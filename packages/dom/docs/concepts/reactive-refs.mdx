@@ -7,25 +7,25 @@ Work with existing DOM elements reactively using [`$ref`](/reference/dom/ref) fo
 Select an element and chain methods for reactive bindings.
 
 ```js
-import { signal } from '@hellajs/core';
-import { $ref } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { $ref } from "@hellajs/dom";
 
 const count = signal(0);
 
 // Reactive text content
-$ref('.counter').bind(count);
+$ref(".counter").bind(count);
 
 // Reactive attributes
-$ref('.input').bind({ disabled: () => count() > 5 });
+$ref(".input").bind({ disabled: () => count() > 5 });
 
 // Event handlers
-$ref('.button').on('click', () => count(count() + 1));
+$ref(".button").on("click", () => count(count() + 1));
 
 // Method chaining
-$ref('.node')
+$ref(".node")
   .bind(() => `Count: ${count()}`)
-  .bind({ 'data-active': () => count() > 5 })
-  .on('click', () => console.log('clicked'));
+  .bind({ "data-active": () => count() > 5 })
+  .on("click", () => console.log("clicked"));
 ```
 
 `$ref` automatically watches for elements that don't exist yet. Operations queue and apply once when the first matching element appears, then watching stops. `$collection` watches continuously, applying queued operations to any new matching elements added later.
@@ -37,16 +37,16 @@ When binding a primitive value to form elements (INPUT, TEXTAREA, SELECT), `.val
 Select multiple elements and apply operations to all of them:
 
 ```js
-import { signal } from '@hellajs/core';
-import { $collection } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { $collection } from "@hellajs/dom";
 
-const status = signal('ready');
-const items = $collection('.status-indicator');
+const status = signal("ready");
+const items = $collection(".status-indicator");
 
 // All current and future elements get the binding
 items.bind(() => `Status: ${status()}`);
 items.bind({ class: () => `indicator ${status()}` });
-items.on('click', () => console.log('Clicked'));
+items.on("click", () => console.log("Clicked"));
 items.forEach((wrapper, index) => {
   // Access individual DomWrapper elements
   console.log(`Element ${index}:`, wrapper.node);

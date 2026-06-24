@@ -7,7 +7,7 @@ HellaJS provides a global error handler with element-level configuration for fin
 Set up a global handler using [`onError`](/reference/dom/onerror). The handler receives the error and a context object, and must return a fallback element. Multiple handlers can be registered via separate `onError()` calls; they execute in registration order and the first non-null result wins:
 
 ```jsx
-import { onError, html } from '@hellajs/dom';
+import { onError, html } from "@hellajs/dom";
 
 onError((error, context) => {
   console.error(`[${context.phase}]`, error.message);
@@ -22,7 +22,7 @@ onError((error, context) => {
 Configure error behavior on individual elements with the `error:` prefix. Delegate to `context.config?.fallback?.(error)` in your handler to use element-level fallbacks:
 
 ```js
-import { onError, mount, html } from '@hellajs/dom';
+import { onError, mount, html } from "@hellajs/dom";
 
 // Delegate to element fallback when available, otherwise use global fallback
 onError((error, context) =>
@@ -40,7 +40,7 @@ const App = () => html`
   </div>
 `;
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 **Available attributes:**

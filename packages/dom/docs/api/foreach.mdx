@@ -18,10 +18,10 @@ function ForEach<T>(props: {
 Use `ForEach` to render lists that change over time.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { ForEach } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
 
-const items = signal(['Apple', 'Banana', 'Cherry']);
+const items = signal(["Apple", "Banana", "Cherry"]);
 
 <ul>
   <ForEach
@@ -34,10 +34,10 @@ const items = signal(['Apple', 'Banana', 'Cherry']);
 Using `html` template syntax:
 
 ```js
-import { signal } from '@hellajs/core';
-import { html, ForEach } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { html, ForEach } from "@hellajs/dom";
 
-const items = signal(['Apple', 'Banana', 'Cherry']);
+const items = signal(["Apple", "Banana", "Cherry"]);
 
 html`<ul>
   <${ForEach} each=${items} use=${(fruit) => html`<li>${fruit}</li>`} />
@@ -51,12 +51,12 @@ html`<ul>
 Use the `key` attribute for optimal reconciliation. Explicit keys use key-only comparison — same key always reuses the DOM node, even if the item reference changes.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { ForEach } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
 
 const items = signal([
-  { unique: 1, tag: 'Foo' },
-  { unique: 2, tag: 'Bar' }
+  { unique: 1, tag: "Foo" },
+  { unique: 2, tag: "Bar" }
 ]);
 
 const Items = () => <ul>
@@ -70,12 +70,12 @@ const Items = () => <ul>
 Items with an `id` property are automatically keyed - no explicit `key` needed.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { ForEach } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
 
 const users = signal([
-  { id: 1, name: 'Alice' },
-  { id: 2, name: 'Bob' }
+  { id: 1, name: "Alice" },
+  { id: 2, name: "Bob" }
 ]);
 
 // ✅ id property is used as key automatically
@@ -128,12 +128,12 @@ Use stable, unique keys (like database IDs) rather than array indices. Index-key
 For dynamic content inside list items, use [`signal`](/reference/core/signal) children rather than deriving values in the `use` callback. Key-only reconciliation reuses DOM nodes on reference changes, so reactive signals handle content updates surgically.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { ForEach } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
 
 const items = signal([
-  { id: 1, name: signal('Alice') },
-  { id: 2, name: signal('Bob') }
+  { id: 1, name: signal("Alice") },
+  { id: 2, name: signal("Bob") }
 ]);
 
 // ✅ Signal children — DOM nodes reused when items reference changes

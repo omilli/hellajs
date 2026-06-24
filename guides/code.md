@@ -42,6 +42,7 @@ import { value } from "./internal/module";
 
 - All `import` statements precede every other top-level statement — no `const`, `let`, type alias, or any declaration above the last import. Side-effect imports and bare `import "..."` follow the same rule
 - Double quotes for all imports and string literals; semicolons always required
+- Enforced by `@stylistic/quotes` in `eslint.config.mjs` — lint fails on single-quoted string literals
 - Separate `import type` for all type-only imports — never inline `type` in a value import
 - Import only what each file uses
 - No external dependencies. Exception: type-only imports (`import type`) from external packages are permitted when the package ships only type declarations (`.d.ts` / `.js.flow`, no runtime JS entry) and is declared as an intentional `dependency`. Type-only imports erase at compile time and add zero bundle weight, so the lean-runtime concern driving this rule does not apply. `import type * as CSS from "csstype"` in `packages/css/lib/types.d.ts` is the canonical case.

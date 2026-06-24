@@ -18,12 +18,12 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>F</span>`}>
-          ${() => { throw new Error('test'); }}
+          ${() => { throw new Error("test"); }}
         </div>
       `, container);
 
       expect(resetFn).toBeDefined();
-      expect(typeof resetFn).toBe('function');
+      expect(typeof resetFn).toBe("function");
     });
 
     test("reset re-renders original content", () => {
@@ -38,17 +38,17 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${(e: Error) => html`<span>E: ${e.message}</span>`}>
-          ${() => { if (shouldThrow()) throw new Error('oops'); return html`<span>OK</span>`; }}
+          ${() => { if (shouldThrow()) throw new Error("oops"); return html`<span>OK</span>`; }}
         </div>
       `, container);
 
-      expect(container.textContent).toBe('E: oops');
+      expect(container.textContent).toBe("E: oops");
 
       shouldThrow(false);
       resetFn!();
       flushMount();
 
-      expect(container.textContent).toBe('OK');
+      expect(container.textContent).toBe("OK");
     });
 
     test("reset without boundary does nothing", () => {
@@ -59,7 +59,7 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(html`<div>${() => { throw new Error('test'); }}</div>`, container);
+      mount(html`<div>${() => { throw new Error("test"); }}</div>`, container);
 
       expect(resetFn).toBeUndefined();
     });
@@ -78,20 +78,20 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>F</span>`}>
-          ${() => { if (shouldThrow()) throw new Error('oops'); return html`<span>OK</span>`; }}
+          ${() => { if (shouldThrow()) throw new Error("oops"); return html`<span>OK</span>`; }}
         </div>
       `, container);
 
-      expect(container.textContent).toBe('Error #1');
+      expect(container.textContent).toBe("Error #1");
 
       resetFn!();
       flushMount();
-      expect(container.textContent).toBe('Error #2');
+      expect(container.textContent).toBe("Error #2");
 
       shouldThrow(false);
       resetFn!();
       flushMount();
-      expect(container.textContent).toBe('OK');
+      expect(container.textContent).toBe("OK");
     });
 
     test("same reset function restores content across multiple calls", () => {
@@ -107,21 +107,21 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>F</span>`}>
-          ${() => { if (shouldThrow()) throw new Error('oops'); return html`<span>OK</span>`; }}
+          ${() => { if (shouldThrow()) throw new Error("oops"); return html`<span>OK</span>`; }}
         </div>
       `, container);
 
-      expect(container.textContent).toBe('Error #1');
+      expect(container.textContent).toBe("Error #1");
 
       firstReset!();
-      expect(container.textContent).toBe('Error #2');
+      expect(container.textContent).toBe("Error #2");
 
       firstReset!();
-      expect(container.textContent).toBe('Error #3');
+      expect(container.textContent).toBe("Error #3");
 
       shouldThrow(false);
       firstReset!();
-      expect(container.textContent).toBe('OK');
+      expect(container.textContent).toBe("OK");
     });
 
     test("reset preserves original template across error cycles", () => {
@@ -136,23 +136,23 @@ describe("dom", () => {
       const container = setupContainer();
       mount(html`
         <div error:fallback=${() => html`<span>F</span>`}>
-          ${() => { if (shouldThrow()) throw new Error('oops'); return html`<span>Original</span>`; }}
+          ${() => { if (shouldThrow()) throw new Error("oops"); return html`<span>Original</span>`; }}
         </div>
       `, container);
 
-      expect(container.textContent).toBe('Error');
+      expect(container.textContent).toBe("Error");
 
       shouldThrow(false);
       resetFn!();
-      expect(container.textContent).toBe('Original');
+      expect(container.textContent).toBe("Original");
 
       shouldThrow(true);
       flushMount();
-      expect(container.textContent).toBe('Error');
+      expect(container.textContent).toBe("Error");
 
       shouldThrow(false);
       resetFn!();
-      expect(container.textContent).toBe('Original');
+      expect(container.textContent).toBe("Original");
     });
   });
 });

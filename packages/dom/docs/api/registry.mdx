@@ -24,9 +24,9 @@ type HookType =
 Registers a reactive effect on an element. The effect is automatically disposed when the element is removed from the DOM.
 
 ```js
-import { registry } from '@hellajs/dom';
+import { registry } from "@hellajs/dom";
 
-const element = document.createElement('div');
+const element = document.createElement("div");
 
 registry.addEffect(element, () => {
   element.textContent = `Count: ${count()}`;
@@ -40,12 +40,12 @@ Effects also trigger `beforeUpdate` and `afterUpdate` hooks when the element is 
 Registers a lifecycle hook on an element. Multiple hooks of the same type stack (all execute).
 
 ```js
-registry.addHook(element, 'afterMount', () => {
-  console.log('Element mounted');
+registry.addHook(element, "afterMount", () => {
+  console.log("Element mounted");
 });
 
-registry.addHook(element, 'beforeDestroy', (node) => {
-  console.log('About to remove:', node);
+registry.addHook(element, "beforeDestroy", (node) => {
+  console.log("About to remove:", node);
 });
 ```
 
@@ -96,14 +96,14 @@ Third-party DOM mutations outside mount targets do not trigger HellaJS processin
 Building a custom element renderer that integrates with the lifecycle system:
 
 ```js
-import { signal } from '@hellajs/core';
-import { registry } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { registry } from "@hellajs/dom";
 
 function renderReactiveElement(tag, props) {
   const element = document.createElement(tag);
   
   // Add reactive text binding
-  if (typeof props.text === 'function') {
+  if (typeof props.text === "function") {
     registry.addEffect(element, () => {
       element.textContent = props.text();
     });
@@ -111,7 +111,7 @@ function renderReactiveElement(tag, props) {
   
   // Add lifecycle hooks
   if (props.onMount) {
-    registry.addHook(element, 'afterMount', props.onMount);
+    registry.addHook(element, "afterMount", props.onMount);
   }
   
   return element;
@@ -120,9 +120,9 @@ function renderReactiveElement(tag, props) {
 // Usage
 const count = signal(0);
 
-const button = renderReactiveElement('button', {
+const button = renderReactiveElement("button", {
   text: () => `Count: ${count()}`,
-  onMount: () => console.log('Button ready')
+  onMount: () => console.log("Button ready")
 });
 
 document.body.appendChild(button);
@@ -149,7 +149,7 @@ await Promise.resolve();
 Nodes are only cleaned if truly disconnected - moved nodes (remove then re-append) skip cleanup:
 
 ```js
-const el = document.querySelector('.item');
+const el = document.querySelector(".item");
 el.remove();           // Queued for cleanup
 parent.prepend(el);    // Re-connected before processing
 // Cleanup skips this node (still connected)
@@ -160,7 +160,7 @@ parent.prepend(el);    // Re-connected before processing
 Multiple hooks of the same type all execute in registration order:
 
 ```js
-registry.addHook(el, 'afterMount', () => console.log('First'));
-registry.addHook(el, 'afterMount', () => console.log('Second'));
+registry.addHook(el, "afterMount", () => console.log("First"));
+registry.addHook(el, "afterMount", () => console.log("Second"));
 // Both run: "First" then "Second"
 ```

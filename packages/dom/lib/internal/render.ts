@@ -81,7 +81,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
         hooks.beforeMount();
       } catch (err) {
         const config = getBoundaryConfig(currentBoundary);
-        dispatchError(toError(err), { phase: 'mount', element, config });
+        dispatchError(toError(err), { phase: "mount", element, config });
       }
     }
   }
@@ -104,7 +104,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
         renderProp(element, key, resolveValue(value));
       } catch (err) {
         const config = getBoundaryConfig(currentBoundary);
-        const fallback = dispatchError(toError(err), { phase: 'update', element, config });
+        const fallback = dispatchError(toError(err), { phase: "update", element, config });
         if (fallback) {
           const target = currentBoundary ?? element;
           target.replaceChildren(mountNode(fallback));
@@ -129,7 +129,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
 function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryElement?: Element) {
   if (!children || children.length === 0) return;
 
-  if (children.length === 1 && typeof children[0] === 'string') {
+  if (children.length === 1 && typeof children[0] === "string") {
     parent.textContent = children[0];
     return;
   }
@@ -173,14 +173,14 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
           if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
             const proxyParent = new Proxy(actualParent as Element, {
               get(target, prop) {
-                if (prop === 'appendChild') {
+                if (prop === "appendChild") {
                   return (node: Node) => {
                     renderedNodes.push(node);
                     return target.insertBefore(node, anchor);
                   };
                 }
                 const val = (target as unknown as Record<string, unknown>)[prop as string];
-                return typeof val === 'function' ? (val as (...args: unknown[]) => unknown).bind(target) : val;
+                return typeof val === "function" ? (val as (...args: unknown[]) => unknown).bind(target) : val;
               }
             });
             (resolved as RenderFn)(proxyParent as HellaElement);
@@ -201,7 +201,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
           }
         } catch (e) {
           const config = getBoundaryConfig(currentBoundary);
-          const fallback = dispatchError(toError(e), { phase: 'mount', element: actualParent, config });
+          const fallback = dispatchError(toError(e), { phase: "mount", element: actualParent, config });
           if (fallback) {
             let ci = 0;
             const cLen = renderedNodes.length;

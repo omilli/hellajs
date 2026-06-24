@@ -21,7 +21,7 @@ type PortalInsertType = "append" | "prepend" | "replace" | "before" | "after";
 Use `Portal` to render content outside the component tree, like modals or tooltips.
 
 ```jsx
-import { Portal } from '@hellajs/dom';
+import { Portal } from "@hellajs/dom";
 
 const Modal = ({ isOpen, children }) => {
   if (!isOpen()) return null;
@@ -105,17 +105,17 @@ Control where content is inserted relative to the target element.
 Portal content remains reactive - signals update in the portaled location.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { Portal } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { Portal } from "@hellajs/dom";
 
-const message = signal('Initial');
+const message = signal("Initial");
 
 <Portal to="#notifications">
   <div class="toast">{message}</div>
 </Portal>
 
 // Later...
-message('Updated!'); // Toast updates in #notifications
+message("Updated!"); // Toast updates in #notifications
 ```
 
 ### html`` Template Syntax
@@ -123,9 +123,9 @@ message('Updated!'); // Toast updates in #notifications
 Use Portal with tagged template syntax.
 
 ```js
-import { html, Portal } from '@hellajs/dom';
+import { html, Portal } from "@hellajs/dom";
 
-const content = signal('Hello');
+const content = signal("Hello");
 
 html`
   <div>
@@ -176,8 +176,8 @@ Children rendered through a portal maintain their lifecycle hooks and reactive b
 ```jsx
 <Portal to="#external">
   <div
-    hook:afterMount={() => console.log('Mounted in portal target')}
-    hook:afterDestroy={() => console.log('Cleaned up')}
+    hook:afterMount={() => console.log("Mounted in portal target")}
+    hook:afterDestroy={() => console.log("Cleaned up")}
   >
     Content with lifecycle
   </div>

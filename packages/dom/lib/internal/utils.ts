@@ -23,7 +23,7 @@ export function resolveText(value: unknown): string {
   return isFalsy(value) ? "" : `${value}`;
 }
 
-const DIRECT_PROPS = Object.freeze(new Set(['value', 'checked', 'selected', 'innerHTML']));
+const DIRECT_PROPS = Object.freeze(new Set(["value", "checked", "selected", "innerHTML"]));
 
 /**
  * @internal
@@ -36,7 +36,7 @@ const DIRECT_PROPS = Object.freeze(new Set(['value', 'checked', 'selected', 'inn
  */
 export function renderProp(element: HellaElement, key: string, value: unknown) {
   if (DIRECT_PROPS.has(key)) {
-    (element as unknown as Record<string, unknown>)[key] = isFalsy(value) ? '' : value;
+    (element as unknown as Record<string, unknown>)[key] = isFalsy(value) ? "" : value;
     return;
   }
   if (isFalsy(value)) {

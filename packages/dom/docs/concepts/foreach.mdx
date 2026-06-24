@@ -3,10 +3,10 @@
 Render dynamic lists with efficient DOM reconciliation using [`ForEach`](/reference/dom/foreach). Items are keyed and diffed using the LIS algorithm for minimal DOM moves.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount, ForEach } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount, ForEach } from "@hellajs/dom";
 
-const fruits = signal(['Apple', 'Banana', 'Cherry']);
+const fruits = signal(["Apple", "Banana", "Cherry"]);
 
 const App = () => (
   <ul>
@@ -14,7 +14,7 @@ const App = () => (
   </ul>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 ## Key-Based Reconciliation
@@ -23,8 +23,8 @@ ForEach tracks items by key. Add a `key` attribute for optimal diffing when list
 
 ```jsx
 const todos = signal([
-  { id: 1, text: 'Learn HellaJS' },
-  { id: 2, text: 'Build an app' }
+  { id: 1, text: "Learn HellaJS" },
+  { id: 2, text: "Build an app" }
 ]);
 
 <ForEach
@@ -42,10 +42,10 @@ Explicit keys use key-only comparison — same key always reuses the DOM node, e
 Pass a signal as `each` and ForEach re-renders on change. Always create new array references for updates:
 
 ```jsx
-const items = signal(['A', 'B', 'C']);
+const items = signal(["A", "B", "C"]);
 
 // Add item
-items([...items(), 'D']);
+items([...items(), "D"]);
 
 // Remove item
 items(items().filter((_, i) => i !== 1));
@@ -54,7 +54,7 @@ items(items().filter((_, i) => i !== 1));
 ## html Template Syntax
 
 ```js
-import { html, ForEach } from '@hellajs/dom';
+import { html, ForEach } from "@hellajs/dom";
 
 html`<ul>
   <${ForEach} each=${items} use=${(item) => html`<li key=${item.id}>${item.text}</li>`} />

@@ -11,8 +11,8 @@ Both produce the same internal HellaNode representation, so all reactive feature
 A familiar syntax (with minor differences) for those coming from React or similar libraries.
 
 ```jsx
-import { mount } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
+import { mount } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 
 const count = signal(0);
 
@@ -31,8 +31,8 @@ mount(App, "#app");
 Template literals allow for pure runtime compilation and caching. An optional build-time compile step offers the same speed and size benefits as JSX.
 
 ```js
-import { mount, html } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
+import { mount, html } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 
 const count = signal(0);
 
@@ -98,7 +98,7 @@ Array values for attributes are joined with spaces, filtering falsy values. Usef
 ```jsx
 const isActive = signal(true);
 
-<div class={['base', isActive() && 'active', 'always']}>
+<div class={["base", isActive() && "active", "always"]}>
   // Renders: class="base active always"
 </div>
 ```

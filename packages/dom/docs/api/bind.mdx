@@ -5,16 +5,16 @@ Create reactive bindings between signals and DOM attributes. When the signal val
 ## Usage
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
 const isActive = signal(false);
-const theme = signal('dark');
-const inputValue = signal('hello');
+const theme = signal("dark");
+const inputValue = signal("hello");
 
 const App = () => (
   <div>
-    <div bind:class={() => isActive() ? 'active' : ''}>
+    <div bind:class={() => isActive() ? "active" : ""}>
       Content
     </div>
     <input bind:value={inputValue} />
@@ -22,7 +22,7 @@ const App = () => (
   </div>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 ## Key Concepts
@@ -33,10 +33,10 @@ For reactivity, `bind:` must be a **function** that returns the desired value.
 
 ```jsx
 // ✅ Reactive binding
-bind:class={() => count() > 5 ? 'large' : 'small'}
+bind:class={() => count() > 5 ? "large" : "small"}
 
 // ❌ Static value (no reactivity)
-bind:class={count() > 5 ? 'large' : 'small'}
+bind:class={count() > 5 ? "large" : "small"}
 ```
 
 ### Attribute Types
@@ -45,11 +45,11 @@ bind:class={count() > 5 ? 'large' : 'small'}
 
 ```jsx
 const itemId = signal(123);
-const className = signal('active');
+const className = signal("active");
 
 <div bind:class={className} />
 <div bind:id={() => `item-${itemId()}`} />
-<a bind:href={() => isActive() ? '#active' : '#inactive'}>Link</a>
+<a bind:href={() => isActive() ? "#active" : "#inactive"}>Link</a>
 ```
 
 #### Boolean Attributes
@@ -72,7 +72,7 @@ When the function returns `true`, the attribute is added. When `false`/`null`/`u
 Attributes accept array values, which are joined with spaces:
 
 ```jsx
-const classes = signal(['active', 'highlight']);
+const classes = signal(["active", "highlight"]);
 
 <div bind:class={classes} />
 // Renders: <div class="active highlight"></div>
@@ -82,8 +82,8 @@ Falsy values are filtered out:
 
 ```jsx
 <div bind:class={() => [
-  isActive() && 'active',
-  isDisabled() && 'disabled',
+  isActive() && "active",
+  isDisabled() && "disabled",
 ]} />
 ```
 
@@ -95,8 +95,8 @@ Passing a static value (non-function) to `bind:` renders the initial value but n
 
 ```jsx
 // ✅ Reactive: updates when count changes
-<div bind:class={() => count() > 0 ? 'has-items' : 'empty'} />
+<div bind:class={() => count() > 0 ? "has-items" : "empty"} />
 
 // ❌ Static: renders once, never updates
-<div bind:class={count() > 0 ? 'has-items' : 'empty'} />
+<div bind:class={count() > 0 ? "has-items" : "empty"} />
 ```

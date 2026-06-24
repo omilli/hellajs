@@ -11,8 +11,8 @@ Function references make conditionals reactive, they re-evaluate when their sign
 </div>
 
 ```jsx
-import { mount } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
+import { mount } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 
 const Counter = () => {
   const count = signal(0);
@@ -21,7 +21,7 @@ const Counter = () => {
     <div>
       <h1>Count: {count}</h1>
       <h2>Doubled: {() => count() * 2}</h2>
-      <p>Count is: {() => count() % 2 === 0 ? 'even' : 'odd'}</p>
+      <p>Count is: {() => count() % 2 === 0 ? "even" : "odd"}</p>
       {() => count() > 5 && <p>Great job! Count is greater than 5!</p>}
       <button on:click={() => count(count() + 1)}>
         Increment
@@ -30,7 +30,7 @@ const Counter = () => {
   );
 };
 
-mount(Counter, '#app');
+mount(Counter, "#app");
 ```
 
 ## Lists and Iteration
@@ -38,19 +38,19 @@ mount(Counter, '#app');
 Use [`ForEach`](/reference/dom/foreach) for reactive lists that change over time. Use regular array methods for static lists rendered once.
 
 ```jsx
-import { mount, ForEach } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
+import { mount, ForEach } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 
 const TodoList = () => {
   const todos = signal([
-    { id: 1, text: 'Learn HellaJS', done: false },
-    { id: 2, text: 'Build an app', done: false }
+    { id: 1, text: "Learn HellaJS", done: false },
+    { id: 2, text: "Build an app", done: false }
   ]);
 
   return (
     <ul>
       <ForEach each={todos} use={(todo) => (
-        <li key={todo.id} class={todo.done ? 'done' : ''}>
+        <li key={todo.id} class={todo.done ? "done" : ""}>
           <input
             type="checkbox"
             checked={todo.done}
@@ -68,7 +68,7 @@ const TodoList = () => {
   );
 };
 
-mount(TodoList, '#app');
+mount(TodoList, "#app");
 ```
 
 **Static lists** (no reactivity): `{todos().map(todo => <li>{todo.text}</li>)}`
@@ -80,8 +80,8 @@ See [`ForEach`](/reference/dom/foreach) for keyed reconciliation details.
 Render content to a different DOM location while maintaining reactivity.
 
 ```jsx
-import { mount, Portal } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
+import { mount, Portal } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 
 const Modal = () => {
   const isOpen = signal(false);
@@ -101,7 +101,7 @@ const Modal = () => {
   );
 };
 
-mount(Modal, '#app');
+mount(Modal, "#app");
 ```
 
 **Portal types:** `append` (default), `prepend`, `replace`, `before`, `after`
@@ -113,14 +113,14 @@ See [`Portal`](/reference/dom/portal) for full details.
 Load components asynchronously with automatic code splitting. [`Lazy`](/reference/dom/lazy) shows optional loading state during load and optional fallback on error.
 
 ```jsx
-import { Lazy } from '@hellajs/dom';
+import { Lazy } from "@hellajs/dom";
 
 const Dashboard = () => {
   return (
     <div>
       <h1>Dashboard</h1>
       <Lazy
-        loader={() => import('./HeavyChart')}
+        loader={() => import("./HeavyChart")}
         loading={<div>Loading chart...</div>}
         fallback={<div>Failed to load chart</div>}
       />

@@ -5,26 +5,26 @@ Lifecycle hooks allow you to run code at specific points during an element's lif
 ## Usage
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 const App = () => (
   <div
-    hook:beforeMount={() => console.log('Creating element')}
+    hook:beforeMount={() => console.log("Creating element")}
     hook:afterMount={(element) => {
       // Safe to measure dimensions, initialize libraries, etc.
       const rect = element.getBoundingClientRect();
-      console.log('Element size:', rect.width, rect.height);
+      console.log("Element size:", rect.width, rect.height);
     }}
-    hook:beforeUpdate={() => console.log('About to update')}
-    hook:afterUpdate={() => console.log('Element updated')}
-    hook:beforeDestroy={() => console.log('Cleaning up')}
-    hook:afterDestroy={() => console.log('Element removed')}
+    hook:beforeUpdate={() => console.log("About to update")}
+    hook:afterUpdate={() => console.log("Element updated")}
+    hook:beforeDestroy={() => console.log("Cleaning up")}
+    hook:afterDestroy={() => console.log("Element removed")}
   >
     Content
   </div>
 );
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 ## Key Concepts
@@ -48,7 +48,7 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 <div
   hook:afterMount={(element) => {
     // element is the DOM node
-    element.style.color = 'red';
+    element.style.color = "red";
   }}
   hook:beforeDestroy={(element) => {
     // cleanup using element reference
@@ -82,7 +82,7 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 <div
   hook:afterMount={(el) => {
     const { width, height } = el.getBoundingClientRect();
-    console.log('Dimensions:', width, height);
+    console.log("Dimensions:", width, height);
   }}
 />
 ```

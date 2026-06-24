@@ -17,16 +17,16 @@ Lifecycle hooks fire at specific points in an element's existence. They are tied
 - `hook:afterDestroy`: After removal and effect cleanup (no element argument)
 
 ```jsx
-import { mount } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
+import { mount } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
 
 const Counter = () => {
   const count = signal(0);
 
   return (
     <div
-      hook:afterMount={() => console.log('In DOM')}
-      hook:beforeDestroy={() => console.log('Removing')}
+      hook:afterMount={() => console.log("In DOM")}
+      hook:beforeDestroy={() => console.log("Removing")}
     >
       <h1>{count}</h1>
       <button on:click={() => count(count() + 1)}>Increment</button>
@@ -34,7 +34,7 @@ const Counter = () => {
   );
 };
 
-mount(Counter, '#app');
+mount(Counter, "#app");
 ```
 
 Multiple hooks of the same type on the same element all execute in registration order.

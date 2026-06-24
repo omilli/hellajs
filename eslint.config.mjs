@@ -18,7 +18,6 @@ export default tseslint.config(
 	js.configs.recommended,
 	...tseslint.configs.recommended,
 	{
-		files: ["**/*.{ts,tsx,js,jsx,mjs}"],
 		plugins: {
 			"@stylistic": stylistic,
 		},
@@ -44,6 +43,16 @@ export default tseslint.config(
 			"no-useless-assignment": "error",
 			"no-unused-labels": "error",
 			"prefer-const": "error",
+		},
+	},
+	{
+		files: ["packages/dom/**/*.{ts,tsx,js,jsx,mjs}"],
+		plugins: {
+			"@stylistic": stylistic,
+		},
+		rules: {
+			"@stylistic/quotes": ["error", "double", { avoidEscape: true, allowTemplateLiterals: "always" }],
+			"@stylistic/jsx-quotes": ["error", "prefer-double"],
 		},
 	},
 	{

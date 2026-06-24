@@ -25,8 +25,8 @@ function mount(
 Pass a component function to `mount`. HellaJS will call this function to get the node tree and render it.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
 // A simple component function
 const Counter = () => {
@@ -43,7 +43,7 @@ const Counter = () => {
 };
 
 // Mount the component into the element with id="app"
-mount(Counter, '#app');
+mount(Counter, "#app");
 
 // Defaults to #app if no selector is provided
 mount(Counter);
@@ -56,11 +56,11 @@ mount(Counter);
 `mount` establishes the reactive root where signals automatically update the DOM when values change.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
 const count = signal(0);
-mount(<div>Count: {count}</div>, '#app');
+mount(<div>Count: {count}</div>, "#app");
 ```
 
 ### Component Functions
@@ -68,7 +68,7 @@ mount(<div>Count: {count}</div>, '#app');
 Components are plain functions that return HellaNodes, no classes or special syntax required.
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 const Greeting = ({name}) => <h1>Hello, {name}!</h1>;
 mount(<Greeting name="World" />);
@@ -81,11 +81,11 @@ mount(<Greeting name="World" />);
 Each `mount()` call creates an independent reactive tree - avoid multiple mounts on the same element.
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 // ❌ Multiple mounts on same element
-mount(App1, '#app');
-mount(App2, '#app');
+mount(App1, "#app");
+mount(App2, "#app");
 ```
 
 ### Async Component Errors
@@ -93,15 +93,15 @@ mount(App2, '#app');
 When an async component function rejects, the error routes through [`onError`](/reference/dom/onerror). If no handler is registered, the error is logged to `console.error`.
 
 ```jsx
-import { mount, onError } from '@hellajs/dom';
+import { mount, onError } from "@hellajs/dom";
 
 onError((err) => {
-  console.error('Mount failed:', err.message);
+  console.error("Mount failed:", err.message);
   return null;
 });
 
 mount(async () => {
-  const data = await fetch('/api/data').then(r => r.json());
+  const data = await fetch("/api/data").then(r => r.json());
   return <div>{data.title}</div>;
 });
 ```
@@ -121,8 +121,8 @@ For component-level effects, use any of these approaches - they all provide auto
 - **`component()` helper** - Manual wrapping for raw AST
 
 ```jsx
-import { effect, signal } from '@hellajs/core';
-import { mount, html } from '@hellajs/dom';
+import { effect, signal } from "@hellajs/core";
+import { mount, html } from "@hellajs/dom";
 
 const Timer = () => {
   const seconds = signal(0);

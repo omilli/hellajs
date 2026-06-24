@@ -17,19 +17,19 @@ For a single element without collection overhead, see [`$ref`](/reference/dom/re
 Use `$collection` to select and manipulate multiple existing DOM elements reactively.
 
 ```js
-import { signal } from '@hellajs/core';
-import { $collection } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { $collection } from "@hellajs/dom";
 
 const count = signal(0);
 
-// Select all buttons with class 'btn'
-const buttons = $collection('.btn');
+// Select all buttons with class "btn"
+const buttons = $collection(".btn");
 
 // Bind reactive text to all matched elements
 buttons.bind(() => `Count: ${count()}`);
 
 // Add event handlers to all elements
-buttons.on('click', () => count(count() + 1));
+buttons.on("click", () => count(count() + 1));
 ```
 
 ## Key Concepts
@@ -39,7 +39,7 @@ buttons.on('click', () => count(count() + 1));
 The returned reference is callable - invoke it to get raw DOM nodes by index.
 
 ```js
-const ref = $collection('.item');
+const ref = $collection(".item");
 
 ref()    // First matched element
 ref(0)   // Same as above
@@ -52,7 +52,7 @@ ref(99)  // undefined (out of bounds)
 Access the number of matched elements.
 
 ```js
-const items = $collection('.item');
+const items = $collection(".item");
 console.log(items.length); // Number of matched elements
 ```
 
@@ -61,7 +61,7 @@ console.log(items.length); // Number of matched elements
 Access individual element wrappers using bracket notation.
 
 ```js
-const ref = $collection('.item');
+const ref = $collection(".item");
 
 ref[0]  // First ReactiveElement wrapper
 ref[1]  // Second ReactiveElement wrapper
@@ -75,11 +75,11 @@ ref[0].node  // First DOM element
 All methods return the reference for fluent chaining.
 
 ```js
-$collection('.counter')
+$collection(".counter")
   .bind(() => `Count: ${count()}`)
-  .bind({ class: () => count() > 10 ? 'high' : 'low' })
-  .on('click', () => count(count() + 1))
-  .hooks({ afterMount: () => console.log('ready') });
+  .bind({ class: () => count() > 10 ? "high" : "low" })
+  .on("click", () => count(count() + 1))
+  .hooks({ afterMount: () => console.log("ready") });
 ```
 
 ### Reactive Bindings
@@ -89,13 +89,13 @@ Use `.bind()` for text content or attributes on **all** matched elements.
 **Text/Value binding** - pass a string or reactive function:
 
 ```js
-const status = signal('idle');
+const status = signal("idle");
 
 // Static text on all elements
-$collection('.label').bind('Hello');
+$collection(".label").bind("Hello");
 
 // Reactive text (updates when signal changes)
-$collection('.status').bind(() => status());
+$collection(".status").bind(() => status());
 ```
 
 Form elements (INPUT, TEXTAREA, SELECT) automatically use `.value` instead of `.textContent`.
@@ -105,10 +105,10 @@ Form elements (INPUT, TEXTAREA, SELECT) automatically use `.value` instead of `.
 ```js
 const isLoading = signal(false);
 
-$collection('.btn').bind({
+$collection(".btn").bind({
   disabled: () => isLoading(),
-  class: ['btn', 'primary'],
-  'data-count': () => count()
+  class: ["btn", "primary"],
+  "data-count": () => count()
 });
 ```
 
@@ -122,9 +122,9 @@ Attribute behavior:
 Attach event handlers to all elements with proper `this` context.
 
 ```js
-$collection('.btn').on('click', function(event) {
-  console.log('Clicked:', this);  // 'this' is the clicked element
-  console.log('Event:', event);
+$collection(".btn").on("click", function(event) {
+  console.log("Clicked:", this);  // "this" is the clicked element
+  console.log("Event:", event);
 });
 ```
 
@@ -133,9 +133,9 @@ $collection('.btn').on('click', function(event) {
 Iterate over element wrappers for per-element logic.
 
 ```js
-$collection('.items').forEach((element, index) => {
+$collection(".items").forEach((element, index) => {
   element.bind(`Item ${index + 1}`);
-  element.bind({ 'data-index': index.toString() });
+  element.bind({ "data-index": index.toString() });
 });
 ```
 
@@ -144,9 +144,9 @@ $collection('.items').forEach((element, index) => {
 Add lifecycle hooks to all elements.
 
 ```js
-$collection('.card').hooks({
-  afterMount: () => console.log('Card mounted'),
-  afterDestroy: () => console.log('Card removed')
+$collection(".card").hooks({
+  afterMount: () => console.log("Card mounted"),
+  afterDestroy: () => console.log("Card removed")
 });
 ```
 
@@ -159,8 +159,8 @@ If elements are already mounted, `afterMount` hooks execute immediately.
 `$collection` watches for new elements matching the selector via an independent MutationObserver. This observer is activated only when `$ref`/`$collection` selectors exist and stops when all are disposed. All queued operations are automatically applied to elements added later.
 
 ```js
-const ref = $collection('.dynamic-item');
-ref.bind('Hello');  // Applied to existing elements
+const ref = $collection(".dynamic-item");
+ref.bind("Hello");  // Applied to existing elements
 
 // Later, when new elements are added to DOM:
 document.body.innerHTML += '<div class="dynamic-item"></div>';
@@ -174,8 +174,8 @@ This is the key difference from `$ref` - collections automatically watch for and
 Call `dispose()` to stop watching for new elements and clear queued operations.
 
 ```js
-const ref = $collection('.temporary');
-ref.bind('Content');
+const ref = $collection(".temporary");
+ref.bind("Content");
 
 // When done watching
 ref.dispose();
@@ -190,8 +190,8 @@ After disposing, new elements matching the selector will not receive the queued 
 Every method applies to **all** matched elements.
 
 ```js
-// Sets text on ALL elements with class 'message'
-$collection('.message').bind('Updated');
+// Sets text on ALL elements with class "message"
+$collection(".message").bind("Updated");
 ```
 
 ### Bracket Access Snapshot
@@ -199,7 +199,7 @@ $collection('.message').bind('Updated');
 Bracket access (`ref[0]`) provides a snapshot at creation time. New elements added via the independent ref observer are accessible through `forEach` or the callable syntax.
 
 ```js
-const ref = $collection('.item');
+const ref = $collection(".item");
 ref[0]  // First wrapper at creation time
 ref()   // First element (always current)
 
@@ -213,10 +213,10 @@ If you only need the first matching element and don't need auto-watching, use [`
 
 ```js
 // For single element without watching
-import { $ref } from '@hellajs/dom';
-const single = $ref('.unique-element');
+import { $ref } from "@hellajs/dom";
+const single = $ref(".unique-element");
 
 // For multiple elements with watching
-import { $collection } from '@hellajs/dom';
-const multiple = $collection('.repeated-element');
+import { $collection } from "@hellajs/dom";
+const multiple = $collection(".repeated-element");
 ```

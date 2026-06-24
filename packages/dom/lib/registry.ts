@@ -24,7 +24,7 @@ export const registry = {
         try {
           runHooks(node, "beforeUpdate");
         } catch (err) {
-          dispatchError(toError(err), { phase: 'update', element: el, config: resolveErrorConfig(el) });
+          dispatchError(toError(err), { phase: "update", element: el, config: resolveErrorConfig(el) });
         }
       }
       effectFn();
@@ -32,7 +32,7 @@ export const registry = {
         try {
           runHooks(node, "afterUpdate");
         } catch (err) {
-          dispatchError(toError(err), { phase: 'update', element: el, config: resolveErrorConfig(el) });
+          dispatchError(toError(err), { phase: "update", element: el, config: resolveErrorConfig(el) });
         }
       }
     });

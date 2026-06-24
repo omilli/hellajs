@@ -7,15 +7,15 @@ Short patterns for common DOM rendering tasks using [`@hellajs/dom`](/reference/
 Use `bind:class` with a ternary for state-driven styling.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
 const isActive = signal(false);
-const activeClass = () => isActive() ? 'btn-active' : 'btn-inactive';
+const activeClass = () => isActive() ? "btn-active" : "btn-inactive";
 
 const template = <div bind:class={activeClass}>Toggle</div>;
 
-mount(template, '#app');
+mount(template, "#app");
 ```
 
 ### Conditional Class Arrays
@@ -23,20 +23,20 @@ mount(template, '#app');
 Use arrays for composable class lists: falsy values are filtered out.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
-const status = signal('active');
+const status = signal("active");
 const taskClasses = () => [
-  'task-item',
-  status() === 'active' && 'task-active',
-  status() === 'done' && 'task-done',
-  status() === 'error' && 'task-error'
-].filter(Boolean).join(' ');
+  "task-item",
+  status() === "active" && "task-active",
+  status() === "done" && "task-done",
+  status() === "error" && "task-error"
+].filter(Boolean).join(" ");
 
 const template = <div bind:class={taskClasses}>Task</div>;
 
-mount(template, '#app');
+mount(template, "#app");
 ```
 
 ### Two-Way Input Binding
@@ -44,10 +44,10 @@ mount(template, '#app');
 Combine `bind:value` with `on:input` for controlled inputs.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
-const name = signal('');
+const name = signal("");
 const onNameInput = (e) => name(e.target.value);
 
 const template = <div>
@@ -55,7 +55,7 @@ const template = <div>
   <p>Hello, {name}</p>
 </div>;
 
-mount(template, '#app');
+mount(template, "#app");
 ```
 
 ### Conditional Rendering
@@ -63,8 +63,8 @@ mount(template, '#app');
 Wrap conditionals in function references for reactivity.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
 const showPanel = signal(false);
 const togglePanel = () => showPanel(!showPanel());
@@ -75,7 +75,7 @@ const template = <div>
   {panelContent}
 </div>;
 
-mount(template, '#app');
+mount(template, "#app");
 ```
 
 ### Keyed List Rendering
@@ -83,12 +83,12 @@ mount(template, '#app');
 Use [`ForEach`](/reference/dom/foreach) for reactive lists with efficient reconciliation.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount, ForEach } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount, ForEach } from "@hellajs/dom";
 
 const items = signal([
-  { id: 1, text: 'First' },
-  { id: 2, text: 'Second' }
+  { id: 1, text: "First" },
+  { id: 2, text: "Second" }
 ]);
 const renderItem = (item) => <li key={item.id}>{item.text}</li>;
 
@@ -96,7 +96,7 @@ const template = <ul>
   <ForEach each={items} use={renderItem} />
 </ul>;
 
-mount(template, '#app');
+mount(template, "#app");
 ```
 
 ### Dynamic Component
@@ -104,8 +104,8 @@ mount(template, '#app');
 A signal can hold a component, rendered with `{signal}`.
 
 ```jsx
-import { signal } from '@hellajs/core';
-import { mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
 
 const HomePage = <h1>Home</h1>;
 const AboutPage = <h1>About</h1>;
@@ -120,5 +120,5 @@ const template = <div>
   {currentPage}
 </div>;
 
-mount(template, '#app');
+mount(template, "#app");
 ```

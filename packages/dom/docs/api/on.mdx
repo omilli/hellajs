@@ -5,17 +5,17 @@ Delegated event handlers attached globally to `document.body` in the capture pha
 ## Usage
 
 ```jsx
-import { mount } from '@hellajs/dom';
+import { mount } from "@hellajs/dom";
 
 const App = () => {
-  const handleClick = () => console.log('clicked');
+  const handleClick = () => console.log("clicked");
 
   return (
     <button on:click={handleClick}>Click Me</button>
   );
 };
 
-mount(App, '#app');
+mount(App, "#app");
 ```
 
 ```jsx

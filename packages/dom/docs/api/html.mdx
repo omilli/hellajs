@@ -19,8 +19,8 @@ function html(
 Use `html` to create DOM structures with a familiar HTML-like syntax.
 
 ```js
-import { signal } from '@hellajs/core';
-import { html, mount } from '@hellajs/dom';
+import { signal } from "@hellajs/core";
+import { html, mount } from "@hellajs/dom";
 
 const count = signal(0);
 
@@ -39,13 +39,13 @@ mount(html`
 Interpolate signals, functions, or static values in text content.
 
 ```js
-const name = signal('World');
+const name = signal("World");
 const computed = () => name().toUpperCase();
 
 html`<div>
   Hello ${name}!
   Uppercase: ${computed}
-  Static: ${'value'}
+  Static: ${"value"}
 </div>`
 ```
 
@@ -54,7 +54,7 @@ html`<div>
 Interpolate values in attributes.
 
 ```js
-const className = signal('active');
+const className = signal("active");
 const isDisabled = signal(false);
 
 html`<button 
@@ -75,7 +75,7 @@ html`<input on:input=${(e) => value(e.target.value)} />`
 
 **`bind:` - Reactive bindings**
 ```js
-const theme = signal('light');
+const theme = signal("light");
 html`<div bind:class=${theme}>Content</div>`
 // Updates automatically when theme() changes
 ```
@@ -83,8 +83,8 @@ html`<div bind:class=${theme}>Content</div>`
 **`hook:` - Lifecycle hooks**
 ```js
 html`<div
-  hook:afterMount=${() => console.log('mounted')}
-  hook:afterDestroy=${() => console.log('destroyed')}
+  hook:afterMount=${() => console.log("mounted")}
+  hook:afterDestroy=${() => console.log("destroyed")}
 >Content</div>`
 ```
 
@@ -164,9 +164,9 @@ html`<div>
 Integrate with `ForEach` for dynamic lists.
 
 ```js
-import { ForEach } from '@hellajs/dom';
+import { ForEach } from "@hellajs/dom";
 
-const items = signal([{ id: 1, name: 'A' }, { id: 2, name: 'B' }]);
+const items = signal([{ id: 1, name: "A" }, { id: 2, name: "B" }]);
 
 html`<ul>
   <${ForEach} each=${items} use=${(item) => html`<li key=${item.id}>${item.name}</li>`} />
@@ -235,5 +235,5 @@ html`<div>  <span>Text</span>  </div>`
 // Internal spaces preserved in DOM
 
 // For explicit whitespace, use text content
-html`<div>${'   '}<span>Text</span></div>`
+html`<div>${"   "}<span>Text</span></div>`
 ```

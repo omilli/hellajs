@@ -36,7 +36,7 @@ export function mount(
     typeof resolved === "object" &&
     typeof (resolved as { then?: unknown }).then === "function") {
     (resolved as Promise<HellaNode>).then(attach, (err: unknown) => {
-      dispatchError(toError(err), { phase: 'mount' });
+      dispatchError(toError(err), { phase: "mount" });
     });
     return;
   }

@@ -52,7 +52,7 @@ export function $collection<T extends Element = Element>(selector: string): DomC
     return elementWrappers[index]?.node ?? undefined;
   } as DomCollection<T>;
 
-  Object.defineProperty(result, 'length', {
+  Object.defineProperty(result, "length", {
     get: () => elementWrappers.length,
     enumerable: true
   });
