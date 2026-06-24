@@ -1,1 +1,1 @@
-export { signal, computed, effect, untracked, isFunction, hasDocument, hasNavigator, hasWindow } from "@hellajs/core";
+export { signal, computed, effect, untracked, isFunction, isPlainObject, hasDocument, hasNavigator, hasWindow } from "@hellajs/core";

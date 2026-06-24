@@ -74,6 +74,8 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   abortSignal?: AbortSignal;
   /** Whether to deduplicate identical concurrent requests */
   deduplicate?: boolean;
+  /** Preserve object/array references for structurally unchanged subtrees on fetch success, preventing redundant reactive cascades (default: false) */
+  structuralSharing?: boolean;
   /** Number of retry attempts on failure, or function to determine if retry should occur */
   retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
   /** Delay between retries in ms, or function returning delay based on attempt number */
