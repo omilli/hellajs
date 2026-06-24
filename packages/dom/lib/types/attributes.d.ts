@@ -1,7 +1,3 @@
-/**
- * A type that can either be the raw value or a Signal containing that value.
- * @template T
- */
 import type { HellaPrimitive, ElementHooks } from "./nodes";
 
 /**
