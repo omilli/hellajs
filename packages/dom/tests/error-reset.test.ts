@@ -67,13 +67,12 @@ describe("dom", () => {
     test("reset can be called multiple times", () => {
       const shouldThrow = signal(true);
       let resetFn: (() => void) | undefined;
-      let count = 0;
 
-      onError((_, context) => {
-        count++;
-        resetFn = context.reset;
-        return html`<span>Error #${count}</span>` as HellaNode;
+      const errorHandler = mock((_error: Error, context: { reset?: () => void }) => {
+        if (!resetFn) resetFn = context.reset;
+        return html`<span>Error #${errorHandler.mock.calls.length}</span>` as HellaNode;
       });
+      onError(errorHandler);
 
       const container = setupContainer();
       mount(html`
