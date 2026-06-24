@@ -1,6 +1,6 @@
 ---
 name: feedback
-description: Run after any skill execution to review for skill-level friction. Conservatively proposes edits to a skill's SKILL.md only when there is clear evidence of underperformance, conflict, or ambiguity during the run. A clean run proposes nothing — that is the common and correct outcome.
+description: Run after a loop completes (or immediately on blocking friction) to review for skill-level friction. Conservatively proposes edits to a skill's SKILL.md only when there is clear evidence of underperformance, conflict, or ambiguity during the run. A clean run proposes nothing — that is the common and correct outcome.
 ---
 
 # Feedback
@@ -17,6 +17,16 @@ Two rules govern this skill absolutely.
 
 **Every change carries its full blast radius.** A skill edit alters every future run of that skill. Proposals are therefore conservative and evidence-grounded: cite the specific moment in the run where the skill underperformed. A hypothetical improvement with no run evidence does not qualify — it is imagination, not feedback.
 
+## Step 0 — Read memory
+
+Read `memory/INDEX.md` (create if absent). Scan for:
+
+- **Rejection entries** — do not re-propose unless new evidence has emerged in this run.
+- **Pattern entries** — the same skill + section appearing 3+ times signals a systemic gap. Escalate: propose a structural fix, not another incremental patch.
+- **Decision entries** — already-made decisions that affect the current run. Don't re-derive what's settled.
+
+This is one Read call (~30 lines). Deep-dive into individual entries (`memory/entries/[tag].md`) only when an index line is directly relevant to the current run.
+
 ## Step 1 — Intake
 
 Identify which skill ran and review what happened: the conversation, the tool calls, the outputs, any corrections the user made, any rework or ambiguity. The run just completed is the evidence base; feedback without a specific run is general rumination, which this skill does not do.
@@ -30,6 +40,7 @@ Look for evidence of:
 - **A verification step that missed a real problem** — caught later by blast-radius, by the user, or by a failing check the skill's floor didn't include.
 - **A redundant or slow step** — work the skill did that added no signal (a check that always passes, a read that duplicates another).
 - **A blast-radius effect that slipped through** — a cross-package caller, a sibling test, a doc contradiction that the skill's scope didn't account for.
+- **Trigger calibration** — was feedback invoked at the right time? If the user explicitly asked for feedback (the response-protocol gate in `AGENTS.md` didn't fire), the trigger criteria may be too narrow — what signal was missed? If feedback found nothing to propose, the trigger may be too broad. If significant friction accumulated across multiple responses before feedback ran, the trigger should have fired earlier — what was the earliest signal? Note calibration observations in the memory handoff; if a pattern recurs across runs, propose an edit to `AGENTS.md` §Response protocol.
 
 ## Step 3 — Conservatively propose
 
@@ -46,9 +57,22 @@ If the run was clean — no friction, no conflicts, no ambiguity, no misses — 
 
 Feedback proposes; it does not edit skills directly. A skill change affects every future run, so the user approves first. If the user approves a proposal, apply it as a cohesive edit to the cited step (not an ad-hoc patch), following the skill's existing structure and the two Non-negotiables every skill carries. A rejected proposal is dropped — do not re-propose it on the next run unless new evidence recurs.
 
+## Step 5 — Hand off to memory
+
+After the user decides on each proposal, hand off to the `/memory` skill:
+
+- **What passed the filter** — proposals accepted/rejected/deferred, with the evidence and rationale from the run.
+- **The memory skill critically analyzes** each finding: Is it worth remembering? Is it already in a durable file? Does a similar entry exist? Is the rationale non-obvious? Most findings will NOT become entries.
+- **The memory skill writes** entries + updates INDEX. Feedback does not write to `memory/` directly.
+
+This separation keeps feedback focused on skill improvement and memory focused on durable knowledge curation.
+
 ## Self-check
 
 a. Does every proposal cite a specific moment in the run, not a hypothetical?
 b. Did I distinguish skill gaps (propose a skill edit) from guide gaps (emit a guide-update proposal)?
 c. If the run was clean, did I say so and propose nothing — rather than manufacturing a suggestion?
 d. Did I propose, not write?
+e. Did I check `memory/INDEX.md` before proposing, to avoid re-proposing a rejected item?
+f. Did I hand off to `/memory` after the user decided?
+g. Did I evaluate trigger timing — was feedback invoked at the right moment?

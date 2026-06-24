@@ -102,6 +102,8 @@ no
 - [ ] [seeded from the matching block below; drop inapplicable items; add Contract-derived items]
 ```
 
+Surface change: `no` plans may have multiple tasks when the work spans distinct concerns (e.g., a migration with cleanup, rename, and restructure phases). The Contract is shared scope as usual; tasks are ordered by dependency. No trio is required because there is no public surface to verify or document.
+
 ---
 
 ## Multi-task plan (Surface change: yes)

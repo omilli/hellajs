@@ -51,6 +51,8 @@ If the scope hint or citations are missing, ask before proceeding. Do not plan i
 
 Read `packages/[pkg]/index.ts`. Determine surface change per TEMPLATE.md's definition: does the change add, change, or remove any symbol `index.ts` re-exports, or any field on a public type consumers pass, or any public signature? This is factual — read the barrel and the cited type files; do not guess from the feature description.
 
+If the work is not in a package workspace (scripts, root config, guides, docs infrastructure), Surface change is `no` by definition — there is no public API barrel to change. Skip the `index.ts` read and proceed to Phase 2 with `no`.
+
 - `yes` → trio (Code + Tests + Docs sub-tasks, minimum). The surface has three views; all three must land together.
 - `no` → single task of the matching type. Tests-view and Docs-view fields still appear and justify the absence of siblings.
 

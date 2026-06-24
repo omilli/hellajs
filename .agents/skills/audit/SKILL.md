@@ -61,10 +61,11 @@ Read exactly one (PER FILE TYPE):
 
 - **Tests** → `./guides/tests.md`
 - **Docs** → `./guides/docs.md`
-- **Config** → `./guides/code.md` (no dedicated `./guides/config.md` exists yet; config files follow `code.md`'s conventions — double quotes, semicolons, no external deps, strict typing — plus the Config-specific checks in Step 3)
-- **Code** → `./guides/code.md`
+- **Config** → `./guides/code.md` (no dedicated `./guides/config.md` exists; config files follow `code.md`'s conventions — double quotes, semicolons, strict typing — plus the Config verification checklist at the end of `code.md`)
+- **Code** → `./guides/code.md` for files under `packages/*/lib/`, `packages/*/src/`, `plugins/**`
+- **Code** → `./guides/scripts.md` for files under `scripts/**` and `utils/**` (build tooling — different precedence than the runtime library)
 
-The three guides are the source of truth, never the input's own local conventions. A file that is internally consistent but breaks its guide is still non-compliant.
+The four guides are the source of truth, never the input's own local conventions. A file that is internally consistent but breaks its guide is still non-compliant.
 
 ## Step 3 — Ground every finding before reporting
 
@@ -78,6 +79,8 @@ Eyeballing code misses regressions the toolchain already catches. Run the type-a
 | **Code** | `bun check <package>`, `bun lint` | Compiles; lint passes |
 
 Docs-only input (entirely `.md` / `.mdx`) skips `bun check` and `bun coverage` — those verify code and tests, not prose. The cross-check against `index.ts` is the entire grounding for Docs.
+
+Scripts input (`.ts` / `.mjs` / `.js` under `scripts/**` or `utils/**`) grounds on `bun lint` only — there is no per-package `bun check` for root build tooling, and scripts have no dedicated tests (correctness is validated by `bun check` / `bun bundle` exiting 0 in CI). Apply `./guides/scripts.md`'s checklist, not `code.md`'s runtime-library checks.
 
 Qualitative checks the commands cannot catch:
 
@@ -132,7 +135,9 @@ At the end of the report, list the findings by number and ask the user which (if
 Audit is **reactive discovery** (fix-this), where feature is generative discovery (add-this). Both feed plan the same shape — an evidence map — so plan's Phase 0 intake is identical regardless of source. For each finding the user chooses to hand off, produce:
 
 - **Gap** — the one-sentence finding (what is wrong), rephrased as the target state plan will reach.
-- **Scope hint** — the file's detected type from Step 1: `surface` (a Code finding in a file under `lib/*.ts` whose symbol is re-exported by `index.ts`), `internal` (Code under `lib/internal/`), `docs`, `config`, or `tests`. Plan re-verifies surface by reading `index.ts`.
+- **Scope hint** — the file's detected type from Step 1: `surface` (a Code finding in a file under `lib/*.ts` whose symbol is re-exported by `index.ts`), `internal` (Code under `lib/internal/`), `scripts` (Code under `scripts/**` or `utils/**`), `docs`, `config`, or `tests`. Plan re-verifies surface by reading `index.ts`.
 - **Citations** — `{ file, anchor, what-it-shows }` per finding. The anchor is the function/type/heading name (stable across edits); the line number from the finding is a hint. "What-it-shows" is the violated guide rule with its section, because that rule is the target state plan's Contract must restore.
 
 Plan reads each citation, reads the cited guide rule, and derives the Contract for the fix — the rule itself defines the delta (for Code), the scenarios (for Tests), or the corrected content (for Docs). An audit finding carries its own success criterion in the rule it violated, so the evidence map is unusually tight: the gap and the target are the same statement.
+
+When the user hands off all findings from one root cause (e.g., a pre-migration audit where every finding traces to the same gap), produce ONE evidence map for the group, not N individual maps. The Gap describes the aggregate target state; Citations covers all affected files. Plan derives the task breakdown from the group evidence map — individual findings become Contract.Files entries and DoD items, not separate plans.

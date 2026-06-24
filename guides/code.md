@@ -19,6 +19,7 @@ Every `index.ts` / `lib/` reference in this guide resolves against these locatio
 | Internal type | co-located with owning module | `@internal` if a sibling needs it |
 | Tests | `tests/{surface}.test.ts` | surface-named; `.test.ts` is load-bearing |
 | Docs | `docs/api/{export}.mdx`, `docs/concepts/{topic}.mdx`, `docs/patterns/{topic}.mdx` | see `docs.md` |
+| Build scripts | `scripts/[name].ts`, `scripts/utils/[concern].ts` | see `scripts.md` (build tooling, not runtime) |
 
 ## File-placement decision tree
 
@@ -374,3 +375,33 @@ Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `script
 **Toolchain**
 - [ ] `bun check <package>` exits 0
 - [ ] `bun lint` exits 0
+
+## Config Verification Checklist
+
+Run this when holding a Config file (`tsconfig*.json`, `eslint.config.*`, `package.json`, `bunfig.toml`, `.npmrc`, `.nvmrc`, `*.config.{ts,mjs,js}`, files under `plugins/**/{babel,rollup,vite}/`). Config answers to different rules than the code beside it — these are the checks that catch drift the compiler cannot.
+
+**TypeScript configs**
+- [ ] `tsconfig*` keeps `strict: true` or stronger; nothing was weakened
+- [ ] Path mappings (`paths`) match the actual package layout (`@hellajs/{pkg}` → `packages/{pkg}/lib/index.ts`)
+- [ ] `include` covers every file type the lint should see; `exclude` drops `dist/` + `node_modules/`
+- [ ] No `any`-enabling flags (`noImplicitAny: false`, `suppressImplicitAnyIndexErrors`)
+
+**ESLint config**
+- [ ] No rule contradicts this guide (banning double quotes, allowing missing semicolons, permitting `any`)
+- [ ] `@stylistic/quotes` enforces double quotes
+- [ ] Plugin refs resolve (no orphaned/deleted plugin still referenced)
+
+**package.json**
+- [ ] Every `scripts` entry referenced by a workflow (`.github/workflows/`) or another script still exists and still does what its callers expect
+- [ ] No new runtime dependency without justification (type-only `.d.ts` packages are the exception, per §Imports)
+- [ ] `exports` map matches the actual `dist/` output after bundling
+- [ ] `workspaces` covers `packages/*` and `plugins/*`
+
+**Build plugin configs** (`plugins/{babel,rollup,vite}/`)
+- [ ] Exported hook shape matches its stated purpose and runtime
+- [ ] Wrapper thinness: the rollup/vite plugins forward to the babel plugin, not re-implement it
+
+**Toolchain**
+- [ ] `bun check` exits 0 for every package the change touches
+- [ ] `bun lint` exits 0
+- [ ] `bun bundle <package>` succeeds if build tooling changed
