@@ -14,25 +14,12 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-# Stage any sync-generated file changes
-FILES_STAGED=false
+# Stage the closed set of sync-generated paths unconditionally — `git diff --name-only`
+# misses untracked (newly-generated) files, which is how new .instructions.md fell through.
+git add ':(glob)**/CLAUDE.md' .github/instructions/ .github/copilot-instructions.md 2>/dev/null
 
-if git diff --name-only | grep -q "CLAUDE\.md"; then
-  find . -name "CLAUDE.md" -type f -exec git add {} + 2>/dev/null
-  FILES_STAGED=true
-fi
-
-if git diff --name-only | grep -q "\.github/instructions"; then
-  find .github/instructions -name "*.instructions.md" -type f -exec git add {} + 2>/dev/null
-  FILES_STAGED=true
-fi
-
-if git diff --name-only | grep -q "\.github/copilot-instructions\.md"; then
-  git add .github/copilot-instructions.md
-  FILES_STAGED=true
-fi
-
-if [ "$FILES_STAGED" = true ] && git diff --cached --name-only | grep -q .; then
+# Commit only if staging produced changes
+if ! git diff --cached --quiet; then
   git commit -m "chore: sync CLAUDE.md and instruction files from AGENTS.md" --no-verify
   echo "Auto-committed CLAUDE.md and instruction file updates"
 fi
