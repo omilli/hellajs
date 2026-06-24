@@ -4,6 +4,71 @@
 
 Performance-critical runtime library. Optimized for execution speed and minimal memory overhead. Every abstraction must earn its cost against the hot path.
 
+## Canonical paths
+
+Every `index.ts` / `lib/` reference in this guide resolves against these locations. Pin them once; do not re-derive per file. The public barrel is `lib/index.ts` — not `packages/[pkg]/index.ts`, which does not exist.
+
+| Artifact | Path | Notes |
+|---|---|---|
+| Public barrel | `lib/index.ts` | The arbiter of the public surface; read it to decide "is this symbol public?" |
+| Public function | `lib/{name}.ts` | filename = export name verbatim |
+| JSX/html component | `lib/{Name}.ts` | PascalCase |
+| $-ref API | `lib/${name}.ts` | $-prefix |
+| Internal helper | `lib/internal/{concern}.ts` | single noun/gerund (`dedupe`, `polling`, `retry`) |
+| Public type | `lib/types/*.d.ts` (or `lib/types.d.ts` for single-file packages like core) | wholesale-re-exported via `export type *` |
+| Internal type | co-located with owning module | `@internal` if a sibling needs it |
+| Tests | `tests/{surface}.test.ts` | surface-named; `.test.ts` is load-bearing |
+| Docs | `docs/api/{export}.mdx`, `docs/concepts/{topic}.mdx`, `docs/patterns/{topic}.mdx` | see `docs.md` |
+
+## File-placement decision tree
+
+Traverse when deciding where a new symbol lives. Derived from §Package File Structure, §Files, §index.ts Rules.
+
+```
+New symbol?
+├─ Re-exported by lib/index.ts (public)
+│   ├─ Function → lib/{name}.ts (filename = export verbatim)
+│   │   ├─ JSX/html component → PascalCase (ForEach.ts)
+│   │   └─ $-ref API → $-prefix ($ref.ts)
+│   ├─ Type consumers import → lib/types/*.d.ts
+│   └─ Barrel re-export from internal/ (utils, env) → stays in lib/internal/, re-exported by index.ts
+├─ Not re-exported (internal)
+│   ├─ Helper function / logic → lib/internal/{concern}.ts (single noun/gerund)
+│   └─ Internal type → co-located with owning module
+└─ A file that seems to need two concerns → split it; the concern is one word
+```
+
+## Signature-shape decision tree
+
+Traverse when deciding the shape of a new or changed signature. Derived from §Types, §Naming Conventions.
+
+```
+New/changed signature?
+├─ Object shape → interface (declaration merging, cleaner errors)
+├─ Union / intersection / mapped / conditional → type
+├─ Options bag (passed once to a factory) → {Name}Options
+├─ Runtime-config bag (shaped over a lifetime) → {Name}Config
+├─ Component/element prop bag → {Name}Props (reserved)
+├─ Function-valued type → {Name}Fn (pick one suffix per package; never mix Fn/Handler/Callback)
+├─ Public overloads → overload signatures before implementation; JSDoc on each overload
+└─ Returns or accepts a named shape → reference the type by name, never re-inline
+```
+
+## Canonical examples
+
+Pattern-match against these rather than re-deriving from prose. The codebase is the spec; this guide is the index into it.
+
+| Pattern | Reference file |
+|---|---|
+| Public function with overloads + JSDoc on each | `packages/core/lib/signal.ts` |
+| Public function with no value validation (signal takes a value, not a fn) | `packages/core/lib/signal.ts` |
+| Public function with input validation (`[core] fn:` throw) | `packages/core/lib/computed.ts`, `effect.ts` |
+| Cached `while` loop in a real module | `packages/core/lib/internal/utils.ts` (`objectLoop`) |
+| Short internal field names for hidden-class density | `packages/core/lib/signal.ts` (`sbc`, `sbv`, `rs`, `rf`) |
+| Public barrel shape (re-exports, `export type *`) | `packages/core/lib/index.ts` |
+| Internal modules named by single-noun concern | `packages/core/lib/internal/{propagation,tracking,scheduler,...}.ts` |
+| `WeakMap` for element-associated data | `packages/dom/lib/internal/*` |
+
 ## Decision Precedence
 
 When rules conflict, resolve in this order:
@@ -61,7 +126,7 @@ import { value } from "./internal/module";
 - JSDoc on every overload signature. When the implementation signature is itself the exported function (a single `export function` body following multiple overload signatures), no separate JSDoc on the implementation — the overload signatures carry the public documentation. Implementation gets `@internal` only when it is a separate non-exported function
 - Use `Object.hasOwn(obj, key)` for own-property checks — never `in` (traverses prototype chain) or `.hasOwnProperty` (can be shadowed)
 - A named type is the source of truth for its shape: reference it by name at every signature that returns or accepts it, never re-inline the shape. Inlining a duplicate lets the two drift
-- `export type * from "./types"` promotes every type in the file to the public API with no per-type opt-out. Keep only consumer-facing types in a wholesale-re-exported file; internal implementation types live in the module that uses them (exported with `@internal`, or not exported at all)
+- `export type * from "./types"` promotes every type in the file to the public API with no per-type opt-out, so **type visibility is enforced by file location, not annotation**. Types split into two buckets by where the file sits: **global/public types are grouped in the `lib/types/*.d.ts` declaration file(s)** a package's `index.ts` reaches via `export type *` (the wholesale-exported surface); **internal types are co-located with the code they relate to** in the `lib/internal/` module that owns them — exported with `@internal` if a sibling internal module needs them, or not exported at all if local. There is no catch-all `lib/internal/types.ts`: a type lives next to the implementation that introduces it, even when more than one internal module reads it (the owning module exports it `@internal`; the others import from there). `@internal` on a type *inside* a wholesale-re-exported `.d.ts` is contradictory and decorative: TypeScript only strips `@internal` when emitting `.d.ts` from `.ts`, and these type files are hand-written declarations (the source of truth), so the annotated type ships in the public surface regardless. Move the type to the internal module that owns it instead of annotating around the leak. `@internal` retains its meaning from Functions & Modules (a symbol exported from its module but not re-exported by `index.ts`) for value symbols, and for internal types once they sit in their owning module. The visibility audit script (`.agents/skills/audit/scripts/check-type-visibility.mjs`) mechanically flags any `@internal`-tagged type sitting in a wholesale-exported file
 
 ### Loops
 
@@ -207,7 +272,7 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 
 - (Pascal|Camel)case, no hyphens: `signal.ts`, `cssRemove.ts`, `ForEach.ts` — not `app-context.ts`
 - One public API function per file. The filename is the verbatim export name: `signal.ts` exports `signal`, `cssRemove.ts` exports `cssRemove`, `cssVars.ts` exports `cssVars`. No "related pair" or "multi-word noun shortcut" carve-outs — `css`/`cssRemove`/`cssReset` are three files, and `cssVars`/`cssVarsRemove`/`cssVarsReset` are three more. One export per file is what makes the public surface scannable and lets the audit be checked mechanically
-- Files under `lib/internal/` are organized by cohesive concern rather than a single public API, so the one-export-per-file and filename-matches-export rules apply only to top-level `lib/*.ts`, not to `internal/`
+- Files under `lib/internal/` are organized by cohesive concern rather than a single public API, so the one-export-per-file and filename-matches-export rules apply only to top-level `lib/*.ts`, not to `internal/`. Name an internal file after its concern as a single noun or gerund (`core`, `dedupe`, `errors`, `lifecycle`, `polling`, `retry`) — never a camelCase compound derived from the export it hosts. The concern is one word; if it seems to need two, the file is either two concerns (split it) or a single concept not yet named. A file exporting `structuralShare` is `structural.ts`, not `structuralShare.ts`
 - PascalCase for JSX/html component filenames that match their export: `ForEach.ts` exports `ForEach`, `Portal.ts` exports `Portal`. Required for JSX component resolution
 - `$`-prefixed names for special reference APIs: `$ref.ts` exports `$ref`, `$collection.ts` exports `$collection`. The `$` prefix signals a DOM reference utility
 
@@ -260,3 +325,52 @@ Named re-exports, `export type *`, global augmentations. No logic, no conditiona
 ### Benchmark Files
 
 Benchmark files under `packages/*/benchmarks/*.bench.ts` are Code: they follow every rule in this guide (double quotes, semicolons, 2-space indentation, no external dependencies without justification). The only relaxation: benchmark files MAY import a benchmark runner (e.g., `mitata`) as a devDependency — the one justified external import for `.bench.ts` files.
+
+## Verification Checklist
+
+Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `scripts/`, `plugins/`). Each item is a yes/no or a command. This is the audit floor stated where the rules live; the audit skill reads it instead of reconstructing it from prose.
+
+**Structure**
+- [ ] File sits at the right path per the File-placement decision tree
+- [ ] One public export per `lib/*.ts` file; filename matches the export name verbatim
+- [ ] Internal-only files live under `lib/internal/` (not at the top level)
+- [ ] Internal module named by a single noun/gerund concern
+- [ ] Public types live in `lib/types/*.d.ts`; internal types co-located with their owning module
+
+**Imports**
+- [ ] All `import` statements precede every other top-level statement
+- [ ] `import type` separated; never inline `type` in a value import
+- [ ] Double quotes; semicolons always
+- [ ] No external runtime dependency (type-only from `.d.ts`-only packages is the exception)
+
+**Types**
+- [ ] `interface` for object shapes; `type` for unions/mapped/conditional
+- [ ] No `any` (`unknown` only)
+- [ ] No `@internal` on a type inside a wholesale-exported `.d.ts` (decorative — move the type instead)
+- [ ] Named shape referenced by name at every signature, never re-inlined
+
+**Naming**
+- [ ] Public functions single-word; components PascalCase; `$`-ref APIs `$`-prefixed
+- [ ] camelCase variables; UPPER_SNAKE_CASE immutable config constants; `is`/`has` booleans
+- [ ] Verb-first internal names; `Fn` suffix consistent within a package
+- [ ] `Options` vs `Config` vs `Props` chosen by what the fields do, not familiarity
+
+**Functions & JSDoc**
+- [ ] JSDoc on every function and type; `@internal` where exported but not re-exported by `lib/index.ts`
+- [ ] No wrapper functions that only forward (exception: overload implementations)
+- [ ] No single-callsite helper under 30 lines
+- [ ] No parameter added just to pass it through unchanged
+
+**Loops & memory**
+- [ ] Cached `while` loops on hot paths; no `for…of` / `for…in` (`.forEach` only on cold paths)
+- [ ] No collection reallocation where `.clear()` or reference swap works
+- [ ] No `bare l` for cached length (always `len` or `<prefix>Len`)
+
+**Errors**
+- [ ] Public functions validate inputs with `[package] fn: <constraint>, received <value>` messages
+- [ ] Internal functions do not guard
+- [ ] No broad `catch {}` swallowing unknown errors
+
+**Toolchain**
+- [ ] `bun check <package>` exits 0
+- [ ] `bun lint` exits 0

@@ -2,6 +2,31 @@
 
 Uniform conventions for all package documentation. Package docs live in `packages/{name}/docs/` and are imported by the website in `docs/src/pages/`.
 
+## Contents
+
+Decision index — jump to the section for the decision you are making. This guide is long; do not scan linearly. The barrel that defines which exports are documented is `lib/index.ts` (see `code.md` §Canonical paths).
+
+| Decision | Section |
+|---|---|
+| Which of the 6 doc templates? | §Template Selection |
+| Which file path? | §File Locations & Naming |
+| Extending an existing doc (adding an option/field/method)? | §Extending Existing Content |
+| Function vs Prefix doc structure? | §Function & Prefix Docs |
+| Multi-method export (`resource`, `resourceCache`, `store`)? | §Multi-Method Exports |
+| Which section does new content go in? | §Content Scope → What Goes Where |
+| Signature format in `## API`? | §API Section |
+| Overloaded function? | §API Section → Overloaded Functions |
+| Language tag for a code block? | §Code Examples → Language Tags |
+| Import style? | §Code Examples → Import Style |
+| Cross-reference link format? | §Cross-References |
+| Frontmatter rules? | §File Locations & Naming → Frontmatter |
+| Length limits per doc type? | §Length Targets |
+| Section heading naming (banned generics)? | §Section Headings |
+| Tutorial progressive-build? | §Tutorial Docs |
+| Website wrapper page? | §Website Wrapper Pages |
+
+Sections in order: File Locations & Naming · Decision Precedence · Template Selection · Function & Prefix Docs · Concept Docs · Pattern Docs · Index Docs · Tutorial Docs · Website Wrapper Pages · **Extending Existing Content** · Content Scope · API Section · Code Examples · Dual Syntax · Cross-References · Tables · Alert Boxes · `<details>` Sections · Content Tone · Section Headings · Length Targets · Verification Checklist.
+
 ## File Locations & Naming
 
 | Type | Path | Naming |
@@ -310,6 +335,30 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 - **Component name**: PascalCase derived from the file name (`signal.mdx` → `SignalContent`).
 - **No content** between the import and the component tag.
 - A wrapper MAY import and render more than one package doc, separated by `<div class="...border-t..."></div>`, when the website joins related concepts from different packages under a single URL (e.g., core and store state docs colocated at one learn URL). Each import must still follow the alias and PascalCase-component-name rules, and the wrapper must still contain zero prose.
+
+## Extending Existing Content
+
+Most real doc work extends an existing doc; it does not create a new one. Traverse this when adding an option, field, method, or section to an existing `.mdx`. Derived from §Multi-Method Exports, §Content Scope, §API Section.
+
+```
+Extending an existing doc?
+├─ New option on a multi-method export's interface (e.g. invalidates on ResourceOptions)
+│   ├─ Add the field to the interface block (verbatim signature + one-line description)
+│   └─ Earn a ### under ## Key Concepts when the behavior warrants explanation
+│       └─ Else leave it inline in the interface block with its description
+├─ New method on a multi-method export
+│   └─ Add a ### sub-heading under ## API per §Multi-Method Exports (never interleave usage between methods)
+├─ New standalone export (re-exported by lib/index.ts)
+│   └─ New file docs/api/{export}.mdx (Function doc) + new website wrapper page
+├─ New gotcha / pitfall on an existing export
+│   └─ ### under ## Important Considerations
+├─ New behavior spanning multiple exports
+│   └─ New file docs/concepts/{topic}.mdx (Concept doc); cross-reference from each API doc
+└─ Copy-paste recipe for a pattern
+    └─ New ### in docs/patterns/{topic}.mdx, or new patterns file if the topic is new
+```
+
+Never duplicate (§Splitting & Duplicate Rules): if two docs would cover the same content, show a brief summary in one and cross-reference the other.
 
 ## Content Scope
 
@@ -624,3 +673,45 @@ Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparis
 | Pattern docs | 100–300 lines | 400 lines | Split by sub-topic |
 | Index docs | 40–70 lines | 100 lines | Simplify the example |
 | Code blocks | 5–30 lines | 40 lines | Simplify or use context markers |
+
+## Verification Checklist
+
+Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a cross-check. This is the audit floor stated where the rules live; the audit skill reads it instead of reconstructing it from prose. Docs-only input skips `bun check` and `bun coverage` — those verify code, not prose.
+
+**Location & template**
+- [ ] File at the right path per §File Locations & Naming; filename matches export name (API) or is lowercase-hyphenated (concepts/patterns)
+- [ ] Correct template from §Template Selection (Function / Prefix / Concept / Pattern / Index / Tutorial)
+- [ ] Every new/extended section follows §Extending Existing Content
+
+**Frontmatter**
+- [ ] Package docs (`packages/*/docs/**/*.mdx`) have no frontmatter
+- [ ] Website wrappers (`docs/src/pages/**/*.mdx`) carry `title`, `description`, `layout`
+
+**Structure (Function & Prefix docs)**
+- [ ] `# Title` matches the export name exactly (`# signal`, `# ForEach`, `# on:`)
+- [ ] One-line description immediately after the title
+- [ ] `## API` present (Function docs only); `## Basic Usage` (functions) / `## Usage` (prefixes)
+- [ ] Multi-method exports use `###` sub-headings under `## API`; no usage interleaved between methods
+
+**Code examples**
+- [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
+- [ ] Imports shown (package imports `@hellajs/...`, never relative); first example imports the documented export
+- [ ] No test-framework assertions (`expect` / `toBe` / `describe` / `it` / `test`) — use comments and `console.log`
+- [ ] No single-letter variable names (well-known `i`, `x`, `fn` excepted)
+- [ ] No silent no-op — every `get`/`read`/`data()` demo reads a key that was written earlier in the block
+- [ ] Blocks 5–30 lines; `//…` context markers for longer
+
+**Accuracy**
+- [ ] Every code example compiles against current source signatures (cross-check `lib/index.ts`)
+- [ ] Interface signatures match the actual exported types verbatim (wrapper types named, never substituted)
+- [ ] No claim contradicts the implementation — cross-checked against source and tests
+- [ ] Callback parameter types match what the implementation passes
+
+**Cross-references & tone**
+- [ ] Function/method names backtick-wrapped in cross-references; concepts in plain text
+- [ ] Full path format `/reference/{package}/{export}`; link on first mention only
+- [ ] No `## Related` section; cross-references inline
+- [ ] Present tense, no hedging; tone matches doc type (API = factual, Concept = educational, Pattern = terse)
+
+**Length**
+- [ ] Within target per §Length Targets; action taken if exceeded

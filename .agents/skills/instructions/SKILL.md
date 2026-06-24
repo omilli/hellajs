@@ -7,6 +7,14 @@ description: Optimize an AI-coding AGENTS.md file as a truth-grounded rebuild. R
 
 Optimize one AGENTS.md at a time as a truth-grounded rebuild. The existing file is the optimization target, not a source of truth — it may have drifted, and surfacing that drift is part of the job. Truth comes from source, in priority order: `lib/` first (what the code actually does), `tests/` second (which behaviors are actually exercised), `docs/` third (intended usage — assume accurate, but useful mainly to learn how something is meant to be used). When they disagree, `lib/` wins; note the discrepancy. This is a rebuild grounded in what the source contains, not a template to fill.
 
+## Non-negotiables
+
+Two rules govern this skill absolutely. An AGENTS.md is consumed by every other skill — `feature` reads it as architectural ground truth; `audit` verifies claims against it; `plan` derives Contracts from its public-exports table; `worker` consults it for non-obvious behaviors. An inaccurate AGENTS.md poisons every downstream run in that package.
+
+**Guides are inviolable.** The rebuilt AGENTS.md does not duplicate `code.md` / `tests.md` / `docs.md` rules — it is architecture, not style. A conflict between the rebuild and a guide surfaces as a guide-update proposal (see the loop skills), never a silent workaround baked into the AGENTS.md.
+
+**Every change carries its full blast radius.** An AGENTS.md change is synced to `CLAUDE.md` + `.github/instructions/*` mirrors (run `bun sync`), and every skill that reads it as ground truth re-consumes the new version on its next run. A drift fix here can invalidate a claim another package's AGENTS.md makes about this one — check cross-package references before finishing.
+
 ## Step 1 — Load the truth sources
 
 Ask which AGENTS.md to optimize — the root one, or a specific package / plugin. One file per invocation. Then read, in this order:
@@ -51,13 +59,15 @@ Write the new AGENTS.md applying the Step 3 decisions to the Step 2 ledger. Pres
 
 For a root AGENTS.md the same per-section logic applies — the scripts table and the folder-structure map are usually tighter as a real table and a bulleted tree than as nested XML.
 
-## Step 5 — Propose, do not write
+## Step 5 — Propose or write
 
-Present the rebuilt file in the conversation alongside a concise change summary so the decision to apply is informed. The summary quantifies, with counts: claims fixed for drift (source disagreed), gaps filled (source had, old file missed), XML elements cut as single-child overhead, blocks converted to tables, and the net line / token delta versus the original. Call out anything cut that the user might miss. Do not write the file yet — ask for approval, and offer to revise structure or scope first.
+Present the rebuilt file alongside a concise change summary so the decision to apply is informed. The summary quantifies, with counts: claims fixed for drift (source disagreed), gaps filled (source had, old file missed), XML elements cut as single-child overhead, blocks converted to tables, and the net line / token delta versus the original. Call out anything cut that the user might miss.
+
+The default is propose — present the rebuild and summary, ask for approval before writing. If the user has pre-approved writes (e.g., "optimize all AGENTS.md files"), write directly and report the summary. Either way the change summary is required so the decision is informed.
 
 ## Step 6 — Apply on approval
 
-On explicit approval, overwrite the target AGENTS.md. If the user requests changes, revise the rebuild and re-propose rather than surgically editing the already-written file — the output is a cohesive rebuild, and ad-hoc patches to a rebuilt file reintroduce the inconsistency it was rebuilt to remove.
+On explicit approval (if not already written under a pre-approval in Step 5), overwrite the target AGENTS.md. If the user requests changes, revise the rebuild and re-propose rather than surgically editing the already-written file — the output is a cohesive rebuild, and ad-hoc patches to a rebuilt file reintroduce the inconsistency it was rebuilt to remove. Remind the user to run `bun sync` so the generated mirrors regenerate.
 
 ## Self-check before proposing
 

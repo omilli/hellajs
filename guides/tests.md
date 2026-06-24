@@ -11,6 +11,34 @@ Tests are documentation. A reader should understand every behavior from tests al
 3. **Coverage** — every public API path: happy, error, edge.
 4. **Brevity** — short, never at DRY or clarity's expense.
 
+## Scenario → test() derivation
+
+When deriving tests from a plan's Behavioral scenarios (plan skill Phase 2), each scenario line becomes exactly one `test()`. This rule consolidates §Test Structure and §Naming so you do not synthesize across sections per scenario:
+
+- One scenario line → one `test()`. Never two behaviors in one test (exception: sequential lifecycle tests — see §Test Structure).
+- Name in present tense, describing the asserted behavior. No "should", no "test N", no "works correctly".
+- Setup → action → assertion flows naturally (no AAA pattern).
+
+Worked example:
+
+- Scenario: `invalidates: ["user:"] + mutation success → invalidateByPrefix called with "user:"`
+- `test("calls invalidateByPrefix on mutation success", () => { ... })`
+- Scenario: `mutation aborts → no invalidation calls`
+- `test("does not invalidate on mutation abort", () => { ... })`
+
+## File-naming for tests
+
+`{surface}.test.ts` — named after the specific API surface or behavior area, never a categorical prefix. When the surface is ambiguous, use the table:
+
+| Change | File name | Reason |
+|---|---|---|
+| New option on a multi-method export (`invalidates` on `resource`) | `invalidates.test.ts` | the option/feature is the surface |
+| Behavior of a single export (`signal` equality) | `signals.test.ts` | the export is the surface |
+| A sub-area of a large export (router `active` state) | `active.test.ts` | the sub-area is the surface |
+| Cross-cutting mode (hash-mode routing) | `hash-mode.test.ts` | the mode is the surface |
+
+A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) signals the file mixes concerns — split it.
+
 ## Anti-Patterns
 
 - Never import reactive primitives, async helpers, or DOM helpers — they're globals (see `### Globals Reference` for the full list and the preload source). A barrel symbol like `flush` that is injected globally and called from other packages' tests satisfies the barrel-coverage rule; a "missing direct test in the authoring package" finding is wrong when the symbol is a global exercised elsewhere.
@@ -255,5 +283,44 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 ## Test Coverage
 
 - 100% of public API. Real-world integration patterns, not internals. Error and edge cases alongside happy paths. Each behavior tested exactly once in the most relevant file.
-- **Barrel rule**: when `index.ts` re-exports a utility (type guard, predicate, env probe, iterator helper), the authoring package **must** cover it — even if consumers also exercise it. The barrel defines the public surface; coverage follows the barrel. Consumer coverage doesn't protect the author from silent contract drift (e.g. a predicate whose name suggests general semantics but whose implementation is narrow).
+- **Barrel rule**: when `index.ts` re-exports a utility (type guard, predicate, env-probe, iterator helper), the authoring package **must** cover it — even if consumers also exercise it. The barrel defines the public surface; coverage follows the barrel. Consumer coverage doesn't protect the author from silent contract drift (e.g. a predicate whose name suggests general semantics but whose implementation is narrow).
 - Never import non-public APIs. Functions/types not exported from `index.ts` are internal. Exports from `index.ts` (including testing utilities from `internal/` modules) are fair game.
+
+## Verification Checklist
+
+Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a yes/no or a command. This is the audit floor stated where the rules live; the audit skill reads it instead of reconstructing it from prose.
+
+**Framework & imports**
+- [ ] `bun:test` only; double quotes, semicolons always
+- [ ] No import of reactive primitives / async helpers / DOM helpers — they are globals (see §Globals Reference)
+- [ ] Import order: `bun:test` → package under test (`/bundle` suffix) → cross-package deps → `import type` (bare path, last)
+- [ ] Separate `import type` statement; never inline
+
+**File & structure**
+- [ ] `{surface}.test.ts` — surface-named per §File-naming for tests, no categorical prefix
+- [ ] Max two `describe` levels; at most one inner `describe` per file
+- [ ] 100–300 lines target (soft cap 400); minimum 2 tests per file
+
+**Naming & shape**
+- [ ] One behavior per `test()`; present tense, no "should"
+- [ ] No AAA pattern — tests flow naturally
+- [ ] `async` only when it `await`s; structure is act → await → assert
+
+**Anti-patterns (none present)**
+- [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test`
+- [ ] No `any` (`unknown` only)
+- [ ] No `it()` or `test.skip()`
+- [ ] No bare `await tick()` (always `await tick(0)`) and never the double-tick
+- [ ] No boolean-flag or pure-integer call counters — `mock()` (exception: counter with observable side effects)
+- [ ] No helper duplicated across files — extracted to `tests/helpers.ts`
+
+**State & cleanup**
+- [ ] `beforeEach(() => { resetTestState(); })` on every file touching shared mutable state
+- [ ] Patched browser globals saved in `beforeEach`, restored in `afterEach` (or try/finally)
+- [ ] `afterEach` only for state `resetTestState()` does not cover
+
+**Coverage**
+- [ ] Every test asserts a behavior the source actually exposes (cross-checked against `lib/index.ts`)
+- [ ] No test imports a symbol not exported from `lib/index.ts`
+- [ ] `bun check <package>` exits 0
+- [ ] `bun coverage` shows 100% on the relevant source lines; overall not lower than baseline
