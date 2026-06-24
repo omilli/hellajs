@@ -40,7 +40,7 @@ router({
 const App = <div class="app-container">
   <h1 class="app-title">{title}</h1>
   {view}
-</div>
+</div>;
 
 css({
   ".app-container": {
