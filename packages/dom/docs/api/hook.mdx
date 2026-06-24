@@ -33,7 +33,7 @@ mount(App, "#app");
 
 | Hook | When it fires |
 |------|---------------|
-| `hook:beforeMount` | Synchronously before element creation |
+| `hook:beforeMount` | Synchronously before element is inserted into DOM |
 | `hook:afterMount` | After element is in DOM (deferred via `queueMicrotask`) |
 | `hook:beforeUpdate` | Before reactive updates (not during initial render) |
 | `hook:afterUpdate` | After reactive updates (not during initial render) |
