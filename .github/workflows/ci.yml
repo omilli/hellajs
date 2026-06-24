@@ -38,10 +38,10 @@ jobs:
       - name: Sync LLM files
         run: |
           bun sync
-          if [ -n "$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md')" ]; then
+          if [ -n "$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md|\.github/instructions|copilot-instructions')" ]; then
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
-            git add **/CLAUDE.md **/AGENTS.md 2>/dev/null || true
+            git add ':(glob)**/CLAUDE.md' ':(glob)**/AGENTS.md' .github/instructions/ .github/copilot-instructions.md 2>/dev/null || true
             git commit -m "chore: llm sync" || true
             git push || true
           fi
