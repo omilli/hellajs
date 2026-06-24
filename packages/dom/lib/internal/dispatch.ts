@@ -32,7 +32,7 @@ export function setMountNode(fn: (node: HellaNode) => Node): void {
 /**
  * @internal
  * Returns the registered mountNode function.
- * Used by events.ts and direct-events.ts to render fallback UI.
+ * Used by events.ts to render fallback UI.
  */
 export function getMountNode(): ((node: HellaNode) => Node) | null {
   return mountNodeFn;
