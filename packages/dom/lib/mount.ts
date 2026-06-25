@@ -17,7 +17,7 @@ setMountNode((node: HellaNode) => mountNode(node) as Node);
  * @returns A MountHandle for controlling the mounted tree
  */
 export function mount(
-  node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode>),
+  node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
   target: string | Element = "#app"
 ): MountHandle {
   const container = typeof target === "string" ? document.querySelector(target) : target;
@@ -51,9 +51,10 @@ export function mount(
     }
   };
 
-  const attach = (resolvedNode: HellaNode) => {
+  const attach = (resolvedNode: HellaNode | (() => HellaNode)) => {
     if (cancelled) return;
-    mountedNode = mountNode(resolvedNode) as HellaElement;
+    const node = resolveValue(resolvedNode) as HellaNode;
+    mountedNode = mountNode(node) as HellaElement;
     container.replaceChildren(mountedNode);
     registerContainer(container);
     if (mountedNode.nodeType === Node.ELEMENT_NODE) {
@@ -68,12 +69,12 @@ export function mount(
     resolved !== null &&
     typeof resolved === "object" &&
     typeof (resolved as { then?: unknown }).then === "function") {
-    (resolved as Promise<HellaNode>).then(attach, (err: unknown) => {
+    (resolved as Promise<HellaNode | (() => HellaNode)>).then(attach, (err: unknown) => {
       dispatchError(toError(err), { phase: "mount" });
     });
     return { container, flush, unmount };
   }
 
-  attach(resolved as HellaNode);
+  attach(resolved as HellaNode | (() => HellaNode));
   return { container, flush, unmount };
 }
