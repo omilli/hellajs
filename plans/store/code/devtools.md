@@ -79,7 +79,6 @@ New `docs/api/devtools.mdx` (Function template) + `docs/index.mdx` API list entr
 - [ ] Public API delta in Contract implemented verbatim — `lib/index.ts` re-exports `devtools`, `action`, `DevToolsConfig`, `DisconnectFunction`
 - [ ] Every new exported symbol has JSDoc (all are re-exported by `index.ts`, so no `@internal`)
 - [ ] No new runtime dependency (Redux DevTools extension is browser-loaded, not bundled; `effect` from the core peer)
-- [ ] A changeset exists at `.changeset/*.md` declaring `minor` for `@hellajs/store` (purely additive)
 - [ ] Contract Tests-view and Docs-view hold — sibling Tests + Docs tasks exist (below)
 - [ ] Audit skill run on `lib/devtools.ts` + `lib/index.ts` reports no deviations from `./guides/code.md`
 

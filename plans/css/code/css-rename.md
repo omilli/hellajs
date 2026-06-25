@@ -89,7 +89,6 @@ Verb-first `reset<Package>` / `remove<Package>` is the project-wide convention (
 - [ ] Public API delta in Contract implemented verbatim — `lib/index.ts` re-exports the four new names from the four new source paths
 - [ ] Every renamed exported symbol keeps its JSDoc (all four are re-exported by `index.ts`, so no `@internal`)
 - [ ] No new runtime dependency
-- [ ] A changeset exists at `.changeset/*.md` declaring `major` for `@hellajs/css` (four public symbols renamed — breaking)
 - [ ] Contract Tests-view and Docs-view hold — sibling Tests + Docs tasks exist (below)
 - [ ] Audit skill run on the four renamed files + `lib/index.ts` reports no deviations from `./guides/code.md`
 

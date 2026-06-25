@@ -88,7 +88,6 @@ New `docs/api/persist.mdx` (Function template) + `docs/index.mdx` API list entry
 - [ ] Public API delta in Contract implemented verbatim — `lib/index.ts` re-exports `persist`, `persistLocal`, `persistSession`, `StorageAdapter`, `PersistConfig`
 - [ ] Every new exported symbol has JSDoc (all are re-exported by `index.ts`, so no `@internal`)
 - [ ] No new runtime dependency (`effect` from the core peer)
-- [ ] A changeset exists at `.changeset/*.md` declaring `minor` for `@hellajs/store` (purely additive)
 - [ ] Contract Tests-view and Docs-view hold — sibling Tests + Docs tasks exist (below)
 - [ ] Audit skill run on `lib/persist.ts` + `lib/index.ts` reports no deviations from `./guides/code.md`
 

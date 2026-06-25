@@ -193,13 +193,12 @@ Pick the block matching the task type. Drop inapplicable items. Add Contract-der
 
 For files under `packages/*/lib/`, `packages/*/src/`, `plugins/**`, `scripts/**`.
 
-- [ ] `bun check <package>` exits 0
-- [ ] `bun lint` exits 0
+- [ ] `bun coverage <package>` exits 0
 - [ ] Every file in Contract.Files touched as specified
 - [ ] [Surface change only] Public API delta in Contract implemented verbatim — every signature matches
 - [ ] Every new or changed exported symbol has JSDoc (`@internal` where not re-exported by `index.ts`)
-- [ ] No new runtime dependency, OR justified in Strategy and a changeset exists
-- [ ] Backward compatible, OR a changeset exists at `.changeset/*.md`
+- [ ] No new runtime dependency, OR justified in Strategy
+- [ ] Backward compatible unless the change is a breaking change, OR justified in Strategy
 - [ ] Contract Tests-view and Docs-view hold — sibling tasks exist OR the "no impact" reasoning is accurate against the actual change
 - [ ] Audit skill run on changed files reports no deviations from `./guides/code.md`
 
@@ -207,8 +206,7 @@ For files under `packages/*/lib/`, `packages/*/src/`, `plugins/**`, `scripts/**`
 
 For files under `packages/*/tests/**`, or any `*.test.ts` / `*.spec.ts`.
 
-- [ ] `bun check <package>` exits 0
-- [ ] `bun coverage` shows 100% coverage on the changed source lines (named in Contract.Files)
+- [ ] `bun coverage <package>` shows 100% coverage on the changed source lines (named in Contract.Files)
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios
 - [ ] Overall coverage is not lower than before this task
 - [ ] No anti-pattern from `./guides/tests.md`: `jest.fn` / `vi.fn`, `any`, `it()` / `test.skip`, `await tick()` without `0`, the double-tick, boolean-flag or pure-integer call counters, helpers duplicated across files
@@ -230,8 +228,7 @@ For files under `packages/*/docs/**`, `docs/**`, or any `.mdx` / `.md`.
 
 For `tsconfig*.json`, `eslint.config.*`, `package.json`, `bunfig.toml`, `.npmrc`, `.nvmrc`, `plugins/**/{babel,rollup,vite}/**`, `.github/workflows/**`, or any `*.config.{ts,mjs,js}`.
 
-- [ ] `bun check` exits 0 for every package the change touches
-- [ ] `bun lint` exits 0
+- [ ] `bun coverage <package>` exits 0 for every package the change touches
 - [ ] `bun bundle <package>` succeeds for every package whose build tooling changed
 - [ ] No new runtime dependency unless justified in Strategy
 - [ ] No new or changed ESLint rule contradicts `./guides/code.md`

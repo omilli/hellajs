@@ -105,7 +105,6 @@ Reorder `tryMatchRoute` (`lib/utils.ts:177-256`) so the `before` chain runs befo
 - [ ] Public API delta in Contract implemented verbatim — `navigate` returns `Promise<void>`; `before` return contract enforced in `runGuards`
 - [ ] Every new or changed exported symbol has JSDoc (`@internal` where not re-exported by `index.ts`); the `before` return contract documented in JSDoc on `GlobalHooks.before` / `RouteWithHooks.before`
 - [ ] No new runtime dependency
-- [ ] A changeset exists at `.changeset/*.md` declaring `major` for `@hellajs/router` (breaking: navigation is always-async; `before` return values become guard semantics; `navigate` returns a Promise)
 - [ ] Contract Tests-view and Docs-view hold — sibling Tests + Docs tasks exist (below)
 - [ ] Audit skill run on the changed `lib/**` files reports no deviations from `./guides/code.md`
 
