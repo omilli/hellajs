@@ -13,12 +13,12 @@ meta — cross-cutting user-facing doc; not a package workspace (no `index.ts`).
 - Doc placement ← `docs.md` §Pattern Docs
 
 ### Files
-- `docs/src/pages/learn/patterns/testing.mdx` — create — STANDALONE Pattern-doc page (mirrors `docs/src/pages/learn/quick-start.mdx` as a standalone learn page — cross-cutting, no single package owns it, so unlike a package wrapper it carries its own content rather than importing a package doc). Pattern template from `docs.md` §Pattern Docs. Frontmatter: `title`, `description`, `layout: ../../../layouts/MainLayout.astro`. Five `###` patterns:
-  1. **Isolate tests with `resetTestState`** — the `beforeEach` recipe composing each package's `reset*()` nuke (`resetDom`, `resetCss`, `resetCssVars`, `resetResource`, `resetRouter`), noting store needs no global reset (per-instance `cleanup()`).
-  2. **Drain the DOM microtask** — `await Promise.resolve()` after DOM mutations (replaces a former `tick` helper); real time via `await new Promise(r => setTimeout(r, ms))`.
-  3. **Drive lifecycle synchronously** — `const app = mount(…); app.flush(); app.unmount();`.
-  4. **Assert with `flush`** — `import { flush } from "@hellajs/core"` for synchronous reactive propagation.
-  5. **Suppress console errors** — inline `suppressConsole`-style snippet for tests that assert error behavior.
+- `docs/src/pages/learn/patterns/testing.mdx` — create — STANDALONE Pattern-doc page (mirrors `docs/src/pages/learn/quick-start.mdx` as a standalone learn page — cross-cutting, no single package owns it, so unlike a package wrapper it carries its own content rather than importing a package doc). Pattern template from `docs.md` §Pattern Docs. Frontmatter: `title`, `description`, `layout: ../../../layouts/MainLayout.astro`.   Five `###` patterns:
+  - **Isolate tests with `resetTestState`** — the `beforeEach` recipe composing each package's `reset*()` nuke (`resetDom`, `resetCss`, `resetCssVars`, `resetResource`, `resetRouter`), noting store needs no global reset (per-instance `cleanup()`).
+  - **Drain the DOM microtask** — `await Promise.resolve()` after DOM mutations (replaces a former `tick` helper); real time via `await new Promise(r => setTimeout(r, ms))`.
+  - **Drive lifecycle synchronously** — `const app = mount(…); app.flush(); app.unmount();`.
+  - **Assert with `flush`** — `import { flush } from "@hellajs/core"` for synchronous reactive propagation.
+  - **Suppress console errors** — inline `suppressConsole`-style snippet for tests that assert error behavior.
 
   Every snippet imports from the owning package (`@hellajs/core`, `@hellajs/dom`, `@hellajs/css`, …), never from internal paths. Per `docs.md`: no test-framework assertions in examples (use comments / `console.log`).
 

@@ -13,11 +13,11 @@ meta — cross-cutting style-guide edit; not a package workspace (no `index.ts`)
 
 ### Files
 - `guides/tests.md` — modify (in place) — five coordinated edits:
-  1. Delete the entire `## Globals Reference` section (Reactive Primitives, Async Helpers, DOM Helpers, Package-Exported Testing Utilities tables) and the `beforeEach`/`resetTestState` prose that assumes globals.
-  2. Invert the "Never import reactive primitives… they're globals" anti-pattern: tests import every symbol they use — reactive primitives from `@hellajs/core`, dom API from `@hellajs/dom/bundle`, shared helpers from `utils/test-helpers.ts`.
-  3. Rewrite the import-order rule to name the real imports: `bun:test` → `@hellajs/core` → owning package `/bundle` → `utils/test-helpers` → `import type`.
-  4. Rewrite the async guidance: `await tick(0)` → `await Promise.resolve()`; real time → `await new Promise(r => setTimeout(r, ms))`; polling → `wait()` from `utils/test-helpers.ts`. Drop the `tick` decision tree (no `tick` symbol anymore).
-  5. Rewrite the testing-utilities section to point at `resetTestState` (imported from `utils/test-helpers.ts`) and each package's `reset*()` nuke, with the `beforeEach` composition recipe. Keep the `flush()` rule but document `flush` as an explicit `import { flush } from "@hellajs/core"` (operational primitive), and document the `mount()` handle's `flush()`/`unmount()` as the dom lifecycle mechanism.
+  - Delete the entire `## Globals Reference` section (Reactive Primitives, Async Helpers, DOM Helpers, Package-Exported Testing Utilities tables) and the `beforeEach`/`resetTestState` prose that assumes globals.
+  - Invert the "Never import reactive primitives… they're globals" anti-pattern: tests import every symbol they use — reactive primitives from `@hellajs/core`, dom API from `@hellajs/dom/bundle`, shared helpers from `utils/test-helpers.ts`.
+  - Rewrite the import-order rule to name the real imports: `bun:test` → `@hellajs/core` → owning package `/bundle` → `utils/test-helpers` → `import type`.
+  - Rewrite the async guidance: `await tick(0)` → `await Promise.resolve()`; real time → `await new Promise(r => setTimeout(r, ms))`; polling → `wait()` from `utils/test-helpers.ts`. Drop the `tick` decision tree (no `tick` symbol anymore).
+  - Rewrite the testing-utilities section to point at `resetTestState` (imported from `utils/test-helpers.ts`) and each package's `reset*()` nuke, with the `beforeEach` composition recipe. Keep the `flush()` rule but document `flush` as an explicit `import { flush } from "@hellajs/core"` (operational primitive), and document the `mount()` handle's `flush()`/`unmount()` as the dom lifecycle mechanism.
 
 ### Tests view
 No impact. `guides/tests.md` is a project style guide, not source under `packages/*/lib/`; `tests.md` §Files governs `packages/*/tests/**` named after a public surface. No `test()` applies. (The guide describes testing, but is itself an authoring artifact.)
