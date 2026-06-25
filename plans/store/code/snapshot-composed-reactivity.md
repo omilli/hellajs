@@ -54,7 +54,6 @@ The snapshot computed at `lib/create.ts:38-59` currently calls `value.snapshot()
 - [ ] Every file in Contract.Files touched as specified — the nested-store branch at `lib/create.ts:51-52` no longer captures value-without-dependency
 - [ ] Every new or changed exported symbol has JSDoc (`@internal` where not re-exported by `index.ts`) — `readDeep` is `@internal`
 - [ ] No new runtime dependency
-- [ ] A changeset exists at `.changeset/*.md` declaring `major` for `@hellajs/store` (breaking behavior change — `snapshot()` now propagates across composed stores)
 - [ ] Contract Tests-view and Docs-view hold — sibling Tests + Docs tasks exist (below)
 - [ ] Audit skill run on `lib/create.ts` (+ `lib/utils.ts` if `readDeep` lands there) reports no deviations from `./guides/code.md`
 
