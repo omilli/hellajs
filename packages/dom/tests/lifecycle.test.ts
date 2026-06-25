@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, flushMount, queueCleanup, peekState } from "@hellajs/dom/bundle";
+import { mount, html, queueCleanup, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -12,7 +12,7 @@ describe("dom", () => {
       const callOrder: string[] = [];
       let receivedNode: Element | undefined;
 
-      mount(html`
+      const app = mount(html`
         <div
           id="lifecycle-test"
           hook:beforeMount=${() => callOrder.push("beforeMount")}
@@ -28,7 +28,7 @@ describe("dom", () => {
 
       expect(callOrder).toEqual(["beforeMount"]);
 
-      flushMount(document.getElementById("app")!);
+      app.flush();
       expect(callOrder).toEqual(["beforeMount", "afterMount"]);
       expect(receivedNode?.id).toBe("lifecycle-test");
 
@@ -65,7 +65,7 @@ describe("dom", () => {
       const parentCalls: string[] = [];
       const childCalls: string[] = [];
 
-      mount(html`
+      const app2 = mount(html`
         <div
           id="parent"
           hook:beforeMount=${() => parentCalls.push("beforeMount")}
@@ -81,7 +81,7 @@ describe("dom", () => {
       expect(parentCalls).toEqual(["beforeMount"]);
       expect(childCalls).toEqual(["beforeMount"]);
 
-      flushMount(document.getElementById("app")!);
+      app2.flush();
       expect(parentCalls).toEqual(["beforeMount", "afterMount"]);
       expect(childCalls).toEqual(["beforeMount", "afterMount"]);
     });
@@ -89,7 +89,7 @@ describe("dom", () => {
     test("deeply nested afterMount order", () => {
       const calls: string[] = [];
 
-      mount(html`
+      const app3 = mount(html`
         <div id="grandparent" hook:afterMount=${() => calls.push("grandparent")}>
           <div id="parent" hook:afterMount=${() => calls.push("parent")}>
             <span hook:afterMount=${() => calls.push("child")}>
@@ -99,7 +99,7 @@ describe("dom", () => {
         </div>
       `);
 
-      flushMount(document.getElementById("app")!);
+      app3.flush();
       expect(calls).toEqual(["grandparent", "parent", "child", "grandchild"]);
     });
   });

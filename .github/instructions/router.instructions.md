@@ -12,6 +12,7 @@ applyTo: "packages/router/**"
   | `router` | `router.ts` | Init: registers routes/hooks/redirects/notFound/mode/scroll/inheritMeta, binds listeners, returns initial `RouteInfo` (handler `null` until microtask). |
   | `route` | `state.ts` | Reactive signal holding the current `RouteInfo` (`path`, `params`, `query`, `handler`, `meta`, `crumbs`, `active`). |
   | `navigate` | `navigate.ts` | Programmatic nav: `:param`/`*` substitution, query serialize, history push/replace. |
+  | `resetRouter` | `resetRouter.ts` | Factory-reset: sets all 8 config signals to defaults, detaches listeners. Does NOT touch the URL. |
   | `type *` | `types.d.ts` | `RouterConfig`, `RouteInfo`, `RouteWithHooks`, `NavigateOptions`, `Redirect`, `ScrollBehavior`, `HistoryMode`, `Crumb`, `ExtractParams`. |
 
   ## File map

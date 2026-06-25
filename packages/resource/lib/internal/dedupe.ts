@@ -14,7 +14,16 @@ interface OngoingRequest {
 }
 
 /** Nested WeakMap tracking ongoing requests keyed by fetcher then cache key to prevent cross-fetcher collisions. */
-const ongoingRequestsMap = new WeakMap<object, Map<unknown, OngoingRequest>>();
+let ongoingRequestsMap = new WeakMap<object, Map<unknown, OngoingRequest>>();
+
+/**
+ * @internal
+ * Resets the deduplication map, releasing all in-flight request registrations.
+ * Since WeakMap has no .clear(), a new instance is assigned.
+ */
+export function resetDedupe() {
+  ongoingRequestsMap = new WeakMap();
+}
 
 /**
  * @internal

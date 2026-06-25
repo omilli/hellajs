@@ -1,0 +1,35 @@
+# resetResource
+
+Factory-resets all resource package mutable state — cache map, online callbacks, cleanup throttle, and deduplication map. A real-world nuke for logout, HMR, session reset, error recovery, and testing.
+
+## API
+
+```typescript
+function resetResource(): void
+```
+
+## Basic Usage
+
+Use `resetResource` when you need a complete teardown of all resource state — unlike `resourceCache.invalidateAll()`, it also clears online subscribers, the cleanup throttle, and the in-flight request dedup map.
+
+```typescript
+import { resetResource, resourceCache } from "@hellajs/resource";
+
+// On logout, HMR, or catastrophic recovery:
+resetResource(); // clears cacheMap + ongoingRequestsMap + onlineCallbacks + lastCleanupTime
+```
+
+## Key Concepts
+
+### What gets reset
+
+| State | How |
+|---|---|
+| Cache map (`cacheMap`) | All entries across all fetcher scopes are cleared |
+| Dedup map (`ongoingRequestsMap`) | In-flight request registrations are released (in-flight promises continue but subsequent dedup lookups miss) |
+| Online callbacks (`onlineCallbacks`) | `onOnlineChange` subscribers no longer fire |
+| Cleanup throttle (`lastCleanupTime`) | Reset to `0` — next `setCacheData` runs `cleanupExpiredCache` unconditionally |
+
+### vs `resourceCache.invalidateAll()`
+
+`invalidateAll()` only clears the cache map. After it runs, online callbacks remain registered, the cleanup throttle is unchanged, and the dedup map still holds prior in-flight registrations. `resetResource()` is the only way to fully reset all resource package mutable state.

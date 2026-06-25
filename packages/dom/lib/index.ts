@@ -30,7 +30,7 @@ declare global {
   }
 }
 
-export { flushMount, queueCleanup, resetDomState } from "./internal/testing";
-export { checkMultiSelectors, multiSelectors } from "./internal/selectors";
-
+export { resetDom } from "./internal/testing";
+export { flushMount, queueCleanup } from "./internal/testing";
 export { getState, hasState, peekState, deleteState } from "./internal/state";
+export { checkMultiSelectors, multiSelectors } from "./internal/selectors";

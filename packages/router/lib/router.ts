@@ -6,6 +6,11 @@ import { navigate } from "./navigate";
 
 let cleanupListener: (() => void) | null = null;
 
+export function resetListeners() {
+  cleanupListener?.();
+  cleanupListener = null;
+}
+
 /**
  * Initializes the router with a map of routes and optional hooks.
  * @param config Router configuration object containing routes, hooks, redirects, and notFound handler.

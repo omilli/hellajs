@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, registry, flushMount, queueCleanup } from "@hellajs/dom/bundle";
+import { mount, html, registry, queueCleanup } from "@hellajs/dom/bundle";
 import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -59,14 +59,14 @@ describe("dom", () => {
     test("multiple hooks of same type all execute in order", () => {
       const calls: string[] = [];
 
-      mount(html`<div id="stacked">Content</div>`);
+      const app1 = mount(html`<div id="stacked">Content</div>`);
       const el = document.getElementById("stacked")! as HellaElement;
 
       registry.addHook(el, "afterMount", () => calls.push("first"));
       registry.addHook(el, "afterMount", () => calls.push("second"));
       registry.addHook(el, "afterMount", () => calls.push("third"));
 
-      flushMount(el.parentElement!);
+      app1.flush();
 
       expect(calls).toEqual(["first", "second", "third"]);
     });
@@ -89,12 +89,12 @@ describe("dom", () => {
     test("afterMount hook receives element as argument", () => {
       let receivedEl: Element | undefined;
 
-      mount(html`<div id="hook-arg">Content</div>`);
+      const app2 = mount(html`<div id="hook-arg">Content</div>`);
       const el = document.getElementById("hook-arg")! as HellaElement;
 
       registry.addHook(el, "afterMount", (node) => { receivedEl = node; });
 
-      flushMount(el.parentElement!);
+      app2.flush();
 
       expect(receivedEl).toBe(el);
     });
@@ -169,7 +169,7 @@ describe("dom", () => {
     test("afterMount fires after flushMount", () => {
       const afterMountCalls = mock(() => { });
 
-      mount(html`
+      const app3 = mount(html`
         <div>
           <span id="mount-queue-test" hook:afterMount=${afterMountCalls}>Content</span>
         </div>
@@ -178,20 +178,20 @@ describe("dom", () => {
       // afterMount not called yet (deferred)
       expect(afterMountCalls).toHaveBeenCalledTimes(0);
 
-      flushMount(document.getElementById("app")!);
+      app3.flush();
       expect(afterMountCalls).toHaveBeenCalledTimes(1);
     });
 
     test("disconnected nodes are skipped in mount queue", () => {
       const afterMountCalls = mock(() => { });
 
-      mount(html`<div id="disconnect-test" hook:afterMount=${afterMountCalls}>Content</div>`);
+      const app4 = mount(html`<div id="disconnect-test" hook:afterMount=${afterMountCalls}>Content</div>`);
 
       const el = document.getElementById("disconnect-test")!;
       el.remove();
 
       // Even after flushMount, disconnected nodes are skipped
-      flushMount(document.getElementById("app") ?? document.body);
+      app4.flush();
       expect(afterMountCalls).toHaveBeenCalledTimes(0);
     });
   });
