@@ -28,6 +28,7 @@ applyTo: "**"
   - **`bun sync`** reads every `AGENTS.md` and regenerates: a `CLAUDE.md` mirror in the same directory, one `.github/instructions/{folder}.instructions.md` (with `applyTo:` frontmatter) per package/plugin, and the root `.github/copilot-instructions.md` (`applyTo: "**"`).
   - **post-commit hook** (`.github/hooks/post-commit`) auto-runs `bun sync` when an `AGENTS.md` changes, then auto-commits the generated files with `--no-verify`. CI also runs `bun sync` and commits any drift.
   - **commit-msg hook** (`.github/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
+  - **After editing any `AGENTS.md`, run `bun sync`** — within the session, not only on commit. Global skills (`author`, `feedback`) that edit this file must do this so the generated mirrors (`CLAUDE.md`, `.github/instructions/*`) never go stale before the post-commit hook fires.
 
   ## Packages
 
@@ -70,7 +71,11 @@ applyTo: "**"
 
   ## Skills
 
-  The discovery → plan → worker loop: `feature` / `audit` (discovery) hand off an evidence map to `plan`, which derives a Contract from the guides and writes typed tasks; `worker` executes with structural gates. When a skill hits a guide conflict it emits a guide-update proposal; `guide` executes the accepted edit. `feedback` runs after a loop completes (or immediately on blocking friction) to conservatively propose skill improvements — the self-improvement loop. `feedback` hands off outcomes to `memory`, which critically filters and curates durable entries into the progressive-disclosure `memory/` system. Each skill's `SKILL.md` carries the full workflow and the two Non-negotiables with skill-specific enforcement.
+  **Relationship rule.** Global skills — those provided by the operator's environment outside this repo — are the base library every project inherits. A project skill (`.agents/skills/`) exists only when the specialization is thick — a structurally different workflow — and it then takes a distinct name, never shadowing a global one. Thin specializations are expressed as rules in this file + project-local data, not as skills. `plan` and `audit` are the thick-rename pattern (against global `planner` / `reviewer`); `worker`, `feedback`, and `memory` are thin here, so they resolve to their global counterparts and have no project copy. This keeps one canonical copy of generic machinery and eliminates drift.
+
+  The discovery → plan → worker loop: `feature` / `audit` (project discovery) hand off an evidence map to `plan`, which derives a Contract from the guides and writes typed tasks; the global `worker` executes with structural gates (it parses the Contract block `plan/TEMPLATE.md` defines — Surface change, Tests-view, Docs-view). When a skill hits a guide conflict it emits a guide-update proposal; `guide` executes the accepted edit. The global `feedback` runs after a loop completes (or immediately on blocking friction) to conservatively propose improvements — the self-improvement loop — and hands outcomes to the global `memory`, which critically filters and curates durable entries into the progressive-disclosure `memory/` system. Each project skill's `SKILL.md` carries the full workflow and the two Non-negotiables with skill-specific enforcement; global skills carry their own.
+
+  Project skills (`.agents/skills/`):
 
   | Skill | When to use |
   |---|---|
@@ -78,11 +83,18 @@ applyTo: "**"
   | audit | Review, grade, or critique files against the guides |
   | comparison | Generate a package comparison doc vs competitors |
   | plan | Plan, break down, or scope work into typed tasks with a Contract and DoD |
-  | worker | Execute a plan document task by task |
   | instructions | Rebuild an AGENTS.md truth-grounded from `lib/` |
   | guide | Apply a guide update after a proposal is accepted; verify generality + blast radius |
-  | feedback | Run after a loop completes (or immediately on blocking friction); conservatively propose skill edits on friction |
-  | memory | Curate durable knowledge into progressive-disclosure `memory/`; single writer, many readers |
+  | hotpath | Discover performance optimizations in a package's hot paths |
+
+  Global-inherited — same verb, run unmodified from the operator's environment: `worker`, `feedback`, `memory`, plus `planner` / `reviewer` (generic counterparts to `plan` / `audit`), `brainstorm`, `author`, `debugger`, `skill-creator`.
+
+  **Graceful degradation.** The global-inherited verbs above (`worker`, `feedback`, `memory`) and `memory.py` are not in this repo — they live outside this repo, in the operator's global environment. A contributor without that environment still runs every thick project skill; the only loss is the automation and self-improvement layer. Two rules keep the loop from dead-ending silently:
+
+  - **Detection before handoff.** Before offering a handoff to a global skill, confirm it is available in your session. If absent, emit the standard signpost (below) instead of dead-ending. The Response protocol's `/feedback` and `/memory` offers follow this same rule; `/plan` and `/audit` are vendored, always available.
+  - **The plan Contract is self-sufficient.** Every Definition of Done item is a command that exits 0 or a yes/no question (`plan/TEMPLATE.md`). `worker` automates a human-executable artifact; if it is absent, execute the contract's tasks manually — tick `[ ]`→`[x]` per task, `bun check <package>` as the floor.
+
+  **Standard signpost** (emit this shape when a global skill is the target but unavailable): *"`<skill>` is not vendored in this repo — it lives in the operator's global environment, which you may not have. <what the contributor can still do>."*
 
   ## Response protocol
 
@@ -96,7 +108,7 @@ applyTo: "**"
   | Multiple | Offer each, each labeled and justified |
   | None (trivial, clean run, mid-loop) | Say "nothing to hand off" and finish |
 
-  Decide critically, not reflexively — a clean loop with zero friction skips feedback. The feedback skill self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop.
+  Decide critically, not reflexively — a clean loop with zero friction skips feedback. The feedback skill self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop. Offers of `/feedback` and `/memory` are conditional on those skills being available (global-only — see §Skills Graceful degradation); if unavailable, omit them.
 
   ## Style guides
 
@@ -111,15 +123,17 @@ applyTo: "**"
 
   Config files (`tsconfig*`, `eslint.config.*`, `package.json`, build plugins) follow `guides/code.md`'s conventions plus the Config verification checklist at the end of `code.md`.
 
+  Per-file guide application: a file is audited/verified against the guide matching its *own* extension, not the task's Type tag — a `*.test.ts` against `tests.md`, an `.md`/`.mdx` against `docs.md`, a `*.ts`/`*.tsx`/`*.mjs` under `lib/`/`scripts/`/`plugins/` against `code.md`. A Code task that ships a `*.test.ts` must verify that file against `tests.md`, not only `code.md`.
+
   ## Folder structure
 
-  - `.agents/skills/` — `feature`, `audit`, `comparison`, `plan`, `worker`, `instructions`, `guide`, `feedback`, `memory` (see Skills above)
+  - `.agents/skills/` — `feature`, `audit`, `comparison`, `plan`, `instructions`, `guide`, `hotpath` (project skills; `worker`/`feedback`/`memory` are global-inherited — see Skills above)
   - `.changeset/` — changeset config
   - `.github/` — `workflows/` (CI + release), git hooks (`post-commit` → sync, `commit-msg` → commitlint), generated `instructions/` + `copilot-instructions.md`
   - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`)
   - `examples/` — `bench`, `blog`, `counter`, `theme-switcher`, `todo`
   - `guides/` — style guides (see above)
-  - `memory/` — progressive-disclosure knowledge base (`INDEX.md` + `entries/[tag].md`); curated by the `memory` skill
+  - `memory/` — progressive-disclosure knowledge base: `entries/*.md` are canonical (frontmatter + TL;DR + Why + Evidence), `INDEX.md` is derived (regenerated by the global `memory.py`, not vendored in this repo; never hand-edited), `archive/` holds retired entries. The global `memory` skill is the single writer; all other skills read. Contributors without the global config treat `memory/` as read-only (Grep INDEX → Read TL;DR); `memory.py` maintenance (rebuild/stale/supersede/prune) is operator-only.
   - `packages/` — the six workspaces
   - `plugins/` — `babel`, `rollup`, `vite`
   - `scripts/` — build/CI automation (`bundle`, `check`, `clean`, `coverage`, `release`, `sync`) + `utils/`; see `scripts/AGENTS.md` and `guides/scripts.md`
