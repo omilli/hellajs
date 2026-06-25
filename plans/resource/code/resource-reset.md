@@ -19,6 +19,9 @@ resource
 - `packages/resource/lib/cache.ts` — modify — add an `@internal resetCacheState()` that calls `cacheMap.clear()` (cache.ts:12), `onlineCallbacks.clear()` (cache.ts:17), and resets `lastCleanupTime = 0` (cache.ts:14)
 - `packages/resource/lib/internal/dedupe.ts` — modify — change `ongoingRequestsMap` (line 17) from `const` to `let`, add an `@internal resetDedupe()` that reassigns `ongoingRequestsMap = new WeakMap()` (WeakMap has no `.clear()` — reassign per `code.md` §Memory; already noted in dedupe.ts:6-7 module comment)
 - `packages/resource/lib/index.ts` — modify — add `export { resetResource } from "./resetResource";`
+- `packages/resource/AGENTS.md` — modify — exports table: add `resetResource`; note `invalidateAll` is NOT a full reset (misses the dedup map + `onlineCallbacks` + `lastCleanupTime`); regenerated `CLAUDE.md` + `.github/instructions/*` via `bun sync`
+- `packages/resource/docs/api/resetresource.mdx` — create — Function template; `# resetResource`; `## API` signature; self-contained `## Basic Usage`; `## Key Concepts` covering the real-world nuke use cases (HMR, session reset, logout, error recovery, testing) + explicit note on which state it clears (vs `resourceCache.invalidateAll`)
+- `docs/src/pages/reference/resource/resetresource.mdx` — create — website wrapper with `title`/`description`/`layout`
 
 ### Public API delta
 ```ts
@@ -42,14 +45,15 @@ resetResource(); // clears cacheMap + ongoingRequestsMap + onlineCallbacks + las
 
 ### Doc placement
 - `packages/resource/docs/index.mdx` — Index template — `### API` bullet list — add a `resetResource` entry linking to `/reference/resource/resetresource`
-- `packages/resource/docs/api/resetresource.mdx` — **tracked in `meta/docs/api-reference-pages.md`, NOT owned by this trio** (standalone page for a NEW top-level export); this trio only notes the dependency
-- The `AGENTS.md`/`CLAUDE.md` sync for the new export is owned by `meta/docs/agents-md-sync.md`
+- `packages/resource/docs/api/resetresource.mdx` — Function template — `# resetResource`; `## API` signature; self-contained `## Basic Usage`; `## Key Concepts` covering the real-world nuke use cases (HMR, session reset, logout, error recovery, testing) + explicit note on which state it clears (vs `resourceCache.invalidateAll`)
+- `docs/src/pages/reference/resource/resetresource.mdx` — website wrapper with `title`/`description`/`layout`
+- `packages/resource/AGENTS.md` — exports table: add `resetResource`; note `invalidateAll` is NOT a full reset (misses dedup map + `onlineCallbacks` + `lastCleanupTime`); regenerated mirrors via `bun sync`
 
 ### Tests view
 New `tests/reset-resource.test.ts`, 5 scenarios per Behavioral scenarios above, per `tests.md` §Test Structure and §Scenario → test() derivation. Contrasts `resetResource()` against `invalidateAll()` insufficiency.
 
 ### Docs view
-Modify `packages/resource/docs/index.mdx` API list per Doc placement above, per `docs.md` §File Locations & Naming. The standalone `resetresource.mdx` page is owned by `meta/docs/api-reference-pages.md`; the `AGENTS.md` sync is owned by `meta/docs/agents-md-sync.md`. This trio does not duplicate either.
+This trio owns the full blast radius: modify `packages/resource/docs/index.mdx` API list, create the standalone `packages/resource/docs/api/resetresource.mdx` Function-template page + its website wrapper, and add `resetResource` to `packages/resource/AGENTS.md` exports table (with the `invalidateAll`-is-not-a-full-reset note), then run `bun sync` to regenerate mirrors — all per `docs.md` §File Locations & Naming and §Function & Prefix Docs. No meta coordination plan is cited.
 
 ---
 
@@ -69,7 +73,7 @@ Modify `packages/resource/docs/index.mdx` API list per Doc placement above, per 
 - [ ] No new runtime dependency
 - [ ] Backward compatible — new public symbol, no existing signature changed → minor changeset
 - [ ] A changeset exists at `.changeset/*.md` declaring `minor` for `@hellajs/resource`
-- [ ] Contract Tests-view and Docs-view hold — sibling Tests + Docs tasks exist (below); standalone page + AGENTS.md sync tracked in meta plans
+- [ ] Contract Tests-view and Docs-view hold — sibling Tests + Docs tasks exist (below) and own the standalone page + AGENTS.md sync directly
 - [ ] Audit skill run on `resetResource.ts`, `cache.ts`, `internal/dedupe.ts`, `index.ts` reports no deviations from `./guides/code.md`
 
 ## [ ] Test resetResource (Tests)
@@ -92,7 +96,7 @@ Five `test()`s map 1:1 to the Behavioral scenarios. Set up dirty state, call `re
 **Depends on:** Implement resetResource
 
 ### Strategy
-Per `docs.md` §File Locations & Naming and the Index template, add a `resetResource` bullet to `packages/resource/docs/index.mdx`'s `### API` list linking to `/reference/resource/resetresource`, with a one-line description (real-world nuke: logout, HMR, error recovery — clears cache + dedup + online subscribers + cleanup throttle). Do NOT create `resetresource.mdx` here — the standalone API page is owned by `meta/docs/api-reference-pages.md`; the `AGENTS.md` sync is owned by `meta/docs/agents-md-sync.md`. This trio only updates the package's API index and notes the cross-plan dependencies.
+Per `docs.md` §File Locations & Naming and the Function template (§Function & Prefix Docs), this task owns the full doc surface: (1) add a `resetResource` bullet to `packages/resource/docs/index.mdx`'s `### API` list linking to `/reference/resource/resetresource` with a one-line description (real-world nuke: logout, HMR, error recovery — clears cache + dedup + online subscribers + cleanup throttle); (2) create the standalone `packages/resource/docs/api/resetresource.mdx` page — `# resetResource`, `## API` (`resetResource(): void` verbatim from Contract.Public API delta), self-contained `## Basic Usage` with imports, `## Key Concepts` covering the nuke use cases (HMR, session reset, logout, error recovery, testing) + an explicit note on which state it clears vs `resourceCache.invalidateAll` (which only clears the cache, leaking dedup + `onlineCallbacks` + `lastCleanupTime`); (3) create the website wrapper `docs/src/pages/reference/resource/resetresource.mdx` with `title`/`description`/`layout`; (4) add `resetResource` to `packages/resource/AGENTS.md` exports table with the `invalidateAll`-is-not-a-full-reset note, then run `bun sync` to regenerate mirrors.
 
 ### Definition of Done
 - [ ] Every code example in the changed `index.mdx` compiles against the current source signatures
@@ -101,4 +105,5 @@ Per `docs.md` §File Locations & Naming and the Index template, add a `resetReso
 - [ ] Public API delta signature (`export { resetResource } from "./resetResource"`) is reflected by the new API list entry
 - [ ] Package docs (`packages/resource/docs/**/*.mdx`) have no frontmatter
 - [ ] No claim in the changed docs contradicts the implementation — cross-checked against source and tests
-- [ ] The standalone `resetresource.mdx` page is NOT created here (owned by `meta/docs/api-reference-pages.md`); the `AGENTS.md` sync is NOT done here (owned by `meta/docs/agents-md-sync.md`)
+- [ ] The standalone `packages/resource/docs/api/resetresource.mdx` page exists (Function template) and the website wrapper `docs/src/pages/reference/resource/resetresource.mdx` exists with `title`/`description`/`layout`
+- [ ] `packages/resource/AGENTS.md` exports table includes `resetResource` with the `invalidateAll`-is-not-a-full-reset note; `bun sync` regenerates `CLAUDE.md` + `.github/instructions/*`

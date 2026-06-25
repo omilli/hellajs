@@ -20,6 +20,7 @@ router
 - `packages/router/tests/reset-router.test.ts` — create — three scenarios (see Behavioral scenarios)
 - `packages/router/docs/api/resetrouter.mdx` — create — Function template
 - `packages/router/docs/index.mdx` — modify — API bullet list: add `resetRouter`
+- `packages/router/AGENTS.md` — modify — exports table: add `resetRouter`; note it does not touch the URL (history API left as-is); regenerated `CLAUDE.md` + `.github/instructions/*` via `bun sync`
 
 ### Public API delta
 ```ts
@@ -49,7 +50,7 @@ resetRouter(); // singleton signals back to defaults + listeners detached; URL u
 New `tests/reset-router.test.ts`, one `test()` per scenario in Behavioral scenarios (three). Assert each of the eight signals reads as its default after `resetRouter()`; assert listeners detach by re-initializing through `router()` and confirming handlers do not double-fire (mock-tracked); assert `window.location.pathname`/`history.length` unchanged across the call. `mock()` from `bun:test`; no boolean-flag/integer counters (tests.md §Mock Patterns, §Shared State and Cleanup).
 
 ### Docs view
-New `docs/api/resetrouter.mdx` (Function template) + `docs/index.mdx` API list entry, per Doc placement. The standalone `api/resetrouter.mdx` new-export page is registered in `meta/docs/api-reference-pages.md` (registry owned by that meta plan); this Docs task writes the page content. `AGENTS.md` / `CLAUDE.md` sync owned by `meta/docs/agents-md-sync.md`.
+This trio owns the full blast radius: the new `docs/api/resetrouter.mdx` (Function template) + `docs/index.mdx` API list entry + `packages/router/AGENTS.md` exports-table add (`resetRouter`, with the does-not-touch-the-URL note), then `bun sync` to regenerate mirrors — per Doc placement and `docs.md` §File Locations & Naming. No meta coordination plan is cited.
 
 ---
 
@@ -92,7 +93,7 @@ One `test()` per Behavioral scenario (three). Seed non-default state via `router
 **Depends on:** Implement resetRouter factory reset
 
 ### Strategy
-Write `docs/api/resetrouter.mdx` from the Function template (docs.md §Function & Prefix Docs) — title, `## API` (`resetRouter(): void` verbatim from Contract.Public API delta), `## Basic Usage` (the Contract example, framed as session-reset / HMR / return-to-home, with the explicit note that the URL is untouched). Add `resetRouter` to the `docs/index.mdx` API bullet list. The standalone new-export page is registered in `meta/docs/api-reference-pages.md`; this task writes the page itself.
+Write `docs/api/resetrouter.mdx` from the Function template (docs.md §Function & Prefix Docs) — title, `## API` (`resetRouter(): void` verbatim from Contract.Public API delta), `## Basic Usage` (the Contract example, framed as session-reset / HMR / return-to-home, with the explicit note that the URL is untouched). Add `resetRouter` to the `docs/index.mdx` API bullet list. Add `resetRouter` to `packages/router/AGENTS.md` exports table with the does-not-touch-the-URL note, then run `bun sync` to regenerate the `CLAUDE.md` mirror + `.github/instructions/*`. This trio owns the standalone page itself — no meta-plan registry is cited.
 
 ### Definition of Done
 - [ ] Every code example in the changed files compiles against the current source signatures
@@ -102,3 +103,4 @@ Write `docs/api/resetrouter.mdx` from the Function template (docs.md §Function 
 - [ ] Public API delta signature appears verbatim in `resetrouter.mdx`; the Contract usage example appears under `## Basic Usage`
 - [ ] No claim in the changed docs contradicts the implementation — cross-checked against `lib/resetRouter.ts` and tests
 - [ ] `packages/router/docs/index.mdx` API list includes `resetRouter`
+- [ ] `packages/router/AGENTS.md` exports table includes `resetRouter` with the does-not-touch-the-URL note; `bun sync` regenerates `CLAUDE.md` + `.github/instructions/*`

@@ -21,6 +21,7 @@ store
 - `packages/store/docs/api/devtools.mdx` — create — Function template
 - `packages/store/docs/index.mdx` — modify — API bullet list: add `devtools`
 - `packages/store/docs/concepts/state.mdx` — modify — new "Debugging with Redux DevTools" subsection wiring `devtools()` + `action()`
+- `packages/store/AGENTS.md` — modify — exports table: add `devtools` + `action` (+ types `DevToolsConfig`/`DisconnectFunction`); regenerated `CLAUDE.md` + `.github/instructions/*` via `bun sync`
 
 ### Public API delta
 ```ts
@@ -60,7 +61,7 @@ disconnect(); // stops sending, disposes the internal effect
 New `tests/devtools.test.ts`, one `test()` per scenario in Behavioral scenarios (seven total). Mock `window.__REDUX_DEVTOOLS_EXTENSION__` via `beforeEach` save / `afterEach` restore (tests.md §Patched browser globals); record `connect`/`send`/`disconnect` through a fake extension backed by `mock()` (tests.md §Mock Patterns — no boolean-flag or pure-integer counters).
 
 ### Docs view
-New `docs/api/devtools.mdx` (Function template) + `docs/index.mdx` API list entry + `docs/concepts/state.mdx` subsection, per Doc placement. The standalone `api/devtools.mdx` new-export page is registered in `meta/docs/api-reference-pages.md` (registry owned by that meta plan); this Docs task writes the page content. `AGENTS.md` / `CLAUDE.md` sync owned by `meta/docs/agents-md-sync.md`.
+New `docs/api/devtools.mdx` (Function template) + `docs/index.mdx` API list entry + `docs/concepts/state.mdx` subsection, per Doc placement. This trio owns the full blast radius: the standalone `api/devtools.mdx` page + the `packages/store/AGENTS.md` exports-table add (`devtools`/`action` + types), then `bun sync` to regenerate mirrors. No meta coordination plan is cited.
 
 ---
 
@@ -102,7 +103,7 @@ One `test()` per Behavioral scenario (seven). Build a fake extension that record
 **Depends on:** Implement devtools bridge and action label helper
 
 ### Strategy
-Write `docs/api/devtools.mdx` from the Function template (docs.md §Function & Prefix Docs) — title, `## API` (signatures verbatim from Contract.Public API delta), `## Basic Usage` (the Contract example). Add `devtools` to the `docs/index.mdx` API bullet list (currently only `store`). Add a "Debugging with Redux DevTools" subsection to `docs/concepts/state.mdx` showing `devtools()` + `action()` wiring. The standalone new-export page is registered in `meta/docs/api-reference-pages.md`; this task writes the page itself.
+Write `docs/api/devtools.mdx` from the Function template (docs.md §Function & Prefix Docs) — title, `## API` (signatures verbatim from Contract.Public API delta), `## Basic Usage` (the Contract example). Add `devtools` to the `docs/index.mdx` API bullet list (currently only `store`). Add a "Debugging with Redux DevTools" subsection to `docs/concepts/state.mdx` showing `devtools()` + `action()` wiring. Add `devtools`/`action` (+ types) to `packages/store/AGENTS.md` exports table, then run `bun sync` to regenerate the `CLAUDE.md` mirror + `.github/instructions/*`. This trio owns the standalone page + AGENTS.md entry itself — no meta-plan registry is cited.
 
 ### Definition of Done
 - [ ] Every code example in the changed files compiles against the current source signatures
