@@ -110,3 +110,7 @@ Mismatches go back to Phase 2.
 - For Surface change: yes, do Code + Tests + Docs sub-tasks all exist, sharing one Contract?
 - Does the H1 title carry the `[ ]` aggregate-status marker, per TEMPLATE.md Hard rules?
 - Could a dev who never read the discovery handoff execute each task from this artifact alone? If not, the Contract is incomplete — add the missing piece before saving.
+
+## Handoff
+
+Save the plan, then hand the contract to `worker` for execution. If `worker` is unavailable (absent from your session — it is a global-inherited skill, not vendored in this repo), emit the standard signpost per §Skills Graceful degradation rather than dead-ending: the Contract is self-sufficient, so a contributor can execute it manually — work each task against its Strategy, tick every Definition of Done item `[ ]`→`[x]` only with cited evidence, and run `bun check <package>` as the floor. Do not leave the loop at an implicit edge.
