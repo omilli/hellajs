@@ -24,6 +24,9 @@ dom
 - `packages/dom/tests/*.test.ts` — modify — migrate every reference to the eight removed exports (`flushMount`/`queueCleanup` → handle methods; `peekState`/`getState`/`hasState`/`deleteState`/`multiSelectors`/`checkMultiSelectors` → source-relative imports from `lib/internal/*`)
 - `packages/dom/docs/api/mount.mdx` — modify — document the `MountHandle` return type + a `###` Key Concepts entry on the handle lifecycle
 - `packages/dom/docs/index.mdx` — modify — API list: rename `resetDomState`→`resetDom`, drop the eight removed entries
+- `packages/dom/docs/api/resetdom.mdx` — create — Function template; `# resetDom`; `## API` signature; self-contained `## Basic Usage`; `## Key Concepts` noting it clears error handlers + scoped observer state (the full factory-reset surface)
+- `docs/src/pages/reference/dom/resetdom.mdx` — create — website wrapper with `title`/`description`/`layout`
+- `packages/dom/AGENTS.md` — modify — exports table: rename `resetDomState`→`resetDom`, add `MountHandle` + `mount()`'s new return shape, drop the eight removed entries (`flushMount`/`queueCleanup`/`getState`/`hasState`/`peekState`/`deleteState`/`multiSelectors`/`checkMultiSelectors`); regenerated mirrors via `bun sync`. NOTE: the dom AGENTS.md **testing-section** rewrite (globals → explicit imports) is owned by the consolidation plan (`meta/misc/test-harness.md`), NOT this trio — this plan owns only the exports-table delta.
 
 ### Public API delta
 ```ts
@@ -67,12 +70,15 @@ resetDom();      // factory-reset all dom shared state incl. error handlers
 ### Doc placement
 - `packages/dom/docs/api/mount.mdx` — Function template (modify) — document the `MountHandle` return type; add `### Mount Lifecycle Handle` under Key Concepts covering `flush`/`unmount` + the async-defer/cancel behavior
 - `packages/dom/docs/index.mdx` — Index — API bullet list — rename `resetDomState`→`resetDom`, drop the eight removed entries
+- `packages/dom/docs/api/resetdom.mdx` — Function template (create) — `# resetDom`; `## API` signature; self-contained `## Basic Usage`; `## Key Concepts` noting it clears error handlers + scoped observer state
+- `docs/src/pages/reference/dom/resetdom.mdx` — website wrapper with `title`/`description`/`layout`
+- `packages/dom/AGENTS.md` — exports table: rename `resetDomState`→`resetDom`, add `MountHandle` + the new `mount()` return shape, drop the eight removed entries (the testing-section rewrite is the consolidation plan's, not this trio's)
 
 ### Tests view
 New `packages/dom/tests/reset-dom.test.ts` (surface-named per `tests.md` §File-naming — matches `resetDom`), one `test()` per the six Behavioral scenarios, plus migrating every existing test that references the eight removed barrel exports (`flushMount`/`queueCleanup`/`peekState`/`getState`/`multiSelectors`/`checkMultiSelectors`/…) to handle methods (`app.flush()`/`app.unmount()`) or source-relative imports for the introspection helpers, per `tests.md` §Files and §Shared State and Cleanup (`beforeEach` with `resetTestState()` + `resetDom()`). Import from `@hellajs/dom/bundle`; `mount`/`resetDom` from the bundle, injected helpers (`tick`/`delay`/`wait`/`setupContainer`/`resetTestState`/`onError`) from `globalThis`. The Code task's `bun check dom` is unblocked only once this migration lands (`mount`'s new return + the barrel trim break existing tests until then).
 
 ### Docs view
-Modify `packages/dom/docs/api/mount.mdx` (document `MountHandle` return + Key Concepts section) and `packages/dom/docs/index.mdx` API list (rename + drop the eight entries), per Doc placement above, per `docs.md` §Function & Prefix Docs and §File Locations & Naming. The standalone `resetdom.mdx` reference page is owned by `meta/docs/api-reference-pages.md` per the coordination spec (not duplicated here); the `AGENTS.md`/`CLAUDE.md` sync for the removed exports is owned by `meta/docs/agents-md-sync.md`.
+This trio owns the full blast radius: modify `packages/dom/docs/api/mount.mdx` (document `MountHandle` return + Key Concepts section) + `packages/dom/docs/index.mdx` API list (rename + drop the eight entries), create the standalone `packages/dom/docs/api/resetdom.mdx` Function-template page + its website wrapper, and apply the exports-table delta to `packages/dom/AGENTS.md` (rename `resetDomState`→`resetDom`, add `MountHandle` + the new `mount()` return shape, drop the eight removed entries) then `bun sync` — per `docs.md` §Function & Prefix Docs and §File Locations & Naming. The dom AGENTS.md **testing-section** rewrite (globals → explicit imports) is owned by the consolidation plan (`meta/misc/test-harness.md`), NOT this trio. No other meta coordination plan is cited.
 
 ---
 
@@ -115,7 +121,7 @@ Two concerns. (1) Migrate every existing test referencing the eight removed barr
 **Depends on:** Implement resetDom + MountHandle
 
 ### Strategy
-Update `docs/api/mount.mdx`: document the `MountHandle` return type in `## API` (show the interface), refresh `## Basic Usage` with the handle example from Contract.Public API delta (`app.flush()`/`app.unmount()`), and add a `### Mount Lifecycle Handle` under Key Concepts covering flush/unmount plus the async-defer and cancel-before-attach behavior. Update `docs/index.mdx` API list: rename `resetDomState`→`resetDom` and drop the eight removed entries. Per `docs.md` §Function & Prefix Docs. The standalone `resetdom.mdx` reference page is owned by `meta/docs/api-reference-pages.md` (coordination spec) — not created here.
+Update `docs/api/mount.mdx`: document the `MountHandle` return type in `## API` (show the interface), refresh `## Basic Usage` with the handle example from Contract.Public API delta (`app.flush()`/`app.unmount()`), and add a `### Mount Lifecycle Handle` under Key Concepts covering flush/unmount plus the async-defer and cancel-before-attach behavior. Update `docs/index.mdx` API list: rename `resetDomState`→`resetDom` and drop the eight removed entries. Create the standalone `packages/dom/docs/api/resetdom.mdx` Function-template page (`# resetDom`, `## API`, self-contained `## Basic Usage`, `## Key Concepts` noting it clears error handlers + scoped observer state) + its website wrapper `docs/src/pages/reference/dom/resetdom.mdx`. Apply the exports-table delta to `packages/dom/AGENTS.md` (rename + `MountHandle` add + eight-entry trim) then run `bun sync` to regenerate mirrors. Per `docs.md` §Function & Prefix Docs. (The dom AGENTS.md testing-section rewrite is the consolidation plan's concern, not this trio's.)
 
 ### Definition of Done
 - [ ] Every code example in the changed `.mdx` files compiles against the current source signatures
@@ -125,3 +131,5 @@ Update `docs/api/mount.mdx`: document the `MountHandle` return type in `## API` 
 - [ ] Package docs (`packages/dom/docs/**/*.mdx`) have no frontmatter
 - [ ] No claim in the changed docs contradicts the implementation — cross-checked against source and tests
 - [ ] `packages/dom/docs/index.mdx` API list reflects `resetDom` (not `resetDomState`) and contains none of the eight removed entries
+- [ ] The standalone `packages/dom/docs/api/resetdom.mdx` page exists (Function template) and the website wrapper `docs/src/pages/reference/dom/resetdom.mdx` exists with `title`/`description`/`layout`
+- [ ] `packages/dom/AGENTS.md` exports table reflects `resetDom` + `MountHandle` + the new `mount()` return shape and contains none of the eight removed entries; `bun sync` regenerates `CLAUDE.md` + `.github/instructions/*`

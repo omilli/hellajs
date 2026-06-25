@@ -21,6 +21,7 @@ css
 - `packages/css/lib/cssVarsRemove.ts` → `packages/css/lib/removeCssVars.ts` — rename — `cssVarsRemove` → `removeCssVars`
 - `packages/css/lib/index.ts` — modify — the four re-exports swap to the new names + new source paths
 - `packages/css/tests/*.test.ts` — modify — every `cssReset`/`cssVarsReset`/`cssRemove`/`cssVarsRemove` reference (import + call site, especially the `beforeEach` composition documented in the css AGENTS.md Testing section)
+- `packages/css/AGENTS.md` — modify — exports table: rename the four entries (`cssReset`→`resetCss`, `cssVarsReset`→`resetCssVars`, `cssRemove`→`removeCss`, `cssVarsRemove`→`removeCssVars`) + every inline mention; the regenerated `CLAUDE.md` mirror + `.github/instructions/*` are produced by `bun sync` after this edit
 - `packages/css/docs/api/cssreset.mdx` → `resetcss.mdx` — rename — `# cssReset` → `# resetCss`, every cross-reference
 - `packages/css/docs/api/cssvarsreset.mdx` → `resetcssvars.mdx` — rename — same
 - `packages/css/docs/api/cssremove.mdx` → `removecss.mdx` — rename — same
@@ -70,7 +71,7 @@ removeCssVars(varsRef);  // reactive-first (by ref) then static (by hash) remova
 Update existing css tests (`css.test.ts`, `cssvars.test.ts`, `cssvars-remove.test.ts`, `ssr.test.ts`) to import and call the four new names — especially the `beforeEach` reset composition. No new `test()`s; the four Behavioral scenarios above are already asserted by the existing suite under the old names. Per `tests.md` §Files (surface-named test files) and §Shared State and Cleanup.
 
 ### Docs view
-Rename the four API doc pages + their website wrappers so the file name matches the new export name (`docs.md` §File Locations & Naming — lowercase, matches export); update `packages/css/docs/index.mdx` API list and every internal cross-reference. The `AGENTS.md`/`CLAUDE.md` sync for this rename is owned by `meta/docs/agents-md-sync.md`; the standalone reference pages are owned by THIS trio (the meta plan does not duplicate per-package API pages).
+Rename the four API doc pages + their website wrappers so the file name matches the new export name (`docs.md` §File Locations & Naming — lowercase, matches export); update `packages/css/docs/index.mdx` API list and every internal cross-reference. This trio owns the full blast radius: the standalone reference pages AND the `packages/css/AGENTS.md` exports-table rename of the four entries (the regenerated `CLAUDE.md` mirror + `.github/instructions/*` are produced by `bun sync` after the AGENTS.md edit). No meta coordination plan is cited — each feature plan owns its symbol's full surface.
 
 ---
 
@@ -112,7 +113,7 @@ Pure symbol swap across the existing suite — no new behavior to cover (the fou
 **Depends on:** Rename the css reset/remove family
 
 ### Strategy
-Per `docs.md` §File Locations & Naming, the API doc file name matches the export name (lowercase, no separator) — so each renamed export forces a renamed `.mdx` and website wrapper. Rename the four package doc pages and four wrapper pages, update the `# Title` to the new export name, and fix every internal cross-reference (the `docs/index.mdx` API list links + any `## Key Concepts` callouts in `css.mdx`/`cssvars.mdx` that mention the reset/remove siblings). The Function template (`docs.md` §Function & Prefix Docs) still governs each page; only identifiers and file names change, not structure.
+Per `docs.md` §File Locations & Naming, the API doc file name matches the export name (lowercase, no separator) — so each renamed export forces a renamed `.mdx` and website wrapper. Rename the four package doc pages and four wrapper pages, update the `# Title` to the new export name, and fix every internal cross-reference (the `docs/index.mdx` API list links + any `## Key Concepts` callouts in `css.mdx`/`cssvars.mdx` that mention the reset/remove siblings). The Function template (`docs.md` §Function & Prefix Docs) still governs each page; only identifiers and file names change, not structure. This trio also owns the `packages/css/AGENTS.md` exports-table rename of the four entries + every inline mention, then runs `bun sync` to regenerate the `CLAUDE.md` mirror + `.github/instructions/*` — the symbol's AGENTS.md entry is part of its blast radius, not a meta-plan concern.
 
 ### Definition of Done
 - [ ] Every code example in the changed/renamed `.mdx` files compiles against the current (renamed) source signatures
@@ -122,3 +123,4 @@ Per `docs.md` §File Locations & Naming, the API doc file name matches the expor
 - [ ] No claim in the changed docs contradicts the implementation — cross-checked against the renamed source and tests
 - [ ] Every new/renamed file name matches its export name (lowercase): `resetcss`, `resetcssvars`, `removecss`, `removecssvars`
 - [ ] `packages/css/docs/index.mdx` API list links point at the new slugs; no stale `cssreset`/`cssvarsreset`/`cssremove`/`cssvarsremove` references remain
+- [ ] `packages/css/AGENTS.md` exports table renames the four entries; no stale `cssReset`/`cssVarsReset`/`cssRemove`/`cssVarsRemove` mention remains; `bun sync` regenerates `CLAUDE.md` + `.github/instructions/*`

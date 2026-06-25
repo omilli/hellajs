@@ -23,6 +23,7 @@ css
 - `packages/css/tests/extract.test.ts` — create — new test file (surface-named)
 - `packages/css/docs/api/extractcss.mdx` — create — Function template
 - `packages/css/docs/index.mdx` — modify — add `extractCSS` to the API bullet list
+- `packages/css/AGENTS.md` — modify — exports table: add `extractCSS` (+ the `ExtractedCSS` type carried by `export type *`); regenerated `CLAUDE.md` + `.github/instructions/*` via `bun sync`
 
 ### Public API delta
 ```ts
@@ -63,7 +64,7 @@ const { css: cssText, vars } = extractCSS();
 New `packages/css/tests/extract.test.ts`, one `test()` per the six Behavioral scenarios above, per `tests.md` §Files (surface-named: `extract.test.ts` matches `extract.ts`/`extractCSS`) and §Shared State and Cleanup (`beforeEach` runs `resetTestState()` + `cssReset()` + `cssVarsReset()` — the css module-level maps aren't cleared by `resetTestState` alone). The SSR scenario brackets `globalThis.document = undefined` (save in `beforeEach`, restore in `afterEach`) following the `ssr.test.ts` pattern and `tests.md` §Patched browser globals — no trailing restoration after assertions. Import from `@hellajs/css/bundle`.
 
 ### Docs view
-Create `packages/css/docs/api/extractcss.mdx` (Function template) and add `extractCSS` to `packages/css/docs/index.mdx` API list, per Doc placement above, per `docs.md` §File Locations & Naming (`extractcss.mdx` = lowercase export, no separator) and §Function & Prefix Docs. The `AGENTS.md`/`CLAUDE.md` sync is owned by `meta/docs/agents-md-sync.md`; no standalone website-wrapper page is in scope for this trio.
+Create `packages/css/docs/api/extractcss.mdx` (Function template) and add `extractCSS` to `packages/css/docs/index.mdx` API list, per Doc placement above, per `docs.md` §File Locations & Naming (`extractcss.mdx` = lowercase export, no separator) and §Function & Prefix Docs. This trio owns the full blast radius: the standalone page + the `packages/css/AGENTS.md` exports-table add (`extractCSS`), then `bun sync` to regenerate mirrors. No standalone website-wrapper page is in scope for this trio; no meta coordination plan is cited.
 
 ---
 

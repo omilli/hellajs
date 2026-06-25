@@ -19,7 +19,7 @@ store
 - `packages/store/tests/nested.test.ts` — modify — flip the test at lines 140-155 ("snapshot is not deeply reactive across composed stores") to assert reactivity
 - `packages/store/tests/snapshot.test.ts` — modify — add composed-reactivity coverage per Behavioral scenarios
 - `packages/store/docs/api/store.mdx` — modify — snapshot section: add positive cross-store example + expand the Performance warning for the wider dependency footprint
-- `packages/store/AGENTS.md` — modify — remove the old non-reactive-behavior claim (scoped to this behavior flip; broader AGENTS.md regeneration owned by `meta/docs/agents-md-sync.md` — cross-reference noted, not duplicated)
+- `packages/store/AGENTS.md` — modify — remove the old non-reactive-behavior claim (scoped to this behavior flip; regenerated `CLAUDE.md` + `.github/instructions/*` via `bun sync`)
 - `packages/store/store-comparison.md` — modify — §5 Snapshot & Derivation (HellaJS Reactivity cell + prose) and §10 Bottom Line (remove the gap)
 
 ### Behavioral scenarios
@@ -30,7 +30,7 @@ store
 
 ### Doc placement
 - `packages/store/docs/api/store.mdx` — Function template (existing) — snapshot section — add positive cross-store example + expand the Performance/escape-hatch warning (read individual signals in effects for wide stores)
-- `packages/store/AGENTS.md` — instructions — remove the old non-reactive-behavior claim (scoped edit; broader sync owned by `meta/docs/agents-md-sync.md`)
+- `packages/store/AGENTS.md` — instructions — remove the old non-reactive-behavior claim (scoped edit), then `bun sync` to regenerate mirrors
 - `packages/store/store-comparison.md` — comparison — §5 (HellaJS Reactivity cell → "Reactive across the full composed tree" + drop the limitation prose) and §10 Bottom Line (drop the gap bullet)
 
 ### Tests view
@@ -79,7 +79,7 @@ Edit `tests/nested.test.ts:140-155`: rename "snapshot is not deeply reactive acr
 **Depends on:** Implement readDeep snapshot algorithm
 
 ### Strategy
-Update the `docs/api/store.mdx` snapshot section — remove any composed-store limitation callout, add a positive cross-store reactivity example, and expand the Performance warning to cover the wider dependency footprint of composed snapshots (escape hatch: read individual signals in effects for wide stores). Edit `packages/store/AGENTS.md` to remove the old non-reactive-behavior claim — this is a scoped edit specific to the behavior flip (the broader AGENTS.md / `CLAUDE.md` regeneration is owned by `meta/docs/agents-md-sync.md`; cross-reference noted, not duplicated). Update `store-comparison.md`: §5 HellaJS Reactivity cell → "Reactive across the full composed tree" and drop the limitation prose; §10 Bottom Line → drop "a snapshot that does not stay reactive across composed-store boundaries" from the gaps list (cited at `store-comparison.md:108-121` and `:262-274`).
+Update the `docs/api/store.mdx` snapshot section — remove any composed-store limitation callout, add a positive cross-store reactivity example, and expand the Performance warning to cover the wider dependency footprint of composed snapshots (escape hatch: read individual signals in effects for wide stores). Edit `packages/store/AGENTS.md` to remove the old non-reactive-behavior claim — a scoped edit specific to this behavior flip, then run `bun sync` to regenerate the `CLAUDE.md` mirror + `.github/instructions/*`. Update `store-comparison.md`: §5 HellaJS Reactivity cell → "Reactive across the full composed tree" and drop the limitation prose; §10 Bottom Line → drop "a snapshot that does not stay reactive across composed-store boundaries" from the gaps list (cited at `store-comparison.md:108-121` and `:262-274`).
 
 ### Definition of Done
 - [ ] Every code example in the changed files compiles against the current source signatures

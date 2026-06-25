@@ -58,7 +58,7 @@ resourceCache.isFetching("user:1");   // false (no in-flight request); true whil
 New `tests/cache-observability.test.ts`, 3 scenarios per Behavioral scenarios above, per `tests.md` §Test Structure and §Scenario → test() derivation. Imports from `@hellajs/resource/bundle`; reactive primitives (`signal`/`effect`/`tick`/`delay`/`wait`) come from `globalThis` per `tests.md` §Shared State and Cleanup — never imported.
 
 ### Docs view
-Modify `docs/api/resourcecache.mdx` per Doc placement above, per `docs.md` §Function & Prefix Docs (the cache is an existing interface doc, so the trio owns it fully — no standalone page is created, matching the meta/api-reference-pages exception for in-place interface extensions).
+Modify `docs/api/resourcecache.mdx` per Doc placement above, per `docs.md` §Function & Prefix Docs and §Template Selection (the cache is an existing interface doc, so the trio owns it fully — no standalone page is created for an in-place interface extension).
 
 ---
 

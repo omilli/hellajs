@@ -21,6 +21,7 @@ store
 - `packages/store/docs/api/persist.mdx` — create — Function template
 - `packages/store/docs/index.mdx` — modify — API bullet list: add `persist` (current list at `docs/index.mdx:39` lists only `store`)
 - `packages/store/docs/patterns/state.mdx` — modify — new "Persistent State" pattern (localStorage + custom adapter)
+- `packages/store/AGENTS.md` — modify — exports table: add `persist`, `persistLocal`, `persistSession` (+ types `StorageAdapter`/`PersistConfig`); regenerated `CLAUDE.md` + `.github/instructions/*` via `bun sync`
 
 ### Public API delta
 ```ts
@@ -69,7 +70,7 @@ settings.theme("dark"); // -> localStorage["settings"] updated on the next micro
 New `tests/persist.test.ts`, one `test()` per scenario in Behavioral scenarios (seven). Mock `StorageAdapter` as an in-memory `{ map, getItem, setItem, removeItem }` (tests.md §Mock Patterns — no external deps); track `setItem` counts with `mock()`; flush microtask batching with `await tick(0)`.
 
 ### Docs view
-New `docs/api/persist.mdx` (Function template) + `docs/index.mdx` API list entry + `docs/patterns/state.mdx` "Persistent State" pattern, per Doc placement. The standalone `api/persist.mdx` new-export page is registered in `meta/docs/api-reference-pages.md` (registry owned by that meta plan); this Docs task writes the page content. `AGENTS.md` / `CLAUDE.md` sync owned by `meta/docs/agents-md-sync.md`.
+New `docs/api/persist.mdx` (Function template) + `docs/index.mdx` API list entry + `docs/patterns/state.mdx` "Persistent State" pattern, per Doc placement. This trio owns the full blast radius: the standalone `api/persist.mdx` page + the `packages/store/AGENTS.md` exports-table add (`persist`/`persistLocal`/`persistSession` + types), then `bun sync` to regenerate mirrors. No meta coordination plan is cited.
 
 ---
 
@@ -111,7 +112,7 @@ One `test()` per Behavioral scenario (seven). In-memory `StorageAdapter` (`{ map
 **Depends on:** Implement persist wrapper and StorageAdapter types
 
 ### Strategy
-Write `docs/api/persist.mdx` from the Function template (docs.md §Function & Prefix Docs) — title, `## API` (signatures verbatim from Contract.Public API delta), `## Basic Usage` (the Contract example). Add `persist` to the `docs/index.mdx` API bullet list. Add a "Persistent State" pattern to `docs/patterns/state.mdx` (docs.md §Pattern Docs) showing localStorage plus a custom IndexedDB-style adapter. The standalone new-export page is registered in `meta/docs/api-reference-pages.md`; this task writes the page itself.
+Write `docs/api/persist.mdx` from the Function template (docs.md §Function & Prefix Docs) — title, `## API` (signatures verbatim from Contract.Public API delta), `## Basic Usage` (the Contract example). Add `persist` to the `docs/index.mdx` API bullet list. Add a "Persistent State" pattern to `docs/patterns/state.mdx` (docs.md §Pattern Docs) showing localStorage plus a custom IndexedDB-style adapter. Add `persist`/`persistLocal`/`persistSession` (+ types) to `packages/store/AGENTS.md` exports table, then run `bun sync` to regenerate the `CLAUDE.md` mirror + `.github/instructions/*`. This trio owns the standalone page + AGENTS.md entry itself — no meta-plan registry is cited.
 
 ### Definition of Done
 - [ ] Every code example in the changed files compiles against the current source signatures
