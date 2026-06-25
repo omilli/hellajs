@@ -138,11 +138,11 @@ describe("dom", () => {
 
       const value = signal("a");
       const container = setupContainer();
-      mount(html`
+      const app1 = mount(html`
         <div id="test" hook:beforeUpdate=${() => { throw new Error("bu"); }} bind:data-value=${value}></div>
       `, container);
 
-      flushMount(container);
+      app1.flush();
       value("b");
       flush();
 
@@ -158,11 +158,11 @@ describe("dom", () => {
 
       const value = signal("a");
       const container = setupContainer();
-      mount(html`
+      const app2 = mount(html`
         <div id="test" hook:afterUpdate=${() => { throw new Error("au"); }} bind:data-value=${value}></div>
       `, container);
 
-      flushMount(container);
+      app2.flush();
       value("b");
       flush();
 
@@ -177,11 +177,11 @@ describe("dom", () => {
 
       const value = signal("a");
       const container = setupContainer();
-      mount(html`
+      const app3 = mount(html`
         <div id="test" hook:beforeUpdate=${() => { throw new Error("hook"); }} bind:data-value=${value}></div>
       `, container);
 
-      flushMount(container);
+      app3.flush();
 
       value("b");
       flush();
@@ -197,11 +197,11 @@ describe("dom", () => {
 
       const value = signal("a");
       const container = setupContainer();
-      mount(html`
+      const app4 = mount(html`
         <div id="test" hook:afterUpdate=${() => { throw new Error("hook"); }} bind:data-value=${value}></div>
       `, container);
 
-      flushMount(container);
+      app4.flush();
 
       value("b");
       flush();

@@ -15,6 +15,14 @@ export const handlers = new Set<ErrorFn>();
 
 /**
  * @internal
+ * Clears all registered error handlers.
+ */
+export function resetErrorState() {
+  handlers.clear();
+}
+
+/**
+ * @internal
  * Tracks elements currently handling errors to prevent infinite loops.
  */
 export const handlingBoundaries = new WeakSet<Element>();

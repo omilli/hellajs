@@ -169,6 +169,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 |---|---|---|
 | `resource` | function | `resource(url, options?)` or `resource(fetcher, options?)`. URL overload wraps a fresh `async (key) => fetch(key)` closure and uses the URL as `key`. |
 | `resourceCache` | object | Global cache singleton (see `CacheMapView` + methods below). |
+| `resetResource` | function | Factory-reset: clears `cacheMap`, `ongoingRequestsMap`, `onlineCallbacks`, and resets `lastCleanupTime` to `0`. Unlike `invalidateAll`, which only clears the cache map. |
 | `types` | type-only | `Resource`, `ResourceOptions`, `ResourceError`, `ResourceErrorCategory`, `Fetcher`, `FetchOptions`, `ResourceStatus`; `CacheEntry`, `CacheConfig`, `CacheUpdate`, `CacheMapView`, `ResourceCache`. |
 
 ### `resourceCache` methods

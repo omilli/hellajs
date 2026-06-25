@@ -96,6 +96,15 @@ export type HellaElement = Element & {
   value?: string;
 };
 
+/**
+ * Handle returned by mount() for controlling a mounted tree.
+ */
+export interface MountHandle {
+  container: Element;
+  flush(): void;
+  unmount(): void;
+}
+
 // ============================================================================
 // COMPONENT SYSTEM
 // Types for component functions, props, and rendering

@@ -205,6 +205,16 @@ const flatView: CacheMapView = {
   clear() { cacheMap.clear(); },
 };
 
+/**
+ * @internal
+ * Resets cache state: clears the cache map, online callbacks, and cleanup throttle.
+ */
+export function resetCacheState() {
+  cacheMap.clear();
+  onlineCallbacks.clear();
+  lastCleanupTime = 0;
+}
+
 /** Removes every entry matching a key from all fetcher scopes. */
 const invalidateGlobal = (key: unknown): void => {
   const scopes = Array.from(cacheMap.values());
