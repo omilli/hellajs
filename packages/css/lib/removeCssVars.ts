@@ -10,8 +10,8 @@ import { isPlainObject } from "./internal/core";
  * @param vars Object containing CSS variable definitions (must match the object passed to cssVars)
  * @param options Configuration options (must match the options used in cssVars)
  */
-export function cssVarsRemove<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): void {
-  if (!isPlainObject(vars)) throw new Error(`[css] cssVarsRemove: expected a plain object, received ${String(vars)}`);
+export function removeCssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): void {
+  if (!isPlainObject(vars)) throw new Error(`[css] removeCssVars: expected a plain object, received ${String(vars)}`);
 
   const reactiveEntry = varsRegistryReactive.get(vars);
   if (reactiveEntry) {

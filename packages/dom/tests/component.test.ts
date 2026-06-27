@@ -1,5 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, component, queueCleanup } from "@hellajs/dom/bundle";
+import { effect, flush, signal } from "@hellajs/core";
+import {delay, resetTestState} from "../../../utils/test-helpers.js";
+import { mount, html, component } from "@hellajs/dom/bundle";
 import type { HellaNode, ComponentFn, HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -52,7 +54,7 @@ describe("dom", () => {
       expect(document.getElementById("greeting")?.textContent).toBe("Hello World");
     });
 
-    test("multiple components have independent scopes", () => {
+    test("multiple components have independent scopes", async () => {
       const aCalls = mock(() => { });
       const bCalls = mock(() => { });
       const countA = signal(0);
@@ -67,7 +69,7 @@ describe("dom", () => {
         return html`<div id="comp-b">B</div>` as HellaNode;
       };
 
-      mount(html`
+      const app = mount(html`
         <div>
           <div id="wrapper-a"><${CompA} /></div>
           <div id="wrapper-b"><${CompB} /></div>
@@ -79,7 +81,8 @@ describe("dom", () => {
 
       const wrapperA = document.getElementById("wrapper-a")!;
       wrapperA.remove();
-      queueCleanup(wrapperA);
+      await delay();
+      app.flush();
 
       countA(1);
       countB(1);
@@ -110,7 +113,7 @@ describe("dom", () => {
       expect(effectRuns).toHaveBeenCalledTimes(2);
     });
 
-    test("nested components with isolated scopes", () => {
+    test("nested components with isolated scopes", async () => {
       const trigger1 = signal(0);
       const trigger2 = signal(0);
       const effect1Runs = mock(() => { });
@@ -126,7 +129,7 @@ describe("dom", () => {
         return html`<div id="outer"><${Inner} /></div>`;
       };
 
-      mount(html`<${Outer} />`);
+      const app = mount(html`<${Outer} />`);
       expect(effect1Runs).toHaveBeenCalledTimes(1);
       expect(effect2Runs).toHaveBeenCalledTimes(1);
 
@@ -137,7 +140,8 @@ describe("dom", () => {
 
       const inner = document.getElementById("inner") as HellaElement;
       inner.remove();
-      queueCleanup(inner);
+      await delay();
+      app.flush();
 
       trigger1(2);
       trigger2(2);
@@ -146,13 +150,14 @@ describe("dom", () => {
 
       const outer = document.getElementById("outer") as HellaElement;
       outer.remove();
-      queueCleanup(outer);
+      await delay();
+      app.flush();
 
       trigger1(3);
       expect(effect1Runs).toHaveBeenCalledTimes(3);
     });
 
-    test("html component scope cleanup", () => {
+    test("html component scope cleanup", async () => {
       const count = signal(0);
       const effectRuns = mock(() => { });
 
@@ -169,13 +174,13 @@ describe("dom", () => {
 
       const counter = document.getElementById("html-counter") as HellaElement;
       counter.remove();
-      queueCleanup(counter);
+      await delay(0);
 
       count(2);
       expect(effectRuns).toHaveBeenCalledTimes(2);
     });
 
-    test("multiple components isolation", () => {
+    test("multiple components isolation", async () => {
       const trigger1 = signal(0);
       const trigger2 = signal(0);
       const effect1Runs = mock(() => { });
@@ -191,13 +196,14 @@ describe("dom", () => {
         return html`<div id="comp2">Component 2</div>`;
       };
 
-      mount(html`<div><${Component1} /><${Component2} /></div>`);
+      const app = mount(html`<div><${Component1} /><${Component2} /></div>`);
       expect(effect1Runs).toHaveBeenCalledTimes(1);
       expect(effect2Runs).toHaveBeenCalledTimes(1);
 
       const comp1 = document.getElementById("comp1");
       comp1!.remove();
-      queueCleanup(comp1!);
+      await delay(0);
+      app.flush();
 
       trigger1(1);
       trigger2(1);
@@ -206,7 +212,8 @@ describe("dom", () => {
 
       const comp2 = document.getElementById("comp2");
       comp2!.remove();
-      queueCleanup(comp2!);
+      await delay(0);
+      app.flush();
 
       trigger2(2);
       expect(effect2Runs).toHaveBeenCalledTimes(2);

@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
 	execCommand,
+	execCommandInherited,
 	isValidPackage,
 	projectRoot,
 	packagesDir,
@@ -53,6 +54,9 @@ function runCapture(command, args, options = {}) {
 async function main() {
 	const args = process.argv.slice(2);
 	const packageName = args.find((arg) => !arg.startsWith("--"));
+
+	logger.info("Linting...");
+	await execCommandInherited("bun", ["lint"], { cwd: projectRoot });
 
 	if (!packageName) {
 		logger.info("Running full coverage...");

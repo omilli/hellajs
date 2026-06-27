@@ -1,7 +1,7 @@
 export { css } from "./css";
-export { cssRemove } from "./cssRemove";
-export { cssReset } from "./cssReset";
+export { removeCss } from "./removeCss";
+export { resetCss } from "./resetCss";
 export { cssVars } from "./cssVars";
-export { cssVarsRemove } from "./cssVarsRemove";
-export { cssVarsReset } from "./cssVarsReset";
+export { removeCssVars } from "./removeCssVars";
+export { resetCssVars } from "./resetCssVars";
 export type * from "./types";

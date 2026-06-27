@@ -41,7 +41,7 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 
 ## Anti-Patterns
 
-- Never import reactive primitives, async helpers, or DOM helpers — they're globals (see `### Globals Reference` for the full list and the preload source). A barrel symbol like `flush` that is injected globally and called from other packages' tests satisfies the barrel-coverage rule; a "missing direct test in the authoring package" finding is wrong when the symbol is a global exercised elsewhere.
+- Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`. Import `onError` from `@hellajs/dom/bundle`. Import test helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`) from `../../../utils/test-helpers.js`. Never import a symbol whose module isn't listed — if you need a reactive primitive you didn't import, add it to the existing `@hellajs/core` import rather than creating a duplicate.
 - Never use `jest.fn()` / `jest.spyOn()` / `vi.fn()` — use `mock()` from `bun:test`.
 - Never use `any` — `unknown` only.
 - Never use `it()` or `test.skip()` — always `test()`.
@@ -51,8 +51,7 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 - Never mock reactive primitives — use real ones.
 - Never repeat a helper across files — extract.
 - Never `await flush()` — synchronous, returns `void`. Use bare `flush()`.
-- Never use the double-tick (`await tick(); await tick()`). Use `await tick(0)`.
-- Always write `await tick(0)` explicitly, even for a single microtask — bare `await tick()` is inconsistent with codebase convention.
+- Never use the double-delay (`await delay(); await delay()`). Use `await delay()`.
 - Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — use `mock()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. The only exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — use `mock()`.
 
 ### Replace pattern
@@ -75,12 +74,13 @@ expect(callback).toHaveBeenCalledTimes(1);
 ## Test Framework
 
 - `bun:test` only. Double quotes, semicolons always.
-- Import order: `bun:test` → package under test (with `/bundle` suffix) → cross-package deps → `import type` (bare path, last).
+- Import order: `bun:test` → test helpers → package under test (with `/bundle` suffix) → cross-package deps → `import type` (bare path, last).
 - Separate `import type` statement — never inline.
 
 ```typescript
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { mount, html } from "@hellajs/dom/bundle";
+import { tick, delay, wait, suppressConsole, setupContainer, resetTestState } from "../../../utils/test-helpers.js";
+import { mount, html, onError } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 ```
 
@@ -125,6 +125,8 @@ A single scenario verified through sequential steps (render → update → reord
 Every file touching shared mutable state uses exactly:
 
 ```typescript
+import { resetTestState } from "../../../utils/test-helpers.js";
+
 beforeEach(() => {
   resetTestState();
 });
@@ -154,68 +156,22 @@ Prefer extending `resetTestState()` over adding `afterEach` to individual files.
 
 Any test that reassigns a global (`window.scrollTo = ...`, `global.window = {...}`, `console.error = ...`) must capture the original in `beforeEach` and restore in `afterEach`, or wrap the body in `try { ... } finally { restore(); }`. A trailing restoration assignment is unacceptable — a failing assertion before it leaks the mock into later files.
 
-## Globals Reference
-
-Preloaded globally. **Never import. Never redefine.**
-
-These globals are injected onto `globalThis` by `./utils/happydom.js`, which imports the reactive primitives from `@hellajs/core` and the DOM/reset helpers from `@hellajs/dom/bundle`. Because the preload runs before any test, an `import { signal, effect, flush, ... }` line in a test file is always redundant — delete it.
-
-### Reactive Primitives
-
-| Global | Type | Purpose |
-|--------|------|---------|
-| `signal` | `(val?) => Signal` | Writable state |
-| `computed` | `(fn) => Computed` | Derived value |
-| `effect` | `(fn) => Dispose` | Side effect on dependency change |
-| `batch` | `(fn) => R` | Group writes into single update |
-| `untracked` | `(fn) => R` | Read without creating dependency |
-| `scope` | `(fn) => Dispose` | Collect/dispose effects together |
-| `flush` | `() => void` | Force synchronous update |
-
-### Async Helpers
-
-| Global | Signature | When |
-|--------|-----------|------|
-| `tick()` | `() => Promise<void>` | One microtask (use `tick(0)` form instead) |
-| `tick(ms)` | `(ms: number) => Promise<void>` | Wait real time |
-| `delay(val, ms?)` | `(val: T, ms?) => Promise<T>` | Mock async value (default `ms` 10) |
-| `wait(fn, ms?)` | `(fn: () => boolean, ms?) => Promise<void>` | Poll until true (default timeout 500) |
-
-Decision tree:
-- Need a value back → `delay(val, ms)`.
-- Sync reactive update → `flush()` (no await).
-- Deferred update (MutationObserver, microtask) → `await tick(0)`.
-- Real time → `await tick(ms)`.
-- Condition → `await wait(() => condition())`.
-
 ### Async Tests
 
 - Mark `async` only when it `await`s.
 - Structure: **act → await → assert**.
-- Prefer `await wait(() => condition)` over hardcoded `await tick(N)` when timing isn't contractually fixed — robust against microtask jitter, self-documents the condition.
-- For genuine fixed waits (e.g. transition leave timer `duration + 50`), use `await tick(N)` with an inline comment naming the constant: `await tick(160); // duration(100) + safety buffer(50) + frame slack`.
-- Never double-tick — `await tick(0)` for a single microtask flush.
-
-### DOM Helpers
-
-| Global | Signature | Purpose |
-|--------|-----------|---------|
-| `onError` | `(handler | null) => () => void` | Register/clear global DOM error handler |
-| `resetTestState()` | `() => void` | Reset body, CSS, cache, error handlers |
-| `resetTestState(html)` | `(html?: string) => void` | Reset `document.body.innerHTML` |
-| `setupContainer` | `() => HTMLDivElement` | Create + append isolated container |
-| `suppressConsole` | `() => { errors, restore }` | Capture `console.error`; remember `restore()` |
-
-For simple call-count checks, mock `console.error` directly with save/restore in `beforeEach`/`afterEach`.
+- Use `delay()` (no args) to flush the microtask queue — equivalent to `await Promise.resolve()`.
+- Use `await delay(N)` for a real-time wait of N ms (e.g. transition leave timer: `await delay(160); // duration(100) + safety buffer(50) + frame slack`).
+- Use `await delay(val, ms)` to resolve a value after ms (mocking async APIs).
+- Use a polling loop with `await delay(10)` for conditions where timing isn't contractually fixed: `for (let i = 0; i < 100; i++) { if (condition) break; await delay(10); }`.
+- Never double-delay — `delay()` for a single microtask flush.
 
 ### Package-Exported Testing Utilities
 
-Imported from `@hellajs/dom/bundle` (not globals). Use for deterministic lifecycle timing:
+Imported from `@hellajs/dom/bundle`. Use for deterministic lifecycle timing:
 
 | Utility | Purpose |
 |---------|---------|
-| `flushMount(root?)` | Process mount queue for `root`'s children; runs `afterMount` synchronously |
-| `queueCleanup(node)` | Queue a node for immediate cleanup; runs `beforeDestroy`/`afterDestroy`, disposes effects/handlers |
 
 Prefer over waiting for the scoped MutationObserver.
 
@@ -292,8 +248,8 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 
 **Framework & imports**
 - [ ] `bun:test` only; double quotes, semicolons always
-- [ ] No import of reactive primitives / async helpers / DOM helpers — they are globals (see §Globals Reference)
-- [ ] Import order: `bun:test` → package under test (`/bundle` suffix) → cross-package deps → `import type` (bare path, last)
+- [ ] All imports from correct sources: reactive primitives from `@hellajs/core`, `onError` from `@hellajs/dom/bundle`, test helpers from `../../../utils/test-helpers.js`
+- [ ] Import order: `bun:test` → test helpers → package under test (`/bundle` suffix) → cross-package deps → `import type` (bare path, last)
 - [ ] Separate `import type` statement; never inline
 
 **File & structure**
@@ -310,7 +266,7 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test`
 - [ ] No `any` (`unknown` only)
 - [ ] No `it()` or `test.skip()`
-- [ ] No bare `await tick()` (always `await tick(0)`) and never the double-tick
+- [ ] No bare `await delay()` used as double-delay — single `delay()` for microtask flush
 - [ ] No boolean-flag or pure-integer call counters — `mock()` (exception: counter with observable side effects)
 - [ ] No helper duplicated across files — extracted to `tests/helpers.ts`
 

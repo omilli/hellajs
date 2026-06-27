@@ -1,11 +1,11 @@
-# cssRemove
+# removeCss
 
 Removes specific CSS rules and decrements their reference count for memory management.
 
 ## API
 
 ```typescript
-function cssRemove(obj: CSSObject, options?: CSSOptions): void
+function removeCss(obj: CSSObject, options?: CSSOptions): void
 ```
 - `obj`: CSS object to remove (structurally identical objects match)
 - `options`: Optional configuration object (must match the options used in `css()`)
@@ -15,7 +15,7 @@ function cssRemove(obj: CSSObject, options?: CSSOptions): void
 ## Basic Usage
 
 ```jsx
-import { css, cssRemove } from '@hellajs/css';
+import { css, removeCss } from '@hellajs/css';
 
 const buttonStyle = css({
   background: 'blue',
@@ -27,7 +27,7 @@ const buttonStyle = css({
 <button class={buttonStyle}>Click me</button>
 
 // Later, remove it when no longer needed
-cssRemove({
+removeCss({
   background: 'blue',
   color: 'white',
   padding: '0.5rem 1rem'
@@ -38,7 +38,7 @@ cssRemove({
 
 ### Reference Counting
 
-The `cssRemove` function provides precise control over CSS rule lifecycle:
+The `removeCss` function provides precise control over CSS rule lifecycle:
 
 - **Reference Counting**: Each `css()` call increments the reference count for the style
 - **Automatic Cleanup**: Removes CSS rules from DOM when reference count reaches zero
@@ -47,10 +47,10 @@ The `cssRemove` function provides precise control over CSS rule lifecycle:
 
 ### Usage Pattern
 
-Styles are deduplicated via memoization: all `css()` calls with the same object return the same class name. Each call increments the reference count, so `cssRemove()` must be called the same number of times to fully remove the style.
+Styles are deduplicated via memoization: all `css()` calls with the same object return the same class name. Each call increments the reference count, so `removeCss()` must be called the same number of times to fully remove the style.
 
 ```jsx
-import { css, cssRemove } from '@hellajs/css';
+import { css, removeCss } from '@hellajs/css';
 
 const sharedStyle = {
   display: 'flex',
@@ -64,17 +64,17 @@ const classB = css(sharedStyle); // refCount = 2, same class name
 const classC = css(sharedStyle); // refCount = 3, same class name
 
 // Remove one reference: style persists (refCount = 2)
-cssRemove(sharedStyle);
+removeCss(sharedStyle);
 
 // Remove remaining references to fully clear
-cssRemove(sharedStyle);
-cssRemove(sharedStyle); // refCount = 0, CSS removed from DOM
+removeCss(sharedStyle);
+removeCss(sharedStyle); // refCount = 0, CSS removed from DOM
 ```
 
 ### With Options
 
 ```jsx
-import { css, cssRemove } from '@hellajs/css';
+import { css, removeCss } from '@hellajs/css';
 
 const styles = css({
   fontSize: '1.5rem',
@@ -83,7 +83,7 @@ const styles = css({
 }, { name: 'header' });
 
 // Later remove with matching options
-cssRemove({
+removeCss({
   fontSize: '1.5rem',
   padding: '1rem',
   color: 'blue'
@@ -93,7 +93,7 @@ cssRemove({
 ### Component Cleanup
 
 ```jsx
-import { css, cssRemove } from '@hellajs/css';
+import { css, removeCss } from '@hellajs/css';
 
 const MyComponent = () => {
   const styleObjects = [
@@ -105,7 +105,7 @@ const MyComponent = () => {
   const classNames = styleObjects.map(obj => css(obj));
 
   const destroy = () => {
-    styleObjects.forEach(obj => cssRemove(obj));
+    styleObjects.forEach(obj => removeCss(obj));
   };
 
   return (
@@ -120,14 +120,14 @@ const MyComponent = () => {
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { css, cssRemove } from '@hellajs/css';
+import { css, removeCss } from '@hellajs/css';
 
 let currentTheme = null;
 
 const applyTheme = (colors) => {
   // Remove old theme if exists
   if (currentTheme) {
-    cssRemove(currentTheme);
+    removeCss(currentTheme);
   }
 
   // Apply new theme, store for removal on next switch
@@ -149,21 +149,21 @@ applyTheme({ background: '#000', text: '#fff', border: '#444' });
 
 ### Exact Matching Required
 
-`cssRemove()` uses a deterministic hash key computed from the CSS object and options. The same object reference is not required; structurally identical objects will match:
+`removeCss()` uses a deterministic hash key computed from the CSS object and options. The same object reference is not required; structurally identical objects will match:
 
 ```jsx
 // ✅ Works - structurally identical objects match
 css({ color: 'red', fontSize: '16px' });
-cssRemove({ color: 'red', fontSize: '16px' }); // Same hash key
+removeCss({ color: 'red', fontSize: '16px' }); // Same hash key
 
 // ✅ Works - same reference (also works, and is clearer)
 const style = { color: 'red', fontSize: '16px' };
 css(style);
-cssRemove(style);
+removeCss(style);
 
 // ❌ Won't work - different CSS content
 css({ color: 'red' });
-cssRemove({ color: 'blue' }); // Different hash key
+removeCss({ color: 'blue' }); // Different hash key
 ```
 
 ### Use Cases
@@ -174,12 +174,12 @@ Perfect for:
 - **Long-running applications** - Prevent CSS accumulation over time
 - **Testing** - Ensure clean state between test runs
 
-For bulk cleanup of all styles at once, use [`cssReset`](/reference/css/cssreset) instead.
+For bulk cleanup of all styles at once, use [`resetCss`](/reference/css/resetcss) instead.
 
 ### Global Styles
 
 ```jsx
 // Global styles don't need any options
 css(globalStyles);
-cssRemove(globalStyles);
+removeCss(globalStyles);
 ```

@@ -8,8 +8,8 @@ import type { CSSObject, CSSOptions } from "./types";
  * @param obj CSS object to remove (structurally identical objects match, same reference not required)
  * @param options Optional configuration object (must match the options used in css())
  */
-export function cssRemove(obj: CSSObject, options: CSSOptions = {}): void {
-  if (!isPlainObject(obj)) throw new Error(`[css] cssRemove: expected a CSS object, received ${String(obj)}`);
+export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
+  if (!isPlainObject(obj)) throw new Error(`[css] removeCss: expected a CSS object, received ${String(obj)}`);
 
   const key = hashKey(obj, options);
 

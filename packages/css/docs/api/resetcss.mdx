@@ -1,11 +1,11 @@
-# cssReset
+# resetCss
 
 Clears all CSS rules, caches, and resets the CSS system to initial state.
 
 ## API
 
 ```typescript
-function cssReset(): void
+function resetCss(): void
 ```
 - **Returns**: `void`
 
@@ -13,14 +13,14 @@ function cssReset(): void
 
 
 ```jsx
-import { css, cssReset } from '@hellajs/css';
+import { css, resetCss } from '@hellajs/css';
 
 // Create some styles
 const button = css({ background: 'blue', color: 'white' });
 const card = css({ padding: '1rem', border: '1px solid #ccc' });
 
 // Later, reset everything
-cssReset();
+resetCss();
 
 // All previous styles are removed from DOM and memory
 ```
@@ -29,7 +29,7 @@ cssReset();
 
 ### Complete System Reset
 
-The `cssReset` function provides a complete cleanup of the CSS system:
+The `resetCss` function provides a complete cleanup of the CSS system:
 
 - Clears all cached CSS rules from memory
 - Removes all generated CSS from the DOM
@@ -39,10 +39,10 @@ The `cssReset` function provides a complete cleanup of the CSS system:
 ### Testing Scenarios
 
 ```jsx
-import { css, cssReset } from '@hellajs/css';
+import { css, resetCss } from '@hellajs/css';
 
 // Reset before each test suite for a predictable starting state
-cssReset();
+resetCss();
 
 const buttonStyle = css({ background: 'red', color: 'white' }, { name: 'btn' });
 // buttonStyle === 'btn' — styles injected cleanly
@@ -51,7 +51,7 @@ const buttonStyle = css({ background: 'red', color: 'white' }, { name: 'btn' });
 ### Memory Management
 
 ```jsx
-import { css, cssReset } from '@hellajs/css';
+import { css, resetCss } from '@hellajs/css';
 
 const generateManyStyles = () => {
   for (let i = 0; i < 1000; i++) {
@@ -62,7 +62,7 @@ const generateManyStyles = () => {
 generateManyStyles();
 // Now DOM has many style rules and memory usage is high
 
-cssReset();
+resetCss();
 // All styles cleared, memory freed, DOM cleaned
 ```
 
@@ -76,9 +76,9 @@ Perfect for:
 - **Long-running applications** - Periodic cleanup to prevent memory leaks
 - **Dynamic theming** - Clear old theme before applying new one
 
-### Integration with cssVarsReset
+### Integration with resetCssVars
 
-See [`cssVarsReset`](/reference/css/cssvarsreset) for clearing CSS variables. Use both together for a complete reset.
+See [`resetCssVars`](/reference/css/resetcssvars) for clearing CSS variables. Use both together for a complete reset.
 
 ### Safety
 

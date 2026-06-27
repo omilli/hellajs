@@ -31,6 +31,5 @@ declare global {
 }
 
 export { resetDom } from "./internal/reset";
-export { flushMount, queueCleanup } from "./internal/queue";
 export { getState, hasState, peekState, deleteState } from "./internal/state";
 export { checkMultiSelectors, multiSelectors } from "./internal/selectors";

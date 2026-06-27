@@ -1,4 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { delay } from "../../../utils/test-helpers.js";
+import { effect } from "@hellajs/core";
+
 import { router, navigate, route } from "@hellajs/router/bundle";
 import { setupRouterEnv } from "./helpers";
 
@@ -86,7 +89,7 @@ describe("router", () => {
         mode: "hash"
       });
 
-      await tick(0); // drain router init's queueMicrotask before subscribing
+      await delay(); // drain router init's queueMicrotask before subscribing
 
       const tracker = mock(() => { route().path; });
       effect(tracker);

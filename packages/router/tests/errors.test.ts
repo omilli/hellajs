@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { delay, suppressConsole } from "../../../utils/test-helpers.js";
 import { router, navigate, route } from "@hellajs/router/bundle";
 import { setupRouterEnv, expectLoggedError } from "./helpers";
 
@@ -56,7 +57,7 @@ describe("errors", () => {
     navigate("/test");
     expect(handler).toHaveBeenCalledTimes(1);
 
-    await tick(10);
+    await delay(10);
     expectLoggedError(sup, "[router] Global before:");
     expectLoggedError(sup, "[router] Global after:");
   });
@@ -133,7 +134,7 @@ describe("errors", () => {
     navigate("/test");
     expect(handler).toHaveBeenCalledTimes(1);
 
-    await tick(10);
+    await delay(10);
     expectLoggedError(sup, "[router] hook:");
   });
 

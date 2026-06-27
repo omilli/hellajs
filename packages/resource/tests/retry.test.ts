@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
+import {delay} from "../../../utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -12,7 +13,7 @@ describe("resource", () => {
         { retry: 3, retryDelay: 10 }
       );
       r.fetch({ force: true });
-      await wait(() => r.status() === "success");
+      for (let __i = 0; __i < 100; __i++) { if (r.status() === "success") break; await delay(10); }
       expect(n).toBe(3);
       expect(r.data()).toBe("ok");
     });
@@ -21,7 +22,7 @@ describe("resource", () => {
       let n = 0;
       const r1 = resource(() => { ++n; return Promise.reject(new Error("x")); }, { retry: true, retryDelay: 10 });
       r1.fetch({ force: true });
-      await wait(() => n >= 2);
+      for (let __i = 0; __i < 50; __i++) { if ((n >= 2)) break; await delay(10); };
       expect(n).toBe(2);
 
       n = 0;
@@ -50,7 +51,7 @@ describe("resource", () => {
         { retry: (c, e) => e.category === "server" && c < 3, retryDelay: 10 }
       );
       r.fetch({ force: true });
-      await wait(() => n >= 3);
+      for (let __i = 0; __i < 50; __i++) { if ((n >= 3)) break; await delay(10); };
       expect(n).toBe(3);
     });
 
@@ -65,7 +66,7 @@ describe("resource", () => {
         { retry: 2, retryDelay: 50 }
       );
       r.fetch({ force: true });
-      await wait(() => n >= 3);
+      for (let __i = 0; __i < 50; __i++) { if ((n >= 3)) break; await delay(10); };
       expect(ts[1]! - ts[0]!).toBeGreaterThanOrEqual(40);
       expect(ts[2]! - ts[1]!).toBeGreaterThanOrEqual(40);
     });
@@ -82,7 +83,7 @@ describe("resource", () => {
         { retry: 2, retryDelay: a => a * 30 }
       );
       r2.fetch({ force: true });
-      await wait(() => n2 >= 3);
+      for (let __i = 0; __i < 50; __i++) { if ((n2 >= 3)) break; await delay(10); };
       expect(ts2[1]! - ts2[0]!).toBeGreaterThanOrEqual(25);
       expect(ts2[2]! - ts2[1]!).toBeGreaterThanOrEqual(55);
     });
@@ -102,7 +103,7 @@ describe("resource", () => {
       let n = 0;
       const r = resource(() => { ++n; return delay("ok"); }, { retry: 3, retryDelay: 10 });
       r.fetch({ force: true });
-      await wait(() => r.status() === "success");
+      for (let __i = 0; __i < 50; __i++) { if ((r.status() === "success")) break; await delay(10); }
       expect(n).toBe(1);
     });
 
@@ -114,7 +115,7 @@ describe("resource", () => {
         { retry: 1, retryDelay: (_, e) => { captured.err = e; return 10; } }
       );
       r.fetch({ force: true });
-      await wait(() => n >= 2);
+      for (let __i = 0; __i < 50; __i++) { if ((n >= 2)) break; await delay(10); };
       expect(captured.err?.category).toBe("server");
       expect(captured.err?.statusCode).toBe(503);
     });
@@ -127,12 +128,12 @@ describe("resource", () => {
         { retry: 3, retryDelay: 10 }
       );
       r.fetch({ force: true });
-      await wait(() => !r.isFetching());
+      for (let __i = 0; __i < 50; __i++) { if ((!r.isFetching())) break; await delay(10); }
       expect(n).toBe(2);
 
       n = 0; fail = true;
       r.fetch({ force: true });
-      await wait(() => !r.isFetching());
+      for (let __i = 0; __i < 50; __i++) { if ((!r.isFetching())) break; await delay(10); }
       expect(n).toBe(2);
     });
 
@@ -143,7 +144,7 @@ describe("resource", () => {
         { retry: 3, retryDelay: 10, cacheTime: 1000, key: () => "k" }
       );
       r.fetch({ force: true });
-      await wait(() => r.status() === "success");
+      for (let __i = 0; __i < 50; __i++) { if ((r.status() === "success")) break; await delay(10); }
       expect(n).toBe(2);
       r.fetch();
       await delay(20);

@@ -1,11 +1,13 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { css, cssVars, cssReset, cssVarsReset, cssRemove } from "@hellajs/css/bundle";
+import { batch, flush, signal } from "@hellajs/core";
+import {resetTestState} from "../../../utils/test-helpers.js";
+import { css, cssVars, resetCss, resetCssVars, removeCss } from "@hellajs/css/bundle";
 import { mount } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
-  cssReset();
-  cssVarsReset();
+  resetCss();
+  resetCssVars();
 });
 
 describe("css", () => {
@@ -68,46 +70,46 @@ describe("css", () => {
   test("removes styles", () => {
     const styles = { color: 'blue' };
     css(styles, { name: 'test' });
-    cssRemove(styles, { name: 'test' });
+    removeCss(styles, { name: 'test' });
 
     const styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).not.toContain('color:blue');
   });
 
-  test("cssRemove preserves styles until all references gone", () => {
+  test("removeCss preserves styles until all references gone", () => {
     const styles = { color: 'purple' };
 
     css(styles, { name: 'test' });
     css(styles, { name: 'test' });
     css(styles, { name: 'test' });
 
-    cssRemove(styles, { name: 'test' });
+    removeCss(styles, { name: 'test' });
     expect(document.getElementById('hella-css')?.textContent).toContain('color:purple');
 
-    cssRemove(styles, { name: 'test' });
+    removeCss(styles, { name: 'test' });
     expect(document.getElementById('hella-css')?.textContent).toContain('color:purple');
 
-    cssRemove(styles, { name: 'test' });
+    removeCss(styles, { name: 'test' });
     expect(document.getElementById('hella-css')?.textContent).not.toContain('color:purple');
 
     css(styles, { name: 'test' });
     expect(document.getElementById('hella-css')?.textContent).toContain('color:purple');
   });
 
-  test("cssRemove is a no-op for unknown styles", () => {
-    cssRemove({ color: 'neveradded' });
+  test("removeCss is a no-op for unknown styles", () => {
+    removeCss({ color: 'neveradded' });
     const el = document.getElementById('hella-css');
     expect(el === null || el.textContent === '').toBe(true);
   });
 
-  test("cssReset clears CSS rules", () => {
+  test("resetCss clears CSS rules", () => {
     css({ color: 'red', fontSize: '16px' }, { name: 'test' });
 
     let styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).toContain('color:red');
     expect(styleEl?.textContent).toContain('font-size:16px');
 
-    cssReset();
+    resetCss();
 
     styleEl = document.getElementById('hella-css');
     expect(styleEl?.textContent).toBe('');
@@ -142,12 +144,12 @@ describe("css", () => {
     expect(content).toContain('.parent span{display:inline}');
   });
 
-  test("cssRemove with global styles", () => {
+  test("removeCss with global styles", () => {
     const styles = { body: { margin: '0' } };
     css(styles);
     expect(document.getElementById('hella-css')?.textContent).toContain('margin:0');
 
-    cssRemove(styles);
+    removeCss(styles);
     expect(document.getElementById('hella-css')?.textContent).toBe('');
   });
 
@@ -261,9 +263,9 @@ describe("css", () => {
       expect(() => css(invalid)).toThrow("[css] css:");
     });
 
-    test.each([null, undefined, "not-an-object"])("cssRemove throws on non-object input", (invalid) => {
+    test.each([null, undefined, "not-an-object"])("removeCss throws on non-object input", (invalid) => {
       // @ts-expect-error - testing invalid input
-      expect(() => cssRemove(invalid)).toThrow("[css] cssRemove:");
+      expect(() => removeCss(invalid)).toThrow("[css] removeCss:");
     });
   });
 });

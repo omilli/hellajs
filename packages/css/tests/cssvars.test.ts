@@ -1,10 +1,12 @@
 import { describe, expect, test, beforeEach, mock } from "bun:test";
-import { cssVars, cssReset, cssVarsReset } from "@hellajs/css/bundle";
+import { batch, computed, flush, signal } from "@hellajs/core";
+import {resetTestState} from "../../../utils/test-helpers.js";
+import { cssVars, resetCss, resetCssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
-  cssReset();
-  cssVarsReset();
+  resetCss();
+  resetCssVars();
 });
 
 describe("cssVars", () => {
@@ -29,7 +31,7 @@ describe("cssVars", () => {
     expect(current as unknown).toBe('var(--theme-colors-primary-light)');
   });
 
-  test("cssVarsReset clears CSS variables", () => {
+  test("resetCssVars clears CSS variables", () => {
     const result1 = cssVars({ colors: { primary: 'purple', secondary: 'green' } });
     flush();
 
@@ -37,7 +39,7 @@ describe("cssVars", () => {
     expect(varsEl?.textContent).toContain('--colors-primary: purple');
     expect(varsEl?.textContent).toContain('--colors-secondary: green');
 
-    cssVarsReset();
+    resetCssVars();
     flush();
 
     varsEl = document.getElementById("hella-vars");
@@ -162,14 +164,14 @@ describe("cssVars", () => {
     expect(varsEl?.textContent).toContain('--typography-size: 14px');
   });
 
-  test("cssVarsReset clears reactive effects", () => {
+  test("resetCssVars clears reactive effects", () => {
     const color = signal('red');
     cssVars({ primary: color });
 
     flush();
     expect(document.getElementById("hella-vars")?.textContent).toContain('red');
 
-    cssVarsReset();
+    resetCssVars();
 
     color('blue');
     flush();
@@ -295,7 +297,7 @@ describe("cssVars", () => {
     color("blue");
     flush();
     expect(tracker.mock.calls.length).toBeGreaterThan(initialCount);
-    cssVarsReset();
+    resetCssVars();
     const countAfterReset = tracker.mock.calls.length;
     color("green");
     flush();

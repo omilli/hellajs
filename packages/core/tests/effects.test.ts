@@ -1,4 +1,6 @@
 import { describe, expect, test, mock } from "bun:test";
+import { delay } from "../../../utils/test-helpers.js";
+import { batch, effect, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("effects", () => {
@@ -92,11 +94,11 @@ describe("core", () => {
 
       expect(result()).toBe("init");
 
-      await tick(0);
+      await delay();
       expect(result()).toBe("data-1");
 
       id(2);
-      await tick(0);
+      await delay();
       expect(result()).toBe("data-2");
     });
 

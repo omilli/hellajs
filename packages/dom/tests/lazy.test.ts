@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
+import { delay, resetTestState } from "../../../utils/test-helpers.js";
 import { mount, html, Lazy } from "@hellajs/dom/bundle";
 import type { HellaNode, LazyOptions } from "@hellajs/dom";
 
@@ -19,7 +20,7 @@ describe("dom", () => {
       const AsyncComponent = async () => html`<div id="async-comp">Async</div>` as HellaNode;
       mount(AsyncComponent);
       expect(document.body.textContent).not.toContain("Async");
-      await tick(0);
+      await delay();
       expect(document.getElementById("async-comp")?.textContent).toBe("Async");
     });
 
@@ -43,7 +44,7 @@ describe("dom", () => {
 
       resolveComponent(AsyncComponent);
       await successPromise;
-      await tick(10);
+      await delay(10);
 
       expect(container.textContent).not.toContain("Loading...");
       expect(container.textContent).toContain("Success");
@@ -67,7 +68,7 @@ describe("dom", () => {
 
       resolveComponent(AsyncComponent);
       await successPromise;
-      await tick(10);
+      await delay(10);
 
       expect(container.textContent).toContain("Success");
     });
@@ -85,7 +86,7 @@ describe("dom", () => {
       const container = document.getElementById("container")!;
       expect(container.textContent).toBe("");
 
-      await tick(20);
+      await delay(20);
 
       expect(container.textContent).toContain("Fallback");
     });
@@ -108,7 +109,7 @@ describe("dom", () => {
 
       resolveLoader(ProfileComponent);
       await loaderPromise;
-      await tick(10);
+      await delay(10);
 
       const profile = document.getElementById("profile")!;
       expect(profile.textContent).toContain("42");
@@ -132,7 +133,7 @@ describe("dom", () => {
       const container = document.getElementById("container")!;
       expect(container.textContent).toContain("Loading...");
 
-      await tick(20);
+      await delay(20);
 
       expect(document.getElementById("loading-indicator")).toBeNull();
       expect(container.textContent).not.toContain("Loading...");
@@ -155,7 +156,7 @@ describe("dom", () => {
 
       resolveComponent();
       await promise;
-      await tick(10);
+      await delay(10);
 
       expect(container.textContent).toBe("Done");
     });
@@ -180,7 +181,7 @@ describe("dom", () => {
 
       resolveComponent(AsyncComponent);
       await pendingPromise;
-      await tick(0);
+      await delay();
 
       expect(container.textContent).toContain("Loading");
       expect(container.textContent).not.toContain("Should not render");
@@ -208,7 +209,7 @@ describe("dom", () => {
       app.unmount();
 
       rejectLoader(new Error("load failed"));
-      await tick(20);
+      await delay(20);
 
       expect(container.textContent).not.toContain("Fallback");
       expect(container.textContent).toContain("Loading");
@@ -240,7 +241,7 @@ describe("dom", () => {
 
       resolveComponent(AsyncComponent);
       await pendingPromise;
-      await tick(0);
+      await delay();
     });
   });
 });

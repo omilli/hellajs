@@ -1,10 +1,11 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { css, cssReset, cssVarsReset } from "@hellajs/css/bundle";
+import {resetTestState} from "../../../utils/test-helpers.js";
+import { css, resetCss, resetCssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
-  cssReset();
-  cssVarsReset();
+  resetCss();
+  resetCssVars();
 });
 
 describe("css at-rules", () => {

@@ -1,10 +1,12 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { cssVars, cssReset, cssVarsReset } from "@hellajs/css/bundle";
+import { batch, flush, signal } from "@hellajs/core";
+import {resetTestState} from "../../../utils/test-helpers.js";
+import { cssVars, resetCss, resetCssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
-  cssReset();
-  cssVarsReset();
+  resetCss();
+  resetCssVars();
 });
 
 describe("cssVars scoped", () => {
@@ -119,7 +121,7 @@ describe("cssVars scoped", () => {
     expect(varsEl?.textContent).toContain(".dynamic{--dyn-theme-color: purple;--dyn-font-size: 22px;}");
   });
 
-  test("cssVarsReset clears all scoped variables", () => {
+  test("resetCssVars clears all scoped variables", () => {
     cssVars({ theme: { primary: "red" } }, { scoped: ".comp1" });
     cssVars({ theme: { secondary: "blue" } }, { scoped: ".comp2" });
     cssVars({ layout: { margin: "10px" } });
@@ -130,7 +132,7 @@ describe("cssVars scoped", () => {
     expect(varsEl?.textContent).toContain(".comp2");
     expect(varsEl?.textContent).toContain(":root");
 
-    cssVarsReset();
+    resetCssVars();
     flush();
 
     varsEl = document.getElementById("hella-vars");

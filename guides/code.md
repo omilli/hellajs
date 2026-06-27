@@ -271,8 +271,8 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 
 ### Files
 
-- (Pascal|Camel)case, no hyphens: `signal.ts`, `cssRemove.ts`, `ForEach.ts` — not `app-context.ts`
-- One public API function per file. The filename is the verbatim export name: `signal.ts` exports `signal`, `cssRemove.ts` exports `cssRemove`, `cssVars.ts` exports `cssVars`. No "related pair" or "multi-word noun shortcut" carve-outs — `css`/`cssRemove`/`cssReset` are three files, and `cssVars`/`cssVarsRemove`/`cssVarsReset` are three more. One export per file is what makes the public surface scannable and lets the audit be checked mechanically
+- (Pascal|Camel)case, no hyphens: `signal.ts`, `removeCss.ts`, `ForEach.ts` — not `app-context.ts`
+- One public API function per file. The filename is the verbatim export name: `signal.ts` exports `signal`, `removeCss.ts` exports `removeCss`, `cssVars.ts` exports `cssVars`. No "related pair" or "multi-word noun shortcut" carve-outs — `css`/`removeCss`/`resetCss` are three files, and `cssVars`/`removeCssVars`/`resetCssVars` are three more. One export per file is what makes the public surface scannable and lets the audit be checked mechanically
 - Files under `lib/internal/` are organized by cohesive concern rather than a single public API, so the one-export-per-file and filename-matches-export rules apply only to top-level `lib/*.ts`, not to `internal/`. Name an internal file after its concern as a single noun or gerund (`core`, `dedupe`, `errors`, `lifecycle`, `polling`, `retry`) — never a camelCase compound derived from the export it hosts. The concern is one word; if it seems to need two, the file is either two concerns (split it) or a single concept not yet named. A file exporting `structuralShare` is `structural.ts`, not `structuralShare.ts`
 - PascalCase for JSX/html component filenames that match their export: `ForEach.ts` exports `ForEach`, `Portal.ts` exports `Portal`. Required for JSX component resolution
 - `$`-prefixed names for special reference APIs: `$ref.ts` exports `$ref`, `$collection.ts` exports `$collection`. The `$` prefix signals a DOM reference utility

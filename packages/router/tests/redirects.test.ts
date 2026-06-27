@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { flush } from "@hellajs/core";
 import { router, navigate, route } from "@hellajs/router/bundle";
 import { setupRouterEnv } from "./helpers";
 

@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { css, cssVars, cssReset, cssVarsReset } from "@hellajs/css/bundle";
+import { signal } from "@hellajs/core";
+import { css, cssVars, resetCss, resetCssVars } from "@hellajs/css/bundle";
 
 let origDocument: unknown;
 
@@ -10,8 +11,8 @@ beforeEach(() => {
 
 afterEach(() => {
   (globalThis as unknown as Record<string, unknown>).document = origDocument;
-  cssReset();
-  cssVarsReset();
+  resetCss();
+  resetCssVars();
 });
 
 describe("SSR safety", () => {
@@ -36,12 +37,12 @@ describe("SSR safety", () => {
     expect(vars.colors.primary).toBe('var(--colors-primary)');
   });
 
-  test("cssReset() does not throw", () => {
-    expect(() => cssReset()).not.toThrow();
+  test("resetCss() does not throw", () => {
+    expect(() => resetCss()).not.toThrow();
   });
 
-  test("cssVarsReset() does not throw", () => {
-    expect(() => cssVarsReset()).not.toThrow();
+  test("resetCssVars() does not throw", () => {
+    expect(() => resetCssVars()).not.toThrow();
   });
 
   test("cssVars() with scoped option returns proxy without DOM write", () => {

@@ -1,4 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { effect } from "@hellajs/core";
+import {resetTestState} from "../../../utils/test-helpers.js";
 import { router, route, navigate } from "@hellajs/router/bundle";
 
 describe("router", () => {
