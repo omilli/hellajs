@@ -13,6 +13,7 @@ applyTo: "**"
   - Explore the codebase with tools before proposing changes — treat it like a searchable database.
   - ALWAYS use `bun` for scripts — never `node` directly unless unavoidable.
   - Use existing tests, examples, and folders in the repo to execute code/tests. Do not wander outside the file system (e.g., to `/tmp/`) to test or build.
+  - Load the `brain-prime` skill before any substantive task.
 
   ## Non-negotiables
 
@@ -71,30 +72,28 @@ applyTo: "**"
 
   ## Skills
 
-  **Relationship rule.** Global skills — those provided by the operator's environment outside this repo — are the base library every project inherits. A project skill (`.agents/skills/`) exists only when the specialization is thick — a structurally different workflow — and it then takes a distinct name, never shadowing a global one. Thin specializations are expressed as rules in this file + project-local data, not as skills. `plan` and `audit` are the thick-rename pattern (against global `planner` / `reviewer`); `worker`, `feedback`, and `memory` are thin here, so they resolve to their global counterparts and have no project copy. This keeps one canonical copy of generic machinery and eliminates drift.
+  The `brain-*` pack at `.agents/skills/ai-brain/` is the skill system: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills that maintain it. All ten `brain-*` skills are vendored in this repo — there is no global-inherited layer and no graceful-degradation fallback. `brain-prime` loads first on any substantive task (see Core rules); the rest are discovered on demand.
 
-  The discovery → plan → worker loop: `feature` / `audit` (project discovery) hand off an evidence map to `plan`, which derives a Contract from the guides and writes typed tasks; the global `worker` executes with structural gates (it parses the Contract block `plan/TEMPLATE.md` defines — Surface change, Tests-view, Docs-view). When a skill hits a guide conflict it emits a guide-update proposal; `guide` executes the accepted edit. The global `feedback` runs after a loop completes (or immediately on blocking friction) to conservatively propose improvements — the self-improvement loop — and hands outcomes to the global `memory`, which critically filters and curates durable entries into the progressive-disclosure `memory/` system. Each project skill's `SKILL.md` carries the full workflow and the two Non-negotiables with skill-specific enforcement; global skills carry their own.
+  The loop: `brain-idea` / `brain-audit` / `brain-feature` (entry) → `brain-plan` → `brain-worker` (back to `brain-plan` on a gap, `brain-idea` on a fork) → `brain-feedback` → `brain-memory`. When a skill hits a guide conflict it emits a guide-update proposal; the user accepts, rejects, or defers (see Non-negotiables). Each skill's `SKILL.md` carries the full workflow plus the two Non-negotiables with skill-specific enforcement.
 
-  Project skills (`.agents/skills/`):
+  | Skill | Role |
+  |---|---|
+  | `brain-prime` | Operating backbone — ethos, the loop, methodology, the Non-negotiables. Loaded first. |
+  | `brain-idea` | Stress-test an idea/plan before building; resolve load-bearing forks. Entry. |
+  | `brain-audit` | Review/grade files against the repo's own rules; grounded findings. Entry. |
+  | `brain-feature` | Surface grounded enhancement ideas; hand each to `brain-plan` as an evidence map. Entry. |
+  | `brain-plan` | Turn a goal or evidence map into a task-contract (Files, delta, DoD). |
+  | `brain-worker` | Execute a plan task-by-task; tick each DoD only with cited evidence. |
+  | `brain-feedback` | After a run with friction, conservatively propose config/skill edits. |
+  | `brain-memory` | Persist verified decisions/facts to `memory/`; refresh/supersede. |
+  | `brain-skill` | Author new skills or revise existing ones. Standalone. |
+  | `brain-author` | Author/revise `AGENTS.md`, agent prompts, rules files. Standalone. |
+
+  One standalone project skill sits outside the pack (`.agents/skills/comparison/`):
 
   | Skill | When to use |
   |---|---|
-  | feature | Brainstorm or surface grounded feature ideas for a package, then hand off to plan |
-  | audit | Review, grade, or critique files against the guides |
-  | comparison | Generate a package comparison doc vs competitors |
-  | plan | Plan, break down, or scope work into typed tasks with a Contract and DoD |
-  | instructions | Rebuild an AGENTS.md truth-grounded from `lib/` |
-  | guide | Apply a guide update after a proposal is accepted; verify generality + blast radius |
-  | hotpath | Discover performance optimizations in a package's hot paths |
-
-  Global-inherited — same verb, run unmodified from the operator's environment: `worker`, `feedback`, `memory`, plus `planner` / `reviewer` (generic counterparts to `plan` / `audit`), `brainstorm`, `author`, `debugger`, `skill-creator`.
-
-  **Graceful degradation.** The global-inherited verbs above (`worker`, `feedback`, `memory`) and `memory.py` are not in this repo — they live outside this repo, in the operator's global environment. A contributor without that environment still runs every thick project skill; the only loss is the automation and self-improvement layer. Two rules keep the loop from dead-ending silently:
-
-  - **Detection before handoff.** Before offering a handoff to a global skill, confirm it is available in your session. If absent, emit the standard signpost (below) instead of dead-ending. The Response protocol's `/feedback` and `/memory` offers follow this same rule; `/plan` and `/audit` are vendored, always available.
-  - **The plan Contract is self-sufficient.** Every Definition of Done item is a command that exits 0 or a yes/no question (`plan/TEMPLATE.md`). `worker` automates a human-executable artifact; if it is absent, execute the contract's tasks manually — tick `[ ]`→`[x]` per task, `bun check <package>` as the floor.
-
-  **Standard signpost** (emit this shape when a global skill is the target but unavailable): *"`<skill>` is not vendored in this repo — it lives in the operator's global environment, which you may not have. <what the contributor can still do>."*
+  | `comparison` | Generate a package comparison doc vs competitors |
 
   ## Response protocol
 
@@ -102,13 +101,13 @@ applyTo: "**"
 
   | Condition | Action |
   |---|---|
-  | Skill loop completed with friction | Offer `/feedback` |
-  | Non-obvious decision made (affects future runs, not already in a durable file) | Offer `/memory` handoff |
-  | Actionable change surfaced (bug, gap, needed edit) | Offer `/plan` to scope the fix |
+  | Skill loop completed with friction | Offer `brain-feedback` |
+  | Non-obvious decision made (affects future runs, not already in a durable file) | Offer `brain-memory` handoff |
+  | Actionable change surfaced (bug, gap, needed edit) | Offer `brain-plan` to scope the fix |
   | Multiple | Offer each, each labeled and justified |
   | None (trivial, clean run, mid-loop) | Say "nothing to hand off" and finish |
 
-  Decide critically, not reflexively — a clean loop with zero friction skips feedback. The feedback skill self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop. Offers of `/feedback` and `/memory` are conditional on those skills being available (global-only — see §Skills Graceful degradation); if unavailable, omit them.
+  Decide critically, not reflexively — a clean loop with zero friction skips feedback. `brain-feedback` self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop.
 
   ## Style guides
 
@@ -127,13 +126,13 @@ applyTo: "**"
 
   ## Folder structure
 
-  - `.agents/skills/` — `feature`, `audit`, `comparison`, `plan`, `instructions`, `guide`, `hotpath` (project skills; `worker`/`feedback`/`memory` are global-inherited — see Skills above)
+  - `.agents/skills/` — `ai-brain/` (the `brain-*` pack: 10 vendored skills) + `comparison/` (standalone). See §Skills.
   - `.changeset/` — changeset config
   - `.github/` — `workflows/` (CI + release), git hooks (`post-commit` → sync, `commit-msg` → commitlint), generated `instructions/` + `copilot-instructions.md`
   - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`)
   - `examples/` — `bench`, `blog`, `counter`, `theme-switcher`, `todo`
   - `guides/` — style guides (see above)
-  - `memory/` — progressive-disclosure knowledge base: `entries/*.md` are canonical (frontmatter + TL;DR + Why + Evidence), `INDEX.md` is derived (regenerated by the global `memory.py`, not vendored in this repo; never hand-edited), `archive/` holds retired entries. The global `memory` skill is the single writer; all other skills read. Contributors without the global config treat `memory/` as read-only (Grep INDEX → Read TL;DR); `memory.py` maintenance (rebuild/stale/supersede/prune) is operator-only.
+  - `memory/` — progressive-disclosure knowledge base: `entries/*.md` are canonical (frontmatter + TL;DR + Why + Evidence), `INDEX.md` is derived (regenerated by `memory.py` at `.agents/skills/ai-brain/brain-memory/memory.py`; never hand-edited), `archive/` holds retired entries. `brain-memory` is the single writer; all other skills read.
   - `packages/` — the six workspaces
   - `plugins/` — `babel`, `rollup`, `vite`
   - `scripts/` — build/CI automation (`bundle`, `check`, `clean`, `coverage`, `release`, `sync`) + `utils/`; see `scripts/AGENTS.md` and `guides/scripts.md`
