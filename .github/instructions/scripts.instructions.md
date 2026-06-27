@@ -4,7 +4,7 @@ applyTo: "scripts/**"
 
 <scripts-instructions>
 
-  Build tooling and CI automation. These scripts bundle, test, lint, sync, and release the six packages. They run under `bun` (never `node`) in dev and CI. Style target: `guides/scripts.md` — TS, one concern per file, shared utils. The current code is `.mjs`/`.js` with tabs and `node`/`npx` invocations; the plan skill drives the migration to the target.
+  Build tooling and CI automation. These scripts bundle, test, lint, sync, and release the six packages. They run under `bun` (never `node`) in dev and CI. Style target: `guides/scripts.md` — TS, one concern per file, shared utils. The current code is `.mjs`/`.js` with tabs and `node`/`npx` invocations; the `brain-plan` skill drives the migration to the target.
 
   ## Scripts (CLI entries — one per `package.json` scripts row)
 
@@ -50,7 +50,7 @@ applyTo: "scripts/**"
 
   Parallel orchestration: `buildPackagesParallel` respects `DEPENDENCY_GRAPH`, runs up to `maxParallel` (min CPUs, 4) concurrently, stops if `core` fails (everything depends on it).
 
-  ## Target architecture (the split the plan skill derives toward)
+  ## Target architecture (the split the `brain-plan` skill derives toward)
 
   `bundle.mjs` is eight concerns in one file. Target: `scripts/bundle/` with one file per concern, thin entry.
 
