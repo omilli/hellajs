@@ -23,16 +23,14 @@ describe("dom", () => {
         return html`<div id="comp">Component</div>` as HellaNode;
       };
 
-      mount(html`<div id="wrapper"><${Comp} /></div>`);
+      const app = mount(html`<div id="wrapper"><${Comp} /></div>`);
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
       flush();
       expect(effectRuns).toHaveBeenCalledTimes(2);
 
-      const wrapper = document.getElementById("wrapper")!;
-      wrapper.remove();
-      queueCleanup(wrapper);
+      app.unmount();
 
       count(2);
       flush();
@@ -100,15 +98,13 @@ describe("dom", () => {
         return html`<div id="counter">Counter</div>`;
       };
 
-      mount(html`<${Counter} />`);
+      const app = mount(html`<${Counter} />`);
       expect(effectRuns).toHaveBeenCalledTimes(1);
 
       count(1);
       expect(effectRuns).toHaveBeenCalledTimes(2);
 
-      const counter = document.getElementById("counter") as HellaElement;
-      counter.remove();
-      queueCleanup(counter);
+      app.unmount();
 
       count(2);
       expect(effectRuns).toHaveBeenCalledTimes(2);

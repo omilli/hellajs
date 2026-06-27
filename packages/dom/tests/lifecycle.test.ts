@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, queueCleanup, peekState } from "@hellajs/dom/bundle";
+import { mount, html, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -41,7 +41,7 @@ describe("dom", () => {
       const callOrder: string[] = [];
       const clickHandler = mock(() => {});
 
-      mount(html`
+      const app = mount(html`
         <button
           id="destroyable"
           hook:beforeDestroy=${() => callOrder.push("beforeDestroy")}
@@ -54,8 +54,7 @@ describe("dom", () => {
       el.dispatchEvent(new Event("click"));
       expect(clickHandler).toHaveBeenCalledTimes(1);
 
-      el.remove();
-      queueCleanup(el);
+      app.unmount();
 
       expect(callOrder).toEqual(["beforeDestroy", "afterDestroy"]);
       expect(peekState(el)).toBeUndefined();

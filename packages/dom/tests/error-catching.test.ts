@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, flushMount } from "@hellajs/dom/bundle";
+import { mount, html } from "@hellajs/dom/bundle";
 import type { HellaNode, ErrorContext } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 
@@ -120,14 +120,14 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="test">${() => { if (shouldThrow()) throw new Error("effect"); return "OK"; }}</div>
       `, container);
 
       expect(container.textContent).toBe("OK");
 
       shouldThrow(true);
-      flushMount();
+      app.flush();
 
       expect(container.textContent).toBe("E: effect");
     });

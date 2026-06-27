@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, flushMount } from "@hellajs/dom/bundle";
+import { mount, html } from "@hellajs/dom/bundle";
 import type { HellaNode, ErrorContext } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 
@@ -210,10 +210,10 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(html`<div error:fallback=${() => { throw new Error("fb"); }}>${() => { if (s()) throw new Error("orig"); return "ok"; }}</div>`, container);
+      const app = mount(html`<div error:fallback=${() => { throw new Error("fb"); }}>${() => { if (s()) throw new Error("orig"); return "ok"; }}</div>`, container);
 
       s(true);
-      flushMount();
+      app.flush();
 
       expect(calls).toHaveBeenCalledTimes(1);
       suppressed.restore();
@@ -291,7 +291,7 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="parent">
           <span id="child" bind:test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>Content</span>
         </div>
@@ -300,7 +300,7 @@ describe("dom", () => {
       expect(container.querySelector("#child")?.textContent).toBe("Content");
 
       shouldThrow(true);
-      flushMount();
+      app.flush();
 
       expect(container.querySelector("#child")?.textContent).toBe("E: bind");
       suppressed.restore();

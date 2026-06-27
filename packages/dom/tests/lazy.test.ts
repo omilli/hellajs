@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, Lazy, queueCleanup } from "@hellajs/dom/bundle";
+import { mount, html, Lazy } from "@hellajs/dom/bundle";
 import type { HellaNode, LazyOptions } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -167,7 +167,7 @@ describe("dom", () => {
       });
       const AsyncComponent = () => html`<div>Should not render</div>` as HellaNode;
 
-      mount(html`
+      const app = mount(html`
         <div id="container">
           <${Lazy} loader=${() => pendingPromise} loading=${html`<div>Loading</div>`} />
         </div>
@@ -176,8 +176,7 @@ describe("dom", () => {
       const container = document.getElementById("container")!;
       expect(container.textContent).toContain("Loading");
 
-      container.remove();
-      queueCleanup(container);
+      app.unmount();
 
       resolveComponent(AsyncComponent);
       await pendingPromise;
@@ -193,7 +192,7 @@ describe("dom", () => {
         rejectLoader = reject;
       });
 
-      mount(html`
+      const app = mount(html`
         <div id="container">
           <${Lazy}
             loader=${() => pendingPromise}
@@ -206,8 +205,7 @@ describe("dom", () => {
       const container = document.getElementById("container")!;
       expect(container.textContent).toContain("Loading");
 
-      container.remove();
-      queueCleanup(container);
+      app.unmount();
 
       rejectLoader(new Error("load failed"));
       await tick(20);
@@ -224,7 +222,7 @@ describe("dom", () => {
       });
       const AsyncComponent = () => html`<div>Content</div>` as HellaNode;
 
-      mount(html`
+      const app = mount(html`
         <div id="container">
           <${Lazy} loader=${(options?: LazyOptions) => {
             receivedSignal = options?.signal;
@@ -236,9 +234,7 @@ describe("dom", () => {
       expect(receivedSignal).toBeDefined();
       expect(receivedSignal!.aborted).toBe(false);
 
-      const container = document.getElementById("container")!;
-      container.remove();
-      queueCleanup(container);
+      app.unmount();
 
       expect(receivedSignal!.aborted).toBe(true);
 

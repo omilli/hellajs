@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { $ref, checkMultiSelectors, flushMount, queueCleanup, getState, peekState } from "@hellajs/dom/bundle";
+import { $ref, checkMultiSelectors, mount, html, getState, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState(`
@@ -138,15 +138,12 @@ describe("dom", () => {
       expect(afterUpdateHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("destroy hooks execute on removal", async () => {
+    test("destroy hooks execute on removal", () => {
       const beforeDestroyHandler = mock(() => { });
       const afterDestroyHandler = mock(() => { });
 
-      const container = document.createElement("div");
-      container.className = "destroy-test";
-      document.body.appendChild(container);
-
-      flushMount();
+      const app = mount(html`<div class="destroy-test"></div>`);
+      const container = document.querySelector(".destroy-test")!;
 
       $ref(".destroy-test").hooks({
         beforeDestroy: (el) => {
@@ -156,9 +153,7 @@ describe("dom", () => {
         afterDestroy: () => { afterDestroyHandler(); }
       });
 
-      container.remove();
-      await tick(10);
-      queueCleanup(container);
+      app.unmount();
 
       expect(beforeDestroyHandler).toHaveBeenCalledTimes(1);
       expect(afterDestroyHandler).toHaveBeenCalledTimes(1);
