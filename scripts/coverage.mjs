@@ -51,18 +51,32 @@ function runCapture(command, args, options = {}) {
 	});
 }
 
+/**
+ * Run lint as the final gate. Returns 0/1 instead of throwing so the coverage
+ * table still renders (writeAndExit is called by the caller). Callers skip this
+ * when tests already failed — lint is the slow, rarely-failing step, so it runs
+ * only on a green test run to keep the iteration loop fast.
+ */
+async function runLint() {
+	logger.info("Linting...");
+	try {
+		await execCommandInherited("bun", ["lint"], { cwd: projectRoot });
+		return 0;
+	} catch {
+		return 1;
+	}
+}
+
 async function main() {
 	const args = process.argv.slice(2);
 	const packageName = args.find((arg) => !arg.startsWith("--"));
-
-	logger.info("Linting...");
-	await execCommandInherited("bun", ["lint"], { cwd: projectRoot });
 
 	if (!packageName) {
 		logger.info("Running full coverage...");
 		await execCommand("bun", ["./scripts/bundle.mjs", "--quiet"], { cwd: projectRoot });
 		const result = await runCapture("bun", ["test", "--coverage"], { cwd: projectRoot });
-		writeAndExit(result.output, result.code);
+		const exitCode = result.code !== 0 ? result.code : await runLint();
+		writeAndExit(result.output, exitCode);
 		return;
 	}
 
@@ -87,8 +101,9 @@ async function main() {
 		{ cwd: projectRoot }
 	);
 
+	const exitCode = result.code !== 0 ? result.code : await runLint();
 	const filtered = filterCoverageTable(result.output, packageName);
-	writeAndExit(filtered, result.code);
+	writeAndExit(filtered, exitCode);
 }
 
 /**
