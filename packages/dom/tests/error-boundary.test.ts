@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, flushMount, peekState } from "@hellajs/dom/bundle";
+import { mount, html, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 
@@ -13,7 +13,7 @@ describe("dom", () => {
       fallbackHandler(html`<span>E</span>`);
 
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="b" error:fallback=${() => html`<span>F</span>`}>
           <div id="mid">
             <span id="deep">
@@ -25,7 +25,7 @@ describe("dom", () => {
 
       const btn = (container.querySelector("#btn") as HTMLElement) as Element;
       btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      flushMount();
+      app.flush();
 
       expect(peekState(btn)?.cachedBoundary?.id).toBe("b");
     });
@@ -35,7 +35,7 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="b" error:fallback=${() => html`<span>F</span>`}>
           <span id="deep">${() => { if (shouldThrow()) throw new Error("up"); return "OK"; }}</span>
         </div>
@@ -44,13 +44,13 @@ describe("dom", () => {
       const deep = container.querySelector("#deep") as Element;
 
       shouldThrow(true);
-      flushMount();
+      app.flush();
       expect(peekState(deep)?.cachedBoundary?.id).toBe("b");
 
       shouldThrow(false);
-      flushMount();
+      app.flush();
       shouldThrow(true);
-      flushMount();
+      app.flush();
 
       expect(peekState(deep)?.cachedBoundary?.id).toBe("b");
     });
@@ -141,7 +141,7 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="b" error:fallback=${() => html`<span>F</span>`}>
           <span id="deep">${() => { if (shouldThrow()) throw new Error("up"); return "OK"; }}</span>
         </div>
@@ -150,16 +150,16 @@ describe("dom", () => {
       const deep = container.querySelector("#deep") as Element;
 
       shouldThrow(true);
-      flushMount();
+      app.flush();
       expect(peekState(deep)?.cachedBoundary).toBeDefined();
 
       const boundary = container.querySelector("#b") as HTMLElement;
       peekState(boundary)!.errorConfig = undefined;
 
       shouldThrow(false);
-      flushMount();
+      app.flush();
       shouldThrow(true);
-      flushMount();
+      app.flush();
 
       suppressed.restore();
     });
@@ -189,7 +189,7 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
           <span id="sib1">${() => { if (shouldThrow()) throw new Error("oops1"); return "OK1"; }}</span>
           <span id="sib2">${() => { return "OK2"; }}</span>
@@ -199,7 +199,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("OK1OK2");
 
       shouldThrow(true);
-      flushMount();
+      app.flush();
 
       expect(container.textContent).toContain("FB: oops1");
       expect(container.textContent).toContain("OK2");
@@ -214,7 +214,7 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
           <span>Static Before</span>
           <span id="dynamic">${() => { if (shouldThrow()) throw new Error("static"); return "Dynamic"; }}</span>
@@ -225,7 +225,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("Static BeforeDynamicStatic After");
 
       shouldThrow(true);
-      flushMount();
+      app.flush();
 
       expect(container.textContent).toContain("Static Before");
       expect(container.textContent).toContain("Static After");
@@ -252,7 +252,7 @@ describe("dom", () => {
 
       const shouldThrow = signal(false);
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
           <span id="c1">C1</span>
           <span id="c2" bind:test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>C2</span>
@@ -263,7 +263,7 @@ describe("dom", () => {
       expect(container.querySelector("#c1")).not.toBeNull();
 
       shouldThrow(true);
-      flushMount();
+      app.flush();
 
       expect(container.textContent).toBe("FB: bind");
       expect(container.querySelector("#c1")).toBeNull();
@@ -275,7 +275,7 @@ describe("dom", () => {
 
       const shouldThrowInner = signal(false);
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div id="outer" error:fallback=${(e: Error) => html`<span>Outer FB: ${e.message}</span>`}>
           <span id="outer-static">Outer Static</span>
           <div id="inner" error:fallback=${(e: Error) => html`<span>Inner FB: ${e.message}</span>`}>
@@ -287,7 +287,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("Outer StaticInner Dynamic");
 
       shouldThrowInner(true);
-      flushMount();
+      app.flush();
 
       expect(container.textContent).toContain("Outer Static");
       expect(container.textContent).toContain("Inner FB: inner");

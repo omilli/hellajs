@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, queueCleanup } from "@hellajs/dom/bundle";
+import { mount, html } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -18,14 +18,13 @@ describe("dom", () => {
 
     test("e: handlers are cleaned up on removal", () => {
       const clickHandler = mock(() => {});
-      mount(html`<div id="container" e:click=${clickHandler}>Content</div>`);
+      const app = mount(html`<div id="container" e:click=${clickHandler}>Content</div>`);
 
       const container = document.getElementById("container")!;
       container.click();
       expect(clickHandler).toHaveBeenCalledTimes(1);
 
-      container.remove();
-      queueCleanup(container);
+      app.unmount();
 
       container.click();
       expect(clickHandler).toHaveBeenCalledTimes(1);

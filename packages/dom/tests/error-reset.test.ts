@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, flushMount } from "@hellajs/dom/bundle";
+import { mount, html } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -36,7 +36,7 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div error:fallback=${(e: Error) => html`<span>E: ${e.message}</span>`}>
           ${() => { if (shouldThrow()) throw new Error("oops"); return html`<span>OK</span>`; }}
         </div>
@@ -46,7 +46,7 @@ describe("dom", () => {
 
       shouldThrow(false);
       resetFn!();
-      flushMount();
+      app.flush();
 
       expect(container.textContent).toBe("OK");
     });
@@ -75,7 +75,7 @@ describe("dom", () => {
       onError(errorHandler);
 
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div error:fallback=${() => html`<span>F</span>`}>
           ${() => { if (shouldThrow()) throw new Error("oops"); return html`<span>OK</span>`; }}
         </div>
@@ -84,12 +84,12 @@ describe("dom", () => {
       expect(container.textContent).toBe("Error #1");
 
       resetFn!();
-      flushMount();
+      app.flush();
       expect(container.textContent).toBe("Error #2");
 
       shouldThrow(false);
       resetFn!();
-      flushMount();
+      app.flush();
       expect(container.textContent).toBe("OK");
     });
 
@@ -133,7 +133,7 @@ describe("dom", () => {
       });
 
       const container = setupContainer();
-      mount(html`
+      const app = mount(html`
         <div error:fallback=${() => html`<span>F</span>`}>
           ${() => { if (shouldThrow()) throw new Error("oops"); return html`<span>Original</span>`; }}
         </div>
@@ -146,7 +146,7 @@ describe("dom", () => {
       expect(container.textContent).toBe("Original");
 
       shouldThrow(true);
-      flushMount();
+      app.flush();
       expect(container.textContent).toBe("Error");
 
       shouldThrow(false);

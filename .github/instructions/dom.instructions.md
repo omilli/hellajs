@@ -13,7 +13,8 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `ForEach`, `Portal`, `Lazy`, `Transition` | Dynamic components (`isDynamic: true`) | `lib/{ForEach,Portal,Lazy,Transition}.ts` |
 | `$ref`, `$collection` | Reactive wrappers over existing DOM | `lib/$ref.ts`, `lib/$collection.ts` |
 | `registry` | `addEffect` / `addHook` registration API | `lib/registry.ts` |
-| `flushMount`, `queueCleanup`, `resetDomState` | Test utilities | `lib/internal/testing.ts` |
+| `flushMount`, `queueCleanup` | Queue drivers (test/introspection) | `lib/internal/queue.ts` |
+| `resetDom` | State reset (test/introspection) | `lib/internal/reset.ts` |
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
 | `getState`, `hasState`, `peekState`, `deleteState` | ElementState access (test/introspection) | `lib/internal/state.ts` |
 | `HellaNode`, `HellaChild`, `ElementHooks`, `HookType`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
@@ -102,7 +103,7 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 - **Sync `cleanupSubtree(root)`** — called directly by `appendToParent` (reactive child swap), ForEach (stale-removal + list clear), Transition (leave completion). `traverseDescendants` (iterative stack) → per descendant `clean(node)`: `beforeDestroy` → `componentScope?.()` → `portalCleanup?.()` → `lazyCleanup?.()` → `transitionCleanup?.()` → drain `effects` → `removeDirectHandlers` → `afterDestroy` → `deleteState`.
 - **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes with state → `cleanupQueue`; added element nodes → `mountQueue`; both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` or still having a `parentNode` (re-parented, not removed).
 - **`runHooks` element-argument rule.** `beforeMount` and `afterDestroy` are called with **no** argument; every other hook receives the element.
-- **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDomState` tear down listeners, observers, queues, and `handlerCounts` between tests.
+- **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, and `handlerCounts` between tests.
 
 ## Mount queue
 
@@ -207,7 +208,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **Hook element-argument rule.** `afterMount`/`beforeDestroy`/`beforeUpdate`/`afterUpdate` receive the element; `beforeMount`/`afterDestroy` do not. `beforeMount` fires synchronously before `appendChild`; `afterMount` fires deferred via the observer's microtask. Multiple hooks of the same type all fire in insertion order.
 - **`bind:` effects run `beforeUpdate`/`afterUpdate`** only when `state.isMounted` is true.
 - **`onError(null)` clears all handlers**; a function registers and returns an unregister. No handlers → `console.error('[dom]', error)` and no UI change.
-- **Event types registered for delegation stay registered for the page lifetime** — only `resetEventState()` (called by `resetDomState()` in tests) removes them. Delegated handlers never auto-stop propagation.
+- **Event types registered for delegation stay registered for the page lifetime** — only `resetEventState()` (called by `resetDom()` in tests) removes them. Delegated handlers never auto-stop propagation.
 
 ## Performance
 

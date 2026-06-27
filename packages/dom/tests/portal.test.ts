@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, Portal, queueCleanup } from "@hellajs/dom/bundle";
+import { mount, html, Portal } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState('<div id="app"></div><div id="modal-root"></div>');
@@ -63,7 +63,7 @@ describe("dom", () => {
     test("cleans up when marker removed", () => {
       resetTestState('<div id="app"></div><div id="modal-root"></div>');
 
-      mount(html`
+      const app = mount(html`
         <div id="wrapper">
           <${Portal} to="#modal-root">
             <span id="portal-span">Content</span>
@@ -73,10 +73,7 @@ describe("dom", () => {
 
       expect(document.querySelector("#modal-root #portal-span")).not.toBeNull();
 
-      const wrapper = document.querySelector("#wrapper")!;
-      const marker = wrapper.firstChild as ChildNode;
-      marker.remove();
-      queueCleanup(marker);
+      app.unmount();
 
       expect(document.querySelector("#modal-root #portal-span")).toBeNull();
     });

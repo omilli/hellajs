@@ -12,7 +12,7 @@ describe("dom", () => {
       const count = signal(0);
       const effectRuns = mock(() => { });
 
-      mount(html`<div id="container"><span id="target">0</span></div>`);
+      const app = mount(html`<div id="container"><span id="target">0</span></div>`);
 
       const target = document.getElementById("target")! as HellaElement;
       registry.addEffect(target, () => { effectRuns(); count(); });
@@ -23,8 +23,7 @@ describe("dom", () => {
       flush();
       expect(effectRuns).toHaveBeenCalledTimes(2);
 
-      target.remove();
-      queueCleanup(target);
+      app.unmount();
 
       count(2);
       flush();
@@ -37,7 +36,7 @@ describe("dom", () => {
       const runsA = mock(() => { });
       const runsB = mock(() => { });
 
-      mount(html`<div id="multi-effect">Content</div>`);
+      const app = mount(html`<div id="multi-effect">Content</div>`);
       const el = document.getElementById("multi-effect")! as HellaElement;
 
       registry.addEffect(el, () => { runsA(); countA(); });
@@ -46,8 +45,7 @@ describe("dom", () => {
       expect(runsA).toHaveBeenCalledTimes(1);
       expect(runsB).toHaveBeenCalledTimes(1);
 
-      el.remove();
-      queueCleanup(el);
+      app.unmount();
 
       countA(1);
       countB(1);
@@ -74,14 +72,13 @@ describe("dom", () => {
     test("beforeDestroy and afterDestroy hooks fire on cleanup", () => {
       const calls: string[] = [];
 
-      mount(html`<div id="destroy-hooks">Content</div>`);
+      const app = mount(html`<div id="destroy-hooks">Content</div>`);
       const el = document.getElementById("destroy-hooks")! as HellaElement;
 
       registry.addHook(el, "beforeDestroy", () => calls.push("before"));
       registry.addHook(el, "afterDestroy", () => calls.push("after"));
 
-      el.remove();
-      queueCleanup(el);
+      app.unmount();
 
       expect(calls).toEqual(["before", "after"]);
     });
@@ -142,7 +139,7 @@ describe("dom", () => {
       const childCalls = mock(() => { });
       const count = signal(0);
 
-      mount(html`
+      const app = mount(html`
         <div id="parent-clean">
           <span id="child-clean">Content</span>
         </div>
@@ -157,8 +154,7 @@ describe("dom", () => {
       expect(parentCalls).toHaveBeenCalledTimes(1);
       expect(childCalls).toHaveBeenCalledTimes(1);
 
-      parent.remove();
-      queueCleanup(parent);
+      app.unmount();
 
       count(1);
       flush();
@@ -166,7 +162,7 @@ describe("dom", () => {
       expect(childCalls).toHaveBeenCalledTimes(1);
     });
 
-    test("afterMount fires after flushMount", () => {
+    test("afterMount fires after flush", () => {
       const afterMountCalls = mock(() => { });
 
       const app3 = mount(html`
@@ -190,7 +186,7 @@ describe("dom", () => {
       const el = document.getElementById("disconnect-test")!;
       el.remove();
 
-      // Even after flushMount, disconnected nodes are skipped
+      // Even after flush, disconnected nodes are skipped
       app4.flush();
       expect(afterMountCalls).toHaveBeenCalledTimes(0);
     });

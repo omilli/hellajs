@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { mount, html, Transition, queueCleanup } from "@hellajs/dom/bundle";
+import { mount, html, Transition } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -207,7 +207,7 @@ describe("dom", () => {
     test("does not leak timer when parent removed mid-leave", async () => {
       const visible = signal(true);
 
-      mount(html`
+      const app = mount(html`
         <div id="container">
           <${Transition} show=${visible} leave="fade-out" duration=${100}>
             <span id="content">Visible</span>
@@ -218,9 +218,7 @@ describe("dom", () => {
       visible(false);
       flush();
 
-      const container = document.getElementById("container")!;
-      container.remove();
-      queueCleanup(container);
+      app.unmount();
 
       await tick(160);
     });
