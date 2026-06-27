@@ -146,4 +146,6 @@ Highest-signal gotchas; verify any change against these:
 - `cssvars-remove.test.ts` — static removal, ref counting (3 calls → 3 removes), reactive effect disposal, shared-scope partial removal, scoped/prefixed removal, reactive refCount (2 calls → 1 remove leaves effect active), no-op unknown, input validation.
 - `ssr.test.ts` — unsets `globalThis.document` (save in `beforeEach`, restore in `afterEach`); css/cssVars still return correct results; `resetCss`/`resetCssVars` don't throw.
 
+Run with `bun coverage css`.
+
 Follow `guides/code.md` for source and `guides/tests.md` for tests; both supersede any style hint here.

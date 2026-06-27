@@ -245,4 +245,6 @@ Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bu
 - `component.test.ts`, `registry.test.ts` — `component()` scope wrapping, `addEffect`/`addHook` stacking.
 
 **Pattern across all tests:** `mount` → drive signals → `flush()` (sync, no `await`) → assert DOM. For lifecycle assertions, `app.flush()` on the mount handle processes deferred lifecycle hooks. For removal assertions, `el.remove()` then `await delay()` to let the MutationObserver fire and process cleanup. Never test two behaviors in one test; aim for 100% coverage.
+
+Run with `bun coverage dom`.
 </dom-package-instructions>

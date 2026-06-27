@@ -106,5 +106,7 @@ Tests live in `tests/` (9 files: `data`, `update`, `snapshot`, `nested`, `cleanu
 - Readonly: setter is a runtime no-op; not inherited by nested.
 - Track effect runs with `mock()` from `bun:test`.
 
+Run with `bun coverage store`.
+
 Style cross-refs: `guides/code.md` (source/types), `guides/tests.md` (tests), `guides/docs.md` (docs).
 </store-package>
