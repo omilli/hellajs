@@ -1,4 +1,5 @@
 import { describe, test, expect, mock } from "bun:test";
+import { computed, effect } from "@hellajs/core";
 import { store } from "@hellajs/store/bundle";
 import type { Store } from "@hellajs/store";
 

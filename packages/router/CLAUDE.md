@@ -86,5 +86,5 @@
 
   - Run `bun check router` (lint + bundle + test) or `bun coverage router`; coverage instruments `dist/bundle.js`, not `lib/`.
   - Shared helpers in `tests/helpers.ts`: `setupRouterEnv` (resetTestState + setupContainer + `history.replaceState`), `expectLoggedError` (asserts `[router]` prefix against `suppressConsole` output).
-  - One behavior per file: `routing`, `hooks`, `redirects`, `specificity`, `history`, `hash-mode`, `navigate-options`, `intercept`, `errors`, `inherit-meta`, `meta`, `crumbs`, `active`, `scroll`, `url-encoding`, `atomicity`. Follow `guides/tests.md` — `mock()` from `bun:test`, never import injected globals (`signal`/`effect`/`tick`/`flush`/`setupContainer`/`resetTestState`/…), `await tick(0)`, `flush()` is sync.
+  - One behavior per file: `routing`, `hooks`, `redirects`, `specificity`, `history`, `hash-mode`, `navigate-options`, `intercept`, `errors`, `inherit-meta`, `meta`, `crumbs`, `active`, `scroll`, `url-encoding`, `atomicity`. Follow `guides/tests.md` — `mock()` from `bun:test`, explicit imports from `@hellajs/core`/`@hellajs/router/bundle`/`../../../utils/test-helpers.js`, `flush()` is sync.
 </router-package-instructions>

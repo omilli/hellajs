@@ -1,5 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, registry, queueCleanup } from "@hellajs/dom/bundle";
+import { flush, signal } from "@hellajs/core";
+import {delay, resetTestState} from "../../../utils/test-helpers.js";
+import { mount, html, registry } from "@hellajs/dom/bundle";
 import type { HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -106,7 +108,7 @@ describe("dom", () => {
       expect(definedArgs).toHaveLength(0);
     });
 
-    test("moved elements are not cleaned up", () => {
+    test("moved elements are not cleaned up", async () => {
       const runsEffect = mock(() => { });
       const count = signal(0);
 
@@ -126,8 +128,8 @@ describe("dom", () => {
       const dest = document.getElementById("dest")!;
       dest.appendChild(moveable);
 
-      // Process cleanup - should skip since element is still connected
-      queueCleanup(moveable);
+      // Let observer fire and cleanup run - should skip since element is still connected
+      await delay(0);
 
       count(1);
       flush();

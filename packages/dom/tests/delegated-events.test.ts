@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { mount, html, queueCleanup, peekState } from "@hellajs/dom/bundle";
+import {delay, resetTestState} from "../../../utils/test-helpers.js";
+import { mount, html, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -48,7 +49,7 @@ describe("dom", () => {
       expect(hoverHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("remaining delegated handler fires after sibling element removal", () => {
+    test("remaining delegated handler fires after sibling element removal", async () => {
       const clickHandler = mock(() => {});
       mount(html`
         <div>
@@ -63,13 +64,13 @@ describe("dom", () => {
 
       const a = document.getElementById("a")!;
       a.remove();
-      queueCleanup(a);
+      await delay();
 
       document.getElementById("b")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(clickHandler).toHaveBeenCalledTimes(3);
     });
 
-    test("element state cleans up when last delegated handler element is removed", () => {
+    test("element state cleans up when last delegated handler element is removed", async () => {
       const dragHandler = mock(() => {});
       mount(html`<div id="drag-el" on:drag=${dragHandler}>Drag</div>`);
 
@@ -78,12 +79,12 @@ describe("dom", () => {
       expect(dragHandler).toHaveBeenCalledTimes(1);
 
       el.remove();
-      queueCleanup(el);
+      await delay(0);
 
       expect(peekState(el)).toBeUndefined();
     });
 
-    test("delegated handler on permanent node remains active after unrelated cleanup", () => {
+    test("delegated handler on permanent node remains active after unrelated cleanup", async () => {
       const clickHandler = mock(() => {});
       const dragHandler = mock(() => {});
 
@@ -94,19 +95,19 @@ describe("dom", () => {
 
       const temp = document.getElementById("temporary")!;
       temp.remove();
-      queueCleanup(temp);
+      await delay();
 
       document.getElementById("permanent")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(clickHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("events of removed delegated handler type do not crash", () => {
+    test("events of removed delegated handler type do not crash", async () => {
       const dragHandler = mock(() => {});
       mount(html`<div id="drag-el" on:drag=${dragHandler}>Drag</div>`);
 
       const el = document.getElementById("drag-el")!;
       el.remove();
-      queueCleanup(el);
+      await delay();
 
       document.body.dispatchEvent(new Event("drag", { bubbles: true }));
       expect(dragHandler).toHaveBeenCalledTimes(0);

@@ -98,7 +98,7 @@ Passing an existing store as a value inside another store's initial object: the 
 
 ## Testing
 
-Tests live in `tests/` (9 files: `data`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`) and import `store` from `@hellajs/store/bundle`. `signal`/`effect`/`computed`/`batch` are injected on `globalThis` by the test preload — never import them in tests. See `guides/tests.md` for the full rules.
+Tests live in `tests/` (9 files: `data`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`) and import `store` from `@hellajs/store/bundle`. Reactive primitives (`signal`/`effect`/`computed`/`batch`/`flush`) import from `@hellajs/core`. Test helpers import from `../../../utils/test-helpers.js`. See `guides/tests.md` for the full rules.
 
 - Cover each `update` path (partial, draft, middleware) independently.
 - Snapshot reactivity tested flat and deeply nested.

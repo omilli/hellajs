@@ -1,4 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { delay } from "../../../utils/test-helpers.js";
+import { effect } from "@hellajs/core";
+
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -30,13 +33,13 @@ describe("resource", () => {
 
     test("refetches when tab becomes visible", async () => {
       let count = 0;
-      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+      const r = resource(() => delay(5).then(() => `data-${++count}`), {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
       effect(() => { r.status(); });
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(1);
 
@@ -44,7 +47,7 @@ describe("resource", () => {
       setVisibility("hidden");
       setVisibility("visible");
 
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(2);
 
@@ -53,20 +56,20 @@ describe("resource", () => {
 
     test("does not refetch when disabled", async () => {
       let count = 0;
-      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+      const r = resource(() => delay(5).then(() => `data-${++count}`), {
         refetchOnWindowFocus: false,
         refetchOnKeyChange: true,
       });
 
       effect(() => { r.status(); });
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(1);
 
       setVisibility("hidden");
       setVisibility("visible");
 
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(1);
 
@@ -75,13 +78,13 @@ describe("resource", () => {
 
     test("stops refetching on dispose", async () => {
       let count = 0;
-      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+      const r = resource(() => delay(5).then(() => `data-${++count}`), {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
       effect(() => { r.status(); });
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(1);
 
@@ -90,26 +93,26 @@ describe("resource", () => {
       setVisibility("hidden");
       setVisibility("visible");
 
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(1);
     });
 
     test("does not refetch when hidden (only on visible)", async () => {
       let count = 0;
-      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+      const r = resource(() => delay(5).then(() => `data-${++count}`), {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
 
       effect(() => { r.status(); });
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(1);
 
       // Just hidden - should not refetch
       setVisibility("hidden");
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(1);
 
@@ -118,26 +121,26 @@ describe("resource", () => {
 
     test("works without auto mode (requires manual trigger)", async () => {
       let count = 0;
-      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+      const r = resource(() => delay(5).then(() => `data-${++count}`), {
         refetchOnWindowFocus: true,
       });
 
       effect(() => { r.status(); });
-      await tick(20);
+      await delay(20);
 
       // No auto, so no fetch yet
       expect(count).toBe(0);
 
       // Manual trigger
       r.fetch({ force: true });
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(1);
 
       setVisibility("hidden");
       setVisibility("visible");
 
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(2);
 
@@ -146,21 +149,21 @@ describe("resource", () => {
 
     test("respects enabled: false", async () => {
       let count = 0;
-      const r = resource(() => tick(5).then(() => `data-${++count}`), {
+      const r = resource(() => delay(5).then(() => `data-${++count}`), {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
         enabled: false,
       });
 
       effect(() => { r.status(); });
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(0);
 
       setVisibility("hidden");
       setVisibility("visible");
 
-      await tick(20);
+      await delay(20);
 
       expect(count).toBe(0);
 

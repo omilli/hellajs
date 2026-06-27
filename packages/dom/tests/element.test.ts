@@ -1,4 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { delay, resetTestState } from "../../../utils/test-helpers.js";
+import { effect, flush, signal } from "@hellajs/core";
 import { html, ForEach, element } from "@hellajs/dom/bundle";
 import type { HellaElement } from "@hellajs/dom";
 
@@ -20,7 +22,7 @@ describe("dom", () => {
       });
 
       resetTestState('<test-counter initial="5"></test-counter>');
-      await tick(0);
+      await delay();
 
       const el = document.querySelector("test-counter")!;
       expect(el.querySelector("#count")?.textContent).toBe("5");
@@ -40,14 +42,14 @@ describe("dom", () => {
       element("test-reconnect", renderFn);
 
       resetTestState("<test-reconnect></test-reconnect>");
-      await tick(0);
+      await delay();
       expect(renderFn).toHaveBeenCalledTimes(1);
 
       const el = document.querySelector("test-reconnect") as HellaElement;
       el.remove();
 
       document.body.appendChild(el);
-      await tick(0);
+      await delay();
       expect(renderFn).toHaveBeenCalledTimes(2);
     });
 
@@ -57,7 +59,7 @@ describe("dom", () => {
       );
 
       resetTestState('<test-attr-remove value="set"></test-attr-remove>');
-      await tick(0);
+      await delay();
       const el = document.querySelector("test-attr-remove")!;
       expect(el.querySelector("span")?.textContent).toBe("set");
 
@@ -84,7 +86,7 @@ describe("dom", () => {
           <nav slot="sidebar">Sidebar</nav>
         </test-slots>
       `);
-      await tick(0);
+      await delay();
 
       const el = document.querySelector("test-slots")!;
       expect(el.querySelector("header h1")?.textContent).toBe("Title");
@@ -130,7 +132,7 @@ describe("dom", () => {
           <small slot="footer">© 2025</small>
         </test-complex>
       `);
-      await tick(0);
+      await delay();
 
       const el = document.querySelector("test-complex")!;
       expect(el.querySelector(".card-header h2, header h2")?.textContent).toBe("My Card");

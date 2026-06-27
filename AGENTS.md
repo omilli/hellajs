@@ -24,7 +24,7 @@
   - **`bun sync`** reads every `AGENTS.md` and regenerates: a `CLAUDE.md` mirror in the same directory, one `.github/instructions/{folder}.instructions.md` (with `applyTo:` frontmatter) per package/plugin, and the root `.github/copilot-instructions.md` (`applyTo: "**"`).
   - **post-commit hook** (`.github/hooks/post-commit`) auto-runs `bun sync` when an `AGENTS.md` changes, then auto-commits the generated files with `--no-verify`. CI also runs `bun sync` and commits any drift.
   - **commit-msg hook** (`.github/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
-  - **After editing any `AGENTS.md`, run `bun sync`** — within the session, not only on commit. Global skills (`author`, `feedback`) that edit this file must do this so the generated mirrors (`CLAUDE.md`, `.github/instructions/*`) never go stale before the post-commit hook fires.
+  - **Do not run `bun sync` manually.** The post-commit hook regenerates all mirrors automatically when an `AGENTS.md` change is committed; CI catches any drift. Editing `AGENTS.md` is enough — never touch `CLAUDE.md` or `.github/instructions/*` by hand.
 
   ## Packages
 
@@ -155,7 +155,7 @@
 
   ## Testing
 
-  Tests run under HappyDOM via one preload (`utils/happydom.js`, configured in `bunfig.toml`). These are injected on `globalThis` — **never import them in tests** (banned by `guides/tests.md`): reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`), DOM (`onError`), and helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`). Track call counts with `mock()` from `bun:test`.
+  Tests run under HappyDOM via a preload (`utils/happydom.js`, configured in `bunfig.toml`). Reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `../../../utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`.
 
   Coverage instruments built bundles (`dist/bundle.js`, `dist/index.js`, `plugins/**/*.mjs`), not `lib/` source — `lib/` is the truth; the bundle is the measurement target. See `guides/tests.md` for the full rules (anti-patterns, structure, the scenario → `test()` derivation, the verification checklist).
 </hellajs-agent>

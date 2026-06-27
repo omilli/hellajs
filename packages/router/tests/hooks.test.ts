@@ -1,4 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { delay } from "../../../utils/test-helpers.js";
+
 import { router, navigate } from "@hellajs/router/bundle";
 import { setupRouterEnv } from "./helpers";
 
@@ -128,7 +130,7 @@ describe("hooks", () => {
       routes: {
         "/test": {
           before: async () => {
-            await tick(10);
+            await delay(10);
             done();
           },
           handler: () => render("test")
@@ -140,7 +142,7 @@ describe("hooks", () => {
     expect(container.textContent).toBe("test");
     expect(done).toHaveBeenCalledTimes(0);
 
-    await tick(20);
+    await delay(20);
     expect(done).toHaveBeenCalled();
   });
 
@@ -164,7 +166,7 @@ describe("hooks", () => {
     expect(log).toEqual(["sync-before", "mixed"]);
     expect(done).toHaveBeenCalledTimes(0);
 
-    await tick(10);
+    await delay(10);
     expect(done).toHaveBeenCalled();
   });
 

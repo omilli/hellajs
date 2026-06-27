@@ -1,4 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { flush, signal } from "@hellajs/core";
+import { delay, resetTestState } from "../../../utils/test-helpers.js";
 import { $ref, checkMultiSelectors, mount, html, getState, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
@@ -178,7 +180,7 @@ describe("dom", () => {
       document.body.appendChild(newElement);
 
       checkMultiSelectors();
-      await tick(10);
+      await delay(10);
 
       expect(mountHandler).toHaveBeenCalledTimes(1);
       expect(newElement.textContent).toBe("Watched!");
@@ -192,7 +194,7 @@ describe("dom", () => {
       document.body.appendChild(element2);
 
       checkMultiSelectors();
-      await tick(10);
+      await delay(10);
       expect(mountHandler).toHaveBeenCalledTimes(1);
     });
 
@@ -217,7 +219,7 @@ describe("dom", () => {
       document.body.appendChild(newElement);
 
       checkMultiSelectors();
-      await tick(10);
+      await delay(10);
 
       expect(newElement.getAttribute("data-test")).toBe("value");
 
@@ -225,8 +227,8 @@ describe("dom", () => {
       expect(clickHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("refObserver auto-cleans tracked element on removal without explicit queueCleanup", async () => {
-      const clickHandler = mock(() => {});
+    test("refObserver auto-cleans tracked element on removal", async () => {
+      const clickHandler = mock(() => { });
       $ref(".auto-clean").on("click", clickHandler);
 
       const el = document.createElement("div");
@@ -234,12 +236,12 @@ describe("dom", () => {
       document.body.appendChild(el);
 
       checkMultiSelectors();
-      await wait(() => peekState(el) !== undefined);
+      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) !== undefined)) break; await delay(10); }
 
       expect(peekState(el)).toBeDefined();
 
       el.remove();
-      await wait(() => peekState(el) === undefined);
+      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) === undefined)) break; await delay(10); }
 
       expect(peekState(el)).toBeUndefined();
     });

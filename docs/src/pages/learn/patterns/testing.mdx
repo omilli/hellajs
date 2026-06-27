@@ -1,0 +1,132 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: Testing Patterns
+description: Test patterns for HellaJS applications — cleanup, lifecycle control, async timing, and error handling.
+---
+
+# Testing Patterns
+
+Common test patterns for applications built with HellaJS. Every pattern works with any test framework — `bun:test`, `vitest`, `jest` — using only public package imports.
+
+### Isolate Tests with Reset Functions
+
+Reset shared state between tests so each test runs in a clean environment. Import per-package reset functions and call them in `beforeEach`:
+
+```typescript
+import { beforeEach, afterEach } from "bun:test";
+import { resetDom } from "@hellajs/dom";
+import { resetCss, resetCssVars } from "@hellajs/css";
+import { resetResource } from "@hellajs/resource";
+import { resetRouter } from "@hellajs/router";
+
+beforeEach(() => {
+  resetCss();
+  resetCssVars();
+  resetDom();
+  resetResource();
+  resetRouter();
+});
+```
+
+Each reset clears only its package's registries — DOM state, CSS rules, cache entries, router config. `store` needs no global reset because each store is instance-scoped and garbage-collected.
+
+For convenience, bundle all the resets into a single helper in your test setup file:
+
+```typescript
+// test-setup.ts
+export function resetTestState() {
+  resetCss();
+  resetCssVars();
+  resetDom();
+  resetResource();
+  resetRouter();
+}
+```
+
+### Drain the DOM Microtask
+
+DOM mutations (mounting, attribute changes, style injection) are batched in a microtask. Drain the queue with `await Promise.resolve()` to assert on the resulting DOM:
+
+```typescript
+import { mount, html } from "@hellajs/dom";
+
+const app = mount(() => html`<p>Hello</p>`);
+
+await Promise.resolve(); // Drain the microtask queue
+
+console.log(document.body.textContent); // "Hello"
+```
+
+For tests that need real time progress:
+
+```typescript
+const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+await wait(100); // Wait 100ms real time
+```
+
+### Drive Lifecycle Synchronously
+
+`mount()` returns a handle with `flush()` and `unmount()` for synchronous lifecycle control without waiting for microtasks:
+
+```typescript
+import { signal } from "@hellajs/core";
+import { mount, html } from "@hellajs/dom";
+
+const visible = signal(true);
+const app = mount(() => (visible() ? html`<p>Visible</p>` : null));
+
+app.flush(); // Process mount queue synchronously
+console.log(document.body.textContent); // "Visible"
+
+visible(false);
+app.flush(); // Process unmount synchronously
+console.log(document.body.textContent); // ""
+
+app.unmount(); // Clean up the entire tree
+```
+
+### Assert Synchronously with `flush`
+
+After updating signals, use `flush()` from `@hellajs/core` to propagate changes and assert on computed state — no microtask needed:
+
+```typescript
+import { signal, computed, flush, batch } from "@hellajs/core";
+
+const count = signal(0);
+const doubled = computed(() => count() * 2);
+
+batch(() => {
+  count(3);
+  count(5); // Only the final value triggers propagation
+});
+
+flush(); // Synchronously propagate — no await needed
+console.log(doubled()); // 10
+```
+
+`flush()` is synchronous and returns `void`. Never `await flush()`.
+
+### Suppress Console Errors
+
+When testing error paths, capture `console.error` output inline instead of suppressing globally:
+
+```typescript
+function suppressConsole() {
+  const messages: unknown[][] = [];
+  const original = console.error;
+  console.error = (...args: unknown[]) => messages.push(args);
+  return { messages, restore: () => { console.error = original; } };
+}
+
+// Usage in a test
+const { messages, restore } = suppressConsole();
+try {
+  someErrorProneOperation();
+  console.log(messages.length); // 1
+  console.log(String(messages[0][0])); // "expected message"
+} finally {
+  restore();
+}
+```
+
+The `try`/`finally` block ensures `console.error` is restored even if an assertion throws.

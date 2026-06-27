@@ -150,30 +150,30 @@ For styles that must react to signal changes at runtime, use [`cssVars`](/refere
 
 ### Style Cleanup
 
-Use [`cssRemove`](/reference/css/cssremove) to clean up styles when they are no longer needed. Pass the same CSS object and options used to create the style. `css()` rules are global and reference-counted — removing a DOM node that used the class does not decrement the count, so call `cssRemove` for styles tied to a component's lifetime, and reserve `cssReset` for app-level teardown.
+Use [`removeCss`](/reference/css/removecss) to clean up styles when they are no longer needed. Pass the same CSS object and options used to create the style. `css()` rules are global and reference-counted — removing a DOM node that used the class does not decrement the count, so call `removeCss` for styles tied to a component's lifetime, and reserve `resetCss` for app-level teardown.
 
 ```jsx
-import { css, cssRemove } from '@hellajs/css';
+import { css, removeCss } from '@hellajs/css';
 
 const styles = { color: 'red' };
 const className = css(styles, { name: 'test' });
 
-cssRemove(styles, { name: 'test' });
+removeCss(styles, { name: 'test' });
 ```
 
 ### CSS Variable Cleanup
 
-Use [`cssVarsRemove`](/reference/css/cssvarsremove) to clean up reactive CSS variables when a component unmounts. Each [`cssVars`](/reference/css/cssvars) call increments a reference count; `cssVarsRemove` decrements it. Variables are removed from the stylesheet only when the count reaches zero.
+Use [`removeCssVars`](/reference/css/removecssvars) to clean up reactive CSS variables when a component unmounts. Each [`cssVars`](/reference/css/cssvars) call increments a reference count; `removeCssVars` decrements it. Variables are removed from the stylesheet only when the count reaches zero.
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { cssVars, cssVarsRemove } from '@hellajs/css';
+import { cssVars, removeCssVars } from '@hellajs/css';
 
 const color = signal('red');
 const vars = { primary: color };
 
 cssVars(vars);  // refCount = 1
-cssVarsRemove(vars);  // refCount = 0, effect disposed, vars removed
+removeCssVars(vars);  // refCount = 0, effect disposed, vars removed
 
 color('blue');  // No longer tracked — no stylesheet update
 ```

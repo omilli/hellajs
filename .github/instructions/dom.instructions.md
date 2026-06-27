@@ -13,7 +13,6 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `ForEach`, `Portal`, `Lazy`, `Transition` | Dynamic components (`isDynamic: true`) | `lib/{ForEach,Portal,Lazy,Transition}.ts` |
 | `$ref`, `$collection` | Reactive wrappers over existing DOM | `lib/$ref.ts`, `lib/$collection.ts` |
 | `registry` | `addEffect` / `addHook` registration API | `lib/registry.ts` |
-| `flushMount`, `queueCleanup` | Queue drivers (test/introspection) | `lib/internal/queue.ts` |
 | `resetDom` | State reset (test/introspection) | `lib/internal/reset.ts` |
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
 | `getState`, `hasState`, `peekState`, `deleteState` | ElementState access (test/introspection) | `lib/internal/state.ts` |
@@ -101,13 +100,13 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 - **Sync `cleanupSubtree(root)`** — called directly by `appendToParent` (reactive child swap), ForEach (stale-removal + list clear), Transition (leave completion). `traverseDescendants` (iterative stack) → per descendant `clean(node)`: `beforeDestroy` → `componentScope?.()` → `portalCleanup?.()` → `lazyCleanup?.()` → `transitionCleanup?.()` → drain `effects` → `removeDirectHandlers` → `afterDestroy` → `deleteState`.
-- **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes with state → `cleanupQueue`; added element nodes → `mountQueue`; both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` or still having a `parentNode` (re-parented, not removed).
+- **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which recursively walks each removed node's subtree collecting elements with state → `cleanupQueue`; added element nodes → `mountQueue`; both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
 - **`runHooks` element-argument rule.** `beforeMount` and `afterDestroy` are called with **no** argument; every other hook receives the element.
 - **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, and `handlerCounts` between tests.
 
 ## Mount queue
 
-`processMountQueue` traverses each queued node's descendants; every element with state gets `isMounted = true` and `afterMount` run. Skips nodes not `isConnected` at flush time. The root's `isMounted` is set sync in `mount()`; descendants are deferred one microtask — **tests must `flushMount(container)` before asserting on `afterMount`-gated behavior.** `flushMount(root = document.body)` adds all direct children of `root` to `mountQueue` and processes it synchronously.
+`processMountQueue` traverses each queued node's descendants; every element with state gets `isMounted = true` and `afterMount` run. Skips nodes not `isConnected` at flush time. The root's `isMounted` is set sync in `mount()`; descendants are deferred one microtask — **tests must call `app.flush()` on the mount handle before asserting on `afterMount`-gated behavior.** `flush()` on the mount handle processes the mount queue synchronously for the container tree.
 
 ## Event delegation (`lib/internal/events.ts`, `lib/internal/counts.ts`)
 
@@ -204,7 +203,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **`HellaNode.children` is always flat** — nested arrays are impossible after substitution.
 - **Passthrough components bypass `component()`** — `ForEach`/`Portal`/`Lazy`/`Transition` set `isDynamic: true` and are called directly by `appendToParent` with the parent. `<${Comp}>` in templates wraps in `component()` only if `Comp.isDynamic` is false.
 - **One scoped observer covers every `mount()` target** (`observedContainers`); a second mount target adds no second observer.
-- **`isMounted`: root sync, descendants async.** Tests must `flushMount(container)` before asserting on `afterMount`-gated behavior.
+- **`isMounted`: root sync, descendants async.** Tests must call `app.flush()` on the mount handle before asserting on `afterMount`-gated behavior.
 - **Hook element-argument rule.** `afterMount`/`beforeDestroy`/`beforeUpdate`/`afterUpdate` receive the element; `beforeMount`/`afterDestroy` do not. `beforeMount` fires synchronously before `appendChild`; `afterMount` fires deferred via the observer's microtask. Multiple hooks of the same type all fire in insertion order.
 - **`bind:` effects run `beforeUpdate`/`afterUpdate`** only when `state.isMounted` is true.
 - **`onError(null)` clears all handlers**; a function registers and returns an unregister. No handlers → `console.error('[dom]', error)` and no UI change.
@@ -225,7 +224,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 
 ## Testing approach (`tests/`)
 
-Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bundle`** (the instrumented bundle — see root `bunfig.toml`); type-only imports from `@hellajs/dom`. The reactive primitives, `onError`, and helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`) are injected on `globalThis` — **never import them in tests** (banned by `guides/tests.md`). The publicly-exported introspection helpers used directly: `flushMount`, `queueCleanup`, `peekState`, `getState`, `multiSelectors`, `checkMultiSelectors`. Track call counts with `mock()` from `bun:test` — never boolean flags or counters.
+Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bundle`** (the instrumented bundle — see root `bunfig.toml`); type-only imports from `@hellajs/dom`. Reactive primitives import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `../../../utils/test-helpers.js`. The publicly-exported introspection helpers used directly: `peekState`, `getState`, `multiSelectors`, `checkMultiSelectors`. Track call counts with `mock()` from `bun:test` — never boolean flags or counters.
 
 `tests/helpers.ts` exports `fallbackHandler(defaultFallback)` — registers an `onError` handler that delegates to `context.config?.fallback?.(error)` else returns the default; the standard pattern for exercising element-level fallback through the global handler.
 
@@ -245,5 +244,5 @@ Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bu
 - `ref.test.ts`, `collection.test.ts` — queued ops, auto-watching, method chaining, `dispose()`, selector-registry state.
 - `component.test.ts`, `registry.test.ts` — `component()` scope wrapping, `addEffect`/`addHook` stacking.
 
-**Pattern across all tests:** `mount` → drive signals → `flush()` (sync, no `await`) → assert DOM. For lifecycle assertions, `flushMount(container)` between mount and assertion. For removal assertions, `el.remove()` then `queueCleanup(el)` to bypass the microtask-deferred observer. Never test two behaviors in one test; aim for 100% coverage.
+**Pattern across all tests:** `mount` → drive signals → `flush()` (sync, no `await`) → assert DOM. For lifecycle assertions, `app.flush()` on the mount handle processes deferred lifecycle hooks. For removal assertions, `el.remove()` then `await delay()` to let the MutationObserver fire and process cleanup. Never test two behaviors in one test; aim for 100% coverage.
 </dom-package-instructions>

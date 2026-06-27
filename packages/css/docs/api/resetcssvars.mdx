@@ -1,11 +1,11 @@
-# cssVarsReset
+# resetCssVars
 
 Clears all CSS variables, caches, and reactive effects, resetting the CSS variables system to initial state.
 
 ## API
 
 ```typescript
-function cssVarsReset(): void
+function resetCssVars(): void
 ```
 - **Returns**: `void`
 
@@ -13,7 +13,7 @@ function cssVarsReset(): void
 
 
 ```jsx
-import { cssVars, cssVarsReset } from '@hellajs/css';
+import { cssVars, resetCssVars } from '@hellajs/css';
 
 // Create some CSS variables
 const theme = cssVars({
@@ -22,7 +22,7 @@ const theme = cssVars({
 });
 
 // Later, reset everything
-cssVarsReset();
+resetCssVars();
 
 // All CSS variables are removed from DOM and memory
 // All reactive effects are disposed
@@ -32,7 +32,7 @@ cssVarsReset();
 
 ### Complete System Reset
 
-The `cssVarsReset` function provides complete cleanup of the CSS variables system:
+The `resetCssVars` function provides complete cleanup of the CSS variables system:
 
 - **CSS Variables**: Clears all CSS custom properties from the `hella-vars` style element
 - **Cache Cleanup**: Clears all cached variable objects and hash mappings
@@ -42,10 +42,10 @@ The `cssVarsReset` function provides complete cleanup of the CSS variables syste
 ### Testing Scenarios
 
 ```jsx
-import { cssVars, cssVarsReset } from '@hellajs/css';
+import { cssVars, resetCssVars } from '@hellajs/css';
 
 // Clean slate before creating variables
-cssVarsReset();
+resetCssVars();
 
 const theme = cssVars({
   colors: { primary: '#ff0000' }
@@ -59,7 +59,7 @@ const theme = cssVars({
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { cssVars, cssVarsReset } from '@hellajs/css';
+import { cssVars, resetCssVars } from '@hellajs/css';
 
 const primaryColor = signal('#3b82f6');
 const isDark = signal(false);
@@ -71,21 +71,21 @@ const theme = cssVars({
   }
 });
 
-cssVarsReset();
+resetCssVars();
 
 primaryColor('#ff0000'); // No CSS update after reset
 isDark(true);           // No CSS update after reset
 ```
 
-### Integration with cssReset
+### Integration with resetCss
 
 ```jsx
-import { cssReset, cssVarsReset } from '@hellajs/css';
+import { resetCss, resetCssVars } from '@hellajs/css';
 
 // Complete CSS system reset
 const resetAllCSS = () => {
-  cssReset();      // Clear CSS rules and styles
-  cssVarsReset();  // Clear CSS variables and effects
+  resetCss();      // Clear CSS rules and styles
+  resetCssVars();  // Clear CSS variables and effects
 };
 ```
 

@@ -5,7 +5,7 @@ import { STYLE_ID, refCounts, inlineCache, cssRulesMap, ruleCounts } from "./int
 /**
  * Clears all CSS rules, caches, and resets the CSS system to initial state.
  */
-export function cssReset() {
+export function resetCss() {
   inlineCache.clear();
   refCounts.clear();
   cssRulesMap.clear();

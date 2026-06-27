@@ -1,4 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { delay, resetTestState } from "../../../utils/test-helpers.js";
+import { flush, signal } from "@hellajs/core";
 import { $collection, checkMultiSelectors, multiSelectors, getState } from "@hellajs/dom/bundle";
 import type { DomWrapper } from "@hellajs/dom";
 
@@ -199,14 +201,14 @@ describe("dom", () => {
 
       checkMultiSelectors();
 
-      await tick(10);
+      await delay(10);
 
       const div = document.createElement("div");
       div.className = "scheduled";
       document.body.appendChild(div);
 
       checkMultiSelectors();
-      await tick(10);
+      await delay(10);
 
       expect(div.textContent).toBe("test");
     });

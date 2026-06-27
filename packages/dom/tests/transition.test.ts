@@ -1,4 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
+import { delay, resetTestState } from "../../../utils/test-helpers.js";
+import { flush, signal } from "@hellajs/core";
 import { mount, html, Transition } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
@@ -91,7 +93,7 @@ describe("dom", () => {
 
       expect(document.getElementById("content")).not.toBeNull();
 
-      await tick(160);
+      await delay(160);
 
       expect(document.getElementById("content")).toBeNull();
     });
@@ -144,7 +146,7 @@ describe("dom", () => {
 
       expect(document.getElementById("content")?.classList.contains("fade-out")).toBe(true);
 
-      await tick(160);
+      await delay(160);
 
       expect(document.getElementById("content")).toBeNull();
     });
@@ -220,7 +222,7 @@ describe("dom", () => {
 
       app.unmount();
 
-      await tick(160);
+      await delay(160);
     });
 
     test("works with reactive show function wrapping a signal", () => {

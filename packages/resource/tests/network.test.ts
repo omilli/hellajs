@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
+import {delay} from "../../../utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resourceCache", () => {

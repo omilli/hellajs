@@ -403,18 +403,18 @@ const btn = css({
 }, { name: 'my-btn' }); // custom class name
 ```
 
-### cssRemove
+### removeCss
 
 ```typescript
-function cssRemove(obj: CSSObject, options?: CSSOptions): void
+function removeCss(obj: CSSObject, options?: CSSOptions): void
 ```
 
 Decrements reference count, removes from DOM at zero. Must match structurally (not by reference). Options must match those used in `css()`.
 
-### cssReset
+### resetCss
 
 ```typescript
-function cssReset(): void
+function resetCss(): void
 ```
 
 Clears all CSS rules, caches, reference counters. Only affects HellaJS-generated CSS.
@@ -425,7 +425,7 @@ Clears all CSS rules, caches, reference counters. Only affects HellaJS-generated
 function cssVars<T>(vars: T, options?: { scoped?: string; prefix?: string }): { [K in keyof T]: string }
 ```
 
-Creates CSS custom properties. Values can be signals, functions, or static. Reactive values auto-update when signals change. Returns `var(--name)` references. Nested objects create dashed names (e.g. `colors.primary` → `var(--colors-primary)`). Reactive effects auto-cleaned on `cssVarsReset`.
+Creates CSS custom properties. Values can be signals, functions, or static. Reactive values auto-update when signals change. Returns `var(--name)` references. Nested objects create dashed names (e.g. `colors.primary` → `var(--colors-primary)`). Reactive effects auto-cleaned on `resetCssVars`.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -440,10 +440,10 @@ const vars = cssVars({
 const box = css({ background: vars.bg, color: vars.primary });
 ```
 
-### cssVarsReset
+### resetCssVars
 
 ```typescript
-function cssVarsReset(): void
+function resetCssVars(): void
 ```
 
 Clears all CSS variables, caches, and reactive effects.

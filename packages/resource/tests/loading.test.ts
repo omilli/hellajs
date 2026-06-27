@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import {delay} from "../../../utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
@@ -13,7 +14,7 @@ describe("resource", () => {
       expect(r.isFetching()).toBe(true);
       expect(r.isLoading()).toBe(true);
 
-      await tick(60);
+      await delay(60);
 
       expect(r.isFetching()).toBe(false);
       expect(r.isLoading()).toBe(false);
@@ -23,7 +24,7 @@ describe("resource", () => {
       const r = resource(() => delay("data", 20), { cacheTime: 100 });
 
       r.fetch({ force: true });
-      await tick(30);
+      await delay(30);
 
       expect(r.data()).toBe("data");
       expect(r.isLoading()).toBe(false);
@@ -35,7 +36,7 @@ describe("resource", () => {
       expect(r.isFetching()).toBe(true);
       expect(r.data()).toBe("data"); // Still has stale data
 
-      await tick(30);
+      await delay(30);
 
       expect(r.isFetching()).toBe(false);
     });
@@ -48,7 +49,7 @@ describe("resource", () => {
       r.fetch({ force: true });
       expect(r.isIdle()).toBe(false);
 
-      await tick(20);
+      await delay(20);
       expect(r.isIdle()).toBe(false);
 
       r.reset();
@@ -61,7 +62,7 @@ describe("resource", () => {
       r.fetch({ force: true });
       expect(r.isFetching()).toBe(true);
 
-      await tick(20);
+      await delay(20);
 
       expect(r.isFetching()).toBe(false);
       expect(r.error()?.message).toBe("Failed");
@@ -78,7 +79,7 @@ describe("resource", () => {
       expect(r.isLoading()).toBe(false);
       expect(r.isFetching()).toBe(true);
 
-      await tick(30);
+      await delay(30);
 
       expect(r.isFetching()).toBe(false);
       expect(r.data()).toBe("new data");
@@ -91,7 +92,7 @@ describe("resource", () => {
       expect(r.isLoading()).toBe(true);
       expect(r.isFetching()).toBe(true);
 
-      await tick(30);
+      await delay(30);
 
       expect(r.isLoading()).toBe(false);
       expect(r.isFetching()).toBe(false);

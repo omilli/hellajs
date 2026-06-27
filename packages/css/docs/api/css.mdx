@@ -83,7 +83,7 @@ const cardStyle = css({
 CSS automatically optimizes performance through:
 
 - **Automatic Memoization**: Identical CSS objects with the same `name` share a single rule
-- **Reference Counting**: [`cssRemove`](/reference/css/cssremove) decrements usage; styles are removed from the DOM when the count reaches zero
+- **Reference Counting**: [`removeCss`](/reference/css/removecss) decrements usage; styles are removed from the DOM when the count reaches zero
 - **Smart Caching**: Previously processed styles return instantly
 
 ### @-Rules
@@ -136,7 +136,7 @@ Fully typed with TypeScript using `csstype`. Property names and values are valid
 
 ### Memory Management
 
-Use [`cssRemove`](/reference/css/cssremove) to clean up styles when components are destroyed, or [`cssReset`](/reference/css/cssreset) to clear all styles.
+Use [`removeCss`](/reference/css/removecss) to clean up styles when components are destroyed, or [`resetCss`](/reference/css/resetcss) to clear all styles.
 
 ### Special Value Handling
 
