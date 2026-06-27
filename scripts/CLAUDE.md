@@ -6,7 +6,7 @@
 
   | Script | What it does |
   |---|---|
-  | `check.mjs` | Orchestrator: lint → bundle → test. `bun check [package]` scopes to one workspace. Preferred over `bun test`. |
+  | `check.mjs` | Orchestrator: bundle → test → lint. `bun check [package]` scopes to one workspace. Preferred over `bun test`. |
   | `bundle.mjs` | Build `dist/` per package: esbuild bundle + per-module transpile, terser minified variant, `.d.ts` generation + copy, artifact validation, size metrics, hash-based cache, dependency-ordered parallel orchestration. **875 lines — split target.** |
   | `coverage.mjs` | `bun bundle` then `bun test --coverage`, filtered to the target package. CI runs this. |
   | `clean.mjs` | Remove `dist/` + `.build-cache/` per package. |

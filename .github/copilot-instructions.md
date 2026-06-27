@@ -59,8 +59,8 @@ applyTo: "**"
 
   | Name | Command | What it does |
   |---|---|---|
-  | check | `bun check [package]` | lint + bundle + test. **Preferred over `bun test`.** |
-  | coverage | `bun coverage [package]` | bundle + `test --coverage`; filters the table to the target package. CI runs this. |
+  | check | `bun check [package]` | bundle + test + lint. **Preferred over `bun test`.** |
+  | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint; filters the table to the target package. CI runs this. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
   | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` |
   | clean | `bun clean` | Remove build artifacts. |

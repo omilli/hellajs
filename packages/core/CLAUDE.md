@@ -98,4 +98,6 @@ Integration-style, public API only — never imports `lib/internal/*`. Uses `moc
 - `topology.test.ts` — diamond / jagged-diamond / lazy-branch / skip-update / unsubscribe-inactive patterns (ported from preact-signals).
 - `env.test.ts`, `utils.test.ts` — env probes and type guards (`isPlainObject` rejects arrays, Date, Map/Set, class instances; accepts `Object.create(null)`).
 
+Run with `bun coverage core`.
+
 </core-package-instructions>
