@@ -111,6 +111,7 @@ Run this when holding a scripts file (`scripts/**/*.ts`, `utils/**/*.ts`). Each 
 **Utils usage**
 - [ ] Uses `logger` not bare `console.log`
 - [ ] Uses `execCommand` / `execCommandInherited` not raw `spawn`
+  - Exception: raw `spawn` is allowed when a script must capture output from a process that intentionally exits non-zero (e.g., test coverage output from failing tests). The function must include a JSDoc comment explaining why the non-rejecting contract is necessary.
 - [ ] Uses `projectRoot` / `packagesDir` not per-file `path.resolve(process.cwd())`
 - [ ] Uses `getPackageInfo` / `isValidPackage` not ad-hoc `fs.readdir` + filter
 - [ ] No re-implementation of an existing util

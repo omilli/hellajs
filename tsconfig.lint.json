@@ -65,7 +65,8 @@
     "packages/*/tests/**/*.ts",
     "plugins/*/src/**/*.mjs",
     "plugins/*/tests/**/*.ts",
-    "scripts/**/*.mjs",
+    "scripts/**/*.ts",
+    "scripts/utils/**/*.ts",
     "utils/**/*.js",
     "commitlint.config.ts"
   ],
