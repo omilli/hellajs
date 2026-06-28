@@ -37,14 +37,14 @@
 		"typescript": "^5.9.3"
 	},
 	"scripts": {
-		"check": "bun ./scripts/check.mjs",
+		"check": "bun ./scripts/check.ts",
 		"lint": "tsc -p tsconfig.lint.json --noEmit && eslint .",
-		"bundle": "bun ./scripts/bundle.mjs",
-		"clean": "bun ./scripts/clean.mjs",
-		"coverage": "bun ./scripts/coverage.mjs",
+		"bundle": "bun ./scripts/bundle.ts",
+		"clean": "bun ./scripts/clean.ts",
+		"coverage": "bun ./scripts/coverage.ts",
 		"changeset": "changeset",
-		"release": "bun bundle --quiet && bun ./scripts/release.mjs",
-		"sync": "bun ./scripts/sync.mjs",
+		"release": "bun bundle --quiet && bun ./scripts/release.ts",
+		"sync": "bun ./scripts/sync.ts",
 		"test:docs": "bun test docs/src/pages/learn/"
 	},
 	"version": ""
