@@ -6,6 +6,7 @@ import {
   isObject,
   isObjectOrFunction,
   isStore,
+  readDeep,
   applyUpdate,
   wrapWithMiddleware,
   defineStoreProperty
@@ -34,10 +35,10 @@ export function createStore<T extends Record<string, unknown>>(
   const middlewares = options?.middleware;
 
   const result = {} as Store<T, never>;
+  let resultKeys: string[] = [];
 
   const snapshotComputed = computed(() => {
     const snapshotObj = {} as T;
-    const resultKeys = Object.keys(result);
     let i = 0;
     const len = resultKeys.length;
     while (i < len) {
@@ -48,8 +49,16 @@ export function createStore<T extends Record<string, unknown>>(
 
       if (isFunction(originalValue)) {
         snapshotObj[key as keyof T] = originalValue;
-      } else if (isObject(value) && Object.hasOwn(value, "snapshot") && isFunction((value as Record<"snapshot", unknown>).snapshot)) {
-        snapshotObj[key as keyof T] = ((value as Record<"snapshot", unknown>).snapshot as () => T[keyof T])();
+      } else if (isStore(value)) {
+        if (isStore(initial[key as keyof T])) {
+          snapshotObj[key as keyof T] = {} as T[keyof T];
+          readDeep(
+            value as Record<string, unknown>,
+            snapshotObj[key as keyof T] as Record<string, unknown>
+          );
+        } else {
+          snapshotObj[key as keyof T] = (value as Record<"snapshot", () => T[keyof T]>).snapshot();
+        }
       } else if (isFunction(value)) {
         snapshotObj[key as keyof T] = (value as () => T[keyof T])();
       }
@@ -157,6 +166,8 @@ export function createStore<T extends Record<string, unknown>>(
     );
     i++;
   }
+
+  resultKeys = Object.keys(result);
 
   return result;
 }

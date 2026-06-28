@@ -65,6 +65,58 @@ describe("snapshot", () => {
     expect((lastSnap as { user: { profile: { settings: { theme: string } } } }).user.profile.settings.theme).toBe("light");
   });
 
+  test("snapshot is reactive across deeply nested composed stores", () => {
+    const innerStore = store({ value: "a" });
+    const midStore = store({ inner: innerStore });
+    const outerStore = store({ mid: midStore });
+    const tracker = mock(() => {});
+
+    effect(() => {
+      outerStore.snapshot();
+      tracker();
+    });
+
+    expect(tracker).toHaveBeenCalledTimes(1);
+
+    innerStore.value("b");
+
+    expect(tracker).toHaveBeenCalledTimes(2);
+  });
+
+  test("snapshot is reactive across composed stores with array leaves", () => {
+    const itemsStore = store({ items: [1, 2, 3] });
+    const containerStore = store({ data: itemsStore });
+    const tracker = mock(() => {});
+
+    effect(() => {
+      containerStore.snapshot();
+      tracker();
+    });
+
+    expect(tracker).toHaveBeenCalledTimes(1);
+
+    itemsStore.items([1, 2, 3, 4]);
+
+    expect(tracker).toHaveBeenCalledTimes(2);
+  });
+
+  test("snapshot is reactive across composed stores with readonly properties", () => {
+    const innerStore = store({ name: "Alice", age: 30 }, { readonly: ["name"] });
+    const appStore = store({ user: innerStore });
+    const tracker = mock(() => {});
+
+    effect(() => {
+      appStore.snapshot();
+      tracker();
+    });
+
+    expect(tracker).toHaveBeenCalledTimes(1);
+
+    innerStore.age(31);
+
+    expect(tracker).toHaveBeenCalledTimes(2);
+  });
+
   test("empty store snapshot", () => {
     const data = store({});
     expect(data.snapshot()).toEqual({});

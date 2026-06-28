@@ -105,13 +105,13 @@ Valtio and MobX win on raw mutation ergonomics — you write normal JS. RTK's Im
 
 ## 5. Snapshot & Derivation
 
-HellaJS `snapshot` is a `computed()` that iterates non-reserved keys and produces a plain-object view (`lib/create.ts`). It re-runs when any accessed signal changes and flattens nested stores by calling their `.snapshot()` recursively (`lib/create.ts`). Original functions are preserved on the snapshot (`lib/create.ts`), so helper methods on the initial object keep working.
+HellaJS `snapshot` is a `computed()` that iterates non-reserved keys and produces a plain-object view (`lib/create.ts`). It re-runs when any accessed signal changes and recursively reads leaf signals in composed stores via the `readDeep` helper (`lib/utils.ts`). Original functions are preserved on the snapshot (`lib/create.ts`), so helper methods on the initial object keep working.
 
-A real limitation, verified by `tests/nested.test.ts`: the snapshot is *not* deeply reactive across composed stores. If you nest `userStore` inside `appStore`, mutating `userStore.name` does not re-run an effect that only reads `appStore.snapshot()` — the inner store's snapshot is called as a value, breaking the reactive chain. For reactive derivations across composed stores, you must read the inner signals directly.
+The snapshot is reactive across the full composed tree. Nested store leaf signals are read inline during snapshot evaluation, so mutating any signal in a composed tree triggers re-computation of the outermost snapshot.
 
 | Library | Snapshot pattern | Reactivity |
 |---|---|---|
-| HellaJS | `store.snapshot()` — reactive computed | Reactive within a single store; not across composed stores |
+| HellaJS | `store.snapshot()` — reactive computed | Reactive across the full composed tree |
 | Zustand | `useStore(selector)` | Selector determines scope |
 | Redux Toolkit | `useSelector(selector)` + `createSelector` memoization | Selector determines scope |
 | Jotai | Derived atoms: `atom((get) => …)` | Reactive by construction |
@@ -271,4 +271,4 @@ What sets HellaJS apart — and no single competitor matches all of:
 5. **Per-key middleware that nests recursively via the store factory** — middleware is wired into the construction loop (`lib/create.ts`), not a wrapper layer.
 6. **Recursive cleanup that preserves shared leaf signals** — composes safely with externally-owned state.
 
-Its gaps are the predictable ones: ecosystem size (no devtools, no Redux DevTools bridge, no `persist` middleware), no SSR/hydration story, no async/suspense primitives in the package itself (delegated to `@hellajs/resource`), no per-element array reactivity (arrays are single signals), and a snapshot that does not stay reactive across composed-store boundaries. For applications that live inside the HellaJS ecosystem and want deeply reactive state with strong typing at minimal bundle cost, it is the smallest and most typed option here. For applications that need devtools, time travel, async flows, or per-element array reactivity, Valtio and MobX remain the safer bets.
+Its gaps are the predictable ones: ecosystem size (no devtools, no Redux DevTools bridge, no `persist` middleware), no SSR/hydration story, no async/suspense primitives in the package itself (delegated to `@hellajs/resource`), and no per-element array reactivity (arrays are single signals). For applications that live inside the HellaJS ecosystem and want deeply reactive state with strong typing at minimal bundle cost, it is the smallest and most typed option here. For applications that need devtools, time travel, async flows, or per-element array reactivity, Valtio and MobX remain the safer bets.
