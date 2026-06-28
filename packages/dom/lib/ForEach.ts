@@ -100,12 +100,11 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           index++;
         }
 
-        const existingKeys = Array.from(keyToNode.keys());
+        const existingEntries = Array.from(keyToNode.entries());
         let ki = 0;
-        const kLen = existingKeys.length;
+        const kLen = existingEntries.length;
         while (ki < kLen) {
-          const key = existingKeys[ki++]!;
-          const node = keyToNode.get(key)!;
+          const [key, node] = existingEntries[ki++]!;
           if (node.parentNode !== actualParent) continue;
           const newNode = newKeyToNode.get(key);
           (!newNode || newNode !== node) && nodesToRemove.push(node);

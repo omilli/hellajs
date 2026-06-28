@@ -10,7 +10,7 @@ import type { HookType } from "../types/nodes";
  * @param type The hook type to run
  */
 export function runHooks(node: Node, type: HookType) {
-  const hooks = peekState(node)?.hooks[type];
+  const hooks = peekState(node)?.hooks?.[type];
   if (!hooks) return;
   const len = hooks.length;
   if (len === 0) return;
@@ -45,12 +45,15 @@ function clean(node: Node) {
   state.lazyCleanup?.();
   state.transitionCleanup?.();
 
-  let i = 0;
-  const len = state.effects.length;
-  while (i < len) {
-    state.effects[i++]!();
+  const effects = state.effects;
+  if (effects) {
+    let i = 0;
+    const len = effects.length;
+    while (i < len) {
+      effects[i++]!();
+    }
+    effects.length = 0;
   }
-  state.effects.length = 0;
 
   removeDirectHandlers(node);
 

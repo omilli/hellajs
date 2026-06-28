@@ -1,11 +1,11 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn } from "../types/nodes";
 import { isFunction, objectLoop } from "./core";
-import { isHellaNode, renderProp, resolveText, resolveValue } from "./utils";
+import { isHellaNode, renderProp, toText, resolveValue } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
 import { cleanupSubtree } from "./cleanup";
-import { getState, hasState, peekState } from "./state";
+import { getState, peekState } from "./state";
 
 /**
  * @internal
@@ -48,11 +48,11 @@ export function resolveNode(value: HellaChild, parent?: Node): Node {
   if (isFunction(value)) {
     const textNode = document.createTextNode("");
     registry.addEffect(parent || textNode, () =>
-      textNode.textContent = resolveText(value())
+      textNode.textContent = toText(value())
     );
     return textNode;
   }
-  return document.createTextNode(resolveText(value));
+  return document.createTextNode(toText(value));
 }
 
 /**
@@ -63,7 +63,7 @@ export function resolveNode(value: HellaChild, parent?: Node): Node {
  * @returns The mounted DOM element or fragment
  */
 export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElement | DocumentFragment {
-  const { tag, props, on, e, bind, hooks, children = [], __scope, error } = node;
+  const { tag, props, on, e, bind, hooks, children, __scope, error } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
@@ -151,7 +151,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
     return;
   }
 
-  const currentBoundary = hasState(parent) && getState(parent).errorConfig ? parent : boundaryElement;
+  const currentBoundary = peekState(parent)?.errorConfig ? parent : boundaryElement;
 
   let index = 0;
   const length = children.length;
@@ -227,7 +227,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
     const resolved = resolveValue(child);
 
     if (typeof resolved === "string" || typeof resolved === "number") {
-      parent.appendChild(document.createTextNode(resolveText(resolved)));
+      parent.appendChild(document.createTextNode(toText(resolved)));
     } else if (resolved instanceof Node) {
       parent.appendChild(resolved);
     } else if (isHellaNode(resolved)) {

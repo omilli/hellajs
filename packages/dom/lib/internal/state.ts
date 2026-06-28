@@ -4,12 +4,15 @@ import type { ErrorConfig, HellaNode, HookType, HookHandler } from "../types/nod
  * @internal
  * Element state stored in a WeakMap, keyed by DOM node.
  * No properties are added to DOM elements themselves.
+ * `directHandlers`, `effects`, and `hooks` are lazy-allocated on first use so
+ * elements that never carry `e:` handlers / `bind:` effects / `hook:` hooks
+ * pay no Map/array/object allocation at mount.
  */
 export interface ElementState {
-  effects: (() => void)[];
+  effects?: (() => void)[];
   handlers: Record<string, EventListener>;
-  directHandlers: Map<string, EventListener>;
-  hooks: Partial<Record<HookType, Array<HookHandler>>>;
+  directHandlers?: Map<string, EventListener>;
+  hooks?: Partial<Record<HookType, Array<HookHandler>>>;
   isMounted: boolean;
   componentScope?: () => void;
   portalCleanup?: () => void;
@@ -32,10 +35,7 @@ export function getState(node: Node): ElementState {
   let state = elementMap.get(node);
   if (!state) {
     state = {
-      effects: [],
       handlers: {},
-      directHandlers: new Map(),
-      hooks: {},
       isMounted: false,
     };
     elementMap.set(node, state);

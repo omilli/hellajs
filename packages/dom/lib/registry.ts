@@ -18,6 +18,7 @@ export const registry = {
    */
   addEffect(node: Node, effectFn: () => void) {
     const state = getState(node);
+    const effects = state.effects ?? (state.effects = []);
     const el = node as Element;
     const dispose = effect(() => {
       if (state.isMounted) {
@@ -37,7 +38,7 @@ export const registry = {
       }
     });
 
-    state.effects.push(dispose);
+    effects.push(dispose);
   },
 
   /**
@@ -52,7 +53,8 @@ export const registry = {
     type: HookType,
     handler: HookHandler
   ) {
-    const stacks = getState(element).hooks;
+    const state = getState(element);
+    const stacks = state.hooks ?? (state.hooks = {});
     (stacks[type] || (stacks[type] = [])).push(handler);
   }
 };
