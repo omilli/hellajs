@@ -14,6 +14,7 @@ applyTo: "**"
   - ALWAYS use `bun` for scripts — never `node` directly unless unavoidable.
   - Use existing tests, examples, and folders in the repo to execute code/tests. Do not wander outside the file system (e.g., to `/tmp/`) to test or build.
   - Load the `brain-prime` skill before any substantive task.
+  - After editing AGENTS.md files, stop. Do NOT run `bun sync` — the post-commit hook + CI handle regeneration.
 
   ## Non-negotiables
 
