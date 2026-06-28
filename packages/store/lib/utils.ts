@@ -42,6 +42,39 @@ export const isObjectOrFunction = (value: unknown): boolean =>
   isObject(value) || isFunction(value);
 
 /**
+ * @internal
+ * Recursively reads every signal in a store tree, registering the caller
+ * as a subscriber. Produces a plain object mirror with callable properties
+ * preserved so signals remain callable in the output.
+ * @param node The store or nested store to read.
+ * @param out The output object to populate.
+ */
+export const readDeep = (
+  node: Record<string, unknown>,
+  out: Record<string, unknown>
+): void => {
+  const keys = Object.keys(node);
+  let i = 0;
+  const len = keys.length;
+  while (i < len) {
+    const key = keys[i]!;
+    if (reservedKeys.has(key)) { i++; continue; }
+    const value = node[key];
+
+    if (isStore(value)) {
+      out[key] = {};
+      readDeep(value as Record<string, unknown>, out[key] as Record<string, unknown>);
+    } else if (isFunction(value)) {
+      value();
+      out[key] = value;
+    } else {
+      out[key] = value;
+    }
+    i++;
+  }
+};
+
+/**
  * Applies an update to a target signal, optionally through middleware.
  * @internal
  */

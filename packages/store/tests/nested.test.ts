@@ -138,7 +138,7 @@ describe("store", () => {
       }).not.toThrow();
     });
 
-    test("snapshot is not deeply reactive across composed stores", () => {
+    test("snapshot is reactive across composed stores", () => {
       const userStore = store({ name: "Alice" });
       const appStore = store({ user: userStore });
       const tracker = mock(() => {});
@@ -152,7 +152,7 @@ describe("store", () => {
 
       userStore.name("Bob");
 
-      expect(tracker).toHaveBeenCalledTimes(1);
+      expect(tracker).toHaveBeenCalledTimes(2);
     });
   });
 });

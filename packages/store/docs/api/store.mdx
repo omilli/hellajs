@@ -59,7 +59,7 @@ type StoreMiddleware<T> = {
 
 A reactive snapshot of the entire store state as a plain JavaScript object. The snapshot function is reactive and will re-compute when any store property changes.
 
-> ⚠️ **Performance**: snapshot accesses every signal in the store. Any property change triggers re-computation. Use individual property access for targeted reactivity.
+> ⚠️ **Performance**: snapshot accesses every signal in the store. When composed stores are nested, the dependency footprint covers the full composed tree — any leaf signal change triggers re-computation. Use individual property access for targeted reactivity in wide or deeply composed stores.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -68,6 +68,22 @@ const appStore = store({ count: 0, user: { name: 'Alice' } });
 
 const snapshot = appStore.snapshot();
 console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
+```
+
+The snapshot is reactive across composed store boundaries. When one store is nested inside another, mutating a leaf signal in either store triggers re-computation of the outer snapshot:
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const userStore = store({ name: 'Alice' });
+const appStore = store({ user: userStore });
+
+effect(() => {
+  console.log(appStore.snapshot());
+});
+
+userStore.name('Bob'); // triggers the effect — snapshot is reactive across composed stores
 ```
 
 ### `update`
