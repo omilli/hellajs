@@ -1,6 +1,6 @@
 import { handlerCounts } from "./counts";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "./dispatch";
-import { getState, hasState } from "./state";
+import { getState, peekState } from "./state";
 
 const globalListeners = new Set<string>();
 
@@ -41,8 +41,7 @@ function delegatedHandler(event: Event) {
 
   while (i < len) {
     const element = path[i++] as Element;
-    if (!hasState(element)) continue;
-    const handler = getState(element).handlers[type];
+    const handler = peekState(element)?.handlers[type];
 
     if (handler) {
       try {
@@ -73,7 +72,8 @@ function delegatedHandler(event: Event) {
  * @param handler Event handler function
  */
 export function setDirectHandler(element: Element, type: string, handler: EventListener) {
-  const handlers = getState(element).directHandlers;
+  const state = getState(element);
+  const handlers = state.directHandlers ?? (state.directHandlers = new Map());
 
   const wrappedHandler = (event: Event) => {
     try {
@@ -101,6 +101,7 @@ export function setDirectHandler(element: Element, type: string, handler: EventL
  */
 export function removeDirectHandlers(node: Node) {
   const handlers = getState(node).directHandlers;
+  if (!handlers) return;
   const iter = handlers.keys();
   let result = iter.next();
   while (!result.done) {
