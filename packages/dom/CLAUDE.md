@@ -19,7 +19,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 
 ## ElementState (`lib/internal/state.ts`) — `WeakMap<Node, ElementState>`
 
-`getState` lazily creates; `peekState` returns `undefined` if absent; `hasState`/`deleteState` wrap `has`/`delete`. Initial shape: `{ effects: [], handlers: {}, directHandlers: new Map(), hooks: {}, isMounted: false }`.
+`getState` lazily creates; `peekState` returns `undefined` if absent; `hasState`/`deleteState` wrap `has`/`delete`. Initial shape: `{ handlers: {}, isMounted: false }`. `effects`, `directHandlers`, and `hooks` are **lazy-allocated on first use** (`registry.addEffect` → `effects` array, `setDirectHandler` → `directHandlers` Map, `registry.addHook` → `hooks` object) — elements that never carry `bind:` / `e:` / `hook:` pay zero allocation for those collections (guide `code.md` §Memory). `handlers` stays eager (plain object, cheap, and `on:` is common).
 
 | Field | Purpose |
 |---|---|
@@ -36,7 +36,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 
 ## HellaNode (`lib/types/nodes.d.ts`)
 
-Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`. `isHellaNode` = `isPlainObject(v) && v.tag !== undefined` — the only structural discriminator.
+Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`. `isHellaNode` = `v !== null && typeof v === "object" && v.tag !== undefined` — the hot-path structural discriminator. Dom-local and deliberately skips the `isPlainObject` proto/`toString` cost; DOM Nodes expose `tagName` (not `tag`), so they fail the `tag` own-property check and are correctly rejected.
 
 | Field | Purpose |
 |---|---|
@@ -217,6 +217,10 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **`WeakMap`/`WeakSet`** for `elementMap`, `observedContainers`, `handlingBoundaries`, `processedNodes` — GC with the DOM nodes.
 - **Persistent text-node anchors** (`createTextNode("")`) for ForEach/Portal/Lazy/Transition/reactive children — never recreated; no comment nodes in the DOM.
 - **Bulk removal** in ForEach (collect before mutating); events cleanup iterates handlers once.
+- **Fast `isHellaNode`** — dom-local `typeof === "object" && v.tag !== undefined`, avoiding `isPlainObject`'s `getPrototypeOf` + `Object.prototype.toString.call` on every child resolution / ForEach item / dispatch step. `isPlainObject` is retained in core for cold input-validation paths (`$ref`/`$collection`).
+- **`toText` vs `resolveText`** — `toText(value)` assumes an already-resolved input and skips the `resolveValue` call; `resolveText` (which keeps the call) is used only where the input may still be a function/signal (`reactive.ts` bind path). Mount-side text rendering routes through `toText`.
+- **Lazy `ElementState` collections** — `effects` / `directHandlers` / `hooks` allocate on first use, not at `getState`. A reactive leaf pays only `{ handlers, isMounted }`.
+- **Single WeakMap lookup** on hot guards — `peekState(node)?.field` replaces the `hasState` + `getState` double-lookup in `appendToParent`'s boundary check and in `delegatedHandler`'s per-path-element walk.
 
 ## Testing approach (`tests/`)
 
