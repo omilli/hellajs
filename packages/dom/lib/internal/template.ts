@@ -29,10 +29,10 @@ const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w
 export function cloneWithValues(node: unknown, values: unknown[]): unknown {
   if (typeof node !== "object" || node === null) return node;
 
+  if (Object.hasOwn(node, "__static")) return node;
+
   if (Object.hasOwn(node, "__placeholder"))
     return values[(node as HtmlPlaceholder).__placeholder];
-
-  if (Object.hasOwn(node, "__static")) return node;
 
   if (Array.isArray(node)) {
     const result: unknown[] = [];
@@ -148,7 +148,18 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
 
   if (hellaNode.children) {
     const children = cloneWithValues(hellaNode.children, values);
-    cloned.children = Array.isArray(children) ? children.flat() : [children];
+    if (Array.isArray(children)) {
+      let needsFlat = false;
+      let fi = 0;
+      const fLen = children.length;
+      while (fi < fLen) {
+        if (Array.isArray(children[fi])) { needsFlat = true; break; }
+        fi++;
+      }
+      cloned.children = needsFlat ? children.flat() : children;
+    } else {
+      cloned.children = [children];
+    }
   }
 
   return cloned as HellaNode;

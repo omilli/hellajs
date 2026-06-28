@@ -3,6 +3,7 @@ import { handlerCounts } from "./counts";
 import { resetEventState } from "./events";
 import { resetSelectorState } from "./selectors";
 import { resetErrorState } from "./dispatch";
+import { clearStaticCache } from "./render";
 
 /**
  * @internal
@@ -13,5 +14,6 @@ export function resetDom() {
   resetEventState();
   resetSelectorState();
   resetErrorState();
+  clearStaticCache();
   handlerCounts.clear();
 }

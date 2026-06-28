@@ -1,4 +1,4 @@
-import { isFunction, isFalsy } from "./core";
+import { isFunction } from "./core";
 import type { HellaNode, HellaElement } from "../types/nodes";
 
 /**
@@ -39,8 +39,6 @@ export function resolveText(value: unknown): string {
   return toText(resolveValue(value));
 }
 
-const DIRECT_PROPS = Object.freeze(new Set(["value", "checked", "selected", "innerHTML"]));
-
 /**
  * @internal
  * Renders a property/attribute to a DOM element.
@@ -51,11 +49,12 @@ const DIRECT_PROPS = Object.freeze(new Set(["value", "checked", "selected", "inn
  * @param value The value to set
  */
 export function renderProp(element: HellaElement, key: string, value: unknown) {
-  if (DIRECT_PROPS.has(key)) {
-    (element as unknown as Record<string, unknown>)[key] = isFalsy(value) ? "" : value;
+  const isFalsyVal = value === false || value === null || value === undefined;
+  if (key === "value" || key === "checked" || key === "selected" || key === "innerHTML") {
+    (element as unknown as Record<string, unknown>)[key] = isFalsyVal ? "" : value;
     return;
   }
-  if (isFalsy(value)) {
+  if (isFalsyVal) {
     element.removeAttribute(key);
     return;
   }

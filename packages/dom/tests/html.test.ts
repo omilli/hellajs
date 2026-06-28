@@ -275,6 +275,48 @@ describe("dom", () => {
       expect(nodeA).not.toBe(nodeB);
     });
 
+    test("static subtree produces independent DOM on repeated mounts", () => {
+      const makeStatic = () => html`<div id="indep-test"><span>hello</span></div>` as HellaNode;
+
+      const app1 = document.createElement("div");
+      document.body.appendChild(app1);
+      mount(makeStatic(), app1);
+
+      const app2 = document.createElement("div");
+      document.body.appendChild(app2);
+      mount(makeStatic(), app2);
+
+      const span1 = app1.querySelector("span")!;
+      const span2 = app2.querySelector("span")!;
+
+      expect(span1).not.toBeNull();
+      expect(span2).not.toBeNull();
+      expect(span1).not.toBe(span2);
+      expect(span1.textContent).toBe("hello");
+      expect(span2.textContent).toBe("hello");
+
+      span1.textContent = "mutated";
+      expect(span2.textContent).toBe("hello");
+
+      app1.remove();
+      app2.remove();
+    });
+
+    test("static subtree inside non-static parent mounts correctly", () => {
+      const dynamic = signal("world");
+      const makeMixed = () => html`
+        <div id="mixed-static">
+          <p class="static-child">hello</p>
+          <span>${dynamic}</span>
+        </div>
+      ` as HellaNode;
+
+      mount(makeMixed());
+      expect(document.getElementById("mixed-static")).not.toBeNull();
+      expect(document.querySelector(".static-child")?.textContent).toBe("hello");
+      expect(document.querySelector("#mixed-static span")?.textContent).toBe("world");
+    });
+
     test("deeply nested template with mixed static/dynamic content", () => {
       const make = () => html`
         <div id="root">
