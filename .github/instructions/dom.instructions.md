@@ -72,7 +72,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 
 - **Tokenization.** `SKIP_REGEX` strips comments/DOCTYPE/CDATA; `<>`/`</>` rewrite to `<__fragment__>`/`</__fragment__>` → `tag: "$"`. `TOKEN_REGEX` matches tags + text; `ATTR_REGEX` classifies prefixes (`error:` before `e:` before `on:`/`bind:`/`hook:` before bare) in one pass; `parseAttributes` routes by `name.startsWith(...)`.
 - **Placeholders.** Interpolations become `__SLOT_N__` markers in the string and `{ __placeholder: N }` markers in the AST. **Format is `__SLOT_N__`, not `__HELLA_N__`.** `parseTextContent` splits text containing slots.
-- **Static-subtree optimization.** `markIfStatic` tags any node whose `props`/`on`/`e`/`bind`/`hooks`/`error`/`children` contain no `__placeholder` and no `__dynamicComponent` as `__static = true`. `cloneWithValues` short-circuits on `Object.hasOwn(node, "__static")` and returns the node as-is — **static subtrees are shared by reference across every invocation of the same literal.** This is why mutating a returned HellaNode is unsafe.
+- **Static-subtree optimization.** `markIfStatic` tags any node whose `props`/`on`/`e`/`bind`/`hooks`/`error`/`children` contain no `__placeholder` and no `__dynamicComponent` as `__static = true`. `cloneWithValues` short-circuits on `Object.hasOwn(node, "__static")` and returns the node as-is — **static subtrees are shared by reference across every invocation of the same literal.** This is why mutating a returned HellaNode is unsafe. `mountNode` further caches the first-built DOM subtree in a `staticDom: WeakMap<HellaNode, Element | DocumentFragment>` (`render.ts`); subsequent mounts of the same `__static` node return `cache.cloneNode(true)`, replacing O(nodes) DOM construction with O(1) clone (`render.ts:mountNode`). Safe because `markIfStatic` guarantees `__static` nodes carry no `on`/`e`/`bind`/`hooks`/`error` — zero `ElementState` entries exist on cached elements. The cache is cleared by `resetDom()` for test isolation.
 - **Root interpolation unwrap.** If the trimmed template is exactly `__SLOT_N__`, `parseHTML` returns the placeholder value directly — `html\`${value}\`` yields `value` itself, unwrapped.
 - **Roots.** 1 root → that node; `>1` roots → wrapped in `{ tag: "$", children: nodes }`.
 - **Dynamic components.** `<${Comp}>` becomes `{ __dynamicComponent: N, props, children }`; `cloneWithValues` calls `Comp(mergedProps)` if `Comp.isDynamic` (passthrough) or wraps via `component(Comp, mergedProps)`. Attribute buckets merge into one props object; a single child unwraps, multiple become an array.
@@ -102,7 +102,7 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 - **Sync `cleanupSubtree(root)`** — called directly by `appendToParent` (reactive child swap), ForEach (stale-removal + list clear), Transition (leave completion). `traverseDescendants` (iterative stack) → per descendant `clean(node)`: `beforeDestroy` → `componentScope?.()` → `portalCleanup?.()` → `lazyCleanup?.()` → `transitionCleanup?.()` → drain `effects` → `removeDirectHandlers` → `afterDestroy` → `deleteState`.
 - **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which recursively walks each removed node's subtree collecting elements with state → `cleanupQueue`; added element nodes → `mountQueue`; both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
 - **`runHooks` element-argument rule.** `beforeMount` and `afterDestroy` are called with **no** argument; every other hook receives the element.
-- **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, and `handlerCounts` between tests.
+- **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, the `staticDom` cache, and `handlerCounts` between tests.
 
 ## Mount queue
 
@@ -215,6 +215,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **`DocumentFragment`** for every multi-insert (ForEach first render / no-overlap / empty-recovery, Portal fragment).
 - **ForEach collection reuse** — temp Maps/arrays/Sets `clear()` + reference-swap, never reallocated.
 - **`__static` sharing** — static subtrees returned by reference, no deep clone.
+- **`staticDom` prototype cache** — `__static` subtrees return `cloneNode(true)` of a cached prototype, turning O(nodes) mount into O(1) for static branches.
 - **`composedPath()`** for delegation (pre-computed ancestor chain).
 - **`handlerCounts` fast-exit** + inline prefix matching in `ATTR_REGEX` (single regex pass).
 - **Module-level cached regexes** (`TOKEN_REGEX`, `PLACEHOLDER_REGEX`, `SKIP_REGEX`, `ATTR_REGEX`), `lastIndex = 0` before each use.
