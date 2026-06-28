@@ -73,7 +73,7 @@ New `docs/api/devtools.mdx` (Function template) + `docs/index.mdx` API list entr
 `devtools()` opts into the Redux DevTools extension via the global `window.__REDUX_DEVTOOLS_EXTENSION__` hook; when absent it returns a no-op disconnect (opt-in bridge — no allocation on the hot path when DevTools is missing). On connect: `extension.connect({ name })`, send `@@INIT` with `store.snapshot()`, then subscribe via `effect(() => { devtools.send(peekLabel() ?? "update", store.snapshot()) })` — the effect reads the snapshot computed (`lib/create.ts:38-59`) and therefore subscribes to every leaf signal through the same mechanism the store already uses. The label stack is a module-level `string[]`; `action(label, fn)` pushes, runs `fn`, pops in a `finally` so exceptions do not leak the stack; `peekLabel()` returns the top (or `undefined` when empty). `disconnect()` calls `devtools.disconnect()` and disposes the effect. Use `unknown` casts + an ambient `ReduxDevToolsExtension` interface (`declare global` in `devtools.ts`) rather than `any` (code.md §Types). `effect` comes from the existing `@hellajs/core` peer (re-exported through `lib/internal/core.ts`) — no new dep, no new `subscribe()` API. Trade-off considered and rejected: a separate `subscribe()` on the store — redundant since `effect()` over `snapshot()` already tracks every leaf.
 
 ### Definition of Done
-- [ ] `bun check store` exits 0
+- [ ] `bun coverage store` exits 0
 - [ ] `bun lint` exits 0
 - [ ] Every file in Contract.Files touched/created as specified
 - [ ] Public API delta in Contract implemented verbatim — `lib/index.ts` re-exports `devtools`, `action`, `DevToolsConfig`, `DisconnectFunction`
@@ -90,7 +90,6 @@ New `docs/api/devtools.mdx` (Function template) + `docs/index.mdx` API list entr
 One `test()` per Behavioral scenario (seven). Build a fake extension that records `connect`/`send`/`disconnect` into a `mock()`-tracked list; install it on `window.__REDUX_DEVTOOLS_EXTENSION__` under `beforeEach` save / `afterEach` restore (tests.md §Patched browser globals). The absent-extension scenario deletes the global for that one test only. Assert send labels and counts via the mock trackers (tests.md §Mock Patterns — `mock()` from `bun:test`, no boolean flags or integer counters). Cross-check each assertion against `lib/devtools.ts`.
 
 ### Definition of Done
-- [ ] `bun check store` exits 0
 - [ ] `bun coverage` shows 100% coverage on `lib/devtools.ts` (name the file + line range in the commit message)
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios (seven)
 - [ ] Overall coverage is not lower than before this task

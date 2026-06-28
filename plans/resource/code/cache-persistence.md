@@ -69,7 +69,7 @@ Modify `docs/api/resourcecache.mdx` per Doc placement above, per `docs.md` §Fun
 `save` = `adapter.setItem(key ?? "@hellajs/resource", JSON.stringify(resourceCache.toJSON()))`; `load` reads, returns `0` on `null`, else `resourceCache.hydrate(JSON.parse(raw))` and returns the restored count (`hydrate`'s return). Default key `"@hellajs/resource"`; partitioning via the `key` argument. **Manual save/restore only — no auto-persist with debounce** (preserved decision from source): keeps the API simple, avoids write amplification, gives users full control over when persistence happens. **No adapter implementations shipped** — users supply `localStorage`/`sessionStorage` (which match the interface directly) or a wrapper; this preserves the zero-dependency promise and avoids Web Storage APIs that may not exist in all environments. Error handling: `load` with a stored value that fails `JSON.parse` should not silently corrupt — surface the parse error (per `code.md` §Error Handling); the "no stored data" path (null) returns `0` cleanly.
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
+- [ ] `bun coverage resource` exits 0
 - [ ] `bun lint` exits 0
 - [ ] Every file in Contract.Files touched as specified
 - [ ] Public API delta in Contract implemented verbatim — `resourceCache.save`/`load` exist with the listed signatures; `StorageAdapter` is exported from `types/cache.d.ts`
@@ -87,7 +87,6 @@ Modify `docs/api/resourcecache.mdx` per Doc placement above, per `docs.md` §Fun
 Two `test()`s map 1:1 to the Behavioral scenarios. Round-trip: `resourceCache.set` a few entries with `cacheTime > 0`, `save(adapter)`, call `resourceCache.invalidateAll()` to emulate a fresh cache, `load(adapter)`, assert `resourceCache.get(key)` returns the original values and the return count matches. Use a hand-rolled `Map`-backed `StorageAdapter` fake (no `vi.fn`); `beforeEach` resets the cache via `resourceCache.invalidateAll()`. Empty-load: call `load` on an empty adapter and assert `0` with no throw. Mock `Date.now` if any entry needs to survive a TTL window across the round-trip (per the resource AGENTS.md Testing convention).
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
 - [ ] `bun coverage` shows 100% coverage on the changed source lines (`save`, `load`) named in Contract.Files
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios (2 total)
 - [ ] Overall coverage is not lower than before this task

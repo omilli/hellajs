@@ -62,7 +62,7 @@ Modify `docs/api/resource.mdx` per Doc placement above, per `docs.md` §Function
 Minimal, surgical change. Destructure `invalidates` from `options` alongside the existing mutation-relevant fields. In `mutate`, **after** `await options.onSettled?.(result, undefined, variables, mutationContext)` on the success path (resource.ts:451) — never on the error/abort path at line 459 — iterate `invalidates` (if present): `typeof item === "string"` → `resourceCache.invalidateByPrefix(item)`; else → `resourceCache.invalidateByPattern(item)`. The ordering decision (after `onSettled`) is deliberate so user code can inspect the result before cache state changes; the success-only decision preserves the existing contract that error/abort paths leave the cache alone (users call `invalidate()` manually in `onSettled` for error-path invalidation). Mixed arrays are allowed: `invalidates: ["user:", /^posts:\d+$/]`. Reuses existing invalidation methods — no new invalidation logic. Trade-off considered and rejected: invalidating before `onSettled` — rejected because it hides the pre-invalidation cache snapshot from the user's settle hook.
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
+- [ ] `bun coverage resource` exits 0
 - [ ] `bun lint` exits 0
 - [ ] Every file in Contract.Files touched as specified
 - [ ] Public API delta in Contract implemented verbatim — `invalidates?: Array<string | RegExp>` exists on `ResourceOptions`; the mutate success path dispatches strings to `invalidateByPrefix` and RegExp to `invalidateByPattern`
@@ -80,7 +80,6 @@ Minimal, surgical change. Destructure `invalidates` from `options` alongside the
 Three `test()`s map 1:1 to the Behavioral scenarios. Use `mock()` from `bun:test` to spy on `resourceCache.invalidateByPrefix` and `resourceCache.invalidateByPattern` (replace, assert `toHaveBeenCalledWith`, restore in `afterEach` — per `tests.md` §Mock Patterns). Prefix case: a resource with `invalidates: ["user:"]`, `r.mutate(...)`, assert prefix spy called with `"user:"`. Pattern case: same with `/^posts:\d+$/`. Negative case: a fetcher that rejects (or aborts via `timeout`/`abortSignal`), assert neither spy was called — covers the error and abort paths. `beforeEach` resets the cache and the spies.
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
 - [ ] `bun coverage` shows 100% coverage on the changed source lines (the `invalidates` destructure + dispatch in `mutate`) named in Contract.Files
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios (3 total)
 - [ ] Overall coverage is not lower than before this task

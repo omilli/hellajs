@@ -84,7 +84,7 @@ Modify `docs/api/resourcecache.mdx` (API + Key Concepts) and `docs/patterns/reso
 `toJSON` walks the public scope (`PUBLIC_SCOPE`, cache.ts:10) and emits a `SerializedCacheEntry` per non-expired entry (expired entries are excluded and deleted, mirroring `getCacheData` at cache.ts:147). **Approach C is the chosen scope decision: fetcher-scoped entries are NOT serialized in v1** — there is no stable string key for a fetcher function reference, and the prefetch API is the recommended server-side mechanism for fetcher-scoped data. `hydrate(payload)` iterates `payload.entries`, skips any whose `cacheTime` window has elapsed, and calls `setCacheData(PUBLIC_SCOPE, key, data, cacheTime, staleTime)` for the rest, returning the restored count. `hydrate` is explicit (user calls it) — no auto-magic. `toJSON` includes all non-expired entries regardless of staleness (stale entries are still valid cache; staleness only triggers SWR). Trade-offs considered and rejected: Approach A (serialize only public scope with no path forward — Approach C is A plus the prefetch recommendation) and Approach B (require a `serializeScope` string option on `resource()` — adds API surface for a v1 edge case; deferred).
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
+- [ ] `bun coverage resource` exits 0
 - [ ] `bun lint` exits 0
 - [ ] Every file in Contract.Files touched as specified
 - [ ] Public API delta in Contract implemented verbatim — `resourceCache.toJSON`/`hydrate` exist with the listed signatures; `SerializedCacheEntry`/`SerializedCache` are exported from `types/cache.d.ts`
@@ -103,7 +103,6 @@ Modify `docs/api/resourcecache.mdx` (API + Key Concepts) and `docs/patterns/reso
 Four `test()`s map 1:1 to the Behavioral scenarios. Non-expired emission: `set` two public entries with `cacheTime > 0`, `toJSON()`, assert both appear with correct meta and `scope: "__public__"`. Expired exclusion: mock `Date.now` forward past one entry's `cacheTime`, `toJSON()`, assert that entry is absent (and deleted in passing). Hydrate populate: `toJSON()` → `invalidateAll()` → `hydrate(payload)` → assert return count and that `resourceCache.get(key)` and `resourceCache.map.get(key)` return the data. `beforeEach` resets the cache. Use plain object payloads (no `JSON.parse` needed in-test unless verifying the round-trip through a string).
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
 - [ ] `bun coverage` shows 100% coverage on the changed source lines (`toJSON`, `hydrate`) named in Contract.Files
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios (4 total)
 - [ ] Overall coverage is not lower than before this task

@@ -78,7 +78,7 @@ Modify `docs/api/resourcecache.mdx` per Doc placement above, per `docs.md` §Fun
 `prefetch` resolves the key, consults the dedup map (unless `deduplicate: false`) and joins any in-flight same-fetcher+key request; otherwise creates an `AbortController`, registers via `setOngoing`, runs the fetcher with the same abort/timeout/retry pipeline as `run()` (resource.ts:161), stores the result via `setCacheData(fetcher, key, data, cacheTime, staleTime)`, resolves the dedup promise, and returns the data. **The primary work is extraction, not duplication**: the fetch/cache/retry/dedup orchestration already lives in `resource.ts:run()` — pull it into a shared helper (new `lib/internal/fetch.ts` or a `cache.ts`-local function) that both `run()` and `prefetch` call. URL-string overload is deferred (users pass an explicit fetcher). No resource object is created — `prefetch` returns `Promise<T>`; cache + dedup are keyed by fetcher reference identity (same as resources), so a resource sharing the same fetcher function reference + key hits the prefetched entry. Trade-off considered and rejected: duplicating the pipeline inline in `cache.ts` — rejected because it would diverge from `run()`'s abort/retry semantics under maintenance.
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
+- [ ] `bun coverage resource` exits 0
 - [ ] `bun lint` exits 0
 - [ ] Every file in Contract.Files touched as specified
 - [ ] Public API delta in Contract implemented verbatim — `resourceCache.prefetch` exists with the listed signature; `PrefetchOptions` is exported from `types/cache.d.ts`
@@ -96,7 +96,6 @@ Modify `docs/api/resourcecache.mdx` per Doc placement above, per `docs.md` §Fun
 Four `test()`s map 1:1 to the Behavioral scenarios. Store+hit: `prefetch` with a `mock()`-wrapped fetcher + `cacheTime > 0`, then construct a `resource` with the **same fetcher reference** and assert its cache lookup hits (fetcher not called again — assert call count). Dedup: two concurrent `prefetch` calls with the same fetcher + key, assert the fetcher runs exactly once. Timeout/abort/retry: use `delay` (from `globalThis`) and a `timeout` to drive the abort path; a rejecting fetcher with `retry: 2` to exercise the retry loop. `beforeEach` resets the cache and dedup via `resourceCache.invalidateAll()`.
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
 - [ ] `bun coverage` shows 100% coverage on the changed source lines (`prefetch` + the extracted shared helper) named in Contract.Files
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios (4 total)
 - [ ] Overall coverage is not lower than before this task

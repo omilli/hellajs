@@ -278,5 +278,4 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 **Coverage**
 - [ ] Every test asserts a behavior the source actually exposes (cross-checked against `lib/index.ts`)
 - [ ] No test imports a symbol not exported from `lib/index.ts`
-- [ ] `bun check <package>` exits 0
 - [ ] `bun coverage` shows 100% on the relevant source lines; overall not lower than baseline

@@ -76,7 +76,7 @@ Create `packages/css/docs/api/extractcss.mdx` (Function template) and add `extra
 `extractCSS()` reads the module-private state that already accumulates under SSR (where `hasDocument()` is false but the in-memory maps still update). Add two `@internal` accessors so the text-building logic has two callsites each: `getCssText()` in `lib/css.ts` returning `Array.from(cssRulesMap.values()).join("")` — refactor the existing `syncTextContent` (`lib/css.ts:26-32`) to call it, leaving only the `hasDocument()` guard and DOM write; and `getVarsText()` in `lib/vars.ts` extracted from the text-building loop inside `syncTextContent` (`lib/vars.ts:219-243`), same two-callsite structure. New `lib/extract.ts` imports both and returns `{ css: getCssText(), vars: getVarsText() }`. Key decisions: does NOT clear state (the caller resets via `cssReset()`/`cssVarsReset()`, allowing multiple extractions in a single pass); returns a structured object mirroring the two-element `hella-css`/`hella-vars` architecture so the caller emits two `<style>` tags or combines them; works under both SSR and client (useful for debugging/testing). Trade-off considered and rejected: a combined single-string return — would lose the two-element separation callers need.
 
 ### Definition of Done
-- [ ] `bun check css` exits 0
+- [ ] `bun coverage css` exits 0
 - [ ] `bun lint` exits 0
 - [ ] Every file in Contract.Files touched as specified — `lib/extract.ts` created; `lib/css.ts`, `lib/vars.ts`, `lib/types.d.ts`, `lib/index.ts` modified
 - [ ] Public API delta in Contract implemented verbatim — `lib/index.ts` re-exports `extractCSS`; `ExtractedCSS` present in `lib/types.d.ts`
@@ -94,7 +94,6 @@ Create `packages/css/docs/api/extractcss.mdx` (Function template) and add `extra
 New `tests/extract.test.ts`, one `test()` per Behavioral scenario, imported from `@hellajs/css/bundle`. `beforeEach` runs `resetTestState()` + `cssReset()` + `cssVarsReset()`. The SSR scenario captures the original `document` in `beforeEach`, reassigns `globalThis.document = undefined`, restores in `afterEach` — never a trailing restoration after assertions (per `tests.md` §Patched browser globals). Assert `result.css`/`result.vars` substrings: the css-side mirror is no-space format (`.btn{color:red}`), the vars-side mirror is space format (`--k: v;`). The removal scenario calls `css()` then `cssRemove()` and asserts the rule is gone from `result.css`.
 
 ### Definition of Done
-- [ ] `bun check css` exits 0
 - [ ] `bun coverage` shows 100% coverage on the changed source lines (`lib/extract.ts` + the new accessors in `lib/css.ts` and `lib/vars.ts`)
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios (six)
 - [ ] Overall coverage is not lower than before this task
