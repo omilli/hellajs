@@ -1,4 +1,4 @@
-import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig } from "../types/nodes";
+import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn } from "../types/nodes";
 import { isFunction, objectLoop } from "./core";
 import { isHellaNode, renderProp, resolveText, resolveValue } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
@@ -17,6 +17,23 @@ function getBoundaryConfig(boundary: Element | undefined): ErrorConfig | undefin
   if (!boundary) return undefined;
   const state = peekState(boundary);
   return state ? state.errorConfig : undefined;
+}
+
+/**
+ * @internal
+ * Clears a tracked rendered-nodes array, cleaning up each node before removal.
+ * @param nodes The array of rendered nodes to clear
+ * @param parent The parent DOM node to remove children from
+ */
+function clearRenderedNodes(nodes: Node[], parent: Node) {
+  let i = 0;
+  const len = nodes.length;
+  while (i < len) {
+    const n = nodes[i++]!;
+    cleanupSubtree(n);
+    parent.removeChild(n);
+  }
+  nodes.length = 0;
 }
 
 /**
@@ -70,11 +87,11 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
 
   if (hooks) {
     hooks.beforeMount && registry.addHook(element, "beforeMount", hooks.beforeMount);
-    hooks.afterMount && registry.addHook(element, "afterMount", hooks.afterMount as (node: Element) => void);
-    hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", hooks.beforeDestroy as (node: Element) => void);
+    hooks.afterMount && registry.addHook(element, "afterMount", hooks.afterMount as ElementMountFn);
+    hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", hooks.beforeDestroy as ElementMountFn);
     hooks.afterDestroy && registry.addHook(element, "afterDestroy", hooks.afterDestroy);
-    hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", hooks.beforeUpdate as (node: Element) => void);
-    hooks.afterUpdate && registry.addHook(element, "afterUpdate", hooks.afterUpdate as (node: Element) => void);
+    hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", hooks.beforeUpdate as ElementMountFn);
+    hooks.afterUpdate && registry.addHook(element, "afterUpdate", hooks.afterUpdate as ElementMountFn);
 
     if (hooks.beforeMount) {
       try {
@@ -160,15 +177,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
         try {
           const resolved = resolveValue(child);
 
-          let ci = 0;
-          const cLen = renderedNodes.length;
-          while (ci < cLen) {
-            const node = renderedNodes[ci]!;
-            cleanupSubtree(node);
-            actualParent.removeChild(node);
-            ci++;
-          }
-          renderedNodes.length = 0;
+          clearRenderedNodes(renderedNodes, actualParent);
 
           if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
             const proxyParent = new Proxy(actualParent as Element, {
@@ -203,15 +212,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
           const config = getBoundaryConfig(currentBoundary);
           const fallback = dispatchError(toError(e), { phase: "mount", element: actualParent, config });
           if (fallback) {
-            let ci = 0;
-            const cLen = renderedNodes.length;
-            while (ci < cLen) {
-              const node = renderedNodes[ci]!;
-              cleanupSubtree(node);
-              actualParent.removeChild(node);
-              ci++;
-            }
-            renderedNodes.length = 0;
+            clearRenderedNodes(renderedNodes, actualParent);
 
             const fbNode = mountNode(fallback);
             renderedNodes.push(fbNode);

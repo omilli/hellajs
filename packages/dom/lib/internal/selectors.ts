@@ -1,7 +1,21 @@
 import { hasDocument } from "./core";
 import { hasState } from "./state";
 import { cleanupQueue, scheduleCleanup } from "./queue";
-import type { MultiOp, SelectorEntry } from "../types/nodes";
+
+/**
+ * @internal
+ * Operation callback for multi-selector watching.
+ */
+export type MultiOp = (nodes: Element[]) => void;
+
+/**
+ * @internal
+ * Entry in the multiSelectors registry tracking operations and processed nodes.
+ */
+export interface SelectorEntry {
+  ops: MultiOp[];
+  processedNodes: WeakSet<Element>;
+}
 
 /**
  * @internal
@@ -36,10 +50,10 @@ export function ensureRefObserver() {
     const mLen = mutationsList.length;
     while (i < mLen) {
       const { removedNodes } = mutationsList[i++]!;
-      let j = 0;
+      let ri = 0;
       const rLen = removedNodes.length;
-      while (j < rLen) {
-        const node = removedNodes[j++]!;
+      while (ri < rLen) {
+        const node = removedNodes[ri++]!;
         if (node.nodeType === Node.ELEMENT_NODE && hasState(node)) {
           cleanupQueue.add(node);
           hasRemovals = true;
@@ -92,10 +106,10 @@ export function checkMultiSelectors() {
     }
 
     if (newNodes.length > 0) {
-      let j = 0;
+      let oi = 0;
       const oLen = ops.length;
-      while (j < oLen) {
-        ops[j++]!(newNodes);
+      while (oi < oLen) {
+        ops[oi++]!(newNodes);
       }
     }
   }

@@ -6,7 +6,7 @@ import type { HellaNode, ComponentFn } from "./types/nodes";
  * Wraps a component function with automatic scope management.
  * Creates a disposal scope that cleans up effects when the component unmounts.
  * Catches render errors and dispatches them through the error handling system.
- * @param componentFn The component function to wrap
+ * @param fn The component function to wrap
  * @param props Props to pass to the component function
  * @returns HellaNode with attached scope dispose function, or empty fragment on error
  */

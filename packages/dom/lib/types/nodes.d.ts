@@ -132,6 +132,11 @@ export type RenderFn = ((element: HellaElement) => void) & { isDynamic: true };
 export type ElementMountFn = (element: HellaElement) => void;
 
 /**
+ * Handler type for lifecycle hooks — either void callback or element callback.
+ */
+export type HookHandler = (() => void) | ElementMountFn;
+
+/**
  * Props object passed to component render function.
  * Each prop is a function that returns the current attribute value.
  * Accessing any property via Proxy always returns a function.
@@ -180,31 +185,6 @@ export interface ElementHooks {
  * Standard lifecycle hook types.
  */
 export type HookType = "beforeMount" | "afterMount" | "beforeDestroy" | "afterDestroy" | "beforeUpdate" | "afterUpdate";
-
-// ============================================================================
-// ELEMENT STATE
-// Internal state tracking for DOM elements
-// ============================================================================
-
-/**
- * @internal
- * Element state stored in a WeakMap, keyed by DOM node.
- * No properties are added to DOM elements themselves.
- */
-export interface ElementState {
-  effects: (() => void)[];
-  handlers: Record<string, EventListener>;
-  directHandlers: Map<string, EventListener>;
-  hooks: Partial<Record<HookType, Array<(() => void) | ((node: Element) => void)>>>;
-  isMounted: boolean;
-  componentScope?: () => void;
-  portalCleanup?: () => void;
-  errorConfig?: ErrorConfig;
-  originalNode?: HellaNode;
-  cachedBoundary?: Element;
-  lazyCleanup?: () => void;
-  transitionCleanup?: () => void;
-}
 
 // ============================================================================
 // REFERENCE SYSTEM
@@ -259,21 +239,6 @@ export interface DomCollection<T extends Element = Element> extends DomWrapperBa
   forEach(callback: (element: DomWrapper<T>, index: number) => void): DomCollection<T>;
   /** Stop watching for new elements and clear queued operations */
   dispose(): void;
-}
-
-/**
- * @internal
- * Operation callback for multi-selector watching.
- */
-export type MultiOp = (nodes: Element[]) => void;
-
-/**
- * @internal
- * Entry in the multiSelectors registry tracking operations and processed nodes.
- */
-export interface SelectorEntry {
-  ops: MultiOp[];
-  processedNodes: WeakSet<Element>;
 }
 
 // ============================================================================

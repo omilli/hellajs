@@ -45,7 +45,8 @@
 		"changeset": "changeset",
 		"release": "bun bundle --quiet && bun ./scripts/release.ts",
 		"sync": "bun ./scripts/sync.ts",
-		"test:docs": "bun test docs/src/pages/learn/"
+		"test:docs": "bun test docs/src/pages/learn/",
+		"visibility": "bun ./scripts/type-visibility.ts"
 	},
 	"version": ""
 }

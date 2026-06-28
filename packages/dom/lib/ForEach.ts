@@ -143,9 +143,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           keyToOldIndex.clear();
           toMove.clear();
           const currentKeysLen = currentKeys.length,
-            newKeysLen = newKeys.length;
+            curKeysLen = newKeys.length;
           let i = 0;
-          while (i < newKeysLen) {
+          while (i < curKeysLen) {
             toMove.add(i);
             i++;
           }
@@ -156,9 +156,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             i++;
           }
 
-          const mapped = new Array(newKeysLen);
+          const mapped = new Array(curKeysLen);
           i = 0;
-          while (i < newKeysLen) {
+          while (i < curKeysLen) {
             const key = newKeys[i];
             const oldNode = keyToNode.get(key);
             const newNode = newKeyToNode.get(key);
@@ -170,8 +170,6 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           const tails: number[] = [];
           const prevIndices = new Array(n).fill(-1);
           let keyIndexed = 0;
-
-          if (n === 0) return;
 
           while (keyIndexed < n) {
             if (mapped[keyIndexed] === -1) {

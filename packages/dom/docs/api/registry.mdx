@@ -7,7 +7,7 @@ Low-level API for manually registering effects and lifecycle hooks on DOM elemen
 ```typescript
 const registry: {
   addEffect(node: Node, effectFn: () => void): void;
-  addHook(element: Element, type: HookType, handler: (() => void) | ((node: Element) => void)): void;
+  addHook(element: Element, type: HookType, handler: HookHandler): void;
 }
 
 type HookType = 
