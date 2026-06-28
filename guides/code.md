@@ -373,7 +373,7 @@ Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `script
 - [ ] No broad `catch {}` swallowing unknown errors
 
 **Toolchain**
-- [ ] `bun check <package>` exits 0
+- [ ] `bun coverage <package>` exits 0
 - [ ] `bun lint` exits 0
 
 ## Config Verification Checklist
@@ -402,6 +402,6 @@ Run this when holding a Config file (`tsconfig*.json`, `eslint.config.*`, `packa
 - [ ] Wrapper thinness: the rollup/vite plugins forward to the babel plugin, not re-implement it
 
 **Toolchain**
-- [ ] `bun check` exits 0 for every package the change touches
+- [ ] `bun coverage` exits 0 for every package the change touches
 - [ ] `bun lint` exits 0
 - [ ] `bun bundle <package>` succeeds if build tooling changed

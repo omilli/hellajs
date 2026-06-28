@@ -70,7 +70,7 @@ Modify `docs/api/resourcecache.mdx` per Doc placement above, per `docs.md` §Fun
 Both methods reuse the existing cross-scope iteration pattern already used by `flatView.get`/`flatView.has` (cache.ts:181-206) and `resourceCache.get` (cache.ts:232). For `isFetching`, add a `@internal` helper in `dedupe.ts` that walks `ongoingRequestsMap` (WeakMap<object, Map<key, OngoingRequest>>, dedupe.ts:17) iterating each fetcher's inner map for a matching key — the dedup map is the single source of truth for in-flight requests, so searching it is the correct cross-scope query. For `getEntryMeta`, mirror `flatView.get`'s first-non-expired-match walk but return a projected `{ timestamp, staleTime, cacheTime, lastAccess }` (no `data`) — consistent with `getCacheData`'s expired-entry delete-and-return-undefined behavior (cache.ts:147). Trade-off considered and rejected: per-fetcher granularity on `isFetching` — rejected because every other `resourceCache` method (`get`, `invalidate`, etc.) is cross-scope; per-fetcher users reach the dedup map indirectly through their resource's `cacheKey`.
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
+- [ ] `bun coverage resource` exits 0
 - [ ] `bun lint` exits 0
 - [ ] Every file in Contract.Files touched as specified
 - [ ] Public API delta in Contract implemented verbatim — `resourceCache.isFetching` and `resourceCache.getEntryMeta` exist with the listed signatures; `CacheEntryMeta` is exported from `types/cache.d.ts`
@@ -88,7 +88,6 @@ Both methods reuse the existing cross-scope iteration pattern already used by `f
 Three `test()`s map 1:1 to the Behavioral scenarios. `isFetching` true/false: drive a real resource with a delayed fetcher (use `delay` from `globalThis`), assert `isFetching(key)` true mid-flight and false after settle — cross-scope asserted by registering the key under one fetcher and querying `resourceCache.isFetching` (which is scope-agnostic). `getEntryMeta` hit: `resourceCache.set(key, data, cacheTime, staleTime)` then assert the four meta fields; `getEntryMeta` miss/expired: query a never-set key (undefined) and a key whose `cacheTime` has elapsed (mock `Date.now` per the cache/TTL testing convention in the resource AGENTS.md Testing section). Use `beforeEach` with `resourceCache.invalidateAll()` for isolation, not per-test inline resets (per `tests.md` §Shared State and Cleanup).
 
 ### Definition of Done
-- [ ] `bun check resource` exits 0
 - [ ] `bun coverage` shows 100% coverage on the changed source lines (`isFetching`, `getEntryMeta`, the dedupe cross-scope helper) named in Contract.Files
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios (3 total)
 - [ ] Overall coverage is not lower than before this task

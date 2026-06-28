@@ -82,7 +82,7 @@ New `docs/api/persist.mdx` (Function template) + `docs/index.mdx` API list entry
 `persist()` rehydrates from `storage.getItem(key)` on call (deserialize + `store.update(...)` routing through `applyUpdate` per `lib/utils.ts:48-63`), then subscribes to snapshot changes via `effect(() => scheduleWrite(serialize(store.snapshot())))` from the `@hellajs/core` peer (re-exported through `lib/internal/core.ts`). Writes coalesce through a dirty flag flushed by `queueMicrotask`, reset at the start of the flush so subsequent ticks re-arm (code.md §Memory "Batched writes"); optional `config.debounce` swaps to `setTimeout`. Default `storage` is `persistLocal`; default serialize/deserialize are `JSON.stringify`/`JSON.parse`. Parse errors are untrusted platform input — narrow `try { JSON.parse } catch` with `console.error` + continue (the narrow-catch rule, code.md §Error Handling). `persistLocal`/`persistSession` guard for SSR/undefined. `persist()` returns the same `store` reference (not a wrapper); the disconnect (dispose effect + final flush) is exposed on the store or as a separate return — cleanest non-breaking shape left to the worker. The wrapper mirrors the `lib/utils.ts:70-75` `wrapWithMiddleware` precedent. No new runtime dep. Trade-off considered and rejected: a proxy-based wrapper — violates the store's direct-access design; reusing the existing middleware/applyUpdate path keeps persistence orthogonal.
 
 ### Definition of Done
-- [ ] `bun check store` exits 0
+- [ ] `bun coverage store` exits 0
 - [ ] `bun lint` exits 0
 - [ ] Every file in Contract.Files touched/created as specified
 - [ ] Public API delta in Contract implemented verbatim — `lib/index.ts` re-exports `persist`, `persistLocal`, `persistSession`, `StorageAdapter`, `PersistConfig`
@@ -99,7 +99,6 @@ New `docs/api/persist.mdx` (Function template) + `docs/index.mdx` API list entry
 One `test()` per Behavioral scenario (seven). In-memory `StorageAdapter` (`{ map: Map<string,string>, getItem, setItem, removeItem }`) per tests.md §Mock Patterns; `mock()` for `setItem` call counts (no boolean flags / integer counters); `await tick(0)` to flush microtask batching and assert coalescing. SSR scenario deletes `globalThis.localStorage` for that test only. Cross-check each assertion against `lib/persist.ts`.
 
 ### Definition of Done
-- [ ] `bun check store` exits 0
 - [ ] `bun coverage` shows 100% coverage on `lib/persist.ts` (name the file + line range in the commit message)
 - [ ] One `test()` exists per scenario in Contract.Behavioral scenarios (seven)
 - [ ] Overall coverage is not lower than before this task
