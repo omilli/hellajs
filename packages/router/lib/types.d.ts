@@ -59,7 +59,13 @@ export type RouteValue =
 export type RouteWithHooks = {
   /** Main route handler function executed when route matches */
   handler?: Handler;
-  /** Hook executed before the main handler */
+  /**
+   * Hook executed before the main handler. Acts as a route guard (arity-dispatched: receives
+   * cumulative params/query for this nesting level). Sync return contract: return `false` to
+   * cancel (no URL/signal/handler change); return a non-empty `string` to redirect (replace) to
+   * that path; any other return proceeds. Throwing cancels and logs `[router] hook:`. A returned
+   * `Promise` does NOT block — the navigation proceeds immediately and only a rejection is logged.
+   */
   before?: Handler;
   /** Hook executed after the main handler */
   after?: Handler;
@@ -99,7 +105,13 @@ export type RouterConfig = {
  * Global hooks that execute on every route change.
  */
 export type GlobalHooks = {
-  /** Hook executed before every route change */
+  /**
+   * Hook executed before every route change. Acts as a global guard. Sync return contract:
+   * return `false` to cancel (no URL/signal/handler change); return a non-empty `string` to
+   * redirect (replace) to that path; any other return proceeds. Throwing cancels and logs
+   * `[router] Global before:`. A returned `Promise` does NOT block — the navigation proceeds
+   * immediately and only a rejection is logged. Decide synchronously to block.
+   */
   before?: () => Promise<unknown> | unknown;
   /** Hook executed after every route change */
   after?: () => Promise<unknown> | unknown;

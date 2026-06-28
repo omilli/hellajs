@@ -56,12 +56,18 @@ export function router(config: RouterConfig): RouteInfo {
     if (routerMode === "hash") {
       eventType = "hashchange";
       handler = () => {
-        updateRoute(getHashPath());
+        const verdict = updateRoute(getHashPath());
+        if (verdict === "cancelled") {
+          window.history.replaceState(null, "", `#${previousPath()}`);
+        }
       };
     } else {
       eventType = "popstate";
       handler = () => {
-        updateRoute(window.location.pathname + window.location.search);
+        const verdict = updateRoute(window.location.pathname + window.location.search);
+        if (verdict === "cancelled") {
+          window.history.replaceState(null, "", previousPath());
+        }
       };
     }
 

@@ -342,14 +342,35 @@ const searchHandler = (params, query) => {
 
 ### Hook Returns
 
-`before` hooks execute before route handlers but do not block handler execution. Use the [`route()`](/reference/router/route) signal or shared state to communicate between hooks and handlers.
+`before` hooks can block or redirect navigation by returning specific values:
+
+| Return | Behavior |
+|---|---|
+| `void` / `true` / `undefined` | Proceed — handler executes normally |
+| `false` | Cancel — navigation is blocked, URL unchanged |
+| `string` | Redirect — navigates to the returned path |
+| `throw` | Cancel — navigation is blocked, error logged |
+| `Promise` | Cannot block — treated as proceed, rejection `.catch`-logged |
 
 ```typescript
 const authState = signal({ authenticated: false });
 
 '/protected': {
   before: () => {
-    if (!isAuthenticated()) navigate('/login');
+    if (!isAuthenticated()) return false;
+  },
+  handler: () => {
+    currentView('ProtectedPage');
+  }
+}
+```
+
+Async guards cannot block — guard the handler too:
+
+```typescript
+'/protected': {
+  before: async () => {
+    if (!isAuthenticated()) await navigate('/login');
   },
   handler: () => {
     if (!authState().authenticated) return;
@@ -357,6 +378,8 @@ const authState = signal({ authenticated: false });
   }
 }
 ```
+
+On `false` or throw in a popstate/hashchange event, the router restores the previous URL via `replaceState`.
 
 ### Global Redirects
 
@@ -375,4 +398,34 @@ router({
 
 ### Error Handling
 
-Router hooks use non-blocking error handling. Errors are logged but don't prevent navigation. See the [routing concepts](/learn/concepts/routing#route-guards) page for error recovery patterns.
+Sync errors thrown in `before` hooks cancel navigation — the handler does not execute and the URL remains unchanged. The error is logged with a `[router]` prefix and does not propagate to user code.
+
+```typescript
+router({
+  routes: {
+    '/dashboard': {
+      before: () => {
+        throw new Error('Guard failed'); // Cancels navigation
+      },
+      handler: () => currentView('Dashboard') // Never runs
+    }
+  }
+});
+```
+
+Errors in `after` hooks are logged but do not affect the already-completed navigation.
+
+Async hook rejections are caught and logged — they cannot block navigation.
+
+```typescript
+router({
+  hooks: {
+    before: async () => {
+      await someAsyncCheck();
+    }
+  }
+});
+// Rejection is `.catch`-logged; navigation proceeds
+```
+
+For recovery patterns, see [Route Guards](/learn/concepts/routing#route-guards).

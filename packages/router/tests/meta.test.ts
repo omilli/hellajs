@@ -55,23 +55,31 @@ describe("router", () => {
       expect(route().meta).toEqual({ title: "User Management" });
     });
 
-    test("meta is accessible in before hook", () => {
-      let capturedMeta: Record<string, unknown> | null = null;
+    test("before hook runs before route meta is committed", () => {
+      let beforeMeta: unknown = "unset";
+      let handlerMeta: unknown = "unset";
 
       router({
         routes: {
+          "/": { meta: { title: "Home" }, handler: () => {} },
           "/about": {
             meta: { title: "About" },
             before: () => {
-              capturedMeta = route().meta ?? null;
+              beforeMeta = route().meta;
             },
-            handler: () => render("about")
+            handler: () => {
+              handlerMeta = route().meta;
+            }
           }
         }
       });
 
+      navigate("/");
+
       navigate("/about");
-      expect(capturedMeta!).toEqual({ title: "About" });
+
+      expect(beforeMeta).toEqual({ title: "Home" });
+      expect(handlerMeta).toEqual({ title: "About" });
     });
 
     test("meta works with all route types", () => {

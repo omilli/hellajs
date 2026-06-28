@@ -129,7 +129,129 @@ export function extractRouteHooks(routeValue: unknown): { before: Handler | null
 }
 
 /**
- * Executes route handler and hooks in the correct order.
+ * Result of evaluating a guard chain.
+ * @internal
+ */
+export type GuardVerdict =
+  | "pass"
+  | "cancel"
+  | { redirect: string };
+
+/**
+ * Interprets a single guard's return value into a verdict. A `Promise` return does NOT block
+ * (sync-only pipeline) — navigation proceeds and only a rejection is logged.
+ * @param result The guard's returned value.
+ * @param errorPrefix Prefix for rejection logging.
+ */
+function interpretGuardResult(result: unknown, errorPrefix: string): GuardVerdict {
+  if (result instanceof Promise) {
+    result.catch((error) => console.error(`[router] ${errorPrefix}:`, error));
+    return "pass";
+  }
+  if (result === false) {
+    return "cancel";
+  }
+  if (typeof result === "string" && result.length > 0) {
+    return { redirect: result };
+  }
+  return "pass";
+}
+
+/**
+ * Invokes a route-level guard with arity dispatch (matching `executeHook`'s convention) and
+ * interprets its result. A throw cancels and logs.
+ * @param guard The route-level before hook.
+ * @param params Cumulative parameters at this nesting level.
+ * @param query Query parameters.
+ * @param errorPrefix Prefix for error/rejection logging.
+ */
+function invokeRouteGuard(
+  guard: Handler,
+  params: Params,
+  query: Params,
+  errorPrefix: string
+): GuardVerdict {
+  const fn = guard as (a?: Params, b?: Params) => unknown;
+  let result: unknown;
+  try {
+    if (Object.keys(params).length > 0) {
+      result = fn(params, query);
+    } else if (guard.length >= 2) {
+      result = fn(undefined, query);
+    } else {
+      result = fn(query);
+    }
+  } catch (error) {
+    console.error(`[router] ${errorPrefix}:`, error);
+    return "cancel";
+  }
+  return interpretGuardResult(result, errorPrefix);
+}
+
+/**
+ * Runs the before-guard chain (global before, then each nested route before top-down, or the
+ * flat route before) and returns the first non-pass verdict. Guards run BEFORE the route signal
+ * is written so a cancel/redirect never produces an observable route change.
+ * @internal
+ * @param routeValue The flat route value (used only when `nestedMatches` is absent).
+ * @param nestedMatches The parent-to-leaf nested match chain, or undefined for flat routes.
+ * @param leafParams Leaf-level parameters (flat routes only).
+ * @param leafQuery Leaf-level query (flat routes only).
+ * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
+ */
+export function runGuards(
+  routeValue: unknown,
+  nestedMatches: RouteMatch[] | undefined,
+  leafParams: Params,
+  leafQuery: Params
+): GuardVerdict {
+  const { before: globalBefore } = hooks();
+
+  if (isFunction(globalBefore)) {
+    let result: unknown;
+    try {
+      result = (globalBefore as () => unknown)();
+    } catch (error) {
+      console.error("[router] Global before:", error);
+      return "cancel";
+    }
+    const verdict = interpretGuardResult(result, "Global before");
+    if (verdict !== "pass") {
+      return verdict;
+    }
+  }
+
+  if (nestedMatches) {
+    let i = 0;
+    const len = nestedMatches.length;
+    while (i < len) {
+      const { routeValue: levelValue, params, query } = nestedMatches[i]!;
+      i++;
+      const before = extractRouteHooks(levelValue).before;
+      if (isFunction(before)) {
+        const verdict = invokeRouteGuard(before, params, query, "Nested before");
+        if (verdict !== "pass") {
+          return verdict;
+        }
+      }
+    }
+  } else {
+    const before = extractRouteHooks(routeValue).before;
+    if (isFunction(before)) {
+      const verdict = invokeRouteGuard(before, leafParams, leafQuery, "hook");
+      if (verdict !== "pass") {
+        return verdict;
+      }
+    }
+  }
+
+  return "pass";
+}
+
+/**
+ * Executes route handler and after-hooks. The before chain is run separately by `runGuards`
+ * before the route signal is written; this runs only on a pass: handler, then nested `after`
+ * hooks bottom-up (LIFO), then the global `after` hook.
  * @internal
  * @param handler The main route handler.
  * @param params Route parameters.
@@ -144,21 +266,9 @@ export function executeRouteWithHooks(
   routeValue?: unknown,
   nestedMatches?: RouteMatch[]
 ): void {
-  const { before, after } = hooks();
-
-  executeGlobalHook(before, "Global before");
+  const { after } = hooks();
 
   if (nestedMatches) {
-    {
-      let i = 0;
-      const len = nestedMatches.length;
-      while (i < len) {
-        const { routeValue, params, query } = nestedMatches[i]!;
-        i++;
-        executeHook(extractRouteHooks(routeValue).before, params, query, "Nested before");
-      }
-    }
-
     executeHook(handler, params, query, "Nested handler");
 
     let i = nestedMatches.length - 1;
@@ -168,9 +278,8 @@ export function executeRouteWithHooks(
       i--;
     }
   } else {
-    const { before: routeBefore, after: routeAfter } = extractRouteHooks(routeValue);
+    const { after: routeAfter } = extractRouteHooks(routeValue);
 
-    executeHook(routeBefore, params, query, "hook");
     executeHook(handler, params, query, "handler");
     executeHook(routeAfter, params, query, "hook");
   }

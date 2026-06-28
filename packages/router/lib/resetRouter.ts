@@ -6,12 +6,14 @@ import {
   mode,
   scrollBehavior,
   previousPath,
-  inheritMeta
+  inheritMeta,
+  route,
+  activeFn
 } from "./state";
 import { resetListeners } from "./router";
 
 /**
- * Factory-resets the router singleton state to defaults and detaches all listeners.
+ * Factory-resets the router singleton to defaults and detaches all listeners.
  * Does NOT mutate `window.location` or `history`.
  */
 export function resetRouter(): void {
@@ -23,5 +25,14 @@ export function resetRouter(): void {
   scrollBehavior(undefined);
   previousPath("/");
   inheritMeta(false);
+  route({
+    handler: null,
+    params: {},
+    query: {},
+    path: "/",
+    meta: undefined,
+    crumbs: Object.freeze([]),
+    active: activeFn
+  });
   resetListeners();
 }

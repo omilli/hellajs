@@ -201,28 +201,33 @@ See the [`router`](/reference/router/router) reference for all hook configuratio
 
 ## Route Guards
 
-Guards use `before` hooks to protect routes. A critical detail: `before` hooks execute before the handler, but **do not block handler execution**: the handler always runs regardless of what the `before` hook does. Check auth state inside the handler for reliable access control.
+`before` hooks can block navigation or redirect by returning specific values:
 
-Basic single-route guard with `before` hook + handler guard:
+| Return value | Behavior |
+|---|---|
+| `void` / `true` / `undefined` | Proceed — navigation continues normally |
+| `false` | Cancel — navigation is blocked, URL stays unchanged |
+| `string` | Redirect — navigates to the returned path |
+| `throw` | Cancel — navigation is blocked, error logged |
+| `Promise` | Cannot block — treated as proceed, rejection `.catch`-logged |
+
+Basic guard that blocks unauthenticated access:
 
 ```jsx
-import { router, navigate } from '@hellajs/router';
+import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
 const user = signal(null);
 const currentView = signal(null);
 
-const requireAuth = () => {
-  if (!user()) navigate('/login');
-};
-
 router({
   routes: {
     '/login': () => currentView(<LoginPage />),
     '/dashboard': {
-      before: requireAuth,
+      before: () => {
+        if (!user()) return false;
+      },
       handler: () => {
-        if (!user()) return;
         currentView(<Dashboard user={user()} />);
       }
     }
@@ -230,12 +235,41 @@ router({
 });
 ```
 
-Multiple guards stack naturally through nesting: each level adds its own `before` check.
-
-Nested guard with additional admin check:
+Redirect instead:
 
 ```jsx
-// ...basic dashboard route above
+'/dashboard': {
+  before: () => {
+    if (!user()) return '/login';
+  },
+  handler: () => {
+    currentView(<Dashboard user={user()} />);
+  }
+}
+```
+
+Async `before` hooks cannot block. If you need async auth, use `navigate` inside the hook but also guard the handler:
+
+```jsx
+const checkAuth = async () => {
+  const ok = await fetch('/api/check-session');
+  if (!ok.ok) navigate('/login');
+};
+
+'/protected': {
+  before: checkAuth,
+  handler: () => {
+    if (!user()) return;
+    currentView(<ProtectedPage />);
+  }
+}
+```
+
+On popstate/hashchange (browser back/forward), a cancelled guard restores the previous URL via `replaceState`, keeping the address bar consistent.
+
+Multiple guards stack through nesting; the first non-pass verdict short-circuits:
+
+```jsx
 router({
   routes: {
     '/admin': {
@@ -243,10 +277,9 @@ router({
       children: {
         '/settings': {
           before: () => {
-            if (!user()?.isAdmin) navigate('/dashboard');
+            if (!user()?.isAdmin) return '/dashboard';
           },
           handler: () => {
-            if (!user()?.isAdmin) return;
             currentView(<AdminSettings />);
           }
         }
@@ -255,6 +288,8 @@ router({
   }
 });
 ```
+
+If `requireAuth` returns `false`, the child's `before` never runs. If it passes but the admin check fails, navigation redirects.
 
 ## Redirects
 

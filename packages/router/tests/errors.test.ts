@@ -35,10 +35,10 @@ describe("errors", () => {
 
     navigate("/test");
 
-    expectLoggedError(sup, "[router] Global before:");
-    expectLoggedError(sup, "[router] Global after:");
-    expect(handler).toHaveBeenCalledTimes(1);
-    expect(container.textContent).toBe("test");
+    expect(sup.errors).toHaveLength(1);
+    expectLoggedError(sup, "[router] Global before:", "Global before error");
+    expect(handler).not.toHaveBeenCalled();
+    expect(container.textContent).toBe("");
   });
 
   test("handles async global hook errors", async () => {
@@ -77,9 +77,10 @@ describe("errors", () => {
 
     navigate("/test");
 
+    expect(sup.errors).toHaveLength(1);
     expectLoggedError(sup, "[router] hook:", "Before error");
-    expectLoggedError(sup, "[router] hook:", "After error");
-    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).not.toHaveBeenCalled();
+    expect(container.textContent).toBe("");
   });
 
   test("handles handler errors", () => {
@@ -113,10 +114,10 @@ describe("errors", () => {
 
     navigate("/parent/child");
 
-    expectLoggedError(sup, "[router] Nested before:");
-    expectLoggedError(sup, "[router] Nested after:");
-    expect(handler).toHaveBeenCalledTimes(1);
-    expect(container.textContent).toBe("child");
+    expect(sup.errors).toHaveLength(1);
+    expectLoggedError(sup, "[router] Nested before:", "Nested before error");
+    expect(handler).not.toHaveBeenCalled();
+    expect(container.textContent).toBe("");
   });
 
   test("handles async hook errors", async () => {
@@ -138,12 +139,14 @@ describe("errors", () => {
     expectLoggedError(sup, "[router] hook:");
   });
 
-  test("handles multiple errors in single navigation", () => {
+  test("cancels navigation on the first throwing global before", () => {
+    const handler = mock(() => render("test"));
+
     router({
       routes: {
         "/test": {
           before: () => { throw new Error("Before error"); },
-          handler: () => { throw new Error("Handler error"); },
+          handler,
           after: () => { throw new Error("After error"); }
         }
       },
@@ -155,12 +158,9 @@ describe("errors", () => {
 
     navigate("/test");
 
-    expect(sup.errors).toHaveLength(5);
-    expectLoggedError(sup, "[router] Global before:");
-    expectLoggedError(sup, "[router] hook:");
-    expectLoggedError(sup, "[router] handler:");
-    expectLoggedError(sup, "[router] hook:");
-    expectLoggedError(sup, "[router] Global after:");
+    expect(sup.errors).toHaveLength(1);
+    expectLoggedError(sup, "[router] Global before:", "Global before error");
+    expect(handler).not.toHaveBeenCalled();
   });
 
   test("treats route with null children as a leaf with no handler", () => {
@@ -212,11 +212,13 @@ describe("errors", () => {
   });
 
   test("handles global before hook errors in nested routes", () => {
+    const handler = mock(() => render("child"));
+
     router({
       routes: {
         "/parent": {
           children: {
-            "/child": () => render("child")
+            "/child": handler
           }
         }
       },
@@ -226,8 +228,10 @@ describe("errors", () => {
     });
 
     navigate("/parent/child");
-    expectLoggedError(sup, "[router] Global before:");
-    expect(container.textContent).toBe("child");
+    expect(sup.errors).toHaveLength(1);
+    expectLoggedError(sup, "[router] Global before:", "Global before error in nested");
+    expect(handler).not.toHaveBeenCalled();
+    expect(container.textContent).toBe("");
   });
 });
 });

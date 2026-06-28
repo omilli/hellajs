@@ -8,7 +8,7 @@
   | `router` | `router.ts` | Init: registers routes/hooks/redirects/notFound/mode/scroll/inheritMeta, binds listeners, returns initial `RouteInfo` (handler `null` until microtask). |
   | `route` | `state.ts` | Reactive signal holding the current `RouteInfo` (`path`, `params`, `query`, `handler`, `meta`, `crumbs`, `active`). |
   | `navigate` | `navigate.ts` | Programmatic nav: `:param`/`*` substitution, query serialize, history push/replace. |
-  | `resetRouter` | `resetRouter.ts` | Factory-reset: sets all 8 config signals to defaults, detaches listeners. Does NOT touch the URL. |
+  | `resetRouter` | `resetRouter.ts` | Factory-reset: resets all config signals + `route()` to defaults, detaches listeners. Does NOT mutate the URL. |
   | `type *` | `types.d.ts` | `RouterConfig`, `RouteInfo`, `RouteWithHooks`, `NavigateOptions`, `Redirect`, `ScrollBehavior`, `HistoryMode`, `Crumb`, `ExtractParams`. |
 
   ## File map
@@ -16,7 +16,7 @@
   | File | Responsibility |
   |---|---|
   | `router.ts` | Config → state signals; initial-path detection (hash vs history); popstate/hashchange + click listeners with composed cleanup; `queueMicrotask(() => updateRoute())`. |
-  | `state.ts` | 8 config signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `scrollBehavior`, `previousPath`, `inheritMeta`) + the `route` signal + shared `activeFn`. |
+  | `state.ts` | 9 signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `scrollBehavior`, `previousPath`, `inheritMeta`, `route`) + shared `activeFn`. |
   | `navigate.ts` | `:key` → `encodeURIComponent`, `*` → raw insert, strip unmatched `:param`, query string, → `go()`. |
   | `match.ts` | `parseQuery`, `matchPattern` (segment/wildcard extraction), `matchNestedRoute` (recursive, specificity-sorted, params spread-merged), `matchRoute` (flat). |
   | `hooks.ts` | `executeHook` (arity dispatch + try/catch + promise.catch), `executeGlobalHook` (no args). |
@@ -38,13 +38,13 @@
   - **Flat routes are NOT sorted** — list specific patterns before generic ones in the routes object.
   - **Global redirects ignore query** (`/login?ref=1` matches `from: ["/login"]`); string redirects use full `matchRoute`.
 
-  ## Lifecycle hook order (`internal/matched.ts:140` `executeRouteWithHooks`)
+  ## Lifecycle hook order (`internal/matched.ts` `runGuards` → `executeRouteWithHooks`)
 
   `global.before → parent.before → child.before → handler → child.after → parent.after → global.after`
 
-  - Nested `before` runs top-down; nested `after` runs bottom-up (LIFO). Flat routes run `routeBefore → handler → routeAfter`, wrapped by global hooks.
+  - `runGuards` runs `before` hooks (global + nested top-down) and short-circuits on the first non-pass verdict (`false`, throw, or redirect string). `executeRouteWithHooks` runs the handler + `after` hooks.
   - Each nested level's hook receives that level's **cumulative inherited params** + query; the handler receives leaf params/query.
-  - All execution via `executeHook`/`executeGlobalHook`: errors caught and logged as `[router] <prefix>:`, promise reactions `.catch`-logged — **navigation never blocks**.
+  - **Sync** `before` return values can block: `false`/throw cancels, string redirects. **Async** `before` (`Promise`) cannot block — treated as proceed, rejection `.catch`-logged.
 
   <non-obvious>
     **Init is deferred** — `router()` ends with `queueMicrotask(() => updateRoute())` and returns `route()` with `handler: null` until the microtask fires (`router.ts:113,115`). Read resolved state inside `effect()`, not from the return value.
@@ -69,7 +69,15 @@
 
     **`crumbs` parent-to-leaf** — each crumb `{segment: pattern key, path: cumulative URL (query excluded), params: inherited through that level}`; `notFound` resolution → empty array (`utils.ts:253-264`). Use `crumb.path` for hrefs, `crumb.segment` for label lookup.
 
-    **`notFound: string` is a redirect** — triggers `go(notFound, {replace:true})` then re-resolves (`utils.ts:132-134`).
+    **`resetRouter` resets everything** — all 9 signals (8 config + `route()`) reset to defaults, listeners detached. Does NOT mutate `window.location` or `history`. Re-init with `router()` after reset.
+
+    **Sync/async `before` asymmetry** — sync `before` can block via `false`/throw/string return; async `before` (returning `Promise`) cannot block — treated as proceed, rejection `.catch`-logged. This is intentional: `navigate` stays `void`; async can't retroactively block a synchronous navigation.
+
+    **Popstate guard failure restores URL** — on `"cancelled"` verdict from popstate/hashchange, the handler calls `window.history.replaceState(null, "", previousPath())` to keep the address bar in sync (`router.ts:61,69`). No reentrancy risk — `replaceState` does not fire popstate.
+
+    **`route()` is pre-commit in `before` hooks** — `runGuards` executes before the `route()` signal write (`internal/matched.ts`). A `before` hook reading `route()` sees the *previous* route's state, not the incoming one. Params/query are still passed as hook arguments. Use `after` hooks or inline `navigate({meta})` to react to the committed route.
+
+    **Guard return contract** — `before` hook return values: `void`/`true` → proceed, `false` → cancel (URL unchanged), string → redirect, `throw` → cancel + log, `Promise` → proceed (cannot block). No new types exported; contract documented via JSDoc only.
 
     **Malformed routes tolerated** — string children values, `children: null`, non-function/non-object route values, and `routes: null` all resolve to `handler: null` rather than throwing (`routing.test.ts`, `errors.test.ts`).
   </non-obvious>
@@ -84,7 +92,7 @@
 
   ## Testing
 
-  - Run `bun coverage router`; coverage instruments `dist/bundle.js`, not `lib/`.
+  - Run `bun coverage router` (primary) or `bun check router` (secondary). **NEVER run `bun test` directly** — it tests against stale bundles. Coverage instruments `dist/bundle.js`, not `lib/`.
   - Shared helpers in `tests/helpers.ts`: `setupRouterEnv` (resetTestState + setupContainer + `history.replaceState`), `expectLoggedError` (asserts `[router]` prefix against `suppressConsole` output).
   - One behavior per file: `routing`, `hooks`, `redirects`, `specificity`, `history`, `hash-mode`, `navigate-options`, `intercept`, `errors`, `inherit-meta`, `meta`, `crumbs`, `active`, `scroll`, `url-encoding`, `atomicity`. Follow `guides/tests.md` — `mock()` from `bun:test`, explicit imports from `@hellajs/core`/`@hellajs/router/bundle`/`../../../utils/test-helpers.js`, `flush()` is sync.
 </router-package-instructions>
