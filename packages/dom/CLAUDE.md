@@ -15,7 +15,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `HellaNode`, `HellaChild`, `ElementHooks`, `HookType`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
 | `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes` | Type-only | `lib/types/attributes.d.ts` |
 
-**Throw contracts.** `mount` → `[dom] mount: target "<target>" not found in document`. `ForEach` → `[dom] ForEach: each is required` / `[dom] ForEach: use must be a function`. `Lazy` → `[dom] Lazy: loader must be a function`. `Portal` → `[dom] Portal: target "<to>" not found in document` (at first effect run, not at construction).
+**Throw contracts.** `mount` → `[dom] mount: target "<target>" not found in document`. `ForEach` → `[dom] ForEach: each is required` / `[dom] ForEach: use must be a function`. `element` → `[dom] element: tagName must be a hyphenated string / render must be a function`. `Lazy` → `[dom] Lazy: loader must be a function`. `Portal` → `[dom] Portal: target "<to>" not found in document` (at first effect run, not at construction).
 
 ## ElementState (`lib/internal/state.ts`) — `WeakMap<Node, ElementState>`
 
