@@ -13,7 +13,7 @@ Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain objec
 | `lib/store.ts` | Public `store()` overloads; all delegate to `createStore` |
 | `lib/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, recursive init |
 | `lib/draft.ts` | `deepClone` + `extractChanges` — used only by the draft-mutator path |
-| `lib/utils.ts` | `reservedKeys` Set, `isObject`, `isStore`, `isObjectOrFunction`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
+| `lib/utils.ts` | `reservedKeys` Set, `isObject`, `isStore`, `isObjectOrFunction`, `readDeep`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
 | `lib/types.d.ts` | `Store<T,R>`, `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys` |
 | `lib/internal/core.ts` | Re-exports `signal`/`computed`/`isFunction`/`isPlainObject` + `Signal` type from core |
 
@@ -47,7 +47,7 @@ Plus built-ins: `snapshot: () => T`, `update: (PartialDeep<T> or (draft: T) => v
 
 Resolves: `readonlyAll = options.readonly === true`; `readonlyKeys = Array.isArray(options.readonly) ? options.readonly : []`; `middlewares = options.middleware`.
 
-**snapshot** — a `computed` assigned to `result.snapshot`. Iterates `Object.keys(result)`, skips reserved keys, and for each key takes the FIRST matching branch: (1) `initial[key]` is a function → use the **original** `initial` value; (2) store value is an object with own `snapshot` fn → call `value.snapshot()`; (3) store value is a function → call `value()`. The computed subscribes to every signal it reads, so any property change re-runs it and re-flattens the whole tree.
+**snapshot** — a `computed` assigned to `result.snapshot`. Iterates cached `Object.keys(result)`, skips reserved keys, and for each key takes the FIRST matching branch: (1) `initial[key]` is a function → use the **original** `initial` value; (2) store value is a store (`isStore`) AND `initial[key]` is also a store (composition) → recurse via `readDeep` which reads every leaf signal inline, subscribing the parent computed to the full composed tree; (3) store value is a store but `initial[key]` is a plain object (auto-nested) → call `value.snapshot()`; (4) store value is a function → call `value()`. The computed subscribes to every signal it reads, so any property change re-runs it and re-flattens the whole tree. Reactive across composed store boundaries.
 
 **update(partial)** — two paths:
 - *Draft path* (`isFunction(partial)`): calls `this.snapshot()` (materializes the full snapshot), `deepClone`s it, runs `partial(draft)`, then `extractChanges(snapshot, draft)` produces the resolved partial.
