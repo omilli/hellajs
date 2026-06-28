@@ -1,11 +1,17 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn } from "../types/nodes";
 import { isFunction, objectLoop } from "./core";
-import { isHellaNode, renderProp, toText, resolveValue } from "./utils";
+import { renderProp, toText, resolveValue } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
 import { cleanupSubtree } from "./cleanup";
 import { getState, peekState } from "./state";
+
+let staticDom = new WeakMap<HellaNode, Element | DocumentFragment>();
+
+export function clearStaticCache(): void {
+  staticDom = new WeakMap();
+}
 
 /**
  * @internal
@@ -44,7 +50,7 @@ function clearRenderedNodes(nodes: Node[], parent: Node) {
  * @returns The resolved DOM Node
  */
 export function resolveNode(value: HellaChild, parent?: Node): Node {
-  if (isHellaNode(value)) return mountNode(value);
+  if (value !== null && typeof value === "object" && (value as HellaNode).tag !== undefined) return mountNode(value as HellaNode);
   if (isFunction(value)) {
     const textNode = document.createTextNode("");
     registry.addEffect(parent || textNode, () =>
@@ -63,11 +69,17 @@ export function resolveNode(value: HellaChild, parent?: Node): Node {
  * @returns The mounted DOM element or fragment
  */
 export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElement | DocumentFragment {
+  if (node.__static) {
+    const cached = staticDom.get(node);
+    if (cached) return cached.cloneNode(true) as HellaElement | DocumentFragment;
+  }
+
   const { tag, props, on, e, bind, hooks, children, __scope, error } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
     appendToParent(fragment as unknown as HellaElement, children, boundaryElement);
+    if (node.__static) staticDom.set(node, fragment);
     return fragment;
   }
 
@@ -132,6 +144,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
 
   appendToParent(element, children, currentBoundary);
 
+  if (node.__static) staticDom.set(node, element);
   return element;
 }
 
@@ -143,7 +156,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
  * @param children The children to append
  * @param boundaryElement The nearest error boundary element (for error propagation during construction)
  */
-function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryElement?: Element) {
+function appendToParent(parent: HellaElement, children?: HellaChild[], currentBoundary?: Element) {
   if (!children || children.length === 0) return;
 
   if (children.length === 1 && typeof children[0] === "string") {
@@ -151,13 +164,16 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
     return;
   }
 
-  const currentBoundary = peekState(parent)?.errorConfig ? parent : boundaryElement;
-
   let index = 0;
   const length = children.length;
   while (index < length) {
     const child = children[index];
     index++;
+
+    if (typeof child === "string") {
+      parent.appendChild(document.createTextNode(child));
+      continue;
+    }
 
     if (isFunction(child)) {
       if ((child as RenderFn).isDynamic) {
@@ -230,8 +246,8 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], boundaryE
       parent.appendChild(document.createTextNode(toText(resolved)));
     } else if (resolved instanceof Node) {
       parent.appendChild(resolved);
-    } else if (isHellaNode(resolved)) {
-      parent.appendChild(mountNode(resolved, currentBoundary));
+    } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
+      parent.appendChild(mountNode(resolved as HellaNode, currentBoundary));
     }
   }
 }
