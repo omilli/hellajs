@@ -94,6 +94,14 @@ describe("dom", () => {
       expect(el.querySelector("aside nav")?.textContent).toBe("Sidebar");
     });
 
+    test("throws on tag without hyphen", () => {
+      expect(() => element("bad", () => html`<div></div>`)).toThrow(/\[dom\] element:/);
+    });
+
+    test("throws on non-function render", () => {
+      expect(() => element("good-tag", "not a fn" as never)).toThrow(/\[dom\] element:/);
+    });
+
     test("complex element with components", async () => {
       const Button = (props: { label: string; onClick: () => void }) =>
         html`<button class="btn" on:click=${props.onClick}>${props.label}</button>`;

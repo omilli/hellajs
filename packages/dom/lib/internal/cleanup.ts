@@ -72,7 +72,7 @@ export function traverseDescendants(node: Node, callback: (node: Node) => void) 
   while ((current = stack.pop())) {
     callback(current);
 
-    if (current.nodeType === 1 && current.hasChildNodes()) {
+    if (current.nodeType === Node.ELEMENT_NODE && current.hasChildNodes()) {
       const children = current.childNodes;
       let i = children.length;
       while (i--) stack.push(children[i]!);

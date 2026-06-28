@@ -33,11 +33,11 @@ export function $collection<T extends Element = Element>(selector: string): DomC
       const index = elementWrappers.length;
       elementWrappers.push(wrapper);
 
-      let j = 0;
-      const opLen = queuedOps.length;
-      while (j < opLen) {
-        queuedOps[j]!(wrapper, index);
-        j++;
+      let oi = 0;
+      const oLen = queuedOps.length;
+      while (oi < oLen) {
+        queuedOps[oi]!(wrapper, index);
+        oi++;
       }
       i++;
     }

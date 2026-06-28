@@ -2,7 +2,7 @@ import { effect } from "./internal/core";
 import { runHooks } from "./internal/cleanup";
 import { getState } from "./internal/state";
 import { dispatchError, toError, resolveErrorConfig } from "./internal/dispatch";
-import type { HookType } from "./types/nodes";
+import type { HookType, HookHandler } from "./types/nodes";
 
 /**
  * Registry API for managing element effects and hooks.
@@ -13,7 +13,7 @@ export const registry = {
    * Registers a reactive effect on an element with update hooks.
    * Accumulative: multiple calls stack effects on the same element.
    * Effect is automatically disposed when element is removed from DOM.
-   * @param node Target element
+   * @param node Target node
    * @param effectFn Effect function to run
    */
   addEffect(node: Node, effectFn: () => void) {
@@ -50,7 +50,7 @@ export const registry = {
   addHook(
     element: Element,
     type: HookType,
-    handler: (() => void) | ((node: Element) => void)
+    handler: HookHandler
   ) {
     const stacks = getState(element).hooks;
     (stacks[type] || (stacks[type] = [])).push(handler);

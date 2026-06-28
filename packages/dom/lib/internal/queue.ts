@@ -65,14 +65,14 @@ function ensureContainerObserver() {
       const mutation = mutationsList[i++]!;
       const { removedNodes, addedNodes } = mutation;
 
-      let j = 0;
+      let ri = 0;
       const rLen = removedNodes.length;
-      while (j < rLen) registerNode(removedNodes[j++]!);
+      while (ri < rLen) registerNode(removedNodes[ri++]!);
 
-      j = 0;
+      let ai = 0;
       const aLen = addedNodes.length;
-      while (j < aLen) {
-        const addedNode = addedNodes[j++]!;
+      while (ai < aLen) {
+        const addedNode = addedNodes[ai++]!;
         if (addedNode.nodeType === Node.ELEMENT_NODE) {
           mountQueue.add(addedNode);
           hasAdditions = true;

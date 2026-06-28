@@ -90,5 +90,12 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
     }
   }
 
+  if (typeof tagName !== "string" || !tagName.includes("-")) {
+    throw new Error(`[dom] element: tagName must be a hyphenated string, received ${typeof tagName !== "string" ? typeof tagName : tagName}`);
+  }
+  if (typeof render !== "function") {
+    throw new Error(`[dom] element: render must be a function, received ${typeof render}`);
+  }
+
   customElements.define(tagName, HellaElement);
 }
