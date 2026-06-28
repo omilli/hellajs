@@ -60,7 +60,7 @@ applyTo: "**"
 
   | Name | Command | What it does |
   |---|---|---|
-  | check | `bun check [package]` | bundle + test + lint. **Preferred over `bun test`.** |
+  | check | `bun check [package]` | bundle + test + lint. **NEVER run `bun test` directly — it runs against stale bundles.** |
   | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint; filters the table to the target package. CI runs this. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
   | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` |
@@ -159,6 +159,8 @@ applyTo: "**"
   ## Testing
 
   Tests run under HappyDOM via a preload (`utils/happydom.js`, configured in `bunfig.toml`). Reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `../../../utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`.
+
+  **NEVER run `bun test` directly.** All tests import from `dist/` bundles. `bun test` does NOT rebuild `dist/` — it silently tests against stale code. Always use `bun coverage <package>` (bundle + coverage + lint) or `bun check <package>` (bundle + test + lint). CI runs `bun coverage`.
 
   Coverage instruments built bundles (`dist/bundle.js`, `dist/index.js`, `plugins/**/*.mjs`), not `lib/` source — `lib/` is the truth; the bundle is the measurement target. See `guides/tests.md` for the full rules (anti-patterns, structure, the scenario → `test()` derivation, the verification checklist).
 </hellajs-agent>

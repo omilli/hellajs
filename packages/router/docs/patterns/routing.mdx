@@ -51,10 +51,10 @@ router({
 
 ### Auth Guard
 
-Use `before` hooks to check auth and redirect. Guard the handler itself since `before` hooks do not block handler execution.
+Use a `before` hook to block unauthenticated access by returning `false`. No handler-level guard needed for sync checks.
 
 ```jsx
-import { router, navigate } from '@hellajs/router';
+import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
 const user = signal(null);
@@ -64,14 +64,42 @@ router({
   routes: {
     '/login': () => currentView(<LoginPage />),
     '/dashboard': {
-      before: () => { if (!user()) navigate('/login'); },
+      before: () => {
+        if (!user()) return false;
+      },
       handler: () => {
-        if (!user()) return;
         currentView(<Dashboard user={user()} />);
       }
     }
   }
 });
+```
+
+To redirect to login instead:
+
+```jsx
+'/dashboard': {
+  before: () => {
+    if (!user()) return '/login';
+  },
+  handler: () => {
+    currentView(<Dashboard user={user()} />);
+  }
+}
+```
+
+Async guards cannot block — guard the handler too:
+
+```jsx
+'/dashboard': {
+  before: async () => {
+    if (!user()) await navigate('/login');
+  },
+  handler: () => {
+    if (!user()) return;
+    currentView(<Dashboard user={user()} />);
+  }
+}
 ```
 
 ### Nested Routes

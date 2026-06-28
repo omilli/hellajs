@@ -171,7 +171,7 @@ Five files under `tests/`: `transform.test.ts` (full pipeline), `processor.test.
 
 - **Helpers** — `transformJSX(code)` runs `babel.transformSync` with `configFile: false` and the plugin; `normalize(output)` collapses whitespace for full-output equality asserts; `getNamedImports(code, source)` regex-extracts specifier names.
 - **Style** — integration-style: most tests exercise the full transform and assert either `toContain` on substrings or `toBe` on `normalize()` output. Some tests import internals directly from `src/**/*.mjs`.
-- **Run** — `bun check babel` (bundle + test + lint) or `bun test` from this folder. Follow `guides/tests.md`; never import non-public APIs.
+- **Run** — `bun check babel` (bundle + test + lint). **NEVER run `bun test` directly — it runs against stale bundles.** Follow `guides/tests.md`; never import non-public APIs.
 - **Coverage target** — `dist/` bundles (per root `AGENTS.md`); the babel plugin is measured on its built output.
 
 ## Performance notes (verified)

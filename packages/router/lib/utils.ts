@@ -1,7 +1,7 @@
 import { isPlainObject, isString, hasWindow } from "./internal/core";
 import { route, routes, notFound, redirects, mode, inheritMeta, activeFn } from "./state";
 import { matchRoute, matchNestedRoute } from "./match";
-import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks } from "./internal/matched";
+import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuards } from "./internal/matched";
 import type {
   RouteInfo,
   RouteWithHooks,
@@ -11,6 +11,14 @@ import type {
   Params,
   ScrollBehavior
 } from "./types";
+
+/**
+ * Resolution verdict propagated up from `tryMatchRoute`/`updateRoute` to `go` and the popstate handler.
+ * `"matched"` commits the navigation (signal written, history updated); `"cancelled"` means a guard
+ * blocked (no signal write, no history change from this call); `"redirected"` means a guard or
+ * redirect rule issued a nested `go` that handled history itself.
+ */
+type RouteVerdict = "matched" | "cancelled" | "redirected";
 
 /**
  * Frozen empty parameters object for memory efficiency.
@@ -82,7 +90,9 @@ export function sortRoutesBySpecificity([patternA]: [string, unknown], [patternB
 }
 
 /**
- * Navigates to a new URL using the History API.
+ * Resolves a URL through the route pipeline and, only on a committed match (guards passed),
+ * updates the browser history. A cancelled guard produces no history change; a redirect's nested
+ * `go` already updated history, so the outer call skips.
  * @internal
  * @param to The URL to navigate to.
  * @param options Navigation options including replace, scroll, and meta.
@@ -100,37 +110,42 @@ export function go(
   const finalTo = isHashMode ? `#${to}` : to;
   const action = replace ? "replaceState" : "pushState";
 
-  hasWindow() && window.history[action](null, "", finalTo);
+  const verdict = updateRoute(to, scroll, meta);
 
-  updateRoute(to, scroll, meta);
+  if (verdict === "matched" && hasWindow()) {
+    window.history[action](null, "", finalTo);
+  }
 }
 
 /**
- * Updates the current route based on the current URL.
+ * Resolves the current URL through redirects, route matching (running guards), and notFound.
  * @internal
  * @param nextPath Optional new path. When omitted, reads from route().path.
  * @param inlineScroll Optional inline scroll behavior from navigate()
  * @param inlineMeta Optional inline meta from navigate()
+ * @returns The resolution verdict: `"matched"`, `"cancelled"` (a guard blocked), or `"redirected"`.
  */
 export function updateRoute(
   nextPath?: string,
   inlineScroll?: ScrollBehavior | false,
   inlineMeta?: Record<string, unknown>
-) {
+): RouteVerdict {
   const currentPath = nextPath ?? route().path;
 
   if (tryRedirect(currentPath)) {
-    return;
+    return "redirected";
   }
 
-  if (tryMatchRoute(currentPath, inlineScroll, inlineMeta)) {
-    return;
+  const matchVerdict = tryMatchRoute(currentPath, inlineScroll, inlineMeta);
+  if (matchVerdict !== "none") {
+    return matchVerdict;
   }
 
   const notFoundValue = notFound();
 
   if (isString(notFoundValue)) {
-    return go(notFoundValue, { replace: true });
+    go(notFoundValue, { replace: true });
+    return "redirected";
   }
 
   route(buildRouteInfo({
@@ -144,6 +159,7 @@ export function updateRoute(
 
   notFoundValue && notFoundValue();
   handleScroll(currentPath, inlineScroll);
+  return "matched";
 }
 
 /**
@@ -191,20 +207,21 @@ function tryRedirect(currentPath: string): boolean {
 }
 
 /**
- * Attempts nested and flat route matching.
+ * Attempts nested and flat route matching, running guards before the route signal is written.
  * @param currentPath The current URL path.
  * @param inlineScroll Optional inline scroll behavior from navigate().
  * @param inlineMeta Optional inline meta from navigate().
- * @returns True if a route matched and was executed.
+ * @returns `"matched"` (guards passed, signal written), `"cancelled"` (a guard blocked),
+ * `"redirected"` (a guard redirected via a nested `go`), or `"none"` (no route matched).
  */
 function tryMatchRoute(
   currentPath: string,
   inlineScroll: ScrollBehavior | false | undefined,
   inlineMeta: Record<string, unknown> | undefined
-): boolean {
+): "none" | RouteVerdict {
   const routeMap = routes();
   if (!routeMap) {
-    return false;
+    return "none";
   }
 
   const pathWithoutQuery = currentPath.split("?")[0]!;
@@ -228,6 +245,16 @@ function tryMatchRoute(
       if (nestedMatches && nestedMatches.length > 0) {
         const lastMatch = nestedMatches[nestedMatches.length - 1]!;
         const { params, query } = lastMatch;
+
+        const guardVerdict = runGuards(routeValue, nestedMatches, params, query);
+        if (guardVerdict === "cancel") {
+          return "cancelled";
+        }
+        if (guardVerdict !== "pass") {
+          go(guardVerdict.redirect, { replace: true });
+          return "redirected";
+        }
+
         const handler = extractHandler(lastMatch.routeValue);
 
         let routeMeta: Record<string, unknown> | undefined;
@@ -273,7 +300,7 @@ function tryMatchRoute(
         }));
         executeRouteWithHooks(handler, params, query, routeValue, nestedMatches);
         handleScroll(currentPath, inlineScroll, scroll);
-        return true;
+        return "matched";
       }
     }
   }
@@ -292,6 +319,16 @@ function tryMatchRoute(
       const match = matchRoute(pattern, currentPath);
       if (match) {
         const { params, query } = match;
+
+        const guardVerdict = runGuards(routeValue, undefined, params, query);
+        if (guardVerdict === "cancel") {
+          return "cancelled";
+        }
+        if (guardVerdict !== "pass") {
+          go(guardVerdict.redirect, { replace: true });
+          return "redirected";
+        }
+
         const handler = extractHandler(routeValue);
         const meta = mergeMeta(extractMeta(routeValue));
         const scroll = extractScroll(routeValue);
@@ -306,10 +343,10 @@ function tryMatchRoute(
         }));
         executeRouteWithHooks(handler, params, query, routeValue);
         handleScroll(currentPath, inlineScroll, scroll);
-        return true;
+        return "matched";
       }
     }
   }
-  return false;
+  return "none";
 }
 
