@@ -28,7 +28,7 @@ export const CACHE_MAX = 100;
 export const DOT_REGEX = /\./g;
 
 /**
- * Registry entry tracking a single cssVars() call"s flat keys, scope,
+ * Registry entry tracking a single cssVars() call's flat keys, scope,
  * prefix, reference count, and optional effect cleanup.
  */
 interface VarsEntry {
@@ -45,11 +45,15 @@ interface VarsEntry {
 export const varsRegistryStatic = new Map<string, VarsEntry>();
 
 /**
+ * Re-assignable via `let` — WeakMap cannot be cleared or enumerated, so
+ * `resetReactiveRegistries()` swaps in a fresh instance on full reset.
  * @internal
  */
 export let varsRegistryReactive = new WeakMap<object, VarsEntry>();
 
 /**
+ * Re-assignable via `let` — WeakMap cannot be cleared or enumerated, so
+ * `resetReactiveRegistries()` swaps in a fresh instance on full reset.
  * @internal
  */
 export let varsResultReactive = new WeakMap<object, CSSVars<Record<string, unknown>>>();
@@ -124,7 +128,7 @@ export function resetReactiveRegistries(): void {
 }
 
 /**
- * Mirrors the scoped vars rules into the style element"s textContent
+ * Mirrors the scoped vars rules into the style element's textContent
  * for DevTools visibility.
  */
 function syncTextContent() {
