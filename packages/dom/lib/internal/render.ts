@@ -212,7 +212,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
             return;
           }
 
-          const newNode = resolveNode(resolved, parent);
+          const newNode = resolveNode(resolved as HellaChild, parent);
 
           if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
             let fragChild: ChildNode | null;

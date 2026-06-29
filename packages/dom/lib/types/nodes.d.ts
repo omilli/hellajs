@@ -24,7 +24,7 @@ export type HellaPrimitive<T = unknown> = string | string[] | number | boolean |
 /**
  * Any value that can be rendered as a child in a HellaNode.
  */
-export type HellaChild = HellaNode | HellaPrimitive | unknown;
+export type HellaChild = HellaNode | HellaPrimitive | Node | null | undefined;
 
 /**
  * Error configuration attached to elements via error: prefix attributes.
