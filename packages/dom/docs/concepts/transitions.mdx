@@ -3,7 +3,7 @@
 Animate show/hide content with enter/leave CSS classes using [`Transition`](/reference/dom/transition).
 
 ```jsx
-import { signal } from "@hellajs/core";
+import { signal, flush } from "@hellajs/core";
 import { mount, Transition } from "@hellajs/dom";
 
 const visible = signal(false);
