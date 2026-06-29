@@ -3,7 +3,6 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   execCommand,
-  execCommandInherited,
   isValidPackage,
   projectRoot,
   packagesDir,
@@ -65,19 +64,18 @@ function runCapture(
 }
 
 /**
- * Run lint as the final gate. Returns 0/1 instead of throwing so the coverage
- * table still renders (writeAndExit is called by the caller). Callers skip this
- * when tests already failed — lint is the slow, rarely-failing step, so it runs
- * only on a green test run to keep the iteration loop fast.
+ * Run lint as the final gate. Captures combined stdout+stderr so the caller can
+ * append it to the final output — inherited stdio would print before the
+ * captured test output (written last by writeAndExit) and bury the errors above
+ * the test summary, making a lint failure look like an exit-1 with no reason.
+ * Callers skip this when tests already failed — lint is the slow,
+ * rarely-failing step, so it runs only on a green test run to keep the
+ * iteration loop fast.
  */
-async function runLint(): Promise<number> {
+async function runLint(): Promise<{ code: number; output: string }> {
   logger.info("Linting...");
-  try {
-    await execCommandInherited("bun", ["lint"], { cwd: projectRoot });
-    return 0;
-  } catch {
-    return 1;
-  }
+  const result = await runCapture("bun", ["lint"], { cwd: projectRoot });
+  return { code: result.code, output: result.output };
 }
 
 async function main(): Promise<void> {
@@ -88,8 +86,14 @@ async function main(): Promise<void> {
     logger.info("Running full coverage...");
     await execCommand("bun", ["./scripts/bundle.ts", "--quiet"], { cwd: projectRoot });
     const result = await runCapture("bun", ["test", "--coverage"], { cwd: projectRoot });
-    const exitCode = result.code !== 0 ? result.code : await runLint();
-    writeAndExit(result.output, exitCode);
+    let exitCode = result.code;
+    let lintOutput = "";
+    if (result.code === 0) {
+      const lint = await runLint();
+      exitCode = lint.code;
+      if (lint.code !== 0) lintOutput = lint.output;
+    }
+    writeAndExit(result.output + lintOutput, exitCode);
     return;
   }
 
@@ -114,9 +118,15 @@ async function main(): Promise<void> {
     { cwd: projectRoot },
   );
 
-  const exitCode = result.code !== 0 ? result.code : await runLint();
   const filtered = filterCoverageTable(result.output, packageName);
-  writeAndExit(filtered, exitCode);
+  let exitCode = result.code;
+  let lintOutput = "";
+  if (result.code === 0) {
+    const lint = await runLint();
+    exitCode = lint.code;
+    if (lint.code !== 0) lintOutput = lint.output;
+  }
+  writeAndExit(filtered + lintOutput, exitCode);
 }
 
 /**
