@@ -44,8 +44,7 @@
 		"coverage": "bun ./scripts/coverage.ts",
 		"changeset": "changeset",
 		"release": "bun bundle --quiet && bun ./scripts/release.ts",
-		"sync": "bun ./scripts/sync.ts",
-		"test:docs": "bun test docs/src/pages/learn/",
+		"sync": "bun ./scripts/sync.ts && bun ./scripts/sync-skills.ts",
 		"visibility": "bun ./scripts/type-visibility.ts"
 	},
 	"version": ""

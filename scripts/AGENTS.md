@@ -1,79 +1,76 @@
 <scripts-instructions>
 
-  Build tooling and CI automation. These scripts bundle, test, lint, sync, and release the six packages. They run under `bun` (never `node`) in dev and CI. Style target: `guides/scripts.md` — TS, one concern per file, shared utils. The current code is `.mjs`/`.js` with tabs and `node`/`npx` invocations; the `brain-plan` skill drives the migration to the target.
+  Build tooling and CI automation. These scripts bundle, test, lint, sync, and release the six packages. They run under `bun` (never `node`) in dev and CI, are authored in TS (one concern per file, shared utils), and follow `guides/scripts.md`.
 
-  ## Scripts (CLI entries — one per `package.json` scripts row)
+  ## Scripts (CLI entries under `scripts/`)
 
   | Script | What it does |
   |---|---|
-  | `check.mjs` | Orchestrator: bundle → test → lint. `bun check [package]` scopes to one workspace. **NEVER run `bun test` directly — it runs against stale bundles.** |
-  | `bundle.mjs` | Build `dist/` per package: esbuild bundle + per-module transpile, terser minified variant, `.d.ts` generation + copy, artifact validation, size metrics, hash-based cache, dependency-ordered parallel orchestration. **875 lines — split target.** |
-  | `coverage.mjs` | `bun bundle` then `bun test --coverage`, filtered to the target package. CI runs this. |
-  | `clean.mjs` | Remove `dist/` + `.build-cache/` per package. |
-  | `release.mjs` | Changeset-driven publish after `bun bundle`. |
-  | `sync.mjs` | Regenerate `CLAUDE.md` + `.github/instructions/*` from every `AGENTS.md`. |
+  | `check.ts` | Orchestrator: bundle → test → lint. `bun check [package]` scopes to one workspace (incl. its plugin tests). **NEVER run `bun test` directly — it runs against stale bundles.** |
+  | `bundle.ts` | Thin entry (55 lines): parse args → call `bundle/orchestrate.ts` → report. Flags: `[package]`, `--size-mode` (minified bundle variant only), `--clean` (purge dist + cache first). Callers pass `--quiet` but bundle does not read it. |
+  | `coverage.ts` | bundle → `bun test --coverage` → lint. Filters the coverage table to `[package]` rows and recalculates the `All files` average (Bun has no scope flag; the test preload forces `@hellajs/dom` into the instrumented set). CI runs this. |
+  | `clean.ts` | Remove `dist/` + `.build-cache/` per package. `bun clean [package]` scopes to one workspace. |
+  | `release.ts` | Update `@hellajs/core` peer deps + `babel-plugin-hellajs` deps across packages, commit (`--no-verify`), then `changeset publish`. Run via `bun release` (the npm script bundles first). |
+  | `sync.ts` | Regenerate `CLAUDE.md` + `.github/instructions/*` from every `AGENTS.md` under root + `packages/`/`plugins/`/`docs/`/`scripts/`. Root → `.github/copilot-instructions.md` (`applyTo: "**"`); folders → `{folder}.instructions.md`. |
+  | `sync-skills.ts` | Chained after `sync.ts` by the `sync` npm script. Shallow-clone `omilli/ai-brain` and mirror its `brain-*` skills into `.agents/skills/`, leaving non-`brain-*` skills (`comparison/`) untouched. Flags: `--dry-run`, `--remote=<url>`. Prints `git diff --stat .agents/skills/`. |
+  | `type-visibility.ts` | Guard (`bun visibility`): fail if any `lib/types*.d.ts` that is wholesale re-exported (`export type * from "./types[…]"`) contains `@internal`-tagged types — those would leak as public. No package scoping; scans every package. |
 
-  Each entry parses `process.argv` for an optional package name (first non-`--` arg) and `--flags`, validates via `isValidPackage`, then runs. The arg-parse pattern is duplicated across scripts — extract candidate for `utils/args.ts`.
+  Each entry parses `process.argv` for an optional package name (first non-`--` arg) and `--flags`, validates via `isValidPackage`, then runs. The arg-parse pattern is duplicated across `check`/`clean`/`coverage`/`bundle` — extract candidate for `utils/args.ts`.
 
-  ## Shared utils (`scripts/utils/`)
+  ## Shared utils (`scripts/utils/`, all `.ts`)
 
-  | File | Exports | Notes |
-  |---|---|---|
-  | `index.js` | `export *` barrel | The single import path scripts use |
-  | `logger.js` | `logger.{info,success,warn,error}` | Prefixed console wrappers |
-  | `exec.js` | `execCommand`, `execCommandInherited` | spawn + timeout + stdio capture/passthrough |
-  | `fs.js` | `ensureDir`, `readJson`, `writeJson`, `scanDirRecursive`, `fileExists` | fs helpers |
-  | `paths.js` | `projectRoot`, `packagesDir`, `pluginsDir`, `getPackagePath`, `getPackagePaths` | resolved paths |
-  | `packages.js` | `isValidPackage`, package enumeration | |
-  | `package-info.js` | `getPackageInfo` | distDir, dir, peerDeps, tsconfigPath, cacheDir |
-  | `common.js` | re-export shim | **Dead weight** — duplicates `index.js`. Delete on migration. |
-
-  ## Bundle pipeline (the build flow `bundle.mjs` runs per package)
-
-  ```
-  buildPackage(packageName)
-    ├─ isCacheValid? (file hashes + git status) → skip if hit
-    ├─ cleanBuildDir(distDir)
-    ├─ buildBundle        → esbuild lib/index.ts → bundle.js + bundle.min.js (terser)
-    ├─ buildIndividualModules → esbuild per .ts module → preserve dir structure
-    │   └─ fix imports: add .js ext; minified variant rewrites → .min.js
-    ├─ buildDeclarations  → tsc --emitDeclarationOnly
-    ├─ copyDeclarationFiles → copy hand-written lib/types/*.d.ts
-    ├─ validateBuildArtifacts → non-empty bundle.js + index.d.ts
-    ├─ calculateMetrics   → dist/sizes.json
-    └─ updateCache        → .build-cache/build-cache.json
-  ```
-
-  Parallel orchestration: `buildPackagesParallel` respects `DEPENDENCY_GRAPH`, runs up to `maxParallel` (min CPUs, 4) concurrently, stops if `core` fails (everything depends on it).
-
-  ## Target architecture (the split the `brain-plan` skill derives toward)
-
-  `bundle.mjs` is eight concerns in one file. Target: `scripts/bundle/` with one file per concern, thin entry.
-
-  | Target file | Concern (currently in bundle.mjs) |
+  | File | Exports |
   |---|---|
-  | `scripts/bundle.ts` | Thin entry: parse args → call orchestrate → report → exit |
-  | `scripts/bundle/orchestrate.ts` | Dependency-ordered parallel build (derived from package.json, not hardcoded) |
-  | `scripts/bundle/esbuild-build.ts` | `buildBundle` + `buildIndividualModules` + import-extension fixing |
-  | `scripts/bundle/optimize.ts` | `applyTerser` + `fixMinifiedImports` (the 4-pass regex) |
-  | `scripts/bundle/declarations.ts` | `buildDeclarations` + `copyDeclarationFiles` |
-  | `scripts/bundle/cache.ts` | `isCacheValid` + `updateCache` + `cleanCache` + hashing |
-  | `scripts/bundle/validate.ts` | `validateBuildArtifacts` |
-  | `scripts/bundle/metrics.ts` | `calculateFileMetrics` + `calculateMetrics` → sizes.json |
-  | `scripts/bundle/config.ts` | `BUILD_CONFIG`, `VARIANTS`, dependency graph (derived from package.json) |
+  | `index.ts` | `export *` barrel — the single import path scripts use |
+  | `logger.ts` | `logger.{info,success,warn,error}` (emoji-prefixed console wrappers); `Logger` |
+  | `exec.ts` | `execCommand` (capture), `execCommandInherited` (passthrough); `ExecOptions`, `ExecResult` |
+  | `fs.ts` | `fileExists`, `ensureDir`, `readJson`, `writeJson`, `scanDirRecursive` |
+  | `paths.ts` | `projectRoot`, `packagesDir`, `pluginsDir`, `testsDir`, `scriptsDir`, `changesetDir`, `getPackagePath`, `getPackagePaths` |
+  | `packages.ts` | `getAllPackages`, `getPackageDirectories`, `getPackagesWithChangesets`; `PackageEntry` |
+  | `package-info.ts` | `getPackageInfo`, `isValidPackage`; `PackageInfo` |
 
-  ## Known fragile / drift points
+  `projectRoot = path.resolve(process.cwd())` — scripts assume cwd is the repo root (npm scripts guarantee this).
 
-  - **Hardcoded `BUILD_ORDER` + `DEPENDENCY_GRAPH`** — duplicates `packages/*/package.json` dependencies. Drifts when a package adds a dep. Target: derive from package.json at load time.
-  - **Minified-import fixing is 4 regex passes** on built output (`from"..."` and `import(...)` for both `.js`→`.min.js` and extension-adding). String manipulation on built JS breaks silently if the bundler output format changes. Target: consider esbuild's `--out-extension` + `--entry-names` to emit correct extensions directly, eliminating the regex.
-  - **`globalThis._buildSummary`** — untyped mutation passing build results from `bundle` to `coverage`. Crosses a process boundary via a global. Target: `coverage` reads `dist/sizes.json` (already written) instead.
-  - **`common.js`** — backward-compat shim duplicating `index.js`. Delete on migration.
-  - **`.mjs` / `.js` mix** — top-level scripts are `.mjs`, utils are `.js`. Target: all `.ts`.
-  - **Tabs, not spaces** — scripts use tabs; packages use 2-space. Target: 2-space per `scripts.md`.
-  - **`node` / `npx` invocations** in `bundle.mjs` (`npx esbuild`, `npx terser`, `node tscPath`) — violates "always bun." Target: `bunx`.
-  - **No JSDoc** on most functions; utils use `{string}` / `{Object}` JSDoc types, not TS.
+  ## Bundle pipeline (`scripts/bundle/`, one concern per file)
+
+  Entry `bundle.ts` → `orchestrate.ts::buildSinglePackageEntry` (retry up to `BUILD_CONFIG.maxRetries`):
+
+  ```
+  buildSinglePackageEntry(packageName, cwd)
+    ├─ getPackageInfo(packageName)                  // utils/package-info.ts
+    ├─ if --clean: cleanBuildDir(distDir) + cleanCache(cacheDir)
+    ├─ isCacheValid(dir, cacheDir) && distExists?   → return cached
+    ├─ cleanBuildDir(distDir)
+    ├─ buildBundle(packageInfo, cwd, bundleMode)    // esbuild lib/index.ts → bundle.js (+ bundle.min.js via terser)
+    ├─ buildIndividualModules(packageInfo, cwd)     // esbuild per lib/**/*.ts → dist/**, .js imports fixed (+ .min.js)
+    ├─ buildDeclarations(packageInfo, cwd)          // bunx tsc --emitDeclarationOnly
+    ├─ copyDeclarationFiles(packageInfo)            // lib/**/*.d.ts → dist/
+    ├─ validateBuildArtifacts(dir)                  // non-empty bundle.js + index.d.ts + sourcemaps
+    ├─ calculateMetrics(packageInfo, metrics)       // → dist/sizes.json
+    └─ updateCache(dir, cacheDir, metrics)          // → .build-cache/build-cache.json
+  ```
+
+  Parallel orchestration: `buildPackagesParallel` respects `derivePackageGraph()` (Kahn topological sort over `@hellajs/*` deps declared in each `packages/*/package.json`), runs up to `maxParallel` (min CPUs, 4) concurrently, and aborts if `core` fails (every other package depends on it).
+
+  ### Module layout
+
+  | File | Concern |
+  |---|---|
+  | `bundle.ts` | Thin entry: args → orchestrate → report → exit |
+  | `bundle/config.ts` | `BUILD_CONFIG`, `VARIANTS`, `BuildResult`/`BuildSummary`/`PackageGraph`/`BuildMetrics` types, `derivePackageGraph()` |
+  | `bundle/orchestrate.ts` | `buildSinglePackageEntry` (retry), `buildPackagesParallel` (dependency-aware), `buildAllPackagesFromOrder`, `reportSummary`/`reportSingleResult` |
+  | `bundle/esbuild-build.ts` | `buildBundle` + `buildIndividualModules` + inline import-extension / minified-path rewriting |
+  | `bundle/optimize.ts` | `applyTerser` (bunx terser) + `fixMinifiedImports` (4-pass regex) |
+  | `bundle/declarations.ts` | `buildDeclarations` (bunx tsc) + `copyDeclarationFiles` |
+  | `bundle/cache.ts` | `calculateFileHash` + `isCacheValid` + `cleanCache` + `updateCache` |
+  | `bundle/validate.ts` | `validateBuildArtifacts` |
+  | `bundle/metrics.ts` | `calculateFileMetrics` + `calculateMetrics` → `dist/sizes.json` |
+
+  ## Known fragile point
+
+  - **Minified-import rewriting is regex on built JS**, duplicated in `optimize.ts::fixMinifiedImports` (4 passes: `from "…"` and `import(…)` for extension-adding and `.js`→`.min.js`) and inline in `esbuild-build.ts::buildBundle`/`buildIndividualModules`. Breaks silently if esbuild's output format changes. Target: emit correct extensions directly via esbuild `--out-extension` / `--entry-names` and delete the regex.
 
   ## Testing
 
-  Scripts have no dedicated tests. They run via `NODE_ENV !== "test"` guards (the `if (process.env.NODE_ENV !== "test")` block before `main()`), so importing them in a test environment does not trigger execution. Coverage instruments `dist/` (the package bundles), not the scripts themselves — script correctness is validated by `bun check` / `bun bundle` exiting 0 in CI.
+  Scripts have no dedicated tests. Each entry guards execution with `if (import.meta.main)`, so importing a script (e.g. from a test) does not run it. Coverage instruments `dist/` (the package bundles), not the scripts — script correctness is validated by `bun check` / `bun bundle` exiting 0 in CI.
 </scripts-instructions>
