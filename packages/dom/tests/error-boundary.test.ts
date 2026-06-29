@@ -1,8 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { onError } from "@hellajs/dom/bundle";
 import { signal } from "@hellajs/core";
-import {resetTestState, setupContainer, suppressConsole} from "@utils/test-helpers.js";
-import { mount, html, peekState } from "@hellajs/dom/bundle";
+import { resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
+import { mount, html, onError, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 
