@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { effect, flush, signal } from "@hellajs/core";
-import {delay, resetTestState} from "../../../utils/test-helpers.js";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, html, component } from "@hellajs/dom/bundle";
 import type { HellaNode, ComponentFn, HellaElement } from "@hellajs/dom";
 

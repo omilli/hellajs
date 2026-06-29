@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import { delay, resetTestState, suppressConsole } from "../../../utils/test-helpers.js";
+import { delay, resetTestState, suppressConsole } from "@utils/test-helpers.js";
 import { mount, html, onError } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
