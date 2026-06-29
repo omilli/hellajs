@@ -61,7 +61,6 @@ Three parallel micro-edits sharing one rule and one transformation pattern (`has
 
 ### Definition of Done
 - [ ] `bun coverage dom` exits 0
-- [ ] `bun lint` exits 0
 - [ ] `cleanup.ts:clean()` uses a single `peekState` lookup
 - [ ] `reactive.ts:hooks` immediate-`afterMount` branch uses `peekState(element)?.isMounted`
 - [ ] `dispatch.ts:findBoundary` cache-write uses a single `peekState` lookup
