@@ -86,7 +86,7 @@ import type { HellaNode } from "@hellajs/dom";
 
 ## Files
 
-- `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `bun coverage`. **Never run `bun test` directly — always use `bun coverage <package>` (primary) or `bun check <package>` (secondary).**
+- `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `bun coverage`. **Never run `bun test` directly — always use `bun coverage <package>`.**
 - File names identify the **specific** API surface or behavior area under test (e.g. `scroll`, `active`, `crumbs`, `hash-mode`, `navigate-options`). Categorical prefixes like `features-` add no information — every test file covers a feature. A file named with only a category, or with no surface at all, is a signal that it mixes concerns and should be split.
 - Group by feature area, not internal module.
 - 100–300 lines target. Soft cap 400 (trim duplication or split on a sub-feature seam). Minimum 2 tests per file.

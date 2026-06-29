@@ -6,7 +6,6 @@
 
   | Script | What it does |
   |---|---|
-  | `check.ts` | Orchestrator: bundle → test → lint. `bun check [package]` scopes to one workspace (incl. its plugin tests). **NEVER run `bun test` directly — it runs against stale bundles.** |
   | `bundle.ts` | Thin entry (55 lines): parse args → call `bundle/orchestrate.ts` → report. Flags: `[package]`, `--size-mode` (minified bundle variant only), `--clean` (purge dist + cache first). Callers pass `--quiet` but bundle does not read it. |
   | `coverage.ts` | bundle → `bun test --coverage` → lint. Filters the coverage table to `[package]` rows and recalculates the `All files` average (Bun has no scope flag; the test preload forces `@hellajs/dom` into the instrumented set). CI runs this. |
   | `clean.ts` | Remove `dist/` + `.build-cache/` per package. `bun clean [package]` scopes to one workspace. |
@@ -15,7 +14,7 @@
   | `sync-skills.ts` | Chained after `sync.ts` by the `sync` npm script. Shallow-clone `omilli/ai-brain` and mirror its `brain-*` skills into `.agents/skills/`, leaving non-`brain-*` skills (`comparison/`) untouched. Flags: `--dry-run`, `--remote=<url>`. Prints `git diff --stat .agents/skills/`. |
   | `type-visibility.ts` | Guard (`bun visibility`): fail if any `lib/types*.d.ts` that is wholesale re-exported (`export type * from "./types[…]"`) contains `@internal`-tagged types — those would leak as public. No package scoping; scans every package. |
 
-  Each entry parses `process.argv` for an optional package name (first non-`--` arg) and `--flags`, validates via `isValidPackage`, then runs. The arg-parse pattern is duplicated across `check`/`clean`/`coverage`/`bundle` — extract candidate for `utils/args.ts`.
+  Each entry parses `process.argv` for an optional package name (first non-`--` arg) and `--flags`, validates via `isValidPackage`, then runs. The arg-parse pattern is duplicated across `clean`/`coverage`/`bundle` — extract candidate for `utils/args.ts`.
 
   ## Shared utils (`scripts/utils/`, all `.ts`)
 
@@ -72,5 +71,5 @@
 
   ## Testing
 
-  Scripts have no dedicated tests. Each entry guards execution with `if (import.meta.main)`, so importing a script (e.g. from a test) does not run it. Coverage instruments `dist/` (the package bundles), not the scripts — script correctness is validated by `bun check` / `bun bundle` exiting 0 in CI.
+  Scripts have no dedicated tests. Each entry guards execution with `if (import.meta.main)`, so importing a script (e.g. from a test) does not run it. Coverage instruments `dist/` (the package bundles), not the scripts — script correctness is validated by `bun bundle` exiting 0 in CI.
 </scripts-instructions>
