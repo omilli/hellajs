@@ -108,7 +108,7 @@ HellaJS uses global event delegation by default via the `on:` prefix:
 
 - A single `document.body.addEventListener(type, handler, true)` listener per event type, registered in the capture phase (`lib/internal/events.ts`).
 - Dispatch walks `event.composedPath()` (pre-computed ancestor chain) and looks up `getState(element).handlers[type]` on each ancestor (`events.ts`).
-- `handlerCounts` Set short-circuits when no handlers exist for a type (`events.ts`).
+- \`globalListeners\` Set short-circuits when no handlers exist for a type (\`events.ts\`).
 - `e:` prefix offers direct (non-delegated) listeners when delegation is undesirable (`events.ts`).
 
 | Framework | Strategy |

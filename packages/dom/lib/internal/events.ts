@@ -1,4 +1,3 @@
-import { handlerCounts } from "./counts";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "./dispatch";
 import { getState, peekState } from "./state";
 
@@ -14,7 +13,6 @@ const globalListeners = new Set<string>();
  */
 export function setNodeHandler(element: Element, type: string, handler: EventListener) {
   const state = getState(element);
-  !state.handlers[type] && handlerCounts.add(type);
 
   if (!globalListeners.has(type)) {
     globalListeners.add(type);
@@ -33,7 +31,7 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
 function delegatedHandler(event: Event) {
   const type = event.type;
 
-  if (!handlerCounts.has(type)) return;
+  if (!globalListeners.has(type)) return;
 
   const path = event.composedPath();
   let i = 0;

@@ -1,5 +1,4 @@
 import { resetQueueState } from "./queue";
-import { handlerCounts } from "./counts";
 import { resetEventState } from "./events";
 import { resetSelectorState } from "./selectors";
 import { resetErrorState } from "./dispatch";
@@ -15,5 +14,4 @@ export function resetDom() {
   resetSelectorState();
   resetErrorState();
   clearStaticCache();
-  handlerCounts.clear();
 }
