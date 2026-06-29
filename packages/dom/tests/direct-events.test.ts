@@ -71,7 +71,7 @@ describe("dom", () => {
       expect(delegatedHandler).toHaveBeenCalledTimes(1);
     });
 
-    test("handler replacement works correctly", () => {
+    test("replaces existing e:click handler on re-mount", () => {
       const firstHandler = mock(() => {});
       const secondHandler = mock(() => {});
 
@@ -124,7 +124,7 @@ describe("dom", () => {
       expect(receivedEvent?.type).toBe("click");
     });
 
-    test("stopPropagation works correctly", () => {
+    test("stopPropagation prevents parent e:click from firing", () => {
       const parentHandler = mock(() => {});
       const childHandler = mock((event: Event) => { event.stopPropagation(); });
 

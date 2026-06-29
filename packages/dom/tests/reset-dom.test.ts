@@ -14,9 +14,7 @@ describe("resetDom", () => {
     resetDom();
     expect(handler).not.toHaveBeenCalled();
   });
-});
 
-describe("MountHandle", () => {
   test("mount returns a handle with container, flush, and unmount", () => {
     const app = mount(html`<div>hello</div>`);
     expect(app.container).toBeInstanceOf(Element);
