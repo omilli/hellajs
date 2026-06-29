@@ -10,20 +10,53 @@
       "@utils/*": [
         "./utils/*"
       ],
+      "@hellajs/core": [
+        "./packages/core/lib/index.ts"
+      ],
       "@hellajs/core/*": [
         "./packages/core/lib/*"
+      ],
+      "@hellajs/dom": [
+        "./packages/dom/lib/index.ts"
+      ],
+      "@hellajs/dom/bundle": [
+        "./packages/dom/lib/index.ts"
       ],
       "@hellajs/dom/*": [
         "./packages/dom/lib/*"
       ],
+      "@hellajs/css": [
+        "./packages/css/lib/index.ts"
+      ],
+      "@hellajs/css/bundle": [
+        "./packages/css/lib/index.ts"
+      ],
       "@hellajs/css/*": [
         "./packages/css/lib/*"
+      ],
+      "@hellajs/resource": [
+        "./packages/resource/lib/index.ts"
+      ],
+      "@hellajs/resource/bundle": [
+        "./packages/resource/lib/index.ts"
       ],
       "@hellajs/resource/*": [
         "./packages/resource/lib/*"
       ],
+      "@hellajs/router": [
+        "./packages/router/lib/index.ts"
+      ],
+      "@hellajs/router/bundle": [
+        "./packages/router/lib/index.ts"
+      ],
       "@hellajs/router/*": [
         "./packages/router/lib/*"
+      ],
+      "@hellajs/store": [
+        "./packages/store/lib/index.ts"
+      ],
+      "@hellajs/store/bundle": [
+        "./packages/store/lib/index.ts"
       ],
       "@hellajs/store/*": [
         "./packages/store/lib/*"
