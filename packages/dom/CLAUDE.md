@@ -98,15 +98,15 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 - **Sync `cleanupSubtree(root)`** — called directly by `appendToParent` (reactive child swap), ForEach (stale-removal + list clear), Transition (leave completion). `traverseDescendants` (iterative stack) → per descendant `clean(node)`: `beforeDestroy` → `componentScope?.()` → `portalCleanup?.()` → `lazyCleanup?.()` → `transitionCleanup?.()` → drain `effects` → `removeDirectHandlers` → `afterDestroy` → `deleteState`.
 - **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which recursively walks each removed node's subtree collecting elements with state → `cleanupQueue`; added element nodes → `mountQueue`; both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
 - **`runHooks` element-argument rule.** `beforeMount` and `afterDestroy` are called with **no** argument; every other hook receives the element.
-- **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, the `staticDom` cache, and `handlerCounts` between tests.
+- **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, the `staticDom` cache, between tests.
 
 ## Mount queue
 
 `processMountQueue` traverses each queued node's descendants; every element with state gets `isMounted = true` and `afterMount` run. Skips nodes not `isConnected` at flush time. The root's `isMounted` is set sync in `mount()`; descendants are deferred one microtask — **tests must call `app.flush()` on the mount handle before asserting on `afterMount`-gated behavior.** `flush()` on the mount handle processes the mount queue synchronously for the container tree.
 
-## Event delegation (`lib/internal/events.ts`, `lib/internal/counts.ts`)
+## Event delegation (`lib/internal/events.ts`)
 
-- **Two Sets track types.** `globalListeners: Set<string>` = types with a real `document.body.addEventListener(type, delegatedHandler, true)` (capture) listener. `handlerCounts: Set<string>` (a Set despite the name) = the fast-exit checked at the top of `delegatedHandler`. **Neither is ever decremented** — types stay registered for the page lifetime until `resetEventState()`.
+- **One Set tracks types.** `globalListeners: Set<string>` holds every type with a registered `document.body.addEventListener(type, delegatedHandler, true)` (capture) listener; it is also the fast-exit checked at the top of `delegatedHandler`. **Never decremented** — types stay registered until `resetEventState()`.
 - **`delegatedHandler`** reads `event.composedPath()` and walks it; for each path element with `state.handlers[type]`, invokes `handler.call(element, event)` in try/catch. Errors dispatch with `phase: 'event'` and render fallback on `findBoundary(element) ?? element` via `replaceChildren`. **No automatic `stopPropagation`** — the whole path always fires (and because the walk is over the static `composedPath`, even a handler calling `stopPropagation` cannot short-circuit it).
 - **Direct (`e:`) handlers** are wrapped per-instance with the same error handling, stored in `state.directHandlers` (Map keyed by type), and `removeEventListener`-ed each on cleanup.
 
@@ -213,7 +213,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **`__static` sharing** — static subtrees returned by reference, no deep clone.
 - **`staticDom` prototype cache** — `__static` subtrees return `cloneNode(true)` of a cached prototype, turning O(nodes) mount into O(1) for static branches.
 - **`composedPath()`** for delegation (pre-computed ancestor chain).
-- **`handlerCounts` fast-exit** + inline prefix matching in `ATTR_REGEX` (single regex pass).
+- **\`globalListeners\` fast-exit** + inline prefix matching in \`ATTR_REGEX\` (single regex pass).
 - **Module-level cached regexes** (`TOKEN_REGEX`, `PLACEHOLDER_REGEX`, `SKIP_REGEX`, `ATTR_REGEX`), `lastIndex = 0` before each use.
 - **`WeakMap`/`WeakSet`** for `elementMap`, `observedContainers`, `handlingBoundaries`, `processedNodes` — GC with the DOM nodes.
 - **Persistent text-node anchors** (`createTextNode("")`) for ForEach/Portal/Lazy/Transition/reactive children — never recreated; no comment nodes in the DOM.
