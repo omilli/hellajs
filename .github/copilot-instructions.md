@@ -27,7 +27,7 @@ applyTo: "**"
 
   `AGENTS.md` is the single source of truth for agent instructions. **Never edit `CLAUDE.md` or `.github/instructions/*.instructions.md` directly** — they are generated.
 
-  - **`bun sync`** reads every `AGENTS.md` and regenerates: a `CLAUDE.md` mirror in the same directory, one `.github/instructions/{folder}.instructions.md` (with `applyTo:` frontmatter) per package/plugin, and the root `.github/copilot-instructions.md` (`applyTo: "**"`).
+  - **`bun sync`** reads every `AGENTS.md` and regenerates: a `CLAUDE.md` mirror in the same directory, one `.github/instructions/{folder}.instructions.md` (with `applyTo:` frontmatter) per folder under `packages/`/`plugins/`/`docs/`/`scripts/`, and the root `.github/copilot-instructions.md` (`applyTo: "**"`).
   - **post-commit hook** (`.github/hooks/post-commit`) auto-runs `bun sync` when an `AGENTS.md` changes, then auto-commits the generated files with `--no-verify`. CI also runs `bun sync` and commits any drift.
   - **commit-msg hook** (`.github/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
   - **Do not run `bun sync` manually.** The post-commit hook regenerates all mirrors automatically when an `AGENTS.md` change is committed; CI catches any drift. Editing `AGENTS.md` is enough — never touch `CLAUDE.md` or `.github/instructions/*` by hand.
@@ -57,7 +57,7 @@ applyTo: "**"
 
   ## Scripts
 
-  Invoke as `bun <name> [package]`. The `[package]` arg scopes `bundle`, `check`, and `coverage` to one workspace.
+  Invoke as `bun <name> [package]`. The `[package]` arg scopes `bundle`, `check`, `clean`, and `coverage` to one workspace.
 
   | Name | Command | What it does |
   |---|---|---|
@@ -65,11 +65,12 @@ applyTo: "**"
   | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint; filters the table to the target package. CI runs this. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
   | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` |
-  | clean | `bun clean` | Remove build artifacts. |
+  | clean | `bun clean [package]` | Remove build artifacts. |
   | changeset | `bun changeset` | Add a changeset entry. |
   | release | `bun release` | Bundle, then publish via changesets. |
-  | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`. |
+  | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`, then sync the `brain-*` skills from `omilli/ai-brain` (shallow clone) into `.agents/skills/` (leaving `comparison/` untouched). |
   | test:docs | `bun test:docs` | Run docs/learn tests (`docs/src/pages/learn/`). |
+  | visibility | `bun visibility` | Guard: fail if a wholesale-exported `types*.d.ts` contains `@internal`-tagged types (would leak as public). |
 
   ## Skills
 
@@ -137,7 +138,7 @@ applyTo: "**"
   - `packages/` — the six workspaces
   - `plans/` — agent-generated plan contracts: `plans/<package>/<category>/<topic>.md` (categories observed: `code`, `docs`, `misc`)
   - `plugins/` — `babel`, `rollup`, `vite`
-  - `scripts/` — build/CI automation (`bundle`, `check`, `clean`, `coverage`, `release`, `sync`) + `utils/`; see `scripts/AGENTS.md` and `guides/scripts.md`
+  - `scripts/` — build/CI automation (`bundle`, `check`, `clean`, `coverage`, `release`, `sync`, `visibility`) + `utils/` + `bundle/` pipeline; see `scripts/AGENTS.md` and `guides/scripts.md`
   - `utils/` — `happydom.js`, the test preload
   - `AGENTS.md` — source of truth (this file); `CLAUDE.md` is its generated mirror
 
