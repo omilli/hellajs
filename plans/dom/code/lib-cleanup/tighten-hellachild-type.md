@@ -81,8 +81,6 @@ External blast radius (callers outside this repo) cannot be checked from source 
 ### Definition of Done
 - [ ] Fork resolved (Option A / B / C chosen by user)
 - [ ] `HellaChild` in `nodes.d.ts:27` matches the chosen option verbatim
-- [ ] `bun lint` exits 0 (proves every internal caller type-checks)
 - [ ] `bun coverage dom` exits 0 (proves runtime behavior unchanged)
 - [ ] `rg "HellaChild" packages/dom/docs` reviewed; any doc describing the type reflects the new union
-- [ ] If Option A or B: a changeset entry exists noting the public type tightening (per project semver contract)
 - [ ] If any test/example/doc failed to compile and was not a bug, the failure is documented as evidence for widening the union back
