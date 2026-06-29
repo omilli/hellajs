@@ -8,6 +8,6 @@ export {
   isString,
   isPlainObject,
   isFalsy,
-  objectLoop
+  objectLoop,
+  hasDocument
 } from "@hellajs/core";
-export { hasDocument } from "@hellajs/core";
