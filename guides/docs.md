@@ -676,7 +676,7 @@ Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparis
 
 ## Verification Checklist
 
-Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a cross-check. This is the audit floor stated where the rules live; the audit skill reads it instead of reconstructing it from prose. Docs-only input skips `bun check` and `bun coverage` — those verify code, not prose.
+Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a cross-check. This is the audit floor stated where the rules live; the audit skill reads it instead of reconstructing it from prose. Docs-only input skips `bun coverage` — it verifies code, not prose.
 
 **Location & template**
 - [ ] File at the right path per §File Locations & Naming; filename matches export name (API) or is lowercase-hyphenated (concepts/patterns)

@@ -37,7 +37,6 @@
 		"typescript": "^5.9.3"
 	},
 	"scripts": {
-		"check": "bun ./scripts/check.ts",
 		"lint": "tsc -p tsconfig.lint.json --noEmit && eslint .",
 		"bundle": "bun ./scripts/bundle.ts",
 		"clean": "bun ./scripts/clean.ts",
