@@ -1,5 +1,5 @@
 import { removeDirectHandlers } from "./events";
-import { getState, hasState, deleteState, peekState } from "./state";
+import { deleteState, peekState } from "./state";
 import type { HookType } from "../types/nodes";
 
 /**
@@ -34,11 +34,10 @@ export function runHooks(node: Node, type: HookType) {
  * @param node The DOM node to clean up
  */
 function clean(node: Node) {
-  if (!hasState(node)) return;
+  const state = peekState(node);
+  if (!state) return;
 
   runHooks(node, "beforeDestroy");
-
-  const state = getState(node);
 
   state.componentScope?.();
   state.portalCleanup?.();
