@@ -6,7 +6,7 @@ description: >
 
 # Audit
 
-Review files against the project's own rules and report grounded findings. The project's rules are the source of truth, not the auditor's taste — a finding with no rule behind it is opinion, and opinion is out of scope. Two non-negotiables govern this skill (see `brain-prime`): rules inviolable (the project's existing conventions govern format; a conflict is a rule-update proposal, not a silent workaround) and full blast radius (a finding's severity accounts for every caller, test, and doc it touches).
+Review files against the project's own rules and report grounded findings. The project's rules are the source of truth, not the auditor's taste — a finding with no rule behind it is opinion, and opinion is out of scope here. Judgment-based critique (over-engineering, coupling, naming, code smells with no rule behind them) belongs to `brain-critic`; this skill is its rule-grounded complement. Two non-negotiables govern this skill (see `brain-prime`): rules inviolable (the project's existing conventions govern format; a conflict is a rule-update proposal, not a silent workaround) and full blast radius (a finding's severity accounts for every caller, test, and doc it touches).
 
 brain-audit owns **assessment** — what is wrong and by which rule. `brain-plan` owns **the fix contract**. brain-audit does not write the contract; it hands off grounded findings that let `brain-plan` derive the fix without re-reading every rule.
 

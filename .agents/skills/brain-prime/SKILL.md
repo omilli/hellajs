@@ -1,16 +1,16 @@
 ---
 name: brain-prime
 description: >
-  The operating backbone — load FIRST on any non-trivial task, before doing the work. Carries the work ethos (smallest correct change at the root cause), the skill loop (brain-idea/brain-audit/brain-feature -> brain-plan -> brain-worker -> brain-feedback -> brain-memory), the methodology, the non-negotiables (Done = solved + verified; full blast radius), and tool/memory economy. Load before any substantive work; skip for trivial lookups.
+  The operating backbone — load FIRST on any non-trivial task, before doing the work. Carries the work ethos (smallest correct change at the root cause), the skill loop (brain-idea/brain-audit/brain-critic/brain-feature -> brain-plan -> brain-worker -> brain-feedback -> brain-memory), the methodology, the non-negotiables (Done = solved + verified; full blast radius), and tool/memory economy. Load before any substantive work; skip for trivial lookups.
 ---
 
 # Prime
 
-The backbone every substantive task loads first. It carries four things the rest of the system assumes present: the **ethos**, the **loop**, the **methodology**, and the **non-negotiables**. The other skills (`brain-idea`, `brain-audit`, `brain-feature`, `brain-plan`, `brain-worker`, `brain-feedback`, `brain-memory`, plus standalone `brain-skill`/`brain-author`) are the capabilities this loop orchestrates.
+The backbone every substantive task loads first. It carries four things the rest of the system assumes present: the **ethos**, the **loop**, the **methodology**, and the **non-negotiables**. The other skills (`brain-idea`, `brain-audit`, `brain-critic`, `brain-feature`, `brain-plan`, `brain-worker`, `brain-feedback`, `brain-memory`, plus standalone `brain-skill`/`brain-author`) are the capabilities this loop orchestrates.
 
 ## The loop
 
-    brain-idea / brain-audit / brain-feature  (entry: decide WHAT)
+    brain-idea / brain-audit / brain-critic / brain-feature  (entry: decide WHAT)
         -> brain-plan      (structure HOW: a task-contract)
         -> brain-worker    (execute it, ticking each Definition of Done with evidence)
             on a plan-gap -> back to brain-plan
