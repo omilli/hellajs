@@ -57,11 +57,10 @@ applyTo: "**"
 
   ## Scripts
 
-  Invoke as `bun <name> [package]`. The `[package]` arg scopes `bundle`, `check`, `clean`, and `coverage` to one workspace.
+  Invoke as `bun <name> [package]`. The `[package]` arg scopes `bundle`, `clean`, and `coverage` to one workspace.
 
   | Name | Command | What it does |
   |---|---|---|
-  | check | `bun check [package]` | bundle + test + lint. **NEVER run `bun test` directly — it runs against stale bundles.** |
   | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint; filters the table to the target package. CI runs this. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
   | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` |
@@ -138,7 +137,7 @@ applyTo: "**"
   - `packages/` — the six workspaces
   - `plans/` — agent-generated plan contracts: `plans/<package>/<category>/<topic>.md` (categories observed: `code`, `docs`, `misc`)
   - `plugins/` — `babel`, `rollup`, `vite`
-  - `scripts/` — build/CI automation (`bundle`, `check`, `clean`, `coverage`, `release`, `sync`, `visibility`) + `utils/` + `bundle/` pipeline; see `scripts/AGENTS.md` and `guides/scripts.md`
+  - `scripts/` — build/CI automation (`bundle`, `clean`, `coverage`, `release`, `sync`, `visibility`) + `utils/` + `bundle/` pipeline; see `scripts/AGENTS.md` and `guides/scripts.md`
   - `utils/` — `happydom.js`, the test preload
   - `AGENTS.md` — source of truth (this file); `CLAUDE.md` is its generated mirror
 
@@ -163,7 +162,7 @@ applyTo: "**"
 
   Tests run under HappyDOM via a preload (`utils/happydom.js`, configured in `bunfig.toml`). Reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `../../../utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`.
 
-  **NEVER run `bun test` directly.** All tests import from `dist/` bundles. `bun test` does NOT rebuild `dist/` — it silently tests against stale code. Default to `bun coverage <package>` (bundle + coverage + lint) for every code change and every plan DoD; use `bun check <package>` (bundle + test + lint) only when explicitly skipping coverage. CI runs `bun coverage`.
+  **NEVER run `bun test` directly.** All tests import from `dist/` bundles. `bun test` does NOT rebuild `dist/` — it silently tests against stale code. Always run `bun coverage <package>` (bundle + coverage + lint). CI runs `bun coverage`.
 
   Coverage instruments built bundles (`dist/bundle.js`, `dist/index.js`, `plugins/**/*.mjs`), not `lib/` source — `lib/` is the truth; the bundle is the measurement target. See `guides/tests.md` for the full rules (anti-patterns, structure, the scenario → `test()` derivation, the verification checklist).
 </hellajs-agent>
