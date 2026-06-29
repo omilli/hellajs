@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { delay, resetTestState } from "../../../utils/test-helpers.js";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { flush, signal } from "@hellajs/core";
 import { mount, html, Transition } from "@hellajs/dom/bundle";
 

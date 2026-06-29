@@ -1,5 +1,5 @@
 import { describe, test, expect, mock } from "bun:test";
-import {delay} from "../../../utils/test-helpers.js";
+import {delay} from "@utils/test-helpers.js";
 import { resource } from "@hellajs/resource/bundle";
 
 describe("resource", () => {

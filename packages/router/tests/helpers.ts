@@ -1,5 +1,5 @@
 import { expect } from "bun:test";
-import { resetTestState, setupContainer } from "../../../utils/test-helpers.js";
+import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 
 export const renderInto = (container: HTMLElement) => (content: string) => {
   container.textContent = content;

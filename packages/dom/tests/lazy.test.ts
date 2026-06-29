@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { delay, resetTestState } from "../../../utils/test-helpers.js";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, html, Lazy } from "@hellajs/dom/bundle";
 import type { HellaNode, LazyOptions } from "@hellajs/dom";
 

@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { batch, flush, signal } from "@hellajs/core";
-import {resetTestState} from "../../../utils/test-helpers.js";
+import {resetTestState} from "@utils/test-helpers.js";
 import { css, cssVars, resetCss, resetCssVars, removeCss } from "@hellajs/css/bundle";
 import { mount } from "@hellajs/dom/bundle";
 

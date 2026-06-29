@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { flush, signal } from "@hellajs/core";
-import {resetTestState} from "../../../utils/test-helpers.js";
+import {resetTestState} from "@utils/test-helpers.js";
 import { mount, html, Portal } from "@hellajs/dom/bundle";
 
 beforeEach(() => {

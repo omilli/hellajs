@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { flush } from "@hellajs/core";
-import {delay} from "../../../utils/test-helpers.js";
+import {delay} from "@utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { onError } from "@hellajs/dom/bundle";
 import { flush, signal } from "@hellajs/core";
-import {resetTestState} from "../../../utils/test-helpers.js";
+import {resetTestState} from "@utils/test-helpers.js";
 import { mount, html } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 

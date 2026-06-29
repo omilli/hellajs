@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { delay } from "../../../utils/test-helpers.js";
+import { delay } from "@utils/test-helpers.js";
 import { effect } from "@hellajs/core";
 
 import { resource, resourceCache } from "@hellajs/resource/bundle";

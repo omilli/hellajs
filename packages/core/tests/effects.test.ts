@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from "bun:test";
-import { delay } from "../../../utils/test-helpers.js";
+import { delay } from "@utils/test-helpers.js";
 import { batch, effect, signal } from "@hellajs/core";
 
 describe("core", () => {

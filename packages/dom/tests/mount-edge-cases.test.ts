@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { scope } from "@hellajs/core";
-import {resetTestState} from "../../../utils/test-helpers.js";
+import {resetTestState} from "@utils/test-helpers.js";
 import { mount, html, onError, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 

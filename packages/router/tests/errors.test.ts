@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { delay, suppressConsole } from "../../../utils/test-helpers.js";
+import { delay, suppressConsole } from "@utils/test-helpers.js";
 import { router, navigate, route } from "@hellajs/router/bundle";
 import { setupRouterEnv, expectLoggedError } from "./helpers";
 
