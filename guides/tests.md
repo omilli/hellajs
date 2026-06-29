@@ -74,15 +74,18 @@ expect(callback).toHaveBeenCalledTimes(1);
 ## Test Framework
 
 - `bun:test` only. Double quotes, semicolons always.
-- Import order: `bun:test` → test helpers → package under test (with `/bundle` suffix) → cross-package deps → `import type` (bare path, last).
+- Import order: `bun:test` → `@hellajs/core` (reactive primitives, if needed) → `@utils/test-helpers.js` → package under test (`@hellajs/dom/bundle`) → `import type` (bare path, last) → local helpers (e.g. `./helpers`), if present.
 - Separate `import type` statement — never inline.
 
 ```typescript
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { tick, delay, wait, suppressConsole, setupContainer, resetTestState } from "../../../utils/test-helpers.js";
+import { signal } from "@hellajs/core";
+import { tick, delay, wait, suppressConsole, setupContainer, resetTestState } from "@utils/test-helpers.js";
 import { mount, html, onError } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
+import { fallbackHandler } from "./helpers";
 ```
+- The §Verification Checklist must reflect the conventions in this section — keep both in sync.
 
 ## Files
 
@@ -248,8 +251,8 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 
 **Framework & imports**
 - [ ] `bun:test` only; double quotes, semicolons always
-- [ ] All imports from correct sources: reactive primitives from `@hellajs/core`, `onError` from `@hellajs/dom/bundle`, test helpers from `../../../utils/test-helpers.js`
-- [ ] Import order: `bun:test` → test helpers → package under test (`/bundle` suffix) → cross-package deps → `import type` (bare path, last)
+- [ ] All imports from correct sources: reactive primitives from `@hellajs/core`, `onError` from `@hellajs/dom/bundle`, test helpers from `@utils/test-helpers.js`
+- [ ] Import order: `bun:test` → `@hellajs/core` → `@utils/test-helpers.js` → package under test (`/bundle` suffix) → `import type` (bare path, last) → local helpers (e.g. `./helpers`), if present
 - [ ] Separate `import type` statement; never inline
 
 **File & structure**
