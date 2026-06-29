@@ -56,7 +56,6 @@ Pure deletion + import-site rewrite. The redundancy is proven by reading `setNod
 
 ### Definition of Done
 - [ ] `bun coverage dom` exits 0 (bundle rebuilds `dist/` — coverage is measured there)
-- [ ] `bun lint` exits 0
 - [ ] `packages/dom/lib/internal/counts.ts` is deleted
 - [ ] No `import.*handlerCounts` remains anywhere in `packages/dom/` (`rg handlerCounts packages/dom` returns nothing)
 - [ ] `delegatedHandler` fast-exit reads `globalListeners.has(type)`
