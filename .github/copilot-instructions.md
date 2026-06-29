@@ -15,6 +15,7 @@ applyTo: "**"
   - Use existing tests, examples, and folders in the repo to execute code/tests. Do not wander outside the file system (e.g., to `/tmp/`) to test or build.
   - Load the `brain-prime` skill before any substantive task.
   - After editing AGENTS.md files, stop. Do NOT run `bun sync` — the post-commit hook + CI handle regeneration.
+  - Changesets are created manually, never by agent plans. Do not include changeset creation in any plan's DoD.
 
   ## Non-negotiables
 
@@ -73,7 +74,7 @@ applyTo: "**"
 
   ## Skills
 
-  The `brain-*` pack is the skill system: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills that maintain it. All ten `brain-*` skills are vendored in this repo — there is no global-inherited layer and no graceful-degradation fallback. `brain-prime` loads first on any substantive task (see Core rules); the rest are discovered on demand.
+  The `brain-*` pack is the skill system: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills that maintain it. All ten `brain-*` skills are synced from `omilli/ai-brain` — do not edit them directly; edits are overwritten on sync. All feedback-driven config edits must target `AGENTS.md` instead. There is no global-inherited layer and no graceful-degradation fallback. `brain-prime` loads first on any substantive task (see Core rules); the rest are discovered on demand.
 
   The loop: `brain-idea` / `brain-audit` / `brain-feature` (entry) → `brain-plan` → `brain-worker` (back to `brain-plan` on a gap, `brain-idea` on a fork) → `brain-feedback` → `brain-memory`. When a skill hits a guide conflict it emits a guide-update proposal; the user accepts, rejects, or defers (see Non-negotiables). Each skill's `SKILL.md` carries the full workflow plus the two Non-negotiables with skill-specific enforcement.
 
@@ -162,7 +163,7 @@ applyTo: "**"
 
   Tests run under HappyDOM via a preload (`utils/happydom.js`, configured in `bunfig.toml`). Reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `../../../utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`.
 
-  **NEVER run `bun test` directly.** All tests import from `dist/` bundles. `bun test` does NOT rebuild `dist/` — it silently tests against stale code. Always run `bun coverage <package>` (bundle + coverage + lint). CI runs `bun coverage`.
+  **NEVER run `bun test` directly.** All tests import from `dist/` bundles. `bun test` does NOT rebuild `dist/` — it silently tests against stale code. Always run `bun coverage <package>` (bundle + coverage + lint). CI runs `bun coverage`. `bun coverage` is the single verification gate — never list standalone `bun lint` or `bun test` in a plan's DoD when it is present.
 
   Coverage instruments built bundles (`dist/bundle.js`, `dist/index.js`, `plugins/**/*.mjs`), not `lib/` source — `lib/` is the truth; the bundle is the measurement target. See `guides/tests.md` for the full rules (anti-patterns, structure, the scenario → `test()` derivation, the verification checklist).
 </hellajs-agent>
