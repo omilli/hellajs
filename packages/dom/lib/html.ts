@@ -35,7 +35,7 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
   }
 
   const nodes = parseHTML(parts.join(""), placeholderMarkers);
-  const ast = nodes.length === 1 ? nodes[0]! : { tag: "$", children: nodes };
+  const ast = nodes.length === 1 ? nodes[0]! : { tag: "$", children: nodes } as HtmlInternalNode;
 
   templateCache.set(strings, ast);
 

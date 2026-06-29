@@ -158,7 +158,7 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
       }
       cloned.children = needsFlat ? children.flat() : children;
     } else {
-      cloned.children = [children];
+      cloned.children = [children as HellaChild];
     }
   }
 
@@ -172,7 +172,7 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
  * @param child The child value to append
  */
 export function appendChild(node: HtmlParsedNode, child: unknown): void {
-  (node.children ||= []).push(child);
+  (node.children ||= []).push(child as HellaChild);
 }
 
 /**
