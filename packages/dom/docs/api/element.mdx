@@ -5,15 +5,18 @@ Defines reactive custom elements with light DOM rendering and slot support.
 ## API
 
 ```typescript
-function element<T extends object = ElementProps>(
+function element<T extends object = ComponentProps & Partial<ComponentSlots>>(
   tagName: string,
-  render: ElementRender<T>
+  render: ComponentRenderFn<T>
 ): void
 
-type ElementRender<T> = (props: T) => HellaNode | (() => HellaNode);
+type ComponentRenderFn<T> = (props: T) => HellaNode | (() => HellaNode);
 
-interface ElementProps {
+interface ComponentProps {
   [key: string]: () => string | null;  // Reactive attribute getters
+}
+
+interface ComponentSlots {
   children?: Node[];                    // Default slot content
   slots?: Record<string, Node[]>;       // Named slot content
 }
