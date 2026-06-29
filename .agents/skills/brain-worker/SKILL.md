@@ -1,7 +1,7 @@
 ---
 name: brain-worker
 description: >
-  Execute a plan task-by-task, faithfully. Verify each task is needed, enforce the surface fork gate, establish a green baseline, make the change, run type-appropriate verification, and tick each Definition of Done only with cited evidence — no note, no tick. Use when working through a plan or contract produced by the `brain-plan` skill, or any explicit task-contract with binary checks. Use ONLY when such a contract exists.
+  Execute a plan task-by-task, faithfully. Respect inter-file dependencies (refuse to start a file whose deps are unfinished), verify each task is needed, enforce the surface fork gate, establish a green baseline, make the change, run type-appropriate verification, and tick each Definition of Done only with cited evidence — no note, no tick. Use when working through a plan or contract produced by the `brain-plan` skill, or any explicit task-contract with binary checks. Use ONLY when such a contract exists.
 ---
 
 # Worker
@@ -11,6 +11,12 @@ Execute a plan task-by-task. The plan is the contract: a shared scope block and 
 The project's own rules (lint, style, config conventions) are the source of truth, not a passing typecheck. A green check does not override a rule violation, because rules encode decisions the toolchain cannot detect. Two non-negotiables govern this skill (see `brain-prime`): rules inviolable (a conflict halts with a surfaced proposal, never a silent workaround) and full blast radius (a change green in its own module but breaking a caller, test, or doc elsewhere is not done).
 
 brain-plan produces the contract; brain-worker executes it. If verification fails, debug methodically — isolate the failure, read the full error, form a one-line hypothesis, fix the root cause, re-verify — rather than patching symptoms.
+
+## Step 0 — Dependency gate (if the plan file has deps)
+
+If the plan file carries frontmatter `depends_on: [sibling, ...]`, resolve each name to a sibling file in the same folder and read its top marker. If any dep's top marker is still `[ ]`, this file is **blocked**: do not start it. Report "blocked on <dep>" and either pick an unblocked file from the set or hand back to the orchestrator. A dep flipping to `[x]` unblocks it. Never execute a blocked file, and never tick around a missing dep.
+
+If the plan is inline (not a file), has no frontmatter, or lists no deps, skip this gate — it is a single-unit plan.
 
 ## Step 1 — Read the contract, run the fork gate, verify the task is needed
 
@@ -66,6 +72,8 @@ For each DoD item you verified, tick `[x]` and append a short note citing the ev
 
 A task header `## [ ] Task` becomes `## [x] Task` only when every DoD item is `[x]` and the consistency gate passed. If even one item is unmet or unverifiable, the header stays `[ ]`. There is no third marker. After ticking, recompute the aggregate: if zero `[ ]` task headers remain, the plan's top marker flips to `[x]`; otherwise it stays `[ ]`.
 
+**Update set aggregate (if multi-file set):** If the same folder contains an `INDEX.md`, read it to identify sibling files. After completing this file, scan every sibling's top marker. If all siblings are now `[x]`, update `INDEX.md`'s top marker from `[ ]` to `[x]`. This makes the set-level status visible at a glance.
+
 ## Step 4 — Blast-radius check and report
 
 Before declaring the plan done, verify nothing outside the touched files regressed: run checks in every module whose code imports a changed symbol, not just the task's; coverage not below baseline; no doc now contradicts code; no sibling test now asserts dead behavior.
@@ -78,5 +86,7 @@ c. Did the contract-consistency gate pass — does the implementation match the 
 d. Is every tick backed by evidence I cited inline?
 e. Did the type-appropriate verification actually pass, or did I assume it?
 f. Did I check the blast radius — green in every affected module, not just the task's?
+g. If the file had `depends_on`, did I run the dependency gate and refuse to start while a dep was unfinished?
+h. For multi-file sets (INDEX.md present), did I update the set aggregate after the last file?
 
 If any answer is no, the task is not done.
