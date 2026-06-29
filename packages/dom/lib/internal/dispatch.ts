@@ -1,5 +1,5 @@
 import type { HellaNode, ErrorConfig, ErrorContext, ErrorFn } from "../types/nodes";
-import { getState, hasState, peekState } from "./state";
+import { peekState } from "./state";
 
 /**
  * @internal
@@ -78,9 +78,8 @@ export function findBoundary(origin: Element | undefined): Element | null {
   while (current) {
     const config = peekState(current)?.errorConfig;
     if (config && (config.boundary || config.fallback)) {
-      if (hasState(origin)) {
-        getState(origin).cachedBoundary = current;
-      }
+      const originState = peekState(origin);
+      if (originState) originState.cachedBoundary = current;
       return current;
     }
     current = current.parentElement;
