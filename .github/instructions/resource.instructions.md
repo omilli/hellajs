@@ -151,6 +151,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `refetchOnReconnect` | `false` | Refetch on network online. |
 | `onMutate` | `—` | `(variables) => context`; runs before mutation, enables optimistic updates. |
 | `onSettled` | `—` | `(data?, error?, variables?, context?) => ...`; **skipped on mutation abort**. |
+| `invalidates` | `—` | `Array<string \| RegExp>`; on mutate success, strings → `resourceCache.invalidateByPrefix`, RegExp → `invalidateByPattern`. Deletes cache entries only (no mounted-resource refetch); no invalidation on error/abort. |
 
 ## Status machine
 
@@ -170,11 +171,11 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `resource` | function | `resource(url, options?)` or `resource(fetcher, options?)`. URL overload wraps a fresh `async (key) => fetch(key)` closure and uses the URL as `key`. |
 | `resourceCache` | object | Global cache singleton (see `CacheMapView` + methods below). |
 | `resetResource` | function | Factory-reset: clears `cacheMap`, `ongoingRequestsMap`, `onlineCallbacks`, and resets `lastCleanupTime` to `0`. Unlike `invalidateAll`, which only clears the cache map. |
-| `types` | type-only | `Resource`, `ResourceOptions`, `ResourceError`, `ResourceErrorCategory`, `Fetcher`, `FetchOptions`, `ResourceStatus`; `CacheEntry`, `CacheConfig`, `CacheUpdate`, `CacheMapView`, `ResourceCache`. |
+| `types` | type-only | `Resource`, `ResourceOptions`, `ResourceError`, `ResourceErrorCategory`, `Fetcher`, `FetchOptions`, `ResourceStatus`; `CacheEntry`, `CacheConfig`, `CacheUpdate`, `CacheMapView`, `ResourceCache`, `PrefetchOptions`. |
 
 ### `resourceCache` methods
 
-`set(key, data, cacheTime=0, staleTime=0)` → `key` (writes `PUBLIC_SCOPE`; validates non-negative numbers; no-op when `cacheTime=0`). `get<T>(key)` (searches all scopes, refreshes `lastAccess`, deletes expired). `update(key, updater)`/`updateMultiple(updates)` → `boolean`/void (first-scope hit wins; throws on `undefined` updater). `cleanup()`. `invalidate(key)`/`invalidateMultiple(keys)` (all scopes). `invalidateByPrefix(prefix)` / `invalidateByPattern(regex)` → count (**string keys only**). `invalidateAll()` → count. `invalidateResources([...])` (calls `.invalidate()` on each). `setConfig(partial)`. `isOnline()` / `onOnlineChange(cb) => unsub`.
+`set(key, data, cacheTime=0, staleTime=0)` → `key` (writes `PUBLIC_SCOPE`; validates non-negative numbers; no-op when `cacheTime=0`). `get<T>(key)` (searches all scopes, refreshes `lastAccess`, deletes expired). `update(key, updater)`/`updateMultiple(updates)` → `boolean`/void (first-scope hit wins; throws on `undefined` updater). `cleanup()`. `invalidate(key)`/`invalidateMultiple(keys)` (all scopes). `invalidateByPrefix(prefix)` / `invalidateByPattern(regex)` → count (**string keys only**). `invalidateAll()` → count. `invalidateResources([...])` (calls `.invalidate()` on each). `setConfig(partial)`. `prefetch<T,K>(opts) => Promise<T>` (fetches via `fetcher(key)`, caches under the fetcher's own scope without creating a resource; dedup/retry/abort like `resource()`). `isOnline()` / `onOnlineChange(cb) => unsub`.
 
 ## Non-obvious behaviors
 
