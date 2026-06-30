@@ -58,7 +58,7 @@
 
   | Name | Command | What it does |
   |---|---|---|
-  | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint; filters the table to the target package. CI runs this. |
+  | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint (the full `bun lint` across all packages — not scoped); filters the coverage table to the target package. CI runs this. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
   | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` |
   | clean | `bun clean [package]` | Remove build artifacts. |
