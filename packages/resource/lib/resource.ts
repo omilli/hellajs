@@ -143,6 +143,16 @@ export function resource<T, K = undefined, TTransformed = T>(
     return controller || new AbortController();
   };
 
+  /** Settles the deferred promise and cleans up dedup registration. */
+  const settleRun = <R>(
+    settle: (value: R) => void,
+    value: R,
+    cacheKey: unknown
+  ) => {
+    settle(value);
+    deduplicate && deleteOngoing(fetcherFn, cacheKey);
+  };
+
   // eslint-disable-next-line prefer-const
   let cleanupEffect: (() => void) | undefined;
   let currentAbortController: AbortController | undefined;
@@ -273,16 +283,12 @@ export function resource<T, K = undefined, TTransformed = T>(
         !currentSignal.aborted && handleSuccess(shared);
         retryCount = 0;
 
-        // Resolve deduplication promise and clean up
-        resolvePromise!(shared);
-        deduplicate && deleteOngoing(fetcherFn, cacheKey);
+        settleRun(resolvePromise!, shared, cacheKey);
         return;
       } catch (err) {
         if (isAbortError(err)) {
           handleSuccessError(err);
-          // Reject deduplication promise and clean up
-          rejectPromise!(err);
-          deduplicate && deleteOngoing(fetcherFn, cacheKey);
+          settleRun(rejectPromise!, err, cacheKey);
           return;
         }
 
@@ -292,9 +298,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         // Check if we should retry
         if (!retryConfig.shouldRetry(retryCount, categorizedError)) {
           handleSuccessError(err);
-          // Reject deduplication promise and clean up
-          rejectPromise!(err);
-          deduplicate && deleteOngoing(fetcherFn, cacheKey);
+          settleRun(rejectPromise!, err, cacheKey);
           return;
         }
 
@@ -312,9 +316,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         // Check for abort after delay
         if (currentSignal.aborted) {
           handleSuccessError(new DOMException("Request was aborted", "AbortError"));
-          // Reject deduplication promise and clean up
-          rejectPromise!(new DOMException("Request was aborted", "AbortError"));
-          deduplicate && deleteOngoing(fetcherFn, cacheKey);
+          settleRun(rejectPromise!, new DOMException("Request was aborted", "AbortError"), cacheKey);
           return;
         }
       }
@@ -429,8 +431,8 @@ export function resource<T, K = undefined, TTransformed = T>(
         : abortSignal.addEventListener("abort", () => currentAbortController!.abort(), { once: true });
 
     try {
-      isLoading(true);
-      handleError();
+      const hasData = untracked(rawData) !== undefined;
+      handleError(undefined, !hasData, true);
 
       if (options.onMutate)
         mutationContext = await options.onMutate(variables);

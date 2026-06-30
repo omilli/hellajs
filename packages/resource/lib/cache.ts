@@ -358,7 +358,6 @@ export const resourceCache: ResourceCache = {
     cacheMap.clear();
     return count;
   },
-  createKeyGenerator: <T>() => (template: (params: T) => unknown) => template,
   invalidateResources: (resources: Array<Pick<Resource<unknown>, "invalidate">>) => {
     let i = 0;
     const len = resources.length;

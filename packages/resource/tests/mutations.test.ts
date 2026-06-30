@@ -185,4 +185,35 @@ describe("resource", () => {
     expect(r.error()).toBeUndefined();
   });
 
+  test("isFetching true during mutation execution", async () => {
+    const r = resource(() => delay("result", 50));
+
+    const promise = r.mutate("input");
+    await delay(1);
+
+    expect(r.isFetching()).toBe(true);
+    expect(r.status()).toBe("loading");
+
+    await promise;
+
+    expect(r.isFetching()).toBe(false);
+    expect(r.status()).toBe("success");
+  });
+
+  test("isLoading reflects data presence during mutation execution", async () => {
+    const r = resource<string>(() => delay("result", 50), { initialData: "old" });
+
+    const promise = r.mutate("input");
+    await delay(1);
+
+    // Has prior data via initialData, so isLoading=false but isFetching=true
+    expect(r.isLoading()).toBe(false);
+    expect(r.isFetching()).toBe(true);
+
+    await promise;
+
+    expect(r.isLoading()).toBe(false);
+    expect(r.isFetching()).toBe(false);
+    expect(r.data()).toBe("result");
+  });
 });

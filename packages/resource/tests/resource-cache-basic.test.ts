@@ -26,14 +26,6 @@ describe("resourceCache", () => {
     expect(resourceCache.config.enableLRU).toBe(false);
   });
 
-  test("createKeyGenerator returns template function", () => {
-    const generator = resourceCache.createKeyGenerator<{ id: number }>();
-    const template = generator((params) => `user-${params.id}`);
-
-    expect(template({ id: 1 })).toBe("user-1");
-    expect(template({ id: 2 })).toBe("user-2");
-  });
-
   describe("set/get", () => {
     test("set with cacheTime=0 does nothing", () => {
       resourceCache.set("key1", "data1", 0);
