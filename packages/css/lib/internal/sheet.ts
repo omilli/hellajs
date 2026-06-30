@@ -63,10 +63,12 @@ export function upsertRule(id: string, key: string, cssText: string): void {
   }
 
   const index = s.cssRules.length;
-  try { s.insertRule(cssText, index); } catch {
-    // Some CSS rule types may not be parseable by the platform; skip.
+  try {
+    s.insertRule(cssText, index);
+    indexMap.set(ruleKey, index);
+  } catch {
+    // skip — rule not supported by runtime; indexMap stays clean
   }
-  indexMap.set(ruleKey, index);
 }
 
 /**
