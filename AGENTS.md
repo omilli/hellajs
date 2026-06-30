@@ -67,6 +67,7 @@
   | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`, then sync the `brain-*` skills from `omilli/ai-brain` (shallow clone) into `.agents/skills/` (leaving `comparison/` untouched). |
   | test:docs | `bun test:docs` | Run docs/learn tests (`docs/src/pages/learn/`). |
   | visibility | `bun visibility` | Guard: fail if a wholesale-exported `types*.d.ts` contains `@internal`-tagged types (would leak as public). |
+  | dead-exports | `bun dead-exports` | Guard: fail if any exported symbol has zero value-position references across source, tests, and docs. |
 
   ## Skills
 
