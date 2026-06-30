@@ -194,6 +194,38 @@ describe("css at-rules", () => {
     expect(content).not.toContain('.btn{@layer');
   });
 
+  describe("failed insertRule", () => {
+    function getCssSheet(): CSSStyleSheet {
+      return (document.getElementById('hella-css') as HTMLStyleElement).sheet as CSSStyleSheet;
+    }
+
+    test("phantom indexMap entry is not created when insertRule throws", () => {
+      // happy-dom rejects @layer, so insertRule will throw.
+      // The phantom entry bug would cause a subsequent supported rule to
+      // be injected at a stale index, corrupting the sheet.
+      css({ '@layer base': { h1: { fontSize: '2rem' } } });
+      css({ body: { margin: '0' } });
+      const sheet = getCssSheet();
+      expect(sheet.cssRules.length).toBe(1);
+      expect(sheet.cssRules[0]!.cssText).toContain('body');
+      const content = document.getElementById('hella-css')?.textContent;
+      expect(content).toContain('@layer base');
+      expect(content).toContain('body');
+    });
+
+    test("re-injecting a failed rule key does not corrupt existing rules", () => {
+      // First injection fails (happy-dom rejects @layer).
+      css({ '@layer base': { h1: { fontSize: '2rem' } } });
+      // Supported rule lands fine.
+      css({ body: { margin: '0' } });
+      // Re-inject same @layer key with different text — exercises existing-key path.
+      css({ '@layer base': { h1: { color: 'red' } } });
+      const sheet = getCssSheet();
+      expect(sheet.cssRules.length).toBe(1);
+      expect(sheet.cssRules[0]!.cssText).toContain('body');
+    });
+  });
+
   test("global @media (no name) is unaffected", () => {
     css({
       '@media (max-width: 768px)': { fontSize: '12px' },
