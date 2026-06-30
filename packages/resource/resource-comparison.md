@@ -248,7 +248,6 @@ Window focus uses `visibilitychange` not `focus` (`lib/internal/lifecycle.ts`); 
 - **`untracked(resolveKey)` during fetch** — resolves the key without creating reactive dependencies in the fetch pipeline, so fetch logic doesn't accidentally subscribe to signals (`lib/resource.ts`).
 - **Pattern-based batch invalidation** — `invalidateByPrefix(prefix)` and `invalidateByPattern(regex)` operate across all fetcher scopes at once (`lib/cache.ts`).
 - **`onSettled` suppressed on abort** — aborted mutations skip `onSettled` even if `onMutate` ran, treating abort as cancellation not failure (`lib/resource.ts`, `tests/mutations.test.ts`).
-- **`createKeyGenerator<T>()` curried typing** — separates the type parameter from the template function, avoiding explicit type arguments on every call (`lib/cache.ts`).
 - **Online/offline subscription reusable across resources** — `resourceCache.onOnlineChange(cb)` exposes the underlying network-status callback set so non-resource code can subscribe too (`lib/cache.ts`).
 
 ---

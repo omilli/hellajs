@@ -21,7 +21,6 @@ interface ResourceCache {
   invalidateByPrefix(prefix: string): number;
   invalidateByPattern(pattern: RegExp): number;
   invalidateAll(): number;
-  createKeyGenerator<T>(): (template: (params: T) => unknown) => (params: T) => unknown;
   invalidateResources(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
   isOnline(): boolean;
   onOnlineChange(callback: (online: boolean) => void): () => void;
@@ -265,29 +264,6 @@ resourceCache.invalidateResources([userResource, userPostsResource]);
 ```
 
 ### Utility Methods
-
-### `createKeyGenerator`
-
-Creates a key generator template function for consistent cache key creation. The curried design separates the type parameter from the template function: `createKeyGenerator<T>()` returns a function that accepts a `(params: T) => string` template and produces a `(params: T) => string` key generator.
-
-```typescript
-import { resourceCache } from '@hellajs/resource';
-
-// Create typed key generators
-const userKeyGen = resourceCache.createKeyGenerator<{id: number}>()
-  (params => `user:${params.id}`);
-
-const postKeyGen = resourceCache.createKeyGenerator<{userId: number, postId: number}>()
-  (params => `user:${params.userId}:post:${params.postId}`);
-
-// Use generators for consistent keys
-const userKey = userKeyGen({ id: 123 }); // 'user:123'
-const postKey = postKeyGen({ userId: 123, postId: 456 }); // 'user:123:post:456'
-
-// Keys are consistent across your application
-resourceCache.set(userKey, userData, 60000);
-const cachedUser = resourceCache.get(userKey);
-```
 
 ### `onOnlineChange`
 

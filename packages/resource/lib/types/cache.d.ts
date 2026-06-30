@@ -146,13 +146,6 @@ export interface ResourceCache {
   invalidateAll(): number;
 
   /**
-   * Creates a key generator template function for consistent cache key creation.
-   * @template T - The parameters type for key generation
-   * @returns Function that accepts a template and returns a key generator
-   */
-  createKeyGenerator<T>(): (template: (params: T) => unknown) => (params: T) => unknown;
-
-  /**
    * Immediately invalidates all provided resources by calling their invalidate methods.
    * @param resources - Array of resources with invalidate methods
    */
