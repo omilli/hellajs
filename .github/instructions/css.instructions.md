@@ -26,7 +26,7 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 | `resetCssVars.ts` | `resetCssVars()` — disposes all vars effects, clears vars maps, resets `hella-vars` sheet, replaces reactive WeakMaps. |
 | `types.d.ts` | `CSSOptions` (`name?`), `CSSVarsOptions` (`scoped?`, `prefix?`), `CSSObject`, `CSSValue`, `CSSSelector`, `CSSVarLeaf`, `CSSVarInputObject`, `CSSVars<T>`. Uses `csstype`. |
 | `internal/core.ts` | Re-exports `effect`, `isFunction`, `isPlainObject`, `isObject`, `hasDocument` from `@hellajs/core`. |
-| `internal/cssStore.ts` | css-side state: `STYLE_ID="hella-css"`, `refCounts`, `inlineCache`, `cssRulesMap`, `ruleCounts`, `hashKey()`, exported `syncTextContent()`. |
+| `internal/cssStore.ts` | css-side state: `STYLE_ID="hella-css"`, `refCounts`, `inlineCache`, `cssRulesMap`, `ruleCounts`, `cacheKey()`, exported `syncTextContent()`. |
 | `internal/varsStore.ts` | vars-side state + logic: `VARS_ID="hella-vars"`, `scopedVarsRulesMap`, `cache`, `CACHE_MAX=100`, `DOT_REGEX`, `VarsEntry`, `varsRegistryStatic`, `varsRegistryReactive` / `varsResultReactive` (reassignable `let` WeakMaps), `applyRules()`, `removeFromScope()`, `resetReactiveRegistries()`, **private** `syncTextContent()` (distinct from cssStore's). |
 | `internal/sheet.ts` | CSSOM helper shared by both sheets: module-private `indexMap` + `sheets`, lazy `getSheet()` (creates `<style id>`), `upsertRule()` (skips no-op, try/catch for invalid/unparseable rules), `removeRule()`, `resetSheet()`. |
 | `internal/reactive.ts` | `activeEffects` (lazily-allocated `Set`), `createVarsEffect()` (wraps `effect()`; returns a cleanup that disposes + self-removes), `cleanupVarsEffects()` (bulk dispose). |
@@ -40,9 +40,9 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 | Map | Type | Purpose |
 |---|---|---|
 | `refCounts` | `Map<string, number>` | usage count per hash key |
-| `inlineCache` | `Map<string, string>` | hashKey → returned name (or `""`) |
-| `cssRulesMap` | `Map<string, string>` | hashKey → full cssText; **textContent source** |
-| `ruleCounts` | `Map<string, number>` | hashKey → count of split top-level rules |
+| `inlineCache` | `Map<string, string>` | cacheKey → returned name (or `""`) |
+| `cssRulesMap` | `Map<string, string>` | cacheKey → full cssText; **textContent source** |
+| `ruleCounts` | `Map<string, number>` | cacheKey → count of split top-level rules |
 
 **vars-side** (`varsStore.ts`):
 
@@ -60,7 +60,7 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 ## css() flow
 
 1. `isPlainObject(obj)` guard — throws `[css] css: expected a CSS object, received …`.
-2. `key = hashKey(obj, options)` = `${stringify(obj)}:${options.name || ""}`.
+2. `key = cacheKey(obj, options)` = `${stringify(obj)}:${options.name || ""}`.
 3. `inlineCache` hit → `refCounts++`, return cached name.
 4. Miss → `process(obj, selector, isGlobal)` builds cssText; split into top-level rules at brace-depth 0; `ruleCounts.set(key, rules.length)`.
 5. `if (hasDocument())` → `upsertRule(STYLE_ID, ${key}:${i}, rule)` per split rule. `cssRulesMap.set` + `syncTextContent()` run regardless (the mirror has its own DOM guard).
