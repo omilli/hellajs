@@ -1,12 +1,10 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import {resetTestState} from "@utils/test-helpers.js";
-import { cssVars, removeCssVars, resetCss, resetCssVars } from "@hellajs/css/bundle";
+import { cssVars, removeCssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
-  resetCss();
-  resetCssVars();
 });
 
 describe("removeCssVars", () => {
