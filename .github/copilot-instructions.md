@@ -162,7 +162,7 @@ applyTo: "**"
 
   ## Testing
 
-  Tests run under HappyDOM via a preload (`utils/happydom.js`, configured in `bunfig.toml`). Reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `../../../utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`.
+  Tests run under HappyDOM via a preload (`utils/happydom.js`, configured in `bunfig.toml`). Reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `@utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`.
 
   **NEVER run `bun test` directly.** All tests import from `dist/` bundles. `bun test` does NOT rebuild `dist/` — it silently tests against stale code. Always run `bun coverage <package>` (bundle + coverage + lint). CI runs `bun coverage`. `bun coverage` is the single verification gate — never list standalone `bun lint` or `bun test` in a plan's DoD when it is present.
 
