@@ -91,6 +91,7 @@ Performance beats DRY when extracting a helper adds hot-path overhead. Correctne
 - Never create wrapper functions that only call through to another function. Exception: TypeScript overload implementations — when public overload signatures live on one function and the implementation forwards to an internal factory, the thin forwarding body is structural (required by overload semantics and the public-vs-internal split). The wrapper must add no logic beyond argument forwarding; real work belongs in the factory
 - Never add a parameter just to pass it through unchanged
 - Never extract a function called from exactly one callsite unless it exceeds 30 lines
+- When extraction is justified, where the extracted helper lives is governed by a placement rule, not familiarity. **Co-locate** a single-caller helper with its caller; place a helper in `lib/internal/` only when it meets one of four criteria: (a) **shared** — ≥2 callers; (b) **reusable concept** — a cohesive noun/gerund concern that earns its own module (`stringify`, `hash`, `objectLoop`); (c) **state-owner** — it gates shared module state (the accessors of a state map, e.g. `scheduleEffect` on the effect queue); (d) **cross-package foundation** — re-exported via an `internal/core.ts` barrel to other packages. A pure, non-state, single-package, single-caller helper parked in `internal/` is a placement violation: `@internal` is a comment, not an access boundary, so promoting a private helper to an `internal/` export widens the package's internal API surface for no reuse benefit and invites cross-module coupling. The discriminator is caller-count and reusability — not "is it exported."
 - Arrow functions for inline callbacks and closures; function declarations for top-level named functions
 - Function expressions only when the body needs its own `this` or `arguments` binding (method assignments dispatched via `obj.method()`, getter/setter disambiguation via `arguments.length`). Arrows in every other closure case
 - Parenthesize single-parameter arrow functions: `(x) => fn(x)` — consistency with multi-param form
@@ -360,6 +361,7 @@ Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `script
 - [ ] JSDoc on every function and type; `@internal` where exported but not re-exported by `lib/index.ts`
 - [ ] No wrapper functions that only forward (exception: overload implementations)
 - [ ] No single-callsite helper under 30 lines
+- [ ] Extracted helpers in `lib/internal/` meet one of the four placement criteria (shared ≥2 callers / reusable concept / state-owner accessor / cross-package foundation); pure single-caller helpers are co-located, not internalized
 - [ ] No parameter added just to pass it through unchanged
 
 **Loops & memory**
