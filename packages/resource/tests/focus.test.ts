@@ -1,20 +1,18 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { delay } from "@utils/test-helpers.js";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { effect } from "@hellajs/core";
-
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { resource } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("focus", () => {
     let originalVisibility: string;
 
     beforeEach(() => {
-      resourceCache.map.clear();
+      resetTestState();
       originalVisibility = document.visibilityState;
     });
 
     afterEach(() => {
-      resourceCache.map.clear();
       Object.defineProperty(document, "visibilityState", {
         value: originalVisibility,
         writable: true,
@@ -32,8 +30,8 @@ describe("resource", () => {
     };
 
     test("refetches when tab becomes visible", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
@@ -41,7 +39,7 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(20);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
 
       // Simulate tab hidden then visible
       setVisibility("hidden");
@@ -49,14 +47,14 @@ describe("resource", () => {
 
       await delay(20);
 
-      expect(count).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
 
       r.dispose();
     });
 
     test("does not refetch when disabled", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchOnWindowFocus: false,
         refetchOnKeyChange: true,
       });
@@ -64,21 +62,21 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(20);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
 
       setVisibility("hidden");
       setVisibility("visible");
 
       await delay(20);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
 
       r.dispose();
     });
 
     test("stops refetching on dispose", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
@@ -86,7 +84,7 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(20);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
 
       r.dispose();
 
@@ -95,12 +93,12 @@ describe("resource", () => {
 
       await delay(20);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
     });
 
     test("does not refetch when hidden (only on visible)", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
       });
@@ -108,20 +106,20 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(20);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
 
       // Just hidden - should not refetch
       setVisibility("hidden");
       await delay(20);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
 
       r.dispose();
     });
 
-    test("works without auto mode (requires manual trigger)", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+    test("refetchOnWindowFocus triggers even without auto-fetch enabled", async () => {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchOnWindowFocus: true,
       });
 
@@ -129,27 +127,27 @@ describe("resource", () => {
       await delay(20);
 
       // No auto, so no fetch yet
-      expect(count).toBe(0);
+      expect(fetcher).toHaveBeenCalledTimes(0);
 
       // Manual trigger
       r.fetch({ force: true });
       await delay(20);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
 
       setVisibility("hidden");
       setVisibility("visible");
 
       await delay(20);
 
-      expect(count).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
 
       r.dispose();
     });
 
     test("respects enabled: false", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchOnWindowFocus: true,
         refetchOnKeyChange: true,
         enabled: false,
@@ -158,14 +156,14 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(20);
 
-      expect(count).toBe(0);
+      expect(fetcher).toHaveBeenCalledTimes(0);
 
       setVisibility("hidden");
       setVisibility("visible");
 
       await delay(20);
 
-      expect(count).toBe(0);
+      expect(fetcher).toHaveBeenCalledTimes(0);
 
       r.dispose();
     });

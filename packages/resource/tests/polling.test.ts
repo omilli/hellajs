@@ -1,20 +1,18 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { delay } from "@utils/test-helpers.js";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { effect } from "@hellajs/core";
-
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { resource } from "@hellajs/resource/bundle";
 
 let originalVisibility: string;
 
 describe("resource", () => {
   describe("polling", () => {
     beforeEach(() => {
-      resourceCache.map.clear();
+      resetTestState();
       originalVisibility = document.visibilityState;
     });
 
     afterEach(() => {
-      resourceCache.map.clear();
       Object.defineProperty(document, "visibilityState", {
         value: originalVisibility,
         writable: true,
@@ -23,8 +21,8 @@ describe("resource", () => {
     });
 
     test("polls at interval with refetchOnKeyChange", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchInterval: 30,
         refetchOnKeyChange: true,
       });
@@ -32,26 +30,26 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(100);
 
-      expect(count).toBeGreaterThanOrEqual(2);
+      expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
       r.dispose();
     });
 
     test("requires refetchOnKeyChange to poll", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchInterval: 30,
       });
 
       effect(() => { r.status(); });
       await delay(80);
 
-      expect(count).toBe(0);
+      expect(fetcher).toHaveBeenCalledTimes(0);
       r.dispose();
     });
 
     test.each(["abort", "reset"] as const)("stops polling on %s", async (method) => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
       });
@@ -59,17 +57,18 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(50);
       r[method]();
-      const countAfter = count;
+      const countAfter = fetcher.mock.calls.length;
 
       await delay(50);
-      expect(count).toBe(countAfter);
+      expect(fetcher.mock.calls.length).toBe(countAfter);
       r.dispose();
     });
 
     test("dynamic interval based on data", async () => {
-      let count = 0;
+      let dataCount = 0;
+      const fetcher = mock(() => delay(5).then(() => ({ status: dataCount++ > 0 ? "healthy" : "unhealthy" })));
       const r = resource(
-        () => delay(5).then(() => ({ status: count++ > 0 ? "healthy" : "unhealthy" })),
+        fetcher,
         {
           refetchInterval: (data) => (!data ? 20 : data.status === "unhealthy" ? 20 : 100),
           refetchOnKeyChange: true,
@@ -79,13 +78,13 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(60);
 
-      expect(count).toBeGreaterThanOrEqual(2);
+      expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
       r.dispose();
     });
 
     test.each([false, 0])("refetchInterval %p disables polling", async (value) => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchInterval: value as false | 0,
         refetchOnKeyChange: true,
       });
@@ -93,13 +92,13 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(80);
 
-      expect(count).toBe(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
       r.dispose();
     });
 
     test("respects enabled: false", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
         enabled: false,
@@ -108,7 +107,7 @@ describe("resource", () => {
       effect(() => { r.status(); });
       await delay(80);
 
-      expect(count).toBe(0);
+      expect(fetcher).toHaveBeenCalledTimes(0);
       r.dispose();
     });
 
@@ -131,31 +130,31 @@ describe("resource", () => {
     };
 
     test("pauses when hidden, resumes when visible", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchInterval: 20,
         refetchOnKeyChange: true,
       });
 
       effect(() => { r.status(); });
       await delay(50);
-      expect(count).toBeGreaterThanOrEqual(1);
+      expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(1);
 
       setHidden();
-      const countWhenHidden = count;
+      const countWhenHidden = fetcher.mock.calls.length;
       await delay(60);
-      expect(count).toBe(countWhenHidden);
+      expect(fetcher.mock.calls.length).toBe(countWhenHidden);
 
       setVisible();
       await delay(50);
-      expect(count).toBeGreaterThan(countWhenHidden);
+      expect(fetcher.mock.calls.length).toBeGreaterThan(countWhenHidden);
 
       r.dispose();
     });
 
     test("continues polling in background when enabled", async () => {
-      let count = 0;
-      const r = resource(() => delay(5).then(() => `data-${++count}`), {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
         refetchInterval: 20,
         refetchIntervalInBackground: true,
         refetchOnKeyChange: true,
@@ -165,9 +164,9 @@ describe("resource", () => {
       await delay(50);
 
       setHidden();
-      const countWhenHidden = count;
+      const countWhenHidden = fetcher.mock.calls.length;
       await delay(70);
-      expect(count).toBeGreaterThan(countWhenHidden);
+      expect(fetcher.mock.calls.length).toBeGreaterThan(countWhenHidden);
 
       r.dispose();
     });

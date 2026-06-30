@@ -1,15 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import {delay} from "@utils/test-helpers.js";
+import { describe, test, expect, beforeEach } from "bun:test";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("structuralSharing", () => {
     beforeEach(() => {
-      resourceCache.map.clear();
-    });
-
-    afterEach(() => {
-      resourceCache.map.clear();
+      resetTestState();
     });
 
     test("preserves nested references across identical fetches", async () => {
