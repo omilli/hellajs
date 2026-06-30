@@ -41,7 +41,7 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 
 ## Anti-Patterns
 
-- Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`. Import `onError` from `@hellajs/dom/bundle`. Import test helpers (`tick`, `delay`, `wait`, `suppressConsole`, `setupContainer`, `resetTestState`) from `../../../utils/test-helpers.js`. Never import a symbol whose module isn't listed — if you need a reactive primitive you didn't import, add it to the existing `@hellajs/core` import rather than creating a duplicate.
+- Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`. Import `onError` from `@hellajs/dom/bundle`. Import test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) from `@utils/test-helpers.js`. Never import a symbol whose module isn't listed — if you need a reactive primitive you didn't import, add it to the existing `@hellajs/core` import rather than creating a duplicate.
 - Never use `jest.fn()` / `jest.spyOn()` / `vi.fn()` — use `mock()` from `bun:test`.
 - Never use `any` — `unknown` only.
 - Never use `it()` or `test.skip()` — always `test()`.
@@ -80,7 +80,7 @@ expect(callback).toHaveBeenCalledTimes(1);
 ```typescript
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { signal } from "@hellajs/core";
-import { tick, delay, wait, suppressConsole, setupContainer, resetTestState } from "@utils/test-helpers.js";
+import { delay, suppressConsole, setupContainer, resetTestState } from "@utils/test-helpers.js";
 import { mount, html, onError } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
