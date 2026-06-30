@@ -170,7 +170,6 @@ export function resource<T, K = undefined, TTransformed = T>(
         const entry = cacheMap.get(fetcherFn)?.get(cacheKey) as CacheEntry<T> | undefined;
 
         if (entry && Date.now() - entry.timestamp < entry.cacheTime) {
-          // Update last access
           entry.lastAccess = Date.now();
           rawData(entry.data);
           handleError();
@@ -231,7 +230,6 @@ export function resource<T, K = undefined, TTransformed = T>(
     const hasData = untracked(rawData) !== undefined;
     handleError(undefined, !hasData, true);
 
-    // Reset retry count for each new request
     retryCount = 0;
 
     // Register this request for deduplication before starting
@@ -256,7 +254,6 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     // Retry loop
     while (true) {
-      // Check for abort before each attempt
       if (currentSignal.aborted) {
         handleSuccessError(new DOMException("Request was aborted", "AbortError"));
         return;
@@ -274,7 +271,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         const shared = structuralSharing ? structuralShare<T>(untracked(() => rawData()), result) : result;
         setCacheData(fetcherFn, cacheKey, shared, cacheTime, staleTime ?? Infinity);
         !currentSignal.aborted && handleSuccess(shared);
-        retryCount = 0; // Reset retry count on success
+        retryCount = 0;
 
         // Resolve deduplication promise and clean up
         resolvePromise!(shared);
@@ -349,7 +346,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   // Initialize effect system with optional key-change refetching
   // When user provides an explicit key, skip fetches while it's null/undefined
-  const hasExplicitKey = "key" in options;
+  const hasExplicitKey = Object.hasOwn(options, "key");
 
   cleanupEffect?.();
   cleanupEffect = effect(() => {

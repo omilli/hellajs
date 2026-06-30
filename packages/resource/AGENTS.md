@@ -7,7 +7,7 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 |---|---|
 | `lib/resource.ts` | `resource()` factory (URL + fetcher overloads), the `run()` fetch pipeline, abort/timeout/retry wiring, `mutate`, `setData`, `status`. The 512-line core. |
 | `lib/cache.ts` | Module-level `cacheMap`, `PUBLIC_SCOPE`, `flatView`, the `resourceCache` singleton, online/offline window listeners (registered once at load). |
-| `lib/index.ts` | Barrel: `export { resource, resourceCache }` + type-only re-exports. |
+| `lib/index.ts` | Barrel: `export { resource, resourceCache, resetResource }` + type-only re-exports. |
 | `lib/types/resource.d.ts` | `Resource`, `ResourceOptions`, `ResourceError`, `ResourceErrorCategory`, `Fetcher`, `ResourceStatus`, `FetchOptions`. |
 | `lib/types/cache.d.ts` | `CacheEntry`, `CacheConfig`, `CacheUpdate`, `CacheMapView`, `ResourceCache`. |
 | `lib/internal/core.ts` | Thin re-export from `@hellajs/core`: `signal/computed/effect/untracked/isFunction/isPlainObject/hasDocument/hasNavigator/hasWindow`. |
