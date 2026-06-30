@@ -1,15 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import {delay} from "@utils/test-helpers.js";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("transform", () => {
     beforeEach(() => {
-      resourceCache.map.clear();
-    });
-
-    afterEach(() => {
-      resourceCache.map.clear();
+      resetTestState();
     });
 
     test("transforms data on success", async () => {
@@ -143,7 +139,7 @@ describe("resource", () => {
       expect(userData?.id).toBeUndefined();
     });
 
-    test("transform works with cache hit", async () => {
+    test("re-applies transform to cached data on cache hit", async () => {
       const fetcher = mock(() => delay({ value: fetcher.mock.calls.length }));
 
       const r = resource(

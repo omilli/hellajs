@@ -1,20 +1,19 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { flush } from "@hellajs/core";
-import {delay} from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { resource } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("errors", () => {
     let originalFetch: typeof globalThis.fetch;
 
     beforeEach(() => {
+      resetTestState();
       originalFetch = globalThis.fetch;
-      resourceCache.map.clear();
     });
 
     afterEach(() => {
       globalThis.fetch = originalFetch;
-      resourceCache.map.clear();
     });
 
     test("categorizes string rejection as unknown error", async () => {

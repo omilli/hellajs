@@ -1,16 +1,13 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import {delay} from "@utils/test-helpers.js";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 import { mockUser } from "./helpers";
 
 describe("resource", () => {
   describe("cache", () => {
     beforeEach(() => {
+      resetTestState();
       resourceCache.setConfig({ maxSize: 1000, enableLRU: true });
-    });
-
-    afterEach(() => {
-      resourceCache.map.clear();
     });
 
     test("caches data", async () => {

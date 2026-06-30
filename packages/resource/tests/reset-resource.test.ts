@@ -1,10 +1,13 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
-import {delay} from "@utils/test-helpers.js";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resetResource, resourceCache, resource } from "@hellajs/resource/bundle";
 
 describe("resetResource", () => {
+  let mockTime = 0;
+  let originalNow: typeof Date.now;
+
   beforeEach(() => {
-    resetResource();
+    resetTestState();
   });
 
   test("clears the cache map", () => {
@@ -27,14 +30,21 @@ describe("resetResource", () => {
   });
 
   test("resets cleanup throttle — next setCacheData runs cleanup unconditionally", () => {
+    mockTime = 1000;
+    originalNow = Date.now;
+    Date.now = () => mockTime;
+
     resourceCache.setConfig({ maxSize: 10, enableLRU: false });
-    for (let i = 0; i < 5; i++) resourceCache.set(`key${i}`, `val${i}`, 10000);
+    for (let i = 0; i < 5; i++) resourceCache.set(`key${i}`, `val${i}`, 100);
+
+    mockTime += 200;
 
     resetResource();
+
     resourceCache.set("new", "val", 10000);
-    // After reset, setCacheData should not skip cleanupExpiredCache
-    // We can only verify forward behavior: cache works normally
-    expect(resourceCache.map.size).toBeGreaterThan(0);
+    expect(resourceCache.map.size).toBe(1);
+
+    Date.now = originalNow;
   });
 
   test("invalidateAll is not a full reset — leaves online callbacks registered", () => {
@@ -50,11 +60,9 @@ describe("resetResource", () => {
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
-  test("full reset clears dedup — fresh fetch after reset is not deduped against prior in-flight", () => {
-    // After resetResource, any in-flight request registrations are released.
-    // Verify by confirming a fresh resource fetch works normally.
+  test("full reset clears dedup — fresh fetch after reset is not deduped against prior in-flight", async () => {
     const fetcher = mock(async (key: string) => {
-      await delay(10);
+      await delay(20);
       return `data-${key}`;
     });
 
@@ -63,8 +71,14 @@ describe("resetResource", () => {
     expect(r1.isLoading()).toBe(true);
 
     resetResource();
-    // The prior in-flight request's dedup registration is gone.
-    // We can only verify that the reset itself does not throw.
-    expect(true).toBe(true);
+
+    const r2 = resource(fetcher, { key: () => "a", deduplicate: true });
+    r2.fetch({ force: true });
+
+    await delay(30);
+
+    // Without reset, the fetcher would be called once (dedup).
+    // After reset, dedup registration is cleared, so fetcher fires again.
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,15 +1,12 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import {delay} from "@utils/test-helpers.js";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("cache isolation", () => {
     beforeEach(() => {
+      resetTestState();
       resourceCache.setConfig({ maxSize: 1000, enableLRU: true });
-    });
-
-    afterEach(() => {
-      resourceCache.map.clear();
     });
 
     test("different fetchers with same key do not collide", async () => {

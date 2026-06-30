@@ -1,11 +1,10 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import {delay} from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { describe, test, expect, beforeEach } from "bun:test";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { resource } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("loading", () => {
-    beforeEach(() => { resourceCache.map.clear(); });
-    afterEach(() => { resourceCache.map.clear(); });
+    beforeEach(() => { resetTestState(); });
 
     test("isFetching true during initial load", async () => {
       const r = resource(() => delay("data", 50));

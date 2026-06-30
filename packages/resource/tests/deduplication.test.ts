@@ -1,11 +1,10 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import {delay} from "@utils/test-helpers.js";
-import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { resource } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("deduplication", () => {
-    beforeEach(() => { resourceCache.map.clear(); });
-    afterEach(() => { resourceCache.map.clear(); });
+    beforeEach(() => { resetTestState(); });
 
     test("deduplicates concurrent requests with same key", async () => {
       const fetcher = mock(async (key: string) => {
