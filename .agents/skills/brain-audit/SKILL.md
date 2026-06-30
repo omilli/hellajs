@@ -50,6 +50,8 @@ A rule that contradicts the current code or config is itself a finding — **rul
 
 Present findings grouped by file, severity-sorted within each (blockers first). For each: the rule or check, the violation, the severity + blast radius. Then offer to hand the actionable findings to `brain-plan` to scope the fixes — `brain-plan` derives the contracts; brain-audit does not. If nothing is actionable, say so and stop; a clean audit is a valid outcome.
 
+Run the self-improvement track (`brain-prime` handoff gate) before closing. This skill's friction signals: a rule set the audit needed was absent (no lint config → no lint findings), a rule contradicted itself, or Step 4 surfaced rule drift. Rule-drift proposals are feedback events by definition — hand them to `brain-feedback`, not just the user. A confirmed fact about the codebase's conventions, public surface, or test layout is a memory event. Invoke `brain-feedback` (rule change) or `brain-memory` (recallable fact) yourself; do not make the user ask.
+
 ## Self-check
 
 a. Is every finding grounded in a runnable check or a quoted rule — no taste?
@@ -58,3 +60,4 @@ c. Did I read the repo's actual rule set before judging, rather than substitutin
 d. Did I flag rule drift (rule contradicts code) as a rule-update proposal, not a silent workaround?
 e. Does every severity rating name its blast radius (callers, tests, docs)?
 f. Did I hand fixes to `brain-plan` rather than writing the fix contract myself?
+g. Did I route rule drift and friction to `brain-feedback`/`brain-memory` instead of leaving it for the user to invoke?

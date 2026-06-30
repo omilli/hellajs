@@ -78,6 +78,8 @@ A task header `## [ ] Task` becomes `## [x] Task` only when every DoD item is `[
 
 Before declaring the plan done, verify nothing outside the touched files regressed: run checks in every module whose code imports a changed symbol, not just the task's; coverage not below baseline; no doc now contradicts code; no sibling test now asserts dead behavior.
 
+Run the self-improvement track (`brain-prime` handoff gate) before closing. This skill is the highest-friction skill in the loop — its signals fire often: a verification failure and the fix that worked, a wrong assumption in the plan you had to deviate from, rework caused by a symptom-patch instead of a root-cause fix, or a verification command that was hard to find. The first two are classic memory events (the retry-after-failure and the confirmed-against-source patterns); a repeated failure pattern is a feedback event. A non-obvious project fact confirmed this run (test command shape, build idiosyncrasy, coverage tool quirk) is a memory event. Invoke `brain-feedback` (rule change) or `brain-memory` (recallable fact) yourself; do not make the user ask.
+
 Report a brief per-task status — done, already-correct, rejected (with reason), or structurally-invalid (returned to brain-plan). If the plan was a file, the file itself now carries every tick and its evidence. If it was inline, include the ticked plan in the report. Then the self-check:
 
 a. Did I run the fork gate before any work?
@@ -88,5 +90,6 @@ e. Did the type-appropriate verification actually pass, or did I assume it?
 f. Did I check the blast radius — green in every affected module, not just the task's?
 g. If the file had `depends_on`, did I run the dependency gate and refuse to start while a dep was unfinished?
 h. For multi-file sets (INDEX.md present), did I update the set aggregate after the last file?
+i. Did I route friction (verification failures, rework, wrong assumptions) and durable facts to `brain-feedback`/`brain-memory` instead of leaving it for the user to invoke?
 
 If any answer is no, the task is not done.

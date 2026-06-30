@@ -68,6 +68,9 @@ Before finalizing:
 - Dependencies are ordered (Code before Tests before Docs; Config wherever its tooling demands).
 - Inter-file dependencies: when one unit is incorrect or not-green unless another has landed, the dependent file declares it in frontmatter `depends_on: [sibling-basename, ...]`. Hard deps only — the repo must be red or incoherent without the dep. Soft ordering preference stays in Strategy prose, not the contract. Basenames resolve within the same topic folder.
 - Cross-module callers checked: for every public delta, find importers of the changed symbol across the repo. A broken caller adds a task in that module, or the delta is backward-compatible by construction.
+- Test filenames and surfaces obey the project's test-naming guide — read it; name files after the surface it prescribes, not the plan topic.
+- Coverage DoD is reachable from the Tests scope: a multi-branch Code delta (retry/abort/parse loops, validation throws) needs enough tests to hit the stated coverage. If the scenario count can't reach the DoD, widen Tests or relax the DoD explicitly — an unsatisfiable contract is a defect.
+- Surface inventories synced: adding, renaming, or removing a public symbol updates the project's own surface enumeration (AGENTS.md export/type tables, README API lists) — add a Files entry, or it goes stale.
 
 Mismatches go back to Phase 3.
 
@@ -78,6 +81,8 @@ Present the plan set. When a project `plans/` directory exists, write one file p
 For multi-file sets (N>1), also write `plans/<package>/<category>/<topic>/INDEX.md` with a top-level `# [ ] Plan set: <topic>` aggregate, the set's shared scope, and a bullet list linking each sibling file with a one-line description and its hard deps. This is the set-level entry point — `brain-worker` updates the aggregate as files are completed.
 
 On approval, hand off to the `brain-worker` skill — do not execute the tasks yourself unless the change was small enough to have used the escape hatch.
+
+Run the self-improvement track (`brain-prime` handoff gate) after handing off. This skill's friction signals: intake missing scope or citations you had to re-derive by re-reading source, a delta that broke a caller found late in Phase 5, or a unit split that was obviously wrong in hindsight. A design decision locked into the plan (signature shape, ordering rationale) worth recalling before the next plan on the same area is a memory event. Invoke `brain-feedback` (rule change) or `brain-memory` (recallable fact) yourself; do not make the user ask.
 
 ## Self-check
 
@@ -90,3 +95,6 @@ f. Could someone who never saw the intake execute each task from this plan alone
 g. Is every file a single independently-shippable unit — no distinct units glued together, no atomic unit (e.g. a Surface:yes Code+Tests+Docs) over-split?
 h. Does every `depends_on` reference a real sibling file, and is each a true hard dep (the file is incorrect or not-green without it)?
 i. For multi-file sets (N>1), does an INDEX.md exist with the `[ ]` aggregate and sibling links?
+j. Are test files named after the surface per the project's test-naming guide (not the plan topic)?
+k. For a multi-branch Code delta, can the Tests scope actually reach the stated coverage DoD — widened or relaxed to match?
+l. Did I route friction and durable design decisions to `brain-feedback`/`brain-memory` instead of leaving it for the user to invoke?

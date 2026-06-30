@@ -26,6 +26,10 @@ Your job: grill the user until the plan is concrete enough to build without surp
 - The written spec captures the agreed plan.
 - Hand off. Brainstorm mode is not build mode — don't start implementing.
 
+## Self-improve
+
+Run the self-improvement track (`brain-prime` handoff gate). This skill's friction signals: a codebase assumption you stated that the user overturned, or a load-bearing fork that took many rounds to resolve because the crux was mis-named. A resolved load-bearing decision worth recalling before the next build is a memory event. Invoke `brain-feedback` (rule change) or `brain-memory` (recallable fact) yourself; do not make the user ask.
+
 ## Anti-patterns
 
 - A wall of questions with nothing resolved.

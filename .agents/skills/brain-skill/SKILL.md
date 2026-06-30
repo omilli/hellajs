@@ -79,3 +79,5 @@ Stage in `/tmp/` before copying to the output directory. Package the finished sk
 ## Before you finish
 
 Re-check: frontmatter valid, `name` matches the folder, `description` triggers correctly, body under ~500 lines, and nothing stranded in the body that belongs in `references/`.
+
+Run the self-improvement track (`brain-prime` handoff gate). This skill's friction signals: an anatomy or progressive-disclosure issue discovered mid-edit that the principles above did not flag up front, or a trigger description that false-fires on an adjacent case. A confirmed skill-authoring fact (anatomy rule, trigger pattern) worth recalling on the next skill edit is a memory event. Invoke `brain-feedback` (rule change to this skill or `brain-prime`) or `brain-memory` (recallable fact) yourself; do not make the user ask.
