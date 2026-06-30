@@ -1,6 +1,26 @@
 import { isFunction, isString } from "./internal/core";
-import type { RouteValue, RouteMatch, Params, RouteWithHooks } from "./types";
+import type { RouteValue, Params, RouteWithHooks } from "./types";
 import { sortRoutesBySpecificity, hasChildren, EMPTY_OBJECT } from "./utils";
+
+/**
+ * Internal route matching result with extracted parameters.
+ */
+export type RouteMatch = {
+  /** Route value that was matched */
+  routeValue: RouteValue;
+  /** Pattern string that matched at this nesting level */
+  pattern: string;
+  /** Parameters extracted from the matched path */
+  params: Params;
+  /** Query parameters from the URL */
+  query: Params;
+  /** Remaining unmatched path segment for nested matching */
+  remainingPath: string;
+  /** Path input at this nesting level */
+  fullPath: string;
+  /** Metadata from the matched route */
+  meta?: Record<string, unknown>;
+};
 
 /**
  * Parses URL query string into parameters object.
