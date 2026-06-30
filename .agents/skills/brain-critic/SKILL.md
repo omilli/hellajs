@@ -66,6 +66,8 @@ Before reporting:
 
 Present findings grouped by file, severity-sorted within each (Critical first). For each: the lens, the single named cost, file plus anchor, the one-line evidence, severity plus blast radius, and a suggested direction (one sentence — not the fix contract). Then offer to hand the actionable findings to `brain-plan` to scope the fixes; brain-critic does not write the contract. If nothing clears the cost gate, say so and stop — a clean critique is a valid outcome.
 
+Run the self-improvement track (`brain-prime` handoff gate) before closing. This skill's friction signals: a smell that required careful routing to `brain-audit` because the rule/skill boundary was unclear, or a target whose callers were hard to locate (grep missed importers). A confirmed dead-code, coupling, or surface-shape fact worth recalling is a memory event. Invoke `brain-feedback` (rule change) or `brain-memory` (recallable fact) yourself; do not make the user ask.
+
 ## Self-check
 
 a. Does every finding name exactly one concrete cost (Break / Hamper / Mislead / Bloat) — not preference?
@@ -76,3 +78,4 @@ e. Did I collapse duplicate symptoms into one root-cause finding?
 f. Does every severity rating name its blast radius (callers, tests, docs)?
 g. Did I hand fixes to `brain-plan` rather than write the contract myself?
 h. If I found nothing, did I say so and stop — rather than pad the report?
+i. Did I route friction and durable facts to `brain-feedback`/`brain-memory` instead of leaving it for the user to invoke?

@@ -1,7 +1,7 @@
 ---
 name: brain-prime
 description: >
-  The operating backbone — load FIRST on any non-trivial task, before doing the work. Carries the work ethos (smallest correct change at the root cause), the skill loop (brain-idea/brain-audit/brain-critic/brain-feature -> brain-plan -> brain-worker -> brain-feedback -> brain-memory), the methodology, the non-negotiables (Done = solved + verified; full blast radius), and tool/memory economy. Load before any substantive work; skip for trivial lookups.
+  The operating backbone — load FIRST on any non-trivial task, before doing the work. Carries the work ethos (smallest correct change at the root cause), the skill loop (brain-idea/brain-audit/brain-critic/brain-feature -> brain-plan -> brain-worker, with brain-feedback/brain-memory firing cross-cutting from any skill on friction or verified facts), the methodology, the non-negotiables (Done = solved + verified; full blast radius), and tool/memory economy. Load before any substantive work; skip for trivial lookups.
 ---
 
 # Prime
@@ -15,10 +15,17 @@ The backbone every substantive task loads first. It carries four things the rest
         -> brain-worker    (execute it, ticking each Definition of Done with evidence)
             on a plan-gap -> back to brain-plan
             on a design fork -> back to brain-idea
-        -> brain-feedback  (if the run hit friction, conservatively propose config/skill edits)
-        -> brain-memory    (curate durable verified decisions/facts into the repo knowledge base)
 
-**Handoff gate** — after any substantive work, state one sentence naming the skill the work hands off to (if any) and a one-clause justification, or say "nothing to hand off." Judgment-based, not reflexive: a clean run skips feedback; a trivial change skips everything.
+    Self-improvement (cross-cutting — fires from ANY skill at completion, not a tail):
+        friction -> brain-feedback  (propose config/skill edits)
+        durable fact/decision -> brain-memory  (curate into the repo knowledge base)
+
+**Handoff gate** — after any substantive work, scan both tracks proactively and invoke the matching skill yourself; do not wait for the user to call them. Self-improvement is the system compounding on itself — the skill that hit the friction owns routing it, not the user.
+
+- **Downstream track** — the next skill in the loop, if the work continues (entry → `brain-plan`; `brain-plan` → `brain-worker`; `brain-worker` → `brain-plan` on a plan-gap or `brain-idea` on a design fork). One sentence naming it and a one-clause justification, or "nothing downstream."
+- **Self-improvement track** — friction from THIS run (rework, a wrong assumption, a rule/tool that didn't hold, a user correction) routes to `brain-feedback` when it should change a rule (always-on config/skill text), `brain-memory` when it is a recallable fact/decision. A durable decision or fact confirmed against source this run routes to `brain-memory`. Each skill names its own friction signals in its Done/Self-check section.
+
+A clean run with no events skips the self-improvement track — that is correct and common, not a failure. A trivial change skips everything.
 
 ## Ethos
 
@@ -32,6 +39,7 @@ Ship the smallest correct change that fixes the root cause. Simplify, reuse, or 
 
 ## Method
 
+- Triage a choice before deliberating it. If an inviolable rule or the contract decides it, follow — do not re-derive. If it is reversible and low-stakes, pick the defensible option, state the assumption, proceed. Deliberate or ask only when genuinely open AND high-stakes/irreversible; re-litigating a settled choice is waste.
 - For anything beyond a one-line fix, plan before editing: which files, what change, what verifies it. Use the `brain-plan` skill when it spans >2 files or shared behavior — `brain-idea` first if the approach itself is undecided; just act on small reversible changes.
 - Before changing a shared symbol or behavior, find **all** call sites (your agent's reference/grep tool, `rg`, LSP references); don't edit the first match.
 - Don't guess APIs, signatures, or flags — check the source or docs first; if you can't verify, say so rather than asserting.

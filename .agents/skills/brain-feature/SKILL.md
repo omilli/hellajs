@@ -89,3 +89,7 @@ h. Was the public entry/barrel read (the arbiter of "surface change")?
 i. Did `brain-plan` ask its own clarifying questions, rather than getting pre-answered ones?
 
 If any answer is no, fix it before handing off.
+
+## Self-improve
+
+Run the self-improvement track (`brain-prime` handoff gate) after handing off. This skill's friction signals: a convention gap that blocked proposing ideas, or a target whose public surface had to be re-derived because no barrel/entry existed. A confirmed architectural fact, surface inventory, or comparison-row gap worth recalling before the next feature sweep is a memory event. Invoke `brain-feedback` (rule change) or `brain-memory` (recallable fact) yourself; do not make the user ask.

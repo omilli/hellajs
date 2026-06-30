@@ -71,3 +71,6 @@ e. Does the file match its own existing conventions exactly (one style throughou
 f. For a skill: does the description fire right and not false-fire?
 g. Did the density gate run — is every line earning its context cost?
 h. Did I sync every reference to the changed skill in AGENTS.md and the sibling skills?
+i. Did I route friction (redundancy found late, stale cross-reference, density-gate miss) and durable instruction-surface facts to `brain-feedback`/`brain-memory` instead of leaving it for the user to invoke?
+
+Run the self-improvement track (`brain-prime` handoff gate). This skill's friction signals: redundancy with always-loaded context found only at the density gate (Step 4 should have caught it at Step 1), a stale cross-reference surfaced in Step 6, or a format choice that had to be re-done. A confirmed fact about the project's instruction surface (which files are always-loaded, naming conventions) worth recalling on the next authoring pass is a memory event. Invoke `brain-feedback` (rule change) or `brain-memory` (recallable fact) yourself; do not make the user ask.
