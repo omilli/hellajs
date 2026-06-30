@@ -31,7 +31,7 @@ export const ruleCounts = new Map<string, number>();
  * @internal
  * Creates a deterministic cache key from the CSS object and options.
  */
-export function hashKey(obj: CSSObject, options: CSSOptions): string {
+export function cacheKey(obj: CSSObject, options: CSSOptions): string {
   return `${stringify(obj)}:${options.name || ""}`;
 }
 
