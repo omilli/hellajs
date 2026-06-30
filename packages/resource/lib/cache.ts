@@ -1,6 +1,9 @@
-import type { CacheEntry, CacheConfig, CacheUpdate, ResourceCache, CacheMapView } from "./types/cache";
+import type { CacheEntry, CacheConfig, CacheUpdate, ResourceCache, CacheMapView, PrefetchOptions } from "./types/cache";
 import type { Resource } from "./types/resource";
 import { hasNavigator, hasWindow } from "./internal/core";
+import { resolveRetryConfig } from "./internal/retry";
+import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
+import { isAbortError, categorizeError } from "./internal/errors";
 
 let cacheConfig: CacheConfig = {
   maxSize: 1000,
@@ -367,5 +370,89 @@ export const resourceCache: ResourceCache = {
   onOnlineChange: (callback: (online: boolean) => void) => {
     onlineCallbacks.add(callback);
     return () => onlineCallbacks.delete(callback);
+  },
+  prefetch: async <T, K>(options: PrefetchOptions<T, K>): Promise<T> => {
+    if (options == null || typeof options !== "object")
+      throw new Error("[resource] prefetch: options must be an object, received " + typeof options);
+    if (typeof options.fetcher !== "function")
+      throw new Error("[resource] prefetch: fetcher must be a function, received " + typeof options.fetcher);
+
+    const { fetcher, key, cacheTime = 0, staleTime, timeout, abortSignal, retry = 0, retryDelay = 1000, deduplicate = true } = options;
+
+    // Dedup: join an in-flight same-fetcher+key request
+    if (deduplicate) {
+      const ongoing = getOngoing(fetcher, key);
+      if (ongoing) return ongoing.promise as Promise<T>;
+    }
+
+    const abortController = new AbortController();
+    if (abortSignal)
+      abortSignal.aborted ? abortController.abort()
+        : abortSignal.addEventListener("abort", () => abortController.abort(), { once: true });
+    if (timeout && timeout > 0) {
+      const timeoutId = setTimeout(() => abortController.abort(), timeout);
+      abortController.signal.addEventListener("abort", () => clearTimeout(timeoutId));
+    }
+    const signal = abortController.signal;
+
+    let resolvePromise: (value: T) => void;
+    let rejectPromise: (error: unknown) => void;
+    const requestPromise = new Promise<T>((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+
+    if (deduplicate) {
+      setOngoing(fetcher, key, { promise: requestPromise, abortController });
+      requestPromise.catch(() => { });
+    }
+
+    const retryConfig = resolveRetryConfig(retry, retryDelay);
+    let retryCount = 0;
+
+    try {
+      while (true) {
+        if (signal.aborted) {
+          const err = new DOMException("Request was aborted", "AbortError");
+          rejectPromise!(err);
+          throw err;
+        }
+        try {
+          const result = await Promise.race([
+            fetcher(key),
+            new Promise<never>((_, reject) => {
+              const onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
+              signal.aborted ? onAbort() : signal.addEventListener("abort", onAbort, { once: true });
+            })
+          ]);
+          setCacheData(fetcher, key, result, cacheTime, staleTime ?? Infinity);
+          resolvePromise!(result);
+          return result;
+        } catch (err) {
+          if (isAbortError(err)) {
+            rejectPromise!(err);
+            throw err;
+          }
+          retryCount++;
+          const categorizedError = categorizeError(err);
+          if (!retryConfig.shouldRetry(retryCount, categorizedError)) {
+            rejectPromise!(err);
+            throw err;
+          }
+          const delayMs = retryConfig.getDelay(retryCount, categorizedError);
+          await new Promise<void>(resolve => {
+            const timeoutId = setTimeout(() => resolve(), delayMs);
+            signal.addEventListener("abort", () => { clearTimeout(timeoutId); resolve(); }, { once: true });
+          });
+          if (signal.aborted) {
+            const abortErr = new DOMException("Request was aborted", "AbortError");
+            rejectPromise!(abortErr);
+            throw abortErr;
+          }
+        }
+      }
+    } finally {
+      if (deduplicate) deleteOngoing(fetcher, key);
+    }
   },
 };

@@ -24,6 +24,7 @@ interface ResourceCache {
   invalidateResources(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
   isOnline(): boolean;
   onOnlineChange(callback: (online: boolean) => void): () => void;
+  prefetch<T, K>(options: PrefetchOptions<T, K>): Promise<T>;
 }
 
 interface CacheConfig {
@@ -49,6 +50,18 @@ interface CacheMapView {
   get(key: unknown): CacheEntry<unknown> | undefined;
   has(key: unknown): boolean;
   clear(): void;
+}
+
+interface PrefetchOptions<T, K> {
+  fetcher: (key: K) => Promise<T>;
+  key: K;
+  cacheTime?: number;
+  staleTime?: number;
+  timeout?: number;
+  abortSignal?: AbortSignal;
+  retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
+  retryDelay?: number | ((attempt: number, error: ResourceError) => number);
+  deduplicate?: boolean;
 }
 ```
 
@@ -183,6 +196,19 @@ resourceCache.cleanup(); // Manual cleanup of expired entries
 setInterval(() => resourceCache.cleanup(), 60000);
 ```
 
+### `prefetch`
+
+Fetches via `fetcher(key)` and caches the result under the fetcher's own scope **without creating a resource**, returning the fetched data. Deduplicates, retries, and aborts like a [`resource()`](/reference/resource/resource) fetch. See [Prefetching](#prefetching) for the same-fetcher-reference requirement that lets a later `resource()` reuse the entry.
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+const fetchUser = async (id: number) => (await fetch(`/api/users/${id}`)).json();
+
+const user = await resourceCache.prefetch({ fetcher: fetchUser, key: 1, cacheTime: 60000 });
+console.log(user); // cached under fetchUser's scope
+```
+
 ### Invalidation Methods
 
 ### `invalidate`
@@ -296,6 +322,24 @@ Cache entries have a time-to-live (TTL) that determines when they expire. Expire
 ### LRU Eviction Strategy
 
 When the cache reaches its maximum size limit, the Least Recently Used (LRU) eviction strategy automatically removes the oldest unused entries to make room for new data. This ensures memory usage stays within configured bounds while keeping frequently accessed data available.
+
+### Prefetching
+
+[`prefetch`](#prefetch) fetches via a fetcher and caches the result under that fetcher's own scope without creating a resource — useful for warming the cache ahead of need. It deduplicates, retries, and aborts just like a [`resource()`](/reference/resource/resource) fetch, and returns the fetched data. `structuralSharing` is intentionally absent from `PrefetchOptions`: prefetch has no prior data to share against.
+
+Cache scope and dedup are keyed by **fetcher reference identity**, so a later [`resource()`](/reference/resource/resource) hits the prefetched entry only when it shares the *same fetcher function reference* and key. The URL overload `resource('url')` cannot share a prefetched entry — each call builds a fresh fetcher closure and thus a separate scope. Use a named fetcher function to make the scope shareable.
+
+```typescript
+import { resource, resourceCache } from '@hellajs/resource';
+
+// A named fetcher so the cache scope is shareable.
+const fetchUser = async (id: number) => (await fetch(`/api/users/${id}`)).json();
+
+await resourceCache.prefetch({ fetcher: fetchUser, key: 1, cacheTime: 60000 });
+
+// A later resource sharing the same fetchUser reference + key hits the prefetched entry:
+const userResource = resource(fetchUser, { key: 1, cacheTime: 60000 });
+```
 
 ## Important Considerations
 
