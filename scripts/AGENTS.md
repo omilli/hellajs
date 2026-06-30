@@ -13,6 +13,7 @@
   | `sync.ts` | Regenerate `CLAUDE.md` + `.github/instructions/*` from every `AGENTS.md` under root + `packages/`/`plugins/`/`docs/`/`scripts/`. Root → `.github/copilot-instructions.md` (`applyTo: "**"`); folders → `{folder}.instructions.md`. |
   | `sync-skills.ts` | Chained after `sync.ts` by the `sync` npm script. Shallow-clone `omilli/ai-brain` and mirror its `brain-*` skills into `.agents/skills/`, leaving non-`brain-*` skills (`comparison/`) untouched. Flags: `--dry-run`, `--remote=<url>`. Prints `git diff --stat .agents/skills/`. |
   | `type-visibility.ts` | Guard (`bun visibility`): fail if any `lib/types*.d.ts` that is wholesale re-exported (`export type * from "./types[…]"`) contains `@internal`-tagged types — those would leak as public. No package scoping; scans every package. |
+  | `dead-exports.ts` | Guard (`bun dead-exports`): fail if any exported `function`/`const`/`let`/`class` across packages and plugins has zero value-position references across all source, tests, and docs. No package scoping; type-only exports out of scope. |
 
   Each entry parses `process.argv` for an optional package name (first non-`--` arg) and `--flags`, validates via `isValidPackage`, then runs. The arg-parse pattern is duplicated across `clean`/`coverage`/`bundle` — extract candidate for `utils/args.ts`.
 
