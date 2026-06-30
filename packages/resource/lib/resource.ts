@@ -1,7 +1,7 @@
 import { signal, computed, effect, untracked, isFunction } from "./internal/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types/resource";
 import type { CacheEntry } from "./types/cache";
-import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale } from "./cache";
+import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
 import { isAbortError, categorizeError } from "./internal/errors";
 import { resolveRetryConfig } from "./internal/retry";
 import { createPolling } from "./internal/polling";
@@ -89,6 +89,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     refetchIntervalInBackground = false,
     refetchOnWindowFocus = false,
     refetchOnReconnect = false,
+    invalidates,
     key = (() => undefined as unknown as K)
   } = options;
 
@@ -448,6 +449,18 @@ export function resource<T, K = undefined, TTransformed = T>(
       if (!signal.aborted) {
         handleSuccess(result);
         await options.onSettled?.(result, undefined, variables, mutationContext);
+        if (invalidates) {
+          let i = 0;
+          const len = invalidates.length;
+          while (i < len) {
+            const item = invalidates[i++]!;
+            if (typeof item === "string") {
+              resourceCache.invalidateByPrefix(item);
+            } else {
+              resourceCache.invalidateByPattern(item);
+            }
+          }
+        }
         return result;
       }
 

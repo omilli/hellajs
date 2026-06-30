@@ -100,6 +100,14 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   onMutate?: (variables: unknown) => Promise<unknown> | unknown;
   /** Callback fired after mutation completes (success or error) */
   onSettled?: (data?: T, error?: unknown, variables?: unknown, context?: unknown) => Promise<void> | void;
+  /**
+   * After a successful mutation, invalidate cache entries matching any prefix
+   * (string) or pattern (RegExp). Strings dispatch to `invalidateByPrefix`;
+   * RegExp to `invalidateByPattern`. Deletes cache entries only — mounted
+   * resources do NOT auto-refetch (the next fetch for a matched key goes to
+   * the network). No invalidation runs on error or abort.
+   */
+  invalidates?: Array<string | RegExp>;
 }
 
 /**

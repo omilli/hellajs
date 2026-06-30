@@ -1,4 +1,4 @@
-import type { Resource } from "./resource";
+import type { Resource, ResourceError } from "./resource";
 
 /**
  * Cache entry structure storing cached data with metadata for TTL and LRU eviction.
@@ -50,6 +50,32 @@ export interface CacheMapView {
   has(key: unknown): boolean;
   /** Clears all entries across all fetcher scopes */
   clear(): void;
+}
+
+/**
+ * Options for {@link ResourceCache.prefetch}. Fetches and caches data without creating a resource.
+ * @template T - The fetched data type
+ * @template K - The cache key type
+ */
+export interface PrefetchOptions<T, K> {
+  /** Async function that fetches the data; also defines the cache scope (keyed by reference identity, identical to resource()) */
+  fetcher: (key: K) => Promise<T>;
+  /** Cache key passed to the fetcher and used for the cache entry */
+  key: K;
+  /** TTL in ms; 0 (default) disables caching the prefetched entry */
+  cacheTime?: number;
+  /** Freshness in ms (default: Infinity = never stale, matching resource()) */
+  staleTime?: number;
+  /** Ms before the internal abort controller fires */
+  timeout?: number;
+  /** External AbortSignal wired onto the internal controller */
+  abortSignal?: AbortSignal;
+  /** Attempts on failure, boolean toggle, or predicate (default: 0) */
+  retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
+  /** Delay between retries in ms, or function returning delay based on attempt and error (default: 1000) */
+  retryDelay?: number | ((attempt: number, error: ResourceError) => number);
+  /** Join an in-flight same-fetcher+key request rather than issuing a second call (default: true) */
+  deduplicate?: boolean;
 }
 
 export interface ResourceCache {
@@ -163,4 +189,13 @@ export interface ResourceCache {
    * @returns Unsubscribe function
    */
   onOnlineChange(callback: (online: boolean) => void): () => void;
+  /**
+   * Fetches via `fetcher(key)` and stores the result under the fetcher's own cache scope (fetcher-reference-keyed,
+   * identical to `resource()`) without creating a resource. Deduplicates, retries, and aborts like a resource fetch.
+   * @template T - The fetched data type
+   * @template K - The cache key type
+   * @param options - Fetcher, key, and optional cache/abort/retry controls
+   * @returns The fetched data
+   */
+  prefetch<T, K>(options: PrefetchOptions<T, K>): Promise<T>;
 }

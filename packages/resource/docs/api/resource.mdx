@@ -89,6 +89,8 @@ interface ResourceOptions<T, K, TTransformed = T> {
   onMutate?: (variables: unknown) => Promise<unknown> | unknown;
   /** Hook after mutation completion (success or error) */
   onSettled?: (data?: T, error?: unknown, variables?: unknown, context?: unknown) => Promise<void> | void;
+  /** After a successful mutation, invalidate matching cache entries: strings dispatch to `invalidateByPrefix`, RegExp to `invalidateByPattern`. Deletes cache entries only — mounted resources do not auto-refetch. No invalidation on error or abort. */
+  invalidates?: Array<string | RegExp>;
 }
 ```
 
@@ -351,6 +353,25 @@ Identical concurrent requests share a single network call by default. Disable wi
 ### Timeout and Abort Control
 
 Request timeout and external abort signals for coordinated cancellation. See [Resources](/learn/concepts/resources#timeout-and-abort-control) for external abort controller patterns.
+
+### Mutation invalidation
+
+Declare cache entries to invalidate after a successful mutation with `invalidates`. Each entry is a string prefix (dispatched to [`invalidateByPrefix`](/reference/resource/resourcecache#invalidatebyprefix)) or a `RegExp` pattern (dispatched to [`invalidateByPattern`](/reference/resource/resourcecache#invalidatebypattern)). Invalidation runs only on the success path — on error or abort nothing is invalidated; call `invalidate()` yourself inside `onSettled` when you need error-path invalidation.
+
+```typescript
+import { resource, resourceCache } from '@hellajs/resource';
+
+resourceCache.set('user:1', { id: 1 }, 60000);
+
+const saveUser = resource(async () => ({ ok: true }), {
+  invalidates: ['user:', /^posts:\d+$/],
+});
+
+await saveUser.mutate({ action: 'save' });
+// on success: invalidateByPrefix('user:') + invalidateByPattern(/^posts:\d+$/)
+```
+
+`invalidates` **deletes cache entries only** — it does not refetch mounted resources. A resource currently displaying a matched key keeps its data; only the *next* fetch for that key (manual, key-change, focus, reconnect, polling, or a stale read) hits the network. This is intentionally narrower than react-query's `invalidateQueries`, which refetches active observers — HellaJS has no observer-subscription layer, so call `invalidate()` or `fetch()` on any resource that must refresh immediately.
 
 ## Important Considerations
 
