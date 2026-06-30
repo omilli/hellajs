@@ -1,4 +1,4 @@
-import type { Reactive } from "../types";
+import type { Reactive } from "./links";
 import { DIRTY, PENDING, TRACKING } from "./flags";
 import { removeLink } from "./links";
 

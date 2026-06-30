@@ -5,7 +5,19 @@ import { validateStale } from "./internal/validation";
 import { createLink } from "./internal/links";
 import { WRITABLE, DIRTY, PENDING } from "./internal/flags";
 import { isFunction } from "./internal/utils";
-import type { ComputedState } from "./types";
+import type { Reactive } from "./internal/links";
+
+/**
+ * Base interface for a computed signal.
+ * @internal
+ * @template T
+ */
+export interface ComputedState<T = unknown> extends Reactive {
+  /** The cached value of the computation. */
+  cbc: T | undefined;
+  /** The function that computes the value. */
+  cbf: (previousValue?: T) => T;
+}
 
 /**
  * Creates a read-only signal that automatically updates when its dependencies change.

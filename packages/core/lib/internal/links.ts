@@ -1,5 +1,41 @@
-import type { Reactive, Link, ComputedState } from "../types";
+import type { ComputedState } from "../computed";
 import { TRACKING, WRITABLE, DIRTY } from "./flags";
+
+/**
+ * Base interface for all reactive nodes (signals, computeds, effects).
+ * @internal
+ */
+export interface Reactive {
+  /** Dependencies of this node. */
+  rd?: Link;
+  /** The previous dependency link. */
+  rpd?: Link;
+  /** Subscribers to this node. */
+  rs?: Link;
+  /** The previous subscriber link. */
+  rps?: Link;
+  /** Bitmask representing the state of the node (e.g., dirty, tracking). */
+  rf: number;
+}
+
+/**
+ * Represents a link in the doubly-linked list between reactive nodes.
+ * @internal
+ */
+export interface Link {
+  /** The source node (the one being subscribed to). */
+  ls: Reactive;
+  /** The target node (the subscriber). */
+  lt: Reactive;
+  /** The previous subscriber of the source. */
+  lps: Link | undefined;
+  /** The next subscriber of the source. */
+  lns: Link | undefined;
+  /** The previous dependency of the target. */
+  lpd: Link | undefined;
+  /** The next dependency of the target. */
+  lnd: Link | undefined;
+}
 
 /**
  * @internal Creates a doubly-linked list node between a source and a target reactive node.

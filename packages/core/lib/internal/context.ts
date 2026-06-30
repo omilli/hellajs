@@ -1,4 +1,5 @@
-import type { EffectScope, Reactive } from "../types";
+import type { EffectScope } from "../scope";
+import type { Reactive } from "./links";
 
 /**
  * @internal The currently executing reactive context (effect or computed).

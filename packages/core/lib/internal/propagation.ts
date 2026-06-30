@@ -1,5 +1,15 @@
-import type { Stack, Link } from "../types";
+import type { Link } from "./links";
 import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, CLEAN } from "./flags";
+
+/**
+ * Represents a node in a stack data structure.
+ * @internal
+ * @template T
+ */
+export interface Stack<T> {
+  sv: T;
+  sp: Stack<T> | undefined;
+}
 import { scheduleEffect } from "./queue";
 
 /** Mask for active processing states: tracking, dirty, or pending. */

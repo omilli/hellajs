@@ -10,7 +10,7 @@ Reactive primitives over a doubly-linked dependency DAG. Signals are sources, co
 | `flush` | Scheduler drain (advanced/testing) | `lib/internal/scheduler.ts` |
 | `isFunction`, `isString`, `isUndefined`, `isPlainObject`, `isFalsy`, `isObject`, `objectLoop` | Utils | `lib/internal/utils.ts` |
 | `hasWindow`, `hasDocument`, `hasNavigator` | Env probes | `lib/internal/env.ts` |
-| `Signal`, `ComputedState`, `EffectState`, `Reactive`, `Link`, `Stack`, `EffectScope` | Type-only | `lib/types.d.ts` |
+| `Signal` | Type-only | `lib/types.d.ts` |
 
 `computed`, `effect`, `batch`, `untracked`, and `scope` each throw `new Error("[core] <name>: <argName> must be a function, received <typeof>")` when their callback is not a function (arg names: `computedFn`, `effectFn`, `batchFn`, `untrackedFn`, `fn`). `signal` takes a value, not a function, and does no validation.
 

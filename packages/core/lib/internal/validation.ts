@@ -1,4 +1,7 @@
-import type { Stack, Reactive, Link, SignalState, ComputedState } from "../types";
+import type { Stack } from "./propagation";
+import type { Reactive, Link } from "./links";
+import type { SignalState } from "../signal";
+import type { ComputedState } from "../computed";
 import { DIRTY, WRITABLE, PENDING } from "./flags";
 import { updateValue } from "./execution";
 import { propagate } from "./propagation";

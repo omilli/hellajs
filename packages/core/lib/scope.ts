@@ -1,6 +1,12 @@
 import { setActiveScope } from "./internal/context";
 import { isFunction } from "./internal/utils";
-import type { EffectScope } from "./types";
+/**
+ * Effect scope for collecting and batch-disposing effects.
+ * @internal
+ */
+export interface EffectScope {
+  effects?: Set<() => void>;
+}
 
 /** Shared no-op cleanup for scopes with no effects */
 const NOOP = () => {};

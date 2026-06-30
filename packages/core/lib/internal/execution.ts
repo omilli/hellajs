@@ -1,4 +1,5 @@
-import type { SignalState, ComputedState } from "../types";
+import type { SignalState } from "../signal";
+import type { ComputedState } from "../computed";
 import { WRITABLE } from "./flags";
 import { setCurrentSub } from "./context";
 import { startTracking, endTracking } from "./tracking";
