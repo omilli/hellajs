@@ -3,7 +3,18 @@ import { disposeEffect } from "./internal/scheduler";
 import { createLink } from "./internal/links";
 import { GUARDED } from "./internal/flags";
 import { isFunction } from "./internal/utils";
-import type { EffectState } from "./types";
+import type { Reactive } from "./internal/links";
+
+/**
+ * Interface for an effect.
+ * @internal
+ */
+export interface EffectState extends Reactive {
+  /** The function to execute as a side effect. */
+  ef(): void;
+  /** Cleanup function returned by the effect, called before re-execution and on disposal. */
+  ec?: () => void;
+}
 
 /**
  * Creates a reactive effect that runs a function whenever its dependencies change.

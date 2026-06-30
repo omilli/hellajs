@@ -1,4 +1,5 @@
-import type { Reactive, EffectState } from "../types";
+import type { Reactive } from "./links";
+import type { EffectState } from "../effect";
 import { CLEAN, DIRTY, PENDING } from "./flags";
 import { setCurrentSub } from "./context";
 import { startTracking, endTracking } from "./tracking";

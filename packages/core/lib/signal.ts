@@ -4,8 +4,21 @@ import { propagate, propagateChange } from "./internal/propagation";
 import { flush } from "./internal/scheduler";
 import { createLink } from "./internal/links";
 import { WRITABLE, DIRTY } from "./internal/flags";
-import type { Signal, SignalState } from "./types";
+import type { Signal } from "./types";
+import type { Reactive } from "./internal/links";
 import { batchDepth } from "./batch";
+
+/**
+ * Base interface for a signal.
+ * @internal
+ * @template T
+ */
+export interface SignalState<T = unknown> extends Reactive {
+  /** The last confirmed value. */
+  sbv: T;
+  /** The current (potentially uncommitted) value. */
+  sbc: T;
+}
 
 /**
  * Creates a reactive signal without an initial value. Its value is `undefined` until first set.

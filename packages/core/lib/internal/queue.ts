@@ -1,4 +1,4 @@
-import type { Reactive } from "../types";
+import type { Reactive } from "./links";
 
 /** Queue to store effects that need to be executed during flush. */
 const effectQueue: (Reactive | undefined)[] = [];
