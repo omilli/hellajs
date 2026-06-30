@@ -227,5 +227,5 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 ## Testing
 
-Follow `guides/tests.md` (rules) and `guides/code.md` (source). Tests import from `@hellajs/resource/bundle` (the built bundle, instrumented for coverage per `bunfig.toml`); coverage target is `dist/`. Shared fixtures live in `tests/helpers.ts` (`mockUser`, `mockPosts`). Reactive primitives (`signal`, `effect`, `computed`, `flush`) import from `@hellajs/core`. Test helpers (`delay`) import from `../../../utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`. Time-sensitive cache/TTL tests mock `Date.now`. Run with `bun coverage resource`.
+Follow `guides/tests.md` (rules) and `guides/code.md` (source). Tests import from `@hellajs/resource/bundle` (the built bundle, instrumented for coverage per `bunfig.toml`); coverage target is `dist/`. Shared fixtures live in `tests/helpers.ts` (`mockUser`, `mockPosts`). Reactive primitives (`signal`, `effect`, `computed`, `flush`) import from `@hellajs/core`. Test helpers (`delay`) import from `@utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`. Time-sensitive cache/TTL tests mock `Date.now`. Run with `bun coverage resource`.
 </resource-package-instructions>
