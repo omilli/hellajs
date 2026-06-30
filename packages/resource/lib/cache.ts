@@ -9,6 +9,7 @@ let cacheConfig: CacheConfig = {
 
 const PUBLIC_SCOPE = Symbol("public");
 
+/** @internal Two-level Map<scope, Map<key, CacheEntry>> — the global cache store. */
 export const cacheMap = new Map<unknown, Map<unknown, CacheEntry<unknown>>>();
 
 let lastCleanupTime = 0;
@@ -57,11 +58,13 @@ const totalSize = (): number => {
   return size;
 };
 
+/** @internal Entry TTL check: true when now - timestamp > staleTime (Infinity = never stale). */
 export function isStale<T>(entry: CacheEntry<T>): boolean {
   if (entry.staleTime === Infinity) return false;
   return Date.now() - entry.timestamp > entry.staleTime;
 }
 
+/** @internal Batch deletes TTL-expired entries; throttled to 60s, 100-entry cap. */
 export function cleanupExpiredCache() {
   const now = Date.now();
 
@@ -94,6 +97,7 @@ export function cleanupExpiredCache() {
   }
 }
 
+/** @internal Writes data to the cache scope; no-op when cacheTime is 0. */
 export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime = 0, staleTime = 0): void {
   if (!cacheTime) return;
 
@@ -137,6 +141,7 @@ export function setCacheData<T>(scope: unknown, key: unknown, data: T, cacheTime
   }
 }
 
+/** @internal TTL-valid lookup that refreshes lastAccess and deletes expired entries. */
 export function getCacheData<T = unknown>(scope: unknown, key: unknown): T | undefined {
   const inner = cacheMap.get(scope);
   if (!inner) return undefined;
@@ -153,6 +158,7 @@ export function getCacheData<T = unknown>(scope: unknown, key: unknown): T | und
   return entry.data;
 }
 
+/** @internal In-place entry mutation; returns false on miss or TTL expiry. */
 export function updateCacheData<T>(
   scope: unknown,
   key: unknown,
@@ -223,6 +229,7 @@ const invalidateGlobal = (key: unknown): void => {
   while (i < len) scopes[i++]!.delete(key);
 };
 
+/** Global cache singleton with cross-scope set/get/update/invalidate operations. */
 export const resourceCache: ResourceCache = {
   get map() { return flatView; },
   get config() { return cacheConfig; },
@@ -351,7 +358,7 @@ export const resourceCache: ResourceCache = {
     cacheMap.clear();
     return count;
   },
-  createKeyGenerator: <T>() => (template: (params: T) => unknown) => (params: T) => template(params),
+  createKeyGenerator: <T>() => (template: (params: T) => unknown) => template,
   invalidateResources: (resources: Array<Pick<Resource<unknown>, "invalidate">>) => {
     let i = 0;
     const len = resources.length;
