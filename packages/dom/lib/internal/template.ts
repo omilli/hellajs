@@ -3,15 +3,54 @@ import type {
   HellaChild,
   ElementHooks,
   HellaPrimitive,
-  HtmlPlaceholder,
-  HtmlDynamicComponent,
-  HtmlInternalNode,
-  HtmlParsedNode,
+  ErrorConfig,
   ComponentFn,
-  HtmlParsedAttrs,
   RenderFn
 } from "../types/nodes";
 import { component } from "../component";
+
+/**
+ * Internal marker for placeholder substitution during template parsing.
+ * @internal
+ */
+export interface HtmlPlaceholder {
+  __placeholder: number;
+}
+
+/**
+ * Internal marker for dynamic component resolution during template parsing.
+ * @internal
+ */
+export interface HtmlDynamicComponent {
+  __dynamicComponent: number;
+  props: Record<string, unknown>;
+  children: HellaChild[];
+}
+
+/**
+ * Internal node type used during template parsing (before value substitution).
+ * @internal
+ */
+export type HtmlInternalNode = HellaNode | HtmlPlaceholder | HtmlDynamicComponent;
+
+/**
+ * Mutable node type during parsing (before finalization).
+ * @internal
+ */
+export type HtmlParsedNode = HtmlDynamicComponent | (HellaNode & { children: HellaChild[] });
+
+/**
+ * Parsed attributes categorized by type (props, hooks, bind, on, e, error).
+ * @internal
+ */
+export interface HtmlParsedAttrs {
+  props: Record<string, unknown>;
+  hooks?: Partial<ElementHooks>;
+  bind?: Record<string, HellaPrimitive>;
+  on?: Record<string, EventListener>;
+  e?: Record<string, EventListener>;
+  error?: ErrorConfig;
+}
 
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
