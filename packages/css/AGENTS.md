@@ -131,14 +131,14 @@ Highest-signal gotchas; verify any change against these:
 
 ## Testing
 
-- Import from `@hellajs/css/bundle`; `beforeEach` runs `resetTestState()` + `resetCss()` + `resetCssVars()` (the css package's module-level maps aren't cleared by `resetTestState` alone).
+- Import from `@hellajs/css/bundle`; `beforeEach` runs `resetTestState()`.
 - Assert via `document.getElementById('hella-css' | 'hella-vars')?.textContent` — and use the **vars mirror format** (`--k: v;`) when constructing vars expectations.
 - `css.test.ts` — global/scoped, `&` (incl. multiple `&`), descendants, null/undefined skip, array join, number values, `content` auto-quote, ref counting, cache reuse, `removeCss` no-op, `resetCss`, `test.each` input validation.
 - `css-at-rules.test.ts` — every `@`-rule with the conditional-vs-definitional split (scoped `@media`/`@container`/`@supports`/`@starting-style` inherit; `@keyframes`/`@font-face`/`@layer` stay global even with `name`).
-- `cssvars.test.ts` — static caching, deep nesting, signal/computed/batched updates, mixed static+reactive, multi-call accumulation, independent reactive updates, effect cleanup on reset, **LRU eviction + promotion-on-access**, compile-time type rejections (boolean / Date / boolean-returning fn), input validation.
+- `cssvars.test.ts` — static caching, deep nesting, signal/computed/batched updates, mixed static+reactive, multi-call accumulation, independent reactive updates, effect cleanup on reset, **LRU eviction + promotion-on-access**, input validation.
 - `cssvars-scoped.test.ts` — class/ID selectors, prefix, scoped+prefix, multi-scope accumulation, reactive scoped, options-hash caching.
 - `cssvars-flatten.test.ts` — static flatten, nested fn resolution, mixed deep nesting, dot→hyphen keys.
-- `cssvars-types.test.ts` — compile-time rejection of boolean/Date/boolean-returning fn; acceptance of string/number/string-fn/nested; leaf type is `string`.
+- `cssvars-types.test.ts` — compile-time type rejections (boolean / Date / boolean-returning fn); acceptance of string/number/string-fn/nested; leaf type is `string`.
 - `cssvars-remove.test.ts` — static removal, ref counting (3 calls → 3 removes), reactive effect disposal, shared-scope partial removal, scoped/prefixed removal, reactive refCount (2 calls → 1 remove leaves effect active), no-op unknown, input validation.
 - `ssr.test.ts` — unsets `globalThis.document` (save in `beforeEach`, restore in `afterEach`); css/cssVars still return correct results; `resetCss`/`resetCssVars` don't throw.
 
