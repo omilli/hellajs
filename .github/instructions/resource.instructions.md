@@ -174,7 +174,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 ### `resourceCache` methods
 
-`set(key, data, cacheTime=0, staleTime=0)` → `key` (writes `PUBLIC_SCOPE`; validates non-negative numbers; no-op when `cacheTime=0`). `get<T>(key)` (searches all scopes, refreshes `lastAccess`, deletes expired). `update(key, updater)`/`updateMultiple(updates)` → `boolean`/void (first-scope hit wins; throws on `undefined` updater). `cleanup()`. `invalidate(key)`/`invalidateMultiple(keys)` (all scopes). `invalidateByPrefix(prefix)` / `invalidateByPattern(regex)` → count (**string keys only**). `invalidateAll()` → count. `invalidateResources([...])` (calls `.invalidate()` on each). `createKeyGenerator<T>()` (curried `(template) => (params) => key`). `setConfig(partial)`. `isOnline()` / `onOnlineChange(cb) => unsub`.
+`set(key, data, cacheTime=0, staleTime=0)` → `key` (writes `PUBLIC_SCOPE`; validates non-negative numbers; no-op when `cacheTime=0`). `get<T>(key)` (searches all scopes, refreshes `lastAccess`, deletes expired). `update(key, updater)`/`updateMultiple(updates)` → `boolean`/void (first-scope hit wins; throws on `undefined` updater). `cleanup()`. `invalidate(key)`/`invalidateMultiple(keys)` (all scopes). `invalidateByPrefix(prefix)` / `invalidateByPattern(regex)` → count (**string keys only**). `invalidateAll()` → count. `invalidateResources([...])` (calls `.invalidate()` on each). `setConfig(partial)`. `isOnline()` / `onOnlineChange(cb) => unsub`.
 
 ## Non-obvious behaviors
 
