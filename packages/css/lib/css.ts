@@ -1,6 +1,6 @@
 import { hasDocument, isPlainObject } from "./internal/core";
 import { upsertRule } from "./internal/sheet";
-import { STYLE_ID, refCounts, inlineCache, cssRulesMap, ruleCounts, hashKey, syncTextContent } from "./internal/cssStore";
+import { STYLE_ID, refCounts, inlineCache, cssRulesMap, ruleCounts, cacheKey, syncTextContent } from "./internal/cssStore";
 import type { CSSObject, CSSOptions } from "./types";
 
 const AMP_REGEX = /&/g;
@@ -23,7 +23,7 @@ const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-st
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
 
-  const key = hashKey(obj, options);
+  const key = cacheKey(obj, options);
 
   if (inlineCache.has(key)) {
     refCounts.set(key, (refCounts.get(key) || 0) + 1);

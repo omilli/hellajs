@@ -1,6 +1,6 @@
 import { hasDocument, isPlainObject } from "./internal/core";
 import { removeRule } from "./internal/sheet";
-import { STYLE_ID, refCounts, inlineCache, cssRulesMap, ruleCounts, hashKey, syncTextContent } from "./internal/cssStore";
+import { STYLE_ID, refCounts, inlineCache, cssRulesMap, ruleCounts, cacheKey, syncTextContent } from "./internal/cssStore";
 import type { CSSObject, CSSOptions } from "./types";
 
 /**
@@ -11,7 +11,7 @@ import type { CSSObject, CSSOptions } from "./types";
 export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
   if (!isPlainObject(obj)) throw new Error(`[css] removeCss: expected a CSS object, received ${String(obj)}`);
 
-  const key = hashKey(obj, options);
+  const key = cacheKey(obj, options);
 
   if (!refCounts.has(key)) return;
 
