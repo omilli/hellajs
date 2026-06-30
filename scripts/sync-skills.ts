@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { execCommand, fileExists, logger, projectRoot } from "./utils/index.js";
 
 const CONFIG = {
-  REMOTE_URL: "https://github.com/omilli/ai-brain.git",
+  REMOTE_URL: "https://github.com/omilli/brain.git",
   SKILLS_DIR: join(projectRoot, ".agents", "skills"),
   SKILL_PREFIX: "brain-",
   CLONE_TIMEOUT_MS: 120000,
