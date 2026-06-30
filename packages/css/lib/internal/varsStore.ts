@@ -86,7 +86,7 @@ export function applyRules(flat: Record<string, unknown>, { scoped, prefix = "" 
 
   upsertRule(VARS_ID, scope, `${scope}{${fullScopeVars}}`);
 
-  syncTextContent();
+  syncVarsTextContent();
 }
 
 /**
@@ -115,7 +115,7 @@ export function removeFromScope(scope: string, flatKeys: string[], prefix: strin
     upsertRule(VARS_ID, scope, `${scope}{${fullScopeVars}}`);
   }
 
-  syncTextContent();
+  syncVarsTextContent();
 }
 
 /**
@@ -131,7 +131,7 @@ export function resetReactiveRegistries(): void {
  * Mirrors the scoped vars rules into the style element's textContent
  * for DevTools visibility.
  */
-function syncTextContent() {
+function syncVarsTextContent() {
   let text = "";
 
   const scopeEntries = Array.from(scopedVarsRulesMap.entries());
