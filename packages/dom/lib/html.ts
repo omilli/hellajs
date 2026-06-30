@@ -1,4 +1,5 @@
-import type { HellaNode, HtmlPlaceholder, HtmlInternalNode } from "./types/nodes";
+import type { HellaNode } from "./types/nodes";
+import type { HtmlPlaceholder, HtmlInternalNode } from "./internal/template";
 import { cloneWithValues, parseHTML } from "./internal/template";
 
 const templateCache = new WeakMap<TemplateStringsArray, HtmlInternalNode>();

@@ -304,16 +304,8 @@ export interface TransitionProps {
 }
 
 // ============================================================================
-// INTERNAL PARSING (html`` template system)
-// Internal use in html.ts
+// LAZY COMPONENT
 // ============================================================================
-
-/**
- * Internal marker for placeholder substitution during template parsing.
- */
-export interface HtmlPlaceholder {
-  __placeholder: number;
-}
 
 /**
  * Options passed to the Lazy loader function.
@@ -330,35 +322,4 @@ export interface LazyProps {
   loading?: HellaChild;
   fallback?: HellaChild;
   props?: Record<string, unknown>;
-}
-
-/**
- * Internal marker for dynamic component resolution during template parsing.
- */
-export interface HtmlDynamicComponent {
-  __dynamicComponent: number;
-  props: Record<string, unknown>;
-  children: HellaChild[];
-}
-
-/**
- * Internal node type used during template parsing (before value substitution).
- */
-export type HtmlInternalNode = HellaNode | HtmlPlaceholder | HtmlDynamicComponent;
-
-/**
- * Mutable node type during parsing (before finalization).
- */
-export type HtmlParsedNode = HtmlDynamicComponent | (HellaNode & { children: HellaChild[] });
-
-/**
- * Parsed attributes categorized by type (props, hooks, bind, on, e, error).
- */
-export interface HtmlParsedAttrs {
-  props: Record<string, unknown>;
-  hooks?: Partial<ElementHooks>;
-  bind?: Record<string, HellaPrimitive>;
-  on?: Record<string, EventListener>;
-  e?: Record<string, EventListener>;
-  error?: ErrorConfig;
 }
