@@ -128,7 +128,7 @@ A single scenario verified through sequential steps (render → update → reord
 Every file touching shared mutable state uses exactly:
 
 ```typescript
-import { resetTestState } from "../../../utils/test-helpers.js";
+import { resetTestState } from "@utils/test-helpers.js";
 
 beforeEach(() => {
   resetTestState();
