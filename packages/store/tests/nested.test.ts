@@ -92,7 +92,8 @@ describe("store", () => {
       const userStore = store({ name: "Alice", age: 30 });
       const appStore = store({ user: userStore });
 
-      appStore.update({ user: { name: "Bob" } } as never);
+      // @ts-expect-error composed-store partial: PartialDeep recurses and types name as Signal<string>, but the draft path accepts the plain value
+      appStore.update({ user: { name: "Bob" } });
 
       expect(appStore.user.name()).toBe("Bob");
       expect(appStore.user.age()).toBe(30);

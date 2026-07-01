@@ -28,7 +28,7 @@ describe("store", () => {
     test("readonly properties not updated via update()", () => {
       const data = store({ locked: "original", writable: "a" }, { readonly: ["locked"] });
 
-      data.update({ locked: "new", writable: "b" } as never);
+      data.update({ locked: "new", writable: "b" });
 
       expect(data.locked()).toBe("original");
       expect(data.writable()).toBe("b");
