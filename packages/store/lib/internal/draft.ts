@@ -1,9 +1,9 @@
-import { isPlainObject } from "./internal/core";
+import { isPlainObject } from "./core";
 
 /**
+ * @internal
  * Deep clones an object, handling nested objects, arrays, and built-in types.
  * Correctly clones Date, RegExp, Map, and Set instances.
- * @internal
  */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== "object") return obj;
@@ -46,9 +46,9 @@ export function deepClone<T>(obj: T): T {
 }
 
 /**
+ * @internal
  * Extracts only the changed properties between original and draft.
  * Recursively builds partial objects for nested changes.
- * @internal
  */
 export function extractChanges<T extends Record<string, unknown>>(
   original: T,
@@ -68,11 +68,11 @@ export function extractChanges<T extends Record<string, unknown>>(
     if (Array.isArray(draftVal)) {
       if (Array.isArray(origVal) && origVal.length === draftVal.length) {
         let eq = true;
-        let j = 0;
-        const jLen = origVal.length;
-        while (j < jLen) {
-          if (origVal[j] !== draftVal[j]) { eq = false; break; }
-          j++;
+        let ei = 0;
+        const eLen = origVal.length;
+        while (ei < eLen) {
+          if (origVal[ei] !== draftVal[ei]) { eq = false; break; }
+          ei++;
         }
         if (!eq) { changes[key] = draftVal; }
       } else {
@@ -101,5 +101,3 @@ export function extractChanges<T extends Record<string, unknown>>(
 
   return changes;
 }
-
-

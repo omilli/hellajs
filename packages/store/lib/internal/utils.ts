@@ -1,5 +1,5 @@
-import { isFunction } from "./internal/core";
-import type { Signal } from "./internal/core";
+import { isFunction } from "./core";
+import type { Signal } from "./core";
 
 /**
  * @internal
@@ -13,8 +13,9 @@ export const reservedKeys = new Set(["snapshot", "update", "cleanup"]);
  * @param value The value to check.
  * @returns True if value is a non-null object.
  */
-export const isObject = (value: unknown): value is object =>
-  typeof value === "object" && value !== null;
+export function isObject(value: unknown): value is object {
+  return typeof value === "object" && value !== null;
+}
 
 /**
  * @internal
@@ -23,14 +24,15 @@ export const isObject = (value: unknown): value is object =>
  * @param value The value to check.
  * @returns True if value looks like a store.
  */
-export const isStore = (value: unknown): boolean =>
-  isObject(value)
-  && Object.hasOwn(value, "snapshot")
-  && Object.hasOwn(value, "update")
-  && Object.hasOwn(value, "cleanup")
-  && isFunction((value as { snapshot: unknown }).snapshot)
-  && isFunction((value as { update: unknown }).update)
-  && isFunction((value as { cleanup: unknown }).cleanup);
+export function isStore(value: unknown): boolean {
+  return isObject(value)
+    && Object.hasOwn(value, "snapshot")
+    && Object.hasOwn(value, "update")
+    && Object.hasOwn(value, "cleanup")
+    && isFunction((value as { snapshot: unknown }).snapshot)
+    && isFunction((value as { update: unknown }).update)
+    && isFunction((value as { cleanup: unknown }).cleanup);
+}
 
 /**
  * @internal
@@ -38,8 +40,9 @@ export const isStore = (value: unknown): boolean =>
  * @param value The value to check.
  * @returns True if value is a non-null object or a function.
  */
-export const isObjectOrFunction = (value: unknown): boolean =>
-  isObject(value) || isFunction(value);
+export function isObjectOrFunction(value: unknown): boolean {
+  return isObject(value) || isFunction(value);
+}
 
 /**
  * @internal
@@ -49,10 +52,10 @@ export const isObjectOrFunction = (value: unknown): boolean =>
  * @param node The store or nested store to read.
  * @param out The output object to populate.
  */
-export const readDeep = (
+export function readDeep(
   node: Record<string, unknown>,
   out: Record<string, unknown>
-): void => {
+): void {
   const keys = Object.keys(node);
   let i = 0;
   const len = keys.length;
@@ -72,18 +75,18 @@ export const readDeep = (
     }
     i++;
   }
-};
+}
 
 /**
- * Applies an update to a target signal, optionally through middleware.
  * @internal
+ * Applies an update to a target signal, optionally through middleware.
  */
-export const applyUpdate = (
+export function applyUpdate(
   target: unknown,
   value: unknown,
   middlewares: Record<string, unknown> | undefined,
   key: string
-) => {
+) {
   if (!target) return;
   const middleware = middlewares?.[key];
   const processedValue = middleware
@@ -93,28 +96,29 @@ export const applyUpdate = (
   if (isFunction(target)) {
     target(processedValue);
   }
-};
+}
 
 /**
+ * @internal
  * Wraps a signal with middleware that transforms values on set.
  * Getter when called with no args, setter when called with one arg.
- * @internal
  */
-export const wrapWithMiddleware = (sig: Signal<unknown>, middleware: (val: unknown) => unknown) => {
+export function wrapWithMiddleware(sig: Signal<unknown>, middleware: (val: unknown) => unknown) {
   function wrapped(value?: unknown) {
     return arguments.length === 0 ? sig() : sig(middleware(value));
   }
   return wrapped;
-};
+}
 
 /**
- * Defines a property on the store object with full descriptors.
  * @internal
+ * Defines a property on the store object with full descriptors.
  */
-export const defineStoreProperty = (result: Record<string, unknown>, key: string, value: unknown) =>
-  Object.defineProperty(result, key, {
+export function defineStoreProperty(result: Record<string, unknown>, key: string, value: unknown) {
+  return Object.defineProperty(result, key, {
     value,
     writable: true,
     enumerable: true,
     configurable: true,
   });
+}
