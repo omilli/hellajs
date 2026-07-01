@@ -16,7 +16,7 @@ A ground-up comparison based on the actual source code of `@hellajs/router` v2. 
 | External deps | 0 + core peer | 4 (`@tanstack/router-core`, history, store, seroval) | Bundles `@vue/devtools-kit` etc. | 0 (peer on solid-js) | Many (Angular + rxjs) | Next.js framework |
 | Compile step | None | Codegen (`routeTree.gen.ts`) | Optional (typed routes) | None (JSX or object) | Decorators / standalone | Required (Next.js build) |
 | API surface | 3 exports (`router`, `route`, `navigate`) | Large (router, link, navigate, loaders, search schemas) | `createRouter`, `RouterView`, `RouterLink`, composables | `<Router>`, `<Route>`, `useNavigate`, `useParams`, etc. | `provideRouter`, `RouterOutlet`, `RouterLink`, guards | File conventions + `<Link>` + `useRouter` |
-| Anchor interception | No (programmatic only) | Yes (`<Link>`) | Yes (`<RouterLink>`) | Yes (anchors by default; opt-out via `explicitLinks`) | Yes (`RouterLink`) | Yes (`<Link>` prefetch + client nav) |
+| Anchor interception | Yes (default; `intercept: false` opts out) | Yes (`<Link>`) | Yes (`<RouterLink>`) | Yes (anchors by default; opt-out via `explicitLinks`) | Yes (`RouterLink`) | Yes (`<Link>` prefetch + client nav) |
 
 HellaJS is the minimalist here: a standalone signal-driven router with three exports, a single resolution algorithm, and no framework entanglement. TanStack and Next.js push toward full-stack type-safe contracts; Vue/Solid/Angular are deeply coupled to their component trees. HellaJS is closest architecturally to Solid Router (signal-based, framework-light), but ships at roughly a quarter of the bytes and exposes the entire route state as one reactive signal rather than a constellation of hooks.
 
@@ -123,18 +123,18 @@ HellaJS's matcher is the simplest in this group — `matchPattern()` splits both
 - `navigate(pattern, options)` performs `:param` substitution with `encodeURIComponent`, raw (un-encoded) `*` substitution, and strips unmatched `:param` patterns from the resulting path (`lib/navigate.ts`). Query params are URL-encoded and joined with `&` (`lib/navigate.ts`).
 - The `go()` helper either `pushState`s or `replaceState`s, then writes the new path into the `route` signal and triggers `updateRoute()` (`lib/utils.ts`).
 - The router attaches a single `popstate` listener (history mode) or `hashchange` listener (hash mode) and cleans up the previous listener on re-init (`lib/router.ts`). Default mode is `"history"` (`lib/router.ts`).
-- **No anchor interception.** HellaJS does not intercept `<a href>` clicks; client-side navigation requires explicit `navigate()` calls or user-installed event handlers (documented in `docs/api/router.mdx`). This is a deliberate scope decision — and a real ergonomic gap vs. every other router here.
+- **Same-origin anchor interception is on by default.** `router()` registers a single capture-phase `click` listener on `document` that resolves `event.target.closest("a")`, calls `event.preventDefault()`, and routes through `navigate()` (`lib/router.ts`). Skips: already-`defaultPrevented`, modifier keys (meta/ctrl/shift/alt), `target !== "_self"`, `download`, non-http(s) protocols, cross-origin, malformed `href`, and — in hash mode — hashes that don't start with `#/`. Pass `intercept: false` to restore plain browser navigation (`lib/router.ts`).
 - **Navigation is asynchronous.** Because the first `updateRoute()` is deferred via `queueMicrotask` (`lib/router.ts`), `route().path` is not immediately current after `navigate()` returns; effects are the intended read site.
 
 ### Competitors
 
-- **TanStack, Vue, Solid, Angular, Next.js all intercept anchor clicks** via their `<Link>` / `<RouterLink>` / `<a>` equivalents. Solid Router even makes interception the default for plain `<a>` tags, requiring `explicitLinks` to opt out.
+- **Every router here intercepts anchor clicks** via `<Link>` / `<RouterLink>` / `<a>` equivalents. Solid Router and HellaJS both intercept plain `<a>` clicks by default — Solid opts out via `explicitLinks: true`, HellaJS via `intercept: false`.
 - **Vue Router** decouples history strategy into `createWebHistory`/`createWebHashHistory`/`createMemoryHistory` factories — HellaJS folds this into a single `mode` config field.
 - **Angular** exposes `browserUrl` to let the address bar differ from the matched route, plus `UrlSerializer` customization. None of the others (including HellaJS) offer this.
 - **Next.js** does route prefetching on `<Link>` hover/viewport — none of the others have built-in prefetch at this granularity (TanStack and Solid preload via route hooks, not link hover).
-- **Solid Router** has a `useBeforeLeave` hook with `preventDefault` and `retry(force?)` for unsaved-form guards. HellaJS has nothing equivalent — its hooks cannot block navigation (`lib/hooks.ts`).
+- **Solid Router** has a `useBeforeLeave` hook with `preventDefault` and `retry(force?)` for unsaved-form guards. HellaJS's sync `before` covers the cancel/redirect case but has no `retry(force?)` analog for "let the user override the guard" flows (`lib/internal/matched.ts`).
 
-**Verdict:** HellaJS covers the essentials (history/hash modes, push/replace, params, query) but intentionally skips anchor interception, link prefetching, and navigation blocking. If you want `<a>` tags to behave like SPA links, you write the listener yourself. The upside is a tiny, predictable surface with zero DOM coupling.
+**Verdict:** HellaJS now matches Solid as the only two routers here that intercept plain `<a>` clicks by default, and its sync `before` hooks can cancel or redirect. The remaining navigation gaps are link prefetching (Next.js-only at hover granularity) and async-blocking guards (Vue/Angular/TanStack accept `Promise<boolean>`; HellaJS treats a `Promise` return as "pass").
 
 ---
 
@@ -144,9 +144,9 @@ HellaJS's matcher is the simplest in this group — `matchPattern()` splits both
 
 - **Two scopes: global hooks (`hooks.before` / `hooks.after`) and per-route hooks (`before` / `after` inside a `RouteWithHooks`)** (`lib/types.d.ts 95-100`).
 - **Strict execution order:** global.before → parent.before → child.before → handler → child.after → parent.after → global.after (`lib/internal/matched.ts`). After hooks iterate in reverse via a decrementing loop (`lib/internal/matched.ts`) — LIFO cleanup order, so parents clean up after children.
-- **Hooks never block navigation.** All errors are caught and logged via `console.error("[router] …")` (`lib/hooks.ts` for sync, `lib/hooks.ts` for async promises). Async errors are caught with `.catch()` rather than awaited. Multiple errors in a single navigation are all logged (5 errors logged in `tests/errors.test.ts`), and the handler always runs.
-- **Arity-based argument dispatch.** For static routes with no params, `executeHook()` inspects `handler.length`: 2+ arity receives `(undefined, query)`, otherwise `(query)` (`lib/hooks.ts`). This lets you write `(params, query) => …` consistently and still get `query` on param-less routes. Dynamic routes always pass `(params, query)`.
-- **No guard concept.** `before` hooks fire before the handler but cannot prevent it. The documented pattern is to `navigate('/login')` from the hook and re-check auth inside the handler (`docs/concepts/routing.mdx:202-231`). This is honest about what it is — and is weaker than real guards.
+- **Sync `before` hooks block; async ones cannot.** `runGuards` walks global.before → nested before top-down, short-circuiting on the first non-pass verdict (`lib/internal/matched.ts`). A sync `false` return cancels (URL unchanged), a sync non-empty string redirects, and a throw cancels with a logged error (`lib/internal/matched.ts`). A `Promise` return is treated as "pass" — only its rejection is `.catch`-logged — because `navigate()` is synchronous and cannot retroactively block (`lib/internal/matched.ts`). Guards run BEFORE the route signal is written, so a cancel/redirect never produces an observable route change. Multiple errors in a single navigation are all logged (5 errors logged in `tests/errors.test.ts`).
+- **Arity-based argument dispatch.** For static routes with no params, `executeHook()` inspects `handler.length`: 2+ arity receives `(undefined, query)`, otherwise `(query)` (`lib/internal/hooks.ts`). This lets you write `(params, query) => …` consistently and still get `query` on param-less routes. Dynamic routes always pass `(params, query)`.
+- **Async-blocking parity gap.** Guard equivalence with Vue/Angular/TanStack (which accept `Promise<boolean>` from `beforeEach`/`CanActivate`/`beforeLoad`) would require `navigate()` to return a `Promise` and the whole pipeline to await. HellaJS keeps the pipeline synchronous, so the documented pattern for async checks (e.g. validating a session against a server) is to redirect optimistically from a sync `before`, then revalidate inside the handler (`docs/concepts/routing.mdx`, `docs/concepts/route-hooks.mdx`).
 
 ### Competitors
 
@@ -156,7 +156,7 @@ HellaJS's matcher is the simplest in this group — `matchPattern()` splits both
 - **TanStack** handles "guards" via `beforeLoad` on the route definition, which can throw `redirect()` — type-safe and integrated with the loader pipeline.
 - **Next.js** handles auth at the segment level (middleware, `layout.tsx` server checks, or `loading.tsx`/`error.tsx` boundaries), not via per-route hooks.
 
-**Verdict:** This is HellaJS's biggest functional gap. Every other router here can block or redirect a navigation before the handler runs; HellaJS cannot. The trade-off is simplicity (one execution model, never blocks, all errors are non-fatal) and a tiny code footprint (`lib/hooks.ts` is 61 lines total). If you need real guards, you'll either work around it (handler-side checks) or pick a different router.
+**Verdict:** HellaJS now ships real sync guards — cancel, redirect, and (on popstate/hashchange) URL restoration via `replaceState` (`lib/router.ts`) — closing the gap with Vue/Solid/Angular/TanStack for synchronous auth-style gates. The remaining asymmetry is async: a `Promise`-returning `before` cannot block (the pipeline is sync), so flows that need to await a server check before committing a navigation still require handler-side revalidation or a different router.
 
 ---
 
@@ -194,9 +194,9 @@ HellaJS's matcher is the simplest in this group — `matchPattern()` splits both
 | Regex matchers | No | No (parse-time only) | Yes | Yes (filters) | Yes (`UrlMatcher`) | No |
 | History mode | `history`, `hash` | Custom history | web, hash, memory | web, hash, memory, static | `PathLocationStrategy`, `HashLocationStrategy` | History (built-in) |
 | Programmatic navigation | `navigate()` | `navigate()` | `router.push/replace` | `useNavigate()` | `router.navigate` | `useRouter().push/replace` |
-| Anchor interception | No | Yes (`<Link>`) | Yes (`<RouterLink>`) | Yes (default; opt-out) | Yes (`RouterLink`) | Yes (`<Link>`) |
-| Global hooks | `hooks.before` / `after` (non-blocking) | `beforeLoad` per route (can redirect) | `beforeEach` / `afterEach` (can cancel) | `useBeforeLeave` (can prevent) | Guards (can cancel/redirect) | Middleware |
-| Per-route guards | `before` (non-blocking) | `beforeLoad` (blocking) | `beforeEnter` (blocking) | `useBeforeLeave` (blocking) | `CanActivate` etc. (blocking) | Layout/middleware checks |
+| Anchor interception | Yes (default; `intercept: false` opts out) | Yes (`<Link>`) | Yes (`<RouterLink>`) | Yes (default; opt-out) | Yes (`RouterLink`) | Yes (`<Link>`) |
+| Global hooks | `hooks.before` / `after` (sync-blocking) | `beforeLoad` per route (can redirect) | `beforeEach` / `afterEach` (can cancel) | `useBeforeLeave` (can prevent) | Guards (can cancel/redirect) | Middleware |
+| Per-route guards | `before` (sync-blocking) | `beforeLoad` (blocking) | `beforeEnter` (blocking) | `useBeforeLeave` (blocking) | `CanActivate` etc. (blocking) | Layout/middleware checks |
 | Loaders / data fetching | No | Yes (typed loaders, cache, prefetch) | Yes (`data loaders`, Colada) | Yes (`preload`, `query`, `createAsync`) | Yes (`resolve`, blocking) | Yes (Server Components, `generateStaticParams`) |
 | Redirects | String map + `redirects` array | `redirect()` helper | `redirect: string \| function` | `throw redirect()` | `redirectTo`, `RedirectFunction` | `redirect()` server-side |
 | 404 handling | `notFound` (function or string) | `notFoundComponent` | Catch-all route | `*404` route | `**` route | `not-found.tsx` |
@@ -214,7 +214,7 @@ HellaJS's matcher is the simplest in this group — `matchPattern()` splits both
 - **Inline meta merging.** `navigate(path, { meta })` spreads inline meta over route-level meta, preserving non-overridden keys (`lib/utils.ts`).
 - **Reactive reconfiguration.** Calling `router()` again swaps the entire route map, hooks, redirects, and listener atomically (`lib/router.ts`). Useful for HMR or runtime route injection.
 - **Compile-time param typing without codegen.** `ExtractParams<T>` infers param names from any string literal at zero runtime cost (`lib/types.d.ts`). TanStack and Next.js need build-time codegen for the same effect.
-- **Non-blocking hooks by design.** Navigation always completes; all hook errors are caught and logged (`lib/hooks.ts`). The handler always runs. Predictable at the cost of guard semantics.
+- **Error-isolated guards.** A throwing `before` cancels that navigation and logs via `console.error("[router] …")` rather than crashing the pipeline; a rejecting async `before` is `.catch`-logged and treated as pass (`lib/internal/matched.ts`). The route signal is never corrupted by a hook error.
 - **`EMPTY_OBJECT` reuse for param/query-free routes.** A single frozen `{}` is returned for every static match (`lib/utils.ts`), eliminating per-navigation allocation in the common case.
 
 ---
@@ -234,8 +234,8 @@ router({
     "/files/*":           (params) => currentView(<FileViewer path={params["*"]} />),
     "/search":            (params, query) => currentView(<Search q={query.q} />),
     "/dashboard": {
-      before: () => { if (!authed()) navigate("/login"); },
-      handler: () => { if (authed()) currentView(<Dashboard />); },
+      before: () => authed() ? true : "/login",   // sync guard: false / string / throw blocks
+      handler: () => currentView(<Dashboard />),
       after:  () => trackPageView("dashboard"),
       meta:   { title: "Dashboard" },
       scroll: "top",
@@ -284,7 +284,7 @@ What sets HellaJS apart — and no single competitor matches all of:
 3. **No rendering coupling** — handlers are plain functions; pair with `@hellajs/dom`, React, vanilla JS, or anything else. Vue/Solid/Angular/Next.js all assume a specific component tree.
 4. **Compile-time param typing without codegen** — `ExtractParams<T>` infers param names from any string literal at write time, no `routeTree.gen.ts` step (unlike TanStack) and no build pipeline (unlike Next.js).
 5. **Reactive reconfiguration** — re-calling `router()` atomically swaps routes, hooks, redirects, and listener (`lib/router.ts`). HMR-friendly with no teardown ceremony.
-6. **Non-blocking hook execution** — predictable "navigation always completes" model with full error logging (`lib/hooks.ts`). Every other router here allows hooks to cancel or redirect; HellaJS chooses simplicity over guard semantics.
+6. **Sync guards with URL restoration** — `before` hooks return `false` (cancel), a path string (redirect), or throw (cancel + log); guards run before the route signal is written, so a cancelled navigation never produces an observable route change (`lib/internal/matched.ts`). A popstate/hashchange-triggered cancel restores the prior URL via `replaceState` (`lib/router.ts`). Async `before` (`Promise` return) cannot block — the pipeline is synchronous.
 7. **Three-tier scroll control** — global `scrollBehavior`, per-route `scroll`, inline `navigate({ scroll })`, with custom `(to, from) => { top, left? } | null` functions and explicit `false` to disable (`lib/internal/matched.ts`).
 
-Its gaps are the predictable ones: **no anchor interception** (you write `<a>` handlers yourself), **no real guards** (`before` hooks can't block navigation — a deliberate but limiting choice), **no built-in loaders / data fetching / cache** (use `@hellajs/resource` or anything else), **no SSR**, **no code splitting primitives**, **no devtools**, **no regex route matchers**, **meta from leaf route only** (not inherited up the tree), and **ecosystem maturity** orders of magnitude behind Vue Router and Next.js. If you need any of loaders, search-param schemas, guard-driven redirects, or SSR, TanStack Router or one of the framework routers is the better choice. If you want a tiny, reactive, framework-agnostic client router that gets out of the way, HellaJS is the leanest option here.
+Its gaps have narrowed: anchor interception is default-on and sync guards can cancel/redirect. The remaining ones are **no async-blocking guards** (`Promise`-returning `before` is treated as "pass"; Vue/Angular/TanStack accept `Promise<boolean>`), **no link prefetching** (Next.js-only at hover granularity), **no built-in loaders / data fetching / cache** (use `@hellajs/resource` or anything else), **no SSR**, **no code splitting primitives**, **no devtools**, **no regex route matchers**, **meta from leaf route only** (not inherited up the tree), and **ecosystem maturity** orders of magnitude behind Vue Router and Next.js. If you need async-blocking guards, loaders, search-param schemas, or SSR, TanStack Router or one of the framework routers is the better choice. If you want a tiny, reactive, framework-agnostic client router with default-on SPA links and sync guards, HellaJS is the leanest option here.
