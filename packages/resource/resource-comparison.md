@@ -2,6 +2,8 @@
 
 A ground-up comparison based on the actual source code of `@hellajs/resource` v2. Every claim below was verified against `packages/resource/lib/`.
 
+> **Changelog:** Re-verified against current source. Corrected HellaJS bundle sizes (4.1 KB min+gzip for the resource bundle, was understated). Removed two false gaps: `enabled` accepts a reactive `() => boolean` getter (it is not static), and structural sharing is shipped opt-in via `structuralSharing` (it is not absent). Added the `invalidates` mutation option and clarified that `resourceCache.prefetch` exists — only SSR `dehydrate`/`hydrate` is absent.
+
 ---
 
 ## 1. At-a-Glance Summary
@@ -14,7 +16,7 @@ A ground-up comparison based on the actual source code of `@hellajs/resource` v2
 | Stale-while-revalidate | `staleTime` + background refetch | `staleTime` + `gcTime` + refetchOn* | `revalidateIfStale` + refetchOn* | `refetchOnMountReconnect` | None built-in | None |
 | Mutations | `mutate()` with `onMutate`/`onSettled` (rollback context) | `useMutation` with `onMutate`/`onSuccess`/`onSettled` + invalidation | `mutate()` with `populateCache`/`revalidate`/`rollbackOnError` | `useMutation` + `invalidatesTags` | `mutate` setter (no hooks) | None (write your own) |
 | Retry & polling | `retry`/`retryDelay` + `refetchInterval` (dynamic) + visibility-aware | `retry` (3 / exp backoff default) + `refetchInterval` | `shouldRetryOnError` + `errorRetryCount` + `refreshInterval` | `retry` + `pollingInterval` | None built-in | `timeout` only |
-| Gzipped size | ~3.5 KB (min) / ~5.2 KB full + core peer | ~13.3 KB (react-query) | ~5 KB | ~13.3 KB (all of RTK) | Part of solid-js (~7 KB total) | 2.3 kB |
+| Gzipped size | ~4.1 KB (min+gzip) / ~5.9 KB + core peer | ~13–14 KB (react-query) | ~4–5 KB | ~9 KB (on top of RTK) | Part of solid-js (~7 KB total) | 2.3 kB |
 | External deps | 0 + `@hellajs/core` peer | 0 (adapter bundles framework peer) | 0 (React peer) | Redux Toolkit + Immer + React-Redux | 0 (solid-js) | 0 (Vue peer) |
 | Framework coupling | None — reactive object, consume anywhere | React/Vue/Svelte/Solid adapters | React-only | Redux + React-Redux | Solid-only | Vue-only |
 | API shape | Factory returning reactive getters + control methods | `useQuery({ queryKey, queryFn, ...options })` hook | `useSWR(key, fetcher, options)` hook | `createApi({ endpoints })` → auto-generated hooks | `[resource, { mutate, refetch }] = createResource(source, fetcher, options)` | `const { data, error, ... } = useFetch(url, options)` |
@@ -58,13 +60,13 @@ HellaJS sits between Solid's `createResource` (closest architectural sibling —
 
 ## 3. Bundle Size & Dependencies
 
-|  | HellaJS (resource only, min) | HellaJS (resource + core, min) | TanStack Query (react) | SWR | RTK Query (with RTK) | VueUse `useFetch` |
+|  | HellaJS (resource bundle, min+gzip) | HellaJS (resource + core, min+gzip) | TanStack Query (react) | SWR | RTK Query (with RTK) | VueUse `useFetch` |
 |---|---|---|---|---|---|---|
-| Min+gzip | ~3.5 KB | ~5.2 KB | ~13.3 KB | ~5 KB | ~9 KB (on top of RTK) | 2.3 kB |
+| Min+gzip | ~4.1 KB | ~5.9 KB | ~13–14 KB | ~4–5 KB | ~9 KB (on top of RTK) | 2.3 kB |
 | Source | `dist/sizes.json` | `dist/sizes.json` + core | bundlephobia | bundlephobia | RTK Query docs | VueUse docs |
 
-- `@hellajs/resource` declares **zero** runtime dependencies and one peer dependency (`@hellajs/core`) (`packages/resource/package.json:27-29`). The package is split: consumers can import `@hellajs/resource/bundle` for a single pre-bundled file (5.15 KB gzip / 3.49 KB min+gzip per `dist/sizes.json`), or tree-shake per-feature (`cache.js`, `resource.js`, and the `internal/*` modules are individually published under `dist/`).
-- TanStack Query's `react-query` adapter bundles its own observer implementation on top of `query-core`. SWR ships its own cache, dedup logic, and React hook in 5 KB. RTK Query is a ~9 KB add-on to Redux Toolkit (which itself is ~13.3 KB and depends on Immer) — so the realistic floor is much higher than the add-on size suggests.
+- `@hellajs/resource` declares **zero** runtime dependencies and one peer dependency (`@hellajs/core`) (`packages/resource/package.json:27-29`). The built `dist/bundle.min.js` is **12.16 KB minified / 4.14 KB gzipped** per `dist/sizes.json`; adding the `@hellajs/core` peer (1.80 KB gzipped) puts the realistic floor at ~5.9 KB min+gzip. The package also publishes per-module builds under `dist/` (`cache.js`, `resource.js`, and the `internal/*` modules) for consumers who tree-shake rather than take the pre-bundled file.
+- TanStack Query's `react-query` adapter bundles its own observer implementation on top of `query-core`. SWR ships its own cache, dedup logic, and React hook in ~4–5 KB. RTK Query is a ~9 KB add-on to Redux Toolkit (which itself pulls in Immer) — so the realistic floor is much higher than the add-on size suggests (per [RTK Query Overview](https://redux-toolkit.js.org/rtk-query/overview)).
 - HellaJS is the only entry that treats reactivity as a peer concern: bring your own signals via `@hellajs/core`, or wire the reactive getters into any other framework's rendering layer manually.
 
 ---
@@ -149,11 +151,13 @@ HellaJS mutations live on the resource itself (`resource.mutate(variables)`), no
 
 A subtle behavior the test suite verifies explicitly: **`onSettled` is NOT called when a mutation is aborted** — even if `onMutate` already ran (`tests/mutations.test.ts`, `lib/resource.ts`). This is the opposite of TanStack Query's contract where `onError` and `onSettled` fire for failed mutations. The intent is that an abort is a *cancellation*, not a *failure*; if you stages-changes in `onMutate`, you are responsible for rolling them back yourself on abort.
 
-The read/write split uses two resources: one fetcher for reads, one fetcher for writes, with `onMutate` writing into the read resource via `setData` (documented in `docs/concepts/resources.mdx:78-118`).
+On success, the optional `invalidates: Array<string | RegExp>` option drives cross-scope cache invalidation: strings dispatch to `resourceCache.invalidateByPrefix`, RegExps to `invalidateByPattern` (`lib/resource.ts`, `lib/types/resource.d.ts`). This deletes cache entries only — mounted resources do **not** auto-refetch; the next fetch for a matched key goes to the network. No invalidation runs on error or abort.
+
+The read/write split uses two resources: one fetcher for reads, one fetcher for writes, with `onMutate` writing into the read resource via `setData` (documented in `docs/concepts/resources.mdx`).
 
 | Library | Mutation API |
 |---|---|
-| HellaJS | `resource.mutate(vars)` with `onMutate`/`onSuccess`/`onError`/`onSettled`; same fetcher signature as reads (`lib/resource.ts`) |
+| HellaJS | `resource.mutate(vars)` with `onMutate`/`onSuccess`/`onError`/`onSettled` + `invalidates` (prefix/regex); same fetcher signature as reads (`lib/resource.ts`) |
 | TanStack Query | `useMutation({ mutationFn, onMutate, onSuccess, onError, onSettled })` + `mutate(variables, options)` |
 | SWR | `useSWRMutation(key, fetcher, options)` → `trigger(variables)` with `onSuccess`, `onError`, optimistic `updateData`/`revalidate`/`rollbackOnError`/`populateCache` |
 | RTK Query | `endpoints: build.mutation()` → `useXMutation(); overrideApiResponse; invalidatesTags` for auto-refetch |
@@ -234,6 +238,8 @@ Window focus uses `visibilitychange` not `focus` (`lib/internal/lifecycle.ts`); 
 | Mutations with rollback context | Yes (`lib/resource.ts`) | Yes | Yes | Yes | No | No |
 | Optimistic updates via `setData` / `mutate` | Yes (`lib/resource.ts`) | Yes | Yes | Yes | Yes (manual) | No |
 | Data transformation (cache raw, read transformed) | Yes, via `computed` (`lib/resource.ts`) | `select` option | No | `transformResponse` | Manual | No |
+| Structural sharing (referential stability) | Opt-in via `structuralSharing` (`lib/internal/structural.ts`) | Default on | No | No | No | No |
+| Prefetch without a resource | `resourceCache.prefetch(...)` (`lib/cache.ts`) | `queryClient.fetchQuery`/`prefetchQuery` | `preload` | `initiate` | None | None |
 | Batch invalidation (prefix/pattern/regex) | Yes (`lib/cache.ts`) | `invalidateQueries({ predicate })` | No | `invalidateTags` | No | No |
 | Structured error category | Yes (`lib/internal/errors.ts`) | Error instance | Error instance | Error instance | Error instance | Error instance |
 | Framework-agnostic reactive object | Yes | No (adapters) | React-only | Redux-bound | Solid-only | Vue-only |
@@ -245,6 +251,7 @@ Window focus uses `visibilitychange` not `focus` (`lib/internal/lifecycle.ts`); 
 - **Public vs fetcher scope separation** — manual `resourceCache.set()` writes go to a `PUBLIC_SCOPE` symbol that never collides with resource-driven entries, even with the same key (`lib/cache.ts`, `lib/cache.ts`).
 - **Cache isolation survives disposal** — cache entries outlive individual resource instances; only the resource is disposable, the fetcher-keyed cache persists (`lib/resource.ts`).
 - **Transform via `computed` signal** — raw data is cached, `data()` returns a transformed view via `@hellajs/core`'s `computed`, so transforms always read through to current raw data (`lib/resource.ts`).
+- **Opt-in structural sharing** — `structuralSharing` reuses unchanged plain-object/array subtree references on fetch success so dependent computeds skip re-evaluation; `Map`/`Set`/`Date`/class instances use strict equality and are never merged (`lib/internal/structural.ts`).
 - **`untracked(resolveKey)` during fetch** — resolves the key without creating reactive dependencies in the fetch pipeline, so fetch logic doesn't accidentally subscribe to signals (`lib/resource.ts`).
 - **Pattern-based batch invalidation** — `invalidateByPrefix(prefix)` and `invalidateByPattern(regex)` operate across all fetcher scopes at once (`lib/cache.ts`).
 - **`onSettled` suppressed on abort** — aborted mutations skip `onSettled` even if `onMutate` ran, treating abort as cancellation not failure (`lib/resource.ts`, `tests/mutations.test.ts`).
@@ -318,16 +325,16 @@ The explicit-prefix attribute convention (`fetch({ force: true })`, `setData(old
 
 ## Bottom Line
 
-Architecturally, HellaJS resource is the closest sibling to Solid's `createResource` — a signal-based factory function returning reactive state — but with the full feature set of TanStack Query layered on (cache, dedup, SWR, retry, polling, mutations, abort). It is the only library in this comparison that is simultaneously (a) framework-agnostic at the reactivity layer, (b) features a fetcher-scoped cache rather than a single global key namespace, and (c) ships in the same size class as VueUse's `useFetch` (~3.5 KB min+gzip) while offering strictly more.
+Architecturally, HellaJS resource is the closest sibling to Solid's `createResource` — a signal-based factory function returning reactive state — but with the full feature set of TanStack Query layered on (cache, dedup, SWR, retry, polling, mutations, abort). It is the only library in this comparison that is simultaneously (a) framework-agnostic at the reactivity layer, (b) features a fetcher-scoped cache rather than a single global key namespace, and (c) ships in the same size class as VueUse's `useFetch` (~4.1 KB min+gzip) while offering strictly more.
 
 What sets HellaJS apart — and no single competitor matches all of:
 
 1. **Fetcher-scoped cache** — `Map<fetcher, Map<key, …>>` isolates resources by fetcher identity, not by global key string. TanStack/SWR/RTK Query all use global key namespaces; Solid/VueUse don't cache at all (`lib/cache.ts`).
 2. **Framework-agnostic reactive object** — the returned resource is a plain object of signal getters and methods; it is not a hook, not bound to React/Vue/Solid, and can be consumed anywhere `@hellajs/core` signals work. TanStack Query requires framework-specific adapters (`@tanstack/react-query`, `@tanstack/vue-query`, etc.); SWR is React-only; RTK Query requires Redux; Solid/VueUse are framework-bound.
 3. **`WeakMap`-keyed dedup with shared `AbortController`** — concurrent identical requests share both the promise and the abort controller, so a `force: true` fetch that registers in the dedup map can be joined by later non-force fetches. No competitor composes abort through the dedup layer (`lib/internal/dedupe.ts`, `lib/resource.ts`).
-4. **Public-scope vs fetcher-scope cache separation** — `resourceCache.set()` writes go to a `PUBLIC_SCOPE` symbol that can never collide with resource-driven entries. No competitor has this isolation primitive (`lib/cache.ts`, `lib/cache.ts`).
+4. **Public-scope vs fetcher-scope cache separation** — `resourceCache.set()` writes go to a `PUBLIC_SCOPE` symbol that can never collide with resource-driven entries. No competitor has this isolation primitive (`lib/cache.ts`).
 5. **Default-off caching and retry** — `cacheTime: 0` and `retry: 0` defaults force the developer to opt in, where TanStack Query's defaults are aggressive (5 min `gcTime`, immediate staleness, 3 retries). The choice is opinionated but defensible: it eliminates surprise network behavior on first use.
 6. **Pattern + prefix batch invalidation across all scopes** — `invalidateByPrefix` / `invalidateByPattern` operate cross-scope in one call (`lib/cache.ts`). TanStack Query has `invalidateQueries({ predicate })` but a single-scope cache; RTK Query has `invalidateTags`; SWR/Solid/VueUse have nothing equivalent.
 7. **Mutation abort suppresses `onSettled`** — cancelled mutations skip the settled hook even if `onMutate` already ran, treating abort as cancellation not failure. TanStack Query's mutation contract fires `onError`/`onSettled` on cancellation (`lib/resource.ts`).
 
-Its gaps are the predictable ones: ecosystem size and adoption maturity (TanStack Query, SWR, and RTK Query each have orders of magnitude more users and integration guides), DevTools (TanStack Query ships dedicated React/Vue/Solid DevTools; HellaJS has none), SSR/streaming support (TanStack Query has `prefetch`/`dehydrate`/`hydrate`; Solid has `ssrLoadFrom`/`storage`; HellaJS has no SSR story), structural sharing for referential stability (TanStack does this by default; HellaJS does not), framework hooks (no `useQuery`/`useSWR`-style integrations — you write your own adapter), and the absence of an OpenAPI/GraphQL codegen story comparable to RTK Query's. The `enabled` option being static rather than reactive (`lib/resource.ts`, `lib/resource.ts`) is also a documented limitation vs TanStack Query's reactive `enabled`.
+Its gaps are the predictable ones: ecosystem size and adoption maturity (TanStack Query, SWR, and RTK Query each have orders of magnitude more users and integration guides), DevTools (TanStack Query ships dedicated React/Vue/Solid DevTools; HellaJS has none), SSR dehydration for streaming/hydration (HellaJS has `resourceCache.prefetch` for warming the cache outside a resource, but no `dehydrate`/`hydrate` equivalent to serialize prefetched state across the server/client boundary the way TanStack Query and Solid's `ssrLoadFrom`/`storage` do), structural sharing defaults (TanStack ships it on by default; HellaJS ships it opt-in, so consumers who forget to set `structuralSharing: true` lose referential stability), framework hooks (no `useQuery`/`useSWR`-style integrations — you write your own adapter), and the absence of an OpenAPI/GraphQL codegen story comparable to RTK Query's.
