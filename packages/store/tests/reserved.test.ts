@@ -29,7 +29,8 @@ describe("store", () => {
 
     test("update method skips keys not present in initial object", () => {
       const data = store({ a: 1 });
-      data.update({ snapshot: "hijack" } as never);
+      // @ts-expect-error snapshot is reserved — update must skip reserved keys
+      data.update({ snapshot: "hijack" });
       expect(data.snapshot()).toEqual({ a: 1 });
     });
   });

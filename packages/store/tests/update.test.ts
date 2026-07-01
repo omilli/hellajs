@@ -24,7 +24,8 @@ describe("store", () => {
     test("silently ignores keys absent from initial object", () => {
       const data = store({ a: 1, b: 2 });
 
-      data.update({ a: 10, c: 99 } as never);
+      // @ts-expect-error c is absent from initial — update must ignore unknown keys
+      data.update({ a: 10, c: 99 });
 
       expect(data.a()).toBe(10);
       expect(data.b()).toBe(2);
