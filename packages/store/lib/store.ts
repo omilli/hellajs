@@ -1,5 +1,5 @@
 import type { Store, StoreOptions, StoreMiddleware } from "./types";
-import { createStore } from "./create";
+import { createStore } from "./internal/create";
 
 /**
  * Creates a reactive store with specific readonly properties.

@@ -1,5 +1,5 @@
-import { signal, computed, isFunction, isPlainObject } from "./internal/core";
-import type { Store, PartialDeep, StoreOptions, StoreMiddleware } from "./types";
+import { signal, computed, isFunction, isPlainObject } from "./core";
+import type { Store, PartialDeep, StoreOptions, StoreMiddleware } from "../types";
 import { deepClone, extractChanges } from "./draft";
 import {
   reservedKeys,
