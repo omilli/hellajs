@@ -35,7 +35,7 @@ applyTo: "**"
 
   ## Packages
 
-  Workspaces under `packages/`. Each ships its own `AGENTS.md` documenting internals — read it before working in that package.
+  Workspaces under `packages/`. Each ships two distinct reads — its `AGENTS.md` (agent-facing internals, gotchas, performance) and its `docs/` (the user-facing public contract). Read the `AGENTS.md` before working in a package. When judging whether a public interface or behavior misleads users (review, critique, feature-gap work), read the matching `docs/*.mdx`: `AGENTS.md` is not the public contract, and accurate user docs mitigate a "Mislead" finding even when the type or the `AGENTS.md` description is loose.
 
   | Package | Responsibility |
   |---|---|
