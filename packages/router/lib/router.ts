@@ -2,7 +2,8 @@ import { isFunction, hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
 import { hooks, routes, redirects, notFound, mode, scrollBehavior, previousPath, inheritMeta } from "./internal/state";
 import { route } from "./route";
-import { updateRoute, getHashPath } from "./internal/utils";
+import { updateRoute } from "./internal/resolve";
+import { getHashPath } from "./internal/utils";
 import { navigate } from "./navigate";
 
 let cleanupListener: (() => void) | null = null;
