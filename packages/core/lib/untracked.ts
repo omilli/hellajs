@@ -6,6 +6,7 @@ import { isFunction } from "./internal/utils";
  * @template T
  * @param untrackedFn The function to execute.
  * @returns The return value of the function.
+ * @throws {Error} When untrackedFn is not a function.
  */
 export function untracked<T>(untrackedFn: () => T): T {
   if (!isFunction(untrackedFn)) {

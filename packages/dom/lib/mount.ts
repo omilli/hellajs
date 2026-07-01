@@ -15,6 +15,7 @@ setMountNode((node: HellaNode) => mountNode(node) as Node);
  * @param node The HellaNode or component function to mount (sync or async)
  * @param target CSS selector string or Element to mount into (defaults to "#app")
  * @returns A MountHandle for controlling the mounted tree
+ * @throws {Error} When target is a selector string that matches no element in the document.
  */
 export function mount(
   node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),

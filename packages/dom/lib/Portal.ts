@@ -15,6 +15,7 @@ const INSERT_METHODS: Record<string, keyof Element> = {
  * Uses boundary markers for cleanup tracking, similar to ForEach.
  * @param props Portal props with target selector, insert type, and children
  * @returns Function that mounts portal content
+ * @throws {Error} When the target selector matches no element in the document (checked at first effect run, not at construction).
  */
 export function Portal(props: PortalProps): JSX.Element {
   const { to, type = "append", children = [] } = props;

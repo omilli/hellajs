@@ -194,6 +194,7 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 ### Error Handling
 
 - Public API functions validate inputs — they do not trust their callers. On invalid input, throw an `Error` with a `[package] fn: <constraint>, received <value>` message (e.g., `[dom] ForEach: each is required`); never silently coerce
+- Document every thrown error with a `@throws {Error} When <condition>.` JSDoc tag. The condition is the useful part; the message shape stays governed by the bullet above (do not duplicate the full message in the tag). Place the tag on the signature the consumer calls: the function declaration for non-overloaded functions, each public overload signature for overloaded functions, or the interface method for object-typed singletons (e.g. `resourceCache`'s `ResourceCache` methods, `Resource.setData`)
 - Internal functions do not guard — they trust their callers. Guards on internal functions are dead branches
 - Exception: functions invoked by the platform (MutationObserver callbacks, event listeners, Promise `.then`/`.catch` continuations, `setTimeout` callbacks) receive untrusted inputs and may guard. The runtime — not a trusted internal caller — invokes them with whatever the DOM or Promise machinery provides
 - Platform APIs that throw recoverably on known-benign conditions (e.g., an invalidated CSSOM rule) may catch narrowly. The catch block must:

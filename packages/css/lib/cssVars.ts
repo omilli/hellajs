@@ -10,6 +10,7 @@ import { isFunction, isPlainObject } from "./internal/core";
  * @param vars Object containing CSS variable definitions. Can include nested objects and reactive signals.
  * @param options Configuration options for scoping and prefixing
  * @returns Proxy object with var() references to the CSS custom properties
+ * @throws {Error} When vars is not a plain object.
  */
 export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): CSSVars<T> {
   if (!isPlainObject(vars)) throw new Error(`[css] cssVars: expected a plain object, received ${String(vars)}`);

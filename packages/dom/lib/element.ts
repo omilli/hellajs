@@ -8,6 +8,7 @@ import type { ComponentProps, ComponentRenderFn, ComponentSlots, HellaNode } fro
  * Children are captured before mount and available via props.children and props.slots.
  * @param tagName The custom element tag name (must contain a hyphen)
  * @param render Render function that receives props and returns a HellaNode
+ * @throws {Error} When tagName is not a hyphenated string or render is not a function.
  */
 export function element<T extends object = ComponentProps & Partial<ComponentSlots>>(
   tagName: string,

@@ -17,6 +17,7 @@ const NOOP = () => {};
  * Uses lazy Set allocation - only creates Set when effects are registered.
  * @param fn The callback function to execute within the scope.
  * @returns A cleanup function to stop all effects in the scope.
+ * @throws {Error} When fn is not a function.
  */
 export function scope(fn: () => void): () => void {
   if (!isFunction(fn)) {

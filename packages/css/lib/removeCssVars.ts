@@ -9,6 +9,7 @@ import { isPlainObject } from "./internal/core";
  * @template T
  * @param vars Object containing CSS variable definitions (must match the object passed to cssVars)
  * @param options Configuration options (must match the options used in cssVars)
+ * @throws {Error} When vars is not a plain object.
  */
 export function removeCssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): void {
   if (!isPlainObject(vars)) throw new Error(`[css] removeCssVars: expected a plain object, received ${String(vars)}`);
