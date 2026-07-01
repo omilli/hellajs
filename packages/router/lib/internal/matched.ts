@@ -1,8 +1,8 @@
 import { isFunction, isPlainObject, hasWindow } from "./core";
-import { hooks, previousPath, scrollBehavior } from "../state";
-import { executeHook, executeGlobalHook } from "../hooks";
+import { hooks, previousPath, scrollBehavior } from "./state";
+import { executeHook, executeGlobalHook } from "./hooks";
 import type { Handler, Params, RouteWithHooks, GlobalHooks, ScrollBehavior } from "../types";
-import type { RouteMatch } from "../match";
+import type { RouteMatch } from "./match";
 
 /**
  * Handles scroll behavior after navigation.

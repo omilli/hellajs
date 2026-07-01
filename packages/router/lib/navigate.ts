@@ -1,4 +1,4 @@
-import { EMPTY_OBJECT, go } from "./utils";
+import { EMPTY_OBJECT, go } from "./internal/utils";
 import type { NavigateOptions } from "./types";
 
 /**

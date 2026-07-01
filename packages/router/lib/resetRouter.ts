@@ -6,10 +6,9 @@ import {
   mode,
   scrollBehavior,
   previousPath,
-  inheritMeta,
-  route,
-  activeFn
-} from "./state";
+  inheritMeta
+} from "./internal/state";
+import { route, activeFn } from "./route";
 import { resetListeners } from "./router";
 
 /**

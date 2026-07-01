@@ -1,7 +1,8 @@
-import { isPlainObject, isString, hasWindow } from "./internal/core";
-import { route, routes, notFound, redirects, mode, inheritMeta, activeFn } from "./state";
+import { isPlainObject, isString, hasWindow } from "./core";
+import { routes, notFound, redirects, mode, inheritMeta } from "./state";
+import { route, activeFn } from "../route";
 import { matchRoute, matchNestedRoute } from "./match";
-import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuards } from "./internal/matched";
+import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuards } from "./matched";
 import type {
   RouteInfo,
   RouteWithHooks,
@@ -10,7 +11,7 @@ import type {
   Handler,
   Params,
   ScrollBehavior
-} from "./types";
+} from "../types";
 
 /**
  * Resolution verdict propagated up from `tryMatchRoute`/`updateRoute` to `go` and the popstate handler.
@@ -123,7 +124,7 @@ export function go(
  * @param nextPath Optional new path. When omitted, reads from route().path.
  * @param inlineScroll Optional inline scroll behavior from navigate()
  * @param inlineMeta Optional inline meta from navigate()
- * @returns The resolution verdict: `"matched"`, `"cancelled"` (a guard blocked), or `"redirected"`.
+ * @returns The resolution verdict: `"matched"`, `"cancelled"` (a guard blocked), or `"redirected".
  */
 export function updateRoute(
   nextPath?: string,
@@ -349,4 +350,3 @@ function tryMatchRoute(
   }
   return "none";
 }
-

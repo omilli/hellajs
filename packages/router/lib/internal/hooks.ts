@@ -1,5 +1,5 @@
-import { isFunction } from "./internal/core";
-import type { Params, Handler } from "./types";
+import { isFunction } from "./core";
+import type { Params, Handler } from "../types";
 
 /**
  * Executes a route or hook handler with proper error handling and parameter passing.
