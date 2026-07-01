@@ -23,6 +23,9 @@ export function resetListeners() {
  * @returns The initial route information after first resolution.
  */
 export function router(config: RouterConfig): RouteInfo {
+  if (config === null || config === undefined || typeof config !== "object" || Array.isArray(config)) {
+    throw new Error(`[router] router: config must be an object, received ${config === null ? "null" : typeof config}`);
+  }
   routes(config.routes as Record<string, RouteValue | string>);
   hooks(config.hooks || {});
   redirects(config.redirects || []);

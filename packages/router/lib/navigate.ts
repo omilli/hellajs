@@ -11,6 +11,9 @@ export function navigate<T extends string>(
   path: T,
   options: NavigateOptions<T> = {}
 ): void {
+  if (path === null || path === undefined || typeof path !== "string") {
+    throw new Error(`[router] navigate: path must be a string, received ${path === null ? "null" : typeof path}`);
+  }
   const { params = EMPTY_OBJECT, query = EMPTY_OBJECT, replace = false, scroll, meta } = options;
   const p = params as Record<string, string>;
   let result = path as string;
