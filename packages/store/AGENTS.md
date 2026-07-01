@@ -7,9 +7,9 @@ Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain objec
 |---|---|
 | `lib/index.ts` | Barrel — exports `store`, re-exports types |
 | `lib/store.ts` | Public `store()` overloads; all delegate to `createStore` |
-| `lib/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, recursive init |
-| `lib/draft.ts` | `deepClone` + `extractChanges` — used only by the draft-mutator path |
-| `lib/utils.ts` | `reservedKeys` Set, `isObject`, `isStore`, `isObjectOrFunction`, `readDeep`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
+| `lib/internal/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, recursive init |
+| `lib/internal/draft.ts` | `deepClone` + `extractChanges` — used only by the draft-mutator path |
+| `lib/internal/utils.ts` | `reservedKeys` Set, `isObject`, `isStore`, `isObjectOrFunction`, `readDeep`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
 | `lib/types.d.ts` | `Store<T,R>`, `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys` |
 | `lib/internal/core.ts` | Re-exports `signal`/`computed`/`isFunction`/`isPlainObject` + `Signal` type from core |
 
@@ -39,7 +39,7 @@ Plus built-ins: `snapshot: () => T`, `update: (PartialDeep<T> or (draft: T) => v
 - **"plain object"** = a value `isPlainObject` returns true for (excludes arrays, `null`, functions, and class instances). `Date`/`Map`/`Set`/`RegExp`/custom instances fall into the primitive row → become a `Signal`, not a nested store.
 - **R is threaded into nested object types but is inert** — top-level keys don't exist on nested types, so `K extends R` is never true there. The runtime also never passes `readonly` into recursive `createStore` calls. Nested stores are always writable regardless of what the type claims.
 
-## `createStore` pipeline (`lib/create.ts`)
+## `createStore` pipeline (`lib/internal/create.ts`)
 
 Resolves: `readonlyAll = options.readonly === true`; `readonlyKeys = Array.isArray(options.readonly) ? options.readonly : []`; `middlewares = options.middleware`.
 
@@ -72,7 +72,7 @@ Passing an existing store as a value inside another store's initial object: the 
 - **`isPlainObject` gates deep-merge**: partial arrays are replaced, not element-merged.
 - **Draft path materializes the snapshot** — calls `this.snapshot()`, subscribing the active reactive context (if any) to every signal.
 - **Draft writes are not auto-batched**: each extracted change is a separate signal write; wrap `update(draft => ...)` in `batch()` to fire effects once.
-- **`extractChanges` array equality is shallow `===` per element** (`lib/draft.ts:68-80`). Because `deepClone` produces fresh references for object elements, arrays-of-objects in the draft are **always** considered changed (the whole array signal is rewritten) even when untouched. Primitive-only arrays compare by value.
+- **`extractChanges` array equality is shallow `===` per element** (`lib/internal/draft.ts:68-80`). Because `deepClone` produces fresh references for object elements, arrays-of-objects in the draft are **always** considered changed (the whole array signal is rewritten) even when untouched. Primitive-only arrays compare by value.
 
 ## Middleware
 
@@ -82,7 +82,7 @@ Passing an existing store as a value inside another store's initial object: the 
 - A middleware that **throws** rejects the write (propagates to caller); the signal is unchanged.
 - Combines with readonly: the middleware-wrapped signal is further wrapped in `computed(() => wrapped())`.
 
-## `deepClone` & `extractChanges` (`lib/draft.ts`)
+## `deepClone` & `extractChanges` (`lib/internal/draft.ts`)
 
 - **deepClone**: primitives/functions/`null`/`undefined` returned as-is; arrays mapped recursively; `Date` → `new Date(getTime())`; `RegExp` → `new RegExp(source, flags)`; `Map` → new map with **values** deep-cloned (keys kept by reference, not cloned); `Set` → new set with deep-cloned values; plain objects → own keys cloned. Custom class instances fall through to the plain-object branch — prototype is lost.
 - **extractChanges**: iterates draft keys. Arrays → record whole array unless same length AND every element `===` original's. Plain objects → recurse, record only if nested changes exist. Primitives → record on `!==`.
@@ -90,7 +90,7 @@ Passing an existing store as a value inside another store's initial object: the 
 ## Other non-obvious behaviors
 
 - **Reserved keys throw at create time** for any non-store-shaped `initial` and any value type (including functions); skipped silently when `isStore(initial)`.
-- **Functions in snapshot**: snapshot stores the **original** `initial` function reference (`create.ts:49-50`), not the store property.
+- **Functions in snapshot**: snapshot stores the **original** `initial` function reference (`lib/internal/create.ts:49-50`), not the store property.
 - **No cycle detection**: self-referential initial objects recurse until stack overflow; initial state must be a tree.
 - **null/undefined** become signals like any primitive.
 - **Readonly is creation-time only**: enforced via `computed(() => wrapped())` — the setter is a silent runtime no-op (computed ignores args), not a runtime check.

@@ -140,8 +140,9 @@ const cart = store({
 });
 
 const total = computed(() => {
-  const subtotal = cart.items().reduce((sum, item) => sum + item.price, 0);
-  return subtotal * (1 - cart.discount());
+  const state = cart.snapshot();
+  const subtotal = state.items.reduce((sum, item) => sum + item.price, 0);
+  return subtotal * (1 - state.discount);
 });
 
 total(); // 27
