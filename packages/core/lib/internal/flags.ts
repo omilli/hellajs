@@ -19,3 +19,6 @@ export const DIRTY = 16;
 
 /** Pending state, might be dirty. */
 export const PENDING = 32;
+
+/** Effect is in the flush queue. */
+export const SCHEDULED = 128;

@@ -14,7 +14,6 @@ export {
   isFunction,
   isPlainObject,
   isString,
-  isUndefined,
   isFalsy,
   isObject,
   objectLoop

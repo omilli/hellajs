@@ -1,11 +1,11 @@
 import type { Reactive } from "./links";
 import type { EffectState } from "../effect";
-import { CLEAN, DIRTY, PENDING } from "./flags";
+import { CLEAN, DIRTY, PENDING, SCHEDULED } from "./flags";
 import { setCurrentSub } from "./context";
 import { startTracking, endTracking } from "./tracking";
 import { removeLink } from "./links";
 import { validateStale } from "./validation";
-import { getNextEffect, hasQueuedEffects, resetQueue, SCHEDULED } from "./queue";
+import { getNextEffect, hasQueuedEffects, resetQueue } from "./queue";
 import { isFunction } from "./utils";
 
 /**

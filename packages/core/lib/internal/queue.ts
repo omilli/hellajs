@@ -1,12 +1,8 @@
 import type { Reactive } from "./links";
+import { SCHEDULED } from "./flags";
 
 /** Queue to store effects that need to be executed during flush. */
 const effectQueue: (Reactive | undefined)[] = [];
-
-/**
- * @internal Flag to indicate an effect is scheduled to run.
- */
-export const SCHEDULED = 128;
 
 /** Index of next effect to process and total count of queued effects. */
 let queueIndex = 0, effectCount = 0;
