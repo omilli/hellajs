@@ -1,6 +1,5 @@
-import { signal, hasWindow } from "./internal/core";
-import { matchPattern } from "./match";
-import type { RouteInfo, GlobalHooks, RouteValue, Redirect, HistoryMode, ScrollBehavior } from "./types";
+import { signal } from "./core";
+import type { GlobalHooks, RouteValue, Redirect, HistoryMode, ScrollBehavior } from "../types";
 
 /**
  * Signal containing the current route map.
@@ -50,26 +49,3 @@ export const previousPath = signal<string>("/");
  * @internal
  */
 export const inheritMeta = signal<boolean>(false);
-
-/**
- * Shared active-link predicate. Reads route path dynamically so it stays
- * correct after navigation changes the path without rebuilding the closure.
- * @internal
- */
-export const activeFn = (pattern: string): boolean =>
-  matchPattern(pattern, route().path.split("?")[0]!, true) !== null;
-
-/**
- * Signal containing the current route information.
- */
-export const route = signal<RouteInfo>({
-  handler: null,
-  params: {},
-  query: {},
-  path: hasWindow()
-    ? window.location.pathname + window.location.search
-    : "/",
-  meta: undefined,
-  crumbs: Object.freeze([]),
-  active: activeFn
-});

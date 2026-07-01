@@ -1,9 +1,10 @@
-import { isFunction, isString } from "./internal/core";
-import type { RouteValue, Params, RouteWithHooks } from "./types";
+import { isFunction, isString } from "./core";
+import type { RouteValue, Params, RouteWithHooks } from "../types";
 import { sortRoutesBySpecificity, hasChildren, EMPTY_OBJECT } from "./utils";
 
 /**
  * Internal route matching result with extracted parameters.
+ * @internal
  */
 export type RouteMatch = {
   /** Route value that was matched */

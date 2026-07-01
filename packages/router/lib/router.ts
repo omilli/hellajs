@@ -1,11 +1,16 @@
 import { isFunction, hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
-import { hooks, route, routes, redirects, notFound, mode, scrollBehavior, previousPath, inheritMeta } from "./state";
-import { updateRoute, getHashPath } from "./utils";
+import { hooks, routes, redirects, notFound, mode, scrollBehavior, previousPath, inheritMeta } from "./internal/state";
+import { route } from "./route";
+import { updateRoute, getHashPath } from "./internal/utils";
 import { navigate } from "./navigate";
 
 let cleanupListener: (() => void) | null = null;
 
+/**
+ * Detaches the popstate/hashchange and click listeners via the composed cleanup closure.
+ * @internal
+ */
 export function resetListeners() {
   cleanupListener?.();
   cleanupListener = null;
