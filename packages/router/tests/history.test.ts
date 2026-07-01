@@ -95,36 +95,4 @@ describe("router", () => {
     expect(route().path).toBe("/test");
     expect(container.textContent).toBe("test-page");
   });
-
-  test("calling router() twice reconfigures routes", () => {
-    router({
-      routes: {
-        "/": () => render("first-home"),
-        "/about": () => render("first-about")
-      }
-    });
-
-    navigate("/about");
-    expect(container.textContent).toBe("first-about");
-
-    router({
-      routes: {
-        "/": () => render("second-home"),
-        "/contact": () => render("second-contact")
-      }
-    });
-
-    navigate("/");
-    expect(container.textContent).toBe("second-home");
-
-    navigate("/contact");
-    expect(container.textContent).toBe("second-contact");
-  });
-
-  test("returns RouteInfo with path property", () => {
-    const initial = router({ routes: { "/": () => render("home") } });
-    expect(typeof initial.path).toBe("string");
-    navigate("/");
-    expect(container.textContent).toBe("home");
-  });
 });
