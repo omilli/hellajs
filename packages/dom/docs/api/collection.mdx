@@ -183,6 +183,8 @@ ref.dispose();
 
 After disposing, new elements matching the selector will not receive the queued operations.
 
+Effects and handlers already applied to matched elements are not torn down by `dispose()` — they persist for the lifetime of each element and are cleaned up when the element is removed from the DOM.
+
 ## Important Considerations
 
 ### All Operations Apply to All Elements
