@@ -1,0 +1,186 @@
+# Route Hooks
+
+Lifecycle hooks, guards, and redirects for controlling navigation through the route resolution pipeline.
+
+## Route Hooks
+
+Routes can be defined as objects with `before`, `after`, and `handler` properties for lifecycle control.
+
+```jsx
+import { router, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/profile': {
+      before: () => {
+        if (!isAuthenticated()) {
+          navigate('/login');
+        }
+      },
+      handler: () => {
+        if (!isAuthenticated()) return;
+        currentView(<UserProfile />);
+      },
+      after: () => trackPageView('profile')
+    }
+  }
+});
+```
+
+Hooks execute in cascade order for nested routes:
+
+1. Global `before` hooks
+2. Parent `before` → child `before` (top-down)
+3. Route `handler`
+4. Child `after` → parent `after` (bottom-up)
+5. Global `after` hooks
+
+### Global Hooks
+
+Register global hooks on the router configuration object to execute on every navigation.
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const loading = signal(false);
+
+router({
+  routes: {
+    '/': () => render('Home')
+  },
+  hooks: {
+    before: () => {
+      loading(true);
+    },
+    after: () => {
+      loading(false);
+    }
+  }
+});
+```
+
+See the [`router`](/reference/router/router) reference for all hook configuration options.
+
+## Route Guards
+
+`before` hooks can block navigation or redirect by returning specific values:
+
+| Return value | Behavior |
+|---|---|
+| `void` / `true` / `undefined` | Proceed — navigation continues normally |
+| `false` | Cancel — navigation is blocked, URL stays unchanged |
+| `string` | Redirect — navigates to the returned path |
+| `throw` | Cancel — navigation is blocked, error logged |
+| `Promise` | Cannot block — treated as proceed, rejection `.catch`-logged |
+
+Basic guard that blocks unauthenticated access:
+
+```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const user = signal(null);
+const currentView = signal(null);
+
+router({
+  routes: {
+    '/login': () => currentView(<LoginPage />),
+    '/dashboard': {
+      before: () => {
+        if (!user()) return false;
+      },
+      handler: () => {
+        currentView(<Dashboard user={user()} />);
+      }
+    }
+  }
+});
+```
+
+Redirect instead:
+
+```jsx
+'/dashboard': {
+  before: () => {
+    if (!user()) return '/login';
+  },
+  handler: () => {
+    currentView(<Dashboard user={user()} />);
+  }
+}
+```
+
+Async `before` hooks cannot block. If you need async auth, use `navigate` inside the hook but also guard the handler:
+
+```jsx
+const checkAuth = async () => {
+  const ok = await fetch('/api/check-session');
+  if (!ok.ok) navigate('/login');
+};
+
+'/protected': {
+  before: checkAuth,
+  handler: () => {
+    if (!user()) return;
+    currentView(<ProtectedPage />);
+  }
+}
+```
+
+On popstate/hashchange (browser back/forward), a cancelled guard restores the previous URL via `replaceState`, keeping the address bar consistent.
+
+Multiple guards stack through nesting; the first non-pass verdict short-circuits:
+
+```jsx
+router({
+  routes: {
+    '/admin': {
+      before: requireAuth,
+      children: {
+        '/settings': {
+          before: () => {
+            if (!user()?.isAdmin) return '/dashboard';
+          },
+          handler: () => {
+            currentView(<AdminSettings />);
+          }
+        }
+      }
+    }
+  }
+});
+```
+
+If `requireAuth` returns `false`, the child's `before` never runs. If it passes but the admin check fails, navigation redirects.
+
+## Redirects
+
+The router supports two redirect mechanisms.
+
+```jsx
+import { router } from '@hellajs/router';
+
+// String redirects: simplest form
+router({
+  routes: {
+    '/home': '/',              // Redirect /home → /
+    '/profile': '/user/me'     // Redirect /profile → /user/me
+  }
+});
+
+// Global redirects: multiple sources to one destination
+router({
+  routes: {
+    '/todos': () => currentView(<TodoList />)
+  },
+  redirects: [
+    { from: ['/tasks', '/items', '/list'], to: '/todos' }
+  ]
+});
+```
+
+See [`router`](/reference/router/router) for the redirect configuration options, and [routing](/learn/concepts/routing) for the core routing model, parameter inheritance, and nested routes.
