@@ -279,6 +279,20 @@ router({
 
 ## Important Considerations
 
+### Input Validation
+
+`router()` throws if `config` is `null`, `undefined`, an array, or not an object. The error message follows the shape `[router] router: config must be an object, received <value>`.
+
+```typescript
+// ❌ Throws
+router(null); // [router] router: config must be an object, received null
+
+// ✅ Valid — routes may be empty
+router({ routes: {} });
+```
+
+Individual route definitions are validated leniently: malformed routes, `null` children, and non-function handlers resolve to `handler: null` rather than throwing.
+
 ### Route Resolution Priority
 
 Resolution follows strict precedence with early exits.

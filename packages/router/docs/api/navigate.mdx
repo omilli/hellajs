@@ -173,9 +173,21 @@ effect(() => {
 });
 ```
 
+### Input Validation
+
+`navigate()` throws if `path` is `null`, `undefined`, or not a string. The error message follows the shape `[router] navigate: path must be a string, received <value>`.
+
+```typescript
+// ❌ Throws
+navigate(null); // [router] navigate: path must be a string, received null
+
+// ✅ Valid
+navigate("/dashboard");
+```
+
 ### Parameter Validation
 
-Parameter validation is strictly compile-time (via TypeScript types). At runtime, the router performs no validation, and invalid parameter keys are silently ignored.
+Parameter key validation is strictly compile-time (via TypeScript types). Invalid parameter keys are silently ignored at runtime.
 
 ```typescript
 // ✅ Validated at compile-time by TypeScript, works at runtime
