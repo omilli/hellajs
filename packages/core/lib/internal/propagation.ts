@@ -1,5 +1,6 @@
 import type { Link } from "./links";
 import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, CLEAN } from "./flags";
+import { scheduleEffect } from "./queue";
 
 /**
  * Represents a node in a stack data structure.
@@ -10,7 +11,6 @@ export interface Stack<T> {
   sv: T;
   sp: Stack<T> | undefined;
 }
-import { scheduleEffect } from "./queue";
 
 /** Mask for active processing states: tracking, dirty, or pending. */
 const ACTIVE_FLAGS = TRACKING | DIRTY | PENDING;

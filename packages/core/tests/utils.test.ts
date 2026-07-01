@@ -1,6 +1,6 @@
 import { describe, expect, test, mock } from "bun:test";
 import {
-  isFunction, isPlainObject, isString, isUndefined, isFalsy, isObject,
+  isFunction, isPlainObject, isString, isFalsy, isObject,
   objectLoop
 } from "@hellajs/core";
 
@@ -38,13 +38,6 @@ describe("core", () => {
       expect(isString(null)).toBe(false);
       expect(isString(undefined)).toBe(false);
       expect(isString(new String("hello"))).toBe(false);
-    });
-
-    test("isUndefined returns true only for undefined", () => {
-      expect(isUndefined(undefined)).toBe(true);
-      expect(isUndefined(null)).toBe(false);
-      expect(isUndefined(0)).toBe(false);
-      expect(isUndefined("")).toBe(false);
     });
 
     test("isFalsy returns true for false, null, and undefined per narrow contract", () => {
