@@ -15,7 +15,8 @@ function router(config: RouterConfig): RouteInfo
 //   notFound?: string | (() => void),
 //   mode?: 'history' | 'hash',
 //   scrollBehavior?: ScrollBehavior,
-//   intercept?: boolean
+//   intercept?: boolean,
+//   inheritMeta?: boolean
 // }
 ```
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
@@ -24,6 +25,8 @@ function router(config: RouterConfig): RouteInfo
 - `notFound`: Optional handler for unmatched routes.
 - `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format.
 - `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
+- `intercept`: Enable automatic same-origin `<a>` click interception. Default `true`.
+- `inheritMeta`: Parent-to-child meta inheritance through nested routes. Default `false` (leaf-only meta).
 - **Returns**: The initial [`RouteInfo`](/reference/router/route) (handler is `null` until microtask resolves).
 
 ## Basic Usage
@@ -70,34 +73,9 @@ router({
 
 ### Nested Routes
 
-Create hierarchical route structures with `children` for automatic parameter inheritance.
+Create hierarchical route structures with `children` for automatic parameter inheritance. Nested routes are sorted by specificity: non-wildcard before wildcard, deeper segment count before shallow.
 
-```typescript
-const currentView = signal(null);
-
-router({
-  routes: {
-    "/admin": {
-      handler: () => currentView("AdminDashboard"),
-      before: () => checkAuth(),
-      children: {
-        "/users": {
-          handler: () => currentView("UsersList"),
-          children: {
-            "/:id": (params) => currentView(`UserDetail: ${params.id}`)
-          }
-        },
-        "/settings": () => currentView("AdminSettings")
-      }
-    }
-  }
-});
-
-// /admin → AdminDashboard
-// /admin/users → UsersList
-// /admin/users/123 → UserDetail: 123 (params inherited)
-// /admin/settings → AdminSettings
-```
+See [routing concepts](/learn/concepts/routing) for parameter inheritance, specificity ordering, and multi-level nesting.
 
 ### Navigation Mode
 
@@ -219,39 +197,9 @@ Set `inheritMeta: true` on a route to opt it into inheritance when the global fl
 
 ### Scroll Behavior
 
-Control scroll position after navigation globally or per-route.
+Control scroll position after navigation at three levels: global `scrollBehavior`, route-level `scroll`, and inline `navigate({ scroll })`. Priority: inline > route-level > global. Custom scroll functions receive `(to, from)` paths and return `{ top, left? }` or `null` to skip.
 
-```typescript
-// Global scroll behavior
-router({
-  scrollBehavior: 'top',
-  routes: { /* ... */ }
-});
-
-// Custom scroll function
-router({
-  scrollBehavior: (to, from) => {
-    if (to.startsWith('/docs')) return { top: 100 };
-    return null;
-  },
-  routes: { /* ... */ }
-});
-
-// Route-level override
-router({
-  scrollBehavior: 'top',
-  routes: {
-    '/feed': {
-      scroll: 'preserve',
-      handler: () => currentView('Feed')
-    },
-    '/chat': {
-      scroll: false,
-      handler: () => currentView('Chat')
-    }
-  }
-});
-```
+See [routing concepts](/learn/concepts/routing) for scroll priority and per-route overrides.
 
 ### Link Interception
 
@@ -442,4 +390,4 @@ router({
 // Rejection is `.catch`-logged; navigation proceeds
 ```
 
-For recovery patterns, see [Route Guards](/learn/concepts/routing#route-guards).
+For recovery patterns, see [Route Guards](/learn/concepts/route-hooks).

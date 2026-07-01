@@ -27,7 +27,7 @@ resetRouter();
 
 ### What gets reset
 
-`resetRouter` resets all eight singleton config signals to their defaults:
+`resetRouter` resets all nine singleton signals to their defaults — the eight config signals plus the `route` signal:
 
 - `routes` → `{}`
 - `hooks` → `{}`
@@ -37,11 +37,13 @@ resetRouter();
 - `scrollBehavior` → `undefined`
 - `previousPath` → `"/"`
 - `inheritMeta` → `false`
+- `route` → default `RouteInfo`: `handler: null`, `params: {}`, `query: {}`, `path: "/"`, `meta: undefined`, `crumbs: []` (frozen), `active` predicate reattached
+
+Reading `route()` immediately after `resetRouter()` returns these defaults, not the prior match.
 
 ### What is NOT affected
 
 - **`window.location` and `history`** — the URL and browser history are external state; `resetRouter` does not mutate them.
-- **The `route` signal** — reading `route()` after reset returns the last resolved info; call `navigate` or re-init via `router()` to re-resolve.
 
 ### Listener cleanup
 
