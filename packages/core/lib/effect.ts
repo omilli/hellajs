@@ -20,6 +20,7 @@ export interface EffectState extends Reactive {
  * Creates a reactive effect that runs a function whenever its dependencies change.
  * @param effectFn The function to execute as a side effect. May return a cleanup function that runs before re-execution and on disposal.
  * @returns A cleanup function to stop the effect.
+ * @throws {Error} When effectFn is not a function.
  */
 export function effect(effectFn: () => (() => void) | void): () => void {
   if (!isFunction(effectFn)) {

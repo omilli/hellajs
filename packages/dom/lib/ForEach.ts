@@ -10,6 +10,7 @@ import type { ForEachProps } from "./types/nodes";
  * @template T
  * @param props Component props with each and use
  * @returns Function that mounts the list into a parent element
+ * @throws {Error} When props.each is missing or props.use is not a function.
  */
 export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
   if (!props.each) throw new Error("[dom] ForEach: each is required");

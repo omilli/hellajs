@@ -135,7 +135,10 @@ export interface Resource<TTransformed, T = TTransformed> {
   abort(): void;
   /** Clears cache entry and triggers fresh request */
   invalidate(): void;
-  /** Updates cached data with new value or updater function (raw type) */
+  /**
+   * Updates cached data with new value or updater function (raw type)
+   * @throws {Error} When updater is undefined.
+   */
   setData: (updater: T | ((old: T | undefined) => T)) => void;
   /** Gets the current cache key */
   cacheKey: () => unknown;

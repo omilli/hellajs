@@ -19,6 +19,7 @@ const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-st
  * @param obj CSS object containing style properties and nested selectors
  * @param options Optional configuration. Provide `name` to create a scoped `.{name}` selector and get a return value for `class` attributes.
  * @returns The provided `name` string, or empty string for global styles
+ * @throws {Error} When obj is not a plain object.
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);

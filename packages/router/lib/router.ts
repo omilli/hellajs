@@ -21,6 +21,7 @@ export function resetListeners() {
  * Initializes the router with a map of routes and optional hooks.
  * @param config Router configuration object containing routes, hooks, redirects, and notFound handler.
  * @returns The initial route information after first resolution.
+ * @throws {Error} When config is null, undefined, an array, or not an object.
  */
 export function router(config: RouterConfig): RouteInfo {
   if (config === null || config === undefined || typeof config !== "object" || Array.isArray(config)) {

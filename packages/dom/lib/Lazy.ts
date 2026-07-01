@@ -9,6 +9,7 @@ import type { LazyProps, HellaNode } from "./types/nodes";
  * Supports cancellation via AbortSignal when the parent element is removed during loading.
  * @param props Component props with loader, loading, fallback, and props for the loaded component
  * @returns Function that mounts the lazy component into a parent element
+ * @throws {Error} When props.loader is not a function.
  */
 export function Lazy(props: LazyProps): JSX.Element {
   if (typeof props.loader !== "function") throw new Error("[dom] Lazy: loader must be a function");

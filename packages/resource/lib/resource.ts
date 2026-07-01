@@ -17,6 +17,7 @@ import { structuralShare } from "./internal/structural";
  * @param url - The URL endpoint to fetch from
  * @param options - Configuration options for the resource
  * @returns A resource object with reactive state and control methods
+ * @throws {Error} When fetcher is not a string URL or function, or options is not an object.
  */
 export function resource<T = unknown, TTransformed = T>(
   url: string,
@@ -32,6 +33,7 @@ export function resource<T = unknown, TTransformed = T>(
  * @param fetcher - Custom async function that performs the data fetching
  * @param options - Configuration options for the resource
  * @returns A resource object with reactive state and control methods
+ * @throws {Error} When fetcher is not a string URL or function, or options is not an object.
  */
 export function resource<T, K = undefined, TTransformed = T>(
   fetcher: Fetcher<T, K>,

@@ -7,6 +7,7 @@ import type { CSSObject, CSSOptions } from "./types";
  * Removes specific CSS rules and decrements their reference count for memory management.
  * @param obj CSS object to remove (structurally identical objects match, same reference not required)
  * @param options Optional configuration object (must match the options used in css())
+ * @throws {Error} When obj is not a plain object.
  */
 export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
   if (!isPlainObject(obj)) throw new Error(`[css] removeCss: expected a CSS object, received ${String(obj)}`);

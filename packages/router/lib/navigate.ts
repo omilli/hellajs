@@ -6,6 +6,7 @@ import type { NavigateOptions } from "./types";
  * @template T The route path pattern.
  * @param path The route pattern to navigate to.
  * @param options Navigation options including params, query, replace, scroll, and meta.
+ * @throws {Error} When path is null, undefined, or not a string.
  */
 export function navigate<T extends string>(
   path: T,

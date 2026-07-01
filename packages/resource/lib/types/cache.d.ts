@@ -94,6 +94,7 @@ export interface ResourceCache {
   /**
    * Updates the global cache configuration with new settings.
    * @param config - Partial configuration object to merge with current settings
+   * @throws {Error} When config is not an object.
    */
   setConfig(config: Partial<CacheConfig>): void;
 
@@ -106,6 +107,7 @@ export interface ResourceCache {
    * @param cacheTime - Optional TTL in milliseconds (0 = no caching)
    * @param staleTime - Optional stale time in milliseconds (0 = always stale)
    * @returns Typed cache key for type safety
+   * @throws {Error} When cacheTime or staleTime is not a non-negative number.
    */
   set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K;
 
@@ -123,6 +125,7 @@ export interface ResourceCache {
    * @param key - Cache key to update
    * @param updater - New value or function that receives old value and returns new value
    * @returns True if update succeeded, false if entry not found/expired
+   * @throws {Error} When updater is undefined.
    */
   update<T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean;
 
@@ -136,6 +139,7 @@ export interface ResourceCache {
    * Updates multiple cache entries in a batch operation.
    * @template T - The data type for all updates
    * @param updates - Array of update operations containing key and updater
+   * @throws {Error} When any update's updater is undefined.
    */
   updateMultiple<T>(updates: Array<CacheUpdate<T>>): void;
 
@@ -196,6 +200,7 @@ export interface ResourceCache {
    * @template K - The cache key type
    * @param options - Fetcher, key, and optional cache/abort/retry controls
    * @returns The fetched data
+   * @throws {Error} When options is not an object or options.fetcher is not a function.
    */
   prefetch<T, K>(options: PrefetchOptions<T, K>): Promise<T>;
 }

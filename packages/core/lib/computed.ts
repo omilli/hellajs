@@ -24,6 +24,7 @@ export interface ComputedState<T = unknown> extends Reactive {
  * @template T
  * @param computedFn Compute function. Called with the previous value on re-computation.
  * @returns A function that returns the computed value.
+ * @throws {Error} When computedFn is not a function.
  */
 export function computed<T>(computedFn: (previousValue?: T) => T): () => T {
   if (!isFunction(computedFn)) {

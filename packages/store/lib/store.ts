@@ -68,6 +68,7 @@ export function store<T extends Record<string, unknown>>(
  * @param initial Initial object to transform
  * @param options Store configuration options
  * @returns Reactive store with snapshot, update, and cleanup methods
+ * @throws {Error} When initial contains a reserved key (`snapshot`, `update`, or `cleanup`) with a non-function value.
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,

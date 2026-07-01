@@ -12,6 +12,7 @@ export let batchDepth = 0;
  * @template T
  * @param batchFn The function to execute.
  * @returns The return value of the function.
+ * @throws {Error} When batchFn is not a function.
  */
 export function batch<T>(batchFn: () => T): T {
   if (!isFunction(batchFn)) {
