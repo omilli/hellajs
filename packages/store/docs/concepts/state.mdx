@@ -36,7 +36,7 @@ Beyond basic get/set, stores offer several capabilities, each documented in deta
 - **Middleware**: Validate and transform values before they're stored. Runs synchronously on every set operation.
 - **Nested stores**: Compose stores hierarchically. Nested stores share signal references bidirectionally.
 - **Batching**: Wrap multiple store updates in [`batch`](/reference/core/batch) to defer computation until all changes are applied.
-- **Cleanup**: Recursively dispose of nested reactive structures when the store is no longer needed.
+- **Cleanup**: Recursively propagate teardown to nested stores when the store is no longer needed.
 
 ## Important Store Behaviors
 
@@ -171,7 +171,7 @@ Store updates follow the same efficient propagation mechanism as the core reacti
 
 The store system includes several memory optimization strategies.
 
-- **Automatic Cleanup** - The cleanup system recursively disposes of all nested reactive values
+- **Automatic Cleanup** - `cleanup()` recursively invokes teardown on nested stores; individual signals are not disposed
 - **No Cycle Detection** - Self-referential initial objects will recurse until the stack overflows; store initial state must be a tree
 - **Efficient Updates** - The `update()` function variant only applies changes that differ from the current state
 

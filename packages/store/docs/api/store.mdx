@@ -113,7 +113,7 @@ console.log(appStore.user.name());   // Bob
 
 ### `cleanup`
 
-Recursively disposes nested stores and their reactive subscriptions. Individual signals remain accessible after cleanup; they are not disposed, only the store structure is torn down.
+Recursively invokes `cleanup` on each nested store. Individual signals are not disposed — they remain functional after cleanup, and the store object stays intact. Effects that read individual signals continue to fire.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -357,7 +357,7 @@ store({ snapshot: 1 }); // throws: Reserved key "snapshot"
 
 ### Memory Management
 
-Call `cleanup()` when stores are no longer needed to prevent memory leaks from nested store subscriptions.
+`cleanup()` propagates teardown through the store tree, invoking each nested store's `cleanup`. Assign a custom `cleanup` method to release external resources (timers, listeners, subscriptions); the call recurses through the whole tree.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -372,7 +372,7 @@ Readonly configuration applies to the current store level only. See [Readonly Op
 
 ### Signals Survive Cleanup
 
-`cleanup()` disposes the store structure and nested computed dependencies, but individual signals remain functional. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
+`cleanup()` recursively invokes `cleanup` on nested stores but does not dispose individual signals or null the store object. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
 
 ### Effects vs Middleware
 
@@ -429,7 +429,7 @@ type PartialConfig = PartialDeep<Config>;
 
 ### `ReadonlyKeys<T, O>`
 
-Extracts the readonly property key set from a `StoreOptions` value. Used internally by `Store<T, R>` to enforce compile-time readonly access. See [Readonly Options](#readonly-options) for usage.
+Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [Readonly Options](#readonly-options) for usage.
 
 ```typescript
 type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
