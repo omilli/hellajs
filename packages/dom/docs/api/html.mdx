@@ -237,3 +237,16 @@ html`<div>  <span>Text</span>  </div>`
 // For explicit whitespace, use text content
 html`<div>${"   "}<span>Text</span></div>`
 ```
+
+### Single-Value Unwrap
+
+A template consisting of exactly one interpolation returns the value itself, unwrapped. This lets a template delegate to an already-resolved node or function without re-wrapping. The declared return type stays `HellaNode | (() => HellaNode)`; the runtime value is the interpolation verbatim.
+
+```js
+// A single interpolation returns the value as-is, not wrapped in a HellaNode
+const inner = html`<span />`;
+html`${inner}` === inner;        // true
+
+// A primitive is returned the same way — do not pass it straight to mount
+html`${"text"}` === "text";      // true
+```

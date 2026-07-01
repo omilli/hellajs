@@ -1,3 +1,4 @@
+import type { HellaNode } from "../types/nodes";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "./dispatch";
 import { getState, peekState } from "./state";
 
@@ -20,6 +21,16 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
   }
 
   state.handlers[type] = handler;
+}
+
+/**
+ * Renders an error-boundary fallback by replacing the boundary's (or the
+ * element's own) children. Shared by the delegated and direct handler paths.
+ */
+function renderEventFallback(element: Element, fallback: HellaNode) {
+  const target = findBoundary(element) ?? element;
+  const mountNode = getMountNode();
+  if (mountNode) target.replaceChildren(mountNode(fallback));
 }
 
 /**
@@ -49,11 +60,7 @@ function delegatedHandler(event: Event) {
         const config = resolveErrorConfig(element);
         const fallback = dispatchError(err, { phase: "event", element, event, config });
 
-        if (fallback) {
-          const target = findBoundary(element) ?? element;
-          const mountNode = getMountNode();
-          if (mountNode) target.replaceChildren(mountNode(fallback));
-        }
+        if (fallback) renderEventFallback(element, fallback);
       }
     }
   }
@@ -79,11 +86,7 @@ export function setDirectHandler(element: Element, type: string, handler: EventL
     } catch (e) {
       const config = resolveErrorConfig(element);
       const fallback = dispatchError(toError(e), { phase: "event", element, event, config });
-      if (fallback) {
-        const target = findBoundary(element) ?? element;
-        const mountNode = getMountNode();
-        if (mountNode) target.replaceChildren(mountNode(fallback));
-      }
+      if (fallback) renderEventFallback(element, fallback);
     }
   };
 

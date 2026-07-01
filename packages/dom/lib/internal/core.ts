@@ -5,9 +5,7 @@ export {
   scope,
   flush,
   isFunction,
-  isString,
   isPlainObject,
-  isFalsy,
   objectLoop,
   hasDocument
 } from "@hellajs/core";
