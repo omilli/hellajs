@@ -7,8 +7,8 @@ Removes CSS custom properties by decrementing the reference count. Variables are
 ```typescript
 function removeCssVars<T extends CSSVarInputObject>(vars: T, options?: CSSVarsOptions): void
 ```
-- `vars`: Object containing CSS variable definitions (must match the object passed to `cssVars`)
-- `options`: Optional configuration (must match the options used in `cssVars`)
+- `vars`: Object containing CSS variable definitions. For reactive vars, must be the same reference passed to `cssVars`; for static vars, a structurally equal object matches by hash
+- `options`: Optional configuration. Reactive entries are matched by vars reference and use the options recorded at the first `cssVars` call; `options` is consulted only to locate the static entry by hash
 - **Returns**: `void`
 
 ## Basic Usage
@@ -99,9 +99,9 @@ removeCssVars({ theme: { primary: 'red' } });
 
 `removeCssVars` is a no-op for inputs not previously registered by a `cssVars` call — no throw, no stylesheet change.
 
-### Exact Options Match
+### Exact Options Match (Static Path)
 
-The `options` argument must match the `options` used in the original `cssVars` call, including `scoped` and `prefix`:
+For **static** vars, the `options` argument must match the `options` used in the original `cssVars` call, including `scoped` and `prefix` — they feed the hash that locates the entry:
 
 ```jsx
 cssVars({ color: 'red' }, { scoped: '.card', prefix: 'ui' });

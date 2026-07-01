@@ -7,8 +7,8 @@ import { isPlainObject } from "./internal/core";
  * Removes CSS custom properties by decrementing the reference count.
  * The variables are removed from the stylesheet only when the reference count reaches zero.
  * @template T
- * @param vars Object containing CSS variable definitions (must match the object passed to cssVars)
- * @param options Configuration options (must match the options used in cssVars)
+ * @param vars Object containing CSS variable definitions. For reactive vars, must be the same reference passed to cssVars; for static vars, a structurally equal object matches by hash.
+ * @param options Configuration options. Reactive entries are matched by vars reference and use the options recorded at the first cssVars call; `options` is consulted only to locate the static entry by hash.
  * @throws {Error} When vars is not a plain object.
  */
 export function removeCssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): void {
