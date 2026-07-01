@@ -42,9 +42,9 @@ export type ScrollBehavior =
 /**
  * Type-safe route map with string keys and route values.
  */
-export type Routes = {
+export interface Routes {
   [pattern: string]: RouteValue | string;
-};
+}
 
 /**
  * Union type representing possible route values.
@@ -56,7 +56,7 @@ export type RouteValue =
 /**
  * Route definition with optional hooks and nested children.
  */
-export type RouteWithHooks = {
+export interface RouteWithHooks {
   /** Main route handler function executed when route matches */
   handler?: Handler;
   /**
@@ -77,12 +77,12 @@ export type RouteWithHooks = {
   scroll?: ScrollBehavior | false;
   /** Nested child routes with inherited parameters */
   children?: Routes;
-};
+}
 
 /**
  * Configuration object for router initialization.
  */
-export type RouterConfig = {
+export interface RouterConfig {
   /** Map of route patterns to handlers or nested route objects */
   routes: Routes;
   /** Global hooks that execute on every route change */
@@ -99,12 +99,12 @@ export type RouterConfig = {
   intercept?: boolean;
   /** Enable parent-to-child meta inheritance through nested route chains. Child meta overrides parent on key conflict. Default is false (leaf-only meta). */
   inheritMeta?: boolean;
-};
+}
 
 /**
  * Global hooks that execute on every route change.
  */
-export type GlobalHooks = {
+export interface GlobalHooks {
   /**
    * Hook executed before every route change. Acts as a global guard. Sync return contract:
    * return `false` to cancel (no URL/signal/handler change); return a non-empty `string` to
@@ -115,7 +115,7 @@ export type GlobalHooks = {
   before?: () => Promise<unknown> | unknown;
   /** Hook executed after every route change */
   after?: () => Promise<unknown> | unknown;
-};
+}
 
 /**
  * Options for programmatic navigation.
@@ -136,17 +136,17 @@ export type NavigateOptions<T extends string = string> = {
 /**
  * Redirect configuration mapping source paths to target path.
  */
-export type Redirect = {
+export interface Redirect {
   /** Array of source paths that trigger this redirect */
   readonly from: readonly string[];
   /** Target path to redirect to */
   readonly to: string;
-};
+}
 
 /**
  * Current route state information.
  */
-export type RouteInfo = {
+export interface RouteInfo {
   /** Matched route handler function, or null if no match */
   handler: Handler | null;
   /** Parameters extracted from the URL path */
@@ -161,17 +161,17 @@ export type RouteInfo = {
   crumbs: ReadonlyArray<Crumb>;
   /** Tests whether a pattern matches the current route path (ancestor semantics) */
   active: (pattern: string) => boolean;
-};
+}
 
 /**
  * Breadcrumb entry for one level of the matched route chain.
  */
-export type Crumb = {
+export interface Crumb {
   /** Route-map key that matched at this nesting level */
   readonly segment: string;
   /** Cumulative matched URL up to and including this level */
   readonly path: string;
   /** Inherited parameters through this level */
   readonly params: Params;
-};
+}
 
