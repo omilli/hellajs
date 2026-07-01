@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { suppressConsole } from "@utils/test-helpers.js";
 import { router, route } from "@hellajs/router/bundle";
-import { setupRouterEnv } from "./helpers";
+import { setupRouterEnv, expectLoggedError } from "./helpers";
 
 describe("router", () => {
 describe("anchor interception", () => {
@@ -289,6 +290,30 @@ describe("anchor interception", () => {
     el.dispatchEvent(event);
 
     expect(route().path).toBe(pathBefore);
+  });
+
+  test("does not intercept clicks on anchors with a malformed href", () => {
+    const sup = suppressConsole();
+    try {
+      router({
+        routes: { "/": () => render("home") }
+      });
+
+      const el = document.createElement("a");
+      el.href = "http://[";
+      el.textContent = "Broken";
+      document.body.appendChild(el);
+
+      const pathBefore = route().path;
+      const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+      el.dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(route().path).toBe(pathBefore);
+      expectLoggedError(sup, "[router] intercept: malformed href, skipping");
+    } finally {
+      sup.restore();
+    }
   });
 });
 });
