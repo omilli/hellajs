@@ -1,12 +1,12 @@
 ---
 name: brain-critic
 description: >
-  Fairly critique, review, or grade code for over-engineering, unnecessary complexity and abstraction, tight coupling, dead or duplicate code, misleading naming or file layout, and correctness smells — the judgment-based review that `brain-audit` deliberately excludes (audit is rule-grounded; this is the taste that has no lint rule behind it). Every finding passes a cost gate: it names a concrete cost (it breaks, hampers, misleads, or bloats) and cites source read this session. Use when asked to critique, review for code smells, or flag over-engineering/complexity. Use ONLY for judgment-based critique — route any finding backed by a runnable check or quoted project rule to `brain-audit` instead.
+  Fairly critique, review, or grade code for over-engineering, unnecessary complexity and abstraction, tight coupling, dead or duplicate code, misleading naming or file layout, API/interface design (parameter names, order, types, return shapes, and the contract callers learn), and correctness smells — the judgment-based review that `brain-audit` deliberately excludes (audit is rule-grounded; this is the taste that has no lint rule behind it). Every finding passes a cost gate: it names a concrete cost (it breaks, hampers, misleads, or bloats) and cites source read this session. Use when asked to critique, review for code smells, flag over-engineering/complexity, or assess API/interface design. Use ONLY for judgment-based critique — route any finding backed by a runnable check or quoted project rule to `brain-audit` instead.
 ---
 
 # Critic
 
-One skill, one target at a time. Fairly diagnose code for over-engineering, complexity and coupling, dead or duplicate code, naming or file layout, and correctness smells — the judgment-based review `brain-audit` excludes. Audit is rule-grounded; this is the taste with no lint rule behind it. Every finding passes the **cost gate**: it names a concrete, articulable cost — it *breaks*, *hampers*, *misleads*, or *bloats* — and cites source read this session. A finding with no real cost is a nitpick; drop it. Silence is a valid outcome; manufacturing findings to seem thorough is the failure mode this skill exists to avoid.
+One skill, one target at a time. Fairly diagnose code for over-engineering, complexity and coupling, dead or duplicate code, naming or file layout, API/interface design, and correctness smells — the judgment-based review `brain-audit` excludes. Audit is rule-grounded; this is the taste with no lint rule behind it — the shape of public interfaces, the names and parameters callers must learn, the abstractions and coupling the next change inherits. Every finding passes the **cost gate**: it names a concrete, articulable cost — it *breaks*, *hampers*, *misleads*, or *bloats* — and cites source read this session. A finding with no real cost is a nitpick; drop it. Silence is a valid outcome; manufacturing findings to seem thorough is the failure mode this skill exists to avoid.
 
 brain-critic owns **diagnosis** — what is wrong and why it costs. `brain-plan` owns **the fix contract**. brain-critic hands off findings; it does not write the contract, and `brain-worker` depends on that boundary.
 
@@ -42,7 +42,7 @@ A smell is rarely visible in isolation. Before judging, read in parallel:
 - The public entry/barrel, if any — to know which symbols are surface (a Surface finding's blast radius includes every importer).
 - Conventions/guides if present — to tell intentional design from a smell, and to route rule-grounded issues to `brain-audit`.
 
-## Step 3 — Apply the five lenses
+## Step 3 — Apply the six lenses
 
 Each lens carries the test that separates a real finding from noise:
 
@@ -50,6 +50,7 @@ Each lens carries the test that separates a real finding from noise:
 - **Complexity & coupling** — deep nesting, god-objects, leaky abstractions, circular dependencies, change-one-break-many. Test: can a reasonable change land in one place without ripple forced by the design? Forced ripple is a Hamper.
 - **Dead & duplicate code** — unreachable branches, unused exports, empty/swallowed handlers, near-identical blocks with drift risk. Test: does grep find a caller (dead) or two-plus drifting copies (duplicate)? Unverifiable claims get dropped.
 - **Naming & file layout** — names that lie about behavior; types or paths that contradict the role. Pure convention breaks route to `brain-audit`. Test: would a new contributor guess wrong from the name or path? If yes, it is a Mislead.
+- **API & interface design** — the full signature: parameter names, order, types, optionality, return shape, arity, and the contract a caller must learn to use it correctly (symbol and file naming belong to the naming lens). Test: could a caller use this correctly from the signature alone, without reading the body? If the signature hides a requirement, contradicts the name, demands out-of-band knowledge, or forces an awkward call shape, it is a Mislead or Hamper.
 - **Correctness smells** — unchecked errors, races, off-by-one, missing edge cases, unsafe defaults, swallowed exceptions. Test: can you name the concrete input or state that produces wrong behavior? If you cannot construct the failure, it is anxiety, not a finding. This is a Break.
 
 ## Step 4 — Run the fairness filter
