@@ -97,8 +97,9 @@ export function router(config: RouterConfig): RouteInfo {
         let parsedURL: URL;
         try {
           parsedURL = new URL(anchor.href, window.location.href);
-        } catch {
+        } catch (error) {
           // Malformed href — skip interception
+          console.error("[router] intercept: malformed href, skipping", error);
           return;
         }
 
