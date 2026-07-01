@@ -225,7 +225,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 
 ## Testing approach (`tests/`)
 
-Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bundle`** (the instrumented bundle — see root `bunfig.toml`); type-only imports from `@hellajs/dom`. Reactive primitives import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `../../../utils/test-helpers.js`. The publicly-exported introspection helpers used directly: `peekState`, `getState`, `multiSelectors`, `checkMultiSelectors`. Track call counts with `mock()` from `bun:test` — never boolean flags or counters.
+Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bundle`** (the instrumented bundle — see root `bunfig.toml`); type-only imports from `@hellajs/dom`. Reactive primitives import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `@utils/test-helpers.js`. The publicly-exported introspection helpers used directly: `peekState`, `getState`, `multiSelectors`, `checkMultiSelectors`. Track call counts with `mock()` from `bun:test` — never boolean flags or counters.
 
 `tests/helpers.ts` exports `fallbackHandler(defaultFallback)` — registers an `onError` handler that delegates to `context.config?.fallback?.(error)` else returns the default; the standard pattern for exercising element-level fallback through the global handler.
 
