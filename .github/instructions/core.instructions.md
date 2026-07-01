@@ -12,7 +12,7 @@ Reactive primitives over a doubly-linked dependency DAG. Signals are sources, co
 |---|---|---|
 | `signal`, `computed`, `effect`, `batch`, `untracked`, `scope` | Primitives | `lib/*.ts` |
 | `flush` | Scheduler drain (advanced/testing) | `lib/internal/scheduler.ts` |
-| `isFunction`, `isString`, `isUndefined`, `isPlainObject`, `isFalsy`, `isObject`, `objectLoop` | Utils | `lib/internal/utils.ts` |
+| `isFunction`, `isString`, `isPlainObject`, `isFalsy`, `isObject`, `objectLoop` | Utils | `lib/internal/utils.ts` |
 | `hasWindow`, `hasDocument`, `hasNavigator` | Env probes | `lib/internal/env.ts` |
 | `Signal` | Type-only | `lib/types.d.ts` |
 
@@ -33,7 +33,7 @@ A `Link` (`lib/types.d.ts`) is the doubly-linked edge: `ls` (source), `lt` (targ
 - **Computed starts `WRITABLE | DIRTY`** so the first read triggers compute; the `WRITABLE` bit lets propagation treat it like a signal (descend into subscribers), and `updateValue` dispatches on `cbf` presence (computed) vs absence (signal).
 - **Effect starts `GUARDED`** marking it as a sink to be *scheduled* (not traversed) during propagation.
 
-## Flags (`lib/internal/flags.ts`, `lib/internal/queue.ts`)
+## Flags (`lib/internal/flags.ts`)
 
 | Flag | Value | Meaning |
 |---|---|---|
@@ -43,7 +43,7 @@ A `Link` (`lib/types.d.ts`) is the doubly-linked edge: `ls` (source), `lt` (targ
 | `TRACKING` | 4 | Currently executing and recording dependencies |
 | `DIRTY` | 16 | Definitely needs re-execution |
 | `PENDING` | 32 | Might need re-execution (validate before deciding) |
-| `SCHEDULED` | 128 | Effect is in the flush queue (defined in `queue.ts`, not `flags.ts`) |
+| `SCHEDULED` | 128 | Effect is in the flush queue |
 
 Value `8` is intentionally unused. `WRITABLE`/`GUARDED` are permanent type bits (cleared only by `disposeEffect` → `CLEAN`, and by computed auto-GC); `TRACKING`/`DIRTY`/`PENDING`/`SCHEDULED` are transient state bits.
 
