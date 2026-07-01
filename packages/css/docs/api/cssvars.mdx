@@ -234,6 +234,25 @@ cssVars({
 // Both color and spacing variables are available
 ```
 
+### Reactive Vars Are Keyed by Reference
+
+A **reactive** vars object (one with any function leaf) is registered by object **reference**, not by value. A second `cssVars()` call passing the *same* reference returns the same result proxy and bumps its reference count. Passing the same reference a second time with *different* `scoped`/`prefix` options throws — use a distinct object per scope so each gets its own reactive effect:
+
+```jsx
+import { signal } from '@hellajs/core';
+import { cssVars } from '@hellajs/css';
+
+const isDark = signal(false);
+const theme = { bg: () => (isDark() ? '#000' : '#fff') };
+
+cssVars(theme);                             // ok — :root, reactive
+cssVars(theme);                             // ok — same options, refCount++
+cssVars(theme, { scoped: '.dark' });        // throws — same ref, different scope
+cssVars({ ...theme }, { scoped: '.dark' }); // ok — separate reference, own effect
+```
+
+Static vars (no function leaves) are instead keyed by a hash of the object and its options, so structurally equal static objects collide regardless of reference identity.
+
 ### Scoping and Prefixing
 
 Control where CSS variables are applied and how they're named:

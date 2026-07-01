@@ -52,12 +52,16 @@ export function upsertRule(id: string, key: string, cssText: string): void {
       // cssRules access throws when the underlying rule has been invalidated by the browser; rebuild below.
     }
 
+    indexMap.delete(ruleKey);
     try { s.deleteRule(existing); } catch {
       // Index already invalidated; the insertRule below will repopulate it.
     }
-    try { s.insertRule(cssText, existing); } catch {
+    try {
+      s.insertRule(cssText, existing);
+      indexMap.set(ruleKey, existing);
+    } catch {
       // Some CSS rule types may not be parseable by the platform (e.g. @layer in happy-dom);
-      // the textContent mirror still carries them.
+      // indexMap stays clean and the textContent mirror still carries it.
     }
     return;
   }

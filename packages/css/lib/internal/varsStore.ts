@@ -62,10 +62,11 @@ export let varsResultReactive = new WeakMap<object, CSSVars<Record<string, unkno
  * @internal
  * Writes flattened variable declarations to the scoped rules map
  * and upserts the scope rule into the stylesheet.
+ * `rawPrefix` is the raw `options.prefix`; the formatted `${p}-` form is derived here.
  */
-export function applyRules(flat: Record<string, unknown>, { scoped, prefix = "" }: CSSVarsOptions) {
+export function applyRules(flat: Record<string, unknown>, { scoped, prefix: rawPrefix = "" }: CSSVarsOptions) {
   const scope = scoped || ":root";
-  const fullPrefix = prefix ? `${prefix}-` : "";
+  const fullPrefix = rawPrefix ? `${rawPrefix}-` : "";
   const entries = Object.entries(flat);
   const len = entries.length;
 
@@ -80,11 +81,7 @@ export function applyRules(flat: Record<string, unknown>, { scoped, prefix = "" 
     scopeMap.set(`${fullPrefix}${k}`, String(v));
   }
 
-  const fullScopeVars = Array.from(scopeMap.entries())
-    .map(([k, v]) => `--${k.replace(DOT_REGEX, "-")}:${v}`)
-    .join(";");
-
-  upsertRule(VARS_ID, scope, `${scope}{${fullScopeVars}}`);
+  upsertRule(VARS_ID, scope, `${scope}{${serializeDecls(scopeMap)}}`);
 
   syncVarsTextContent();
 }
@@ -94,25 +91,23 @@ export function applyRules(flat: Record<string, unknown>, { scoped, prefix = "" 
  * Removes the given flat variable keys from the scoped rules map
  * and updates the stylesheet. If the scope is now empty, the scope
  * rule is removed entirely.
+ * `fullPrefix` is the pre-formatted prefix (already trailing-hyphen) stored on the registry entry.
  */
-export function removeFromScope(scope: string, flatKeys: string[], prefix: string): void {
+export function removeFromScope(scope: string, flatKeys: string[], fullPrefix: string): void {
   const scopeMap = scopedVarsRulesMap.get(scope);
   if (!scopeMap) return;
 
   let i = 0;
   const len = flatKeys.length;
   while (i < len) {
-    scopeMap.delete(`${prefix}${flatKeys[i++]}`);
+    scopeMap.delete(`${fullPrefix}${flatKeys[i++]}`);
   }
 
   if (scopeMap.size === 0) {
     scopedVarsRulesMap.delete(scope);
     removeRule(VARS_ID, scope);
   } else {
-    const fullScopeVars = Array.from(scopeMap.entries())
-      .map(([k, v]) => `--${k.replace(DOT_REGEX, "-")}:${v}`)
-      .join(";");
-    upsertRule(VARS_ID, scope, `${scope}{${fullScopeVars}}`);
+    upsertRule(VARS_ID, scope, `${scope}{${serializeDecls(scopeMap)}}`);
   }
 
   syncVarsTextContent();
@@ -125,6 +120,22 @@ export function removeFromScope(scope: string, flatKeys: string[], prefix: strin
 export function resetReactiveRegistries(): void {
   varsRegistryReactive = new WeakMap();
   varsResultReactive = new WeakMap();
+}
+
+/**
+ * @internal No-space CSSOM declaration form: `--k:v;--k2:v2`.
+ */
+function serializeDecls(scopeMap: Map<string, string>): string {
+  const entries = Array.from(scopeMap.entries());
+  let i = 0;
+  const len = entries.length;
+  let out = "";
+  while (i < len) {
+    const [k, v] = entries[i++]!;
+    out += `--${k.replace(DOT_REGEX, "-")}:${v}`;
+    if (i < len) out += ";";
+  }
+  return out;
 }
 
 /**

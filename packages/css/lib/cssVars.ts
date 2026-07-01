@@ -11,6 +11,7 @@ import { isFunction, isPlainObject } from "./internal/core";
  * @param options Configuration options for scoping and prefixing
  * @returns Proxy object with var() references to the CSS custom properties
  * @throws {Error} When vars is not a plain object.
+ * @throws {Error} When the same reactive vars object is registered a second time with differing scoped/prefix options.
  */
 export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): CSSVars<T> {
   if (!isPlainObject(vars)) throw new Error(`[css] cssVars: expected a plain object, received ${String(vars)}`);
@@ -48,6 +49,11 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
 
   const existingEntry = varsRegistryReactive.get(vars);
   if (existingEntry) {
+    const scope = options.scoped || ":root";
+    const prefix = options.prefix ? `${options.prefix}-` : "";
+    if (scope !== existingEntry.scope || prefix !== existingEntry.prefix) {
+      throw new Error(`[css] cssVars: reactive vars object already registered with different options (scoped/prefix); use a separate object per scope, received ${String(vars)}`);
+    }
     existingEntry.refCount++;
     applyRules(flat, options);
     return varsResultReactive.get(vars) as CSSVars<T>;

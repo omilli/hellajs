@@ -149,4 +149,33 @@ describe("cssVars scoped", () => {
     expect(result1).toBe(result3);
     expect(result1.theme.primary).toBe("var(--ui-theme-primary)");
   });
+
+  test("reactive same-ref repeat call with identical options returns the same result", () => {
+    const v = { c: signal("red") };
+    const a = cssVars(v, { scoped: ".a" });
+    const b = cssVars(v, { scoped: ".a" });
+    expect(a).toBe(b);
+    flush();
+    const varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).toContain(".a{--c: red;}");
+  });
+
+  test("reactive same-ref repeat call with differing scoped throws and writes no stray scope", () => {
+    const v = { c: signal("red") };
+    cssVars(v);
+    expect(() => cssVars(v, { scoped: ".dark" })).toThrow("[css] cssVars:");
+    flush();
+    const varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent).not.toContain(".dark");
+    expect(varsEl?.textContent).toContain(":root{--c: red;}");
+  });
+
+  test("reactive same-ref repeat call with differing prefix throws", () => {
+    const v = { c: signal("red") };
+    cssVars(v);
+    expect(() => cssVars(v, { prefix: "p" })).toThrow("[css] cssVars:");
+    flush();
+    const varsEl = document.getElementById("hella-vars");
+    expect(varsEl?.textContent ?? "").not.toContain("--p-");
+  });
 });
