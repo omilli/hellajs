@@ -6,26 +6,26 @@ description: >
 
 # Skill creator
 
-Create skills from scratch, or edit and restructure existing ones. This skill is invoked explicitly — no triggering logic.
+Create skills from scratch, or edit/restructure existing ones. Invoked explicitly — no triggering logic.
 
 ## Capture intent first
 
-Mine the current conversation before asking — the workflow the user wants to capture is usually already there ("turn this into a skill"). Look for the tool sequence, the step order, the corrections the user made, and the input/output formats.
+Mine the current conversation before asking — the workflow is usually already there ("turn this into a skill"): tool sequence, step order, corrections, input/output formats.
 
-Then ask only the questions that determine the skill's shape. Don't start writing until these are settled:
+Ask only what determines the skill's shape; don't start writing until settled:
 
 1. What should this skill enable the agent to do?
-2. What is the exact output format? Get a concrete example.
-3. What triggers it — which keywords or situations?
-4. What edge cases, dependencies, or constraints matter?
+2. Exact output format? Get a concrete example.
+3. Trigger — which keywords/situations?
+4. Edge cases, dependencies, constraints?
 
-## Frontmatter (the hard rules)
+## Frontmatter (hard rules)
 
 - **name** — required, lowercase-hyphen, ≤64 chars, must match the folder name.
-- **description** — effectively required; skills without one are filtered out and never surfaced. This is the trigger, not a summary. Front-load the literal keywords the user will say, cover *what* AND *when*, and gate with "Use ONLY when…" if the skill should stay quiet on adjacent topics.
+- **description** — effectively required; skills without one are filtered out and never surfaced. This is the trigger, not a summary. Front-load literal keywords the user will say; cover *what* AND *when*; gate with "Use ONLY when…" if it should stay quiet on adjacent topics.
 - **compatibility** — optional, rarely needed.
 
-The authoritative field list lives in your agent's skill-authoring docs (for opencode, the schema at https://opencode.ai/config.json) — check there if unsure rather than guessing.
+Authoritative field list lives in your agent's skill-authoring docs (for opencode, the schema at https://opencode.ai/config.json) — check there if unsure.
 
 ## Anatomy
 
@@ -40,44 +40,39 @@ skill-name/
 
 ## Progressive disclosure
 
-Skills load in three tiers — place content in the tier that matches it:
+Three tiers — place content in the tier that matches it:
 
-1. **Metadata** (name + description) — always in context. Keep it tight and trigger-focused.
+1. **Metadata** (name + description) — always in context. Tight, trigger-focused.
 2. **SKILL.md body** — loaded when the skill runs. Keep under ~500 lines.
 3. **Bundled resources** — loaded on demand, effectively unlimited. Scripts can run without being loaded into context.
 
 Rules:
 
-- Bulky, conditional, or domain-specific content belongs in `references/`, not the body. For multi-domain skills, split references by variant and read only the relevant one.
-- Large reference files (>300 lines) need a table of contents so the agent can navigate.
-- If the same helper logic recurs (a formatter, a parser, a builder), bundle it once as a script in `scripts/` — never reinvent it inline each run.
+- Bulky/conditional/domain-specific content → `references/`, not the body. Multi-domain skills: split references by variant, read only the relevant one.
+- Reference files >300 lines → need a table of contents.
+- Recurring helper logic (formatter, parser, builder) → bundle once as a script in `scripts/`; never reinvent inline each run.
 
 ## Writing style
 
-- **Imperative mood.** "Do X", not "You might consider X."
-- **Explain why.** Given reasons, the model generalizes beyond rote rules. "Why" is what makes a skill robust across prompts.
-- **No caps-shouting.** If you reach for MUST/NEVER, reframe it as reasoning. Caps rarely change behavior; reasons do.
+- **Imperative.** "Do X", not "You might consider X."
+- **Explain why.** Given reasons, the model generalizes beyond rote rules. "Why" makes a skill robust across prompts.
+- **No caps-shouting.** If you reach for MUST/NEVER, reframe as reasoning. Caps rarely change behavior; reasons do.
 - **Generalize.** Skills run across many prompts. Overfitting to one example makes them brittle.
-- **Define output formats explicitly** — exact templates, not vibes. Provide an example for any non-trivial format.
+- **Define output formats explicitly** — exact templates, not vibes; an example for any non-trivial format.
 - Draft, reread with fresh eyes, cut, improve.
 
 ## Improving an existing skill
 
-Read the current SKILL.md and critique it against the principles above *before* editing. Common rot:
+Read the current SKILL.md and critique against the principles above *before* editing. Common rot: dictates with no "why"; implicit output formats; body bloat belonging in `references/`; duplicated logic that should be a bundled script.
 
-- Instructions that dictate without explaining why.
-- Output formats left implicit.
-- Body bloat that belongs in `references/`.
-- Duplicated logic that should be a bundled script.
-
-Cut anything not pulling its weight. Preserve the directory name and the `name` field. If the install path is read-only, copy to a writable location before editing.
+Cut anything not pulling its weight. Preserve the directory name and the `name` field. Install path read-only → copy to a writable location before editing.
 
 ## Packaging
 
-Stage in `/tmp/` before copying to the output directory. Package the finished skill and return the path to the user.
+Stage in `/tmp/` before copying to the output dir. Package the finished skill; return the path.
 
 ## Before you finish
 
-Re-check: frontmatter valid, `name` matches the folder, `description` triggers correctly, body under ~500 lines, and nothing stranded in the body that belongs in `references/`.
+Re-check: frontmatter valid; `name` matches folder; `description` triggers correctly; body under ~500 lines; nothing stranded in the body that belongs in `references/`.
 
-Run the self-improvement track (`brain-prime` handoff gate). This skill's friction signals: an anatomy or progressive-disclosure issue discovered mid-edit that the principles above did not flag up front, or a trigger description that false-fires on an adjacent case. A confirmed skill-authoring fact (anatomy rule, trigger pattern) worth recalling on the next skill edit is a memory event. Invoke `brain-feedback` (rule change to this skill or `brain-prime`) or `brain-memory` (recallable fact) yourself; do not make the user ask.
+Run the brain-prime handoff gate; friction signals: an anatomy/progressive-disclosure issue discovered mid-edit that the principles above didn't flag up front, or a trigger description that false-fires on an adjacent case.

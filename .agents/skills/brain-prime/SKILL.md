@@ -6,8 +6,6 @@ description: >
 
 # Prime
 
-The backbone every substantive task loads first. It carries four things the rest of the system assumes present: the **ethos**, the **loop**, the **methodology**, and the **non-negotiables**. The other skills (`brain-idea`, `brain-audit`, `brain-critic`, `brain-feature`, `brain-plan`, `brain-worker`, `brain-feedback`, `brain-memory`, plus standalone `brain-skill`/`brain-author`) are the capabilities this loop orchestrates.
-
 ## The loop
 
     brain-idea / brain-audit / brain-critic / brain-feature  (entry: decide WHAT)
@@ -20,12 +18,10 @@ The backbone every substantive task loads first. It carries four things the rest
         friction -> brain-feedback  (propose config/skill edits)
         durable fact/decision -> brain-memory  (curate into the repo knowledge base)
 
-**Handoff gate** — after any substantive work, scan both tracks proactively and invoke the matching skill yourself; do not wait for the user to call them. Self-improvement is the system compounding on itself — the skill that hit the friction owns routing it, not the user.
+**Handoff gate** — after any substantive work, scan both tracks and invoke the matching skill yourself; do not wait for the user. Clean run → skip self-improvement; trivial change → skip everything.
 
-- **Downstream track** — the next skill in the loop, if the work continues (entry → `brain-plan`; `brain-plan` → `brain-worker`; `brain-worker` → `brain-plan` on a plan-gap or `brain-idea` on a design fork). One sentence naming it and a one-clause justification, or "nothing downstream."
-- **Self-improvement track** — friction from THIS run (rework, a wrong assumption, a rule/tool that didn't hold, a user correction) routes to `brain-feedback` when it should change a rule (always-on config/skill text), `brain-memory` when it is a recallable fact/decision. A durable decision or fact confirmed against source this run routes to `brain-memory`. Each skill names its own friction signals in its Done/Self-check section.
-
-A clean run with no events skips the self-improvement track — that is correct and common, not a failure. A trivial change skips everything.
+- **Downstream** — next skill if work continues (entry → `brain-plan`; `brain-plan` → `brain-worker`; `brain-worker` → `brain-plan` on a plan-gap or `brain-idea` on a design fork). One sentence + justification, or "nothing downstream."
+- **Self-improvement** — friction from THIS run (rework, wrong assumption, rule/tool that didn't hold, user correction) → `brain-feedback` if it changes always-on config/skill text, `brain-memory` if it is a recallable fact/decision. Each skill names its own friction signals.
 
 ## Ethos
 
@@ -33,67 +29,67 @@ Ship the smallest correct change that fixes the root cause. Simplify, reuse, or 
 
 ## Non-negotiables
 
-- **Done = solved + verified.** Lint, typecheck, relevant tests green. If a verification command isn't findable, ask — never skip the gate.
-- **Every change carries its full blast radius.** Before finishing, enumerate every downstream effect: sibling tests asserting old behavior, docs describing the old shape, callers of a changed signature, backward compatibility. A change green in its own check but breaking a caller, test, or doc elsewhere is not done.
-- **Rules inviolable.** When work conflicts with an established project rule (lint, style, convention), surface the conflict and propose the change — never silently work around it.
+- **Done = solved + verified.** Lint, typecheck, relevant tests green. Verification command not findable → ask, never skip the gate.
+- **Full blast radius.** Before finishing, enumerate every downstream effect: sibling tests asserting old behavior, docs describing the old shape, callers of a changed signature, backward compatibility. Green in its own check but breaking a caller, test, or doc is not done.
+- **Rules inviolable.** Work conflicts with a project rule (lint, style, convention) → surface it and propose the change, never silently work around.
 
 ## Method
 
-- Triage a choice before deliberating it. If an inviolable rule or the contract decides it, follow — do not re-derive. If it is reversible and low-stakes, pick the defensible option, state the assumption, proceed. Deliberate or ask only when genuinely open AND high-stakes/irreversible; re-litigating a settled choice is waste.
-- For anything beyond a one-line fix, plan before editing: which files, what change, what verifies it. Use the `brain-plan` skill when it spans >2 files or shared behavior — `brain-idea` first if the approach itself is undecided; just act on small reversible changes.
-- Before changing a shared symbol or behavior, find **all** call sites (your agent's reference/grep tool, `rg`, LSP references); don't edit the first match.
-- Don't guess APIs, signatures, or flags — check the source or docs first; if you can't verify, say so rather than asserting.
-- Every claim about code traces to source read this session — don't carry claims from parametric (model) memory, prior sessions, or stale files; cite the file. This bars the model's own memory — NOT the repo knowledge base at `<repo>/memory/`, which is the opposite (a read target; see Memory below).
-- When a check fails, read the full error and form a one-line hypothesis before editing; fix the cause, not the symptom. If `brain-worker` verification fails, debug methodically rather than patching symptoms (isolate the failure, form a hypothesis, fix the root cause, re-verify).
+- Triage before deliberating. Inviolable rule or contract decides it → follow, don't re-derive. Reversible + low-stakes → pick the defensible option, state the assumption, proceed. Deliberate or ask only when genuinely open AND high-stakes/irreversible.
+- Beyond a one-line fix, plan before editing: which files, what change, what verifies it. `brain-plan` when it spans >2 files or shared behavior; `brain-idea` first if the approach is undecided; just act on small reversible changes.
+- Before changing a shared symbol/behavior, find **all** call sites (reference/grep, `rg`, LSP); don't edit the first match.
+- Don't guess APIs, signatures, or flags — check source/docs first; if unverifiable, say so.
+- Every claim about code traces to source read this session — not parametric (model) memory, prior sessions, or stale files; cite the file. This bars the model's own memory — NOT the repo KB at `<repo>/memory/`, a read target (see Memory).
+- Check fails → read the full error, form a one-line hypothesis before editing; fix the cause, not the symptom.
 
 ## Action & scope
 
 - Default to acting on reversible, low-blast-radius changes.
 - Ask first when a change alters product behavior, breaks a public API, is hard to undo (migrations, deletions, schema/contract changes), or adds/removes a dependency.
-- Never without an explicit request: commit, push, amend, force, open PRs, or create new files/dependencies.
-- State assumptions before acting on them; ask when blocked.
-- Off-limits unless the task requires it: generated output, vendored code, lockfiles, unrelated diffs, and the user's existing changes.
-- Preserve architecture, style, and public APIs unless told otherwise.
+- Never without explicit request: commit, push, amend, force, open PRs, create new files/dependencies.
+- State assumptions before acting; ask when blocked.
+- Off-limits unless the task requires: generated output, vendored code, lockfiles, unrelated diffs, the user's existing changes.
+- Preserve architecture, style, public APIs unless told otherwise.
 
 ## Discovery
 
 - Read before write; search before assume. Match nearby conventions exactly.
 - Before editing a file, inspect its imports and immediate neighbors.
-- Take bounded slices of large files (offset/limit); never dump them whole. Size first (`wc -l`), then slice.
+- Size first (`wc -l`), then bounded slices (offset/limit); never dump large files whole.
 
 ## Memory (self-improving)
 
-A markdown knowledge base at `<repo>/memory/` records verified decisions and confirmed facts/corrections so prior learning is recallable instead of re-derived. Concept files (`entries/*.md`) are the canonical source; `index.md` is a derived directory-listing regenerated by `python3 .agents/skills/brain-memory/memory.py rebuild` (never hand-edited); `archive/` holds retired concepts.
+Markdown KB at `<repo>/memory/` records verified decisions and confirmed facts/corrections so prior learning is recallable instead of re-derived. `entries/*.md` canonical; `index.md` derived, regenerated by `python3 .agents/skills/brain-memory/memory.py rebuild` (never hand-edited); `archive/` holds retired concepts.
 
-- **Read the KB as the first read step of every task.** Before opening any source/test/doc for a target, grep `<repo>/memory/index.md` for the target's module name and the symbols it exposes; read every matched concept before acting. The grep is cheap and runs on every task; a full concept loads only on a hit (entries load on trigger, never wholesale). Triggers are broad — any task touching a named module, function, type, file, or area qualifies, not just edits to a public surface or a re-tried failure. Re-verify before trusting a hit: run `python3 .agents/skills/brain-memory/memory.py stale` and re-verify anything it lists. Skipping this re-derives learning the KB already holds — the same waste as ignoring a passing check. This is the recall side of self-improvement; the write side is the next bullet.
-- **Write on a memory event:** a retry after failure, a non-obvious fact confirmed from source/docs, a justified deviation from a stated rule, or a user correction. Hand each to the `brain-memory` skill, which applies the write gate (verified + load-bearing) and the one-in-one-out supersession rule.
-- **Boundary vs `brain-feedback`:** brain-feedback changes a rule (always-on text in AGENTS.md or a skill); brain-memory records a recallable decision or fact that does not change a rule. If it belongs in always-on config, brain-feedback owns it; otherwise brain-memory owns it.
+- **Read the KB first on every task.** Before opening any source/test/doc for a target, grep `<repo>/memory/index.md` for the target's module name and exposed symbols; read every matched concept before acting. Cheap grep every task; a full concept loads only on a hit. Triggers are broad — any task touching a named module, function, type, file, or area qualifies. Re-verify before trusting: run `python3 .agents/skills/brain-memory/memory.py stale` and re-verify anything listed.
+- **Write on a memory event:** retry after failure, non-obvious fact confirmed from source/docs, justified deviation from a stated rule, or user correction → hand to `brain-memory`, which applies the write gate (verified + load-bearing) and one-in-one-out supersession.
+- **Boundary vs `brain-feedback`:** feedback changes a rule (always-on text); memory records a recallable decision/fact that does not change a rule.
 
 ## Authoring agent files
 
-- `AGENTS.md`, agent/skill/command prompts, and config are consumed by agents, not humans. Write dense, imperative, trigger-focused prose; match each file type's format.
-- When a skill is added, renamed, removed, or materially changed, sync every reference to it in `AGENTS.md` and the sibling skills in the same pass — a dangling cross-reference is an unfinished edit (the `brain-author` skill enforces this).
+- `AGENTS.md`, agent/skill/command prompts, config = consumed by agents, not humans. Dense, imperative, trigger-focused; match each file type's format.
+- Skill added/renamed/removed/materially changed → sync every reference in `AGENTS.md` and sibling skills in the same pass. A dangling cross-reference is an unfinished edit (`brain-author` enforces).
 
 ## Shell & tool economy
 
-Tool choice by intent — reach for the lightest tool that returns the signal:
+Lightest tool that returns the signal:
 
 | Intent | Tool |
 |--------|------|
-| Read / edit / bounded slice of a known file | your agent's read/edit tools (offset+limit, not shell truncation) |
-| One-shot content search (where/what matches) | your agent's grep tool |
-| One-shot file lookup by name or glob | your agent's glob/find tool |
-| Matches as input to a pipeline (counts, cross-file aggregation) | `rg` / `fd` in a shell |
+| Read / edit / bounded slice of a known file | read/edit tools (offset+limit, not shell truncation) |
+| One-shot content search | grep tool |
+| One-shot file lookup by name/glob | glob/find tool |
+| Matches into a pipeline (counts, cross-file aggregation) | `rg` / `fd` in a shell |
 | Parse/transform JSON | `jq` |
-| Parse/transform YAML / frontmatter | `yq` |
-| Complex transforms or glue logic; fallback when no CLI fits | `python3 -c` |
+| Parse/transform YAML/frontmatter | `yq` |
+| Complex transforms/glue; fallback | `python3 -c` |
 
-- Batch independent read-only work as parallel tool calls in one message.
-- Make each shell call do as much as safely combinable: pipe and chain to replace round-trips.
-- Kill noise at the flag level so output is signal: `--no-pager`, `--color=never`/`NO_COLOR=1`, `-q`, `2>/dev/null`, `</dev/null`. Never invoke pagers, editors, or interactive prompts.
-- Multi-step and destructive: `set -euo pipefail`, `mkdir -p`, `--dry-run` first; `rm -rf` only with explicit intent.
+- Batch independent read-only work as parallel tool calls.
+- Pipe and chain to replace round-trips.
+- Kill noise at the flag level: `--no-pager`, `--color=never`/`NO_COLOR=1`, `-q`, `2>/dev/null`, `</dev/null`. Never invoke pagers/editors/interactive prompts.
+- Multi-step/destructive: `set -euo pipefail`, `mkdir -p`, `--dry-run` first; `rm -rf` only with explicit intent.
 - Web only for current external APIs or facts not in the repo.
 
 ## Hot paths
 
-Optimize speed and allocation only where a path is truly hot or the project's values demand it. Prefer readability everywhere else.
+Optimize speed/allocation only where a path is truly hot or the project demands it. Prefer readability everywhere else.
