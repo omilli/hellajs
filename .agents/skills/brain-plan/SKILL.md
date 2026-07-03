@@ -64,6 +64,7 @@ Before finalizing:
 - Every code change has matching scenarios.
 - Every public delta reflected in doc updates.
 - Deps ordered (Code before Tests before Docs; Config wherever its tooling demands).
+- Each unit is a vertical slice — its Code+Tests+Docs land and ship together. Resist horizontal (type-)batching across siblings: writing every unit's Code, then every unit's Tests, then every unit's Docs leaves half-built slices that can't ship or revert alone and buries integration failure until the end. Unit-at-a-time is the model; `brain-worker` finishes one slice before starting the next.
 - Inter-file deps: when one unit is incorrect/not-green unless another has landed, the dependent declares `depends_on: [sibling-basename, ...]`. **Hard deps only** — repo must be red/incoherent without it. Soft ordering stays in Strategy prose. Basenames resolve within the same topic folder.
 - Cross-module callers checked: for every public delta, find importers across the repo. A broken caller adds a task in that module, or the delta is backward-compatible by construction.
 - Test filenames/surfaces obey the project's test-naming guide — read it; name after the surface it prescribes, not the plan topic.
