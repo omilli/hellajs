@@ -6,95 +6,92 @@ description: >
 
 # Plan
 
-Turn a goal — or evidence map(s) handed up from discovery — into one or more plan files: contracts the `brain-worker` skill executes by ticking `[ ]` to `[x]`. Each file is one independently-shippable unit; units that depend on each other declare it in frontmatter (`depends_on`). The plan exists because "plan in your head, then edit" is where wrong-root-cause fixes and missed blast radii are born. Writing the contract forces the design and its full scope into the open before any code changes.
+Turn a goal — or evidence map(s) from discovery — into plan files: contracts `brain-worker` executes by ticking `[ ]` to `[x]`. One file = one independently-shippable unit; inter-dependent units declare it in frontmatter (`depends_on`). brain-plan produces the artifact; `brain-worker` executes it. `brain-idea` may precede (decide *what* before *how*); on `brain-worker` verification failure, debug methodically (isolate, one-line hypothesis, root cause, re-verify), don't patch symptoms. Governed by brain-prime.
 
-brain-plan produces the artifact; `brain-worker` executes it. `brain-idea` may precede planning (decide *what* before structuring *how*); if `brain-worker`'s verification fails, debug methodically (isolate the failure, form a one-line hypothesis, fix the root cause, re-verify) rather than patching symptoms. Two non-negotiables govern this skill (see `brain-prime`): rules inviolable (surface conflicts, never silent workarounds) and full blast radius.
+## Escape hatch
 
-## The escape hatch
-
-A single obvious edit does not need a plan — say so, make the change, verify, stop. Planning is for work where the scope, the blast radius, or the design is non-trivial. Do not formalize trivia.
+Single obvious edit → no plan. Say so, make the change, verify, stop. Don't formalize trivia.
 
 ## Phase 0 — Intake
 
-Receive a plain goal, a single evidence map, or a set of evidence maps from discovery. If evidence map(s), verify each carries:
+Plain goal, one evidence map, or a set of them. If evidence map(s), verify each carries:
 
-- **Gap** — one sentence: the target state (what is missing or wrong, phrased as what will be true).
-- **Scope hint** — where the change lives: `surface` (a public/exported symbol or a consumed contract) / `internal` / `docs` / `config` / `tests`. Plan re-verifies `surface` by reading the project's public exports; it does not trust the hint blindly.
-- **Citations** — one or more `{ file, anchor, what-it-shows }`. Anchors are function/type/heading names, not line numbers — names survive edits.
+- **Gap** — one sentence: target state (what's missing/wrong, phrased as what will be true).
+- **Scope hint** — `surface` (public/exported symbol or consumed contract) / `internal` / `docs` / `config` / `tests`. Plan re-verifies `surface` by reading public exports; doesn't trust the hint.
+- **Citations** — one or more `{ file, anchor, what-it-shows }`. Anchors are function/type/heading names, not line numbers.
 - **Type tag** — Code / Tests / Docs / Config.
 
-If scope or citations are missing, ask before proceeding. Do not plan into fog — every open question becomes a wrong assumption in the contract.
+Scope/citations missing → ask before proceeding. Don't plan into fog — every open question becomes a wrong assumption.
 
 ## Phase 1 — Decompose into shippable units
 
-Before any per-unit work, decide how many plan files this intake produces. **One file = one independently-shippable unit**: a change that could land and revert alone with the repo green and coherent. The blast-radius boundary is the split boundary.
+Decide how many plan files this intake produces. **One file = one independently-shippable unit**: a change that could land and revert alone with the repo green and coherent. Blast-radius boundary = split boundary.
 
-- Cluster the intake's evidence maps / sub-goals by shared blast radius. Two changes that touch the same files, or where one is incorrect or not-green without the other, are ONE unit. Two changes with independent blast radii are SEPARATE units.
+- Cluster by shared blast radius. Two changes touching the same files, or where one is incorrect/not-green without the other = ONE unit. Independent blast radii = SEPARATE units.
 - A Surface:yes change's Code+Tests+Docs (Phase 3) are one atomic unit — never split across files.
-- Don't over-split: if two units must land atomically (the repo is red or incoherent with only one), they are one unit. Don't under-split: a file with many tasks almost always means distinct units glued together — split them so each can be tracked, reviewed, and reverted independently.
-- Trivia (a single obvious edit) still uses the escape hatch, not a file.
+- Don't over-split: two units that must land atomically (repo red/incoherent with only one) = one unit. Don't under-split: one file with many tasks usually = distinct units glued together — split so each tracks/reviews/reverts independently.
+- Trivia (single obvious edit) → escape hatch, not a file.
 
-Outcome: a set of 1..N units. N=1 → Phases 2–5 run once, producing one file. N>1 → Phases 2–4 run once per unit, producing sibling files in one shared `plans/<package>/<category>/<topic>/` folder, and Phase 5 stitches the set together with dependencies.
+Outcome: 1..N units. N=1 → Phases 2–5 once, one file. N>1 → Phases 2–4 once per unit, sibling files in one shared `plans/<package>/<category>/<topic>/` folder; Phase 5 stitches with deps.
 
 ## Phase 2 — Surface fork (per unit)
 
-Determine whether the work changes the project's public surface: any exported symbol, any field on a type callers pass, any publicly consumed signature or documented behavior. This is factual — read the public exports (barrel, package entry, module index — whatever the project uses) and the cited types. Do not guess from the goal description.
+Does the work change the project's public surface (any exported symbol, any field on a type callers pass, any publicly consumed signature or documented behavior)? Factual — read the public exports (barrel, entry, module index) and cited types. Don't guess from the goal.
 
-- `yes` → the change has three views that must land together: **Code** + its **Tests** + its **Docs**. Scope all three.
-- `no` → a single task of the matching type. Tests-view and Docs-view fields still appear and justify the absence with a cited reason ("internal helper, not exported; existing tests cover the public surface").
+- `yes` → three views landing together: **Code** + **Tests** + **Docs**. Scope all three.
+- `no` → one task of the matching type. Tests-view and Docs-view still appear, justifying absence with a cited reason ("internal helper, not exported; existing tests cover the public surface").
 
-If the project has no notion of a public surface (scripts, scratch work, one-off tooling), Surface change is `no` by definition — skip the export read.
+No notion of public surface (scripts, scratch, one-off tooling) → Surface `no` by definition; skip the export read.
 
 ## Phase 3 — Contract crystallization
 
-Derive each artifact by applying the project's own rules (lint, style, config conventions — the project's equivalent of a style guide), not authorial intuition. The artifact is the output of that application:
+Derive each artifact by applying the project's own rules (lint, style, config conventions), not authorial intuition:
 
-- **Files** — each file to touch, with a content anchor (function/type/heading name + relative position), not a line number.
-- **The change / delta** — for Surface change: yes, the exact signature/shape change, plus one runnable usage example (if you cannot write the call, the design is wrong — and the example seeds the Docs task).
-- **Behavioral scenarios** (if tests in scope) — each scenario is one behavior, phrased as one test, so `brain-worker` transcribes compliant tests without re-deciding structure.
+- **Files** — each file to touch, with a content anchor (function/type/heading + relative position), not a line number.
+- **Change / delta** — for Surface: yes, the exact signature/shape change + one runnable usage example (if you can't write the call, the design is wrong; the example seeds the Docs task).
+- **Behavioral scenarios** (if tests in scope) — one behavior per scenario, phrased as one test, so `brain-worker` transcribes without re-deciding structure.
 - **Doc updates** (if docs in scope) — which file/section owns this, what content extends it.
-- **Definitions of Done** — binary items, each tied to a contract artifact: every Files entry → a DoD item; every scenario → a DoD item; every doc update → a DoD item; every delta line → a DoD item. The DoD is an exhaustive mirror of the contract — nothing in the contract goes unchecked.
+- **Definitions of Done** — binary items, each tied to a contract artifact: every Files entry → DoD item; every scenario → DoD item; every doc update → DoD item; every delta line → DoD item. DoD is an exhaustive mirror of the contract — nothing goes unchecked.
 
 ## Phase 4 — Strategy per task
 
-For each task, 2–4 sentences: the approach, the key decisions, the trade-offs considered and rejected. This is where design judgment lives so `brain-worker` does not re-exercise it. Keep it short — advisory, not a parse target. Add a short example if this is a user facing or API change.
+2–4 sentences per task: approach, key decisions, trade-offs considered and rejected. Where design judgment lives so `brain-worker` doesn't re-exercise it. Short — advisory, not a parse target. Add a short example if user-facing/API.
 
 ## Phase 5 — Cross-task consistency and blast radius
 
 Before finalizing:
 
 - Every code change has matching scenarios.
-- Every public delta is reflected in doc updates.
-- Dependencies are ordered (Code before Tests before Docs; Config wherever its tooling demands).
-- Inter-file dependencies: when one unit is incorrect or not-green unless another has landed, the dependent file declares it in frontmatter `depends_on: [sibling-basename, ...]`. Hard deps only — the repo must be red or incoherent without the dep. Soft ordering preference stays in Strategy prose, not the contract. Basenames resolve within the same topic folder.
-- Cross-module callers checked: for every public delta, find importers of the changed symbol across the repo. A broken caller adds a task in that module, or the delta is backward-compatible by construction.
-- Test filenames and surfaces obey the project's test-naming guide — read it; name files after the surface it prescribes, not the plan topic.
-- Coverage DoD is reachable from the Tests scope: a multi-branch Code delta (retry/abort/parse loops, validation throws) needs enough tests to hit the stated coverage. If the scenario count can't reach the DoD, widen Tests or relax the DoD explicitly — an unsatisfiable contract is a defect.
-- Surface inventories synced: adding, renaming, or removing a public symbol updates the project's own surface enumeration (AGENTS.md export/type tables, README API lists) — add a Files entry, or it goes stale.
+- Every public delta reflected in doc updates.
+- Deps ordered (Code before Tests before Docs; Config wherever its tooling demands).
+- Inter-file deps: when one unit is incorrect/not-green unless another has landed, the dependent declares `depends_on: [sibling-basename, ...]`. **Hard deps only** — repo must be red/incoherent without it. Soft ordering stays in Strategy prose. Basenames resolve within the same topic folder.
+- Cross-module callers checked: for every public delta, find importers across the repo. A broken caller adds a task in that module, or the delta is backward-compatible by construction.
+- Test filenames/surfaces obey the project's test-naming guide — read it; name after the surface it prescribes, not the plan topic.
+- Coverage DoD reachable from Tests scope: a multi-branch Code delta (retry/abort/parse loops, validation throws) needs enough tests to hit stated coverage. Can't reach DoD → widen Tests or relax DoD explicitly; an unsatisfiable contract is a defect.
+- Surface inventories synced: adding/renaming/removing a public symbol updates the project's surface enumeration (AGENTS.md export/type tables, README API lists) — add a Files entry, or it goes stale.
 
-Mismatches go back to Phase 3.
+Mismatches → back to Phase 3.
 
 ## Phase 6 — Propose, then hand to brain-worker
 
-Present the plan set. When a project `plans/` directory exists, write one file per unit to `plans/<package>/<category>/<topic>/<unit>.md` (folder per topic; unit-named files), each carrying frontmatter `depends_on:` if it has hard deps, and link the set inline; inline-only is the fallback when no such directory exists. State the dependency graph across the set.
+Present the plan set. When a project `plans/` dir exists, write one file per unit to `plans/<package>/<category>/<topic>/<unit>.md` (folder per topic; unit-named files), each with frontmatter `depends_on:` if it has hard deps, and link the set inline; inline-only is the fallback when no such dir exists. State the dep graph.
 
-For multi-file sets (N>1), also write `plans/<package>/<category>/<topic>/INDEX.md` with a top-level `# [ ] Plan set: <topic>` aggregate, the set's shared scope, and a bullet list linking each sibling file with a one-line description and its hard deps. This is the set-level entry point — `brain-worker` updates the aggregate as files are completed.
+For N>1, also write `plans/<package>/<category>/<topic>/INDEX.md`: top-level `# [ ] Plan set: <topic>` aggregate, shared scope, and a bullet list linking each sibling with a one-line description + hard deps. Set-level entry point — `brain-worker` updates it as files complete.
 
-On approval, hand off to the `brain-worker` skill — do not execute the tasks yourself unless the change was small enough to have used the escape hatch.
+On approval, hand to `brain-worker` — don't execute tasks yourself unless small enough to have used the escape hatch.
 
-Run the self-improvement track (`brain-prime` handoff gate) after handing off. This skill's friction signals: intake missing scope or citations you had to re-derive by re-reading source, a delta that broke a caller found late in Phase 5, or a unit split that was obviously wrong in hindsight. A design decision locked into the plan (signature shape, ordering rationale) worth recalling before the next plan on the same area is a memory event. Invoke `brain-feedback` (rule change) or `brain-memory` (recallable fact) yourself; do not make the user ask.
+Run the brain-prime handoff gate; friction signals: intake missing scope/citations you had to re-derive by re-reading source, a delta that broke a caller found late in Phase 5, or a unit split obviously wrong in hindsight.
 
 ## Self-check
 
-a. Does every contract artifact cite a source read this session (no claims carried from memory)?
-b. For Surface change: yes, do Code + Tests + Docs tasks all exist, sharing one contract?
-c. For Surface change: no, do Tests-view and Docs-view carry cited reasoning for their absence?
-d. Is every DoD item tied to a contract artifact, with no orphan checks?
-e. Were cross-module callers checked for every public delta?
-f. Could someone who never saw the intake execute each task from this plan alone? If not, the contract is incomplete.
-g. Is every file a single independently-shippable unit — no distinct units glued together, no atomic unit (e.g. a Surface:yes Code+Tests+Docs) over-split?
-h. Does every `depends_on` reference a real sibling file, and is each a true hard dep (the file is incorrect or not-green without it)?
-i. For multi-file sets (N>1), does an INDEX.md exist with the `[ ]` aggregate and sibling links?
-j. Are test files named after the surface per the project's test-naming guide (not the plan topic)?
-k. For a multi-branch Code delta, can the Tests scope actually reach the stated coverage DoD — widened or relaxed to match?
-l. Did I route friction and durable design decisions to `brain-feedback`/`brain-memory` instead of leaving it for the user to invoke?
+a. Every contract artifact cites source read this session (none from memory)?
+b. Surface: yes → Code + Tests + Docs all exist, sharing one contract?
+c. Surface: no → Tests-view and Docs-view carry cited reasoning for absence?
+d. Every DoD item tied to a contract artifact, no orphans?
+e. Cross-module callers checked for every public delta?
+f. Could someone who never saw the intake execute each task from this plan alone? (else contract incomplete)
+g. Every file a single independently-shippable unit — no distinct units glued, no atomic unit (Surface:yes Code+Tests+Docs) over-split?
+h. Every `depends_on` references a real sibling and is a true hard dep (file incorrect/not-green without it)?
+i. N>1 → INDEX.md exists with `[ ]` aggregate + sibling links?
+j. Test files named after surface per the test-naming guide (not plan topic)?
+k. Multi-branch Code delta → Tests scope can actually reach the coverage DoD (widened/relaxed)?
