@@ -12,6 +12,8 @@ Execute a plan task-by-task. The plan is the contract: shared scope block + type
 
 Frontmatter `depends_on: [sibling, ...]` → resolve each to a sibling file in the same folder and read its top marker. Any dep's top marker still `[ ]` → this file is **blocked**: don't start it. Report "blocked on <dep>"; pick an unblocked file from the set or hand back to the orchestrator. A dep flipping to `[x]` unblocks. Never execute a blocked file; never tick around a missing dep.
 
+Then slice vertically: in a multi-file set, finish the current unit — every task ticked, top marker `[x]` — before starting a sibling. Horizontal (type-)batching across units (all their Code, then all their Tests, then all their Docs) defeats the unit boundary: half-built slices can't ship or revert alone, and integration breaks surface late. Only a hard `depends_on` block justifies setting a unit down mid-flight.
+
 Inline plan (not a file), no frontmatter, or no deps → skip this gate (single-unit plan).
 
 ## Step 1 — Read the contract, run the fork gate, verify the task is needed
@@ -86,5 +88,6 @@ e. Type-appropriate verification actually passed, not assumed?
 f. Blast radius checked — green in every affected module, not just the task's?
 g. File had `depends_on` → ran the dep gate and refused to start while a dep was unfinished?
 h. Multi-file set (INDEX.md present) → updated the set aggregate after the last file?
+i. Multi-file set → finished each unit before starting a sibling (no horizontal type-batching across units)?
 
 Any no → task not done.
