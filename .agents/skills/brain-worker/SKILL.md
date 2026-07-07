@@ -76,18 +76,6 @@ Task header `## [ ] Task` → `## [x] Task` only when every DoD is `[x]` and the
 
 Before declaring done: nothing outside touched files regressed — run checks in every module whose code imports a changed symbol (not just the task's); coverage not below baseline; no doc now contradicts code; no sibling test now asserts dead behavior.
 
-Run the brain-prime handoff gate; highest-friction skill in the loop — signals fire often: a verification failure + the fix that worked, a wrong plan assumption you deviated from, rework from a symptom-patch instead of root-cause, a verification command hard to find. First two are classic memory events (retry-after-failure, confirmed-against-source); a repeated failure pattern is a feedback event.
+Run the brain-prime handoff gate; highest-friction skill in the loop — signals fire often: verification failure + the fix that worked → `brain-memory` (retry-after-failure); wrong plan assumption you deviated from → `brain-memory` (confirmed-against-source); rework from a symptom-patch instead of root-cause → `brain-feedback` (root-cause discipline slipped — repeated pattern); verification command hard to find → `brain-memory` (record it so the next run finds it); a repeated failure pattern across runs → `brain-feedback`.
 
-Report brief per-task status — done, already-correct, rejected (reason), or structurally-invalid (returned to brain-plan). Plan was a file → it now carries every tick + evidence; inline → include the ticked plan. Then:
-
-a. Ran the fork gate before any work?
-b. Established a green baseline (or correctly skipped for docs-only)?
-c. Contract-consistency gate passed — implementation matches the contract?
-d. Every tick backed by inline-cited evidence?
-e. Type-appropriate verification actually passed, not assumed?
-f. Blast radius checked — green in every affected module, not just the task's?
-g. File had `depends_on` → ran the dep gate and refused to start while a dep was unfinished?
-h. Multi-file set (INDEX.md present) → updated the set aggregate after the last file?
-i. Multi-file set → finished each unit before starting a sibling (no horizontal type-batching across units)?
-
-Any no → task not done.
+Report brief per-task status — done, already-correct, rejected (reason), or structurally-invalid (returned to brain-plan). Plan was a file → it now carries every tick + evidence; inline → include the ticked plan. Then confirm: blast radius checked — green in every module importing a changed symbol, not just the task's; multi-file set → set aggregate updated after the last file and each unit finished before starting a sibling (no horizontal type-batching); every tick backed by inline-cited evidence; type-appropriate verification actually ran, not assumed. Any gap → task not done.

@@ -1,7 +1,7 @@
 ---
 name: brain-audit
 description: >
-  Review, critique, check, or grade files against the project's OWN rules and report grounded findings. For each file, read the matching project rules (lint/style config, tsconfig, test-framework config, guides, CONTRIBUTING, AGENTS.md conventions), ground every finding in a runnable check or a quoted rule, assess the rules themselves for drift, and offer to hand fixes to `brain-plan`. Use ONLY for rule-grounded review — not for implementing features or fixing a known bug.
+  Check or grade files against the project's OWN rules (lint/style config, tsconfig, test-framework config, guides, CONTRIBUTING, AGENTS.md conventions) and report grounded findings — each finding a runnable check or a quoted rule, never taste. Assess the rules themselves for drift, and offer to hand fixes to `brain-plan`. Use ONLY for rule-grounded review — not for judgment-based critique (→ `brain-critic`), implementing features, or fixing a known bug.
 ---
 
 # Audit
@@ -44,4 +44,33 @@ A rule contradicting current code/config is itself a finding — **rule drift**.
 
 Findings grouped by file, severity-sorted (blockers first): rule/check, violation, severity + blast radius. Offer to hand actionable findings to `brain-plan` (it derives contracts; audit does not). Nothing actionable → say so, stop; a clean audit is valid.
 
-Run the brain-prime handoff gate; friction signals: needed rule set absent, rule self-contradiction, or Step 4 rule drift (drift proposals are feedback events → `brain-feedback`).
+## Worked example
+
+Illustrative findings on `src/utils/parse.ts` (synthetic). Shows both finding kinds — a runnable check and a quoted rule — plus a Step 4 drift proposal. Each finding grounds in a check or a rule, never taste; that is the audit discriminator.
+
+```
+src/utils/parse.ts
+
+BLOCKER
+  Check: `tsc --noEmit` → exit 1, TS2322 at `parseConfig`: string assigned to
+  `Config["timeout"]` (number). Expected 0, got 1 error.
+  Blast: every caller of `parseConfig` inherits the type hole; `src/api/start.ts`
+  already passes a string literal.
+
+SHOULD-FIX
+  Rule: `CONTRIBUTING.md#imports` says "one named export per file."
+  `parse.ts` exports three (`parseConfig`, `formatConfig`, `validateConfig`).
+  Blast: splits the module's surface across the index re-export; no single owner
+  for the shape.
+
+Rule-update proposal (drift)
+  `guides/code.md#errors` says "throw `Error` subclasses, never bare strings."
+  `parseConfig` already throws `ConfigError` (a subclass) and lint passes — the
+  guide predates the convention. Proposed edit: replace with "throw the project's
+  domain error classes (`src/errors/*`)." Reasoning: the guide contradicts the
+  codebase as of this read; silent deviation is how rules rot.
+```
+
+Hand actionable findings (BLOCKER + SHOULD-FIX) to `brain-plan`; the drift proposal routes to `brain-feedback` (it changes a rule, not a codebase fact).
+
+Run the brain-prime handoff gate; friction signals: needed rule set absent → `brain-memory` (recallable fact about this repo's config state); rule self-contradiction → `brain-feedback` (rule-update proposal); Step 4 rule drift → `brain-feedback` (already a drift proposal by construction).

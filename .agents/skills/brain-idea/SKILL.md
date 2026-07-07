@@ -1,7 +1,7 @@
 ---
 name: brain-idea
 description: >
-  Relentlessly stress-test a plan or idea with the user until every load-bearing decision is resolved into a concrete answer. Use when the user wants to brainstorm, get grilled on a plan, stress-test an idea, or talk through a design before building.
+  Relentlessly stress-test a plan or idea with the user until every load-bearing decision is resolved into a concrete answer. Use when the user wants to get grilled on a plan, pressure-test an idea, or talk through a design before building.
 ---
 
 # Brainstorm
@@ -26,7 +26,7 @@ Grill the user until the plan is concrete enough to build without surprise. Not 
 - Written spec captures the agreed plan.
 - Hand off. Not build mode — don't start implementing.
 
-Run the brain-prime handoff gate; friction signals: a codebase assumption you stated that the user overturned, or a load-bearing fork that took many rounds because the crux was mis-named.
+Run the brain-prime handoff gate; friction signals: codebase assumption you stated that the user overturned → `brain-memory` (recallable fact about this codebase); load-bearing fork that took many rounds because the crux was mis-named → `brain-feedback` (the find-the-crux method slipped — sharpen the skill's framing).
 
 ## Anti-patterns
 

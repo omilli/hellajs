@@ -81,18 +81,46 @@ For N>1, also write `plans/<package>/<category>/<topic>/INDEX.md`: top-level `# 
 
 On approval, hand to `brain-worker` — don't execute tasks yourself unless small enough to have used the escape hatch.
 
-Run the brain-prime handoff gate; friction signals: intake missing scope/citations you had to re-derive by re-reading source, a delta that broke a caller found late in Phase 5, or a unit split obviously wrong in hindsight.
+## Worked example
+
+Illustrative contract (synthetic; N=1, no hard deps — frontmatter omitted). Shows the Surface:yes fork landing Code+Tests+Docs as one atomic unit, each task carrying Files/Delta/Strategy and a binary DoD `brain-worker` ticks.
+
+```
+# [ ] Add `timeout` option to `fetchUser`
+
+## Scope
+- Gap: `fetchUser(id)` has no timeout; callers cannot bound latency.
+- Surface: yes — re-exported by `src/index.ts`; an optional param changes the public signature.
+- Type: Code + Tests + Docs (atomic — Surface:yes).
+
+## [ ] Code
+Files: `src/api/fetchUser.ts` — `fetchUser` signature.
+Delta: `fetchUser(id: string, opts?: { timeout?: number }): Promise<User>` — Promise.race the fetch against a rejection timer when `timeout` is set.
+Strategy: Options bag, not a positional param, so future options don't shift arity. Default unset preserves existing behavior. Runnable usage: `fetchUser("u1", { timeout: 5000 })`.
+
+- [ ] Accepts `opts.timeout`, applies via `Promise.race`.
+- [ ] Omitting `opts` or `opts.timeout` preserves existing behavior (no timer).
+- [ ] On timeout, rejects with a named `TimeoutError`.
+
+## [ ] Tests
+Files: `src/api/fetchUser.test.ts`.
+
+- [ ] Resolves normally when `timeout` unset (existing test still passes).
+- [ ] Rejects with `TimeoutError` when fetch exceeds `timeout`.
+- [ ] Resolves when fetch beats `timeout` (timer cleared, no leak).
+
+## [ ] Docs
+Files: `README.md` §API — `fetchUser` row; `docs/api.md` §`fetchUser`.
+
+- [ ] Signature shows `opts.timeout`, default noted as unset.
+- [ ] One usage example matching the Code delta's runnable call.
+- [ ] `TimeoutError` behavior documented.
+```
+
+Note the cross-references that make it a contract, not three loose tasks: every Code branch has a matching Tests scenario; the Docs usage example is the Code delta's runnable call; every DoD item ties to a contract artifact. `brain-worker` ticks each `[ ]` only with cited evidence, and the task header + top aggregate flip to `[x]` only when every item under them is `[x]`.
+
+Run the brain-prime handoff gate; friction signals: intake missing scope/citations you had to re-derive by re-reading source → `brain-feedback` (upstream handoff format should enforce completeness); delta that broke a caller found late in Phase 5 → `brain-memory` (recallable: changing X breaks caller Y); unit split obviously wrong in hindsight → `brain-feedback` (split heuristic didn't resolve — sharpen Phase 1).
 
 ## Self-check
 
-a. Every contract artifact cites source read this session (none from memory)?
-b. Surface: yes → Code + Tests + Docs all exist, sharing one contract?
-c. Surface: no → Tests-view and Docs-view carry cited reasoning for absence?
-d. Every DoD item tied to a contract artifact, no orphans?
-e. Cross-module callers checked for every public delta?
-f. Could someone who never saw the intake execute each task from this plan alone? (else contract incomplete)
-g. Every file a single independently-shippable unit — no distinct units glued, no atomic unit (Surface:yes Code+Tests+Docs) over-split?
-h. Every `depends_on` references a real sibling and is a true hard dep (file incorrect/not-green without it)?
-i. N>1 → INDEX.md exists with `[ ]` aggregate + sibling links?
-j. Test files named after surface per the test-naming guide (not plan topic)?
-k. Multi-branch Code delta → Tests scope can actually reach the coverage DoD (widened/relaxed)?
+Cross-module callers checked for every public delta; each task executable from this plan alone by someone who never saw the intake; every DoD item tied to a contract artifact with no orphans; every file a true independently-shippable unit (no distinct units glued, no over-split atomic Surface:yes Code+Tests+Docs); every `depends_on` references a real sibling and is a true hard dep (repo red/incoherent without it); N>1 → INDEX.md exists with `[ ]` aggregate + sibling links; test files named after surface per the test-naming guide; multi-branch Code delta → Tests scope can actually reach the coverage DoD.

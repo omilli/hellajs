@@ -75,4 +75,4 @@ Stage in `/tmp/` before copying to the output dir. Package the finished skill; r
 
 Re-check: frontmatter valid; `name` matches folder; `description` triggers correctly; body under ~500 lines; nothing stranded in the body that belongs in `references/`.
 
-Run the brain-prime handoff gate; friction signals: an anatomy/progressive-disclosure issue discovered mid-edit that the principles above didn't flag up front, or a trigger description that false-fires on an adjacent case.
+Run the brain-prime handoff gate; friction signals: anatomy/progressive-disclosure issue discovered mid-edit that the principles above didn't flag → `brain-feedback` (principles missed a case — sharpen this skill); trigger description that false-fires on an adjacent case → `brain-feedback` (narrow the description).

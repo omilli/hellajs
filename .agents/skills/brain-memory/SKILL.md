@@ -27,7 +27,7 @@ KB lives at the repo root (`<repo>/memory/`), separate from this skill folder (`
 
 Concept ID = filename stem. `title`/`description` live in frontmatter, not body. Quote any frontmatter value containing `: `, leading YAML indicators, or `"` — `memory.py` parses both bare and double-quoted scalars.
 
-**Command form.** Script travels with this skill at `.agents/skills/brain-memory/memory.py` (vendored). Invoke as `python3 .agents/skills/brain-memory/memory.py <cmd> [--root <dir>]`. Resolves the repo KB automatically (`<git-toplevel>/memory`); project-scoped write needs no `--root`. Pass `--root <dir>` only for an alternate store (e.g. a personal global KB outside this pack). One canonical copy per repo, no cross-project drift.
+**Command form.** Script travels with this skill at `.agents/skills/brain-memory/memory.py` (vendored). Invoke as `python3 .agents/skills/brain-memory/memory.py <cmd> [--root <dir>]`. Resolves the repo KB automatically (`<git-toplevel>/memory`); project-scoped write needs no `--root`. Pass `--root <dir>` only for an alternate store (e.g. a personal global KB outside this pack). One canonical copy per repo, no cross-project drift. **Before first use in a repo**, confirm the script path resolves — if the pack is installed somewhere other than `.agents/skills/`, locate `memory.py` (`fd memory.py` from the repo root, or `git ls-files | grep brain-memory/memory.py`) and substitute that path in every command below; the path is hardcoded throughout this skill and breaks silently if wrong.
 
 ## Step 1 — Confirm memory event, not feedback event
 
@@ -75,10 +75,4 @@ Archive exists only to serve the live supersession narrative (an active concept'
 
 ## Self-check
 
-a. Memory event, not a rule change for feedback?
-b. Write gate passed (verified + load-bearing + non-duplicate)?
-c. Frontmatter only earning fields (`type`/`title`/`description`/`tags`/`timestamp` + extensions), body `# Why` → `# Evidence`?
-d. Retiring a concept → `memory.py supersede` ran (archive move + `supersedes:` + `log.md` + rebuild), no two active disagreements?
-e. Loaded stale → re-verified, `last_confirmed` bumped or superseded?
-f. Write closed with `memory.py rebuild`? (the one remaining failure mode)
-g. No orphaned archive entries? (`memory.py prune` after supersession chains)
+Confirmed memory event, not a rule change for feedback; write gate passed (verified + load-bearing + non-duplicate); retiring a concept → `memory.py supersede` ran with no two active disagreements; write closed with `memory.py rebuild` (the one remaining failure mode); no orphaned archive entries after supersession chains.

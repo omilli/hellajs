@@ -54,9 +54,4 @@ Feedback proposes; it does not edit. A config change affects every future run �
 
 ## Self-check
 
-a. Every proposal cites a specific moment in THIS run, not hypothetical?
-b. Each routed correctly — kind (config vs rule) and scope (project vs global)?
-c. Clean run → said so, proposed nothing (no manufacturing)?
-d. Proposed, not wrote?
-e. Approved → handed to `brain-author` to apply + sync?
-f. Both scopes scanned — or anchored on the first finding?
+Every proposal cites a specific moment in THIS run (no hypothetical); both scopes scanned, not anchored on the first finding; clean run → said so and proposed nothing; proposed, not wrote; approved → handed to `brain-author` to apply + sync.

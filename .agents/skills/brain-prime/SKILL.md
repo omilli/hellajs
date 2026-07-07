@@ -6,6 +6,8 @@ description: >
 
 # Prime
 
+**If your `AGENTS.md` already carries tool/scope/discovery economy, those sections below are redundant — the loop, handoff gate, and memory protocol are the brain-specific load.**
+
 ## The loop
 
     brain-idea / brain-audit / brain-critic / brain-feature  (entry: decide WHAT)
@@ -17,6 +19,18 @@ description: >
     Self-improvement (cross-cutting — fires from ANY skill at completion, not a tail):
         friction -> brain-feedback  (propose config/skill edits)
         durable fact/decision -> brain-memory  (curate into the repo knowledge base)
+
+**Transition table** (lookup; the prose above is the why):
+
+| From | Trigger | To |
+|---|---|---|
+| entry (idea / audit / critic / feature) | findings to act on | `brain-plan` |
+| `brain-plan` | contract approved | `brain-worker` |
+| `brain-worker` | plan-gap (contract incomplete) | `brain-plan` |
+| `brain-worker` | design fork (contract wrong at a deeper layer) | `brain-idea` |
+| any skill | friction that should change always-on text | `brain-feedback` |
+| any skill | recallable verified fact/decision | `brain-memory` |
+| any skill | clean run | nothing |
 
 **Handoff gate** — after any substantive work, scan both tracks and invoke the matching skill yourself; do not wait for the user. Clean run → skip self-improvement; trivial change → skip everything.
 
