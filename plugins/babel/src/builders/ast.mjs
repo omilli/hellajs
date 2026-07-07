@@ -1,9 +1,14 @@
-// Convert intermediate component AST to Babel AST
-import { processComponentAttributes, setComponentNodeToBabel } from '../processors/attributes.mjs';
-import { buildHellaNode } from './vnode.mjs';
-import { buildComponentCall } from './component.mjs';
+import { processComponentAttributes, setComponentNodeToBabel } from "../processors/attributes.mjs";
+import { buildHellaNode } from "./vnode.mjs";
+import { buildComponentCall } from "./component.mjs";
 
-// Convert component node to Babel AST
+/**
+ * Convert intermediate component AST node to Babel AST.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("../parsers/html.mjs").HtmlNode} node
+ * @param {any[]} expressions
+ * @returns {import("@babel/core").Expression}
+ */
 export function componentNodeToBabel(t, node, expressions) {
   // Inject this function into processors/attributes.mjs to avoid circular dependency
   setComponentNodeToBabel(componentNodeToBabel);
@@ -14,7 +19,7 @@ export function componentNodeToBabel(t, node, expressions) {
   }
 
   // Handle string primitives
-  if (typeof node === 'string') {
+  if (typeof node === "string") {
     return t.stringLiteral(node);
   }
 
@@ -31,7 +36,7 @@ export function componentNodeToBabel(t, node, expressions) {
     // Build concatenation expression
     let result = parts[0];
     for (let i = 1; i < parts.length; i++) {
-      result = t.binaryExpression('+', result, parts[i]);
+      result = t.binaryExpression("+", result, parts[i]);
     }
     return result;
   }
@@ -41,8 +46,7 @@ export function componentNodeToBabel(t, node, expressions) {
   const isComponent = isSlotTag || /^[A-Z]/.test(node.tag);
 
   if (isComponent) {
-    const { props, on, e, bind, hooks, error } = processComponentAttributes(t, node.props || {}, expressions, true);
-    // For components, merge on/bind/hooks/error back into props
+    const { props, on, e, bind, hooks, error } = processComponentAttributes(t, node.props || {}, expressions);
     const allProps = [...props];
     if (on.length > 0) allProps.push(...on);
     if (e.length > 0) allProps.push(...e);
@@ -68,7 +72,7 @@ export function componentNodeToBabel(t, node, expressions) {
 
     return buildComponentCall(t, tagCallee, allProps, processedChildren);
   } else {
-    const { props, on, e, bind, hooks, error } = processComponentAttributes(t, node.props || {}, expressions, false);
+    const { props, on, e, bind, hooks, error } = processComponentAttributes(t, node.props || {}, expressions);
 
     // Process children recursively
     const processedChildren = [];

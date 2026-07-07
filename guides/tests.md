@@ -244,6 +244,7 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 - 100% of public API. Real-world integration patterns, not internals. Error and edge cases alongside happy paths. Each behavior tested exactly once in the most relevant file.
 - **Barrel rule**: when `index.ts` re-exports a utility (type guard, predicate, env-probe, iterator helper), the authoring package **must** cover it — even if consumers also exercise it. The barrel defines the public surface; coverage follows the barrel. Consumer coverage doesn't protect the author from silent contract drift (e.g. a predicate whose name suggests general semantics but whose implementation is narrow).
 - Never import non-public APIs. Functions/types not exported from `index.ts` are internal. Exports from `index.ts` (including testing utilities from `internal/` modules) are fair game.
+- **Carveout — `plugins/**` build plugins**: Plugin internals (`src/**/*.mjs`) may be imported directly in unit tests when (a) the helpers are pure functions whose edge cases are impractical to reach through the plugin's public transform surface (single default export or visitor), and (b) there is no `index.ts` barrel to re-export them from. This exemption is narrow: runtime packages under `packages/` must keep the strict barrel-exclusive rule; `plugins/**` is the only scope where the practical benefit of isolated parser/util tests outweighs the internal-import cost.
 
 ## Verification Checklist
 

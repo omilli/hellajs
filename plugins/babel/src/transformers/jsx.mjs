@@ -1,23 +1,25 @@
-// JSX element and fragment transformers
-import { FRAGMENT_TAG } from '../constants.mjs';
-import { getTagCallee } from '../utils/babel.mjs';
-import { processAttributes } from '../processors/attributes.mjs';
-import { filterEmptyChildren } from '../processors/children.mjs';
-import { buildHellaNode } from '../builders/vnode.mjs';
-import { buildComponentCall } from '../builders/component.mjs';
-import { handleStyleTag } from './style.mjs';
-import { ensureCreateComponentImport, ensureForEachImport, ensurePortalImport, ensureLazyImport } from '../utils/imports.mjs';
+import { FRAGMENT_TAG } from "../constants.mjs";
+import { getTagCallee } from "../utils/babel.mjs";
+import { processAttributes } from "../processors/attributes.mjs";
+import { filterEmptyChildren } from "../processors/children.mjs";
+import { buildHellaNode } from "../builders/vnode.mjs";
+import { buildComponentCall } from "../builders/component.mjs";
+import { handleStyleTag } from "./style.mjs";
+import { ensureCreateComponentImport } from "../utils/imports.mjs";
+import { PASSTHROUGH_INJECTORS } from "../utils/passthrough.mjs";
 
-// Passthrough components that need their own imports
-const PASSTHROUGH_COMPONENTS = { ForEach: ensureForEachImport, Portal: ensurePortalImport, Lazy: ensureLazyImport };
-
+/**
+ * Create JSX element and fragment transformers.
+ * @param {object} t
+ * @returns {{ JSXElement(path): void, JSXFragment(path): void }}
+ */
 export function createJSXTransformers(t) {
   return {
     JSXElement(path) {
       const opening = path.node.openingElement;
 
       // Auto-transform <style>...</style> to css(...)
-      if (t.isJSXIdentifier(opening.name, { name: 'style' })) {
+      if (t.isJSXIdentifier(opening.name, { name: "style" })) {
         handleStyleTag(t, path, opening);
         return;
       }
@@ -33,16 +35,12 @@ export function createJSXTransformers(t) {
 
       if (isComponent) {
         const program = path.findParent(p => t.isProgram(p));
-        if (program) {
-          // Check for passthrough components (ForEach, Portal, Lazy)
-          if (tagName && PASSTHROUGH_COMPONENTS[tagName]) {
-            PASSTHROUGH_COMPONENTS[tagName](t, program);
-          } else {
-            ensureCreateComponentImport(t, program);
-          }
+        if (tagName && PASSTHROUGH_INJECTORS[tagName]) {
+          PASSTHROUGH_INJECTORS[tagName](t, program);
+        } else {
+          ensureCreateComponentImport(t, program);
         }
 
-        // For components, merge on/bind/hooks/error back into props
         const allProps = [...props];
         if (on.length > 0) allProps.push(...on);
         if (e.length > 0) allProps.push(...e);

@@ -36,27 +36,47 @@ function ensureNamedImport(t, program, source, name) {
   );
 }
 
-// Ensure CSS import exists in program
+/**
+ * Ensure `import { css } from "@hellajs/css"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
 export function ensureCssImport(t, program) {
-  ensureNamedImport(t, program, '@hellajs/css', 'css');
+  ensureNamedImport(t, program, "@hellajs/css", "css");
 }
 
-// Ensure component import exists in program
+/**
+ * Ensure `import { component } from "@hellajs/dom"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
 export function ensureCreateComponentImport(t, program) {
-  ensureNamedImport(t, program, '@hellajs/dom', 'component');
+  ensureNamedImport(t, program, "@hellajs/dom", "component");
 }
 
-// Ensure ForEach import exists in program
+/**
+ * Ensure `import { ForEach } from "@hellajs/dom"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
 export function ensureForEachImport(t, program) {
-  ensureNamedImport(t, program, '@hellajs/dom', 'ForEach');
+  ensureNamedImport(t, program, "@hellajs/dom", "ForEach");
 }
 
-// Ensure Portal import exists in program
+/**
+ * Ensure `import { Portal } from "@hellajs/dom"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
 export function ensurePortalImport(t, program) {
-  ensureNamedImport(t, program, '@hellajs/dom', 'Portal');
+  ensureNamedImport(t, program, "@hellajs/dom", "Portal");
 }
 
-// Ensure Lazy import exists in program
+/**
+ * Ensure `import { Lazy } from "@hellajs/dom"` in the program.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} program
+ */
 export function ensureLazyImport(t, program) {
-  ensureNamedImport(t, program, '@hellajs/dom', 'Lazy');
+  ensureNamedImport(t, program, "@hellajs/dom", "Lazy");
 }

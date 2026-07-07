@@ -1,5 +1,5 @@
 // Parse HTML attributes from component strings
-import { parseTextContent } from './text.mjs';
+import { parseTextContent } from "./text.mjs";
 
 /**
  * @param {string | null | undefined} attrsStr
@@ -31,7 +31,7 @@ export function parseAttributes(attrsStr, expressions) {
         props[name] = { __slot: parseInt(singleSlotMatch[1]) };
       } else {
         const parts = parseTextContent(doubleQuoted, expressions);
-        if (parts.length === 1 && typeof parts[0] === 'string') {
+        if (parts.length === 1 && typeof parts[0] === "string") {
           props[name] = parts[0];
         } else {
           props[name] = parts;
@@ -43,7 +43,7 @@ export function parseAttributes(attrsStr, expressions) {
         props[name] = { __slot: parseInt(singleSlotMatch[1]) };
       } else {
         const parts = parseTextContent(singleQuoted, expressions);
-        if (parts.length === 1 && typeof parts[0] === 'string') {
+        if (parts.length === 1 && typeof parts[0] === "string") {
           props[name] = parts[0];
         } else {
           props[name] = parts;
