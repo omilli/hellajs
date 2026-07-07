@@ -1,5 +1,10 @@
 // Process attribute values
 
+/**
+ * Unwrap JSXExpressionContainer to get the actual value.
+ * @param {import("@babel/core").JSXAttribute["value"]} value
+ * @returns {import("@babel/core").Expression | import("@babel/core").JSXElement | null}
+ */
 export function processAttributeValue(value) {
   if (!value) return value;
 

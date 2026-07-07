@@ -1,7 +1,7 @@
 // HTML template parser for tagged template literals
-import { FRAGMENT_TAG } from '../constants.mjs';
-import { parseAttributes } from './attributes.mjs';
-import { parseTextContent } from './text.mjs';
+import { FRAGMENT_TAG } from "../constants.mjs";
+import { parseAttributes } from "./attributes.mjs";
+import { parseTextContent } from "./text.mjs";
 
 // Strip HTML comments, DOCTYPE, and CDATA sections before tokenization
 const SKIP_REGEX = /<!--[\s\S]*?-->|<!DOCTYPE[^>]*>|<!\[CDATA\[[\s\S]*?\]\]>/gi;
@@ -16,7 +16,7 @@ const SKIP_REGEX = /<!--[\s\S]*?-->|<!DOCTYPE[^>]*>|<!\[CDATA\[[\s\S]*?\]\]>/gi;
  */
 export function parseHTMLComponent(quasis, expressions) {
   // Build HTML string with slot markers
-  let htmlString = '';
+  let htmlString = "";
   let i = 0;
   const len = quasis.length;
 
@@ -69,7 +69,7 @@ export function parseHTML(html, expressions) {
     const textContent = match[5];
 
     // Convert __fragment__ back to FRAGMENT_TAG
-    if (tagName === '__fragment__') {
+    if (tagName === "__fragment__") {
       tagName = FRAGMENT_TAG;
     }
 

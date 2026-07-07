@@ -17,7 +17,7 @@ describe("babel", () => {
     });
 
     test("nested elements", () => {
-      const result = parseHTML('<div><span>text</span></div>', []);
+      const result = parseHTML("<div><span>text</span></div>", []);
       expect(result).toEqual([
         {
           tag: "div",
@@ -45,7 +45,7 @@ describe("babel", () => {
     });
 
     test("self-closing with space before slash", () => {
-      const result = parseHTML('<br />', []);
+      const result = parseHTML("<br />", []);
       expect(result).toEqual([
         {
           tag: "br",
@@ -56,7 +56,7 @@ describe("babel", () => {
     });
 
     test("multiple root elements", () => {
-      const result = parseHTML('<div>first</div><span>second</span>', []);
+      const result = parseHTML("<div>first</div><span>second</span>", []);
       expect(result).toEqual([
         {
           tag: "div",
@@ -72,7 +72,7 @@ describe("babel", () => {
     });
 
     test("text content", () => {
-      const result = parseHTML('<div>Hello World</div>', []);
+      const result = parseHTML("<div>Hello World</div>", []);
       expect(result).toEqual([
         {
           tag: "div",
@@ -83,7 +83,7 @@ describe("babel", () => {
     });
 
     test("whitespace handling", () => {
-      const result = parseHTML('<div>  spaced  </div>', []);
+      const result = parseHTML("<div>  spaced  </div>", []);
       expect(result).toEqual([
         {
           tag: "div",
@@ -94,7 +94,7 @@ describe("babel", () => {
     });
 
     test("empty attributes", () => {
-      const result = parseHTML('<input required disabled></input>', []);
+      const result = parseHTML("<input required disabled></input>", []);
       expect(result).toEqual([
         {
           tag: "input",
@@ -105,14 +105,14 @@ describe("babel", () => {
     });
 
     test("self-closing element inside parent", () => {
-      const result = parseHTML('<div><br /></div>', []);
+      const result = parseHTML("<div><br /></div>", []);
       const parent = result[0];
-      expect(typeof parent === "object" && parent?.tag).toBe('div');
-      expect(typeof parent === "object" && parent?.children?.[0]?.tag).toBe('br');
+      expect(typeof parent === "object" && parent?.tag).toBe("div");
+      expect(typeof parent === "object" && parent?.children?.[0]?.tag).toBe("br");
     });
 
     test("fragment syntax", () => {
-      const result = parseHTML('<><span>a</span><span>b</span></>', []);
+      const result = parseHTML("<><span>a</span><span>b</span></>", []);
       expect(result).toEqual([
         {
           tag: "$",
@@ -141,7 +141,7 @@ describe("babel", () => {
     });
 
     test("deeply nested elements", () => {
-      const result = parseHTML('<div><nav><ul><li>item</li></ul></nav></div>', []);
+      const result = parseHTML("<div><nav><ul><li>item</li></ul></nav></div>", []);
       expect(result).toEqual([
         {
           tag: "div",
@@ -170,8 +170,8 @@ describe("babel", () => {
     });
 
     test("root-level text content", () => {
-      const result = parseHTML('root text', []);
-      expect(result[0]).toBe('root text');
+      const result = parseHTML("root text", []);
+      expect(result[0]).toBe("root text");
     });
   });
 
@@ -188,8 +188,8 @@ describe("babel", () => {
 
     test("with expression", () => {
       const quasis = [
-        { value: { raw: '<div>' } },
-        { value: { raw: '</div>' } }
+        { value: { raw: "<div>" } },
+        { value: { raw: "</div>" } }
       ];
       const expressions = ["text"];
       const result = parseHTMLComponent(quasis, expressions);
@@ -201,7 +201,7 @@ describe("babel", () => {
     });
 
     test("multiple root returns fragment", () => {
-      const quasis = [{ value: { raw: '<div>a</div><span>b</span>' } }];
+      const quasis = [{ value: { raw: "<div>a</div><span>b</span>" } }];
       const result = parseHTMLComponent(quasis, []);
       expect(result).toEqual({
         tag: "$",
@@ -398,7 +398,7 @@ describe("babel", () => {
     });
 
     test("slot marker in attribute", () => {
-      const result = parseAttributes('class=__SLOT_0__', ["expr"]);
+      const result = parseAttributes("class=__SLOT_0__", ["expr"]);
       expect(result).toEqual({
         class: { __slot: 0 }
       });
@@ -412,7 +412,7 @@ describe("babel", () => {
     });
 
     test("boolean attributes", () => {
-      const result = parseAttributes('required disabled', []);
+      const result = parseAttributes("required disabled", []);
       expect(result).toEqual({
         required: true,
         disabled: true
@@ -433,7 +433,7 @@ describe("babel", () => {
         { value: { raw: '-suffix"' } }
       ];
       const expressions = ["middle"];
-      const htmlString = quasis[0]!.value.raw + '__SLOT_0__' + quasis[1]!.value.raw;
+      const htmlString = quasis[0]!.value.raw + "__SLOT_0__" + quasis[1]!.value.raw;
       const result = parseAttributes(htmlString, expressions);
       expect(result.class).toEqual(["prefix-", { __slot: 0 }, "-suffix"]);
     });

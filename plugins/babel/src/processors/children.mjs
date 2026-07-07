@@ -1,14 +1,19 @@
 // Process JSX children
 
-// Filter empty children from JSX
+/**
+ * Filter empty/whitespace children and spread props.children.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").JSXElement["children"]} children
+ * @returns {import("@babel/core").Expression[]}
+ */
 export function filterEmptyChildren(t, children) {
   const result = [];
 
   for (const child of children) {
     if (t.isJSXText(child)) {
-      if (typeof child.value === 'string' && child.value.trim()) {
+      if (typeof child.value === "string" && child.value.trim()) {
         // Normalize whitespace but preserve meaningful spaces
-        const normalized = child.value.replace(/\s+/g, ' ');
+        const normalized = child.value.replace(/\s+/g, " ");
         result.push(t.stringLiteral(normalized));
       }
     } else if (t.isJSXExpressionContainer(child)) {
@@ -22,8 +27,8 @@ export function filterEmptyChildren(t, children) {
 
       // Check if this is props.children - if so, spread it
       if (t.isMemberExpression(expression) &&
-        t.isIdentifier(expression.object, { name: 'props' }) &&
-        t.isIdentifier(expression.property, { name: 'children' })) {
+        t.isIdentifier(expression.object, { name: "props" }) &&
+        t.isIdentifier(expression.property, { name: "children" })) {
         // Return a spread element for props.children
         result.push(t.spreadElement(expression));
         continue;

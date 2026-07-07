@@ -1,8 +1,13 @@
-// Build component call AST
+import { PASSTHROUGH_NAMES } from "../constants.mjs";
 
-// Components that bypass component wrapping
-const PASSTHROUGH_COMPONENTS = new Set(['ForEach', 'Portal', 'Lazy']);
-
+/**
+ * Build component() or passthrough Tag() call expression.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").Expression} tagCallee
+ * @param {import("@babel/core").ObjectProperty[]} props
+ * @param {import("@babel/core").Expression[]} children
+ * @returns {import("@babel/core").CallExpression}
+ */
 export function buildComponentCall(t, tagCallee, props, children) {
   let finalProps;
 
@@ -11,7 +16,7 @@ export function buildComponentCall(t, tagCallee, props, children) {
     const allStringLiterals = children.every(child => t.isStringLiteral(child));
 
     const childrenValue = allStringLiterals
-      ? t.arrayExpression([t.stringLiteral(children.map(child => child.value).join(''))])
+      ? t.arrayExpression([t.stringLiteral(children.map(child => child.value).join(""))])
       : t.arrayExpression(children);
 
     finalProps = t.objectExpression([
@@ -29,7 +34,7 @@ export function buildComponentCall(t, tagCallee, props, children) {
 
   // Check if this is a passthrough component (direct call without component)
   const tagName = t.isIdentifier(tagCallee) ? tagCallee.name : null;
-  if (tagName && PASSTHROUGH_COMPONENTS.has(tagName)) {
+  if (tagName && PASSTHROUGH_NAMES.has(tagName)) {
     return t.callExpression(tagCallee, [finalProps]);
   }
 

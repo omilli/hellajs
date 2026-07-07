@@ -1,11 +1,13 @@
-// AST traversal utilities
+import { PASSTHROUGH_NAMES } from "../constants.mjs";
 
-// Passthrough components that don't need component
-const PASSTHROUGH_NAMES = new Set(['ForEach', 'Portal', 'Lazy']);
-
-// Find all passthrough component names in the AST
+/**
+ * Find all passthrough component names (ForEach, Portal, Lazy) in the intermediate AST.
+ * @param {any} node
+ * @param {Set<string>} [found]
+ * @returns {Set<string>}
+ */
 export function findPassthroughComponents(node, found = new Set()) {
-  if (!node || typeof node !== 'object') return found;
+  if (!node || typeof node !== "object") return found;
 
   if (node.tag && PASSTHROUGH_NAMES.has(node.tag)) {
     found.add(node.tag);
@@ -20,10 +22,14 @@ export function findPassthroughComponents(node, found = new Set()) {
   return found;
 }
 
-// Check if intermediate AST contains component tags (uppercase or dynamic)
-// Optionally exclude passthrough component names
+/**
+ * Check if the intermediate AST contains any component tags.
+ * @param {any} node
+ * @param {Set<string>} [excludeNames]
+ * @returns {boolean}
+ */
 export function containsComponent(node, excludeNames = new Set()) {
-  if (!node || typeof node !== 'object') return false;
+  if (!node || typeof node !== "object") return false;
 
   // Check if this node is a component (uppercase first letter or slot tag for dynamic)
   if (node.tag) {

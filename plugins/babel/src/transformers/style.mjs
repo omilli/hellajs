@@ -1,6 +1,12 @@
 // Handle style tag transformation
-import { ensureCssImport } from '../utils/imports.mjs';
+import { ensureCssImport } from "../utils/imports.mjs";
 
+/**
+ * Transform <style> JSX element to css() call.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").NodePath} path
+ * @param {import("@babel/core").JSXOpeningElement} opening
+ */
 export function handleStyleTag(t, path, opening) {
   // Extract props as options
   const options = {};
@@ -26,7 +32,7 @@ export function handleStyleTag(t, path, opening) {
   if (Object.keys(options).length > 0) {
     // Convert string options to correct types if possible
     const optsProps = Object.entries(options).map(([k, v]) =>
-      t.objectProperty(t.identifier(k), v === 'true' ? t.booleanLiteral(true) : v === 'false' ? t.booleanLiteral(false) : t.stringLiteral(v))
+      t.objectProperty(t.identifier(k), v === "true" ? t.booleanLiteral(true) : v === "false" ? t.booleanLiteral(false) : t.stringLiteral(v))
     );
     cssArgs.push(t.objectExpression(optsProps));
   }
@@ -37,7 +43,7 @@ export function handleStyleTag(t, path, opening) {
 
   path.replaceWith(
     t.callExpression(
-      t.identifier('css'),
+      t.identifier("css"),
       cssArgs
     )
   );

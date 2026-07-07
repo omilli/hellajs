@@ -1,6 +1,11 @@
 // Babel AST utility functions
 
-// Get tag callee from JSX name node
+/**
+ * Resolve JSXIdentifier/JSXMemberExpression to Babel Identifier/MemberExpression.
+ * @param {any} t
+ * @param {any} nameNode
+ * @returns {any}
+ */
 export function getTagCallee(t, nameNode) {
   if (t.isJSXIdentifier(nameNode)) {
     return t.identifier(nameNode.name);

@@ -1,14 +1,20 @@
-// Process JSX and component attributes
-import { processAttributeValue } from './values.mjs';
+import { processAttributeValue } from "./values.mjs";
 
 // Forward declaration - will be injected by builder/ast.mjs to avoid circular dependency
 let componentNodeToBabel = null;
 
+/** @param {(t: any, node: any, expressions: any[]) => any} fn */
 export function setComponentNodeToBabel(fn) {
   componentNodeToBabel = fn;
 }
 
-// Process JSX attributes into categorized arrays
+/**
+ * Categorize JSX attributes into six typed arrays.
+ * @param {typeof import("@babel/core").types} t
+ * @param {import("@babel/core").JSXAttribute[]} attributes
+ * @param {boolean} isComponent
+ * @returns {{ props: import("@babel/core").ObjectProperty[], on: import("@babel/core").ObjectProperty[], bind: import("@babel/core").ObjectProperty[], hooks: import("@babel/core").ObjectProperty[], e: import("@babel/core").ObjectProperty[], error: import("@babel/core").ObjectProperty[] }}
+ */
 export function processAttributes(t, attributes, isComponent) {
   if (!attributes.length) return { props: [], on: [], bind: [], hooks: [], e: [], error: [] };
 
@@ -28,54 +34,47 @@ export function processAttributes(t, attributes, isComponent) {
         ? attr.value.expression
         : attr.value;
 
-      // Handle boolean attributes (when value is null, set to true)
       if (value === null) {
         value = t.booleanLiteral(true);
       } else {
         value = processAttributeValue(value, isComponent, key);
       }
 
-      // Check for error: prefix for error config
-      if (key.startsWith('error:')) {
-        const errorKey = key.slice(6); // Remove 'error:' prefix
+      if (key.startsWith("error:")) {
+        const errorKey = key.slice(6);
         error.push(t.objectProperty(t.identifier(errorKey), value));
       }
-      // Check for bind: prefix for dynamic bindings
-      else if (key.startsWith('bind:')) {
-        const propName = key.slice(5); // Remove 'bind:' prefix
+      else if (key.startsWith("bind:")) {
+        const propName = key.slice(5);
         bind.push(t.objectProperty(t.identifier(propName), value));
       }
-      // Check for hook: prefix for hooks
-      else if (key.startsWith('hook:')) {
-        const hookName = key.slice(5); // Remove 'hook:' prefix
+      else if (key.startsWith("hook:")) {
+        const hookName = key.slice(5);
         hooks.push(t.objectProperty(t.identifier(hookName), value));
       }
-      // Check for e: prefix for direct (non-delegated) event handlers
-      else if (key.startsWith('e:')) {
-        const eventName = key.slice(2); // Remove 'e:' prefix
+      // e: prefix for direct (non-delegated) event handlers
+      else if (key.startsWith("e:")) {
+        const eventName = key.slice(2);
         e.push(t.objectProperty(t.identifier(eventName), value));
       }
-      // Check for on: prefix for event handlers
-      else if (key.startsWith('on:')) {
-        const eventName = key.slice(3); // Remove 'on:' prefix
+      else if (key.startsWith("on:")) {
+        const eventName = key.slice(3);
         on.push(t.objectProperty(t.identifier(eventName), value));
       } else {
-        // Regular prop
         // Convert camelCase data/aria to kebab-case
-        if (typeof key === 'string' && /^(data|aria)[A-Z]/.test(key)) {
-          key = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+        if (typeof key === "string" && /^(data|aria)[A-Z]/.test(key)) {
+          key = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
         }
 
-        const needsQuoting = typeof key === 'string' && /[-]/.test(key);
+        const needsQuoting = typeof key === "string" && /[-]/.test(key);
         props.push(t.objectProperty(
-          needsQuoting || (typeof key === 'string' && /^data-|^aria-/.test(key))
+          needsQuoting || (typeof key === "string" && /^data-|^aria-/.test(key))
             ? t.stringLiteral(key)
             : t.identifier(key),
           value
         ));
       }
     } else if (t.isJSXSpreadAttribute(attr)) {
-      // Spread goes into props
       props.push(t.spreadElement(attr.argument));
     }
   });
@@ -84,7 +83,12 @@ export function processAttributes(t, attributes, isComponent) {
 }
 
 
-// Process component attributes into categorized arrays
+/**
+ * Categorize html`` component attributes into six typed arrays.
+ * @param {object} t
+ * @param {Record<string, any>} props
+ * @param {any[]} expressions
+ */
 export function processComponentAttributes(t, props, expressions) {
   const propsArray = [], onArray = [], bindArray = [], hooksArray = [], eArray = [], errorArray = [];
 
@@ -97,42 +101,36 @@ export function processComponentAttributes(t, props, expressions) {
     } else if (value.__slot !== undefined) {
       processedValue = expressions[value.__slot];
     } else if (Array.isArray(value)) {
-      // Mixed content - convert to concatenation expression
       processedValue = componentNodeToBabel(t, value, expressions);
     } else {
       processedValue = t.stringLiteral(String(value));
     }
 
-    // Check for error: prefix for error config
-    if (key.startsWith('error:')) {
+    if (key.startsWith("error:")) {
       const errorKey = key.slice(6);
       errorArray.push(t.objectProperty(t.identifier(errorKey), processedValue));
     }
-    // Check for hook: prefix for hooks
-    else if (key.startsWith('hook:')) {
+    else if (key.startsWith("hook:")) {
       const hookName = key.slice(5);
       hooksArray.push(t.objectProperty(t.identifier(hookName), processedValue));
     }
-    // Check for e: prefix for direct (non-delegated) event handlers
-    else if (key.startsWith('e:')) {
+    // e: prefix for direct (non-delegated) event handlers
+    else if (key.startsWith("e:")) {
       const eventName = key.slice(2);
       eArray.push(t.objectProperty(t.identifier(eventName), processedValue));
     }
-    // Check for on: prefix for event handlers
-    else if (key.startsWith('on:')) {
+    else if (key.startsWith("on:")) {
       const eventName = key.slice(3);
       onArray.push(t.objectProperty(t.identifier(eventName), processedValue));
     }
-    // Check for bind: prefix for dynamic bindings
-    else if (key.startsWith('bind:')) {
+    else if (key.startsWith("bind:")) {
       const propName = key.slice(5);
       bindArray.push(t.objectProperty(t.identifier(propName), processedValue));
     } else {
-      // Regular prop
       // Handle kebab-case for data/aria
       let propKey = key;
       if (/^(data|aria)[A-Z]/.test(key)) {
-        propKey = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+        propKey = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
       }
 
       const needsQuoting = /[-:]/.test(propKey);

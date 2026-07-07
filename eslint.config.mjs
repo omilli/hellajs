@@ -56,6 +56,15 @@ export default tseslint.config(
 		},
 	},
 	{
+		files: ["plugins/**/*.{ts,tsx,js,jsx,mjs}"],
+		plugins: {
+			"@stylistic": stylistic,
+		},
+		rules: {
+			"@stylistic/quotes": ["error", "double", { avoidEscape: true, allowTemplateLiterals: "always" }],
+		},
+	},
+	{
 		files: ["**/*.mjs", "**/*.js"],
 		rules: {
 			"@typescript-eslint/no-require-imports": "off",

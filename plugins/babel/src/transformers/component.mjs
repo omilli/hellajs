@@ -1,17 +1,18 @@
-// Tagged component literal transformer
-import { parseHTMLComponent } from '../parsers/html.mjs';
-import { componentNodeToBabel } from '../builders/ast.mjs';
-import { containsComponent, findPassthroughComponents } from '../utils/traversal.mjs';
-import { ensureCreateComponentImport, ensureForEachImport, ensurePortalImport, ensureLazyImport } from '../utils/imports.mjs';
-
-// Passthrough components that need their own imports
-const PASSTHROUGH_IMPORTS = { ForEach: ensureForEachImport, Portal: ensurePortalImport, Lazy: ensureLazyImport };
-
+import { parseHTMLComponent } from "../parsers/html.mjs";
+import { componentNodeToBabel } from "../builders/ast.mjs";
+import { containsComponent, findPassthroughComponents } from "../utils/traversal.mjs";
+import { ensureCreateComponentImport } from "../utils/imports.mjs";
+import { PASSTHROUGH_INJECTORS } from "../utils/passthrough.mjs";
+/**
+ * Create transformer for html`` tagged template literals.
+ * @param {typeof import("@babel/core").types} t
+ * @returns {{ TaggedTemplateExpression(path): void }}
+ */
 export function componentTransformer(t) {
   return {
     TaggedTemplateExpression(path) {
       // Only transform html`` components
-      if (path.node.tag.name !== 'html') return;
+      if (path.node.tag.name !== "html") return;
 
       const { quasis, expressions } = path.node.quasi;
 
@@ -20,19 +21,13 @@ export function componentTransformer(t) {
 
       const program = path.findParent(p => t.isProgram(p));
 
-      // Ensure imports for passthrough components
       const passthroughNames = findPassthroughComponents(ast);
       for (const name of passthroughNames) {
-        if (program && PASSTHROUGH_IMPORTS[name]) {
-          PASSTHROUGH_IMPORTS[name](t, program);
-        }
+        PASSTHROUGH_INJECTORS[name](t, program);
       }
 
-      // Check if we need to import component (for non-passthrough components)
       if (containsComponent(ast, passthroughNames)) {
-        if (program) {
-          ensureCreateComponentImport(t, program);
-        }
+        ensureCreateComponentImport(t, program);
       }
 
       // Convert to clean Babel AST
