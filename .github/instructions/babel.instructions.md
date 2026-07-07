@@ -148,7 +148,7 @@ For components, **all six category arrays are merged into a single `props` objec
 Grounded in tests — verify any change against these:
 
 - **`component`, not `componentScope`** — wrap identifier is `component` from `@hellajs/dom`.
-- **Passthroughs: `ForEach`, `Portal`, `Lazy`** — three names, mirrored in `jsx.mjs`, `component.mjs`, `builders/component.mjs`, `utils/traversal.mjs`.
+- **Passthroughs: `ForEach`, `Portal`, `Lazy`** — three names, single-sourced in `constants.mjs` (`PASSTHROUGH_NAMES` set) and `utils/passthrough.mjs` (`PASSTHROUGH_INJECTORS` map).
 - **Six attribute categories** — `error:` and `e:` exist alongside `on:` / `bind:` / `hook:`.
 - **`e:` vs `on:`** — direct vs delegated events; both can appear on the same element (`<div e:click={direct} on:click={delegated} />`).
 - **`hook:` in, `hooks` out** — input prefix is singular `hook:`, output object key is plural `hooks`.
@@ -171,11 +171,11 @@ Grounded in tests — verify any change against these:
 
 ## Tests
 
-Five files under `tests/`: `transform.test.ts` (full pipeline), `processor.test.ts` (attribute/child/value processing), `builder.test.ts` (`buildHellaNode`, `buildComponentCall`, `componentNodeToBabel`), `parser.test.ts` (`parseHTML`, `parseHTMLComponent`, `parseAttributes`, `parseTextContent`), `utility.test.ts` (`getTagCallee`, `findPassthroughComponents`, `containsComponent`).
+Six files under `tests/`: `transform.test.ts` (full pipeline), `processor.test.ts` (attribute/child/value processing), `builder.test.ts` (`buildHellaNode`, `buildComponentCall`, `componentNodeToBabel`), `parser.test.ts` (`parseHTML`, `parseHTMLComponent`, `parseAttributes`, `parseTextContent`), `tag-callee.test.ts` (`getTagCallee`), `traversal.test.ts` (`findPassthroughComponents`, `containsComponent`).
 
 - **Helpers** — `transformJSX(code)` runs `babel.transformSync` with `configFile: false` and the plugin; `normalize(output)` collapses whitespace for full-output equality asserts; `getNamedImports(code, source)` regex-extracts specifier names.
-- **Style** — integration-style: most tests exercise the full transform and assert either `toContain` on substrings or `toBe` on `normalize()` output. Some tests import internals directly from `src/**/*.mjs`.
-- **Run** — `bun coverage babel` (bundle + coverage + lint). **NEVER run `bun test` directly — it runs against stale bundles.** Follow `guides/tests.md`; never import non-public APIs.
+- **Style** — integration-style: most tests exercise the full transform and assert either `toContain` on substrings or `toBe` on `normalize()` output. Some tests import internals directly from `src/**/*.mjs` — this is a documented carveout (see `guides/tests.md` §Coverage, `plugins/**` rule).
+- **Run** — `bun coverage babel` (bundle + coverage + lint). **NEVER run `bun test` directly — it runs against stale bundles.**
 - **Coverage target** — `dist/` bundles (per root `AGENTS.md`); the babel plugin is measured on its built output.
 
 ## Performance notes (verified)
