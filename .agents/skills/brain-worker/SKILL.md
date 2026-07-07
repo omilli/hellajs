@@ -70,7 +70,7 @@ For each verified DoD item: tick `[x]` + append a short note citing evidence —
 
 Task header `## [ ] Task` → `## [x] Task` only when every DoD is `[x]` and the consistency gate passed. Even one item unmet/unverifiable → header stays `[ ]`. No third marker. After ticking, recompute the aggregate: zero `[ ]` task headers → top marker flips to `[x]`; else stays `[ ]`.
 
-**Set aggregate (multi-file set):** same folder has an `INDEX.md` → read it to find siblings. After completing this file, scan every sibling's top marker; all `[x]` → flip `INDEX.md`'s top marker `[ ]` → `[x]`.
+**Set aggregate (multi-file set):** same folder has an `index.md` → read it to find siblings. After completing this file, scan every sibling's top marker; all `[x]` → flip `index.md`'s top marker `[ ]` → `[x]`.
 
 ## Step 4 — Blast-radius check and report
 

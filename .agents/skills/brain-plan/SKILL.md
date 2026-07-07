@@ -77,7 +77,7 @@ Mismatches → back to Phase 3.
 
 Present the plan set. When a project `plans/` dir exists, write one file per unit to `plans/<package>/<category>/<topic>/<unit>.md` (folder per topic; unit-named files), each with frontmatter `depends_on:` if it has hard deps, and link the set inline; inline-only is the fallback when no such dir exists. State the dep graph.
 
-For N>1, also write `plans/<package>/<category>/<topic>/INDEX.md`: top-level `# [ ] Plan set: <topic>` aggregate, shared scope, and a bullet list linking each sibling with a one-line description + hard deps. Set-level entry point — `brain-worker` updates it as files complete.
+For N>1, also write `plans/<package>/<category>/<topic>/index.md`: top-level `# [ ] Plan set: <topic>` aggregate, shared scope, and a bullet list linking each sibling with a one-line description + hard deps. Set-level entry point — `brain-worker` updates it as files complete.
 
 On approval, hand to `brain-worker` — don't execute tasks yourself unless small enough to have used the escape hatch.
 
@@ -123,4 +123,4 @@ Run the brain-prime handoff gate; friction signals: intake missing scope/citatio
 
 ## Self-check
 
-Cross-module callers checked for every public delta; each task executable from this plan alone by someone who never saw the intake; every DoD item tied to a contract artifact with no orphans; every file a true independently-shippable unit (no distinct units glued, no over-split atomic Surface:yes Code+Tests+Docs); every `depends_on` references a real sibling and is a true hard dep (repo red/incoherent without it); N>1 → INDEX.md exists with `[ ]` aggregate + sibling links; test files named after surface per the test-naming guide; multi-branch Code delta → Tests scope can actually reach the coverage DoD.
+Cross-module callers checked for every public delta; each task executable from this plan alone by someone who never saw the intake; every DoD item tied to a contract artifact with no orphans; every file a true independently-shippable unit (no distinct units glued, no over-split atomic Surface:yes Code+Tests+Docs); every `depends_on` references a real sibling and is a true hard dep (repo red/incoherent without it); N>1 → index.md exists with `[ ]` aggregate + sibling links; test files named after surface per the test-naming guide; multi-branch Code delta → Tests scope can actually reach the coverage DoD.
