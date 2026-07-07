@@ -1,5 +1,10 @@
 # Memory Update Log
 
+## 2026-07-07
+* **Creation**: Added concept [006](entries/006.md) (type: decision).
+* **Creation**: Added concept [007](entries/007.md) (type: decision).
+* **Update**: Audit — entries 005/006/007 reframed to mark SSR track as DECIDED-but-UNBUILT (prose had presented planned work as shipped). Entry 005 update paragraph rewritten; path prefixes corrected (internal/render.ts, internal/lifecycle.ts). Deleted stale uppercase INDEX.md (script writes lowercase index.md). Rebuilt index.md.
+
 ## 2026-07-03
 * **Creation**: Added concept [004](entries/004.md) (type: decision).
 * **Creation**: Added concept [005](entries/005.md) (type: decision).
