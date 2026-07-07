@@ -61,13 +61,6 @@ After any edit that adds/renames/removes/materially changes a skill, search AGEN
 
 ## Self-check
 
-a. Read always-loaded neighbors and cut redundancy?
-b. Every claim grounded (source for codebase claims; real workflow for skill claims) — nothing from the old file on trust?
-c. Format per block, no single-child wrappers, no wholesale XML where markdown suffices?
-d. Rules guide → decision trees + rules + verification checklist + Decision Precedence all present?
-e. File matches its own conventions exactly (one style throughout)?
-f. Skill → description fires right, doesn't false-fire?
-g. Density gate ran — every line earning its cost?
-h. Synced every reference to the changed skill in AGENTS.md and siblings?
+Every claim grounded in source or real workflow — nothing from the old file on trust; density gate ran (every line earning its cost); skill description fires right with no false-fire; every cross-reference to the changed skill synced across AGENTS.md and siblings.
 
-Run the brain-prime handoff gate; friction signals: redundancy with always-loaded context found only at the density gate (Step 4 should have caught it at Step 1), a stale cross-reference surfaced in Step 6, or a format choice that had to be re-done.
+Run the brain-prime handoff gate; friction signals: redundancy with always-loaded context found only at the density gate (Step 4 should have caught it at Step 1) → `brain-feedback` (Step 1 neighbor read didn't surface it — sharpen the read); stale cross-reference surfaced in Step 6 → `brain-feedback` (sync rule didn't catch it — strengthen); format choice that had to be re-done → `brain-feedback` (decision tree didn't resolve first pass).

@@ -1,7 +1,7 @@
 ---
 name: brain-critic
 description: >
-  Fairly critique, review, or grade code for over-engineering, unnecessary complexity and abstraction, tight coupling, dead or duplicate code, misleading naming or file layout, API/interface design (parameter names, order, types, return shapes, and the contract callers learn), and correctness smells — the judgment-based review that `brain-audit` deliberately excludes (audit is rule-grounded; this is the taste that has no lint rule behind it). Every finding passes a cost gate: it names a concrete cost (it breaks, hampers, misleads, or bloats) and cites source read this session. Use when asked to critique, review for code smells, flag over-engineering/complexity, or assess API/interface design. Use ONLY for judgment-based critique — route any finding backed by a runnable check or quoted project rule to `brain-audit` instead.
+  Judge code for over-engineering, unnecessary complexity and abstraction, tight coupling, dead or duplicate code, misleading naming or file layout, API/interface design (parameter names, order, types, return shapes, and the contract callers learn), and correctness smells — the judgment-based review with no lint rule behind it (`brain-audit` owns rule-grounded review; this owns taste). Every finding passes a cost gate: it names a concrete cost (it breaks, hampers, misleads, or bloats) and cites source read this session. Use when asked to critique, review for code smells, flag over-engineering/complexity, or assess API/interface design. Use ONLY for judgment-based critique — route any finding backed by a runnable check or quoted project rule to `brain-audit` instead.
 ---
 
 # Critic
@@ -63,4 +63,33 @@ Before reporting:
 
 Findings grouped by file, severity-sorted (Critical first): lens, the single named cost, file + anchor, one-line evidence, severity + blast radius, suggested direction (one sentence — not the fix contract). Offer to hand actionable findings to `brain-plan` (it scopes fixes; critic does not write the contract). Nothing clears the cost gate → say so, stop; a clean critique is valid.
 
-Run the brain-prime handoff gate; friction signals: a smell that needed careful routing to `brain-audit` because the rule/skill boundary was unclear, or a target whose callers were hard to locate (grep missed importers).
+## Worked example
+
+Illustrative findings on `src/api/client.ts` (synthetic). Two findings across two lenses, each clearing the cost gate by naming one primary cost (Breaks / Hampers) with cited evidence. "I'd write it differently" without a named cost → dropped, not reported.
+
+```
+src/api/client.ts
+
+CRITICAL
+  Lens: correctness smells. Cost: Breaks.
+  `fetchRetry` swallows non-2xx as `null` instead of throwing; callers can't
+  tell "no data" from "server error."
+  Evidence: returns `null` in both the `!res.ok` and the empty-`res.json()`
+  branches (read this session).
+  Blast: 3 callers (`getUser`, `getOrg`, `getRepo`) check `=== null` and return
+  empty objects — failures are invisible.
+  Direction: throw `FetchError` on non-2xx; let callers decide. No sentinel.
+
+MAJOR
+  Lens: complexity & coupling. Cost: Hampers.
+  `Client` is a god-object — auth, retry, cache, and serialization all mutate
+  `this`; adding a cache strategy touches the auth init path.
+  Evidence: constructor calls `_initAuth`, `_initCache`, `_initRetry` in
+  sequence; cache reads happen inside retry hooks.
+  Blast: any change to caching requires reasoning about retry timing.
+  Direction: extract `Cache` and `RetryPolicy` as composed dependencies.
+```
+
+Hand actionable findings to `brain-plan` (it scopes the fix; critic stops at direction). A file with no cost-gated finding reports nothing — silence is valid, not a failure.
+
+Run the brain-prime handoff gate; friction signals: smell that needed careful routing to `brain-audit` because the rule/skill boundary was unclear → `brain-feedback` (boundary deserves a clarifying edit); target whose callers were hard to locate (grep missed importers) → `brain-memory` (recallable technique for this codebase's import shape).

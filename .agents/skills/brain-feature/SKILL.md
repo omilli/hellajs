@@ -1,7 +1,7 @@
 ---
 name: brain-feature
 description: >
-  Surface grounded enhancement ideas for a codebase or module, then hand each viable one to `brain-plan` as an evidence map. Use when asked to brainstorm, propose, or surface feature/enhancement ideas. Reads the source, tests, and docs (plus any comparison/competitive doc if present) to mine evidence-backed gaps. Every idea must cite a file, a missing test, a missing doc, or a comparison row — an idea proposed from memory is fabrication.
+  Surface grounded enhancement ideas for a codebase or module, then hand each viable one to `brain-plan` as an evidence map. Use when asked to propose or surface feature/enhancement ideas, or mine a codebase for what's missing. Reads the source, tests, and docs (plus any comparison/competitive doc if present) to mine evidence-backed gaps. Every idea must cite a file, a missing test, a missing doc, or a comparison row — an idea proposed from memory is fabrication.
 ---
 
 # Feature
@@ -70,20 +70,36 @@ Ask which to pursue, then hand each to `brain-plan` as an **evidence map**. Feat
 
 Let `brain-plan` ask its own clarifying questions — don't pre-answer. Feature ideas usually need scope narrowed (public API surface, backward compat, tests/docs inclusion) before becoming a contract.
 
+## Worked example
+
+Illustrative handoff to `brain-plan` from the `src/api/` target (synthetic). Two Pursue ideas with different scope hints and type tags. Every gap cites a Source read this session with an Anchor (name); "(missing)" marks an absent test/doc — itself evidence. An idea with no citation is fabrication and does not get handed off.
+
+```
+Target: src/api/  →  plans/src/api/
+
+Idea 1 — expose retry count on the public surface
+  Gap:      `fetchRetry` hardcodes 3 retries; callers handling flaky endpoints
+            can't tune it.
+  Scope:    surface — `fetchRetry` is re-exported by `src/index.ts`.
+  Citations:
+    - { src/api/client.ts, anchor: fetchRetry, shows: `MAX_RETRIES = 3` constant }
+    - { tests/client.test.ts, anchor: (missing), shows: no test exercises retry-count }
+  Type:     Code
+
+Idea 2 — document the cache invalidation contract
+  Gap:      `Client` cache invalidates on TTL only; no doc tells callers when
+            stale data may surface.
+  Scope:    docs — `docs/api.md` exists but has no cache section.
+  Citations:
+    - { src/api/client.ts, anchor: _initCache, shows: TTL-only, no manual purge hook }
+    - { docs/api.md, anchor: (missing §Cache), shows: cache behavior undocumented }
+  Type:     Docs
+```
+
+`brain-plan` re-verifies the scope hint against the public entry, then derives each contract. Feature stops here — it does not write plan files.
+
 ## Step 5 — Self-check before handing off
 
-For each **Pursue**:
+For each **Pursue**: every Observation cites Source + Anchor from this session (no memory, no fabrication); scope hint matches the cited file's actual location (surface only if re-exported by the public entry or on a consumer-passed public type); Type tag exactly one of Code/Tests/Docs/Config; internal/private dirs and comparison doc (if present) read in full; `brain-plan` asked its own clarifying questions, not pre-answered. Any gap → fix before handing off.
 
-a. Every Observation cites ≥1 Source from this session — no memory, no fabrication?
-b. Every citation carries an Anchor (name), not just a file path?
-c. Scope hint consistent with the cited file's location (surface only if re-exported by the public entry or on a consumer-passed public type)?
-d. Every Idea consistent with the conventions/guides read in Step 1?
-e. Type tag exactly one of Code/Tests/Docs/Config?
-f. Internal/private dirs read in full (if they exist)?
-g. Comparison doc (if present) read in full — every features-matrix row and honest-gap sentence?
-h. Public entry/barrel read (arbiter of "surface change")?
-i. `brain-plan` asked its own clarifying questions, not pre-answered?
-
-Any no → fix before handing off.
-
-Run the brain-prime handoff gate; friction signals: a convention gap that blocked proposing ideas, or a target whose public surface had to be re-derived because no barrel/entry existed.
+Run the brain-prime handoff gate; friction signals: convention gap that blocked proposing ideas → `brain-feedback` (skill should handle absent conventions more explicitly); target whose public surface had to be re-derived because no barrel/entry existed → `brain-memory` (recallable fact about this codebase's structure).
