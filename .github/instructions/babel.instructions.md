@@ -8,7 +8,7 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html\
 
 ## Mental model
 
-- **JSX path**: `JSXElement` / `JSXFragment` visitors walk Babel's parsed JSX AST and `path.replaceWith` either a HellaNode object expression, a `component(Tag, props)` call, a passthrough `Tag(props)` call, or a `css(...)` call.
+- **JSX path**: `JSXElement` / `JSXFragment` visitors walk Babel's parsed JSX AST and `path.replaceWith` either a HellaNode object expression, a `component(Tag, props)` call, or a passthrough `Tag(props)` call.
 - **`html\`\`` path**: `TaggedTemplateExpression` visitor (only when `tag.name === 'html'`) parses the template string into an intermediate AST, then converts it to the same Babel AST the JSX path emits. Single regex tokenizer + stack-based parser; expressions become `__SLOT_N__` markers during parsing and are substituted during AST conversion.
 - **Attribute categorization is shared** by both paths but splits into **six** categories (see table below).
 - **Components are wrapped with `component(Tag, props)`** — `component` is auto-imported from `@hellajs/dom`. Three passthrough components (`ForEach`, `Portal`, `Lazy`) bypass the wrapper and call `Tag(props)` directly.
@@ -18,9 +18,8 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html\
 | File | Responsibility |
 |---|---|
 | `index.mjs` | Plugin entry; merges JSX + component visitors; inherits `@babel/plugin-syntax-jsx`. |
-| `src/transformers/jsx.mjs` | `JSXElement` + `JSXFragment` visitors; tag-type dispatch (style / component / element / fragment). |
+| `src/transformers/jsx.mjs` | `JSXElement` + `JSXFragment` visitors; tag-type dispatch (component / element / fragment). |
 | `src/transformers/component.mjs` | `TaggedTemplateExpression` visitor for `html\`\``; orchestrates parse → ensure imports → convert → replace. |
-| `src/transformers/style.mjs` | `<style>` JSX → `css(styles, options?)` call; injects `css` import. |
 | `src/parsers/html.mjs` | `parseHTML` + `parseHTMLComponent`: strip comments/DOCTYPE/CDATA, tokenize via single regex, stack-based nest tracking, fragment normalization. |
 | `src/parsers/attributes.mjs` | `parseAttributes`: regex over attribute string; handles double/single/unquoted values + `__SLOT_N__` markers + mixed-content arrays. |
 | `src/parsers/text.mjs` | `parseTextContent`: splits text on `__SLOT_N__` markers, preserving text before/after/between. |
@@ -30,7 +29,7 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html\
 | `src/builders/vnode.mjs` | `buildHellaNode`: emits object expression with `tag` + non-empty category fields + joined/static-array children. |
 | `src/builders/component.mjs` | `buildComponentCall`: emits `component(Tag, props)` or passthrough `Tag(props)`; merges children into props. |
 | `src/builders/ast.mjs` | `componentNodeToBabel`: intermediate AST → Babel AST; resolves slots, joins mixed content via `+`, recurses. |
-| `src/utils/imports.mjs` | `ensureNamedImport` + helpers (`ensureCssImport`, `ensureCreateComponentImport`, `ensureForEachImport`, `ensurePortalImport`, `ensureLazyImport`). |
+| `src/utils/imports.mjs` | `ensureNamedImport` + helpers (`ensureCreateComponentImport`, `ensureForEachImport`, `ensurePortalImport`, `ensureLazyImport`). |
 | `src/utils/traversal.mjs` | `findPassthroughComponents` (Set) + `containsComponent(node, excludeNames)`; recurses through intermediate AST. |
 | `src/utils/babel.mjs` | `getTagCallee`: JSXIdentifier → Identifier; JSXMemberExpression → MemberExpression (recursive); throws otherwise. |
 | `src/constants.mjs` | `FRAGMENT_TAG = '$'`. |
@@ -38,18 +37,17 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html\
 ## Visitor pipeline
 
 <visitor-pipeline>
-**`JSXElement`** (`src/transformers/jsx.mjs:16`) — runs in this order, returns early on style:
+**`JSXElement`** (`src/transformers/jsx.mjs:16`) — runs in this order:
 
-1. **Style short-circuit** — if `opening.name` is JSXIdentifier `{ name: 'style' }` → `handleStyleTag(t, path, opening)` and `return`. Style is never a HellaNode.
-2. **Resolve callee** — `getTagCallee(t, opening.name)`; throws `"Unsupported JSX tag type"` on anything but JSXIdentifier / JSXMemberExpression.
-3. **Component detection** — `isComponent = (JSXIdentifier && first char uppercase) || JSXMemberExpression`. `<UI.Button>` and `<App.Components.Button>` both qualify.
-4. **Categorize attrs** — `processAttributes(t, opening.attributes, isComponent)` returns `{ props, on, bind, hooks, e, error }` (six arrays, possibly all empty).
-5. **Filter children** — `filterEmptyChildren(t, path.node.children, isComponent)`; JSXText whitespace-collapsed, comments dropped, `props.children` spread.
-6. **Branch**:
+1. **Resolve callee** — `getTagCallee(t, opening.name)`; throws `"Unsupported JSX tag type"` on anything but JSXIdentifier / JSXMemberExpression.
+2. **Component detection** — `isComponent = (JSXIdentifier && first char uppercase) || JSXMemberExpression`. `<UI.Button>` and `<App.Components.Button>` both qualify.
+3. **Categorize attrs** — `processAttributes(t, opening.attributes, isComponent)` returns `{ props, on, bind, hooks, e, error }` (six arrays, possibly all empty).
+4. **Filter children** — `filterEmptyChildren(t, path.node.children, isComponent)`; JSXText whitespace-collapsed, comments dropped, `props.children` spread.
+5. **Branch**:
    - **Component** — find program parent. If `tagName ∈ {ForEach, Portal, Lazy}` inject matching import and emit `Tag(props)` via `buildComponentCall` (passthrough). Otherwise inject `component` from `@hellajs/dom` and emit `component(Tag, props)`. **All six category arrays are flattened back into a single props object** — components never receive `on` / `bind` / `hooks` / `e` / `error` fields.
-   - **Element** — `buildHellaNode(t, tag, props, on, e, bind, hooks, children, error)`.
+   - **Element** — `buildHellaNode(t, tag, props, on, e, bind, hooks, children, error)`. `<style>` is a regular element (tag: `"style"`), not special-cased.
 
-**`JSXFragment`** (`src/transformers/jsx.mjs:58`) — `buildHellaNode(t, '$', [], [], [], [], [], children, [])`. Fragment nodes have no attributes (empty props/on/e/bind/hooks/error).
+**`JSXFragment`** (`src/transformers/jsx.mjs:52`) — `buildHellaNode(t, '$', [], [], [], [], [], children, [])`. Fragment nodes have no attributes (empty props/on/e/bind/hooks/error).
 
 **`TaggedTemplateExpression`** (`src/transformers/component.mjs:12`) — only fires when `path.node.tag.name === 'html'`:
 
@@ -87,15 +85,6 @@ Six prefixes route attrs into six arrays. The `processAttributes` check order is
 | `<Portal>...</Portal>` | `Portal({...})` | `Portal` |
 | `<Lazy ... />` | `Lazy({...})` | `Lazy` |
 | `html\`<${Comp}>...</${Comp}>\`` | `component(Comp, {...})` | `component` |
-| `<style>...</style>` | `css({...})` (or `css({...}, {...})`) | `css` from `@hellajs/css` |
-
-## `<style>` transform
-
-`handleStyleTag` (`src/transformers/style.mjs`):
-
-- **Styles object** — first `JSXExpressionContainer` child whose expression is an `ObjectExpression` becomes the first arg. If absent, defaults to `css({})`.
-- **Options** — every `JSXAttribute` whose value is a `StringLiteral` is collected into the options object (the second arg, only emitted when non-empty). **Non-string-literal attrs and valueless attrs (e.g. `scoped`) are silently dropped.** String values `"true"` / `"false"` are converted to boolean literals.
-- Always replaces the JSX node with `css(...)`; always injects `import { css } from "@hellajs/css"`.
 
 ## Intermediate AST and slot resolution
 
@@ -137,7 +126,6 @@ For components, **all six category arrays are merged into a single `props` objec
 
 | Helper | Source | Name |
 |---|---|---|
-| `ensureCssImport` | `@hellajs/css` | `css` |
 | `ensureCreateComponentImport` | `@hellajs/dom` | `component` |
 | `ensureForEachImport` | `@hellajs/dom` | `ForEach` |
 | `ensurePortalImport` | `@hellajs/dom` | `Portal` |
@@ -163,7 +151,6 @@ Grounded in tests — verify any change against these:
 - **HTML fragment syntax** — `<>…</>` rewritten to `<__fragment__>…</__fragment__>` then back to `tag: '$'`; fragment nodes get `props: {}` (no `parseAttributes` call).
 - **HTML attribute quotes** — double, single, and unquoted values all parse; mixed content (`"prefix-${suffix}-tail"`) produces a `binaryExpression('+')` chain.
 - **Boolean attrs** — `<input required />` → `required: true`; explicit `={false}` stays `false`.
-- **`<style>` always wins** — `<style>` short-circuits before any other JSX-element logic; valueless attrs (e.g. `scoped`) and non-StringLiteral attrs are silently dropped from the options object; `"true"`/`"false"` string values become booleans.
 - **Member-expression tags** — `<UI.Button>` and arbitrarily nested `<A.B.C>` are components (recursive `getTagCallee`).
 - **Dynamic components in `html\`\``** — `<${Comp}>` becomes a node with `tag: "__SLOT_N__"`; `componentNodeToBabel` resolves it to the actual expression and wraps with `component(...)`.
 - **Self-closing parsing** — `/>` with optional leading space (`<br />`).
@@ -175,8 +162,7 @@ Six files under `tests/`: `transform.test.ts` (full pipeline), `processor.test.t
 
 - **Helpers** — `transformJSX(code)` runs `babel.transformSync` with `configFile: false` and the plugin; `normalize(output)` collapses whitespace for full-output equality asserts; `getNamedImports(code, source)` regex-extracts specifier names.
 - **Style** — integration-style: most tests exercise the full transform and assert either `toContain` on substrings or `toBe` on `normalize()` output. Some tests import internals directly from `src/**/*.mjs` — this is a documented carveout (see `guides/tests.md` §Coverage, `plugins/**` rule).
-- **Run** — `bun coverage babel` (bundle + coverage + lint). **NEVER run `bun test` directly — it runs against stale bundles.**
-- **Coverage target** — `dist/` bundles (per root `AGENTS.md`); the babel plugin is measured on its built output.
+- **Run** — `bun test plugins/babel/tests` (tests import from source `index.mjs`, not `dist/`). `bun lint` covers typecheck + eslint. **NEVER run `bun test` alone against the full repo without scoping to the plugin path.**
 
 ## Performance notes (verified)
 
