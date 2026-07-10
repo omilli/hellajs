@@ -1,5 +1,8 @@
 # Memory Update Log
 
+## 2026-07-10
+* **Update**: Refresh — entries 005/006 updated from UNBUILT to BUILT: css platform-dependent return is implemented (css.ts:37, cssVars.ts:27-41), former 4 css-side maps collapsed to 1 (injectedMap), <style> babel transform deleted. Entry 007 (ssr package) remains UNBUILT. Rebuilt index.md.
+
 ## 2026-07-07
 * **Creation**: Added concept [006](entries/006.md) (type: decision).
 * **Creation**: Added concept [007](entries/007.md) (type: decision).

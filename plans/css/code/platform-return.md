@@ -253,59 +253,59 @@ Per `guides/docs.md`. The key change: document the separated-CSS authoring model
 ## DoD
 
 ### Platform-dependent return
-- [ ] `css(obj, opts)` returns name when `hasDocument()`, returns CSS text when `!hasDocument()`.
-- [ ] `cssVars(vars, opts)` returns proxy when `hasDocument()`, returns vars text when `!hasDocument()`.
-- [ ] No module-level state mutation when `!hasDocument()` (server is fully stateless).
-- [ ] Client-path behavior unchanged (css injects, cssVars creates effects, both return structured values).
+- [x] `css(obj, opts)` returns name when `hasDocument()`, returns CSS text when `!hasDocument()`. — css.ts:38 `if (!hasDocument()) return cssText`; client returns `name || ""` at css.ts:67. ssr.test.ts verifies both.
+- [x] `cssVars(vars, opts)` returns proxy when `hasDocument()`, returns vars text when `!hasDocument()`. — cssVars.ts:27 inline server-return block. Return type stays `CSSVars<T>` (user decision — union type would break ~25 type-checked client test reads).
+- [x] No module-level state mutation when `!hasDocument()` (server is fully stateless). — css.ts returns text before injectedMap mutation; cssVars early-returns before varsStore; removeCss/removeCssVars guard `!hasDocument()`. ssr.test.ts verifies no DOM injection.
+- [x] Client-path behavior unchanged (css injects, cssVars creates effects, both return structured values). — 117 css tests pass, 100% coverage.
 
 ### Internal state simplification
-- [ ] `cssStore.ts` exports `injectedMap` (1 map), not `refCounts`/`inlineCache`/`cssRulesMap`/`ruleCounts` (4 maps).
-- [ ] `cacheKey()` deleted.
-- [ ] `syncTextContent()` reads from `injectedMap.keys()`.
-- [ ] `varsStore.ts` in-memory mutations guarded by `hasDocument()`.
+- [x] `cssStore.ts` exports `injectedMap` (1 map), not `refCounts`/`inlineCache`/`cssRulesMap`/`ruleCounts` (4 maps). — `injectedMap: Map<string, InjectedEntry>` where `InjectedEntry = { count: number; ruleCount: number }`. Deviation: plan's `{ index, count }` had unused `index`; used `{ count, ruleCount }` (ruleCount needed for CSSOM removal). Type co-located in cssStore.ts (not types.d.ts) per code-guide visibility rule.
+- [x] `cacheKey()` deleted. — cssStore.ts no longer defines or imports it.
+- [x] `syncTextContent()` reads from `injectedMap.keys()`. — cssStore.ts:35 `Array.from(injectedMap.keys()).join("")`.
+- [x] `varsStore.ts` in-memory mutations guarded by `hasDocument()`. — Deviation: not guarded inline; cssVars.ts early-returns before reaching varsStore mutations, and removeCssVars guards `!hasDocument()`. Server is stateless by construction (guards upstream achieve the same effect).
 
 ### removeCss / removeCssVars
-- [ ] `removeCss(obj, opts)` re-derives text via `process()`, looks up in `injectedMap`, decrements count.
-- [ ] `removeCss` is a no-op when `!hasDocument()`.
-- [ ] `removeCssVars` same pattern.
+- [x] `removeCss(obj, opts)` re-derives text via `process()`, looks up in `injectedMap`, decrements count. — removeCss.ts imports `process` from `./css`; `injectedMap.get(cssText)` lookup; `entry.count--`.
+- [x] `removeCss` is a no-op when `!hasDocument()`. — removeCss.ts:16 `if (!hasDocument()) return;`. ssr.test.ts verifies.
+- [x] `removeCssVars` same pattern. — removeCssVars.ts:16 `if (!hasDocument()) return;`. ssr.test.ts verifies.
 
 ### resetCss / resetCssVars
-- [ ] `resetCss()` clears `injectedMap` + CSSOM. Returns `void`.
-- [ ] `resetCssVars()` clears vars state. Returns `void`.
-- [ ] Both no-op when `!hasDocument()`.
+- [x] `resetCss()` clears `injectedMap` + CSSOM. Returns `void`. — resetCss.ts: `injectedMap.clear(); if (hasDocument()) resetSheet(STYLE_ID);`
+- [x] `resetCssVars()` clears vars state. Returns `void`. — unchanged (already server-safe; maps empty, resetSheet guarded, cleanupVarsEffects no-op on server).
+- [x] Both no-op when `!hasDocument()`. — ssr.test.ts verifies no-throw for both.
 
 ### `<style>` transform removal
-- [ ] `plugins/babel/src/transformers/style.mjs` deleted.
-- [ ] `plugins/babel/src/transformers/jsx.mjs` style short-circuit removed.
-- [ ] `plugins/babel/src/utils/imports.mjs` `ensureCssImport` removed.
-- [ ] `<style>` JSX produces a regular HellaNode (tag: "style").
-- [ ] No `@hellajs/css` import injected by the babel plugin.
+- [x] `plugins/babel/src/transformers/style.mjs` deleted. — `rm` confirmed.
+- [x] `plugins/babel/src/transformers/jsx.mjs` style short-circuit removed. — handleStyleTag import + style check deleted; `<style>` falls through to element handling.
+- [x] `plugins/babel/src/utils/imports.mjs` `ensureCssImport` removed. — imports.mjs exports 4 helpers (no ensureCssImport).
+- [x] `<style>` JSX produces a regular HellaNode (tag: "style"). — transform.test.ts: `<style>hello</style>` → `{ tag: "style", children: ["hello"] }`.
+- [x] No `@hellajs/css` import injected by the babel plugin. — transform.test.ts: getNamedImports("@hellajs/css") does not contain "css".
 
 ### Tests
-- [ ] Platform-dependent return tests pass (client name, server text).
-- [ ] Server-stateless tests pass (no accumulation when `!hasDocument()`).
-- [ ] removeCss text-re-derivation tests pass.
-- [ ] All existing client-path tests unchanged and green.
-- [ ] `<style>` transform tests removed; new `<style>`-as-regular-element test passes.
-- [ ] `bun coverage css` green.
-- [ ] `bun coverage babel` green.
+- [x] Platform-dependent return tests pass (client name, server text). — ssr.test.ts (repurposed): 13 tests, all green. Deviation: consolidated all server-path tests in ssr.test.ts (DRY) rather than per-file.
+- [x] Server-stateless tests pass (no accumulation when `!hasDocument()`). — ssr.test.ts: "css() does not inject into the DOM" + "cssVars() does not inject into the DOM".
+- [x] removeCss text-re-derivation tests pass. — existing client tests ("removes styles", "removeCss preserves styles until all references gone") unchanged and green.
+- [x] All existing client-path tests unchanged and green. — 117 css tests pass, 0 fail.
+- [x] `<style>` transform tests removed; new `<style>`-as-regular-element test passes. — transform.test.ts: Style tag describe block replaced (2 tests), import-injection tests + existing-css-import test removed. 210 babel tests pass.
+- [x] `bun coverage css` green. — 117 pass, 100% coverage, lint exit 0.
+- [x] `bun coverage babel` green. — Deviation: `bun coverage babel` doesn't support plugins (`isValidPackage` checks `packages/`). Verified via `bun test plugins/babel/tests` (210 pass) + `bun lint` (exit 0). babel AGENTS.md "Run" line corrected.
 
 ### Docs
-- [ ] `packages/css/docs/api/css.mdx` documents platform-dependent return + separated-CSS authoring.
-- [ ] `packages/css/docs/api/cssvars.mdx` same.
-- [ ] All cross-references use `` [`name`] `` + `/reference/{package}/{export}`.
+- [x] `packages/css/docs/api/css.mdx` documents platform-dependent return + separated-CSS authoring. — Added `### Platform-Dependent Return`, `### Separated CSS Authoring`, `### Server Return Is Text, Not a Name`.
+- [x] `packages/css/docs/api/cssvars.mdx` same. — Added `### Platform-Dependent Return`.
+- [x] All cross-references use `` [`name`] `` + `/reference/{package}/{export}`. — Verified in doc edits. Also updated removecss.mdx, resetcss.mdx, index.mdx, css-comparison.md.
 
 ### Agent instructions
-- [ ] `packages/css/AGENTS.md` updated: platform-dependent return, injectedMap, server stateless.
-- [ ] `plugins/babel/AGENTS.md` updated: `<style>` transform removed.
-- [ ] Root `AGENTS.md` notes the css breaking change.
+- [x] `packages/css/AGENTS.md` updated: platform-dependent return, injectedMap, server stateless. — Description, mental model, files table, state table, css() flow, cssVars dual path, non-obvious behaviors, performance, testing sections all updated.
+- [x] `plugins/babel/AGENTS.md` updated: `<style>` transform removed. — Mental model, files table (style.mjs row deleted), visitor pipeline (step 1 removed), tag table, `<style>` transform section deleted, import injection table, non-obvious behaviors, tests "Run" line.
+- [x] Root `AGENTS.md` notes the css breaking change. — css + babel package descriptions updated.
 
 ### Boundary guardrails
-- [ ] cssVars client-side reactivity preserved (effects fire on signal change).
-- [ ] cssVars reactive path untouched on client.
-- [ ] `bun coverage css` shows 100% on changed source lines.
+- [x] cssVars client-side reactivity preserved (effects fire on signal change). — cssvars.test.ts reactive tests green (signal tracking, batch updates, effect cleanup).
+- [x] cssVars reactive path untouched on client. — cssVars.ts: early-return only affects `!hasDocument()` branch; client path (static + reactive) unchanged.
+- [x] `bun coverage css` shows 100% on changed source lines. — 100.00% funcs, 100.00% lines.
 
 ### Verification gates
-- [ ] `bun coverage css` green.
-- [ ] `bun coverage babel` green.
-- [ ] No existing dom/core/resource/router/store test breaks.
+- [x] `bun coverage css` green. — 117 pass, 100% coverage, lint exit 0.
+- [x] `bun coverage babel` green. — `bun test plugins/babel/tests` (210 pass) + `bun lint` (exit 0).
+- [x] No existing dom/core/resource/router/store test breaks. — full sweep: 756 pass, 0 fail.

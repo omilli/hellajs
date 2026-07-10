@@ -1,15 +1,21 @@
 import type { CSSVarsOptions, CSSVars, CSSVarInputObject } from "./types";
 import { hash, stringify } from "./internal/shared";
 import { createVarsEffect } from "./internal/reactive";
+import { hasDocument, isFunction, isPlainObject } from "./internal/core";
 import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules } from "./internal/varsStore";
-import { isFunction, isPlainObject } from "./internal/core";
 
 /**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
+ *
+ * On the client (DOM available): injects the custom properties into the CSSOM and returns a
+ * same-shaped proxy of `var()` references. On the server (no DOM): returns the generated CSS
+ * text directly (the custom-property declarations as a string), with zero state mutation and
+ * no effects — the return type stays `CSSVars<T>` for client ergonomics; treat the server value
+ * as `string` (narrow with `typeof` if reading it in isomorphic code).
  * @template T
  * @param vars Object containing CSS variable definitions. Can include nested objects and reactive signals.
  * @param options Configuration options for scoping and prefixing
- * @returns Proxy object with var() references to the CSS custom properties
+ * @returns Proxy object with var() references on the client; CSS text on the server.
  * @throws {Error} When vars is not a plain object.
  * @throws {Error} When the same reactive vars object is registered a second time with differing scoped/prefix options.
  */
@@ -17,6 +23,22 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
   if (!isPlainObject(vars)) throw new Error(`[css] cssVars: expected a plain object, received ${String(vars)}`);
 
   const { flat, hasFns } = flattenVars(vars);
+
+  if (!hasDocument()) {
+    const scope = options.scoped || ":root";
+    const prefix = options.prefix ? `${options.prefix}-` : "";
+    const flatKeys = Object.keys(flat);
+    let fi = 0;
+    const fLen = flatKeys.length;
+    let decls = "";
+    while (fi < fLen) {
+      const key = flatKeys[fi++] as string;
+      const name = `${prefix}${key}`.replace(DOT_REGEX, "-");
+      decls += `--${name}:${String(flat[key])}`;
+      if (fi < fLen) decls += ";";
+    }
+    return `${scope}{${decls}}` as unknown as CSSVars<T>;
+  }
 
   if (!hasFns) {
     const inputHash = hash(stringify(vars) + stringify(options));
