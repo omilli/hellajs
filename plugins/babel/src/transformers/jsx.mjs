@@ -4,7 +4,6 @@ import { processAttributes } from "../processors/attributes.mjs";
 import { filterEmptyChildren } from "../processors/children.mjs";
 import { buildHellaNode } from "../builders/vnode.mjs";
 import { buildComponentCall } from "../builders/component.mjs";
-import { handleStyleTag } from "./style.mjs";
 import { ensureCreateComponentImport } from "../utils/imports.mjs";
 import { PASSTHROUGH_INJECTORS } from "../utils/passthrough.mjs";
 
@@ -17,12 +16,6 @@ export function createJSXTransformers(t) {
   return {
     JSXElement(path) {
       const opening = path.node.openingElement;
-
-      // Auto-transform <style>...</style> to css(...)
-      if (t.isJSXIdentifier(opening.name, { name: "style" })) {
-        handleStyleTag(t, path, opening);
-        return;
-      }
 
       const tagCallee = getTagCallee(t, opening.name);
       const tagName = t.isJSXIdentifier(opening.name) ? opening.name.name : null;

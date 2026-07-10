@@ -1,6 +1,6 @@
 # resetCss
 
-Clears all CSS rules, caches, and resets the CSS system to initial state.
+Clears all CSS rules and resets the CSS system to initial state. Client-only effect; a no-op on the server (no DOM).
 
 ## API
 
@@ -31,10 +31,9 @@ resetCss();
 
 The `resetCss` function provides a complete cleanup of the CSS system:
 
-- Clears all cached CSS rules from memory
+- Clears all injected CSS rules from internal state
 - Removes all generated CSS from the DOM
-- Resets internal reference counters
-- Clears inline memoization cache
+- Resets internal reference counts
 
 ### Testing Scenarios
 

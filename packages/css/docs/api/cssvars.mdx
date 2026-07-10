@@ -9,7 +9,7 @@ function cssVars<T extends CSSVarInputObject>(vars: T, options?: CSSVarsOptions)
 ```
 - `vars`: Object containing CSS variable definitions. Can include nested objects and reactive signals.
 - `options`: Optional configuration for scoping and prefixing
-- **Returns**: Object with `var()` references to the CSS custom properties
+- **Returns**: On the client (DOM available), an object with `var()` references to the CSS custom properties. On the server (no DOM), the CSS text — the return type stays `CSSVars<T>` for client ergonomics; narrow with `typeof` if reading the value in isomorphic code.
 
 ### Options
 
@@ -207,6 +207,21 @@ CSS variables automatically optimize performance through:
 - **Reactive Tracking**: Only creates effects when functions are detected
 - **Smart Caching**: Identical static objects are cached and reused (evicts at 100 entries to prevent unbounded growth)
 - **Memory Management**: Effects are automatically cleaned up
+
+### Platform-Dependent Return
+
+On the client, [`cssVars`](/reference/css/cssvars) injects custom properties into the CSSOM and returns the `var()` proxy. On the server (no DOM), it returns the generated CSS text directly — no effects, no state mutation. Reactive signals are resolved to their initial values during the server return.
+
+```typescript
+import { signal } from '@hellajs/core';
+import { cssVars } from '@hellajs/css';
+
+const color = signal('red');
+
+// Client: returns { theme: { color: 'var(--theme-color)' } }, injects :root{--theme-color:red}
+// Server: returns ':root{--theme-color:red}'
+const theme = cssVars({ theme: { color } });
+```
 
 ### Variable Accumulation
 

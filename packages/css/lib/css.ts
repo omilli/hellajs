@@ -1,6 +1,7 @@
 import { hasDocument, isPlainObject } from "./internal/core";
 import { upsertRule } from "./internal/sheet";
-import { STYLE_ID, refCounts, inlineCache, cssRulesMap, ruleCounts, cacheKey, syncTextContent } from "./internal/cssStore";
+import { STYLE_ID, injectedMap, syncTextContent } from "./internal/cssStore";
+import type { InjectedEntry } from "./internal/cssStore";
 import type { CSSObject, CSSOptions } from "./types";
 
 const AMP_REGEX = /&/g;
@@ -15,26 +16,31 @@ const CAMEL_REGEX = /[A-Z]/g;
 const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-style"];
 
 /**
- * Creates CSS rules from JavaScript objects. Global by default. Returns a class name when `name` is provided.
+ * Creates CSS rules from JavaScript objects. Global by default.
+ *
+ * On the client (DOM available): injects rules into the CSSOM and returns the provided
+ * `name` (or empty string for global). On the server (no DOM): returns the generated CSS
+ * text directly, with zero state mutation.
  * @param obj CSS object containing style properties and nested selectors
  * @param options Optional configuration. Provide `name` to create a scoped `.{name}` selector and get a return value for `class` attributes.
- * @returns The provided `name` string, or empty string for global styles
+ * @returns The provided `name` string (or empty string for global) on the client; the CSS text on the server.
  * @throws {Error} When obj is not a plain object.
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
 
-  const key = cacheKey(obj, options);
-
-  if (inlineCache.has(key)) {
-    refCounts.set(key, (refCounts.get(key) || 0) + 1);
-    return inlineCache.get(key)!;
-  }
-
   const { name } = options;
   const isGlobal = !name;
   const selector = name ? `.${name}` : "";
   const cssText = process(obj, selector, isGlobal);
+
+  if (!hasDocument()) return cssText;
+
+  const existing = injectedMap.get(cssText);
+  if (existing) {
+    existing.count++;
+    return name || "";
+  }
 
   // Split into individual top-level rules at brace-depth boundaries.
   const rules: string[] = [];
@@ -54,29 +60,22 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
     }
   }
 
-  ruleCounts.set(key, rules.length);
-
-  if (hasDocument()) {
-    let i = 0;
-    const len = rules.length;
-    while (i < len) {
-      upsertRule(STYLE_ID, `${key}:${i}`, rules[i]!);
-      i++;
-    }
+  let ri = 0;
+  const rlen = rules.length;
+  while (ri < rlen) {
+    upsertRule(STYLE_ID, `${cssText}:${ri}`, rules[ri]!);
+    ri++;
   }
 
-  cssRulesMap.set(key, cssText);
+  const entry: InjectedEntry = { count: 1, ruleCount: rules.length };
+  injectedMap.set(cssText, entry);
   syncTextContent();
 
-  refCounts.set(key, (refCounts.get(key) || 0) + 1);
-
-  const result = name || "";
-  inlineCache.set(key, result);
-
-  return result;
+  return name || "";
 }
 
 /**
+ * @internal
  * Recursively traverses a CSS object and builds the final CSS string.
  * Conditional at-rules (@media, @container, @supports, @starting-style) inherit
  * the parent scope when a class name is active, producing scoped selectors inside
@@ -86,11 +85,14 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * The `content` property auto-quotes unquoted strings. Array values join with
  * commas. Null and undefined values are skipped.
  *
+ * Exported so removeCss can re-derive the same text from (obj, options) —
+ * deterministic: the same object always produces the same text.
+ *
  * @param obj CSS object to process
  * @param selector Parent selector for nesting resolution
  * @param isGlobal Whether styles are applied globally (no selector wrapping)
  */
-function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
+export function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
   const rules: string[] = [];
   const properties: string[] = [];
   const keys = Object.keys(obj);

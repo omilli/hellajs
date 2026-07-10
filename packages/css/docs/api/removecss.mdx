@@ -1,6 +1,6 @@
 # removeCss
 
-Removes specific CSS rules and decrements their reference count for memory management.
+Removes specific CSS rules and decrements their reference count for memory management. Client-only; a no-op on the server (no DOM).
 
 ## API
 
@@ -149,12 +149,12 @@ applyTheme({ background: '#000', text: '#fff', border: '#444' });
 
 ### Exact Matching Required
 
-`removeCss()` uses a deterministic hash key computed from the CSS object and options. The same object reference is not required; structurally identical objects will match:
+`removeCss()` re-derives the CSS text from `(obj, options)` using the same deterministic transform as [`css`](/reference/css/css) — no hash key or cached reference needed. Structurally identical objects produce the same text and match:
 
 ```jsx
 // ✅ Works - structurally identical objects match
 css({ color: 'red', fontSize: '16px' });
-removeCss({ color: 'red', fontSize: '16px' }); // Same hash key
+removeCss({ color: 'red', fontSize: '16px' }); // Same CSS text
 
 // ✅ Works - same reference (also works, and is clearer)
 const style = { color: 'red', fontSize: '16px' };
@@ -163,7 +163,7 @@ removeCss(style);
 
 // ❌ Won't work - different CSS content
 css({ color: 'red' });
-removeCss({ color: 'blue' }); // Different hash key
+removeCss({ color: 'blue' }); // Different CSS text
 ```
 
 ### Use Cases

@@ -95,25 +95,15 @@ describe("babel", () => {
     });
   });
 
-  describe("Style tag transformation", () => {
-    test("<style> transforms to css()", () => {
-      const output = transformJSX('<style>{{ color: "red" }}</style>');
-      expect(normalize(output)).toBe('import { css } from "@hellajs/css"; css({ color: "red" });');
+  describe("Style tag is a regular element", () => {
+    test("<style> produces a regular HellaNode", () => {
+      const output = transformJSX("<style>hello</style>");
+      expect(normalize(output)).toBe('({ tag: "style", children: ["hello"] });');
     });
 
-    test("<style> with options", () => {
-      const output = transformJSX('<style scoped>{{ color: "red" }}</style>');
-      expect(normalize(output)).toBe('import { css } from "@hellajs/css"; css({ color: "red" });');
-    });
-
-    test("<style> with string option", () => {
-      const output = transformJSX('<style id="my-style">{{ color: "red" }}</style>');
-      expect(normalize(output)).toBe('import { css } from "@hellajs/css"; css({ color: "red" }, { id: "my-style" });');
-    });
-
-    test("<style> boolean option", () => {
-      const output = transformJSX('<style global="true">{{ color: "red" }}</style>');
-      expect(normalize(output)).toBe('import { css } from "@hellajs/css"; css({ color: "red" }, { global: true });');
+    test("<style> does not inject css import", () => {
+      const imports = getNamedImports('<style>{{ color: "red" }}</style>', "@hellajs/css");
+      expect(imports).not.toContain("css");
     });
   });
 
@@ -218,16 +208,6 @@ describe("babel", () => {
       expect(output).not.toContain("import { component }");
     });
 
-    test("style tag injects css import", () => {
-      const imports = getNamedImports('<style>{{ color: "red" }}</style>', "@hellajs/css");
-      expect(imports).toContain("css");
-    });
-
-    test("style tag with options injects css import", () => {
-      const imports = getNamedImports('<style scoped>{{ color: "red" }}</style>', "@hellajs/css");
-      expect(imports).toContain("css");
-    });
-
     test("ForEach JSX injects ForEach import", () => {
       const imports = getNamedImports("<ForEach each={items} use={item => item} />", "@hellajs/dom");
       expect(imports).toContain("ForEach");
@@ -250,16 +230,6 @@ describe("babel", () => {
       `;
       const output = transformJSX(code);
       const matches = output.match(/import\s*{\s*component\s*}/g);
-      expect(matches?.length).toBe(1);
-    });
-
-    test("existing css import is not duplicated", () => {
-      const code = `
-        import { css } from '@hellajs/css';
-        <style>{{ color: "red" }}</style>
-      `;
-      const output = transformJSX(code);
-      const matches = output.match(/import\s*{\s*css\s*}/g);
       expect(matches?.length).toBe(1);
     });
   });

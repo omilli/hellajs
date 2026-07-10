@@ -1,6 +1,6 @@
 # css
 
-Creates CSS rules from JavaScript objects. Global by default. Returns a class name when `name` is provided.
+Creates CSS rules from JavaScript objects. Global by default. Returns a class name when `name` is provided (client), or the CSS text (server).
 
 ## API
 
@@ -10,7 +10,7 @@ function css(obj: CSSObject, options?: CSSOptions): string
 - `obj`: CSS object containing style properties and nested selectors
 - `options`: Optional configuration object
   - `name`: Class name to scope styles to. Creates a `.{name}` selector and returns the name for use in `class` attributes.
-- **Returns**: The provided `name` string, or empty string for global styles
+- **Returns**: On the client (DOM available), the provided `name` string (or empty string for global). On the server (no DOM), the generated CSS text.
 
 ## Basic Usage
 
@@ -86,6 +86,44 @@ CSS automatically optimizes performance through:
 - **Reference Counting**: [`removeCss`](/reference/css/removecss) decrements usage; styles are removed from the DOM when the count reaches zero
 - **Smart Caching**: Previously processed styles return instantly
 
+### Platform-Dependent Return
+
+`css()` returns different values depending on whether a DOM is available:
+
+- **Client** (`hasDocument()`): injects rules into the CSSOM and returns the `name` (or empty string for global) — the class name for `class` attributes.
+- **Server** (no DOM): returns the generated CSS text directly, with zero state mutation.
+
+```typescript
+import { css } from '@hellajs/css';
+
+// Client: returns "btn", injects .btn{color:red} into the CSSOM
+const className = css({ color: 'red' }, { name: 'btn' });
+
+// Server: returns ".btn{color:red}" — no DOM write, no state
+const cssText = css({ color: 'red' }, { name: 'btn' });
+```
+
+### Separated CSS Authoring
+
+Under platform-dependent return, CSS is defined in shared modules or at the entry/handler level — not inline in component templates. Components hardcode the class name (the `name` the user provided):
+
+```typescript
+// styles.ts — shared module, works on both platforms
+import { css } from '@hellajs/css';
+
+// Client: returns "btn", injects into CSSOM
+// Server: returns ".btn{color:red}"
+export const btnCss = css({ color: 'red' }, { name: 'btn' });
+```
+
+```jsx
+// Component.tsx — hardcodes the class name
+import { btnCss } from './styles';
+
+// btnCss is evaluated at module load; the class name is always "btn"
+html`<button class="btn">Click</button>`
+```
+
 ### @-Rules
 
 All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. Use global calls (no `name`) for `@` rules that define top-level constructs.
@@ -129,6 +167,20 @@ css({
 ```
 
 ## Important Considerations
+
+### Server Return Is Text, Not a Name
+
+On the server, [`css`](/reference/css/css) returns the CSS text — not the class name. Do not use the return value for `class` binding in isomorphic code without checking the platform. Define CSS in shared modules (where the text return is captured for SSR) and hardcode class names in components.
+
+```typescript
+// ❌ Isomorphic class binding — breaks on server (returns CSS text, not "btn")
+const className = css({ color: 'red' }, { name: 'btn' });
+html`<button class=${className}>Click</button>`;
+
+// ✅ Hardcode the class name; css() is called for its side effect (client) or text (server)
+css({ color: 'red' }, { name: 'btn' });
+html`<button class="btn">Click</button>`;
+```
 
 ### Type Safety
 

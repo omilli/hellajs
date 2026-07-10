@@ -37,15 +37,6 @@ function ensureNamedImport(t, program, source, name) {
 }
 
 /**
- * Ensure `import { css } from "@hellajs/css"` in the program.
- * @param {typeof import("@babel/core").types} t
- * @param {import("@babel/core").NodePath} program
- */
-export function ensureCssImport(t, program) {
-  ensureNamedImport(t, program, "@hellajs/css", "css");
-}
-
-/**
  * Ensure `import { component } from "@hellajs/dom"` in the program.
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").NodePath} program
