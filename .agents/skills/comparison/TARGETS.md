@@ -98,3 +98,18 @@ The principle: pick libraries that are either (a) the dominant market leader in 
 | Jotai | Atomic state management, composable primitives |
 | Valtio | Proxy-based reactive state — closest architectural sibling |
 | MobX | Deeply observable reactive state — most paradigm-similar |
+
+---
+
+## @hellajs/ssr
+
+**Category:** SSR stringifier + hydration contract — HellaNode AST → HTML string with region markers.
+
+**Angle:** Compare HellaJS ssr (the stringifier half of each framework's SSR) against the SSR renderers of the same framework cohort as dom, since each competitor's stringifier + hydration-marker model is the direct comparison surface. The marker decision (Vue-style `<!--[-->…<!--]-->`, verified from `vuejs/core` source) is the load-bearing differentiator to document.
+
+| Target | Why |
+|---|---|
+| Solid `renderToString` | Architectural sibling — fine-grained reactive, zero-runtime SSR; attribute-based hydration keys (`data-hk`) + `<!--!$-->` separators (verified 1.9.x; the older `<!--#-->`/`<!--/-->` pair is no longer emitted) |
+| Svelte 5 SSR | Compiled-to-string, the compiler-first counterpoint |
+| React `renderToString` / `renderToPipeableStream` | The dominant baseline; `<!-- -->` text separators + `<!--$--><!--/$-->` segment markers |
+| Vue 3 `renderToString` | Marker source verified this session (`<!--[-->`/`<!--]-->`); the format HellaJS adopted |

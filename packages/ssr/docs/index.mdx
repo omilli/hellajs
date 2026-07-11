@@ -1,0 +1,37 @@
+## SSR
+
+Render HellaNode templates to HTML strings on the server with zero runtime dependencies. Pair with [`@hellajs/dom`](/reference/dom) templates and, optionally, [`@hellajs/css`](/reference/css) for styled output.
+
+### Installation
+
+```bash
+npm install @hellajs/dom @hellajs/ssr
+```
+
+### Example
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const greet = (name) => html`<div><h1>Hello ${name}</h1></div>`;
+
+const body = ssr(greet('World'));
+// body: "<div><h1>Hello World</h1></div>"
+
+// Assemble a full document in your server handler
+const page = `<!DOCTYPE html>
+<html><body><div id="app">${body}</div></body></html>`;
+```
+
+### API
+
+- **[ssr](/reference/ssr/ssr)**: Serialize a HellaNode AST into an HTML string
+
+### Concepts
+
+- **[Server-Side Rendering](/learn/concepts/ssr)**: The string-renderer model, zero runtime deps, and client enhancement
+
+### Patterns
+
+- **[SSR](/learn/patterns/ssr)**: Bun.serve, styled output, Express, and client enhancement recipes

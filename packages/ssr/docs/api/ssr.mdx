@@ -1,0 +1,95 @@
+# ssr
+
+Serialize a HellaNode AST into an HTML string — a pure stringifier with zero runtime dependencies.
+
+## API
+
+```typescript
+function ssr(node: HellaNode): string
+```
+
+- `node`: A HellaNode AST (produced by [`html`](/reference/dom/html) or JSX) to serialize.
+- **Returns**: The rendered HTML string.
+
+## Basic Usage
+
+Render a template to a string and assemble it into a full document. No DOM is required, so `ssr` runs in any server runtime (Bun, Node, Deno, workers).
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const page = (title) => html`
+  <section>
+    <h1>${title}</h1>
+    <p>Welcome.</p>
+  </section>
+`;
+
+const body = ssr(page('Hello'));
+// body: "<section><h1>Hello</h1><p>Welcome.</p></section>"
+```
+
+### Styled output
+
+[`@hellajs/css`](/reference/css) returns CSS text on the server; place it in a `<style>` tag and compose it with the rendered body. `ssr` never imports `@hellajs/css` — the caller assembles both.
+
+```js
+import { html } from '@hellajs/dom';
+import { css } from '@hellajs/css';
+import { ssr } from '@hellajs/ssr';
+
+const button = css({ color: 'red' }, { name: 'btn' });
+// On the server, `button` is the CSS text ".btn{color:red}"
+
+const body = ssr(html`<button class="btn">Click</button>`);
+const page = `<style>${button}</style><div id="app">${body}</div>`;
+```
+
+## Key Concepts
+
+### Zero Runtime Dependencies
+
+`ssr` has zero runtime imports from any `@hellajs/*` package — only a type-only [`HellaNode`](/reference/dom) import, erased at compile time. It works whether or not the other packages are installed and adds no runtime weight to the server bundle.
+
+### Hydration markers
+
+`ssr()` wraps every dynamic region — a reactive child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy), or a nested fragment — in `<!--[->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
+
+```js
+import { signal } from '@hellajs/core';
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const count = signal(5);
+const body = ssr(html`<p>Count: ${count}</p>`);
+// body: "<p>Count: <!--[-->5<!--]--></p>"
+```
+
+This is a **breaking** part of the output contract: if you parse or snapshot `ssr()` output, expect the markers around dynamic regions. Generate server HTML with `ssr()` rather than hand-building it.
+
+### Resource Fetching Suppressed
+
+[`resource`](/reference/resource/resource) is a reactive UI primitive. On the server it no-ops its fetch pipeline, so resources embedded in a server-rendered tree never trigger network calls. Fetch server-side data with direct `fetch()` and pass it in as initial values.
+
+### Client Enhancement Model
+
+The shipped HTML is the source of truth on the client. Bind existing static nodes into reactivity with [`$ref`](/reference/dom/ref) / [`$collection`](/reference/dom/collection), or mount a reactive island into an empty placeholder the template left for it.
+
+## Important Considerations
+
+### Portal renders nothing
+
+[`Portal`](/reference/dom/portal) teleports content to a DOM target — there is no document on the server, so portals render as empty. Render portal content inline in the template if it must appear in the HTML.
+
+### Lazy renders the loading fallback
+
+[`Lazy`](/reference/dom/lazy) is async; the server render is synchronous, so `ssr` emits the `loading` fallback (or nothing if none was provided) and never awaits the loader.
+
+### Full re-mount over server HTML wipes it
+
+Calling [`mount`](/reference/dom/mount) over the server-rendered container replaces its children and rebuilds the tree, discarding the server HTML and any user state in that subtree. Use [`$ref`](/reference/dom/ref) / [`$collection`](/reference/dom/collection) to bind existing nodes, or mount islands into empty placeholders. Full re-mount is only appropriate for throwaway (SEO-only) content.
+
+### Synchronous render required
+
+`ssr` walks the tree once and returns. Reactive getters are read at their current value; there is no effect scheduling, no batching, and no async resolution. Build the tree from already-resolved data.

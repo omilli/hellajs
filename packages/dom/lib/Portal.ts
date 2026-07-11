@@ -1,6 +1,7 @@
 import { resolveNode } from "./internal/render";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
+import { peekHydrateContext } from "./internal/hydrate";
 import type { PortalProps, HellaChild } from "./types/nodes";
 
 const INSERT_METHODS: Record<string, keyof Element> = {
@@ -22,8 +23,9 @@ export function Portal(props: PortalProps): JSX.Element {
   const childNodes = Array.isArray(children) ? children : [children];
 
   const fn = ((parent: Element) => {
-    const anchor = document.createTextNode("");
-    parent.appendChild(anchor);
+    const hctx = peekHydrateContext();
+    const anchor = hctx ? hctx.anchor : document.createTextNode("");
+    if (!hctx) parent.appendChild(anchor);
 
     let portalNodes: Node[] = [];
 
@@ -58,5 +60,6 @@ export function Portal(props: PortalProps): JSX.Element {
   }) as JSX.Element;
 
   fn.isDynamic = true;
+  fn.ssr = { kind: "portal", props };
   return fn;
 }

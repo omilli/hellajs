@@ -1,6 +1,7 @@
 import { isFunction } from "./internal/core";
 import { getState } from "./internal/state";
 import { mountNode, resolveNode } from "./internal/render";
+import { peekHydrateContext } from "./internal/hydrate";
 import type { LazyProps, HellaNode } from "./types/nodes";
 
 /**
@@ -14,8 +15,9 @@ import type { LazyProps, HellaNode } from "./types/nodes";
 export function Lazy(props: LazyProps): JSX.Element {
   if (typeof props.loader !== "function") throw new Error("[dom] Lazy: loader must be a function");
   const fn = ((parent: Element) => {
-    const anchor = document.createTextNode("");
-    parent.appendChild(anchor);
+    const hctx = peekHydrateContext();
+    const anchor = hctx ? hctx.anchor : document.createTextNode("");
+    if (!hctx) parent.appendChild(anchor);
 
     let loadingNode: Node | null = null;
     if (props.loading) {
@@ -51,5 +53,6 @@ export function Lazy(props: LazyProps): JSX.Element {
   }) as JSX.Element;
 
   fn.isDynamic = true;
+  fn.ssr = { kind: "lazy", props };
   return fn;
 }

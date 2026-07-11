@@ -1,4 +1,4 @@
-# [ ] Plan set: @hellajs/ssr v1 — pure stringifier
+# [x] Plan set: @hellajs/ssr v1 — pure stringifier
 
 ## Shared scope
 
@@ -14,7 +14,7 @@ The original single-file plan assumed the SSR walk could render `ForEach`/`Trans
 
 Calling the closure needs a real DOM `Element` and `document`; a pure stringifier has neither. So scenarios 8–13 (ForEach/Transition/Portal/Lazy) are **impossible** unless dom exposes the props.
 
-**Resolution A (chosen)** — dom tags each isDynamic function with an `__ssr` descriptor `{ kind, props }`; ssr's walk switches on `kind` and re-implements each component's render-to-string. dom stays DOM-only (it only tags data it already holds); ssr owns all serialization; ssr keeps zero runtime imports (reads a property, imports `SsrMeta`/`HellaNode` **type-only**). This matches the plan's own stated principle: *"Serialization is reimplemented, not imported."*
+**Resolution A (chosen)** — dom tags each isDynamic function with an `ssr` descriptor `{ kind, props }`; ssr's walk switches on `kind` and re-implements each component's render-to-string. dom stays DOM-only (it only tags data it already holds); ssr owns all serialization; ssr keeps zero runtime imports (reads a property, imports `SsrMeta`/`HellaNode` **type-only**). This matches the plan's own stated principle: *"Serialization is reimplemented, not imported."*
 
 **Rejected:**
 - **B** — dom attaches an `fn.ssr()` method per component. Couples dom (currently DOM-only) to string rendering and scatters serialization logic across both packages; violates "reimplemented, not delegated."
@@ -22,14 +22,14 @@ Calling the closure needs a real DOM `Element` and `document`; a pure stringifie
 
 ## Units
 
-- [ ] **[`dom-ssr-meta.md`](./dom-ssr-meta.md)** — dom exposes `__ssr` (`{ kind, props }`) on the four isDynamic components + exports the `SsrMeta` type. **No deps.** Ships green alone; type-only, no mount behavior change.
-- [ ] **[`ssr-package.md`](./ssr-package.md)** — the `@hellajs/ssr` package (`ssr` + `internal/walk` + `internal/serialize`), resource `hasWindow` guard, full docs + learn surface, root/packages AGENTS sync. **`depends_on: [dom-ssr-meta]`** — ssr scenarios 8–13 read `__ssr`; `bun coverage ssr` is red without Unit 1, and ssr tests import the rebuilt `@hellajs/dom/bundle`.
+- [x] **[`dom-ssr-meta.md`](./dom-ssr-meta.md)** — dom exposes `ssr` (`{ kind, props }`) on the four isDynamic components + exports the `SsrMeta` type. **DONE** — `bun coverage dom` green (270 pass, coverage at baseline); type-only, no mount behavior change. Unblocks Unit 2.
+- [x] **[`ssr-package.md`](./ssr-package.md)** — the `@hellajs/ssr` package (`ssr` + `internal/walk` + `internal/serialize`), resource `hasWindow` guard, full docs + learn surface, root/packages AGENTS sync. **DONE** — `bun coverage ssr` 100/100, `bun coverage resource` green, full `bun coverage` 1112 pass / 0 fail.
 
 ## Boundary guardrails (set-level)
 
 - **core untouched** — `git diff packages/core` empty.
 - **css untouched** — css changes live in `plans/css/code/platform-return.md`.
-- **dom IS modified** — by `dom-ssr-meta.md` ONLY (adds the type-only `SsrMeta` + optional `RenderFn.__ssr` field; four one-line `fn.__ssr = { kind, props }` assignments; zero mount-time behavior change).
+- **dom IS modified** — by `dom-ssr-meta.md` ONLY (adds the type-only `SsrMeta` + optional `RenderFn.ssr` field; four one-line `fn.ssr = { kind, props }` assignments; zero mount-time behavior change).
 - **ssr has ZERO runtime imports from `@hellajs/*`** — the `import type` lines are erased at compile time.
 - **resource** — one-line guard, no new export, no API change.
 

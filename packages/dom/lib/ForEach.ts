@@ -2,6 +2,8 @@ import { isHellaNode, resolveValue } from "./internal/utils";
 import { registry } from "./registry";
 import { resolveNode } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
+import { peekHydrateContext } from "./internal/hydrate";
+import type { HellaNode } from "./types/nodes";
 import type { ForEachProps } from "./types/nodes";
 
 /**
@@ -28,8 +30,9 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
     const keyToOldIndex = new Map<unknown, number>();
     const toMove = new Set<number>();
 
-    const anchor = document.createTextNode("");
-    parent.appendChild(anchor);
+    const hctx = peekHydrateContext();
+    const anchor = hctx ? hctx.anchor : document.createTextNode("");
+    if (!hctx) parent.appendChild(anchor);
 
     registry.addEffect(parent, () => {
       const actualParent = anchor.parentNode as Element;
@@ -39,6 +42,41 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
 
       if (arr.length > 0) {
         if (currentKeys.length === 0) {
+          if (hctx && hctx.existingNodes.length === arr.length) {
+            // hydrate adoption: reuse the marker-gathered server nodes, no fresh build
+            let index = 0;
+            const arrLen = arr.length;
+            while (index < arrLen) {
+              const item = arr[index]!;
+              const element = use(item, index);
+              const key = element && isHellaNode(element)
+                ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
+                : (item as { id?: unknown })?.id ?? index;
+              const existing = hctx.existingNodes[index]!;
+              if (element && isHellaNode(element) && (element as HellaNode).tag !== "$") {
+                hctx.hydrateNode(element as HellaNode, existing);
+              }
+              keyToNode.set(key, existing);
+              keyToItem.set(key, item);
+              currentKeys.push(key);
+              index++;
+            }
+            return;
+          }
+          if (hctx) {
+            // count mismatch (server/client divergence) — warn, clear the region's server nodes, fresh-build
+            console.warn(`[dom] hydrate mismatch: ForEach region had ${hctx.existingNodes.length} nodes, expected ${arr.length}`);
+            let ri = 0;
+            const rLen = hctx.existingNodes.length;
+            while (ri < rLen) {
+              const rem = hctx.existingNodes[ri]!;
+              if (rem.parentNode === actualParent) {
+                cleanupSubtree(rem);
+                actualParent.removeChild(rem);
+              }
+              ri++;
+            }
+          }
           const fragment = document.createDocumentFragment();
           const arrLen = arr.length;
           let index = 0;
@@ -247,5 +285,6 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
   }) as JSX.Element;
 
   fn.isDynamic = true;
+  fn.ssr = { kind: "forEach", props };
   return fn;
 }

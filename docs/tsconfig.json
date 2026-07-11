@@ -29,6 +29,9 @@
       ],
       "@store/*": [
         "../packages/store/docs/*"
+      ],
+      "@ssr/*": [
+        "../packages/ssr/docs/*"
       ]
     }
   }

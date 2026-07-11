@@ -1,0 +1,70 @@
+# hydrate
+
+Attaches reactivity to existing server-rendered HTML in place — re-executes the component tree and wires effects, handlers, and state to the DOM the server shipped, without replacing it.
+
+## API
+
+```typescript
+function hydrate(
+  hellaNode: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
+  target?: string | Element
+): MountHandle
+```
+- `hellaNode`: The same node or component function passed to [`ssr`](/reference/ssr/ssr) on the server.
+- `target`: A CSS selector string or DOM Element whose existing children are the server output. Defaults to `"#app"`.
+- **Returns**: A [`MountHandle`](/reference/dom/mount#mounthandle) with `flush()` and `unmount()` methods.
+
+## Basic Usage
+
+Render the tree to HTML on the server with [`ssr`](/reference/ssr/ssr), ship it inside the target element, then call `hydrate` on the client with the **same** tree.
+
+```jsx
+import { signal } from "@hellajs/core";
+import { ssr } from "@hellajs/ssr";
+
+const App = () => {
+  const count = signal(0);
+  return (
+    <div id="app-root">
+      <span>Count: {count}</span>
+      <button on:click={() => count(count() + 1)}>Increment</button>
+    </div>
+  );
+};
+
+// Server — ship the serialized tree inside the target element
+const body = ssr(<App />);
+const page = `<div id="app">${body}</div>`;
+```
+
+```jsx
+import { hydrate } from "@hellajs/dom";
+
+// Client — re-execute App against the existing DOM, never replacing it
+const handle = hydrate(<App />, "#app");
+handle.flush(); // fire deferred afterMount hooks before first paint
+```
+
+## Key Concepts
+
+### Adopt, Don't Re-Render
+
+Unlike [`mount`](/reference/dom/mount), which calls `replaceChildren` and rebuilds the tree, `hydrate` walks the existing DOM and attaches reactivity to the nodes already there. Element identity is preserved — a button the server rendered is the same button the client binds `on:click` to. Static attributes are left untouched (the server already applied them); only `bind:` effects, `on:`/`e:` handlers, hooks, and reactive children are wired up.
+
+### Server HTML Must Match
+
+`hydrate` assumes the target's children are exactly what `ssr` produced from the same tree with the same initial state. Reactive state must initialize to the values the server rendered. When the DOM and the tree disagree, `hydrate` warns and re-mounts the mismatched subtree from scratch — the page still works, and the warning surfaces the drift.
+
+### Keyed List Adoption
+
+[`ForEach`](/reference/dom/foreach) items rendered by the server are adopted directly into the list's reconciliation map — keys are re-derived from the same `each`/`use` calls the server made, with no markers in the HTML. Pushing, removing, or reordering items after hydrate reconciles against the adopted nodes exactly as it would against freshly-mounted ones.
+
+## Important Considerations
+
+### Reactive State Must Initialize to Server Values
+
+A signal that initializes to a different value than the server rendered is a hydration mismatch. `hydrate` inherits the contract that initial values match the server output — it does not introduce drift, but it inherits any that exists.
+
+### `mount` vs `hydrate`
+
+Use [`mount`](/reference/dom/mount) for purely client-rendered apps (it replaces the container's content). Use `hydrate` when the server shipped HTML you want to keep. For enhancing individual static nodes or mounting reactive islands into empty slots, [`$ref`](/reference/dom/ref), [`$collection`](/reference/dom/collection), and island `mount`s remain lighter-weight alternatives.

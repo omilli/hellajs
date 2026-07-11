@@ -242,7 +242,11 @@ def cmd_rebuild(args) -> int:
 
 
 def _next_id() -> str:
-    used = {r["id"] for r in _load_dir(ENTRIES)}
+    # Archive ids are retired — never reallocate them, or a new live entry
+    # collides with archive/NNN.md and its supersession narrative.
+    used = {r["id"] for r in _load_dir(ENTRIES)} | {
+        r["id"] for r in _load_dir(ARCHIVE)
+    }
     n = 1
     while f"{n:03d}" in used:
         n += 1

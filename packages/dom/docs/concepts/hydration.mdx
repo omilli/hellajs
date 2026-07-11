@@ -1,0 +1,63 @@
+# Hydration
+
+Attach client reactivity to HTML the server rendered, so the user sees content immediately and the page becomes interactive without rebuilding the DOM.
+
+## The Hydration Model
+
+Hydration re-executes the component tree on the client and attaches effects, event handlers, and state to the **existing** server-rendered DOM. The server's HTML survives — HellaJS never wipes it. This is the same model SolidJS uses, distinct from React-style re-rendering: component bodies run again (they create signals and effects that can't be serialized), but `createElement` becomes "use the element already at this position."
+
+```js
+import { signal } from "@hellajs/core";
+import { html } from "@hellajs/dom";
+import { ssr } from "@hellajs/ssr";
+import { hydrate } from "@hellajs/dom";
+
+const App = () => {
+  const count = signal(0);
+  return html`<button on:click=${() => count(count() + 1)}>Clicked ${count} times</button>`;
+};
+
+// Server ships the rendered button
+const body = ssr(html`<${App} />`);
+```
+
+```js
+// Client attaches the click handler to the existing button
+hydrate(html`<${App} />`, "#app");
+```
+
+The button the server rendered is the exact node the client binds `on:click` to — element identity is preserved.
+
+## When to Hydrate vs Enhance
+
+[`hydrate`](/reference/dom/hydrate) re-executes the whole tree against the existing DOM. It is the right tool when you want a fully interactive app from server-rendered HTML. For lighter needs, prefer:
+
+- [`$ref`](/reference/dom/ref) / [`$collection`](/reference/dom/collection) — bind a few existing static nodes into reactivity without re-executing any component tree.
+- Island [`mount`](/reference/dom/mount) — mount a reactive component into an empty placeholder the server left. Use this when most of the page is static and only a region is interactive.
+
+A full-tree `mount` over the server container is a footgun: `mount` replaces the container's children and rebuilds, discarding the server HTML. Reserve it for throwaway, SEO-only content.
+
+## The Serialization Contract
+
+Hydration relies on the server HTML matching what [`mount`](/reference/dom/mount) would produce: tag names, attributes, and element structure must agree. [`ssr`](/reference/ssr/ssr) mirrors `mount`'s attribute rules, so element-bounded structure hydrates cleanly. Reactive state must initialize to the same values the server rendered — a signal that starts at a different value is a mismatch.
+
+When the DOM and the tree disagree, `hydrate` warns and re-mounts the mismatched subtree from scratch. The page keeps working; the warning surfaces the drift.
+
+## Keyed List Adoption
+
+[`ForEach`](/reference/dom/foreach) items the server rendered are adopted directly into the list's reconciliation map. Keys are re-derived at hydrate time from the same `each` and `use` calls the server made — no `data-key` markers or comments pollute the HTML. After hydrate, pushing, removing, or reordering items reconciles against the adopted nodes through the normal keyed-diff algorithm.
+
+```js
+const items = signal([{ id: 1, label: "First" }, { id: 2, label: "Second" }]);
+const App = () => html`<ul><${ForEach} each=${items} use=${(i) => html`<li key=${i.id}>${i.label}</li>`} /></ul>`;
+
+// Server emits the two <li>s; client adopts them, then list updates reconcile normally
+hydrate(html`<${App} />`, "#app");
+```
+
+<details>
+<summary>Internal Mechanics</summary>
+
+`hydrate` walks the HellaNode AST in parallel with the existing DOM using a node pointer. For each AST child it consumes the matching server node(s): static elements are recursed into, `bind:` effects and `on:`/`e:` handlers are registered against the existing element, and static attributes are skipped (the server already applied them). `ForEach` and `Transition` receive the existing nodes through a hydrate context and seed their internal maps from them instead of building fresh; their update paths run unchanged against the seeded maps. Every dynamic region (a reactive child, a control-flow component, or a nested fragment) is bounded by `<!--[-->…<!--]-->` comment markers the server emits; `hydrate` reads those Comment nodes to locate and adopt each region in place — no structural inference, no text rebuild.
+
+</details>
