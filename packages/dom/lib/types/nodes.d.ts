@@ -124,7 +124,19 @@ export interface ComponentFn {
  * Render function type for a component that renders into a parent element.
  * This is a function with an isDynamic flag that receives a parent element.
  */
-export type RenderFn = ((element: HellaElement) => void) & { isDynamic: true };
+/**
+ * SSR rendering descriptor attached to isDynamic components.
+ * Consumed type-only by `@hellajs/ssr`; carries the resolved props so a pure
+ * stringifier can render ForEach/Transition/Portal/Lazy without DOM access.
+ */
+export interface SsrMeta {
+  /** Which isDynamic component produced this function. */
+  kind: "forEach" | "transition" | "portal" | "lazy";
+  /** The resolved props object the component received (ssr casts to index it). */
+  props: object;
+}
+
+export type RenderFn = ((element: HellaElement) => void) & { isDynamic: true; ssr?: SsrMeta };
 
 /**
  * Function with an element argument for mount operations.

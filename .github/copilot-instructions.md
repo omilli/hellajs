@@ -40,11 +40,12 @@ applyTo: "**"
   | Package | Responsibility |
   |---|---|
   | core | Reactive primitives over a doubly-linked dependency DAG. Signals = sources, computed = transforms, effects = sinks. Glitch-free, topological propagation. |
-  | dom | Surgical DOM updates (no VDOM). Scoped MutationObserver cleanup, global event delegation (capture phase), keyed list reconciliation (LIS), portals, lazy/async components, transitions, reactive refs, error boundaries. |
+  | dom | Surgical DOM updates (no VDOM). Scoped MutationObserver cleanup, global event delegation (capture phase), keyed list reconciliation (LIS), portals, lazy/async components, transitions, reactive refs, error boundaries, surgical hydration of server-rendered HTML via `hydrate()`. |
   | css | Type-safe CSS-in-JS. Platform-dependent return (class name/proxy on client, CSS text on server), text-keyed reference counting, runtime style generation, reactive `cssVars()`. Global by default; `name` option scopes to a class. |
   | resource | Reactive async fetching. Fetcher-scoped cache (LRU + TTL), request deduplication, SWR, abort control, optimistic mutations, polling/retry. |
   | router | Reactive client-side routing. Nested routes, parameter inheritance, lifecycle hooks, History API. Resolution order: redirects → nested → flat → notFound. |
   | store | Deeply reactive state. Plain objects auto-convert to granular signals/stores with TS inference; `snapshot` / `update` / `cleanup`. |
+  | ssr | Pure HTML stringifier. Walks a HellaNode AST to an HTML string with zero runtime imports (mirrors dom's `renderProp` rules). `resource` no-ops on the server. |
 
   ## Plugins
 
@@ -164,6 +165,10 @@ applyTo: "**"
   Tests run under HappyDOM via a preload (`utils/happydom.js`, configured in `bunfig.toml`). Reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `@utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`.
 
   **NEVER run `bun test` directly.** All `packages/` tests import from `dist/` bundles. `bun test` does NOT rebuild `dist/` — it silently tests against stale code. Always run `bun coverage <package>` (bundle + coverage + lint). CI runs `bun coverage`. `bun coverage` is the single verification gate — never list standalone `bun lint` or `bun test` in a plan's DoD when it is present. **Plugin exception:** `bun coverage <plugin>` fails — `isValidPackage` resolves under `packages/` only. For `plugins/babel`, use `bun test plugins/babel/tests` + `bun lint` (tests import from source, not `dist/`).
+
+  **`bun coverage` does not enforce `guides/code.md`'s structural rules** — it runs tsc + eslint + tests, but the thin-wrapper ban, `lib/internal/` placement criteria, single-callsite <30-line extraction, `for…of`/`for…in`, and `@internal` visibility have no lint counterpart and pass green when violated. For a new package or new file structure, run `brain-audit` against `guides/code.md` as part of verification; the audit is the cheapest place to catch guide-violating structure, not a post-hoc user request.
+
+  **`bun coverage` does not enforce `guides/tests.md`'s anti-pattern rules** — duplicated helpers across files, patched-global save/restore without `try/finally`, boolean-flag/pure-integer call counters, `await delay()` used as double-delay, and `import type` inlined into a value import have no lint counterpart and pass green when violated (the hydrate test files shipped a duplicated `suppressWarn` + unsafe `console.warn` patch under a green run). For a new test file or a new shared helper, run `brain-audit` against `guides/tests.md` as part of verification.
 
   Coverage instruments built bundles (`dist/bundle.js`, `dist/index.js`, `plugins/**/*.mjs`), not `lib/` source — `lib/` is the truth; the bundle is the measurement target. A coverage reading is a point-in-time snapshot of that bundle — re-run `bun coverage` immediately before reporting coverage findings, since `dist/` bundles or tests can shift within a session and invalidate an earlier reading. See `guides/tests.md` for the full rules (anti-patterns, structure, the scenario → `test()` derivation, the verification checklist).
 </hellajs-agent>

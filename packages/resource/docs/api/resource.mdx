@@ -447,3 +447,7 @@ Each unique key creates a separate cache entry within the resource's fetcher sco
 { key: () => `user-${userId()}` }
 ```
 
+### Server-Side Rendering
+
+On the server (no `window`), `run()` exits before fetching — resources embedded in a server-rendered tree never trigger network calls. Fetch server-side data with direct `fetch()` and pass it in as `initialData`; do not rely on resources for server-side data loading.
+

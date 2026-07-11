@@ -4,16 +4,9 @@ title: Learn HellaJS
 description: Master HellaJS fundamentals through practical tutorials and comprehensive guides covering reactive programming, state management, and modern web development patterns.
 ---
 
-import { Icon } from "astro-icon/components";
-
 # Learn HellaJS
 
 HellaJS is a set of packages for building reactive client-side web applications.
-
-<div role="alert" class="alert alert-error text-base">
-  <Icon name="ph:warning" width={24} height={24} />
-  <span>Server-side rendering is not currently supported.</span>
-</div>
 
 ## Package Overview
 
@@ -25,6 +18,7 @@ Independent reactive packages. Install only what you need.
 - **[@hellajs/store](/reference/store)**: State with reactive properties.
 - **[@hellajs/router](/reference/router)**: Reactive routing and navigation.
 - **[@hellajs/resource](/reference/resource)**: Async reactive data fetching.
+- **[@hellajs/ssr](/reference/ssr)**: Server-side HTML string rendering.
 
 ## Concepts
 
@@ -45,6 +39,8 @@ Independent reactive packages. Install only what you need.
 - [Error Handling](/learn/concepts/error-handling): Global and element-level error boundaries
 - [Reactive Refs](/learn/concepts/reactive-refs): Bind to existing DOM elements with `$ref` and `$collection`
 - [Custom Elements](/learn/concepts/custom-elements): Web Components with reactive props and slots
+- [Server-Side Rendering](/learn/concepts/ssr): Render templates to HTML strings on the server
+- [Hydration](/learn/concepts/hydration): Attach reactivity to server-rendered HTML in place
 
 ## Tutorials
 
@@ -67,6 +63,7 @@ Short, copy-paste code snippets organized by concept.
 - [Styling](/learn/patterns/styling): Scoped styles, CSS variables, theme switching, animations
 - [Routing](/learn/patterns/routing): Auth guards, nested routes, query parameters
 - [Resources](/learn/patterns/resources): Fetching, caching, polling, optimistic updates
+- [SSR](/learn/patterns/ssr): Server rendering, styled output, client enhancement
 
 ## Next Steps
 

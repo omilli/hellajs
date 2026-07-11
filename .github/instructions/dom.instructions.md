@@ -9,7 +9,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 
 | Export | Kind | Source |
 |---|---|---|
-| `mount`, `html`, `component`, `element`, `onError` | Core API | `lib/{mount,html,component,element,error}.ts` |
+| `mount`, `hydrate`, `html`, `component`, `element`, `onError` | Core API | `lib/{mount,hydrate,html,component,element,error}.ts` |
 | `ForEach`, `Portal`, `Lazy`, `Transition` | Dynamic components (`isDynamic: true`) | `lib/{ForEach,Portal,Lazy,Transition}.ts` |
 | `$ref`, `$collection` | Reactive wrappers over existing DOM | `lib/$ref.ts`, `lib/$collection.ts` |
 | `registry` | `addEffect` / `addHook` registration API | `lib/registry.ts` |
@@ -55,6 +55,10 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 | `__scope` | Attached by `component()`; copied to `state.componentScope` at mount. |
 | `__static` | Template-cache marker — subtree has zero placeholder deps; shared by reference across invocations, never cloned. |
 
+### `RenderFn` / `SsrMeta` (isDynamic components)
+
+`RenderFn = ((element) => void) & { isDynamic: true; ssr?: SsrMeta }` — the return type of the four isDynamic components (`ForEach`/`Portal`/`Lazy`/`Transition`). Each attaches `fn.ssr = { kind, props }` before returning, carrying its kind (`"forEach"`/`"transition"`/`"portal"`/`"lazy"`) and the resolved props object. `SsrMeta` is consumed **type-only** by `@hellajs/ssr`, which reads `kind` to re-implement each component's render without DOM access. `props` is typed `object` (not `Record<string, unknown>`) because TS interfaces (`ForEachProps`, etc.) lack a string index signature; ssr casts to index it. A user-authored isDynamic function has no `ssr` and renders as nothing in SSR.
+
 ## Attribute prefixes
 
 | Prefix | Bucket | Behavior |
@@ -86,6 +90,16 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 - **Async mount rejections** route through `dispatchError(err, { phase: 'mount' })` — no element context, so no fallback rendering; surfaces via `onError` or `console.error('[dom]', err)`.
 - **`setMountNode` indirection.** `mount.ts` registers `mountNode` with `dispatch.ts` at module init to break the `render.ts` ↔ `dispatch.ts` circular import; `events.ts` reads `getMountNode()` lazily when rendering fallback UI.
 
+## `hydrate(node, target = "#app")` (`lib/hydrate.ts`, `lib/internal/hydrate.ts`)
+
+Attaches reactivity to existing server-rendered HTML in place — re-executes the component tree and wires effects/handlers/state to the DOM the server shipped, **never `replaceChildren`** (the core invariant vs `mount`). Mirrors `mount`'s resolve + sync/async shape; `attach` hydrates the resolved node against `container`'s existing childNodes (no replace). Fragment root → `hydrateSequence` over `container.firstChild`; single element → `hydrateNode(node, container.firstChild)`. Empty container → falls back to a fresh `mount`. Returns the same `MountHandle` shape as `mount`.
+
+- **`hydrateNode(node, existing, boundary?)`** — mirrors `mountNode`'s step order: `__static` fast-path (verify tag, attach nothing — static subtrees carry no `on`/`e`/`bind`/`hooks`); copy `__scope`/`error`; register hooks; run `beforeMount`; **SKIP `props`** (server applied them via `ssr`); register `on:`/`e:`/`bind:` against `existing`; recurse `hydrateSequence`. Tag mismatch or missing element → `console.warn("[dom] hydrate mismatch…")` + `replaceMismatch` (`mountNode` subtree-replace via `existing.parentNode.replaceChild`); a missing child (no existing) returns an orphan that `hydrateSequence` appends.
+- **`hydrateSequence(parent, children, current, boundary)`** — a **marker-reader**: walks AST children in parallel with existing DOM via a node pointer, locating each dynamic region by its `<!--[->…<!--]-->` Comment markers (`isMarkOpen` / `gatherRegion` / `consumeRegion`). Static text/elements match by position (consume one node); element children → `hydrateNode` (adopt); a fragment child → gather + remove its marker pair, recurse inline; a reactive child → `consumeRegion` (gather nodes, remove markers, insert anchor) + `adoptReactiveRegion` (adopt the gathered nodes first-run, clear+render on subsequent runs — mirrors `appendToParent`, incl. the isDynamic-resolved `Proxy` branch which is safe here because `clearRenderedNodes` runs before re-rendering); an isDynamic child → `hydrateDynamic`.
+- **`HydrateCtx` + stack** (`peekHydrateContext`/`push`/`pop`) — an **internal** type in `lib/internal/hydrate.ts` (NOT in `nodes.d.ts`; `RenderFn`'s public signature is unchanged). Carries `{ anchor, existingNodes, hydrateNode }`. `adoptRegion` pushes it around each isDynamic `fn(parent)` call so the component reuses the walker's pre-positioned anchor and adopts the marker-gathered region nodes instead of building fresh. Reentrancy-safe for nested regions.
+- **isDynamic dispatch** (`hydrateDynamic`): `consumeRegion` gathers the region's nodes + positions the anchor; `adoptRegion` pushes the ctx + calls `fn`. `ForEach`/`Transition` adopt the gathered nodes; `Portal` passes `[]` (server rendered nothing in-place) and re-mounts into the target; `Lazy` `clearRenderedNodes` the gathered loading node, then re-runs the loader. ForEach's first-render adopts via `hctx.existingNodes` into `keyToNode`/`keyToItem`/`currentKeys` **iff `existingNodes.length === arr.length`** (count-strict); on mismatch it warns + removes the gathered nodes + fresh-builds (the LIS update path is unchanged). `Transition` adopts `existingNodes[0]` as `current` when visible (applies `appear`).
+- **Marker contract** — `ssr()` wraps every dynamic region (reactive child, isDynamic component, nested fragment) in `<!--[->…<!--]-->` Comment markers; hydrate reads them. There is **no coalescing/rebuild**: each reactive value is its own bounded region, adopted in place. Missing markers (e.g. hand-built server HTML without them) → `console.warn("[dom] hydrate: expected … marker, not found")` + fresh-mount the region (graceful degradation). Reset: `resetHydrateState()` clears the stack (wired into `resetDom()`).
+
 ## `mountNode` / `appendToParent` (`lib/internal/render.ts`)
 
 `mountNode(node, boundaryElement?)` — creates element (or fragment for `tag: "$"`), copies `__scope` → `state.componentScope` and `error` → `state.errorConfig` + `state.originalNode`, sets `currentBoundary = error ? element : boundaryElement`, registers hooks, runs `beforeMount` (errors caught, `phase: 'mount'`, **no fallback**), applies `props` via `renderProp`, registers `on:` (delegated) / `e:` (direct) / `bind:` (effect-wrapped; errors `phase: 'update'`, fallback `replaceChildren` on `currentBoundary ?? element`), then `appendToParent(element, children, currentBoundary)`.
@@ -116,7 +130,7 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 ## Keyed reconciliation — `ForEach` (`lib/ForEach.ts`)
 
-Returns a function with `isDynamic: true`; `appendToParent` calls it with the parent. Creates a text anchor + one effect holding live collections (`keyToNode`, `keyToItem`, `currentKeys`) and reusable temp collections (`newKeys`, `newKeyToNode`, `newKeyToItem`, `nodesToRemove`, `keyToOldIndex`, `toMove`).
+Returns a function with `isDynamic: true` and `fn.ssr = { kind: "forEach", props }` (the SSR descriptor consumed type-only by `@hellajs/ssr`); `appendToParent` calls it with the parent. Creates a text anchor + one effect holding live collections (`keyToNode`, `keyToItem`, `currentKeys`) and reusable temp collections (`newKeys`, `newKeyToNode`, `newKeyToItem`, `nodesToRemove`, `keyToOldIndex`, `toMove`).
 
 - **Key resolution.** `element.props.key` → `item.id` → array index. The first two set `hasExplicitKey = true`; the index fallback does not.
 - **Reuse rule.** `!node || (!hasExplicitKey && oldItem !== item)` → `resolveNode` (fresh node). Explicit keys reuse by key identity regardless of item reference; index-fallback keys require the same item reference.
@@ -129,11 +143,11 @@ Returns a function with `isDynamic: true`; `appendToParent` calls it with the pa
 
 ## `Portal` (`lib/Portal.ts`)
 
-Renders children to a remote target. Creates a local anchor, then in one effect (guarded by `if (portalNodes.length > 0) return` → runs once) resolves `document.querySelector(to)`, builds nodes into a fragment, applies it via the target's `appendChild`/`prepend`/`replaceChildren`/`before`/`after` (`type` prop; default `append` maps to `appendChild`). `state.portalCleanup` (on the **anchor**) removes each tracked node from its current parent on cleanup. Throws if the target misses.
+Returns a function with `isDynamic: true` and `fn.ssr = { kind: "portal", props }`. Renders children to a remote target. Creates a local anchor, then in one effect (guarded by `if (portalNodes.length > 0) return` → runs once) resolves `document.querySelector(to)`, builds nodes into a fragment, applies it via the target's `appendChild`/`prepend`/`replaceChildren`/`before`/`after` (`type` prop; default `append` maps to `appendChild`). `state.portalCleanup` (on the **anchor**) removes each tracked node from its current parent on cleanup. Throws if the target misses.
 
 ## `Lazy` (`lib/Lazy.ts`)
 
-Async loader with cancellation. Creates an anchor; optionally `insertBefore`s a `loading` node. Allocates an `AbortController`; `state.lazyCleanup` (on the **parent**) sets `isCancelled = true` and `controller.abort()`. Calls `props.loader({ signal })`, then:
+Returns a function with `isDynamic: true` and `fn.ssr = { kind: "lazy", props }`. Async loader with cancellation. Creates an anchor; optionally `insertBefore`s a `loading` node. Allocates an `AbortController`; `state.lazyCleanup` (on the **parent**) sets `isCancelled = true` and `controller.abort()`. Calls `props.loader({ signal })`, then:
 
 - **Success** — guards on `isCancelled || !anchor.parentNode`; removes loading; if `component` is a function calls `component(props.props)`, else uses directly; `mountNode`s + `insertBefore` at anchor. **No nested Promise unwrapping** — loader must resolve to `ComponentFn | HellaNode`.
 - **Error** — same guards; removes loading; if `props.fallback`, `resolveNode` + `insertBefore` at anchor. **Errors do NOT bubble to `onError`** (local fallback only).
@@ -141,7 +155,7 @@ Async loader with cancellation. Creates an anchor; optionally `insertBefore`s a 
 
 ## `Transition` (`lib/Transition.ts`)
 
-Enter/leave CSS animations. Holds `current`, `leaveTimer`, `isFirstRender`. One effect re-runs on `show`:
+Returns a function with `isDynamic: true` and `fn.ssr = { kind: "transition", props }`. Enter/leave CSS animations. Holds `current`, `leaveTimer`, `isFirstRender`. One effect re-runs on `show`:
 
 - **Enter** (`show=true`, no `current`, no `leaveTimer`): `resolveNode(children, parent)`, `insertBefore` at anchor. `isFirstRender && appear` → add `appear` (string) or fall back to `enter`; `!isFirstRender && enter` → add `enter`. **Without `appear`, no class is added on first mount.**
 - **Rescue** (`show=true` with active `leaveTimer`): `clearTimeout`, remove `leave` class, keep the node (rapid-toggle rescue).
@@ -201,7 +215,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **`html\`${value}\`` returns `value` directly**, unwrapped.
 - **`<>...</>` and multiple roots** are supported inside `html\`\`` at any nesting; multiple roots auto-wrap in a fragment.
 - **`HellaNode.children` is always flat** — nested arrays are impossible after substitution.
-- **Passthrough components bypass `component()`** — `ForEach`/`Portal`/`Lazy`/`Transition` set `isDynamic: true` and are called directly by `appendToParent` with the parent. `<${Comp}>` in templates wraps in `component()` only if `Comp.isDynamic` is false.
+- **Passthrough components bypass `component()`** — `ForEach`/`Portal`/`Lazy`/`Transition` set `isDynamic: true` and `fn.ssr = { kind, props }`, and are called directly by `appendToParent` with the parent. `<${Comp}>` in templates wraps in `component()` only if `Comp.isDynamic` is false. The `ssr` descriptor (see `RenderFn`/`SsrMeta`) lets `@hellajs/ssr` render these without DOM access; it's write-only at mount.
 - **One scoped observer covers every `mount()` target** (`observedContainers`); a second mount target adds no second observer.
 - **`isMounted`: root sync, descendants async.** Tests must call `app.flush()` on the mount handle before asserting on `afterMount`-gated behavior.
 - **Hook element-argument rule.** `afterMount`/`beforeDestroy`/`beforeUpdate`/`afterUpdate` receive the element; `beforeMount`/`afterDestroy` do not. `beforeMount` fires synchronously before `appendChild`; `afterMount` fires deferred via the observer's microtask. Multiple hooks of the same type all fire in insertion order.

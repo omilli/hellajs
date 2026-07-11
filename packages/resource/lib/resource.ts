@@ -1,4 +1,4 @@
-import { signal, computed, effect, untracked, isFunction } from "./internal/core";
+import { signal, computed, effect, untracked, isFunction, hasWindow } from "./internal/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types/resource";
 import type { CacheEntry } from "./types/cache";
 import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
@@ -172,6 +172,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    * @param manual - When true, bypasses reactive enabled checks (manual fetch)
    */
   async function run(force = false, manual = false) {
+    if (!hasWindow()) return;
     if (!untracked(isEnabled) && !(manual && enabledIsFn)) return;
 
     const cacheKey = untracked(resolveKey);

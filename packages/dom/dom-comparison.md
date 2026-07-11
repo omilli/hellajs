@@ -28,7 +28,7 @@ HellaJS sits closest to Solid philosophically (signal-driven, no VDOM, surgical 
 - No virtual DOM. Templates (JSX or html\`\`) compile to a HellaNode AST once, then `mountNode()` produces real DOM nodes directly (`lib/internal/render.ts`, wired up in `lib/mount.ts`).
 - Surgical updates: an effect is registered per reactive binding (`render.ts`). When a signal changes, only the specific DOM property/text/attribute bound to it updates — no tree walk, no diffing, no reconciliation of siblings.
 - The html\`\` tag caches parsed AST by `TemplateStringsArray` identity in a `WeakMap` (`lib/html.ts`). On first parse, `markStaticSubtrees()` (`lib/internal/template.ts`) walks the entire AST and marks any subtree with zero placeholder dependencies as `__static`. Subsequent invocations **share static subtrees by reference** and only deep-clone the dynamic portions (`cloneWithValues`, `template.ts`) — giving you compile-time-like static analysis at runtime, with no build step required.
-- Reactive children use invisible text-node anchors + a `renderedNodes` array for stable insertion (`render.ts`) — no comment markers pollute the DOM.
+- Reactive children use invisible text-node anchors + a `renderedNodes` array for stable insertion (`render.ts`) — on mount no comment markers pollute the DOM; hydrated output carries `<!--[->…<!--]-->` region markers consumed by `hydrate`.
 
 ### Solid
 
@@ -261,4 +261,4 @@ What sets HellaJS apart — and no single competitor matches all of:
 7. **Reactive external-DOM refs** — `$ref`/`$collection` with auto-watching MutationObserver, targeting nodes outside HellaJS's own render tree.
 8. **Robust lazy cancellation** — `AbortSignal` propagated to the loader, `isCancelled` guards on both resolve and reject paths.
 
-Its gaps are the predictable ones: ecosystem size, SSR, devtools, and adoption maturity.
+Its gaps are the predictable ones: ecosystem size, devtools, and adoption maturity. SSR + hydration ship via `@hellajs/ssr` (a zero-runtime-import stringifier emitting `<!--[->…<!--]-->` region markers) and `hydrate()` (surgical, marker-located adoption — no VDOM, no coalescing rebuild).

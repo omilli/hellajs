@@ -1,0 +1,53 @@
+# Server-Side Rendering
+
+Render HellaNode templates to HTML strings on the server, then enhance them on the client. `@hellajs/ssr` is a pure stringifier — see [`ssr`](/reference/ssr/ssr).
+
+## The String-Renderer Model
+
+`ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region — a reactive child, a control-flow component, or a nested fragment — is wrapped in `<!--[->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const body = ssr(html`<div class="card">${'<b>'}</div>`);
+// body: "<div class=\"card\">&lt;b&gt;</div>"
+```
+
+Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
+
+## Zero Runtime Dependencies
+
+`ssr` imports nothing at runtime from any `@hellajs/*` package — the [`HellaNode`](/reference/dom) import is type-only and erased. This keeps the server bundle minimal and lets `ssr` operate whether or not the other packages are installed.
+
+## Control Flow on the Server
+
+[`ForEach`](/reference/dom/foreach) renders each item in array order. [`Transition`](/reference/dom/transition) renders its child when `show` is truthy, nothing otherwise. [`Lazy`](/reference/dom/lazy) renders its `loading` fallback without awaiting the loader. [`Portal`](/reference/dom/portal) renders nothing — there is no document to teleport into. Each attaches a descriptor the stringifier reads, so `ssr` needs no DOM to interpret them.
+
+## Client Enhancement
+
+The shipped HTML is the source of truth. The client can either hydrate the full tree or enhance the static HTML selectively.
+
+- [`hydrate`](/reference/dom/hydrate) re-executes the component tree against the existing DOM, locating each `<!--[->…<!--]-->` marker region and attaching effects/handlers/state without replacing it. Pass the same node the server passed to `ssr`; reactive state must initialize to the server-rendered values. See [Hydration](/learn/concepts/hydration).
+- Bind individual existing server-rendered nodes into reactivity with [`$ref`](/reference/dom/ref) and [`$collection`](/reference/dom/collection).
+- Mount a reactive island into an empty placeholder the template left for it.
+
+```js
+import { html, hydrate } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+// Server renders the whole app
+const body = ssr(html`<${App} />`);
+// page: <div id="app">${body}</div>
+```
+
+```js
+// Client hydrates it in place
+hydrate(html`<${App} />`, '#app');
+```
+
+⚠️ A full-tree [`mount`](/reference/dom/mount) over the server-rendered container wipes it — `mount` replaces the container's children and rebuilds. Use `hydrate`, the enhancement modes above, or reserve full re-mount for throwaway SEO-only content.
+
+## Synchronous Render
+
+`ssr` walks the tree once. Reactive values are read at their current value with no effect scheduling or batching. Resolve server-side data before building the tree.

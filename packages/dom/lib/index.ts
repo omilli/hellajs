@@ -3,6 +3,7 @@ export { Portal } from "./Portal";
 export { Lazy } from "./Lazy";
 export { Transition } from "./Transition";
 export { mount } from "./mount";
+export { hydrate } from "./hydrate";
 export { element } from "./element";
 export { $ref } from "./$ref";
 export { $collection } from "./$collection";

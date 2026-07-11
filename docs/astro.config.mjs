@@ -17,7 +17,8 @@ export default defineConfig({
         '@dom/*': '../packages/dom/docs/*',
         '@resource/*': '../packages/resource/docs/*',
         '@router/*': '../packages/router/docs/*',
-        '@store/*': '../packages/store/docs/*'
+        '@store/*': '../packages/store/docs/*',
+        '@ssr/*': '../packages/ssr/docs/*'
       }
     }
   },

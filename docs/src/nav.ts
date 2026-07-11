@@ -19,6 +19,8 @@ export const navigation = {
         "ForEach",
         "Lazy-Loading",
         "Portals",
+        "SSR",
+        "Hydration",
       ],
     },
     {
@@ -29,6 +31,7 @@ export const navigation = {
         "Styling",
         "Routing",
         "Resources",
+        "SSR",
       ],
     },
     {
@@ -57,6 +60,7 @@ export const navigation = {
         "html",
         "Lazy",
         "mount",
+        "hydrate",
         "onError",
         "Portal",
         "registry",
@@ -66,6 +70,7 @@ export const navigation = {
     { store: ["store"] },
     { router: ["navigate", "route", "router"] },
     { resource: ["resource", "resourcecache"] },
+    { ssr: ["ssr"] },
   ],
   plugins: ["babel", "rollup", "vite"],
 } as const;

@@ -19,7 +19,7 @@ export function clearStaticCache(): void {
  * @param boundary The boundary element to check
  * @returns The error config, or undefined
  */
-function getBoundaryConfig(boundary: Element | undefined): ErrorConfig | undefined {
+export function getBoundaryConfig(boundary: Element | undefined): ErrorConfig | undefined {
   if (!boundary) return undefined;
   const state = peekState(boundary);
   return state ? state.errorConfig : undefined;
@@ -31,7 +31,7 @@ function getBoundaryConfig(boundary: Element | undefined): ErrorConfig | undefin
  * @param nodes The array of rendered nodes to clear
  * @param parent The parent DOM node to remove children from
  */
-function clearRenderedNodes(nodes: Node[], parent: Node) {
+export function clearRenderedNodes(nodes: Node[], parent: Node) {
   let i = 0;
   const len = nodes.length;
   while (i < len) {

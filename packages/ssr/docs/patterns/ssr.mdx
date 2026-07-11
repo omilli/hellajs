@@ -1,0 +1,124 @@
+# SSR
+
+Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr).
+
+### Plain HTML with Bun.serve
+
+Render a template to a string and return a full document.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const page = (name) => html`<div><h1>Hello ${name}</h1></div>`;
+
+Bun.serve({
+  port: 3000,
+  fetch: () => new Response(
+    `<!DOCTYPE html><html><body><div id="app">${ssr(page('World'))}</div></body></html>`,
+    { headers: { 'content-type': 'text/html' } }
+  )
+});
+```
+
+### Styled output
+
+[`@hellajs/css`](/reference/css) returns CSS text on the server. Compose it with the rendered body in a `<style>` tag.
+
+```js
+import { html } from '@hellajs/dom';
+import { css } from '@hellajs/css';
+import { ssr } from '@hellajs/ssr';
+
+const card = css({ border: '1px solid #ccc' }, { name: 'card' });
+
+const body = ssr(html`<div class="card">Content</div>`);
+const page = `<!DOCTYPE html><html><head><style>${card}</style></head>
+<body><div id="app">${body}</div></body></html>`;
+```
+
+### Express handler
+
+Use `ssr` inside any Node framework. The stringifier is framework-agnostic.
+
+```js
+import express from 'express';
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const app = express();
+
+app.get('/', (req, res) => {
+  const body = ssr(html`<div><h1>Hello ${req.query.name ?? 'World'}</h1></div>`);
+  res.send(`<!DOCTYPE html><html><body><div id="app">${body}</div></body></html>`);
+});
+
+app.listen(3000);
+```
+
+### Bind an existing node with $ref
+
+Enhance server-rendered HTML by binding an existing node into reactivity on the client.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+// Server
+const body = ssr(html`<div id="app"><span id="count">0</span></div>`);
+```
+
+```typescript
+import { signal } from '@hellajs/core';
+import { $ref } from '@hellajs/dom';
+
+// Client
+const count = signal(0);
+const span = $ref('#count');
+span.bind(() => String(count()));
+```
+
+### Mount an island into an empty slot
+
+Leave an empty placeholder on the server and mount a reactive island into it on the client.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+// Server leaves an empty slot
+const body = ssr(html`<div><h1>Post</h1><div id="slot"></div></div>`);
+```
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+
+// Client mounts an interactive island
+const Counter = () => {
+  const clicks = signal(0);
+  return html`<button on:click=${() => clicks(clicks() + 1)}>${clicks}</button>`;
+};
+mount(Counter, '#slot');
+```
+
+### Hydrate server-rendered HTML
+
+Re-execute the full component tree against the existing server DOM to make the entire page interactive without replacing any nodes.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+// Server renders the whole app into the target element
+const body = ssr(html`<${App} />`);
+// page: <div id="app">${body}</div>
+```
+
+```js
+import { hydrate, html } from '@hellajs/dom';
+
+// Client attaches effects/handlers to the existing nodes
+const handle = hydrate(html`<${App} />`, '#app');
+handle.flush(); // fire deferred afterMount hooks before first paint
+```

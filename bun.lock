@@ -62,6 +62,13 @@
         "@hellajs/core": "^1.0.6",
       },
     },
+    "packages/ssr": {
+      "name": "@hellajs/ssr",
+      "version": "1.0.0",
+      "peerDependencies": {
+        "@hellajs/dom": "^1.4.2",
+      },
+    },
     "packages/store": {
       "name": "@hellajs/store",
       "version": "1.0.5",
@@ -323,6 +330,8 @@
     "@hellajs/resource": ["@hellajs/resource@workspace:packages/resource"],
 
     "@hellajs/router": ["@hellajs/router@workspace:packages/router"],
+
+    "@hellajs/ssr": ["@hellajs/ssr@workspace:packages/ssr"],
 
     "@hellajs/store": ["@hellajs/store@workspace:packages/store"],
 
