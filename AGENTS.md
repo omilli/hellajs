@@ -68,12 +68,13 @@
   | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`, then sync the `brain-*` skills from `omilli/brain` (shallow clone) into `.agents/skills/` (leaving `comparison/` untouched). |
   | visibility | `bun visibility` | Guard: fail if a wholesale-exported `types*.d.ts` contains `@internal`-tagged types (would leak as public). |
   | dead-exports | `bun dead-exports` | Guard: fail if any exported symbol has zero value-position references across source, tests, and docs. |
+  | jsdoc-params | `bun jsdoc-params` | Guard: fail if any `function` declaration's JSDoc has a `@param` tag whose name does not match a parameter. |
 
   ## Skills
 
   The `brain-*` pack is the skill system: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills that maintain it. All ten `brain-*` skills are synced from `omilli/brain` — do not edit them directly; edits are overwritten on sync. All feedback-driven config edits must target `AGENTS.md` instead. There is no global-inherited layer and no graceful-degradation fallback. `brain-prime` loads first on any substantive task (see Core rules); the rest are discovered on demand.
 
-  The loop: `brain-idea` / `brain-audit` / `brain-feature` (entry) → `brain-plan` → `brain-worker` (back to `brain-plan` on a gap, `brain-idea` on a fork) → `brain-feedback` → `brain-memory`. When a skill hits a guide conflict it emits a guide-update proposal; the user accepts, rejects, or defers (see Non-negotiables). Each skill's `SKILL.md` carries the full workflow plus the two Non-negotiables with skill-specific enforcement.
+  The loop: `brain-idea` / `brain-audit` / `brain-feature` (entry) → `brain-plan` → `brain-worker` (back to `brain-plan` on a gap, `brain-idea` on a fork) → `brain-feedback` → `brain-memory`. When a skill hits a guide conflict it emits a guide-update proposal; the user accepts, rejects, or defers (see Non-negotiables). A codebase-fact drift — AGENTS.md prose describing current behavior (file maps, invariant one-liners such as "No try/catch") that the source has outgrown — is not a rule conflict: route it to `brain-plan` as a factual fix in the change's blast radius, not to `brain-feedback`. Each skill's `SKILL.md` carries the full workflow plus the two Non-negotiables with skill-specific enforcement.
 
   | Skill | Role |
   |---|---|
