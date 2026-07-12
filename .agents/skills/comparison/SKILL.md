@@ -13,7 +13,7 @@ Two rules govern this skill absolutely. The comparison doc feeds `feature`'s dis
 
 **Guides are inviolable.** The comparison doc follows `guides/docs.md` — it is a `.md` file, audited as Docs. A conflict with the guide surfaces as a guide-update proposal, never a silent workaround. The doc cites HellaJS v2 and states competitor versions researched, per `docs.md` §Implementation Accuracy.
 
-**Every change carries its full blast radius.** Every HellaJS claim cites a `lib/` file read this session; every competitor claim cites a fetched source. A claim carried from memory or from an old version of the doc without re-verification is exactly the drift this skill exists to remove. When updating an existing comparison, note corrected claims in a changelog entry so downstream feature ideas built on the old claim can be re-checked — a stale gap row may have driven a feature that's now shipped.
+**Every change carries its full blast radius.** Every HellaJS claim cites a `lib/` file read this session; every competitor claim cites a fetched source. A claim carried from memory or from an old version of the doc without re-verification is exactly the drift this skill exists to remove. A stale gap row that may have driven a shipped feature is caught by re-verifying the claim against current source — comparison docs carry no changelog and no "was this / now this" narrative; the present-tense rule is set in Step 4.
 
 ## Step 1 — Load the package and its targets
 
@@ -57,6 +57,7 @@ Read `./TEMPLATE.md` and follow its section structure verbatim — do not add, r
 
 What follows is how to write the prose that fills those sections — TEMPLATE.md owns structure, this list owns voice:
 
+- Write the doc as a point-in-time present-tense snapshot of what each library does and does not do today. No changelog, no "was this / now this," no "previously / no longer / once / still / grew to / now ships" framing anywhere — a reader comparing libraries wants the current state, not a diff against an earlier version of this doc. When updating an existing comparison, rewrite the prose fresh; carry no historical framing forward and annotate no delta (Step 5 checks for it).
 - Every claim about HellaJS behavior ends with a citation in the form `(lib/[file].ts)` or `(lib/internal/[file].ts)`. A claim you cannot cite is a claim you cannot make — the citation is the only thing distinguishing this doc from an opinion piece.
 - Every competitor claim is factual and current. State researched facts plainly; mark unverified ones "per [source]" or `unverified`.
 - Tables are for at-a-glance scanning; prose is for nuance. Use both — collapsing everything into one table loses the reasoning a comparison exists to convey.
@@ -69,13 +70,14 @@ What follows is how to write the prose that fills those sections — TEMPLATE.md
 Before writing the file, verify:
 
 a. Does every HellaJS claim have a `file` citation that was actually read this session?
-b. Does the doc include at least one honest gap or weakness?
-c. Does the Bottom Line list differentiators that are genuinely unique (no single competitor matches all)?
-d. Does the section structure match `./TEMPLATE.md` exactly — no added, renamed, reordered, or skipped sections?
-e. Was `packages/[package]/lib/internal/` read in full (if it exists)?
+b. Does the doc read as present tense — no changelog, no "was / now / previously / no longer / once / still / grew to / now ships" framing anywhere?
+c. Does the doc include at least one honest gap or weakness?
+d. Does the Bottom Line list differentiators that are genuinely unique (no single competitor matches all)?
+e. Does the section structure match `./TEMPLATE.md` exactly — no added, renamed, reordered, or skipped sections?
+f. Was `packages/[package]/lib/internal/` read in full (if it exists)?
 
 If any answer is no, fix it before saving. Save to `packages/[package]/[package]-comparison.md`.
 
 ## When to update an existing comparison
 
-If `packages/[package]/[package]-comparison.md` already exists, treat it as a previous version. Re-read all source files (the implementation may have changed since it was written), re-verify every citation, re-fetch competitor info, and update the doc. Note any claims that were corrected at the top of the updated doc in a one-line changelog entry. Do not blindly preserve old claims — verify them against current source.
+If `packages/[package]/[package]-comparison.md` already exists, re-read all source files (the implementation may have changed since it was written), re-verify every citation, re-fetch competitor info, and rewrite the doc as a fresh present-tense snapshot. There is no previous version from the reader's perspective, so carry over no "was / now / previously / no longer" framing and note no changelog — a comparison describes what each library does today, not what this doc used to say. Do not blindly preserve old prose either; verify each claim against current source and rephrase it present-tense.
