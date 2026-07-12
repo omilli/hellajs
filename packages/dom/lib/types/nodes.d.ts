@@ -131,7 +131,7 @@ export interface ComponentFn {
  */
 export interface SsrMeta {
   /** Which isDynamic component produced this function. */
-  kind: "forEach" | "transition" | "portal" | "lazy";
+  kind: "forEach" | "transition" | "portal" | "lazy" | "suspense";
   /** The resolved props object the component received (ssr casts to index it). */
   props: object;
 }
@@ -334,4 +334,12 @@ export interface LazyProps {
   loading?: HellaChild;
   fallback?: HellaChild;
   props?: Record<string, unknown>;
+}
+
+/** Props for [`Suspense`](../dom) — an out-of-order streaming boundary for server rendering. */
+export interface SuspenseProps {
+  /** Content rendered while children are unresolved (server-streaming only; dropped under `ssr`/`ssrAsync`). */
+  fallback?: HellaChild;
+  /** The boundary's content. On the server it may await; on the client it renders directly. */
+  children: HellaChild;
 }

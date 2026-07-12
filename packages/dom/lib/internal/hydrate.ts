@@ -91,6 +91,30 @@ function consumeRegion(parent: HellaElement, open: Node): { anchor: Node; existi
 }
 
 /**
+ * @internal
+ * β hydrate-swap for `<Suspense>`: if the gathered region nodes contain a sentinel comment whose nodeValue
+ * is a staged `<template>` id, replace the fallback with the template's resolved children (no inline script —
+ * the swap runs during this single hydrate pass). Returns the nodes to adopt (swapped children, or the
+ * original `existing` when there is no stage — e.g. an `ssr`/`ssrAsync` render where children are present).
+ */
+function swapSuspenseStage(existing: Node[], anchor: Node): Node[] {
+  let template: HTMLTemplateElement | null = null;
+  for (const n of existing) {
+    if (n.nodeType === Node.COMMENT_NODE && n.nodeValue) {
+      const staged = document.getElementById(n.nodeValue);
+      if (staged && staged.tagName === "TEMPLATE") { template = staged as HTMLTemplateElement; break; }
+    }
+  }
+  if (!template) return existing;
+  const swapped = Array.from(template.content.childNodes);
+  const parent = anchor.parentNode;
+  for (const n of existing) { if (n.parentNode) n.parentNode.removeChild(n); }   // drop fallback + sentinel
+  if (parent) for (const n of swapped) parent.insertBefore(n, anchor);            // place resolved children
+  template.remove();
+  return swapped;
+}
+
+/**
  * Pushes a HydrateCtx seeded with the gathered region nodes + the walker's anchor, calls the
  * isDynamic component fn (which adopts via {@link peekHydrateContext}), then pops.
  * @internal
@@ -358,6 +382,9 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
     case "lazy":
       clearRenderedNodes(existing, parent);     // drop the server loading node; re-run the loader
       adoptRegion(parent, child, anchor, []);
+      break;
+    case "suspense":
+      adoptRegion(parent, child, anchor, swapSuspenseStage(existing, anchor));   // β hydrate-swap: stage → resolved children
       break;
     default:
       adoptRegion(parent, child, anchor, existing);

@@ -5,12 +5,14 @@ Pure HTML stringifier over `@hellajs/dom`'s HellaNode AST. Zero runtime imports 
 | Export | Purpose |
 |---|---|
 | `ssr` | `ssr(node: HellaNode): string` — serialize a HellaNode AST to an HTML string. |
+| `ssrAsync` | `ssrAsync(node: HellaNode): Promise<string>` — async counterpart; awaits any Promise a resolved value (child, `bind:`, `each`, `show`) returns. |
+| `ssrStream` | `ssrStream(node: HellaNode): ReadableStream<string>` — streaming counterpart; yields HTML chunks, flushing the static prefix before each await. |
 
 ## Architecture (`lib/`)
 
 | File | Purpose |
 |---|---|
-| `lib/ssr.ts` | The whole package. `ssr(node)` (the recursive node walker — the only export) plus co-located helpers: `walkChild` (child dispatcher), `renderDynamic` (shared isDynamic-`ssr` dispatch), `walkChildren`, `serializeProp`/`escapeText` (mirror dom's `renderProp`), `resolveValue`, and `MARK_OPEN`/`MARK_CLOSE` region wrapping. No try/catch (walk failures propagate). No `internal/` — one file, co-located single-package helpers; nothing meets the `internal/` placement criteria. |
+| `lib/ssr.ts` | The whole package. `ssr(node)` (the sync recursive walker) plus `ssrAsync(node)` (collect-wrapper) and `ssrStream(node)` (`ReadableStream` wrapper) over one shared async-generator walker (`walkChildGen`/`walkChildrenGen`/`renderDynamicGen`/`ssrNodeGen`, `async function*` that yields chunks). Sync helpers: `walkChild`/`walkChildren`/`renderDynamic`. Shared: `serializeProp`/`escapeText` (mirror dom's `renderProp`), `resolveValue`/`resolveAsync`/`isPromise`, `MARK_OPEN`/`MARK_CLOSE`. No try/catch (walk failures, including rejected Promises, propagate). No `internal/` — one file, co-located single-package helpers; nothing meets the `internal/` placement criteria. |
 
 ### The walk
 
@@ -29,11 +31,12 @@ Every dynamic region (reactive child, isDynamic component, nested fragment) is w
 
 ### isDynamic components (`ssr` descriptor)
 
-`ForEach`/`Transition`/`Portal`/`Lazy` return opaque `isDynamic` closures. dom attaches `fn.ssr = { kind, props }` (`packages/dom/lib/types/nodes.d.ts` → `SsrMeta`); `renderDynamic` (shared by the direct-child and reactive-resolved paths) switches on `kind`:
+`ForEach`/`Transition`/`Portal`/`Lazy`/`Suspense` return opaque `isDynamic` closures. dom attaches `fn.ssr = { kind, props }` (`packages/dom/lib/types/nodes.d.ts` → `SsrMeta`); `renderDynamic` (shared by the direct-child and reactive-resolved paths) switches on `kind`:
 - `forEach` — resolves `each` (call if function), maps `use(item, index)` → `walkChild`. Keys are irrelevant server-side.
 - `transition` — resolves `show`; renders `children` when truthy, nothing otherwise.
 - `portal` — renders nothing (no document to teleport into).
 - `lazy` — renders `props.loading` if present; never awaits `loader`.
+- `suspense` — under `ssr`/`ssrAsync` renders `children` directly (fallback dropped); under `ssrStream` emits `fallback` inline + a sentinel comment (nodeValue = a `<template>` id), defers, and stages the resolved children in `<template id="hsN">` at stream end for `hydrate` to swap in (β).
 
 A user-authored isDynamic function with no `ssr` renders as nothing (not an error). User components (`component()`) expand to a HellaNode at template time, so they are plain recursion — no `ssr`.
 
@@ -44,6 +47,7 @@ A user-authored isDynamic function with no `ssr` renders as nothing (not an erro
 - **`resource` render-fetches no-op on the server.** `run()` guards with `hasWindow()` — resources embedded in a server-rendered tree never trigger network calls. `mutate()` is intentionally UNGUARDED: it is user-initiated (not render-time), so an SSR render never invokes it; guarding would silently drop legitimate mutations. Fetch server-side data with direct `fetch()` and pass it as `initialData`.
 - **Errors propagate.** `ssr` has no try/catch; a throwing child/bind/`use` getter surfaces to the caller. (A throwing *component* does NOT propagate — `component()` catches render errors → empty fragment.)
 - **Zero runtime imports.** `lib/` has only `import type` from `@hellajs/dom` (erased). Adding a runtime `@hellajs/*` import violates the package's core invariant.
+- **`ssrAsync` awaits but changes nothing else.** `ssrAsync(node)` is the async counterpart to `ssr`: it awaits any Promise a resolved value (child, `bind:`, `each`, `show`) returns, then classifies exactly as `ssr`. Marker wrapping is byte-identical, so `hydrate` consumes either output unchanged. `Lazy` still renders `loading` (client-side loader) and `resource` still no-ops on the server — both unchanged; expose server data via a Promise-returning getter.
 
 ## Testing approach (`tests/`)
 

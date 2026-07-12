@@ -64,13 +64,14 @@ export const navigation = {
         "onError",
         "Portal",
         "registry",
+        "Suspense",
       ]
     },
     { css: ["css", "removeCss", "resetCss", "cssVars", "removeCssVars", "resetCssVars"] },
     { store: ["store"] },
     { router: ["navigate", "route", "router"] },
     { resource: ["resource", "resourcecache"] },
-    { ssr: ["ssr"] },
+    { ssr: ["ssr", "ssr-async", "ssr-stream"] },
   ],
   plugins: ["babel", "rollup", "vite"],
 } as const;

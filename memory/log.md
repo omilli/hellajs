@@ -1,5 +1,10 @@
 # Memory Update Log
 
+## 2026-07-12
+* **Creation**: Added concept [014](entries/014.md) (type: decision).
+* **Creation**: Added concept [015](entries/015.md) (type: decision).
+* **Creation**: Added concept [016](entries/016.md) (type: decision).
+
 ## 2026-07-11
 * **Update**: Accuracy refresh — re-verified every active concept against `lib/` source. Fixed 005 ("ssr UNBUILT (entry 007)" → ssr is BUILT; 007 archived → 009 → 013; corrected lifecycle/cache/render line drift) and 006 ("14 tests" → 13 tests, in description + 005 css bullet). Bumped `last_confirmed` on 001/002/003/004/005/006 (verified accurate this session). 008 (flaky-test observation) left as-is — flakiness not re-verifiable without a full-suite run; 010/011/012 RESOLVED-banner accuracy confirmed. Rebuilt index.md.
 * **Creation**: Added concept [012](entries/012.md) (type: decision).

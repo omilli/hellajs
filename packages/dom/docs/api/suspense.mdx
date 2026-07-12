@@ -1,0 +1,67 @@
+# Suspense
+
+An out-of-order streaming boundary for server rendering — wrap async server data so the shell and a `fallback` flush immediately via [`streamSsr`](/reference/ssr/ssr-stream), then [`hydrate`](/reference/dom/hydrate) swaps the resolved children in.
+
+## API
+
+```typescript
+function Suspense(props: SuspenseProps): JSX.Element
+```
+
+- `props.fallback`: Content rendered while children are unresolved (server-streaming only; dropped under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)).
+- `props.children`: The boundary's content. On the server it may await; on the client it renders directly.
+
+## Basic Usage
+
+Render a shell with a `fallback` immediately, then resolve async data into the boundary. [`streamSsr`](/reference/ssr/ssr-stream) flushes the `fallback` inline and stages the resolved children; [`hydrate`](/reference/dom/hydrate) swaps them in.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { html, Suspense } from '@hellajs/dom';
+import { ssrStream } from '@hellajs/ssr';
+
+const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+
+const App = () => html`
+  <div>
+    <h1>Profile</h1>
+    <${Suspense} fallback=${html`<p>Loading…</p>`}>
+      ${() => user(1).then(name => html`<p>${name}</p>`)}
+    </${Suspense}>
+  </div>
+`;
+
+// Server — the shell + fallback stream first; resolved children stage for hydrate
+const stream = ssrStream(html`<${App} />`);
+```
+
+```jsx
+import { hydrate, html } from '@hellajs/dom';
+
+// Client — hydrate swaps each boundary's resolved children in, then wires them
+hydrate(html`<${App} />`, '#app');
+```
+
+## Key Concepts
+
+### Out-of-Order Streaming Opt-In
+
+Bare async (a Promise outside a `<Suspense>`) is awaited in-order by [`ssrStream`](/reference/ssr/ssr-stream) — a slow value delays everything after it. `<Suspense>` opts a subtree into out-of-order streaming: its `fallback` flushes inline and siblings continue, so a slow fetch no longer blocks the rest of the page.
+
+### Hydrate Swaps, Then Adopts
+
+The resolved children are staged in a `<template>` at stream end. During the single [`hydrate`](/reference/dom/hydrate) pass, each boundary swaps its staged children in (replacing the `fallback`) and adopts them — no inline script ships in the HTML. Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) (no streaming) the children are already present, so `<Suspense>` simply renders them directly.
+
+### Fresh Mount Renders Children Directly
+
+On a purely client-side [`mount`](/reference/dom/mount) (no server HTML), `<Suspense>` renders its children immediately — the `fallback` is server-stream-only.
+
+## Important Considerations
+
+### Pair With `streamSsr`
+
+`<Suspense>` only changes streaming behavior under [`streamSsr`](/reference/ssr/ssr-stream). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) it renders children directly (fallback dropped), so it is safe to use in trees rendered any way.
+
+### Nested Suspense Resolves Eagerly
+
+A `<Suspense>` inside another boundary's children resolves eagerly within its parent's staged content (the parent's swap contains the fully-resolved subtree). Top-level boundaries stream independently.
