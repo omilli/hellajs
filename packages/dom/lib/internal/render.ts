@@ -154,7 +154,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
  * Handles static text, HellaNodes, functions, and forEach.
  * @param parent The parent element
  * @param children The children to append
- * @param boundaryElement The nearest error boundary element (for error propagation during construction)
+ * @param currentBoundary The nearest error boundary element (for error propagation during construction)
  */
 function appendToParent(parent: HellaElement, children?: HellaChild[], currentBoundary?: Element) {
   if (!children || children.length === 0) return;
