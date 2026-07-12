@@ -1,2 +1,3 @@
 - use package README.md as import to API docs
 - html`` props
+- type visibility and params check inside lint
