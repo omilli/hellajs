@@ -2,8 +2,6 @@
 
 A ground-up comparison based on the actual source code of `@hellajs/resource` v2. Every claim below was verified against `packages/resource/lib/`.
 
-> **Changelog:** Re-verified against current source. Corrected HellaJS bundle sizes (4.1 KB min+gzip for the resource bundle, was understated). Removed two false gaps: `enabled` accepts a reactive `() => boolean` getter (it is not static), and structural sharing is shipped opt-in via `structuralSharing` (it is not absent). Added the `invalidates` mutation option and clarified that `resourceCache.prefetch` exists — only SSR `dehydrate`/`hydrate` is absent.
-
 ---
 
 ## 1. At-a-Glance Summary
