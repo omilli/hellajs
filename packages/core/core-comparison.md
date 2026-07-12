@@ -75,7 +75,7 @@ HellaJS core sits in the standalone-signals camp with Solid's reactive core and 
 
 ## 4. Reactivity Granularity
 
-HellaJS gives per-binding granularity with glitch-free guarantees. Reading a signal inside a computed or effect establishes a subscription only to that specific signal (`lib/signal.ts`, `lib/computed.ts`); conditional branches establish dynamic dependencies that change between executions (`lib/internal/tracking.ts` tears down unused links after `rpd`, so a branch that no longer fires drops its subscriptions).
+HellaJS gives per-binding granularity with glitch-free guarantees. Reading a signal inside a computed or effect establishes a subscription only to that specific signal (`lib/signal.ts`, `lib/computed.ts`); conditional branches establish dynamic dependencies that change between executions (`lib/internal/tracking.ts` tears down unused links after `rpd`, so a branch that stops firing drops its subscriptions).
 
 | Framework | Granularity | Glitch-free? | Untracked reads |
 |---|---|---|---|
@@ -145,7 +145,7 @@ HellaJS's default is **synchronous flush**. Calling `signal(value)` outside a ba
 
 `batch(fn)` increments a counter on entry, decrements on exit, and flushes when the counter returns to zero (`lib/batch.ts`). Nested batches collapse into the outermost. The SCHEDULED bitmask (`lib/internal/queue.ts`) prevents double-queuing when multiple signals change in the same propagation (verified by `packages/core/tests/reactive.test.ts` — "effect not double-queued when scheduled twice in same propagation").
 
-`flush` processes the queue in FIFO order, with each effect re-validating its dependencies before running (`lib/internal/scheduler.ts` and `lib/internal/scheduler.ts`). Errors thrown from an effect abort the remaining queue — subsequent updates start a fresh flush (`packages/core/tests/reactive.test.ts`).
+`flush` processes the queue in FIFO order, with each effect re-validating its dependencies before running (`lib/internal/scheduler.ts` and `lib/internal/scheduler.ts`). Errors thrown from an effect abort the rest of the queue — subsequent updates start a fresh flush (`packages/core/tests/reactive.test.ts`).
 
 | Framework | Default flush | Batching primitive | Order guarantee |
 |---|---|---|---|
