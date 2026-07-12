@@ -1,0 +1,54 @@
+# ssrAsync
+
+Serialize a HellaNode AST into an HTML string, awaiting any Promise a resolved value returns — the async counterpart to [`ssr`](/reference/ssr/ssr).
+
+## API
+
+```typescript
+function ssrAsync(node: HellaNode): Promise<string>
+```
+
+- `node`: A HellaNode AST (produced by [`html`](/reference/dom/html) or JSX) to serialize.
+- **Returns**: A `Promise` resolving to the rendered HTML string.
+
+## Basic Usage
+
+A component may embed server-side async data directly: a getter that returns a `Promise` is awaited, and its resolved value is placed inside a marker-bounded region identical to [`ssr`](/reference/ssr/ssr).
+
+```js
+import { html } from '@hellajs/dom';
+import { ssrAsync } from '@hellajs/ssr';
+
+const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+
+const body = await ssrAsync(html`<p>Hello ${() => user(1)}</p>`);
+// body: "<p><!--[-->Ada<!--]--></p>"
+```
+
+## Key Concepts
+
+### Awaits Promises In Place
+
+Where [`ssr`](/reference/ssr/ssr) reads each getter once and cannot await, `ssrAsync` awaits any resolved value that is a `Promise` — a child, a `bind:` attribute, a [`ForEach`](/reference/dom/foreach) `each`, or a [`Transition`](/reference/dom/transition) `show`. Nested thenables unwrap fully. Use `ssrAsync` when a subtree needs server-fetched data; use `ssr` when every value is already resolved (zero Promise overhead).
+
+### Identical Markers, Unchanged Hydration
+
+Marker wrapping is byte-identical to [`ssr`](/reference/ssr/ssr): every dynamic region is bounded by `<!--[->…<!--]-->`, so [`hydrate`](/reference/dom/hydrate) consumes `ssrAsync` output exactly as it consumes `ssr` output. Awaiting data changes *when* values resolve, not the output contract.
+
+### Zero Runtime Dependencies
+
+Like [`ssr`](/reference/ssr/ssr), `ssrAsync` has zero runtime imports from any `@hellajs/*` package — awaiting a `Promise` needs no import. The only import is a type-only [`HellaNode`](/reference/dom), erased at compile time.
+
+## Important Considerations
+
+### Fetch Directly; Lazy and Resource Are Unchanged
+
+`ssrAsync` provides a generic await mechanism — return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) still renders its `loading` fallback (its loader is client-side), and [`resource`](/reference/resource/resource) still no-ops its fetch pipeline on the server. Fetch server-side data with direct `fetch()` and expose it through a Promise-returning getter.
+
+### Errors Propagate
+
+A rejected `Promise` rejects the returned `Promise` — `ssrAsync` has no try/catch. Wrap the call in your own error handling if a fetch may fail.
+
+### Synchronous Data Prefers `ssr`
+
+If no value is a `Promise`, `await ssrAsync(node)` equals `ssr(node)`. Prefer [`ssr`](/reference/ssr/ssr) for already-resolved data to avoid the Promise overhead.

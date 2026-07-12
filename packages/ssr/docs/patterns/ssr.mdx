@@ -122,3 +122,65 @@ import { hydrate, html } from '@hellajs/dom';
 const handle = hydrate(html`<${App} />`, '#app');
 handle.flush(); // fire deferred afterMount hooks before first paint
 ```
+
+### Async data fetching
+
+Fetch server-side data directly in the tree with [`ssrAsync`](/reference/ssr/ssr-async) — a getter that returns a Promise is awaited.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssrAsync } from '@hellajs/ssr';
+
+const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+
+const App = (id) => html`<p>Hello ${() => user(id)}</p>`;
+
+const body = await ssrAsync(App(1));
+// body: "<p><!--[-->Ada<!--]--></p>"
+```
+
+### Streaming responses
+
+Stream HTML to the client as it renders with [`ssrStream`](/reference/ssr/ssr-stream) — the static shell flushes before async values resolve.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssrStream } from '@hellajs/ssr';
+
+const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
+
+Bun.serve({
+  port: 3000,
+  fetch: (req) => {
+    const id = new URL(req.url).searchParams.get('id') ?? '1';
+    return new Response(
+      ssrStream(page(id)).pipeThrough(new TextEncoderStream()),
+      { headers: { 'content-type': 'text/html' } }
+    );
+  }
+});
+```
+
+### Out-of-order streaming with Suspense
+
+Wrap async data in [`<Suspense>`](/reference/dom/suspense) so the shell and a `fallback` flush immediately while the children resolve — a slow fetch no longer blocks the rest of the page.
+
+```jsx
+import { html, Suspense } from '@hellajs/dom';
+import { ssrStream } from '@hellajs/ssr';
+
+const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+
+const App = () => html`
+  <div>
+    <h1>Profile</h1>
+    <${Suspense} fallback=${html`<p>Loading…</p>`}>
+      ${() => user(1).then(name => html`<p>${name}</p>`)}
+    </${Suspense}>
+  </div>
+`;
+
+// Server streams the shell + fallback first; resolved children stage for hydrate
+const stream = ssrStream(html`<${App} />`);
+```

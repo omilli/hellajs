@@ -2,6 +2,7 @@ export { ForEach } from "./ForEach";
 export { Portal } from "./Portal";
 export { Lazy } from "./Lazy";
 export { Transition } from "./Transition";
+export { Suspense } from "./Suspense";
 export { mount } from "./mount";
 export { hydrate } from "./hydrate";
 export { element } from "./element";
