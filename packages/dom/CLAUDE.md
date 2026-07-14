@@ -203,7 +203,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 
 ## `renderProp` (`lib/internal/utils.ts`)
 
-`DIRECT_PROPS` = `value`/`checked`/`selected`/`innerHTML` → set the IDL property directly (falsy → `''`, never `removeAttribute`). Other keys: `isFalsy` (`false`/`null`/`undefined`) → `removeAttribute`; `true` → empty string; arrays → space-joined filtering falsy (class lists); else `setAttribute`. **`isFalsy(0)` is false** — signal `0` renders `"0"`.
+`value`/`checked`/`selected`/`innerHTML` → set the IDL property directly (falsy → `''`, never `removeAttribute`). Other keys: `isFalsy` (`false`/`null`/`undefined`) → `removeAttribute`; `true` → empty string; arrays → space-joined filtering falsy (class lists); else `setAttribute`. **`isFalsy(0)` is false** — signal `0` renders `"0"`.
 
 ## Non-obvious behaviors (gotchas)
 
@@ -243,8 +243,8 @@ Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bu
 
 `tests/helpers.ts` exports `fallbackHandler(defaultFallback)` — registers an `onError` handler that delegates to `context.config?.fallback?.(error)` else returns the default; the standard pattern for exercising element-level fallback through the global handler.
 
-- `mount.test.ts` — sync/async component fns, signal `0` renders `"0"`, async-mount error routing.
-- `mount-validation.test.ts`, `mount-targets.test.ts`, `mount-binding.test.ts`, `mount-edge-cases.test.ts` — target-miss throw, selector-vs-Element targets, `DIRECT_PROPS` falsy fallback, raw-`Node` passthrough, `componentScope`/`errorConfig` transfer to state.
+- `mount.test.ts` — sync/async component fns, signal `0` renders `"0"`, async-mount error routing, target-miss throw.
+- `mount-targets.test.ts`, `mount-binding.test.ts`, `mount-edge-cases.test.ts` — selector-vs-Element targets, direct-prop falsy fallback, raw-`Node` passthrough, `componentScope`/`errorConfig` transfer to state.
 - `async-mount.test.ts` — async resolution + rejection routing through `onError`/`dispatchError`.
 - `reactive-dynamic-children.test.ts` — `appendToParent` Proxy forwarding for dynamic-component children.
 - `html.test.ts`, `template.test.ts` — caching, parsing edge cases, fragments, dynamic components, error-config materialization, deep nesting.
