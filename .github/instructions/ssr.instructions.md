@@ -14,9 +14,18 @@ Pure HTML stringifier over `@hellajs/dom`'s HellaNode AST. Zero runtime imports 
 
 ## Architecture (`lib/`)
 
+One public export per file (`lib/index.ts` is a pure re-export barrel). The shared async walker lives under `lib/internal/` — it gained ≥2 callers (`ssrAsync` + `ssrStream`), meeting the `internal/` placement criterion.
+
 | File | Purpose |
 |---|---|
-| `lib/ssr.ts` | The whole package. `ssr(node)` (the sync recursive walker) plus `ssrAsync(node)` (collect-wrapper) and `ssrStream(node)` (`ReadableStream` wrapper) over one shared async-generator walker (`walkChildGen`/`walkChildrenGen`/`renderDynamicGen`/`ssrNodeGen`, `async function*` that yields chunks). Sync helpers: `walkChild`/`walkChildren`/`renderDynamic`. Shared: `serializeProp`/`escapeText` (mirror dom's `renderProp`), `resolveValue`/`resolveAsync`/`isPromise`, `MARK_OPEN`/`MARK_CLOSE`. No try/catch (walk failures, including rejected Promises, propagate). No `internal/` — one file, co-located single-package helpers; nothing meets the `internal/` placement criteria. |
+| `lib/ssr.ts` | Public `ssr(node)` — the sync recursive walker. Sync helpers `walkChild`/`walkChildren`/`renderDynamic` co-located (non-exported, single-caller). |
+| `lib/ssrAsync.ts` | Public `ssrAsync(node)` — collect-wrapper over the shared async generator. |
+| `lib/ssrStream.ts` | Public `ssrStream(node)` — `ReadableStream` wrapper over the shared async generator; flushes staged `<Suspense>` swaps at stream end. |
+| `lib/internal/serialize.ts` | `serializeProp`/`escapeHtml` (mirror dom's `renderProp`), `VOID` void-element set. |
+| `lib/internal/resolve.ts` | `resolveValue`/`resolveAsync` (call-if-function, await-if-Promise resolvers); `isPromise` type guard (local). |
+| `lib/internal/walk.ts` | The shared async walker (`ssrNodeGen` exported; `walkChildGen`/`walkChildrenGen`/`renderDynamicGen` local) + `MARK_OPEN`/`MARK_CLOSE` and the `DynamicFn`/`PendingSwap` types. |
+
+`ssr`/`ssrAsync` have no try/catch (walk failures, including rejected Promises, propagate). `ssrStream` wraps its async drain in try/catch to route a rejected Promise into `controller.error()` — structurally required by `ReadableStream` semantics (a `ReadableStream` cannot propagate a throw synchronously to its consumer), not a swallow.
 
 ### The walk
 
