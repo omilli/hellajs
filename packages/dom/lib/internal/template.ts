@@ -297,7 +297,11 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
         } as HellaNode & { children: HellaChild[] };
 
       if (isSelfClosing) {
-        current ? appendChild(current, node) : result.push(node);
+        if (current) {
+          appendChild(current, node);
+        } else {
+          result.push(node);
+        }
       } else {
         if (current) appendChild(current, node);
         stack.push(node);

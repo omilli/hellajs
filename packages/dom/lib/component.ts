@@ -10,10 +10,10 @@ import type { HellaNode, ComponentFn } from "./types/nodes";
  * @param props Props to pass to the component function
  * @returns HellaNode with attached scope dispose function, or empty fragment on error
  */
-export function component(fn: ComponentFn, props: unknown): HellaNode {
+export function component(fn: ComponentFn, props: Record<string, unknown>): HellaNode {
   let result!: HellaNode;
   try {
-    const dispose = scope(() => result = fn(props as Record<string, unknown>) as HellaNode);
+    const dispose = scope(() => result = fn(props) as HellaNode);
     result.__scope = dispose;
   } catch (e) {
     dispatchError(toError(e), { phase: "render" });

@@ -5,7 +5,7 @@ Wraps a component function with automatic effect cleanup scope.
 ## API
 
 ```typescript
-function component(componentFn: ComponentFn, props: unknown): HellaNode
+function component(componentFn: ComponentFn, props: Record<string, unknown>): HellaNode
 ```
 
 - `componentFn`: A function that returns a HellaNode.

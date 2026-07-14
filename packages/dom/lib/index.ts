@@ -1,3 +1,6 @@
+import type { RenderFn, HellaNode } from "./types/nodes";
+import type { HTMLAttributeMap } from "./types/attributes";
+
 export { ForEach } from "./ForEach";
 export { Portal } from "./Portal";
 export { Lazy } from "./Lazy";
@@ -15,9 +18,6 @@ export { onError } from "./error";
 
 export type * from "./types/nodes";
 export type * from "./types/attributes";
-
-import type { RenderFn, HellaNode } from "./types/nodes";
-import type { HTMLAttributeMap } from "./types/attributes";
 
 declare global {
   namespace JSX {

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { delay, resetTestState } from "@utils/test-helpers.js";
+import { delay, resetTestState, suppressConsole } from "@utils/test-helpers.js";
 import { mount, html, Lazy } from "@hellajs/dom/bundle";
 import type { HellaNode, LazyOptions } from "@hellajs/dom";
 
@@ -89,6 +89,30 @@ describe("dom", () => {
       await delay(20);
 
       expect(container.textContent).toContain("Fallback");
+    });
+
+    test("logs and renders nothing when the loader rejects with no fallback", async () => {
+      const suppressed = suppressConsole();
+      try {
+        mount(html`
+          <div id="container">
+            <${Lazy} loader=${() => Promise.reject(new Error("boom"))} />
+          </div>
+        `);
+
+        const container = document.getElementById("container")!;
+        expect(container.textContent).toBe("");
+
+        await delay(20);
+
+        expect(container.textContent).toBe("");
+        expect(suppressed.errors).toHaveLength(1);
+        const logged = suppressed.errors[0] as unknown[];
+        expect(logged[0]).toBe("[dom] Lazy:");
+        expect(logged[1]).toBeInstanceOf(Error);
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("forwards props to loaded component", async () => {
