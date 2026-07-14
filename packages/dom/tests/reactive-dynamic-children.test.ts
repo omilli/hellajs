@@ -34,5 +34,31 @@ describe("dom", () => {
       expect(document.getElementById("host")?.textContent).toContain("dynamic");
       expect(accessedNodeType).toHaveBeenCalledTimes(1);
     });
+
+    test("dynamic component appends multiple nodes in order before the anchor", () => {
+      const toggle = signal<(() => void) | null>(null);
+
+      const MultiNode = ((parent: Element) => {
+        parent.appendChild(document.createElement("span")).textContent = "a";
+        parent.appendChild(document.createElement("span")).textContent = "b";
+        parent.appendChild(document.createElement("span")).textContent = "c";
+      }) as (() => void) & { isDynamic: boolean };
+      MultiNode.isDynamic = true;
+
+      mount(html`
+        <div id="host">
+          ${() => toggle()}
+        </div>
+      `);
+
+      toggle(MultiNode);
+      flush();
+
+      const spans = document.querySelectorAll("#host span");
+      expect(spans).toHaveLength(3);
+      expect(spans[0]?.textContent).toBe("a");
+      expect(spans[1]?.textContent).toBe("b");
+      expect(spans[2]?.textContent).toBe("c");
+    });
   });
 });

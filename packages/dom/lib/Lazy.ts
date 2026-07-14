@@ -42,12 +42,14 @@ export function Lazy(props: LazyProps): JSX.Element {
         const mounted = mountNode(resolved as HellaNode);
         anchor.parentNode.insertBefore(mounted, anchor);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (isCancelled || !anchor.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         if (props.fallback) {
           const mounted = resolveNode(props.fallback);
           anchor.parentNode.insertBefore(mounted, anchor);
+        } else {
+          console.error("[dom] Lazy:", err);
         }
       });
   }) as JSX.Element;

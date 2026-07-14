@@ -3,8 +3,7 @@ import { registry } from "./registry";
 import { resolveNode } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
 import { peekHydrateContext } from "./internal/hydrate";
-import type { HellaNode } from "./types/nodes";
-import type { ForEachProps } from "./types/nodes";
+import type { HellaNode, ForEachProps } from "./types/nodes";
 
 /**
  * Renders and updates a list of items using keyed reconciliation.
@@ -219,12 +218,20 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
 
             while (left < right) {
               const mid = Math.floor((left + right) / 2);
-              mapped[tails[mid]!] < mapped[keyIndexed] ? (left = mid + 1) : (right = mid);
+              if (mapped[tails[mid]!] < mapped[keyIndexed]) {
+                left = mid + 1;
+              } else {
+                right = mid;
+              }
             }
 
             left > 0 && (prevIndices[keyIndexed] = tails[left - 1]);
 
-            left === tails.length ? tails.push(keyIndexed) : (tails[left] = keyIndexed);
+            if (left === tails.length) {
+              tails.push(keyIndexed);
+            } else {
+              tails[left] = keyIndexed;
+            }
             keyIndexed++;
           }
 

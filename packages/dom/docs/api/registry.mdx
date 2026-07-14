@@ -60,6 +60,29 @@ registry.addHook(element, "beforeDestroy", (node) => {
 | `beforeDestroy` | Before cleanup begins | Yes |
 | `afterDestroy` | After cleanup completes | No |
 
+## Basic Usage
+
+```typescript
+import { signal } from "@hellajs/core";
+import { registry } from "@hellajs/dom";
+
+const count = signal(0);
+const button = document.createElement("button");
+
+// Reactive binding: re-runs when count changes
+registry.addEffect(button, () => {
+  button.setAttribute("data-count", String(count()));
+});
+
+// Lifecycle hook: fires when mounted through HellaJS
+registry.addHook(button, "afterMount", (el) => {
+  console.log("mounted", el.tagName);
+});
+
+document.body.append(button);
+count(1); // button now has data-count="1"
+```
+
 ## Key Concepts
 
 ### Automatic Cleanup

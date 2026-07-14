@@ -176,5 +176,9 @@ describe("dom", () => {
       expect(container.querySelectorAll("em").length).toBe(3);
       expect(container.querySelectorAll("em")[2]?.textContent).toBe("z");
     });
+
+    test("throws for selector that does not match any element", () => {
+      expect(() => mount(html`<div>test</div>`, "#nonexistent")).toThrow('[dom] mount: target "#nonexistent" not found in document');
+    });
   });
 });

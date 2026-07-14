@@ -31,5 +31,22 @@ describe("dom", () => {
       flush();
       expect(valInput.value).toBe("restored");
     });
+
+    test("innerHTML set via direct property with falsy fallback", () => {
+      const content = signal<string | null>("<b>bold</b>");
+
+      mount(html`<div id="html-div" bind:innerHTML=${content}></div>`);
+
+      const el = document.getElementById("html-div")!;
+      expect(el.querySelector("b")?.textContent).toBe("bold");
+
+      content(null);
+      flush();
+      expect(el.innerHTML).toBe("");
+
+      content("<i>italic</i>");
+      flush();
+      expect(el.querySelector("i")?.textContent).toBe("italic");
+    });
   });
 });

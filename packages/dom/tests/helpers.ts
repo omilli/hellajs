@@ -1,6 +1,6 @@
+import { setupContainer } from "@utils/test-helpers.js";
 import { onError } from "@hellajs/dom/bundle";
 import { ssr, ssrStream } from "@hellajs/ssr/bundle";
-import { setupContainer } from "@utils/test-helpers.js";
 import type { HellaNode } from "@hellajs/dom";
 
 export const fallbackHandler = (

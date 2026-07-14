@@ -164,7 +164,7 @@ During loading, Lazy components either show the `loading` prop content or remain
 
 ### Error Handling
 
-All loader errors are caught and trigger the fallback rendering.
+Loader errors are caught locally. When `fallback` is provided, the fallback renders in place of the content. When no `fallback` is provided, the error is logged to `console.error` and nothing renders. Loader errors do **not** bubble to [`onError`](/reference/dom/onerror) — `Lazy` handles them entirely locally.
 
 ```jsx
 const faultyLoader = async () => {

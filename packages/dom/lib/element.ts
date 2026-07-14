@@ -14,7 +14,7 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
   tagName: string,
   render: ComponentRenderFn<T>
 ): void {
-  class HellaElement extends HTMLElement {
+  class HellaCustomElement extends HTMLElement {
     private _dispose?: () => void;
     private _isInitialized = false;
     private _version = signal(0);
@@ -98,5 +98,5 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
     throw new Error(`[dom] element: render must be a function, received ${typeof render}`);
   }
 
-  customElements.define(tagName, HellaElement);
+  customElements.define(tagName, HellaCustomElement);
 }

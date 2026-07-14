@@ -18,8 +18,13 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
   const queuedOps: Array<(wrapper: DomWrapper<T>) => void> = [];
   let isWatching = false;
 
-  const applyOp = (op: (wrapper: DomWrapper<T>) => void) =>
-    wrapper ? op(wrapper) : queuedOps.push(op);
+  const applyOp = (op: (wrapper: DomWrapper<T>) => void) => {
+    if (wrapper) {
+      op(wrapper);
+    } else {
+      queuedOps.push(op);
+    }
+  };
 
   const startWatching = () => {
     if (isWatching || targetNode) return;

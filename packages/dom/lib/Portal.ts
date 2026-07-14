@@ -8,7 +8,8 @@ const INSERT_METHODS: Record<string, keyof Element> = {
   prepend: "prepend",
   replace: "replaceChildren",
   before: "before",
-  after: "after"
+  after: "after",
+  append: "appendChild"
 };
 
 /**
