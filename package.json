@@ -46,7 +46,8 @@
 		"sync": "bun ./scripts/sync.ts && bun ./scripts/sync-skills.ts",
 		"visibility": "bun ./scripts/type-visibility.ts",
 		"dead-exports": "bun ./scripts/dead-exports.ts",
-		"jsdoc-params": "bun ./scripts/jsdoc-params.ts"
+		"jsdoc-params": "bun ./scripts/jsdoc-params.ts",
+		"doc-links": "bun ./scripts/doc-links.ts"
 	},
 	"version": ""
 }
