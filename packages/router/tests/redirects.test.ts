@@ -55,6 +55,8 @@ describe("router", () => {
         notFound
       });
 
+      // Synchronous init may fire notFound for the unmatched initial path; isolate the navigate.
+      notFound.mockClear();
       navigate("/missing");
       expect(notFound).toHaveBeenCalledTimes(1);
       expect(container.textContent).toBe("404");
@@ -90,6 +92,8 @@ describe("router", () => {
         notFound
       });
 
+      // Synchronous init may fire notFound for the unmatched initial path; isolate the navigate.
+      notFound.mockClear();
       navigate("/admin/nonexistent");
       expect(notFound).toHaveBeenCalledTimes(1);
       expect(container.textContent).toBe("404");

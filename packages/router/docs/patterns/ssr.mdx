@@ -1,0 +1,174 @@
+# SSR Routing
+
+Server-render a routed app: [`router`](/reference/router/router) resolves the request URL synchronously, a renderer serializes the tree, and the client [`hydrate`](/reference/dom/hydrate)s the same tree. Recipes use [`html`](/reference/dom/html) templates so the server entry needs no build plugin.
+
+### Shared App
+
+One isomorphic module defines the view signal, the route map, and the shell. Each handler is a pure state-setter — the view-signal pattern `() => currentView(...)`.
+
+```js
+import { signal } from '@hellajs/core';
+import { html } from '@hellajs/dom';
+import { router, route } from '@hellajs/router';
+
+const currentView = signal(html`<h1>Loading…</h1>`);
+
+const Home = () => html`<h1>Home</h1>`;
+const User = ({ id }) => html`<h1>User ${id}</h1>`;
+const NotFound = () => html`<h1>Not Found</h1>`;
+
+const routes = {
+  '/': () => currentView(Home()),
+  '/users/:id': (params) => currentView(User({ id: params.id }))
+};
+
+const notFound = () => currentView(NotFound());
+
+const App = () => html`
+  <nav>
+    <a href="/" class=${route().active('/') ? 'active' : ''}>Home</a>
+    <a href="/users/1" class=${route().active('/users/1') ? 'active' : ''}>User</a>
+  </nav>
+  <main>${currentView}</main>
+`;
+
+export { routes, App, notFound };
+```
+
+The view-signal style is the isomorphic handler form: the same handlers fire on the server (driven by [`router`](/reference/router/router)`({ url })`) and on the client (driven by [`router`](/reference/router/router)`({ routes })` + [`hydrate`](/reference/dom/hydrate)). The `() => mount(...)` style is client-only — [`mount`](/reference/dom/mount) needs a document and throws on the server.
+
+### Server — ssr()
+
+[`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying. There is no `window` on the server — pass the request URL via the `url` option.
+
+```js
+import { html } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { ssr, doc } from '@hellajs/ssr';
+import { routes, App, notFound } from './app.js';
+
+Bun.serve({
+  port: 3000,
+  fetch(req) {
+    const { pathname, search } = new URL(req.url);
+
+    // url overrides window.location; resolution is synchronous, so currentView
+    // holds the matched view before ssr walks the tree.
+    router({ routes, url: pathname + search, notFound });
+
+    const body = ssr(html`<${App} />`);
+    return new Response(
+      doc({ lang: 'en', head: { title: 'App' }, body }),
+      { headers: { 'content-type': 'text/html' } }
+    );
+  }
+});
+```
+
+### Server — ssrAsync()
+
+For server-fetched data, return a Promise from a getter child — [`ssrAsync`](/reference/ssr/ssr-async) awaits it in tree order. Everything else is identical to the [`ssr`](/reference/ssr/ssr) recipe.
+
+```js
+import { signal } from '@hellajs/core';
+import { html } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { ssrAsync, doc } from '@hellajs/ssr';
+
+const loadName = (id) => fetch(`/api/users/${id}`).then((r) => r.text());
+// A promise-getter child is awaited by ssrAsync
+const Profile = ({ id }) => html`<h1>${() => loadName(id)}</h1>`;
+
+const currentView = signal(html`<h1>Loading…</h1>`);
+const routes = {
+  '/': () => currentView(html`<h1>Home</h1>`),
+  '/users/:id': (params) => currentView(Profile({ id: params.id }))
+};
+const App = () => html`<main>${currentView}</main>`;
+
+Bun.serve({
+  port: 3000,
+  async fetch(req) {
+    const { pathname, search } = new URL(req.url);
+    router({ routes, url: pathname + search });
+
+    const body = await ssrAsync(html`<${App} />`);
+    return new Response(
+      doc({ lang: 'en', head: { title: 'App' }, body }),
+      { headers: { 'content-type': 'text/html' } }
+    );
+  }
+});
+```
+
+### Server — ssrStream()
+
+[`ssrStream`](/reference/ssr/ssr-stream) flushes the static shell before async values resolve. Wrap an async subtree in [`<Suspense>`](/reference/dom/suspense) for out-of-order streaming — the shell and the `fallback` flush immediately while the children resolve. A full document needs a prefix and suffix around the streamed body.
+
+```js
+import { signal } from '@hellajs/core';
+import { html, Suspense } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { ssrStream } from '@hellajs/ssr';
+
+const loadName = (id) => fetch(`/api/users/${id}`).then((r) => r.text());
+const Profile = ({ id }) => html`
+  <${Suspense} fallback=${html`<p>Loading…</p>`}>
+    ${() => loadName(id).then((name) => html`<h1>${name}</h1>`)}
+  </${Suspense}>
+`;
+
+const currentView = signal(html`<h1>Loading…</h1>`);
+const routes = {
+  '/users/:id': (params) => currentView(Profile({ id: params.id }))
+};
+const App = () => html`<main>${currentView}</main>`;
+
+const prefix = '<!DOCTYPE html><html lang="en"><head><title>App</title></head><body><div id="app">';
+const suffix = '</div><script type="module" src="/client.js"></script></body></html>';
+
+Bun.serve({
+  port: 3000,
+  fetch(req) {
+    const { pathname, search } = new URL(req.url);
+    router({ routes, url: pathname + search });
+
+    const body = ssrStream(html`<${App} />`);
+    const stream = new ReadableStream({
+      async start(controller) {
+        const enc = new TextEncoder();
+        controller.enqueue(enc.encode(prefix));
+        for await (const chunk of body) controller.enqueue(enc.encode(chunk));
+        controller.enqueue(enc.encode(suffix));
+        controller.close();
+      }
+    });
+    return new Response(stream, { headers: { 'content-type': 'text/html' } });
+  }
+});
+```
+
+### Client — hydrate
+
+One client entry works for all three renderers. Omit `url`: the client reads `window.location` and resolves synchronously — the same URL the server resolved — so `currentView` matches the server-rendered view and [`hydrate`](/reference/dom/hydrate) adopts the existing nodes rather than rebuilding them.
+
+```js
+import { html, hydrate } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { routes, App } from './app.js';
+
+router({ routes });
+
+const handle = hydrate(html`<${App} />`, '#app');
+handle.flush(); // fire deferred afterMount hooks before first paint
+```
+
+Streamed [`<Suspense>`](/reference/dom/suspense) regions stage their resolved children in `<template>` elements; `hydrate` swaps each staged template in automatically, so the streamed and sync paths share one client entry.
+
+### Keep Handlers Pure
+
+Route handlers should be pure state-setters (`() => currentView(View())`). Put side effects — analytics, subscriptions, `localStorage` — in component [`effect`](/reference/core/effect) bodies, not in the handler. [`ssr`](/reference/ssr/ssr) walks the tree once and never flushes the scheduler, so effects do not run during the server render; they run on the client after [`hydrate`](/reference/dom/hydrate). The initial route's handler fires on both the server render and the client hydrate — harmless for a pure setter (idempotent), visible for an impure one.
+
+### Concurrency
+
+Synchronous [`ssr`](/reference/ssr/ssr) is concurrency-safe: [`router`](/reference/router/router)`({ url })` + the render is one synchronous block with no `await`, so no second request can interleave and overwrite the router's module-level signals mid-render. [`ssrAsync`](/reference/ssr/ssr-async) and [`ssrStream`](/reference/ssr/ssr-stream) yield at each awaited Promise — they stay correct while every shared-signal read (the router's [`route`](/reference/router/route)`()`, your `currentView`) happens before the first `await` in tree order. Full safety under arbitrary streaming concurrency needs a router instance per request; revisit it only when a real concurrent-streaming workload demands it.

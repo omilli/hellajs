@@ -1,17 +1,9 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, mock } from "bun:test";
 import { signal } from "@hellajs/core";
 import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
 import { ssr, ssrAsync, ssrStream } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
-
-/** Collects all chunks from a ReadableStream<string> into a single string. */
-async function collect(stream: ReadableStream<string>): Promise<string> {
-  const reader = stream.getReader();
-  let out = "";
-  let chunk = await reader.read();
-  while (!chunk.done) { out += chunk.value; chunk = await reader.read(); }
-  return out;
-}
+import { collect, parityCases, attributeCases, unknownKindNode } from "./helpers";
 
 describe("ssrStream", () => {
   test("returns a ReadableStream and resolves a static node to the same HTML as ssr", async () => {
@@ -103,5 +95,27 @@ describe("ssrStream", () => {
     let chunk = await reader.read();
     while (!chunk.done) { out += decoder.decode(chunk.value); chunk = await reader.read(); }
     expect(out).toBe("<div>x</div>");
+  });
+
+  test("throws when node is null", () => {
+    expect(() => ssrStream(null as unknown as HellaNode)).toThrow("[ssr] ssrStream: node is required");
+  });
+
+  test.each(parityCases)("parity: collecting ssrStream matches ssr for $name", async ({ node }) => {
+    expect(await collect(ssrStream(node))).toBe(ssr(node));
+  });
+
+  test("parity: collecting ssrStream matches ssr for an isDynamic function with an unknown kind", async () => {
+    const original = console.warn;
+    console.warn = mock(() => {}) as unknown as typeof console.warn;
+    try {
+      expect(await collect(ssrStream(unknownKindNode()))).toBe(ssr(unknownKindNode()));
+    } finally {
+      console.warn = original;
+    }
+  });
+
+  test.each(attributeCases)("parity: collecting ssrStream matches ssr for attribute serialization ($name)", async ({ node }) => {
+    expect(await collect(ssrStream(node))).toBe(ssr(node));
   });
 });

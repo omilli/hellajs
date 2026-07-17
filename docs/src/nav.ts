@@ -30,6 +30,7 @@ export const navigation = {
         "State",
         "Styling",
         "Routing",
+        "Routing-SSR",
         "Resources",
         "SSR",
       ],
@@ -71,7 +72,7 @@ export const navigation = {
     { store: ["store"] },
     { router: ["navigate", "route", "router"] },
     { resource: ["resource", "resourcecache"] },
-    { ssr: ["ssr", "ssr-async", "ssr-stream"] },
+    { ssr: ["ssr", "ssr-async", "ssr-stream", "doc"] },
   ],
   plugins: ["babel", "rollup", "vite"],
 } as const;

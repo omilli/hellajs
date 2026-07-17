@@ -3,6 +3,7 @@ import { signal } from "@hellajs/core";
 import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
 import { ssr, ssrAsync } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
+import { parityCases, attributeCases, unknownKindNode } from "./helpers";
 
 describe("ssrAsync", () => {
   test("resolves a static node to the same HTML as ssr", async () => {
@@ -86,11 +87,20 @@ describe("ssrAsync", () => {
     expect(await ssrAsync(html`<div>${true}</div>` as HellaNode)).toBe("<div></div>");
   });
 
-  test("emits an empty marker region for an isDynamic function with an unknown ssr kind", async () => {
+  test("renders an empty marker region and warns for an unknown ssr kind", async () => {
     const fn = (() => { throw new Error("fn should not be called"); }) as unknown as { isDynamic?: true; ssr?: { kind: "unknown"; props: object } };
     fn.isDynamic = true;
     fn.ssr = { kind: "unknown", props: {} };
-    expect(await ssrAsync(html`<div>${fn}</div>` as HellaNode)).toBe("<div><!--[--><!--]--></div>");
+    const original = console.warn;
+    const warn = mock(() => {});
+    console.warn = warn as unknown as typeof console.warn;
+    try {
+      expect(await ssrAsync(html`<div>${fn}</div>` as HellaNode)).toBe("<div><!--[--><!--]--></div>");
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith("[ssr] unknown isDynamic kind: unknown");
+    } finally {
+      console.warn = original;
+    }
   });
 
   test("awaits a reactive getter that returns an isDynamic component", async () => {
@@ -104,5 +114,27 @@ describe("ssrAsync", () => {
     const node = html`<div><${Lazy} loader=${loader} loading=${html`<span>…</span>`} /></div>` as HellaNode;
     expect(await ssrAsync(node)).toBe("<div><!--[--><span>…</span><!--]--></div>");
     expect(loader).not.toHaveBeenCalled();
+  });
+
+  test("rejects when node is null", async () => {
+    await expect(ssrAsync(null as unknown as HellaNode)).rejects.toThrow("[ssr] ssrAsync: node is required");
+  });
+
+  test.each(parityCases)("parity: ssrAsync matches ssr for $name", async ({ node }) => {
+    expect(await ssrAsync(node)).toBe(ssr(node));
+  });
+
+  test("parity: ssrAsync matches ssr for an isDynamic function with an unknown kind", async () => {
+    const original = console.warn;
+    console.warn = mock(() => {}) as unknown as typeof console.warn;
+    try {
+      expect(await ssrAsync(unknownKindNode())).toBe(ssr(unknownKindNode()));
+    } finally {
+      console.warn = original;
+    }
+  });
+
+  test.each(attributeCases)("parity: ssrAsync matches ssr for attribute serialization ($name)", async ({ node }) => {
+    expect(await ssrAsync(node)).toBe(ssr(node));
   });
 });

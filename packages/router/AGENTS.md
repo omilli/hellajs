@@ -5,7 +5,7 @@
 
   | Export | Source | Role |
   |---|---|---|
-  | `router` | `router.ts` | Init: registers routes/hooks/redirects/notFound/mode/scroll/inheritMeta, binds listeners, returns initial `RouteInfo` (handler `null` until microtask). |
+  | `router` | `router.ts` | Init: registers routes/hooks/redirects/notFound/mode/scroll/inheritMeta/url, binds listeners, resolves the initial route synchronously and returns the matched `RouteInfo`. |
   | `route` | `state.ts` | Reactive signal holding the current `RouteInfo` (`path`, `params`, `query`, `handler`, `meta`, `crumbs`, `active`). |
   | `navigate` | `navigate.ts` | Programmatic nav: `:param`/`*` substitution, query serialize, history push/replace. |
   | `resetRouter` | `resetRouter.ts` | Factory-reset: resets all config signals + `route()` to defaults, detaches listeners. Does NOT mutate the URL. |
@@ -15,7 +15,7 @@
 
   | File | Responsibility |
   |---|---|
-  | `router.ts` | Config → state signals; initial-path detection (hash vs history); popstate/hashchange + click listeners with composed cleanup; `queueMicrotask(() => updateRoute())`. |
+  | `router.ts` | Config → state signals; initial-path detection (`url` override / hash vs history); popstate/hashchange + click listeners with composed cleanup; synchronous `updateRoute()` on return. |
   | `state.ts` | 9 signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `scrollBehavior`, `previousPath`, `inheritMeta`, `route`) + shared `activeFn`. |
   | `navigate.ts` | `:key` → `encodeURIComponent`, `*` → raw insert, strip unmatched `:param`, query string, → `go()`. |
   | `match.ts` | `parseQuery`, `matchPattern` (segment/wildcard extraction), `matchNestedRoute` (recursive, specificity-sorted, params spread-merged), `matchRoute` (flat). |
@@ -47,7 +47,7 @@
   - **Sync** `before` return values can block: `false`/throw cancels, string redirects. **Async** `before` (`Promise`) cannot block — treated as proceed, rejection `.catch`-logged.
 
   <non-obvious>
-    **Init is deferred** — `router()` ends with `queueMicrotask(() => updateRoute())` and returns `route()` with `handler: null` until the microtask fires (`router.ts:113,115`). Read resolved state inside `effect()`, not from the return value.
+    **Init is synchronous** — `router()` resolves the initial route inline (direct `updateRoute()`) and returns the resolved `RouteInfo` (`handler`/`params`/`query`/`path` set on return). `navigate()` was already synchronous; init now matches. SSR callers pass `url` (no `window`); `config.url` overrides `window.location` for the initial resolution, so `route()` is already resolved when `router()` returns — no microtask, no `handler: null` window.
 
     **Atomic route writes** — `navigate`/`popstate`/`hashchange` all funnel through `updateRoute` → a single `route()` write; `path`/`params`/`query`/`handler`/`meta`/`crumbs` always describe the same match. The init pre-write (`router.ts:36-41`) is the only non-atomic write, guarded by `if (!route().handler)` so it is skipped on re-init.
 
@@ -61,7 +61,7 @@
 
     **Listener cleanup on re-init** — calling `router()` again removes the prior popstate/hashchange **and** click handler via the composed `cleanupListener` (`router.ts:46,105-109`).
 
-    **Scroll no-op on init** — `previousPath` is seeded with `initialPath` (`router.ts:43`), so the deferred first `updateRoute()` sees `from === to` and skips (`matched.ts:20-22`). **Scroll priority**: inline `navigate({scroll})` > route-level `scroll` > global `scrollBehavior`; `false` at any level disables; `"auto"`/`"preserve"` skip `scrollTo`; custom fn returning `null` skips.
+    **Scroll no-op on init** — `previousPath` is seeded with `initialPath` (`router.ts:43`), so the first `updateRoute()` sees `from === to` and skips (`matched.ts:20-22`). **Scroll priority**: inline `navigate({scroll})` > route-level `scroll` > global `scrollBehavior`; `false` at any level disables; `"auto"`/`"preserve"` skip `scrollTo`; custom fn returning `null` skips.
 
     **`intercept` defaults true** — same-origin `<a>` clicks route through `navigate()`. Skipped when: already `defaultPrevented`, modifier keys, `target !== "_self"`, `download`, non-http(s), cross-origin, malformed href. Hash mode requires the hash start with `#/` (`router.ts:67-101`).
 
