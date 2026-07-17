@@ -16,6 +16,7 @@ applyTo: "**"
   - Load the `brain-prime` skill before any substantive task.
   - After editing AGENTS.md files, stop. Do NOT run `bun sync` — the post-commit hook + CI handle regeneration.
   - Changesets are created manually, never by agent plans. Do not include changeset creation in any plan's DoD.
+  - A plan's DoD states each pass criterion as a runnable check, not a prediction of the result — never append an unverified characterization ("zero violations", "no false positives", "passes on the corpus") for an artifact not yet run; it biases the worker toward confirmation and forces an interrupt when wrong. If the characterization is load-bearing, make it its own DoD check the worker must falsify.
 
   ## Non-negotiables
 
