@@ -38,6 +38,7 @@ One public export per file (`lib/index.ts` is a pure re-export barrel). The shar
 - **isDynamic component** (function with `isDynamic: true`, or a reactive child that resolves to one) → `renderDynamic` dispatches on `fn.ssr.kind`, **wrapped** in `<!--[-->…<!--]-->`.
 - **Nested fragment child** (`tag: "$"`) → children concatenated, **wrapped** in `<!--[-->…<!--]-->`.
 - **Element child** (`tag !== "$"`) → recursed via `ssr`, UNWRAPPED.
+- **Raw HTML child** (`{ raw }` from dom's `raw()`) → emitted **verbatim** (unescaped), **wrapped** in `<!--[-->…<!--]-->` (opaque region — `hydrate` adopts it without binding). Duck-typed via `"raw" in child` (no dom import — preserves ssr's zero-runtime invariant).
 
 ### Hydration markers
 
@@ -67,4 +68,4 @@ A user-authored isDynamic function with no `ssr` renders as nothing (not an erro
 
 ## Testing approach (`tests/`)
 
-Import `ssr` from `@hellajs/ssr/bundle`; build HellaNodes with `html`/`ForEach`/`Transition`/`Portal`/`Lazy` from `@hellajs/dom/bundle`; reactive values from `@hellajs/core`. No `resetTestState` — `ssr` walks pure data and touches no shared mutable state. Run with `bun coverage ssr`.
+Import `ssr` from `@hellajs/ssr/bundle`; build HellaNodes with `html`/`ForEach`/`Transition`/`Portal`/`Lazy` from `@hellajs/dom/bundle`; reactive values from `@hellajs/core`. Most tests need no `resetTestState` — `ssr`/`ssrAsync`/`ssrStream`/`doc` walk pure data and touch no shared mutable state. The exception is `hydrate-integration.test.ts`, which mounts/hydrates into a real DOM container and uses `beforeEach(() => resetTestState())` (plus `setupContainer`). Run with `bun coverage ssr`.
