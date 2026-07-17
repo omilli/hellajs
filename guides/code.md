@@ -169,6 +169,8 @@ while (i < len) {
 
 `.forEach` does not allocate a per-iteration iterator object and is permitted on cold paths (e.g. disposal); the prohibition targets `for…of`/`for…in`'s iterator-object cost on hot traversals.
 
+`for await…of` is permitted to consume async iterables/generators — async iteration has no iterator-free form, and the manual `while`/`await gen.next()` alternative loses `return()`/`throw()` correctness and stream-cancellation integration.
+
 Use `Object.entries()` in place of `Object.keys()` only when both key and value are needed and the per-iteration lookup would be redundant; the `[key, value]` destructuring at the top of the loop body replaces the indexed value lookup.
 
 ### Memory
@@ -228,6 +230,7 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 
 - Nested-loop index variables use a single-letter prefix matching the iterated collection, followed by `i`: `ki` (key index), `fi` (field index), `ci` (child index). The cached length uses the same prefix with `Len`: `kLen`, `fLen`, `cLen`. Applies only when `i` is already in scope from an outer loop; a single loop in a function always uses plain `i` and `len`.
 - Internal state fields use shorter names (2-3 chars) for V8 hidden class density — an intentional performance trade-off, not a general pattern.
+- **No `__` (double-underscore) prefixes** on internal marker properties — use the bare word: `raw`, not `__raw`; `static`, not `__static`. The `__` reads as compiler-magic and obscures intent. When a bare word collides with a real HTML attribute on the same object (`scope` clashes with `<th scope>`), rename to a non-colliding word instead of re-adding `__`.
 
 ### Functions
 
@@ -366,7 +369,7 @@ Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `script
 - [ ] No parameter added just to pass it through unchanged
 
 **Loops & memory**
-- [ ] Cached `while` loops on hot paths; no `for…of` / `for…in` (`.forEach` only on cold paths)
+- [ ] Cached `while` loops on hot paths; no `for…of` / `for…in` (`.forEach` only on cold paths; `for await…of` permitted for async iterables/generators)
 - [ ] No collection reallocation where `.clear()` or reference swap works
 - [ ] No `bare l` for cached length (always `len` or `<prefix>Len`)
 
