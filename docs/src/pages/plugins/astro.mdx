@@ -1,0 +1,62 @@
+---
+title: Astro Plugin
+description: First-class HellaJS components in Astro with SSR and client islands
+layout: ../../layouts/MainLayout.astro
+---
+
+# Astro Plugin
+
+The Astro integration (`astro-plugin-hellajs`) makes HellaJS components first-class citizens in `.astro` pages — server-rendered to HTML via `@hellajs/ssr` and hydrated on the client behind `client:*` directives.
+
+## Installation
+
+```bash
+npm install astro-plugin-hellajs @hellajs/core @hellajs/dom @hellajs/ssr
+```
+
+## Configuration
+
+Add the integration to `astro.config.mjs`:
+
+```js
+import { defineConfig } from 'astro/config';
+import hellajs from 'astro-plugin-hellajs';
+
+export default defineConfig({
+  integrations: [hellajs()],
+});
+```
+
+No options — zero-config.
+
+## Usage
+
+A HellaJS component in `src/Counter.tsx`, used from an `.astro` page:
+
+```astro
+---
+// src/pages/index.astro
+import Counter from '../Counter.tsx';
+---
+<Counter client:load initial={0} />
+```
+
+```tsx
+// src/Counter.tsx
+import { signal } from "@hellajs/core";
+
+export default function Counter({ initial = 0 }) {
+  const count = signal(initial);
+  return <button on:click={() => count(count() + 1)}>{count()}</button>;
+}
+```
+
+## How it works
+
+- **SSR** — the renderer's `renderToStaticMarkup` runs `Component(props)` to produce a HellaNode tree and stringifies it with [`ssr`](/reference/ssr/ssr). Nested `component()` calls execute server-side with no DOM; reactive values read at their current value. Dynamic regions are wrapped in `<!--[-->…<!--]-->` markers.
+- **Hydration** — on the client, [`hydrate`](/reference/dom/hydrate) re-runs the component against the existing server DOM, locating each marker region and attaching effects/handlers/state **in place** (never replacing it). Wrap with `client:load`, `client:idle`, `client:visible`, `client:media`, or `client:only` — all are supported (markers survive Astro's island serialization).
+- **Slot passthrough** — children passed in the `.astro` page reach the component as `props.children` (and named slots as named props), embedded verbatim via [`raw`](/reference/dom/raw) so foreign-rendered HTML is not re-escaped.
+
+## Exclusive use
+
+The integration wires `vite-plugin-hellajs`, which transforms **all** `.jsx`/`.tsx`/`.js`/`.ts` (excluding `node_modules`). It assumes HellaJS is the project's only JSX framework — mixing React, Solid, or another JSX framework in the same Astro project is unsupported.
