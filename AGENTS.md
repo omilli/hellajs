@@ -46,13 +46,14 @@
 
   ## Plugins
 
-  Workspaces under `plugins/`. Build-time transforms; only `babel` has its own `AGENTS.md` and tests.
+  Workspaces under `plugins/`. Build-time transforms; `babel` and `astro` each have their own `AGENTS.md` and tests (`vite`/`rollup` are thin wrappers).
 
   | Plugin | Responsibility |
   |---|---|
   | babel | Core compile-time transform for JSX and `html\`\`` templates → HellaNode objects. Attribute categorization (`on:` / `e:` / `bind:` / `hook:` / `error:`), component detection + `component(...)` wrapping. |
   | rollup | Thin Rollup wrapper around the Babel plugin (`index.mjs`). |
   | vite | Thin Vite wrapper around the Babel plugin (`index.mjs`). |
+  | astro | Astro 7 framework renderer. `addRenderer` + `vite-plugin-hellajs` wiring; server entry `renderToStaticMarkup` → `ssr`; client factory → `hydrate`. Slot passthrough via `raw()`. Exclusive-use (no other JSX framework). Own `AGENTS.md` + tests. |
 
   ## Scripts
 
