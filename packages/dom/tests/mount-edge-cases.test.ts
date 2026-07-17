@@ -24,7 +24,7 @@ describe("dom", () => {
       const Comp = () => {
         scope(() => { });
         const node = html`<div id="scoped-comp">Comp</div>` as HellaNode;
-        node.__scope = disposed;
+        node.componentScope = disposed;
         return node;
       };
 

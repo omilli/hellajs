@@ -14,7 +14,7 @@ import { component } from "../component";
  * @internal
  */
 export interface HtmlPlaceholder {
-  __placeholder: number;
+  placeholder: number;
 }
 
 /**
@@ -22,7 +22,7 @@ export interface HtmlPlaceholder {
  * @internal
  */
 export interface HtmlDynamicComponent {
-  __dynamicComponent: number;
+  dynamicComponent: number;
   props: Record<string, unknown>;
   children: HellaChild[];
 }
@@ -60,7 +60,7 @@ const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w
 /**
  * @internal
  * Deep clones HellaNode AST and substitutes placeholder markers with actual values.
- * Handles special markers: __placeholder, __dynamicComponent.
+ * Handles special markers: placeholder, dynamicComponent.
  * @param node The AST node to clone
  * @param values Array of interpolated values from the template
  * @returns Cloned node with values substituted
@@ -68,10 +68,10 @@ const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w
 export function cloneWithValues(node: unknown, values: unknown[]): unknown {
   if (typeof node !== "object" || node === null) return node;
 
-  if (Object.hasOwn(node, "__static")) return node;
+  if (Object.hasOwn(node, "static")) return node;
 
-  if (Object.hasOwn(node, "__placeholder"))
-    return values[(node as HtmlPlaceholder).__placeholder];
+  if (Object.hasOwn(node, "placeholder"))
+    return values[(node as HtmlPlaceholder).placeholder];
 
   if (Array.isArray(node)) {
     const result: unknown[] = [];
@@ -84,9 +84,9 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
     return result;
   }
 
-  if (Object.hasOwn(node, "__dynamicComponent")) {
+  if (Object.hasOwn(node, "dynamicComponent")) {
     const marker = node as HtmlDynamicComponent;
-    const componentFn = values[marker.__dynamicComponent];
+    const componentFn = values[marker.dynamicComponent];
     if (typeof componentFn !== "function") return node;
 
     const resolvedProps: Record<string, unknown> = {};
@@ -281,7 +281,7 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
 
       const node: HtmlParsedNode = isDynamicComponent
         ? {
-          __dynamicComponent: parseInt(tagName!.slice(7, -2)),
+          dynamicComponent: parseInt(tagName!.slice(7, -2)),
           props: { ...attrs.props, ...attrs.on, ...attrs.e, ...attrs.bind, ...attrs.hooks },
           children: []
         }
@@ -320,7 +320,7 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
 
 /**
  * @internal
- * Recursively marks AST nodes with zero placeholder dependencies as __static.
+ * Recursively marks AST nodes with zero placeholder dependencies as static.
  * Static subtrees are shared across template invocations instead of deep-cloned.
  */
 function markStaticSubtrees(nodes: HtmlInternalNode[]): void {
@@ -334,7 +334,7 @@ function markStaticSubtrees(nodes: HtmlInternalNode[]): void {
 function markIfStatic(node: unknown): boolean {
   if (typeof node !== "object" || node === null) return true;
 
-  if (Object.hasOwn(node, "__placeholder") || Object.hasOwn(node, "__dynamicComponent"))
+  if (Object.hasOwn(node, "placeholder") || Object.hasOwn(node, "dynamicComponent"))
     return false;
 
   if (!Object.hasOwn(node, "tag")) return true;
@@ -352,7 +352,7 @@ function markIfStatic(node: unknown): boolean {
       const kLen = keys.length;
       while (ki < kLen) {
         const v = (val as Record<string, unknown>)[keys[ki]!];
-        if (v && typeof v === "object" && Object.hasOwn(v, "__placeholder")) return false;
+        if (v && typeof v === "object" && Object.hasOwn(v, "placeholder")) return false;
         ki++;
       }
     }
@@ -367,7 +367,7 @@ function markIfStatic(node: unknown): boolean {
     }
   }
 
-  (n as Record<string, true>).__static = true;
+  (n as Record<string, true>).static = true;
   return true;
 }
 

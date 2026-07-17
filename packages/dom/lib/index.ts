@@ -13,6 +13,7 @@ export { $ref } from "./$ref";
 export { $collection } from "./$collection";
 export { html } from "./html";
 export { component } from "./component";
+export { raw } from "./raw";
 export { registry } from "./registry";
 export { onError } from "./error";
 

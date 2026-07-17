@@ -44,12 +44,25 @@ export function clearRenderedNodes(nodes: Node[], parent: Node) {
 
 /**
  * @internal
+ * Parses a raw HTML string into a fragment for insertion.
+ */
+function rawToFragment(html: string): DocumentFragment {
+  const tpl = document.createElement("template");
+  tpl.innerHTML = html;
+  return tpl.content;
+}
+
+/**
+ * @internal
  * Resolves a HellaChild to a DOM Node with reactive support.
  * @param value The value to resolve (HellaNode, function, or primitive)
  * @param parent Optional parent element for effect registration
  * @returns The resolved DOM Node
  */
 export function resolveNode(value: HellaChild, parent?: Node): Node {
+  if (value !== null && typeof value === "object" && "raw" in value) {
+    return rawToFragment(value.raw);
+  }
   if (value !== null && typeof value === "object" && (value as HellaNode).tag !== undefined) return mountNode(value as HellaNode);
   if (isFunction(value)) {
     const textNode = document.createTextNode("");
@@ -69,24 +82,24 @@ export function resolveNode(value: HellaChild, parent?: Node): Node {
  * @returns The mounted DOM element or fragment
  */
 export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElement | DocumentFragment {
-  if (node.__static) {
+  if (node.static) {
     const cached = staticDom.get(node);
     if (cached) return cached.cloneNode(true) as HellaElement | DocumentFragment;
   }
 
-  const { tag, props, on, e, bind, hooks, children, __scope, error } = node;
+  const { tag, props, on, e, bind, hooks, children, componentScope, error } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
     appendToParent(fragment as unknown as HellaElement, children, boundaryElement);
-    if (node.__static) staticDom.set(node, fragment);
+    if (node.static) staticDom.set(node, fragment);
     return fragment;
   }
 
   const element = document.createElement(tag as string) as HellaElement;
 
-  if (__scope) {
-    getState(element).componentScope = __scope;
+  if (componentScope) {
+    getState(element).componentScope = componentScope;
   }
 
   if (error) {
@@ -144,7 +157,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
 
   appendToParent(element, children, currentBoundary);
 
-  if (node.__static) staticDom.set(node, element);
+  if (node.static) staticDom.set(node, element);
   return element;
 }
 
@@ -237,6 +250,11 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
         }
       });
 
+      continue;
+    }
+
+    if (child !== null && typeof child === "object" && "raw" in child) {
+      parent.appendChild(rawToFragment(child.raw));
       continue;
     }
 

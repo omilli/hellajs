@@ -68,7 +68,7 @@ The plugin must run on the **server** entry — it is a compile-time transform, 
 
 ### Hydration markers
 
-`ssr()` wraps every dynamic region — a reactive child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy), or a nested fragment — in `<!--[-->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
+`ssr()` wraps every dynamic region — a reactive child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy) / [`Suspense`](/reference/dom/suspense), or a nested fragment — in `<!--[-->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
 
 ```js
 import { signal } from '@hellajs/core';

@@ -47,6 +47,8 @@ function walkChild(child: HellaChild): string {
   // dynamic region). The async path additionally awaits Promises before classifying. Any change to the
   // classification branches, marker placement, or isDynamic dispatch in one MUST be mirrored in the other.
   // The parity tests (`tests/ssr-async.test.ts`, `tests/ssr-stream.test.ts`) assert this for every branch.
+  // Adding a new child classification or `SsrMeta.kind` requires a new entry in `tests/helpers.ts`
+  // (`parityCases`/`attributeCases`), or the async pair can diverge silently.
   if (child === null || child === undefined || child === false) return "";
   if (typeof child === "string") return child;                       // static template text — raw
   if (typeof child === "number") return escapeHtml(`${child}`);
@@ -68,6 +70,9 @@ function walkChild(child: HellaChild): string {
       }
     }
     return MARK_OPEN + body + MARK_CLOSE;          // wrap every dynamic region
+  }
+  if (typeof child === "object" && child !== null && "raw" in child) {
+    return MARK_OPEN + child.raw + MARK_CLOSE;   // raw HTML region — verbatim, marker-bounded (opaque to hydrate)
   }
   if (typeof child === "object" && (child as HellaNode).tag !== undefined) {
     const node = child as HellaNode;

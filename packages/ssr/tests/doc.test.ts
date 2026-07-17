@@ -7,8 +7,11 @@ describe("doc", () => {
     expect(doc({ body: "X" })).toBe("<!DOCTYPE html><html><head></head><body>X</body></html>");
   });
 
-  test("emits <html lang> when lang is set and a bare <html> when unset", () => {
+  test("emits <html lang> when lang is set", () => {
     expect(doc({ body: "X", lang: "en" })).toBe("<!DOCTYPE html><html lang=\"en\"><head></head><body>X</body></html>");
+  });
+
+  test("emits a bare <html> when lang is unset", () => {
     expect(doc({ body: "X" })).toContain("<html>");
   });
 
@@ -48,8 +51,23 @@ describe("doc", () => {
     expect(doc({ body: "X", head: { scripts: [{ content: "if(a<b){}" }] } })).toContain("<script>if(a<b){}</script>");
   });
 
-  test("renders async bare when true and omits it when false", () => {
+  test("drops src when content is set (inline wins — a <script src> would ignore its body)", () => {
+    const out = doc({ body: "X", head: { scripts: [{ src: "/a.js", content: "console.log(1)" }] } });
+    expect(out).toContain("<script>console.log(1)</script>");
+    expect(out).not.toContain("src=");
+  });
+
+  test("keeps non-src attrs on an inline script when content is set", () => {
+    const out = doc({ body: "X", head: { scripts: [{ src: "/a.js", type: "module", content: "x" }] } });
+    expect(out).toContain('<script type="module">x</script>');
+    expect(out).not.toContain("src=");
+  });
+
+  test("renders a script async bare when async is true", () => {
     expect(doc({ body: "X", head: { scripts: [{ src: "/a.js", async: true }] } })).toContain("<script src=\"/a.js\" async></script>");
+  });
+
+  test("omits async when async is false", () => {
     expect(doc({ body: "X", head: { scripts: [{ src: "/a.js", async: false }] } })).toContain("<script src=\"/a.js\"></script>");
   });
 

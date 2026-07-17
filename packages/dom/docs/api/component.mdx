@@ -10,7 +10,7 @@ function component(componentFn: ComponentFn, props: Record<string, unknown>): He
 
 - `componentFn`: A function that returns a HellaNode.
 - `props`: Props object passed to the component function.
-- **Returns**: HellaNode with attached `__scope` disposer for automatic cleanup.
+- **Returns**: HellaNode with attached `componentScope` disposer for automatic cleanup.
 
 ## Basic Usage
 
@@ -130,7 +130,7 @@ function component(componentFn, props) {
   let result;
   try {
     const dispose = scope(() => result = componentFn(props));
-    result.__scope = dispose;
+    result.componentScope = dispose;
   } catch (e) {
     dispatchError(e, { phase: "render" }); // Dispatches through error handling system
     return { tag: "$", children: [] };
@@ -140,7 +140,7 @@ function component(componentFn, props) {
 ```
 
 - Calls the component function inside a `scope()`
-- Attaches the disposer to the returned node as `__scope`
-- When the node is removed from DOM, cleanup system calls `__scope()`
+- Attaches the disposer to the returned node as `componentScope`
+- When the node is removed from DOM, cleanup system calls `componentScope()`
 
 </details>

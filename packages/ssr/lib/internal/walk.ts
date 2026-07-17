@@ -82,6 +82,8 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[]): AsyncG
   // region). This path additionally awaits Promises before classifying. Any change to the classification
   // branches, marker placement, or isDynamic dispatch in one MUST be mirrored in the other. The parity
   // tests (`tests/ssr-async.test.ts`, `tests/ssr-stream.test.ts`) assert this for every branch.
+  // Adding a new child classification or `SsrMeta.kind` requires a new entry in `tests/helpers.ts`
+  // (`parityCases`/`attributeCases`), or the async pair can diverge silently.
   if (child === null || child === undefined || child === false) return;
   if (typeof child === "string") { yield child; return; }              // static template text — raw
   if (typeof child === "number") { yield escapeHtml(`${child}`); return; }
@@ -101,6 +103,12 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[]): AsyncG
         yield escapeHtml(resolved === false || resolved === null || resolved === undefined ? "" : `${resolved}`);
       }
     }
+    yield MARK_CLOSE;
+    return;
+  }
+  if (typeof child === "object" && child !== null && "raw" in child) {
+    yield MARK_OPEN;
+    yield child.raw;                                                 // raw HTML region — verbatim, marker-bounded (parity with sync walkChild)
     yield MARK_CLOSE;
     return;
   }

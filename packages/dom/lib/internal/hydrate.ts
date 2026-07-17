@@ -83,11 +83,12 @@ function gatherRegion(open: Node): { nodes: Node[]; close: Node } {
  */
 function consumeRegion(parent: HellaElement, open: Node): { anchor: Node; existing: Node[]; next: Node | null } {
   const { nodes: existing, close } = gatherRegion(open);
+  const next = close.nextSibling;   // capture before removeChild — a detached node's nextSibling is null
   const anchor = document.createTextNode("");
   parent.insertBefore(anchor, open);
   parent.removeChild(open);
   if (close !== open) parent.removeChild(close);
-  return { anchor, existing, next: close.nextSibling };
+  return { anchor, existing, next };
 }
 
 /**
@@ -99,7 +100,10 @@ function consumeRegion(parent: HellaElement, open: Node): { anchor: Node; existi
  */
 function swapSuspenseStage(existing: Node[], anchor: Node): Node[] {
   let template: HTMLTemplateElement | null = null;
-  for (const n of existing) {
+  let si = 0;
+  const sLen = existing.length;
+  while (si < sLen) {
+    const n = existing[si++]!;
     if (n.nodeType === Node.COMMENT_NODE && n.nodeValue) {
       const staged = document.getElementById(n.nodeValue);
       if (staged && staged.tagName === "TEMPLATE") { template = staged as HTMLTemplateElement; break; }
@@ -108,8 +112,19 @@ function swapSuspenseStage(existing: Node[], anchor: Node): Node[] {
   if (!template) return existing;
   const swapped = Array.from(template.content.childNodes);
   const parent = anchor.parentNode;
-  for (const n of existing) { if (n.parentNode) n.parentNode.removeChild(n); }   // drop fallback + sentinel
-  if (parent) for (const n of swapped) parent.insertBefore(n, anchor);            // place resolved children
+  let ri = 0;
+  const rLen = existing.length;
+  while (ri < rLen) {
+    const n = existing[ri++]!;
+    if (n.parentNode) n.parentNode.removeChild(n);   // drop fallback + sentinel
+  }
+  if (parent) {
+    let pi = 0;
+    const pLen = swapped.length;
+    while (pi < pLen) {
+      parent.insertBefore(swapped[pi++]!, anchor);   // place resolved children
+    }
+  }
   template.remove();
   return swapped;
 }
@@ -203,7 +218,7 @@ function replaceMismatch(node: HellaNode, existing: Node | null, boundaryElement
  * and subtree-replaces. Returns the hydrated element, or a fresh subtree on mismatch.
  */
 export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElement?: Element): Node {
-  if (node.__static && existing && existing.nodeType === Node.ELEMENT_NODE) {
+  if (node.static && existing && existing.nodeType === Node.ELEMENT_NODE) {
     const staticTag = node.tag as string | undefined;
     if (staticTag && (existing as Element).tagName !== staticTag.toUpperCase()) {
       console.warn(`[dom] hydrate mismatch: expected <${staticTag}>, found <${(existing as Element).tagName.toLowerCase()}>`);
@@ -212,7 +227,7 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
     return existing as Node;
   }
 
-  const { tag, on, e, bind, hooks, children, __scope, error } = node;
+  const { tag, on, e, bind, hooks, children, componentScope, error } = node;
 
   if (!existing || existing.nodeType !== Node.ELEMENT_NODE) {
     console.warn("[dom] hydrate mismatch: expected element node");
@@ -225,8 +240,8 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
     return replaceMismatch(node, existing, boundaryElement);
   }
 
-  if (__scope) {
-    getState(element).componentScope = __scope;
+  if (componentScope) {
+    getState(element).componentScope = componentScope;
   }
   if (error) {
     const state = getState(element);
@@ -301,6 +316,19 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
   const len = children.length;
   while (i < len) {
     const child = children[i];
+
+    if (child !== null && typeof child === "object" && "raw" in child) {
+      if (current && isMarkOpen(current)) {
+        current = consumeRegion(parent, current).next;
+      } else {
+        console.warn("[dom] hydrate: expected raw-region marker, not found");
+        const tpl = document.createElement("template");
+        tpl.innerHTML = child.raw;
+        parent.insertBefore(tpl.content, current);
+      }
+      i++;
+      continue;
+    }
 
     if (isHellaNode(child)) {
       const node = child as HellaNode;

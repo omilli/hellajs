@@ -6,10 +6,10 @@ import type { DocOptions, MetaTag, LinkTag } from "./types";
  * `serializeProp`, so falsy values are omitted, `true` renders bare, and strings are quoted
  * and escaped — the same rules `ssr` applies to element attributes.
  * @param attrs The attribute map (a `MetaTag`, `LinkTag`, or `ScriptTag`).
- * @param skip A key to exclude from the output (used to keep a script's `content` out of its attributes).
+ * @param skip A key (or keys) to exclude from the output — keeps a script's `content` (and `src`, when inline `content` is set) out of its attributes.
  * @returns The concatenated attribute string, each entry leading with a space (empty when none).
  */
-function buildAttrs(attrs: Record<string, unknown>, skip?: string): string {
+function buildAttrs(attrs: Record<string, unknown>, skip?: string | string[]): string {
   const keys = Object.keys(attrs);
   let i = 0;
   const len = keys.length;
@@ -18,6 +18,7 @@ function buildAttrs(attrs: Record<string, unknown>, skip?: string): string {
     const key = keys[i]!;
     i++;
     if (key === skip) continue;
+    if (Array.isArray(skip) && skip.indexOf(key) !== -1) continue;
     out += serializeProp(key, attrs[key]);
   }
   return out;
@@ -86,7 +87,8 @@ export function doc(options: DocOptions): string {
       const len = head.scripts.length;
       while (i < len) {
         const script = head.scripts[i]!;
-        const scriptAttrs = buildAttrs(script, "content");
+        // inline content wins: drop `src` too — a `<script src=…>` ignores its body, so emitting both would silently suppress the inline script
+        const scriptAttrs = buildAttrs(script, script.content !== undefined ? ["content", "src"] : "content");
         headHtml += script.content !== undefined
           ? `<script${scriptAttrs}>${script.content}</script>`
           : `<script${scriptAttrs}></script>`;

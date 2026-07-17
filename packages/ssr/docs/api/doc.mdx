@@ -15,7 +15,7 @@ function doc(options: DocOptions): string
     - `meta?` (`MetaTag[]`): `<meta>` tags; each renders void (no closing tag). `MetaTag` is an attribute map, e.g. `{ charset: "utf-8" }` or `{ name: "viewport", content: "width=device-width" }`.
     - `links?` (`LinkTag[]`): `<link>` tags; each renders void. `LinkTag` is an attribute map, e.g. `{ rel: "stylesheet", href: "/a.css" }`.
     - `styles?` (`string[]`): CSS text blocks, joined (no separator) into a single `<style>` — not re-escaped.
-    - `scripts?` (`ScriptTag[]`): `<script>` tags — `{ src }` renders external, `{ content }` renders inline (not escaped). `ScriptTag` also takes `type`, `async`, and `defer`.
+    - `scripts?` (`ScriptTag[]`): `<script>` tags — `{ src }` renders external, `{ content }` renders inline (not escaped); when both are set, `content` wins and `src` is dropped. `ScriptTag` also takes `type`, `async`, and `defer`.
     - `raw?` (`string`): Raw HTML appended verbatim to the head (escape hatch).
   - `lang?` (`string`): Value for `<html lang="…">`; the attribute is omitted when unset.
 - **Returns**: A full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>…</body></html>`.
