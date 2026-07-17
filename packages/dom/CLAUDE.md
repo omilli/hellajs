@@ -8,6 +8,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `mount`, `hydrate`, `html`, `component`, `element`, `onError` | Core API | `lib/{mount,hydrate,html,component,element,error}.ts` |
 | `ForEach`, `Portal`, `Lazy`, `Transition`, `Suspense` | Dynamic components (`isDynamic: true`) | `lib/{ForEach,Portal,Lazy,Transition,Suspense}.ts` |
 | `$ref`, `$collection` | Reactive wrappers over existing DOM | `lib/$ref.ts`, `lib/$collection.ts` |
+| `raw` | Raw HTML child sentinel — `ssr` emits verbatim, `hydrate` adopts opaquely | `lib/raw.ts` |
 | `registry` | `addEffect` / `addHook` registration API | `lib/registry.ts` |
 | `resetDom` | State reset (test/introspection) | `lib/internal/reset.ts` |
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
@@ -48,8 +49,8 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 | `hooks` | Lifecycle hooks (`hook:` prefix). |
 | `error` | `error:fallback` / `error:category` / `error:boundary` (`error:` prefix). |
 | `children` | Always flat (`.flat()` runs during template substitution). |
-| `__scope` | Attached by `component()`; copied to `state.componentScope` at mount. |
-| `__static` | Template-cache marker — subtree has zero placeholder deps; shared by reference across invocations, never cloned. |
+| `componentScope` | Attached by `component()`; copied to `state.componentScope` at mount. |
+| `static` | Template-cache marker — subtree has zero placeholder deps; shared by reference across invocations, never cloned. |
 
 ### `RenderFn` / `SsrMeta` (isDynamic components)
 
@@ -71,13 +72,13 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 `templateCache: WeakMap<TemplateStringsArray, HtmlInternalNode>` keys the AST by template-strings identity. First call builds the AST; later calls skip parsing and only run `cloneWithValues`.
 
 - **Tokenization.** `SKIP_REGEX` strips comments/DOCTYPE/CDATA; `<>`/`</>` rewrite to `<__fragment__>`/`</__fragment__>` → `tag: "$"`. `TOKEN_REGEX` matches tags + text; `ATTR_REGEX` classifies prefixes (`error:` before `e:` before `on:`/`bind:`/`hook:` before bare) in one pass; `parseAttributes` routes by `name.startsWith(...)`.
-- **Placeholders.** Interpolations become `__SLOT_N__` markers in the string and `{ __placeholder: N }` markers in the AST. **Format is `__SLOT_N__`, not `__HELLA_N__`.** `parseTextContent` splits text containing slots.
-- **Static-subtree optimization.** `markIfStatic` tags any node whose `props`/`on`/`e`/`bind`/`hooks`/`error`/`children` contain no `__placeholder` and no `__dynamicComponent` as `__static = true`. `cloneWithValues` short-circuits on `Object.hasOwn(node, "__static")` and returns the node as-is — **static subtrees are shared by reference across every invocation of the same literal.** This is why mutating a returned HellaNode is unsafe. `mountNode` further caches the first-built DOM subtree in a `staticDom: WeakMap<HellaNode, Element | DocumentFragment>` (`render.ts`); subsequent mounts of the same `__static` node return `cache.cloneNode(true)`, replacing O(nodes) DOM construction with O(1) clone (`render.ts:mountNode`). Safe because `markIfStatic` guarantees `__static` nodes carry no `on`/`e`/`bind`/`hooks`/`error` — zero `ElementState` entries exist on cached elements. The cache is cleared by `resetDom()` for test isolation.
+- **Placeholders.** Interpolations become `__SLOT_N__` markers in the string and `{ placeholder: N }` markers in the AST. **Format is `__SLOT_N__`, not `__HELLA_N__`.** `parseTextContent` splits text containing slots.
+- **Static-subtree optimization.** `markIfStatic` tags any node whose `props`/`on`/`e`/`bind`/`hooks`/`error`/`children` contain no `placeholder` and no `dynamicComponent` as `static = true`. `cloneWithValues` short-circuits on `Object.hasOwn(node, "static")` and returns the node as-is — **static subtrees are shared by reference across every invocation of the same literal.** This is why mutating a returned HellaNode is unsafe. `mountNode` further caches the first-built DOM subtree in a `staticDom: WeakMap<HellaNode, Element | DocumentFragment>` (`render.ts`); subsequent mounts of the same `static` node return `cache.cloneNode(true)`, replacing O(nodes) DOM construction with O(1) clone (`render.ts:mountNode`). Safe because `markIfStatic` guarantees `static` nodes carry no `on`/`e`/`bind`/`hooks`/`error` — zero `ElementState` entries exist on cached elements. The cache is cleared by `resetDom()` for test isolation.
 - **Root interpolation unwrap.** If the trimmed template is exactly `__SLOT_N__`, `parseHTML` returns the placeholder value directly — `html\`${value}\`` yields `value` itself, unwrapped.
 - **Roots.** 1 root → that node; `>1` roots → wrapped in `{ tag: "$", children: nodes }`.
-- **Dynamic components.** `<${Comp}>` becomes `{ __dynamicComponent: N, props, children }`; `cloneWithValues` calls `Comp(mergedProps)` if `Comp.isDynamic` (passthrough) or wraps via `component(Comp, mergedProps)`. Attribute buckets merge into one props object; a single child unwraps, multiple become an array.
+- **Dynamic components.** `<${Comp}>` becomes `{ dynamicComponent: N, props, children }`; `cloneWithValues` calls `Comp(mergedProps)` if `Comp.isDynamic` (passthrough) or wraps via `component(Comp, mergedProps)`. Attribute buckets merge into one props object; a single child unwraps, multiple become an array.
 - **Unclosed tags.** Anything left on the parse stack at EOF is flushed — no throw.
-- **Cloning rules.** `__placeholder`/`__static`/`__dynamicComponent` short-circuit; arrays flat-clone; HellaNodes shallow-clone each bucket; children `.flat()`-ed.
+- **Cloning rules.** `placeholder`/`static`/`dynamicComponent` short-circuit; arrays flat-clone; HellaNodes shallow-clone each bucket; children `.flat()`-ed.
 
 ## `mount(node, target = "#app")` (`lib/mount.ts`)
 
@@ -90,7 +91,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 
 Attaches reactivity to existing server-rendered HTML in place — re-executes the component tree and wires effects/handlers/state to the DOM the server shipped, **never `replaceChildren`** (the core invariant vs `mount`). Mirrors `mount`'s resolve + sync/async shape; `attach` hydrates the resolved node against `container`'s existing childNodes (no replace). Fragment root → `hydrateSequence` over `container.firstChild`; single element → `hydrateNode(node, container.firstChild)`. Empty container → falls back to a fresh `mount`. Returns the same `MountHandle` shape as `mount`.
 
-- **`hydrateNode(node, existing, boundary?)`** — mirrors `mountNode`'s step order: `__static` fast-path (verify tag, attach nothing — static subtrees carry no `on`/`e`/`bind`/`hooks`); copy `__scope`/`error`; register hooks; run `beforeMount`; **SKIP `props`** (server applied them via `ssr`); register `on:`/`e:`/`bind:` against `existing`; recurse `hydrateSequence`. Tag mismatch or missing element → `console.warn("[dom] hydrate mismatch…")` + `replaceMismatch` (`mountNode` subtree-replace via `existing.parentNode.replaceChild`); a missing child (no existing) returns an orphan that `hydrateSequence` appends.
+- **`hydrateNode(node, existing, boundary?)`** — mirrors `mountNode`'s step order: `static` fast-path (verify tag, attach nothing — static subtrees carry no `on`/`e`/`bind`/`hooks`); copy `componentScope`/`error`; register hooks; run `beforeMount`; **SKIP `props`** (server applied them via `ssr`); register `on:`/`e:`/`bind:` against `existing`; recurse `hydrateSequence`. Tag mismatch or missing element → `console.warn("[dom] hydrate mismatch…")` + `replaceMismatch` (`mountNode` subtree-replace via `existing.parentNode.replaceChild`); a missing child (no existing) returns an orphan that `hydrateSequence` appends.
 - **`hydrateSequence(parent, children, current, boundary)`** — a **marker-reader**: walks AST children in parallel with existing DOM via a node pointer, locating each dynamic region by its `<!--[->…<!--]-->` Comment markers (`isMarkOpen` / `gatherRegion` / `consumeRegion`). Static text/elements match by position (consume one node); element children → `hydrateNode` (adopt); a fragment child → gather + remove its marker pair, recurse inline; a reactive child → `consumeRegion` (gather nodes, remove markers, insert anchor) + `adoptReactiveRegion` (adopt the gathered nodes first-run, clear+render on subsequent runs — mirrors `appendToParent`, incl. the isDynamic-resolved `Proxy` branch which is safe here because `clearRenderedNodes` runs before re-rendering); an isDynamic child → `hydrateDynamic`.
 - **`HydrateCtx` + stack** (`peekHydrateContext`/`push`/`pop`) — an **internal** type in `lib/internal/hydrate.ts` (NOT in `nodes.d.ts`; `RenderFn`'s public signature is unchanged). Carries `{ anchor, existingNodes, hydrateNode }`. `adoptRegion` pushes it around each isDynamic `fn(parent)` call so the component reuses the walker's pre-positioned anchor and adopts the marker-gathered region nodes instead of building fresh. Reentrancy-safe for nested regions.
 - **isDynamic dispatch** (`hydrateDynamic`): `consumeRegion` gathers the region's nodes + positions the anchor; `adoptRegion` pushes the ctx + calls `fn`. `ForEach`/`Transition` adopt the gathered nodes; `Portal` passes `[]` (server rendered nothing in-place) and re-mounts into the target; `Lazy` `clearRenderedNodes` the gathered loading node, then re-runs the loader. `Suspense` runs `swapSuspenseStage` (β hydrate-swap: a staged `<template>` whose id matches a sentinel comment replaces the fallback), then adopts the resolved children. ForEach's first-render adopts via `hctx.existingNodes` into `keyToNode`/`keyToItem`/`currentKeys` **iff `existingNodes.length === arr.length`** (count-strict); on mismatch it warns + removes the gathered nodes + fresh-builds (the LIS update path is unchanged). `Transition` adopts `existingNodes[0]` as `current` when visible (applies `appear`).
@@ -98,7 +99,7 @@ Attaches reactivity to existing server-rendered HTML in place — re-executes th
 
 ## `mountNode` / `appendToParent` (`lib/internal/render.ts`)
 
-`mountNode(node, boundaryElement?)` — creates element (or fragment for `tag: "$"`), copies `__scope` → `state.componentScope` and `error` → `state.errorConfig` + `state.originalNode`, sets `currentBoundary = error ? element : boundaryElement`, registers hooks, runs `beforeMount` (errors caught, `phase: 'mount'`, **no fallback**), applies `props` via `renderProp`, registers `on:` (delegated) / `e:` (direct) / `bind:` (effect-wrapped; errors `phase: 'update'`, fallback `replaceChildren` on `currentBoundary ?? element`), then `appendToParent(element, children, currentBoundary)`.
+`mountNode(node, boundaryElement?)` — creates element (or fragment for `tag: "$"`), copies `componentScope` → `state.componentScope` and `error` → `state.errorConfig` + `state.originalNode`, sets `currentBoundary = error ? element : boundaryElement`, registers hooks, runs `beforeMount` (errors caught, `phase: 'mount'`, **no fallback**), applies `props` via `renderProp`, registers `on:` (delegated) / `e:` (direct) / `bind:` (effect-wrapped; errors `phase: 'update'`, fallback `replaceChildren` on `currentBoundary ?? element`), then `appendToParent(element, children, currentBoundary)`.
 
 - **`resolveNode(value, parent?)`** — `HellaNode` → `mountNode`; a non-dynamic **function/signal** → a text node plus an effect (registered on `parent || textNode`) tracking `resolveText(value())`; primitive → text node. This is the path Portal/Transition/ForEach use for their children.
 - **`appendToParent` static-string fast path.** A single string child → `parent.textContent = str` (no text-node allocation).
@@ -211,6 +212,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **`html\`${value}\`` returns `value` directly**, unwrapped.
 - **`<>...</>` and multiple roots** are supported inside `html\`\`` at any nesting; multiple roots auto-wrap in a fragment.
 - **`HellaNode.children` is always flat** — nested arrays are impossible after substitution.
+- **`raw(html)` is an opaque child.** `ssr` wraps it in `<!--[-->…<!--]-->` markers and emits the HTML verbatim (never escaped); `hydrate` consumes the markers and adopts the existing DOM in place, binding nothing inside — no reactive scope crosses the boundary. Meta-framework renderers inject slot HTML as `props.children = [raw(slotHtml)]` (array-wrapped, so the babel `<X>{props.children}</X>` spread yields the sentinel). Bypasses escaping — sanitize untrusted input (XSS).
 - **Passthrough components bypass `component()`** — `ForEach`/`Portal`/`Lazy`/`Transition` set `isDynamic: true` and `fn.ssr = { kind, props }`, and are called directly by `appendToParent` with the parent. `<${Comp}>` in templates wraps in `component()` only if `Comp.isDynamic` is false. The `ssr` descriptor (see `RenderFn`/`SsrMeta`) lets `@hellajs/ssr` render these without DOM access; it's write-only at mount.
 - **One scoped observer covers every `mount()` target** (`observedContainers`); a second mount target adds no second observer.
 - **`isMounted`: root sync, descendants async.** Tests must call `app.flush()` on the mount handle before asserting on `afterMount`-gated behavior.
@@ -224,8 +226,8 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **`while` + cached `length`** on every hot path — no `for…of`/`forEach`.
 - **`DocumentFragment`** for every multi-insert (ForEach first render / no-overlap / empty-recovery, Portal fragment).
 - **ForEach collection reuse** — temp Maps/arrays/Sets `clear()` + reference-swap, never reallocated.
-- **`__static` sharing** — static subtrees returned by reference, no deep clone.
-- **`staticDom` prototype cache** — `__static` subtrees return `cloneNode(true)` of a cached prototype, turning O(nodes) mount into O(1) for static branches.
+- **`static` sharing** — static subtrees returned by reference, no deep clone.
+- **`staticDom` prototype cache** — `static` subtrees return `cloneNode(true)` of a cached prototype, turning O(nodes) mount into O(1) for static branches.
 - **`composedPath()`** for delegation (pre-computed ancestor chain).
 - **\`globalListeners\` fast-exit** + inline prefix matching in \`ATTR_REGEX\` (single regex pass).
 - **Module-level cached regexes** (`TOKEN_REGEX`, `PLACEHOLDER_REGEX`, `SKIP_REGEX`, `ATTR_REGEX`), `lastIndex = 0` before each use.
