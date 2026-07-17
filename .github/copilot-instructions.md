@@ -73,6 +73,7 @@ applyTo: "**"
   | visibility | `bun visibility` | Guard: fail if a wholesale-exported `types*.d.ts` contains `@internal`-tagged types (would leak as public). |
   | dead-exports | `bun dead-exports` | Guard: fail if any exported symbol has zero value-position references across source, tests, and docs. |
   | jsdoc-params | `bun jsdoc-params` | Guard: fail if any `function` declaration's JSDoc has a `@param` tag whose name does not match a parameter. |
+  | doc-links | `bun doc-links` | Guard: fail if a doc link's display name is not a barrel export of its target package (catches `streamSsr` vs `ssrStream` rename drift that `tsc`/`eslint` miss). |
 
   ## Skills
 
