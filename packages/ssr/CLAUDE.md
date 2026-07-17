@@ -7,6 +7,7 @@ Pure HTML stringifier over `@hellajs/dom`'s HellaNode AST. Zero runtime imports 
 | `ssr` | `ssr(node: HellaNode): string` — serialize a HellaNode AST to an HTML string. |
 | `ssrAsync` | `ssrAsync(node: HellaNode): Promise<string>` — async counterpart; awaits any Promise a resolved value (child, `bind:`, `each`, `show`) returns. |
 | `ssrStream` | `ssrStream(node: HellaNode): ReadableStream<string>` — streaming counterpart; yields HTML chunks, flushing the static prefix before each await. |
+| `doc` | `doc(options: DocOptions): string` — assemble a rendered body + head into a full HTML document string; pure builder, zero new deps, reuses `serializeProp`/`escapeHtml`. |
 
 ## Architecture (`lib/`)
 
@@ -17,6 +18,8 @@ One public export per file (`lib/index.ts` is a pure re-export barrel). The shar
 | `lib/ssr.ts` | Public `ssr(node)` — the sync recursive walker. Sync helpers `walkChild`/`walkChildren`/`renderDynamic` co-located (non-exported, single-caller). |
 | `lib/ssrAsync.ts` | Public `ssrAsync(node)` — collect-wrapper over the shared async generator. |
 | `lib/ssrStream.ts` | Public `ssrStream(node)` — `ReadableStream` wrapper over the shared async generator; flushes staged `<Suspense>` swaps at stream end. |
+| `lib/doc.ts` | Public `doc(options)` — assembles a rendered body + head into a full HTML document string; reuses `serializeProp`/`escapeHtml` from `./internal/serialize`. Local helpers `buildAttrs`/`renderVoidTags` co-located (non-exported). |
+| `lib/types.d.ts` | `doc`'s option interfaces (`DocOptions`/`HeadOptions`/`MetaTag`/`LinkTag`/`ScriptTag`); wholesale-re-exported via `export type *`. |
 | `lib/internal/serialize.ts` | `serializeProp`/`escapeHtml` (mirror dom's `renderProp`), `VOID` void-element set. |
 | `lib/internal/resolve.ts` | `resolveValue`/`resolveAsync` (call-if-function, await-if-Promise resolvers); `isPromise` type guard (local). |
 | `lib/internal/walk.ts` | The shared async walker (`ssrNodeGen` exported; `walkChildGen`/`walkChildrenGen`/`renderDynamicGen` local) + `MARK_OPEN`/`MARK_CLOSE` and the `DynamicFn`/`PendingSwap` types. |
