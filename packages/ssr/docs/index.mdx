@@ -12,16 +12,15 @@ npm install @hellajs/dom @hellajs/ssr
 
 ```js
 import { html } from '@hellajs/dom';
-import { ssr } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const greet = (name) => html`<div><h1>Hello ${name}</h1></div>`;
 
 const body = ssr(greet('World'));
 // body: "<div><h1>Hello World</h1></div>"
 
-// Assemble a full document in your server handler
-const page = `<!DOCTYPE html>
-<html><body><div id="app">${body}</div></body></html>`;
+// Assemble a full document
+const page = doc({ head: { title: 'Hello' }, body });
 ```
 
 ### API
@@ -29,6 +28,7 @@ const page = `<!DOCTYPE html>
 - **[ssr](/reference/ssr/ssr)**: Serialize a HellaNode AST into an HTML string
 - **[ssrAsync](/reference/ssr/ssr-async)**: Serialize a HellaNode AST into an HTML string, awaiting Promises in the tree
 - **[ssrStream](/reference/ssr/ssr-stream)**: Serialize a HellaNode AST into a streaming HTML response (`ReadableStream`)
+- **[doc](/reference/ssr/doc)**: Assemble a rendered body and head into a full HTML document string
 
 ### Concepts
 

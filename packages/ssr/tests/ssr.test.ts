@@ -106,11 +106,20 @@ describe("ssr", () => {
     expect(ssr(html`<div>${fn}</div>` as HellaNode)).toBe("<div></div>");
   });
 
-  test("emits an empty marker region for an isDynamic function with an unknown ssr kind", () => {
+  test("renders an empty marker region and warns for an unknown ssr kind", () => {
     const fn = (() => { throw new Error("fn should not be called"); }) as unknown as { isDynamic?: true; ssr?: { kind: "unknown"; props: object } };
     fn.isDynamic = true;
     fn.ssr = { kind: "unknown", props: {} };
-    expect(ssr(html`<div>${fn}</div>` as HellaNode)).toBe("<div><!--[--><!--]--></div>");
+    const original = console.warn;
+    const warn = mock(() => {});
+    console.warn = warn as unknown as typeof console.warn;
+    try {
+      expect(ssr(html`<div>${fn}</div>` as HellaNode)).toBe("<div><!--[--><!--]--></div>");
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith("[ssr] unknown isDynamic kind: unknown");
+    } finally {
+      console.warn = original;
+    }
   });
 
   test("renders a HellaNode returned by a reactive child in a marker region", () => {
@@ -150,5 +159,13 @@ describe("ssr", () => {
     const items = signal([1, 2, 3]);
     const node = html`<div>${() => ForEach({ each: items, use: (n: number) => html`<li>${n}</li>` })}</div>` as HellaNode;
     expect(ssr(node)).toBe("<div><!--[--><li>1</li><li>2</li><li>3</li><!--]--></div>");
+  });
+
+  test("throws when node is null", () => {
+    expect(() => ssr(null as unknown as HellaNode)).toThrow(/^\[ssr\] ssr: node is required, received null$/);
+  });
+
+  test("throws when node is undefined", () => {
+    expect(() => ssr(undefined as unknown as HellaNode)).toThrow(/^\[ssr\] ssr: node is required, received undefined$/);
   });
 });

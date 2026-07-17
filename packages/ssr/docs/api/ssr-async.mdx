@@ -33,7 +33,7 @@ Where [`ssr`](/reference/ssr/ssr) reads each getter once and cannot await, `ssrA
 
 ### Identical Markers, Unchanged Hydration
 
-Marker wrapping is byte-identical to [`ssr`](/reference/ssr/ssr): every dynamic region is bounded by `<!--[->…<!--]-->`, so [`hydrate`](/reference/dom/hydrate) consumes `ssrAsync` output exactly as it consumes `ssr` output. Awaiting data changes *when* values resolve, not the output contract.
+Marker wrapping is byte-identical to [`ssr`](/reference/ssr/ssr): every dynamic region is bounded by `<!--[-->…<!--]-->`, so [`hydrate`](/reference/dom/hydrate) consumes `ssrAsync` output exactly as it consumes `ssr` output. Awaiting data changes *when* values resolve, not the output contract.
 
 ### Zero Runtime Dependencies
 
@@ -52,3 +52,7 @@ A rejected `Promise` rejects the returned `Promise` — `ssrAsync` has no try/ca
 ### Synchronous Data Prefers `ssr`
 
 If no value is a `Promise`, `await ssrAsync(node)` equals `ssr(node)`. Prefer [`ssr`](/reference/ssr/ssr) for already-resolved data to avoid the Promise overhead.
+
+### Rejects on invalid input
+
+`ssrAsync` rejects the returned `Promise` with `[ssr] ssrAsync: node is required, received <value>` when `node` is `null` or `undefined`.

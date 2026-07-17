@@ -16,7 +16,8 @@ function router(config: RouterConfig): RouteInfo
 //   mode?: 'history' | 'hash',
 //   scrollBehavior?: ScrollBehavior,
 //   intercept?: boolean,
-//   inheritMeta?: boolean
+//   inheritMeta?: boolean,
+//   url?: string
 // }
 ```
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
@@ -27,7 +28,8 @@ function router(config: RouterConfig): RouteInfo
 - `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
 - `intercept`: Enable automatic same-origin `<a>` click interception. Default `true`.
 - `inheritMeta`: Parent-to-child meta inheritance through nested routes. Default `false` (leaf-only meta).
-- **Returns**: The initial [`RouteInfo`](/reference/router/route) (handler is `null` until microtask resolves).
+- `url`: Resolve against this URL instead of `window.location`. Used for SSR, where there is no window. Resolution is synchronous either way.
+- **Returns**: The resolved initial [`RouteInfo`](/reference/router/route) — the route is matched synchronously during the call.
 
 ## Basic Usage
 
@@ -255,19 +257,26 @@ Within nested routes, specific patterns take precedence over wildcards.
 
 ### Router Return Value
 
-`router()` returns the current [`RouteInfo`](/reference/router/route) immediately, but the first route resolution is deferred via `queueMicrotask`. The returned value has `handler: null` until the microtask fires.
+`router()` resolves the initial route synchronously and returns the matched [`RouteInfo`](/reference/router/route). `handler`, `params`, `query`, and `path` are all set when the call returns.
 
 ```typescript
-// ❌ handler is null immediately after router() returns
-const { handler } = router({ routes: { '/': () => showHome() } });
-console.log(handler); // null
+// ✅ The return value is the resolved route — read it directly
+const { handler, params } = router({ routes: { '/users/:id': (params) => showUser(params) } });
+console.log(handler); // the matched handler function
 
-// ✅ Use effect to respond to the resolved route
+// ✅ Or react to later navigations inside an effect
 router({ routes: { '/': () => showHome() } });
 effect(() => {
   const { handler } = route();
   if (handler) handler();
 });
+```
+
+For SSR, pass the request URL so the router resolves against it instead of `window.location` (absent on the server):
+
+```typescript
+// server: pathname + search from the incoming request
+router({ routes, url: pathname + search });
 ```
 
 ### Parameter Types

@@ -99,6 +99,8 @@ export interface RouterConfig {
   intercept?: boolean;
   /** Enable parent-to-child meta inheritance through nested route chains. Child meta overrides parent on key conflict. Default is false (leaf-only meta). */
   inheritMeta?: boolean;
+  /** Resolve against this URL instead of `window.location`. Used for SSR, where there is no window. Resolution is synchronous either way. */
+  url?: string;
 }
 
 /**

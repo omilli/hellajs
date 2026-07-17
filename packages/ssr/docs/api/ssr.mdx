@@ -48,13 +48,27 @@ const page = `<style>${button}</style><div id="app">${body}</div>`;
 
 ## Key Concepts
 
+### Works with `html` or JSX
+
+`ssr` consumes any `HellaNode` — produced by the `html` tag or JSX — identically. The babel/vite/rollup plugin compiles JSX to the same AST, so a JSX component renders the same HTML as the equivalent `html` template.
+
+```jsx
+import { ssr } from '@hellajs/ssr';
+
+// JSX compiles to the same HellaNode as the html tag
+const App = ({ name }) => <div><h1>Hello {name}</h1></div>;
+const body = ssr(<App name="World" />);
+```
+
+The plugin must run on the **server** entry — it is a compile-time transform, so without it JSX is not a `HellaNode`. See [Render from JSX](/learn/patterns/ssr) for a full recipe.
+
 ### Zero Runtime Dependencies
 
 `ssr` has zero runtime imports from any `@hellajs/*` package — only a type-only [`HellaNode`](/reference/dom) import, erased at compile time. It works whether or not the other packages are installed and adds no runtime weight to the server bundle.
 
 ### Hydration markers
 
-`ssr()` wraps every dynamic region — a reactive child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy), or a nested fragment — in `<!--[->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
+`ssr()` wraps every dynamic region — a reactive child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy), or a nested fragment — in `<!--[-->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
 
 ```js
 import { signal } from '@hellajs/core';
@@ -93,3 +107,11 @@ Calling [`mount`](/reference/dom/mount) over the server-rendered container repla
 ### Synchronous render required
 
 `ssr` walks the tree once and returns. Reactive getters are read at their current value; there is no effect scheduling, no batching, and no async resolution. Build the tree from already-resolved data.
+
+### Errors Propagate
+
+`ssr` has no try/catch — a throwing child, `bind:` getter, or `use` callback surfaces to the caller. Wrap the render in your own error handling if a value may throw. A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
+
+### Throws on invalid input
+
+`ssr` throws `[ssr] ssr: node is required, received <value>` when `node` is `null` or `undefined`.

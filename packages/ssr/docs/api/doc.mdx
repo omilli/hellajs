@@ -1,0 +1,73 @@
+# doc
+
+Assemble a rendered body and an optional head into a complete HTML document string — a pure builder with zero server-runtime coupling.
+
+## API
+
+```typescript
+function doc(options: DocOptions): string
+```
+
+- `options`: Document assembly options.
+  - `body` (`string`): Already-rendered HTML (from [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)/[`ssrStream`](/reference/ssr/ssr-stream)). Placed verbatim — **not** re-escaped.
+  - `head?` (`HeadOptions`): Document head contents. Fields emit in declaration order: `title`, `meta`, `links`, `styles`, `scripts`, then `raw`.
+    - `title?` (`string`): Document title — text-escaped (`& < > "`).
+    - `meta?` (`MetaTag[]`): `<meta>` tags; each renders void (no closing tag). `MetaTag` is an attribute map, e.g. `{ charset: "utf-8" }` or `{ name: "viewport", content: "width=device-width" }`.
+    - `links?` (`LinkTag[]`): `<link>` tags; each renders void. `LinkTag` is an attribute map, e.g. `{ rel: "stylesheet", href: "/a.css" }`.
+    - `styles?` (`string[]`): CSS text blocks, joined (no separator) into a single `<style>` — not re-escaped.
+    - `scripts?` (`ScriptTag[]`): `<script>` tags — `{ src }` renders external, `{ content }` renders inline (not escaped). `ScriptTag` also takes `type`, `async`, and `defer`.
+    - `raw?` (`string`): Raw HTML appended verbatim to the head (escape hatch).
+  - `lang?` (`string`): Value for `<html lang="…">`; the attribute is omitted when unset.
+- **Returns**: A full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>…</body></html>`.
+
+## Basic Usage
+
+Render a template with [`ssr`](/reference/ssr/ssr), take CSS text from [`@hellajs/css`](/reference/css), and assemble both into a document.
+
+```js
+import { html } from '@hellajs/dom';
+import { css } from '@hellajs/css';
+import { ssr, doc } from '@hellajs/ssr';
+
+const card = css({ border: '1px solid #ccc' }, { name: 'card' }); // CSS text on the server
+const body = ssr(html`<div class="card">Hi</div>`);
+
+const page = doc({
+  lang: 'en',
+  head: {
+    title: 'Home',
+    meta: [{ charset: 'utf-8' }, { name: 'viewport', content: 'width=device-width' }],
+    styles: [card],
+  },
+  body,
+});
+// <!DOCTYPE html><html lang="en"><head><title>Home</title><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>.card{border:1px solid #ccc}</style></head><body><div class="card">Hi</div></body></html>
+```
+
+## Key Concepts
+
+### Reuses the package's escaping rules
+
+`title` text and every attribute value run through the same `serializeProp` / `escapeHtml` rules the stringifiers apply to element attributes: falsy values are omitted, `true` renders bare, strings are quoted and escaped. `async: true` emits a bare `async`; `async: false` is omitted.
+
+### Verbatim `body` and `raw`
+
+`body` is already HTML (the output of a stringifier), so it is placed unchanged — entities and tags inside it are **not** re-escaped. `head.raw` is the same kind of escape hatch for arbitrary head markup.
+
+### Correct void elements
+
+`<meta>` and `<link>` render void — no closing tag, no trailing `/`. `<title>`, `<style>`, and `<script>` carry closing tags. The document skeleton (`<!DOCTYPE html>`, `<html>`, `<head>`, `<body>`) is always present, even with an empty head.
+
+### Agnostic to the renderer
+
+`body` is a `string`, not a `HellaNode`, so `doc` pairs with whichever renderer fits — [`ssr`](/reference/ssr/ssr) (sync), [`ssrAsync`](/reference/ssr/ssr-async) (await Promises), or [`ssrStream`](/reference/ssr/ssr-stream) (collected from the stream). There is no server-runtime coupling: no Request/Response, no host API, so it runs identically in Bun, Node, Deno, Express, and Hono.
+
+## Important Considerations
+
+### No automatic CSS or head collection
+
+`doc` takes an already-composed CSS string (`styles`) and explicit `title` / `meta` / `links` / `scripts`. It does not collect [`css()`](/reference/css/css) / [`cssVars()`](/reference/css/cssvars) calls or hoist `<head>` from the rendered tree — those are larger, separate concerns. Drain the stringifiers' output yourself and pass it in.
+
+### `body` is required
+
+`doc` throws `[ssr] doc: body is required, received undefined` when `body` is omitted. Pass the output of a stringifier (or any HTML string).

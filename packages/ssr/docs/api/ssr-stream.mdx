@@ -52,8 +52,12 @@ Like [`ssr`](/reference/ssr/ssr), `ssrStream` has zero runtime imports from any 
 
 ### In-Order Streaming
 
-Async values are awaited in tree order, so a slow Promise delays everything after it. For out-of-order streaming — flushing a shell while an async subtree resolves in parallel — wrap the subtree in a `<Suspense>` boundary (planned). Prefer `ssrStream` when you want progressive paint; prefer [`ssr`](/reference/ssr/ssr) or [`ssrAsync`](/reference/ssr/ssr-async) when streaming isn't needed (no Promise overhead).
+Async values are awaited in tree order, so a slow Promise delays everything after it. For out-of-order streaming — flushing a shell while an async subtree resolves in parallel — wrap the subtree in a [`<Suspense>`](/reference/dom/suspense) boundary. Prefer `ssrStream` when you want progressive paint; prefer [`ssr`](/reference/ssr/ssr) or [`ssrAsync`](/reference/ssr/ssr-async) when streaming isn't needed (no Promise overhead).
 
 ### Errors Error the Stream
 
 A rejected Promise errors the `ReadableStream` — reading it throws. Handle errors at the stream consumer (your server handler).
+
+### Throws on invalid input
+
+`ssrStream` throws `[ssr] ssrStream: node is required, received <value>` when `node` is `null` or `undefined`.

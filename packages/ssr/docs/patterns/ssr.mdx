@@ -1,56 +1,69 @@
 # SSR
 
-Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr).
+Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr). For URL→view routing on the server — a request URL driving the rendered view, with shared client [`hydrate`](/reference/dom/hydrate) — see [SSR Routing](/learn/patterns/routing-ssr).
 
 ### Plain HTML with Bun.serve
 
-Render a template to a string and return a full document.
+Render a template to a string and return a full document via [`doc`](/reference/ssr/doc).
 
 ```js
 import { html } from '@hellajs/dom';
-import { ssr } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const page = (name) => html`<div><h1>Hello ${name}</h1></div>`;
 
 Bun.serve({
   port: 3000,
   fetch: () => new Response(
-    `<!DOCTYPE html><html><body><div id="app">${ssr(page('World'))}</div></body></html>`,
+    doc({ head: { title: 'Hello' }, body: ssr(page('World')) }),
     { headers: { 'content-type': 'text/html' } }
   )
 });
 ```
 
+### Render from JSX
+
+`ssr` consumes any [`HellaNode`](/reference/dom) — the [`html`](/reference/dom/html) tag and JSX compile to the same AST. Render a JSX component exactly like an `html` template.
+
+```jsx
+import { ssr } from '@hellajs/ssr';
+
+const App = ({ name }) => <div><h1>Hello {name}</h1></div>;
+
+const body = ssr(<App name="World" />);
+// body: "<div><h1>Hello World</h1></div>"
+```
+
+The babel/vite/rollup plugin must run on the **server** entry — it is a compile-time transform, so without it JSX is not a `HellaNode`. See [Build Tools Plugins](/plugins).
+
 ### Styled output
 
-[`@hellajs/css`](/reference/css) returns CSS text on the server. Compose it with the rendered body in a `<style>` tag.
+[`@hellajs/css`](/reference/css) returns CSS text on the server. Pass it to [`doc`](/reference/ssr/doc)'s `styles` to emit a `<style>` tag.
 
 ```js
 import { html } from '@hellajs/dom';
 import { css } from '@hellajs/css';
-import { ssr } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const card = css({ border: '1px solid #ccc' }, { name: 'card' });
-
 const body = ssr(html`<div class="card">Content</div>`);
-const page = `<!DOCTYPE html><html><head><style>${card}</style></head>
-<body><div id="app">${body}</div></body></html>`;
+const page = doc({ head: { title: 'Card', styles: [card] }, body });
 ```
 
 ### Express handler
 
-Use `ssr` inside any Node framework. The stringifier is framework-agnostic.
+Use `ssr` inside any Node framework and assemble the document with [`doc`](/reference/ssr/doc). The stringifier is framework-agnostic.
 
 ```js
 import express from 'express';
 import { html } from '@hellajs/dom';
-import { ssr } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const app = express();
 
 app.get('/', (req, res) => {
   const body = ssr(html`<div><h1>Hello ${req.query.name ?? 'World'}</h1></div>`);
-  res.send(`<!DOCTYPE html><html><body><div id="app">${body}</div></body></html>`);
+  res.send(doc({ head: { title: 'Hello' }, body }));
 });
 
 app.listen(3000);
@@ -166,7 +179,7 @@ Bun.serve({
 
 Wrap async data in [`<Suspense>`](/reference/dom/suspense) so the shell and a `fallback` flush immediately while the children resolve — a slow fetch no longer blocks the rest of the page.
 
-```jsx
+```js
 import { html, Suspense } from '@hellajs/dom';
 import { ssrStream } from '@hellajs/ssr';
 
@@ -184,3 +197,57 @@ const App = () => html`
 // Server streams the shell + fallback first; resolved children stage for hydrate
 const stream = ssrStream(html`<${App} />`);
 ```
+
+### Error handling
+
+`ssr`, [`ssrAsync`](/reference/ssr/ssr-async), and [`ssrStream`](/reference/ssr/ssr-stream) propagate render failures instead of swallowing them — a throwing child, `bind:` getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Handle the failure at the server handler: render a fallback page for the sync/async renderers, or catch at the stream consumer for `ssrStream`.
+
+Sync/async — wrap the render; on throw, render a fallback page:
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+// A throwing child getter propagates — ssr has no try/catch, so it surfaces to the caller.
+const Profile = (user) => html`<h1>${() => user.name.toUpperCase()}</h1>`;
+
+const ErrorPage = (msg) => html`<div class="error">Render failed: ${msg}</div>`;
+
+function render(user) {
+  try {
+    return ssr(Profile(user));
+  } catch (err) {
+    return ssr(ErrorPage(err.message));
+  }
+}
+
+render({ name: 'Ada' });   // "<h1><!--[-->ADA<!--]--></h1>"
+render({});                 // "<div class=\"error\">Render failed: ...</div>"
+```
+
+The same shape works with [`ssrAsync`](/reference/ssr/ssr-async) — `await` the render inside the `try`.
+
+Stream — a rejected Promise errors the `ReadableStream`, so the consumer's read loop must catch:
+
+```js
+import { html } from '@hellajs/dom';
+import { ssrStream } from '@hellajs/ssr';
+
+// A getter returning a rejected Promise errors the stream.
+const fetchName = () => fetch('/api/missing').then(r => r.json()).then(d => d.name);
+
+async function respond() {
+  const stream = ssrStream(html`<p>${() => fetchName()}</p>`)
+    .pipeThrough(new TextEncoderStream());
+  try {
+    for await (const chunk of stream) {
+      // write chunk to the response body
+    }
+  } catch (err) {
+    // The rejected Promise surfaced as a stream error. The static shell may
+    // already have flushed — emit any fallback here.
+  }
+}
+```
+
+Once the static shell has flushed, a late rejection means partial HTML already reached the client — a [`<Suspense>`](/reference/dom/suspense) boundary keeps the failure scoped to one staged region instead of the whole document (see [Out-of-order streaming with Suspense](#out-of-order-streaming-with-suspense)).

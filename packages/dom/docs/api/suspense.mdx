@@ -1,6 +1,6 @@
 # Suspense
 
-An out-of-order streaming boundary for server rendering — wrap async server data so the shell and a `fallback` flush immediately via [`streamSsr`](/reference/ssr/ssr-stream), then [`hydrate`](/reference/dom/hydrate) swaps the resolved children in.
+An out-of-order streaming boundary for server rendering — wrap async server data so the shell and a `fallback` flush immediately via [`ssrStream`](/reference/ssr/ssr-stream), then [`hydrate`](/reference/dom/hydrate) swaps the resolved children in.
 
 ## API
 
@@ -13,7 +13,7 @@ function Suspense(props: SuspenseProps): JSX.Element
 
 ## Basic Usage
 
-Render a shell with a `fallback` immediately, then resolve async data into the boundary. [`streamSsr`](/reference/ssr/ssr-stream) flushes the `fallback` inline and stages the resolved children; [`hydrate`](/reference/dom/hydrate) swaps them in.
+Render a shell with a `fallback` immediately, then resolve async data into the boundary. [`ssrStream`](/reference/ssr/ssr-stream) flushes the `fallback` inline and stages the resolved children; [`hydrate`](/reference/dom/hydrate) swaps them in.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -58,9 +58,9 @@ On a purely client-side [`mount`](/reference/dom/mount) (no server HTML), `<Susp
 
 ## Important Considerations
 
-### Pair With `streamSsr`
+### Pair With `ssrStream`
 
-`<Suspense>` only changes streaming behavior under [`streamSsr`](/reference/ssr/ssr-stream). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) it renders children directly (fallback dropped), so it is safe to use in trees rendered any way.
+`<Suspense>` only changes streaming behavior under [`ssrStream`](/reference/ssr/ssr-stream). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) it renders children directly (fallback dropped), so it is safe to use in trees rendered any way.
 
 ### Nested Suspense Resolves Eagerly
 

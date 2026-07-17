@@ -39,14 +39,7 @@ export function router(config: RouterConfig): RouteInfo {
 
   const intercept: boolean = config.intercept !== false;
 
-  let initialPath = "/";
-  if (hasWindow()) {
-    if (routerMode === "hash") {
-      initialPath = getHashPath();
-    } else {
-      initialPath = window.location.pathname + window.location.search;
-    }
-  }
+  const initialPath = config.url ?? (hasWindow() ? (routerMode === "hash" ? getHashPath() : window.location.pathname + window.location.search) : "/");
 
   if (!route().handler) {
     route({
@@ -132,7 +125,7 @@ export function router(config: RouterConfig): RouteInfo {
     }
   }
 
-  queueMicrotask(() => updateRoute());
+  updateRoute();
 
   return route();
 }

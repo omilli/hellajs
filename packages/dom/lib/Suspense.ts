@@ -4,7 +4,7 @@ import type { SuspenseProps, HellaElement } from "./types/nodes";
 
 /**
  * An out-of-order streaming boundary for server rendering. Wrap async server data in `<Suspense>` so the
- * shell and `fallback` flush immediately via [`streamSsr`](/@hellajs/ssr) while the children resolve, then
+ * shell and `fallback` flush immediately via [`ssrStream`](/@hellajs/ssr) while the children resolve, then
  * [`hydrate`](./hydrate) swaps the resolved children in. Under [`ssr`](/@hellajs/ssr)/[`ssrAsync`](/@hellajs/ssr)
  * (no streaming) it renders its children directly. Follows the ForEach/Lazy pattern using `isDynamic: true`.
  * @param props `{ fallback, children }`

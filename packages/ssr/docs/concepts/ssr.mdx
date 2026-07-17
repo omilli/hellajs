@@ -4,7 +4,7 @@ Render HellaNode templates to HTML strings on the server, then enhance them on t
 
 ## The String-Renderer Model
 
-`ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region — a reactive child, a control-flow component, or a nested fragment — is wrapped in `<!--[->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
+`ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region — a reactive child, a control-flow component, or a nested fragment — is wrapped in `<!--[-->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -28,7 +28,7 @@ Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
 
 The shipped HTML is the source of truth. The client can either hydrate the full tree or enhance the static HTML selectively.
 
-- [`hydrate`](/reference/dom/hydrate) re-executes the component tree against the existing DOM, locating each `<!--[->…<!--]-->` marker region and attaching effects/handlers/state without replacing it. Pass the same node the server passed to `ssr`; reactive state must initialize to the server-rendered values. See [Hydration](/learn/concepts/hydration).
+- [`hydrate`](/reference/dom/hydrate) re-executes the component tree against the existing DOM, locating each `<!--[-->…<!--]-->` marker region and attaching effects/handlers/state without replacing it. Pass the same node the server passed to `ssr`; reactive state must initialize to the server-rendered values. See [Hydration](/learn/concepts/hydration).
 - Bind individual existing server-rendered nodes into reactivity with [`$ref`](/reference/dom/ref) and [`$collection`](/reference/dom/collection).
 - Mount a reactive island into an empty placeholder the template left for it.
 

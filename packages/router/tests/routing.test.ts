@@ -206,6 +206,8 @@ describe("router", () => {
         notFound
       });
 
+      // Synchronous init may fire notFound for the unmatched initial path; isolate the navigate.
+      notFound.mockClear();
       navigate("/");
       expect(notFound).toHaveBeenCalledTimes(1);
     });

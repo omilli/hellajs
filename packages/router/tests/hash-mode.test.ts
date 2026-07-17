@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { effect } from "@hellajs/core";
-import { delay } from "@utils/test-helpers.js";
 
 import { router, navigate, route } from "@hellajs/router/bundle";
 import { setupRouterEnv } from "./helpers";
@@ -80,7 +79,7 @@ describe("router", () => {
       expect(window.location.hash).toBe("#/search?q=test");
     });
 
-    test("hashchange fires route subscribers exactly once per navigation", async () => {
+    test("hashchange fires route subscribers exactly once per navigation", () => {
       router({
         routes: {
           "/test": () => { },
@@ -88,8 +87,6 @@ describe("router", () => {
         },
         mode: "hash"
       });
-
-      await delay(); // drain router init's queueMicrotask before subscribing
 
       const tracker = mock(() => { route().path; });
       effect(tracker);

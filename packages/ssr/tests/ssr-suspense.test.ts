@@ -2,13 +2,14 @@ import { describe, test, expect } from "bun:test";
 import { html, Suspense } from "@hellajs/dom/bundle";
 import { ssr, ssrAsync, ssrStream } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
+import { collect } from "./helpers";
 
-async function collect(stream: ReadableStream<string>): Promise<string> {
-  const reader = stream.getReader();
-  let out = "";
-  let chunk = await reader.read();
-  while (!chunk.done) { out += chunk.value; chunk = await reader.read(); }
-  return out;
+/** Extracts `<Suspense>` swap ids from streamed HTML: sentinel-comment ids (nodeValue) and `<template>` ids. */
+function extractSwapIds(out: string): { sentinels: string[]; templates: string[] } {
+  return {
+    sentinels: [...out.matchAll(/<!--(hs\d+)-->/g)].map((m) => m[1]!),
+    templates: [...out.matchAll(/<template id="(hs\d+)">/g)].map((m) => m[1]!),
+  };
 }
 
 describe("ssr <Suspense>", () => {
@@ -25,24 +26,32 @@ describe("ssr <Suspense>", () => {
   test("ssrStream emits fallback + sentinel region, then a staged template with the resolved children", async () => {
     const node = html`<div><${Suspense} fallback=${html`<span>loading</span>`}>${html`<b>resolved</b>`}</${Suspense}></div>` as HellaNode;
     const out = await collect(ssrStream(node));
-    expect(out.startsWith("<div><!--[--><span>loading</span><!--hs0--><!--]--></div>")).toBe(true);
-    expect(out).toContain('<template id="hs0"><b>resolved</b></template>');
+    const { sentinels, templates } = extractSwapIds(out);
+    expect(sentinels).toHaveLength(1);
+    expect(new Set(sentinels)).toEqual(new Set(templates));   // sentinel id matches the <template> id
+    expect(out.startsWith("<div><!--[--><span>loading</span><!--")).toBe(true);  // shell: fallback then sentinel
+    expect(out).toContain(`<template id="${sentinels[0]!}"><b>resolved</b></template>`);
   });
 
   test("ssrStream resolves async children into the staged template", async () => {
     const node = html`<div><${Suspense} fallback=${html`<i>wait</i>`}>${() => Promise.resolve(html`<b>data</b>`)}</${Suspense}></div>` as HellaNode;
     const out = await collect(ssrStream(node));
-    expect(out.startsWith("<div><!--[--><i>wait</i><!--hs0--><!--]--></div>")).toBe(true);
-    expect(out).toContain('<template id="hs0"><!--[--><b>data</b><!--]--></template>');
+    const { sentinels, templates } = extractSwapIds(out);
+    expect(sentinels).toHaveLength(1);
+    expect(new Set(sentinels)).toEqual(new Set(templates));
+    expect(out.startsWith("<div><!--[--><i>wait</i><!--")).toBe(true);
+    expect(out).toContain(`<template id="${sentinels[0]!}"><!--[--><b>data</b><!--]--></template>`);
   });
 
   test("multiple Suspense boundaries get unique staged-template ids", async () => {
     const node = html`<div><${Suspense} fallback=${html`<i>a</i>`}>${html`<b>A</b>`}</${Suspense}><${Suspense} fallback=${html`<i>b</i>`}>${html`<b>B</b>`}</${Suspense}></div>` as HellaNode;
     const out = await collect(ssrStream(node));
-    expect(out).toContain('<!--hs0-->');
-    expect(out).toContain('<!--hs1-->');
-    expect(out).toContain('<template id="hs0"><b>A</b></template>');
-    expect(out).toContain('<template id="hs1"><b>B</b></template>');
+    const { sentinels, templates } = extractSwapIds(out);
+    expect(sentinels).toHaveLength(2);
+    expect(new Set(sentinels).size).toBe(2);                    // sentinel ids are unique
+    expect(new Set(sentinels)).toEqual(new Set(templates));     // each sentinel matches a <template>
+    expect(out).toContain(`<template id="${sentinels[0]!}"><b>A</b></template>`);
+    expect(out).toContain(`<template id="${sentinels[1]!}"><b>B</b></template>`);
   });
 
   test("ssrStream progressive flush: fallback chunk arrives before async children resolve", async () => {
@@ -58,7 +67,10 @@ describe("ssr <Suspense>", () => {
     let rest = pre;
     chunk = await reader.read();
     while (!chunk.done) { rest += chunk.value; chunk = await reader.read(); }
-    expect(rest).toContain('<template id="hs0">');
+    const { sentinels, templates } = extractSwapIds(rest);
+    expect(sentinels).toHaveLength(1);
+    expect(new Set(sentinels)).toEqual(new Set(templates));
+    expect(rest).toContain(`<template id="${sentinels[0]!}">`);
     expect(rest).toContain("<b>late</b>");
   });
 });
