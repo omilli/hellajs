@@ -1,5 +1,13 @@
 # Memory Update Log
 
+## 2026-07-17
+* **Creation**: Added concept [020](entries/020.md) (type: correction).
+* **Creation**: Added concept [021](entries/021.md) (type: decision).
+* **Creation**: Added concept [022](entries/022.md) (type: decision).
+* **Creation**: Added concept [023](entries/023.md) (type: decision).
+* **Creation**: Added concept [024](entries/024.md) (type: decision).
+* **Deprecation**: Archived [011](archive/011.md) → superseded by [022](entries/022.md).
+
 ## 2026-07-14
 * **Creation**: Added concept [018](entries/018.md) (type: decision).
 * **Creation**: Added concept [019](entries/019.md) (type: decision).
