@@ -1,0 +1,41 @@
+{
+  "name": "astro-plugin-hellajs",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./index.mjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.mjs"
+    }
+  },
+  "files": [
+    "./index.d.ts",
+    "./index.mjs",
+    "./server.mjs",
+    "./client.mjs",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/omilli/hellajs.git",
+    "directory": "./"
+  },
+  "homepage": "git+https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "vite-plugin-hellajs": "^0.8.9"
+  },
+  "peerDependencies": {
+    "astro": "^7.0.0",
+    "@hellajs/dom": "*",
+    "@hellajs/ssr": "*"
+  }
+}
