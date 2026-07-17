@@ -31,7 +31,7 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Hella
   const placeholderMarkers: HtmlPlaceholder[] = [];
   i = 0;
   while (i < vLen) {
-    placeholderMarkers.push({ __placeholder: i });
+    placeholderMarkers.push({ placeholder: i });
     i++;
   }
 

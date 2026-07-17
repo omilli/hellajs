@@ -1,0 +1,32 @@
+# raw
+
+Wraps a raw HTML string as an opaque child — `ssr` emits it verbatim and `hydrate` adopts the existing server DOM without re-binding anything inside.
+
+## API
+
+```typescript
+function raw(html: string): HellaRaw
+```
+
+- `html`: The raw HTML string.
+- **Returns**: A `HellaRaw` sentinel (`{ raw }`) consumed by `ssr`/`hydrate`.
+
+## Basic Usage
+
+Embed pre-rendered HTML into a HellaNode tree unescaped — typically **meta-framework slot passthrough**, where a foreign renderer (e.g. an Astro renderer) has already produced HTML that must land in the tree without being escaped. `raw()` is the bridge between that output and a HellaJS component.
+
+```js
+import { raw } from "@hellajs/dom";
+import { ssr } from "@hellajs/ssr";
+
+ssr({ tag: "main", children: [raw("<h1>Hi</h1><p>from a foreign renderer</p>")] });
+// => '<main><!--[--><h1>Hi</h1><p>from a foreign renderer</p><!--]--></main>'
+```
+
+The region is **opaque**: `ssr` wraps it in `<!--[-->…<!--]-->` markers and emits the HTML verbatim (never escaped); `hydrate` consumes those markers and adopts the existing DOM in place, binding nothing inside. No reactive scope crosses the boundary.
+
+## Important Considerations
+
+### Bypasses HTML Escaping (XSS)
+
+`raw()` bypasses HTML escaping. **Never pass unsanitized user input** — it is an XSS vector. Sanitize untrusted HTML before wrapping it, exactly as you would for `dangerouslySetInnerHTML` / `set:html`.

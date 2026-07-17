@@ -7,11 +7,14 @@ Render HellaNode templates to HTML strings on the server, then enhance them on t
 `ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region — a reactive child, a control-flow component, or a nested fragment — is wrapped in `<!--[-->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
 
 ```js
+import { signal } from '@hellajs/core';
 import { html } from '@hellajs/dom';
 import { ssr } from '@hellajs/ssr';
 
-const body = ssr(html`<div class="card">${'<b>'}</div>`);
-// body: "<div class=\"card\">&lt;b&gt;</div>"
+// A resolved interpolation value (here a signal) is escaped and marker-wrapped.
+const markup = signal('<b>');
+const body = ssr(html`<div class="card">${markup}</div>`);
+// body: "<div class=\"card\"><!--[-->&lt;b&gt;<!--]--></div>"
 ```
 
 Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
@@ -23,6 +26,18 @@ Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
 ## Control Flow on the Server
 
 [`ForEach`](/reference/dom/foreach) renders each item in array order. [`Transition`](/reference/dom/transition) renders its child when `show` is truthy, nothing otherwise. [`Lazy`](/reference/dom/lazy) renders its `loading` fallback without awaiting the loader. [`Portal`](/reference/dom/portal) renders nothing — there is no document to teleport into. Each attaches a descriptor the stringifier reads, so `ssr` needs no DOM to interpret them.
+
+## Raw HTML Children
+
+[`raw`](/reference/dom/raw) wraps an HTML string as an opaque child — `ssr` emits it verbatim (unescaped), marker-wrapped, and `hydrate` adopts the region without binding anything inside. Use it to embed pre-rendered HTML (e.g. a meta-framework's slot output); never pass unsanitized user input (XSS).
+
+```js
+import { html, raw } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+ssr(html`<main>${raw('<h1>Hi</h1>')}</main>`);
+// => "<main><!--[--><h1>Hi</h1><!--]--></main>"
+```
 
 ## Client Enhancement
 

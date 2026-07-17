@@ -33,11 +33,14 @@ describe("ssrAsync", () => {
     expect(await ssrAsync(node)).toBe("<ul><!--[--><li>1</li><li>2</li><li>3</li><!--]--></ul>");
   });
 
-  test("awaits a Promise-returning Transition show (true renders child, false empty)", async () => {
-    const on = html`<div><${Transition} show=${() => Promise.resolve(true)}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode;
-    expect(await ssrAsync(on)).toBe("<div><!--[--><p>on</p><!--]--></div>");
-    const off = html`<div><${Transition} show=${() => Promise.resolve(false)}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode;
-    expect(await ssrAsync(off)).toBe("<div><!--[--><!--]--></div>");
+  test("renders the Transition child when a Promise show resolves true", async () => {
+    const node = html`<div><${Transition} show=${() => Promise.resolve(true)}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode;
+    expect(await ssrAsync(node)).toBe("<div><!--[--><p>on</p><!--]--></div>");
+  });
+
+  test("emits an empty marker region when a Promise show resolves false", async () => {
+    const node = html`<div><${Transition} show=${() => Promise.resolve(false)}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode;
+    expect(await ssrAsync(node)).toBe("<div><!--[--><!--]--></div>");
   });
 
   test("awaits a Promise resolving to a HellaNode and recurses", async () => {
@@ -65,18 +68,25 @@ describe("ssrAsync", () => {
     expect(await ssrAsync(node)).toBe(ssr(node));
   });
 
-  test("parity: ssrAsync matches ssr for ForEach and Transition", async () => {
-    const fe = html`<ul><${ForEach} each=${[1, 2, 3]} use=${(n: number) => html`<li>${n}</li>`} /></ul>` as HellaNode;
-    expect(await ssrAsync(fe)).toBe(ssr(fe));
-    const tr = html`<div><${Transition} show=${true}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode;
-    expect(await ssrAsync(tr)).toBe(ssr(tr));
+  test("parity: ssrAsync matches ssr for ForEach", async () => {
+    const node = html`<ul><${ForEach} each=${[1, 2, 3]} use=${(n: number) => html`<li>${n}</li>`} /></ul>` as HellaNode;
+    expect(await ssrAsync(node)).toBe(ssr(node));
   });
 
-  test("parity: ssrAsync matches ssr for Portal (empty region) and a component", async () => {
-    const portal = html`<div><${Portal} to="#x">${html`<p>p</p>`}</${Portal}></div>` as HellaNode;
-    expect(await ssrAsync(portal)).toBe(ssr(portal));
+  test("parity: ssrAsync matches ssr for Transition", async () => {
+    const node = html`<div><${Transition} show=${true}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode;
+    expect(await ssrAsync(node)).toBe(ssr(node));
+  });
+
+  test("parity: ssrAsync matches ssr for Portal (empty region)", async () => {
+    const node = html`<div><${Portal} to="#x">${html`<p>p</p>`}</${Portal}></div>` as HellaNode;
+    expect(await ssrAsync(node)).toBe(ssr(node));
+  });
+
+  test("parity: ssrAsync matches ssr for a component", async () => {
     const Card = (props: { title: string }) => html`<section><h1>${props.title}</h1></section>` as HellaNode;
-    expect(await ssrAsync(html`<div><${Card} title="Hi" /></div>` as HellaNode)).toBe(ssr(html`<div><${Card} title="Hi" /></div>` as HellaNode));
+    const node = html`<div><${Card} title="Hi" /></div>` as HellaNode;
+    expect(await ssrAsync(node)).toBe(ssr(node));
   });
 
   test("serializes static props (covers the props loop)", async () => {

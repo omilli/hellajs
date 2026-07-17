@@ -10,7 +10,7 @@ import { mountQueue, processMountQueue } from "./internal/queue";
  * Use $collection for multiple elements with continuous watching.
  *
  * @param selector CSS selector string
- * @returns SingleRef wrapper with bind/on/hooks/watch chainable methods
+ * @returns DomRef with bind/on/hooks chainable methods
  */
 export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
   let targetNode = document.querySelector<T>(selector);

@@ -9,7 +9,7 @@ import type { DOMEventMap } from "./types/attributes";
  * Use $ref for single element references without collection overhead.
  * 
  * @param selector CSS selector string
- * @returns ReactiveRef collection with bind/on/hooks/forEach chainable methods
+ * @returns DomCollection with bind/on/hooks/forEach chainable methods
  */
 export function $collection<T extends Element = Element>(selector: string): DomCollection<T> {
   const elementWrappers: DomWrapper<T>[] = [];

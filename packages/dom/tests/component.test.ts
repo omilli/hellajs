@@ -10,10 +10,10 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("component", () => {
-    test("attaches __scope to returned node", () => {
+    test("attaches componentScope to returned node", () => {
       const Counter = () => html`<div>Counter</div>` as HellaNode;
-      const node = component(Counter, {}) as HellaNode & { __scope?: () => void };
-      expect(typeof node.__scope).toBe("function");
+      const node = component(Counter, {}) as HellaNode & { componentScope?: () => void };
+      expect(typeof node.componentScope).toBe("function");
     });
 
     test("cleans up effects when component removed from DOM", () => {

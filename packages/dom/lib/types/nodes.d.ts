@@ -24,7 +24,16 @@ export type HellaPrimitive<T = unknown> = string | string[] | number | boolean |
 /**
  * Any value that can be rendered as a child in a HellaNode.
  */
-export type HellaChild = HellaNode | HellaPrimitive | Node | null | undefined;
+export type HellaChild = HellaNode | HellaRaw | HellaPrimitive | Node | null | undefined;
+
+/**
+ * A raw HTML string rendered as an opaque child. `ssr` emits the HTML verbatim (marker-bounded);
+ * `hydrate` adopts the existing server DOM without re-binding anything inside. Created by {@link raw};
+ * the `{ raw }` shape is the duck-type contract `ssr`/`hydrate` recognize, so never hand-construct.
+ */
+export interface HellaRaw {
+  raw: string;
+}
 
 /**
  * Error configuration attached to elements via error: prefix attributes.
@@ -74,9 +83,9 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   /** The children of the node. */
   children?: HellaChild[];
   /** Template cache optimization marker — set during parsing on subtrees with zero placeholder dependencies. */
-  __static?: true;
+  static?: true;
   /** Component scope dispose function. */
-  __scope?: () => void;
+  componentScope?: () => void;
   /** Error configuration (error: prefix attributes). */
   error?: ErrorConfig;
 }

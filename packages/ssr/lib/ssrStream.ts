@@ -39,7 +39,13 @@ export function ssrStream(node: HellaNode): ReadableStream<string> {
       }
     },
     cancel() {
-      void gen.return(undefined);           // best-effort: stop the generator when the consumer cancels
+      void gen.return(undefined);           // best-effort: stop the main generator when the consumer cancels
+      let si = 0;                           // also return any staged <Suspense> swaps, so their deferred work doesn't continue into a dead stream
+      const sLen = pending.length;
+      while (si < sLen) {
+        void pending[si]!.childGen.return(undefined);
+        si++;
+      }
     },
   });
 }

@@ -1,28 +1,31 @@
 import { describe, test, expect, mock } from "bun:test";
 import { signal } from "@hellajs/core";
-import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
+import { html, ForEach, Transition, Portal, Lazy, Suspense } from "@hellajs/dom/bundle";
 import { ssr, ssrAsync, ssrStream } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { collect, parityCases, attributeCases, unknownKindNode } from "./helpers";
+import { delay } from "@utils/test-helpers.js";
+
+/** Stream/async parity cases — collecting `ssrStream` must equal `ssrAsync` (a distinct comparison from the `ssr` parity matrix). */
+const streamAsyncParityCases: { name: string; node: HellaNode }[] = [
+  { name: "static tree", node: html`<div><span>hi</span>there</div>` as HellaNode },
+  { name: "ForEach", node: html`<ul><${ForEach} each=${[1, 2, 3]} use=${(n: number) => html`<li>${n}</li>`} /></ul>` as HellaNode },
+  { name: "Transition", node: html`<div><${Transition} show=${true}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode },
+  { name: "Portal", node: html`<div><${Portal} to="#x">${html`<p>p</p>`}</${Portal}></div>` as HellaNode },
+  { name: "Lazy loading fallback", node: html`<div><${Lazy} loader=${async () => html`<div />` as HellaNode} loading=${html`<span>…</span>`} /></div>` as HellaNode },
+];
 
 describe("ssrStream", () => {
-  test("returns a ReadableStream and resolves a static node to the same HTML as ssr", async () => {
-    const stream = ssrStream(html`<div>hi</div>` as HellaNode);
-    expect(stream instanceof ReadableStream).toBe(true);
-    expect(await collect(stream)).toBe("<div>hi</div>");
+  test("returns a ReadableStream", () => {
+    expect(ssrStream(html`<div>hi</div>` as HellaNode) instanceof ReadableStream).toBe(true);
   });
 
-  test("stream/async parity: collecting ssrStream equals ssrAsync for non-Promise trees", async () => {
-    const cases: HellaNode[] = [
-      html`<div><span>hi</span>there</div>` as HellaNode,
-      html`<ul><${ForEach} each=${[1, 2, 3]} use=${(n: number) => html`<li>${n}</li>`} /></ul>` as HellaNode,
-      html`<div><${Transition} show=${true}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode,
-      html`<div><${Portal} to="#x">${html`<p>p</p>`}</${Portal}></div>` as HellaNode,
-      html`<div><${Lazy} loader=${async () => html`<div />` as HellaNode} loading=${html`<span>…</span>`} /></div>` as HellaNode,
-    ];
-    for (const node of cases) {
-      expect(await collect(ssrStream(node))).toBe(await ssrAsync(node));
-    }
+  test("resolves a static node to the same HTML as ssr", async () => {
+    expect(await collect(ssrStream(html`<div>hi</div>` as HellaNode))).toBe("<div>hi</div>");
+  });
+
+  test.each(streamAsyncParityCases)("stream/async parity: collecting ssrStream equals ssrAsync for $name", async ({ node }) => {
+    expect(await collect(ssrStream(node))).toBe(await ssrAsync(node));
   });
 
   test("stream/sync parity for a signal child", async () => {
@@ -71,7 +74,20 @@ describe("ssrStream", () => {
     await reader.read();                          // consume the first chunk
     await reader.cancel();                        // cancel → source cancel() → gen.return()
     resolveLate();                                // resolving the orphaned Promise does not throw
-    expect(true).toBe(true);
+  });
+
+  test("cancel terminates staged <Suspense> swap generators (best-effort, no throw)", async () => {
+    let resolveLate!: (v: HellaNode) => void;
+    const delayed = new Promise<HellaNode>((r) => { resolveLate = r; });
+    const node = html`<div><${Suspense} fallback=${html`<i>wait</i>`}>${() => delayed}</${Suspense}></div>` as HellaNode;
+    const reader = ssrStream(node).getReader();
+    let pre = "";
+    let chunk = await reader.read();
+    while (!chunk.done) { pre += chunk.value; if (pre.includes("<!--hs")) break; chunk = await reader.read(); }  // drain until the staged-swap sentinel flushes
+    expect(pre).toContain("<i>wait</i>");          // fallback flushed before cancel
+    await delay(0);                          // let start() resume past the sentinel → pending.push + enter the flush await
+    await reader.cancel();                          // cancel → gen.return() + staged swap generators returned
+    resolveLate(html`<b>late</b>` as HellaNode);    // the orphaned swap childGen is already returned → does not resume or throw
   });
 
   test("a rejected Promise errors the stream", async () => {

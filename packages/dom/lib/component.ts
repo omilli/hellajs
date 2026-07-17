@@ -14,7 +14,7 @@ export function component(fn: ComponentFn, props: Record<string, unknown>): Hell
   let result!: HellaNode;
   try {
     const dispose = scope(() => result = fn(props) as HellaNode);
-    result.__scope = dispose;
+    result.componentScope = dispose;
   } catch (e) {
     dispatchError(toError(e), { phase: "render" });
     return { tag: "$", children: [] };

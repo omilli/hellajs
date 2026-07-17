@@ -13,7 +13,7 @@ export interface LinkTag {
 }
 
 /**
- * A `<script>` tag. `src` emits an external script; `content` emits inline JS (not escaped).
+ * A `<script>` tag. `src` emits an external script; `content` emits inline JS (not escaped). When both are set, `content` wins and `src` is dropped (a `<script src=…>` would otherwise ignore its inline body).
  * `async`/`defer` are boolean attributes. Further string keys pass through as attributes.
  */
 export interface ScriptTag {
@@ -25,7 +25,7 @@ export interface ScriptTag {
   async?: boolean;
   /** Boolean attribute — present bare when `true`, omitted when `false` */
   defer?: boolean;
-  /** Inline script body, placed verbatim (not escaped). When set, `src` is ignored for the body */
+  /** Inline script body, placed verbatim (not escaped). When set, `src` is dropped so the inline script runs (a `<script src=…>` ignores its body). */
   content?: string;
   [key: string]: unknown;
 }
