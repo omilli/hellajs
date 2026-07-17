@@ -59,6 +59,7 @@ export const navigation = {
         "element",
         "ForEach",
         "html",
+        "raw",
         "Lazy",
         "mount",
         "hydrate",
@@ -66,6 +67,7 @@ export const navigation = {
         "Portal",
         "registry",
         "Suspense",
+        "Transition",
       ]
     },
     { css: ["css", "removeCss", "resetCss", "cssVars", "removeCssVars", "resetCssVars"] },
@@ -74,5 +76,5 @@ export const navigation = {
     { resource: ["resource", "resourcecache"] },
     { ssr: ["ssr", "ssr-async", "ssr-stream", "doc"] },
   ],
-  plugins: ["babel", "rollup", "vite"],
+  plugins: ["babel", "rollup", "vite", "astro"],
 } as const;

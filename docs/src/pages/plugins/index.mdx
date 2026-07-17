@@ -15,33 +15,41 @@ All plugins are zero-config: install and add to your build tool. No options to c
 {(() => {
   const plugins = [
     {
-      name: "Babel Plugin", 
+      name: "Babel", 
       href: "/plugins/babel",
       icon: "simple-icons:babel",
       color: "#F9DC3E",
-      description: "The most flexible and widely supported JavaScript compiler.",
+      description: "JSX support for HellaJS.",
       buttonTextColor: "text-black"
     },
     {
-      name: "Rollup Plugin",
+      name: "Rollup",
       href: "/plugins/rollup", 
       icon: "simple-icons:rollupdotjs",
       color: "#EC4A3F",
-      description: "Efficient bundling with tree-shaking and optimal output.",
+      description: "Tree-shaking output.",
       buttonTextColor: "text-white"
     },
     {
-      name: "Vite Plugin",
-      href: "/plugins/vite",
+      name: "Vite",
+      href: "/plugins/vite", 
       icon: "simple-icons:vite",
-      color: "#646CFF",
-      description: "Lightning-fast development with hot module replacement.",
+      color: "#515cbd",
+      description: "Lightning-fast development.",
+      buttonTextColor: "text-white"
+    },
+    {
+      name: "Astro",
+      href: "/plugins/astro",
+      icon: "simple-icons:astro",
+      color: "#5f18ab",
+      description: "HellaJS components in Astro.",
       buttonTextColor: "text-white"
     },
   ];
 
   return (
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       {plugins.map((plugin) => (
         <a 
           href={plugin.href} 
@@ -49,11 +57,11 @@ All plugins are zero-config: install and add to your build tool. No options to c
           style={`background: linear-gradient(to bottom right, color-mix(in srgb, ${plugin.color} 10%, transparent), color-mix(in srgb, ${plugin.color} 5%, transparent)); border: 1px solid color-mix(in srgb, ${plugin.color} 30%, transparent);`}
         >
           <div class="card-body p-6">
-            <div class="flex items-center gap-3 mb-4">
+            <div class="flex items-center gap-3 mb-2">
               <Icon name={plugin.icon} width={32} height={32} style={`color: ${plugin.color}`} />
               <h3 class="card-title">{plugin.name}</h3>
             </div>
-            <p class="text-sm opacity-80 mb-4">{plugin.description}</p>
+            <p class="text-sm opacity-80 mb-4 mt-0">{plugin.description}</p>
             <div class="card-actions">
               <span 
                 class={`btn btn-sm ${plugin.buttonTextColor} border-none group-hover:scale-105 transition-transform`}
