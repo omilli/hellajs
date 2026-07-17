@@ -167,7 +167,7 @@ while (i < len) {
 }
 ```
 
-`.forEach` does not allocate a per-iteration iterator object and is permitted on cold paths (e.g. disposal); the prohibition targets `for…of`/`for…in`'s iterator-object cost on hot traversals.
+`.forEach` does not allocate a per-iteration iterator object (Array methods iterate via internal slots) and is permitted on cold paths (e.g. disposal). The `for…of`/`for…in` ban is unconditional — both allocate an iterator object per iteration — not a hot-path-only rule; cold-path iteration uses the iterator-free forms (`.forEach`, cached `while`), never `for…of`/`for…in`.
 
 `for await…of` is permitted to consume async iterables/generators — async iteration has no iterator-free form, and the manual `while`/`await gen.next()` alternative loses `return()`/`throw()` correctness and stream-cancellation integration.
 
@@ -369,7 +369,7 @@ Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `script
 - [ ] No parameter added just to pass it through unchanged
 
 **Loops & memory**
-- [ ] Cached `while` loops on hot paths; no `for…of` / `for…in` (`.forEach` only on cold paths; `for await…of` permitted for async iterables/generators)
+- [ ] Cached `while` loops; no `for…of` / `for…in` anywhere (iterator-allocating forms are banned unconditionally; `.forEach` only on cold paths; `for await…of` permitted for async iterables/generators)
 - [ ] No collection reallocation where `.clear()` or reference swap works
 - [ ] No `bare l` for cached length (always `len` or `<prefix>Len`)
 
