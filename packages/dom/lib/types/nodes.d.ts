@@ -349,6 +349,6 @@ export interface LazyProps {
 export interface SuspenseProps {
   /** Content rendered while children are unresolved (server-streaming only; dropped under `ssr`/`ssrAsync`). */
   fallback?: HellaChild;
-  /** The boundary's content. On the server it may await; on the client it renders directly. */
-  children: HellaChild;
+  /** The boundary's content. Accepts a single child (`html\`\``) or an array — JSX and `html\`\`` compile component children to an array. Renders directly on the client; may await on the server. */
+  children?: HellaChild | HellaChild[];
 }
