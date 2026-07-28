@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { html, Suspense } from "@hellajs/dom/bundle";
+import { html, Suspense, component } from "@hellajs/dom/bundle";
 import { ssr, ssrAsync, ssrStream } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { collect } from "./helpers";
@@ -72,5 +72,23 @@ describe("ssr <Suspense>", () => {
     expect(new Set(sentinels)).toEqual(new Set(templates));
     expect(rest).toContain(`<template id="${sentinels[0]!}">`);
     expect(rest).toContain("<b>late</b>");
+  });
+
+  test("ssr (sync) renders array children directly (JSX shape: children is [child])", () => {
+    // JSX <Suspense fallback={...}>{child}</Suspense> compiles to
+    // component(Suspense, { fallback, children: [child] }) — children is an ARRAY,
+    // not a single child. The walk must iterate it, not drop it.
+    const node = html`<div>${component(Suspense as unknown as (props: Record<string, unknown>) => HellaNode, { fallback: html`<span>loading</span>`, children: [html`<b>resolved</b>`] })}</div>` as HellaNode;
+    expect(ssr(node)).toBe("<div><!--[--><b>resolved</b><!--]--></div>");
+  });
+
+  test("ssrStream stages resolved array children (JSX shape: children is [getter])", async () => {
+    const node = html`<div>${component(Suspense as unknown as (props: Record<string, unknown>) => HellaNode, { fallback: html`<i>wait</i>`, children: [() => Promise.resolve(html`<b>data</b>`)] })}</div>` as HellaNode;
+    const out = await collect(ssrStream(node));
+    const { sentinels, templates } = extractSwapIds(out);
+    expect(sentinels).toHaveLength(1);
+    expect(new Set(sentinels)).toEqual(new Set(templates));
+    expect(out.startsWith("<div><!--[--><i>wait</i><!--")).toBe(true);
+    expect(out).toContain(`<template id="${sentinels[0]!}"><!--[--><b>data</b><!--]--></template>`);
   });
 });
