@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { hydrate, mount, html, Suspense } from "@hellajs/dom/bundle";
+import { hydrate, mount, html, Suspense, component } from "@hellajs/dom/bundle";
 import { streamContainer } from "./helpers";
 import type { HellaNode } from "@hellajs/dom";
 
@@ -45,6 +45,18 @@ describe("dom hydrate <Suspense>", () => {
     expect(container.querySelector("#b2")!.textContent).toBe("2");
   });
 
+  test("hydrates array children and wires each reactive binding", async () => {
+    // JSX compiles multiple children to an array; hydrate must bind each swapped child, not just place it.
+    const handler = mock(() => {});
+    const App = () => html`<div id="root"><${Suspense} fallback=${html`<i>wait</i>`}><button id="hx-a" on:click=${handler}>A</button><button id="hx-b" on:click=${handler}>B</button></${Suspense}></div>`;
+    const container = await streamContainer(html`<${App} />` as HellaNode);
+
+    hydrate(html`<${App} />`, container);
+    container.querySelector("#hx-a")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    container.querySelector("#hx-b")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(handler).toHaveBeenCalledTimes(2);
+  });
+
   test("mounts children directly on a fresh client mount (no server HTML, fallback not shown)", () => {
     const handler = mock(() => {});
     const App = () => html`<div id="root"><${Suspense} fallback=${html`<i>wait</i>`}><button id="btn" on:click=${handler}>go</button></${Suspense}></div>`;
@@ -54,6 +66,30 @@ describe("dom hydrate <Suspense>", () => {
     expect(container.querySelector("i")).toBeNull();   // fallback is server-stream-only
     document.getElementById("btn")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  test("fresh-mount renders JSX array children instead of stringifying them", () => {
+    // JSX compiles <Suspense><b/></Suspense> to component(Suspense, { children: [<b/>] }) — an array.
+    // resolveNode must mount the element, not fall through to a stringified text node.
+    const handler = mock(() => {});
+    const container = setupContainer();
+    mount(html`<div>${component(Suspense, { fallback: html`<i>wait</i>`, children: [html`<button id="jsx-one" on:click=${handler}>go</button>`] })}</div>`, container);
+    const btn = container.querySelector("#jsx-one");
+    expect(btn).not.toBeNull();
+    expect(container.textContent).not.toContain("[object Object]");
+    btn!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  test("fresh-mount renders multiple JSX children in document order", () => {
+    const container = setupContainer();
+    mount(html`<div>${component(Suspense, { children: [
+      html`<b id="jsx-first">A</b>`,
+      html`<i id="jsx-second">B</i>`,
+    ] })}</div>`, container);
+    const ordered = Array.from(container.querySelectorAll("#jsx-first, #jsx-second")).map((el) => el.id);
+    expect(ordered).toEqual(["jsx-first", "jsx-second"]);
+    expect(container.textContent).not.toContain("[object Object]");
   });
 
   test("adopts children from an ssrAsync render (no stage — children already present)", async () => {
