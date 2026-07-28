@@ -67,7 +67,8 @@ applyTo: "**"
   |---|---|---|
   | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint (the full `bun lint` across all packages — not scoped); filters the coverage table to the target package. CI runs this. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
-  | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` |
+  | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` + `bun lint:guards` (the four repo-wide guards). |
+  | lint:guards | `bun lint:guards` | The four guards composed: `visibility` + `dead-exports` + `jsdoc-params` + `doc-links`. Composed into `lint`; run standalone to skip tsc/eslint. |
   | clean | `bun clean [package]` | Remove build artifacts. |
   | changeset | `bun changeset` | Add a changeset entry. |
   | release | `bun release` | Bundle, then publish via changesets. |
