@@ -14,8 +14,10 @@ export function Suspense(props: SuspenseProps): JSX.Element {
   const fn = ((parent: Element) => {
     const hctx = peekHydrateContext();
     if (hctx) {
-      // hydrate: existingNodes holds the (swapped) resolved children; hydrate props.children against them
-      hydrateSequence(parent as unknown as HellaElement, [props.children], hctx.existingNodes[0] ?? null, undefined);
+      // hydrate: existingNodes holds the (swapped) resolved children; hydrate each child against them.
+      // JSX/html compile component children to an array — pass it flat so hydrateSequence binds each.
+      const children = Array.isArray(props.children) ? props.children : [props.children];
+      hydrateSequence(parent as unknown as HellaElement, children, hctx.existingNodes[0] ?? null, undefined);
       return;
     }
     // fresh mount: render children directly (fallback is server-stream-only)

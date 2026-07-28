@@ -9,7 +9,7 @@ function Suspense(props: SuspenseProps): JSX.Element
 ```
 
 - `props.fallback`: Content rendered while children are unresolved (server-streaming only; dropped under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)).
-- `props.children`: The boundary's content. On the server it may await; on the client it renders directly.
+- `props.children`: The boundary's content — a single child or an array. On the server it may await; on the client it renders directly.
 
 ## Basic Usage
 
