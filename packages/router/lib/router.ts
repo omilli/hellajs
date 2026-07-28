@@ -41,7 +41,10 @@ export function router(config: RouterConfig): RouteInfo {
 
   const initialPath = config.url ?? (hasWindow() ? (routerMode === "hash" ? getHashPath() : window.location.pathname + window.location.search) : "/");
 
-  if (!route().handler) {
+  // An explicit `url` (SSR) always re-resolves against it; the `!route().handler`
+  // guard is for client re-init only, so without it a 2nd+ `router({ url })` call in
+  // one process keeps the first request's route. See router SSR tests.
+  if (config.url !== undefined || !route().handler) {
     route({
       ...route(),
       path: initialPath
