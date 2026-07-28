@@ -50,6 +50,7 @@ function walkChild(child: HellaChild): string {
   // Adding a new child classification or `SsrMeta.kind` requires a new entry in `tests/helpers.ts`
   // (`parityCases`/`attributeCases`), or the async pair can diverge silently.
   if (child === null || child === undefined || child === false) return "";
+  if (Array.isArray(child)) return walkChildren(child);              // array (e.g. JSX component children) — iterate
   if (typeof child === "string") return child;                       // static template text — raw
   if (typeof child === "number") return escapeHtml(`${child}`);
   if (typeof child === "function") {

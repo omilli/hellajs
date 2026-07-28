@@ -85,6 +85,7 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[]): AsyncG
   // Adding a new child classification or `SsrMeta.kind` requires a new entry in `tests/helpers.ts`
   // (`parityCases`/`attributeCases`), or the async pair can diverge silently.
   if (child === null || child === undefined || child === false) return;
+  if (Array.isArray(child)) { yield* walkChildrenGen(child, pending); return; }  // array (e.g. JSX component children) — iterate
   if (typeof child === "string") { yield child; return; }              // static template text — raw
   if (typeof child === "number") { yield escapeHtml(`${child}`); return; }
   if (typeof child === "function") {
