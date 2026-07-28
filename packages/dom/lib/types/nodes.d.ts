@@ -312,8 +312,8 @@ export interface ForEachProps<T> {
 export interface TransitionProps {
   /** Controls visibility. Boolean or reactive function returning boolean. */
   show: boolean | (() => boolean);
-  /** Content to render when visible. Single HellaChild with reactive bindings for dynamic content. */
-  children?: HellaChild;
+  /** Content to render when visible. Accepts a single child or an array (JSX/html compile component children to an array). */
+  children?: HellaChild | HellaChild[];
   /** CSS class for enter animation (e.g., "fade-in" with animation: fadeIn .3s). */
   enter?: string;
   /** CSS class for leave animation (e.g., "fade-out" with animation: fadeOut .3s). */
