@@ -79,4 +79,15 @@ export default tseslint.config(
 			},
 		},
 	},
+	{
+		// SSR server entries (Bun.serve) and Vite build configs run in Node/Bun —
+		// not browser app code — so they get the Node runtime + Bun globals.
+		files: ["examples/**/server.js", "examples/**/vite.config.js"],
+		languageOptions: {
+			globals: {
+				...globals.node,
+				Bun: "readonly",
+			},
+		},
+	},
 );
