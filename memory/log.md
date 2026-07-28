@@ -1,5 +1,8 @@
 # Memory Update Log
 
+## 2026-07-28
+* **Creation**: Added concept [025](entries/025.md) (type: decision).
+
 ## 2026-07-17
 * **Creation**: Added concept [020](entries/020.md) (type: correction).
 * **Creation**: Added concept [021](entries/021.md) (type: decision).
