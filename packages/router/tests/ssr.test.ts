@@ -75,5 +75,26 @@ describe("router", () => {
 
       expect(home).toHaveBeenCalledTimes(1);
     });
+
+    test("re-resolves the url on each router() call in one process (SSR per-request)", () => {
+      const home = mock(() => { });
+      const users = mock(() => { });
+      const routes = {
+        "/": home,
+        "/users/:id": users
+      };
+
+      router({ routes, url: "/users/7" });
+      expect(route().path).toBe("/users/7");
+      expect(users).toHaveBeenCalledTimes(1);
+      expect(home).not.toHaveBeenCalled();
+
+      // A second router({ url }) in the same process must re-resolve against the new
+      // url — the first request's route must not leak into the second.
+      router({ routes, url: "/" });
+      expect(route().path).toBe("/");
+      expect(home).toHaveBeenCalledTimes(1);
+      expect(users).toHaveBeenCalledTimes(1);
+    });
   });
 });
