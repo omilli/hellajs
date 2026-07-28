@@ -1,6 +1,6 @@
 import { scope } from "./internal/core";
 import { dispatchError, toError } from "./internal/dispatch";
-import type { HellaNode, ComponentFn } from "./types/nodes";
+import type { HellaNode, ComponentReturn } from "./types/nodes";
 
 /**
  * Wraps a component function with automatic scope management.
@@ -10,7 +10,7 @@ import type { HellaNode, ComponentFn } from "./types/nodes";
  * @param props Props to pass to the component function
  * @returns HellaNode with attached scope dispose function, or empty fragment on error
  */
-export function component(fn: ComponentFn, props: Record<string, unknown>): HellaNode {
+export function component<P extends Record<string, unknown>>(fn: (props: P) => ComponentReturn, props: P): HellaNode {
   let result!: HellaNode;
   try {
     const dispose = scope(() => result = fn(props) as HellaNode);
