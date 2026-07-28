@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { mount, html, Transition } from "@hellajs/dom/bundle";
+import { mount, html, Transition, component } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -23,7 +23,7 @@ describe("dom", () => {
     });
 
     test("renders array children (JSX compiles children to an array)", () => {
-      mount(html`<div id="tcontainer">${Transition({ show: true, children: [
+      mount(html`<div id="tcontainer">${component(Transition, { show: true, children: [
         html`<b id="ta">A</b>`,
         html`<i id="tb">B</i>`,
       ] })}</div>`);
