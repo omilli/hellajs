@@ -9,7 +9,7 @@ function Transition(props: TransitionProps): JSX.Element
 
 interface TransitionProps {
   show: boolean | (() => boolean);       // Controls visibility
-  children?: HellaChild;                  // Content to render when visible
+  children?: HellaChild | HellaChild[];    // Content to render when visible (single child or array)
   enter?: string;                         // CSS class added on enter
   leave?: string;                         // CSS class added on leave
   duration?: number;                      // Animation length in ms (default: 300)
@@ -18,7 +18,7 @@ interface TransitionProps {
 ```
 
 - `show`: Boolean or reactive function returning boolean. Controls visibility.
-- `children`: Content to render when visible. Single HellaChild (use reactive bindings for dynamic content).
+- `children`: Content to render when visible — a single child or an array (use reactive bindings for dynamic content).
 - `enter`: CSS class added when content enters the DOM (e.g., `"fade-in"`).
 - `leave`: CSS class added when content begins leaving. Triggers deferred removal.
 - `duration`: Animation length in ms. Must match the CSS animation. Default: `300`.

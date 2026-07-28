@@ -22,6 +22,17 @@ describe("dom", () => {
       expect(document.getElementById("container")?.textContent).toContain("Visible");
     });
 
+    test("renders array children (JSX compiles children to an array)", () => {
+      mount(html`<div id="tcontainer">${Transition({ show: true, children: [
+        html`<b id="ta">A</b>`,
+        html`<i id="tb">B</i>`,
+      ] })}</div>`);
+
+      expect(document.getElementById("ta")).not.toBeNull();
+      expect(document.getElementById("tb")).not.toBeNull();
+      expect(document.getElementById("tcontainer")?.textContent).not.toContain("[object Object]");
+    });
+
     test("removes children immediately when show is false without leave class", () => {
       const visible = signal(true);
 
