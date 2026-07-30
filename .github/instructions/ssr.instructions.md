@@ -21,7 +21,7 @@ One public export per file (`lib/index.ts` is a pure re-export barrel). The shar
 |---|---|
 | `lib/ssr.ts` | Public `ssr(node)` — the sync recursive walker. Sync helpers `walkChild`/`walkChildren`/`renderDynamic` co-located (non-exported, single-caller). |
 | `lib/ssrAsync.ts` | Public `ssrAsync(node)` — collect-wrapper over the shared async generator. |
-| `lib/ssrStream.ts` | Public `ssrStream(node)` — `ReadableStream` wrapper over the shared async generator; flushes staged `<Suspense>` swaps at stream end. |
+| `lib/ssrStream.ts` | Public `ssrStream(node)` — `ReadableStream` wrapper over the shared async generator; flushes staged `<Suspense>` swaps at stream end **concurrently** (completion order). Each template is followed by an inline `<script>$hs(id)</script>` (a one-time `$hs` bootstrap precedes them) so each region swaps in the moment it arrives (progressive, React/Solid parity); `hydrate` adopts the already-swapped nodes (`swapSuspenseStage` is the no-script/HappyDOM fallback). `$hs` source lives here as the `HS_SWAP_SCRIPT` const; mirrors dom's `swapSuspenseStage`. |
 | `lib/doc.ts` | Public `doc(options)` — assembles a rendered body + head into a full HTML document string; reuses `serializeProp`/`escapeHtml` from `./internal/serialize`. Local helpers `buildAttrs`/`renderVoidTags` co-located (non-exported). |
 | `lib/types.d.ts` | `doc`'s option interfaces (`DocOptions`/`HeadOptions`/`MetaTag`/`LinkTag`/`ScriptTag`); wholesale-re-exported via `export type *`. |
 | `lib/internal/serialize.ts` | `serializeProp`/`escapeHtml` (mirror dom's `renderProp`), `VOID` void-element set. |
@@ -53,7 +53,7 @@ Every dynamic region (reactive child, isDynamic component, nested fragment) is w
 - `transition` — resolves `show`; renders `children` when truthy, nothing otherwise.
 - `portal` — renders nothing (no document to teleport into).
 - `lazy` — renders `props.loading` if present; never awaits `loader`.
-- `suspense` — under `ssr`/`ssrAsync` renders `children` directly (fallback dropped); under `ssrStream` emits `fallback` inline + a sentinel comment (nodeValue = a `<template>` id), defers, and stages the resolved children in `<template id="hsN">` at stream end for `hydrate` to swap in (β).
+- `suspense` — under `ssr`/`ssrAsync` renders `children` directly (fallback dropped); under `ssrStream` emits `fallback` inline + a sentinel comment (nodeValue = a `<template>` id), defers, and streams the resolved children as `<template id="hsN">…</template><script>$hs("hsN")</script>` — each swapped in the moment it arrives (progressive). A one-time `$hs` bootstrap (the `HS_SWAP_SCRIPT` const in `lib/ssrStream.ts`) precedes the templates; `hydrate` adopts already-swapped nodes (`swapSuspenseStage` is the no-script/HappyDOM fallback). `hydrate` resolves each template by id, so order-independent emission is safe.
 
 A user-authored isDynamic function with no `ssr` renders as nothing (not an error). User components (`component()`) expand to a HellaNode at template time, so they are plain recursion — no `ssr`.
 
