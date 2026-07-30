@@ -20,7 +20,7 @@ export interface DynamicFn {
 
 /**
  * @internal
- * A deferred `<Suspense>` swap: the server emits `fallback` inline now, then stages the resolved children in a `<template id="hsN">` for `hydrate` to swap in (β: hydrate-swap, no inline script).
+ * A deferred `<Suspense>` swap: the server emits `fallback` inline now, then stages the resolved children in a `<template id="hsN">` followed by an inline `<script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) so the browser swaps on arrival; `hydrate`'s `swapSuspenseStage` is the no-script fallback.
  */
 export interface PendingSwap {
   /** The `<template>` id; also the nodeValue of the sentinel comment inside the region. */

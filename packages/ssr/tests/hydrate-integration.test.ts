@@ -1,9 +1,10 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { signal, flush } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { hydrate, html, ForEach } from "@hellajs/dom/bundle";
-import { ssr } from "@hellajs/ssr/bundle";
+import { hydrate, html, ForEach, Suspense } from "@hellajs/dom/bundle";
+import { ssr, ssrStream } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
+import { collect } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -75,5 +76,15 @@ describe("ssr to hydrate integration", () => {
     items([...items(), { id: 3, t: "c" }]);
     flush();
     expect(container.querySelector("#i3")!.textContent).toBe("c");
+  });
+
+  test("hydrate swaps a streamed <Suspense> via the fallback path when the inline swap script doesn’t run (HappyDOM)", async () => {
+    // ssrStream now emits an inline $hs swap script per region; HappyDOM does not execute inline scripts,
+    // so the staged <template> + sentinel remain and hydrate’s swapSuspenseStage fallback swaps them in.
+    const tree = () => html`<div id="root"><${Suspense} fallback=${html`<p>loading</p>`}>${() => Promise.resolve(html`<b>resolved</b>`)}</${Suspense}></div>` as HellaNode;
+    const container = setupContainer();
+    container.innerHTML = await collect(ssrStream(tree()));   // scripts present but NOT executed
+    hydrate(tree(), container);
+    expect(container.querySelector("#root b")!.textContent).toBe("resolved");
   });
 });

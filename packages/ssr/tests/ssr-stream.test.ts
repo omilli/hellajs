@@ -90,6 +90,76 @@ describe("ssrStream", () => {
     resolveLate(html`<b>late</b>` as HellaNode);    // the orphaned swap childGen is already returned → does not resume or throw
   });
 
+  test("concurrent swaps: a slow region above a fast one does not hold the fast region's <template> back (completion order)", async () => {
+    let resolveSlow!: () => void;
+    let resolveFast!: () => void;
+    const slow = new Promise<void>((r) => { resolveSlow = r; });
+    const fast = new Promise<void>((r) => { resolveFast = r; });
+    // slow region on TOP, fast BELOW — under sequential (tree-order) collection the slow region
+    // would block the fast region's resolved <template> from streaming until slow resolves.
+    const node = html`<div><${Suspense} fallback=${html`<i>slow</i>`}>${() => slow.then(() => html`<b>SLOW</b>`)}</${Suspense}><${Suspense} fallback=${html`<i>fast</i>`}>${() => fast.then(() => html`<b>FAST</b>`)}</${Suspense}></div>` as HellaNode;
+    const reader = ssrStream(node).getReader();
+
+    resolveFast();                              // fast resolves first; slow stays pending
+    let buf = "";
+    let chunk = await reader.read();
+    while (!chunk.done) { buf += chunk.value; if (buf.includes("<b>FAST</b>")) break; chunk = await reader.read(); }
+    expect(buf).toContain("<b>FAST</b>");        // fast region's <template> streamed…
+    expect(buf).not.toContain("<b>SLOW</b>");    // …while slow is still pending — completion order, not tree order
+
+    resolveSlow();                              // now slow resolves
+    let rest = buf;
+    chunk = await reader.read();
+    while (!chunk.done) { rest += chunk.value; chunk = await reader.read(); }
+    expect(rest).toContain("<b>SLOW</b>");                                      // slow <template> streamed, stream closed
+    expect(rest.indexOf("<b>FAST</b>")).toBeLessThan(rest.indexOf("<b>SLOW</b>"));  // FAST enqueued before SLOW
+  });
+
+  test("concurrent swaps: a rejecting region errors the stream; a still-pending sibling's late enqueue is skipped (done guard)", async () => {
+    let resolveSibling!: () => void;
+    const sibling = new Promise<void>((r) => { resolveSibling = r; });
+    const node = html`<div><${Suspense} fallback=${html`<i>boom</i>`}>${() => Promise.reject(new Error("boom"))}</${Suspense}><${Suspense} fallback=${html`<i>ok</i>`}>${() => sibling.then(() => html`<b>OK</b>`)}</${Suspense}></div>` as HellaNode;
+    const reader = ssrStream(node).getReader();
+    // drain the prefix (shell + fallbacks + sentinels + closing tags); start() then enters Promise.all,
+    // the rejecting region throws → done=true + controller.error. The sibling is still pending.
+    let err: unknown = undefined;
+    try {
+      let chunk = await reader.read();
+      while (!chunk.done) { chunk = await reader.read(); }
+    } catch (e) { err = e; }
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toBe("boom");
+    resolveSibling();                           // sibling resolves AFTER the stream errored → its enqueue hits the `done` guard and is skipped (no throw)
+    await delay(0);                             // let the skipped-enqueue microtask run — proves no throw into the errored stream
+  });
+
+  test("ssrStream emits the $hs bootstrap once before staged templates, and not at all without <Suspense>", async () => {
+    const node = html`<div><${Suspense} fallback=${html`<i>wait</i>`}>${() => Promise.resolve(html`<b>x</b>`)}</${Suspense}></div>` as HellaNode;
+    const out = await collect(ssrStream(node));
+    const boots = [...out.matchAll(/<script>(function \$hs[\s\S]*?)<\/script>/g)];
+    expect(boots).toHaveLength(1);                                                      // bootstrap emitted exactly once
+    expect(out.indexOf('<script>function $hs')).toBeLessThan(out.indexOf('<template id="')); // bootstrap precedes the templates
+    const id = out.match(/<!--(hs\d+)-->/)![1]!;                                         // actual sentinel id (monotonic counter — never hardcode)
+    expect(out).toContain(`<script>$hs("${id}")</script>`);                              // region followed by its swap script
+    // without <Suspense>: no bootstrap, no swap script (output byte-identical to a non-Suspense stream)
+    const plain = await collect(ssrStream(html`<div><b>hi</b></div>` as HellaNode));
+    expect(plain).not.toContain('$hs');
+    expect(plain).not.toContain('<script>');
+  });
+
+  test("each staged <Suspense> template is followed by its own $hs swap script (id matches)", async () => {
+    const node = html`<div><${Suspense} fallback=${html`<i>a</i>`}>${() => Promise.resolve(html`<b>A</b>`)}</${Suspense}><${Suspense} fallback=${html`<i>b</i>`}>${() => Promise.resolve(html`<b>B</b>`)}</${Suspense}></div>` as HellaNode;
+    const out = await collect(ssrStream(node));
+    const ids = [...out.matchAll(/<!--(hs\d+)-->/g)].map((m) => m[1]!);
+    expect(ids).toHaveLength(2);
+    for (const id of ids) {
+      expect(out).toContain(`<template id="${id}">`);                  // each region's template
+      expect(out).toContain(`</template><script>$hs("${id}")</script>`); // followed by its matching swap script
+    }
+    expect(out).toContain("<b>A</b>");
+    expect(out).toContain("<b>B</b>");
+  });
+
   test("a rejected Promise errors the stream", async () => {
     await expect(collect(ssrStream(html`<p>${() => Promise.reject(new Error("boom"))}</p>` as HellaNode))).rejects.toThrow("boom");
   });

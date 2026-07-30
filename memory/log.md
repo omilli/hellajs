@@ -1,5 +1,11 @@
 # Memory Update Log
 
+## 2026-07-30
+* **Creation**: Added concept [032](entries/032.md) (type: decision).
+* **Creation**: Added concept [033](entries/033.md) (type: decision).
+* **Creation**: Added concept [034](entries/034.md) (type: decision).
+* **Deprecation**: Archived [015](archive/015.md) → superseded by [033](entries/033.md).
+
 ## 2026-07-28
 * **Update**: Accuracy sweep — re-verified every active concept against `lib/`/`package.json` source. Fixed 023 (title+desc+evidence: the "dependencies null / ZERO runtime deps" generalization was false — css legitimately declares `csstype` as a runtime dep because `CSS.Properties` flows into the public `CSSObject` type shipped in `dist/types.d.ts`; consumers need it resolvable to type-check `css({...})`, so `dependency` not `devDependency`), 022 (Why: same false generalization → cross-ref 023), 026 (examples enumeration — added ssr-routing/ssr-streaming/bench; bench is the rollup-tooling `dependencies` exception, still no @hellajs/* entry), 018 (5→6 router ssr.test scenarios — 027 added the per-request re-resolution test). Bumped `last_confirmed` → 2026-07-28 on all 24 re-verified entries except 008 (flaky-test observation; not re-verifiable without a full-suite run). Rebuilt index.md.
 * **Prune**: Deleted orphan `archive/007.md` (twice-superseded: 007 → 009 → 013; referenced only by archived 009, so no active entry reached it). Archive is now 009/011/017, all one-hop-reachable from active entries.
@@ -9,6 +15,8 @@
 * **Creation**: Added concept [028](entries/028.md) (type: correction).
 * **Creation**: Added concept [029](entries/029.md) (type: decision).
 * **Creation**: Added concept [007](entries/007.md) (type: decision).
+* **Creation**: Added concept [030](entries/030.md) (type: decision).
+* **Creation**: Added concept [031](entries/031.md) (type: decision).
 
 ## 2026-07-17
 * **Creation**: Added concept [020](entries/020.md) (type: correction).

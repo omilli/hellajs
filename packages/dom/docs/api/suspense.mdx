@@ -1,6 +1,6 @@
 # Suspense
 
-An out-of-order streaming boundary for server rendering — wrap async server data so the shell and a `fallback` flush immediately via [`ssrStream`](/reference/ssr/ssr-stream), then [`hydrate`](/reference/dom/hydrate) swaps the resolved children in.
+A streaming + async boundary. On the server, wrap async data so the shell and a `fallback` flush immediately via [`ssrStream`](/reference/ssr/ssr-stream), then [`hydrate`](/reference/dom/hydrate) swaps the resolved children in. On a client fresh mount (e.g. client-side navigation), a Promise-returning child suspends — the `fallback` shows until it resolves (or, on rejection, bubbles to the nearest `onError` / `error:fallback` boundary).
 
 ## API
 
@@ -8,8 +8,8 @@ An out-of-order streaming boundary for server rendering — wrap async server da
 function Suspense(props: SuspenseProps): JSX.Element
 ```
 
-- `props.fallback`: Content rendered while children are unresolved (server-streaming only; dropped under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)).
-- `props.children`: The boundary's content — a single child or an array. On the server it may await; on the client it renders directly.
+- `props.fallback`: Content rendered while children are unresolved — shown during [`ssrStream`](/reference/ssr/ssr-stream) streaming AND on a client fresh mount while a Promise child is pending (dropped under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)).
+- `props.children`: The boundary's content — a single child or an array. A Promise-returning child suspends on both server and client; sync children render directly. For reactive re-fetching (re-suspend on signal change), use `resource` + `Show` instead.
 
 ## Basic Usage
 
@@ -50,17 +50,17 @@ Bare async (a Promise outside a `<Suspense>`) is awaited in-order by [`ssrStream
 
 ### Hydrate Swaps, Then Adopts
 
-The resolved children are staged in a `<template>` at stream end. During the single [`hydrate`](/reference/dom/hydrate) pass, each boundary swaps its staged children in (replacing the `fallback`) and adopts them — no inline script ships in the HTML. Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) (no streaming) the children are already present, so `<Suspense>` simply renders them directly.
+The resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the `fallback` for them the moment they arrive (progressive, React/Solid parity); [`hydrate`](/reference/dom/hydrate) later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) (no streaming) the children are already present, so `<Suspense>` simply renders them directly.
 
-### Fresh Mount Renders Children Directly
+### Fresh Mount Resolves Async Children
 
-On a purely client-side [`mount`](/reference/dom/mount) (no server HTML), `<Suspense>` renders its children immediately — the `fallback` is server-stream-only.
+On a purely client-side [`mount`](/reference/dom/mount) (no server HTML — e.g. after client-side navigation), sync children render immediately. A Promise-returning child suspends: the `fallback` shows until the Promise resolves, then the resolved content is swapped in (the Basic Usage child shape — `${() => fetch(…).then(…)}` — works identically here). On rejection, the `fallback` is removed (it is pending-only) and the error bubbles to the nearest `onError` / `error:fallback` boundary. `<Suspense>` resolves a single Promise child at mount — for reactive re-fetching (re-suspend when a signal changes), pair `resource` with `Show`.
 
 ## Important Considerations
 
 ### Pair With `ssrStream`
 
-`<Suspense>` only changes streaming behavior under [`ssrStream`](/reference/ssr/ssr-stream). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) it renders children directly (fallback dropped), so it is safe to use in trees rendered any way.
+`<Suspense>` only changes *streaming* behavior under [`ssrStream`](/reference/ssr/ssr-stream). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) it renders children directly (fallback dropped), so it is safe to use in trees rendered any way. On a client fresh mount, a Promise child still suspends with its `fallback` regardless of which server renderer produced the surrounding HTML.
 
 ### Nested Suspense Resolves Eagerly
 

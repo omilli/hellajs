@@ -52,7 +52,7 @@ Like [`ssr`](/reference/ssr/ssr), `ssrStream` has zero runtime imports from any 
 
 ### In-Order Streaming
 
-Async values are awaited in tree order, so a slow Promise delays everything after it. For out-of-order streaming — flushing a shell while an async subtree resolves in parallel — wrap the subtree in a [`<Suspense>`](/reference/dom/suspense) boundary. Prefer `ssrStream` when you want progressive paint; prefer [`ssr`](/reference/ssr/ssr) or [`ssrAsync`](/reference/ssr/ssr-async) when streaming isn't needed (no Promise overhead).
+Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the fallback for the resolved content **the moment it arrives** — so the user sees each region fill in progressively (React/Solid parity), not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap precedes them. `hydrate` later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). Prefer `ssrStream` when you want progressive paint; prefer [`ssr`](/reference/ssr/ssr) or [`ssrAsync`](/reference/ssr/ssr-async) when streaming isn't needed (no Promise overhead).
 
 ### Errors Error the Stream
 

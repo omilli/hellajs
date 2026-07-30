@@ -1,0 +1,12 @@
+{
+  "name": "ssr-islands",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun src/server.js"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}
