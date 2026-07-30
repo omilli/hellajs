@@ -1,0 +1,16 @@
+{
+  "name": "ssr-streaming",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:ssr": "vite build --ssr src/server.tsx --outDir dist/server"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "vite": "^7.0.0",
+    "vite-plugin-hellajs": "^0.8.9"
+  }
+}

@@ -194,7 +194,8 @@ const App = () => html`
   </div>
 `;
 
-// Server streams the shell + fallback first; resolved children stage for hydrate
+// Server streams the shell + fallback first; each resolved region then streams as a <template> + an
+// inline $hs swap script that swaps it in on arrival (progressive); hydrate later adopts
 const stream = ssrStream(html`<${App} />`);
 ```
 

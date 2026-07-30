@@ -21,6 +21,7 @@ export interface ElementState {
   cachedBoundary?: Element;
   lazyCleanup?: () => void;
   transitionCleanup?: () => void;
+  suspenseCleanup?: () => void;
 }
 
 const elementMap = new WeakMap<Node, ElementState>();

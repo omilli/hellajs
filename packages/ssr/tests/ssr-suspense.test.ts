@@ -1,8 +1,12 @@
-import { describe, test, expect } from "bun:test";
-import { html, Suspense, component } from "@hellajs/dom/bundle";
+import { describe, test, expect, beforeEach } from "bun:test";
+import { html, Suspense, component, hydrate } from "@hellajs/dom/bundle";
 import { ssr, ssrAsync, ssrStream } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { collect } from "./helpers";
+import { setupContainer, resetTestState } from "@utils/test-helpers.js";
+import { flush } from "@hellajs/core";
+
+beforeEach(() => resetTestState());
 
 /** Extracts `<Suspense>` swap ids from streamed HTML: sentinel-comment ids (nodeValue) and `<template>` ids. */
 function extractSwapIds(out: string): { sentinels: string[]; templates: string[] } {
@@ -90,5 +94,53 @@ describe("ssr <Suspense>", () => {
     expect(new Set(sentinels)).toEqual(new Set(templates));
     expect(out.startsWith("<div><!--[--><i>wait</i><!--")).toBe(true);
     expect(out).toContain(`<template id="${sentinels[0]!}"><!--[--><b>data</b><!--]--></template>`);
+  });
+
+  test("$hs swaps the fallback region for the staged template content (bootstrap extracted from the emitted stream)", async () => {
+    const node = html`<div><${Suspense} fallback=${html`<p>loading</p>`}>${() => Promise.resolve(html`<b>resolved</b>`)}</${Suspense}></div>` as HellaNode;
+    const out = await collect(ssrStream(node));
+    const id = out.match(/<!--(hs\d+)-->/)![1]!;                                         // actual sentinel id (monotonic counter — never hardcode)
+    const boot = out.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
+    const container = setupContainer();
+    container.innerHTML = out;                          // HappyDOM parses; inline scripts do NOT execute
+    const $hs = new Function(boot + "; return $hs")() as (id: string) => void;
+    expect(container.querySelector("template")).not.toBeNull();   // template present before the swap
+    $hs(id);
+    expect(container.querySelector("template")).toBeNull();        // template consumed
+    expect(container.textContent).toContain("resolved");
+    expect(container.textContent).not.toContain("loading");
+  });
+
+  test("$hs balance-walks region bounds when the fallback nests a dynamic region", async () => {
+    // the fallback contains a nested <!--[-->…<!--]--> region; $hs must skip it and swap the OUTER region
+    const node = html`<div><${Suspense} fallback=${html`<div>${() => "loading"}</div>`}>${() => Promise.resolve(html`<b>resolved</b>`)}</${Suspense}></div>` as HellaNode;
+    const out = await collect(ssrStream(node));
+    const id = out.match(/<!--(hs\d+)-->/)![1]!;
+    const boot = out.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
+    const container = setupContainer();
+    container.innerHTML = out;
+    const $hs = new Function(boot + "; return $hs")() as (id: string) => void;
+    $hs(id);
+    expect(container.querySelector("template")).toBeNull();
+    expect(container.textContent).toContain("resolved");
+    expect(container.textContent).not.toContain("loading");
+  });
+
+  test("$hs swap + hydrate adopts the resolved content without stringifying the getter’s Promise (no [object Promise])", async () => {
+    // the regression: after $hs swaps (simulating the browser’s inline script) and hydrate runs, the
+    // Suspense getter must NOT be re-evaluated into a Promise → text. $hs wraps the inserted content in an
+    // extra marker pair so hydrate’s consumeRegion leaves the getter’s reactive-region markers intact.
+    const tree = () => html`<div id="root"><${Suspense} fallback=${html`<p>loading</p>`}>${() => Promise.resolve(html`<b>resolved</b>`)}</${Suspense}></div>` as HellaNode;
+    const out = await collect(ssrStream(tree()));
+    const id = out.match(/<!--(hs\d+)-->/)![1]!;
+    const boot = out.match(/<script>(function \$hs[\s\S]*?)<\/script>/)![1]!;
+    const container = setupContainer();
+    container.innerHTML = out;
+    const $hs = new Function(boot + "; return $hs")() as (id: string) => void;
+    $hs(id);                          // simulate the browser running the inline swap script on arrival
+    hydrate(tree(), container);       // then the client entry hydrates
+    flush();
+    expect(container.querySelector("#root b")!.textContent).toBe("resolved");
+    expect(container.textContent).not.toContain("[object Promise]");
   });
 });

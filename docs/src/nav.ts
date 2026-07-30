@@ -41,6 +41,9 @@ export const navigation = {
         "Counter",
         "Todo",
         "Blog",
+        "SSR-Islands",
+        "SSR-Routing",
+        "SSR-Streaming",
       ],
     }
   ],

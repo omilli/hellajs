@@ -43,6 +43,7 @@ function clean(node: Node) {
   state.portalCleanup?.();
   state.lazyCleanup?.();
   state.transitionCleanup?.();
+  state.suspenseCleanup?.();
 
   const effects = state.effects;
   if (effects) {

@@ -1,0 +1,348 @@
+---
+layout: ../../../layouts/MainLayout.astro
+title: SSR Routing
+description: Server-render a routed app — router resolves the request URL, ssr stringifies the tree, and the client hydrates it in place.
+---
+
+import {Icon} from 'astro-icon/components';
+
+# Build an SSR Routing App
+
+Server-render a routed app end to end: [`router`](/reference/router/router) resolves the request URL on the server, [`ssr`](/reference/ssr/ssr) stringifies the tree, [`css`](/reference/css/css) emits styled text, and the client [`hydrate`](/reference/dom/hydrate)s the **same** tree against the existing DOM — adopting nodes, never rebuilding them. One isomorphic route map drives both sides.
+
+Jump to the [Complete Code](#complete-code) for the finished application.
+
+## What You'll Learn
+
+- **[`signal`](/reference/core/signal)**: Hold the currently-rendered view in a reactive view signal
+- **[`router`](/reference/router/router)`({ url })`**: Resolve the request URL on the server (no `window`)
+- **[`ssr`](/reference/ssr/ssr)** + **[`doc`](/reference/ssr/doc)**: Serialize the tree to HTML and wrap it into a full document
+- **[`css`](/reference/css/css)** + **[`cssVars`](/reference/css/css-vars)**: Return CSS text on the server and emit it through `doc()`
+- **[`hydrate`](/reference/dom/hydrate)**: Re-bind the server-rendered tree in place (no flash, no rebuild)
+
+This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders each request and `Bun.build` bundles the client at startup — one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
+
+## Project Setup
+
+### Installation
+
+Create a project folder and install the packages. This tutorial requires [Bun](https://bun.sh) for the server.
+
+```bash
+mkdir ssr-routing && cd ssr-routing
+bun init -y
+bun add @hellajs/core @hellajs/dom @hellajs/router @hellajs/ssr @hellajs/css
+```
+
+### Configuration
+
+`package.json` marks the project as an ES module and adds a single `start` script. `Bun.build` handles the client bundle at server startup, so there is no `build` script and no second tool. The source is plain JavaScript — no `tsconfig.json` is needed.
+
+```json
+{
+  "name": "ssr-routing",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun src/server.js"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}
+```
+
+## The Shared App
+
+One isomorphic module defines the view signal, the route map, and the shell. The same module is imported by the server and the client — there is no server/client fork of the routes.
+
+The key pattern is the **view signal**: each route handler is a *pure state-setter* that updates `currentView` and does nothing else. The shell reads `currentView`, so changing the signal changes the rendered view. This shape is what makes routing isomorphic — the same handlers fire on the server (driven by `router({ url })`) and on the client (driven by `router({ routes })` + `hydrate`).
+
+Create `src/app.js`:
+
+```js
+// src/app.js
+import { signal } from '@hellajs/core';
+import { html } from '@hellajs/dom';
+import { route } from '@hellajs/router';
+
+export const currentView = signal(html`<h1>Loading…</h1>`);
+
+const Home = () => html`<h1>Home</h1>`;
+const User = ({ id }) => html`<h1>User ${id}</h1>`;
+const NotFound = () => html`<h1>Not Found</h1>`;
+
+export const routes = {
+  '/': () => currentView(Home()),
+  '/users/:id': (params) => currentView(User({ id: params.id })),
+};
+
+export const notFound = () => currentView(NotFound());
+
+export const App = () => html`
+  <nav>
+    <a href="/" class=${route().active('/') ? 'active' : ''}>Home</a>
+    <a href="/users/1" class=${route().active('/users/1') ? 'active' : ''}>User</a>
+  </nav>
+  <main>${currentView}</main>
+`;
+```
+
+**Code Explanation**
+
+- **`currentView` signal**: Holds the node for the currently-rendered view. Route handlers set it; the shell reads it
+- **Pure-setter handlers** `() => currentView(View())`: They only update the signal. The matched handler fires once during `router()` on both sides, so a pure setter is idempotent and side-effect-free
+- **[`route`](/reference/router/route)**`().active(path)`: Reads the current route reactively (inside `App`), so the active nav class updates after each navigation
+
+<div role="alert" class="alert alert-error text-base">
+  <Icon name="ph:warning" width={24} height={24} />
+  <span>Route handlers must be pure setters, not <code>() => mount(...)</code>. <a href="/reference/dom/mount">mount</a> needs a <code>document</code> and throws on the server. Put side effects (analytics, subscriptions) in component <a href="/reference/core/effect">effect</a> bodies, not in the handler.</span>
+</div>
+
+## Styles
+
+On the server (no DOM), [`cssVars`](/reference/css/css-vars) returns the custom-property declarations as CSS text and [`css`](/reference/css/css) returns the generated rule text — both stateless, neither touches a stylesheet. Collect the server return values and pass them to `doc()`'s `styles` to emit a single `<style>` tag.
+
+Create `src/theme.js`:
+
+```js
+// src/theme.js
+import { cssVars, css } from '@hellajs/css';
+
+export const tokens = cssVars({
+  color: { primary: '#2563eb', text: '#333' },
+  space: { nav: '1rem' },
+});
+
+export const stylesheet = css({
+  body: { fontFamily: 'sans-serif', margin: '0', color: 'var(--color-text)' },
+  nav: {
+    display: 'flex', gap: 'var(--space-nav)', padding: 'var(--space-nav)',
+    borderBottom: '1px solid #e5e7eb',
+  },
+  'nav a': { color: 'var(--color-primary)', textDecoration: 'none' },
+  'nav a.active': { fontWeight: '700', textDecoration: 'underline' },
+  main: { padding: 'var(--space-nav)' },
+});
+```
+
+**Code Explanation**
+
+- **[`cssVars`](/reference/css/css-vars)**`({ color: { primary, text }, … })`: On the server returns `:root{--color-primary:#2563eb;--color-text:#333;…}`. Nested keys join into kebab-case names (`color.primary` → `--color-primary`)
+- **[`css`](/reference/css/css)**`({ … })`: On the server returns the rule text. The same call injects a stylesheet on the client — one API, platform-dependent return
+- **`export const tokens` / `stylesheet`**: The server imports both and lists them in `doc({ head: { styles } })`
+
+## Server Rendering
+
+The server resolves the request URL with [`router`](/reference/router/router)`({ url })`, stringifies the tree with [`ssr`](/reference/ssr/ssr), and wraps it into a full document with [`doc`](/reference/ssr/doc). Pass the request URL via the `url` option — there is no `window` on the server. Resolution is synchronous, so `currentView` already holds the matched view when `ssr` walks the tree.
+
+`Bun.build` bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
+
+Create `src/server.js`:
+
+```js
+// src/server.js
+import { html } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { ssr, doc } from '@hellajs/ssr';
+import { routes, App, notFound } from './app.js';
+import { tokens, stylesheet } from './theme.js';
+
+const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
+if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
+const client = await build.outputs[0].text();
+
+Bun.serve({
+  port: 3000,
+  fetch(req) {
+    const { pathname, search } = new URL(req.url);
+
+    if (pathname === '/client.js') {
+      return new Response(client, { headers: { 'content-type': 'text/javascript' } });
+    }
+
+    router({ routes, url: pathname + search, notFound });
+
+    const body = `<div id="app">${ssr(html`<${App} />`)}</div>`;
+
+    const page = doc({
+      lang: 'en',
+      head: {
+        title: 'SSR Routing',
+        styles: [tokens, stylesheet],
+        scripts: [{ src: '/client.js', type: 'module' }],
+      },
+      body,
+    });
+
+    return new Response(page, { headers: { 'content-type': 'text/html' } });
+  },
+});
+```
+
+**Code Explanation**
+
+- **[`router`](/reference/router/router)`({ routes, url: pathname + search, notFound })`**: `url` overrides `window.location` for the initial resolution. An explicit `url` is re-honored on every call, so each request resolves its own URL
+- **`router()` → `ssr()` with no `await` between them**: One synchronous block. No second request can interleave and overwrite the router's signals mid-render — synchronous `ssr` is concurrency-safe, so you do not need a router instance per request
+- **`` `<div id="app">${ssr(…)}</div>` ``**: [`hydrate`](/reference/dom/hydrate)`('#app')` needs a container to adopt. `doc()` places `body` verbatim, so wrap the output in `<div id="app">`
+- **[`doc`](/reference/ssr/doc)`({ head, body })`**: `styles` joins `tokens` + `stylesheet` into one `<style>` tag; `scripts` emits the client tag
+- **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory — no `dist/` to manage
+
+## Client Hydration
+
+The client omits `url`: it reads `window.location` and resolves synchronously — the same URL the server resolved — so `currentView` matches the server-rendered view and [`hydrate`](/reference/dom/hydrate) adopts the existing nodes rather than rebuilding them.
+
+Create `src/client.js`:
+
+```js
+// src/client.js
+import { html, hydrate } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { routes, App, notFound } from './app.js';
+
+router({ routes, notFound });
+
+const handle = hydrate(html`<${App} />`, '#app');
+handle.flush(); // fire deferred afterMount hooks before first paint
+```
+
+**Code Explanation**
+
+- **[`router`](/reference/router/router)`({ routes, notFound })` — no `url`**: `url` is server-only. The client reads `window.location` and resolves the same URL, so the view matches the server output
+- **[`hydrate`](/reference/dom/hydrate)**: Re-executes the component tree against the existing DOM (the same node passed to `ssr`), attaching effects/handlers/state without replacing nodes
+- **`handle.flush()`**: Fires deferred `afterMount` hooks before first paint
+
+## Run the App
+
+Start the server. It bundles the client at startup and serves both the rendered HTML and the client bundle.
+
+```bash
+bun src/server.js
+```
+
+Visit `http://localhost:3000`. The server renders the matched route for each request — view-source shows the full HTML:
+
+```bash
+curl -s localhost:3000/users/1
+# …<div id="app"><nav>…</nav><main><!--[--><h1>User 1</h1><!--]--></main></div>…
+
+curl -s localhost:3000/
+# …<h1>Home</h1>…
+```
+
+After the client script loads, clicking a nav link updates the view and the active class without a full reload — `hydrate` adopted the server nodes, so there is no flash and no rebuild.
+
+## Next Steps
+
+- **[SSR Streaming](/learn/tutorials/ssr-streaming)**: Flush a shell early and stream async subtrees with `ssrStream` and the `Suspense` component
+- **[Routing](/learn/concepts/routing)**: The routing concept and the resolution pipeline
+- **[router reference](/reference/router/router)**: The full `router({ routes, url, … })` API
+- **[Hydration](/learn/concepts/hydration)**: How `hydrate` adopts the server tree
+
+## Complete Code
+
+### `src/app.js`
+
+```js
+import { signal } from '@hellajs/core';
+import { html } from '@hellajs/dom';
+import { route } from '@hellajs/router';
+
+export const currentView = signal(html`<h1>Loading…</h1>`);
+
+const Home = () => html`<h1>Home</h1>`;
+const User = ({ id }) => html`<h1>User ${id}</h1>`;
+const NotFound = () => html`<h1>Not Found</h1>`;
+
+export const routes = {
+  '/': () => currentView(Home()),
+  '/users/:id': (params) => currentView(User({ id: params.id })),
+};
+
+export const notFound = () => currentView(NotFound());
+
+export const App = () => html`
+  <nav>
+    <a href="/" class=${route().active('/') ? 'active' : ''}>Home</a>
+    <a href="/users/1" class=${route().active('/users/1') ? 'active' : ''}>User</a>
+  </nav>
+  <main>${currentView}</main>
+`;
+```
+
+### `src/theme.js`
+
+```js
+import { cssVars, css } from '@hellajs/css';
+
+export const tokens = cssVars({
+  color: { primary: '#2563eb', text: '#333' },
+  space: { nav: '1rem' },
+});
+
+export const stylesheet = css({
+  body: { fontFamily: 'sans-serif', margin: '0', color: 'var(--color-text)' },
+  nav: {
+    display: 'flex', gap: 'var(--space-nav)', padding: 'var(--space-nav)',
+    borderBottom: '1px solid #e5e7eb',
+  },
+  'nav a': { color: 'var(--color-primary)', textDecoration: 'none' },
+  'nav a.active': { fontWeight: '700', textDecoration: 'underline' },
+  main: { padding: 'var(--space-nav)' },
+});
+```
+
+### `src/server.js`
+
+```js
+import { html } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { ssr, doc } from '@hellajs/ssr';
+import { routes, App, notFound } from './app.js';
+import { tokens, stylesheet } from './theme.js';
+
+const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
+if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
+const client = await build.outputs[0].text();
+
+Bun.serve({
+  port: 3000,
+  fetch(req) {
+    const { pathname, search } = new URL(req.url);
+
+    if (pathname === '/client.js') {
+      return new Response(client, { headers: { 'content-type': 'text/javascript' } });
+    }
+
+    router({ routes, url: pathname + search, notFound });
+
+    const body = `<div id="app">${ssr(html`<${App} />`)}</div>`;
+
+    const page = doc({
+      lang: 'en',
+      head: {
+        title: 'SSR Routing',
+        styles: [tokens, stylesheet],
+        scripts: [{ src: '/client.js', type: 'module' }],
+      },
+      body,
+    });
+
+    return new Response(page, { headers: { 'content-type': 'text/html' } });
+  },
+});
+```
+
+### `src/client.js`
+
+```js
+import { html, hydrate } from '@hellajs/dom';
+import { router } from '@hellajs/router';
+import { routes, App, notFound } from './app.js';
+
+router({ routes, notFound });
+
+const handle = hydrate(html`<${App} />`, '#app');
+handle.flush();
+```

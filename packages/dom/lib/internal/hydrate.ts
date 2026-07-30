@@ -93,9 +93,10 @@ function consumeRegion(parent: HellaElement, open: Node): { anchor: Node; existi
 
 /**
  * @internal
- * β hydrate-swap for `<Suspense>`: if the gathered region nodes contain a sentinel comment whose nodeValue
- * is a staged `<template>` id, replace the fallback with the template's resolved children (no inline script —
- * the swap runs during this single hydrate pass). Returns the nodes to adopt (swapped children, or the
+ * No-script/HappyDOM fallback swap for `<Suspense>`: if the gathered region nodes contain a sentinel comment whose nodeValue
+ * is a staged `<template>` id, replace the fallback with the template's resolved children. In a browser an inline `$hs`
+ * script (emitted by `@hellajs/ssr`) has already swapped each region on arrival; this runs only when that script hasn't
+ * (e.g. in HappyDOM tests). Returns the nodes to adopt (swapped children, or the
  * original `existing` when there is no stage — e.g. an `ssr`/`ssrAsync` render where children are present).
  */
 function swapSuspenseStage(existing: Node[], anchor: Node): Node[] {
@@ -412,7 +413,7 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
       adoptRegion(parent, child, anchor, []);
       break;
     case "suspense":
-      adoptRegion(parent, child, anchor, swapSuspenseStage(existing, anchor));   // β hydrate-swap: stage → resolved children
+      adoptRegion(parent, child, anchor, swapSuspenseStage(existing, anchor));   // no-script fallback: staged <template> → resolved children (a browser's inline $hs already swapped on arrival)
       break;
     default:
       adoptRegion(parent, child, anchor, existing);
