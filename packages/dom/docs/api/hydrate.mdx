@@ -40,9 +40,9 @@ const page = `<div id="app">${body}</div>`;
 ```jsx
 import { hydrate } from "@hellajs/dom";
 
-// Client — re-execute App against the existing DOM, never replacing it
-const handle = hydrate(<App />, "#app");
-handle.flush(); // fire deferred afterMount hooks before first paint
+// Client — re-execute App against the existing DOM, never replacing it.
+// afterMount fires automatically during hydrate — no flush() needed.
+hydrate(<App />, "#app");
 ```
 
 ## Key Concepts

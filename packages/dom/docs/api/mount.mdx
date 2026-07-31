@@ -32,7 +32,7 @@ interface MountHandle {
 ```
 
 - `container`: The DOM element the tree was mounted into.
-- `flush()`: Process deferred lifecycle hooks (useful for tests and synchronous access after mount).
+- `flush()`: Optional escape hatch that drains the mount/cleanup queues synchronously. `afterMount` already fires during `mount()`, so this is only needed to force synchronous processing (e.g. `afterDestroy` in tests, or dynamically-added nodes).
 - `unmount()`: Clean up and remove the mounted tree.
 
 ## Basic Usage

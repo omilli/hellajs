@@ -228,13 +228,14 @@ describe("dom", () => {
       expect(container.querySelector("#root")!.textContent).toBe("content");
     });
 
-    test("returns a MountHandle whose flush fires afterMount and unmount removes the tree", () => {
+    test("afterMount fires at hydrate; flush() is idempotent and unmount removes the tree", () => {
       const afterMount = mock(() => {});
       const App = () => html`<div id="root" hook:afterMount=${afterMount}>x</div>`;
       const container = ssrContainer(html`<${App} />`);
 
       const handle = hydrate(html`<${App} />`, container);
-      expect(afterMount).not.toHaveBeenCalled();
+      // afterMount fires during hydrate() — no flush() needed; calling it does not re-fire
+      expect(afterMount).toHaveBeenCalledTimes(1);
       handle.flush();
       expect(afterMount).toHaveBeenCalledTimes(1);
 

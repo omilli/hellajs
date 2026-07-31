@@ -29,7 +29,8 @@ describe("resetDom", () => {
         content
       </div>
     `);
-    expect(callOrder).toEqual([]);
+    // afterMount now fires during mount(); flush() is an idempotent no-op
+    expect(callOrder).toEqual(["afterMount"]);
     app.flush();
     expect(callOrder).toEqual(["afterMount"]);
   });

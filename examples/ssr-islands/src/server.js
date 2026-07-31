@@ -1,29 +1,6 @@
 import { ssr, doc } from '@hellajs/ssr';
-import { css } from '@hellajs/css';
-import { App } from './app.js';
+import { App, styles } from './app.js';
 
-// On the server (no DOM), `css()` returns the generated CSS text instead of
-// injecting a stylesheet. Pass it to `doc()`'s `styles` to emit one <style> tag.
-const stylesheet = css({
-  body: {
-    fontFamily: 'sans-serif',
-    margin: '2rem',
-    color: '#333',
-  },
-  '#count': {
-    fontWeight: '700',
-    color: '#2563eb',
-  },
-  '#slot button': {
-    marginTop: '1rem',
-    padding: '0.5rem 1rem',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    borderRadius: '0.375rem',
-    border: '1px solid #2563eb',
-    backgroundColor: '#fff',
-  },
-});
 
 // Bundle the client once at startup. Bun's native bundler resolves the bare
 // `@hellajs/*` specifiers the browser can't — no separate build step, no dist/.
@@ -48,7 +25,7 @@ Bun.serve({
     const page = doc({
       head: {
         title: 'SSR Islands',
-        styles: [stylesheet],
+        styles: [styles],
         scripts: [{ src: '/client.js', type: 'module' }],
       },
       body: ssr(App()),

@@ -4,7 +4,6 @@ import { dispatchError, toError } from "./internal/dispatch";
 import { mountNode } from "./internal/render";
 import { hydrateNode, hydrateSequence } from "./internal/hydrate";
 import { registerContainer, processMountQueue, processCleanupQueue, mountQueue } from "./internal/queue";
-import { getState } from "./internal/state";
 import { cleanupSubtree } from "./internal/cleanup";
 
 /**
@@ -73,10 +72,8 @@ export function hydrate(
       hydrateNode(n, rootEl);
     }
     registerContainer(container);
-    if (n.tag !== "$" && rootEl && rootEl.nodeType === Node.ELEMENT_NODE) {
-      getState(rootEl).isMounted = true;
-    }
     attached = true;
+    flush();   // fire afterMount + set isMounted (root + descendants) now — hydrate adds no nodes, so the observer never would
   };
 
   const resolved = resolveValue(node);

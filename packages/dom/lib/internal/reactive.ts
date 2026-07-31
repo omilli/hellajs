@@ -4,7 +4,6 @@ import { registry } from "../registry";
 import { isFunction, isPlainObject, objectLoop } from "./core";
 import { renderProp, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
-import { peekState } from "./state";
 
 const FORM_ELEMENTS = Object.freeze(new Set(["INPUT", "TEXTAREA", "SELECT"]));
 
@@ -43,7 +42,6 @@ export function createReactive<T extends HellaElement>(element: T): DomWrapper<T
         const fn = hooksObj[type];
         if (!fn) continue;
         registry.addHook(element, type, fn as (() => void) | ElementMountFn);
-        type === "afterMount" && peekState(element)?.isMounted && (fn as ElementMountFn)(element);
       }
       return wrapper;
     },

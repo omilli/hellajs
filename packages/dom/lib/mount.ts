@@ -3,7 +3,6 @@ import { resolveValue } from "./internal/utils";
 import { setMountNode, dispatchError, toError } from "./internal/dispatch";
 import { mountNode } from "./internal/render";
 import { registerContainer, processMountQueue, processCleanupQueue, mountQueue } from "./internal/queue";
-import { getState } from "./internal/state";
 import { cleanupSubtree } from "./internal/cleanup";
 
 // Wrapper breaks circular import: dispatch.ts needs mountNode from render.ts, render.ts imports from dispatch.ts
@@ -58,10 +57,8 @@ export function mount(
     mountedNode = mountNode(node) as HellaElement;
     container.replaceChildren(mountedNode);
     registerContainer(container);
-    if (mountedNode.nodeType === Node.ELEMENT_NODE) {
-      getState(mountedNode).isMounted = true;
-    }
     attached = true;
+    flush();   // fire afterMount + set isMounted (root + descendants) now — the scoped observer misses the initial attach
   };
 
   const resolved = resolveValue(node);

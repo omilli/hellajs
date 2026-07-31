@@ -203,15 +203,14 @@ import { routes, App, notFound } from './app.js';
 
 router({ routes, notFound });
 
-const handle = hydrate(html`<${App} />`, '#app');
-handle.flush(); // fire deferred afterMount hooks before first paint
+// afterMount fires automatically during hydrate — no flush() needed
+hydrate(html`<${App} />`, '#app');
 ```
 
 **Code Explanation**
 
 - **[`router`](/reference/router/router)`({ routes, notFound })` — no `url`**: `url` is server-only. The client reads `window.location` and resolves the same URL, so the view matches the server output
-- **[`hydrate`](/reference/dom/hydrate)**: Re-executes the component tree against the existing DOM (the same node passed to `ssr`), attaching effects/handlers/state without replacing nodes
-- **`handle.flush()`**: Fires deferred `afterMount` hooks before first paint
+- **[`hydrate`](/reference/dom/hydrate)**: Re-executes the component tree against the existing DOM (the same node passed to `ssr`), attaching effects/handlers/state without replacing nodes. `afterMount` hooks fire automatically during hydrate.
 
 ## Run the App
 
@@ -343,6 +342,5 @@ import { routes, App, notFound } from './app.js';
 
 router({ routes, notFound });
 
-const handle = hydrate(html`<${App} />`, '#app');
-handle.flush();
+hydrate(html`<${App} />`, '#app');
 ```

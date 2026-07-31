@@ -159,8 +159,7 @@ import { routes, App } from './app.js';
 
 router({ routes });
 
-const handle = hydrate(html`<${App} />`, '#app');
-handle.flush(); // fire deferred afterMount hooks before first paint
+hydrate(html`<${App} />`, '#app');
 ```
 
 Streamed [`<Suspense>`](/reference/dom/suspense) regions stage their resolved children in `<template>` elements; `hydrate` swaps each staged template in automatically, so the streamed and sync paths share one client entry.

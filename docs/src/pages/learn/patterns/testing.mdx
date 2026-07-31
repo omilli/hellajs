@@ -66,7 +66,7 @@ await wait(100); // Wait 100ms real time
 
 ### Drive Lifecycle Synchronously
 
-`mount()` returns a handle with `flush()` and `unmount()` for synchronous lifecycle control without waiting for microtasks:
+`mount()` returns a handle with `flush()` and `unmount()`. `afterMount` fires during `mount()` itself; `flush()` drains the cleanup queue synchronously, so you can assert on `afterDestroy` without awaiting microtasks:
 
 ```typescript
 import { signal } from "@hellajs/core";
@@ -74,12 +74,11 @@ import { mount, html } from "@hellajs/dom";
 
 const visible = signal(true);
 const app = mount(() => (visible() ? html`<p>Visible</p>` : null));
-
-app.flush(); // Process mount queue synchronously
+// afterMount already fired during mount() — no flush() needed
 console.log(document.body.textContent); // "Visible"
 
 visible(false);
-app.flush(); // Process unmount synchronously
+app.flush(); // drain the cleanup queue synchronously (afterDestroy)
 console.log(document.body.textContent); // ""
 
 app.unmount(); // Clean up the entire tree

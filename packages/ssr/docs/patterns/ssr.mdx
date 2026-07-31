@@ -132,8 +132,7 @@ const body = ssr(html`<${App} />`);
 import { hydrate, html } from '@hellajs/dom';
 
 // Client attaches effects/handlers to the existing nodes
-const handle = hydrate(html`<${App} />`, '#app');
-handle.flush(); // fire deferred afterMount hooks before first paint
+hydrate(html`<${App} />`, '#app');
 ```
 
 ### Async data fetching
