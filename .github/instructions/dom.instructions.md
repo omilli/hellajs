@@ -32,7 +32,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `handlers` | `Record<type, EventListener>` delegated handlers (one per type per element). |
 | `directHandlers` | `Map<type, EventListener>` `e:` handlers; `removeEventListener`-ed on cleanup. |
 | `hooks` | `Partial<Record<HookType, fn[]>>` stacked lifecycle hooks; all execute in insertion order. |
-| `isMounted` | `true` after `afterMount` fires. Root set sync in `mount()`; descendants async via the scoped observer. |
+| `isMounted` | `true` once `afterMount` has fired. Set for root + descendants at the end of `attach()` via the handle's `flush()` (idempotent — `processMountQueue` skips already-mounted nodes); the scoped `MutationObserver` only catches *later* dynamic additions. |
 | `componentScope` | Dispose fn from `scope()`, attached when a node is created by `component()`. |
 | `portalCleanup` / `lazyCleanup` / `transitionCleanup` | Optional disposers (Portal registers on its **anchor**; Lazy/Transition on the **parent**). |
 | `errorConfig` | Set when the node carries any `error:` attribute. |
@@ -86,7 +86,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 
 ## `mount(node, target = "#app")` (`lib/mount.ts`)
 
-`resolveValue` calls `node` if it's a function. If the result is a thenable (`typeof resolved.then === "function"`), `attach` is deferred via `.then`; otherwise `attach` runs sync. `attach` = `mountNode` → `container.replaceChildren(...)` → `registerContainer(container)` (starts scoped observer) → sets `getState(root).isMounted = true` (root only).
+`resolveValue` calls `node` if it's a function. If the result is a thenable (`typeof resolved.then === "function"`), `attach` is deferred via `.then`; otherwise `attach` runs sync. `attach` = `mountNode` → `container.replaceChildren(...)` → `registerContainer(container)` (starts scoped observer) → `attached = true` → `flush()` (drains the mount queue: sets `isMounted = true` and fires `afterMount` for root + descendants; idempotent).
 
 - **Async mount rejections** route through `dispatchError(err, { phase: 'mount' })` — no element context, so no fallback rendering; surfaces via `onError` or `console.error('[dom]', err)`.
 - **`setMountNode` indirection.** `mount.ts` registers `mountNode` with `dispatch.ts` at module init to break the `render.ts` ↔ `dispatch.ts` circular import; `events.ts` reads `getMountNode()` lazily when rendering fallback UI.
@@ -121,7 +121,7 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 ## Mount queue
 
-`processMountQueue` traverses each queued node's descendants; every element with state gets `isMounted = true` and `afterMount` run. Skips nodes not `isConnected` at flush time. The root's `isMounted` is set sync in `mount()`; descendants are deferred one microtask — **tests must call `app.flush()` on the mount handle before asserting on `afterMount`-gated behavior.** `flush()` on the mount handle processes the mount queue synchronously for the container tree.
+`processMountQueue` traverses each queued node's descendants; every element with state gets `isMounted = true` and `afterMount` run, **idempotently** — already-`isMounted` nodes are skipped, so re-flushing never double-fires `afterMount`. Skips nodes not `isConnected` at flush time. The scoped `MutationObserver` only catches *later* dynamic additions (it is started by `registerContainer` after the initial `replaceChildren`, so the initial tree is never observed); the initial attach is flushed explicitly at the end of `attach()`. `afterMount` therefore fires by the time `mount()`/`hydrate()` return — **no `flush()` call is required**. The handle's `flush()` remains as an optional escape hatch (e.g. to drain the cleanup queue synchronously in tests). An `afterMount` hook registered on an already-mounted node via `registry.addHook` fires immediately.
 
 ## Event delegation (`lib/internal/events.ts`)
 
@@ -206,7 +206,7 @@ Returns a function with `isDynamic: true` and `fn.ssr = { kind: "suspense", prop
 
 ## `$ref` / `$collection` (`lib/$ref.ts`, `lib/$collection.ts`, `lib/internal/reactive.ts`, `lib/internal/selectors.ts`)
 
-Imperative escape hatch over existing DOM. `createReactive(element)` builds the shared `DomWrapper` (`bind`/`on`/`hooks` returning the wrapper for chaining, plus a `node` getter). `bind` detects `INPUT`/`TEXTAREA`/`SELECT` (frozen `FORM_ELEMENTS`) and targets `.value` instead of `.textContent` for primitives; an object arg sets arbitrary attributes. `hooks` **fires `afterMount` immediately** if the element is already `isMounted`.
+Imperative escape hatch over existing DOM. `createReactive(element)` builds the shared `DomWrapper` (`bind`/`on`/`hooks` returning the wrapper for chaining, plus a `node` getter). `bind` detects `INPUT`/`TEXTAREA`/`SELECT` (frozen `FORM_ELEMENTS`) and targets `.value` instead of `.textContent` for primitives; an object arg sets arbitrary attributes. `hooks` **fires `afterMount` immediately** if the element is already `isMounted` (handled centrally by `registry.addHook`).
 
 - **`$ref(selector)`** — `document.querySelector` synchronously; wraps immediately if found. Otherwise lazily starts watching on the first `bind`/`on`/`hooks` call: registers an op in the global `multiSelectors` Map, ensures `refObserver`. The watcher's `processNode` takes the first match, drains queued ops, then runs `processMountQueue` so `afterMount` hooks fire. Returns a callable `DomRef` — `ref()` / `ref.node` returns the node; methods chain. Also exposes a `.node` getter.
 - **`$collection(selector)`** — wraps every current match and registers with `registerMultiOp` so new matches auto-apply queued ops. Returns a `DomCollection`: callable `collection(index = 0)`, dynamic `length`, `forEach`, `bind`/`on`/`hooks` (all current + future), `dispose()`. Indexed `[i]` access is populated **only for the initial set** — use the callable form for dynamically-added elements.
@@ -214,7 +214,7 @@ Imperative escape hatch over existing DOM. `createReactive(element)` builds the 
 
 ## `registry` (`lib/registry.ts`)
 
-Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by `beforeUpdate`/`afterUpdate` (only when `state.isMounted`; hook errors caught, `phase: 'update'`, no fallback). `addHook(element, type, handler)` pushes onto `state.hooks[type]` (stacking). Both accumulative.
+Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by `beforeUpdate`/`afterUpdate` (only when `state.isMounted`; hook errors caught, `phase: 'update'`, no fallback). `addHook(element, type, handler)` pushes onto `state.hooks[type]` (stacking); an `afterMount` registered on an already-`isMounted` node fires immediately. Both accumulative.
 
 ## `renderProp` (`lib/internal/utils.ts`)
 
@@ -229,8 +229,8 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **`raw(html)` is an opaque child.** `ssr` wraps it in `<!--[-->…<!--]-->` markers and emits the HTML verbatim (never escaped); `hydrate` consumes the markers and adopts the existing DOM in place, binding nothing inside — no reactive scope crosses the boundary. Meta-framework renderers inject slot HTML as `props.children = [raw(slotHtml)]` (array-wrapped, so the babel `<X>{props.children}</X>` spread yields the sentinel). Bypasses escaping — sanitize untrusted input (XSS).
 - **Passthrough components bypass `component()`** — `ForEach`/`Portal`/`Lazy`/`Transition` set `isDynamic: true` and `fn.ssr = { kind, props }`, and are called directly by `appendToParent` with the parent. `<${Comp}>` in templates wraps in `component()` only if `Comp.isDynamic` is false. The `ssr` descriptor (see `RenderFn`/`SsrMeta`) lets `@hellajs/ssr` render these without DOM access; it's write-only at mount.
 - **One scoped observer covers every `mount()` target** (`observedContainers`); a second mount target adds no second observer.
-- **`isMounted`: root sync, descendants async.** Tests must call `app.flush()` on the mount handle before asserting on `afterMount`-gated behavior.
-- **Hook element-argument rule.** `afterMount`/`beforeDestroy`/`beforeUpdate`/`afterUpdate` receive the element; `beforeMount`/`afterDestroy` do not. `beforeMount` fires synchronously before `appendChild`; `afterMount` fires deferred via the observer's microtask. Multiple hooks of the same type all fire in insertion order.
+- **`afterMount` fires at `mount()`/`hydrate()`.** `isMounted` (root + descendants) is set and `afterMount` fired synchronously at the end of `attach()` — no `app.flush()` needed. `flush()` on the handle is an idempotent escape hatch (drains the cleanup queue).
+- **Hook element-argument rule.** `afterMount`/`beforeDestroy`/`beforeUpdate`/`afterUpdate` receive the element; `beforeMount`/`afterDestroy` do not. `beforeMount` fires synchronously during the walk; `afterMount` fires at the end of `attach()` (root + descendants, top-down via `traverseDescendants`). Multiple hooks of the same type all fire in insertion order.
 - **`bind:` effects run `beforeUpdate`/`afterUpdate`** only when `state.isMounted` is true.
 - **`onError(null)` clears all handlers**; a function registers and returns an unregister. No handlers → `console.error('[dom]', error)` and no UI change.
 - **Event types registered for delegation stay registered for the page lifetime** — only `resetEventState()` (called by `resetDom()` in tests) removes them. Delegated handlers never auto-stop propagation.
@@ -275,7 +275,7 @@ Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bu
 - `ref.test.ts`, `collection.test.ts` — queued ops, auto-watching, method chaining, `dispose()`, selector-registry state.
 - `component.test.ts`, `registry.test.ts` — `component()` scope wrapping, `addEffect`/`addHook` stacking.
 
-**Pattern across all tests:** `mount` → drive signals → `flush()` (sync, no `await`) → assert DOM. For lifecycle assertions, `app.flush()` on the mount handle processes deferred lifecycle hooks. For removal assertions, `el.remove()` then `await delay()` to let the MutationObserver fire and process cleanup. Never test two behaviors in one test; aim for 100% coverage.
+**Pattern across all tests:** `mount` → drive signals → `flush()` (core, sync, no `await`) → assert DOM. `afterMount` fires during `mount()`/`hydrate()` already; the handle's `flush()` is only needed to drain the cleanup queue synchronously (e.g. `afterDestroy` assertions). For removal assertions, `el.remove()` then `await delay()` to let the MutationObserver fire and process cleanup. Never test two behaviors in one test; aim for 100% coverage.
 
 Run with `bun coverage dom`.
 </dom-package-instructions>
