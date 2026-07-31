@@ -7,5 +7,5 @@ import { routes, App, notFound } from './app.js';
 // and hydrate adopts the existing nodes rather than rebuilding them.
 router({ routes, notFound });
 
-const handle = hydrate(html`<${App} />`, '#app');
-handle.flush(); // fire deferred afterMount hooks before first paint
+// afterMount fires automatically during hydrate — no flush() needed.
+hydrate(html`<${App} />`, '#app');

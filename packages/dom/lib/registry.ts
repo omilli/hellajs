@@ -56,5 +56,7 @@ export const registry = {
     const state = getState(element);
     const stacks = state.hooks ?? (state.hooks = {});
     (stacks[type] || (stacks[type] = [])).push(handler);
+    // afterMount registered on an already-mounted node fires immediately (the node is already mounted)
+    if (type === "afterMount" && state.isMounted) (handler as (node: Element) => void)(element);
   }
 };

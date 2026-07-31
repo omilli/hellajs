@@ -142,7 +142,9 @@ export function processMountQueue() {
     traverseDescendants(node, (n) => {
       if (n.nodeType !== Node.ELEMENT_NODE) return;
       if (!hasState(n)) return;
-      getState(n).isMounted = true;
+      const state = getState(n);
+      if (state.isMounted) return;   // idempotent: a re-flush (or observer re-fire) must not double-fire afterMount
+      state.isMounted = true;
       runHooks(n, "afterMount");
     });
   }

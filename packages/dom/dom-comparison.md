@@ -162,7 +162,7 @@ HellaJS's `element()` is more "Web Components native" than any competitor's comp
 This is a HellaJS standout. It uses a dual cleanup system:
 
 1. **Synchronous `cleanupSubtree()`** — invoked directly during reactive child removal (e.g. ForEach removal at `ForEach.ts`, Transition leave at `Transition.ts`, reactive child swap at `render.ts`). Immediate, no delay.
-2. **Scoped `MutationObserver`** as a safety net on mount targets (`lib/internal/queue.ts`), deferred via `queueMicrotask` (runs before paint), with `isConnected || parentNode` checks (`queue.ts`) so moved nodes aren't disposed.
+2. **Scoped `MutationObserver`** as a safety net on mount targets (`lib/internal/queue.ts`) for *later* dynamic additions — deferred via `queueMicrotask` (runs before paint), with `isConnected || parentNode` checks (`queue.ts`) so moved nodes aren't disposed. (The initial attach flushes its `afterMount`/`isMounted` synchronously at the end of `mount()`/`hydrate()`; the observer starts only afterward, so it never sees the initial tree.)
 
 Element state lives in a `WeakMap<Node, ElementState>` (`lib/internal/state.ts`) — zero property pollution on DOM elements (`__hella_`-style expando properties are explicitly avoided). ForEach collections, template ASTs, and text-node anchors are all reused rather than reallocated.
 

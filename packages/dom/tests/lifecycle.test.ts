@@ -28,7 +28,8 @@ describe("dom", () => {
         ></div>
       `);
 
-      expect(callOrder).toEqual(["beforeMount"]);
+      // afterMount now fires during mount(); flush() is an idempotent no-op
+      expect(callOrder).toEqual(["beforeMount", "afterMount"]);
 
       app.flush();
       expect(callOrder).toEqual(["beforeMount", "afterMount"]);
@@ -79,8 +80,9 @@ describe("dom", () => {
         </div>
       `);
 
-      expect(parentCalls).toEqual(["beforeMount"]);
-      expect(childCalls).toEqual(["beforeMount"]);
+      // afterMount fires at mount() for both parent and child
+      expect(parentCalls).toEqual(["beforeMount", "afterMount"]);
+      expect(childCalls).toEqual(["beforeMount", "afterMount"]);
 
       app2.flush();
       expect(parentCalls).toEqual(["beforeMount", "afterMount"]);

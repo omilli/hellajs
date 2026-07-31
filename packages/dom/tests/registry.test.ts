@@ -164,7 +164,7 @@ describe("dom", () => {
       expect(childCalls).toHaveBeenCalledTimes(1);
     });
 
-    test("afterMount fires after flush", () => {
+    test("afterMount fires at mount; flush() is idempotent", () => {
       const afterMountCalls = mock(() => { });
 
       const app3 = mount(html`
@@ -173,24 +173,23 @@ describe("dom", () => {
         </div>
       `);
 
-      // afterMount not called yet (deferred)
-      expect(afterMountCalls).toHaveBeenCalledTimes(0);
+      // afterMount fires during mount() — flush() is an optional no-op escape hatch
+      expect(afterMountCalls).toHaveBeenCalledTimes(1);
 
       app3.flush();
       expect(afterMountCalls).toHaveBeenCalledTimes(1);
     });
 
-    test("disconnected nodes are skipped in mount queue", () => {
+    test("explicit flush() after mount does not re-fire afterMount (idempotent)", () => {
       const afterMountCalls = mock(() => { });
 
-      const app4 = mount(html`<div id="disconnect-test" hook:afterMount=${afterMountCalls}>Content</div>`);
+      const app4 = mount(html`<div id="idempotent-test" hook:afterMount=${afterMountCalls}>Content</div>`);
 
-      const el = document.getElementById("disconnect-test")!;
-      el.remove();
-
-      // Even after flush, disconnected nodes are skipped
+      // afterMount fired once during mount(); repeated flush() must not re-fire it
+      expect(afterMountCalls).toHaveBeenCalledTimes(1);
       app4.flush();
-      expect(afterMountCalls).toHaveBeenCalledTimes(0);
+      app4.flush();
+      expect(afterMountCalls).toHaveBeenCalledTimes(1);
     });
   });
 });

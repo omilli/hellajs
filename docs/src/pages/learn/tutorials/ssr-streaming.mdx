@@ -343,9 +343,8 @@ import { Dashboard } from './app';
 
 // No router init — this is a single streaming page. By the time hydrate runs, each region's
 // inline $hs swap script has already swapped its card in on arrival; hydrate just binds the
-// already-present nodes.
-const handle = hydrate(<Dashboard />, '#app');
-handle.flush(); // fire deferred afterMount hooks before first paint
+// already-present nodes. afterMount fires automatically during hydrate.
+hydrate(<Dashboard />, '#app');
 ```
 
 <div role="alert" class="alert alert-warning text-base">
@@ -496,6 +495,5 @@ export function render(): ReadableStream<string> {
 import { hydrate } from '@hellajs/dom';
 import { Dashboard } from './app';
 
-const handle = hydrate(<Dashboard />, '#app');
-handle.flush();
+hydrate(<Dashboard />, '#app');
 ```
