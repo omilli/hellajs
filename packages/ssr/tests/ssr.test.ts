@@ -18,9 +18,9 @@ describe("ssr", () => {
     expect(ssr(html`<p>${count}</p>` as HellaNode)).toBe("<p><!--[-->5<!--]--></p>");
   });
 
-  test("renders bind directive's initial signal value as an attribute", () => {
+  test("renders a function-ref prop's initial signal value as an attribute", () => {
     const value = signal("x");
-    expect(ssr(html`<input bind:value=${value} />` as HellaNode)).toBe('<input value="x">');
+    expect(ssr(html`<input value=${value} />` as HellaNode)).toBe('<input value="x">');
   });
 
   test("concatenates fragment children without fragment markers", () => {
@@ -33,7 +33,7 @@ describe("ssr", () => {
   });
 
   test("escapes attribute values", () => {
-    // Static attribute value (a signal would need bind: to resolve — mirrors renderProp).
+    // Static attribute value (a function-ref prop resolves via resolveValue — mirrors renderProp).
     expect(ssr(html`<div title=${'a"&<b'} />` as HellaNode)).toBe('<div title="a&quot;&amp;&lt;b"></div>');
   });
 

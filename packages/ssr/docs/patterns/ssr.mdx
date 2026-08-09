@@ -200,7 +200,7 @@ const stream = ssrStream(html`<${App} />`);
 
 ### Error handling
 
-`ssr`, [`ssrAsync`](/reference/ssr/ssr-async), and [`ssrStream`](/reference/ssr/ssr-stream) propagate render failures instead of swallowing them — a throwing child, `bind:` getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Handle the failure at the server handler: render a fallback page for the sync/async renderers, or catch at the stream consumer for `ssrStream`.
+`ssr`, [`ssrAsync`](/reference/ssr/ssr-async), and [`ssrStream`](/reference/ssr/ssr-stream) propagate render failures instead of swallowing them — a throwing child, function-ref prop getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Handle the failure at the server handler: render a fallback page for the sync/async renderers, or catch at the stream consumer for `ssrStream`.
 
 Sync/async — wrap the render; on throw, render a fallback page:
 

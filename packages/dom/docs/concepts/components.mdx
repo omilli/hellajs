@@ -46,7 +46,7 @@ mount(MyPage, "#app");
 
 ## Component Data Flow
 
-Pass signals as props to maintain reactivity across component boundaries. The child component reads the signal prop in a template expression; element children and `bind:` expressions auto-wrap, so the binding is reactive.
+Pass signals as props to maintain reactivity across component boundaries. The child component reads the signal prop in a template expression; element children auto-wrap, so the binding is reactive.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -56,7 +56,7 @@ const TodoCard = ({ todo }) => (
   <div class="todo-card">
     <h3>{todo().text}</h3>
     <p>Priority: {todo().priority}</p>
-    <span bind:class={`status ${todo().done ? "completed" : "pending"}`}>
+    <span class={() => `status ${todo().done ? "completed" : "pending"}`}>
       {todo().done ? "Completed" : "Pending"}
     </span>
   </div>
@@ -90,7 +90,7 @@ mount(TodoApp, "#app");
 
 ### Component props and children are not auto-wrapped
 
-Auto-wrapping applies to **element** children and **element** `bind:` expressions. Component props and component children are passed through as-is — a component may treat `props.children` or a prop as a plain value (not a function). So `<Comp>{expr}</Comp>` passes the eager-evaluated value; to keep a component child reactive, pass a signal reference (`<Comp>{mySignal}</Comp>`) or an explicit wrapper (`<Comp>{() => expr}</Comp>`).
+Auto-wrapping applies to **element** children. Component props and component children are passed through as-is — a component may treat `props.children` or a prop as a plain value (not a function). So `<Comp>{expr}</Comp>` passes the eager-evaluated value; to keep a component child reactive, pass a signal reference (`<Comp>{mySignal}</Comp>`) or an explicit wrapper (`<Comp>{() => expr}</Comp>`).
 
 ## Component Scope
 

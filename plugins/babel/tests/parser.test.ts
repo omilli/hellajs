@@ -373,13 +373,6 @@ describe("babel", () => {
       });
     });
 
-    test("bind: prefix for bindings", () => {
-      const result = parseAttributes('bind:value="signal"', []);
-      expect(result).toEqual({
-        "bind:value": "signal"
-      });
-    });
-
     test("hook: prefix for lifecycle", () => {
       const result = parseAttributes('hook:mount="callback"', []);
       expect(result).toEqual({
@@ -388,11 +381,10 @@ describe("babel", () => {
     });
 
     test("mixed prefixes", () => {
-      const result = parseAttributes('id="test" on:click="h" bind:value="s" hook:mount="c"', []);
+      const result = parseAttributes('id="test" on:click="h" hook:mount="c"', []);
       expect(result).toEqual({
         id: "test",
         "on:click": "h",
-        "bind:value": "s",
         "hook:mount": "c"
       });
     });

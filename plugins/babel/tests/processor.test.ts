@@ -21,13 +21,6 @@ describe("babel", () => {
       expect(output).toContain("input: onInput");
     });
 
-    test("bind: prefix for bindings", () => {
-      const output = transformJSX("<div bind:value={signal} bind:class={cls} />");
-      expect(output).toContain("bind: {");
-      expect(output).toContain("value: signal");
-      expect(output).toContain("class: cls");
-    });
-
     test("hook: prefix for lifecycle", () => {
       const output = transformJSX("<div hook:mount={onMount} hook:update={onUpdate} />");
       expect(output).toContain("hooks: {");
@@ -47,13 +40,11 @@ describe("babel", () => {
         <div
           id="test"
           on:click={handler}
-          bind:value={signal}
           hook:mount={onMount}
         />
       `);
       expect(output).toContain('id: "test"');
       expect(output).toContain("on: {");
-      expect(output).toContain("bind: {");
       expect(output).toContain("hooks: {");
     });
 
@@ -92,12 +83,6 @@ describe("babel", () => {
       expect(output).toContain("click: handler");
     });
 
-    test("component with bind: bindings", () => {
-      const output = transformJSX("<Input bind:value={signal} />");
-      // Components get bindings merged into props with the prefix removed
-      expect(output).toContain("value: signal");
-    });
-
     test("component with hook: lifecycle", () => {
       const output = transformJSX("<Component hook:mount={onMount} />");
       // Components get hooks merged into props with the prefix removed
@@ -109,12 +94,10 @@ describe("babel", () => {
         <Button
           id="test"
           on:click={handler}
-          bind:visible={show}
         />
       `);
       expect(output).toContain('id: "test"');
       expect(output).toContain("click: handler");
-      expect(output).toContain("visible: show");
     });
 
     test("component with error: config", () => {
@@ -244,12 +227,6 @@ describe("babel", () => {
       expect(output).toContain("click: handler");
     });
 
-    test("bind: in template", () => {
-      const output = transformJSX('const node = html`<div bind:value="${signal}"></div>`;');
-      expect(output).toContain("bind: {");
-      expect(output).toContain("value: signal");
-    });
-
     test("hook: in template", () => {
       const output = transformJSX('const node = html`<div hook:mount="${callback}"></div>`;');
       expect(output).toContain("hooks: {");
@@ -269,14 +246,12 @@ describe("babel", () => {
         <div
           id="test"
           on:click="\${handler}"
-          bind:value="\${signal}"
           hook:mount="\${callback}"
         ></div>
       \`;
     `);
       expect(output).toContain('id: "test"');
       expect(output).toContain("on: {");
-      expect(output).toContain("bind: {");
       expect(output).toContain("hooks: {");
     });
 

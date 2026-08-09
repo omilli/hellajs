@@ -26,8 +26,8 @@ const notFound = () => currentView(NotFound());
 
 const App = () => html`
   <nav>
-    <a href="/" bind:class=${() => route().active('/') ? 'active' : ''}>Home</a>
-    <a href="/users/1" bind:class=${() => route().active('/users/1') ? 'active' : ''}>User</a>
+    <a href="/" class=${() => route().active('/') ? 'active' : ''}>Home</a>
+    <a href="/users/1" class=${() => route().active('/users/1') ? 'active' : ''}>User</a>
   </nav>
   <main>${currentView}</main>
 `;

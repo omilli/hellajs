@@ -29,7 +29,7 @@ const body = await ssrAsync(html`<p>Hello ${() => user(1)}</p>`);
 
 ### Awaits Promises In Place
 
-Where [`ssr`](/reference/ssr/ssr) reads each getter once and cannot await, `ssrAsync` awaits any resolved value that is a `Promise` — a child, a `bind:` attribute, a [`ForEach`](/reference/dom/foreach) `each`, or a [`Transition`](/reference/dom/transition) `show`. Nested thenables unwrap fully. Use `ssrAsync` when a subtree needs server-fetched data; use `ssr` when every value is already resolved (zero Promise overhead).
+Where [`ssr`](/reference/ssr/ssr) reads each getter once and cannot await, `ssrAsync` awaits any resolved value that is a `Promise` — a child, a function-ref prop attribute, a [`ForEach`](/reference/dom/foreach) `each`, or a [`Transition`](/reference/dom/transition) `show`. Nested thenables unwrap fully. Use `ssrAsync` when a subtree needs server-fetched data; use `ssr` when every value is already resolved (zero Promise overhead).
 
 ### Identical Markers, Unchanged Hydration
 

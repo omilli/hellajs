@@ -24,8 +24,8 @@ describe("ssrAsync", () => {
       .toBe("<p><!--[-->&lt;b&gt;&amp;&quot;x<!--]--></p>");
   });
 
-  test("awaits a Promise-returning bind: value as an attribute", async () => {
-    expect(await ssrAsync(html`<input bind:value=${() => Promise.resolve("x")} />` as HellaNode)).toBe('<input value="x">');
+  test("awaits a Promise-returning function-ref prop value as an attribute", async () => {
+    expect(await ssrAsync(html`<input value=${() => Promise.resolve("x")} />` as HellaNode)).toBe('<input value="x">');
   });
 
   test("awaits a Promise-returning ForEach each and renders items in a marker region", async () => {

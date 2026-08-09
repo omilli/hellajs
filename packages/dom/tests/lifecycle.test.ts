@@ -24,7 +24,7 @@ describe("dom", () => {
           }}
           hook:beforeUpdate=${() => callOrder.push("beforeUpdate")}
           hook:afterUpdate=${() => callOrder.push("afterUpdate")}
-          bind:data-value=${value}
+          data-value=${value}
         ></div>
       `);
 

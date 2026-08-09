@@ -23,7 +23,7 @@ const Counter = () => {
 
   return (
     <div>
-      <h1 bind:class={countClass}>Count: {count}</h1>
+      <h1 class={countClass}>Count: {count}</h1>
       <button on:click={increment}>
         Increment
       </button>
@@ -44,7 +44,6 @@ mount(Counter, "#app");
 
 - **[on:](/reference/dom/on)**: Delegated event listeners
 - **[e:](/reference/dom/e)**: Direct event listeners
-- **[bind:](/reference/dom/bind)**: Reactive attribute bindings
 - **[hook:](/reference/dom/hook)**: Element lifecycle hooks
 - **[error:](/reference/dom/error)**: Element-level error configuration
 
@@ -69,7 +68,7 @@ mount(Counter, "#app");
 ### Concepts
 
 - **[Templates](/learn/concepts/templates)**: JSX and html template syntax for reactive UIs
-- **[Attribute Prefixes](/learn/concepts/attribute-prefixes)**: on:, bind:, hook:, e:, error: prefixes
+- **[Attribute Prefixes](/learn/concepts/attribute-prefixes)**: on:, hook:, e:, error: prefixes
 - **[Components](/learn/concepts/components)**: Component composition, data flow, and scope
 - **[Control Flow](/learn/concepts/control-flow)**: Conditional rendering, lists, portals, lazy loading
 - **[Lifecycle Hooks](/learn/concepts/lifecycle-hooks)**: Element-level lifecycle hooks via hook: prefix

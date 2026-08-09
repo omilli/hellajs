@@ -28,20 +28,20 @@ describe("dom", () => {
       expect(node.hooks).toEqual(hooks);
     });
 
-    test("combines props, bind, on, hooks", () => {
+    test("combines props, on, hooks", () => {
       const className = signal("active");
       const handleClick = () => { };
       const afterMount = () => { };
 
       const node = html`<div
         id="combo"
-        bind:class=${className}
+        class=${className}
         on:click=${handleClick}
         hook:afterMount=${afterMount}
       >Combined</div>` as HellaNode;
 
       expect(node.props!.id).toBe("combo");
-      expect(node.bind!.class).toBe(className);
+      expect(node.props!.class).toBe(className);
       expect(node.on!.click).toBe(handleClick);
       expect(node.hooks!.afterMount).toBe(afterMount);
     });
@@ -214,7 +214,7 @@ describe("dom", () => {
       const node = html`<${Comp}
         id="test-id"
         class="static-class"
-        bind:class=${className}
+        class=${className}
         on:click=${handler}
       />` as HellaNode;
 
@@ -222,7 +222,7 @@ describe("dom", () => {
       expect(node.props?.id).toBe("test-id");
     });
 
-    test("attribute prefix detection (on:, bind:, hook:, e:)", () => {
+    test("attribute prefix detection (on:, hook:, e:)", () => {
       const handler = () => { };
       const bindVal = signal("bound");
       const hookFn = () => { };
@@ -230,14 +230,14 @@ describe("dom", () => {
       const node = html`<div
         id="prefix-test"
         on:click=${handler}
-        bind:class=${bindVal}
+        class=${bindVal}
         hook:afterMount=${hookFn}
         e:focus=${handler}
       >Prefixes</div>` as HellaNode;
 
       expect(node.props?.id).toBe("prefix-test");
       expect(node.on?.click).toBe(handler);
-      expect(node.bind?.class).toBe(bindVal);
+      expect(node.props?.class).toBe(bindVal);
       expect(node.hooks?.afterMount).toBe(hookFn);
       expect(node.on?.focus).toBe(undefined);
     });

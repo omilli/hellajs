@@ -39,8 +39,8 @@ describe("ssrStream", () => {
       .toBe("<p><!--[-->5<!--]--></p>");
   });
 
-  test("awaits a Promise bind: value", async () => {
-    expect(await collect(ssrStream(html`<input bind:value=${() => Promise.resolve("x")} />` as HellaNode)))
+  test("awaits a Promise function-ref prop value", async () => {
+    expect(await collect(ssrStream(html`<input value=${() => Promise.resolve("x")} />` as HellaNode)))
       .toBe('<input value="x">');
   });
 

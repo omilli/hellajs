@@ -238,7 +238,7 @@ const TodoApp = () => {
       <div class="row">
         <input
           type="text"
-          bind:value={newTodoText}
+          value={newTodoText}
           on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
@@ -255,7 +255,7 @@ const TodoApp = () => {
               checked={todo.completed}
               on:change={() => toggleTodo(todo.id)}
             />
-            <span bind:class={['flex', todo.completed && 'done']}>
+            <span class={['flex', todo.completed && 'done']}>
               {todo.text}
             </span>
             <button on:click={() => removeTodo(todo.id)}>Delete</button>
@@ -281,10 +281,10 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
 
 **Code Explanation**
 
-- **`bind:value={newTodoText}`**:  Two-way binding for the input field
+- **`value={newTodoText}`**:  Two-way binding for the input field
 - **`on:keydown={e => e.key === 'Enter' && addTodo()}`**:  Submits on Enter key
 - **[`<ForEach>`](/reference/dom/ForEach) `each={todos} use={(todo) => ...}`**:  Renders the list with optimized diffing
-- **`bind:class={['flex', todo.completed && 'done']}`**:  Conditionally adds the `done` class when completed
+- **`class={['flex', todo.completed && 'done']}`**:  Conditionally adds the `done` class when completed
 - **`{todos().length === 0 && (...)}`**:  Conditional empty state
 
 <div role="alert" class="alert alert-error text-base">
@@ -488,7 +488,7 @@ Update the list item JSX inside `<ForEach>` to support edit mode:
     {editingId() === todo.id ? (
       <input
         type="text"
-        bind:value={editText}
+        value={editText}
         on:input={e => editText((e.target as HTMLInputElement).value)}
         on:keydown={handleEditKeydown}
         on:blur={saveEdit}
@@ -497,7 +497,7 @@ Update the list item JSX inside `<ForEach>` to support edit mode:
       />
     ) : (
       <span
-        bind:class={['flex', todo.completed && 'done']}
+        class={['flex', todo.completed && 'done']}
         on:dblclick={() => startEditing(todo.id, todo.text)}
         title="Double-click to edit"
       >
@@ -792,7 +792,7 @@ const TodoApp = () => {
       <div class="row">
         <input
           type="text"
-          bind:value={newTodoText}
+          value={newTodoText}
           on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
@@ -827,7 +827,7 @@ const TodoApp = () => {
             {editingId() === todo.id ? (
               <input
                 type="text"
-                bind:value={editText}
+                value={editText}
                 on:input={e => editText((e.target as HTMLInputElement).value)}
                 on:keydown={handleEditKeydown}
                 on:blur={saveEdit}
@@ -836,7 +836,7 @@ const TodoApp = () => {
               />
             ) : (
               <span
-                bind:class={['flex', todo.completed && 'done']}
+                class={['flex', todo.completed && 'done']}
                 on:dblclick={() => startEditing(todo.id, todo.text)}
                 title="Double-click to edit"
               >

@@ -73,10 +73,10 @@ html`<button on:click=${() => count(count() + 1)}>Click</button>`
 html`<input on:input=${(e) => value(e.target.value)} />`
 ```
 
-**`bind:` - Reactive bindings**
+**Reactive bindings**
 ```js
 const theme = signal("light");
-html`<div bind:class=${theme}>Content</div>`
+html`<div class=${theme}>Content</div>`
 // Updates automatically when theme() changes
 ```
 
@@ -118,7 +118,7 @@ const Button = (props) => html`
 html`<${Button} on:click=${handleClick}>Click Me</${Button}>`
 ```
 
-Props from `on:`, `bind:`, and `hook:` prefixes merge into the props object.
+Props from `on:` and `hook:` prefixes merge into the props object.
 
 ### Children as Props
 

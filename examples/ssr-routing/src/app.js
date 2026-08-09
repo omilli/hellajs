@@ -25,8 +25,8 @@ const activeClass = (path) => route().active(path) ? 'active' : '';
 
 export const App = () => html`
   <nav>
-    <a href="/" bind:class=${() => activeClass('/')}>Home</a>
-    <a href="/users/1" bind:class=${() => activeClass('/users/1')}>User</a>
+    <a href="/" class=${() => activeClass('/')}>Home</a>
+    <a href="/users/1" class=${() => activeClass('/users/1')}>User</a>
   </nav>
   <main>${currentView}</main>
 `;

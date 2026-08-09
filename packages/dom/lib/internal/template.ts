@@ -2,7 +2,6 @@ import type {
   HellaNode,
   HellaChild,
   ElementHooks,
-  HellaPrimitive,
   ErrorConfig,
   ComponentFn,
   RenderFn
@@ -40,13 +39,12 @@ export type HtmlInternalNode = HellaNode | HtmlPlaceholder | HtmlDynamicComponen
 export type HtmlParsedNode = HtmlDynamicComponent | (HellaNode & { children: HellaChild[] });
 
 /**
- * Parsed attributes categorized by type (props, hooks, bind, on, e, error).
+ * Parsed attributes categorized by type (props, hooks, on, e, error).
  * @internal
  */
 export interface HtmlParsedAttrs {
   props: Record<string, unknown>;
   hooks?: Partial<ElementHooks>;
-  bind?: Record<string, HellaPrimitive>;
   on?: Record<string, EventListener>;
   e?: Record<string, EventListener>;
   error?: ErrorConfig;
@@ -55,7 +53,7 @@ export interface HtmlParsedAttrs {
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
 const SKIP_REGEX = /<!--[\s\S]*?-->|<!DOCTYPE[^>]*>|<!\[CDATA\[[\s\S]*?\]\]>/gi;
-const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|bind:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)|([^\s>]+)))?/g;
+const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)|([^\s>]+)))?/g;
 
 /**
  * @internal
@@ -147,18 +145,6 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
       e[key] = cloneWithValues(hellaNode.e[key], values);
     }
     cloned.e = e as Record<string, EventListener>;
-  }
-
-  if (hellaNode.bind) {
-    const bind: Record<string, unknown> = {};
-    const keys = Object.keys(hellaNode.bind);
-    let i = 0;
-    const len = keys.length;
-    while (i < len) {
-      const key = keys[i++]!;
-      bind[key] = cloneWithValues(hellaNode.bind[key], values);
-    }
-    cloned.bind = bind as Record<string, HellaPrimitive>;
   }
 
   if (hellaNode.hooks) {
@@ -282,7 +268,7 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
       const node: HtmlParsedNode = isDynamicComponent
         ? {
           dynamicComponent: parseInt(tagName!.slice(7, -2)),
-          props: { ...attrs.props, ...attrs.on, ...attrs.e, ...attrs.bind, ...attrs.hooks },
+          props: { ...attrs.props, ...attrs.on, ...attrs.e, ...attrs.hooks },
           children: []
         }
         : {
@@ -291,7 +277,6 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
           children: [],
           ...(attrs.on && { on: attrs.on }),
           ...(attrs.e && { e: attrs.e }),
-          ...(attrs.bind && { bind: attrs.bind }),
           ...(attrs.hooks && { hooks: attrs.hooks }),
           ...(attrs.error && { error: attrs.error })
         } as HellaNode & { children: HellaChild[] };
@@ -341,7 +326,7 @@ function markIfStatic(node: unknown): boolean {
 
   const n = node as HellaNode;
 
-  const fields: Array<keyof HellaNode> = ["props", "on", "e", "bind", "hooks", "error"];
+  const fields: Array<keyof HellaNode> = ["props", "on", "e", "hooks", "error"];
   let fi = 0;
   const fLen = fields.length;
   while (fi < fLen) {
@@ -400,8 +385,8 @@ export function parseTextContent(text: string, placeholders: HtmlPlaceholder[]):
 
 /**
  * @internal
- * Parses attribute string and categorizes into props, hooks, bind, on, e, and error objects.
- * Recognizes prefixes: error:, on:, bind:, hook:, e:.
+ * Parses attribute string and categorizes into props, hooks, on, e, and error objects.
+ * Recognizes prefixes: error:, on:, hook:, e:.
  * @param attrsStr The attributes string from the HTML tag
  * @param placeholders Array of placeholder markers
  * @returns Object with categorized attributes
@@ -443,8 +428,6 @@ export function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[
       (errorConfig as Record<string, unknown>)[errorKey] = value;
     } else if (name.startsWith("hook:")) {
       (result.hooks ||= {})[name.slice(5) as keyof ElementHooks] = value as () => void;
-    } else if (name.startsWith("bind:")) {
-      (result.bind ||= {})[name.slice(5)] = value as HellaPrimitive;
     } else if (name.startsWith("e:")) {
       (result.e ||= {})[name.slice(2)] = value as EventListener;
     } else if (name.startsWith("on:")) {

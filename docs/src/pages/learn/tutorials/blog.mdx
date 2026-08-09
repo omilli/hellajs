@@ -468,7 +468,7 @@ css({
 
 ## Interactive Components
 
-These components handle user interaction through [`bind:`](/reference/dom/bind) directives, event handlers, and Signal props.
+These components handle user interaction through function-ref props, event handlers, and Signal props.
 
 ### SearchBar
 
@@ -497,7 +497,7 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
       <input
         type="text"
         placeholder={"Search..."}
-        bind:value={value}
+        value={value}
         on:input={e => value((e.target as HTMLInputElement).value)}
         on:keyup={handleKeyup}
       />
@@ -534,7 +534,7 @@ css({
 **Code Explanation**
 
 - **`Signal<string>`**: The component accepts a signal directly as a prop, enabling two-way binding without callbacks
-- **[`bind:value`](/reference/dom/bind)`={value}`**: Two-way binding between the input and the signal. The input value stays in sync with `searchValue`
+- **`value``={value}`**: Two-way binding between the input and the signal. The input value stays in sync with `searchValue`
 - **`on:input={e => value(...)}`**: Delegated input event. Updates the signal on every keystroke
 - **`on:keyup={handleKeyup}`**: Triggers search on Enter or when the input is cleared
 - **Nested selectors**: `"input": { ... }` inside `.search-bar` generates `.search-bar input { ... }`
@@ -627,7 +627,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
   <div class="pagination">
     <button
       on:click={() => onPageChange(Math.max(1, page() - 1))}
-      bind:disabled={page() <= 1}
+      disabled={() => page() <= 1}
     >
       Prev
     </button>
@@ -636,7 +636,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
     </span>
     <button
       on:click={() => onPageChange(Math.min(totalPages(), page() + 1))}
-      bind:disabled={page() >= totalPages()}
+      disabled={() => page() >= totalPages()}
     >
       Next
     </button>
@@ -665,7 +665,7 @@ css({
 **Code Explanation**
 
 - **`Signal<number>` and `() => number`**: The `page` prop is a signal (read+write), while `totalPages` is a computed function (read-only). Both are reactive
-- **[`bind:disabled`](/reference/dom/bind)`={() => page() <= 1}`**: Reactive disabled state. The button disables when on the first page
+- **`disabled``={() => page() <= 1}`**: Reactive disabled state. The button disables when on the first page
 - **`onPageChange`**: Callback that handles the actual page change logic. The parent page component decides how to update the URL
 - **`Math.max(1, page() - 1)`**: Clamps the page number so it never goes below 1
 
@@ -732,7 +732,7 @@ export const PostList = () => {
 - **`<SearchBar>` outside the reactive block**: Static elements placed outside `{() => {}}` never re-render. The search bar doesn't depend on fetched data, so it stays mounted across fetches
 - **`{() => { ... } }`**: Function expression makes the block reactive. When `data()` changes, the posts list re-renders
 - **`isFetching() ? ... : ... ? ... : ...`**: Single ternary returning directly handles three states: loading, has results, no results. No wrapping `<div>` needed
-- **`searchValue` as a Signal prop**: Passed directly to SearchBar, which uses it for [`bind:value`](/reference/dom/bind) two-way binding
+- **`searchValue` as a Signal prop**: Passed directly to SearchBar, which uses it for `value` two-way binding
 - **`<Pagination>` in its own reactive block**: Separated into its own reactive expression so pagination controls stay mounted while posts update independently
 
 ## Post Detail Page
@@ -1216,7 +1216,7 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
       <input
         type="text"
         placeholder={"Search..."}
-        bind:value={value}
+        value={value}
 
         on:input={e => value((e.target as HTMLInputElement).value)}
         on:keyup={handleKeyup}
@@ -1319,7 +1319,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
   <div class="pagination">
     <button
       on:click={() => onPageChange(Math.max(1, page() - 1))}
-      bind:disabled={page() <= 1}
+      disabled={() => page() <= 1}
     >
       Prev
     </button>
@@ -1328,7 +1328,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
     </span>
     <button
       on:click={() => onPageChange(Math.min(totalPages(), page() + 1))}
-      bind:disabled={page() >= totalPages()}
+      disabled={() => page() >= totalPages()}
     >
       Next
     </button>

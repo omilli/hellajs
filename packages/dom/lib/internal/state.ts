@@ -5,7 +5,7 @@ import type { ErrorConfig, HellaNode, HookType, HookHandler } from "../types/nod
  * Element state stored in a WeakMap, keyed by DOM node.
  * No properties are added to DOM elements themselves.
  * `directHandlers`, `effects`, and `hooks` are lazy-allocated on first use so
- * elements that never carry `e:` handlers / `bind:` effects / `hook:` hooks
+ * elements that never carry `e:` handlers / function-ref prop effects / `hook:` hooks
  * pay no Map/array/object allocation at mount.
  */
 export interface ElementState {

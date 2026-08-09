@@ -257,7 +257,7 @@ describe("dom", () => {
       const app = mount(html`
         <div id="b" error:fallback=${(e: Error) => html`<span>FB: ${e.message}</span>`}>
           <span id="c1">C1</span>
-          <span id="c2" bind:test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>C2</span>
+          <span id="c2" test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>C2</span>
           <span id="c3">C3</span>
         </div>
       `, container);

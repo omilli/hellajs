@@ -69,7 +69,7 @@ type PrefixedHooks = {
 };
 
 /**
- * Core HTML attributes without prefixes (used to generate bind: versions)
+ * Core HTML attributes without prefixes.
  */
 interface CoreHTMLAttributes {
   id?: HellaPrimitive;
@@ -132,26 +132,9 @@ interface CoreHTMLAttributes {
 }
 
 /**
- * Helper type to generate bind: prefixed versions of attributes
- * Filters out already-prefixed keys and index signatures
- */
-type WithBindPrefix<T> = {
-  [K in keyof T as K extends `on:${string}` | `bind:${string}` | `at:${string}` | `data-${string}`
-  ? never
-  : K extends string
-  ? `bind:${K}`
-  : never]?: T[K];
-};
-
-/**
- * Dynamic reactive bindings with bind: prefix for core attributes
- */
-type CorePrefixedBindings = WithBindPrefix<CoreHTMLAttributes>;
-
-/**
  * Global HTML attributes that apply to all elements.
  */
-export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventHandlers, DirectEventHandlers, PrefixedHooks, CorePrefixedBindings {
+export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventHandlers, DirectEventHandlers, PrefixedHooks {
   // HTML5 custom data attributes (data-*)
   [key: `data-${string}`]: HellaPrimitive;
   // Index signature to allow arbitrary string keys
@@ -159,10 +142,9 @@ export interface GlobalHTMLAttributes extends CoreHTMLAttributes, PrefixedEventH
 }
 
 /**
- * Helper that adds bind: prefixed versions to all attributes in T
- * WithBindPrefix already filters out prefixed keys, so no duplication
+ * Passthrough; retained so HTMLAttributeMap entries compile unchanged.
  */
-type WithElementPrefixes<T> = T & WithBindPrefix<T>;
+type WithElementPrefixes<T> = T;
 
 // Element-specific attributes
 interface AnchorHTMLAttributes extends GlobalHTMLAttributes {
@@ -574,7 +556,6 @@ interface UlHTMLAttributes extends GlobalHTMLAttributes { }
 
 /**
  * Map of HTML tag names to their specific attribute interfaces.
- * WithElementPrefixes automatically adds bind: versions of element-specific attributes
  */
 export interface HTMLAttributeMap {
   a: WithElementPrefixes<AnchorHTMLAttributes>;

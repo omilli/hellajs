@@ -2,8 +2,8 @@
 //
 // Wrap a call-containing expression in an arrow thunk so dom's effect machinery
 // tracks it (mirrors SolidJS's compiled reactivity). Applies to element children
-// and element `bind:` only — never to regular props or component children (which
-// may treat the value as a plain value, not a function).
+// only — never to component children (which may treat the value as a plain value,
+// not a function).
 
 /**
  * Wrap `expr` in `() => expr` iff it is "reactive-looking": its subtree contains

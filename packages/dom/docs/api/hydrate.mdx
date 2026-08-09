@@ -49,7 +49,7 @@ hydrate(<App />, "#app");
 
 ### Adopt, Don't Re-Render
 
-Unlike [`mount`](/reference/dom/mount), which calls `replaceChildren` and rebuilds the tree, `hydrate` walks the existing DOM and attaches reactivity to the nodes already there. Element identity is preserved — a button the server rendered is the same button the client binds `on:click` to. Static attributes are left untouched (the server already applied them); only `bind:` effects, `on:`/`e:` handlers, hooks, and reactive children are wired up.
+Unlike [`mount`](/reference/dom/mount), which calls `replaceChildren` and rebuilds the tree, `hydrate` walks the existing DOM and attaches reactivity to the nodes already there. Element identity is preserved — a button the server rendered is the same button the client binds `on:click` to. Static attributes are left untouched (the server already applied them); only function-ref prop effects, `on:`/`e:` handlers, hooks, and reactive children are wired up.
 
 ### Server HTML Must Match
 

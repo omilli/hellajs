@@ -53,7 +53,6 @@ export const navigation = {
       dom: [
         { label: "e:", slug: "e" },
         { label: "error:", slug: "error" },
-        { label: "bind:", slug: "bind" },
         { label: "hook:", slug: "hook" },
         { label: "on:", slug: "on" },
         "$collection",
