@@ -98,6 +98,8 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[]): AsyncG
       if (typeof resolved === "function" && (resolved as DynamicFn).isDynamic) {
         const meta = (resolved as DynamicFn).ssr;                      // reactive getter returning an isDynamic component
         if (meta) yield* renderDynamicGen(meta, pending);
+      } else if (Array.isArray(resolved)) {
+        yield* walkChildrenGen(resolved, pending);                     // reactive getter returning an array of children — walk each (parity with dom resolveNode)
       } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
         yield* ssrNodeGen(resolved as HellaNode, pending);
       } else {

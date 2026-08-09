@@ -30,7 +30,7 @@ One public export per file (`lib/index.ts` is a pure re-export barrel). The shar
 
 `ssr(node)` is the recursive node walker: `<tag attrs>body</tag>`; a root fragment (`tag: "$"`) concatenates its children; void elements (`input`, `img`, `br`, …) emit no closing tag. `walkChild` (the child dispatcher) distinguishes:
 - **Static template text/number** (a literal child) → emitted **raw**/escaped, UNWRAPPED (consumed by position).
-- **Reactive child** (a non-dynamic function/signal) → resolved + escaped (or recursed if it resolves to a HellaNode), **wrapped** in `<!--[-->…<!--]-->`.
+- **Reactive child** (a non-dynamic function/signal) → resolved, then escaped, recursed (if a HellaNode), or each child walked (if an array — parity with dom's `resolveNode`); **wrapped** in `<!--[-->…<!--]-->`.
 - **isDynamic component** (function with `isDynamic: true`, or a reactive child that resolves to one) → `renderDynamic` dispatches on `fn.ssr.kind`, **wrapped** in `<!--[-->…<!--]-->`.
 - **Nested fragment child** (`tag: "$"`) → children concatenated, **wrapped** in `<!--[-->…<!--]-->`.
 - **Element child** (`tag !== "$"`) → recursed via `ssr`, UNWRAPPED.

@@ -64,6 +64,8 @@ function walkChild(child: HellaChild): string {
       if (typeof resolved === "function" && (resolved as DynamicFn).isDynamic) {
         const meta = (resolved as DynamicFn).ssr;                      // reactive getter returning an isDynamic component — dispatch on its descriptor
         body = meta ? renderDynamic(meta) : "";
+      } else if (Array.isArray(resolved)) {
+        body = walkChildren(resolved);                                 // reactive getter returning an array of children — walk each (parity with dom resolveNode)
       } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
         body = ssr(resolved as HellaNode);
       } else {
