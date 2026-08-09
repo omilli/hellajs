@@ -119,7 +119,7 @@ effect(() => {
 
 ### Active Link Matching
 
-The `active` predicate tests whether a pattern matches the current route path using ancestor semantics. Pass an href-like path prefix; parent routes stay active when navigating to deeper children. Segment boundaries prevent false matches — `/admin` does not light up at `/administrators`.
+The `active` predicate tests whether a pattern matches the current route path using ancestor semantics. Pass an href-like path prefix; parent routes stay active when navigating to deeper children. Segment boundaries prevent false matches — `/admin` does not light up at `/administrators`. The root `/` is the one exception: it matches exactly, so a home link lights up only at `/` (under ancestor matching the zero-segment root would otherwise be a prefix of every path).
 
 ```typescript
 import { router, route, navigate } from '@hellajs/router';
@@ -141,6 +141,7 @@ route().active('/admin');          // true (ancestor)
 route().active('/admin/users');    // true (exact)
 route().active('/admin/settings'); // false
 route().active('/administrators'); // false (segment boundary)
+route().active('/');               // true only at '/' (root is exact, not ancestor)
 ```
 
 The predicate strips query strings before matching, so `route().active('/search')` returns true at `/search?q=hello`.
