@@ -123,7 +123,10 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
         let nestedSelector: string;
         if (key.startsWith("&")) {
           nestedSelector = key.replace(AMP_REGEX, selector);
-        } else if (!isGlobal) {
+        } else if (selector) {
+          // Compose against the parent selector when one exists (scoped `.{name}`
+          // or any key nested under a non-empty global selector). Top-level global
+          // keys have an empty selector and stay unwrapped (raw CSS selectors).
           nestedSelector = `${selector} ${key}`;
         } else {
           nestedSelector = key;

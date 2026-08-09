@@ -34,6 +34,21 @@ describe("platform-dependent return (no document)", () => {
     expect(result).toBe(".btn{color:red}.btn:hover{color:blue}");
   });
 
+  test("css() composes nested descendant selectors in global mode", () => {
+    const result = css({
+      nav: {
+        display: "flex",
+        a: {
+          color: "var(--color-primary)",
+          "&.active": { fontWeight: "700" },
+        },
+      },
+    });
+    expect(result).toBe(
+      "nav{display:flex}nav a{color:var(--color-primary)}nav a.active{font-weight:700}"
+    );
+  });
+
   test("css() does not inject into the DOM", () => {
     css({ color: "red" }, { name: "server-leak" });
     (globalThis as unknown as Record<string, unknown>).document = origDocument;

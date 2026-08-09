@@ -68,8 +68,8 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 | nested obj under conditional `@`-rule, global | empty selector |
 | nested obj under definitional `@`-rule | always empty selector (global) — even with `name` |
 | nested obj, key starts with `&` | `&` → parent selector (all occurrences) |
-| nested obj, scoped, plain key | descendant: `${selector} ${key}` |
-| nested obj, global, plain key | key unwrapped |
+| nested obj, plain key, non-empty `selector` | descendant: `${selector} ${key}` (scoped `.{name}` or any nested global key) |
+| nested obj, plain key, empty `selector` (top-level global) | key unwrapped |
 | array value | joined with `", "` |
 | camelCase key | kebab-case (`fontSize` → `font-size`) |
 | `--`-prefixed key | preserved verbatim |

@@ -142,6 +142,22 @@ describe("css", () => {
     expect(content).toContain('.parent span{display:inline}');
   });
 
+  test("global nesting composes descendant selectors", () => {
+    css({
+      nav: {
+        display: 'flex',
+        a: {
+          color: 'blue',
+          '&:hover': { color: 'red' },
+        },
+      },
+    });
+    const content = document.getElementById('hella-css')?.textContent;
+    expect(content).toContain('nav{display:flex}');
+    expect(content).toContain('nav a{color:blue}');
+    expect(content).toContain('nav a:hover{color:red}');
+  });
+
   test("removeCss with global styles", () => {
     const styles = { body: { margin: '0' } };
     css(styles);
