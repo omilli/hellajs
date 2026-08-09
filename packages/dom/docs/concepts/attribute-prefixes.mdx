@@ -43,7 +43,7 @@ See [`e:`](/reference/dom/e) for full details.
 
 ### `bind:` - Reactive Attribute Bindings
 
-Reactive attribute bindings that update the DOM when signals change.
+Reactive attribute bindings that update the DOM when signals change. The compiler auto-wraps `bind:` expressions that read signals, so no manual `() => …` wrapper is required (it is still accepted).
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -52,7 +52,7 @@ import { signal } from "@hellajs/core";
 const isActive = signal(false);
 
 const App = () => (
-  <div bind:class={() => isActive() ? "active" : "inactive"}>
+  <div bind:class={isActive() ? "active" : "inactive"}>
     <button on:click={() => isActive(!isActive())}>Toggle</button>
   </div>
 );

@@ -12,7 +12,7 @@ import { signal, effect } from '@hellajs/core';
 const count = signal(0);
 const isVisible = signal(true);
 
-effect(() => console.log(`Count: ${count()}`));
+effect(() => console.log(`Count: ${count}`));
 effect(() => console.log(`Visible: ${isVisible()}`));
 
 count(1);       // Logs: "Count: 1"

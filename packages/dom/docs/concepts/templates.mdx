@@ -48,36 +48,40 @@ mount(App, "#app");
 
 ## Element Syntax
 
-Function references create reactive bindings between signals and DOM elements. Calling a signal directly produces a one-time static value.
+Pass a signal **reference** for a reactive value — `{count}` works identically in JSX and `html\`\`` (runtime or compiled). For a **compound** expression (`{count() * 2}`, `{items().map(…)}`) the call is required, and compiled code auto-wraps it; runtime `html\`\`` needs an explicit `() => …` wrapper. For a one-time static read, hoist the value out of the template or wrap the read in [`untracked`](/reference/core/untracked).
+
+> **Runtime `html\`\``** (no compiler) requires explicit `() => …` wrappers for reactive **compound** expressions — simple signal references (`${count}`) work as-is. See [`html`](/reference/dom/html).
 
 ### Reactive Bindings
 
-Passing a signal reference or a function creates a live binding that updates the DOM when the signal changes.
+A signal **reference** is the simplest reactive binding. A **compound** expression (arithmetic, conditional, method call) calls the signal and auto-wraps in compiled code. Both update the DOM when their dependencies change.
 
 ```jsx
 // Signal reference: updates when count changes
 <h1>{count}</h1>
 
-// Computed function: re-runs when dependencies change
-<h2>{() => count() * 2}</h2>
+// Arithmetic: re-runs when count changes (auto-wrapped — no manual wrapper)
+<h2>{count() * 2}</h2>
 
 // Reactive conditional: re-evaluates when count changes
-{() => count() > 5 && <p>Great job!</p>}
+{count() > 5 && <p>Great job!</p>}
 ```
+
+An explicit `() => …` wrapper is still accepted and behaves identically — required for compound expressions in runtime `html\`\``.
 
 ### Static Values
 
-Calling the signal with parentheses reads the value once with no reactivity.
+To read a signal once with no reactivity, hoist the read out of the template or wrap it in [`untracked`](/reference/core/untracked).
 
 ```jsx
-// One-time value (no reactivity)
-<h1>{count()}</h1>
+import { untracked } from "@hellajs/core";
 
-// Computed once
-<h2>{count() * 2}</h2>
+// Hoist: read once into a plain value
+const total = count();
+<h1>{total}</h1>
 
-// One-time conditional render
-{count() > 5 && <p>Great job!</p>}
+// untracked: read once inside the template, no dependency tracked
+<h1>{untracked(() => count())}</h1>
 ```
 
 ### Value Normalization

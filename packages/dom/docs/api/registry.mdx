@@ -29,7 +29,7 @@ import { registry } from "@hellajs/dom";
 const element = document.createElement("div");
 
 registry.addEffect(element, () => {
-  element.textContent = `Count: ${count()}`;
+  element.textContent = `Count: ${count}`;
 });
 ```
 
@@ -144,7 +144,7 @@ function renderReactiveElement(tag, props) {
 const count = signal(0);
 
 const button = renderReactiveElement("button", {
-  text: () => `Count: ${count()}`,
+  text: () => `Count: ${count}`,
   onMount: () => console.log("Button ready")
 });
 

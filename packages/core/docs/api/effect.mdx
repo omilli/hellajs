@@ -23,7 +23,7 @@ const count = signal(0);
 
 // This effect runs immediately, then whenever `count` changes.
 const cleanup = effect(() => {
-  console.log(`The count is: ${count()}`);
+  console.log(`The count is: ${count}`);
 });
 
 count(1); // Logs: "The count is: 1"

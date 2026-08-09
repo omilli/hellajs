@@ -41,6 +41,21 @@ console.log(result()); // 60 (NOT recomputed because `multiplier` is untracked)
 
 ## Important Considerations
 
+### In templates
+
+In compiled dom templates (JSX and the build-time `html\`\`` step), expressions that read signals are reactive by default. Use `untracked` to read a signal **once** without subscribing — a one-time snapshot in a template.
+
+```jsx
+import { signal, untracked } from '@hellajs/core';
+
+const now = signal(Date.now());
+
+// Renders the mount-time timestamp and never updates
+<div>{untracked(() => now())}</div>
+```
+
+See the dom [Templates](/learn/concepts/templates) concept for the full static-vs-reactive model.
+
 ### Multiple Signals
 
 Reading multiple signals inside a single `untracked` call prevents tracking for all of them.

@@ -38,7 +38,7 @@ export const PostList = () => {
           <Placeholder message={`No posts found "${searchValue()}".`} />;
     }}
 
-    {() => totalPages() > 1 &&
+    {totalPages() > 1 &&
       <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
     }
   </>;

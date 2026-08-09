@@ -43,7 +43,7 @@ const ThemeSwitcher = () => (
     <div class="app">
       <h1>Theme Switcher</h1>
       <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
-        {() => isDark() ? '☀️ Light' : '🌙 Dark'}
+        {isDark() ? '☀️ Light' : '🌙 Dark'}
       </button>
       <p>Toggle the button to switch themes. The background, text, and border colors all update reactively.</p>
     </div>

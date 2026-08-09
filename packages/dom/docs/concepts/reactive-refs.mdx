@@ -23,7 +23,7 @@ $ref(".button").on("click", () => count(count() + 1));
 
 // Method chaining
 $ref(".node")
-  .bind(() => `Count: ${count()}`)
+  .bind(() => `Count: ${count}`)
   .bind({ "data-active": () => count() > 5 })
   .on("click", () => console.log("clicked"));
 ```

@@ -11,7 +11,7 @@ const isOpen = signal(false);
 const App = () => (
   <div>
     <button on:click={() => isOpen(!isOpen())}>Toggle Modal</button>
-    {() => isOpen() && (
+    {isOpen() && (
       <Portal to="#modal-root">
         <div class="modal">Modal content</div>
       </Portal>

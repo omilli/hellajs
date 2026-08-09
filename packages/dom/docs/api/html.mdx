@@ -149,11 +149,17 @@ html`<div>A</div><div>B</div>`
 
 ### Conditional Rendering
 
-Use functions for conditional content.
+Conditional content reads a signal, so under the compiler it is reactive without a wrapper. The runtime `html\`\`` API (no compiler) needs an explicit `() => …` wrapper for reactivity.
 
 ```js
 const show = signal(true);
 
+// Compiled (babel): bare expression is reactive
+html`<div>
+  ${show() ? html`<span>Visible</span>` : html`<span>Hidden</span>`}
+</div>`
+
+// Runtime (no compiler): explicit wrapper required for reactivity
 html`<div>
   ${() => show() ? html`<span>Visible</span>` : html`<span>Hidden</span>`}
 </div>`

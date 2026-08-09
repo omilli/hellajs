@@ -1,6 +1,7 @@
 import { processComponentAttributes, setComponentNodeToBabel } from "../processors/attributes.mjs";
 import { buildHellaNode } from "./vnode.mjs";
 import { buildComponentCall } from "./component.mjs";
+import { maybeReactive } from "../utils/reactive.mjs";
 
 /**
  * Convert intermediate component AST node to Babel AST.
@@ -74,10 +75,17 @@ export function componentNodeToBabel(t, node, expressions) {
   } else {
     const { props, on, e, bind, hooks, error } = processComponentAttributes(t, node.props || {}, expressions);
 
-    // Process children recursively
+    // Process children recursively. Element children (not component children) are
+    // auto-wrapped: a bare slot expression that is reactive-looking (contains a
+    // call) becomes an arrow thunk so dom tracks it. String/element/component
+    // children pass through unchanged (no call, or already a synthesized node).
     const processedChildren = [];
     for (const child of node.children || []) {
-      processedChildren.push(componentNodeToBabel(t, child, expressions));
+      if (child && typeof child === "object" && child.__slot !== undefined) {
+        processedChildren.push(maybeReactive(t, expressions[child.__slot]));
+      } else {
+        processedChildren.push(componentNodeToBabel(t, child, expressions));
+      }
     }
 
     return buildHellaNode(

@@ -8,7 +8,7 @@ interface ReactionsProps {
 
 export const Reactions = ({ likes, views }: ReactionsProps) => (
   <div class="reactions">
-    {() => likes ?? 0} likes{views != null && <> · {views} views</>}
+    {likes ?? 0} likes{views != null && <> · {views} views</>}
   </div>
 );
 

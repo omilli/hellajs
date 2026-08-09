@@ -248,7 +248,7 @@ import { PostList } from "./pages/PostList.tsx";
 const title = signal("");
 const view = signal(<Placeholder message="Loading..." />);
 
-effect(() => document.title = `Blog - ${title()}`);
+effect(() => document.title = `Blog - ${title}`);
 
 router({
   scrollBehavior: 'top',
@@ -447,7 +447,7 @@ interface ReactionsProps {
 
 export const Reactions = ({ likes, views }: ReactionsProps) => (
   <div class="reactions">
-    {() => likes ?? 0} likes{views != null && <> · {views} views</>}
+    {likes ?? 0} likes{views != null && <> · {views} views</>}
   </div>
 );
 
@@ -463,7 +463,7 @@ css({
 **Code Explanation**
 
 - **`views?: number`**: Optional prop. When omitted, only likes are displayed
-- **`{() => likes ?? 0}`**: Function expression creates a reactive binding. Updates if `likes` changes
+- **`{likes ?? 0}`**: Function expression creates a reactive binding. Updates if `likes` changes
 - **`views != null`**: Checks both `undefined` and `null`, so `0` views still displays
 
 ## Interactive Components
@@ -627,7 +627,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
   <div class="pagination">
     <button
       on:click={() => onPageChange(Math.max(1, page() - 1))}
-      bind:disabled={() => page() <= 1}
+      bind:disabled={page() <= 1}
     >
       Prev
     </button>
@@ -636,7 +636,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
     </span>
     <button
       on:click={() => onPageChange(Math.min(totalPages(), page() + 1))}
-      bind:disabled={() => page() >= totalPages()}
+      bind:disabled={page() >= totalPages()}
     >
       Next
     </button>
@@ -717,7 +717,7 @@ export const PostList = () => {
           <Placeholder message={`No posts found "${searchValue()}".`} />
     }}
 
-    {() => totalPages() > 1 &&
+    {totalPages() > 1 &&
       <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
     }
   </>
@@ -760,7 +760,7 @@ export const PostDetail = () => {
       const post = data();
 
       return <div class="post-detail">
-        {() => isFetching() ?
+        {isFetching() ?
           <Placeholder message="Loading post..." /> :
           post?.body ?
             <PostCard post={post!} /> :
@@ -1045,7 +1045,7 @@ import { PostList } from "./pages/PostList.tsx";
 const title = signal("");
 const view = signal(<Placeholder message="Loading..." />);
 
-effect(() => document.title = `Blog - ${title()}`);
+effect(() => document.title = `Blog - ${title}`);
 
 router({
   scrollBehavior: 'top',
@@ -1181,7 +1181,7 @@ interface ReactionsProps {
 
 export const Reactions = ({ likes, views }: ReactionsProps) => (
   <div class="reactions">
-    {() => likes ?? 0} likes{views != null && <> · {views} views</>}
+    {likes ?? 0} likes{views != null && <> · {views} views</>}
   </div>
 );
 
@@ -1319,7 +1319,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
   <div class="pagination">
     <button
       on:click={() => onPageChange(Math.max(1, page() - 1))}
-      bind:disabled={() => page() <= 1}
+      bind:disabled={page() <= 1}
     >
       Prev
     </button>
@@ -1328,7 +1328,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
     </span>
     <button
       on:click={() => onPageChange(Math.min(totalPages(), page() + 1))}
-      bind:disabled={() => page() >= totalPages()}
+      bind:disabled={page() >= totalPages()}
     >
       Next
     </button>
@@ -1397,7 +1397,7 @@ export const PostList = () => {
           <Placeholder message={`No posts found "${searchValue()}".`} />
     }}
 
-    {() => totalPages() > 1 &&
+    {totalPages() > 1 &&
       <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
     }
   </>
@@ -1424,7 +1424,7 @@ export const PostDetail = () => {
       const post = data();
 
       return <div class="post-detail">
-        {() => isFetching() ?
+        {isFetching() ?
           <Placeholder message="Loading post..." /> :
           post?.body ?
             <PostCard post={post!} /> :
