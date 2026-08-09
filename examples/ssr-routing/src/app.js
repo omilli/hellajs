@@ -19,13 +19,14 @@ export const routes = {
   '/users/:id': (params) => currentView(User({ id: params.id })),
 };
 
-export const notFound = () => currentView(NotFound());
+export const notFound = () => currentView(NotFound()); 
 
-// route() is read inside App so the nav links re-evaluate after each navigate.
+const activeClass = (path) => route().active(path) ? 'active' : '';
+
 export const App = () => html`
   <nav>
-    <a href="/" class=${route().active('/') ? 'active' : ''}>Home</a>
-    <a href="/users/1" class=${route().active('/users/1') ? 'active' : ''}>User</a>
+    <a href="/" bind:class=${() => activeClass('/')}>Home</a>
+    <a href="/users/1" bind:class=${() => activeClass('/users/1')}>User</a>
   </nav>
   <main>${currentView}</main>
 `;

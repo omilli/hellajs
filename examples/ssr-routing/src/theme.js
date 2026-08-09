@@ -22,14 +22,14 @@ export const stylesheet = css({
     gap: 'var(--space-nav)',
     padding: 'var(--space-nav)',
     borderBottom: '1px solid #e5e7eb',
-  },
-  'nav a': {
-    color: 'var(--color-primary)',
-    textDecoration: 'none',
-  },
-  'nav a.active': {
-    fontWeight: '700',
-    textDecoration: 'underline',
+    a: {
+      color: 'var(--color-primary)',
+      textDecoration: 'none',
+      '&.active': {
+        fontWeight: '700',
+        textDecoration: 'underline',
+      }
+    },
   },
   main: {
     padding: 'var(--space-nav)',
