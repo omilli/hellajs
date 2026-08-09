@@ -280,11 +280,6 @@ describe("babel", () => {
       expect(normalize(output)).toBe('({ tag: "button", on: { click: () => console.log("clicked") }, children: ["Click"] });');
     });
 
-    test("bind with signal", () => {
-      const output = transformJSX("<input bind:value={count} />");
-      expect(normalize(output)).toBe('({ tag: "input", bind: { value: count } });');
-    });
-
     test("hook lifecycle", () => {
       const output = transformJSX("<div hook:mount={() => mounted = true} />");
       expect(normalize(output)).toBe('({ tag: "div", hooks: { mount: () => mounted = true } });');
@@ -369,21 +364,6 @@ describe("babel", () => {
       expect(normalize(output)).toBe('({ tag: "div", children: [() => fn()] });');
     });
 
-    test("bind: with a call is wrapped", () => {
-      const output = transformJSX("<input bind:value={count()} />");
-      expect(normalize(output)).toBe('({ tag: "input", bind: { value: () => count() } });');
-    });
-
-    test("bind: with a signal ref (identifier) is not wrapped", () => {
-      const output = transformJSX("<input bind:value={count} />");
-      expect(normalize(output)).toBe('({ tag: "input", bind: { value: count } });');
-    });
-
-    test("bind: explicit arrow is emitted verbatim (double-wrap guard)", () => {
-      const output = transformJSX("<input bind:value={() => count()} />");
-      expect(normalize(output)).toBe('({ tag: "input", bind: { value: () => count() } });');
-    });
-
     test("regular prop with a call is NOT wrapped (stays static)", () => {
       const output = transformJSX("<input id={foo()} />");
       expect(normalize(output)).toBe('({ tag: "input", props: { id: foo() } });');
@@ -402,11 +382,6 @@ describe("babel", () => {
     test("html element child bare identifier is not wrapped", () => {
       const output = transformJSX("const node = html`<div>${x}</div>`;");
       expect(normalize(output)).toBe('const node = { tag: "div", children: [x] };');
-    });
-
-    test("html bind: with a call is wrapped", () => {
-      const output = transformJSX("const node = html`<input bind:value=${count()} />`;");
-      expect(normalize(output)).toBe('const node = { tag: "input", bind: { value: () => count() } };');
     });
 
     test("html mixed-content attribute is NOT wrapped (binary + chain)", () => {

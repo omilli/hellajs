@@ -84,8 +84,8 @@ const activeClass = (path) => route().active(path) ? 'active' : '';
 
 export const App = () => html`
   <nav>
-    <a href="/" bind:class=${() => activeClass('/')}>Home</a>
-    <a href="/users/1" bind:class=${() => activeClass('/users/1')}>User</a>
+    <a href="/" class=${() => activeClass('/')}>Home</a>
+    <a href="/users/1" class=${() => activeClass('/users/1')}>User</a>
   </nav>
   <main>${currentView}</main>
 `;
@@ -95,7 +95,7 @@ export const App = () => html`
 
 - **`currentView` signal**: Holds the node for the currently-rendered view. Route handlers set it; the shell reads it
 - **Pure-setter handlers** `() => currentView(View())`: They only update the signal. The matched handler fires once during `router()` on both sides, so a pure setter is idempotent and side-effect-free
-- **Reactive active class**: [`bind:class`](/reference/dom/bind) wraps the getter in a reactive effect, so [`route`](/reference/router/route)`().active(href)` re-runs on every navigation. Use `bind:class`, not plain `class` — a plain attribute is set once at mount and never updates
+- **Reactive active class**: `class` wraps the getter in a reactive effect, so [`route`](/reference/router/route)`().active(href)` re-runs on every navigation. Use `class`, not plain `class` — a plain attribute is set once at mount and never updates
 
 <div role="alert" class="alert alert-error text-base">
   <Icon name="ph:warning" width={24} height={24} />
@@ -281,8 +281,8 @@ const activeClass = (path) => route().active(path) ? 'active' : '';
 
 export const App = () => html`
   <nav>
-    <a href="/" bind:class=${() => activeClass('/')}>Home</a>
-    <a href="/users/1" bind:class=${() => activeClass('/users/1')}>User</a>
+    <a href="/" class=${() => activeClass('/')}>Home</a>
+    <a href="/users/1" class=${() => activeClass('/users/1')}>User</a>
   </nav>
   <main>${currentView}</main>
 `;

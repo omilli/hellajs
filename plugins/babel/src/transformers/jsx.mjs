@@ -23,7 +23,7 @@ export function createJSXTransformers(t) {
         t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
       ) || t.isJSXMemberExpression(opening.name);
 
-      const { props, on, bind, hooks, e, error } = processAttributes(t, opening.attributes, isComponent);
+      const { props, on, hooks, e, error } = processAttributes(t, opening.attributes, isComponent);
       const children = filterEmptyChildren(t, path.node.children, isComponent);
 
       if (isComponent) {
@@ -37,19 +37,18 @@ export function createJSXTransformers(t) {
         const allProps = [...props];
         if (on.length > 0) allProps.push(...on);
         if (e.length > 0) allProps.push(...e);
-        if (bind.length > 0) allProps.push(...bind);
         if (hooks.length > 0) allProps.push(...hooks);
         if (error.length > 0) allProps.push(...error);
         path.replaceWith(buildComponentCall(t, tagCallee, allProps, children));
       } else {
-        path.replaceWith(buildHellaNode(t, tagCallee.name, props, on, e, bind, hooks, children, error));
+        path.replaceWith(buildHellaNode(t, tagCallee.name, props, on, e, hooks, children, error));
       }
     },
 
     JSXFragment(path) {
       const children = filterEmptyChildren(t, path.node.children, false);
       // Fragment: pass empty error array
-      path.replaceWith(buildHellaNode(t, FRAGMENT_TAG, [], [], [], [], [], children, []));
+      path.replaceWith(buildHellaNode(t, FRAGMENT_TAG, [], [], [], [], children, []));
     }
   };
 }

@@ -76,8 +76,6 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   on?: Record<string, EventListener>;
   /** Direct (non-delegated) event handlers mapped by event name. */
   e?: Record<string, EventListener>;
-  /** Dynamic reactive bindings mapped by property name. */
-  bind?: Record<string, HellaPrimitive>;
   /** Hooks for the element. */
   hooks?: ElementHooks;
   /** The children of the node. */

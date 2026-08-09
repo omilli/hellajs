@@ -6,11 +6,11 @@ HellaJS supports two styling approaches: traditional CSS classes with reactive b
 
 ## Traditional CSS Classes
 
-Apply CSS classes using the `class` attribute. Static classes work with external stylesheets, while [`bind:class`](/reference/dom/bind) enables reactive class names that respond to state changes.
+Apply CSS classes using the `class` attribute. Static classes work with external stylesheets, while `class` enables reactive class names that respond to state changes.
 
 ### Reactive Classes
 
-Arrow functions in `bind:class` recalculate when signals change.
+Arrow functions in `class` recalculate when signals change.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -20,11 +20,11 @@ const Counter = () => {
 
   return (
     <div class="counter-container">
-      <h1 bind:class={() => `counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
+      <h1 class={() => `counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
         {count}
       </h1>
       <button
-        bind:class={() => `btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
+        class={() => `btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
         on:click={() => count(count() + 1)}
       >
         {count() > 5 ? 'Great job!' : 'Increment'}
@@ -41,7 +41,7 @@ Arrays provide a cleaner syntax for conditional classes. Falsy values are filter
 ```jsx
 const TodoItem = ({ todo }) => {
   return (
-    <div bind:class={() => [
+    <div class={() => [
       'todo-item',
       todo().done && 'completed',
       todo().priority === 'high' && 'priority-high',

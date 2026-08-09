@@ -49,7 +49,7 @@ const Counter = () => {
         <button
           on:click={() => count(count() - 1)}
           class="btn-dec"
-          bind:disabled={count() === 0}
+          disabled={() => count() === 0}
         >
           -
         </button>
@@ -64,7 +64,7 @@ const Counter = () => {
         <button
           on:click={() => count(0)}
           class="btn-reset"
-          bind:disabled={count() === 0}
+          disabled={() => count() === 0}
         >
           Reset
         </button>

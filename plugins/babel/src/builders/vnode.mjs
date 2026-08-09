@@ -8,13 +8,12 @@
  * @param {import("@babel/core").ObjectProperty[]} props
  * @param {import("@babel/core").ObjectProperty[]} on
  * @param {import("@babel/core").ObjectProperty[]} e
- * @param {import("@babel/core").ObjectProperty[]} bind
  * @param {import("@babel/core").ObjectProperty[]} hooks
  * @param {import("@babel/core").Expression[]} children
  * @param {import("@babel/core").ObjectProperty[]} error
  * @returns {import("@babel/core").ObjectExpression}
  */
-export function buildHellaNode(t, tag, props, on, e, bind, hooks, children, error) {
+export function buildHellaNode(t, tag, props, on, e, hooks, children, error) {
   const vNodeProperties = [
     t.objectProperty(t.identifier("tag"), t.stringLiteral(tag))
   ];
@@ -34,12 +33,6 @@ export function buildHellaNode(t, tag, props, on, e, bind, hooks, children, erro
   if (e && e.length > 0) {
     vNodeProperties.push(
       t.objectProperty(t.identifier("e"), t.objectExpression(e))
-    );
-  }
-
-  if (bind && bind.length > 0) {
-    vNodeProperties.push(
-      t.objectProperty(t.identifier("bind"), t.objectExpression(bind))
     );
   }
 

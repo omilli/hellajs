@@ -212,7 +212,7 @@ HellaJS's global-first approach with DOM-tree-walking boundary lookup is unique 
 | Portals | `Portal` (5 insert modes: `lib/Portal.ts`) | `Portal` | `svelte:portal` | `createPortal` | `<Teleport>` |
 | Transitions | `Transition` (enter/leave/appear/rescue) | via transitions | `transition:` directive | CSS / framer-motion | `<Transition>` |
 | Custom elements | First-class `element()` | web wrapper | custom-element adapter | `customElements.define` | `defineCustomElement` |
-| Refs to existing DOM | `$ref` / `$collection` w/ auto-watch | `ref` | `bind:this` | ref callback | template ref |
+| Refs to existing DOM | `$ref` / `$collection` w/ auto-watch | `ref` | `this` | ref callback | template ref |
 | Lifecycle hooks | `hook:` prefix (5 hooks) | `onMount`/`onCleanup` | lifecycle module | `useEffect` | options hooks |
 | Scoped styling | via `@hellajs/css` package | css\`\` | `<style scoped>` | CSS Modules / styled | `<style scoped>` |
 
@@ -233,7 +233,7 @@ HellaJS attribute prefixes are distinctive and explicit:
 <div
   on:click={handler}      // delegated event (capture-phase)
   e:click={handler}       // direct listener
-  bind:class={fn}         // reactive attribute binding
+  class={fn}         // reactive attribute binding
   hook:afterMount={fn}    // lifecycle
   error:fallback={<Fail/>}// error config
 >
@@ -242,7 +242,7 @@ HellaJS attribute prefixes are distinctive and explicit:
 </div>
 ```
 
-The `on:`/`bind:`/`hook:`/`error:` prefix convention (`template.ts`) is closer to Svelte's `on:`/`bind:` directives than React's `onClick`/Vue's `@click`. The explicit `bind:` for reactive attributes vs. plain attributes for static ones is a clarity win over Solid/React where all attributes behave the same way.
+The `on:`/`hook:`/`error:` prefix convention (`template.ts`) is closer to Svelte's `on:` directives than React's `onClick`/Vue's `@click`. Reactive attributes are function-ref props (a signal or `() => …` wrapper) vs. plain values for static ones — a clarity win over Solid/React where all attributes behave the same way.
 
 The dual JSX + html\`\` story is a genuine differentiator: the **same HellaNode AST** is produced by both, so authors can choose JSX (build-compiled, type-checked) or html\`\` (runtime, dependency-free) per file. Solid has `solid-html` but it's secondary; Svelte has no equivalent (SFC only); React/Vue/Angular have no tagged-template option.
 

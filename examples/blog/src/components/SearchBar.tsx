@@ -17,7 +17,7 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
       <input
         type="text"
         placeholder={"Search..."}
-        bind:value={value}
+        value={value}
 
         on:input={e => value((e.target as HTMLInputElement).value)}
         on:keyup={handleKeyup}

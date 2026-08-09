@@ -101,7 +101,7 @@ interface ErrorConfig {
 | `null` | Logs error, no UI change |
 | `void` | Logs error, no UI change |
 
-**Note**: Fallback UI is only rendered for errors from reactive children, `bind:` callbacks, and event handlers. Render phase and `beforeMount` hook errors are logged but do not render fallback UI.
+**Note**: Fallback UI is only rendered for errors from reactive children, function-ref prop callbacks, and event handlers. Render phase and `beforeMount` hook errors are logged but do not render fallback UI.
 
 ### Error Phases
 
@@ -147,7 +147,7 @@ String category passed to the global handler for filtering/logging:
 The error handler catches errors from:
 
 - **Reactive children** - Functions that throw during render (fallback UI rendered)
-- **Reactive bindings** - `bind:` callback errors (fallback UI rendered)
+- **Reactive bindings** - function-ref prop callback errors (fallback UI rendered)
 - **Event handlers** - `on:` and `e:` handler errors (fallback UI rendered)
 - **beforeMount hook** - `hook:beforeMount` errors (error logged, no fallback UI)
 
@@ -157,7 +157,7 @@ The error handler catches errors from:
   ${() => { throw new Error("Render error"); }}
 
   {/* Bind callback error - fallback rendered */}
-  <div bind:class={() => mightThrow()} />
+  <div class={() => mightThrow()} />
 
   {/* Event handler error - fallback rendered */}
   <button on:click=${() => { throw new Error("Click error"); }}>Click</button>

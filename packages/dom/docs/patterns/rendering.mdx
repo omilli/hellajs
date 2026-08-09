@@ -4,7 +4,7 @@ Short patterns for common DOM rendering tasks using [`@hellajs/dom`](/reference/
 
 ### Reactive Class Names
 
-Use `bind:class` with a ternary for state-driven styling.
+Use a function-ref `class` (a `() => …` wrapper) with a ternary for state-driven styling.
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -12,7 +12,7 @@ import { mount } from "@hellajs/dom";
 
 const isActive = signal(false);
 
-const template = <div bind:class={isActive() ? "btn-active" : "btn-inactive"}>Toggle</div>;
+const template = <div class={() => (isActive() ? "btn-active" : "btn-inactive")}>Toggle</div>;
 
 mount(template, "#app");
 ```
@@ -33,14 +33,14 @@ const taskClasses = () => [
   status() === "error" && "task-error"
 ].filter(Boolean).join(" ");
 
-const template = <div bind:class={taskClasses}>Task</div>;
+const template = <div class={taskClasses}>Task</div>;
 
 mount(template, "#app");
 ```
 
 ### Two-Way Input Binding
 
-Combine `bind:value` with `on:input` for controlled inputs.
+Combine `value` with `on:input` for controlled inputs.
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -50,7 +50,7 @@ const name = signal("");
 const onNameInput = (e) => name(e.target.value);
 
 const template = <div>
-  <input bind:value={name} on:input={onNameInput} placeholder="Enter name" />
+  <input value={name} on:input={onNameInput} placeholder="Enter name" />
   <p>Hello, {name}</p>
 </div>;
 

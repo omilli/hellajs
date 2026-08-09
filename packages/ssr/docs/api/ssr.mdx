@@ -110,7 +110,7 @@ Calling [`mount`](/reference/dom/mount) over the server-rendered container repla
 
 ### Errors Propagate
 
-`ssr` has no try/catch — a throwing child, `bind:` getter, or `use` callback surfaces to the caller. Wrap the render in your own error handling if a value may throw. A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
+`ssr` has no try/catch — a throwing child, function-ref prop getter, or `use` callback surfaces to the caller. Wrap the render in your own error handling if a value may throw. A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
 
 ### Throws on invalid input
 

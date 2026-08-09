@@ -41,7 +41,7 @@ describe("dom", () => {
       const count = signal(0);
       const className = signal("initial");
 
-      mount(html`<div id="reactive" bind:class=${className}>${count}</div>`);
+      mount(html`<div id="reactive" class=${className}>${count}</div>`);
       const el = document.getElementById("reactive")!;
 
       expect(el.textContent).toBe("0");
@@ -127,7 +127,7 @@ describe("dom", () => {
           id="prop-test"
           type="submit"
           data-custom="value"
-          bind:disabled=${() => isDisabled() ? "disabled" : false}
+          disabled=${() => isDisabled() ? "disabled" : false}
         >
           Submit
         </button>

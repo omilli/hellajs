@@ -50,7 +50,7 @@ mount(App, "#app");
 
 The error context includes `phase`, `element`, `event`, `config`, and `reset`. When an element has error config, `reset()` re-renders the original content.
 
-**What gets caught:** Reactive children, `bind:` callbacks, on:/e: handlers, and beforeMount hook errors. Note: `beforeUpdate` and `afterUpdate` hook errors are caught and dispatched through the error system, but no fallback UI is rendered for them.
+**What gets caught:** Reactive children, function-ref prop callbacks, on:/e: handlers, and beforeMount hook errors. Note: `beforeUpdate` and `afterUpdate` hook errors are caught and dispatched through the error system, but no fallback UI is rendered for them.
 
 **Error phases:** The `phase` in the context object indicates where the error occurred: `'render'` (component render, no element context), `'mount'` (initial mount or reactive child mount), `'update'` (reactive binding update), or event handler phases.
 

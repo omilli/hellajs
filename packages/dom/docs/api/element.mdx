@@ -112,8 +112,7 @@ element("toggle-switch", (props) => {
   
   return {
     tag: "button",
-    props: { class: "toggle" },
-    bind: { "aria-pressed": () => String(isOn()) },
+    props: { class: "toggle", "aria-pressed": () => String(isOn()) },
     on: { click: () => isOn(!isOn()) },
     children: [() => isOn() ? "ON" : "OFF"]
   };
@@ -161,7 +160,7 @@ element("todo-list", (props) => {
       <div class="input-group">
         <input 
           type="text" 
-          bind:value=${input}
+          value=${input}
           on:keydown=${(e) => e.key === "Enter" && addItem()}
         />
         <button on:click=${addItem}>Add</button>
@@ -264,7 +263,7 @@ element("my-slider", (props) => {
   const max = () => Number(props.max?.() ?? 100);
   const value = signal(Number(props.value?.() ?? 50));
   
-  return html`<input type="range" min=${min} max=${max} bind:value=${value} />`;
+  return html`<input type="range" min=${min} max=${max} value=${value} />`;
 });
 ```
 

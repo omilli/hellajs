@@ -63,7 +63,7 @@ When rules conflict, resolve in this order:
 ## Template Selection
 
 1. **Function Doc** — Export has a function/object signature (`signal`, `mount`, `css`, `router`, `store`, `ForEach`, `$ref`)
-2. **Prefix Doc** — Prefix-based feature with no function signature (`on:`, `bind:`, `e:`, `hook:`, `error:`)
+2. **Prefix Doc** — Prefix-based feature with no function signature (`on:`, `e:`, `hook:`, `error:`)
 3. **Concept Doc** — Explanatory content (`templates`, `error-handling`, `lifecycle-hooks`)
 4. **Pattern Doc** — Copy-paste snippets (`reactivity`, `routing`, `styling`)
 5. **Tutorial Doc** — Progressive-build walkthrough (`counter`, `todo`, `blog`)
@@ -479,7 +479,7 @@ import { signal, computed } from '@hellajs/core';
 - Use package imports (`@scope/package-name`), never relative paths.
 - Only show imports needed for the example — not every dependency.
 - First example in a doc must show the import for the export being documented. Subsequent examples in the same doc may omit if they're the same.
-- Prefix docs (`on:`, `bind:`, etc.) must also show imports in their first example.
+- Prefix docs (`on:`, `e:`, etc.) must also show imports in their first example.
 
 ### Good/Bad Patterns
 

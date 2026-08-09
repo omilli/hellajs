@@ -137,7 +137,7 @@ async function* walkChildrenGen(children?: HellaChild[], pending?: PendingSwap[]
  * @internal
  * Serializes a HellaNode AST into HTML chunks — async generator; the single async walker shared by
  * `ssrAsync` (collect-wrapper) and `ssrStream` (ReadableStream wrapper). Each resolved value (child,
- * `bind:`, `each`, `show`) is awaited when it is a Promise. Marker wrapping is byte-identical to `ssr`.
+ * `each`, `show`) is awaited when it is a Promise. Marker wrapping is byte-identical to `ssr`.
  */
 export async function* ssrNodeGen(node: HellaNode, pending?: PendingSwap[]): AsyncGenerator<string> {
   const tag = node.tag;
@@ -149,17 +149,7 @@ export async function* ssrNodeGen(node: HellaNode, pending?: PendingSwap[]): Asy
     const len = keys.length;
     while (i < len) {
       const key = keys[i]!;
-      open += serializeProp(key, (node.props as Record<string, unknown>)[key]);
-      i++;
-    }
-  }
-  if (node.bind) {                                                    // bind: resolved + awaited
-    const keys = Object.keys(node.bind);
-    let i = 0;
-    const len = keys.length;
-    while (i < len) {
-      const key = keys[i]!;
-      open += serializeProp(key, await resolveAsync((node.bind as Record<string, unknown>)[key]));
+      open += serializeProp(key, await resolveAsync((node.props as Record<string, unknown>)[key]));
       i++;
     }
   }

@@ -99,7 +99,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
     if (cached) return cached.cloneNode(true) as HellaElement | DocumentFragment;
   }
 
-  const { tag, props, on, e, bind, hooks, children, componentScope, error } = node;
+  const { tag, props, on, e, hooks, children, componentScope, error } = node;
 
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
@@ -140,7 +140,24 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
     }
   }
 
-  objectLoop(props, (key, value) => renderProp(element, key, value));
+  objectLoop(props, (key, value) => {
+    if (!isFunction(value)) {
+      renderProp(element, key, value);
+      return;
+    }
+    registry.addEffect(element, () => {
+      try {
+        renderProp(element, key, value());
+      } catch (err) {
+        const config = getBoundaryConfig(currentBoundary);
+        const fallback = dispatchError(toError(err), { phase: "update", element, config });
+        if (fallback) {
+          const target = currentBoundary ?? element;
+          target.replaceChildren(mountNode(fallback));
+        }
+      }
+    });
+  });
 
   objectLoop(on, (eventName, handler) =>
     setNodeHandler(element, eventName, handler as EventListener)
@@ -151,21 +168,6 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
       setDirectHandler(element, eventName, handler as EventListener)
     );
   }
-
-  objectLoop(bind, (key, value) =>
-    registry.addEffect(element, () => {
-      try {
-        renderProp(element, key, resolveValue(value));
-      } catch (err) {
-        const config = getBoundaryConfig(currentBoundary);
-        const fallback = dispatchError(toError(err), { phase: "update", element, config });
-        if (fallback) {
-          const target = currentBoundary ?? element;
-          target.replaceChildren(mountNode(fallback));
-        }
-      }
-    })
-  );
 
   appendToParent(element, children, currentBoundary);
 

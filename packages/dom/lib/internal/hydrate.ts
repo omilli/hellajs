@@ -228,7 +228,7 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
     return existing as Node;
   }
 
-  const { tag, on, e, bind, hooks, children, componentScope, error } = node;
+  const { tag, props, on, e, hooks, children, componentScope, error } = node;
 
   if (!existing || existing.nodeType !== Node.ELEMENT_NODE) {
     console.warn("[dom] hydrate mismatch: expected element node");
@@ -269,7 +269,22 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
     }
   }
 
-  // SKIP props — server already applied them via ssr()
+  // Static props already applied by ssr(); wire only function-ref props as effects
+  objectLoop(props, (key, value) => {
+    if (!isFunction(value)) return;
+    registry.addEffect(element, () => {
+      try {
+        renderProp(element, key, value());
+      } catch (err) {
+        const config = getBoundaryConfig(currentBoundary);
+        const fallback = dispatchError(toError(err), { phase: "update", element, config });
+        if (fallback) {
+          const target = currentBoundary ?? element;
+          target.replaceChildren(mountNode(fallback));
+        }
+      }
+    });
+  });
 
   objectLoop(on, (eventName, handler) =>
     setNodeHandler(element, eventName, handler as EventListener)
@@ -280,21 +295,6 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
       setDirectHandler(element, eventName, handler as EventListener)
     );
   }
-
-  objectLoop(bind, (key, value) =>
-    registry.addEffect(element, () => {
-      try {
-        renderProp(element, key, resolveValue(value));
-      } catch (err) {
-        const config = getBoundaryConfig(currentBoundary);
-        const fallback = dispatchError(toError(err), { phase: "update", element, config });
-        if (fallback) {
-          const target = currentBoundary ?? element;
-          target.replaceChildren(mountNode(fallback));
-        }
-      }
-    })
-  );
 
   hydrateSequence(element, children, element.firstChild, currentBoundary);
   return element;

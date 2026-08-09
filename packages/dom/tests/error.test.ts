@@ -295,7 +295,7 @@ describe("dom", () => {
       const container = setupContainer();
       const app = mount(html`
         <div id="parent">
-          <span id="child" bind:test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>Content</span>
+          <span id="child" test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>Content</span>
         </div>
       `, container);
 

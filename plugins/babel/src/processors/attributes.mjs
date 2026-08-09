@@ -1,5 +1,4 @@
 import { processAttributeValue } from "./values.mjs";
-import { maybeReactive } from "../utils/reactive.mjs";
 
 // Forward declaration - will be injected by builder/ast.mjs to avoid circular dependency
 let componentNodeToBabel = null;
@@ -14,12 +13,12 @@ export function setComponentNodeToBabel(fn) {
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").JSXAttribute[]} attributes
  * @param {boolean} isComponent
- * @returns {{ props: import("@babel/core").ObjectProperty[], on: import("@babel/core").ObjectProperty[], bind: import("@babel/core").ObjectProperty[], hooks: import("@babel/core").ObjectProperty[], e: import("@babel/core").ObjectProperty[], error: import("@babel/core").ObjectProperty[] }}
+ * @returns {{ props: import("@babel/core").ObjectProperty[], on: import("@babel/core").ObjectProperty[], hooks: import("@babel/core").ObjectProperty[], e: import("@babel/core").ObjectProperty[], error: import("@babel/core").ObjectProperty[] }}
  */
 export function processAttributes(t, attributes, isComponent) {
-  if (!attributes.length) return { props: [], on: [], bind: [], hooks: [], e: [], error: [] };
+  if (!attributes.length) return { props: [], on: [], hooks: [], e: [], error: [] };
 
-  const props = [], on = [], bind = [], hooks = [], e = [], error = [];
+  const props = [], on = [], hooks = [], e = [], error = [];
 
   attributes.forEach(attr => {
     if (t.isJSXAttribute(attr)) {
@@ -45,10 +44,6 @@ export function processAttributes(t, attributes, isComponent) {
         const errorKey = key.slice(6);
         error.push(t.objectProperty(t.identifier(errorKey), value));
       }
-      else if (key.startsWith("bind:")) {
-        const propName = key.slice(5);
-        bind.push(t.objectProperty(t.identifier(propName), maybeReactive(t, value)));
-      }
       else if (key.startsWith("hook:")) {
         const hookName = key.slice(5);
         hooks.push(t.objectProperty(t.identifier(hookName), value));
@@ -67,7 +62,7 @@ export function processAttributes(t, attributes, isComponent) {
           key = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
         }
 
-        const needsQuoting = typeof key === "string" && /[-]/.test(key);
+        const needsQuoting = typeof key === "string" && /[-:]/.test(key);
         props.push(t.objectProperty(
           needsQuoting || (typeof key === "string" && /^data-|^aria-/.test(key))
             ? t.stringLiteral(key)
@@ -80,7 +75,7 @@ export function processAttributes(t, attributes, isComponent) {
     }
   });
 
-  return { props, on, bind, hooks, e, error };
+  return { props, on, hooks, e, error };
 }
 
 
@@ -91,17 +86,16 @@ export function processAttributes(t, attributes, isComponent) {
  * @param {any[]} expressions
  */
 export function processComponentAttributes(t, props, expressions) {
-  const propsArray = [], onArray = [], bindArray = [], hooksArray = [], eArray = [], errorArray = [];
+  const propsArray = [], onArray = [], hooksArray = [], eArray = [], errorArray = [];
 
   for (const key in props) {
     const value = props[key];
-    const isBind = key.startsWith("bind:");
     let processedValue;
 
     if (value === true) {
       processedValue = t.booleanLiteral(true);
     } else if (value.__slot !== undefined) {
-      processedValue = isBind ? maybeReactive(t, expressions[value.__slot]) : expressions[value.__slot];
+      processedValue = expressions[value.__slot];
     } else if (Array.isArray(value)) {
       processedValue = componentNodeToBabel(t, value, expressions);
     } else {
@@ -125,10 +119,7 @@ export function processComponentAttributes(t, props, expressions) {
       const eventName = key.slice(3);
       onArray.push(t.objectProperty(t.identifier(eventName), processedValue));
     }
-    else if (key.startsWith("bind:")) {
-      const propName = key.slice(5);
-      bindArray.push(t.objectProperty(t.identifier(propName), processedValue));
-    } else {
+    else {
       // Handle kebab-case for data/aria
       let propKey = key;
       if (/^(data|aria)[A-Z]/.test(key)) {
@@ -145,5 +136,5 @@ export function processComponentAttributes(t, props, expressions) {
     }
   }
 
-  return { props: propsArray, on: onArray, bind: bindArray, hooks: hooksArray, e: eArray, error: errorArray };
+  return { props: propsArray, on: onArray, hooks: hooksArray, e: eArray, error: errorArray };
 }

@@ -12,7 +12,7 @@ beforeEach(() => {
 describe("dom hydrate <Suspense>", () => {
   test("swaps staged children in, removes the template, and hydrates them reactively", async () => {
     const count = signal(0);
-    const App = () => html`<div id="root"><${Suspense} fallback=${html`<span id="fb">loading</span>`}>${html`<b id="b" bind:data-n=${count}>x</b>`}</${Suspense}></div>`;
+    const App = () => html`<div id="root"><${Suspense} fallback=${html`<span id="fb">loading</span>`}>${html`<b id="b" data-n=${count}>x</b>`}</${Suspense}></div>`;
     const container = await streamContainer(html`<${App} />` as HellaNode);
     expect(container.querySelector("#fb")).not.toBeNull();   // fallback present pre-hydrate
 

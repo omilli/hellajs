@@ -10,9 +10,9 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("hydrate", () => {
-    test("attaches a bind: effect to an existing server element without replacing it", () => {
+    test("attaches a function-ref prop effect to an existing server element without replacing it", () => {
       const className = signal("initial");
-      const App = () => html`<div id="root" bind:class=${className}>Hi</div>`;
+      const App = () => html`<div id="root" class=${className}>Hi</div>`;
       const container = ssrContainer(html`<${App} />`);
       const elBefore = container.querySelector("#root")!;
 
@@ -46,9 +46,9 @@ describe("dom", () => {
       expect(handler).toHaveBeenCalledTimes(1);
     });
 
-    test("skips re-applying static props but updates bind: reactively", () => {
+    test("skips re-applying static props but updates a function-ref prop reactively", () => {
       const disabled = signal(false);
-      const App = () => html`<input id="inp" type="text" data-static="kept" bind:disabled=${() => disabled() ? "disabled" : false} />`;
+      const App = () => html`<input id="inp" type="text" data-static="kept" disabled=${() => disabled() ? "disabled" : false} />`;
       const container = ssrContainer(html`<${App} />`);
 
       hydrate(html`<${App} />`, container);
@@ -59,6 +59,43 @@ describe("dom", () => {
       disabled(true);
       flush();
       expect(inp.hasAttribute("disabled")).toBe(true);
+    });
+
+    test("wires a function-ref prop as an effect and skips static props", () => {
+      const className = signal("initial");
+      const App = () => html`<div id="root" class=${className} data-static="kept">Hi</div>`;
+      const container = ssrContainer(html`<${App} />`);
+      const elBefore = container.querySelector("#root")!;
+
+      hydrate(html`<${App} />`, container);
+      const elAfter = container.querySelector("#root")!;
+      expect(elAfter).toBe(elBefore);
+      expect(elAfter.className).toBe("initial");
+      expect(elAfter.getAttribute("data-static")).toBe("kept");
+
+      className("updated");
+      flush();
+      expect(elAfter.className).toBe("updated");
+    });
+
+    test("a function-ref prop that throws during hydrate dispatches to error:fallback", () => {
+      fallbackHandler();
+      const shouldThrow = signal(false);
+      const App = () => html`
+        <div id="boundary" error:fallback=${() => html`<span>Caught</span>`}>
+          <span id="rt" data-x=${() => {
+            if (shouldThrow()) throw new Error("hydrate-prop");
+            return "ok";
+          }}>x</span>
+        </div>
+      `;
+      const container = ssrContainer(html`<${App} />`);
+      hydrate(html`<${App} />`, container);
+      expect(container.querySelector("#rt")!.getAttribute("data-x")).toBe("ok");
+
+      shouldThrow(true);
+      flush();
+      expect(container.textContent).toBe("Caught");
     });
 
     test("adopts nested static structure preserving node identity", () => {
@@ -192,7 +229,7 @@ describe("dom", () => {
 
     test("warns and re-mounts when a server element is missing", () => {
       const cls = signal("c");
-      const App = () => html`<div id="root"><span id="s" bind:class=${cls}>x</span></div>`;
+      const App = () => html`<div id="root"><span id="s" class=${cls}>x</span></div>`;
       const container = setupContainer();
       container.innerHTML = `<div id="root"></div>`;
 
@@ -205,7 +242,7 @@ describe("dom", () => {
     test("routes a bind error through the boundary fallback on hydrate", () => {
       const captured = suppressConsole();
       const unregister = fallbackHandler();
-      const App = () => html`<div id="root" error:fallback=${() => html`<span id="fb">fallback</span>`}><span id="inner" bind:class=${() => { throw new Error("boom"); }}>x</span></div>`;
+      const App = () => html`<div id="root" error:fallback=${() => html`<span id="fb">fallback</span>`}><span id="inner" class=${() => { throw new Error("boom"); }}>x</span></div>`;
       const container = setupContainer();
       container.innerHTML = `<div id="root"><span id="inner">x</span></div>`;
 

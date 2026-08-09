@@ -141,7 +141,7 @@ describe("dom", () => {
       const value = signal("a");
       const container = setupContainer();
       const app1 = mount(html`
-        <div id="test" hook:beforeUpdate=${() => { throw new Error("bu"); }} bind:data-value=${value}></div>
+        <div id="test" hook:beforeUpdate=${() => { throw new Error("bu"); }} data-value=${value}></div>
       `, container);
 
       app1.flush();
@@ -161,7 +161,7 @@ describe("dom", () => {
       const value = signal("a");
       const container = setupContainer();
       const app2 = mount(html`
-        <div id="test" hook:afterUpdate=${() => { throw new Error("au"); }} bind:data-value=${value}></div>
+        <div id="test" hook:afterUpdate=${() => { throw new Error("au"); }} data-value=${value}></div>
       `, container);
 
       app2.flush();
@@ -180,7 +180,7 @@ describe("dom", () => {
       const value = signal("a");
       const container = setupContainer();
       const app3 = mount(html`
-        <div id="test" hook:beforeUpdate=${() => { throw new Error("hook"); }} bind:data-value=${value}></div>
+        <div id="test" hook:beforeUpdate=${() => { throw new Error("hook"); }} data-value=${value}></div>
       `, container);
 
       app3.flush();
@@ -200,7 +200,7 @@ describe("dom", () => {
       const value = signal("a");
       const container = setupContainer();
       const app4 = mount(html`
-        <div id="test" hook:afterUpdate=${() => { throw new Error("hook"); }} bind:data-value=${value}></div>
+        <div id="test" hook:afterUpdate=${() => { throw new Error("hook"); }} data-value=${value}></div>
       `, container);
 
       app4.flush();

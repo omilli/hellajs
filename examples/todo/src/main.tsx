@@ -153,7 +153,7 @@ const TodoApp = () => {
       <div class="row">
         <input
           type="text"
-          bind:value={newTodoText}
+          value={newTodoText}
           on:input={e => newTodoText((e.target as HTMLInputElement).value)}
           on:keydown={e => e.key === 'Enter' && addTodo()}
           placeholder="What needs to be done?"
@@ -188,7 +188,7 @@ const TodoApp = () => {
             {editingId() === todo.id ? (
               <input
                 type="text"
-                bind:value={editText}
+                value={editText}
                 on:input={e => editText((e.target as HTMLInputElement).value)}
                 on:keydown={handleEditKeydown}
                 on:blur={saveEdit}
@@ -197,7 +197,7 @@ const TodoApp = () => {
               />
             ) : (
               <span
-                bind:class={['flex', todo.completed && 'done']}
+                class={['flex', todo.completed && 'done']}
                 on:dblclick={() => startEditing(todo.id, todo.text)}
                 title="Double-click to edit"
               >

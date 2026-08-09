@@ -286,7 +286,7 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 
 - **Functions**: soft limit under 80 lines. If a function exceeds 80 lines, look for natural split points without violating the No Single Use Functions rule
 - **Files**: soft limit under 300 lines. If a file exceeds 300 lines, split internal helpers into sub-modules without violating the No Single Use Functions rule. Judge per-file, not as a blanket allowance
-- `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions — element attribute maps, event maps, mapped types, computed type derivations (e.g., `bind:*` variants derived from core attributes via mapped types) — where splitting across files would harm discoverability, usability, or type inference quality. Hand-expansion of mapped types is prohibited
+- `.d.ts` type declaration files are exempt from the 300-line limit when they contain cohesive type definitions — element attribute maps, event maps, mapped types, computed type derivations (e.g., prefix-variant types derived from core attributes via mapped types) — where splitting across files would harm discoverability, usability, or type inference quality. Hand-expansion of mapped types is prohibited
 - Files dominated by cohesive per-feature registries or state maps may slightly exceed 300 lines when splitting would force artificial seams across tightly coupled state; judge per-file, not as a blanket allowance
 - Soft limits — exceed them when the alternative (splitting) would harm clarity
 

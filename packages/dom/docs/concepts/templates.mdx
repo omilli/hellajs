@@ -102,7 +102,7 @@ Array values for attributes are joined with spaces, filtering falsy values. Usef
 ```jsx
 const isActive = signal(true);
 
-<div class={["base", isActive() && "active", "always"]}>
+<div class={() => ["base", isActive() && "active", "always"]}>
   {/* Renders: class="base active always" */}
 </div>
 ```

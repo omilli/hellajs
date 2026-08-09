@@ -118,17 +118,7 @@ export function ssr(node: HellaNode): string {
     const len = keys.length;
     while (i < len) {
       const key = keys[i]!;
-      open += serializeProp(key, (node.props as Record<string, unknown>)[key]);
-      i++;
-    }
-  }
-  if (node.bind) {                                                   // bind: initial value, resolved once
-    const keys = Object.keys(node.bind);
-    let i = 0;
-    const len = keys.length;
-    while (i < len) {
-      const key = keys[i]!;
-      open += serializeProp(key, resolveValue((node.bind as Record<string, unknown>)[key]));
+      open += serializeProp(key, resolveValue((node.props as Record<string, unknown>)[key]));
       i++;
     }
   }
