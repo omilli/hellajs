@@ -255,7 +255,7 @@ const TodoApp = () => {
               checked={todo.completed}
               on:change={() => toggleTodo(todo.id)}
             />
-            <span bind:class={() => ['flex', todo.completed && 'done']}>
+            <span bind:class={['flex', todo.completed && 'done']}>
               {todo.text}
             </span>
             <button on:click={() => removeTodo(todo.id)}>Delete</button>
@@ -263,7 +263,7 @@ const TodoApp = () => {
         )} />
       </ul>
 
-      {() => todos().length === 0 && (
+      {todos().length === 0 && (
         <div>No todos yet! Add one above.</div>
       )}
     </div>
@@ -284,8 +284,8 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
 - **`bind:value={newTodoText}`**:  Two-way binding for the input field
 - **`on:keydown={e => e.key === 'Enter' && addTodo()}`**:  Submits on Enter key
 - **[`<ForEach>`](/reference/dom/ForEach) `each={todos} use={(todo) => ...}`**:  Renders the list with optimized diffing
-- **`bind:class={() => ['flex', todo.completed && 'done']}`**:  Conditionally adds the `done` class when completed
-- **`{() => todos().length === 0 && (...)}`**:  Conditional empty state
+- **`bind:class={['flex', todo.completed && 'done']}`**:  Conditionally adds the `done` class when completed
+- **`{todos().length === 0 && (...)}`**:  Conditional empty state
 
 <div role="alert" class="alert alert-error text-base">
   <Icon name="ph:warning" width={24} height={24} />
@@ -368,13 +368,13 @@ Add filter buttons between the input and the list:
 {/* add the filter buttons: */}
 <div class="row">
   <button on:click={() => filter('all')}>
-    All ({() => stats().total})
+    All ({stats().total})
   </button>
   <button on:click={() => filter('active')}>
-    Active ({() => stats().active})
+    Active ({stats().active})
   </button>
   <button on:click={() => filter('completed')}>
-    Done ({() => stats().completed})
+    Done ({stats().completed})
   </button>
 </div>
 
@@ -394,11 +394,11 @@ Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the emp
   )} />
 </ul>
 
-{() => filteredTodos().length === 0 && (
+{filteredTodos().length === 0 && (
   <div>
-    {() => filter() === 'all' && "No todos yet! Add one above."}
-    {() => filter() === 'active' && "No active todos. Great job!"}
-    {() => filter() === 'completed' && "No completed todos yet."}
+    {filter() === 'all' && "No todos yet! Add one above."}
+    {filter() === 'active' && "No active todos. Great job!"}
+    {filter() === 'completed' && "No completed todos yet."}
   </div>
 )}
 ```
@@ -408,7 +408,7 @@ Update `<ForEach>` to use `filteredTodos` instead of `todos`, and update the emp
 - **`computed(() => { ... })`**:  Creates filtered view that updates when `todos` or `filter` changes
 - **`stats` computed**:  Calculates live statistics (total, active, completed counts)
 - **Multiple dependencies**:  Computed values automatically track both `todos()` and `filter()` signals
-- **Dynamic counts**:  `{() => stats().total}` shows live counts in button text
+- **Dynamic counts**:  `{stats().total}` shows live counts in button text
 - **Contextual empty states**:  Different messages based on current filter state
 
 [Computed](/reference/core/computed) values are automatically cached and only recalculate when their dependencies actually change.
@@ -485,7 +485,7 @@ Update the list item JSX inside `<ForEach>` to support edit mode:
       checked={todo.completed}
       on:change={() => toggleTodo(todo.id)}
     />
-    {() => editingId() === todo.id ? (
+    {editingId() === todo.id ? (
       <input
         type="text"
         bind:value={editText}
@@ -497,14 +497,14 @@ Update the list item JSX inside `<ForEach>` to support edit mode:
       />
     ) : (
       <span
-        bind:class={() => ['flex', todo.completed && 'done']}
+        bind:class={['flex', todo.completed && 'done']}
         on:dblclick={() => startEditing(todo.id, todo.text)}
         title="Double-click to edit"
       >
         {todo.text}
       </span>
     )}
-    {() => editingId() === todo.id ? (
+    {editingId() === todo.id ? (
       <>
         <button on:click={saveEdit}>✓</button>
         <button on:click={cancelEdit}>✕</button>
@@ -520,7 +520,7 @@ Update the list item JSX inside `<ForEach>` to support edit mode:
 
 - **`editingId` signal**:  Tracks which todo is currently being edited (null when none)
 - **`editText` signal**:  Stores the temporary text while editing
-- **Conditional rendering**:  `{() => editingId() === todo.id ? (...) : (...)}` switches between edit and display mode
+- **Conditional rendering**:  `{editingId() === todo.id ? (...) : (...)}` switches between edit and display mode
 - **Event coordination**:  `on:dblclick`, `on:keydown`, and `on:blur` work together for editing
 - **State coordination**:  Multiple signals (`editingId`, `editText`, `todos`) work together seamlessly
 - **Smart validation**:  Empty text triggers todo deletion instead of saving empty content
@@ -605,7 +605,7 @@ return (
 
     <div class="row">
       {/* ... filter buttons unchanged */}
-      {() => stats().completed > 0 && (
+      {stats().completed > 0 && (
         <button on:click={clearCompleted}>Clear Done</button>
       )}
     </div>
@@ -620,7 +620,7 @@ return (
 - **`loadTodos()` function**:  Loads persisted todos from localStorage with error handling
 - **Persistence effect**:  `effect(() => { localStorage.setItem(...) })` saves todos automatically
 - **Title effect**:  `effect(() => { document.title = ... })` updates browser tab title
-- **Progressive disclosure**:  `{() => stats().completed > 0 && (...)}` shows "Clear Done" conditionally
+- **Progressive disclosure**:  `{stats().completed > 0 && (...)}` shows "Clear Done" conditionally
 - **Error handling**:  Try/catch blocks prevent localStorage errors from breaking the app
 - **Enhanced UX**:  Live statistics in header, bulk operations, and visual feedback
 
@@ -803,15 +803,15 @@ const TodoApp = () => {
 
       <div class="row">
         <button on:click={() => filter('all')}>
-          All ({() => stats().total})
+          All ({stats().total})
         </button>
         <button on:click={() => filter('active')}>
-          Active ({() => stats().active})
+          Active ({stats().active})
         </button>
         <button on:click={() => filter('completed')}>
-          Done ({() => stats().completed})
+          Done ({stats().completed})
         </button>
-        {() => stats().completed > 0 && (
+        {stats().completed > 0 && (
           <button on:click={clearCompleted}>Clear Done</button>
         )}
       </div>
@@ -824,7 +824,7 @@ const TodoApp = () => {
               checked={todo.completed}
               on:change={() => toggleTodo(todo.id)}
             />
-            {() => editingId() === todo.id ? (
+            {editingId() === todo.id ? (
               <input
                 type="text"
                 bind:value={editText}
@@ -836,14 +836,14 @@ const TodoApp = () => {
               />
             ) : (
               <span
-                bind:class={() => ['flex', todo.completed && 'done']}
+                bind:class={['flex', todo.completed && 'done']}
                 on:dblclick={() => startEditing(todo.id, todo.text)}
                 title="Double-click to edit"
               >
                 {todo.text}
               </span>
             )}
-            {() => editingId() === todo.id ? (
+            {editingId() === todo.id ? (
               <>
                 <button on:click={saveEdit}>✓</button>
                 <button on:click={cancelEdit}>✕</button>
@@ -855,11 +855,11 @@ const TodoApp = () => {
         )} />
       </ul>
 
-      {() => filteredTodos().length === 0 && (
+      {filteredTodos().length === 0 && (
         <div>
-          {() => filter() === 'all' && "No todos yet! Add one above."}
-          {() => filter() === 'active' && "No active todos. Great job!"}
-          {() => filter() === 'completed' && "No completed todos yet."}
+          {filter() === 'all' && "No todos yet! Add one above."}
+          {filter() === 'active' && "No active todos. Great job!"}
+          {filter() === 'completed' && "No completed todos yet."}
         </div>
       )}
     </div>

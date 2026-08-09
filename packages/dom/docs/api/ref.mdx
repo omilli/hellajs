@@ -26,7 +26,7 @@ const count = signal(0);
 const button = $ref(".btn");
 
 // Bind reactive text content
-button.bind(() => `Count: ${count()}`);
+button.bind(() => `Count: ${count}`);
 
 // Add event handler
 button.on("click", () => count(count() + 1));
@@ -51,7 +51,7 @@ All methods return the reference for fluent chaining.
 
 ```js
 $ref(".counter")
-  .bind(() => `Count: ${count()}`)
+  .bind(() => `Count: ${count}`)
   .bind({ class: () => count() > 10 ? "high" : "low" })
   .on("click", () => count(count() + 1))
   .hooks({ afterMount: () => console.log("ready") });

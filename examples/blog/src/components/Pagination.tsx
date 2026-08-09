@@ -12,7 +12,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
   <div class="pagination">
     <button
       on:click={() => onPageChange(Math.max(1, page() - 1))}
-      bind:disabled={() => page() <= 1}
+      bind:disabled={page() <= 1}
     >
       Prev
     </button>
@@ -21,7 +21,7 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
     </span>
     <button
       on:click={() => onPageChange(Math.min(totalPages(), page() + 1))}
-      bind:disabled={() => page() >= totalPages()}
+      bind:disabled={page() >= totalPages()}
     >
       Next
     </button>

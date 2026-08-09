@@ -1,12 +1,17 @@
 // Process JSX children
+import { maybeReactive } from "../utils/reactive.mjs";
 
 /**
  * Filter empty/whitespace children and spread props.children.
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").JSXElement["children"]} children
+ * @param {boolean} isComponent When false (element/fragment), call-containing child
+ *   expressions are auto-wrapped into arrow thunks for reactivity; when true
+ *   (component), children pass through unwrapped (components may treat
+ *   `props.children` as a value, not a function).
  * @returns {import("@babel/core").Expression[]}
  */
-export function filterEmptyChildren(t, children) {
+export function filterEmptyChildren(t, children, isComponent) {
   const result = [];
 
   for (const child of children) {
@@ -34,7 +39,7 @@ export function filterEmptyChildren(t, children) {
         continue;
       }
 
-      result.push(expression);
+      result.push(isComponent ? expression : maybeReactive(t, expression));
     } else if (t.isJSXElement(child) || t.isJSXFragment(child)) {
       result.push(child);
     }

@@ -14,11 +14,11 @@ const inputValue = signal("hello");
 
 const App = () => (
   <div>
-    <div bind:class={() => isActive() ? "active" : ""}>
+    <div bind:class={isActive() ? "active" : ""}>
       Content
     </div>
     <input bind:value={inputValue} />
-    <div bind:style={() => `color: ${theme()}`} />
+    <div bind:style={`color: ${theme}`} />
   </div>
 );
 
@@ -27,17 +27,18 @@ mount(App, "#app");
 
 ## Key Concepts
 
-### Reactive Functions
+### Reactive Expressions
 
-For reactivity, `bind:` must be a **function** that returns the desired value.
+Pass a signal **reference** for a reactive binding — `bind:class={className}` works identically in JSX and `html\`\``. A **compound** expression (`bind:class={count() > 5 ? …}`) calls the signal and auto-wraps in compiled code; runtime `html\`\`` needs an explicit `() => …` wrapper.
 
 ```jsx
-// ✅ Reactive binding
-bind:class={() => count() > 5 ? "large" : "small"}
-
-// ❌ Static value (no reactivity)
+// Signal reference
+bind:class={className}
+// Compound expression — auto-wrapped in compiled code
 bind:class={count() > 5 ? "large" : "small"}
 ```
+
+To bind a value that should never update (a true one-time snapshot), hoist the read or wrap it in [`untracked`](/reference/core/untracked) — a signal reference like `bind:class={count}` is reactive, not static.
 
 ### Attribute Types
 
@@ -48,8 +49,8 @@ const itemId = signal(123);
 const className = signal("active");
 
 <div bind:class={className} />
-<div bind:id={() => `item-${itemId()}`} />
-<a bind:href={() => isActive() ? "#active" : "#inactive"}>Link</a>
+<div bind:id={`item-${itemId()}`} />
+<a bind:href={isActive() ? "#active" : "#inactive"}>Link</a>
 ```
 
 #### Boolean Attributes
@@ -81,7 +82,7 @@ const classes = signal(["active", "highlight"]);
 Falsy values are filtered out:
 
 ```jsx
-<div bind:class={() => [
+<div bind:class={[
   isActive() && "active",
   isDisabled() && "disabled",
 ]} />
@@ -89,14 +90,15 @@ Falsy values are filtered out:
 
 ## Important Considerations
 
-### Function vs Static Value
+### Reactive vs Static
 
-Passing a static value (non-function) to `bind:` renders the initial value but never updates. Always pass a function or signal for reactivity.
+A `bind:` expression that reads a signal is reactive (auto-wrapped). A value with no signal read — a literal, a hoisted constant, or an [`untracked`](/reference/core/untracked) read — binds once and never updates. Use the latter deliberately when you want a snapshot.
 
 ```jsx
-// ✅ Reactive: updates when count changes
-<div bind:class={() => count() > 0 ? "has-items" : "empty"} />
-
-// ❌ Static: renders once, never updates
+// Reactive: updates when count changes
 <div bind:class={count() > 0 ? "has-items" : "empty"} />
+
+// Static snapshot: read once, never updates
+const label = count() > 0 ? "has-items" : "empty";
+<div bind:class={label} />
 ```

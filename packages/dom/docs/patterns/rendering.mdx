@@ -11,9 +11,8 @@ import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 
 const isActive = signal(false);
-const activeClass = () => isActive() ? "btn-active" : "btn-inactive";
 
-const template = <div bind:class={activeClass}>Toggle</div>;
+const template = <div bind:class={isActive() ? "btn-active" : "btn-inactive"}>Toggle</div>;
 
 mount(template, "#app");
 ```
@@ -68,11 +67,10 @@ import { mount } from "@hellajs/dom";
 
 const showPanel = signal(false);
 const togglePanel = () => showPanel(!showPanel());
-const panelContent = () => showPanel() && <div class="panel">Panel content</div>;
 
 const template = <div>
   <button on:click={togglePanel}>Toggle Panel</button>
-  {panelContent}
+  {showPanel() && <div class="panel">Panel content</div>}
 </div>;
 
 mount(template, "#app");

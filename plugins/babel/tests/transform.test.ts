@@ -332,4 +332,91 @@ describe("babel", () => {
       expect(normalize(output)).toBe('const node = { tag: "input", e: { click: fn, input: handler } };');
     });
   });
+
+  describe("auto-wrap reactive expressions", () => {
+    test("element child with a call is wrapped in an arrow thunk", () => {
+      const output = transformJSX("<div>{fn()}</div>");
+      expect(normalize(output)).toBe('({ tag: "div", children: [() => fn()] });');
+    });
+
+    test("element child bare identifier is not wrapped (static)", () => {
+      const output = transformJSX("<div>{x}</div>");
+      expect(normalize(output)).toBe('({ tag: "div", children: [x] });');
+    });
+
+    test("element child conditional with a call is wrapped", () => {
+      const output = transformJSX("<div>{cond() ? a : b}</div>");
+      expect(normalize(output)).toBe('({ tag: "div", children: [() => cond() ? a : b] });');
+    });
+
+    test("element child logical expression with a call is wrapped", () => {
+      const output = transformJSX("<div>{show() && x}</div>");
+      expect(normalize(output)).toBe('({ tag: "div", children: [() => show() && x] });');
+    });
+
+    test("element child member-call is wrapped", () => {
+      const output = transformJSX("<div>{obj.method()}</div>");
+      expect(normalize(output)).toBe('({ tag: "div", children: [() => obj.method()] });');
+    });
+
+    test("element child .map() returning elements is wrapped", () => {
+      const output = transformJSX("<div>{arr.map(x => <li />)}</div>");
+      expect(normalize(output)).toBe('({ tag: "div", children: [() => arr.map(x => ({ tag: "li" }))] });');
+    });
+
+    test("explicit arrow child is emitted verbatim (double-wrap guard)", () => {
+      const output = transformJSX("<div>{() => fn()}</div>");
+      expect(normalize(output)).toBe('({ tag: "div", children: [() => fn()] });');
+    });
+
+    test("bind: with a call is wrapped", () => {
+      const output = transformJSX("<input bind:value={count()} />");
+      expect(normalize(output)).toBe('({ tag: "input", bind: { value: () => count() } });');
+    });
+
+    test("bind: with a signal ref (identifier) is not wrapped", () => {
+      const output = transformJSX("<input bind:value={count} />");
+      expect(normalize(output)).toBe('({ tag: "input", bind: { value: count } });');
+    });
+
+    test("bind: explicit arrow is emitted verbatim (double-wrap guard)", () => {
+      const output = transformJSX("<input bind:value={() => count()} />");
+      expect(normalize(output)).toBe('({ tag: "input", bind: { value: () => count() } });');
+    });
+
+    test("regular prop with a call is NOT wrapped (stays static)", () => {
+      const output = transformJSX("<input id={foo()} />");
+      expect(normalize(output)).toBe('({ tag: "input", props: { id: foo() } });');
+    });
+
+    test("component child with a call is NOT wrapped (props.children is a value)", () => {
+      const output = transformJSX("<Comp>{foo()}</Comp>");
+      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Comp, { children: [foo()] });');
+    });
+
+    test("html element child with a call is wrapped", () => {
+      const output = transformJSX("const node = html`<div>${fn()}</div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", children: [() => fn()] };');
+    });
+
+    test("html element child bare identifier is not wrapped", () => {
+      const output = transformJSX("const node = html`<div>${x}</div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", children: [x] };');
+    });
+
+    test("html bind: with a call is wrapped", () => {
+      const output = transformJSX("const node = html`<input bind:value=${count()} />`;");
+      expect(normalize(output)).toBe('const node = { tag: "input", bind: { value: () => count() } };');
+    });
+
+    test("html mixed-content attribute is NOT wrapped (binary + chain)", () => {
+      const output = transformJSX("const node = html`<div class=\"a-${fn()}-b\">${y}</div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", props: { class: "a-" + fn() + "-b" }, children: [y] };');
+    });
+
+    test("html component child is NOT wrapped", () => {
+      const output = transformJSX("const node = html`<${Comp}>${foo()}</${Comp}>`;");
+      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; const node = component(Comp, { children: [foo()] });');
+    });
+  });
 });

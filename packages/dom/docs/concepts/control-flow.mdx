@@ -1,14 +1,10 @@
 # Control Flow
 
-HellaJS uses function references for dynamic content. Wrap conditionals and dynamic expressions in functions to keep them reactive.
+Conditionals and dynamic expressions in templates are reactive by default — the compiler auto-wraps any expression that reads a signal, so no manual wrapper is required (an explicit `() => …` is still accepted and behaves identically).
 
 ## Conditional Rendering
 
-Function references make conditionals reactive, they re-evaluate when their signal dependencies change.
-
-<div role="alert" class="alert alert-error text-base">
-  <span>Unlike other frameworks, you <strong style="color: inherit; font-weight:800">MUST</strong> wrap conditionals in a reactive function.</span>
-</div>
+Expressions that read signals re-evaluate when their dependencies change.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -20,9 +16,9 @@ const Counter = () => {
   return (
     <div>
       <h1>Count: {count}</h1>
-      <h2>Doubled: {() => count() * 2}</h2>
-      <p>Count is: {() => count() % 2 === 0 ? "even" : "odd"}</p>
-      {() => count() > 5 && <p>Great job! Count is greater than 5!</p>}
+      <h2>Doubled: {count() * 2}</h2>
+      <p>Count is: {count() % 2 === 0 ? "even" : "odd"}</p>
+      {count() > 5 && <p>Great job! Count is greater than 5!</p>}
       <button on:click={() => count(count() + 1)}>
         Increment
       </button>
@@ -71,7 +67,7 @@ const TodoList = () => {
 mount(TodoList, "#app");
 ```
 
-**Static lists** (no reactivity): `{todos().map(todo => <li>{todo.text}</li>)}`
+A bare `{todos().map(...)}` is reactive (it reads the signal). For a one-time static snapshot, hoist the read (`const items = todos()`) or wrap it in [`untracked`](/reference/core/untracked) — or, for lists that change, prefer [`ForEach`](/reference/dom/foreach).
 
 See [`ForEach`](/reference/dom/foreach) for keyed reconciliation details.
 
@@ -89,7 +85,7 @@ const Modal = () => {
   return (
     <div>
       <button on:click={() => isOpen(true)}>Open</button>
-      {() => isOpen() && (
+      {isOpen() && (
         <Portal to="#modal-root" type="append">
           <div class="modal">
             <button on:click={() => isOpen(false)}>Close</button>

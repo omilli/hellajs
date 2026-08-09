@@ -1,4 +1,5 @@
 import { processAttributeValue } from "./values.mjs";
+import { maybeReactive } from "../utils/reactive.mjs";
 
 // Forward declaration - will be injected by builder/ast.mjs to avoid circular dependency
 let componentNodeToBabel = null;
@@ -46,7 +47,7 @@ export function processAttributes(t, attributes, isComponent) {
       }
       else if (key.startsWith("bind:")) {
         const propName = key.slice(5);
-        bind.push(t.objectProperty(t.identifier(propName), value));
+        bind.push(t.objectProperty(t.identifier(propName), maybeReactive(t, value)));
       }
       else if (key.startsWith("hook:")) {
         const hookName = key.slice(5);
@@ -94,12 +95,13 @@ export function processComponentAttributes(t, props, expressions) {
 
   for (const key in props) {
     const value = props[key];
+    const isBind = key.startsWith("bind:");
     let processedValue;
 
     if (value === true) {
       processedValue = t.booleanLiteral(true);
     } else if (value.__slot !== undefined) {
-      processedValue = expressions[value.__slot];
+      processedValue = isBind ? maybeReactive(t, expressions[value.__slot]) : expressions[value.__slot];
     } else if (Array.isArray(value)) {
       processedValue = componentNodeToBabel(t, value, expressions);
     } else {

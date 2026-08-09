@@ -62,7 +62,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 |---|---|---|
 | `on:` | `node.on` | Delegated: one `document.body.addEventListener(type, …, true)` (capture phase) per type. |
 | `e:` | `node.e` | Direct: per-instance `addEventListener` (bubble phase), error-boundary-wrapped. |
-| `bind:` | `node.bind` | Reactive: `registry.addEffect` re-runs on dependency change. |
+| `bind:` | `node.bind` | Reactive: `registry.addEffect` re-runs on dependency change. The compiler auto-wraps call-containing `bind:` expressions (and element children) into thunks; runtime `html\`\`` needs explicit function wrappers. |
 | `hook:` | `node.hooks` | Lifecycle: `beforeMount` / `afterMount` / `beforeDestroy` / `afterDestroy` / `beforeUpdate` / `afterUpdate`. |
 | `error:` | `node.error` | Config: `error:fallback` (fn) / `error:category` (string) / `error:boundary` (boolean). |
 | (none) | `node.props` | Static attribute, applied once. |

@@ -26,7 +26,7 @@ const count = signal(0);
 const buttons = $collection(".btn");
 
 // Bind reactive text to all matched elements
-buttons.bind(() => `Count: ${count()}`);
+buttons.bind(() => `Count: ${count}`);
 
 // Add event handlers to all elements
 buttons.on("click", () => count(count() + 1));
@@ -76,7 +76,7 @@ All methods return the reference for fluent chaining.
 
 ```js
 $collection(".counter")
-  .bind(() => `Count: ${count()}`)
+  .bind(() => `Count: ${count}`)
   .bind({ class: () => count() > 10 ? "high" : "low" })
   .on("click", () => count(count() + 1))
   .hooks({ afterMount: () => console.log("ready") });

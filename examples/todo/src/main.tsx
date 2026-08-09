@@ -148,7 +148,7 @@ const TodoApp = () => {
   return (
     <div class="app">
       <h1>Todo App</h1>
-      <div>{() => stats().active} active, {() => stats().completed} done</div>
+      <div>{stats().active} active, {stats().completed} done</div>
 
       <div class="row">
         <input
@@ -164,15 +164,15 @@ const TodoApp = () => {
 
       <div class="row">
         <button on:click={() => filter('all')}>
-          All ({() => stats().total})
+          All ({stats().total})
         </button>
         <button on:click={() => filter('active')}>
-          Active ({() => stats().active})
+          Active ({stats().active})
         </button>
         <button on:click={() => filter('completed')}>
-          Done ({() => stats().completed})
+          Done ({stats().completed})
         </button>
-        {() => stats().completed > 0 && (
+        {stats().completed > 0 && (
           <button on:click={clearCompleted}>Clear Done</button>
         )}
       </div>
@@ -185,7 +185,7 @@ const TodoApp = () => {
               checked={todo.completed}
               on:change={() => toggleTodo(todo.id)}
             />
-            {() => editingId() === todo.id ? (
+            {editingId() === todo.id ? (
               <input
                 type="text"
                 bind:value={editText}
@@ -197,14 +197,14 @@ const TodoApp = () => {
               />
             ) : (
               <span
-                bind:class={() => ['flex', todo.completed && 'done']}
+                bind:class={['flex', todo.completed && 'done']}
                 on:dblclick={() => startEditing(todo.id, todo.text)}
                 title="Double-click to edit"
               >
                 {todo.text}
               </span>
             )}
-            {() => editingId() === todo.id ? (
+            {editingId() === todo.id ? (
               <>
                 <button on:click={saveEdit}>✓</button>
                 <button on:click={cancelEdit}>✕</button>
@@ -216,11 +216,11 @@ const TodoApp = () => {
         )} />
       </ul>
 
-      {() => filteredTodos().length === 0 && (
+      {filteredTodos().length === 0 && (
         <div>
-          {() => filter() === 'all' && "No todos yet! Add one above."}
-          {() => filter() === 'active' && "No active todos. Great job!"}
-          {() => filter() === 'completed' && "No completed todos yet."}
+          {filter() === 'all' && "No todos yet! Add one above."}
+          {filter() === 'active' && "No active todos. Great job!"}
+          {filter() === 'completed' && "No completed todos yet."}
         </div>
       )}
     </div>

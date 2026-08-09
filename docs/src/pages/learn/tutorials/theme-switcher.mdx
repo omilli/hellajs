@@ -163,7 +163,7 @@ const ThemeSwitcher = () => (
     <div class="app">
       <h1>Theme Switcher</h1>
       <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
-        {() => isDark() ? '☀️ Light' : '🌙 Dark'}
+        {isDark() ? '☀️ Light' : '🌙 Dark'}
       </button>
       <p>Toggle the button to switch themes. The background, text, and border colors all update reactively.</p>
     </div>
@@ -185,7 +185,7 @@ Your app will be running at `http://localhost:5173`. Click the toggle and watch 
 - **`backgroundColor: vars.bg`**:  `vars.*` properties resolve to CSS custom property strings
 - **`'button'`**:  Shared button styles as a descendant selector (buttons inside `app` inherit these defaults)
 - **`theme(isDark() ? 'light' : 'dark')`**:  Updates the signal reactively
-- **`{() => isDark() ? '☀️ Light' : '🌙 Dark'}`**:  Conditional text that updates reactively
+- **`{isDark() ? '☀️ Light' : '🌙 Dark'}`**:  Conditional text that updates reactively
 
 ## Next Steps
 
@@ -245,7 +245,7 @@ const ThemeSwitcher = () => (
     <div class="app">
       <h1>Theme Switcher</h1>
       <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
-        {() => isDark() ? '☀️ Light' : '🌙 Dark'}
+        {isDark() ? '☀️ Light' : '🌙 Dark'}
       </button>
       <p>Toggle the button to switch themes. The background, text, and border colors all update reactively.</p>
     </div>

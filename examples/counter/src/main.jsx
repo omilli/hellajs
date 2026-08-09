@@ -35,7 +35,7 @@ const Counter = () => {
   const count = signal(0);
 
   effect(() => {
-    document.title = `Counter: ${count()}`;
+    document.title = `Counter: ${count}`;
   });
 
   const doubled = computed(() => count() * 2);
@@ -49,7 +49,7 @@ const Counter = () => {
         <button
           on:click={() => count(count() - 1)}
           class="btn-dec"
-          bind:disabled={() => count() === 0}
+          bind:disabled={count() === 0}
         >
           -
         </button>
@@ -64,7 +64,7 @@ const Counter = () => {
         <button
           on:click={() => count(0)}
           class="btn-reset"
-          bind:disabled={() => count() === 0}
+          bind:disabled={count() === 0}
         >
           Reset
         </button>

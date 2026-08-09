@@ -210,7 +210,7 @@ const Counter = () => {
         <button
           on:click={() => count(count() - 1)}
           class="btn-dec"
-          bind:disabled={() => count() === 0}
+          bind:disabled={count() === 0}
         >
           -
         </button>
@@ -225,7 +225,7 @@ const Counter = () => {
         <button
           on:click={() => count(0)}
           class="btn-reset"
-          bind:disabled={() => count() === 0}
+          bind:disabled={count() === 0}
         >
           Reset
         </button>
@@ -246,7 +246,7 @@ Your app will be running at `http://localhost:5173`. Try clicking the buttons an
 **Code Explanation**
 
 - **Event handlers**:  Simple functions that update state
-- **`bind:disabled={() => count() === 0}`**:  Reactively disables buttons when count is zero
+- **`bind:disabled={count() === 0}`**:  Reactively disables buttons when count is zero
 
 ## Signal Side Effects
 
@@ -269,7 +269,7 @@ const Counter = () => {
 
   // add this effect
   effect(() => {
-    document.title = `Counter: ${count()}`;
+    document.title = `Counter: ${count}`;
   });
 
   //... derived values and return unchanged
@@ -331,7 +331,7 @@ const Counter = () => {
   const count = signal(0);
 
   effect(() => {
-    document.title = `Counter: ${count()}`;
+    document.title = `Counter: ${count}`;
   });
 
   const doubled = computed(() => count() * 2);
@@ -345,7 +345,7 @@ const Counter = () => {
         <button
           on:click={() => count(count() - 1)}
           class="btn-dec"
-          bind:disabled={() => count() === 0}
+          bind:disabled={count() === 0}
         >
           -
         </button>
@@ -360,7 +360,7 @@ const Counter = () => {
         <button
           on:click={() => count(0)}
           class="btn-reset"
-          bind:disabled={() => count() === 0}
+          bind:disabled={count() === 0}
         >
           Reset
         </button>

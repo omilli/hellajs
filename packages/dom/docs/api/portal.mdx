@@ -159,7 +159,7 @@ const App = () => {
   
   return (
     <div>
-      {() => showModal() && (
+      {showModal() && (
         <Portal to="#modal-root">
           <div>This cleans up when showModal becomes false</div>
         </Portal>
@@ -191,7 +191,7 @@ Children rendered through a portal maintain their lifecycle hooks and reactive b
 ```jsx
 const Dialog = ({ open, onClose, children }) => (
   <Portal to="#dialog-root">
-    {() => open() && (
+    {open() && (
       <div class="dialog-backdrop" on:click={onClose}>
         <div class="dialog" on:click={(e) => e.stopPropagation()}>
           {children}

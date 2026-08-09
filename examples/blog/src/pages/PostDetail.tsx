@@ -15,7 +15,7 @@ export const PostDetail = () => {
       const post = data();
 
       return <div class="post-detail">
-        {() => isFetching() ?
+        {isFetching() ?
           <Placeholder message="Loading post..." /> :
           post?.body ?
             <PostCard post={post!} /> :

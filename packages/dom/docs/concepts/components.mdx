@@ -46,7 +46,7 @@ mount(MyPage, "#app");
 
 ## Component Data Flow
 
-Pass signals as props to maintain reactivity across component boundaries. The child component calls the signal prop inside a function to create a reactive binding.
+Pass signals as props to maintain reactivity across component boundaries. The child component reads the signal prop in a template expression; element children and `bind:` expressions auto-wrap, so the binding is reactive.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -54,10 +54,10 @@ import { signal } from "@hellajs/core";
 
 const TodoCard = ({ todo }) => (
   <div class="todo-card">
-    <h3>{() => todo().text}</h3>
-    <p>Priority: {() => todo().priority}</p>
-    <span bind:class={() => `status ${todo().done ? "completed" : "pending"}`}>
-      {() => todo().done ? "Completed" : "Pending"}
+    <h3>{todo().text}</h3>
+    <p>Priority: {todo().priority}</p>
+    <span bind:class={`status ${todo().done ? "completed" : "pending"}`}>
+      {todo().done ? "Completed" : "Pending"}
     </span>
   </div>
 );
@@ -88,6 +88,10 @@ const TodoApp = () => {
 mount(TodoApp, "#app");
 ```
 
+### Component props and children are not auto-wrapped
+
+Auto-wrapping applies to **element** children and **element** `bind:` expressions. Component props and component children are passed through as-is — a component may treat `props.children` or a prop as a plain value (not a function). So `<Comp>{expr}</Comp>` passes the eager-evaluated value; to keep a component child reactive, pass a signal reference (`<Comp>{mySignal}</Comp>`) or an explicit wrapper (`<Comp>{() => expr}</Comp>`).
+
 ## Component Scope
 
 Effects created within components are automatically scoped and cleaned up when the component is removed from the DOM.
@@ -99,7 +103,7 @@ import { signal, effect } from "@hellajs/core";
 const Timer = () => {
   const count = signal(0);
 
-  effect(() => console.log(`Count: ${count()}`));
+  effect(() => console.log(`Count: ${count}`));
 
   return (
     <div>

@@ -32,7 +32,7 @@ HellaJS sits closest to Solid philosophically (signal-driven, no VDOM, surgical 
 
 ### Solid
 
-- Conceptually identical: JSX compiles to reactive computations wrapping direct DOM calls. Both HellaJS and Solid treat the DOM as the source of truth and bind signals directly to nodes.
+- Conceptually identical: JSX compiles to reactive computations wrapping direct DOM calls. Both HellaJS and Solid treat the DOM as the source of truth and bind signals directly to nodes. Under the HellaJS compiler, call-containing JSX/`html\`\`` expressions auto-wrap into thunks (Solid-style), so `{signal()}` is reactive without a manual `() => …` wrapper; the runtime `html\`\`` API (no compiler) still requires explicit wrappers — the one compile/runtime asymmetry vs Solid's compiler-mandatory model.
 
 ### Svelte 5
 

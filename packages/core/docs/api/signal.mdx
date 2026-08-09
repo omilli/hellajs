@@ -53,7 +53,7 @@ const doubled = computed(() => count() * 2);
 
 // The effect runs when count changes
 effect(() => {
-  console.log(`Count is: ${count()}`);
+  console.log(`Count is: ${count}`);
 });
 
 count(5); // Triggers both the computed and effect
