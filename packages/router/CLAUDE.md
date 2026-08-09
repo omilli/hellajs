@@ -65,7 +65,7 @@
 
     **`intercept` defaults true** — same-origin `<a>` clicks route through `navigate()`. Skipped when: already `defaultPrevented`, modifier keys, `target !== "_self"`, `download`, non-http(s), cross-origin, malformed href. Hash mode requires the hash start with `#/` (`router.ts:67-101`).
 
-    **`active()` ancestor semantics** — shared `activeFn` reads `route().path` reactively, strips query, respects segment boundaries via `matchPattern(isNested=true)`; `/admin` is NOT active at `/administrators` (`state.ts:59`, `active.test.ts`).
+    **`active()` ancestor semantics** — shared `activeFn` reads `route().path` reactively, strips query, respects segment boundaries via `matchPattern(isNested=true)`; `/admin` is NOT active at `/administrators`. Root `/` is exact-only (a zero-segment ancestor would match every path, so a home link lights up solely at `/`) (`route.ts`, `active.test.ts`).
 
     **`crumbs` parent-to-leaf** — each crumb `{segment: pattern key, path: cumulative URL (query excluded), params: inherited through that level}`; `notFound` resolution → empty array (`utils.ts:253-264`). Use `crumb.path` for hrefs, `crumb.segment` for label lookup.
 
