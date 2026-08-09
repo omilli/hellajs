@@ -11,7 +11,7 @@
   - Use existing tests, examples, and folders in the repo to execute code/tests. Do not wander outside the file system (e.g., to `/tmp/`) to test or build.
   - Load the `brain-prime` skill before any substantive task.
   - After editing AGENTS.md files, stop. Do NOT run `bun sync` — the post-commit hook + CI handle regeneration.
-  - Changesets are created manually, never by agent plans. Do not include changeset creation in any plan's DoD.
+  - **Never create a changeset.** Adding `.changeset/*.md` files or running `bun changeset` is a manual, user-only step — treat it exactly like a commit: only on an explicit request. This holds even for published-package behavior changes; note the need in your handoff summary and let the user create it. Do not list changeset creation in any plan's DoD.
   - A plan's DoD states each pass criterion as a runnable check, not a prediction of the result — never append an unverified characterization ("zero violations", "no false positives", "passes on the corpus") for an artifact not yet run; it biases the worker toward confirmation and forces an interrupt when wrong. If the characterization is load-bearing, make it its own DoD check the worker must falsify.
 
   ## Non-negotiables
