@@ -24,7 +24,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 
 ## ElementState (`lib/internal/state.ts`) — `WeakMap<Node, ElementState>`
 
-`getState` lazily creates; `peekState` returns `undefined` if absent; `hasState`/`deleteState` wrap `has`/`delete`. Initial shape: `{ handlers: {}, isMounted: false }`. `effects`, `directHandlers`, and `hooks` are **lazy-allocated on first use** (`registry.addEffect` → `effects` array, `setDirectHandler` → `directHandlers` Map, `registry.addHook` → `hooks` object) — elements that never carry `bind:` / `e:` / `hook:` pay zero allocation for those collections (guide `code.md` §Memory). `handlers` stays eager (plain object, cheap, and `on:` is common).
+`getState` lazily creates; `peekState` returns `undefined` if absent; `hasState`/`deleteState` wrap `has`/`delete`. Initial shape: `{ handlers: {}, isMounted: false }`. `effects`, `directHandlers`, and `hooks` are **lazy-allocated on first use** (`registry.addEffect` → `effects` array, `setDirectHandler` → `directHandlers` Map, `registry.addHook` → `hooks` object) — elements that never carry a function-ref prop / `e:` / `hook:` pay zero allocation for those collections (guide `code.md` §Memory). `handlers` stays eager (plain object, cheap, and `on:` is common).
 
 | Field | Purpose |
 |---|---|
@@ -49,7 +49,6 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 | `props` | Static attributes applied once at mount via `renderProp`. |
 | `on` | Delegated handlers (`on:` prefix). |
 | `e` | Direct non-delegated handlers (`e:` prefix). |
-| `bind` | Reactive bindings wrapped in `registry.addEffect` (`bind:` prefix). |
 | `hooks` | Lifecycle hooks (`hook:` prefix). |
 | `error` | `error:fallback` / `error:category` / `error:boundary` (`error:` prefix). |
 | `children` | Always flat (`.flat()` runs during template substitution). |
@@ -66,16 +65,15 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 |---|---|---|
 | `on:` | `node.on` | Delegated: one `document.body.addEventListener(type, …, true)` (capture phase) per type. |
 | `e:` | `node.e` | Direct: per-instance `addEventListener` (bubble phase), error-boundary-wrapped. |
-| `bind:` | `node.bind` | Reactive: `registry.addEffect` re-runs on dependency change. The compiler auto-wraps call-containing `bind:` expressions (and element children) into thunks; runtime `html\`\`` needs explicit function wrappers. |
 | `hook:` | `node.hooks` | Lifecycle: `beforeMount` / `afterMount` / `beforeDestroy` / `afterDestroy` / `beforeUpdate` / `afterUpdate`. |
 | `error:` | `node.error` | Config: `error:fallback` (fn) / `error:category` (string) / `error:boundary` (boolean). |
-| (none) | `node.props` | Static attribute, applied once. |
+| (none) | `node.props` | Attribute; a function-ref value (signal / `() => …`) is reactive (effect-wrapped), else applied once. |
 
 ## `html\`\`` parsing & caching (`lib/html.ts`, `lib/internal/template.ts`)
 
 `templateCache: WeakMap<TemplateStringsArray, HtmlInternalNode>` keys the AST by template-strings identity. First call builds the AST; later calls skip parsing and only run `cloneWithValues`.
 
-- **Tokenization.** `SKIP_REGEX` strips comments/DOCTYPE/CDATA; `<>`/`</>` rewrite to `<__fragment__>`/`</__fragment__>` → `tag: "$"`. `TOKEN_REGEX` matches tags + text; `ATTR_REGEX` classifies prefixes (`error:` before `e:` before `on:`/`bind:`/`hook:` before bare) in one pass; `parseAttributes` routes by `name.startsWith(...)`.
+- **Tokenization.** `SKIP_REGEX` strips comments/DOCTYPE/CDATA; `<>`/`</>` rewrite to `<__fragment__>`/`</__fragment__>` → `tag: "$"`. `TOKEN_REGEX` matches tags + text; `ATTR_REGEX` classifies prefixes (`error:` before `e:` before `on:`/`hook:` before bare) in one pass; `parseAttributes` routes by `name.startsWith(...)`.
 - **Placeholders.** Interpolations become `__SLOT_N__` markers in the string and `{ placeholder: N }` markers in the AST. **Format is `__SLOT_N__`, not `__HELLA_N__`.** `parseTextContent` splits text containing slots.
 - **Static-subtree optimization.** `markIfStatic` tags any node whose `props`/`on`/`e`/`bind`/`hooks`/`error`/`children` contain no `placeholder` and no `dynamicComponent` as `static = true`. `cloneWithValues` short-circuits on `Object.hasOwn(node, "static")` and returns the node as-is — **static subtrees are shared by reference across every invocation of the same literal.** This is why mutating a returned HellaNode is unsafe. `mountNode` further caches the first-built DOM subtree in a `staticDom: WeakMap<HellaNode, Element | DocumentFragment>` (`render.ts`); subsequent mounts of the same `static` node return `cache.cloneNode(true)`, replacing O(nodes) DOM construction with O(1) clone (`render.ts:mountNode`). Safe because `markIfStatic` guarantees `static` nodes carry no `on`/`e`/`bind`/`hooks`/`error` — zero `ElementState` entries exist on cached elements. The cache is cleared by `resetDom()` for test isolation.
 - **Root interpolation unwrap.** If the trimmed template is exactly `__SLOT_N__`, `parseHTML` returns the placeholder value directly — `html\`${value}\`` yields `value` itself, unwrapped.
@@ -95,7 +93,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 
 Attaches reactivity to existing server-rendered HTML in place — re-executes the component tree and wires effects/handlers/state to the DOM the server shipped, **never `replaceChildren`** (the core invariant vs `mount`). Mirrors `mount`'s resolve + sync/async shape; `attach` hydrates the resolved node against `container`'s existing childNodes (no replace). Fragment root → `hydrateSequence` over `container.firstChild`; single element → `hydrateNode(node, container.firstChild)`. Empty container → falls back to a fresh `mount`. Returns the same `MountHandle` shape as `mount`.
 
-- **`hydrateNode(node, existing, boundary?)`** — mirrors `mountNode`'s step order: `static` fast-path (verify tag, attach nothing — static subtrees carry no `on`/`e`/`bind`/`hooks`); copy `componentScope`/`error`; register hooks; run `beforeMount`; **SKIP `props`** (server applied them via `ssr`); register `on:`/`e:`/`bind:` against `existing`; recurse `hydrateSequence`. Tag mismatch or missing element → `console.warn("[dom] hydrate mismatch…")` + `replaceMismatch` (`mountNode` subtree-replace via `existing.parentNode.replaceChild`); a missing child (no existing) returns an orphan that `hydrateSequence` appends.
+- **`hydrateNode(node, existing, boundary?)`** — mirrors `mountNode`'s step order: `static` fast-path (verify tag, attach nothing — static subtrees carry no `on`/`e`/`hooks`); copy `componentScope`/`error`; register hooks; run `beforeMount`; **SKIP `props`** (server applied them via `ssr`); register `on:`/`e:` and wire function-ref props against `existing`; recurse `hydrateSequence`. Tag mismatch or missing element → `console.warn("[dom] hydrate mismatch…")` + `replaceMismatch` (`mountNode` subtree-replace via `existing.parentNode.replaceChild`); a missing child (no existing) returns an orphan that `hydrateSequence` appends.
 - **`hydrateSequence(parent, children, current, boundary)`** — a **marker-reader**: walks AST children in parallel with existing DOM via a node pointer, locating each dynamic region by its `<!--[->…<!--]-->` Comment markers (`isMarkOpen` / `gatherRegion` / `consumeRegion`). Static text/elements match by position (consume one node); element children → `hydrateNode` (adopt); a fragment child → gather + remove its marker pair, recurse inline; a reactive child → `consumeRegion` (gather nodes, remove markers, insert anchor) + `adoptReactiveRegion` (adopt the gathered nodes first-run, clear+render on subsequent runs — mirrors `appendToParent`, incl. the isDynamic-resolved `Proxy` branch which is safe here because `clearRenderedNodes` runs before re-rendering); an isDynamic child → `hydrateDynamic`.
 - **`HydrateCtx` + stack** (`peekHydrateContext`/`push`/`pop`) — an **internal** type in `lib/internal/hydrate.ts` (NOT in `nodes.d.ts`; `RenderFn`'s public signature is unchanged). Carries `{ anchor, existingNodes, hydrateNode }`. `adoptRegion` pushes it around each isDynamic `fn(parent)` call so the component reuses the walker's pre-positioned anchor and adopts the marker-gathered region nodes instead of building fresh. Reentrancy-safe for nested regions.
 - **isDynamic dispatch** (`hydrateDynamic`): `consumeRegion` gathers the region's nodes + positions the anchor; `adoptRegion` pushes the ctx + calls `fn`. `ForEach`/`Transition` adopt the gathered nodes; `Portal` passes `[]` (server rendered nothing in-place) and re-mounts into the target; `Lazy` `clearRenderedNodes` the gathered loading node, then re-runs the loader. `Suspense` runs `swapSuspenseStage` — the no-script/HappyDOM fallback (a staged `<template>` whose id matches a sentinel comment replaces the fallback). In a browser the inline `$hs` swap script (emitted by `@hellajs/ssr`) has already swapped each region as it arrived, so this runs only when that script hasn't (e.g. in tests). Either way it then adopts the resolved children. ForEach's first-render adopts via `hctx.existingNodes` into `keyToNode`/`keyToItem`/`currentKeys` **iff `existingNodes.length === arr.length`** (count-strict); on mismatch it warns + removes the gathered nodes + fresh-builds (the LIS update path is unchanged). `Transition` adopts `existingNodes[0]` as `current` when visible (applies `appear`).
@@ -103,11 +101,11 @@ Attaches reactivity to existing server-rendered HTML in place — re-executes th
 
 ## `mountNode` / `appendToParent` (`lib/internal/render.ts`)
 
-`mountNode(node, boundaryElement?)` — creates element (or fragment for `tag: "$"`), copies `componentScope` → `state.componentScope` and `error` → `state.errorConfig` + `state.originalNode`, sets `currentBoundary = error ? element : boundaryElement`, registers hooks, runs `beforeMount` (errors caught, `phase: 'mount'`, **no fallback**), applies `props` via `renderProp`, registers `on:` (delegated) / `e:` (direct) / `bind:` (effect-wrapped; errors `phase: 'update'`, fallback `replaceChildren` on `currentBoundary ?? element`), then `appendToParent(element, children, currentBoundary)`.
+`mountNode(node, boundaryElement?)` — creates element (or fragment for `tag: "$"`), copies `componentScope` → `state.componentScope` and `error` → `state.errorConfig` + `state.originalNode`, sets `currentBoundary = error ? element : boundaryElement`, registers hooks, runs `beforeMount` (errors caught, `phase: 'mount'`, **no fallback**), applies `props` via `renderProp` (function-ref values are effect-wrapped; errors `phase: 'update'`, fallback `replaceChildren` on `currentBoundary ?? element`), registers `on:` (delegated) / `e:` (direct), then `appendToParent(element, children, currentBoundary)`.
 
 - **`resolveNode(value, parent?)`** — `HellaNode` → `mountNode`; a non-dynamic **function/signal** → a text node plus an effect (registered on `parent || textNode`) tracking `resolveText(value())`; primitive → text node. This is the path Portal/Transition/ForEach use for their children.
 - **`appendToParent` static-string fast path.** A single string child → `parent.textContent = str` (no text-node allocation).
-- **Reactive child effect** (non-dynamic function child): creates a text anchor + `renderedNodes[]` + one effect. Each run resolves the value, `cleanupSubtree` + `removeChild` on every previous node, re-inserts. If the resolved value is itself a dynamic function, a `Proxy` parent intercepts `appendChild` to track nodes while still inserting before the anchor. Errors `phase: 'mount'`, fallback `insertBefore`-ed at anchor — **preserves siblings**, unlike the `bind:`/event path.
+- **Reactive child effect** (non-dynamic function child): creates a text anchor + `renderedNodes[]` + one effect. Each run resolves the value, `cleanupSubtree` + `removeChild` on every previous node, re-inserts. If the resolved value is itself a dynamic function, a `Proxy` parent intercepts `appendChild` to track nodes while still inserting before the anchor. Errors `phase: 'mount'`, fallback `insertBefore`-ed at anchor — **preserves siblings**, unlike the prop-effect/event path.
 - **Non-function children.** `resolveValue` first; string/number → text node; raw `Node` → appended directly; `HellaNode` → `mountNode(resolved, currentBoundary)`.
 
 ## Cleanup & queues (`lib/internal/cleanup.ts`, `lib/internal/queue.ts`)
@@ -189,7 +187,7 @@ Returns a function with `isDynamic: true` and `fn.ssr = { kind: "suspense", prop
 | `component()` render body | render | none — returns empty fragment `{ tag:'$', children:[] }` |
 | `beforeMount` hook | mount | none — element continues mounting |
 | Reactive child effect | mount | `insertBefore` at anchor (**preserves siblings**) |
-| `bind:` effect | update | `replaceChildren` on `currentBoundary ?? element` (replaces siblings) |
+| Function-ref prop effect | update | `replaceChildren` on `currentBoundary ?? element` (replaces siblings) |
 | `beforeUpdate`/`afterUpdate` hook | update | none — bindings stay functional |
 | `on:`/`e:` handler | event | `replaceChildren` on `findBoundary(element) ?? element` |
 | Async mount rejection | mount | none — no element context |
@@ -231,7 +229,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **One scoped observer covers every `mount()` target** (`observedContainers`); a second mount target adds no second observer.
 - **`afterMount` fires at `mount()`/`hydrate()`.** `isMounted` (root + descendants) is set and `afterMount` fired synchronously at the end of `attach()` — no `app.flush()` needed. `flush()` on the handle is an idempotent escape hatch (drains the cleanup queue).
 - **Hook element-argument rule.** `afterMount`/`beforeDestroy`/`beforeUpdate`/`afterUpdate` receive the element; `beforeMount`/`afterDestroy` do not. `beforeMount` fires synchronously during the walk; `afterMount` fires at the end of `attach()` (root + descendants, top-down via `traverseDescendants`). Multiple hooks of the same type all fire in insertion order.
-- **`bind:` effects run `beforeUpdate`/`afterUpdate`** only when `state.isMounted` is true.
+- **Function-ref prop effects run `beforeUpdate`/`afterUpdate`** only when `state.isMounted` is true.
 - **`onError(null)` clears all handlers**; a function registers and returns an unregister. No handlers → `console.error('[dom]', error)` and no UI change.
 - **Event types registered for delegation stay registered for the page lifetime** — only `resetEventState()` (called by `resetDom()` in tests) removes them. Delegated handlers never auto-stop propagation.
 

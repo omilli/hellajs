@@ -9,7 +9,7 @@ Pure HTML stringifier over `@hellajs/dom`'s HellaNode AST. Zero runtime imports 
 | Export | Purpose |
 |---|---|
 | `ssr` | `ssr(node: HellaNode): string` — serialize a HellaNode AST to an HTML string. |
-| `ssrAsync` | `ssrAsync(node: HellaNode): Promise<string>` — async counterpart; awaits any Promise a resolved value (child, `bind:`, `each`, `show`) returns. |
+| `ssrAsync` | `ssrAsync(node: HellaNode): Promise<string>` — async counterpart; awaits any Promise a resolved value (child, function-ref prop, `each`, `show`) returns. |
 | `ssrStream` | `ssrStream(node: HellaNode): ReadableStream<string>` — streaming counterpart; yields HTML chunks, flushing the static prefix before each await. |
 | `doc` | `doc(options: DocOptions): string` — assemble a rendered body + head into a full HTML document string; pure builder, zero new deps, reuses `serializeProp`/`escapeHtml`. |
 
@@ -59,12 +59,12 @@ A user-authored isDynamic function with no `ssr` renders as nothing (not an erro
 
 ## Non-obvious behaviors (gotchas)
 
-- **`bind:` emits the initial value only.** `ssr` resolves each `bind` getter once (its current value); there is no reactive update. Static (`props`) attributes are NOT auto-resolved — a signal in a static attribute is stringified as a function (matches dom's `renderProp`); use `bind:` for reactive attributes.
+- **Function-ref props emit the initial value only.** `ssr` resolves each function-ref prop getter once via `resolveValue` (its current value); there is no reactive update. A plain (non-function) prop value is emitted as-is.
 - **Hydration markers are the contract.** `ssr()` wraps every dynamic region in `<!--[-->…<!--]-->` (see §Hydration markers). The client's [`hydrate(node, target)`](../dom) (`@hellajs/dom`) reads those `Comment` nodes to bind each region in place — never replacing server DOM. `$ref`/`$collection` and `mount(Island, "#empty-slot")` remain the lighter-enhancement alternatives. A full-tree `mount(app(), "#server-rendered")` over server HTML is a footgun — `mountNode` → `container.replaceChildren` (`packages/dom/lib/mount.ts`) wipes it.
 - **`resource` render-fetches no-op on the server.** `run()` guards with `hasWindow()` — resources embedded in a server-rendered tree never trigger network calls. `mutate()` is intentionally UNGUARDED: it is user-initiated (not render-time), so an SSR render never invokes it; guarding would silently drop legitimate mutations. Fetch server-side data with direct `fetch()` and pass it as `initialData`.
 - **Errors propagate.** `ssr` has no try/catch; a throwing child/bind/`use` getter surfaces to the caller. (A throwing *component* does NOT propagate — `component()` catches render errors → empty fragment.)
 - **Zero runtime imports.** `lib/` has only `import type` from `@hellajs/dom` (erased). Adding a runtime `@hellajs/*` import violates the package's core invariant.
-- **`ssrAsync` awaits but changes nothing else.** `ssrAsync(node)` is the async counterpart to `ssr`: it awaits any Promise a resolved value (child, `bind:`, `each`, `show`) returns, then classifies exactly as `ssr`. Marker wrapping is byte-identical, so `hydrate` consumes either output unchanged. `Lazy` still renders `loading` (client-side loader) and `resource` still no-ops on the server — both unchanged; expose server data via a Promise-returning getter.
+- **`ssrAsync` awaits but changes nothing else.** `ssrAsync(node)` is the async counterpart to `ssr`: it awaits any Promise a resolved value (child, function-ref prop, `each`, `show`) returns, then classifies exactly as `ssr`. Marker wrapping is byte-identical, so `hydrate` consumes either output unchanged. `Lazy` still renders `loading` (client-side loader) and `resource` still no-ops on the server — both unchanged; expose server data via a Promise-returning getter.
 
 ## Testing approach (`tests/`)
 
