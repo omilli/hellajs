@@ -76,7 +76,7 @@ HellaJS's reactivity comes from `@hellajs/core` (a separate package): signals as
 | Vue | Component + ref | Mostly | `markRaw`, `shallowRef` opt-outs |
 | Angular | Component / signal | Yes (signals) | Zone covers everything by default |
 
-A distinctive HellaJS ergonomic: passing a bare signal reference into JSX creates a **live binding**, while calling it `count()` produces a **one-time static value** (`render.ts` — functions become tracked effects, primitives become static text nodes). This is a clean, explicit, zero-API way to opt in/out of tracking that no competitor matches so directly.
+A distinctive HellaJS ergonomic: at the **runtime** level, passing a bare signal reference creates a **live binding** while calling it `count()` produces a **one-time static value** (`render.ts` — functions become tracked effects, primitives become static text nodes). The compiler erases this distinction for compound expressions by auto-wrapping `{count()}` into a thunk, so compiled JSX/`html\`\`` is reactive either way; the bare-ref-vs-called choice only matters in runtime `html\`\`` (no compiler). This is a clean, explicit, zero-API way to opt in/out of tracking that no competitor matches so directly.
 
 ---
 

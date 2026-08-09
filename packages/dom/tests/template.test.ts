@@ -146,6 +146,36 @@ describe("dom", () => {
       expect(document.getElementById("filtered-class")?.className).toBe("active visible");
     });
 
+    test("reactive array attribute updates on signal change", () => {
+      const active = signal("on");
+      mount(html`<div id="reactive-array" class=${() => [active(), "base"]}>x</div>`);
+      expect(document.getElementById("reactive-array")?.className).toBe("on base");
+
+      active("off");
+      flush();
+      expect(document.getElementById("reactive-array")?.className).toBe("off base");
+    });
+
+    test("reactive call attribute updates on signal change", () => {
+      const active = signal("primary");
+      mount(html`<div id="reactive-call" class=${() => active()}>x</div>`);
+      expect(document.getElementById("reactive-call")?.className).toBe("primary");
+
+      active("secondary");
+      flush();
+      expect(document.getElementById("reactive-call")?.className).toBe("secondary");
+    });
+
+    test("reactive attribute re-filters falsy entries on update", () => {
+      const on = signal(true);
+      mount(html`<div id="reactive-filter" class=${() => on() ? ["active", null, "base"] : ["off"]}>x</div>`);
+      expect(document.getElementById("reactive-filter")?.className).toBe("active base");
+
+      on(false);
+      flush();
+      expect(document.getElementById("reactive-filter")?.className).toBe("off");
+    });
+
     test("multiple root elements become fragment", () => {
       const fragment = html`<span>A</span><span>B</span>` as HellaNode;
       expect(fragment.tag).toBe("$");

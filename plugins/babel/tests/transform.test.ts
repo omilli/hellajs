@@ -364,9 +364,34 @@ describe("babel", () => {
       expect(normalize(output)).toBe('({ tag: "div", children: [() => fn()] });');
     });
 
-    test("regular prop with a call is NOT wrapped (stays static)", () => {
+    test("regular prop with a call is wrapped", () => {
       const output = transformJSX("<input id={foo()} />");
-      expect(normalize(output)).toBe('({ tag: "input", props: { id: foo() } });');
+      expect(normalize(output)).toBe('({ tag: "input", props: { id: () => foo() } });');
+    });
+
+    test("prop array with a call is wrapped", () => {
+      const output = transformJSX('<div class={[signal(), "x"]} />');
+      expect(normalize(output)).toBe('({ tag: "div", props: { class: () => [signal(), "x"] } });');
+    });
+
+    test("prop ternary with a call is wrapped", () => {
+      const output = transformJSX('<div class={a ? active() : "x"} />');
+      expect(normalize(output)).toBe('({ tag: "div", props: { class: () => a ? active() : "x" } });');
+    });
+
+    test("non-call props (static, bare identifier) pass through unwrapped", () => {
+      expect(normalize(transformJSX('<div class="static" />'))).toBe('({ tag: "div", props: { class: "static" } });');
+      expect(normalize(transformJSX("<div class={className} />"))).toBe('({ tag: "div", props: { class: className } });');
+    });
+
+    test("prefixed keys (on:/hook:) are not wrapped", () => {
+      expect(normalize(transformJSX("<div on:click={handleClick()} />"))).toContain("click: handleClick()");
+      expect(normalize(transformJSX("<div hook:mount={cb()} />"))).toContain("mount: cb()");
+    });
+
+    test("component prop is not wrapped (props may be a plain value)", () => {
+      const output = transformJSX("<Btn class={foo()} />");
+      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Btn, { class: foo() });');
     });
 
     test("component child with a call is NOT wrapped (props.children is a value)", () => {
@@ -384,9 +409,19 @@ describe("babel", () => {
       expect(normalize(output)).toBe('const node = { tag: "div", children: [x] };');
     });
 
-    test("html mixed-content attribute is NOT wrapped (binary + chain)", () => {
+    test("html mixed-content attribute with a call is wrapped", () => {
       const output = transformJSX("const node = html`<div class=\"a-${fn()}-b\">${y}</div>`;");
-      expect(normalize(output)).toBe('const node = { tag: "div", props: { class: "a-" + fn() + "-b" }, children: [y] };');
+      expect(normalize(output)).toBe('const node = { tag: "div", props: { class: () => "a-" + fn() + "-b" }, children: [y] };');
+    });
+
+    test("html element array attribute with a call is wrapped", () => {
+      const output = transformJSX("const node = html`<div class=\"${[signal(), 'x']}\">${y}</div>`;");
+      expect(normalize(output)).toBe('const node = { tag: "div", props: { class: () => [signal(), \'x\'] }, children: [y] };');
+    });
+
+    test("html component prop is not wrapped", () => {
+      const output = transformJSX("const node = html`<${Comp} class=\"${fn()}\"></${Comp}>`;");
+      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; const node = component(Comp, { class: fn() });');
     });
 
     test("html component child is NOT wrapped", () => {

@@ -1,4 +1,5 @@
 import { processAttributeValue } from "./values.mjs";
+import { maybeReactive } from "../utils/reactive.mjs";
 
 // Forward declaration - will be injected by builder/ast.mjs to avoid circular dependency
 let componentNodeToBabel = null;
@@ -62,6 +63,13 @@ export function processAttributes(t, attributes, isComponent) {
           key = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
         }
 
+        // Auto-wrap call-containing element props (signals, method calls,
+        // derived arrays/ternaries) into a thunk so dom's per-binding effect
+        // tracks them — mirrors the children heuristic. Component props are
+        // excluded (a component may treat the value as plain, not a function).
+        // Prefixed keys (on:/e:/hook:/error:) are handled above and never reach here.
+        if (!isComponent) value = maybeReactive(t, value);
+
         const needsQuoting = typeof key === "string" && /[-:]/.test(key);
         props.push(t.objectProperty(
           needsQuoting || (typeof key === "string" && /^data-|^aria-/.test(key))
@@ -85,7 +93,7 @@ export function processAttributes(t, attributes, isComponent) {
  * @param {Record<string, any>} props
  * @param {any[]} expressions
  */
-export function processComponentAttributes(t, props, expressions) {
+export function processComponentAttributes(t, props, expressions, isComponent) {
   const propsArray = [], onArray = [], hooksArray = [], eArray = [], errorArray = [];
 
   for (const key in props) {
@@ -95,9 +103,11 @@ export function processComponentAttributes(t, props, expressions) {
     if (value === true) {
       processedValue = t.booleanLiteral(true);
     } else if (value.__slot !== undefined) {
-      processedValue = expressions[value.__slot];
+      const slotExpr = expressions[value.__slot];
+      processedValue = isComponent ? slotExpr : maybeReactive(t, slotExpr);
     } else if (Array.isArray(value)) {
-      processedValue = componentNodeToBabel(t, value, expressions);
+      const concat = componentNodeToBabel(t, value, expressions);
+      processedValue = isComponent ? concat : maybeReactive(t, concat);
     } else {
       processedValue = t.stringLiteral(String(value));
     }

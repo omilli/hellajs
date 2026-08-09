@@ -97,12 +97,12 @@ const total = count();
 
 ### Array Attributes
 
-Array values for attributes are joined with spaces, filtering falsy values. Useful for dynamic class lists:
+Array values for attributes are joined with spaces, filtering falsy values. A call inside the array makes the whole attribute reactive in compiled code — no manual wrapper needed (runtime `html\`\`` still requires `() => …`).
 
 ```jsx
 const isActive = signal(true);
 
-<div class={() => ["base", isActive() && "active", "always"]}>
-  {/* Renders: class="base active always" */}
+<div class={["base", isActive() && "active", "always"]}>
+  {/* Compiled: isActive() auto-wraps — class="base active always"; → "base always" once false */}
 </div>
 ```

@@ -186,7 +186,7 @@ describe("babel", () => {
 
     test("handles function calls", () => {
       const output = transformJSX("<div onClick={handleClick()} />");
-      expect(output).toContain("onClick: handleClick()");
+      expect(output).toContain("onClick: () => handleClick()");
     });
 
     test("handles object expressions", () => {
@@ -283,7 +283,10 @@ describe("babel", () => {
       };
       const expressions = [types.identifier("dynamicValue")];
 
-      const result = processComponentAttributes(types, props, expressions);
+      // Mixed-content array (text + slot markers) builds a binary `+` concat.
+      // isComponent=false exercises the new element path (maybeReactive is a no-op
+      // here: dynamicValue is an identifier, not a call).
+      const result = processComponentAttributes(types, props, expressions, false);
       // The mixed content should be processed
       expect(result.props).toHaveLength(2); // id and class
       expect(result.props[0]?.key?.name).toBe("id");
