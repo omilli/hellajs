@@ -33,6 +33,7 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html\
 | `src/utils/traversal.mjs` | `findPassthroughComponents` (Set) + `containsComponent(node, excludeNames)`; recurses through intermediate AST. |
 | `src/utils/babel.mjs` | `getTagCallee`: JSXIdentifier → Identifier; JSXMemberExpression → MemberExpression (recursive); throws otherwise. |
 | `src/constants.mjs` | `FRAGMENT_TAG = '$'`. |
+| `src/utils/reactive.mjs` | `maybeReactive(t, expr)` + `containsCall`: auto-wrap heuristic — wraps a call-containing expression in `() => expr` for reactivity (skip if top-level is already a function = the double-wrap guard). Applied to element children + element `bind:` only. |
 
 ## Visitor pipeline
 
@@ -143,6 +144,7 @@ Grounded in tests — verify any change against these:
 - **Component props flatten** — `<Button on:click={h} bind:x={s} hook:mount={m} error:fallback={f} e:click={d} id="x" />` produces a single `props` object with `click`, `x`, `mount`, `fallback`, `click`, `id` keys (no nested `on`/`bind`/etc.).
 - **HellaNode field order** — `tag, props, on, e, bind, hooks, error, children`; only `tag` is always present.
 - **Static-children join** — when every child of an element or component is a `StringLiteral`, they are concatenated into one string inside a one-element array (vnode.mjs, component.mjs).
+- **Auto-wrap of reactive expressions** — element children and element `bind:` expressions that contain a call (signal read, method call) are auto-wrapped into `() => expr` so dom's effect machinery tracks them (SolidJS-style compiled reactivity). **Excluded** (never wrapped): regular `props`; component children/props (a component may treat `props.children` as a value, not a function); mixed-content `html\`\`` attributes (binary `+` chains); and any expression already a function at top level (double-wrap guard — an explicit `() => foo()` is emitted verbatim, else dom would stringify the inner arrow). Heuristic: `src/utils/reactive.mjs`; applied in `processors/children.mjs` (JSX children, gated on `isComponent`), `processors/attributes.mjs` (JSX + compiled-`html\`\`` `bind:`), `builders/ast.mjs` (compiled-`html\`\`` element children). Runtime `html\`\`` (`packages/dom/lib/html.ts`) receives evaluated values and cannot wrap — explicit `() => …` wrappers remain required there. Bare signal refs (`{signal}`) and bare identifiers are not call-containing and pass through unwrapped.
 - **`props.children` spread** — `{props.children}` in JSX becomes `...props.children` (spread element) inside the children array.
 - **Whitespace normalization** — JSX text is whitespace-collapsed (`\s+` → single space) and dropped if `.trim()` is empty; HTML text is trimmed.
 - **camelCase `data`/`aria`** — `dataTestId` → `"data-test-id"`, `ariaLabel` → `"aria-label"`; the kebab form is always emitted as a quoted string key.
