@@ -1,2 +1,3 @@
 - use package README.md as import to API docs
 - plugins docs import
+- import example docs from examples
