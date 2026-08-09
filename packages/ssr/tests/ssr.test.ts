@@ -42,6 +42,13 @@ describe("ssr", () => {
     expect(ssr(node)).toBe("<ul><!--[--><li>1</li><li>2</li><li>3</li><!--]--></ul>");
   });
 
+  test("renders a reactive getter returning an array of nodes in array order inside a marker region", () => {
+    // A getter resolving to an array of HellaNodes walks each (parity with dom's resolveNode);
+    // byte-identical to the ForEach case above (no per-item markers — one region pair wraps the array).
+    const node = html`<ul>${() => [1, 2, 3].map((n) => html`<li>${n}</li>`)}</ul>` as HellaNode;
+    expect(ssr(node)).toBe("<ul><!--[--><li>1</li><li>2</li><li>3</li><!--]--></ul>");
+  });
+
   test("renders Transition child in a marker region when show is true", () => {
     const node = html`<div><${Transition} show=${true}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode;
     expect(ssr(node)).toBe("<div><!--[--><p>on</p><!--]--></div>");

@@ -19,6 +19,7 @@ export const parityCases: { name: string; node: HellaNode }[] = [
   { name: "escaped text child", node: html`<p>${signal('<b>&"x')}</p>` as HellaNode },
   { name: "fragment child among siblings", node: html`<div>a${html`<b></b><c></c>`}d</div>` as HellaNode },
   { name: "reactive child resolving to an element", node: html`<div>${signal(html`<b></b>` as HellaNode)}</div>` as HellaNode },
+  { name: "reactive getter returning an array of nodes", node: html`<ul>${() => [1, 2, 3].map((n) => html`<li>${n}</li>`)}</ul>` as HellaNode },
   { name: "reactive child resolving to a non-HellaNode object", node: html`<div>${signal({ notag: true } as unknown as HellaNode)}</div>` as HellaNode },
   { name: "reactive getter returning an isDynamic component", node: html`<div>${() => ForEach({ each: signal([1, 2, 3]), use: (n: number) => html`<li>${n}</li>` })}</div>` as HellaNode },
 ];
