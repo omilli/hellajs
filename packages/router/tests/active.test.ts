@@ -100,5 +100,21 @@ describe("router", () => {
       navigate("/search", { query: { q: "hello" } });
       expect(route().active("/search")).toBe(true);
     });
+
+    test("root pattern is exact — not active at deeper paths", () => {
+      router({
+        routes: {
+          "/": () => render("home"),
+          "/users/:id": () => render("user")
+        }
+      });
+
+      navigate("/");
+      expect(route().active("/")).toBe(true);
+
+      navigate("/users/1");
+      expect(route().active("/")).toBe(false);
+      expect(route().active("/users/1")).toBe(true);
+    });
   });
 });
