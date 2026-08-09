@@ -47,7 +47,7 @@ export function componentNodeToBabel(t, node, expressions) {
   const isComponent = isSlotTag || /^[A-Z]/.test(node.tag);
 
   if (isComponent) {
-    const { props, on, e, hooks, error } = processComponentAttributes(t, node.props || {}, expressions);
+    const { props, on, e, hooks, error } = processComponentAttributes(t, node.props || {}, expressions, true);
     const allProps = [...props];
     if (on.length > 0) allProps.push(...on);
     if (e.length > 0) allProps.push(...e);
@@ -72,7 +72,7 @@ export function componentNodeToBabel(t, node, expressions) {
 
     return buildComponentCall(t, tagCallee, allProps, processedChildren);
   } else {
-    const { props, on, e, hooks, error } = processComponentAttributes(t, node.props || {}, expressions);
+    const { props, on, e, hooks, error } = processComponentAttributes(t, node.props || {}, expressions, false);
 
     // Process children recursively. Element children (not component children) are
     // auto-wrapped: a bare slot expression that is reactive-looking (contains a
