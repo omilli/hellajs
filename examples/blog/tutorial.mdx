@@ -294,7 +294,7 @@ mount(App, "#app");
 - **`"/": "/posts"`**: Redirect from root to `/posts`
 - **`"/posts": (_params, query) => ...`**: The second argument `query` provides query string parameters. Used here to read the `page` param
 - **[`appStore.page`](/reference/store/store)`(query.page ? Number(query.page) : 1)`**: Sets the page from the URL, defaulting to 1
-- **[`view`](/reference/core/signal)`(PostList())`**: Renders the PostList component into the view signal. The component is evaluated immediately and its DOM stored in the signal
+- **[`signal`](/reference/core/signal)` `view` `(PostList())`**: Renders the PostList component into the view signal. The component is evaluated immediately and its DOM stored in the signal
 - **`"/posts/:id": ({ id }) => ...`**: Dynamic parameter extracted from the URL, stored in `appStore.postId`
 - **`scrollBehavior: 'top'`**: Scrolls to the top on every navigation
 - **[`mount`](/reference/dom/mount)`(App, '#app')`**: Renders the App element into the DOM. Since `App` is a plain element (not a function), it's mounted directly

@@ -10,7 +10,7 @@ function $collection<T extends Element = Element>(selector: string): DomCollecti
 - `selector`: A CSS selector string to find all matching elements.
 - **Returns**: A reactive reference with declarative methods and array-like access.
 
-For a single element without collection overhead, see [`$ref`](/reference/dom/ref).
+For a single element without collection overhead, see [`$ref`](/reference/dom/$ref).
 
 ## Basic Usage
 
@@ -211,7 +211,7 @@ ref.forEach((el, i) => console.log(i, el.node));
 
 ### Use $ref for Single Elements
 
-If you only need the first matching element and don't need auto-watching, use [`$ref`](/reference/dom/ref) for less overhead.
+If you only need the first matching element and don't need auto-watching, use [`$ref`](/reference/dom/$ref) for less overhead.
 
 ```js
 // For single element without watching
