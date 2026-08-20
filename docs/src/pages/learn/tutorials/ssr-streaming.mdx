@@ -257,33 +257,88 @@ export const Dashboard = () => (
 
 ## The Streaming Server
 
-The server exports a `render()` that returns a web `ReadableStream`. A full streamed document needs a prefix and a suffix around the body — [`doc`](/reference/ssr/doc) returns a string synchronously, so for [`ssrStream`](/reference/ssr/ssr-stream) you assemble the shell by hand. On the server (no DOM), [`css`](/reference/css/css) returns the generated CSS text, injected into the prefix's `<head>`. This is a single page, so `render()` takes no argument.
+The server exports a `render()` that returns a web `ReadableStream`. A full streamed document needs a prefix and a suffix around the body — [`doc`](/reference/ssr/doc) returns a string synchronously, so for [`ssrStream`](/reference/ssr/ssr-stream) you assemble the shell by hand. The page's styles live in their own module — on the server (no DOM), [`css`](/reference/css/css) returns the generated CSS text, which the prefix injects into the document's `<head>`. This is a single page, so `render()` takes no argument.
 
-Create `src/server.tsx`:
+First the theme — deliberately minimal, since the CSS is incidental to the streaming story: layout and skeleton visibility, not visual polish. Create `src/theme.ts`:
 
 ```tsx
 import { css } from '@hellajs/css';
+
+// The dashboard's theme, one nested object mirroring the DOM — every selector composes
+// down from .dashboard. css() returns the generated CSS text on the server (no DOM); the
+// server injects it once into the streamed document's <head>. The shell is static, so no
+// client re-injection is needed. Deliberately minimal: layout and skeleton visibility only.
+export const styles = css({
+  body: {
+    fontFamily: 'system-ui, sans-serif',
+    maxWidth: '42rem',
+    margin: '2rem auto',
+    padding: '0 1rem',
+  },
+  '.dashboard': {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem',
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      borderBottom: '1px solid #e5e7eb',
+      paddingBottom: '1rem',
+      h1: {
+        margin: '0',
+        fontSize: '1.5rem',
+      },
+    },
+    '.grid': {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
+      gap: '1rem',
+      '.card': {
+        border: '1px solid #e5e7eb',
+        padding: '1rem 1.25rem',
+        h2: {
+          margin: '0 0 0.75rem',
+          fontSize: '0.8rem',
+          color: '#6b7280',
+        },
+        dl: {
+          display: 'grid',
+          gridTemplateColumns: 'auto 1fr',
+          gap: '0.25rem 0.75rem',
+          margin: '0',
+        },
+        dd: {
+          margin: '0',
+          fontWeight: '600',
+        },
+        '& ul, & ol': {
+          margin: '0',
+          paddingLeft: '1.25rem',
+        },
+        '&.skeleton .bone': {
+          display: 'block',
+          height: '0.75rem',
+          marginBottom: '0.5rem',
+          background: '#e5e7eb',
+        },
+      },
+    },
+  },
+});
+```
+
+**Code Explanation**
+
+- **[`css`](/reference/css/css)`(obj)`**: global styles, defined once in a module any platform can import. The object nests to mirror the DOM — each nested key composes a descendant selector (`.dashboard header h1`)
+- **`'& ul, & ol'` / `'&.skeleton .bone'`**: every `&` expands to the parent selector, so both list types share one rule and the skeleton bones scope to the card element itself
+- **Platform-dependent return**: the server receives the CSS text for its `<style>` tag (the prefix below injects it); the shell is static, so the client never imports this module — nothing re-injects
+
+Then the server. Create `src/server.tsx`:
+
+```tsx
 import { ssrStream } from '@hellajs/ssr';
 import { Dashboard } from './app';
-
-// css() returns the generated CSS text on the server (no DOM) — inject it once into the
-// streamed document's <head>. The shell is static, so no client re-injection is needed.
-const styles = css({
-  body: { fontFamily: 'system-ui, sans-serif', maxWidth: '42rem', margin: '2rem auto', padding: '0 1rem', color: '#1f2937' },
-  '.dashboard': { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-  header: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' },
-  'header h1': { margin: '0', fontSize: '1.5rem' },
-  '.user': { color: '#6b7280', fontSize: '0.95rem' },
-  '.grid': { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))', gap: '1rem' },
-  '.card': { border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1rem 1.25rem', background: '#fff' },
-  '.card h2': { margin: '0 0 0.75rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#6b7280' },
-  '.card dl': { display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.25rem 0.75rem', margin: '0' },
-  '.card dt': { color: '#6b7280' },
-  '.card dd': { margin: '0', fontWeight: '600' },
-  '.card ul': { margin: '0', paddingLeft: '1.25rem', lineHeight: '1.6' },
-  '.card ol': { margin: '0', paddingLeft: '1.25rem', lineHeight: '1.6' },
-  '.skeleton .bone': { display: 'block', height: '0.75rem', marginBottom: '0.5rem', borderRadius: '0.25rem', background: '#e5e7eb' },
-});
+import { styles } from './theme';
 
 // A full streamed document needs a prefix and suffix around the streamed body — doc()
 // returns a string synchronously, so assemble the shell by hand for ssrStream.
@@ -449,29 +504,76 @@ export const Dashboard = () => (
 );
 ```
 
-### `src/server.tsx`
+### `src/theme.ts`
 
 ```tsx
 import { css } from '@hellajs/css';
+
+export const styles = css({
+  body: {
+    fontFamily: 'system-ui, sans-serif',
+    maxWidth: '42rem',
+    margin: '2rem auto',
+    padding: '0 1rem',
+  },
+  '.dashboard': {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem',
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      borderBottom: '1px solid #e5e7eb',
+      paddingBottom: '1rem',
+      h1: {
+        margin: '0',
+        fontSize: '1.5rem',
+      },
+    },
+    '.grid': {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
+      gap: '1rem',
+      '.card': {
+        border: '1px solid #e5e7eb',
+        padding: '1rem 1.25rem',
+        h2: {
+          margin: '0 0 0.75rem',
+          fontSize: '0.8rem',
+          color: '#6b7280',
+        },
+        dl: {
+          display: 'grid',
+          gridTemplateColumns: 'auto 1fr',
+          gap: '0.25rem 0.75rem',
+          margin: '0',
+        },
+        dd: {
+          margin: '0',
+          fontWeight: '600',
+        },
+        '& ul, & ol': {
+          margin: '0',
+          paddingLeft: '1.25rem',
+        },
+        '&.skeleton .bone': {
+          display: 'block',
+          height: '0.75rem',
+          marginBottom: '0.5rem',
+          background: '#e5e7eb',
+        },
+      },
+    },
+  },
+});
+```
+
+### `src/server.tsx`
+
+```tsx
 import { ssrStream } from '@hellajs/ssr';
 import { Dashboard } from './app';
-
-const styles = css({
-  body: { fontFamily: 'system-ui, sans-serif', maxWidth: '42rem', margin: '2rem auto', padding: '0 1rem', color: '#1f2937' },
-  '.dashboard': { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-  header: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' },
-  'header h1': { margin: '0', fontSize: '1.5rem' },
-  '.user': { color: '#6b7280', fontSize: '0.95rem' },
-  '.grid': { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))', gap: '1rem' },
-  '.card': { border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1rem 1.25rem', background: '#fff' },
-  '.card h2': { margin: '0 0 0.75rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#6b7280' },
-  '.card dl': { display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.25rem 0.75rem', margin: '0' },
-  '.card dt': { color: '#6b7280' },
-  '.card dd': { margin: '0', fontWeight: '600' },
-  '.card ul': { margin: '0', paddingLeft: '1.25rem', lineHeight: '1.6' },
-  '.card ol': { margin: '0', paddingLeft: '1.25rem', lineHeight: '1.6' },
-  '.skeleton .bone': { display: 'block', height: '0.75rem', marginBottom: '0.5rem', borderRadius: '0.25rem', background: '#e5e7eb' },
-});
+import { styles } from './theme';
 
 const prefix = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Dashboard</title><style>${styles}</style></head><body><div id="app">`;
 const suffix = '</div><script type="module" src="/src/client.tsx"></script></body></html>';
