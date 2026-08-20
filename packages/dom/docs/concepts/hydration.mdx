@@ -32,7 +32,7 @@ The button the server rendered is the exact node the client binds `on:click` to 
 
 [`hydrate`](/reference/dom/hydrate) re-executes the whole tree against the existing DOM. It is the right tool when you want a fully interactive app from server-rendered HTML. For lighter needs, prefer:
 
-- [`$ref`](/reference/dom/ref) / [`$collection`](/reference/dom/collection) — bind a few existing static nodes into reactivity without re-executing any component tree.
+- [`$ref`](/reference/dom/$ref) / [`$collection`](/reference/dom/$collection) — bind a few existing static nodes into reactivity without re-executing any component tree.
 - Island [`mount`](/reference/dom/mount) — mount a reactive component into an empty placeholder the server left. Use this when most of the page is static and only a region is interactive.
 
 A full-tree `mount` over the server container is a footgun: `mount` replaces the container's children and rebuilds, discarding the server HTML. Reserve it for throwaway, SEO-only content.

@@ -10,7 +10,7 @@ function $ref<T extends Element = Element>(selector: string): DomRef<T>
 - `selector`: A CSS selector string to find the first matching element.
 - **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.
 
-For multiple elements with auto-watching, see [`$collection`](/reference/dom/collection).
+For multiple elements with auto-watching, see [`$collection`](/reference/dom/$collection).
 
 ## Basic Usage
 
@@ -132,7 +132,7 @@ If the element is already mounted, `afterMount` hooks execute immediately.
 
 ### Single Element Only
 
-`$ref` returns the **first** matching element. For multiple elements with auto-watching for dynamically added nodes, use [`$collection`](/reference/dom/collection).
+`$ref` returns the **first** matching element. For multiple elements with auto-watching for dynamically added nodes, use [`$collection`](/reference/dom/$collection).
 
 ```js
 // Only selects the FIRST .item

@@ -88,7 +88,7 @@ This is a **breaking** part of the output contract: if you parse or snapshot `ss
 
 ### Client Enhancement Model
 
-The shipped HTML is the source of truth on the client. Bind existing static nodes into reactivity with [`$ref`](/reference/dom/ref) / [`$collection`](/reference/dom/collection), or mount a reactive island into an empty placeholder the template left for it.
+The shipped HTML is the source of truth on the client. Bind existing static nodes into reactivity with [`$ref`](/reference/dom/$ref) / [`$collection`](/reference/dom/$collection), or mount a reactive island into an empty placeholder the template left for it.
 
 ## Important Considerations
 
@@ -102,7 +102,7 @@ The shipped HTML is the source of truth on the client. Bind existing static node
 
 ### Full re-mount over server HTML wipes it
 
-Calling [`mount`](/reference/dom/mount) over the server-rendered container replaces its children and rebuilds the tree, discarding the server HTML and any user state in that subtree. Use [`$ref`](/reference/dom/ref) / [`$collection`](/reference/dom/collection) to bind existing nodes, or mount islands into empty placeholders. Full re-mount is only appropriate for throwaway (SEO-only) content.
+Calling [`mount`](/reference/dom/mount) over the server-rendered container replaces its children and rebuilds the tree, discarding the server HTML and any user state in that subtree. Use [`$ref`](/reference/dom/$ref) / [`$collection`](/reference/dom/$collection) to bind existing nodes, or mount islands into empty placeholders. Full re-mount is only appropriate for throwaway (SEO-only) content.
 
 ### Synchronous render required
 

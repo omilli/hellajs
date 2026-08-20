@@ -87,7 +87,7 @@
   The docs site has no test catching broken internal links, so each change must manually reconcile the full surface — this is the docs-site analogue of the root "full blast radius" rule:
 
   - **`nav.ts` ↔ `pages/**/*.mdx`** — every entry must resolve to a file; every sidebar-visible page needs an entry. Stale entries render dead links or fall back to dash→space titles.
-  - **Enumeration pages** — `learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx` are hand-maintained; known to drift (e.g. `patterns/index.mdx` links a `data` page whose file is `resource.mdx`). Re-walk these whenever a page is added, removed, or renamed.
+  - **Enumeration pages** — `learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx` are hand-maintained; known to drift. Re-walk these whenever a page is added, removed, or renamed.
   - **Prose cross-references** — before changing a behavior the docs describe, grep `src/pages/` for claims the change falsifies (e.g. an "X not supported" alert a new feature makes false).
   - **Aliases** — a new package needs its `@<pkg>` alias added to **both** `astro.config.mjs` and `tsconfig.json`.
 

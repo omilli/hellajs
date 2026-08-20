@@ -44,7 +44,7 @@ ssr(html`<main>${raw('<h1>Hi</h1>')}</main>`);
 The shipped HTML is the source of truth. The client can either hydrate the full tree or enhance the static HTML selectively.
 
 - [`hydrate`](/reference/dom/hydrate) re-executes the component tree against the existing DOM, locating each `<!--[-->…<!--]-->` marker region and attaching effects/handlers/state without replacing it. Pass the same node the server passed to `ssr`; reactive state must initialize to the server-rendered values. See [Hydration](/learn/concepts/hydration).
-- Bind individual existing server-rendered nodes into reactivity with [`$ref`](/reference/dom/ref) and [`$collection`](/reference/dom/collection).
+- Bind individual existing server-rendered nodes into reactivity with [`$ref`](/reference/dom/$ref) and [`$collection`](/reference/dom/$collection).
 - Mount a reactive island into an empty placeholder the template left for it.
 
 ```js
