@@ -36,11 +36,11 @@ Sections in order: File Locations & Naming · Decision Precedence · Template Se
 | Pattern | `packages/{name}/docs/patterns/{topic}.mdx` | Lowercase topic (`reactivity.mdx`, `routing.mdx`, `styling.mdx`) |
 | Package index | `packages/{name}/docs/index.mdx` | Always `index.mdx` |
 | Website wrapper | `docs/src/pages/{section}/{package}/{name}.mdx` | Matches package doc |
-| Tutorial | `docs/src/pages/learn/tutorials/{name}.mdx` | Lowercase app name |
+| Tutorial | `examples/{name}/tutorial.mdx` | Lowercase app name, always `tutorial.mdx` |
 
 ### Frontmatter
 
-- **Package docs** (`packages/*/docs/**/*.mdx`): No frontmatter.
+- **Package docs** (`packages/*/docs/**/*.mdx`) and **tutorial content docs** (`examples/*/tutorial.mdx`): No frontmatter.
 - **Website wrapper pages** (`docs/src/pages/**/*.mdx`): Always include `title`, `description`, `layout`:
 
 ```yaml
@@ -211,19 +211,11 @@ Self-contained example demonstrating core functionality (15–40 lines, with imp
 
 ## Tutorial Docs
 
-Tutorials follow a strict progressive-build pattern: each section adds code on top of the previous, building toward the complete app shown at the end. The working app lives in `examples/{name}/`.
+Tutorials follow a strict progressive-build pattern: each section adds code on top of the previous, building toward the complete app shown at the end. The tutorial doc AND the working app both live in `examples/{name}/` — `tutorial.mdx` sits next to the code it documents. The website page is a thin wrapper (§Website Wrapper Pages).
 
 ### Template
 
 ```astro
----
-layout: ../../../layouts/MainLayout.astro
-title: {Name} App
-description: Learn ... by building ...
----
-
-import {Icon} from 'astro-icon/components';
-
 # Build a {Name} App
 
 Brief intro paragraph.
@@ -274,17 +266,17 @@ Full runnable code matching the example app.
 
 ### Rules
 
-- **Frontmatter**: Always include `title`, `description`, `layout`. Import `Icon` from `astro-icon/components` when using alert boxes.
+- **Frontmatter**: None — the wrapper page owns `title`, `description`, `layout`.
 - **Language tag**: `tsx` for TypeScript tutorials, `jsx` for JavaScript tutorials.
 - **Progressive build**: Each section adds code on top of the previous. Never removes or rewrites earlier code.
 - **Context markers**: Use `//...` comments to show placement (`//... add after X`, `//... rest of the code unchanged`). **Never show full file repeats** — only new/changed code with surrounding context. The reader builds up from previous sections.
 - **Code Explanation**: Always present after every code block. Bullet list with bold backtick-wrapped API names linking to reference docs on first mention. Factual tone (not conversational).
-- **Alert boxes**: Use `<div role="alert" class="alert alert-error">` with Icon import for critical warnings (mutation pitfalls, reactivity gotchas). Follow with Good/Bad code examples.
+- **Alert boxes**: Use `<div role="alert" class="alert alert-error">` with a `<span>⚠️</span>` for critical warnings (mutation pitfalls, reactivity gotchas). Follow with Good/Bad code examples. No component imports — content docs live outside `docs/`.
 - **Dev server callout**: Include `npm run dev` + URL (`http://localhost:5173`) in the section where the app first becomes interactive.
 - **What You'll Learn**: Bold concept labels with brief descriptions. Link to reference docs on first mention using `[Concept](/reference/path)`.
 - **Project Setup**: Always includes `### Installation` (npm commands) and `### Configuration` (vite config, tsconfig).
 - **Next Steps**: 3 links to relevant tutorials/guides/concepts + one-line closing sentence.
-- **Complete Code**: Full runnable code block matching `examples/{name}/src/main.tsx` (or `.jsx`) identically.
+- **Complete Code**: Every source file under `examples/{name}/src/` appears identically (ambient shims like `vite-env.d.ts` may be omitted); single-file apps as one block, multi-file apps as one `### `src/...`` heading + block per file. Configs (`vite.config.js`, `tsconfig.json`, `package.json`) appear in Project Setup.
 
 ### Concept Section Order
 
@@ -300,7 +292,7 @@ Adjust to match the app's build-up. State always comes first. Effects are option
 
 ## Website Wrapper Pages
 
-`docs/src/pages/` pages are thin wrappers that import and render package docs. **Zero content of their own.**
+`docs/src/pages/` pages are thin wrappers that import and render package docs and example tutorials. **Zero content of their own.**
 
 ### Format
 
@@ -326,6 +318,8 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 | `@resource/` | `packages/resource/docs/` |
 | `@router/` | `packages/router/docs/` |
 | `@store/` | `packages/store/docs/` |
+| `@ssr/` | `packages/ssr/docs/` |
+| `@examples/` | `examples/` |
 
 ### Rules
 
@@ -372,7 +366,7 @@ Never duplicate (§Splitting & Duplicate Rules): if two docs would cover the sam
 | Multi-topic conceptual guide | `concepts/{name}.mdx` |
 | Gotchas/anti-patterns | `api/{name}.mdx` → `## Important Considerations` |
 | Copy-paste code snippets | `patterns/{name}.mdx` |
-| Step-by-step app build | `docs/src/pages/learn/tutorials/{name}.mdx` |
+| Step-by-step app build | `examples/{name}/tutorial.mdx` |
 
 ### Splitting & Duplicate Rules
 
@@ -619,7 +613,7 @@ Use Astro alert syntax for callouts needing visual emphasis:
 
 - Use sparingly — most information belongs in normal text.
 - Prefer `alert-info` for informational notes. Avoid `alert-warning` (use `⚠️` inline instead).
-- Use `<div role="alert" class="alert alert-error">` for critical warnings in tutorials (requires Icon import).
+- Use `<div role="alert" class="alert alert-error">` with a `<span>⚠️</span>` for critical warnings in tutorials. Never import site-only components (e.g. `astro-icon`) in content docs — they live outside `docs/` and cannot resolve them.
 
 ### Blockquote Callouts
 
