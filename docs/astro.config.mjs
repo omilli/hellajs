@@ -18,7 +18,8 @@ export default defineConfig({
         '@resource/*': '../packages/resource/docs/*',
         '@router/*': '../packages/router/docs/*',
         '@store/*': '../packages/store/docs/*',
-        '@ssr/*': '../packages/ssr/docs/*'
+        '@ssr/*': '../packages/ssr/docs/*',
+        '@examples/*': '../examples/*'
       }
     }
   },

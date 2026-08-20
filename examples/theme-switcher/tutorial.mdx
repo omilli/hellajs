@@ -1,0 +1,250 @@
+# Build a Theme Switcher
+
+Let's build a theme switcher using reactive CSS variables that update when state changes.
+
+Jump to the [Complete Code](#complete-code) for the finished application.
+
+## What You'll Learn
+
+- **[CSS Variables](/reference/css/cssvars)**:  Reactive bridge between state and styles
+- **[Signals](/reference/core/signal)**:  Reactive state for theme mode
+- **[Computed](/reference/core/computed)**:  Deriving values from signals
+
+We'll start simple and add complexity step by step, so you see how each concept builds on the previous ones.
+
+## Project Setup
+
+### Installation
+
+Use your favorite package manager to scaffold a new Vite project.
+
+```bash
+npm create vite@latest theme-app -- --template vanilla-ts
+```
+
+Navigate into your new project directory and install the HellaJS packages and the Vite plugin.
+
+```bash
+cd theme-app
+npm install @hellajs/core @hellajs/dom @hellajs/css
+npm install -D vite-plugin-hellajs
+```
+
+### Configuration
+
+Update your `vite.config.js` to use the HellaJS plugin.
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+import viteHellaJS from 'vite-plugin-hellajs';
+
+export default defineConfig({
+  plugins: [viteHellaJS()],
+});
+```
+
+Update your `tsconfig.json` to add HellaJS type definitions.
+
+```json
+{
+  "compilerOptions": {
+    //...
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"]
+    //...
+  }
+}
+```
+
+## Theme State
+
+Start by creating a [signal](/reference/core/signal) for the theme mode and a [computed](/reference/core/computed) value to track whether we're in dark mode.
+
+Replace the content of `main.tsx` with the component shell.
+
+```tsx
+// main.tsx
+import { signal, computed } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+
+const theme = signal('light');
+const isDark = computed(() => theme() === 'dark');
+
+const ThemeSwitcher = () => {
+  return (
+    <div>
+      <h1>Theme Switcher</h1>
+      <p>Mode: {theme}</p>
+    </div>
+  );
+};
+
+mount(ThemeSwitcher, '#app');
+```
+
+**Code Explanation**
+
+- **[`signal`](/reference/core/signal)`('light')`**:  Creates reactive state for the current theme mode
+- **[`computed`](/reference/core/computed)`(() => theme() === 'dark')`**:  Derives a boolean that updates when the signal changes
+- **`{theme}`**:  Creates a reactive binding that shows the current mode
+- **[`mount`](/reference/dom/mount)`(ThemeSwitcher, '#app')`**:  Renders the component into the DOM
+
+## Reactive CSS Variables
+
+Now let's connect our theme state to CSS. [`cssVars`](/reference/css/cssvars) creates reactive CSS custom properties that update when signals change.
+
+Add the CSS import and define reactive variables:
+
+```tsx
+//... add after core import
+import { css, cssVars } from "@hellajs/css";
+
+const vars = cssVars({
+  bg: () => isDark() ? '#1a1a2e' : '#fff',
+  surface: () => isDark() ? '#16213e' : '#f8fafc',
+  text: () => isDark() ? '#e2e8f0' : '#1e293b',
+  primary: () => '#3b82f6',
+  border: () => isDark() ? '#334155' : '#e2e8f0',
+});
+
+const ThemeSwitcher = () => {
+  //... rest of the code unchanged
+}
+```
+
+**Code Explanation**
+
+- **[`cssVars`](/reference/css/cssvars)`({...})`**:  Creates reactive CSS custom properties (each value is a function that reads from signals)
+- **`vars.bg`, `vars.text`**:  Each property resolves to a CSS custom property string (e.g., `var(--hellajs-bg)`)
+- **Automatic reactivity**:  When `isDark()` changes, every variable that depends on it recalculates
+- **Static values**:  `vars.primary` returns a constant since the accent color doesn't change
+
+## Styles and Toggle
+
+Define styles using [`css`](/reference/css/css) with class selectors as keys. Shared button styles live in the `app` container as a descendant selector.
+
+```tsx
+//... after vars definition
+
+css({
+  '.page': {
+    minHeight: '100vh',
+    backgroundColor: vars.bg,
+    color: vars.text,
+    fontFamily: 'system-ui, sans-serif',
+    transition: 'background-color 0.2s, color 0.2s',
+  },
+  '.app': {
+    maxWidth: '30rem',
+    margin: '0 auto',
+    padding: '1rem',
+    'h1': { margin: '0 0 0.75rem' },
+    'button': {
+      padding: '0.5rem 1rem',
+      border: 'none',
+      borderRadius: '0.25rem',
+      backgroundColor: vars.primary,
+      color: '#fff',
+      cursor: 'pointer',
+      fontSize: '0.875rem',
+    },
+  },
+});
+
+const ThemeSwitcher = () => (
+  <div class="page">
+    <div class="app">
+      <h1>Theme Switcher</h1>
+      <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
+        {isDark() ? '☀️ Light' : '🌙 Dark'}
+      </button>
+      <p>Toggle the button to switch themes. The background, text, and border colors all update reactively.</p>
+    </div>
+  </div>
+);
+```
+
+Start the development server to see your app in action.
+
+```bash
+npm run dev
+```
+
+Your app will be running at `http://localhost:5173`. Click the toggle and watch the entire page update reactively.
+
+**Code Explanation**
+
+- **`css({'.page': {...}, '.app': {...}})`**:  Creates class selectors for `.page` and `.app`
+- **`backgroundColor: vars.bg`**:  `vars.*` properties resolve to CSS custom property strings
+- **`'button'`**:  Shared button styles as a descendant selector (buttons inside `app` inherit these defaults)
+- **`theme(isDark() ? 'light' : 'dark')`**:  Updates the signal reactively
+- **`{isDark() ? '☀️ Light' : '🌙 Dark'}`**:  Conditional text that updates reactively
+
+## Next Steps
+
+Ready to level up? Here are your best next steps.
+
+- **[Build a Todo App](/learn/tutorials/todo)**:  Apply reactive patterns to a more complex application
+- **[Styling Guide](/learn/concepts/styling)**:  Explore more dynamic CSS patterns
+- **[Understanding Reactivity](/learn/concepts/reactivity)**:  Deep dive into how the reactive system works
+
+The patterns you learned here (reactive CSS variables and computed derivations) are the foundation for building dynamic, themeable applications.
+
+## Complete Code
+
+```tsx
+import { signal, computed } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { css, cssVars } from "@hellajs/css";
+
+const theme = signal('light');
+const isDark = computed(() => theme() === 'dark');
+
+const vars = cssVars({
+  bg: () => isDark() ? '#1a1a2e' : '#fff',
+  surface: () => isDark() ? '#16213e' : '#f8fafc',
+  text: () => isDark() ? '#e2e8f0' : '#1e293b',
+  primary: () => '#3b82f6',
+  border: () => isDark() ? '#334155' : '#e2e8f0',
+});
+
+css({
+  '.page': {
+    minHeight: '100vh',
+    backgroundColor: vars.bg,
+    color: vars.text,
+    fontFamily: 'system-ui, sans-serif',
+    transition: 'background-color 0.2s, color 0.2s',
+  },
+  '.app': {
+    maxWidth: '30rem',
+    margin: '0 auto',
+    padding: '1rem',
+    'h1': { margin: '0 0 0.75rem' },
+    'button': {
+      padding: '0.5rem 1rem',
+      border: 'none',
+      borderRadius: '0.25rem',
+      backgroundColor: vars.primary,
+      color: '#fff',
+      cursor: 'pointer',
+      fontSize: '0.875rem',
+    },
+  },
+});
+
+const ThemeSwitcher = () => (
+  <div class="page">
+    <div class="app">
+      <h1>Theme Switcher</h1>
+      <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
+        {isDark() ? '☀️ Light' : '🌙 Dark'}
+      </button>
+      <p>Toggle the button to switch themes. The background, text, and border colors all update reactively.</p>
+    </div>
+  </div>
+);
+
+mount(ThemeSwitcher, '#app');
+```
