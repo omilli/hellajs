@@ -16,8 +16,12 @@ function signal<T>(initialValue: T): Signal<T>;
 
 // Without an initial value
 function signal<T>(): Signal<T | undefined>;
+
+// With an equality override
+function signal<T>(initialValue: T, options: EqualsOptions<T>): Signal<T>;
 ```
 - `initialValue`: The initial value for the signal. Omit to start as `undefined`.
+- `options`: An optional `{ equals }` comparator that replaces the default equality check (`===`, with `NaN` equal to itself). Pass `signal(undefined, { equals })` to combine a comparator with no initial value.
 - **Returns**: A `Signal<T>` function that gets the value when called with no arguments, or sets the value when called with an argument. Importable as `import type { Signal } from '@hellajs/core'` for typing function parameters.
 
 ## Basic Usage
@@ -74,7 +78,7 @@ name('Alice'); // No effect triggered - same value
 name('Bob');   // Effect triggered - different value
 ```
 
-NaN is a special case: `NaN !== NaN`, so setting `NaN` always triggers propagation even when the logical value is the same.
+`NaN` is self-equal under the default equality: writing `NaN` to a signal that already holds `NaN` is treated as unchanged and skips propagation. Transitions to or from `NaN` still propagate.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
@@ -83,8 +87,35 @@ const count = signal(NaN);
 
 effect(() => console.log('Effect triggered:', count()));
 
-count(NaN); // Effect triggered: NaN !== NaN means the value always appears changed
+count(NaN); // No effect triggered - NaN is self-equal
+count(1);   // Effect triggered - different value
 ```
+
+### Custom Equality
+
+The `equals` option replaces the default reference check. When it returns `true`, the write is skipped entirely: the value, the old reference, and all subscriptions stay untouched.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const todos = signal([{ id: 1, done: false }], {
+  equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i].id)
+});
+
+const stable = todos();
+todos([{ id: 1, done: false }]); // Content-equal by id: write skipped
+console.log(todos() === stable); // true - the old reference is kept
+
+effect(() => console.log('Todos changed:', todos()));
+
+todos([{ id: 1, done: true }]); // Different content: effect triggered
+```
+
+An equal write keeps the old reference, so consumers comparing by identity never see a rejected value.
+
+`NaN` needs no comparator — the default already treats it as self-equal. Use `Object.is` as `equals` only to also distinguish `+0` from `-0`; under the default they compare equal.
+
+The comparator receives the freshest stored value, and `{ equals: undefined }` behaves as no options.
 
 ## Important Considerations
 

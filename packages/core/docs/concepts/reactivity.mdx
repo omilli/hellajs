@@ -188,6 +188,24 @@ counterValue(1);      // display recalculates
 console.log(display()); // "Count: 1"
 ```
 
+### Custom Equality
+
+Both [`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) accept an optional `{ equals }` comparator that replaces the default reference check. An equal value skips the update entirely — the old reference is kept and nothing propagates.
+
+```typescript
+import { signal, effect } from '@hellajs/core';
+
+const todos = signal([{ id: 1 }], {
+  equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i].id)
+});
+
+effect(() => console.log('Todos changed:', todos()));
+
+todos([{ id: 1 }]); // Content-equal by id: effect does not re-run
+```
+
+The default equality already treats `NaN` as equal to itself, so repeated `NaN` writes never re-run effects — reach for `equals` when comparing content, or `Object.is` to also distinguish `+0` from `-0`.
+
 ### Untracked Reads
 
 Use [`untracked`](/reference/core/untracked) to read a [`signal`](/reference/core/signal) without establishing a dependency.

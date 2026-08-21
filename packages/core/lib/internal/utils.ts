@@ -8,6 +8,17 @@ export function isFunction(value: unknown): value is (...args: unknown[]) => unk
 }
 
 /**
+ * Checks if two values are equal under the default equality: identical references,
+ * with NaN equal to itself so repeated NaN writes never count as changes.
+ * @param a First value
+ * @param b Second value
+ * @returns True if the values are equal
+ */
+export function isEqual(a: unknown, b: unknown): boolean {
+  return a === b || (a !== a && b !== b);
+}
+
+/**
  * Checks if a value is a string.
  * @param value The value to check
  * @returns True if the value is a string
