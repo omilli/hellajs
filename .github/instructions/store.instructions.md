@@ -13,9 +13,9 @@ Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain objec
 | `lib/store.ts` | Public `store()` overloads; all delegate to `createStore` |
 | `lib/internal/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, recursive init |
 | `lib/internal/draft.ts` | `deepClone` + `extractChanges` — used only by the draft-mutator path |
-| `lib/internal/utils.ts` | `reservedKeys` Set, `isObject`, `isStore`, `isObjectOrFunction`, `readDeep`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
+| `lib/internal/utils.ts` | `reservedKeys` Set, `isStore`, `isObjectOrFunction`, `readDeep`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
 | `lib/types.d.ts` | `Store<T,R>`, `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys` |
-| `lib/internal/core.ts` | Re-exports `signal`/`computed`/`isFunction`/`isPlainObject` + `Signal` type from core |
+| `lib/internal/core.ts` | Re-exports `signal`/`computed`/`isFunction`/`isPlainObject`/`isObject` + `Signal` type from core |
 
 ## `store()` overloads (`lib/store.ts`)
 
