@@ -16,7 +16,7 @@ Reactive primitives over a doubly-linked dependency DAG. Signals are sources, co
 | `hasWindow`, `hasDocument`, `hasNavigator` | Env probes | `lib/internal/env.ts` |
 | `Signal` | Type-only | `lib/types.d.ts` |
 
-`computed`, `effect`, `batch`, `untracked`, and `scope` each throw `new Error("[core] <name>: <argName> must be a function, received <typeof>")` when their callback is not a function (arg names: `computedFn`, `effectFn`, `batchFn`, `untrackedFn`, `fn`). `signal` takes a value, not a function, and does no validation.
+`computed`, `effect`, `batch`, `untracked`, and `scope` each throw `new Error("[core] <name>: <argName> must be a function, received <typeof>")` when their callback is not a function (arg names: `computedFn`, `effectFn`, `batchFn`, `untrackedFn`, `fn`). `signal` takes a value, not a function, and validates only its optional `options.equals` (throwing `[core] signal: equals must be a function, received <typeof>` when present and non-function); `computed(fn, options)` validates the same way. An equal `equals` result skips the update entirely — old value/reference kept, no propagation; on `computed`, the comparator is skipped on the first evaluation (prev is `undefined`).
 
 ## Node types & initialization
 
@@ -79,7 +79,7 @@ Module-level singletons that drive tracking and scope registration:
 ## Non-obvious behaviors
 
 - **Getter/setter discriminator is `arguments.length`, not value identity.** `s(undefined)` is a setter call, not a getter — storing `undefined` is supported and tested.
-- **`!==` reference equality** for change detection (like Preact / Alien Signals). Primitives compare by value; new object/array references always propagate; `NaN !== NaN` so setting `NaN` always fires. In-place mutation never fires — replace the reference.
+- **Reference equality with `NaN` self-equal by default** for change detection (`isEqual` in `lib/internal/utils.ts`: `a === b || (a !== a && b !== b)`), overridable per node via `signal(v, { equals })` / `computed(fn, { equals })`. Primitives compare by value; new object/array references always propagate; writing `NaN` over `NaN` is treated as unchanged and never fires (`+0`/`-0` compare equal — `Object.is` as `equals` distinguishes them). An equal comparator result skips the write block entirely — the old reference stays visible. In-place mutation never fires — replace the reference.
 - **Self-writes do not infinite-loop.** An executing node holds `TRACKING`, and `propagateChange` sets a local `rf=CLEAN` for active nodes so it skips re-scheduling them — the same mechanism behind the no-double-queue guarantee. A single effect writing a signal it reads runs at most twice then stabilizes (verified: `count(count()+1)` → 2 runs, value `2`); even mutual write-cycles between two effects stabilize. `untracked` exists to read without establishing a dependency, not to prevent loops.
 - **The first effect run differs from re-runs.** The `effect()` factory runs `ef` under `setCurrentSub(this)` but does *not* call `startTracking`/`endTracking` (only `executeEffect` in the scheduler does). Dependencies are still recorded (`createLink` runs because `currentValue` is set), but `rf` stays `GUARDED` during that first run — which is why a self-write on the first run can schedule one extra execution before the re-run sets `TRACKING` and stabilizes.
 - **Errors abort the flush.** An uncaught throw in an effect propagates out of the signal setter that triggered it; remaining queued effects are skipped. Subsequent signal writes start a fresh flush and recover. Signal state is not corrupted.
@@ -95,8 +95,8 @@ Module-level singletons that drive tracking and scope registration:
 
 Integration-style, public API only — never imports `lib/internal/*`. Uses `mock()` from `bun:test` for call counts.
 
-- `signals.test.ts` — primitive/reference types, `!==` equality, `NaN`, no-arg signal (`undefined`).
-- `computed.test.ts` — chaining, previous value, error recovery, auto-GC + rebuild, deep chains (6 levels), undefined-result no-op.
+- `signals.test.ts` — primitive/reference types, default equality (incl. `NaN` self-equal), custom `equals`, no-arg signal (`undefined`).
+- `computed.test.ts` — chaining, previous value, error recovery, auto-GC + rebuild, deep chains (6 levels), undefined/NaN-result no-op.
 - `effects.test.ts` — cleanup return value, nested effects, errors from setter, try/catch tracking, async via `.then`, no-double-queue, flush-abort, deep accumulation.
 - `batch.test.ts`, `scope.test.ts` — grouping, nesting, return values, idempotent dispose, shared NOOP.
 - `topology.test.ts` — diamond / jagged-diamond / lazy-branch / skip-update / unsubscribe-inactive patterns (ported from preact-signals).
