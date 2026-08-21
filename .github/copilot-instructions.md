@@ -119,7 +119,7 @@ applyTo: "**"
 
   ## Style guides
 
-  Read the matching guide before editing. Each lives in `guides/` and is structured as a decision procedure: decision trees + canonical paths + canonical examples at the top, the rules in the middle, and a verification checklist at the end. Read the relevant section, not the whole file.
+  Read the matching guide before editing. Each lives in `guides/` and is structured as a decision procedure: decision trees + canonical paths + canonical examples at the top, the rules in the middle, and a verification checklist at the end. Read the relevant section, not the whole file. A rule edit syncs the checklist item that audits it in the same pass — `brain-audit` ticks the checklist, not the prose, so an unsynced checklist re-flags the old rule on the next audit.
 
   | Trigger | Guide |
   |---|---|
