@@ -47,11 +47,14 @@ A ground-up comparison based on the actual source code of `@hellajs/[package]` v
 
 ---
 
-## 3. Bundle Size & Dependencies
+## 3. Dependencies
 
-|  | HellaJS ([package]) | HellaJS (+ deps) | [Competitor 1] | ... |
+Bundle/byte-size numbers are intentionally excluded — they are point-in-time, frequently unverifiable (size APIs fail), and drift faster than any other claim in the doc. Dependency facts come from each package's `package.json`.
+
+| | HellaJS ([package]) | [Competitor 1] | [Competitor 2] | ... |
 |---|---|---|---|---|
-| Min+gzip | [fetched] | [fetched] | [fetched] | ... |
+| Runtime deps | [fetched from package.json] | [fetched] | [fetched] | ... |
+| Peer deps | [fetched from package.json] | [fetched] | [fetched] | ... |
 
 [Bullet points on dependency model, package split, tree-shaking.]
 
@@ -98,7 +101,7 @@ Its gaps are [honest list: ecosystem size, SSR, devtools, maturity, etc.].
 
 ## Domain-specific section candidates
 
-Pick the sections relevant to the package. Each becomes a numbered `##` section between section 3 (Bundle Size) and the Built-in Features Matrix. Adapt the section title to the package's domain.
+Pick the sections relevant to the package. Each becomes a numbered `##` section between section 3 (Dependencies) and the Built-in Features Matrix. Adapt the section title to the package's domain.
 
 ### For `core` (reactive primitives)
 
@@ -161,7 +164,6 @@ Adapt to the package. Common dimensions:
 | State shape | store |
 | Virtual DOM | dom |
 | Compile step | core, dom, css |
-| Gzipped size | all |
 | External deps | all |
 | Templating / API shape | all |
 | Language / type safety | all |
