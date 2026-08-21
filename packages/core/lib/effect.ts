@@ -35,7 +35,8 @@ export function effect(effectFn: () => (() => void) | void): () => void {
     rf: GUARDED,
   };
 
-  // Link to parent effect if nested: this makes parent re-run when child is disposed
+  // Link to parent effect if nested: the link lands in parent.rd / child.rs so the
+  // scheduler's post-run SCHEDULED walk executes scheduled child effects in dependency order.
   // Must happen before setCurrentSub so the link targets the parent, not this effect
   currentValue && createLink(effectState, currentValue);
   // Set this effect as the current reactive context for dependency tracking

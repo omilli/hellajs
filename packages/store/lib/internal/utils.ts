@@ -1,4 +1,4 @@
-import { isFunction } from "./core";
+import { isFunction, isObject } from "./core";
 import type { Signal } from "./core";
 
 /**
@@ -6,16 +6,6 @@ import type { Signal } from "./core";
  * Property names reserved by the store implementation
  */
 export const reservedKeys = new Set(["snapshot", "update", "cleanup"]);
-
-/**
- * @internal
- * Checks if value is a non-null object.
- * @param value The value to check.
- * @returns True if value is a non-null object.
- */
-export function isObject(value: unknown): value is object {
-  return typeof value === "object" && value !== null;
-}
 
 /**
  * @internal

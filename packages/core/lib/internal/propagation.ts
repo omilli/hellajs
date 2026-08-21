@@ -1,4 +1,5 @@
 import type { Link } from "./links";
+import type { EffectState } from "../effect";
 import { PENDING, DIRTY, GUARDED, WRITABLE, TRACKING, CLEAN } from "./flags";
 import { scheduleEffect } from "./queue";
 
@@ -28,7 +29,7 @@ export function propagate(link: Link): void {
     // If only pending (not dirty), mark as dirty
     if ((rf & (PENDING | DIRTY)) === PENDING) {
       lt.rf = rf | DIRTY; // Upgrade from pending to dirty
-      rf & GUARDED && scheduleEffect(lt); // Schedule effects for execution
+      rf & GUARDED && scheduleEffect(lt as EffectState); // Schedule effects for execution
     }
     link = lns!; // Move to next subscriber
   }
@@ -57,7 +58,7 @@ export function propagateChange(link: Link): void {
       }
 
       // Schedule guarded effects (effects with GUARDED flag) for execution
-      rf & GUARDED && scheduleEffect(lt);
+      rf & GUARDED && scheduleEffect(lt as EffectState);
 
       // For writable signals, traverse their subscribers depth-first
       if (rf & WRITABLE && rs) {
