@@ -55,7 +55,7 @@ const doubled = computed(() => count() * 2);
 
 // Effect automatically tracks dependencies
 effect(() => {
-  console.log(`Count: ${count}, Doubled: ${doubled}`);
+  console.log(`Count: ${count()}, Doubled: ${doubled()}`);
 });
 
 count(5); // Logs: "Count: 5, Doubled: 10"
@@ -99,7 +99,7 @@ const todos = signal([]);
 
 const currentTitle = computed(() => {
   if (view() === 'counter') {
-    return `Count: ${count}`;  // Only tracks count when view is 'counter'
+    return `Count: ${count()}`;  // Only tracks count when view is 'counter'
   }
   return `Todos: ${todos().length}`;  // Only tracks todos when view is 'todos'
 });

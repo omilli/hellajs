@@ -1,12 +1,11 @@
 import { describe, expect, test, mock } from "bun:test";
-import { delay } from "@utils/test-helpers.js";
 import { batch, effect, signal } from "@hellajs/core";
+import { delay } from "@utils/test-helpers.js";
 
 describe("core", () => {
   describe("effects", () => {
-    test("effects run on changes with cleanup and nested support", () => {
+    test("effects re-run on changes and stop after cleanup", () => {
       const count = signal(0);
-      const trigger = signal(0);
       let lastValue = 0;
 
       // Basic effect with cleanup
@@ -24,8 +23,10 @@ describe("core", () => {
       cleanup();
       count(10);
       expect(runs).toHaveBeenCalledTimes(2);
+    });
 
-      // Nested effects
+    test("nested effects created during a parent re-run execute immediately", () => {
+      const trigger = signal(0);
       const nestedRuns = mock(() => { });
       effect(() => {
         trigger();

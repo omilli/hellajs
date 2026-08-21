@@ -23,7 +23,7 @@ const count = signal(0);
 
 // This effect runs immediately, then whenever `count` changes.
 const cleanup = effect(() => {
-  console.log(`The count is: ${count}`);
+  console.log(`The count is: ${count()}`);
 });
 
 count(1); // Logs: "The count is: 1"
@@ -104,23 +104,23 @@ effect(() => {
 });
 ```
 
-### Infinite Loops
+### Self-Writes
 
-Writing to a signal that the effect also reads creates infinite loops.
+Writing to a signal the effect also reads does not run forever. Propagation skips nodes that are already executing, so a synchronous self-write runs the effect at most twice, then stabilizes.
 
-Use [`untracked`](/reference/core/untracked) for non-reactive reads.
+Use [`untracked`](/reference/core/untracked) to read a signal without creating a dependency at all.
 
 ```typescript
 import { signal, effect, untracked } from "@hellajs/core";
 
 const count = signal(0);
 
-// ❌ Effect reads and writes the same signal
+// Self-write: re-runs once, then settles at 2
 effect(() => {
-  count(count() + 1); // Triggers itself infinitely
+  count(count() + 1);
 });
 
-// ✅ Use untracked to read without creating dependency
+// ✅ Use untracked to read without creating a dependency
 effect(() => {
   const current = untracked(() => count());
   console.log(`Count: ${current}`);

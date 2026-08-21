@@ -177,6 +177,10 @@ console.log(setting()); // "Advanced: new advanced"
 Should not have side effects. Use [`effect`](/reference/core/effect) instead.
 
 ```typescript
+import { signal, computed } from '@hellajs/core';
+
+const count = signal(1);
+
 // ❌ Side effects in computed
 const result = computed(() => {
   fetch('/api/data');

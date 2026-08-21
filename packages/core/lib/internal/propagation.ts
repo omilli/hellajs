@@ -50,7 +50,11 @@ export function propagateChange(link: Link): void {
     // Only process writable signals and guarded effects
     if (rf & (WRITABLE | GUARDED)) {
       // Mark clean nodes as PENDING; set local rf to CLEAN for already-processing nodes to skip re-scheduling
-      (!(rf & ACTIVE_FLAGS)) ? (lt.rf = rf | PENDING) : rf = CLEAN;
+      if (!(rf & ACTIVE_FLAGS)) {
+        lt.rf = rf | PENDING;
+      } else {
+        rf = CLEAN;
+      }
 
       // Schedule guarded effects (effects with GUARDED flag) for execution
       rf & GUARDED && scheduleEffect(lt);
