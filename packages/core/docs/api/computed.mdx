@@ -6,9 +6,16 @@ Read-only value that automatically updates when dependencies change.
 
 ```typescript
 function computed<T>(computedFn: (previousValue?: T) => T): () => T
+
+// With an equality override
+function computed<T>(
+  computedFn: (previousValue?: T) => T,
+  options: EqualsOptions<T>
+): () => T
 ```
 - `computedFn`: The function to compute the derived value. Receives `previousValue` (the last computed result) as an optional argument.
 - `previousValue`: The previously computed value. `undefined` on the first call. Useful for incremental calculations.
+- `options`: An optional `{ equals }` comparator that replaces the default result check (`===`, with `NaN` equal to itself).
 - **Returns**: A read-only getter function
 
 ## Basic Usage
@@ -98,6 +105,26 @@ effect(() => {
 items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]"
 items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]" again (new array reference)
 ```
+
+### Custom Equality
+
+The `equals` option replaces the default equality check on the recomputed result (`===`, with `NaN` equal to itself). When it returns `true`, the old reference is kept and downstream subscribers are not notified — the recomputation itself still runs.
+
+```typescript
+import { signal, computed, effect } from '@hellajs/core';
+
+const items = signal([1, 2, 3]);
+const doubled = computed(() => items().map(x => x * 2), {
+  equals: (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
+});
+
+effect(() => console.log('Effect:', doubled()));
+
+items([1, 2, 3]); // Recomputes to equal content: no effect triggered
+items([4]);       // Different content: effect logs "Effect: [8]"
+```
+
+The comparator is skipped on the first evaluation, when the previous value is still `undefined` — the default check applies there.
 
 ### Lazy Evaluation
 
