@@ -122,7 +122,7 @@ HellaJS has three distinct memory behaviors worth comparing:
 
 **Link reuse during tracking.** When a computed or effect re-executes and reads the same signals in the same order, `createLink` advances the `rpd` bookmark and reuses the existing link object (`lib/internal/links.ts`). In the common case (deterministic reactive code), zero link objects are allocated after the first run.
 
-**Computed auto-GC.** When a computed loses its last subscriber, `removeLink` recursively walks the computed's dependencies and removes them, then marks the computed `WRITABLE | DIRTY` (`lib/internal/links.ts`). The next read rebuilds the graph from scratch. This prevents memory leaks in patterns like "subscribe, do work, dispose, subscribe again" (`packages/core/tests/reactive.test.ts` verifies the rebuild).
+**Computed auto-GC.** When a computed loses its last subscriber, `removeLink` removes **all** of the computed's dependency links (cascading into dep computeds that lose their own last subscriber), then marks the computed `WRITABLE | DIRTY` (`lib/internal/links.ts`). The next read rebuilds the graph from scratch. This prevents memory leaks in patterns like "subscribe, do work, dispose, subscribe again" (`packages/core/tests/computed.test.ts` verifies the rebuild and full dependency release).
 
 **Effect queue slot reuse.** The effect queue is a single shared array; `getNextEffect` clears each slot to `undefined` after processing so it can be garbage-collected (`lib/internal/queue.ts`), and `resetQueue` resets the indices on every flush (`lib/internal/queue.ts`). The queue itself is never reallocated.
 
@@ -143,9 +143,9 @@ HellaJS and Solid share the doubly-linked-list approach. Vue and Angular use `Se
 
 HellaJS's default is **synchronous flush**. Calling `signal(value)` outside a batch propagates changes and runs effects immediately (`lib/signal.ts`: `if (rs) { propagateChange(rs); !batchDepth && flush(); }`). There is no microtask deferral, no job queue, no scheduler tick.
 
-`batch(fn)` increments a counter on entry, decrements on exit, and flushes when the counter returns to zero (`lib/batch.ts`). Nested batches collapse into the outermost. The SCHEDULED bitmask (`lib/internal/queue.ts`) prevents double-queuing when multiple signals change in the same propagation (verified by `packages/core/tests/reactive.test.ts` — "effect not double-queued when scheduled twice in same propagation").
+`batch(fn)` increments a counter on entry, decrements on exit, and flushes when the counter returns to zero (`lib/batch.ts`). Nested batches collapse into the outermost. The SCHEDULED bitmask (`lib/internal/queue.ts`) prevents double-queuing when multiple signals change in the same propagation (verified by `packages/core/tests/effects.test.ts` — "effect not double-queued when scheduled twice in same propagation").
 
-`flush` processes the queue in FIFO order, with each effect re-validating its dependencies before running (`lib/internal/scheduler.ts` and `lib/internal/scheduler.ts`). Errors thrown from an effect abort the rest of the queue — subsequent updates start a fresh flush (`packages/core/tests/reactive.test.ts`).
+`flush` processes the queue in FIFO order, with each effect re-validating its dependencies before running (`lib/internal/scheduler.ts` and `lib/internal/scheduler.ts`). Errors thrown from an effect abort the rest of the queue — subsequent updates start a fresh flush (`packages/core/tests/effects.test.ts`).
 
 | Framework | Default flush | Batching primitive | Order guarantee |
 |---|---|---|---|
@@ -175,14 +175,14 @@ HellaJS and Solid are the only two here that flush synchronously by default with
 | Custom equality | Reference `===` only | Optional `equals` fn | `$state.raw` for refs | `Object.is` | `Object.is` + custom | `Object.is` + `{equal}` |
 | Deep reactivity | No | Stores (`createStore`) | Yes (default Proxy) | No | Yes (`reactive()`) | No |
 | Async-aware tracking | No (sync only) | `createResource` | `$derived.await` | `use(promise)` | `asyncComputed` (3rd-party) | `Resource` |
-| Error boundary | Flush aborts + re-throws (`packages/core/tests/reactive.test.ts`) | `ErrorBoundary` | `<svelte:boundary>` | Class boundaries | `errorCaptured` | `ErrorHandler` |
+| Error boundary | Flush aborts + re-throws (`packages/core/tests/effects.test.ts`) | `ErrorBoundary` | `<svelte:boundary>` | Class boundaries | `errorCaptured` | `ErrorHandler` |
 
 ### Notable HellaJS differentiators
 
 - **Doubly-linked-list dependency graph** — no per-node `Set` allocations; link removal is O(1) pointer surgery — `(lib/internal/links.ts)`
 - **Link reuse during tracking** — re-executed computations that read the same signals in the same order allocate zero link objects — `(lib/internal/links.ts)`
 - **Manual-stack DFS propagation** — `propagateChange` and `validateStale` use lightweight `{sv, sp}` stack frames, not recursion, not arrays — `(lib/internal/propagation.ts)`, `(lib/internal/validation.ts)`
-- **Computed auto-GC with DIRTY re-init** — losing the last subscriber recursively drops dependencies and marks the computed `WRITABLE | DIRTY` for lazy rebuild on next read — `(lib/internal/links.ts)`
+- **Computed auto-GC with DIRTY re-init** — losing the last subscriber drops **all** dependency links (cascading into dep computeds) and marks the computed `WRITABLE | DIRTY` for lazy rebuild on next read — `(lib/internal/links.ts)`
 - **Skip-update optimization** — `validateStale` walks the dependency graph to clear PENDING flags when underlying values didn't actually change, preventing spurious recomputation — `(lib/internal/validation.ts)`
 - **Synchronous flush by default** — no microtask, no scheduler tick; `batch(fn)` is opt-in for grouping — `(lib/signal.ts)`, `(lib/batch.ts)`
 - **Polymorphic signal/computed dispatch** — `updateValue` checks for the presence of `cbf` to dispatch between signal and computed execution paths — `(lib/internal/execution.ts)`
@@ -241,7 +241,7 @@ What sets HellaJS apart — and no single competitor matches all of:
 2. **Doubly-linked-list dependency graph** — no per-node `Set` stores; O(1) link removal; zero link allocation when re-executions read dependencies in the same order (`lib/internal/links.ts`).
 3. **Synchronous flush by default** — effects run immediately on signal write outside `batch()`. Vue, Angular, and React all defer; only Solid and Svelte share this property.
 4. **Standalone and framework-agnostic** — works in any JS runtime with no compiler, no DI container, no renderer required. Vue/Angular/Svelte/React all couple reactivity to a larger framework.
-5. **Computed auto-GC with DIRTY re-init** — losing the last subscriber recursively drops dependencies; re-subscribing rebuilds the graph and recomputes lazily. The disposal pattern is fully automatic (`lib/internal/links.ts`).
+5. **Computed auto-GC with DIRTY re-init** — losing the last subscriber drops all dependency links (cascading into dep computeds); re-subscribing rebuilds the graph and recomputes lazily. The disposal pattern is fully automatic (`lib/internal/links.ts`).
 6. **Skip-update validation** — `validateStale` walks the graph to clear PENDING flags when underlying values didn't actually change, preventing redundant recomputation in conditional-dependency graphs (`lib/internal/validation.ts`).
 
 Its gaps are the predictable ones: no devtools or browser inspector, no async/await tracking inside effects (Vue and Solid offer resource primitives; HellaJS pushes this to `@hellajs/resource`), no deep reactivity (you must replace object references — same trade-off as Solid, unlike Vue/Svelte 5 which proxy deeply), no SSR/streaming primitives in core (those live in `@hellajs/dom`), ecosystem size and adoption maturity far behind React/Vue/Angular/Svelte/Solid, and a smaller community for help, hiring, and third-party libraries.

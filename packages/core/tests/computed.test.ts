@@ -168,6 +168,82 @@ describe("core", () => {
       cleanup2();
     });
 
+    test("computed auto-GC releases every dependency for multi-dependency computeds", () => {
+      const a = signal(1);
+      const b = signal(2);
+
+      // The canary must flow into the returned value: a bare `held;` statement optimizes
+      // out of the closure and the probe reports a false negative
+      const canary = (() => {
+        const held = { tag: "multi-dep" };
+        const sum = computed(() => ({ total: a() + b(), tag: held }));
+        const stop = effect(() => { sum(); });
+        stop(); // sum loses its only subscriber: auto-GC must drop both a and b links
+        return new WeakRef(held);
+      })();
+
+      // Repeated full GCs: a single pass can leave weak targets un-swept
+      Bun.gc(true);
+      Bun.gc(true);
+      Bun.gc(true);
+      expect(canary.deref()).toBeUndefined();
+    });
+
+    test("computed auto-GC cascades dependency release into inner computeds", () => {
+      const a = signal(1);
+      const b = signal(2);
+
+      // a ─┐
+      //    ├─ inner ─ outer ─ effect
+      // b ─┘
+      // The canary rides inner's cached value, so it stays retained unless outer's
+      // auto-GC cascades through inner and releases both of inner's dependencies
+      const canary = (() => {
+        const held = { tag: "inner" };
+        const inner = computed(() => ({ total: a() + b(), tag: held }));
+        const outer = computed(() => inner().total + 1);
+        const stop = effect(() => { outer(); });
+        stop();
+        return new WeakRef(held);
+      })();
+
+      Bun.gc(true);
+      Bun.gc(true);
+      Bun.gc(true);
+      expect(canary.deref()).toBeUndefined();
+    });
+
+    test("computed re-subscription after multi-dependency auto-GC rebuilds and tracks correctly", () => {
+      const a = signal(1);
+      const b = signal(2);
+      const sum = computed(() => a() + b());
+
+      const runs = mock(() => { sum(); });
+      const stop1 = effect(runs);
+      expect(runs).toHaveBeenCalledTimes(1);
+      expect(sum()).toBe(3);
+
+      stop1();
+      a(10);
+      b(20);
+
+      // Re-subscribe after the graph was torn down and both sources changed
+      const runs2 = mock(() => { sum(); });
+      const stop2 = effect(runs2);
+      expect(runs2).toHaveBeenCalledTimes(1);
+      expect(sum()).toBe(30);
+
+      a(100);
+      expect(runs2).toHaveBeenCalledTimes(2);
+      expect(sum()).toBe(120);
+
+      b(200);
+      expect(runs2).toHaveBeenCalledTimes(3);
+      expect(sum()).toBe(300);
+
+      stop2();
+    });
+
     test("computed returning undefined detects no change", () => {
       const toggle = signal(true);
       const c = computed(() => toggle() ? undefined : "value");

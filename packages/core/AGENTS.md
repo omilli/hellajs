@@ -61,7 +61,7 @@ Module-level singletons that drive tracking and scope registration:
 
 **`createLink(source, target)` (`links.ts`).** Dedup fast-path: if `rpd.ls === source` return. If `target` is `TRACKING`, peek the next dep (`rpd.lnd` or `rd`); if it points to the same source, advance `rpd` and reuse the link — zero allocation in steady state. Otherwise splice a new link into both doubly-linked lists. Edge direction: `target` subscribes to `source` (link lands in `target.rd` and `source.rs`).
 
-**`removeLink(link, target)` (`links.ts`).** DLL surgery on both lists, returns `lnd` so callers can keep walking. **Auto-GC:** if the source loses all subscribers (`!lps && !(ls.rs = lns)`) and has a `cbf` (is a computed), mark it `WRITABLE | DIRTY` and recursively remove its outgoing dependencies.
+**`removeLink(link, target)` (`links.ts`).** DLL surgery on both lists, returns `lnd` so callers can keep walking. **Auto-GC:** if the source loses all subscribers (`!lps && !(ls.rs = lns)`) and has a `cbf` (is a computed), mark it `WRITABLE | DIRTY` and remove **all** of its outgoing dependency links (cascading into dep computeds that lose their own last subscriber).
 
 **Scheduler (`scheduler.ts` + `queue.ts`).** `scheduleEffect` appends to `effectQueue` and sets `SCHEDULED` (dedup). `flush` drains the queue: `getNextEffect` clears the slot (for GC) and the `SCHEDULED` bit, then `executeEffect` runs it; `resetQueue` zeroes indices at the end. `executeEffect`: if `DIRTY` or (`PENDING` && `validateStale`), run prior `ec`, `setCurrentSub` + `startTracking`, run `ef`, capture new `ec`, `endTracking`. Else if just `PENDING`, clear it. Then walk `rd` and recursively `executeEffect` any dependency still flagged `SCHEDULED` (clearing the bit before recursing) — this runs nested scheduled effects in dependency order. `disposeEffect` runs `ec`, removes all `rd` links and the incoming `rs` link, sets `rf = CLEAN`.
 
@@ -85,7 +85,7 @@ Module-level singletons that drive tracking and scope registration:
 - **Scope cleanup is idempotent.** The returned function `forEach`-calls cleanups then clears the set; subsequent calls iterate an empty set (no-op). Empty scopes return a shared `NOOP` singleton (reference-equal across calls).
 - **`untracked` nests correctly:** saves/restores the prior `currentValue`, so it composes inside `computed`/`effect` and reads multiple signals in one call.
 - **Batch is a depth counter.** `++batchDepth` on entry, `!--batchDepth` triggers `flush()`. Nested batches drain at outermost exit. Async work scheduled inside escapes the boundary.
-- **Computed auto-GC.** When a computed's last subscriber link is removed, `removeLink` recursively drops its dependencies and marks it `WRITABLE | DIRTY`. The next read rebuilds the graph and recomputes from scratch.
+- **Computed auto-GC.** When a computed's last subscriber link is removed, `removeLink` drops **all** of its dependency links (cascading into dep computeds that lose their own last subscriber) and marks it `WRITABLE | DIRTY`. The next read rebuilds the graph and recomputes from scratch.
 
 ## Testing approach (`tests/`)
 

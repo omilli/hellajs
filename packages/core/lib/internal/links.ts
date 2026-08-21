@@ -122,12 +122,12 @@ export function removeLink(link: Link, target = link.lt): Link | undefined {
   if (!lps && !(ls.rs = lns)) {
     // Check if source is a computed value (has compute function)
     if ((ls as ComputedState).cbf) {
-      if (ls.rd) {
-        // Mark computed as writable and dirty for cleanup
-        ls.rf = WRITABLE | DIRTY;
-        // Recursively remove all outgoing dependencies (clean up dependency tree)
-        ls.rd && (ls.rd = removeLink(ls.rd, ls));
-      }
+      // Mark computed as writable and dirty for lazy rebuild on next read
+      ls.rf = WRITABLE | DIRTY;
+      // Drain ALL outgoing dependencies; cascades into dep computeds that
+      // lose their own last subscriber (mirrors disposeEffect's loop)
+      let dep = ls.rd;
+      while (dep) dep = removeLink(dep, ls);
     }
   }
 

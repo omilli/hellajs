@@ -1,4 +1,3 @@
-import type { Reactive } from "./links";
 import type { EffectState } from "../effect";
 import { CLEAN, DIRTY, PENDING, SCHEDULED } from "./flags";
 import { setCurrentSub } from "./context";
@@ -27,9 +26,9 @@ export function flush(): void {
  * @internal Disposes of an effect, removing all its dependencies and subscriptions.
  * @param effect The effect to dispose.
  */
-export function disposeEffect(effect: EffectState | Reactive): void {
+export function disposeEffect(effect: EffectState): void {
   // Run cleanup return value if it exists
-  (effect as EffectState).ec?.();
+  effect.ec?.();
   // Remove all outgoing dependency links (what this effect depends on)
   let dep = effect.rd;
   while (dep) dep = removeLink(dep, effect);
@@ -44,21 +43,21 @@ export function disposeEffect(effect: EffectState | Reactive): void {
  * @param effectValue The effect to execute.
  * @param flags The current flags of the effect.
  */
-function executeEffect(effectValue: EffectState | Reactive, flags: number): void {
+function executeEffect(effectValue: EffectState, flags: number): void {
   // Execute if dirty or pending with stale dependencies
   if (
     flags & DIRTY // Definitely dirty
     || (flags & PENDING && validateStale(effectValue.rd!, effectValue)) // Maybe dirty - validate
   ) {
     // Call cleanup return value from previous execution
-    (effectValue as EffectState).ec?.();
+    effectValue.ec?.();
     const prevSub = setCurrentSub(effectValue); // Set reactive context for dependency tracking
     startTracking(effectValue); // Begin fresh dependency tracking
 
     try {
       // Capture cleanup return value from effect function
-      const result = (effectValue as EffectState).ef();
-      (effectValue as EffectState).ec = isFunction(result) ? result : undefined;
+      const result = effectValue.ef();
+      effectValue.ec = isFunction(result) ? result : undefined;
     } finally {
       setCurrentSub(prevSub); // Restore previous reactive context
       endTracking(effectValue); // Clean up unused dependencies from previous execution
@@ -77,7 +76,7 @@ function executeEffect(effectValue: EffectState | Reactive, flags: number): void
     const { ls, lnd } = rd;
     const { rf } = ls;
     // Execute scheduled dependencies recursively
-    rf & SCHEDULED && executeEffect(ls, ls.rf = rf & ~SCHEDULED);
+    rf & SCHEDULED && executeEffect(ls as EffectState, ls.rf = rf & ~SCHEDULED);
     rd = lnd; // Move to next dependency
   }
 }
