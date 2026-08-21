@@ -73,9 +73,17 @@ export function createLink(source: Reactive, target: Reactive): void {
   // Wire up the doubly-linked list pointers in target's dependency list
   nextDep && (nextDep.lpd = newLink); // Point next dependency back to new link
   // Insert new link into target's dependency list (either after rpd or as first)
-  rpd ? (rpd.lnd = newLink) : (target.rd = newLink);
+  if (rpd) {
+    rpd.lnd = newLink;
+  } else {
+    target.rd = newLink;
+  }
   // Wire up the doubly-linked list pointers in source's subscriber list
-  prevSub ? (prevSub.lns = newLink) : (source.rs = newLink);
+  if (prevSub) {
+    prevSub.lns = newLink;
+  } else {
+    source.rs = newLink;
+  }
 }
 
 /**
@@ -88,11 +96,26 @@ export function removeLink(link: Link, target = link.lt): Link | undefined {
   const { ls, lnd, lpd, lns, lps } = link; // Destructure all link pointers
 
   // Remove link from target's dependency list (doubly-linked list surgery)
-  lnd ? (lnd.lpd = lpd) : (target.rpd = lpd); // Update next dependency's previous pointer
-  lpd ? (lpd.lnd = lnd) : (target.rd = lnd);  // Update previous dependency's next pointer
+  // Update next dependency's previous pointer
+  if (lnd) {
+    lnd.lpd = lpd;
+  } else {
+    target.rpd = lpd;
+  }
+  // Update previous dependency's next pointer
+  if (lpd) {
+    lpd.lnd = lnd;
+  } else {
+    target.rd = lnd;
+  }
 
   // Remove link from source's subscriber list (doubly-linked list surgery)
-  lns ? (lns.lps = lps) : (ls.rps = lps);     // Update next subscriber's previous pointer
+  // Update next subscriber's previous pointer
+  if (lns) {
+    lns.lps = lps;
+  } else {
+    ls.rps = lps;
+  }
   lps && (lps.lns = lns);                     // Update previous subscriber's next pointer
 
   // Garbage collection: if source has no subscribers and no previous subscriber

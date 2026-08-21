@@ -20,7 +20,7 @@ import { signal, effect, scope } from '@hellajs/core';
 const count = signal(0);
 
 const dispose = scope(() => {
-  effect(() => console.log(`Count: ${count}`));
+  effect(() => console.log(`Count: ${count()}`));
   effect(() => console.log(`Doubled: ${count() * 2}`));
 });
 
@@ -103,10 +103,10 @@ import { signal, effect, scope } from '@hellajs/core';
 const count = signal(0);
 
 // Outside scope
-const cleanupUnscoped = effect(() => console.log(`Unscoped: ${count}`));
+const cleanupUnscoped = effect(() => console.log(`Unscoped: ${count()}`));
 
 const disposeScope = scope(() => {
-  effect(() => console.log(`Scoped: ${count}`));
+  effect(() => console.log(`Scoped: ${count()}`));
 });
 
 count(1); // Both effects run
@@ -128,7 +128,7 @@ const count = signal(0);
 const doubled = computed(() => count() * 2);
 
 const dispose = scope(() => {
-  effect(() => console.log(`Doubled: ${doubled}`));
+  effect(() => console.log(`Doubled: ${doubled()}`));
 });
 
 console.log(doubled()); // 0

@@ -33,9 +33,6 @@ describe("core", () => {
       // Multiple dispose calls safe
       expect(() => dispose()).not.toThrow();
 
-      // Empty scopes return shared noop
-      expect(scope(() => { })).toBe(scope(() => { }));
-
       cleanupUnscoped();
     });
 
@@ -107,6 +104,10 @@ describe("core", () => {
       dispose();
       count(3);
       expect(runs).toHaveBeenCalledTimes(2);
+    });
+
+    test("empty scopes return a shared no-op cleanup", () => {
+      expect(scope(() => { })).toBe(scope(() => { }));
     });
   });
 });
