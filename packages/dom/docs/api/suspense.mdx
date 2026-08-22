@@ -1,6 +1,6 @@
 # Suspense
 
-A streaming + async boundary. On the server, wrap async data so the shell and a `fallback` flush immediately via [`ssrStream`](/reference/ssr/ssr-stream), then [`hydrate`](/reference/dom/hydrate) swaps the resolved children in. On a client fresh mount (e.g. client-side navigation), a Promise-returning child suspends — the `fallback` shows until it resolves (or, on rejection, bubbles to the nearest `onError` / `error:fallback` boundary).
+A streaming + async boundary. On the server, wrap async data so the shell and a `fallback` flush immediately via [`ssr.stream`](/reference/ssr/ssr#stream), then [`hydrate`](/reference/dom/hydrate) swaps the resolved children in. On a client fresh mount (e.g. client-side navigation), a Promise-returning child suspends — the `fallback` shows until it resolves (or, on rejection, bubbles to the nearest `onError` / `error:fallback` boundary).
 
 ## API
 
@@ -8,17 +8,17 @@ A streaming + async boundary. On the server, wrap async data so the shell and a 
 function Suspense(props: SuspenseProps): JSX.Element
 ```
 
-- `props.fallback`: Content rendered while children are unresolved — shown during [`ssrStream`](/reference/ssr/ssr-stream) streaming AND on a client fresh mount while a Promise child is pending (dropped under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)).
+- `props.fallback`: Content rendered while children are unresolved — shown during [`ssr.stream`](/reference/ssr/ssr#stream) streaming AND on a client fresh mount while a Promise child is pending (dropped under [`ssr`](/reference/ssr/ssr)/[`ssr.async`](/reference/ssr/ssr#async)).
 - `props.children`: The boundary's content — a single child or an array. A Promise-returning child suspends on both server and client; sync children render directly. For reactive re-fetching (re-suspend when a signal changes), pair [`resource`](/reference/resource/resource) with a reactive child that branches on its getters.
 
 ## Basic Usage
 
-Render a shell with a `fallback` immediately, then resolve async data into the boundary. [`ssrStream`](/reference/ssr/ssr-stream) flushes the `fallback` inline and stages the resolved children; [`hydrate`](/reference/dom/hydrate) swaps them in.
+Render a shell with a `fallback` immediately, then resolve async data into the boundary. [`ssr.stream`](/reference/ssr/ssr#stream) flushes the `fallback` inline and stages the resolved children; [`hydrate`](/reference/dom/hydrate) swaps them in.
 
 ```jsx
 import { signal } from '@hellajs/core';
 import { html, Suspense } from '@hellajs/dom';
-import { ssrStream } from '@hellajs/ssr';
+import { ssr } from '@hellajs/ssr';
 
 const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
 
@@ -32,7 +32,7 @@ const App = () => html`
 `;
 
 // Server — the shell + fallback stream first; resolved children stage for hydrate
-const stream = ssrStream(html`<${App} />`);
+const stream = ssr.stream(html`<${App} />`);
 ```
 
 ```jsx
@@ -46,11 +46,11 @@ hydrate(html`<${App} />`, '#app');
 
 ### Out-of-Order Streaming Opt-In
 
-Bare async (a Promise outside a `<Suspense>`) is awaited in-order by [`ssrStream`](/reference/ssr/ssr-stream) — a slow value delays everything after it. `<Suspense>` opts a subtree into out-of-order streaming: its `fallback` flushes inline and siblings continue, so a slow fetch no longer blocks the rest of the page.
+Bare async (a Promise outside a `<Suspense>`) is awaited in-order by [`ssr.stream`](/reference/ssr/ssr#stream) — a slow value delays everything after it. `<Suspense>` opts a subtree into out-of-order streaming: its `fallback` flushes inline and siblings continue, so a slow fetch no longer blocks the rest of the page.
 
 ### Hydrate Swaps, Then Adopts
 
-The resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the `fallback` for them the moment they arrive (progressive, React/Solid parity); [`hydrate`](/reference/dom/hydrate) later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) (no streaming) the children are already present, so `<Suspense>` simply renders them directly.
+The resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the `fallback` for them the moment they arrive (progressive, React/Solid parity); [`hydrate`](/reference/dom/hydrate) later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). Under [`ssr`](/reference/ssr/ssr)/[`ssr.async`](/reference/ssr/ssr#async) (no streaming) the children are already present, so `<Suspense>` simply renders them directly.
 
 If the stream was interrupted before a boundary's staged `<template>` arrived (sentinel present, template gone), `hydrate` degrades to fresh-mount semantics for that region — the `fallback` stays rendered while the child re-suspends on the client, and the resolved content swaps in when it settles (a rejection bubbles to the nearest `onError` / `error:fallback` boundary).
 
@@ -69,9 +69,9 @@ ${() => user.isLoading() ? html`<p>Loading…</p>` : html`<p>${user.data()}</p>`
 
 ## Important Considerations
 
-### Pair With `ssrStream`
+### Pair With `ssr.stream`
 
-`<Suspense>` only changes *streaming* behavior under [`ssrStream`](/reference/ssr/ssr-stream). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) it renders children directly (fallback dropped), so it is safe to use in trees rendered any way. On a client fresh mount, a Promise child still suspends with its `fallback` regardless of which server renderer produced the surrounding HTML.
+`<Suspense>` only changes *streaming* behavior under [`ssr.stream`](/reference/ssr/ssr#stream). Under [`ssr`](/reference/ssr/ssr)/[`ssr.async`](/reference/ssr/ssr#async) it renders children directly (fallback dropped), so it is safe to use in trees rendered any way. On a client fresh mount, a Promise child still suspends with its `fallback` regardless of which server renderer produced the surrounding HTML.
 
 ### Nested Suspense Resolves Eagerly
 

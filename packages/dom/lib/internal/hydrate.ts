@@ -101,7 +101,7 @@ const HS_STAGE_REGEX = /^hs\d+$/;
  * is a staged `<template>` id, replace the fallback with the template's resolved children. In a browser an inline `$hs`
  * script (emitted by `@hellajs/ssr`) has already swapped each region on arrival; this runs only when that script hasn't
  * (e.g. in HappyDOM tests). Returns the nodes to adopt (swapped children, or the
- * original `existing` when there is no stage — e.g. an `ssr`/`ssrAsync` render where children are present), plus
+ * original `existing` when there is no stage — e.g. an `ssr`/`ssr.async` render where children are present), plus
  * `missing: true` when a stage sentinel was seen but its template is gone (interrupted stream) — the caller re-suspends.
  */
 function swapSuspenseStage(existing: Node[], anchor: Node): { nodes: Node[]; missing: boolean } {

@@ -40,8 +40,8 @@ function suspendChild(
 
 /**
  * A streaming + async boundary. On the server, wrap async data in `<Suspense>` so the
- * shell and `fallback` flush immediately via [`ssrStream`](/@hellajs/ssr) while the children resolve, then
- * [`hydrate`](./hydrate) swaps the resolved children in. Under [`ssr`](/@hellajs/ssr)/[`ssrAsync`](/@hellajs/ssr)
+ * shell and `fallback` flush immediately via [`ssr.stream`](/@hellajs/ssr) while the children resolve, then
+ * [`hydrate`](./hydrate) swaps the resolved children in. Under [`ssr`](/@hellajs/ssr)/[`ssr.async`](/@hellajs/ssr)
  * (no streaming) it renders its children directly. Follows the ForEach/Lazy pattern using `isDynamic: true`.
  * @param props `{ fallback, children }`
  * @returns Function that mounts the boundary into a parent element
