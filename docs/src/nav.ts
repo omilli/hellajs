@@ -76,7 +76,7 @@ export const navigation = {
     { store: ["store"] },
     { router: ["navigate", "route", "router"] },
     { resource: ["resource", "resourcecache"] },
-    { ssr: ["ssr", "ssr-async", "ssr-stream", "doc"] },
+    { ssr: ["ssr", "ssr-async", "ssr-stream", "doc", "doc-stream"] },
   ],
   plugins: ["babel", "rollup", "vite", "astro"],
 } as const;

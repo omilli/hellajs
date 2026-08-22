@@ -265,7 +265,7 @@ export const Dashboard = () => (
 
 ## The Streaming Server
 
-The server exports a `render()` that returns a web `ReadableStream`. A full streamed document needs a prefix and a suffix around the body — [`doc`](/reference/ssr/doc) returns a string synchronously, so for [`ssrStream`](/reference/ssr/ssr-stream) you assemble the shell by hand. The page's styles live in their own module — on the server (no DOM), [`css`](/reference/css/css) returns the generated CSS text, which the prefix injects into the document's `<head>`. This is a single page, so `render()` takes no argument.
+The server exports a `render()` that returns a web `ReadableStream` — a full streamed document. [`docStream`](/reference/ssr/doc-stream) wraps the body stream in the document shell: the `head` (with the CSS text [`css`](/reference/css/css) returned on the server — no DOM), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged [`<Suspense>`](/reference/dom/suspense) swap has streamed — nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
 
 First the theme — deliberately minimal, since the CSS is incidental to the streaming story: layout and skeleton visibility, not visual polish. Create `src/theme.ts`:
 
@@ -339,31 +339,38 @@ export const styles = css({
 
 - **[`css`](/reference/css/css)`(obj)`**: global styles, defined once in a module any platform can import. The object nests to mirror the DOM — each nested key composes a descendant selector (`.dashboard header h1`)
 - **`'& ul, & ol'` / `'&.skeleton .bone'`**: every `&` expands to the parent selector, so both list types share one rule and the skeleton bones scope to the card element itself
-- **Platform-dependent return**: the server receives the CSS text for its `<style>` tag (the prefix below injects it); the shell is static, so the client never imports this module — nothing re-injects
+- **Platform-dependent return**: the server receives the CSS text for its `<style>` tag (the head below injects it); the shell is static, so the client never imports this module — nothing re-injects
 
 Then the server. Create `src/server.tsx`:
 
 ```tsx
-import { ssrStream } from '@hellajs/ssr';
+import { ssrStream, docStream } from '@hellajs/ssr';
 import { Dashboard } from './app';
 import { styles } from './theme';
 
-// A full streamed document needs a prefix and suffix around the streamed body — doc()
-// returns a string synchronously, so assemble the shell by hand for ssrStream.
-const prefix = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Dashboard</title><style>${styles}</style></head><body><div id="app">`;
-const suffix = '</div><script type="module" src="/src/client.tsx"></script></body></html>';
-
-// Single page — the URL is irrelevant, so render() takes no argument. The vite-plugin-hellajs
-// transform ran on this module (and ./app) via ssrLoadModule, so <Dashboard /> is already a HellaNode.
+// Single page — the URL is irrelevant, so render() takes no argument. The dev middleware
+// (vite.config.js) passes req.url, but render ignores it. The vite-plugin-hellajs transform
+// ran on this module (and ./app) via ssrLoadModule, so <Dashboard /> is already a HellaNode.
 export function render(): ReadableStream<string> {
-  const body = ssrStream(<Dashboard />);
-  return new ReadableStream<string>({
-    async start(controller) {
-      controller.enqueue(prefix);
-      for await (const chunk of body) controller.enqueue(chunk);
-      controller.enqueue(suffix);
-      controller.close();
+  // docStream assembles the full streamed document: the shell (head, lang, the mount wrapper)
+  // flushes first, each body chunk pipes through as it renders, and the closing tags land only
+  // after the body closes — for ssrStream that means after every staged <Suspense> swap, so
+  // progressive paint holds end-to-end (nothing is collected).
+  return docStream({
+    lang: 'en',
+    // Emits <div id="app">…</div> around the streamed body — the same selector the client's
+    // hydrate(<Dashboard />, '#app') targets, so server and client share one string.
+    mount: '#app',
+    head: {
+      title: 'Dashboard',
+      meta: [{ charset: 'UTF-8' }],
+      // css() returns the generated CSS text on the server — injected here, once.
+      styles: [styles],
+      // The client entry as a module script: module scripts defer, so head placement gives the
+      // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).
+      scripts: [{ type: 'module', src: '/src/client.tsx' }],
     },
+    body: ssrStream(<Dashboard />),
   });
 }
 ```
@@ -372,14 +379,14 @@ export function render(): ReadableStream<string> {
 
 - **[`router`](/reference/router/router)** — *not used here*: this is a single page. For URL → view routing on the server, see [SSR Routing](/learn/tutorials/ssr-routing)
 - **[`ssrStream`](/reference/ssr/ssr-stream)`(<Dashboard />)`**: returns a `ReadableStream<string>`. The shell and each `<Suspense>` `fallback` flush first; each resolved region then streams as `<template id="hsN">…</template><script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) so the browser swaps it in the moment it arrives
-- **`prefix` / `suffix`**: the document around the streamed body. The suffix loads the client entry; in dev Vite serves `/src/client.tsx` on demand
-- **`controller.enqueue(...)`**: pumps prefix, every body chunk, then suffix into one stream — the consumer (the dev middleware, or a production server) writes them in order
+- **`mount: '#app'`**: emits `<div id="app">…</div>` around the streamed body — the same selector the client's `hydrate(<Dashboard />, '#app')` targets, so server and client share one string
+- **[`docStream`](/reference/ssr/doc-stream)`({...})`**: assembles the full streamed document — shell first, every body chunk as it arrives, closing tags only after the body closes (so after all staged swaps); the consumer (the dev middleware, or a production server) writes the chunks in order
 
 The streamed HTML looks like this — the shell and all three fallbacks arrive before any fetch resolves, then each card's resolved content streams as a `<template>` + an inline swap script that swaps it in the moment it arrives:
 
 ```bash
 curl -sN localhost:5173/
-# <!DOCTYPE html>…<style>…</style>…<div id="app">
+# <!DOCTYPE html>…<style>…</style><script type="module" src="/src/client.tsx"></script>…<div id="app">
 #   <div class="dashboard"><header>…<h1>Dashboard</h1>…</header><main class="grid">
 #     <!--[--><section class="card skeleton">…<h2>Stats</h2>…<!--hs0--><!--]-->        ← Stats skeleton (TTFB)
 #     <!--[--><section class="card skeleton">…<h2>Recent activity</h2>…<!--hs1-->…    ← Activity skeleton
@@ -389,7 +396,7 @@ curl -sN localhost:5173/
 # <template id="hs0">…<dd>$48.2k</dd>…</template><script>$hs("hs0")</script>  ← Stats resolves (~120ms) → swaps now
 # <template id="hs1">…<li>Ada upgraded to Pro</li>…</template><script>$hs("hs1")</script>  ← Activity (~600ms)
 # <template id="hs2">…<li>Accounting</li>…</template><script>$hs("hs2")</script>  ← Top (~1200ms)
-# …<script type="module" src="/src/client.tsx"></script>…</html>
+# …</div></body></html>
 ```
 
 Each region's `<template>` streams the moment its own async work completes, immediately followed by its `$hs` swap script — so the browser swaps each card in as it arrives (progressive, React/Solid parity). Contrast this with [`ssr`](/reference/ssr/ssr) / [`ssrAsync`](/reference/ssr/ssr-async): without streaming, nothing paints until the slowest (1200ms) fetch resolves.
@@ -594,27 +601,33 @@ export const styles = css({
 ### `src/server.tsx`
 
 ```tsx
-import { ssrStream } from '@hellajs/ssr';
+import { ssrStream, docStream } from '@hellajs/ssr';
 import { Dashboard } from './app';
 import { styles } from './theme';
-
-// A full streamed document needs a prefix and suffix around the streamed body — doc()
-// returns a string synchronously, so assemble the shell by hand for ssrStream.
-const prefix = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Dashboard</title><style>${styles}</style></head><body><div id="app">`;
-const suffix = '</div><script type="module" src="/src/client.tsx"></script></body></html>';
 
 // Single page — the URL is irrelevant, so render() takes no argument. The dev middleware
 // (vite.config.js) passes req.url, but render ignores it. The vite-plugin-hellajs transform
 // ran on this module (and ./app) via ssrLoadModule, so <Dashboard /> is already a HellaNode.
 export function render(): ReadableStream<string> {
-  const body = ssrStream(<Dashboard />);
-  return new ReadableStream<string>({
-    async start(controller) {
-      controller.enqueue(prefix);
-      for await (const chunk of body) controller.enqueue(chunk);
-      controller.enqueue(suffix);
-      controller.close();
+  // docStream assembles the full streamed document: the shell (head, lang, the mount wrapper)
+  // flushes first, each body chunk pipes through as it renders, and the closing tags land only
+  // after the body closes — for ssrStream that means after every staged <Suspense> swap, so
+  // progressive paint holds end-to-end (nothing is collected).
+  return docStream({
+    lang: 'en',
+    // Emits <div id="app">…</div> around the streamed body — the same selector the client's
+    // hydrate(<Dashboard />, '#app') targets, so server and client share one string.
+    mount: '#app',
+    head: {
+      title: 'Dashboard',
+      meta: [{ charset: 'UTF-8' }],
+      // css() returns the generated CSS text on the server — injected here, once.
+      styles: [styles],
+      // The client entry as a module script: module scripts defer, so head placement gives the
+      // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).
+      scripts: [{ type: 'module', src: '/src/client.tsx' }],
     },
+    body: ssrStream(<Dashboard />),
   });
 }
 ```
