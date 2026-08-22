@@ -71,6 +71,24 @@ describe("dom", () => {
       expect(calls).toEqual(["first", "second", "third"]);
     });
 
+    test("update hooks fire when registered after a hook-free mount", () => {
+      const beforeUpdate = mock(() => { });
+      const afterUpdate = mock(() => { });
+      const count = signal(0);
+
+      mount(html`<div id="late-hooks"><span id="late-target">${() => String(count())}</span></div>`);
+      const el = document.getElementById("late-target")! as HellaElement;
+
+      registry.addHook(el, "beforeUpdate", beforeUpdate);
+      registry.addHook(el, "afterUpdate", afterUpdate);
+
+      count(1);
+      flush();
+
+      expect(beforeUpdate).toHaveBeenCalledTimes(1);
+      expect(afterUpdate).toHaveBeenCalledTimes(1);
+    });
+
     test("beforeDestroy and afterDestroy hooks fire on cleanup", () => {
       const calls: string[] = [];
 

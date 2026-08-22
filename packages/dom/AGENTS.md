@@ -20,15 +20,15 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 
 ## ElementState (`lib/internal/state.ts`) — `WeakMap<Node, ElementState>`
 
-`getState` lazily creates; `peekState` returns `undefined` if absent; `hasState`/`deleteState` wrap `has`/`delete`. Initial shape: `{ handlers: {}, isMounted: false }`. `effects`, `directHandlers`, and `hooks` are **lazy-allocated on first use** (`registry.addEffect` → `effects` array, `setDirectHandler` → `directHandlers` Map, `registry.addHook` → `hooks` object) — elements that never carry a function-ref prop / `e:` / `hook:` pay zero allocation for those collections (guide `code.md` §Memory). `handlers` stays eager (plain object, cheap, and `on:` is common).
+`getState` lazily creates; `peekState` returns `undefined` if absent; `hasState`/`deleteState` wrap `has`/`delete`. Initial shape: `{ isMounted: false }`. All four collections — `handlers`, `effects`, `directHandlers`, `hooks` — are **lazy-allocated on first use** (`setNodeHandler` → `handlers` object, `registry.addEffect` → `effects` array, `setDirectHandler` → `directHandlers` Map, `registry.addHook` → `hooks` object) — elements that never carry `on:` / a function-ref prop / `e:` / `hook:` pay zero collection allocation at mount (guide `code.md` §Memory).
 
 | Field | Purpose |
 |---|---|
 | `effects` | `(() => void)[]` effect disposers; drained during cleanup. |
-| `handlers` | `Record<type, EventListener>` delegated handlers (one per type per element). |
+| `handlers` | `Record<type, EventListener>` delegated handlers (one per type per element); lazily allocated by `setNodeHandler`. |
 | `directHandlers` | `Map<type, EventListener>` `e:` handlers; `removeEventListener`-ed on cleanup. |
 | `hooks` | `Partial<Record<HookType, fn[]>>` stacked lifecycle hooks; all execute in insertion order. |
-| `isMounted` | `true` once `afterMount` has fired. Set for root + descendants at the end of `attach()` via the handle's `flush()` (idempotent — `processMountQueue` skips already-mounted nodes); the scoped `MutationObserver` only catches *later* dynamic additions. |
+| `isMounted` | `true` once `afterMount` has fired. Set for root + descendants at the end of `attach()` via the handle's `flush()` — but only while any lifecycle hook exists anywhere (`mountHooksExist` in `queue.ts`, flipped by the first `registry.addHook`; hook-free apps skip the walk entirely). For hooks registered post-mount, mounted-ness resolves lazily: `registry.addHook`'s `afterMount` immediate-fire and `registry.addEffect`'s update-hook gate both fall back to `element.isConnected` (suppressed while `isMountInFlight()` — a mount/hydrate attach is running). The scoped `MutationObserver` only catches *later* dynamic additions. |
 | `componentScope` | Dispose fn from `scope()`, attached when a node is created by `component()`. |
 | `portalCleanup` / `lazyCleanup` / `transitionCleanup` | Optional disposers (Portal registers on its **anchor**; Lazy/Transition on the **parent**). |
 | `errorConfig` | Set when the node carries any `error:` attribute. |
@@ -109,13 +109,13 @@ Attaches reactivity to existing server-rendered HTML in place — re-executes th
 Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 - **Sync `cleanupSubtree(root)`** — called directly by `appendToParent` (reactive child swap), ForEach (stale-removal + list clear), Transition (leave completion). `traverseDescendants` (iterative stack) → per descendant `clean(node)`: `beforeDestroy` → `componentScope?.()` → `portalCleanup?.()` → `lazyCleanup?.()` → `transitionCleanup?.()` → `suspenseCleanup?.()` → drain `effects` → `removeDirectHandlers` → `afterDestroy` → `deleteState`.
-- **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which recursively walks each removed node's subtree collecting elements with state → `cleanupQueue`; added element nodes → `mountQueue`; both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
+- **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which collects removed nodes with state → `cleanupQueue` — a stateful node is queued WITHOUT recursing into it (`processCleanupQueue`'s `cleanupSubtree` already traverses its descendants; only stateless intermediates are walked through); added element nodes → `mountQueue` (scheduled only when `mountHooksExist`); both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
 - **`runHooks` element-argument rule.** `beforeMount` and `afterDestroy` are called with **no** argument; every other hook receives the element.
 - **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, the `staticDom` cache, between tests.
 
 ## Mount queue
 
-`processMountQueue` traverses each queued node's descendants; every element with state gets `isMounted = true` and `afterMount` run, **idempotently** — already-`isMounted` nodes are skipped, so re-flushing never double-fires `afterMount`. Skips nodes not `isConnected` at flush time. The scoped `MutationObserver` only catches *later* dynamic additions (it is started by `registerContainer` after the initial `replaceChildren`, so the initial tree is never observed); the initial attach is flushed explicitly at the end of `attach()`. `afterMount` therefore fires by the time `mount()`/`hydrate()` return — **no `flush()` call is required**. The handle's `flush()` remains as an optional escape hatch (e.g. to drain the cleanup queue synchronously in tests). An `afterMount` hook registered on an already-mounted node via `registry.addHook` fires immediately.
+`processMountQueue` traverses each queued node's descendants; every element with state gets `isMounted = true` and `afterMount` run, **idempotently** — already-`isMounted` nodes are skipped, so re-flushing never double-fires `afterMount`. The whole walk is **skipped while no lifecycle hook has ever been registered** (`mountHooksExist`) — hook-free apps (the common case) pay nothing. Skips nodes not `isConnected` at flush time. The scoped `MutationObserver` only catches *later* dynamic additions (it is started by `registerContainer` after the initial `replaceChildren`, so the initial tree is never observed); the initial attach is flushed explicitly at the end of `attach()`. `afterMount` therefore fires by the time `mount()`/`hydrate()` return — **no `flush()` call is required**. The handle's `flush()` remains as an optional escape hatch (e.g. to drain the cleanup queue synchronously in tests). An `afterMount` hook registered on an already-mounted node via `registry.addHook` fires immediately (`state.isMounted`, or lazily via `element.isConnected` outside a running attach — which also sets `isMounted` so the walk does not double-fire).
 
 ## Event delegation (`lib/internal/events.ts`)
 
@@ -208,7 +208,7 @@ Imperative escape hatch over existing DOM. `createReactive(element)` builds the 
 
 ## `registry` (`lib/registry.ts`)
 
-Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by `beforeUpdate`/`afterUpdate` (only when `state.isMounted`; hook errors caught, `phase: 'update'`, no fallback). `addHook(element, type, handler)` pushes onto `state.hooks[type]` (stacking); an `afterMount` registered on an already-`isMounted` node fires immediately. Both accumulative.
+Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by `beforeUpdate`/`afterUpdate` — gated on `state.hooks` (two property loads, not WeakMap gets) and `state.isMounted`, which resolves lazily from `element.isConnected` so hooks registered post-mount still fire on updates; hook errors caught, `phase: 'update'`, no fallback. `addHook(element, type, handler)` pushes onto `state.hooks[type]` (stacking) and flips `mountHooksExist`; an `afterMount` registered on an already-mounted node fires immediately. Both accumulative.
 
 ## `renderProp` (`lib/internal/utils.ts`)
 
@@ -244,7 +244,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 - **Bulk removal** in ForEach (collect before mutating); events cleanup iterates handlers once.
 - **Fast `isHellaNode`** — dom-local `typeof === "object" && v.tag !== undefined`, avoiding `isPlainObject`'s `getPrototypeOf` + `Object.prototype.toString.call` on every child resolution / ForEach item / dispatch step. `isPlainObject` is retained in core for cold input-validation paths (`$ref`/`$collection`).
 - **`toText` vs `resolveText`** — `toText(value)` assumes an already-resolved input and skips the `resolveValue` call; `resolveText` (which keeps the call) is used only where the input may still be a function/signal (`reactive.ts` bind path). Mount-side text rendering routes through `toText`.
-- **Lazy `ElementState` collections** — `effects` / `directHandlers` / `hooks` allocate on first use, not at `getState`. A reactive leaf pays only `{ handlers, isMounted }`.
+- **Lazy `ElementState` collections** — `handlers` / `effects` / `directHandlers` / `hooks` allocate on first use, not at `getState`. A reactive leaf pays only `{ isMounted }`.
 - **Single WeakMap lookup** on hot guards — `peekState(node)?.field` replaces the `hasState` + `getState` double-lookup in `appendToParent`'s boundary check and in `delegatedHandler`'s per-path-element walk.
 
 ## Testing approach (`tests/`)
