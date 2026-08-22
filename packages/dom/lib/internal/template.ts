@@ -316,6 +316,10 @@ function markStaticSubtrees(nodes: HtmlInternalNode[]): void {
   }
 }
 
+/**
+ * Recursively determines whether a node (and its whole subtree) is free of placeholder
+ * dependencies — tagging it `static` when so. Drives `markStaticSubtrees`.
+ */
 function markIfStatic(node: unknown): boolean {
   if (typeof node !== "object" || node === null) return true;
 

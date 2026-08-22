@@ -12,7 +12,7 @@ A ground-up comparison based on the actual source code of `@hellajs/dom` v2. Eve
 | Rendering | Direct DOM, surgical | Direct DOM, surgical | Compiled direct DOM | VDOM diff & reconcile | VDOM diff & reconcile | VDOM diff + change detection |
 | Virtual DOM | None | None | None | Yes | Yes | Yes |
 | Compile step | Optional (JSX/html\`\` → HellaNode) | Yes (JSX → reactive) | Yes (SFC → JS) | Yes (JSX → js) | Yes (SFC/template) | Yes (TS/HTML decorators) |
-| Gzipped size | ~9 KB min+gzip (~13.7 KB full bundle) | ~7–8 KB | ~2–5 KB runtime | ~40–45 KB | ~34 KB | ~90+ KB |
+| Gzipped size | ~9.5 KB min+gzip (~14.1 KB full bundle) | ~7–8 KB | ~2–5 KB runtime | ~40–45 KB | ~34 KB | ~90+ KB |
 | External deps | 0 + core peer | 0 | 0 | 0 | 0 | many |
 | Templating | JSX and html\`\` | JSX / tagged templates | Svelte SFC | JSX | `<template>` | HTML templates + TS |
 | Language | TS, framework-agnostic packages | TS | SFC compiler | JS/TS | SFC compiler | TS-first, decorators |
@@ -54,9 +54,9 @@ HellaJS sits closest to Solid philosophically (signal-driven, no VDOM, surgical 
 
 |  | HellaJS (dom only) | HellaJS dom + core | Solid | Svelte (runtime) | React+ReactDOM |
 |---|---|---|---|---|---|
-| Min+gzip | ~9 KB | ~11 KB | ~7–8 KB | ~2–5 KB | ~40 KB |
+| Min+gzip | ~9.5 KB | ~11 KB | ~7–8 KB | ~2–5 KB | ~40 KB |
 
-- `@hellajs/dom` declares zero runtime deps and one peer dep (`@hellajs/core`). No scheduler, no event system polyfill, no custom polyfills. The full pre-bundled `dist/bundle.js` is ~13.7 KB gzipped (~9 KB minified+gzipped); the per-module `dist/./*` builds let a bundler tree-shake to only what is imported.
+- `@hellajs/dom` declares zero runtime deps and one peer dep (`@hellajs/core`). No scheduler, no event system polyfill, no custom polyfills. The full pre-bundled `dist/bundle.js` is ~14.1 KB gzipped (~9.5 KB minified+gzipped); the per-module `dist/./*` builds let a bundler tree-shake to only what is imported.
 - The package is split: consumers can import `@hellajs/dom/bundle` for a single pre-bundled file, or tree-shake per-feature (`ForEach.js`, `Lazy.js`, `hydrate.js`, etc. are individually published under `dist/./*`).
 - The bundle spans rendering, hydration, and reconciliation: the hydrate marker-reader (`internal/hydrate.ts`, ~2.5 KB gzip), the keyed reconciler (`ForEach`, ~2 KB gzip), and the runtime template analyzer (`internal/template.ts`, ~2.5 KB gzip) are the largest slices — surgical updates, in-place hydration, and streaming-Suspense adoption all ship in one peer-dep-only package.
 - HellaJS is the only one here that is a composable package rather than a framework you adopt wholesale — you bring your own router/state/CSS from the same ecosystem or none.
@@ -108,7 +108,7 @@ HellaJS is roughly on par with Solid/Vue for list performance and ahead of naive
 HellaJS uses global event delegation by default via the `on:` prefix:
 
 - A single `document.body.addEventListener(type, handler, true)` listener per event type, registered in the capture phase (`lib/internal/events.ts`).
-- Dispatch walks `event.composedPath()` (pre-computed ancestor chain) and looks up `getState(element).handlers[type]` on each ancestor (`events.ts`).
+- Dispatch walks `event.composedPath()` (pre-computed ancestor chain) and looks up `peekState(element)?.handlers[type]` on each ancestor — a single `WeakMap` peek per path element (`events.ts`).
 - \`globalListeners\` Set short-circuits when no handlers exist for a type (\`events.ts\`).
 - `e:` prefix offers direct (non-delegated) listeners when delegation is undesirable (`events.ts`).
 
@@ -263,4 +263,4 @@ What sets HellaJS apart — and no single competitor matches all of:
 7. **Reactive external-DOM refs** — `$ref`/`$collection` with auto-watching MutationObserver, targeting nodes outside HellaJS's own render tree.
 8. **Robust lazy cancellation** — `AbortSignal` propagated to the loader, `isCancelled` guards on both resolve and reject paths.
 
-Its gaps are the predictable ones: bundle size reflects its in-bundle hydration and streaming-Suspense support (~9 KB min+gzip, slightly above Solid's ~7–8 KB and well above Svelte's ~2–5 KB), plus ecosystem size, devtools, and adoption maturity. SSR + hydration ship via `@hellajs/ssr` (a zero-runtime-import stringifier — with `ssrAsync` and `ssrStream` — emitting `<!--[->…<!--]-->` region markers plus a `<!--hsN-->` Suspense sentinel) and `hydrate()` (a one-shot marker-reader that adopts server DOM in place, adopts already-swapped `<Suspense>` regions in place (an inline `$hs` script swapped each as it arrived), and re-mounts only mismatched subtrees — no VDOM, no coalescing rebuild; content reveals progressively (React/Solid parity), with per-segment *interactivity* hydration the remaining gap).
+Its gaps are the predictable ones: bundle size reflects its in-bundle hydration and streaming-Suspense support (~9.5 KB min+gzip, slightly above Solid's ~7–8 KB and well above Svelte's ~2–5 KB), plus ecosystem size, devtools, and adoption maturity. SSR + hydration ship via `@hellajs/ssr` (a zero-runtime-import stringifier — with `ssrAsync` and `ssrStream` — emitting `<!--[->…<!--]-->` region markers plus a `<!--hsN-->` Suspense sentinel) and `hydrate()` (a one-shot marker-reader that adopts server DOM in place, adopts already-swapped `<Suspense>` regions in place (an inline `$hs` script swapped each as it arrived), and re-mounts only mismatched subtrees — no VDOM, no coalescing rebuild; content reveals progressively (React/Solid parity), with per-segment *interactivity* hydration the remaining gap).

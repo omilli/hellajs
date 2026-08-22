@@ -28,9 +28,8 @@ export const suppressWarn = <T>(fn: () => T): { result: T; warnings: unknown[][]
 
 /**
  * Produces a fresh container whose innerHTML is the REAL `ssr()` output for `node` — marker-bearing
- * (`<!--[->…<!--]-->`) server HTML that `hydrate(node, container)` consumes. Use this (not
- * `serverContainer`) whenever the tree has dynamic children: it reproduces the exact contract `ssr`
- * ships, including region markers, with no mount/divergence caveats.
+ * (`<!--[->…<!--]-->`) server HTML that `hydrate(node, container)` consumes. Use this whenever the
+ * tree has dynamic children: it reproduces the exact contract `ssr` ships, including region markers.
  */
 export const ssrContainer = (node: HellaNode | (() => HellaNode)): Element => {
   const resolved = typeof node === "function" ? (node as () => HellaNode)() : node;

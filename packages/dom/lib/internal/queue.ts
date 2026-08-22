@@ -34,7 +34,6 @@ export function scheduleCleanup() {
 }
 
 /**
- * @internal
  * Creates the scoped MutationObserver on mount targets for cleanup/mount tracking.
  */
 function ensureContainerObserver() {

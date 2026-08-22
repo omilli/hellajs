@@ -1,4 +1,4 @@
-import type { ErrorConfig, HellaNode, HookType, HookHandler } from "../types/nodes";
+import type { ErrorConfig, HellaNode, HookType, HookFn } from "../types/nodes";
 
 /**
  * @internal
@@ -12,7 +12,7 @@ export interface ElementState {
   effects?: (() => void)[];
   handlers: Record<string, EventListener>;
   directHandlers?: Map<string, EventListener>;
-  hooks?: Partial<Record<HookType, Array<HookHandler>>>;
+  hooks?: Partial<Record<HookType, Array<HookFn>>>;
   isMounted: boolean;
   componentScope?: () => void;
   portalCleanup?: () => void;
@@ -27,7 +27,6 @@ export interface ElementState {
 const elementMap = new WeakMap<Node, ElementState>();
 
 /**
- * @internal
  * Gets or creates the state object for a DOM node.
  * @param node The DOM node to get state for
  * @returns The element state object
@@ -45,7 +44,6 @@ export function getState(node: Node): ElementState {
 }
 
 /**
- * @internal
  * Checks if a DOM node has associated state.
  * @param node The DOM node to check
  * @returns True if the node has state
@@ -55,7 +53,6 @@ export function hasState(node: Node): boolean {
 }
 
 /**
- * @internal
  * Returns the state object without creating one if absent.
  * @param node The DOM node to peek at
  * @returns The element state, or undefined if none exists
@@ -65,7 +62,6 @@ export function peekState(node: Node): ElementState | undefined {
 }
 
 /**
- * @internal
  * Removes the state entry for a DOM node.
  * @param node The DOM node to delete state for
  */

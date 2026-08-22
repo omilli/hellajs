@@ -151,9 +151,16 @@ export type RenderFn = ((element: HellaElement) => void) & { isDynamic: true; ss
 export type ElementMountFn = (element: HellaElement) => void;
 
 /**
- * Handler type for lifecycle hooks — either void callback or element callback.
+ * A lifecycle hook callback — zero-arg (`beforeMount`, `afterDestroy`) or element-receiving.
  */
-export type HookHandler = (() => void) | ElementMountFn;
+export type HookFn = (() => void) | ElementMountFn;
+
+/**
+ * Deprecated alias of `HookFn` — kept for backward compatibility; the package's
+ * function-valued types use the `Fn` suffix consistently.
+ * @deprecated Use `HookFn`.
+ */
+export type HookHandler = HookFn;
 
 /**
  * Props object passed to component render function.

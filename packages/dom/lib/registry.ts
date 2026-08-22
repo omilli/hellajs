@@ -2,7 +2,7 @@ import { effect } from "./internal/core";
 import { runHooks } from "./internal/cleanup";
 import { getState } from "./internal/state";
 import { dispatchError, toError, resolveErrorConfig } from "./internal/dispatch";
-import type { HookType, HookHandler } from "./types/nodes";
+import type { HookType, HookFn } from "./types/nodes";
 
 /**
  * Registry API for managing element effects and hooks.
@@ -51,7 +51,7 @@ export const registry = {
   addHook(
     element: Element,
     type: HookType,
-    handler: HookHandler
+    handler: HookFn
   ) {
     const state = getState(element);
     const stacks = state.hooks ?? (state.hooks = {});

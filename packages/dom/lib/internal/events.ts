@@ -34,7 +34,6 @@ function renderEventFallback(element: Element, fallback: HellaNode) {
 }
 
 /**
- * @internal
  * Single delegated handler for all event types.
  * Uses composedPath() for ancestor traversal and dispatches
  * handler errors through the error boundary system.

@@ -9,7 +9,7 @@ function Suspense(props: SuspenseProps): JSX.Element
 ```
 
 - `props.fallback`: Content rendered while children are unresolved — shown during [`ssrStream`](/reference/ssr/ssr-stream) streaming AND on a client fresh mount while a Promise child is pending (dropped under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)).
-- `props.children`: The boundary's content — a single child or an array. A Promise-returning child suspends on both server and client; sync children render directly. For reactive re-fetching (re-suspend on signal change), use `resource` + `Show` instead.
+- `props.children`: The boundary's content — a single child or an array. A Promise-returning child suspends on both server and client; sync children render directly. For reactive re-fetching (re-suspend when a signal changes), pair [`resource`](/reference/resource/resource) with a reactive child that branches on its getters.
 
 ## Basic Usage
 
@@ -52,9 +52,20 @@ Bare async (a Promise outside a `<Suspense>`) is awaited in-order by [`ssrStream
 
 The resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the `fallback` for them the moment they arrive (progressive, React/Solid parity); [`hydrate`](/reference/dom/hydrate) later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). Under [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async) (no streaming) the children are already present, so `<Suspense>` simply renders them directly.
 
+If the stream was interrupted before a boundary's staged `<template>` arrived (sentinel present, template gone), `hydrate` degrades to fresh-mount semantics for that region — the `fallback` stays rendered while the child re-suspends on the client, and the resolved content swaps in when it settles (a rejection bubbles to the nearest `onError` / `error:fallback` boundary).
+
 ### Fresh Mount Resolves Async Children
 
-On a purely client-side [`mount`](/reference/dom/mount) (no server HTML — e.g. after client-side navigation), sync children render immediately. A Promise-returning child suspends: the `fallback` shows until the Promise resolves, then the resolved content is swapped in (the Basic Usage child shape — `${() => fetch(…).then(…)}` — works identically here). On rejection, the `fallback` is removed (it is pending-only) and the error bubbles to the nearest `onError` / `error:fallback` boundary. `<Suspense>` resolves a single Promise child at mount — for reactive re-fetching (re-suspend when a signal changes), pair `resource` with `Show`.
+On a purely client-side [`mount`](/reference/dom/mount) (no server HTML — e.g. after client-side navigation), sync children render immediately. A Promise-returning child suspends: the `fallback` shows until the Promise resolves, then the resolved content is swapped in (the Basic Usage child shape — `${() => fetch(…).then(…)}` — works identically here). On rejection, the `fallback` is removed (it is pending-only) and the error bubbles to the nearest `onError` / `error:fallback` boundary. `<Suspense>` resolves a single Promise child at mount — for reactive re-fetching (re-suspend when a signal changes), pair [`resource`](/reference/resource/resource) with a reactive child:
+
+```js
+import { resource } from '@hellajs/resource';
+
+const user = resource('/api/users/1');
+
+// in the tree — a reactive child re-runs when the resource state changes
+${() => user.isLoading() ? html`<p>Loading…</p>` : html`<p>${user.data()}</p>`}
+```
 
 ## Important Considerations
 
