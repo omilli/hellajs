@@ -30,6 +30,7 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html\
 | `src/utils/babel.mjs` | `getTagCallee`: JSXIdentifier → Identifier; JSXMemberExpression → MemberExpression (recursive); throws otherwise. |
 | `src/constants.mjs` | `FRAGMENT_TAG = '$'`. |
 | `src/utils/reactive.mjs` | `maybeReactive(t, expr)` + `containsCall`: auto-wrap heuristic — wraps a call-containing expression in `() => expr` for reactivity (skip if top-level is already a function = the double-wrap guard). Applied to element children only. |
+| `src/utils/static.mjs` | Static-subtree hoisting: `tryBuildStaticJSX` (raw-JSX predicate + builder, reuses `processAttributes`/`filterEmptyChildren` for normalization parity), `hoistStaticJSX`, `hoistStaticSubtrees` (Babel-AST pass for the `html\`\`` output), `hoistVNode` (`program.scope.push` const). |
 
 ## Visitor pipeline
 
@@ -42,7 +43,9 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html\
 4. **Filter children** — `filterEmptyChildren(t, path.node.children, isComponent)`; JSXText whitespace-collapsed, comments dropped, `props.children` spread.
 5. **Branch**:
    - **Component** — find program parent. If `tagName ∈ {ForEach, Portal, Lazy}` inject matching import and emit `Tag(props)` via `buildComponentCall` (passthrough). Otherwise inject `component` from `@hellajs/dom` and emit `component(Tag, props)`. **All six category arrays are flattened back into a single props object** — components never receive `on` / `bind` / `hooks` / `e` / `error` fields.
-   - **Element** — `buildHellaNode(t, tag, props, on, e, bind, hooks, children, error)`. `<style>` is a regular element (tag: `"style"`), not special-cased.
+   - **Element** — **static-hoist first**: `hoistStaticJSX` attempts to build the whole subtree as a `static: true` object literal; on success it is pushed to a module-level `_hellaStatic` const (via `program.scope.push`, declared before first use) and the JSX is replaced by the identifier — the normal pipeline (and the children traversal) is skipped entirely. Otherwise `buildHellaNode(t, tag, props, on, e, bind, hooks, children, error)`. `<style>` is a regular element (tag: `"style"`), not special-cased.
+
+**Static-hoist safety rules** (both paths): lowercase string tag (element or `$` fragment); NO `on:`/`e:`/`hook:`/`error:` attributes at all; props limited to string/number/boolean literals (no spreads, no expressions); children limited to static text and other fully-static elements. Components, member-expression tags, dynamic `<${Comp}>`, slots, and anything `maybeReactive` would wrap are excluded by construction. Static children of a disqualified parent hoist individually at their own visit (JSX) or via the `hoistStaticSubtrees` recursion (`html\`\``). Known caveat (pre-existing, equal to runtime `html\`\``): a component returning a hoisted node gets `componentScope` attached to the shared const — the scope is not wired into mounts, same as `component(() => html\`<div>static</div>\`)` uncompiled.
 
 **`JSXFragment`** (`src/transformers/jsx.mjs:52`) — `buildHellaNode(t, '$', [], [], [], [], [], children, [])`. Fragment nodes have no attributes (empty props/on/e/bind/hooks/error).
 
@@ -51,7 +54,7 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html\
 1. `parseHTMLComponent(quasis, expressions)` → intermediate AST (single node, or fragment `$` wrapping multiple roots, or bare `{ __slot }` if the entire template is one expression).
 2. `findPassthroughComponents(ast)` → Set of `{ForEach, Portal, Lazy}` tag names present; ensure each import.
 3. `containsComponent(ast, passthroughNames)` → if any uppercase or `__SLOT_N__` tag remains, `ensureCreateComponentImport`.
-4. `componentNodeToBabel(t, ast, expressions)` → Babel AST; `path.replaceWith`.
+4. `componentNodeToBabel(t, ast, expressions)` → Babel AST; `hoistStaticSubtrees(t, program, babelAST)` hoists fully-static subtrees (whole root, or nested static children of a dynamic root) to `_hellaStatic` module consts; `path.replaceWith`.
 </visitor-pipeline>
 
 ## Attribute categories
@@ -101,7 +104,7 @@ A node is one of:
 
 ## HellaNode output shape
 
-Emitted by `buildHellaNode` (`src/builders/vnode.mjs`). **Each field after `tag` is included only when non-empty** — `<div />` produces just `{ tag: "div" }`.
+Emitted by `buildHellaNode` (`src/builders/vnode.mjs`). **Each field after `tag` is included only when non-empty** — `<div />` produces just `{ tag: "div" }`. Fully-static subtrees are hoisted to module consts and carry `static: true` (see visitor pipeline).
 
 | Field | Type | Source |
 |---|---|---|
