@@ -7,7 +7,7 @@ import { logger, packagesDir, pluginsDir, projectRoot } from "./utils/index.js";
  *
  * 1. Export-name check — fail if a doc link's display name (the `` `NAME` `` in
  * `` [`NAME`](URL) ``) is not a barrel export of the package the link targets. Catches
- * the `streamSsr` vs `ssrStream` rename drift that `tsc`, `eslint`, and every other
+ * the `streamSsr` vs `ssr` rename drift that `tsc`, `eslint`, and every other
  * guard miss: a stale display name compiles, lints, and ships while pointing readers
  * at a symbol that no longer exists. The barrel (`packages/<pkg>/lib/index.ts`) is the
  * truth for the public surface; a symbol exported only from a non-barrel file is not
