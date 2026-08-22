@@ -1,6 +1,6 @@
 import { setupContainer } from "@utils/test-helpers.js";
 import { onError } from "@hellajs/dom/bundle";
-import { ssr, ssrStream } from "@hellajs/ssr/bundle";
+import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
 export const fallbackHandler = (
@@ -39,14 +39,14 @@ export const ssrContainer = (node: HellaNode | (() => HellaNode)): Element => {
 };
 
 /**
- * Produces a fresh container whose innerHTML is the REAL `ssrStream()` output for `node` — the streamed
+ * Produces a fresh container whose innerHTML is the REAL `ssr.stream()` output for `node` — the streamed
  * HTML including `<Suspense>` fallbacks, sentinel comments, and staged `<template>`s that `hydrate`
  * swaps in. Use this for streaming/hydrate-swap tests (β).
  */
 export const streamContainer = async (node: HellaNode | (() => HellaNode)): Promise<Element> => {
   const resolved = typeof node === "function" ? (node as () => HellaNode)() : node;
   const container = setupContainer();
-  const reader = ssrStream(resolved).getReader();
+  const reader = ssr.stream(resolved).getReader();
   let html = "";
   let chunk = await reader.read();
   while (!chunk.done) { html += chunk.value; chunk = await reader.read(); }

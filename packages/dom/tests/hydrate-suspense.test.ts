@@ -92,7 +92,7 @@ describe("dom hydrate <Suspense>", () => {
     expect(container.textContent).not.toContain("[object Object]");
   });
 
-  test("adopts children from an ssrAsync render (no stage — children already present)", async () => {
+  test("adopts children from an ssr.async render (no stage — children already present)", async () => {
     const handler = mock(() => {});
     const App = () => html`<div id="root"><${Suspense} fallback=${html`<i>wait</i>`}><button id="btn" on:click=${handler}>go</button></${Suspense}></div>`;
     const { ssrContainer } = await import("./helpers");
