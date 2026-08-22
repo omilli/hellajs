@@ -6,6 +6,7 @@ import { buildHellaNode } from "../builders/vnode.mjs";
 import { buildComponentCall } from "../builders/component.mjs";
 import { ensureCreateComponentImport } from "../utils/imports.mjs";
 import { PASSTHROUGH_INJECTORS } from "../utils/passthrough.mjs";
+import { hoistStaticJSX } from "../utils/static.mjs";
 
 /**
  * Create JSX element and fragment transformers.
@@ -22,6 +23,18 @@ export function createJSXTransformers(t) {
       const isComponent = (
         t.isJSXIdentifier(opening.name) && opening.name.name[0] === opening.name.name[0].toUpperCase()
       ) || t.isJSXMemberExpression(opening.name);
+
+      // Fully-static subtree — hoist to a module const (staticDom clone path);
+      // skips the normal pipeline entirely, so children are never traversed
+      // (static subtrees contain no components, so no import injection is lost)
+      if (!isComponent) {
+        const program = path.findParent(p => t.isProgram(p));
+        const hoisted = hoistStaticJSX(t, program, path.node);
+        if (hoisted) {
+          path.replaceWith(hoisted);
+          return;
+        }
+      }
 
       const { props, on, hooks, e, error } = processAttributes(t, opening.attributes, isComponent);
       const children = filterEmptyChildren(t, path.node.children, isComponent);
@@ -46,6 +59,12 @@ export function createJSXTransformers(t) {
     },
 
     JSXFragment(path) {
+      const program = path.findParent(p => t.isProgram(p));
+      const hoisted = hoistStaticJSX(t, program, path.node);
+      if (hoisted) {
+        path.replaceWith(hoisted);
+        return;
+      }
       const children = filterEmptyChildren(t, path.node.children, false);
       // Fragment: pass empty error array
       path.replaceWith(buildHellaNode(t, FRAGMENT_TAG, [], [], [], [], children, []));

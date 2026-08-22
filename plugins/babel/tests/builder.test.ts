@@ -6,7 +6,7 @@ describe("babel", () => {
     test("basic element with tag only", () => {
       const output = transformJSX("<div />");
       expect(output).toContain('tag: "div"');
-      expect(output).toMatch(/\{\s*tag:\s*"div"\s*\}/);
+      expect(output).toMatch(/static:\s*true/);
     });
 
     test("element with props", () => {

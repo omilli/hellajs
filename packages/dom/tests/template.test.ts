@@ -304,5 +304,34 @@ describe("dom", () => {
 
       expect(node.props?.id).toEqual(dynamicId);
     });
+
+    test("a shared static vnode mounts as a distinct clone per mount", () => {
+      // the shape the babel plugin emits for fully-static JSX/html`` subtrees:
+      // one module-level object, `static: true`, mounted many times
+      const shared: HellaNode = {
+        tag: "div",
+        props: { id: "shared", class: "box" },
+        children: ["static text", { tag: "span", children: ["nested"], static: true }],
+        static: true
+      };
+
+      const hostA = document.createElement("div");
+      const hostB = document.createElement("div");
+      document.body.append(hostA, hostB);
+
+      const a = mount(shared, hostA);
+      const b = mount(shared, hostB);
+
+      const elA = document.getElementById("shared");
+      const els = document.querySelectorAll("#shared");
+      expect(els.length).toBe(2);
+      expect(elA?.textContent).toBe("static textnested");
+      expect(elA?.getAttribute("class")).toBe("box");
+
+      // clones are distinct — removing one mount leaves the other intact
+      a.unmount();
+      expect(document.querySelectorAll("#shared").length).toBe(1);
+      expect(b.container.textContent).toBe("static textnested");
+    });
   });
 });
