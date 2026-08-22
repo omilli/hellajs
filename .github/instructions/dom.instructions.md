@@ -53,7 +53,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 | `error` | `error:fallback` / `error:category` / `error:boundary` (`error:` prefix). |
 | `children` | Always flat (`.flat()` runs during template substitution). |
 | `componentScope` | Attached by `component()`; copied to `state.componentScope` at mount. |
-| `static` | Template-cache marker — subtree has zero placeholder deps; shared by reference across invocations, never cloned. |
+| `static` | Template-cache marker — subtree has zero placeholder deps (runtime `html\`\``) or was hoisted by the babel plugin as a fully-static module constant (JSX / compiled `html\`\``); shared by reference across invocations and cloned via `staticDom` on re-mount, never cloned structurally. |
 
 ### `RenderFn` / `SsrMeta` (isDynamic components)
 
