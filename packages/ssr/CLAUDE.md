@@ -8,6 +8,7 @@ Pure HTML stringifier over `@hellajs/dom`'s HellaNode AST. Zero runtime imports 
 | `ssrAsync` | `ssrAsync(node: HellaNode): Promise<string>` — async counterpart; awaits any Promise a resolved value (child, function-ref prop, `each`, `show`) returns. |
 | `ssrStream` | `ssrStream(node: HellaNode): ReadableStream<string>` — streaming counterpart; yields HTML chunks, flushing the static prefix before each await. |
 | `doc` | `doc(options: DocOptions): string` — assemble a rendered body + head into a full HTML document string; pure builder, zero new deps, reuses `serializeProp`/`escapeHtml`. |
+| `docStream` | `docStream(options: DocStreamOptions): ReadableStream<string>` — streaming counterpart of `doc`; emits the shell (head, `lang`, `mount` wrapper), pipes body chunks through, then the closing tags. Head renders via the shared `buildHead`; suffix lands only after the body closes (so after staged `<Suspense>` swaps). Body-stream error → `controller.error`; cancel propagates to the body via the held reader. |
 
 ## Architecture (`lib/`)
 
@@ -18,9 +19,11 @@ One public export per file (`lib/index.ts` is a pure re-export barrel). The shar
 | `lib/ssr.ts` | Public `ssr(node)` — the sync recursive walker. Sync helpers `walkChild`/`walkChildren`/`renderDynamic` co-located (non-exported, single-caller). |
 | `lib/ssrAsync.ts` | Public `ssrAsync(node)` — collect-wrapper over the shared async generator. |
 | `lib/ssrStream.ts` | Public `ssrStream(node)` — `ReadableStream` wrapper over the shared async generator; flushes staged `<Suspense>` swaps at stream end **concurrently** (completion order). Each template is followed by an inline `<script>$hs(id)</script>` (a one-time `$hs` bootstrap precedes them) so each region swaps in the moment it arrives (progressive, React/Solid parity); `hydrate` adopts the already-swapped nodes (`swapSuspenseStage` is the no-script/HappyDOM fallback). `$hs` source lives here as the `HS_SWAP_SCRIPT` const; mirrors dom's `swapSuspenseStage`. |
-| `lib/doc.ts` | Public `doc(options)` — assembles a rendered body + head into a full HTML document string; reuses `serializeProp`/`escapeHtml` from `./internal/serialize`. Local helpers `buildAttrs`/`renderVoidTags` co-located (non-exported). |
-| `lib/types.d.ts` | `doc`'s option interfaces (`DocOptions`/`HeadOptions`/`MetaTag`/`LinkTag`/`ScriptTag`); wholesale-re-exported via `export type *`. |
+| `lib/doc.ts` | Public `doc(options)` — assembles a rendered body + head into a full HTML document string; head built by the shared `buildHead` (`./internal/head`), `lang` via `serializeProp`. |
+| `lib/docStream.ts` | Public `docStream(options)` — streaming counterpart of `doc`: prefix/suffix around a `ReadableStream<string>` body (see export table for stream semantics). Local helper `parseMount` co-located (non-exported, single-caller) — parses tag/`#id`/`.class`, default `div`; the body's reader is acquired up front so `cancel()` can propagate (the stream is locked to it). |
+| `lib/types.d.ts` | `doc`'s option interfaces (`DocOptions`/`HeadOptions`/`MetaTag`/`LinkTag`/`ScriptTag`) + `DocStreamOptions` (`body: ReadableStream<string>`, `mount?` selector); wholesale-re-exported via `export type *`. |
 | `lib/internal/serialize.ts` | `serializeProp`/`escapeHtml` (mirror dom's `renderProp`), `VOID` void-element set. |
+| `lib/internal/head.ts` | `buildHead(head)` — the single head builder shared by `doc` + `docStream` (≥2 callers — `internal/` placement criterion); local helpers `buildAttrs`/`renderVoidTags` (non-exported). |
 | `lib/internal/resolve.ts` | `resolveValue`/`resolveAsync` (call-if-function, await-if-Promise resolvers); `isPromise` type guard (local). |
 | `lib/internal/walk.ts` | The shared async walker (`ssrNodeGen` exported; `walkChildGen`/`walkChildrenGen`/`renderDynamicGen` local) + `MARK_OPEN`/`MARK_CLOSE` and the `DynamicFn`/`PendingSwap` types. |
 
