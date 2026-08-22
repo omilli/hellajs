@@ -6,6 +6,7 @@
 * **Creation**: Added concept [043](entries/043.md) (type: decision).
 * **Creation**: Added concept [044](entries/044.md) (type: decision).
 * **Creation**: Added concept [047](entries/047.md) (type: correction).
+* **Creation**: Added concept [048](entries/048.md) (type: decision).
 
 ## 2026-08-21
 * **Creation**: Added concept [039](entries/039.md) (type: decision).

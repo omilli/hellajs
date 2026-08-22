@@ -62,6 +62,7 @@
   | Name | Command | What it does |
   |---|---|---|
   | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint (the full `bun lint` across all packages — not scoped); filters the coverage table to the target package. CI runs this. |
+| bench | `bun bench [--variant=html\|jsx\|ts] [--runs=<n>] [--throttle=<x>] [--label=<text>] [--ops=<list>] [--headed]` | Playwright + system Chrome macro-benchmark over `examples/bench`: 4× CPU throttle, in-page click→verified-frame timing for all 8 krausest ops (median + mean), appends self-describing entries (label, HEAD sha, dirty flag, env) to `.bench/results.md`. A/B is manual: `git checkout <ref>` → run → checkout feature → run → read the log. Rebuilds all packages first (examples bundle against `dist/`). Requires local Google Chrome. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
   | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` + `bun lint:guards` (the four repo-wide guards). |
   | lint:guards | `bun lint:guards` | The four guards composed: `visibility` + `dead-exports` + `jsdoc-params` + `doc-links`. Composed into `lint`; run standalone to skip tsc/eslint. |
