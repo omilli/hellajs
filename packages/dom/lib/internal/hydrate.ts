@@ -21,6 +21,8 @@ export interface HydrateCtx {
   existingNodes: Node[];
   /** Recurse adoption into an adopted child element. */
   hydrateNode: (node: HellaNode, existing: Node | null, boundary?: Element) => Node;
+  /** True when a `<!--hsN-->` stage sentinel was gathered but its staged `<template>` never arrived (interrupted stream) — `<Suspense>` re-suspends client-side. */
+  stageMissing?: boolean;
 }
 
 const hydrateStack: HydrateCtx[] = [];
@@ -33,10 +35,12 @@ export function peekHydrateContext(): HydrateCtx | undefined {
   return hydrateStack.length ? hydrateStack[hydrateStack.length - 1] : undefined;
 }
 
+/** Pushes a hydration context so the next `fn(parent)` call adopts via `peekHydrateContext` — called by `adoptRegion`. */
 function pushHydrateContext(ctx: HydrateCtx): void {
   hydrateStack.push(ctx);
 }
 
+/** Pops the innermost hydration context off the stack — paired with `pushHydrateContext` in `adoptRegion`. */
 function popHydrateContext(): void {
   hydrateStack.pop();
 }
@@ -54,7 +58,6 @@ const isMarkOpen = (n: Node | null): boolean => n !== null && n.nodeType === Nod
 
 /**
  * Gathers the nodes between an open marker and its matching close (depth-aware for nested regions).
- * @internal
  */
 function gatherRegion(open: Node): { nodes: Node[]; close: Node } {
   const nodes: Node[] = [];
@@ -79,7 +82,6 @@ function gatherRegion(open: Node): { nodes: Node[]; close: Node } {
  * Consumes a marker-bounded region: gathers its nodes, removes the open/close markers, inserts a
  * persistent text anchor where the open marker was. Returns the anchor, the gathered nodes, and the
  * DOM pointer past the region (the node that followed the close marker).
- * @internal
  */
 function consumeRegion(parent: HellaElement, open: Node): { anchor: Node; existing: Node[]; next: Node | null } {
   const { nodes: existing, close } = gatherRegion(open);
@@ -91,26 +93,31 @@ function consumeRegion(parent: HellaElement, open: Node): { anchor: Node; existi
   return { anchor, existing, next };
 }
 
+/** Matches a `<Suspense>` stage-sentinel comment id (`hs0`, `hs1`, …) emitted by `@hellajs/ssr`'s stream. */
+const HS_STAGE_REGEX = /^hs\d+$/;
+
 /**
- * @internal
  * No-script/HappyDOM fallback swap for `<Suspense>`: if the gathered region nodes contain a sentinel comment whose nodeValue
  * is a staged `<template>` id, replace the fallback with the template's resolved children. In a browser an inline `$hs`
  * script (emitted by `@hellajs/ssr`) has already swapped each region on arrival; this runs only when that script hasn't
  * (e.g. in HappyDOM tests). Returns the nodes to adopt (swapped children, or the
- * original `existing` when there is no stage — e.g. an `ssr`/`ssrAsync` render where children are present).
+ * original `existing` when there is no stage — e.g. an `ssr`/`ssrAsync` render where children are present), plus
+ * `missing: true` when a stage sentinel was seen but its template is gone (interrupted stream) — the caller re-suspends.
  */
-function swapSuspenseStage(existing: Node[], anchor: Node): Node[] {
+function swapSuspenseStage(existing: Node[], anchor: Node): { nodes: Node[]; missing: boolean } {
   let template: HTMLTemplateElement | null = null;
+  let hasSentinel = false;
   let si = 0;
   const sLen = existing.length;
   while (si < sLen) {
     const n = existing[si++]!;
     if (n.nodeType === Node.COMMENT_NODE && n.nodeValue) {
+      if (HS_STAGE_REGEX.test(n.nodeValue)) hasSentinel = true;
       const staged = document.getElementById(n.nodeValue);
       if (staged && staged.tagName === "TEMPLATE") { template = staged as HTMLTemplateElement; break; }
     }
   }
-  if (!template) return existing;
+  if (!template) return { nodes: existing, missing: hasSentinel };
   const swapped = Array.from(template.content.childNodes);
   const parent = anchor.parentNode;
   let ri = 0;
@@ -127,16 +134,15 @@ function swapSuspenseStage(existing: Node[], anchor: Node): Node[] {
     }
   }
   template.remove();
-  return swapped;
+  return { nodes: swapped, missing: false };
 }
 
 /**
  * Pushes a HydrateCtx seeded with the gathered region nodes + the walker's anchor, calls the
  * isDynamic component fn (which adopts via {@link peekHydrateContext}), then pops.
- * @internal
  */
-function adoptRegion(parent: HellaElement, child: RenderFn, anchor: Node, existing: Node[]): void {
-  pushHydrateContext({ anchor, existingNodes: existing, hydrateNode });
+function adoptRegion(parent: HellaElement, child: RenderFn, anchor: Node, existing: Node[], stageMissing = false): void {
+  pushHydrateContext({ anchor, existingNodes: existing, hydrateNode, stageMissing });
   child(parent);
   popHydrateContext();
 }
@@ -146,7 +152,6 @@ function adoptRegion(parent: HellaElement, child: RenderFn, anchor: Node, existi
  * nodes are ADOPTED as the initial render (first run skipped); subsequent signal changes clear + render
  * fresh (mirroring `appendToParent`, incl. the isDynamic-resolved `Proxy` branch — safe here because
  * `clearRenderedNodes` runs before re-rendering on subsequent runs).
- * @internal
  */
 function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: Node, existing: Node[], boundaryElement?: Element): void {
   const renderedNodes: Node[] = existing;
@@ -199,7 +204,6 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
 }
 
 /**
- * @internal
  * Replaces a mismatched server node with a freshly mounted subtree in place.
  */
 function replaceMismatch(node: HellaNode, existing: Node | null, boundaryElement?: Element): Node {
@@ -388,7 +392,6 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
 /**
  * Dispatches an isDynamic child against its marker-bounded region: consumes the region, then either
  * adopts the gathered nodes (ForEach/Transition) or drops them and re-runs (Portal/Lazy).
- * @internal
  */
 function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | null): Node | null {
   if (!current || !isMarkOpen(current)) {
@@ -400,6 +403,7 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
   }
   const { anchor, existing, next } = consumeRegion(parent, current);
   const meta = child.ssr;
+  let swappedStage: { nodes: Node[]; missing: boolean };
   switch (meta?.kind) {
     case "forEach":
     case "transition":
@@ -413,7 +417,10 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
       adoptRegion(parent, child, anchor, []);
       break;
     case "suspense":
-      adoptRegion(parent, child, anchor, swapSuspenseStage(existing, anchor));   // no-script fallback: staged <template> → resolved children (a browser's inline $hs already swapped on arrival)
+      // no-script fallback: staged <template> → resolved children (a browser's inline $hs already swapped on arrival);
+      // sentinel-without-template (interrupted stream) flags the ctx so <Suspense> re-suspends client-side
+      swappedStage = swapSuspenseStage(existing, anchor);
+      adoptRegion(parent, child, anchor, swappedStage.nodes, swappedStage.missing);
       break;
     default:
       adoptRegion(parent, child, anchor, existing);

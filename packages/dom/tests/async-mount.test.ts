@@ -40,5 +40,19 @@ describe("dom", () => {
       expect((handler.mock.calls[0] as unknown[])?.[0]).toBeInstanceOf(Error);
       onError(null);
     });
+    test("unmount before an async mount attaches cancels the late resolution", async () => {
+      let resolveMount: () => void = () => {};
+      const slow = () => new Promise<void>((resolve) => {
+        resolveMount = resolve;
+      }).then(() => html`<div id="late">late</div>` as HellaNode);
+
+      const handle = mount(slow);
+      handle.unmount();
+      resolveMount();
+      await delay();
+
+      expect(document.getElementById("late")).toBeNull();
+      expect(document.getElementById("app")?.childElementCount).toBe(0);
+    });
   });
 });

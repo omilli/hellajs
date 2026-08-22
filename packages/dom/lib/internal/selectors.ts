@@ -18,7 +18,6 @@ export interface SelectorEntry {
 }
 
 /**
- * @internal
  * Global registry of CSS selectors to their operation callbacks and processed nodes.
  */
 export const multiSelectors = new Map<string, SelectorEntry>();
@@ -27,7 +26,6 @@ let refObserver: MutationObserver | null = null;
 let isMultiCheckScheduled = false;
 
 /**
- * @internal
  * Schedules a multi-selector check via microtask.
  */
 function scheduleMultiCheck() {
@@ -67,7 +65,6 @@ export function ensureRefObserver() {
 }
 
 /**
- * @internal
  * Disconnects the refObserver when no selectors remain.
  */
 function cleanupRefObserver() {
@@ -78,7 +75,6 @@ function cleanupRefObserver() {
 }
 
 /**
- * @internal
  * Checks all registered selectors for newly added elements and applies queued operations.
  * Called after MutationObserver detects DOM additions.
  */

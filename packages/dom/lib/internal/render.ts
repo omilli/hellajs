@@ -9,6 +9,11 @@ import { getState, peekState } from "./state";
 
 let staticDom = new WeakMap<HellaNode, Element | DocumentFragment>();
 
+/**
+ * @internal
+ * Clears the `staticDom` prototype cache — the next mount of each `static` subtree rebuilds
+ * a fresh prototype. Wired into `resetDom()` for test isolation.
+ */
 export function clearStaticCache(): void {
   staticDom = new WeakMap();
 }
@@ -43,7 +48,6 @@ export function clearRenderedNodes(nodes: Node[], parent: Node) {
 }
 
 /**
- * @internal
  * Parses a raw HTML string into a fragment for insertion.
  */
 function rawToFragment(html: string): DocumentFragment {
@@ -176,7 +180,6 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
 }
 
 /**
- * @internal
  * Appends children to a parent element with reactive support.
  * Handles static text, HellaNodes, functions, and forEach.
  * @param parent The parent element

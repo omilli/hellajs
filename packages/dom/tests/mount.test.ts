@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { flush, signal } from "@hellajs/core";
+import { flush, signal, batch } from "@hellajs/core";
 import {resetTestState} from "@utils/test-helpers.js";
 import { mount, html } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
@@ -10,6 +10,12 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("mount", () => {
+    test("mounts inside a batch and renders when the batch exits", () => {
+      batch(() => {
+        mount(html`<div id="in-batch">b</div>`);
+      });
+      expect(document.getElementById("in-batch")?.textContent).toBe("b");
+    });
     test("mounts static HTML content", () => {
       mount(html`<div id="static">Hello</div>`);
       expect(document.getElementById("static")?.textContent).toBe("Hello");
