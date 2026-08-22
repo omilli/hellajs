@@ -67,6 +67,6 @@ hydrate(html`<${App} />`, '#app');
 
 `ssr` walks the tree once. Reactive values are read at their current value with no effect scheduling or batching. Resolve server-side data before building the tree.
 
-For data that must be fetched during render, [`ssrAsync`](/reference/ssr/ssr-async) is the async counterpart — it awaits any Promise a resolved value returns, so a getter can fetch directly. Output and markers are identical to `ssr`; [`hydrate`](/reference/dom/hydrate) consumes either unchanged.
+For data that must be fetched during render, [`ssr.async`](/reference/ssr/ssr#async) is the async counterpart — it awaits any Promise a resolved value returns, so a getter can fetch directly. Output and markers are identical to `ssr`; [`hydrate`](/reference/dom/hydrate) consumes either unchanged.
 
-[`ssrStream`](/reference/ssr/ssr-stream) streams the same walk as `ReadableStream` chunks, flushing the static prefix before each awaited Promise (progressive paint), and [`docStream`](/reference/ssr/doc-stream) wraps that stream in a full document — head, `lang`, and a mount-point wrapper — without collecting it.
+[`ssr.stream`](/reference/ssr/ssr#stream) streams the same walk as `ReadableStream` chunks, flushing the static prefix before each awaited Promise (progressive paint), and [`doc`](/reference/ssr/doc) wraps that stream in a full document — head, `lang`, and a mount-point wrapper — without collecting it.

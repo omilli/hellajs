@@ -11,7 +11,7 @@ export async function collect(stream: ReadableStream<string>): Promise<string> {
   return out;
 }
 
-/** Parity node cases — inputs every walker (`ssr`/`ssrAsync`/`ssrStream`) must render byte-identically. */
+/** Parity node cases — inputs every walker (`ssr`/`ssr.async`/`ssr.stream`) must render byte-identically. */
 export const parityCases: { name: string; node: HellaNode }[] = [
   { name: "falsy child (false)", node: html`<div>${false}</div>` as HellaNode },
   { name: "number child", node: html`<p>${5}</p>` as HellaNode },

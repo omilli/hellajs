@@ -1,12 +1,12 @@
 # Build an SSR Streaming App
 
-Stream HTML to the browser as it renders: [`ssrStream`](/reference/ssr/ssr-stream) flushes the static shell and each [`<Suspense>`](/reference/dom/suspense) `fallback` immediately, then streams each region's resolved children as a `<template>` plus a tiny inline swap script that swaps it in **the moment it arrives** — so each card fills in progressively as its data lands. A page with several independent async regions is where streaming earns its keep: the shell paints at TTFB and the cards pop in one-by-one, instead of the whole page blocking on the slowest fetch.
+Stream HTML to the browser as it renders: [`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell and each [`<Suspense>`](/reference/dom/suspense) `fallback` immediately, then streams each region's resolved children as a `<template>` plus a tiny inline swap script that swaps it in **the moment it arrives** — so each card fills in progressively as its data lands. A page with several independent async regions is where streaming earns its keep: the shell paints at TTFB and the cards pop in one-by-one, instead of the whole page blocking on the slowest fetch.
 
 Jump to the [Complete Code](#complete-code) for the finished application.
 
 ## What You'll Learn
 
-- **[`ssrStream`](/reference/ssr/ssr-stream)**: Serialize a template into a streaming `ReadableStream`, flushing the shell before async values resolve
+- **[`ssr.stream`](/reference/ssr/ssr#stream)**: Serialize a template into a streaming `ReadableStream`, flushing the shell before async values resolve
 - **[`<Suspense>`](/reference/dom/suspense)**: Mark a subtree for out-of-order streaming — a `fallback` flushes first, then resolved children stream in (and swap) as they resolve
 - **Multiple independent regions**: several `<Suspense>` boundaries at different latencies make streaming's value visible — cards fill in one by one as their data resolves
 - **[`hydrate`](/reference/dom/hydrate)**: Adopt the streamed HTML on the client — each region's inline swap script already swapped it in on arrival; hydrate just binds the already-present nodes
@@ -259,13 +259,13 @@ export const Dashboard = () => (
 
 - **`after(data, ms)`**: a simulated async fetch — resolves with `data` after `ms`. Deterministic (no backend), so the streamed shape is reproducible
 - **[`<Suspense>`](/reference/dom/suspense)**` fallback={<Skeleton …/>}`: a streaming boundary. The `fallback` (skeleton) flushes inline; the resolved card streams in (and swaps) as it resolves
-- **`() => after(...).then(d => <section/>)`**: a getter child returning a `Promise`. [`ssrStream`](/reference/ssr/ssr-stream) defers it inside the `<Suspense>` region and streams the result as a `<template>` + swap script
+- **`() => after(...).then(d => <section/>)`**: a getter child returning a `Promise`. [`ssr.stream`](/reference/ssr/ssr#stream) defers it inside the `<Suspense>` region and streams the result as a `<template>` + swap script
 - **Fast → slow ordering**: the three regions resolve top-to-bottom, so the page fills in naturally as you watch
 - **Static shell**: `<header>` renders synchronously, so it paints at TTFB before any card resolves
 
 ## The Streaming Server
 
-The server exports a `render()` that returns a web `ReadableStream` — a full streamed document. [`docStream`](/reference/ssr/doc-stream) wraps the body stream in the document shell: the `head` (with the CSS text [`css`](/reference/css/css) returned on the server — no DOM), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged [`<Suspense>`](/reference/dom/suspense) swap has streamed — nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
+The server exports a `render()` that returns a web `ReadableStream` — a full streamed document. [`doc`](/reference/ssr/doc) wraps the body stream in the document shell: the `head` (with the CSS text [`css`](/reference/css/css) returned on the server — no DOM), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged [`<Suspense>`](/reference/dom/suspense) swap has streamed — nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
 
 First the theme — deliberately minimal, since the CSS is incidental to the streaming story: layout and skeleton visibility, not visual polish. Create `src/theme.ts`:
 
@@ -344,7 +344,7 @@ export const styles = css({
 Then the server. Create `src/server.tsx`:
 
 ```tsx
-import { ssrStream, docStream } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 import { Dashboard } from './app';
 import { styles } from './theme';
 
@@ -352,11 +352,11 @@ import { styles } from './theme';
 // (vite.config.js) passes req.url, but render ignores it. The vite-plugin-hellajs transform
 // ran on this module (and ./app) via ssrLoadModule, so <Dashboard /> is already a HellaNode.
 export function render(): ReadableStream<string> {
-  // docStream assembles the full streamed document: the shell (head, lang, the mount wrapper)
+  // doc assembles the full streamed document: the shell (head, lang, the mount wrapper)
   // flushes first, each body chunk pipes through as it renders, and the closing tags land only
-  // after the body closes — for ssrStream that means after every staged <Suspense> swap, so
+  // after the body closes — for ssr.stream that means after every staged <Suspense> swap, so
   // progressive paint holds end-to-end (nothing is collected).
-  return docStream({
+  return doc({
     lang: 'en',
     // Emits <div id="app">…</div> around the streamed body — the same selector the client's
     // hydrate(<Dashboard />, '#app') targets, so server and client share one string.
@@ -370,7 +370,7 @@ export function render(): ReadableStream<string> {
       // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).
       scripts: [{ type: 'module', src: '/src/client.tsx' }],
     },
-    body: ssrStream(<Dashboard />),
+    body: ssr.stream(<Dashboard />),
   });
 }
 ```
@@ -378,9 +378,9 @@ export function render(): ReadableStream<string> {
 **Code Explanation**
 
 - **[`router`](/reference/router/router)** — *not used here*: this is a single page. For URL → view routing on the server, see [SSR Routing](/learn/tutorials/ssr-routing)
-- **[`ssrStream`](/reference/ssr/ssr-stream)`(<Dashboard />)`**: returns a `ReadableStream<string>`. The shell and each `<Suspense>` `fallback` flush first; each resolved region then streams as `<template id="hsN">…</template><script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) so the browser swaps it in the moment it arrives
+- **[`ssr.stream`](/reference/ssr/ssr#stream)`(<Dashboard />)`**: returns a `ReadableStream<string>`. The shell and each `<Suspense>` `fallback` flush first; each resolved region then streams as `<template id="hsN">…</template><script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) so the browser swaps it in the moment it arrives
 - **`mount: '#app'`**: emits `<div id="app">…</div>` around the streamed body — the same selector the client's `hydrate(<Dashboard />, '#app')` targets, so server and client share one string
-- **[`docStream`](/reference/ssr/doc-stream)`({...})`**: assembles the full streamed document — shell first, every body chunk as it arrives, closing tags only after the body closes (so after all staged swaps); the consumer (the dev middleware, or a production server) writes the chunks in order
+- **[`doc`](/reference/ssr/doc)`({...})`**: assembles the full streamed document — shell first, every body chunk as it arrives, closing tags only after the body closes (so after all staged swaps); the consumer (the dev middleware, or a production server) writes the chunks in order
 
 The streamed HTML looks like this — the shell and all three fallbacks arrive before any fetch resolves, then each card's resolved content streams as a `<template>` + an inline swap script that swaps it in the moment it arrives:
 
@@ -399,7 +399,7 @@ curl -sN localhost:5173/
 # …</div></body></html>
 ```
 
-Each region's `<template>` streams the moment its own async work completes, immediately followed by its `$hs` swap script — so the browser swaps each card in as it arrives (progressive, React/Solid parity). Contrast this with [`ssr`](/reference/ssr/ssr) / [`ssrAsync`](/reference/ssr/ssr-async): without streaming, nothing paints until the slowest (1200ms) fetch resolves.
+Each region's `<template>` streams the moment its own async work completes, immediately followed by its `$hs` swap script — so the browser swaps each card in as it arrives (progressive, React/Solid parity). Contrast this with [`ssr`](/reference/ssr/ssr) / [`ssr.async`](/reference/ssr/ssr#async): without streaming, nothing paints until the slowest (1200ms) fetch resolves.
 
 ## The Client
 
@@ -436,7 +436,7 @@ Open `http://localhost:5173/`. You see the header and three loading skeletons im
 
 - **[SSR patterns](/learn/patterns/ssr)**: Streaming, styled output, and the stringifier contract
 - **[SSR Routing](/learn/tutorials/ssr-routing)**: URL → view routing on the server — this example is a single page; routing has its own tutorial
-- **[ssrStream reference](/reference/ssr/ssr-stream)**: The streaming renderer API
+- **[ssr.stream reference](/reference/ssr/ssr#stream)**: The streaming renderer API
 - **[Suspense reference](/reference/dom/suspense)**: The out-of-order streaming boundary
 
 ## Complete Code
@@ -601,7 +601,7 @@ export const styles = css({
 ### `src/server.tsx`
 
 ```tsx
-import { ssrStream, docStream } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 import { Dashboard } from './app';
 import { styles } from './theme';
 
@@ -609,11 +609,11 @@ import { styles } from './theme';
 // (vite.config.js) passes req.url, but render ignores it. The vite-plugin-hellajs transform
 // ran on this module (and ./app) via ssrLoadModule, so <Dashboard /> is already a HellaNode.
 export function render(): ReadableStream<string> {
-  // docStream assembles the full streamed document: the shell (head, lang, the mount wrapper)
+  // doc assembles the full streamed document: the shell (head, lang, the mount wrapper)
   // flushes first, each body chunk pipes through as it renders, and the closing tags land only
-  // after the body closes — for ssrStream that means after every staged <Suspense> swap, so
+  // after the body closes — for ssr.stream that means after every staged <Suspense> swap, so
   // progressive paint holds end-to-end (nothing is collected).
-  return docStream({
+  return doc({
     lang: 'en',
     // Emits <div id="app">…</div> around the streamed body — the same selector the client's
     // hydrate(<Dashboard />, '#app') targets, so server and client share one string.
@@ -627,7 +627,7 @@ export function render(): ReadableStream<string> {
       // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).
       scripts: [{ type: 'module', src: '/src/client.tsx' }],
     },
-    body: ssrStream(<Dashboard />),
+    body: ssr.stream(<Dashboard />),
   });
 }
 ```

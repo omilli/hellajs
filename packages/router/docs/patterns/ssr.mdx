@@ -65,18 +65,18 @@ Bun.serve({
 });
 ```
 
-### Server — ssrAsync()
+### Server — ssr.async()
 
-For server-fetched data, return a Promise from a getter child — [`ssrAsync`](/reference/ssr/ssr-async) awaits it in tree order. Everything else is identical to the [`ssr`](/reference/ssr/ssr) recipe.
+For server-fetched data, return a Promise from a getter child — [`ssr.async`](/reference/ssr/ssr#async) awaits it in tree order. Everything else is identical to the [`ssr`](/reference/ssr/ssr) recipe.
 
 ```js
 import { signal } from '@hellajs/core';
 import { html } from '@hellajs/dom';
 import { router } from '@hellajs/router';
-import { ssrAsync, doc } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const loadName = (id) => fetch(`/api/users/${id}`).then((r) => r.text());
-// A promise-getter child is awaited by ssrAsync
+// A promise-getter child is awaited by ssr.async
 const Profile = ({ id }) => html`<h1>${() => loadName(id)}</h1>`;
 
 const currentView = signal(html`<h1>Loading…</h1>`);
@@ -92,7 +92,7 @@ Bun.serve({
     const { pathname, search } = new URL(req.url);
     router({ routes, url: pathname + search });
 
-    const body = await ssrAsync(html`<${App} />`);
+    const body = await ssr.async(html`<${App} />`);
     return new Response(
       doc({ lang: 'en', head: { title: 'App' }, body }),
       { headers: { 'content-type': 'text/html' } }
@@ -101,15 +101,15 @@ Bun.serve({
 });
 ```
 
-### Server — ssrStream()
+### Server — ssr.stream()
 
-[`ssrStream`](/reference/ssr/ssr-stream) flushes the static shell before async values resolve. Wrap an async subtree in [`<Suspense>`](/reference/dom/suspense) for out-of-order streaming — the shell and the `fallback` flush immediately while the children resolve. A full document needs a prefix and suffix around the streamed body.
+[`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell before async values resolve. Wrap an async subtree in [`<Suspense>`](/reference/dom/suspense) for out-of-order streaming — the shell and the `fallback` flush immediately while the children resolve. A full document needs a prefix and suffix around the streamed body.
 
 ```js
 import { signal } from '@hellajs/core';
 import { html, Suspense } from '@hellajs/dom';
 import { router } from '@hellajs/router';
-import { ssrStream } from '@hellajs/ssr';
+import { ssr } from '@hellajs/ssr';
 
 const loadName = (id) => fetch(`/api/users/${id}`).then((r) => r.text());
 const Profile = ({ id }) => html`
@@ -133,7 +133,7 @@ Bun.serve({
     const { pathname, search } = new URL(req.url);
     router({ routes, url: pathname + search });
 
-    const body = ssrStream(html`<${App} />`);
+    const body = ssr.stream(html`<${App} />`);
     const stream = new ReadableStream({
       async start(controller) {
         const enc = new TextEncoder();
@@ -170,4 +170,4 @@ Route handlers should be pure state-setters (`() => currentView(View())`). Put s
 
 ### Concurrency
 
-Synchronous [`ssr`](/reference/ssr/ssr) is concurrency-safe: [`router`](/reference/router/router)`({ url })` + the render is one synchronous block with no `await`, so no second request can interleave and overwrite the router's module-level signals mid-render. [`ssrAsync`](/reference/ssr/ssr-async) and [`ssrStream`](/reference/ssr/ssr-stream) yield at each awaited Promise — they stay correct while every shared-signal read (the router's [`route`](/reference/router/route)`()`, your `currentView`) happens before the first `await` in tree order. Full safety under arbitrary streaming concurrency needs a router instance per request; revisit it only when a real concurrent-streaming workload demands it.
+Synchronous [`ssr`](/reference/ssr/ssr) is concurrency-safe: [`router`](/reference/router/router)`({ url })` + the render is one synchronous block with no `await`, so no second request can interleave and overwrite the router's module-level signals mid-render. [`ssr.async`](/reference/ssr/ssr#async) and [`ssr.stream`](/reference/ssr/ssr#stream) yield at each awaited Promise — they stay correct while every shared-signal read (the router's [`route`](/reference/router/route)`()`, your `currentView`) happens before the first `await` in tree order. Full safety under arbitrary streaming concurrency needs a router instance per request; revisit it only when a real concurrent-streaming workload demands it.

@@ -3,6 +3,8 @@ import { serializeProp, escapeHtml, VOID } from "./internal/serialize";
 import { resolveValue } from "./internal/resolve";
 import { MARK_OPEN, MARK_CLOSE } from "./internal/walk";
 import type { DynamicFn } from "./internal/walk";
+import { ssrAsync } from "./ssrAsync";
+import { ssrStream } from "./ssrStream";
 
 /** Renders an isDynamic component's content from its `ssr` descriptor — shared by the direct-isDynamic-child and reactive-resolved-isDynamic dispatch paths. */
 function renderDynamic(meta: SsrMeta): string {
@@ -99,15 +101,57 @@ function walkChildren(children?: HellaChild[]): string {
 }
 
 /**
- * Serializes a HellaNode AST into an HTML string.
- *
- * Pure stringifier with zero runtime imports from any `@hellajs/*` package — only a type-only
- * `HellaNode` import (erased at compile time). Walk failures propagate to the caller (no try/catch).
- * @param node The HellaNode AST to serialize
- * @returns The rendered HTML string
- * @throws {Error} When `node` is null or undefined.
+ * The `ssr` callable namespace — one serialization pass, three timing strategies. The base call
+ * walks synchronously; `ssr.async` awaits every Promise in the tree; `ssr.stream` flushes
+ * progressively. All three emit byte-identical markers, so `hydrate` consumes any output unchanged.
  */
-export function ssr(node: HellaNode): string {
+interface SsrFn {
+  /**
+   * Serializes a HellaNode AST into an HTML string — synchronous walk.
+   *
+   * Pure stringifier with zero runtime imports from any `@hellajs/*` package — only a type-only
+   * `HellaNode` import (erased at compile time). Walk failures propagate to the caller (no try/catch).
+   * @param node The HellaNode AST to serialize
+   * @returns The rendered HTML string
+   * @throws {Error} When `node` is null or undefined.
+   */
+  (node: HellaNode): string;
+  /**
+   * Async counterpart — awaits any Promise a resolved value returns (child, function-ref prop,
+   * `each`, `show`), then returns the concatenated HTML. `<Suspense>` renders its children directly
+   * (fallback dropped — everything resolves before the string returns). Marker wrapping is
+   * byte-identical to the sync call, so `hydrate` consumes the output unchanged. Walk failures
+   * (including rejected Promises) propagate to the caller (no try/catch).
+   * @param node The HellaNode AST to serialize
+   * @returns A Promise resolving to the rendered HTML string
+   * @throws {Error} When `node` is null or undefined.
+   */
+  async(node: HellaNode): Promise<string>;
+  /**
+   * Streaming counterpart — yields chunks as the walk proceeds, flushing the static prefix before
+   * each awaited Promise (TTFB). A `<Suspense>` boundary opts a subtree into out-of-order streaming:
+   * its `fallback` flushes inline, then each resolved region streams a `<template>` + an inline
+   * `<script>$hs(id)</script>` that swaps it in the moment it arrives (progressive reveal, React/Solid
+   * parity); `hydrate` later adopts the already-swapped nodes. Multiple regions stage concurrently —
+   * each as its own region resolves (completion order, not document order). Bare Promises are awaited
+   * in-order; a rejected Promise errors the stream. Pipe through `new TextEncoderStream()` for a
+   * `Response` body.
+   * @param node The HellaNode AST to serialize
+   * @returns A `ReadableStream<string>` of HTML chunks
+   * @throws {Error} When `node` is null or undefined.
+   */
+  stream(node: HellaNode): ReadableStream<string>;
+}
+
+/**
+ * Serializes a HellaNode AST into an HTML string. Callable namespace: the base call is the synchronous
+ * stringifier; `ssr.async(node)` awaits the Promises in the tree; `ssr.stream(node)` returns a streaming
+ * response. Each member's full contract lives on `SsrFn`.
+ */
+export const ssr: SsrFn = Object.assign(ssrImpl, { async: ssrAsync, stream: ssrStream });
+
+/** Sync walk — the base call target of the `ssr` namespace (see `SsrFn` for the public contract). */
+function ssrImpl(node: HellaNode): string {
   if (node === null || node === undefined) {
     throw new Error(`[ssr] ssr: node is required, received ${node}`);
   }

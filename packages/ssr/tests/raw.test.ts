@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { html, raw } from "@hellajs/dom/bundle";
-import { ssr, ssrAsync } from "@hellajs/ssr/bundle";
+import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 
 describe("ssr raw child", () => {
@@ -14,8 +14,8 @@ describe("ssr raw child", () => {
       .toBe("<div><!--[--><b>x</b><!--]--></div>");
   });
 
-  test("ssrAsync produces byte-identical output to ssr for a raw child", async () => {
+  test("ssr.async produces byte-identical output to ssr for a raw child", async () => {
     const node = html`<main>${raw("<h1>Hi</h1><p>slot</p>")}</main>` as HellaNode;
-    expect(await ssrAsync(node)).toBe(ssr(node));
+    expect(await ssr.async(node)).toBe(ssr(node));
   });
 });
