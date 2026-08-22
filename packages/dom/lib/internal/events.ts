@@ -20,7 +20,7 @@ export function setNodeHandler(element: Element, type: string, handler: EventLis
     document.body.addEventListener(type, delegatedHandler, true);
   }
 
-  state.handlers[type] = handler;
+  (state.handlers ?? (state.handlers = {}))[type] = handler;
 }
 
 /**
@@ -50,7 +50,7 @@ function delegatedHandler(event: Event) {
   while (i < len) {
     if (event.cancelBubble) break;
     const element = path[i++] as Element;
-    const handler = peekState(element)?.handlers[type];
+    const handler = peekState(element)?.handlers?.[type];
 
     if (handler) {
       try {

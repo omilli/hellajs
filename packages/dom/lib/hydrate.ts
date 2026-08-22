@@ -3,7 +3,7 @@ import { resolveValue } from "./internal/utils";
 import { dispatchError, toError } from "./internal/dispatch";
 import { mountNode } from "./internal/render";
 import { hydrateNode, hydrateSequence } from "./internal/hydrate";
-import { registerContainer, processMountQueue, processCleanupQueue, mountQueue } from "./internal/queue";
+import { registerContainer, processMountQueue, processCleanupQueue, mountQueue, beginMountPhase, endMountPhase } from "./internal/queue";
 import { cleanupSubtree } from "./internal/cleanup";
 
 /**
@@ -59,21 +59,26 @@ export function hydrate(
 
   const attach = (resolvedNode: HellaNode | (() => HellaNode)) => {
     if (cancelled) return;
-    const n = resolveValue(resolvedNode) as HellaNode;
-    if (!container.hasChildNodes()) {
-      // nothing to hydrate — mount fresh
-      rootEl = mountNode(n) as HellaElement;
-      container.replaceChildren(rootEl);
-    } else if (n.tag === "$") {
-      // fragment root: hydrate each top-level child against the container's children
-      hydrateSequence(container as unknown as HellaElement, n.children, container.firstChild, undefined);
-    } else {
-      rootEl = container.firstChild as HellaElement;
-      hydrateNode(n, rootEl);
+    beginMountPhase();
+    try {
+      const n = resolveValue(resolvedNode) as HellaNode;
+      if (!container.hasChildNodes()) {
+        // nothing to hydrate — mount fresh
+        rootEl = mountNode(n) as HellaElement;
+        container.replaceChildren(rootEl);
+      } else if (n.tag === "$") {
+        // fragment root: hydrate each top-level child against the container's children
+        hydrateSequence(container as unknown as HellaElement, n.children, container.firstChild, undefined);
+      } else {
+        rootEl = container.firstChild as HellaElement;
+        hydrateNode(n, rootEl);
+      }
+      registerContainer(container);
+      attached = true;
+      flush();   // fire afterMount + set isMounted (root + descendants) now — hydrate adds no nodes, so the observer never would
+    } finally {
+      endMountPhase();
     }
-    registerContainer(container);
-    attached = true;
-    flush();   // fire afterMount + set isMounted (root + descendants) now — hydrate adds no nodes, so the observer never would
   };
 
   const resolved = resolveValue(node);

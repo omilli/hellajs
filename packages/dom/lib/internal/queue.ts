@@ -1,6 +1,6 @@
 import { hasDocument } from "./core";
 import { cleanupSubtree, traverseDescendants, runHooks } from "./cleanup";
-import { getState, hasState } from "./state";
+import { peekState, hasState } from "./state";
 
 /**
  * @internal
@@ -19,8 +19,48 @@ let isMounting = false;
 let isCleanupScheduled = false;
 let isMountScheduled = false;
 
+/** True once any lifecycle hook has been registered — gates the afterMount walk. */
+let mountHooksExist = false;
+
+/** Depth of mount()/hydrate() attaches currently running. */
+let activeMounts = 0;
+
 let observedContainers = new WeakSet<Element>();
 let containerObserver: MutationObserver | null = null;
+
+/**
+ * @internal
+ * Flags that at least one lifecycle hook exists — `processMountQueue` skips the
+ * afterMount tree walk entirely while none has ever been registered.
+ */
+export function noteMountHook(): void {
+  mountHooksExist = true;
+}
+
+/**
+ * @internal
+ * Enters a mount()/hydrate() attach — suppresses registration-time `isConnected`
+ * checks (post-mount hook firing) while the tree is still building.
+ */
+export function beginMountPhase(): void {
+  activeMounts++;
+}
+
+/**
+ * @internal
+ * Exits a mount()/hydrate() attach.
+ */
+export function endMountPhase(): void {
+  activeMounts--;
+}
+
+/**
+ * @internal
+ * Returns whether a mount()/hydrate() attach is currently running.
+ */
+export function isMountInFlight(): boolean {
+  return activeMounts > 0;
+}
 
 /**
  * @internal
@@ -45,6 +85,7 @@ function ensureContainerObserver() {
     if (hasState(node)) {
       cleanupQueue.add(node);
       hasRemovals = true;
+      return;   // cleanupSubtree traverses this node's descendants — walking them here too doubles the removal cost
     }
     if (node.nodeType === Node.ELEMENT_NODE) {
       const children = (node as Element).childNodes;
@@ -81,7 +122,7 @@ function ensureContainerObserver() {
 
     if (hasRemovals) scheduleCleanup();
 
-    if (hasAdditions && !isMountScheduled) {
+    if (hasAdditions && mountHooksExist && !isMountScheduled) {
       isMountScheduled = true;
       queueMicrotask(processMountQueue);
     }
@@ -106,8 +147,9 @@ export function registerContainer(container: Element) {
  */
 export function processCleanupQueue() {
   if (isCleaning) return;
-  isCleaning = true;
   isCleanupScheduled = false;
+  if (cleanupQueue.size === 0) return;
+  isCleaning = true;
 
   const nodes = Array.from(cleanupQueue);
   let i = 0;
@@ -132,20 +174,22 @@ export function processMountQueue() {
   isMounting = true;
   isMountScheduled = false;
 
-  const nodes = Array.from(mountQueue);
-  let i = 0;
-  const len = nodes.length;
-  while (i < len) {
-    const node = nodes[i++]!;
-    if (!(node as ChildNode).isConnected) continue;
-    traverseDescendants(node, (n) => {
-      if (n.nodeType !== Node.ELEMENT_NODE) return;
-      if (!hasState(n)) return;
-      const state = getState(n);
-      if (state.isMounted) return;   // idempotent: a re-flush (or observer re-fire) must not double-fire afterMount
-      state.isMounted = true;
-      runHooks(n, "afterMount");
-    });
+  if (mountHooksExist) {
+    const nodes = Array.from(mountQueue);
+    let i = 0;
+    const len = nodes.length;
+    while (i < len) {
+      const node = nodes[i++]!;
+      if (!(node as ChildNode).isConnected) continue;
+      traverseDescendants(node, (n) => {
+        if (n.nodeType !== Node.ELEMENT_NODE) return;
+        const state = peekState(n);
+        if (!state) return;
+        if (state.isMounted) return;   // idempotent: a re-flush (or observer re-fire) must not double-fire afterMount
+        state.isMounted = true;
+        if (state.hooks) runHooks(n, "afterMount");
+      });
+    }
   }
   mountQueue.clear();
 
@@ -163,6 +207,8 @@ export function resetQueueState() {
   isMounting = false;
   isCleanupScheduled = false;
   isMountScheduled = false;
+  mountHooksExist = false;
+  activeMounts = 0;
   observedContainers = new WeakSet();
   if (containerObserver) {
     containerObserver.disconnect();

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
-import {resetTestState} from "@utils/test-helpers.js";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, html, peekState } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
@@ -104,6 +104,21 @@ describe("dom", () => {
 
       app3.flush();
       expect(calls).toEqual(["grandparent", "parent", "child", "grandchild"]);
+    });
+
+    test("afterMount fires for hooked content added after a hook-free mount", async () => {
+      const show = signal(false);
+      const mounted = mock(() => { });
+
+      mount(html`<div id="dyn-hooks">${() => show() ? html`<span id="dyn-child" hook:afterMount=${mounted}>hi</span>` : null}</div>`);
+
+      expect(mounted).toHaveBeenCalledTimes(0);
+
+      show(true);
+      flush();
+      await delay(10);   // observer microtask → processMountQueue walks the added subtree
+
+      expect(mounted).toHaveBeenCalledTimes(1);
     });
   });
 });

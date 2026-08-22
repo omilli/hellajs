@@ -107,6 +107,13 @@ describe("dom", () => {
       expect(mountHandler).toHaveBeenCalledTimes(1);
     });
 
+    test("fires afterMount immediately on an element mounted without hooks", () => {
+      const mountHandler = mock(() => { });
+      $ref("#app").hooks({ afterMount: mountHandler });
+
+      expect(mountHandler).toHaveBeenCalledTimes(1);
+    });
+
     test("all hook types work", () => {
       const app = document.getElementById("app")!;
       getState(app).isMounted = true;

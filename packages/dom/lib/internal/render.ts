@@ -76,10 +76,11 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node): No
     }
     return fragment;
   }
-  if (value !== null && typeof value === "object" && "raw" in value) {
-    return rawToFragment(value.raw);
+  if (value !== null && typeof value === "object") {
+    // HellaNode first — the common object child; DOM Nodes expose tagName, never tag
+    if ((value as HellaNode).tag !== undefined) return mountNode(value as HellaNode);
+    if ("raw" in value) return rawToFragment((value as { raw: string }).raw);
   }
-  if (value !== null && typeof value === "object" && (value as HellaNode).tag !== undefined) return mountNode(value as HellaNode);
   if (isFunction(value)) {
     const textNode = document.createTextNode("");
     registry.addEffect(parent || textNode, () =>
@@ -114,14 +115,13 @@ export function mountNode(node: HellaNode, boundaryElement?: Element): HellaElem
 
   const element = document.createElement(tag as string) as HellaElement;
 
-  if (componentScope) {
-    getState(element).componentScope = componentScope;
-  }
-
-  if (error) {
+  if (componentScope || error) {
     const state = getState(element);
-    state.errorConfig = error;
-    state.originalNode = node;
+    if (componentScope) state.componentScope = componentScope;
+    if (error) {
+      state.errorConfig = error;
+      state.originalNode = node;
+    }
   }
 
   const currentBoundary = error ? element : boundaryElement;
@@ -270,19 +270,21 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
       continue;
     }
 
-    if (child !== null && typeof child === "object" && "raw" in child) {
-      parent.appendChild(rawToFragment(child.raw));
+    if (child !== null && typeof child === "object") {
+      // HellaNode first — the common object child; raw sentinels and DOM Nodes never carry tag
+      if ((child as HellaNode).tag !== undefined) {
+        parent.appendChild(mountNode(child as HellaNode, currentBoundary));
+      } else if ("raw" in child) {
+        parent.appendChild(rawToFragment((child as { raw: string }).raw));
+      } else if (child instanceof Node) {
+        parent.appendChild(child);
+      }
       continue;
     }
 
-    const resolved = resolveValue(child);
-
-    if (typeof resolved === "string" || typeof resolved === "number") {
-      parent.appendChild(document.createTextNode(toText(resolved)));
-    } else if (resolved instanceof Node) {
-      parent.appendChild(resolved);
-    } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
-      parent.appendChild(mountNode(resolved as HellaNode, currentBoundary));
+    if (typeof child === "number") {
+      parent.appendChild(document.createTextNode(String(child)));
     }
+    // booleans, null, undefined render nothing
   }
 }

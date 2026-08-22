@@ -4,13 +4,14 @@ import type { ErrorConfig, HellaNode, HookType, HookFn } from "../types/nodes";
  * @internal
  * Element state stored in a WeakMap, keyed by DOM node.
  * No properties are added to DOM elements themselves.
- * `directHandlers`, `effects`, and `hooks` are lazy-allocated on first use so
- * elements that never carry `e:` handlers / function-ref prop effects / `hook:` hooks
- * pay no Map/array/object allocation at mount.
+ * Every collection field (`handlers`, `effects`, `directHandlers`, `hooks`) is
+ * lazy-allocated on first use so elements that never carry `on:` handlers /
+ * function-ref prop effects / `e:` handlers / `hook:` hooks pay no collection
+ * allocation at mount.
  */
 export interface ElementState {
   effects?: (() => void)[];
-  handlers: Record<string, EventListener>;
+  handlers?: Record<string, EventListener>;
   directHandlers?: Map<string, EventListener>;
   hooks?: Partial<Record<HookType, Array<HookFn>>>;
   isMounted: boolean;
@@ -35,7 +36,6 @@ export function getState(node: Node): ElementState {
   let state = elementMap.get(node);
   if (!state) {
     state = {
-      handlers: {},
       isMounted: false,
     };
     elementMap.set(node, state);

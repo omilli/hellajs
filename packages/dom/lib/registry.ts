@@ -2,6 +2,7 @@ import { effect } from "./internal/core";
 import { runHooks } from "./internal/cleanup";
 import { getState } from "./internal/state";
 import { dispatchError, toError, resolveErrorConfig } from "./internal/dispatch";
+import { isMountInFlight, noteMountHook } from "./internal/queue";
 import type { HookType, HookFn } from "./types/nodes";
 
 /**
@@ -21,7 +22,9 @@ export const registry = {
     const effects = state.effects ?? (state.effects = []);
     const el = node as Element;
     const dispose = effect(() => {
-      if (state.isMounted) {
+      // update hooks gate: hooks rarely exist — two property loads, not two WeakMap gets per run.
+      // isMounted resolves lazily from isConnected so hooks added post-mount still fire on updates.
+      if (state.hooks && (state.isMounted || (state.isMounted = el.isConnected))) {
         try {
           runHooks(node, "beforeUpdate");
         } catch (err) {
@@ -29,7 +32,7 @@ export const registry = {
         }
       }
       effectFn();
-      if (state.isMounted) {
+      if (state.hooks && state.isMounted) {
         try {
           runHooks(node, "afterUpdate");
         } catch (err) {
@@ -53,10 +56,16 @@ export const registry = {
     type: HookType,
     handler: HookFn
   ) {
+    noteMountHook();
     const state = getState(element);
     const stacks = state.hooks ?? (state.hooks = {});
     (stacks[type] || (stacks[type] = [])).push(handler);
-    // afterMount registered on an already-mounted node fires immediately (the node is already mounted)
-    if (type === "afterMount" && state.isMounted) (handler as (node: Element) => void)(element);
+    // afterMount registered on an already-mounted node fires immediately (the node is already mounted);
+    // isConnected resolves "already-mounted" for nodes whose mount predates any hook registration,
+    // and isMounted is set so the flush walk does not double-fire
+    if (type === "afterMount" && (state.isMounted || (element.isConnected && !isMountInFlight()))) {
+      state.isMounted = true;
+      (handler as (node: Element) => void)(element);
+    }
   }
 };
