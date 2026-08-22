@@ -1,15 +1,17 @@
 # doc
 
-Assemble a rendered body and an optional head into a complete HTML document string — a pure builder with zero server-runtime coupling.
+Assemble a rendered body and an optional head into a complete HTML document — a pure builder with zero server-runtime coupling. One overload pair, discriminated by the `body` type: a `string` body returns a string document; a `ReadableStream<string>` body returns a streaming document.
 
 ## API
 
 ```typescript
-function doc(options: DocOptions): string
+function doc(options: DocOptions & { body: string }): string
+function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableStream<string>
 ```
 
 - `options`: Document assembly options.
-  - `body` (`string`): Already-rendered HTML (from [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)). Placed verbatim — **not** re-escaped. For a streamed body use [`docStream`](/reference/ssr/doc-stream) — `doc` accepts a string only.
+  - `body` (`string | ReadableStream<string>`): Already-rendered HTML — the string output of [`ssr`](/reference/ssr/ssr)/[`ssr.async`](/reference/ssr/ssr#async), or the `ReadableStream` from [`ssr.stream`](/reference/ssr/ssr#stream). Placed verbatim — **not** re-escaped. The mode is inferred from the body's type: nothing is collected unless you pass a string.
+  - `mount?` (`string`): Mount-point selector wrapping the body — the same string [`hydrate`](/reference/dom/hydrate) targets on the client (`'#app'`, `'main#app'`, `'.wrap.x'`). One optional tag (defaults to `div`), at most one `#id`, any number of `.class` tokens (space-joined, in order). Anything else throws. Works in both modes.
   - `head?` (`HeadOptions`): Document head contents. Fields emit in declaration order: `title`, `meta`, `links`, `styles`, `scripts`, then `raw`.
     - `title?` (`string`): Document title — text-escaped (`& < > "`).
     - `meta?` (`MetaTag[]`): `<meta>` tags; each renders void (no closing tag). `MetaTag` is an attribute map, e.g. `{ charset: "utf-8" }` or `{ name: "viewport", content: "width=device-width" }`.
@@ -18,11 +20,12 @@ function doc(options: DocOptions): string
     - `scripts?` (`ScriptTag[]`): `<script>` tags — `{ src }` renders external, `{ content }` renders inline (not escaped); when both are set, `content` wins and `src` is dropped. `ScriptTag` also takes `type`, `async`, and `defer`.
     - `raw?` (`string`): Raw HTML appended verbatim to the head (escape hatch).
   - `lang?` (`string`): Value for `<html lang="…">`; the attribute is omitted when unset.
-- **Returns**: A full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>…</body></html>`.
+- **Returns** (string body): A full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>[mount]…[mount]</body></html>`.
+- **Returns** (stream body): A `ReadableStream<string>` of the full document — shell first, body chunks as they arrive, closing tags last.
 
 ## Basic Usage
 
-Render a template with [`ssr`](/reference/ssr/ssr), take CSS text from [`@hellajs/css`](/reference/css), and assemble both into a document.
+Render a template with [`ssr`](/reference/ssr/ssr), take CSS text from [`@hellajs/css`](/reference/css), and assemble both into a document. `mount` emits the wrapper `hydrate` targets.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -34,6 +37,7 @@ const body = ssr(html`<div class="card">Hi</div>`);
 
 const page = doc({
   lang: 'en',
+  mount: '#app',
   head: {
     title: 'Home',
     meta: [{ charset: 'utf-8' }, { name: 'viewport', content: 'width=device-width' }],
@@ -41,10 +45,45 @@ const page = doc({
   },
   body,
 });
-// <!DOCTYPE html><html lang="en"><head><title>Home</title><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>.card{border:1px solid #ccc}</style></head><body><div class="card">Hi</div></body></html>
+// <!DOCTYPE html><html lang="en"><head>…</head><body><div id="app"><div class="card">Hi</div></div></body></html>
+```
+
+Pass an [`ssr.stream`](/reference/ssr/ssr#stream) body and the same options produce a streaming document — the client receives the shell immediately and each chunk as it renders, nothing collected.
+
+```js
+import { ssr, doc } from '@hellajs/ssr';
+
+const page = doc({
+  lang: 'en',
+  mount: '#app',
+  head: {
+    title: 'Dashboard',
+    scripts: [{ type: 'module', src: '/client.js' }],
+  },
+  body: ssr.stream(App()),
+});
+
+Bun.serve({
+  port: 3000,
+  fetch: () => new Response(page.pipeThrough(new TextEncoderStream()), {
+    headers: { 'content-type': 'text/html' },
+  }),
+});
 ```
 
 ## Key Concepts
+
+### One head, two media
+
+`head` runs through one builder for both modes — identical escaping, ordering, and void-element rules. Only the body's medium differs (stream vs string); collecting a streamed document equals the string document for the same body.
+
+### `mount` mirrors `hydrate`'s target
+
+`mount: '#app'` emits `<div id="app">` before the body and `</div>` after it — so the client hydrates with the same selector the server declared: `hydrate(App(), '#app')`. A custom tag works too (`'main#app'` → `<main id="app">`), and classes join in order (`'.wrap.x'` → `<div class="wrap x">`). The closing tags are emitted by `doc` itself, so a wrapper can never be left unclosed mid-stream.
+
+### The closing tags flush after every staged swap
+
+In the streaming mode the suffix (`</div></body></html>`) is emitted only after the body stream closes. For an `ssr.stream` body carrying [`<Suspense>`](/reference/dom/suspense) boundaries, that means after every staged `<template>` has streamed — progressive paint holds end-to-end, with nothing collected or re-ordered.
 
 ### Reuses the package's escaping rules
 
@@ -60,7 +99,7 @@ const page = doc({
 
 ### Agnostic to the renderer
 
-`body` is a `string`, not a `HellaNode`, so `doc` pairs with whichever string renderer fits — [`ssr`](/reference/ssr/ssr) (sync) or [`ssrAsync`](/reference/ssr/ssr-async) (await Promises). For [`ssrStream`](/reference/ssr/ssr-stream) output use [`docStream`](/reference/ssr/doc-stream): it wraps the stream in the same document shell without collecting it (collecting would destroy progressive paint). Neither has server-runtime coupling: no Request/Response, no host API, so both run identically in Bun, Node, Deno, Express, and Hono.
+`body` is a string or a stream, not a `HellaNode`, so `doc` pairs with whichever renderer fits — [`ssr`](/reference/ssr/ssr) (sync), [`ssr.async`](/reference/ssr/ssr#async) (await Promises), or [`ssr.stream`](/reference/ssr/ssr#stream) (progressive). Neither mode has server-runtime coupling: no Request/Response, no host API, so both run identically in Bun, Node, Deno, Express, and Hono.
 
 ## Important Considerations
 
@@ -68,6 +107,10 @@ const page = doc({
 
 `doc` takes an already-composed CSS string (`styles`) and explicit `title` / `meta` / `links` / `scripts`. It does not collect [`css()`](/reference/css/css) / [`cssVars()`](/reference/css/cssvars) calls or hoist `<head>` from the rendered tree — those are larger, separate concerns. Drain the stringifiers' output yourself and pass it in.
 
-### `body` is required
+### `mount` accepts tag, `#id`, `.class` only
 
-`doc` throws `[ssr] doc: body is required, received undefined` when `body` is omitted. Pass the output of a stringifier (or any HTML string).
+A mount point is a single wrapping element. Combinators, attribute selectors, pseudo-classes, and empty strings throw `[ssr] doc: mount supports tag/#id/.class only, received "<value>"` — in both modes.
+
+### `body` is required; stream failures surface on the stream
+
+`doc` throws `[ssr] doc: body is required, received undefined` when `body` is omitted. In the streaming mode, a body-stream error (a rejected render, per [Errors Propagate](/reference/ssr/ssr#errors-propagate)) errors the document stream; cancelling the document stream cancels the body — staged `<Suspense>` swaps stop with it.

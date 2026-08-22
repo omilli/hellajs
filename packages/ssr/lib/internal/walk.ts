@@ -29,7 +29,7 @@ export interface PendingSwap {
   childGen: AsyncGenerator<string>;
 }
 
-/** Monotonic counter for deferred `<Suspense>` swap ids — unique across `ssrStream` calls in one process, so composed streamed outputs never collide on `hs0`. */
+/** Monotonic counter for deferred `<Suspense>` swap ids — unique across `ssr.stream` calls in one process, so composed streamed outputs never collide on `hs0`. */
 let suspenseSeq = 0;
 
 /** Renders an isDynamic component's content from its `ssr` descriptor — async generator yielding HTML chunks; awaits Promise `each`/`show`/`loading`. `<Suspense>` defers a swap onto `pending` (streaming) or renders children directly (non-streaming). */
@@ -63,7 +63,7 @@ async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[]): AsyncG
         pending.push({ id, childGen: walkChildGen(props.children as HellaChild, undefined) });  // children collected non-streaming → nested suspense resolves eagerly
         return;
       }
-      yield* walkChildGen(props.children as HellaChild, undefined);   // non-streaming (ssrAsync) — render children directly, fallback dropped
+      yield* walkChildGen(props.children as HellaChild, undefined);   // non-streaming (ssr.async) — render children directly, fallback dropped
       return;
     default:
       console.warn(`[ssr] unknown isDynamic kind: ${String(meta.kind)}`);
@@ -74,7 +74,7 @@ async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[]): AsyncG
 /**
  * Walks a single child into HTML chunks — async generator. A function child is resolved and, if it yields
  * a Promise, awaited before classification. `MARK_OPEN` and `MARK_CLOSE` bracket the region's chunks, so
- * `hydrate` consumes `ssrStream`/`ssrAsync` output exactly as it consumes `ssr` output.
+ * `hydrate` consumes `ssr.async`/`ssr.stream` output exactly as it consumes `ssr` output.
  */
 async function* walkChildGen(child: HellaChild, pending?: PendingSwap[]): AsyncGenerator<string> {
   // Parity invariant: `walkChildGen` (async) and `walkChild` (sync, `lib/ssr.ts`) classify children
@@ -138,7 +138,7 @@ async function* walkChildrenGen(children?: HellaChild[], pending?: PendingSwap[]
 /**
  * @internal
  * Serializes a HellaNode AST into HTML chunks — async generator; the single async walker shared by
- * `ssrAsync` (collect-wrapper) and `ssrStream` (ReadableStream wrapper). Each resolved value (child,
+ * `ssr.async` (collect-wrapper) and `ssr.stream` (ReadableStream wrapper). Each resolved value (child,
  * `each`, `show`) is awaited when it is a Promise. Marker wrapping is byte-identical to `ssr`.
  */
 export async function* ssrNodeGen(node: HellaNode, pending?: PendingSwap[]): AsyncGenerator<string> {

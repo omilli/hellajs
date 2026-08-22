@@ -137,27 +137,27 @@ hydrate(html`<${App} />`, '#app');
 
 ### Async data fetching
 
-Fetch server-side data directly in the tree with [`ssrAsync`](/reference/ssr/ssr-async) — a getter that returns a Promise is awaited.
+Fetch server-side data directly in the tree with [`ssr.async`](/reference/ssr/ssr#async) — a getter that returns a Promise is awaited.
 
 ```js
 import { html } from '@hellajs/dom';
-import { ssrAsync } from '@hellajs/ssr';
+import { ssr.async } from '@hellajs/ssr';
 
 const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
 
 const App = (id) => html`<p>Hello ${() => user(id)}</p>`;
 
-const body = await ssrAsync(App(1));
+const body = await ssr.async(App(1));
 // body: "<p><!--[-->Ada<!--]--></p>"
 ```
 
 ### Streaming responses
 
-Stream HTML to the client as it renders with [`ssrStream`](/reference/ssr/ssr-stream) — the static shell flushes before async values resolve.
+Stream HTML to the client as it renders with [`ssr.stream`](/reference/ssr/ssr#stream) — the static shell flushes before async values resolve.
 
 ```js
 import { html } from '@hellajs/dom';
-import { ssrStream } from '@hellajs/ssr';
+import { ssr } from '@hellajs/ssr';
 
 const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
 const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
@@ -167,18 +167,18 @@ Bun.serve({
   fetch: (req) => {
     const id = new URL(req.url).searchParams.get('id') ?? '1';
     return new Response(
-      ssrStream(page(id)).pipeThrough(new TextEncoderStream()),
+      ssr.stream(page(id)).pipeThrough(new TextEncoderStream()),
       { headers: { 'content-type': 'text/html' } }
     );
   }
 });
 ```
 
-Wrap the stream in a full document with [`docStream`](/reference/ssr/doc-stream) — the shell (head, `lang`, the `mount` wrapper) flushes first and the closing tags land only after the body closes, so nothing is collected:
+Wrap the stream in a full document with [`doc`](/reference/ssr/doc) — the shell (head, `lang`, the `mount` wrapper) flushes first and the closing tags land only after the body closes, so nothing is collected:
 
 ```js
 import { html } from '@hellajs/dom';
-import { ssrStream, docStream } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
 
@@ -187,11 +187,11 @@ Bun.serve({
   fetch: (req) => {
     const id = new URL(req.url).searchParams.get('id') ?? '1';
     return new Response(
-      docStream({
+      doc({
         lang: 'en',
         mount: '#app',                              // the wrapper hydrate(node, '#app') targets
         head: { scripts: [{ type: 'module', src: '/client.js' }] },
-        body: ssrStream(page(id)),
+        body: ssr.stream(page(id)),
       }).pipeThrough(new TextEncoderStream()),
       { headers: { 'content-type': 'text/html' } }
     );
@@ -205,7 +205,7 @@ Wrap async data in [`<Suspense>`](/reference/dom/suspense) so the shell and a `f
 
 ```js
 import { html, Suspense } from '@hellajs/dom';
-import { ssrStream } from '@hellajs/ssr';
+import { ssr } from '@hellajs/ssr';
 
 const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
 
@@ -220,12 +220,12 @@ const App = () => html`
 
 // Server streams the shell + fallback first; each resolved region then streams as a <template> + an
 // inline $hs swap script that swaps it in on arrival (progressive); hydrate later adopts
-const stream = ssrStream(html`<${App} />`);
+const stream = ssr.stream(html`<${App} />`);
 ```
 
 ### Error handling
 
-`ssr`, [`ssrAsync`](/reference/ssr/ssr-async), and [`ssrStream`](/reference/ssr/ssr-stream) propagate render failures instead of swallowing them — a throwing child, function-ref prop getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Handle the failure at the server handler: render a fallback page for the sync/async renderers, or catch at the stream consumer for `ssrStream`.
+`ssr`, [`ssr.async`](/reference/ssr/ssr#async), and [`ssr.stream`](/reference/ssr/ssr#stream) propagate render failures instead of swallowing them — a throwing child, function-ref prop getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Handle the failure at the server handler: render a fallback page for the sync/async renderers, or catch at the stream consumer for `ssr.stream`.
 
 Sync/async — wrap the render; on throw, render a fallback page:
 
@@ -250,19 +250,19 @@ render({ name: 'Ada' });   // "<h1><!--[-->ADA<!--]--></h1>"
 render({});                 // "<div class=\"error\">Render failed: ...</div>"
 ```
 
-The same shape works with [`ssrAsync`](/reference/ssr/ssr-async) — `await` the render inside the `try`.
+The same shape works with [`ssr.async`](/reference/ssr/ssr#async) — `await` the render inside the `try`.
 
 Stream — a rejected Promise errors the `ReadableStream`, so the consumer's read loop must catch:
 
 ```js
 import { html } from '@hellajs/dom';
-import { ssrStream } from '@hellajs/ssr';
+import { ssr } from '@hellajs/ssr';
 
 // A getter returning a rejected Promise errors the stream.
 const fetchName = () => fetch('/api/missing').then(r => r.json()).then(d => d.name);
 
 async function respond() {
-  const stream = ssrStream(html`<p>${() => fetchName()}</p>`)
+  const stream = ssr.stream(html`<p>${() => fetchName()}</p>`)
     .pipeThrough(new TextEncoderStream());
   try {
     for await (const chunk of stream) {

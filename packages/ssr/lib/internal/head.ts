@@ -44,7 +44,7 @@ function renderVoidTags(tag: string, tags: ReadonlyArray<MetaTag | LinkTag>): st
 /**
  * @internal
  * Renders a document `<head>` from its options — the single head builder shared by `doc` (string
- * document) and `docStream` (streamed document), so both assemblers emit identical head HTML.
+ * document) and `doc` (streamed document), so both assemblers emit identical head HTML.
  * Fields emit in declaration order: `title`, `meta`, `links`, `styles`, `scripts`, then `raw`.
  * `title` text and attribute values run through the same `serializeProp`/`escapeHtml` rules the
  * stringifiers apply to element attributes; `styles` and `raw` pass through unchanged (already HTML).

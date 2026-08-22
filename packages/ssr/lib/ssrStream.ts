@@ -39,7 +39,8 @@ const HS_SWAP_SCRIPT = `function $hs(id){
 }`;
 
 /**
- * Serializes a HellaNode AST into a streaming HTML response — a streaming counterpart of {@link ssr} that
+ * @internal
+ * Serializes a HellaNode AST into a streaming HTML response — the `ssr.stream` namespace member.
  * yields chunks as the walk proceeds, flushing the static prefix before each awaited Promise (TTFB). A
  * `<Suspense>` boundary opts a subtree into out-of-order streaming: its `fallback` flushes inline, then each
  * resolved region streams a `<template>` + an inline `<script>$hs(id)</script>` that swaps it in the moment it
@@ -53,7 +54,7 @@ const HS_SWAP_SCRIPT = `function $hs(id){
  */
 export function ssrStream(node: HellaNode): ReadableStream<string> {
   if (node === null || node === undefined) {
-    throw new Error(`[ssr] ssrStream: node is required, received ${node}`);
+    throw new Error(`[ssr] ssr.stream: node is required, received ${node}`);
   }
   const pending: PendingSwap[] = [];
   const gen = ssrNodeGen(node, pending);

@@ -50,31 +50,22 @@ export interface HeadOptions {
 }
 
 /**
- * Options for assembling a full HTML document.
+ * Options for assembling a full HTML document. The `body` type selects the mode: a `string`
+ * body returns a string document; a `ReadableStream<string>` body returns a streaming document
+ * (shell first, body chunks piped through, closing tags last).
  */
 export interface DocOptions {
-  /** Already-rendered HTML (from `ssr`/`ssrAsync`), placed verbatim — not re-escaped. For a streamed body use `docStream` — `doc` accepts a string only */
-  body: string;
-  /** Document head contents */
-  head?: HeadOptions;
-  /** Value for `<html lang="…">`; omitted from the tag when unset */
-  lang?: string;
-}
-
-/**
- * Options for assembling a full streaming HTML document.
- */
-export interface DocStreamOptions {
-  /** Streamed HTML (from `ssrStream`), placed verbatim chunk-by-chunk — not re-escaped */
-  body: ReadableStream<string>;
+  /** Already-rendered HTML — the string output of `ssr`/`ssr.async`, or the `ReadableStream` from `ssr.stream` — placed verbatim, not re-escaped */
+  body: string | ReadableStream<string>;
   /**
    * Mount-point selector wrapping the body — the same string `hydrate(node, selector)` targets
    * on the client (`'#app'`, `'main#app'`, `'.wrap.x'`). One optional tag (defaults to `div`),
    * at most one `#id`, any number of `.class` tokens (space-joined). Anything else throws.
    */
   mount?: string;
-  /** Document head contents — rendered identically to `doc`'s head */
+  /** Document head contents */
   head?: HeadOptions;
   /** Value for `<html lang="…">`; omitted from the tag when unset */
   lang?: string;
 }
+

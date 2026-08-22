@@ -1,6 +1,33 @@
-import { describe, test, expect } from "bun:test";
-import { doc } from "@hellajs/ssr/bundle";
+import { describe, test, expect, mock } from "bun:test";
+import { html, Suspense } from "@hellajs/dom/bundle";
+import { ssr, doc } from "@hellajs/ssr/bundle";
 import type { DocOptions } from "@hellajs/ssr";
+import type { HellaNode } from "@hellajs/dom";
+import { collect } from "./helpers";
+import { delay } from "@utils/test-helpers.js";
+
+/** A ReadableStream<string> that emits the given chunks then closes — a deterministic body. */
+function streamOf(...chunks: string[]): ReadableStream<string> {
+  return new ReadableStream<string>({
+    start(controller) {
+      let i = 0;
+      while (i < chunks.length) {
+        controller.enqueue(chunks[i]!);
+        i++;
+      }
+      controller.close();
+    },
+  });
+}
+
+/** Collects a stream's chunks as an array — preserves emission boundaries for ordering asserts. */
+async function collectChunks(stream: ReadableStream<string>): Promise<string[]> {
+  const reader = stream.getReader();
+  const out: string[] = [];
+  let chunk = await reader.read();
+  while (!chunk.done) { out.push(chunk.value); chunk = await reader.read(); }
+  return out;
+}
 
 describe("doc", () => {
   test("emits a stable skeleton with an empty head for a minimal body", () => {
@@ -88,6 +115,87 @@ describe("doc", () => {
   });
 
   test("throws when body is omitted", () => {
-    expect(() => doc({} as DocOptions)).toThrow(/^\[ssr\] doc: body is required, received undefined$/);
+    expect(() => doc({} as DocOptions & { body: string })).toThrow(/^\[ssr\] doc: body is required, received undefined$/);
+  });
+
+  test("wraps the body in <div id=\"app\"> for an id-only string mount", () => {
+    expect(doc({ body: "X", mount: "#app" })).toContain("<body><div id=\"app\">X</div></body>");
+  });
+
+  test("emits the mount's tag for a tag#id string mount", () => {
+    expect(doc({ body: "X", mount: "main#app" })).toContain("<body><main id=\"app\">X</main></body>");
+  });
+
+  test("joins class mounts with spaces (string body)", () => {
+    expect(doc({ body: "X", mount: ".wrap.x" })).toContain("<body><div class=\"wrap x\">X</div></body>");
+  });
+
+  test("string mode equals the streamed mode byte-for-byte for the same body", async () => {
+    expect(doc({ body: "X", lang: "en", mount: "#app", head: { title: "T" } }))
+      .toBe(await collect(doc({ body: streamOf("X"), lang: "en", mount: "#app", head: { title: "T" } })));
+  });
+
+  test("wraps streamed body chunks in the full document skeleton, in emission order", async () => {
+    expect(await collect(doc({ body: streamOf("a", "b", "c") }))).toBe("<!DOCTYPE html><html><head></head><body>abc</body></html>");
+  });
+
+  test("emits <html lang> for a streamed body when lang is set", async () => {
+    expect(await collect(doc({ body: streamOf("X"), lang: "en" }))).toBe("<!DOCTYPE html><html lang=\"en\"><head></head><body>X</body></html>");
+  });
+
+  test("renders the streamed head through the shared builder", async () => {
+    const out = await collect(doc({
+      body: streamOf("X"),
+      head: {
+        title: "Home",
+        meta: [{ charset: "utf-8" }],
+        styles: [".x{color:red}"],
+        scripts: [{ src: "/c.js", type: "module" }],
+      },
+    }));
+    expect(out).toContain("<head><title>Home</title><meta charset=\"utf-8\"><style>.x{color:red}</style><script src=\"/c.js\" type=\"module\"></script></head>");
+  });
+
+  test("wraps a streamed body in <div id=\"app\"> for an id-only mount", async () => {
+    expect(await collect(doc({ body: streamOf("X"), mount: "#app" }))).toContain("<body><div id=\"app\">X</div></body>");
+  });
+
+  test("emits the mount's tag for a tag#id mount (streamed body)", async () => {
+    expect(await collect(doc({ body: streamOf("X"), mount: "main#app" }))).toContain("<body><main id=\"app\">X</main></body>");
+  });
+
+  test("throws the mount error on unsupported selectors in BOTH modes", () => {
+    for (const mount of ["a > b", "[x]", ":hover", "", "#a#b", "#a[x]", ".a[x]"]) {
+      expect(() => doc({ body: "X", mount })).toThrow(`[ssr] doc: mount supports tag/#id/.class only, received "${mount}"`);
+      expect(() => doc({ body: streamOf("X"), mount })).toThrow(`[ssr] doc: mount supports tag/#id/.class only, received "${mount}"`);
+    }
+  });
+
+  test("throws when a streamed call omits body", () => {
+    expect(() => doc({} as unknown as { body: ReadableStream<string> })).toThrow("[ssr] doc: body is required, received undefined");
+  });
+
+  test("errors the document stream when the body stream errors", async () => {
+    const body = new ReadableStream<string>({
+      start(controller) { controller.error(new Error("boom")); },
+    });
+    await expect(collect(doc({ body }))).rejects.toThrow("boom");
+  });
+
+  test("cancels the body stream when the document stream is cancelled", async () => {
+    const cancelBody = mock(() => {});
+    const body = new ReadableStream<string>({ cancel: cancelBody });
+    const stream = doc({ body });
+    await stream.getReader().cancel("gone");
+    expect(cancelBody).toHaveBeenCalledTimes(1);
+  });
+
+  test("holds the suffix until staged <Suspense> swaps flush", async () => {
+    const node = html`<div><${Suspense} fallback=${html`<i>wait</i>`}>${() => delay(5).then(() => html`<b>late</b>`)}</${Suspense}></div>` as HellaNode;
+    const chunks = await collectChunks(doc({ mount: "#app", body: ssr.stream(node) }));
+    expect(chunks[chunks.length - 1]!).toBe("</div></body></html>");
+    const swapIndex = chunks.findIndex((chunk) => chunk.includes("<template id=\"hs"));
+    expect(swapIndex).toBeGreaterThan(-1);
+    expect(swapIndex).toBeLessThan(chunks.length - 1);
   });
 });

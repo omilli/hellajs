@@ -1,6 +1,6 @@
 # ssr
 
-Serialize a HellaNode AST into an HTML string — a pure stringifier with zero runtime dependencies.
+Serialize a HellaNode AST into an HTML string — a pure stringifier with zero runtime dependencies. A callable namespace: `ssr(node)` walks synchronously, `ssr.async(node)` awaits every Promise in the tree, `ssr.stream(node)` flushes progressively.
 
 ## API
 
@@ -10,6 +10,55 @@ function ssr(node: HellaNode): string
 
 - `node`: A HellaNode AST (produced by [`html`](/reference/dom/html) or JSX) to serialize.
 - **Returns**: The rendered HTML string.
+
+### async
+
+The async member — awaits any Promise a resolved value returns, then resolves to the concatenated HTML.
+
+```typescript
+ssr.async(node: HellaNode): Promise<string>
+```
+
+A component may embed server-side async data directly: a getter that returns a `Promise` is awaited, and its resolved value is placed inside a marker-bounded region identical to the sync call.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+
+const body = await ssr.async(html`<p>Hello ${() => user(1)}</p>`);
+// body: "<p><!--[-->Ada<!--]--></p>"
+```
+
+### stream
+
+The streaming member — yields chunks as the walk proceeds, flushing the static prefix before each awaited Promise.
+
+```typescript
+ssr.stream(node: HellaNode): ReadableStream<string>
+```
+
+The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
+
+Bun.serve({
+  port: 3000,
+  fetch: (req) => {
+    const id = new URL(req.url).searchParams.get('id') ?? '1';
+    return new Response(
+      ssr.stream(page(id)).pipeThrough(new TextEncoderStream()),
+      { headers: { 'content-type': 'text/html' } }
+    );
+  }
+});
+```
 
 ## Basic Usage
 
@@ -50,7 +99,7 @@ const page = `<style>${button}</style><div id="app">${body}</div>`;
 
 ### Works with `html` or JSX
 
-`ssr` consumes any `HellaNode` — produced by the `html` tag or JSX — identically. The babel/vite/rollup plugin compiles JSX to the same AST, so a JSX component renders the same HTML as the equivalent `html` template.
+`ssr` consumes any `HellaNode` — produced by the `html` tag or JSX — identically, whichever member renders it. The babel/vite/rollup plugin compiles JSX to the same AST, so a JSX component renders the same HTML as the equivalent `html` template.
 
 ```jsx
 import { ssr } from '@hellajs/ssr';
@@ -82,6 +131,18 @@ const body = ssr(html`<p>Count: ${count}</p>`);
 
 This is a **breaking** part of the output contract: if you parse or snapshot `ssr()` output, expect the markers around dynamic regions. Generate server HTML with `ssr()` rather than hand-building it.
 
+### Awaits Promises In Place
+
+Where the sync call reads each getter once and cannot await, `ssr.async` awaits any resolved value that is a `Promise` — a child, a function-ref prop attribute, a [`ForEach`](/reference/dom/foreach) `each`, or a [`Transition`](/reference/dom/transition) `show`. Nested thenables unwrap fully. Use `ssr.async` when a subtree needs server-fetched data; use the sync call when every value is already resolved (zero Promise overhead).
+
+### Progressive Flush
+
+`ssr.stream` yields chunks as the tree resolves. Static markup ahead of an awaited value streams immediately — the client paints the shell while async data resolves. Bare Promises are awaited in-order, consistent with [`ssr.async`](#async).
+
+### Identical Output Contract
+
+All three members emit byte-identical markers: every dynamic region is bounded by `<!--[-->…<!--]-->`, so [`hydrate`](/reference/dom/hydrate) consumes any output unchanged. Collecting every chunk of `ssr.stream(node)` equals `await ssr.async(node)` (and the sync call when no value is a Promise). Awaiting or streaming changes *when* values resolve, not the output contract.
+
 ### Resource Fetching Suppressed
 
 [`resource`](/reference/resource/resource) is a reactive UI primitive. On the server it no-ops its fetch pipeline, so resources embedded in a server-rendered tree never trigger network calls. Fetch server-side data with direct `fetch()` and pass it in as initial values.
@@ -106,12 +167,20 @@ Calling [`mount`](/reference/dom/mount) over the server-rendered container repla
 
 ### Synchronous render required
 
-`ssr` walks the tree once and returns. Reactive getters are read at their current value; there is no effect scheduling, no batching, and no async resolution. Build the tree from already-resolved data.
+The base `ssr(node)` call walks the tree once and returns. Reactive getters are read at their current value; there is no effect scheduling, no batching, and no async resolution — use `ssr.async`/`ssr.stream` when a subtree embeds Promises. Build the tree from already-resolved data.
+
+### Fetch Directly; Lazy and Resource Are Unchanged
+
+`ssr.async` provides a generic await mechanism — return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) still renders its `loading` fallback (its loader is client-side), and [`resource`](/reference/resource/resource) still no-ops its fetch pipeline on the server. Fetch server-side data with direct `fetch()` and expose it through a Promise-returning getter.
+
+### In-Order Streaming
+
+Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the fallback for the resolved content **the moment it arrives** — so the user sees each region fill in progressively (React/Solid parity), not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap precedes them. `hydrate` later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
 
 ### Errors Propagate
 
-`ssr` has no try/catch — a throwing child, function-ref prop getter, or `use` callback surfaces to the caller. Wrap the render in your own error handling if a value may throw. A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
+None of the members has try/catch. The sync call throws, a rejected `Promise` rejects `ssr.async`'s returned `Promise`, and `ssr.stream` errors its `ReadableStream` (reading it throws). Wrap the render in your own error handling if a value may throw; handle stream errors at the consumer (your server handler). A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
 
 ### Throws on invalid input
 
-`ssr` throws `[ssr] ssr: node is required, received <value>` when `node` is `null` or `undefined`.
+Every member throws the same shape when `node` is `null` or `undefined`: `[ssr] ssr: node is required, received <value>` for the sync call (`ssr.async` rejects its Promise with the `ssr.async` prefix, `ssr.stream` throws with the `ssr.stream` prefix).

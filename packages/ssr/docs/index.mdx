@@ -25,11 +25,8 @@ const page = doc({ head: { title: 'Hello' }, body });
 
 ### API
 
-- **[ssr](/reference/ssr/ssr)**: Serialize a HellaNode AST into an HTML string
-- **[ssrAsync](/reference/ssr/ssr-async)**: Serialize a HellaNode AST into an HTML string, awaiting Promises in the tree
-- **[ssrStream](/reference/ssr/ssr-stream)**: Serialize a HellaNode AST into a streaming HTML response (`ReadableStream`)
-- **[doc](/reference/ssr/doc)**: Assemble a rendered body and head into a full HTML document string
-- **[docStream](/reference/ssr/doc-stream)**: Assemble a streamed body and head into a full streaming HTML document
+- **[ssr](/reference/ssr/ssr)**: Serialize a HellaNode AST into an HTML string — sync walk, `ssr.async` (awaits Promises in the tree), or `ssr.stream` (streaming `ReadableStream` response)
+- **[doc](/reference/ssr/doc)**: Assemble a rendered body and head into a full HTML document — string in, string out; stream in, streaming document out (the `body` type selects the mode)
 
 ### Concepts
 
