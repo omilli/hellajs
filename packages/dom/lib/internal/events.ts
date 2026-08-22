@@ -48,6 +48,7 @@ function delegatedHandler(event: Event) {
   const len = path.length;
 
   while (i < len) {
+    if (event.cancelBubble) break;
     const element = path[i++] as Element;
     const handler = peekState(element)?.handlers[type];
 

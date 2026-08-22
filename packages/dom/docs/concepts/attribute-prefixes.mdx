@@ -22,7 +22,7 @@ See [`on:`](/reference/dom/on) for full details.
 
 ### `e:` - Direct Events
 
-Non-delegated event handlers attached directly to elements in the bubble phase. Use when you need `stopPropagation()` to work predictably or when working with third-party libraries that expect direct listeners.
+Non-delegated event handlers attached directly to elements in the bubble phase. Use when a handler must be a real listener on the element — non-bubbling events (`focus`, `blur`) or third-party libraries that expect direct listeners.
 
 ```jsx
 import { mount } from "@hellajs/dom";

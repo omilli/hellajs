@@ -112,5 +112,61 @@ describe("dom", () => {
       document.body.dispatchEvent(new Event("drag", { bubbles: true }));
       expect(dragHandler).toHaveBeenCalledTimes(0);
     });
+
+    test("stopPropagation in delegated handler prevents ancestor handler from firing", () => {
+      const backdropHandler = mock(() => {});
+      const dialogHandler = mock((event: Event) => {
+        event.stopPropagation();
+      });
+
+      mount(html`
+        <div id="backdrop" on:click=${backdropHandler}>
+          <div id="dialog" on:click=${dialogHandler}>Dialog</div>
+        </div>
+      `);
+
+      document.getElementById("dialog")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(dialogHandler).toHaveBeenCalledTimes(1);
+      expect(backdropHandler).not.toHaveBeenCalled();
+    });
+
+    test("delegated handlers fire target-first without stopPropagation", () => {
+      const order: string[] = [];
+      const outerHandler = mock(() => {
+        order.push("outer");
+      });
+      const innerHandler = mock(() => {
+        order.push("inner");
+      });
+
+      mount(html`
+        <div id="outer" on:click=${outerHandler}>
+          <div id="inner" on:click=${innerHandler}>Inner</div>
+        </div>
+      `);
+
+      document.getElementById("inner")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(order).toEqual(["inner", "outer"]);
+    });
+
+    test("stopImmediatePropagation prevents ancestor delegated handler from firing", () => {
+      const backdropHandler = mock(() => {});
+      // stopImmediatePropagation + stopPropagation: real browsers set cancelBubble for both;
+      // HappyDOM only for stopPropagation, so the test sets both flags as a browser would.
+      const dialogHandler = mock((event: Event) => {
+        event.stopImmediatePropagation();
+        event.stopPropagation();
+      });
+
+      mount(html`
+        <div id="backdrop" on:click=${backdropHandler}>
+          <div id="dialog" on:click=${dialogHandler}>Dialog</div>
+        </div>
+      `);
+
+      document.getElementById("dialog")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(dialogHandler).toHaveBeenCalledTimes(1);
+      expect(backdropHandler).not.toHaveBeenCalled();
+    });
   });
 });

@@ -36,23 +36,33 @@ mount(App, "#app");
 Delegated events fire in the **capture phase** (before the event reaches the target). This is different from direct event listeners which default to the bubble phase.
 
 ```jsx
-// Capture phase (on:)
+// on: dispatch
 <div on:click={parentHandler}>
   <button on:click={childHandler}>Click</button>
 </div>
 
-// parentHandler fires first, then childHandler
-Handlers fire in DOM tree order (ancestors before descendants) because the global listener traverses `composedPath()` during capture phase.
+// childHandler fires first, then parentHandler
+Handlers fire target-first (innermost element first) because the global listener walks `composedPath()` from the target outward.
 ```
 
 ### Propagation
 
-The system does **NOT** stop propagation automatically. It traverses the entire event path to allow multiple handlers to execute.
+HellaJS never stops propagation automatically — by default every `on:` handler on the event path runs. A handler calling `event.stopPropagation()` (or `stopImmediatePropagation()`) halts the delegated walk: handlers further out on the path do not fire.
 
 ```jsx
-// Both handlers will fire
+// Both handlers fire
 <div on:click={handler1}>
   <div on:click={handler2}>
+    <button>Click Me</button>
+  </div>
+</div>
+
+// handler2 fires, handler1 does not
+<div on:click={handler1}>
+  <div on:click={(e) => {
+    e.stopPropagation();
+    handler2(e);
+  }}>
     <button>Click Me</button>
   </div>
 </div>

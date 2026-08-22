@@ -16,7 +16,7 @@ const App = () => (
 mount(App, "#app");
 ```
 
-Use `e:` instead of `on:` when you need `event.stopPropagation()` to work predictably, when working with third-party libraries that expect direct event listeners, or for edge cases where delegation causes issues.
+Use `e:` instead of `on:` when a handler must be a real DOM listener on the element: for non-bubbling events (`focus`, `blur`), for third-party libraries that expect direct listeners, or for edge cases where delegation causes issues. Delegated `on:` handlers also honor `stopPropagation()` — see [`on:`](/reference/dom/on) — but only `e:` participates in the browser's native listener chain.
 
 ```jsx
 <div e:click={(e) => e.stopPropagation()}>
@@ -41,7 +41,7 @@ Direct events fire in the **bubble phase** (after the event reaches the target).
 
 ### Propagation Control
 
-With `e:` handlers, `stopPropagation()` works predictably:
+With `e:` handlers, `stopPropagation()` works through the browser's native listener chain — it stops real listeners, including ones other libraries registered on the same elements:
 
 ```jsx
 <div e:click={() => console.log("parent")}>
