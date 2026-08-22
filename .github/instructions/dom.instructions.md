@@ -124,7 +124,7 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 ## Event delegation (`lib/internal/events.ts`)
 
 - **One Set tracks types.** `globalListeners: Set<string>` holds every type with a registered `document.body.addEventListener(type, delegatedHandler, true)` (capture) listener; it is also the fast-exit checked at the top of `delegatedHandler`. **Never decremented** — types stay registered until `resetEventState()`.
-- **`delegatedHandler`** reads `event.composedPath()` and walks it; for each path element with `state.handlers[type]`, invokes `handler.call(element, event)` in try/catch. Errors dispatch with `phase: 'event'` and render fallback on `findBoundary(element) ?? element` via `replaceChildren`. **No automatic `stopPropagation`** — the whole path always fires (and because the walk is over the static `composedPath`, even a handler calling `stopPropagation` cannot short-circuit it).
+- **`delegatedHandler`** reads `event.composedPath()` and walks it target-first; for each path element with `state.handlers[type]`, invokes `handler.call(element, event)` in try/catch. The walk checks `event.cancelBubble` at each iteration — a handler calling `stopPropagation()`/`stopImmediatePropagation()` halts it (later path handlers do not fire). Errors dispatch with `phase: 'event'` and render fallback on `findBoundary(element) ?? element` via `replaceChildren`. **No automatic `stopPropagation`** — every handler on the path fires unless one stops it.
 - **Direct (`e:`) handlers** are wrapped per-instance with the same error handling, stored in `state.directHandlers` (Map keyed by type), and `removeEventListener`-ed each on cleanup.
 
 ## Keyed reconciliation — `ForEach` (`lib/ForEach.ts`)
