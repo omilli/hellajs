@@ -10,7 +10,7 @@ Lifecycle hooks fire at specific points in an element's existence. They are tied
 **Execution order:**
 
 - `hook:beforeMount`: Synchronously before element is inserted into DOM, before children rendered (no element argument)
-- `hook:afterMount`: After element is in DOM, receives element argument (deferred via `queueMicrotask`)
+- `hook:afterMount`: After element is in DOM, receives element argument — synchronously by the time `mount()`/`hydrate()` returns; nodes added dynamically after the initial mount fire on the next microtask (before paint)
 - `hook:beforeUpdate`: Before reactive updates, receives element argument (not during initial render); errors caught, no fallback UI
 - `hook:afterUpdate`: After reactive updates, receives element argument (not during initial render); errors caught, no fallback UI
 - `hook:beforeDestroy`: Before removal, receives element argument

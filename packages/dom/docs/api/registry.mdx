@@ -56,7 +56,7 @@ registry.addHook(element, "beforeDestroy", (node) => {
 | Hook | Timing | Receives Element |
 |------|--------|------------------|
 | `beforeMount` | Before element added to DOM | No |
-| `afterMount` | After element added to DOM (deferred) | Yes |
+| `afterMount` | After element added to DOM — at mount time, or immediately when registered on an already-mounted element | Yes |
 | `beforeUpdate` | Before reactive effect runs | Yes |
 | `afterUpdate` | After reactive effect runs | Yes |
 | `beforeDestroy` | Before cleanup begins | Yes |
@@ -159,7 +159,7 @@ document.body.appendChild(button);
 
 ### Deferred Processing
 
-Cleanup and mount processing is deferred via `queueMicrotask`. This batches operations and ensures processing completes before the browser paints.
+Cleanup of externally-removed nodes and `afterMount` for dynamically added nodes are deferred via `queueMicrotask`. This batches operations and ensures processing completes before the browser paints.
 
 ```js
 element.remove();

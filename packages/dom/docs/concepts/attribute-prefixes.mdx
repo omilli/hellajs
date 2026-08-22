@@ -81,7 +81,7 @@ mount(App, "#app");
 
 **Available hooks:**
 - `hook:beforeMount`: Synchronously before element is inserted into DOM (no element argument)
-- `hook:afterMount`: After element is in DOM (deferred via `queueMicrotask`)
+- `hook:afterMount`: After element is in DOM — synchronously by the time `mount()`/`hydrate()` returns; nodes added dynamically after the initial mount fire on the next microtask
 - `hook:beforeUpdate`: Before reactive updates (errors caught, no fallback UI)
 - `hook:afterUpdate`: After reactive updates (errors caught, no fallback UI)
 - `hook:beforeDestroy`: Before removal
