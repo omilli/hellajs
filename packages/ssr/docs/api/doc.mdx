@@ -9,7 +9,7 @@ function doc(options: DocOptions): string
 ```
 
 - `options`: Document assembly options.
-  - `body` (`string`): Already-rendered HTML (from [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)/[`ssrStream`](/reference/ssr/ssr-stream)). Placed verbatim — **not** re-escaped.
+  - `body` (`string`): Already-rendered HTML (from [`ssr`](/reference/ssr/ssr)/[`ssrAsync`](/reference/ssr/ssr-async)). Placed verbatim — **not** re-escaped. For a streamed body use [`docStream`](/reference/ssr/doc-stream) — `doc` accepts a string only.
   - `head?` (`HeadOptions`): Document head contents. Fields emit in declaration order: `title`, `meta`, `links`, `styles`, `scripts`, then `raw`.
     - `title?` (`string`): Document title — text-escaped (`& < > "`).
     - `meta?` (`MetaTag[]`): `<meta>` tags; each renders void (no closing tag). `MetaTag` is an attribute map, e.g. `{ charset: "utf-8" }` or `{ name: "viewport", content: "width=device-width" }`.
@@ -60,7 +60,7 @@ const page = doc({
 
 ### Agnostic to the renderer
 
-`body` is a `string`, not a `HellaNode`, so `doc` pairs with whichever renderer fits — [`ssr`](/reference/ssr/ssr) (sync), [`ssrAsync`](/reference/ssr/ssr-async) (await Promises), or [`ssrStream`](/reference/ssr/ssr-stream) (collected from the stream). There is no server-runtime coupling: no Request/Response, no host API, so it runs identically in Bun, Node, Deno, Express, and Hono.
+`body` is a `string`, not a `HellaNode`, so `doc` pairs with whichever string renderer fits — [`ssr`](/reference/ssr/ssr) (sync) or [`ssrAsync`](/reference/ssr/ssr-async) (await Promises). For [`ssrStream`](/reference/ssr/ssr-stream) output use [`docStream`](/reference/ssr/doc-stream): it wraps the stream in the same document shell without collecting it (collecting would destroy progressive paint). Neither has server-runtime coupling: no Request/Response, no host API, so both run identically in Bun, Node, Deno, Express, and Hono.
 
 ## Important Considerations
 

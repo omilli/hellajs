@@ -7,7 +7,7 @@ A pure HTML stringifier for HellaJS. Walks a HellaNode AST to an HTML string wit
 
 ## Documentation
 
-- **[API Reference](https://hellajs.com/reference/ssr/ssr)** (sync) · **[ssrAsync](https://hellajs.com/reference/ssr/ssr-async)** (await Promises) · **[ssrStream](https://hellajs.com/reference/ssr/ssr-stream)** (streaming) · **[doc](https://hellajs.com/reference/ssr/doc)** (document assembly)
+- **[API Reference](https://hellajs.com/reference/ssr/ssr)** (sync) · **[ssrAsync](https://hellajs.com/reference/ssr/ssr-async)** (await Promises) · **[ssrStream](https://hellajs.com/reference/ssr/ssr-stream)** (streaming) · **[doc](https://hellajs.com/reference/ssr/doc)** (document assembly) · **[docStream](https://hellajs.com/reference/ssr/doc-stream)** (streaming document assembly)
 - **[Server-Side Rendering Concepts](https://hellajs.com/learn/concepts/ssr)**
 
 ## Quick Start
