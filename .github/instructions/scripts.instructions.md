@@ -12,6 +12,7 @@ applyTo: "scripts/**"
   |---|---|
   | `bundle.ts` | Thin entry (55 lines): parse args → call `bundle/orchestrate.ts` → report. Flags: `[package]`, `--size-mode` (minified bundle variant only), `--clean` (purge dist + cache first). Callers pass `--quiet` but bundle does not read it. |
   | `coverage.ts` | bundle → `bun test --coverage` → lint. Filters the coverage table to `[package]` rows and recalculates the `All files` average (Bun has no scope flag; the test preload forces `@hellajs/dom` into the instrumented set). CI runs this. |
+  | `bench.ts` | Thin entry: parse args (`--variant`, `--runs`, `--throttle`, `--label`, `--ops`, `--headed`) → build + stage → serve → drive → report. Playwright + system Chrome macro-benchmark over `examples/bench`; appends self-describing entries to `.bench/results.md`. |
   | `clean.ts` | Remove `dist/` + `.build-cache/` per package. `bun clean [package]` scopes to one workspace. |
   | `release.ts` | Update `@hellajs/core` peer deps + `babel-plugin-hellajs` deps across packages, commit (`--no-verify`), then `changeset publish`. Run via `bun release` (the npm script bundles first). |
   | `sync.ts` | Regenerate `CLAUDE.md` + `.github/instructions/*` from every `AGENTS.md` under root + `packages/`/`plugins/`/`docs/`/`scripts/`. Root → `.github/copilot-instructions.md` (`applyTo: "**"`); folders → `{folder}.instructions.md`. |
@@ -75,6 +76,19 @@ applyTo: "scripts/**"
   ## Known fragile point
 
   - **Minified-import rewriting is regex on built JS**, duplicated in `optimize.ts::fixMinifiedImports` (4 passes: `from "…"` and `import(…)` for extension-adding and `.js`→`.min.js`) and inline in `esbuild-build.ts::buildBundle`/`buildIndividualModules`. Breaks silently if esbuild's output format changes. Target: emit correct extensions directly via esbuild `--out-extension` / `--entry-names` and delete the regex.
+
+  ## Bench pipeline (`scripts/bench/`, one concern per file)
+
+  Entry `bench.ts` → `build.ts` (rebuild all packages + the example variant, stage into `.bench/current/`) → `serve.ts` (static server on an ephemeral port) → `driver.ts` (Playwright, system Chrome, CDP CPU throttle) → `report.ts` (stdout + append-only `.bench/results.md`). The tool never mutates git state; the only git it runs is the read-only sha/dirty descriptor that labels each entry. Manual A/B protocol: `git checkout <ref>` → `bun bench` → checkout feature → `bun bench` → read `.bench/results.md`.
+
+  | File | Concern |
+  |---|---|
+  | `bench.ts` | Thin entry: args → build → serve → drive → report → exit |
+  | `bench/build.ts` | `bun bundle` (all packages — examples bundle against `dist/`, which is gitignored and survives checkouts) + variant build (`html`/`jsx`/`ts`) + staging into `.bench/current/` |
+  | `bench/serve.ts` | `Bun.serve` on `port: 0`; `/<label>/` → `index.html`, other paths → files under `.bench/` |
+  | `bench/ops.ts` | The 8 op definitions: setup clicks, pre-click capture, measured click, in-page end-state predicate |
+  | `bench/driver.ts` | Playwright driver: capture-phase click listener (t0), rAF predicate poll (t1), 30s watchdog, CDP throttle, warmup + measured runs |
+  | `bench/report.ts` | Env header + per-op median/mean table to stdout; append-only self-describing entry to `.bench/results.md` (only after every op verified) |
 
   ## Testing
 
