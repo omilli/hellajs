@@ -1,8 +1,16 @@
 # Memory Update Log
 
+## 2026-08-22
+* **Creation**: Added concept [041](entries/041.md) (type: decision).
+* **Creation**: Added concept [042](entries/042.md) (type: decision).
+* **Creation**: Added concept [043](entries/043.md) (type: decision).
+* **Creation**: Added concept [044](entries/044.md) (type: decision).
+
 ## 2026-08-21
 * **Creation**: Added concept [039](entries/039.md) (type: decision).
 * **Creation**: Added concept [040](entries/040.md) (type: decision).
+* **Creation**: Added concepts [041](entries/041.md) (isDynamic test component factory shape), [042](entries/042.md) (two-microtask-hop catch assertion), [043](entries/043.md) (braced switch-case closing-brace coverage artifact) — all verified during the dom audit-fix worker run.
+* **Update**: Refreshed [030](entries/030.md) — removed stale `<Show>` recommendation (no such export; superseded by resource + reactive-child idiom per suspense.mdx/AGENTS.md 2026-08-21) and recorded the new hydrate stageMissing degradation contract.
 
 ## 2026-08-20
 * **Creation**: Added concept [038](entries/038.md) (type: correction).
