@@ -3,6 +3,7 @@ import { componentNodeToBabel } from "../builders/ast.mjs";
 import { containsComponent, findPassthroughComponents } from "../utils/traversal.mjs";
 import { ensureCreateComponentImport } from "../utils/imports.mjs";
 import { PASSTHROUGH_INJECTORS } from "../utils/passthrough.mjs";
+import { hoistStaticSubtrees } from "../utils/static.mjs";
 /**
  * Create transformer for html`` tagged template literals.
  * @param {typeof import("@babel/core").types} t
@@ -33,7 +34,8 @@ export function componentTransformer(t) {
       // Convert to clean Babel AST
       const babelAST = componentNodeToBabel(t, ast, expressions);
 
-      path.replaceWith(babelAST);
+      // Hoist fully-static subtrees to module consts (staticDom clone path)
+      path.replaceWith(hoistStaticSubtrees(t, program, babelAST));
     }
   };
 }
