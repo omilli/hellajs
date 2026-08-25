@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestState } from "@utils/test-helpers.js";
+import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
 import { cssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
@@ -31,7 +31,7 @@ describe("cssVars flatten", () => {
 
   test("static nested object flattens with dot-to-hyphen keys", () => {
     cssVars({ a: { b: 1 } });
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--a-b: 1");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--a-b:1");
   });
 });

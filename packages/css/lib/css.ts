@@ -1,6 +1,6 @@
 import { hasDocument, isPlainObject } from "./internal/core";
 import { upsertRule } from "./internal/sheet";
-import { STYLE_ID, injectedMap, syncTextContent } from "./internal/injection";
+import { STYLE_ID, injectedMap } from "./internal/injection";
 import type { InjectedEntry } from "./internal/injection";
 import type { CSSObject, CSSOptions } from "./types";
 
@@ -24,7 +24,9 @@ const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-st
  * @param obj CSS object containing style properties and nested selectors
  * @param options Optional configuration. Provide `name` to create a scoped `.{name}` selector and get a return value for `class` attributes.
  * @returns The provided `name` string (or empty string for global) on the client; the CSS text on the server.
- * @throws {Error} When obj is not a plain object.
+ * @throws {Error} When obj is not a plain object, or when a conditional at-rule body contains
+ * direct style declarations with no selector in scope (global mode) — nest selectors under
+ * the at-rule or use the `name` option.
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
@@ -69,7 +71,6 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
 
   const entry: InjectedEntry = { count: 1, ruleCount: rules.length };
   injectedMap.set(cssText, entry);
-  syncTextContent();
 
   return name || "";
 }
@@ -78,10 +79,13 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * @internal
  * Recursively traverses a CSS object and builds the final CSS string.
  * Conditional at-rules (@media, @container, @supports, @starting-style) inherit
- * the parent scope when a class name is active, producing scoped selectors inside
- * the at-block. Definitional at-rules (@keyframes, @font-face, @layer, etc.) always
- * process content globally. The `&` token in nested selectors is replaced with
- * the parent selector. CamelCase property keys convert to kebab-case.
+ * the active parent selector (a `.{name}` scope or any nested selector); with no
+ * selector in scope, a conditional at-rule body containing direct style declarations
+ * throws. Definitional at-rules (@keyframes, @font-face, @layer, etc.) always
+ * process content with an empty selector so they never nest under a class; their
+ * direct declarations emit bare (e.g. `@font-face{font-family:…}`). The `&` token
+ * in nested selectors is replaced with the parent selector. CamelCase property keys
+ * convert to kebab-case.
  * The `content` property auto-quotes unquoted strings. Array values join with
  * commas. Null and undefined values are skipped.
  *
@@ -116,7 +120,21 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
           }
           ci++;
         }
-        const nestedCss = isConditional && !isGlobal
+        if (isConditional && !selector) {
+          // Direct declarations with no selector would emit a selector-less block
+          // the browser silently drops — reject loudly instead.
+          const body = value as CSSObject;
+          const bodyKeys = Object.keys(body);
+          let bi = 0;
+          const bLen = bodyKeys.length;
+          while (bi < bLen) {
+            const bodyValue = body[bodyKeys[bi++] as string];
+            if (bodyValue != null && !isPlainObject(bodyValue)) {
+              throw new Error(`[css] conditional at-rule "${key}" contains declarations with no selector — nest selectors under it or use the name option`);
+            }
+          }
+        }
+        const nestedCss = isConditional && selector
           ? process(value as CSSObject, selector, isGlobal)
           : process(value as CSSObject, "", true);
         rules.push(`${key}{${nestedCss}}`);
@@ -148,5 +166,9 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
   }
 
   if (properties.length === 0) return rules.join("");
+  // No active selector: emit declarations bare (e.g. inside @font-face). Rules
+  // come first so a brace-depth-0 split keeps valid rules separate from any
+  // brace-less garbage the platform will reject.
+  if (!selector) return `${rules.join("")}${properties.join(";")}`;
   return `${selector}{${properties.join(";")}}${rules.join("")}`;
 }

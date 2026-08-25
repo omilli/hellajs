@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { signal } from "@hellajs/core";
 import { css, cssVars, removeCss, removeCssVars, resetCss, resetCssVars } from "@hellajs/css/bundle";
+import { getStylesheet } from "@utils/test-helpers.js";
 
 let origDocument: unknown;
 
@@ -52,8 +53,13 @@ describe("platform-dependent return (no document)", () => {
   test("css() does not inject into the DOM", () => {
     css({ color: "red" }, { name: "server-leak" });
     (globalThis as unknown as Record<string, unknown>).document = origDocument;
-    const el = document.getElementById("hella-css");
-    expect(el?.textContent ?? "").not.toContain("server-leak");
+    expect(getStylesheet("hella-css")).not.toContain("server-leak");
+  });
+
+  test("css() throws for selector-less conditional at-rule declarations on the server too", () => {
+    expect(() => css({ "@media (min-width: 1px)": { color: "red" } })).toThrow(
+      '[css] conditional at-rule "@media (min-width: 1px)" contains declarations with no selector'
+    );
   });
 
   test("cssVars() returns vars text for static values", () => {
@@ -80,8 +86,7 @@ describe("platform-dependent return (no document)", () => {
   test("cssVars() does not inject into the DOM", () => {
     cssVars({ theme: { color: "red" } });
     (globalThis as unknown as Record<string, unknown>).document = origDocument;
-    const el = document.getElementById("hella-vars");
-    expect(el?.textContent ?? "").not.toContain("--theme-color");
+    expect(getStylesheet("hella-vars")).not.toContain("--theme-color");
   });
 
   test("removeCss is a no-op", () => {

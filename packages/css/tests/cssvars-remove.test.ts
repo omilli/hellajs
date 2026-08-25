@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { flush, signal } from "@hellajs/core";
-import { resetTestState } from "@utils/test-helpers.js";
+import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
 import { cssVars, removeCssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
@@ -12,15 +12,15 @@ describe("removeCssVars", () => {
     cssVars({ colors: { primary: "red", secondary: "blue" } });
     flush();
 
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--colors-primary: red");
-    expect(varsEl?.textContent).toContain("--colors-secondary: blue");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--colors-primary:red");
+    expect(varsText).toContain("--colors-secondary:blue");
 
     removeCssVars({ colors: { primary: "red", secondary: "blue" } });
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe("");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe("");
   });
 
   test("reference counting: vars persist until last reference is removed", () => {
@@ -29,23 +29,23 @@ describe("removeCssVars", () => {
     cssVars({ theme: { color: "red" } });
     flush();
 
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-color: red");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-color:red");
 
     removeCssVars({ theme: { color: "red" } });
     flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-color: red");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-color:red");
 
     removeCssVars({ theme: { color: "red" } });
     flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-color: red");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-color:red");
 
     removeCssVars({ theme: { color: "red" } });
     flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe("");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe("");
   });
 
   test("reactive removal disposes the effect", () => {
@@ -54,15 +54,15 @@ describe("removeCssVars", () => {
 
     cssVars(vars);
     flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
+    expect(getStylesheet("hella-vars")).toContain("red");
 
     removeCssVars(vars);
 
     color("blue");
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).not.toContain("blue");
-    expect(varsEl?.textContent ?? "").toBe("");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).not.toContain("blue");
+    expect(varsText).toBe("");
   });
 
   test("shared scope: only the removed call's keys disappear", () => {
@@ -70,18 +70,18 @@ describe("removeCssVars", () => {
     cssVars({ typography: { size: "16px" } });
     flush();
 
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-primary: red");
-    expect(varsEl?.textContent).toContain("--spacing-small: 8px");
-    expect(varsEl?.textContent).toContain("--typography-size: 16px");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-primary:red");
+    expect(varsText).toContain("--spacing-small:8px");
+    expect(varsText).toContain("--typography-size:16px");
 
     removeCssVars({ theme: { primary: "red" }, spacing: { small: "8px" } });
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).not.toContain("--theme-primary: red");
-    expect(varsEl?.textContent).not.toContain("--spacing-small: 8px");
-    expect(varsEl?.textContent).toContain("--typography-size: 16px");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).not.toContain("--theme-primary:red");
+    expect(varsText).not.toContain("--spacing-small:8px");
+    expect(varsText).toContain("--typography-size:16px");
   });
 
   test("unknown input is a no-op", () => {
@@ -94,14 +94,14 @@ describe("removeCssVars", () => {
     cssVars({ theme: { color: "red" } }, { scoped: ".card", prefix: "ui" });
     flush();
 
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".card{--ui-theme-color: red;}");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(".card{--ui-theme-color:red}");
 
     removeCssVars({ theme: { color: "red" } }, { scoped: ".card", prefix: "ui" });
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe("");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe("");
   });
 
   test("reactive scoped removeCssVars disposes and removes keys", () => {
@@ -110,14 +110,14 @@ describe("removeCssVars", () => {
 
     cssVars(vars, { scoped: ".dynamic", prefix: "dyn" });
     flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain(".dynamic{--dyn-theme-color: green;}");
+    expect(getStylesheet("hella-vars")).toContain(".dynamic{--dyn-theme-color:green}");
 
     removeCssVars(vars, { scoped: ".dynamic", prefix: "dyn" });
 
     color("purple");
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent ?? "").toBe("");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe("");
   });
 
   test("multiple calls to different scopes: removing one scope leaves others intact", () => {
@@ -125,16 +125,16 @@ describe("removeCssVars", () => {
     cssVars({ secondary: "blue" }, { scoped: ".comp2" });
     flush();
 
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".comp1");
-    expect(varsEl?.textContent).toContain(".comp2");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(".comp1");
+    expect(varsText).toContain(".comp2");
 
     removeCssVars({ primary: "red" }, { scoped: ".comp1" });
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).not.toContain(".comp1");
-    expect(varsEl?.textContent).toContain(".comp2");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).not.toContain(".comp1");
+    expect(varsText).toContain(".comp2");
   });
 
   test("removeCssVars at zero refs removes from cache and registry", () => {
@@ -157,19 +157,19 @@ describe("removeCssVars", () => {
     cssVars(vars);
     cssVars(vars);
     flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
+    expect(getStylesheet("hella-vars")).toContain("red");
 
     removeCssVars(vars);
     flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
+    expect(getStylesheet("hella-vars")).toContain("red");
 
     color("blue");
     flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("blue");
+    expect(getStylesheet("hella-vars")).toContain("blue");
 
     removeCssVars(vars);
     flush();
-    expect(document.getElementById("hella-vars")?.textContent ?? "").toBe("");
+    expect(getStylesheet("hella-vars") ?? "").toBe("");
   });
 
   describe("input validation", () => {

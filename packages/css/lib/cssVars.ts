@@ -2,7 +2,7 @@ import type { CSSVarsOptions, CSSVars, CSSVarInputObject } from "./types";
 import { hash, stringify } from "./internal/shared";
 import { createVarsEffect } from "./internal/reactive";
 import { hasDocument, isFunction, isPlainObject } from "./internal/core";
-import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules } from "./internal/vars";
+import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules, resolveVarsOptions, serializeDecls } from "./internal/vars";
 
 /**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
@@ -23,21 +23,11 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
   if (!isPlainObject(vars)) throw new Error(`[css] cssVars: expected a plain object, received ${String(vars)}`);
 
   const { flat, hasFns } = flattenVars(vars);
+  const { scope, fullPrefix } = resolveVarsOptions(options);
+  const resolved = { scope, fullPrefix };
 
   if (!hasDocument()) {
-    const scope = options.scoped || ":root";
-    const prefix = options.prefix ? `${options.prefix}-` : "";
-    const flatKeys = Object.keys(flat);
-    let fi = 0;
-    const fLen = flatKeys.length;
-    let decls = "";
-    while (fi < fLen) {
-      const key = flatKeys[fi++] as string;
-      const name = `${prefix}${key}`.replace(DOT_REGEX, "-");
-      decls += `--${name}:${String(flat[key])}`;
-      if (fi < fLen) decls += ";";
-    }
-    return `${scope}{${decls}}` as unknown as CSSVars<T>;
+    return `${scope}{${serializeDecls(Object.entries(flat).map(([k, v]) => [`${fullPrefix}${k}`, v] as [string, unknown]))}}` as unknown as CSSVars<T>;
   }
 
   if (!hasFns) {
@@ -48,53 +38,58 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
       cache.set(inputHash, cached);
       const entry = varsRegistryStatic.get(inputHash);
       if (entry) entry.refCount++;
-      applyRules(cached.flattened, options);
+      applyRules(cached.flattened, resolved);
       return cached.result as CSSVars<T>;
     }
 
-    applyRules(flat, options);
-    const result = buildResult<T>(flat, options);
+    applyRules(flat, resolved);
+    const result = buildResult<T>(flat, fullPrefix);
 
     if (cache.size >= CACHE_MAX) {
       const oldest = cache.keys().next().value as string;
       cache.delete(oldest);
     }
     cache.set(inputHash, { flattened: flat, result });
-    varsRegistryStatic.set(inputHash, {
-      flatKeys: Object.keys(flat),
-      scope: options.scoped || ":root",
-      prefix: options.prefix ? `${options.prefix}-` : "",
-      refCount: 1,
-    });
+    // An LRU eviction removes the cache entry but not the registry entry —
+    // a re-registration must join the surviving refCount, not reset it to 1
+    // (otherwise one removeCssVars could drop vars with refs outstanding).
+    const prior = varsRegistryStatic.get(inputHash);
+    if (prior) prior.refCount++;
+    else {
+      varsRegistryStatic.set(inputHash, {
+        flatKeys: Object.keys(flat),
+        scope,
+        fullPrefix,
+        refCount: 1,
+      });
+    }
     return result;
   }
 
   const existingEntry = varsRegistryReactive.get(vars);
   if (existingEntry) {
-    const scope = options.scoped || ":root";
-    const prefix = options.prefix ? `${options.prefix}-` : "";
-    if (scope !== existingEntry.scope || prefix !== existingEntry.prefix) {
+    if (scope !== existingEntry.scope || fullPrefix !== existingEntry.fullPrefix) {
       throw new Error(`[css] cssVars: reactive vars object already registered with different options (scoped/prefix); use a separate object per scope, received ${String(vars)}`);
     }
     existingEntry.refCount++;
-    applyRules(flat, options);
+    applyRules(flat, resolved);
     return varsResultReactive.get(vars) as CSSVars<T>;
   }
 
-  applyRules(flat, options);
-  const result = buildResult<T>(flat, options);
+  applyRules(flat, resolved);
+  const result = buildResult<T>(flat, fullPrefix);
 
   const run = () => {
     const { flat } = flattenVars(vars);
-    applyRules(flat, options);
+    applyRules(flat, resolved);
   };
 
   const cleanup = createVarsEffect(run);
 
   varsRegistryReactive.set(vars, {
     flatKeys: Object.keys(flat),
-    scope: options.scoped || ":root",
-    prefix: options.prefix ? `${options.prefix}-` : "",
+    scope,
+    fullPrefix,
     refCount: 1,
     cleanup,
   });
@@ -132,16 +127,15 @@ function flattenVars(obj: Record<string, unknown>, prefix = "", result: { flat: 
  * Builds the result proxy object with var() references from flattened vars.
  * Reconstructs nested structure using dot-separated keys.
  */
-function buildResult<T extends CSSVarInputObject>(flat: Record<string, unknown>, options: CSSVarsOptions): CSSVars<T> {
+function buildResult<T extends CSSVarInputObject>(flat: Record<string, unknown>, fullPrefix: string): CSSVars<T> {
   const result: Record<string, unknown> = {};
   const flatKeys = Object.keys(flat);
   let i = 0;
   const len = flatKeys.length;
-  const prefix = options.prefix ? `${options.prefix}-` : "";
 
   while (i < len) {
     const key = flatKeys[i++] as string;
-    const prefixedKey = prefix + key;
+    const prefixedKey = fullPrefix + key;
     const cssVarValue = `var(--${prefixedKey.replace(DOT_REGEX, "-")})`;
 
     const keyParts = key.split(".");

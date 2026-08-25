@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach, mock } from "bun:test";
 import { batch, computed, flush, signal } from "@hellajs/core";
-import { resetTestState } from "@utils/test-helpers.js";
-import { cssVars, resetCssVars } from "@hellajs/css/bundle";
+import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
+import { cssVars, resetCssVars, removeCssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -33,20 +33,20 @@ describe("cssVars", () => {
     const result1 = cssVars({ colors: { primary: "purple", secondary: "green" } });
     flush();
 
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--colors-primary: purple");
-    expect(varsEl?.textContent).toContain("--colors-secondary: green");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--colors-primary:purple");
+    expect(varsText).toContain("--colors-secondary:green");
 
     resetCssVars();
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe("");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe("");
 
     const result2 = cssVars({ colors: { primary: "purple", secondary: "green" } });
     flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--colors-primary: purple");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--colors-primary:purple");
     expect(result2).not.toBe(result1);
   });
 
@@ -74,8 +74,8 @@ describe("cssVars", () => {
     });
 
     flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe(":root{--colors-primary: red;--colors-secondary: blue;}");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe(":root{--colors-primary:red;--colors-secondary:blue}");
 
     batch(() => {
       primaryColor("green");
@@ -83,8 +83,8 @@ describe("cssVars", () => {
     });
 
     flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe(":root{--colors-primary: green;--colors-secondary: yellow;}");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe(":root{--colors-primary:green;--colors-secondary:yellow}");
   });
 
   test("reactive vars return populated result immediately", () => {
@@ -114,17 +114,17 @@ describe("cssVars", () => {
     });
 
     flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--colors-primary: purple");
-    expect(varsEl?.textContent).toContain("--colors-secondary: orange");
-    expect(varsEl?.textContent).toContain("--spacing: 8px");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--colors-primary:purple");
+    expect(varsText).toContain("--colors-secondary:orange");
+    expect(varsText).toContain("--spacing:8px");
 
     dynamicColor("teal");
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--colors-primary: teal");
-    expect(varsEl?.textContent).toContain("--colors-secondary: orange");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--colors-primary:teal");
+    expect(varsText).toContain("--colors-secondary:orange");
   });
 
   test("nested reactive dependencies", () => {
@@ -145,10 +145,10 @@ describe("cssVars", () => {
     });
 
     flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-background: #333");
-    expect(varsEl?.textContent).toContain("--theme-text: #fff");
-    expect(varsEl?.textContent).toContain("--typography-size: 20px");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-background:#333");
+    expect(varsText).toContain("--theme-text:#fff");
+    expect(varsText).toContain("--typography-size:20px");
 
     batch(() => {
       theme("light");
@@ -156,10 +156,10 @@ describe("cssVars", () => {
     });
 
     flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-background: #fff");
-    expect(varsEl?.textContent).toContain("--theme-text: #000");
-    expect(varsEl?.textContent).toContain("--typography-size: 14px");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-background:#fff");
+    expect(varsText).toContain("--theme-text:#000");
+    expect(varsText).toContain("--typography-size:14px");
   });
 
   test("resetCssVars clears reactive effects", () => {
@@ -167,13 +167,13 @@ describe("cssVars", () => {
     cssVars({ primary: color });
 
     flush();
-    expect(document.getElementById("hella-vars")?.textContent).toContain("red");
+    expect(getStylesheet("hella-vars")).toContain("red");
 
     resetCssVars();
 
     color("blue");
     flush();
-    expect(document.getElementById("hella-vars")?.textContent).toBe("");
+    expect(getStylesheet("hella-vars")).toBe("");
   });
 
   test("computed signal integration", () => {
@@ -195,14 +195,14 @@ describe("cssVars", () => {
     });
 
     flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.8);}");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe(":root{--colors-primary:rgba(255,0,0,0.8)}");
 
     opacity(0.5);
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe(":root{--colors-primary: rgba(255, 0, 0, 0.5);}");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe(":root{--colors-primary:rgba(255,0,0,0.5)}");
   });
 
   test("multiple cssVars calls accumulate instead of overwriting", () => {
@@ -214,9 +214,9 @@ describe("cssVars", () => {
     });
 
     flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-primary: #ff0000");
-    expect(varsEl?.textContent).toContain("--theme-secondary: #00ff00");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-primary:#ff0000");
+    expect(varsText).toContain("--theme-secondary:#00ff00");
 
     const vars2 = cssVars({
       spacing: {
@@ -226,12 +226,12 @@ describe("cssVars", () => {
     });
 
     flush();
-    varsEl = document.getElementById("hella-vars");
+    varsText = getStylesheet("hella-vars");
 
-    expect(varsEl?.textContent).toContain("--theme-primary: #ff0000");
-    expect(varsEl?.textContent).toContain("--theme-secondary: #00ff00");
-    expect(varsEl?.textContent).toContain("--spacing-small: 8px");
-    expect(varsEl?.textContent).toContain("--spacing-large: 16px");
+    expect(varsText).toContain("--theme-primary:#ff0000");
+    expect(varsText).toContain("--theme-secondary:#00ff00");
+    expect(varsText).toContain("--spacing-small:8px");
+    expect(varsText).toContain("--spacing-large:16px");
 
     expect(vars1.theme.primary).toBe("var(--theme-primary)");
     expect(vars2.spacing.small).toBe("var(--spacing-small)");
@@ -250,23 +250,23 @@ describe("cssVars", () => {
     });
 
     flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-primary: red");
-    expect(varsEl?.textContent).toContain("--theme-secondary: blue");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-primary:red");
+    expect(varsText).toContain("--theme-secondary:blue");
 
     color1("green");
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-primary: green");
-    expect(varsEl?.textContent).toContain("--theme-secondary: blue");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-primary:green");
+    expect(varsText).toContain("--theme-secondary:blue");
 
     color2("yellow");
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-primary: green");
-    expect(varsEl?.textContent).toContain("--theme-secondary: yellow");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-primary:green");
+    expect(varsText).toContain("--theme-secondary:yellow");
 
     batch(() => {
       color1("purple");
@@ -274,9 +274,9 @@ describe("cssVars", () => {
     });
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("--theme-primary: purple");
-    expect(varsEl?.textContent).toContain("--theme-secondary: orange");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--theme-primary:purple");
+    expect(varsText).toContain("--theme-secondary:orange");
   });
 
   test("varsEffect cleanup removes individual effect", () => {
@@ -341,12 +341,36 @@ describe("cssVars", () => {
     expect(evicted.key1).toBe("var(--key1)");
   });
 
+  test("LRU eviction followed by re-registration preserves the reference count", () => {
+    const vars = { color: "red" };
+    cssVars(vars);
+    cssVars(vars);
+
+    for (let i = 1; i <= 100; i++) {
+      cssVars({ [`k${i}`]: `v${i}` });
+    }
+
+    // Cache entry was evicted; the re-call must join the surviving refCount (2),
+    // not reset it to 1.
+    cssVars(vars);
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("--color:red");
+
+    removeCssVars(vars);
+    expect(getStylesheet("hella-vars")).toContain("--color:red");
+
+    removeCssVars(vars);
+    removeCssVars(vars);
+    expect(getStylesheet("hella-vars")).not.toContain("--color:red");
+  });
+
   test("empty object returns empty result", () => {
     const result = cssVars({});
     expect(Object.keys(result)).toHaveLength(0);
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent ?? "").toBe("");
+    const varsText = getStylesheet("hella-vars");
+    // An empty vars object still upserts the (empty) :root scope rule.
+    expect(varsText).toBe(":root{}");
   });
 
   describe("input validation", () => {

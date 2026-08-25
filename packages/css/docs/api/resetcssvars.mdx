@@ -52,7 +52,7 @@ const theme = cssVars({
 });
 
 // theme.colors.primary === 'var(--colors-primary)'
-// document.getElementById('hella-vars')?.textContent includes '--colors-primary: #ff0000'
+// document.getElementById('hella-vars')?.sheet?.cssRules[0]?.cssText includes '--colors-primary: #ff0000'
 ```
 
 ### Reactive Effects Cleanup
