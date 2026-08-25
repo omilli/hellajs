@@ -1,5 +1,3 @@
-import { hasDocument } from "./core";
-
 /**
  * @internal
  */
@@ -22,16 +20,3 @@ export interface InjectedEntry {
  * inlineCache + cssRulesMap + ruleCounts.
  */
 export const injectedMap = new Map<string, InjectedEntry>();
-
-/**
- * @internal
- * Mirrors the current CSS rules text into the style element for DevTools visibility.
- * Joins every injected text — the same values the CSSOM holds, in insertion order.
- */
-export function syncTextContent(): void {
-  if (!hasDocument()) return;
-  const el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
-  if (el) {
-    el.textContent = Array.from(injectedMap.keys()).join("");
-  }
-}

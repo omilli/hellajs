@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestState } from "@utils/test-helpers.js";
-import { css } from "@hellajs/css/bundle";
+import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
+import { css, removeCss } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
@@ -16,8 +16,8 @@ describe("css at-rules", () => {
         }
       }
     });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@media (prefers-color-scheme: dark){:root{--theme-bg:black;--theme-color:white}}");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@media (prefers-color-scheme:dark){:root{--theme-bg:black;--theme-color:white}}");
   });
 
   test("@keyframes generates correct animation", () => {
@@ -27,10 +27,10 @@ describe("css at-rules", () => {
         to: { transform: "rotate(360deg)" },
       },
     });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain("@keyframes spin");
-    expect(content).toContain("from{transform:rotate(0deg)}");
-    expect(content).toContain("to{transform:rotate(360deg)}");
+    expect(content).toContain("0%{transform:rotate(0deg)}");
+    expect(content).toContain("100%{transform:rotate(360deg)}");
   });
 
   test("@keyframes with percentage stops", () => {
@@ -41,7 +41,7 @@ describe("css at-rules", () => {
         "100%": { opacity: "1" },
       },
     });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain("@keyframes fadeIn");
     expect(content).toContain("0%{opacity:0}");
     expect(content).toContain("100%{opacity:1}");
@@ -56,9 +56,9 @@ describe("css at-rules", () => {
         fontStyle: "normal",
       },
     });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@font-face");
-    expect(content).toContain('font-family:"Inter"');
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@font-face{");
+    expect(content).toContain("font-family:Inter");
     expect(content).toContain("font-weight:400");
   });
 
@@ -70,8 +70,8 @@ describe("css at-rules", () => {
         },
       },
     });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@container (min-width: 400px)");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@container (min-width:400px)");
     expect(content).toContain(".card{font-size:1.25rem}");
   });
 
@@ -81,27 +81,37 @@ describe("css at-rules", () => {
         ".container": { display: "grid" },
       },
     });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@supports (display: grid){.container{display:grid}}");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@supports (display:grid){.container{display:grid}}");
   });
 
   test("@layer generates correct rule", () => {
-    css({
+    const layer = {
       "@layer base": {
         "h1": { fontSize: "2rem" },
         "p": { lineHeight: "1.5" },
       },
-    });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@layer base{h1{font-size:2rem}p{line-height:1.5}}");
+    };
+    // happy-dom rejects @layer insertRule (the premise of the failed-insertRule
+    // tests below), so composition is asserted via the server text return
+    // (same process() derivation), captured before asserting so a failure
+    // cannot leak the patched global.
+    css(layer);
+    expect(getStylesheet("hella-css")).toBe("");
+
+    const savedDocument = globalThis.document;
+    (globalThis as unknown as Record<string, unknown>).document = undefined;
+    const serverText = css(layer);
+    (globalThis as unknown as Record<string, unknown>).document = savedDocument;
+    expect(serverText).toBe("@layer base{h1{font-size:2rem}p{line-height:1.5}}");
   });
 
   test("scoped @media wraps direct properties under class selector", () => {
     css({
       "@media (max-width: 768px)": { fontSize: "12px", color: "red" }
     }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@media (max-width: 768px){.btn{");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@media (max-width:768px){.btn{");
     expect(content).toContain("font-size:12px");
     expect(content).toContain("color:red");
     expect(content).not.toContain("{{");
@@ -113,8 +123,8 @@ describe("css at-rules", () => {
         ".child": { color: "blue" }
       }
     }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@media (max-width: 768px){");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@media (max-width:768px){");
     expect(content).toContain(".btn .child{color:blue}");
   });
 
@@ -124,8 +134,8 @@ describe("css at-rules", () => {
         "&:hover": { color: "red" }
       }
     }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@media (max-width: 768px){");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@media (max-width:768px){");
     expect(content).toContain(".btn:hover{color:red}");
   });
 
@@ -133,8 +143,8 @@ describe("css at-rules", () => {
     css({
       "@container (min-width: 400px)": { fontSize: "12px" }
     }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@container (min-width: 400px){");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@container (min-width:400px){");
     expect(content).toContain(".btn{font-size:12px}");
   });
 
@@ -142,17 +152,24 @@ describe("css at-rules", () => {
     css({
       "@supports (display: grid)": { display: "grid" }
     }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@supports (display: grid){");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@supports (display:grid){");
     expect(content).toContain(".btn{display:grid}");
   });
 
   test("scoped @starting-style inherits scope", () => {
-    css({
-      "@starting-style": { opacity: "1" }
-    }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@starting-style{.btn{opacity:1}}");
+    const startingStyle = { "@starting-style": { opacity: "1" } };
+    // happy-dom rejects @starting-style insertRule, so composition is asserted
+    // via the server text return (same process() derivation), captured before
+    // asserting so a failure cannot leak the patched global.
+    css(startingStyle, { name: "btn" });
+    expect(getStylesheet("hella-css")).toBe("");
+
+    const savedDocument = globalThis.document;
+    (globalThis as unknown as Record<string, unknown>).document = undefined;
+    const serverText = css(startingStyle, { name: "btn" });
+    (globalThis as unknown as Record<string, unknown>).document = savedDocument;
+    expect(serverText).toBe("@starting-style{.btn{opacity:1}}");
   });
 
   test("@keyframes stays global even with name option", () => {
@@ -162,8 +179,8 @@ describe("css at-rules", () => {
         to: { transform: "rotate(360deg)" },
       },
     }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}");
     expect(content).not.toContain(".btn{@keyframes");
   });
 
@@ -174,22 +191,30 @@ describe("css at-rules", () => {
         src: 'url("/fonts/custom.woff2") format("woff2")',
       },
     }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@font-face");
-    expect(content).toContain('font-family:"Custom"');
-    expect(content).toContain('src:url("/fonts/custom.woff2") format("woff2")');
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@font-face{");
+    expect(content).toContain("font-family:Custom");
     expect(content).not.toContain(".btn{@font-face");
   });
 
   test("@layer stays global even with name option", () => {
-    css({
+    const layer = {
       "@layer utilities": {
         ".flex": { display: "flex" },
       },
-    }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@layer utilities{.flex{display:flex}}");
+    };
+    // happy-dom rejects @layer insertRule — assert no stray .btn wrap client-side
+    // and the composition via the server text return (captured before asserting).
+    css(layer, { name: "btn" });
+    const content = getStylesheet("hella-css");
+    expect(content).not.toContain("@layer");
     expect(content).not.toContain(".btn{@layer");
+
+    const savedDocument = globalThis.document;
+    (globalThis as unknown as Record<string, unknown>).document = undefined;
+    const serverText = css(layer, { name: "btn" });
+    (globalThis as unknown as Record<string, unknown>).document = savedDocument;
+    expect(serverText).toBe("@layer utilities{.flex{display:flex}}");
   });
 
   describe("failed insertRule", () => {
@@ -206,8 +231,10 @@ describe("css at-rules", () => {
       const sheet = getCssSheet();
       expect(sheet.cssRules.length).toBe(1);
       expect(sheet.cssRules[0]!.cssText).toContain("body");
-      const content = document.getElementById("hella-css")?.textContent;
-      expect(content).toContain("@layer base");
+      // @layer is rejected by happy-dom, so it is absent from the CSSOM —
+      // the failed insert is the premise of this test.
+      const content = getStylesheet("hella-css");
+      expect(content).not.toContain("@layer");
       expect(content).toContain("body");
     });
 
@@ -226,12 +253,42 @@ describe("css at-rules", () => {
 
   test("global @media (no name) is unaffected", () => {
     css({
-      "@media (max-width: 768px)": { fontSize: "12px" },
+      "@media (max-width: 768px)": { ".card": { padding: "0.75rem" } },
       ".card": { padding: "1rem" },
     });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("@media (max-width: 768px)");
-    expect(content).toContain("font-size:12px");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("@media (max-width:768px){.card{padding:0.75rem}}");
     expect(content).toContain(".card{padding:1rem}");
+  });
+
+  describe("selector-less conditional at-rule bodies", () => {
+    test.each([
+      "@media (min-width: 1px)",
+      "@container (min-width: 400px)",
+      "@supports (display: grid)",
+      "@starting-style",
+    ])("%s with direct declarations throws in a global call", (atRule) => {
+      expect(() => css({ [atRule]: { color: "red" } })).toThrow(
+        `[css] conditional at-rule "${atRule}" contains declarations with no selector — nest selectors under it or use the name option`
+      );
+    });
+
+    test("removeCss throws for the same shape", () => {
+      expect(() => removeCss({ "@media (min-width: 1px)": { color: "red" } })).toThrow(
+        '[css] conditional at-rule "@media (min-width: 1px)" contains declarations with no selector'
+      );
+    });
+
+    test("null-only body does not throw (nulls are skipped)", () => {
+      expect(() => css({ "@media (min-width: 1px)": { color: null as unknown as undefined } })).not.toThrow();
+      expect(getStylesheet("hella-css")).toContain("@media (min-width:1px){}");
+    });
+
+    test("conditional at-rule nested under a plain selector inherits it", () => {
+      css({ "div.card": { "@media (min-width: 1px)": { color: "red" } } });
+      const content = getStylesheet("hella-css");
+      expect(content).toContain("@media (min-width:1px){div.card{color:red}}");
+      expect(content).not.toContain("{{");
+    });
   });
 });

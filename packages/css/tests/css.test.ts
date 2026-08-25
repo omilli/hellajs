@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { batch, flush, signal } from "@hellajs/core";
-import { resetTestState } from "@utils/test-helpers.js";
+import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
 import { css, cssVars, resetCss, removeCss } from "@hellajs/css/bundle";
 import { mount } from "@hellajs/dom/bundle";
 
@@ -17,7 +17,7 @@ describe("css", () => {
   test("name option returns the name and scopes to class", () => {
     const result = css({ color: "red" }, { name: "card" });
     expect(result).toBe("card");
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain(".card{color:red}");
   });
 
@@ -26,9 +26,9 @@ describe("css", () => {
       "&:hover": { color: "red" },
       "@media (max-width: 768px)": { fontSize: "12px" }
     }, { name: "btn" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain(".btn:hover{color:red}");
-    expect(content).toContain("@media (max-width: 768px){");
+    expect(content).toContain("@media (max-width:768px){");
     expect(content).toContain(".btn{font-size:12px}");
   });
 
@@ -38,7 +38,7 @@ describe("css", () => {
       fontSize: undefined,
       margin: "0"
     }, { name: "test" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain("color:blue");
     expect(content).not.toContain("font-size");
   });
@@ -48,7 +48,7 @@ describe("css", () => {
       color: "red",
       "&:hover": { color: "blue", fontSize: null as unknown as undefined },
     }, { name: "test" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain("color:red");
     expect(content).toContain(":hover{color:blue}");
     expect(content).not.toContain("font-size");
@@ -70,8 +70,8 @@ describe("css", () => {
     css(styles, { name: "test" });
     removeCss(styles, { name: "test" });
 
-    const styleEl = document.getElementById("hella-css");
-    expect(styleEl?.textContent).not.toContain("color:blue");
+    const sheetText = getStylesheet("hella-css");
+    expect(sheetText).not.toContain("color:blue");
   });
 
   test("removeCss preserves styles until all references gone", () => {
@@ -82,40 +82,39 @@ describe("css", () => {
     css(styles, { name: "test" });
 
     removeCss(styles, { name: "test" });
-    expect(document.getElementById("hella-css")?.textContent).toContain("color:purple");
+    expect(getStylesheet("hella-css")).toContain("color:purple");
 
     removeCss(styles, { name: "test" });
-    expect(document.getElementById("hella-css")?.textContent).toContain("color:purple");
+    expect(getStylesheet("hella-css")).toContain("color:purple");
 
     removeCss(styles, { name: "test" });
-    expect(document.getElementById("hella-css")?.textContent).not.toContain("color:purple");
+    expect(getStylesheet("hella-css")).not.toContain("color:purple");
 
     css(styles, { name: "test" });
-    expect(document.getElementById("hella-css")?.textContent).toContain("color:purple");
+    expect(getStylesheet("hella-css")).toContain("color:purple");
   });
 
   test("removeCss is a no-op for unknown styles", () => {
     removeCss({ color: "neveradded" });
-    const el = document.getElementById("hella-css");
-    expect(el === null || el.textContent === "").toBe(true);
+    expect(getStylesheet("hella-css")).toBe("");
   });
 
   test("resetCss clears CSS rules", () => {
     css({ color: "red", fontSize: "16px" }, { name: "test" });
 
-    let styleEl = document.getElementById("hella-css");
-    expect(styleEl?.textContent).toContain("color:red");
-    expect(styleEl?.textContent).toContain("font-size:16px");
+    let sheetText = getStylesheet("hella-css");
+    expect(sheetText).toContain("color:red");
+    expect(sheetText).toContain("font-size:16px");
 
     resetCss();
 
-    styleEl = document.getElementById("hella-css");
-    expect(styleEl?.textContent).toBe("");
+    sheetText = getStylesheet("hella-css");
+    expect(sheetText).toBe("");
   });
 
   test("number values in CSS properties", () => {
     css({ zIndex: 10, opacity: 0.5, lineHeight: 1.5 }, { name: "test" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain("z-index:10");
     expect(content).toContain("opacity:0.5");
     expect(content).toContain("line-height:1.5");
@@ -126,7 +125,7 @@ describe("css", () => {
       color: "black",
       "&&:hover": { color: "red" }
     }, { name: "test" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain(".test.test:hover{color:red}");
   });
 
@@ -136,7 +135,7 @@ describe("css", () => {
       ".child": { color: "red" },
       "span": { display: "inline" }
     }, { name: "parent" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain(".parent{color:black}");
     expect(content).toContain(".parent .child{color:red}");
     expect(content).toContain(".parent span{display:inline}");
@@ -152,7 +151,7 @@ describe("css", () => {
         },
       },
     });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain("nav{display:flex}");
     expect(content).toContain("nav a{color:blue}");
     expect(content).toContain("nav a:hover{color:red}");
@@ -161,10 +160,10 @@ describe("css", () => {
   test("removeCss with global styles", () => {
     const styles = { body: { margin: "0" } };
     css(styles);
-    expect(document.getElementById("hella-css")?.textContent).toContain("margin:0");
+    expect(getStylesheet("hella-css")).toContain("margin:0px");
 
     removeCss(styles);
-    expect(document.getElementById("hella-css")?.textContent).toBe("");
+    expect(getStylesheet("hella-css")).toBe("");
   });
 
   test("array values join with commas", () => {
@@ -172,16 +171,16 @@ describe("css", () => {
       fontFamily: ["Helvetica", "Arial", "sans-serif"],
       transition: ["color 0.2s", "background 0.3s"]
     }, { name: "test" });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("font-family:Helvetica, Arial, sans-serif");
-    expect(content).toContain("transition:color 0.2s, background 0.3s");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("font-family:Helvetica,Arial,sans-serif");
+    expect(content).toContain("transition:color 0.2s,background 0.3s");
   });
 
   test("multiple global styles accumulate", () => {
     css({ body: { margin: "0" } });
     css({ "*": { boxSizing: "border-box" } });
-    const content = document.getElementById("hella-css")?.textContent;
-    expect(content).toContain("body{margin:0}");
+    const content = getStylesheet("hella-css");
+    expect(content).toContain("body{margin:0px}");
     expect(content).toContain("*{box-sizing:border-box}");
   });
 
@@ -189,7 +188,7 @@ describe("css", () => {
     const beforeCount = document.querySelectorAll("#hella-css").length;
 
     css({ color: "green" }, { name: "test" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain("color:green");
 
     expect(document.querySelectorAll("#hella-css").length).toBe(beforeCount + 1);
@@ -225,8 +224,8 @@ describe("css", () => {
     expect(document.body.innerHTML).toContain(`<div class="themed">Hello World</div>`);
     flush();
 
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl!.textContent).toBe(":root{--colors-primary: blue;--font-size: 20px;}");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe(":root{--colors-primary:blue;--font-size:20px}");
   });
 
   test("content property auto-quotes string values", () => {
@@ -239,17 +238,17 @@ describe("css", () => {
         content: '"Already quoted"'
       }
     }, { name: "test" });
-    const styleEl = document.getElementById("hella-css");
-    expect(styleEl?.textContent).toContain('content:"Hello World"');
-    expect(styleEl?.textContent).toContain('content:"Before text"');
-    expect(styleEl?.textContent).toContain('content:"Already quoted"');
+    const sheetText = getStylesheet("hella-css");
+    expect(sheetText).toContain('content:"Hello World"');
+    expect(sheetText).toContain('content:"Before text"');
+    expect(sheetText).toContain('content:"Already quoted"');
   });
 
   test("content property preserves single-quoted values", () => {
     css({
       "&::before": { content: "'single'" }
     }, { name: "test" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain("content:'single'");
   });
 
@@ -258,7 +257,7 @@ describe("css", () => {
       ".card": { padding: "1rem" },
       ".card-title": { fontSize: "1.25rem" },
     });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain(".card{padding:1rem}");
     expect(content).toContain(".card-title{font-size:1.25rem}");
   });
@@ -266,7 +265,7 @@ describe("css", () => {
   test("multiple named rules appear as independent rules", () => {
     css({ color: "red" }, { name: "card" });
     css({ fontSize: "16px" }, { name: "heading" });
-    const content = document.getElementById("hella-css")?.textContent;
+    const content = getStylesheet("hella-css");
     expect(content).toContain(".card{color:red}");
     expect(content).toContain(".heading{font-size:16px}");
   });

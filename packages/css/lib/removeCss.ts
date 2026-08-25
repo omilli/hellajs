@@ -1,6 +1,6 @@
 import { hasDocument, isPlainObject } from "./internal/core";
 import { removeRule } from "./internal/sheet";
-import { STYLE_ID, injectedMap, syncTextContent } from "./internal/injection";
+import { STYLE_ID, injectedMap } from "./internal/injection";
 import { process } from "./css";
 import type { CSSObject, CSSOptions } from "./types";
 
@@ -36,5 +36,4 @@ export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
     i++;
   }
   injectedMap.delete(cssText);
-  syncTextContent();
 }

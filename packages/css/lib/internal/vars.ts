@@ -1,7 +1,5 @@
-import { hasDocument } from "./core";
 import { removeRule, upsertRule } from "./sheet";
 import type { CSSVars, CSSVarsOptions } from "../types";
-
 /**
  * @internal
  */
@@ -29,12 +27,13 @@ export const DOT_REGEX = /\./g;
 
 /**
  * Registry entry tracking a single cssVars() call's flat keys, scope,
- * prefix, reference count, and optional effect cleanup.
+ * resolved prefix (trailing hyphen included), reference count, and optional
+ * effect cleanup.
  */
 interface VarsEntry {
   flatKeys: string[];
   scope: string;
-  prefix: string;
+  fullPrefix: string;
   refCount: number;
   cleanup?: () => void;
 }
@@ -60,13 +59,24 @@ export let varsResultReactive = new WeakMap<object, CSSVars<Record<string, unkno
 
 /**
  * @internal
+ * Resolves CSSVarsOptions once: scope falls back to `:root`, the raw prefix
+ * gains its trailing hyphen. Every cssVars path derives scope/prefix through
+ * this — the single definition (no per-site duplication to drift).
+ */
+export function resolveVarsOptions({ scoped, prefix: rawPrefix = "" }: CSSVarsOptions): { scope: string; fullPrefix: string } {
+  return {
+    scope: scoped || ":root",
+    fullPrefix: rawPrefix ? `${rawPrefix}-` : "",
+  };
+}
+
+/**
+ * @internal
  * Writes flattened variable declarations to the scoped rules map
  * and upserts the scope rule into the stylesheet.
- * `rawPrefix` is the raw `options.prefix`; the formatted `${p}-` form is derived here.
+ * Takes the pre-resolved options from `resolveVarsOptions`.
  */
-export function applyRules(flat: Record<string, unknown>, { scoped, prefix: rawPrefix = "" }: CSSVarsOptions) {
-  const scope = scoped || ":root";
-  const fullPrefix = rawPrefix ? `${rawPrefix}-` : "";
+export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix }: { scope: string; fullPrefix: string }) {
   const entries = Object.entries(flat);
   const len = entries.length;
 
@@ -82,8 +92,6 @@ export function applyRules(flat: Record<string, unknown>, { scoped, prefix: rawP
   }
 
   upsertRule(VARS_ID, scope, `${scope}{${serializeDecls(scopeMap)}}`);
-
-  syncVarsTextContent();
 }
 
 /**
@@ -109,8 +117,6 @@ export function removeFromScope(scope: string, flatKeys: string[], fullPrefix: s
   } else {
     upsertRule(VARS_ID, scope, `${scope}{${serializeDecls(scopeMap)}}`);
   }
-
-  syncVarsTextContent();
 }
 
 /**
@@ -124,46 +130,18 @@ export function resetReactiveRegistries(): void {
 
 /**
  * @internal No-space CSSOM declaration form: `--k:v;--k2:v2`.
+ * Keys arrive already prefixed (dots intact); dots fold to hyphens here.
+ * Shared by applyRules (scope map) and the cssVars server text return.
  */
-function serializeDecls(scopeMap: Map<string, string>): string {
-  const entries = Array.from(scopeMap.entries());
+export function serializeDecls(entries: Iterable<[string, unknown]>): string {
+  const pairs = Array.from(entries);
   let i = 0;
-  const len = entries.length;
+  const len = pairs.length;
   let out = "";
   while (i < len) {
-    const [k, v] = entries[i++]!;
+    const [k, v] = pairs[i++]!;
     out += `--${k.replace(DOT_REGEX, "-")}:${v}`;
     if (i < len) out += ";";
   }
   return out;
-}
-
-/**
- * Mirrors the scoped vars rules into the style element's textContent
- * for DevTools visibility.
- */
-function syncVarsTextContent() {
-  let text = "";
-
-  const scopeEntries = Array.from(scopedVarsRulesMap.entries());
-  let i = 0;
-  const len = scopeEntries.length;
-  while (i < len) {
-    const [scope, rules] = scopeEntries[i++] as [string, Map<string, string>];
-    if (rules.size === 0) continue;
-
-    let vars = "";
-    const iterator = rules.entries();
-    let next = iterator.next();
-    while (!next.done) {
-      const [k, v] = next.value;
-      vars += `--${k.replace(DOT_REGEX, "-")}: ${v};`;
-      next = iterator.next();
-    }
-    text += `${scope}{${vars}}`;
-  }
-
-  if (!hasDocument()) return;
-  const el = document.getElementById(VARS_ID) as HTMLStyleElement | null;
-  if (el) el.textContent = text;
 }

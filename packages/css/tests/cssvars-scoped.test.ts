@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { batch, flush, signal } from "@hellajs/core";
-import { resetTestState } from "@utils/test-helpers.js";
+import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
 import { cssVars, resetCssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
@@ -17,8 +17,8 @@ describe("cssVars scoped", () => {
     }, { scoped: ".my-component" });
 
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".my-component{--theme-primary: #ff0000;--theme-secondary: #00ff00;}");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(".my-component{--theme-primary:#ff0000;--theme-secondary:#00ff00}");
 
     expect(vars.theme.primary).toBe("var(--theme-primary)");
     expect(vars.theme.secondary).toBe("var(--theme-secondary)");
@@ -33,8 +33,8 @@ describe("cssVars scoped", () => {
     }, { scoped: "#main-content" });
 
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain("#main-content{--layout-padding: 20px;--layout-margin: 10px;}");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain("#main-content{--layout-padding:20px;--layout-margin:10px}");
 
     expect(vars.layout.padding).toBe("var(--layout-padding)");
     expect(vars.layout.margin).toBe("var(--layout-margin)");
@@ -49,8 +49,8 @@ describe("cssVars scoped", () => {
     }, { prefix: "comp" });
 
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(":root{--comp-colors-primary: blue;--comp-colors-accent: orange;}");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(":root{--comp-colors-primary:blue;--comp-colors-accent:orange}");
 
     expect(vars.colors.primary).toBe("var(--comp-colors-primary)");
     expect(vars.colors.accent).toBe("var(--comp-colors-accent)");
@@ -65,8 +65,8 @@ describe("cssVars scoped", () => {
     }, { scoped: ".card", prefix: "ui" });
 
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".card{--ui-typography-size: 16px;--ui-typography-weight: bold;}");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(".card{--ui-typography-size:16px;--ui-typography-weight:bold}");
 
     expect(vars.typography.size).toBe("var(--ui-typography-size)");
     expect(vars.typography.weight).toBe("var(--ui-typography-weight)");
@@ -86,14 +86,14 @@ describe("cssVars scoped", () => {
     }, { scoped: ".header" });
 
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    const content = varsEl?.textContent;
+    const varsText = getStylesheet("hella-vars");
+    const content = varsText;
 
     expect(content).toContain(".header{");
     expect(content).toContain(".footer{");
-    expect(content).toContain("--theme-primary: red");
-    expect(content).toContain("--layout-padding: 10px");
-    expect(content).toContain("--theme-secondary: blue");
+    expect(content).toContain("--theme-primary:red");
+    expect(content).toContain("--layout-padding:10px");
+    expect(content).toContain("--theme-secondary:blue");
   });
 
   test("reactive scoped cssVars", () => {
@@ -106,8 +106,8 @@ describe("cssVars scoped", () => {
     }, { scoped: ".dynamic", prefix: "dyn" });
 
     flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".dynamic{--dyn-theme-color: green;--dyn-font-size: 18px;}");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(".dynamic{--dyn-theme-color:green;--dyn-font-size:18px}");
 
     batch(() => {
       color("purple");
@@ -115,8 +115,8 @@ describe("cssVars scoped", () => {
     });
 
     flush();
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".dynamic{--dyn-theme-color: purple;--dyn-font-size: 22px;}");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(".dynamic{--dyn-theme-color:purple;--dyn-font-size:22px}");
   });
 
   test("resetCssVars clears all scoped variables", () => {
@@ -125,16 +125,16 @@ describe("cssVars scoped", () => {
     cssVars({ layout: { margin: "10px" } });
 
     flush();
-    let varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".comp1");
-    expect(varsEl?.textContent).toContain(".comp2");
-    expect(varsEl?.textContent).toContain(":root");
+    let varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(".comp1");
+    expect(varsText).toContain(".comp2");
+    expect(varsText).toContain(":root");
 
     resetCssVars();
     flush();
 
-    varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe("");
+    varsText = getStylesheet("hella-vars");
+    expect(varsText).toBe("");
   });
 
   test("identical options return the same cached result", () => {
@@ -156,8 +156,8 @@ describe("cssVars scoped", () => {
     const b = cssVars(v, { scoped: ".a" });
     expect(a).toBe(b);
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toContain(".a{--c: red;}");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).toContain(".a{--c:red}");
   });
 
   test("reactive same-ref repeat call with differing scoped throws and writes no stray scope", () => {
@@ -165,9 +165,9 @@ describe("cssVars scoped", () => {
     cssVars(v);
     expect(() => cssVars(v, { scoped: ".dark" })).toThrow("[css] cssVars:");
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).not.toContain(".dark");
-    expect(varsEl?.textContent).toContain(":root{--c: red;}");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).not.toContain(".dark");
+    expect(varsText).toContain(":root{--c:red}");
   });
 
   test("reactive same-ref repeat call with differing prefix throws", () => {
@@ -175,7 +175,7 @@ describe("cssVars scoped", () => {
     cssVars(v);
     expect(() => cssVars(v, { prefix: "p" })).toThrow("[css] cssVars:");
     flush();
-    const varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent ?? "").not.toContain("--p-");
+    const varsText = getStylesheet("hella-vars");
+    expect(varsText).not.toContain("--p-");
   });
 });

@@ -126,7 +126,7 @@ html`<button class="btn">Click</button>`
 
 ### @-Rules
 
-All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. Use global calls (no `name`) for `@` rules that define top-level constructs.
+All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. Use global calls (no `name`) for `@` rules that define top-level constructs. In a global call, a conditional at-rule body must contain selectors — direct declarations with no selector in scope throw:
 
 ```jsx
 css({
@@ -152,7 +152,7 @@ css({
 
 ### Conditional at-rules inherit scope
 
-When a `name` is provided, conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the parent class scope. Direct properties and nested selectors inside the at-rule are wrapped in the `.{name}` selector:
+Conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the active parent selector — the `.{name}` scope of a named call, or any selector they are nested under. Direct properties and nested selectors inside the at-rule are wrapped in that selector:
 
 ```typescript
 css({
@@ -165,6 +165,19 @@ css({
 // .btn{padding:1rem}
 // @media (max-width:768px){.btn{font-size:12px}.btn .child{color:blue}}
 ```
+
+```typescript
+// Nested under a plain selector — the at-rule inherits it:
+css({ 'div.card': { '@media (min-width: 1px)': { color: 'red' } } });
+// @media (min-width:1px){div.card{color:red}}
+
+// Throws: direct declarations with no selector in scope (global call):
+css({ '@media (min-width: 1px)': { color: 'red' } });
+// Error: [css] conditional at-rule "@media (min-width: 1px)" contains
+//        declarations with no selector — nest selectors under it or use the name option
+```
+
+Nest selectors under the at-rule (or use the `name` option) so every declaration has a selector to attach to. The same input throws in [`removeCss`](/reference/css/removecss) and on the server — the check runs in the shared CSS derivation before any platform branching. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) never inherit a scope; their direct declarations are their normal shape (`@font-face{font-family:…}`).
 
 ## Important Considerations
 
