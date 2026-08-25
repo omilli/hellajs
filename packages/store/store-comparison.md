@@ -1,6 +1,6 @@
 # HellaJS @hellajs/store vs. Zustand / Redux Toolkit / Jotai / Valtio / MobX
 
-A ground-up comparison based on the actual source code of `@hellajs/store` v2. Every claim below was verified against `packages/store/lib/`.
+A ground-up comparison based on the actual source code of `@hellajs/store`. Every claim below was verified against `packages/store/lib/`.
 
 ---
 
@@ -76,7 +76,7 @@ HellaJS store sits in the same architectural camp as Valtio and MobX — deeply 
 - Zustand is the size leader at ~0.5 KB for the core, but real-world usage pulls in `use-sync-external-store` and the React bindings (~1.1 KB total). Valtio's `proxy-compare` dependency doubles its on-disk footprint. RTK ships Immer + Reselect + redux-thunk by default.
 - MobX is roughly 17× HellaJS's combined store+core size — a fair trade for what MobX brings (decades of edge-case handling, devtools, reactions, async flows), but real for any bundle budget.
 
-Sizes are from bundlephobia's published API for each package's latest version (zustand v2, valtio v2, jotai v2, @reduxjs/toolkit v2, mobx v2) and from `packages/store/dist/sizes.json` for HellaJS.
+Sizes are from bundlephobia's published API for each package's latest version at the time of writing and from `packages/store/dist/sizes.json` for HellaJS.
 
 ---
 
@@ -85,8 +85,8 @@ Sizes are from bundlephobia's published API for each package's latest version (z
 HellaJS supports three update paths, each verified against source:
 
 1. **Direct signal call**: `store.user.name('Jane')` writes a single property (`lib/internal/create.ts`). The signal does a `===` check before propagating, so writes that don't change the value are silent.
-2. **Partial deep merge**: `store.update({ user: { name: 'Jane' } })` walks the partial and recurses into nested stores that have their own `update` method, or falls back to `applyUpdate()` for leaf writes (`lib/internal/create.ts`). Properties absent from the initial object are silently ignored — `update()` cannot introduce new keys (`lib/internal/utils.ts` early-returns on a missing target).
-3. **Draft mutator**: `store.update(draft => { draft.items.push(x); draft.count++ })` clones the snapshot via `deepClone()`, lets the user mutate freely, then diffs via `extractChanges()` to emit only the changed signals (`lib/internal/create.ts`, `lib/internal/draft.ts`). Arrays are diffed element-by-element with `===`; nested objects recurse; only keys with actual deltas produce writes (`lib/internal/draft.ts`). Unchanged writes are skipped, so effects subscribed only to untouched properties do not fire.
+2. **Partial deep merge**: `store.update({ user: { name: 'Jane' } })` walks the partial and recurses into nested stores that have their own `update` method, or falls back to `applyUpdate()` for signal-backed leaves only (`lib/internal/create.ts`). Unknown keys, reserved keys, and function-valued properties are silently ignored — each store tracks its settable (signal-backed) keys at creation and composition threads that registry, so preserved functions are never invoked by an update (functions swap by direct assignment).
+3. **Draft mutator**: `store.update(draft => { draft.items.push(x); draft.count++ })` clones the snapshot via `deepClone()` (class instances keep their prototype), lets the user mutate freely, then diffs via `extractChanges()` to emit only the changed signals (`lib/internal/create.ts`, `lib/internal/draft.ts`). Values compare structurally: arrays diff element-by-element, and Dates, Maps, Sets, RegExps, and class instances compare by content; nested plain objects recurse; only genuine deltas produce writes (`lib/internal/draft.ts`). Unchanged writes are skipped, so effects subscribed only to untouched properties do not fire.
 
 Middleware hooks into all three paths: `applyUpdate()` runs the per-key transform before the signal setter fires (`lib/internal/utils.ts`), and the draft path inherits middleware because it ultimately routes through the same `applyUpdate` call (`lib/internal/create.ts`).
 
@@ -99,15 +99,15 @@ Middleware hooks into all three paths: `applyUpdate()` runs the per-key transfor
 | Valtio | `state.x = v` (direct proxy mutation) | Most ergonomic for nested mutations; no API to learn |
 | MobX | `state.x = v` (direct assignment) | Identical to plain JS; `runInAction` for batches |
 
-Valtio and MobX win on raw mutation ergonomics — you write normal JS. RTK's Immer-wrapped reducers are close behind for nested updates but require an action indirection. HellaJS's draft path matches Immer's ergonomic for array-heavy mutations (`draft.items.push(...)`) without taking an Immer dependency; the diff lives in 50 lines of source (`lib/internal/draft.ts`). Zustand and Jotai require the most manual work for nested structures.
+Valtio and MobX win on raw mutation ergonomics — you write normal JS. RTK's Immer-wrapped reducers are close behind for nested updates but require an action indirection. HellaJS's draft path matches Immer's ergonomic for array-heavy mutations (`draft.items.push(...)`) without taking an Immer dependency; the clone-plus-structural-diff lives in `lib/internal/draft.ts`, dependency-free. Zustand and Jotai require the most manual work for nested structures.
 
 ---
 
 ## 5. Snapshot & Derivation
 
-HellaJS `snapshot` is a `computed()` that iterates non-reserved keys and produces a plain-object view (`lib/internal/create.ts`). It re-runs when any accessed signal changes and recursively reads leaf signals in composed stores via the `readDeep` helper (`lib/internal/utils.ts`). Original functions are preserved on the snapshot (`lib/internal/create.ts`), so helper methods on the initial object keep working.
+HellaJS `snapshot` is a `computed()` that iterates non-reserved keys and produces a plain-object view (`lib/internal/create.ts`). It re-runs when any accessed signal changes; nested stores — composed or auto-created — delegate to their own `snapshot()` computed, so the parent subscribes through the chained computed to the full tree, and composed leaves unwrap to their plain values. Original functions are preserved on the snapshot (`lib/internal/create.ts`), so helper methods on the initial object keep working.
 
-The snapshot is reactive across the full composed tree. Nested store leaf signals are read inline during snapshot evaluation, so mutating any signal in a composed tree triggers re-computation of the outermost snapshot.
+The snapshot is reactive across the full composed tree. Mutating any signal in a composed tree triggers re-computation of the outermost snapshot through the chain of nested snapshot computeds.
 
 | Library | Snapshot pattern | Reactivity |
 |---|---|---|
@@ -199,7 +199,7 @@ HellaJS's recursive cleanup is the most explicit of the group — you call one m
 | Per-key middleware | Yes, nested (`lib/internal/utils.ts`) | Via middleware | Via middleware | Via atom write fn | No | Yes (`intercept`, `observe`) |
 | Async actions | Via `resource` package | Yes (async `set`) | `createAsyncThunk` | Async atoms + Suspense | Suspense-compatible | `flow` |
 | DevTools integration | None | Redux DevTools | Redux DevTools (best-in-class) | Redux DevTools | Redux DevTools | mobx-devtools |
-| SSR / hydration | None | Yes | Yes | Yes | Yes | Yes |
+| SSR / hydration | Server-safe (DOM-free; hydration lives in @hellajs/ssr) | Yes | Yes | Yes | Yes | Yes |
 | Framework coupling | None (core peer) | React-first | Framework-agnostic core | React-only | React-first | Framework-agnostic |
 | Persistence | None | `persist` middleware | Via middleware | `atomWithStorage` | Manual / `subscribe` | Manual |
 
@@ -260,7 +260,7 @@ Compared to competitors:
 
 ## Bottom Line
 
-Architecturally, `@hellajs/store` belongs to the deeply-reactive camp alongside Valtio and MobX. Its distinctive choice is *construction-time conversion*: instead of intercepting every read and write with a Proxy trap, it walks the initial object once and produces a tree of real signal functions. That gives it type-level readonly inference (no competitor matches the conditional `Store<T, R>` mapping), zero Proxy overhead on the hot path, granular effects inherited from `@hellajs/core`'s glitch-free graph, and three explicit update paths (direct call, partial merge, draft mutator) in roughly 350 lines of source.
+Architecturally, `@hellajs/store` belongs to the deeply-reactive camp alongside Valtio and MobX. Its distinctive choice is *construction-time conversion*: instead of intercepting every read and write with a Proxy trap, it walks the initial object once and produces a tree of real signal functions. That gives it type-level readonly inference (no competitor matches the conditional `Store<T, R>` mapping), zero Proxy overhead on the hot path, granular effects inherited from `@hellajs/core`'s glitch-free graph, and three explicit update paths (direct call, partial merge, draft mutator) in roughly 460 lines of source.
 
 What sets HellaJS apart — and no single competitor matches all of:
 
@@ -271,4 +271,4 @@ What sets HellaJS apart — and no single competitor matches all of:
 5. **Per-key middleware that nests recursively via the store factory** — middleware is wired into the construction loop (`lib/internal/create.ts`), not a wrapper layer.
 6. **Recursive cleanup that preserves shared leaf signals** — composes safely with externally-owned state.
 
-Its gaps are the predictable ones: ecosystem size (no devtools, no Redux DevTools bridge, no `persist` middleware), no SSR/hydration story, no async/suspense primitives in the package itself (delegated to `@hellajs/resource`), and no per-element array reactivity (arrays are single signals). For applications that live inside the HellaJS ecosystem and want deeply reactive state with strong typing at minimal bundle cost, it is the smallest and most typed option here. For applications that need devtools, time travel, async flows, or per-element array reactivity, Valtio and MobX remain the safer bets.
+Its gaps are the predictable ones: ecosystem size (no devtools, no Redux DevTools bridge, no `persist` middleware), no hydration-specific features in the package itself (it is DOM-free and server-safe; app-level SSR lives in `@hellajs/ssr`), no async/suspense primitives in the package itself (delegated to `@hellajs/resource`), and no per-element array reactivity (arrays are single signals). For applications that live inside the HellaJS ecosystem and want deeply reactive state with strong typing at minimal bundle cost, it is the smallest and most typed option here. For applications that need devtools, time travel, async flows, or per-element array reactivity, Valtio and MobX remain the safer bets.

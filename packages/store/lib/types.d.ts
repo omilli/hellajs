@@ -32,12 +32,12 @@ export type StoreMiddleware<T> = {
 /**
  * Configuration options for creating a store.
  */
-export type StoreOptions<T> = {
+export interface StoreOptions<T> {
   /** true for all properties readonly, or array of specific property keys to make readonly */
   readonly?: boolean | readonly (keyof T)[];
   /** Transform functions applied before setting values, nested for specific properties */
   middleware?: StoreMiddleware<T>;
-};
+}
 
 /**
  * Extracts which keys are readonly based on StoreOptions.
@@ -48,6 +48,17 @@ export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
   : O extends { readonly: readonly (keyof T)[] }
   ? O["readonly"][number]
   : never;
+
+/**
+ * Recursively unwraps composed store types so Snapshot matches the plain
+ * values snapshot() actually returns: nested Store members resolve to their
+ * data types, everything else is preserved.
+ */
+export type Snapshot<T> = {
+  [K in keyof T]:
+  T[K] extends Store<infer U, PropertyKey> ? Snapshot<U> :
+  T[K];
+};
 
 /**
  * Reactive store type that transforms an object's properties.
@@ -71,13 +82,13 @@ export type Store<
   [K in keyof T]:
   T[K] extends (...args: unknown[]) => unknown ? T[K] :
   T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
-  T[K] extends Record<string, unknown> ? Store<T[K], R> :
+  T[K] extends Record<string, unknown> ? Store<T[K]> :
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {
-  /** Returns a reactive plain object snapshot of the entire store state */
-  snapshot: () => T;
+  /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types */
+  snapshot: () => Snapshot<T>;
   /** Deep merge partial updates or apply mutations via draft function */
-  update: (partial: PartialDeep<T> | ((draft: T) => void)) => void;
-  /** Recursively dispose all signals and computed values */
+  update: (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) => void;
+  /** Recursively invokes cleanup on nested stores; individual signals are not disposed — they remain functional */
   cleanup: () => void;
 };

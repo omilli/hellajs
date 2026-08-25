@@ -84,8 +84,8 @@ describe("store", () => {
 
       const snap = appStore.snapshot();
 
-      expect(snap.user.name()).toBe("Alice");
-      expect(snap.settings.theme()).toBe("dark");
+      expect(snap.user.name).toBe("Alice");
+      expect(snap.settings.theme).toBe("dark");
     });
 
     test("update on composed store propagates to nested stores", () => {
@@ -106,7 +106,7 @@ describe("store", () => {
       const appStore = store({ user: userStore });
 
       appStore.update(draft => {
-        draft.user.name("Bob");
+        draft.user.name = "Bob";
       });
 
       expect(appStore.user.name()).toBe("Bob");

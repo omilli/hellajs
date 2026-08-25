@@ -3,7 +3,8 @@ import { isPlainObject } from "./core";
 /**
  * @internal
  * Deep clones an object, handling nested objects, arrays, and built-in types.
- * Correctly clones Date, RegExp, Map, and Set instances.
+ * Correctly clones Date, RegExp, Map, and Set instances; class instances keep
+ * their prototype.
  */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== "object") return obj;
@@ -33,7 +34,7 @@ export function deepClone<T>(obj: T): T {
     }
     return cloned as T;
   }
-  const clone = {} as T;
+  const clone = Object.create(Object.getPrototypeOf(obj)) as T;
   const keys = Object.keys(obj as Record<string, unknown>);
   let i = 0;
   const len = keys.length;
@@ -43,6 +44,75 @@ export function deepClone<T>(obj: T): T {
     i++;
   }
   return clone;
+}
+
+/**
+ * @internal
+ * Structural equality: built-ins (Date, RegExp, Map, Set) and objects compare
+ * by content, everything else by reference. Inputs are deepClone output of a
+ * store snapshot — a tree, so no cycle guard is needed.
+ */
+export function structurallyEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== "object" || typeof b !== "object") return false;
+
+  if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
+  if (a instanceof RegExp && b instanceof RegExp) return a.source === b.source && a.flags === b.flags;
+
+  if (a instanceof Map && b instanceof Map) {
+    if (a.size !== b.size) return false;
+    const entries = Array.from(a.entries());
+    let mi = 0;
+    while (mi < entries.length) {
+      const [key, value] = entries[mi]!;
+      if (!b.has(key) || !structurallyEqual(value, b.get(key))) return false;
+      mi++;
+    }
+    return true;
+  }
+
+  if (a instanceof Set && b instanceof Set) {
+    if (a.size !== b.size) return false;
+    const members = Array.from(a);
+    let si = 0;
+    while (si < members.length) {
+      const member = members[si]!;
+      if (b.has(member)) { si++; continue; }
+      let matched = false;
+      const remaining = Array.from(b);
+      let ri = 0;
+      while (ri < remaining.length) {
+        if (structurallyEqual(member, remaining[ri]!)) { matched = true; break; }
+        ri++;
+      }
+      if (!matched) return false;
+      si++;
+    }
+    return true;
+  }
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    let ai = 0;
+    while (ai < a.length) {
+      if (!structurallyEqual(a[ai], b[ai])) return false;
+      ai++;
+    }
+    return true;
+  }
+
+  if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
+  const aKeys = Object.keys(a as Record<string, unknown>);
+  const bKeys = Object.keys(b as Record<string, unknown>);
+  if (aKeys.length !== bKeys.length) return false;
+  let ki = 0;
+  while (ki < aKeys.length) {
+    const key = aKeys[ki]!;
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    if (!structurallyEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) return false;
+    ki++;
+  }
+  return true;
 }
 
 /**
@@ -65,21 +135,8 @@ export function extractChanges<T extends Record<string, unknown>>(
     const origVal = original[key];
     const draftVal = draft[key];
 
-    if (Array.isArray(draftVal)) {
-      if (Array.isArray(origVal) && origVal.length === draftVal.length) {
-        let eq = true;
-        let ei = 0;
-        const eLen = origVal.length;
-        while (ei < eLen) {
-          if (origVal[ei] !== draftVal[ei]) { eq = false; break; }
-          ei++;
-        }
-        if (!eq) { changes[key] = draftVal; }
-      } else {
-        changes[key] = draftVal;
-      }
-    } else if (isPlainObject(draftVal) && draftVal !== null) {
-      if (!isPlainObject(origVal) || origVal === null) {
+    if (isPlainObject(draftVal)) {
+      if (!isPlainObject(origVal)) {
         changes[key] = draftVal;
       } else {
         const nestedChanges = extractChanges(
@@ -90,10 +147,8 @@ export function extractChanges<T extends Record<string, unknown>>(
           changes[key] = nestedChanges as T[Extract<keyof T, string>];
         }
       }
-    } else {
-      if (origVal !== draftVal) {
-        changes[key] = draftVal;
-      }
+    } else if (!structurallyEqual(origVal, draftVal)) {
+      changes[key] = draftVal;
     }
 
     i++;
