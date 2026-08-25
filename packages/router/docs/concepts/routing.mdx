@@ -140,7 +140,7 @@ For lifecycle hooks (`before`/`after`), route guards, and redirects, see [route 
 
 ## Navigation
 
-The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is asynchronous: route state updates on the next microtask.
+The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is synchronous — `route()` is updated before `navigate()` returns.
 
 Same-origin `<a href>` clicks are automatically intercepted and routed through `navigate()` by default. Pass `intercept: false` to `router()` to disable and restore full page reload behavior.
 

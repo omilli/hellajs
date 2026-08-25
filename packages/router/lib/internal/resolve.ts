@@ -1,9 +1,10 @@
-import { isString } from "./core";
-import { routes, notFound, redirects, inheritMeta } from "./state";
+import { isString, hasWindow } from "./core";
+import { routes, notFound, redirects, inheritMeta, mode } from "./state";
 import { route, activeFn } from "../route";
-import { matchRoute, matchNestedRoute } from "./match";
-import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuards } from "./matched";
-import { go, EMPTY_OBJECT, EMPTY_CRUMBS, hasChildren, sortRoutesBySpecificity } from "./utils";
+import { matchRoute, matchNestedEntry } from "./match";
+import type { RouteMatch } from "./match";
+import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuardsFlat, runGuardsNested, type GuardVerdict } from "./matched";
+import { EMPTY_OBJECT, EMPTY_CRUMBS, hasChildren, sortRoutesBySpecificity } from "./utils";
 import type { RouteValue, Crumb, ScrollBehavior, Handler, Params, RouteInfo } from "../types";
 
 /**
@@ -13,6 +14,10 @@ import type { RouteValue, Crumb, ScrollBehavior, Handler, Params, RouteInfo } fr
  * redirect rule issued a nested `go` that handled history itself.
  */
 type RouteVerdict = "matched" | "cancelled" | "redirected";
+
+/** Caps synchronous re-entrant resolutions so cyclic redirect/guard configs cancel instead of overflowing the stack. */
+const MAX_REDIRECT_HOPS = 20;
+let resolveDepth = 0;
 
 /**
  * Constructs RouteInfo with the shared active-link predicate attached.
@@ -43,35 +48,132 @@ export function updateRoute(
   inlineScroll?: ScrollBehavior | false,
   inlineMeta?: Record<string, unknown>
 ): RouteVerdict {
-  const currentPath = nextPath ?? route().path;
-
-  if (tryRedirect(currentPath)) {
-    return "redirected";
+  if (resolveDepth >= MAX_REDIRECT_HOPS) {
+    console.error("[router] redirect loop detected:", new Error(`exceeded ${MAX_REDIRECT_HOPS} hops resolving ${nextPath ?? route().path}`));
+    return "cancelled";
   }
+  resolveDepth++;
+  try {
+    const currentPath = nextPath ?? route().path;
 
-  const matchVerdict = tryMatchRoute(currentPath, inlineScroll, inlineMeta);
-  if (matchVerdict !== "none") {
-    return matchVerdict;
+    if (tryRedirect(currentPath)) {
+      return "redirected";
+    }
+
+    const matchVerdict = tryMatchRoute(currentPath, inlineScroll, inlineMeta);
+    if (matchVerdict !== "none") {
+      return matchVerdict;
+    }
+
+    const notFoundValue = notFound();
+
+    if (isString(notFoundValue)) {
+      go(notFoundValue, { replace: true });
+      return "redirected";
+    }
+
+    route(buildRouteInfo({
+      handler: notFoundValue,
+      params: EMPTY_OBJECT,
+      query: EMPTY_OBJECT,
+      path: currentPath,
+      meta: inlineMeta,
+      crumbs: EMPTY_CRUMBS
+    }));
+
+    notFoundValue && notFoundValue();
+    handleScroll(currentPath, inlineScroll);
+    return "matched";
+  } finally {
+    resolveDepth--;
   }
+}
 
-  const notFoundValue = notFound();
+/**
+ * Resolves a URL through the route pipeline and, only on a committed match (guards passed),
+ * updates the browser history. A cancelled guard produces no history change; a redirect's nested
+ * `go` already updated history, so the outer call skips.
+ * @internal
+ * @param to The URL to navigate to.
+ * @param options Navigation options including replace, scroll, and meta.
+ */
+export function go(
+  to: string,
+  options: {
+    readonly replace?: boolean;
+    scroll?: ScrollBehavior | false;
+    meta?: Record<string, unknown>;
+  } = {}
+): void {
+  const { replace = false, scroll, meta } = options;
+  const isHashMode = mode() === "hash";
+  const finalTo = isHashMode ? `#${to}` : to;
+  const action = replace ? "replaceState" : "pushState";
 
-  if (isString(notFoundValue)) {
-    go(notFoundValue, { replace: true });
+  const verdict = updateRoute(to, scroll, meta);
+
+  if (verdict === "matched" && hasWindow()) {
+    window.history[action](null, "", finalTo);
+  }
+}
+
+/**
+ * Merges inline navigate() meta over the resolved route meta.
+ * @param inlineMeta Inline meta from navigate(), or undefined.
+ * @param routeMeta Meta resolved from the matched route chain, or undefined.
+ * @returns The merged meta object or undefined.
+ */
+function mergeRouteMeta(inlineMeta: Record<string, unknown> | undefined, routeMeta?: Record<string, unknown>): Record<string, unknown> | undefined {
+  return inlineMeta !== undefined ? { ...routeMeta, ...inlineMeta } : routeMeta;
+}
+
+/**
+ * Shared post-match pipeline for both matching phases: maps the guard verdict (cancel/redirect)
+ * and, only on a pass, commits the match — route signal write, handler + after-hooks, scroll.
+ * @param guardVerdict Verdict from the phase's guard chain.
+ * @param handler Extracted handler (or null).
+ * @param params Matched parameters.
+ * @param query Parsed query.
+ * @param meta Final merged meta.
+ * @param crumbs Frozen crumb chain.
+ * @param currentPath The resolved URL path.
+ * @param inlineScroll Inline scroll override from navigate().
+ * @param routeScroll Route-level scroll override.
+ * @param routeValue The matched route value (flat) or top-level candidate (nested), forwarded to hook execution.
+ * @param nestedMatches Parent-to-leaf match chain for nested routes; absent for flat routes.
+ * @returns The resolution verdict: `"matched"`, `"cancelled"`, or `"redirected"`.
+ */
+function commitMatch(
+  guardVerdict: GuardVerdict,
+  handler: Handler | null,
+  params: Params,
+  query: Params,
+  meta: Record<string, unknown> | undefined,
+  crumbs: ReadonlyArray<Crumb>,
+  currentPath: string,
+  inlineScroll: ScrollBehavior | false | undefined,
+  routeScroll: ScrollBehavior | false | undefined,
+  routeValue: unknown,
+  nestedMatches?: RouteMatch[]
+): RouteVerdict {
+  if (guardVerdict === "cancel") {
+    return "cancelled";
+  }
+  if (guardVerdict !== "pass") {
+    go(guardVerdict.redirect, { replace: true });
     return "redirected";
   }
 
   route(buildRouteInfo({
-    handler: notFoundValue,
-    params: EMPTY_OBJECT,
-    query: EMPTY_OBJECT,
+    handler,
+    params,
+    query,
     path: currentPath,
-    meta: inlineMeta,
-    crumbs: EMPTY_CRUMBS
+    meta,
+    crumbs
   }));
-
-  notFoundValue && notFoundValue();
-  handleScroll(currentPath, inlineScroll);
+  executeRouteWithHooks(handler, params, query, routeValue, nestedMatches);
+  handleScroll(currentPath, inlineScroll, routeScroll);
   return "matched";
 }
 
@@ -135,8 +237,6 @@ function matchNestedPhase(
   inlineMeta: Record<string, unknown> | undefined
 ): "none" | RouteVerdict {
   const pathWithoutQuery = currentPath.split("?")[0]!;
-  const mergeMeta = (routeMeta?: Record<string, unknown>) =>
-    inlineMeta !== undefined ? { ...routeMeta, ...inlineMeta } : routeMeta;
 
   const routeEntries = Object.entries(routeMap)
     .filter(([, value]) => !isString(value) && hasChildren(value))
@@ -148,22 +248,13 @@ function matchNestedPhase(
     const [pattern, routeValue] = routeEntries[i]!;
     i++;
 
-    const nestedMatches = matchNestedRoute({ [pattern]: routeValue }, currentPath);
+    const nestedMatches = matchNestedEntry(pattern, routeValue, currentPath);
 
     if (nestedMatches && nestedMatches.length > 0) {
       const lastMatch = nestedMatches[nestedMatches.length - 1]!;
       const { params, query } = lastMatch;
 
-      const guardVerdict = runGuards(routeValue, nestedMatches, params, query);
-      if (guardVerdict === "cancel") {
-        return "cancelled";
-      }
-      if (guardVerdict !== "pass") {
-        go(guardVerdict.redirect, { replace: true });
-        return "redirected";
-      }
-
-      const handler = extractHandler(lastMatch.routeValue);
+      const guardVerdict = runGuardsNested(nestedMatches);
 
       let routeMeta: Record<string, unknown> | undefined;
       {
@@ -182,8 +273,6 @@ function matchNestedPhase(
           j++;
         }
       }
-      const meta = mergeMeta(routeMeta);
-      const scroll = extractScroll(lastMatch.routeValue);
 
       const mLen = nestedMatches.length;
       const crumbs = new Array<Crumb>(mLen);
@@ -198,17 +287,19 @@ function matchNestedPhase(
         mi++;
       }
 
-      route(buildRouteInfo({
-        handler,
+      return commitMatch(
+        guardVerdict,
+        extractHandler(lastMatch.routeValue),
         params,
         query,
-        path: currentPath,
-        meta,
-        crumbs: Object.freeze(crumbs)
-      }));
-      executeRouteWithHooks(handler, params, query, routeValue, nestedMatches);
-      handleScroll(currentPath, inlineScroll, scroll);
-      return "matched";
+        mergeRouteMeta(inlineMeta, routeMeta),
+        Object.freeze(crumbs),
+        currentPath,
+        inlineScroll,
+        extractScroll(lastMatch.routeValue),
+        routeValue,
+        nestedMatches
+      );
     }
   }
 
@@ -231,8 +322,6 @@ function matchFlatPhase(
   inlineMeta: Record<string, unknown> | undefined
 ): "none" | RouteVerdict {
   const pathWithoutQuery = currentPath.split("?")[0]!;
-  const mergeMeta = (routeMeta?: Record<string, unknown>) =>
-    inlineMeta !== undefined ? { ...routeMeta, ...inlineMeta } : routeMeta;
 
   const keys = Object.keys(routeMap);
   let i = 0;
@@ -247,31 +336,20 @@ function matchFlatPhase(
     const match = matchRoute(pattern, currentPath);
     if (match) {
       const { params, query } = match;
+      const guardVerdict = runGuardsFlat(routeValue, params, query);
 
-      const guardVerdict = runGuards(routeValue, undefined, params, query);
-      if (guardVerdict === "cancel") {
-        return "cancelled";
-      }
-      if (guardVerdict !== "pass") {
-        go(guardVerdict.redirect, { replace: true });
-        return "redirected";
-      }
-
-      const handler = extractHandler(routeValue);
-      const meta = mergeMeta(extractMeta(routeValue));
-      const scroll = extractScroll(routeValue);
-
-      route(buildRouteInfo({
-        handler,
+      return commitMatch(
+        guardVerdict,
+        extractHandler(routeValue),
         params,
         query,
-        path: currentPath,
-        meta,
-        crumbs: Object.freeze([{ segment: pattern, path: pathWithoutQuery, params }])
-      }));
-      executeRouteWithHooks(handler, params, query, routeValue);
-      handleScroll(currentPath, inlineScroll, scroll);
-      return "matched";
+        mergeRouteMeta(inlineMeta, extractMeta(routeValue)),
+        Object.freeze([{ segment: pattern, path: pathWithoutQuery, params }]),
+        currentPath,
+        inlineScroll,
+        extractScroll(routeValue),
+        routeValue
+      );
     }
   }
   return "none";

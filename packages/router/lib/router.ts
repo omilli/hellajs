@@ -39,7 +39,18 @@ export function router(config: RouterConfig): RouteInfo {
 
   const intercept: boolean = config.intercept !== false;
 
-  const initialPath = config.url ?? (hasWindow() ? (routerMode === "hash" ? getHashPath() : window.location.pathname + window.location.search) : "/");
+  let initialPath: string;
+  if (config.url !== undefined) {
+    let parsedInitial: URL;
+    try {
+      parsedInitial = new URL(config.url, "http://hellajs.local");
+    } catch {
+      throw new Error(`[router] router: invalid url, received ${JSON.stringify(config.url)}`);
+    }
+    initialPath = parsedInitial.pathname + parsedInitial.search;
+  } else {
+    initialPath = hasWindow() ? (routerMode === "hash" ? getHashPath() : window.location.pathname + window.location.search) : "/";
+  }
 
   // An explicit `url` (SSR) always re-resolves against it; the `!route().handler`
   // guard is for client re-init only, so without it a 2nd+ `router({ url })` call in
@@ -62,7 +73,11 @@ export function router(config: RouterConfig): RouteInfo {
     if (routerMode === "hash") {
       eventType = "hashchange";
       handler = () => {
-        const verdict = updateRoute(getHashPath());
+        // Plain anchors (#section) change the hash without a route path — skip
+        // resolution so they don't churn notFound. Only #/… hashes are routes.
+        const hashPath = getHashPath();
+        if (!hashPath.startsWith("/")) return;
+        const verdict = updateRoute(hashPath);
         if (verdict === "cancelled") {
           window.history.replaceState(null, "", `#${previousPath()}`);
         }
@@ -112,6 +127,9 @@ export function router(config: RouterConfig): RouteInfo {
           if (!hash || !hash.startsWith("#/")) return;
           resolvedPath = hash.slice(1);
         } else {
+          // Same URL differing only by hash (in-page anchor): leave the native
+          // jump alone instead of re-navigating the current path.
+          if (parsedURL.hash && parsedURL.pathname === window.location.pathname && parsedURL.search === window.location.search) return;
           resolvedPath = parsedURL.pathname + parsedURL.search;
         }
 

@@ -47,10 +47,11 @@ import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
 const loading = signal(false);
+const currentView = signal(null);
 
 router({
   routes: {
-    '/': () => render('Home')
+    '/': () => currentView(<Home />)
   },
   hooks: {
     before: () => {
@@ -182,5 +183,7 @@ router({
   ]
 });
 ```
+
+Redirect chains stop after 20 hops — a cyclic configuration logs `[router] redirect loop detected` and cancels the navigation (URL unchanged) instead of overflowing the stack.
 
 See [`router`](/reference/router/router) for the redirect configuration options, and [routing](/learn/concepts/routing) for the core routing model, parameter inheritance, and nested routes.

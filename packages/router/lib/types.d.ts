@@ -99,7 +99,7 @@ export interface RouterConfig {
   intercept?: boolean;
   /** Enable parent-to-child meta inheritance through nested route chains. Child meta overrides parent on key conflict. Default is false (leaf-only meta). */
   inheritMeta?: boolean;
-  /** Resolve against this URL instead of `window.location`. Used for SSR, where there is no window. Resolution is synchronous either way. */
+  /** Resolve against this URL instead of `window.location`. Accepts a full URL (e.g. `req.url`, like `https://host/users/7?q=1`) or a path (`/users/7?q=1`) — the origin and hash fragment are ignored. Invalid URLs throw. Used for SSR, where there is no window. Resolution is synchronous either way. */
   url?: string;
 }
 
@@ -122,7 +122,7 @@ export interface GlobalHooks {
 /**
  * Options for programmatic navigation.
  */
-export type NavigateOptions<T extends string = string> = {
+export interface NavigateOptions<T extends string = string> {
   /** Route parameters to substitute into the path pattern */
   params?: ExtractParams<T>;
   /** Query parameters to append to the URL */
@@ -133,7 +133,7 @@ export type NavigateOptions<T extends string = string> = {
   scroll?: ScrollBehavior | false;
   /** Arbitrary metadata attached to this navigation */
   meta?: Record<string, unknown>;
-};
+}
 
 /**
  * Redirect configuration mapping source paths to target path.

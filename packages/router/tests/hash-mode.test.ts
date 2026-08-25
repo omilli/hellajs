@@ -79,6 +79,26 @@ describe("router", () => {
       expect(window.location.hash).toBe("#/search?q=test");
     });
 
+    test("ignores plain hash changes that are not route paths", () => {
+      const notFoundSpy = mock(() => { });
+      router({
+        routes: {
+          "/about": () => { }
+        },
+        mode: "hash",
+        notFound: notFoundSpy
+      });
+      // Init fires notFound for the env's unmatched start path (HappyDOM quirk) —
+      // isolate the dispatched hashchange from it.
+      notFoundSpy.mockClear();
+
+      const pathBefore = route().path;
+      window.location.hash = "faq";
+      window.dispatchEvent(new Event("hashchange"));
+      expect(notFoundSpy).not.toHaveBeenCalled();
+      expect(route().path).toBe(pathBefore);
+    });
+
     test("hashchange fires route subscribers exactly once per navigation", () => {
       router({
         routes: {

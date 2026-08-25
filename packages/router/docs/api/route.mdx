@@ -7,20 +7,20 @@ A reactive [`signal`](/reference/core/signal) containing current route informati
 ```typescript
 function route(): RouteInfo
 
-type RouteInfo = {
-  path: string;
+interface RouteInfo {
+  handler: Handler | null;
   params: Record<string, string>;
   query: Record<string, string>;
-  handler: Handler | null;
+  path: string;
   meta?: Record<string, unknown>;
   crumbs: ReadonlyArray<Crumb>;
   active: (pattern: string) => boolean;
 }
 
-type Crumb = {
-  segment: string;
-  path: string;
-  params: Record<string, string>;
+interface Crumb {
+  readonly segment: string;
+  readonly path: string;
+  readonly params: Record<string, string>;
 }
 ```
 
@@ -248,4 +248,4 @@ navigate('/users/456');
 // Logs: "/users/456" "456"
 ```
 
-The init microtask (see [router](/reference/router/router)) defers the first resolution. `route()` returns its initial empty state until that microtask fires — no partial state, just the not-yet-resolved state.
+Init is synchronous — `route()` is fully resolved (`handler`/`params`/`query`/`path` set) the moment `router()` returns. There is no not-yet-resolved window.

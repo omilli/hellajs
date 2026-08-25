@@ -190,59 +190,82 @@ function invokeRouteGuard(
 }
 
 /**
- * Runs the before-guard chain (global before, then each nested route before top-down, or the
- * flat route before) and returns the first non-pass verdict. Guards run BEFORE the route signal
- * is written so a cancel/redirect never produces an observable route change.
- * @internal
- * @param routeValue The flat route value (used only when `nestedMatches` is absent).
- * @param nestedMatches The parent-to-leaf nested match chain, or undefined for flat routes.
- * @param leafParams Leaf-level parameters (flat routes only).
- * @param leafQuery Leaf-level query (flat routes only).
+ * Runs the global `before` hook and interprets its verdict.
  * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
  */
-export function runGuards(
-  routeValue: unknown,
-  nestedMatches: RouteMatch[] | undefined,
-  leafParams: Params,
-  leafQuery: Params
-): GuardVerdict {
+function runGlobalBefore(): GuardVerdict {
   const { before: globalBefore } = hooks();
 
-  if (isFunction(globalBefore)) {
-    let result: unknown;
-    try {
-      result = (globalBefore as () => unknown)();
-    } catch (error) {
-      console.error("[router] Global before:", error);
-      return "cancel";
-    }
-    const verdict = interpretGuardResult(result, "Global before");
-    if (verdict !== "pass") {
-      return verdict;
-    }
+  if (!isFunction(globalBefore)) {
+    return "pass";
   }
 
-  if (nestedMatches) {
-    let i = 0;
-    const len = nestedMatches.length;
-    while (i < len) {
-      const { routeValue: levelValue, params, query } = nestedMatches[i]!;
-      i++;
-      const before = extractRouteHooks(levelValue).before;
-      if (isFunction(before)) {
-        const verdict = invokeRouteGuard(before, params, query, "Nested before");
-        if (verdict !== "pass") {
-          return verdict;
-        }
-      }
-    }
-  } else {
+  let result: unknown;
+  try {
+    result = (globalBefore as () => unknown)();
+  } catch (error) {
+    console.error("[router] Global before:", error);
+    return "cancel";
+  }
+  return interpretGuardResult(result, "Global before");
+}
+
+/**
+ * Runs the before-guard chain for a nested match (global before, then each nested route before
+ * top-down) and returns the first non-pass verdict. Guards run BEFORE the route signal is written
+ * so a cancel/redirect never produces an observable route change.
+ * @internal
+ * @param nestedMatches The parent-to-leaf nested match chain.
+ * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
+ */
+export function runGuardsNested(nestedMatches: RouteMatch[]): GuardVerdict {
+  const globalVerdict = runGlobalBefore();
+  if (globalVerdict !== "pass") {
+    return globalVerdict;
+  }
+
+  let i = 0;
+  const len = nestedMatches.length;
+  while (i < len) {
+    const { routeValue, params, query } = nestedMatches[i]!;
+    i++;
     const before = extractRouteHooks(routeValue).before;
     if (isFunction(before)) {
-      const verdict = invokeRouteGuard(before, leafParams, leafQuery, "hook");
+      const verdict = invokeRouteGuard(before, params, query, "Nested before");
       if (verdict !== "pass") {
         return verdict;
       }
+    }
+  }
+
+  return "pass";
+}
+
+/**
+ * Runs the before-guard chain for a flat route (global before, then the route before) and returns
+ * the first non-pass verdict. Guards run BEFORE the route signal is written so a cancel/redirect
+ * never produces an observable route change.
+ * @internal
+ * @param routeValue The flat route value.
+ * @param params Leaf-level parameters.
+ * @param query Leaf-level query.
+ * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
+ */
+export function runGuardsFlat(
+  routeValue: unknown,
+  params: Params,
+  query: Params
+): GuardVerdict {
+  const globalVerdict = runGlobalBefore();
+  if (globalVerdict !== "pass") {
+    return globalVerdict;
+  }
+
+  const before = extractRouteHooks(routeValue).before;
+  if (isFunction(before)) {
+    const verdict = invokeRouteGuard(before, params, query, "hook");
+    if (verdict !== "pass") {
+      return verdict;
     }
   }
 

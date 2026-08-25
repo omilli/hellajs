@@ -39,7 +39,7 @@ The view-signal style is the isomorphic handler form: the same handlers fire on 
 
 ### Server — ssr()
 
-[`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying. There is no `window` on the server — pass the request URL via the `url` option.
+[`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying. There is no `window` on the server — pass the request URL via the `url` option. It accepts the full request URL (`req.url`) or a path (`pathname + search`); the origin and hash are ignored.
 
 ```js
 import { html } from '@hellajs/dom';

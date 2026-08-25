@@ -26,7 +26,7 @@ describe("scroll", () => {
         "/": () => render("home"),
         "/about": () => render("about")
       },
-      scrollBehavior: 'top'
+      scrollBehavior: "top"
     });
 
     navigate("/about");
@@ -39,7 +39,7 @@ describe("scroll", () => {
         "/": () => render("home"),
         "/about": () => render("about")
       },
-      scrollBehavior: 'preserve'
+      scrollBehavior: "preserve"
     });
 
     navigate("/about");
@@ -100,7 +100,7 @@ describe("scroll", () => {
         "/about": () => render("about"),
         "/contact": () => render("contact")
       },
-      scrollBehavior: 'top'
+      scrollBehavior: "top"
     });
 
     navigate("/about");
@@ -165,7 +165,7 @@ describe("scroll", () => {
           handler: () => render("about")
         }
       },
-      scrollBehavior: 'top'
+      scrollBehavior: "top"
     });
 
     navigate("/");
@@ -181,11 +181,11 @@ describe("scroll", () => {
       routes: {
         "/": () => render("home"),
         "/about": {
-          scroll: 'top',
+          scroll: "top",
           handler: () => render("about")
         }
       },
-      scrollBehavior: 'preserve'
+      scrollBehavior: "preserve"
     });
 
     navigate("/");

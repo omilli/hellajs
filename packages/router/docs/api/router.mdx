@@ -11,7 +11,7 @@ function router(config: RouterConfig): RouteInfo
 // {
 //   routes: Record<string, RouteValue | string>,
 //   hooks?: GlobalHooks,
-//   redirects?: { from: string[]; to: string }[],
+//   redirects?: { from: readonly string[]; to: string }[],
 //   notFound?: string | (() => void),
 //   mode?: 'history' | 'hash',
 //   scrollBehavior?: ScrollBehavior,
@@ -28,7 +28,7 @@ function router(config: RouterConfig): RouteInfo
 - `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
 - `intercept`: Enable automatic same-origin `<a>` click interception. Default `true`.
 - `inheritMeta`: Parent-to-child meta inheritance through nested routes. Default `false` (leaf-only meta).
-- `url`: Resolve against this URL instead of `window.location`. Used for SSR, where there is no window. Resolution is synchronous either way.
+- `url`: Resolve against this URL instead of `window.location`. Accepts a full request URL (e.g. `req.url` in Bun.serve, like `https://host/users/7?q=1`) or a path (`/users/7?q=1`) — the origin and hash fragment are ignored. Invalid URLs throw. Used for SSR, where there is no window. Resolution is synchronous either way.
 - **Returns**: The resolved initial [`RouteInfo`](/reference/router/route) — the route is matched synchronously during the call.
 
 ## Basic Usage
@@ -216,7 +216,9 @@ The router automatically intercepts same-origin `<a href>` clicks and routes the
 
 **Non-http links** (`mailto:`, `tel:`, etc.), **cross-origin** links, `target="_blank"`, `target="_parent"`, and `download` links are never intercepted.
 
-**Hash mode**: `<a href="#/path">` clicks are intercepted and routed through `navigate("/path")`.
+**Hash mode**: `<a href="#/path">` clicks are intercepted and routed through `navigate("/path")`. Hash changes that don't start with `#/` (plain in-page anchors) are ignored by the router.
+
+**History mode**: links that differ from the current URL only by their hash fragment (e.g. in-page anchors like `#faq`) are left to the browser — the native anchor jump happens and the router state is untouched.
 
 To disable interception, pass `intercept: false`:
 
@@ -366,6 +368,8 @@ router({
   ]
 });
 ```
+
+Redirect chains stop after 20 hops — a cyclic configuration (including mutually redirecting guards) logs `[router] redirect loop detected` and cancels the navigation with the URL unchanged, instead of overflowing the stack.
 
 ### Error Handling
 
