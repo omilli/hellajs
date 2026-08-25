@@ -87,7 +87,7 @@ describe("resource", () => {
   });
 
   test("calls onError and onSettled on failure", async () => {
-    let errorCalled = false;
+    const onError = mock(() => {});
     let settledError: unknown;
 
     const r = resource(
@@ -95,7 +95,7 @@ describe("resource", () => {
         throw new Error("Mutation failed");
       },
       {
-        onError: () => { errorCalled = true; },
+        onError,
         onSettled: async (_result, error) => {
           settledError = error;
         }
@@ -106,7 +106,7 @@ describe("resource", () => {
       await r.mutate("test");
       expect(true).toBe(false);
     } catch {
-      expect(errorCalled).toBe(true);
+      expect(onError).toHaveBeenCalledTimes(1);
       expect(settledError).toBeInstanceOf(Error);
       expect((settledError as Error).message).toBe("Mutation failed");
     }
@@ -183,6 +183,65 @@ describe("resource", () => {
     expect(r.data()).toBeUndefined();
     expect(r.status()).toBe("idle");
     expect(r.error()).toBeUndefined();
+  });
+
+  test("clears isFetching when mutation is aborted by timeout", async () => {
+    const r = resource(() => new Promise(() => { }), { timeout: 30 });
+
+    try {
+      await r.mutate("input");
+      expect(true).toBe(false);
+    } catch (err) {
+      expect(err).toBeInstanceOf(DOMException);
+      expect((err as DOMException).name).toBe("AbortError");
+    }
+
+    expect(r.isFetching()).toBe(false);
+    expect(r.isLoading()).toBe(false);
+    expect(r.error()).toBeUndefined();
+    expect(r.status()).toBe("idle");
+  });
+
+  test("clears isFetching when mutation is aborted by external signal", async () => {
+    const controller = new AbortController();
+    const r = resource(() => new Promise(() => { }), { abortSignal: controller.signal });
+
+    setTimeout(() => controller.abort(), 10);
+
+    try {
+      await r.mutate("input");
+      expect(true).toBe(false);
+    } catch (err) {
+      expect(err).toBeInstanceOf(DOMException);
+      expect((err as DOMException).name).toBe("AbortError");
+    }
+
+    expect(r.isFetching()).toBe(false);
+    expect(r.isLoading()).toBe(false);
+    expect(r.error()).toBeUndefined();
+    expect(r.status()).toBe("idle");
+  });
+
+  test("clears isFetching when mutation is aborted via abort()", async () => {
+    const r = resource(() => new Promise(() => { }));
+
+    const mutationPromise = r.mutate("input");
+    await delay(1);
+
+    r.abort();
+
+    try {
+      await mutationPromise;
+      expect(true).toBe(false);
+    } catch (err) {
+      expect(err).toBeInstanceOf(DOMException);
+      expect((err as DOMException).name).toBe("AbortError");
+    }
+
+    expect(r.isFetching()).toBe(false);
+    expect(r.isLoading()).toBe(false);
+    expect(r.error()).toBeUndefined();
+    expect(r.status()).toBe("idle");
   });
 
   test("isFetching true during mutation execution", async () => {

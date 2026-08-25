@@ -3,7 +3,8 @@ import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } 
 import type { CacheEntry } from "./types/cache";
 import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
 import { isAbortError, categorizeError } from "./internal/errors";
-import { resolveRetryConfig } from "./internal/retry";
+import { resolveRetryConfig, fetchWithRetry } from "./internal/retry";
+import { raceAbort, wireRequestControls } from "./internal/abort";
 import { createPolling } from "./internal/polling";
 import { createFocus, createReconnect } from "./internal/lifecycle";
 import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
@@ -46,8 +47,8 @@ export function resource<T, K = undefined, TTransformed = T>(
 ): Resource<TTransformed, T> {
   if (typeof fetcher !== "string" && typeof fetcher !== "function")
     throw new Error("[resource] resource: fetcher must be a string URL or function, received " + typeof fetcher);
-  if (options != null && (typeof options !== "object" || Array.isArray(options)))
-    throw new Error("[resource] resource: options must be an object, received " + typeof options);
+  if (options !== undefined && (options === null || typeof options !== "object" || Array.isArray(options)))
+    throw new Error("[resource] resource: options must be an object, received " + options);
 
   if (typeof fetcher === "string")
     return resource<T, string, TTransformed>(
@@ -113,7 +114,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     error(err ? categorizeError(err) : undefined);
     isLoading(loading ?? false);
     isFetching(fetching ?? false);
-    options.onError?.(err);
+    if (err) options.onError?.(err);
   };
 
   /**
@@ -160,11 +161,10 @@ export function resource<T, K = undefined, TTransformed = T>(
   let cleanupEffect: (() => void) | undefined;
   let currentAbortController: AbortController | undefined;
   let mutationContext: unknown;
-  let retryCount = 0;
 
   const polling = createPolling<TTransformed>({ refetchInterval, refetchIntervalInBackground, data, run });
-  const focus = createFocus(refetchOnWindowFocus, run);
-  const reconnect = createReconnect(refetchOnReconnect, run);
+  const focus = createFocus(run);
+  const reconnect = createReconnect(run);
 
   /**
    * Core fetch logic with caching, deduplication, and abort handling.
@@ -227,24 +227,14 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     // Request initiation phase - setup abort controls and timeouts
     currentAbortController = cleanAbort();
-
-    if (abortSignal)
-      // Either abort immediately or listen for external abort
-      abortSignal.aborted ? currentAbortController.abort()
-        : abortSignal.addEventListener("abort", () => currentAbortController!.abort(), { once: true });
-
-    if (timeout && timeout > 0) {
-      const timeoutId = setTimeout(() => currentAbortController!.abort(), timeout);
-      // Clean timeout on abort to prevent memory leaks
-      currentAbortController.signal.addEventListener("abort", () => clearTimeout(timeoutId));
-    }
+    const releaseControls = wireRequestControls(currentAbortController, { timeout, abortSignal });
 
     const currentSignal = currentAbortController.signal;
     // isLoading only true if no data at all, isFetching always true
     const hasData = untracked(rawData) !== undefined;
     handleError(undefined, !hasData, true);
 
-    retryCount = 0;
+    const retryConfig = resolveRetryConfig(retry, retryDelay);
 
     // Register this request for deduplication before starting
     let resolvePromise: (value: T) => void;
@@ -264,66 +254,19 @@ export function resource<T, K = undefined, TTransformed = T>(
       requestPromise.catch(() => { });
     }
 
-    const retryConfig = resolveRetryConfig(retry, retryDelay);
+    // Request loop shared with prefetch; post-processing order preserved.
+    try {
+      const result = await fetchWithRetry(() => fetcherFn(cacheKey), { signal: currentSignal, retryConfig });
 
-    // Retry loop
-    while (true) {
-      if (currentSignal.aborted) {
-        handleSuccessError(new DOMException("Request was aborted", "AbortError"));
-        return;
-      }
-
-      try {
-        const result = await Promise.race([
-          fetcherFn(cacheKey),
-          new Promise<never>((_, reject) => {
-            const onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
-            currentSignal.aborted ? onAbort() : currentSignal.addEventListener("abort", onAbort, { once: true });
-          })
-        ]);
-
-        const shared = structuralSharing ? structuralShare<T>(untracked(() => rawData()), result) : result;
-        setCacheData(fetcherFn, cacheKey, shared, cacheTime, staleTime ?? Infinity);
-        !currentSignal.aborted && handleSuccess(shared);
-        retryCount = 0;
-
-        settleRun(resolvePromise!, shared, cacheKey);
-        return;
-      } catch (err) {
-        if (isAbortError(err)) {
-          handleSuccessError(err);
-          settleRun(rejectPromise!, err, cacheKey);
-          return;
-        }
-
-        retryCount++;
-        const categorizedError = categorizeError(err);
-
-        // Check if we should retry
-        if (!retryConfig.shouldRetry(retryCount, categorizedError)) {
-          handleSuccessError(err);
-          settleRun(rejectPromise!, err, cacheKey);
-          return;
-        }
-
-        // Wait for delay before next attempt
-        const delayMs = retryConfig.getDelay(retryCount, categorizedError);
-        await new Promise<void>(resolve => {
-          const timeoutId = setTimeout(() => resolve(), delayMs);
-          // Clean up timeout if aborted during delay
-          currentSignal.addEventListener("abort", () => {
-            clearTimeout(timeoutId);
-            resolve();
-          }, { once: true });
-        });
-
-        // Check for abort after delay
-        if (currentSignal.aborted) {
-          handleSuccessError(new DOMException("Request was aborted", "AbortError"));
-          settleRun(rejectPromise!, new DOMException("Request was aborted", "AbortError"), cacheKey);
-          return;
-        }
-      }
+      const shared = structuralSharing ? structuralShare<T>(untracked(() => rawData()), result) : result;
+      setCacheData(fetcherFn, cacheKey, shared, cacheTime, staleTime ?? Infinity);
+      !currentSignal.aborted && handleSuccess(shared);
+      settleRun(resolvePromise!, shared, cacheKey);
+    } catch (err) {
+      handleSuccessError(err);
+      settleRun(rejectPromise!, err, cacheKey);
+    } finally {
+      releaseControls();
     }
   }
 
@@ -354,16 +297,25 @@ export function resource<T, K = undefined, TTransformed = T>(
   // When user provides an explicit key, skip fetches while it's null/undefined
   const hasExplicitKey = Object.hasOwn(options, "key");
 
+  // Polling arms once: at creation when enabled, or on the first truthy enabled
+  // evaluation inside the key-change effect. Key changes never reset the cadence.
+  let pollingArmed = false;
+
   cleanupEffect?.();
   cleanupEffect = effect(() => {
     if (refetchOnKeyChange && isEnabled()) {
+      if (refetchInterval && !pollingArmed) {
+        pollingArmed = true;
+        polling.setup();
+      }
       const keyVal = resolveKey(); // Track key reactively
       if (!hasExplicitKey || keyVal != null) run(false); // Auto-fetch on key change
     }
   });
 
   // Set up polling synchronously during initialization
-  if (refetchOnKeyChange && isEnabled() && refetchInterval) {
+  if (refetchOnKeyChange && isEnabled() && refetchInterval && !pollingArmed) {
+    pollingArmed = true;
     polling.setup();
   }
 
@@ -391,6 +343,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     return "idle";
   };
 
+  /** Gets the current cache key without creating a reactive dependency. */
   const cacheKey = () => untracked(resolveKey);
 
   /**
@@ -422,17 +375,8 @@ export function resource<T, K = undefined, TTransformed = T>(
    */
   const mutate = async <TVariables = unknown>(variables: TVariables): Promise<T> => {
     currentAbortController = cleanAbort();
+    const releaseControls = wireRequestControls(currentAbortController, { timeout, abortSignal });
     const signal = currentAbortController.signal;
-
-    if (timeout && timeout > 0) {
-      const timeoutId = setTimeout(() => currentAbortController!.abort(), timeout);
-      signal.addEventListener("abort", () => clearTimeout(timeoutId));
-    }
-
-    if (abortSignal)
-      abortSignal.aborted
-        ? currentAbortController.abort()
-        : abortSignal.addEventListener("abort", () => currentAbortController!.abort(), { once: true });
 
     try {
       const hasData = untracked(rawData) !== undefined;
@@ -441,13 +385,11 @@ export function resource<T, K = undefined, TTransformed = T>(
       if (options.onMutate)
         mutationContext = await options.onMutate(variables);
 
-      const result = await Promise.race([
+      const result = await raceAbort(
         (fetcherFn as unknown as (vars: TVariables) => Promise<T>)(variables),
-        new Promise<never>((_, reject) => {
-          const onAbort = () => reject(new DOMException("Mutation was aborted", "AbortError"));
-          signal.aborted ? onAbort() : signal.addEventListener("abort", onAbort);
-        })
-      ]);
+        signal,
+        "Mutation was aborted"
+      );
 
       if (!signal.aborted) {
         handleSuccess(result);
@@ -476,7 +418,13 @@ export function resource<T, K = undefined, TTransformed = T>(
 
       throw err;
     } finally {
-      signal.aborted && isLoading(false);
+      // Abort path never reaches handleSuccessError (the catch guards on !signal.aborted),
+      // so clear both activity flags here; error stays unset for AbortError.
+      if (signal.aborted) {
+        isLoading(false);
+        isFetching(false);
+      }
+      releaseControls();
     }
   };
 

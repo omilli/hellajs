@@ -8,8 +8,9 @@ import type { ResourceError } from "../types/resource";
  * Type guard checking whether a value is a DOMException named AbortError.
  * @param err - Value caught from a fetch or mutation
  */
-export const isAbortError = (err: unknown): err is DOMException =>
-  err instanceof DOMException && err.name === "AbortError";
+export function isAbortError(err: unknown): err is DOMException {
+  return err instanceof DOMException && err.name === "AbortError";
+}
 
 /**
  * @internal
@@ -25,11 +26,16 @@ export function categorizeError(error: unknown): ResourceError {
   const statusMatch = error instanceof Error ? error.message.match(/^HTTP (\d+):/) : null;
   const statusCode = statusMatch ? parseInt(statusMatch[1]!, 10) : undefined;
 
-  const category = isAbortError(error) ? "abort"
-    : statusCode === 404 ? "not_found"
-      : statusCode && statusCode >= 500 ? "server"
-        : statusCode && statusCode >= 400 ? "client"
-          : "unknown";
+  let category: ResourceError["category"] = "unknown";
+  if (isAbortError(error)) {
+    category = "abort";
+  } else if (statusCode === 404) {
+    category = "not_found";
+  } else if (statusCode && statusCode >= 500) {
+    category = "server";
+  } else if (statusCode && statusCode >= 400) {
+    category = "client";
+  }
 
   return {
     message,

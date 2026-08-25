@@ -77,7 +77,7 @@ interface ResourceOptions<T, K, TTransformed = T> {
   onSuccess?: (data: T) => void;
   /** Callback when request fails */
   onError?: (err: unknown) => void;
-  /** Refetch interval in ms, false to disable, or function returning interval based on data */
+  /** Refetch interval in ms, false to disable, or function returning interval based on data (arms when enabled first evaluates true, including a later flip from false; not reset by key changes) */
   refetchInterval?: number | false | ((data: TTransformed | undefined) => number | false);
   /** Continue polling when tab is hidden (default: false) */
   refetchIntervalInBackground?: boolean;
@@ -147,7 +147,6 @@ const userResource = resource(() =>
 userResource.fetch();
 console.log(userResource.isFetching()); // true
 userResource.invalidate(); // background refetch
-// isLoading() -> false (has data), isFetching() -> true
 ```
 
 ### `isIdle`
@@ -161,8 +160,6 @@ const userResource = resource(() =>
 console.log(userResource.isIdle()); // true - no fetch yet
 userResource.fetch();
 console.log(userResource.isIdle()); // false
-userResource.reset();
-console.log(userResource.isIdle()); // true - back to initial state
 ```
 
 ### `status`
@@ -200,10 +197,8 @@ const userResource = resource(
   { initialData: null }
 );
 userResource.fetch();
-setTimeout(() => {
-  userResource.abort();
-  console.log('Data:', userResource.data()); // Back to initialData
-}, 1000);
+userResource.abort();
+console.log(userResource.data()); // null - back to initialData
 ```
 
 ### `invalidate`
@@ -215,10 +210,7 @@ const userResource = resource(
   () => fetch('/api/user').then(r => r.json()),
   { cacheTime: 300000 }
 );
-async function updateUser(data) {
-  await fetch('/api/user', { method: 'PUT', body: JSON.stringify(data) });
-  userResource.invalidate(); // Clear cache and refetch
-}
+userResource.invalidate(); // Cache cleared - next fetch goes to the network
 ```
 
 ### `setData`
@@ -255,22 +247,16 @@ console.log(keyed.cacheKey()); // 2
 
 ### `mutate`
 
-Executes a mutation with given variables, supporting optimistic updates.
+Executes a mutation with given variables, supporting optimistic updates via the `onMutate`/`onSettled` hooks. See [Resources](/learn/concepts/resources#mutations) for the optimistic-update lifecycle and rollback pattern.
 
 ```typescript
-const addTodo = resource(
-  async (data) => fetch('/api/todos', {
-    method: 'POST', body: JSON.stringify(data)
-  }).then(r => r.json()),
-  {
-    onMutate: async () => ({ previousData: addTodo.data() }),
-    onSettled: async (data, err, vars, ctx) => {
-      if (err) console.log('Rollback to', ctx.previousData);
-    }
-  }
+const saveUser = resource(
+  async (data) => fetch('/api/user', {
+    method: 'PUT', body: JSON.stringify(data)
+  }).then(r => r.json())
 );
 
-await addTodo.mutate({ name: 'John Doe' });
+await saveUser.mutate({ name: 'John Doe' });
 ```
 
 When a mutation succeeds, `onSuccess` fires with the result data, just like a regular fetch. If a mutation is aborted (via `abort()`, `timeout`, or external signal), `onSettled` is **not** called, even if `onMutate` already ran.
@@ -302,6 +288,19 @@ const pollResource = resource(
 pollResource.dispose(); // Stops polling, cleans up timers and effects
 ```
 
+## Basic Usage
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json())
+);
+
+userResource.fetch();
+console.log(userResource.status()); // 'loading', then 'success' or 'error'
+```
+
 ## Key Concepts
 
 ### Stale-While-Revalidate (SWR)
@@ -310,7 +309,7 @@ Control data freshness with `staleTime`. When data is stale but cached, `.fetch(
 
 ### Automatic Retry
 
-Configure retry behavior with count, conditional logic, and custom delays. See [Resources](/learn/concepts/resources#automatic-retry) for conditional retry and delay configuration.
+Configure retry behavior with count, conditional logic, and custom delays. The `retry` predicate receives the failure count starting at `1` on the first failure. See [Resources](/learn/concepts/resources#automatic-retry) for conditional retry and delay configuration.
 
 ### Polling / Interval Refetch
 
@@ -326,25 +325,7 @@ Transform data before returning while caching the original. See [Resources](/lea
 
 ### Structural Sharing
 
-Preserve object/array references for structurally unchanged subtrees so dependent computeds and effects that shallow-compare references skip redundant re-evaluation. Opt in per resource with `structuralSharing: true`.
-
-```typescript
-import { resource } from '@hellajs/resource';
-
-const userResource = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  { structuralSharing: true }
-);
-
-userResource.fetch({ force: true });
-const firstProfile = userResource.data().profile;
-
-userResource.fetch({ force: true });
-// profile is structurally unchanged -> same reference as firstProfile
-console.log(userResource.data().profile === firstProfile); // true
-```
-
-Plain objects and arrays are compared element/key-wise; primitives use `Object.is`. `Map`, `Set`, `Date`, and class instances use reference equality and are never merged. When a subtree changes, a new container is built along the changed path while sibling subtrees keep their previous references. Applies to the fetch-success path only; `setData` and `mutate` are unaffected. Off by default — every fetch produces fresh references.
+Preserve object/array references for structurally unchanged subtrees so dependent computeds and effects that shallow-compare references skip redundant re-evaluation. Opt in per resource with `structuralSharing: true`. See [Resources](/learn/concepts/resources#structural-sharing) for the merge semantics and the [Resource patterns](/learn/patterns/resource#structural-sharing) for a runnable example.
 
 ### Request Deduplication
 
@@ -356,22 +337,7 @@ Request timeout and external abort signals for coordinated cancellation. See [Re
 
 ### Mutation invalidation
 
-Declare cache entries to invalidate after a successful mutation with `invalidates`. Each entry is a string prefix (dispatched to [`invalidateByPrefix`](/reference/resource/resourcecache#invalidatebyprefix)) or a `RegExp` pattern (dispatched to [`invalidateByPattern`](/reference/resource/resourcecache#invalidatebypattern)). Invalidation runs only on the success path — on error or abort nothing is invalidated; call `invalidate()` yourself inside `onSettled` when you need error-path invalidation.
-
-```typescript
-import { resource, resourceCache } from '@hellajs/resource';
-
-resourceCache.set('user:1', { id: 1 }, 60000);
-
-const saveUser = resource(async () => ({ ok: true }), {
-  invalidates: ['user:', /^posts:\d+$/],
-});
-
-await saveUser.mutate({ action: 'save' });
-// on success: invalidateByPrefix('user:') + invalidateByPattern(/^posts:\d+$/)
-```
-
-`invalidates` **deletes cache entries only** — it does not refetch mounted resources. A resource currently displaying a matched key keeps its data; only the *next* fetch for that key (manual, key-change, focus, reconnect, polling, or a stale read) hits the network. This is intentionally narrower than react-query's `invalidateQueries`, which refetches active observers — HellaJS has no observer-subscription layer, so call `invalidate()` or `fetch()` on any resource that must refresh immediately.
+Declare cache entries to invalidate after a successful mutation with `invalidates` — string prefixes dispatch to [`invalidateByPrefix`](/reference/resource/resourcecache#invalidatebyprefix), `RegExp` patterns to [`invalidateByPattern`](/reference/resource/resourcecache#invalidatebypattern). Invalidation runs only on the success path — on error or abort nothing is invalidated. See [Resources](/learn/concepts/resources#batch-invalidation) for the seed example and the mounted-resources caveat.
 
 ## Important Considerations
 
@@ -393,7 +359,7 @@ if (r.isIdle() && !r.isFetching()) {
 
 ### Manual vs Key-Change Fetching
 
-By default, resources don't auto-fetch on creation. Call `.fetch()` explicitly, or set `refetchOnKeyChange: true` for automatic fetching when key dependencies change.
+By default, resources don't auto-fetch on creation. Call `.fetch()` explicitly, or set `refetchOnKeyChange: true` for automatic fetching when key dependencies change. With an explicit `key`, fetching is skipped while the key resolves to `null` or `undefined` — see [Reactive Keys](/learn/concepts/resources#reactive-keys).
 
 ```typescript
 // Manual: must call fetch() explicitly
@@ -404,22 +370,9 @@ manual.fetch();
 const auto = resource(() => fetch('/api/user'), { refetchOnKeyChange: true });
 ```
 
-When a `key` is provided, the resource skips fetching while the key resolves to `null` or `undefined`:
-
-```typescript
-const postId = signal<string | undefined>(undefined);
-
-const post = resource(
-  id => fetch(`/api/posts/${id}`).then(r => r.json()),
-  { key: () => postId(), refetchOnKeyChange: true }
-);
-
-// postId undefined -> no fetch; postId('abc') -> fetch triggers
-```
-
 ### enabled: Static vs Reactive
 
-A static `boolean` is captured once at creation and cannot be toggled. A getter `() => boolean` is re-evaluated reactively inside the `refetchOnKeyChange` effect — transitions from `false` to `true` trigger a fetch automatically. Manual `fetch()` bypasses the enabled check, allowing on-demand fetches even when the getter currently returns `false`.
+A static `boolean` is captured once at creation and cannot be toggled — a static `enabled: false` blocks even manual `fetch()`. A getter `() => boolean` is re-evaluated reactively inside the `refetchOnKeyChange` effect: transitions from `false` to `true` trigger a fetch automatically, and manual `fetch()` bypasses the getter. For the toggling pattern, see [Conditional Fetching](/learn/patterns/resource#conditional-fetching).
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -433,19 +386,12 @@ const r = resource(
 );
 
 userId(123); // getter re-evaluates to true -> fetch triggers automatically
-r.fetch();   // manual fetch bypasses enabled, executes regardless
+r.fetch();   // manual fetch bypasses the getter, executes regardless
 ```
 
 ### Memory Management
 
-Each unique key creates a separate cache entry within the resource's fetcher scope - consider key design for large datasets.
-
-```typescript
-// ❌ Too many cache entries
-{ key: () => Math.random() }
-// ✅ Stable, meaningful keys
-{ key: () => `user-${userId()}` }
-```
+Each unique key creates a separate cache entry within the resource's fetcher scope — favor stable, meaningful keys for large datasets. See [`resourceCache`](/reference/resource/resourcecache) for key-design patterns.
 
 ### Server-Side Rendering
 

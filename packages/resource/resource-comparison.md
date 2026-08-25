@@ -190,7 +190,7 @@ The dual-signal design is what enables the clean `isLoading` vs `isFetching` dis
 
 ## 9. Retry & Polling
 
-HellaJS normalizes retry config into a `RetryConfig` with `maxRetries`, `shouldRetry(count, error)`, and `getDelay(attempt, error)` (`lib/internal/retry.ts`). The `retry` option accepts a number, a boolean (`true` = retry once), or a predicate that receives the categorized error (`lib/types/resource.d.ts`). The retry loop is in `lib/resource.ts`:
+HellaJS normalizes retry config into a `RetryConfig` with `maxRetries`, `shouldRetry(count, error)`, and `getDelay(attempt, error)` (`lib/internal/retry.ts`). The `retry` option accepts a number, a boolean (`true` = retry once), or a predicate that receives the categorized error (`lib/types/resource.d.ts`). The shared retry loop (`fetchWithRetry`) lives in `lib/internal/retry.ts`, consumed by `run` and `prefetch`:
 
 ```typescript
 // Exponential backoff with conditional retry
@@ -202,7 +202,7 @@ Defaults: `retry: 0` (no retries) and `retryDelay: 1000` ms (`lib/resource.ts`).
 
 Polling is implemented as recursive `setTimeout` so each tick can recompute a dynamic interval from the latest data (`lib/internal/polling.ts`). The interval can be a number, `false` to disable, or a function `(data) => number | false` (`lib/types/resource.d.ts`). Visibility-aware: ticks are skipped when `document.visibilityState === "hidden"` unless `refetchIntervalInBackground` is set (`lib/internal/polling.ts`).
 
-A non-obvious constraint: **polling requires `refetchOnKeyChange: true` to start at all** (`lib/resource.ts`). The same gate applies to focus/reconnect listeners — they are set up unconditionally if their flags are on (`lib/resource.ts`), but polling specifically gates on `refetchOnKeyChange && enabled && refetchInterval`. The reasoning: without an effect driving fetches, the polling timer has nothing to schedule against on first run.
+A non-obvious constraint: **polling requires `refetchOnKeyChange: true` to start at all** (`lib/resource.ts`). The same gate applies to focus/reconnect listeners — they are set up unconditionally if their flags are on (`lib/resource.ts`), but polling specifically gates on `refetchOnKeyChange && enabled && refetchInterval`. The reasoning: without an effect driving fetches, the polling timer has nothing to schedule against on first run. Polling arms once — at creation when `enabled` is truthy, otherwise on the first truthy evaluation inside the key-change effect (so an `enabled` getter flipping `false → true` starts polling); key changes do not reset the cadence, and `abort()`/`reset()` stop polling until the resource is recreated (`lib/resource.ts`).
 
 Window focus uses `visibilitychange` not `focus` (`lib/internal/lifecycle.ts`); reconnect uses `resourceCache.onOnlineChange`, which is backed by global `online`/`offline` listeners on `window` (`lib/cache.ts`, `lib/internal/lifecycle.ts`).
 

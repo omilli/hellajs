@@ -70,7 +70,7 @@ export interface PrefetchOptions<T, K> {
   timeout?: number;
   /** External AbortSignal wired onto the internal controller */
   abortSignal?: AbortSignal;
-  /** Attempts on failure, boolean toggle, or predicate (default: 0) */
+  /** Attempts on failure, boolean toggle, or predicate (default: 0; predicate receives the failure count starting at 1 on the first failure) */
   retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
   /** Delay between retries in ms, or function returning delay based on attempt and error (default: 1000) */
   retryDelay?: number | ((attempt: number, error: ResourceError) => number);
@@ -94,7 +94,7 @@ export interface ResourceCache {
   /**
    * Updates the global cache configuration with new settings.
    * @param config - Partial configuration object to merge with current settings
-   * @throws {Error} When config is not an object.
+   * @throws {Error} When config is not an object, when maxSize is not a non-negative number, or when enableLRU is not a boolean.
    */
   setConfig(config: Partial<CacheConfig>): void;
 
@@ -109,7 +109,7 @@ export interface ResourceCache {
    * @returns Typed cache key for type safety
    * @throws {Error} When cacheTime or staleTime is not a non-negative number.
    */
-  set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K;
+  set<K, T>(key: K, data: T, cacheTime: number, staleTime?: number): K;
 
   /**
    * Retrieves data from the cache by key.

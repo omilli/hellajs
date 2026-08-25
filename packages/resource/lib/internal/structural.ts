@@ -17,7 +17,7 @@ import { isPlainObject } from "./core";
  * @returns prev when structurally equal, otherwise a new structure sharing
  *   unchanged subtrees with prev; non-mergeable types return next
  */
-export const structuralShare = <T>(prev: T | undefined, next: T): T => {
+export function structuralShare<T>(prev: T | undefined, next: T): T {
   if (prev === undefined) return next;
   if (Object.is(prev, next)) return prev;
 
@@ -74,4 +74,4 @@ export const structuralShare = <T>(prev: T | undefined, next: T): T => {
   }
   if (!changed) return prev;
   return result as T;
-};
+}

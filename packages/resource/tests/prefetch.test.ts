@@ -157,5 +157,23 @@ describe("resourceCache", () => {
         expect((err as DOMException).name).toBe("AbortError");
       }
     });
+
+    test("external-signal listeners are released when prefetch settles", async () => {
+      const listenerCounts = { added: 0, removed: 0 };
+      const fakeSignal = {
+        aborted: false,
+        addEventListener: () => { listenerCounts.added++; },
+        removeEventListener: () => { listenerCounts.removed++; },
+      } as unknown as AbortSignal;
+
+      const fetcher = async (key: number) => `user-${key}`;
+
+      await resourceCache.prefetch({ fetcher, key: 1, cacheTime: 60000, abortSignal: fakeSignal });
+      await resourceCache.prefetch({ fetcher, key: 2, cacheTime: 60000, abortSignal: fakeSignal });
+      await resourceCache.prefetch({ fetcher, key: 3, cacheTime: 60000, abortSignal: fakeSignal });
+
+      expect(listenerCounts.added).toBe(3);
+      expect(listenerCounts.removed).toBe(3);
+    });
   });
 });

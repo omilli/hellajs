@@ -32,8 +32,9 @@ export function resetDedupe() {
  * @param cacheKey - The cache key within the fetcher scope
  * @returns The ongoing request, or undefined if none exists
  */
-export const getOngoing = (fetcher: object, cacheKey: unknown): OngoingRequest | undefined =>
-  ongoingRequestsMap.get(fetcher)?.get(cacheKey);
+export function getOngoing(fetcher: object, cacheKey: unknown): OngoingRequest | undefined {
+  return ongoingRequestsMap.get(fetcher)?.get(cacheKey);
+}
 
 /**
  * @internal
@@ -42,14 +43,14 @@ export const getOngoing = (fetcher: object, cacheKey: unknown): OngoingRequest |
  * @param cacheKey - The cache key within the fetcher scope
  * @param request - The in-flight request to share
  */
-export const setOngoing = (fetcher: object, cacheKey: unknown, request: OngoingRequest): void => {
+export function setOngoing(fetcher: object, cacheKey: unknown, request: OngoingRequest): void {
   let fetcherMap = ongoingRequestsMap.get(fetcher);
   if (!fetcherMap) {
     fetcherMap = new Map();
     ongoingRequestsMap.set(fetcher, fetcherMap);
   }
   fetcherMap.set(cacheKey, request);
-};
+}
 
 /**
  * @internal
@@ -57,6 +58,6 @@ export const setOngoing = (fetcher: object, cacheKey: unknown, request: OngoingR
  * @param fetcher - The fetcher function identifying the cache scope
  * @param cacheKey - The cache key within the fetcher scope
  */
-export const deleteOngoing = (fetcher: object, cacheKey: unknown): void => {
+export function deleteOngoing(fetcher: object, cacheKey: unknown): void {
   ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
-};
+}

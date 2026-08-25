@@ -180,5 +180,16 @@ describe("resource", () => {
 
       expect(fetcher).toHaveBeenCalledTimes(4);
     });
+
+    test("throws when cacheTime is omitted", () => {
+      // @ts-expect-error — cacheTime is now required; JS callers hit the runtime guard
+      expect(() => resourceCache.set("k", { a: 1 })).toThrow("[resource] set: cacheTime is required");
+    });
+
+    test("explicit cacheTime 0 remains a documented no-op returning key", () => {
+      const key = { id: "k" };
+      expect(resourceCache.set(key, { a: 1 }, 0)).toBe(key);
+      expect(resourceCache.get(key)).toBeUndefined();
+    });
   });
 });

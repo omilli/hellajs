@@ -1,9 +1,9 @@
 import type { CacheEntry, CacheConfig, CacheUpdate, ResourceCache, CacheMapView, PrefetchOptions } from "./types/cache";
 import type { Resource } from "./types/resource";
 import { hasNavigator, hasWindow } from "./internal/core";
-import { resolveRetryConfig } from "./internal/retry";
+import { resolveRetryConfig, fetchWithRetry } from "./internal/retry";
+import { wireRequestControls } from "./internal/abort";
 import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
-import { isAbortError, categorizeError } from "./internal/errors";
 
 let cacheConfig: CacheConfig = {
   maxSize: 1000,
@@ -21,6 +21,7 @@ let onlineStatus = hasNavigator() ? navigator.onLine : true;
 const onlineCallbacks = new Set<(online: boolean) => void>();
 
 if (hasWindow()) {
+  /** Marks the connection online and notifies subscribers. */
   const handleOnline = () => {
     onlineStatus = true;
     const cbs = Array.from(onlineCallbacks);
@@ -29,6 +30,7 @@ if (hasWindow()) {
     while (i < len) cbs[i++]!(true);
   };
 
+  /** Marks the connection offline and notifies subscribers. */
   const handleOffline = () => {
     onlineStatus = false;
     const cbs = Array.from(onlineCallbacks);
@@ -237,11 +239,17 @@ export const resourceCache: ResourceCache = {
   get map() { return flatView; },
   get config() { return cacheConfig; },
   setConfig: (config: Partial<CacheConfig>) => {
-    if (config != null && typeof config !== "object")
-      throw new Error("[resource] setConfig: config must be an object, received " + typeof config);
+    if (config == null || typeof config !== "object" || Array.isArray(config))
+      throw new Error("[resource] setConfig: config must be an object, received " + config);
+    if (config.maxSize !== undefined && (typeof config.maxSize !== "number" || Number.isNaN(config.maxSize) || config.maxSize < 0))
+      throw new Error("[resource] setConfig: maxSize must be a non-negative number, received " + config.maxSize);
+    if (config.enableLRU !== undefined && typeof config.enableLRU !== "boolean")
+      throw new Error("[resource] setConfig: enableLRU must be a boolean, received " + config.enableLRU);
     cacheConfig = { ...cacheConfig, ...config };
   },
-  set: <K, T>(key: K, data: T, cacheTime = 0, staleTime = 0) => {
+  set: <K, T>(key: K, data: T, cacheTime: number, staleTime = 0) => {
+    if (cacheTime === undefined)
+      throw new Error("[resource] set: cacheTime is required, received undefined");
     if (cacheTime != null && (typeof cacheTime !== "number" || Number.isNaN(cacheTime) || cacheTime < 0))
       throw new Error("[resource] set: cacheTime must be a non-negative number, received " + cacheTime);
     if (staleTime != null && (typeof staleTime !== "number" || Number.isNaN(staleTime) || staleTime < 0))
@@ -386,13 +394,7 @@ export const resourceCache: ResourceCache = {
     }
 
     const abortController = new AbortController();
-    if (abortSignal)
-      abortSignal.aborted ? abortController.abort()
-        : abortSignal.addEventListener("abort", () => abortController.abort(), { once: true });
-    if (timeout && timeout > 0) {
-      const timeoutId = setTimeout(() => abortController.abort(), timeout);
-      abortController.signal.addEventListener("abort", () => clearTimeout(timeoutId));
-    }
+    const releaseControls = wireRequestControls(abortController, { timeout, abortSignal });
     const signal = abortController.signal;
 
     let resolvePromise: (value: T) => void;
@@ -408,50 +410,17 @@ export const resourceCache: ResourceCache = {
     }
 
     const retryConfig = resolveRetryConfig(retry, retryDelay);
-    let retryCount = 0;
 
     try {
-      while (true) {
-        if (signal.aborted) {
-          const err = new DOMException("Request was aborted", "AbortError");
-          rejectPromise!(err);
-          throw err;
-        }
-        try {
-          const result = await Promise.race([
-            fetcher(key),
-            new Promise<never>((_, reject) => {
-              const onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
-              signal.aborted ? onAbort() : signal.addEventListener("abort", onAbort, { once: true });
-            })
-          ]);
-          setCacheData(fetcher, key, result, cacheTime, staleTime ?? Infinity);
-          resolvePromise!(result);
-          return result;
-        } catch (err) {
-          if (isAbortError(err)) {
-            rejectPromise!(err);
-            throw err;
-          }
-          retryCount++;
-          const categorizedError = categorizeError(err);
-          if (!retryConfig.shouldRetry(retryCount, categorizedError)) {
-            rejectPromise!(err);
-            throw err;
-          }
-          const delayMs = retryConfig.getDelay(retryCount, categorizedError);
-          await new Promise<void>(resolve => {
-            const timeoutId = setTimeout(() => resolve(), delayMs);
-            signal.addEventListener("abort", () => { clearTimeout(timeoutId); resolve(); }, { once: true });
-          });
-          if (signal.aborted) {
-            const abortErr = new DOMException("Request was aborted", "AbortError");
-            rejectPromise!(abortErr);
-            throw abortErr;
-          }
-        }
-      }
+      const result = await fetchWithRetry(() => fetcher(key), { signal, retryConfig });
+      setCacheData(fetcher, key, result, cacheTime, staleTime ?? Infinity);
+      resolvePromise!(result);
+      return result;
+    } catch (err) {
+      rejectPromise!(err);
+      throw err;
     } finally {
+      releaseControls();
       if (deduplicate) deleteOngoing(fetcher, key);
     }
   },
