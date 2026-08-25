@@ -9,14 +9,15 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 
 | Path | Responsibility |
 |---|---|
-| `lib/resource.ts` | `resource()` factory (URL + fetcher overloads), the `run()` fetch pipeline, abort/timeout/retry wiring, `mutate`, `setData`, `status`. The 512-line core. |
+| `lib/resource.ts` | `resource()` factory (URL + fetcher overloads), the `run()` fetch pipeline, abort/timeout/retry wiring, `mutate`, `setData`, `status`. |
 | `lib/cache.ts` | Module-level `cacheMap`, `PUBLIC_SCOPE`, `flatView`, the `resourceCache` singleton, online/offline window listeners (registered once at load). |
 | `lib/index.ts` | Barrel: `export { resource, resourceCache, resetResource }` + type-only re-exports. |
 | `lib/types/resource.d.ts` | `Resource`, `ResourceOptions`, `ResourceError`, `ResourceErrorCategory`, `Fetcher`, `ResourceStatus`, `FetchOptions`. |
 | `lib/types/cache.d.ts` | `CacheEntry`, `CacheConfig`, `CacheUpdate`, `CacheMapView`, `ResourceCache`. |
 | `lib/internal/core.ts` | Thin re-export from `@hellajs/core`: `signal/computed/effect/untracked/isFunction/isPlainObject/hasDocument/hasNavigator/hasWindow`. |
 | `lib/internal/dedupe.ts` | `ongoingRequestsMap` (`WeakMap<object, Map<key, OngoingRequest>>`) + `getOngoing/setOngoing/deleteOngoing`. `OngoingRequest = { promise, abortController }`. |
-| `lib/internal/retry.ts` | `resolveRetryConfig(retry, retryDelay)` → `{ maxRetries, shouldRetry, getDelay }`. Boolean→count, function→predicate. |
+| `lib/internal/retry.ts` | `resolveRetryConfig(retry, retryDelay)` → `{ maxRetries, shouldRetry, getDelay }`. Boolean→count, function→predicate. `fetchWithRetry(start, { signal, retryConfig })` — shared race-against-abort + retry loop (used by `run` and `prefetch`). |
+| `lib/internal/abort.ts` | `wireRequestControls(controller, { timeout?, abortSignal? })` → release() clearing timer + external listener (shared by `run`/`mutate`/`prefetch`); `raceAbort(promise, signal, message?)`. |
 | `lib/internal/polling.ts` | `createPolling` — recursive `setTimeout`, visibility-aware, dynamic interval via `untracked(data)`. |
 | `lib/internal/lifecycle.ts` | `createFocus` (visibilitychange→visible), `createReconnect` (`resourceCache.onOnlineChange`→online). |
 | `lib/internal/structural.ts` | `structuralShare(prev, next)` — reference-preserving deep merge over arrays/plain objects. |
@@ -30,8 +31,8 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 2. **Guard** — `if (!untracked(isEnabled) && !(manual && enabledIsFn)) return;`. Manual fetch bypasses `enabled` **only in getter form**; a static `enabled:false` blocks even manual fetch.
 3. **Cache phase** (skipped when `force`) — only if `cacheTime > 0`: `cleanupExpiredCache()`, lookup entry; on TTL-valid hit → update `lastAccess`, push to `rawData`, `handleError()` (clears error/loading/fetching). Then **SWR**: if `staleTime !== undefined && isStale(entry) && revalidateOnStale` → `isFetching(true)` + un-awaited `run(true)` (force, re-enters dedup). Return.
 4. **Dedup phase** (skipped when `force`) — if `deduplicate`, `getOngoing(fetcherFn, cacheKey)`; on hit → adopt shared `abortController` (`cleanAbort`), `handleError(undefined, !hasData, true)`, `await promise` (unless already aborted) → success/abort handler. Return.
-5. **Request phase** — `currentAbortController = cleanAbort()`; wire external `abortSignal` (immediate-abort if already aborted); wire `timeout`; capture `currentSignal`; `handleError(undefined, !hasData, true)`; reset `retryCount`. Build deferred `requestPromise`; if `deduplicate`, `setOngoing(...)` + attach `.catch(()=>{})` to swallow unhandled rejection.
-6. **Retry loop** — per-attempt: pre-abort check; `Promise.race([fetcherFn(cacheKey), abortReject])`. On success: optional `structuralShare`, `setCacheData(..., cacheTime, staleTime ?? Infinity)`, `handleSuccess`, resolve promise, `deleteOngoing`, return. On error: abort→handle+reject+return; else `retryCount++`, `shouldRetry` false→handle+reject+return; else await `getDelay` (abort clears timeout + resolves), post-delay abort check.
+5. **Request phase** — `currentAbortController = cleanAbort()`; `wireRequestControls` wires external `abortSignal` (immediate-abort if already aborted) and `timeout`, returning a `release()` cleared on every settle path; capture `currentSignal`; `handleError(undefined, !hasData, true)`. Build deferred `requestPromise`; if `deduplicate`, `setOngoing(...)` + attach `.catch(()=>{})` to swallow unhandled rejection.
+6. **Request loop** — delegated to `fetchWithRetry(fetcherFn(cacheKey), { signal, retryConfig })`: per-attempt pre-abort check; race against abort-reject; on success the caller applies optional `structuralShare`, `setCacheData(..., cacheTime, staleTime ?? Infinity)`, guarded `handleSuccess`, resolves promise via `settleRun`; on error: abort→handle+reject; else count++ (starts at 1), `shouldRetry` false→handle+reject; else abort-interruptible delay, top-of-loop abort check exits.
 
 Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loading/fetching and fires `onError` only for a truthy error; `handleSuccessError` clears loading/fetching for AbortError **without** setting error, else delegates to `handleError`; `handleSuccess` writes `rawData`, clears flags, fires `onSuccess`; `cleanAbort(controller?)` aborts the prior controller and returns `controller ?? new AbortController()`.
 
@@ -66,7 +67,7 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 - `createPolling`: recursive `setTimeout`; skips tick when `document.visibilityState === "hidden"` unless `refetchIntervalInBackground`; dynamic interval re-evaluated via `untracked(data)` after each tick. `false`/`0`/`undefined` disable.
 - `createFocus`: `visibilitychange` → `run(false)` only when becoming visible.
 - `createReconnect`: subscribes via `resourceCache.onOnlineChange` → `run(false)` on transition to online.
-- **Setup gates differ**: `polling.setup()` requires `refetchOnKeyChange && isEnabled() && refetchInterval`; `focus.setup()` and `reconnect.setup()` require only their own boolean flags (work without auto-fetch). All three are cleared by `abort`/`reset`/`dispose`.
+- **Setup gates differ**: `polling.setup()` requires `refetchOnKeyChange && isEnabled() && refetchInterval` and arms **once** — at creation when enabled, otherwise on the first truthy enabled evaluation inside the key-change effect (an `enabled` getter flipping false→true starts polling); key changes never reset the cadence. `focus.setup()` and `reconnect.setup()` require only their own boolean flags (work without auto-fetch). All three are cleared by `abort`/`reset`/`dispose`; polling does not re-arm after `abort`/`reset` until the resource is recreated.
 
 ### LRU eviction (cache.ts:111)
 
@@ -176,7 +177,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 ### `resourceCache` methods
 
-`set(key, data, cacheTime=0, staleTime=0)` → `key` (writes `PUBLIC_SCOPE`; validates non-negative numbers; no-op when `cacheTime=0`). `get<T>(key)` (searches all scopes, refreshes `lastAccess`, deletes expired). `update(key, updater)`/`updateMultiple(updates)` → `boolean`/void (first-scope hit wins; throws on `undefined` updater). `cleanup()`. `invalidate(key)`/`invalidateMultiple(keys)` (all scopes). `invalidateByPrefix(prefix)` / `invalidateByPattern(regex)` → count (**string keys only**). `invalidateAll()` → count. `invalidateResources([...])` (calls `.invalidate()` on each). `setConfig(partial)`. `prefetch<T,K>(opts) => Promise<T>` (fetches via `fetcher(key)`, caches under the fetcher's own scope without creating a resource; dedup/retry/abort like `resource()`). `isOnline()` / `onOnlineChange(cb) => unsub`.
+`set(key, data, cacheTime, staleTime=0)` → `key` (writes `PUBLIC_SCOPE`; `cacheTime` required — omission throws, explicit `0` is a documented no-op; validates non-negative numbers). `get<T>(key)` (searches all scopes, refreshes `lastAccess`, deletes expired). `update(key, updater)`/`updateMultiple(updates)` → `boolean`/void (first-scope hit wins; throws on `undefined` updater). `cleanup()`. `invalidate(key)`/`invalidateMultiple(keys)` (all scopes). `invalidateByPrefix(prefix)` / `invalidateByPattern(regex)` → count (**string keys only**). `invalidateAll()` → count. `invalidateResources([...])` (calls `.invalidate()` on each). `setConfig(partial)`. `prefetch<T,K>(opts) => Promise<T>` (fetches via `fetcher(key)`, caches under the fetcher's own scope without creating a resource; dedup/retry/abort like `resource()`). `isOnline()` / `onOnlineChange(cb) => unsub`.
 
 ## Non-obvious behaviors
 
@@ -205,7 +206,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - `status()` reads `rawData()` directly, so `transform` cannot change status. A fetch returning a value equal to `initialData` leaves status `idle`. (resource.ts:380-389)
 - Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts:161-162, retry.test.ts:153)
 - Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts:352-359, fetching.test.ts:236)
-- `polling.setup()` is gated on `refetchOnKeyChange && isEnabled() && refetchInterval`; `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts:363-375, focus.test.ts:119)
+- `polling.setup()` is gated on `refetchOnKeyChange && isEnabled() && refetchInterval` and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the key-change effect; not re-armed by key changes or after `abort`/`reset`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts:363-375, focus.test.ts:119)
 - `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained for cache lifetime); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (cache.ts:12, dedupe.ts:17)
 - Cache entries are module-level and survive `dispose()`/resource recreation. (cache.ts:12)
 

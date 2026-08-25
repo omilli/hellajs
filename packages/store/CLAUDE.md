@@ -8,8 +8,8 @@ Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain objec
 | `lib/index.ts` | Barrel — exports `store`, re-exports types |
 | `lib/store.ts` | Public `store()` overloads; all delegate to `createStore` |
 | `lib/internal/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, recursive init |
-| `lib/internal/draft.ts` | `deepClone` + `extractChanges` — used only by the draft-mutator path |
-| `lib/internal/utils.ts` | `reservedKeys` Set, `isStore`, `isObjectOrFunction`, `readDeep`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
+| `lib/internal/draft.ts` | `deepClone` + `structurallyEqual` + `extractChanges` — used only by the draft-mutator path |
+| `lib/internal/utils.ts` | `reservedKeys` Set, `isStore`, `isObjectOrFunction`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
 | `lib/types.d.ts` | `Store<T,R>`, `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys` |
 | `lib/internal/core.ts` | Re-exports `signal`/`computed`/`isFunction`/`isPlainObject`/`isObject` + `Signal` type from core |
 
@@ -31,19 +31,19 @@ For each key `K` of `T` (R = set of readonly keys, default `never`):
 |---|---|---|
 | function | `T[K]` (preserved) | `T[K]` (preserved) |
 | array | `Signal<T[K]>` | `() => T[K]` |
-| plain object | `Store<T[K], R>` | `Store<T[K], R>` |
+| plain object | `Store<T[K]>` | `Store<T[K]>` |
 | primitive | `Signal<T[K]>` | `() => T[K]` |
 
-Plus built-ins: `snapshot: () => T`, `update: (PartialDeep<T> or (draft: T) => void) => void`, `cleanup: () => void`.
+Plus built-ins: `snapshot: () => Snapshot<T>` (composed nested stores unwrap to their data types), `update: (PartialDeep<T> or (draft: Snapshot<T>) => void) => void`, `cleanup: () => void`.
 
 - **"plain object"** = a value `isPlainObject` returns true for (excludes arrays, `null`, functions, and class instances). `Date`/`Map`/`Set`/`RegExp`/custom instances fall into the primitive row → become a `Signal`, not a nested store.
-- **R is threaded into nested object types but is inert** — top-level keys don't exist on nested types, so `K extends R` is never true there. The runtime also never passes `readonly` into recursive `createStore` calls. Nested stores are always writable regardless of what the type claims.
+- **`R` applies to top-level keys only** — nested stores are typed `Store<T[K]>` (no `R` argument), matching the runtime (readonly never propagates into recursion) and the docs' "do not propagate" claim. Threading `R` into nested levels was a false lockdown: a nested key sharing a name with a top-level readonly key (near-guaranteed under `readonly: true`, where `R = keyof T`) was typed readonly while remaining writable at runtime.
 
 ## `createStore` pipeline (`lib/internal/create.ts`)
 
 Resolves: `readonlyAll = options.readonly === true`; `readonlyKeys = Array.isArray(options.readonly) ? options.readonly : []`; `middlewares = options.middleware`.
 
-**snapshot** — a `computed` assigned to `result.snapshot`. Iterates cached `Object.keys(result)`, skips reserved keys, and for each key takes the FIRST matching branch: (1) `initial[key]` is a function → use the **original** `initial` value; (2) store value is a store (`isStore`) AND `initial[key]` is also a store (composition) → recurse via `readDeep` which reads every leaf signal inline, subscribing the parent computed to the full composed tree; (3) store value is a store but `initial[key]` is a plain object (auto-nested) → call `value.snapshot()`; (4) store value is a function → call `value()`. The computed subscribes to every signal it reads, so any property change re-runs it and re-flattens the whole tree. Reactive across composed store boundaries.
+**snapshot** — a `computed` assigned to `result.snapshot` (return type `Snapshot<T>`). Iterates cached `Object.keys(result)`, skips reserved keys, and for each key takes the FIRST matching branch: (1) `initial[key]` is a function AND the key is not settable (a preserved user function) → use the **original** `initial` value — the settable-keys registry is the discriminator, since under composition `initial`'s signal properties are functions too; (2) store value is a store (`isStore`) → delegate to `value.snapshot()`, chaining computeds so the parent subscribes to the nested snapshot and through it to the full composed tree; (3) store value is a function → call `value()`; (4) anything else (externally replaced plain values) → mirror as-is. The computed subscribes to every signal it reads (directly or through chained nested snapshot computeds), so any property change re-runs it and re-flattens the whole tree. Reactive across composed store boundaries; composed leaves unwrap to plain values.
 
 **update(partial)** — two paths:
 - *Draft path* (`isFunction(partial)`): calls `this.snapshot()` (materializes the full snapshot), `deepClone`s it, runs `partial(draft)`, then `extractChanges(snapshot, draft)` produces the resolved partial.
@@ -68,11 +68,12 @@ Passing an existing store as a value inside another store's initial object: the 
 ## `update()` gotchas
 
 - **New keys silently ignored**: `applyUpdate` early-returns on falsy `target`; `this[key]` is undefined for keys absent from `initial`.
-- **Reserved keys also ignored** by the same path — `update({ snapshot: ... })` cannot hijack the store.
+- **update() writes only settable keys** — each store tracks its signal-backed keys in a non-enumerable registry (`settableRegistry` symbol, `lib/internal/create.ts`); unknown keys, reserved keys, and preserved user functions are never in it, so `update({ snapshot: ... })` cannot hijack the store and `update({ onSave: fn })` never invokes the function. Composition threads the source store's registry so composed leaves stay writable. Functions swap via direct assignment.
 - **`isPlainObject` gates deep-merge**: partial arrays are replaced, not element-merged.
+- **`extractChanges` compares structurally** (`lib/internal/draft.ts`). Arrays, Dates, Maps, Sets, RegExps, and class instances compare by content — untouched values are never rewritten and their subscribers do not fire; mutated values are recorded as the draft clone.
 - **Draft path materializes the snapshot** — calls `this.snapshot()`, subscribing the active reactive context (if any) to every signal.
 - **Draft writes are not auto-batched**: each extracted change is a separate signal write; wrap `update(draft => ...)` in `batch()` to fire effects once.
-- **`extractChanges` array equality is shallow `===` per element** (`lib/internal/draft.ts:68-80`). Because `deepClone` produces fresh references for object elements, arrays-of-objects in the draft are **always** considered changed (the whole array signal is rewritten) even when untouched. Primitive-only arrays compare by value.
+- **`extractChanges` array equality is structural per element** — equal-content arrays are skipped; only genuinely changed arrays rewrite the whole array signal. Primitive-only arrays compare by value.
 
 ## Middleware
 
@@ -84,8 +85,8 @@ Passing an existing store as a value inside another store's initial object: the 
 
 ## `deepClone` & `extractChanges` (`lib/internal/draft.ts`)
 
-- **deepClone**: primitives/functions/`null`/`undefined` returned as-is; arrays mapped recursively; `Date` → `new Date(getTime())`; `RegExp` → `new RegExp(source, flags)`; `Map` → new map with **values** deep-cloned (keys kept by reference, not cloned); `Set` → new set with deep-cloned values; plain objects → own keys cloned. Custom class instances fall through to the plain-object branch — prototype is lost.
-- **extractChanges**: iterates draft keys. Arrays → record whole array unless same length AND every element `===` original's. Plain objects → recurse, record only if nested changes exist. Primitives → record on `!==`.
+- **deepClone**: primitives/functions/`null`/`undefined` returned as-is; arrays mapped recursively; `Date` → `new Date(getTime())`; `RegExp` → `new RegExp(source, flags)`; `Map` → new map with **values** deep-cloned (keys kept by reference, not cloned); `Set` → new set with deep-cloned values; other objects (plain or class instances) → own keys cloned onto `Object.create(getPrototypeOf(obj))` — class instances keep their prototype.
+- **`extractChanges`: iterates draft keys. Arrays, built-ins, and objects compare via `structurallyEqual` (content equality); plain-object pairs recurse, recording only if nested changes exist.**
 
 ## Other non-obvious behaviors
 

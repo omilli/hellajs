@@ -23,11 +23,11 @@ applyTo: "packages/router/**"
   | `state.ts` | 8 config signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `scrollBehavior`, `previousPath`, `inheritMeta`). |
   | `route.ts` | The `route` signal (current `RouteInfo`) + the shared `activeFn` ancestor-match predicate. |
   | `navigate.ts` | `:key` → `encodeURIComponent`, `*` → raw insert, strip unmatched `:param`, query string, → `go()`. |
-  | `match.ts` | `parseQuery`, `matchPattern` (segment/wildcard extraction), `matchNestedRoute` (recursive, specificity-sorted, params spread-merged), `matchRoute` (flat). |
+  | `match.ts` | `parseQuery`, `matchPattern` (segment/wildcard extraction), `matchNestedEntry` (single-entry chain resolver), `matchNestedRoute` (specificity-sorted loop over entries, params spread-merged), `matchRoute` (flat). |
   | `hooks.ts` | `executeHook` (arity dispatch + try/catch + promise.catch), `executeGlobalHook` (no args). |
-  | `utils.ts` | `EMPTY_OBJECT`/`EMPTY_CRUMBS`, `hasChildren`, `getHashPath`, `sortRoutesBySpecificity`, `go` (guard-aware history commit). |
-  | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict`, `updateRoute`, `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase`, `buildRouteInfo`. |
-  | `internal/matched.ts` | `handleScroll`, `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuards`, `executeRouteWithHooks`. |
+  | `utils.ts` | `EMPTY_OBJECT`/`EMPTY_CRUMBS`, `hasChildren`, `getHashPath`, `sortRoutesBySpecificity`. Leaf module — no internal imports. |
+  | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict` + hop counter (`updateRoute`), `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase` via shared `commitMatch` + `mergeRouteMeta`, `buildRouteInfo`, `go` (guard-aware history commit). |
+  | `internal/matched.ts` | `handleScroll`, `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuardsNested`/`runGuardsFlat` (shared global-before prologue), `executeRouteWithHooks`. |
   | `internal/core.ts` | Re-exports `signal`, `isFunction`, `isString`, `isPlainObject`, `hasWindow` from `@hellajs/core`. |
 
   ## Resolution pipeline (`internal/resolve.ts` `updateRoute` → early-exit at first hit)
@@ -48,7 +48,7 @@ applyTo: "packages/router/**"
 
   `global.before → parent.before → child.before → handler → child.after → parent.after → global.after`
 
-  - `runGuards` runs `before` hooks (global + nested top-down) and short-circuits on the first non-pass verdict (`false`, throw, or redirect string). `executeRouteWithHooks` runs the handler + `after` hooks.
+  - `runGuardsNested`/`runGuardsFlat` run `before` hooks (global + nested top-down / flat) and short-circuit on the first non-pass verdict (`false`, throw, or redirect string); the shared commit step runs the handler + `after` hooks only on a pass.
   - Each nested level's hook receives that level's **cumulative inherited params** + query; the handler receives leaf params/query.
   - **Sync** `before` return values can block: `false`/throw cancels, string redirects. **Async** `before` (`Promise`) cannot block — treated as proceed, rejection `.catch`-logged.
 
@@ -69,7 +69,7 @@ applyTo: "packages/router/**"
 
     **Scroll no-op on init** — `previousPath` is seeded with `initialPath` (`router.ts` previousPath seed), so the first `updateRoute()` sees `from === to` and skips (`matched.ts handleScroll`). **Scroll priority**: inline `navigate({scroll})` > route-level `scroll` > global `scrollBehavior`; `false` at any level disables; `"auto"`/`"preserve"` skip `scrollTo`; custom fn returning `null` skips.
 
-    **`intercept` defaults true** — same-origin `<a>` clicks route through `navigate()`. Skipped when: already `defaultPrevented`, modifier keys, `target !== "_self"`, `download`, non-http(s), cross-origin, malformed href. Hash mode requires the hash start with `#/` (`router.ts` clickHandler).
+    **`intercept` defaults true** — same-origin `<a>` clicks route through `navigate()`. Skipped when: already `defaultPrevented`, modifier keys, `target !== "_self"`, `download`, non-http(s), cross-origin, malformed href. History mode also skips hrefs differing from the current URL only by hash (in-page anchors stay native). Hash mode requires the hash start with `#/`; plain hash changes (`#section`) are ignored by the hashchange handler (`router.ts` clickHandler).
 
     **`active()` ancestor semantics** — shared `activeFn` reads `route().path` reactively, strips query, respects segment boundaries via `matchPattern(isNested=true)`; `/admin` is NOT active at `/administrators`. Root `/` is exact-only (a zero-segment ancestor would match every path, so a home link lights up solely at `/`) (`route.ts`, `active.test.ts`).
 
