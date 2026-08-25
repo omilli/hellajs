@@ -1,5 +1,11 @@
 # Memory Update Log
 
+## 2026-08-25
+* **Creation**: Added concept [049](entries/049.md) (type: decision).
+* **Creation**: Added concept [050](entries/050.md) (type: decision).
+* **Creation**: Added concept [051](entries/051.md) (type: decision).
+* **Creation**: Added concept [052](entries/052.md) (type: correction).
+
 ## 2026-08-22
 * **Creation**: Added concept [041](entries/041.md) (type: decision).
 * **Creation**: Added concept [042](entries/042.md) (type: decision).
