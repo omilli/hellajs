@@ -176,3 +176,25 @@ const conditional = resource(
 gate(true); // enabled transitions to true -> fetch triggers automatically
 conditional.fetch(); // manual fetch bypasses the enabled check
 ```
+
+### Structural Sharing
+
+Reuse subtree references across refetches so dependent computeds skip re-evaluation.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+const userResource = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { structuralSharing: true }
+);
+
+userResource.fetch({ force: true });
+// ...wait for the fetch to resolve...
+const firstProfile = userResource.data()?.profile;
+
+userResource.fetch({ force: true });
+// ...after the second fetch resolves, an unchanged profile subtree
+// keeps its reference — dependent computeds skip re-evaluation
+console.log(userResource.data()?.profile === firstProfile); // true
+```

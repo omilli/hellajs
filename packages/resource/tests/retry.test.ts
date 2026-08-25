@@ -51,15 +51,13 @@ describe("resource", () => {
 
     test("uses fixed retry delay", async () => {
       const ts: number[] = [];
-      let fetchCount = 0;
       const fetcher = mock(() => {
         ts.push(Date.now());
-        fetchCount++;
         return fetcher.mock.calls.length < 3 ? Promise.reject(new Error("x")) : Promise.resolve("ok");
       });
       const r = resource(fetcher, { retry: 2, retryDelay: 50 });
       r.fetch({ force: true });
-      for (let __i = 0; __i < 50; __i++) { if ((fetchCount >= 3)) break; await delay(10); };
+      for (let __i = 0; __i < 50; __i++) { if ((fetcher.mock.calls.length >= 3)) break; await delay(10); };
       expect(fetcher).toHaveBeenCalledTimes(3);
       expect(ts[1]! - ts[0]!).toBeGreaterThanOrEqual(40);
       expect(ts[2]! - ts[1]!).toBeGreaterThanOrEqual(40);
@@ -67,15 +65,13 @@ describe("resource", () => {
 
     test("uses exponential retry delay", async () => {
       const ts2: number[] = [];
-      let fetchCount = 0;
       const fetcher2 = mock(() => {
         ts2.push(Date.now());
-        fetchCount++;
         return Promise.reject(new Error("x"));
       });
       const r2 = resource(fetcher2, { retry: 2, retryDelay: a => a * 30 });
       r2.fetch({ force: true });
-      for (let __i = 0; __i < 50; __i++) { if ((fetchCount >= 3)) break; await delay(10); };
+      for (let __i = 0; __i < 50; __i++) { if ((fetcher2.mock.calls.length >= 3)) break; await delay(10); };
       expect(fetcher2).toHaveBeenCalledTimes(3);
       expect(ts2[1]! - ts2[0]!).toBeGreaterThanOrEqual(25);
       expect(ts2[2]! - ts2[1]!).toBeGreaterThanOrEqual(55);

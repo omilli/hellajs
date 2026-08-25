@@ -16,6 +16,11 @@ describe("resource", () => {
       globalThis.fetch = originalFetch;
     });
 
+    test("throws when options is null", () => {
+      // @ts-expect-error — intentionally invalid options
+      expect(() => resource(async () => mockUser, null)).toThrow("[resource] resource: options must be an object");
+    });
+
     test("fetches data successfully", async () => {
       const r = resource(() => delay(mockUser));
       r.fetch({ force: true });
@@ -290,6 +295,24 @@ describe("resource", () => {
 
       expect(r.data()).toBe("resolved");
       expect(r.status()).toBe("success");
+    });
+
+    test("external-signal listeners are released when a fetch settles", async () => {
+      const listenerCounts = { added: 0, removed: 0 };
+      const fakeSignal = {
+        aborted: false,
+        addEventListener: () => { listenerCounts.added++; },
+        removeEventListener: () => { listenerCounts.removed++; },
+      } as unknown as AbortSignal;
+
+      const r = resource(() => delay("data", 5), { abortSignal: fakeSignal });
+
+      await r.fetch({ force: true });
+      await r.fetch({ force: true });
+      await r.fetch({ force: true });
+
+      expect(listenerCounts.added).toBe(3);
+      expect(listenerCounts.removed).toBe(3);
     });
   });
 });

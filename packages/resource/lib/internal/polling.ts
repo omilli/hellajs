@@ -22,10 +22,10 @@ interface PollingConfig<TTransformed> {
  * @param config - Polling configuration
  * @returns An object with setup and clear methods
  */
-export const createPolling = <TTransformed>(config: PollingConfig<TTransformed>): {
+export function createPolling<TTransformed>(config: PollingConfig<TTransformed>): {
   setup: () => void;
   clear: () => void;
-} => {
+} {
   const { refetchInterval, refetchIntervalInBackground, data, run } = config;
 
   let cleanup: (() => void) | undefined;
@@ -39,9 +39,6 @@ export const createPolling = <TTransformed>(config: PollingConfig<TTransformed>)
   /** Sets up recursive setTimeout polling that respects tab visibility and dynamic intervals. */
   const setup = () => {
     clear();
-
-    // Skip if no interval configured
-    if (refetchInterval === undefined || refetchInterval === false || refetchInterval === 0) return;
 
     let stopped = false;
 
@@ -85,4 +82,4 @@ export const createPolling = <TTransformed>(config: PollingConfig<TTransformed>)
   };
 
   return { setup, clear };
-};
+}

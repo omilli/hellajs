@@ -6,15 +6,11 @@ import { resourceCache } from "../cache";
 
 /**
  * @internal
- * Creates a window-focus refetch controller. Registers a visibilitychange listener that refetches when the tab becomes visible, when enabled.
- * @param refetchOnWindowFocus - Whether focus refetch is enabled
+ * Creates a window-focus refetch controller. Registers a visibilitychange listener that refetches when the tab becomes visible. The caller gates setup on its own refetchOnWindowFocus flag.
  * @param run - Callback invoked on refetch (receives force flag)
  * @returns An object with setup and clear methods
  */
-export const createFocus = (
-  refetchOnWindowFocus: boolean,
-  run: (force: boolean) => void
-): { setup: () => void; clear: () => void } => {
+export function createFocus(run: (force: boolean) => void): { setup: () => void; clear: () => void } {
   let cleanup: (() => void) | undefined;
 
   /** Removes the visibilitychange listener and clears its cleanup function. */
@@ -23,11 +19,9 @@ export const createFocus = (
     cleanup = undefined;
   };
 
-  /** Registers a visibilitychange listener that refetches when the tab becomes visible, when refetchOnWindowFocus is enabled. */
+  /** Registers a visibilitychange listener that refetches when the tab becomes visible. */
   const setup = () => {
     clear();
-
-    if (!refetchOnWindowFocus) return;
 
     if (!hasDocument()) return;
 
@@ -42,19 +36,15 @@ export const createFocus = (
   };
 
   return { setup, clear };
-};
+}
 
 /**
  * @internal
- * Creates a reconnect refetch controller. Subscribes to network reconnect events via resourceCache.onOnlineChange to trigger refetch, when enabled.
- * @param refetchOnReconnect - Whether reconnect refetch is enabled
+ * Creates a reconnect refetch controller. Subscribes to network reconnect events via resourceCache.onOnlineChange to trigger refetch. The caller gates setup on its own refetchOnReconnect flag.
  * @param run - Callback invoked on refetch (receives force flag)
  * @returns An object with setup and clear methods
  */
-export const createReconnect = (
-  refetchOnReconnect: boolean,
-  run: (force: boolean) => void
-): { setup: () => void; clear: () => void } => {
+export function createReconnect(run: (force: boolean) => void): { setup: () => void; clear: () => void } {
   let cleanup: (() => void) | undefined;
 
   /** Tears down the online/offline reconnect subscription and clears its cleanup function. */
@@ -63,11 +53,9 @@ export const createReconnect = (
     cleanup = undefined;
   };
 
-  /** Subscribes to network reconnect events via resourceCache.onOnlineChange to trigger refetch, when refetchOnReconnect is enabled. */
+  /** Subscribes to network reconnect events via resourceCache.onOnlineChange. */
   const setup = () => {
     clear();
-
-    if (!refetchOnReconnect) return;
 
     cleanup = resourceCache.onOnlineChange((online) => {
       if (online) run(false);
@@ -75,4 +63,4 @@ export const createReconnect = (
   };
 
   return { setup, clear };
-};
+}

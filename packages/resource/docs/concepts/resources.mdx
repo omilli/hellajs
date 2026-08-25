@@ -115,7 +115,7 @@ const addTodoResource = resource(
 addTodoResource.mutate({ text: 'Learn mutations', completed: false });
 ```
 
-The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for optimistic updates with rollback. `onMutate` returns a context object that `onSettled` receives for rollback on failure. See [`resource`](/reference/resource/resource) for the full lifecycle API.
+The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for optimistic updates with rollback. See [`resource`](/reference/resource/resource) for the full lifecycle API.
 
 ## Features
 
@@ -183,7 +183,7 @@ setTimeout(() => r.abort(), 2000); // Cancel during retry delay
 
 ### Polling / Interval Refetch
 
-Periodically refresh data for real-time updates. Polling requires `refetchOnKeyChange: true`. Without it, the polling cycle never starts.
+Periodically refresh data for real-time updates. Polling requires `refetchOnKeyChange: true`. Without it, the polling cycle never starts. Polling arms when `enabled` first evaluates `true` — including a later flip from `false` — and key changes never reset the cadence. `abort()`/`reset()` stop polling until the resource is recreated.
 
 ```typescript
 // Fixed interval: every 5 seconds
@@ -246,6 +246,12 @@ userEmail.fetch(); // Joins the same request via deduplication
 
 Resources are automatically cache-isolated by their fetcher identity, so sharing the fetcher is required for shared caching.
 
+### Structural Sharing
+
+Preserve object/array references for structurally unchanged subtrees so dependent computeds and effects that shallow-compare references skip redundant re-evaluation. Opt in per resource with `structuralSharing: true`.
+
+Plain objects and arrays are compared element/key-wise; primitives use `Object.is`; `Map`, `Set`, `Date`, and class instances use reference equality and are never merged. A changed subtree builds a new container along the changed path while sibling subtrees keep their previous references. Applies to the fetch-success path only — `setData` and `mutate` are unaffected. See [Structural Sharing](/learn/patterns/resource#structural-sharing) for a runnable reference-stability recipe.
+
 ### Request Deduplication
 
 Identical concurrent requests share a single network call by default. Disable with `deduplicate: false`.
@@ -293,7 +299,22 @@ controller.abort();
 
 ### Batch Invalidation
 
-Pattern-based cache clearing for logout and bulk resets. See [`resourceCache`](/reference/resource/resourcecache).
+Pattern-based cache clearing for logout and bulk resets — see [`resourceCache`](/reference/resource/resourcecache) for the invalidate methods. The `invalidates` option wires them to a successful mutation:
+
+```typescript
+import { resource, resourceCache } from '@hellajs/resource';
+
+resourceCache.set('user:1', { id: 1 }, 60000);
+
+const saveUser = resource(async () => ({ ok: true }), {
+  invalidates: ['user:', /^posts:\d+$/],
+});
+
+await saveUser.mutate({ action: 'save' });
+// on success: invalidateByPrefix('user:') + invalidateByPattern(/^posts:\d+$/)
+```
+
+`invalidates` deletes cache entries only — a resource currently displaying a matched key keeps its data; only the next fetch for that key hits the network. Call `invalidate()` or `fetch()` on any resource that must refresh immediately.
 
 <details>
 <summary>Internal Mechanics</summary>
@@ -320,29 +341,8 @@ idle -> loading -> success
 
 `abort()` resets to idle, restores `initialData`, and clears errors. `reset()` does the same but also clears mutation context. `invalidate()` clears cache and triggers a fresh request.
 
-#### Reactive Foundation
-
-Resources use internal reactive [signals](/reference/core/signal) to track state.
-
-- **data** - Current fetched data or initial value
-- **error** - Error information when requests fail
-- **isLoading** - True only during initial load (no data yet)
-- **isFetching** - True during any network request (initial or background)
-- **isIdle** - True when no fetch has occurred
-- **status** - Computed state reflecting current position in state machine
-
 #### Loading vs Fetching
 
 `isLoading()` is true only when no data exists (full spinner); `isFetching()` is true during any network activity including background refetches. See the SWR section above for a worked example.
-
-#### Resource State Flow
-
-Resources follow a predictable state flow that coordinates async operations:
-
-**Cache Integration**: Resources check cache before network requests (when `cacheTime > 0`), automatically managing data freshness and performance optimization.
-
-**Request Deduplication**: Multiple resources requesting the same data share a single network call, reducing server load and improving response times.
-
-**Memory Management**: Automatic cleanup of expired cache entries and proper disposal of reactive dependencies prevents memory leaks in long-running applications. Call [`dispose()`](/reference/resource/resource) to clean up polling timers, focus listeners, and reactive effects when a resource is no longer needed.
 
 </details>

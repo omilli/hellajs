@@ -42,5 +42,13 @@ describe("resourceCache", () => {
       expect(entry).toBeDefined();
       expect(entry?.data).toBe("fresh");
     });
+
+    test("map.get returns undefined for a key no scope holds", () => {
+      expect(resourceCache.map.get("no-such-key")).toBeUndefined();
+    });
+
+    test("map.has returns false for a key no scope holds", () => {
+      expect(resourceCache.map.has("no-such-key")).toBe(false);
+    });
   });
 });

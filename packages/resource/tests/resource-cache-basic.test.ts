@@ -26,6 +26,28 @@ describe("resourceCache", () => {
     expect(resourceCache.config.enableLRU).toBe(false);
   });
 
+  test.each([
+    "config",
+    null,
+    [1, 2],
+    { maxSize: -1 },
+    { maxSize: Number.NaN },
+    { enableLRU: "yes" },
+  ])("setConfig rejects invalid input %#", (input) => {
+    expect(() => {
+      // @ts-expect-error — intentionally invalid config shapes
+      resourceCache.setConfig(input);
+    }).toThrow("[resource] setConfig:");
+  });
+
+  test("setConfig rejection leaves config untouched and cache writes still work", () => {
+    expect(() => resourceCache.setConfig({ maxSize: -1 })).toThrow("[resource] setConfig:");
+    expect(resourceCache.config.maxSize).toBe(1000);
+
+    resourceCache.set("key1", "data1", 60000);
+    expect(resourceCache.map.size).toBe(1);
+  });
+
   describe("set/get", () => {
     test("set with cacheTime=0 does nothing", () => {
       resourceCache.set("key1", "data1", 0);

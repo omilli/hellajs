@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { effect } from "@hellajs/core";
+import { effect, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resource } from "@hellajs/resource/bundle";
 
@@ -167,6 +167,65 @@ describe("resource", () => {
       const countWhenHidden = fetcher.mock.calls.length;
       await delay(70);
       expect(fetcher.mock.calls.length).toBeGreaterThan(countWhenHidden);
+
+      r.dispose();
+    });
+
+    test("arms polling when enabled getter flips true", async () => {
+      const flag = signal(false);
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
+        refetchInterval: 20,
+        refetchOnKeyChange: true,
+        enabled: () => flag(),
+      });
+
+      effect(() => { r.status(); });
+      await delay(40);
+      expect(fetcher.mock.calls.length).toBe(0);
+
+      flag(true);
+      await delay(200);
+
+      // 1 auto-fetch on flip + multiple interval ticks — pre-fix this was exactly 1.
+      expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(4);
+      r.dispose();
+    });
+
+    test("does not reset polling cadence on key change", async () => {
+      const keySignal = signal("a");
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
+        refetchInterval: 20,
+        refetchOnKeyChange: true,
+        key: () => keySignal(),
+      });
+
+      effect(() => { r.status(); });
+      await delay(40);
+      keySignal("b"); // mid-window key change; cadence restart would lose ticks
+      await delay(160);
+
+      // ~10 interval slots at 20ms + 1 extra from the key-change fetch.
+      expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(8);
+      r.dispose();
+    });
+
+    test("polling stays stopped after abort()", async () => {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
+        refetchInterval: 20,
+        refetchOnKeyChange: true,
+      });
+
+      effect(() => { r.status(); });
+      await delay(50);
+      expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(1);
+
+      r.abort();
+      const countAfterAbort = fetcher.mock.calls.length;
+      await delay(80);
+      expect(fetcher.mock.calls.length).toBe(countAfterAbort);
 
       r.dispose();
     });

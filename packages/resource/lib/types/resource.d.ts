@@ -76,7 +76,7 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   deduplicate?: boolean;
   /** Preserve object/array references for structurally unchanged subtrees on fetch success, preventing redundant reactive cascades (default: false) */
   structuralSharing?: boolean;
-  /** Number of retry attempts on failure, or function to determine if retry should occur */
+  /** Number of retry attempts on failure, or function to determine if retry should occur (predicate receives the failure count starting at 1 on the first failure) */
   retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
   /** Delay between retries in ms, or function returning delay based on attempt number */
   retryDelay?: number | ((attempt: number, error: ResourceError) => number);

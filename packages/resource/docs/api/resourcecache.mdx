@@ -11,7 +11,7 @@ interface ResourceCache {
   readonly map: CacheMapView;
   readonly config: CacheConfig;
   setConfig(config: Partial<CacheConfig>): void;
-  set<K, T>(key: K, data: T, cacheTime?: number, staleTime?: number): K;
+  set<K, T>(key: K, data: T, cacheTime: number, staleTime?: number): K;
   get<T = unknown>(key: unknown): T | undefined;
   update<T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean;
   cleanup(): void;
@@ -21,7 +21,7 @@ interface ResourceCache {
   invalidateByPrefix(prefix: string): number;
   invalidateByPattern(pattern: RegExp): number;
   invalidateAll(): number;
-  invalidateResources(resources: Array<Pick<Resource<any>, 'invalidate'>>): void;
+  invalidateResources(resources: Array<Pick<Resource<unknown>, 'invalidate'>>): void;
   isOnline(): boolean;
   onOnlineChange(callback: (online: boolean) => void): () => void;
   prefetch<T, K>(options: PrefetchOptions<T, K>): Promise<T>;
@@ -74,11 +74,11 @@ Read-only flattened view over every fetcher-scoped cache. `get`, `has`, and `siz
 ```typescript
 import { resourceCache } from '@hellajs/resource';
 
-console.log('Cache entries:', resourceCache.map.size);
-if (resourceCache.map.has('user:123')) {
-  const entry = resourceCache.map.get('user:123');
-  console.log('Cached data:', entry?.data);
-}
+resourceCache.set('user:123', { name: 'John' }, 60000);
+
+console.log('Cache entries:', resourceCache.map.size); // 1
+const entry = resourceCache.map.get('user:123');
+console.log('Cached data:', entry?.data); // { name: 'John' }
 ```
 
 ### `config`
@@ -86,8 +86,7 @@ if (resourceCache.map.has('user:123')) {
 Readonly access to current cache configuration settings.
 
 ```typescript
-console.log('Max cache size:', resourceCache.config.maxSize);
-console.log('LRU enabled:', resourceCache.config.enableLRU);
+console.log(resourceCache.config); // { maxSize: 1000, enableLRU: true }
 ```
 
 ### `get`
@@ -95,6 +94,8 @@ console.log('LRU enabled:', resourceCache.config.enableLRU);
 Retrieves data from the cache by key.
 
 ```typescript
+resourceCache.set('user:123', { name: 'John' }, 60000);
+
 // Get cached data
 const user = resourceCache.get('user:123');
 if (user) console.log('Cached user:', user.name);
@@ -108,11 +109,7 @@ const userData = resourceCache.get<{ name: string }>('user:123');
 Returns the current browser online status.
 
 ```typescript
-if (resourceCache.isOnline()) {
-  console.log('Browser is online');
-} else {
-  console.log('Browser is offline - using cached data');
-}
+console.log(resourceCache.isOnline() ? 'Online' : 'Offline - using cached data');
 ```
 
 ### Write Methods
@@ -134,9 +131,11 @@ resourceCache.setConfig({
 resourceCache.setConfig({ maxSize: 5000 });
 ```
 
+Invalid input throws: `config` must be an object, `maxSize` a non-negative number, `enableLRU` a boolean.
+
 ### `set`
 
-Stores data in the cache with optional time-to-live and stale time. The `cacheTime` parameter is required: when omitted (or 0), nothing is stored.
+Stores data in the cache with a time-to-live and optional stale time. The `cacheTime` parameter is required: omitting it throws. An explicit `0` stores nothing (documented no-op) but still returns the key.
 
 ```typescript
 // Set with TTL (5 minutes) and stale time (30 seconds)
@@ -145,8 +144,8 @@ resourceCache.set('user:123', { name: 'John' }, 300000, 30000);
 // Set with TTL only (staleTime defaults to 0 = always stale on next fetch)
 resourceCache.set('config', { theme: 'dark' }, 60000);
 
-// cacheTime=0 or omitted → nothing is stored (no-op)
-resourceCache.set('temp', { data: 'gone' }); // Not stored!
+// explicit cacheTime 0 → nothing is stored (no-op), key still returned
+resourceCache.set('temp', { data: 'gone' }, 0);
 ```
 
 Note: `staleTime` defaults to `0` here (always stale), which differs from [`resource()`](/reference/resource/resource) where `staleTime` defaults to `Infinity` (never stale).
@@ -166,7 +165,7 @@ const updated = resourceCache.update('user:123', old => ({
 console.log(updated); // true
 
 // Update with direct value
-resourceCache.update('settings', { theme: 'light', lang: 'en' });
+resourceCache.update('user:123', { name: 'Johnny' });
 ```
 
 ### `updateMultiple`
@@ -190,15 +189,13 @@ resourceCache.updateMultiple([
 Performs cleanup of expired cache entries to free memory.
 
 ```typescript
-resourceCache.cleanup(); // Manual cleanup of expired entries
-
 // Periodic cleanup
 setInterval(() => resourceCache.cleanup(), 60000);
 ```
 
 ### `prefetch`
 
-Fetches via `fetcher(key)` and caches the result under the fetcher's own scope **without creating a resource**, returning the fetched data. Deduplicates, retries, and aborts like a [`resource()`](/reference/resource/resource) fetch. See [Prefetching](#prefetching) for the same-fetcher-reference requirement that lets a later `resource()` reuse the entry.
+Fetches via `fetcher(key)` and caches the result under the fetcher's own scope **without creating a resource**, returning the fetched data. Deduplicates, retries, and aborts like a [`resource()`](/reference/resource/resource) fetch; the `retry` predicate receives the failure count starting at `1` on the first failure. See [Prefetching](#prefetching) for the same-fetcher-reference requirement that lets a later `resource()` reuse the entry.
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';
@@ -218,6 +215,8 @@ Removes a single entry from the cache by key.
 ```typescript
 import { resourceCache } from '@hellajs/resource';
 
+resourceCache.set('user:123', { name: 'John' }, 60000);
+
 // Remove specific cache entry
 resourceCache.invalidate('user:123');
 
@@ -230,12 +229,11 @@ console.log(resourceCache.get('user:123')); // undefined
 Removes multiple entries from the cache by keys.
 
 ```typescript
-resourceCache.invalidateMultiple([
-  'user:1',
-  'user:2',
-  'posts:user:1',
-  'settings:user:1'
-]);
+// Seed cache entries first
+resourceCache.set('user:1', { name: 'Alice' }, 60000);
+resourceCache.set('posts:user:1', [{ id: 1 }], 60000);
+
+resourceCache.invalidateMultiple(['user:1', 'posts:user:1']);
 ```
 
 ### `invalidateByPrefix`
@@ -303,6 +301,21 @@ const unsubscribe = resourceCache.onOnlineChange((online) => {
 unsubscribe(); // Clean up subscription
 ```
 
+## Basic Usage
+
+```typescript
+import { resourceCache } from '@hellajs/resource';
+
+// Store an entry with a 5-minute TTL
+resourceCache.set('user:123', { name: 'John' }, 300000);
+
+// Read it back — a hit within the TTL
+console.log(resourceCache.get('user:123')); // { name: 'John' }
+
+// Remove it
+resourceCache.invalidate('user:123');
+```
+
 ## Key Concepts
 
 ### Automatic Cache Isolation
@@ -311,23 +324,17 @@ Each [`resource`](/reference/resource/resource) has its cache automatically scop
 
 The `resourceCache` API provides a flattened view across all scopes: `get()`, `invalidate()`, and similar methods search across all resource scopes transparently. Manual cache entries created with `resourceCache.set()` live in a separate public scope.
 
-### Global Cache Management
-
-The resourceCache provides centralized control over all cache scopes across your application. Methods like `invalidateByPrefix`, `invalidateByPattern`, and `invalidateAll` operate across all resource scopes.
-
 ### TTL and Expiration
 
-Cache entries have a time-to-live (TTL) that determines when they expire. Expired entries are automatically cleaned up during cache operations to prevent memory leaks. The cleanup process is throttled to avoid performance impact.
+Cache entries have a time-to-live (TTL) that determines when they expire; expired entries are cleaned up lazily during cache operations, throttled to avoid performance impact.
 
 ### LRU Eviction Strategy
 
-When the cache reaches its maximum size limit, the Least Recently Used (LRU) eviction strategy automatically removes the oldest unused entries to make room for new data. This ensures memory usage stays within configured bounds while keeping frequently accessed data available.
+When the cache reaches its `maxSize` limit, the least-recently-used entries are evicted automatically — memory stays within configured bounds while frequently accessed data remains available.
 
 ### Prefetching
 
-[`prefetch`](#prefetch) fetches via a fetcher and caches the result under that fetcher's own scope without creating a resource — useful for warming the cache ahead of need. It deduplicates, retries, and aborts just like a [`resource()`](/reference/resource/resource) fetch, and returns the fetched data. `structuralSharing` is intentionally absent from `PrefetchOptions`: prefetch has no prior data to share against.
-
-Cache scope and dedup are keyed by **fetcher reference identity**, so a later [`resource()`](/reference/resource/resource) hits the prefetched entry only when it shares the *same fetcher function reference* and key. The URL overload `resource('url')` cannot share a prefetched entry — each call builds a fresh fetcher closure and thus a separate scope. Use a named fetcher function to make the scope shareable.
+[`prefetch`](#prefetch) warms the cache ahead of need. Cache scope and dedup are keyed by **fetcher reference identity**, so a later [`resource()`](/reference/resource/resource) hits the prefetched entry only when it shares the *same fetcher function reference* and key. The URL overload `resource('url')` cannot share a prefetched entry — each call builds a fresh fetcher closure and thus a separate scope. Use a named fetcher function to make the scope shareable. `structuralSharing` is intentionally absent from `PrefetchOptions`: prefetch has no prior data to share against.
 
 ```typescript
 import { resource, resourceCache } from '@hellajs/resource';
