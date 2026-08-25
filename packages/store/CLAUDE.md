@@ -54,7 +54,7 @@ Then for each `[key, value]`: if `isPlainObject(value)` AND `current = this[key]
 **cleanup()** — defines and runs `deepCleanup(this)`: walks own keys, skips reserved, and for each object value either calls its own `cleanup` fn (nested stores) or recurses. Individual signals are functions, so they are **never disposed** — they keep working post-cleanup. Idempotent; does not null properties, the store object stays intact.
 
 **Init pass** — iterates `Object.entries(initial)`:
-- Reserved key (`snapshot`/`update`/`cleanup`): if `isStore(initial)` (composition) → skip silently; else throw `[store] createStore: reserved key collision, received "${key}"`.
+- Reserved key (`snapshot`/`update`/`cleanup`): if `isStore(initial)` (composition) → skip silently; else throw `[store] store: reserved key collision, received "${key}"`.
 - Function value → `defineStoreProperty` as-is.
 - `isPlainObject` value → recurse `createStore(value, { middleware: nested } or undefined)`. Readonly is NOT passed down.
 - Else (primitive/array) → `signal(value)`, optionally middleware-wrapped, then if readonly wrapped again as `computed(() => wrapped())`; assigned via `defineStoreProperty`.

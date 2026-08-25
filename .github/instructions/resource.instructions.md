@@ -33,7 +33,7 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 5. **Request phase** — `currentAbortController = cleanAbort()`; wire external `abortSignal` (immediate-abort if already aborted); wire `timeout`; capture `currentSignal`; `handleError(undefined, !hasData, true)`; reset `retryCount`. Build deferred `requestPromise`; if `deduplicate`, `setOngoing(...)` + attach `.catch(()=>{})` to swallow unhandled rejection.
 6. **Retry loop** — per-attempt: pre-abort check; `Promise.race([fetcherFn(cacheKey), abortReject])`. On success: optional `structuralShare`, `setCacheData(..., cacheTime, staleTime ?? Infinity)`, `handleSuccess`, resolve promise, `deleteOngoing`, return. On error: abort→handle+reject+return; else `retryCount++`, `shouldRetry` false→handle+reject+return; else await `getDelay` (abort clears timeout + resolves), post-delay abort check.
 
-Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loading/fetching + `onError`; `handleSuccessError` clears loading/fetching for AbortError **without** setting error, else delegates to `handleError`; `handleSuccess` writes `rawData`, clears flags, fires `onSuccess`; `cleanAbort(controller?)` aborts the prior controller and returns `controller ?? new AbortController()`.
+Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loading/fetching and fires `onError` only for a truthy error; `handleSuccessError` clears loading/fetching for AbortError **without** setting error, else delegates to `handleError`; `handleSuccess` writes `rawData`, clears flags, fires `onSuccess`; `cleanAbort(controller?)` aborts the prior controller and returns `controller ?? new AbortController()`.
 
 ### Cache (`cacheMap`, cache.ts:12)
 
@@ -192,6 +192,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 **Abort & error**
 - AbortError never sets `error()`; status falls back to data-derived (typically `idle`). Check `isIdle() && !isFetching()` rather than `error()` after abort/timeout. (resource.ts:119-126)
+- `onError` fires only when a truthy error reaches `handleError` — never on the state-clearing calls (fetch start, cache hit, dedup join, abort, reset).
 - `dispose()` does **not** abort in-flight requests and does **not** touch the cache; a resolving fetcher promise still updates `rawData` after dispose. It only clears polling/focus/reconnect + the key-change effect. One-way (resource is dead after). (resource.ts:489, fetching.test.ts:267)
 - Dedup joiners adopt the shared `abortController`; aborting one joined resource aborts the shared controller and resets **all** joiners to their `initialData`. (resource.ts:200, deduplication.test.ts:110)
 - `onSettled` is skipped on mutation abort — even if `onMutate` already ran and produced a context for rollback. (resource.ts:449-460, mutations.test.ts:135)
