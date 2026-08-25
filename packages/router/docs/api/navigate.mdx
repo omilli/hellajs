@@ -156,16 +156,16 @@ navigate('/users/:id', {
 
 ## Important Considerations
 
-### Asynchronous Navigation
+### Synchronous Navigation
 
-Navigation is asynchronous - the route change isn't immediate. Note that `router()` also returns stale state on initial load (see [`router`](/reference/router/router#router-return-value)).
+Navigation is synchronous — `navigate()` resolves the route and writes `route()` before returning. `router()` likewise resolves the initial route during the call (see [`router`](/reference/router/router#router-return-value)).
 
 ```typescript
-// ❌ Route may not be updated yet
+// ✅ Route is updated before navigate() returns
 navigate('/dashboard');
-console.log(route().path);
+console.log(route().path); // '/dashboard'
 
-// ✅ Use effect for route changes
+// Effects remain the pattern for reactive rendering
 effect(() => {
   if (route().path === '/dashboard') {
     console.log('Dashboard loaded');

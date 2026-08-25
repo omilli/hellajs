@@ -107,6 +107,57 @@ export function matchPattern(pattern: string, path: string, isNested = false): {
 }
 
 /**
+ * Matches one route-map entry against a path and resolves its nested chain.
+ * @internal
+ * @param pattern The route pattern for this entry.
+ * @param routeValue The route value for this entry.
+ * @param path The full path to match including query string.
+ * @returns Array of route matches with inherited parameters or null.
+ */
+export function matchNestedEntry(
+  pattern: string,
+  routeValue: RouteValue | string,
+  path: string
+): RouteMatch[] | null {
+  const [pathWithoutQuery, queryString] = path.split("?") as [string, string | undefined];
+
+  const match = matchPattern(pattern, pathWithoutQuery, true);
+  if (!match) {
+    return null;
+  }
+
+  const currentMatch: RouteMatch = {
+    routeValue: routeValue as RouteValue,
+    pattern,
+    params: match.params,
+    query: parseQuery(queryString),
+    remainingPath: match.remainingPath,
+    fullPath: path
+  };
+
+  const nonStringRouteValue = routeValue as RouteValue;
+  if (hasChildren(nonStringRouteValue) && match.remainingPath) {
+    const childMatches = matchNestedRoute(
+      nonStringRouteValue.children as Record<string, RouteValue | string>,
+      match.remainingPath + (queryString ? `?${queryString}` : "")
+    );
+
+    if (childMatches) {
+      const updatedChildMatches = childMatches.map(childMatch => ({
+        ...childMatch,
+        params: { ...match.params, ...childMatch.params }
+      }));
+      return [currentMatch, ...updatedChildMatches];
+    }
+
+    const hasHandler = isFunction(routeValue) || isFunction((routeValue as RouteWithHooks).handler);
+    return hasHandler ? [currentMatch] : null;
+  }
+
+  return [currentMatch];
+}
+
+/**
  * Matches nested routes and returns all matching route segments with parameter inheritance.
  * @internal
  * @param routeMap The route map to match against.
@@ -117,9 +168,6 @@ export function matchNestedRoute(
   routeMap: Record<string, RouteValue | string>,
   path: string
 ): RouteMatch[] | null {
-  const [pathWithoutQuery, queryString] = path.split("?") as [string, string | undefined];
-  const query = parseQuery(queryString);
-
   const routeEntries = Object.entries(routeMap)
     .filter(([, value]) => !isString(value))
     .sort(sortRoutesBySpecificity);
@@ -130,40 +178,10 @@ export function matchNestedRoute(
     const [pattern, routeValue] = routeEntries[i]!;
     i++;
 
-    const match = matchPattern(pattern, pathWithoutQuery, true);
-    if (!match) {
-      continue;
+    const matches = matchNestedEntry(pattern, routeValue, path);
+    if (matches) {
+      return matches;
     }
-
-    const currentMatch: RouteMatch = {
-      routeValue: routeValue as RouteValue,
-      pattern,
-      params: match.params,
-      query,
-      remainingPath: match.remainingPath,
-      fullPath: path
-    };
-
-    const nonStringRouteValue = routeValue as RouteValue;
-    if (hasChildren(nonStringRouteValue) && match.remainingPath) {
-      const childMatches = matchNestedRoute(
-        nonStringRouteValue.children as Record<string, RouteValue | string>,
-        match.remainingPath + (queryString ? `?${queryString}` : "")
-      );
-
-      if (childMatches) {
-        const updatedChildMatches = childMatches.map(childMatch => ({
-          ...childMatch,
-          params: { ...match.params, ...childMatch.params }
-        }));
-        return [currentMatch, ...updatedChildMatches];
-      }
-
-      const hasHandler = isFunction(routeValue) || isFunction((routeValue as RouteWithHooks).handler);
-      return hasHandler ? [currentMatch] : null;
-    }
-
-    return [currentMatch];
   }
 
   return null;

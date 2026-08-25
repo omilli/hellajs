@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush } from "@hellajs/core";
+import { suppressConsole } from "@utils/test-helpers.js";
 import { router, navigate, route } from "@hellajs/router/bundle";
-import { setupRouterEnv } from "./helpers";
+import { setupRouterEnv, expectLoggedError } from "./helpers";
 
 describe("router", () => {
   let container: HTMLDivElement;
@@ -14,6 +15,85 @@ describe("router", () => {
   });
 
   describe("redirects", () => {
+    test("cancels a cyclic redirect chain instead of overflowing the stack", () => {
+      const sup = suppressConsole();
+      try {
+        router({
+          routes: {
+            "/a": () => render("a"),
+            "/b": () => render("b")
+          },
+          redirects: [{ from: ["/a"], to: "/b" }, { from: ["/b"], to: "/a" }]
+        });
+
+        navigate("/safe");
+        const pathBefore = route().path;
+        navigate("/a");
+
+        expect(route().path).toBe(pathBefore);
+        expectLoggedError(sup, "[router] redirect loop detected:", "exceeded 20 hops resolving /a");
+      } finally {
+        sup.restore();
+      }
+    });
+
+    test("cancels a self-redirect instead of overflowing the stack", () => {
+      const sup = suppressConsole();
+      try {
+        router({
+          routes: {
+            "/a": () => render("a")
+          },
+          redirects: [{ from: ["/a"], to: "/a" }]
+        });
+
+        navigate("/safe");
+        const pathBefore = route().path;
+        navigate("/a");
+
+        expect(route().path).toBe(pathBefore);
+        expectLoggedError(sup, "[router] redirect loop detected:", "exceeded 20 hops resolving /a");
+      } finally {
+        sup.restore();
+      }
+    });
+
+    test("resolves a multi-hop redirect chain under the cap", () => {
+      router({
+        routes: {
+          "/final": () => render("final")
+        },
+        redirects: [
+          { from: ["/old"], to: "/legacy" },
+          { from: ["/legacy"], to: "/v1" },
+          { from: ["/v1"], to: "/final" }
+        ]
+      });
+
+      navigate("/old");
+      flush();
+      expect(route().path).toBe("/final");
+      expect(container.textContent).toBe("final");
+    });
+
+    test("router() init survives cyclic redirects", () => {
+      const sup = suppressConsole();
+      try {
+        const info = router({
+          routes: {
+            "/a": () => {},
+            "/b": () => {}
+          },
+          redirects: [{ from: ["/a"], to: "/b" }, { from: ["/b"], to: "/a" }],
+          url: "/a"
+        });
+
+        expect(info.path).toBe("/a");
+      } finally {
+        sup.restore();
+      }
+    });
+
     test("redirects using route map", () => {
       router({
         routes: {

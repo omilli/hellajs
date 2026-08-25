@@ -28,7 +28,7 @@ describe("navigate options", () => {
         "/": () => render("home"),
         "/about": () => render("about")
       },
-      scrollBehavior: 'preserve'
+      scrollBehavior: "preserve"
     });
 
     navigate("/about", { scroll: "top" });
@@ -59,7 +59,7 @@ describe("navigate options", () => {
         "/": () => render("home"),
         "/about": () => render("about")
       },
-      scrollBehavior: 'top'
+      scrollBehavior: "top"
     });
 
     navigate("/");
@@ -115,7 +115,7 @@ describe("navigate options", () => {
       routes: {
         "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
       },
-      scrollBehavior: 'preserve'
+      scrollBehavior: "preserve"
     });
 
     navigate("/users/:id", {

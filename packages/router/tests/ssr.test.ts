@@ -63,6 +63,51 @@ describe("router", () => {
       expect(route().query["q"]).toBe("hello");
     });
 
+    test("accepts a full request URL for the url option", () => {
+      const user = mock(() => { });
+
+      router({
+        routes: {
+          "/users/:id": user
+        },
+        url: "https://example.com/users/7"
+      });
+
+      expect(route().path).toBe("/users/7");
+      expect(route().params["id"]).toBe("7");
+      expect(user).toHaveBeenCalledTimes(1);
+    });
+
+    test("parses the query string from a full URL", () => {
+      const search = mock(() => { });
+
+      router({
+        routes: {
+          "/search": search
+        },
+        url: "https://example.com/search?q=hello%20world"
+      });
+
+      expect(route().query["q"]).toBe("hello world");
+    });
+
+    test("ignores a hash fragment in the url option", () => {
+      const user = mock(() => { });
+
+      router({
+        routes: {
+          "/users/:id": user
+        },
+        url: "https://example.com/users/7#section"
+      });
+
+      expect(route().params["id"]).toBe("7");
+    });
+
+    test("throws on an invalid url option", () => {
+      expect(() => router({ routes: {}, url: "http://[" })).toThrow("[router] router: invalid url, received \"http://[\"");
+    });
+
     test("fires the matched handler exactly once during router()", () => {
       const home = mock(() => { });
 

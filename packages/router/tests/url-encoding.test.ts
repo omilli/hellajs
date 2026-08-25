@@ -40,5 +40,28 @@ describe("router", () => {
       expect(container.textContent).toBe("files-docs/hello world.md");
       expect(route().params["*"]).toBe("docs/hello world.md");
     });
+
+    test("inserts wildcard values containing $& literally", () => {
+      router({
+        routes: {
+          "/files/*": () => {}
+        }
+      });
+
+      navigate("/files/*", { params: { "*": "docs/$&/readme.md" } });
+      expect(route().path).toBe("/files/docs/$&/readme.md");
+      expect(route().params["*"]).toBe("docs/$&/readme.md");
+    });
+
+    test("inserts wildcard values containing $$ and $` literally", () => {
+      router({
+        routes: {
+          "/files/*": () => {}
+        }
+      });
+
+      navigate("/files/*", { params: { "*": "a$$b/$`c" } });
+      expect(route().path).toBe("/files/a$$b/$`c");
+    });
   });
 });

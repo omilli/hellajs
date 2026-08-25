@@ -238,6 +238,62 @@ describe("anchor interception", () => {
     }
   });
 
+  test("does not intercept same-page hash anchors", () => {
+    window.location.href = "http://localhost/docs";
+    router({
+      routes: { "/docs": () => render("docs") }
+    });
+
+    const el = document.createElement("a");
+    el.href = "#faq";
+    el.textContent = "FAQ";
+    document.body.appendChild(el);
+
+    const pathBefore = route().path;
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+    el.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(route().path).toBe(pathBefore);
+  });
+
+  test("does not intercept full-href links differing only by hash", () => {
+    window.location.href = "http://localhost/docs";
+    router({
+      routes: { "/docs": () => render("docs") }
+    });
+
+    const el = document.createElement("a");
+    el.href = "http://localhost/docs#faq";
+    el.textContent = "FAQ";
+    document.body.appendChild(el);
+
+    const pathBefore = route().path;
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+    el.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(route().path).toBe(pathBefore);
+  });
+
+  test("treats hash-only hrefs as anchors in history mode", () => {
+    router({
+      routes: { "/": () => render("home") }
+    });
+
+    const el = document.createElement("a");
+    el.href = "#/about";
+    el.textContent = "About";
+    document.body.appendChild(el);
+
+    const pathBefore = route().path;
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+    el.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(route().path).toBe(pathBefore);
+  });
+
   test("intercepts hash-mode anchor clicks", () => {
     router({
       routes: {

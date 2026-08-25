@@ -1,4 +1,5 @@
-import { EMPTY_OBJECT, go } from "./internal/utils";
+import { EMPTY_OBJECT } from "./internal/utils";
+import { go } from "./internal/resolve";
 import type { NavigateOptions } from "./types";
 
 /**
@@ -28,8 +29,9 @@ export function navigate<T extends string>(
   }
 
   // Replace wildcard * pattern: not encoded since wildcards contain raw path segments with /
+  // Replacer function form — a string replacement would interpret $&, $$, etc. in the value.
   if (p["*"] !== undefined) {
-    result = result.replace("*", p["*"]);
+    result = result.replace("*", () => p["*"]!);
   }
 
   result = result.replace(/:([^/]+)/g, "");

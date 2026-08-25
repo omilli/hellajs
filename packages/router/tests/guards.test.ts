@@ -39,6 +39,23 @@ describe("router", () => {
       expect(history.length).toBe(len);
     });
 
+    test("mutually redirecting guards cancel instead of overflowing the stack", () => {
+      router({
+        routes: {
+          "/a": { before: () => "/b" },
+          "/b": { before: () => "/a" }
+        }
+      });
+
+      navigate("/safe");
+      const pathBefore = route().path;
+
+      navigate("/a");
+
+      expect(route().path).toBe(pathBefore);
+      expectLoggedError(sup, "[router] redirect loop detected:", "exceeded 20 hops resolving /a");
+    });
+
     test("before returning a string redirects via replace", () => {
       const secretHandler = mock(() => {});
       const loginHandler = mock(() => {});
