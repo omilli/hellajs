@@ -71,11 +71,27 @@ function runCapture(
  * Callers skip this when tests already failed — lint is the slow,
  * rarely-failing step, so it runs only on a green test run to keep the
  * iteration loop fast.
+ *
+ * With `packageName`, eslint scopes to that package so files outside it
+ * (sibling packages mid-edit, foreign scratch files) cannot fail a scoped run;
+ * tsc and the guards stay repo-wide — their foreign failures are triaged per
+ * AGENTS.md §Testing, not chased here.
  */
-async function runLint(): Promise<{ code: number; output: string }> {
-  logger.info("Linting...");
-  const result = await runCapture("bun", ["lint"], { cwd: projectRoot });
-  return { code: result.code, output: result.output };
+async function runLint(packageName?: string): Promise<{ code: number; output: string }> {
+  logger.info(packageName ? `Linting (eslint scoped to ${packageName})...` : "Linting...");
+  if (!packageName) {
+    const result = await runCapture("bun", ["lint"], { cwd: projectRoot });
+    return { code: result.code, output: result.output };
+  }
+  const tsc = await runCapture("bunx", ["tsc", "-p", "tsconfig.lint.json", "--noEmit"]);
+  if (tsc.code !== 0) {
+    return { code: tsc.code, output: tsc.output };
+  }
+  const eslint = await runCapture("bunx", ["eslint", `packages/${packageName}`]);
+  if (eslint.code !== 0) {
+    return { code: eslint.code, output: eslint.output };
+  }
+  return runCapture("bun", ["lint:guards"], { cwd: projectRoot });
 }
 
 async function main(): Promise<void> {
@@ -122,7 +138,7 @@ async function main(): Promise<void> {
   let exitCode = result.code;
   let lintOutput = "";
   if (result.code === 0) {
-    const lint = await runLint();
+    const lint = await runLint(packageName);
     exitCode = lint.code;
     if (lint.code !== 0) lintOutput = lint.output;
   }
