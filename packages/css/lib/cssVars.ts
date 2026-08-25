@@ -2,7 +2,7 @@ import type { CSSVarsOptions, CSSVars, CSSVarInputObject } from "./types";
 import { hash, stringify } from "./internal/shared";
 import { createVarsEffect } from "./internal/reactive";
 import { hasDocument, isFunction, isPlainObject } from "./internal/core";
-import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules } from "./internal/varsStore";
+import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules } from "./internal/vars";
 
 /**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.

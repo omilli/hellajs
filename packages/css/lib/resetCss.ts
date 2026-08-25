@@ -1,6 +1,6 @@
 import { hasDocument } from "./internal/core";
 import { resetSheet } from "./internal/sheet";
-import { STYLE_ID, injectedMap } from "./internal/cssStore";
+import { STYLE_ID, injectedMap } from "./internal/injection";
 
 /**
  * Clears all CSS rules and resets the CSS system to initial state.

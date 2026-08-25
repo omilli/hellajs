@@ -1,7 +1,7 @@
 import { hasDocument, isPlainObject } from "./internal/core";
 import { upsertRule } from "./internal/sheet";
-import { STYLE_ID, injectedMap, syncTextContent } from "./internal/cssStore";
-import type { InjectedEntry } from "./internal/cssStore";
+import { STYLE_ID, injectedMap, syncTextContent } from "./internal/injection";
+import type { InjectedEntry } from "./internal/injection";
 import type { CSSObject, CSSOptions } from "./types";
 
 const AMP_REGEX = /&/g;
@@ -13,7 +13,7 @@ const CAMEL_REGEX = /[A-Z]/g;
  * inherits the parent selector instead of being processed with an empty selector. Unchanged
  * when called without `name` (global mode).
  */
-const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-style"];
+const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-style"] as const;
 
 /**
  * Creates CSS rules from JavaScript objects. Global by default.
@@ -97,8 +97,9 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
   const properties: string[] = [];
   const keys = Object.keys(obj);
   let i = 0;
+  const len = keys.length;
 
-  while (i < keys.length) {
+  while (i < len) {
     const key = keys[i++] as string;
     const value = obj[key];
     if (value == null) continue;

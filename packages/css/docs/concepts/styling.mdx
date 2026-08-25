@@ -162,7 +162,7 @@ All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@contain
 
 HellaJS processes CSS objects into rules through deterministic key generation with built-in caching and memory management.
 
-- **Memoization**: Identical CSS objects with the same `name` share the same rule through hash-based caching
+- **Memoization**: Identical CSS objects generate identical CSS text, and that text is the identity key for deduplication and reference counting
 - **Reference Counting**: Each `css()` call increments a counter; styles are removed from the DOM when the count reaches zero
 - **Synchronous Updates**: `css()` writes to the DOM stylesheet immediately; `cssVars()` updates reactively via effects when signals change
 

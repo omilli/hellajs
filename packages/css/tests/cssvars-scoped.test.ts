@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { batch, flush, signal } from "@hellajs/core";
-import {resetTestState} from "@utils/test-helpers.js";
+import { resetTestState } from "@utils/test-helpers.js";
 import { cssVars, resetCssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
@@ -134,7 +134,7 @@ describe("cssVars scoped", () => {
     flush();
 
     varsEl = document.getElementById("hella-vars");
-    expect(varsEl?.textContent).toBe('');
+    expect(varsEl?.textContent).toBe("");
   });
 
   test("identical options return the same cached result", () => {

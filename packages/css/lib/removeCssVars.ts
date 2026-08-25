@@ -1,6 +1,6 @@
 import type { CSSVarInputObject, CSSVarsOptions } from "./types";
 import { hash, stringify } from "./internal/shared";
-import { varsRegistryReactive, varsResultReactive, varsRegistryStatic, cache, removeFromScope } from "./internal/varsStore";
+import { varsRegistryReactive, varsResultReactive, varsRegistryStatic, cache, removeFromScope } from "./internal/vars";
 import { hasDocument, isPlainObject } from "./internal/core";
 
 /**

@@ -21,7 +21,7 @@ const buttonStyle = css({
   background: 'blue',
   color: 'white',
   padding: '0.5rem 1rem'
-});
+}, { name: 'btn' });
 
 // Use the style...
 <button class={buttonStyle}>Click me</button>
@@ -31,7 +31,7 @@ removeCss({
   background: 'blue',
   color: 'white',
   padding: '0.5rem 1rem'
-});
+}, { name: 'btn' });
 ```
 
 ## Key Concepts
@@ -43,7 +43,7 @@ The `removeCss` function provides precise control over CSS rule lifecycle:
 - **Reference Counting**: Each `css()` call increments the reference count for the style
 - **Automatic Cleanup**: Removes CSS rules from DOM when reference count reaches zero
 - **Memory Management**: Frees memory used by unused styles
-- **Cache Cleanup**: Clears the inline cache for the removed style
+- **Cache Cleanup**: Drops the style's entry from the injected-rules map when the count reaches zero
 
 ### Usage Pattern
 
@@ -59,16 +59,16 @@ const sharedStyle = {
 };
 
 // Each call increments the reference count: CSS is injected once
-const classA = css(sharedStyle); // refCount = 1
-const classB = css(sharedStyle); // refCount = 2, same class name
-const classC = css(sharedStyle); // refCount = 3, same class name
+const classA = css(sharedStyle, { name: 'shared' }); // refCount = 1
+const classB = css(sharedStyle, { name: 'shared' }); // refCount = 2, same class name
+const classC = css(sharedStyle, { name: 'shared' }); // refCount = 3, same class name
 
 // Remove one reference: style persists (refCount = 2)
-removeCss(sharedStyle);
+removeCss(sharedStyle, { name: 'shared' });
 
 // Remove remaining references to fully clear
-removeCss(sharedStyle);
-removeCss(sharedStyle); // refCount = 0, CSS removed from DOM
+removeCss(sharedStyle, { name: 'shared' });
+removeCss(sharedStyle, { name: 'shared' }); // refCount = 0, CSS removed from DOM
 ```
 
 ### With Options
@@ -102,10 +102,10 @@ const MyComponent = () => {
     { border: '1px solid #ccc', borderRadius: '4px' }
   ];
 
-  const classNames = styleObjects.map(obj => css(obj));
+  const classNames = styleObjects.map((obj, i) => css(obj, { name: `comp-${i}` }));
 
   const destroy = () => {
-    styleObjects.forEach(obj => removeCss(obj));
+    styleObjects.forEach((obj, i) => removeCss(obj, { name: `comp-${i}` }));
   };
 
   return (
@@ -127,7 +127,7 @@ let currentTheme = null;
 const applyTheme = (colors) => {
   // Remove old theme if exists
   if (currentTheme) {
-    removeCss(currentTheme);
+    removeCss(currentTheme, { name: 'theme' });
   }
 
   // Apply new theme, store for removal on next switch
@@ -137,7 +137,7 @@ const applyTheme = (colors) => {
     borderColor: colors.border
   };
 
-  return css(currentTheme);
+  return css(currentTheme, { name: 'theme' });
 };
 
 // Switch themes
