@@ -1,6 +1,6 @@
 import { hasDocument, isPlainObject } from "./internal/core";
 import { removeRule } from "./internal/sheet";
-import { STYLE_ID, injectedMap, syncTextContent } from "./internal/cssStore";
+import { STYLE_ID, injectedMap, syncTextContent } from "./internal/injection";
 import { process } from "./css";
 import type { CSSObject, CSSOptions } from "./types";
 
@@ -30,7 +30,8 @@ export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
   if (entry.count > 0) return;
 
   let i = 0;
-  while (i < entry.ruleCount) {
+  const ruleCount = entry.ruleCount;
+  while (i < ruleCount) {
     removeRule(STYLE_ID, `${cssText}:${i}`);
     i++;
   }

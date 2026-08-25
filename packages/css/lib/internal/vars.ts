@@ -32,11 +32,11 @@ export const DOT_REGEX = /\./g;
  * prefix, reference count, and optional effect cleanup.
  */
 interface VarsEntry {
-  flatKeys: string[]
-  scope: string
-  prefix: string
-  refCount: number
-  cleanup?: () => void
+  flatKeys: string[];
+  scope: string;
+  prefix: string;
+  refCount: number;
+  cleanup?: () => void;
 }
 
 /**

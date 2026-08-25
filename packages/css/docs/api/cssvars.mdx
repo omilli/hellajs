@@ -88,7 +88,7 @@ const buttonStyle = css({
 
 ### Reactive CSS Variables
 
-CSS variables automatically update when signals change:
+CSS variables automatically update when signals change. Multiple signal updates inside `batch()` flush together — the sheet updates once when the batch completes:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -126,55 +126,6 @@ const ThemeExample = () => {
       <button on:click={() => primaryColor('#059669')}>
         Change Color
       </button>
-    </div>
-  );
-};
-```
-
-### Complex Reactive Theming
-
-```jsx
-import { signal, computed, batch } from '@hellajs/core';
-import { cssVars, css } from '@hellajs/css';
-
-const AdvancedTheme = () => {
-  const baseHue = signal(220); // Blue
-  const saturation = signal(70);
-  const lightness = signal(50);
-
-  // Complex computed CSS variables
-  const theme = cssVars({
-    colors: {
-      primary: () => `hsl(${baseHue()}, ${saturation()}%, ${lightness()}%)`,
-      secondary: () => `hsl(${baseHue() + 30}, ${saturation()}%, ${lightness() + 20}%)`,
-      background: () => `hsl(${baseHue()}, ${saturation() / 4}%, 95%)`,
-    },
-    spacing: {
-      base: () => lightness() > 60 ? '1rem' : '0.75rem' // Responsive spacing
-    }
-  });
-
-  const cardStyle = css({
-    backgroundColor: theme.colors.background,
-    color: theme.colors.primary,
-    padding: theme.spacing.base,
-    borderLeft: `4px solid ${theme.colors.secondary}`,
-    borderRadius: '0.5rem'
-  });
-
-  const randomizeTheme = () => {
-    batch(() => {
-      baseHue(Math.floor(Math.random() * 360));
-      saturation(50 + Math.floor(Math.random() * 40));
-      lightness(40 + Math.floor(Math.random() * 40));
-    });
-  };
-
-  return (
-    <div class={cardStyle}>
-      <h3>Dynamic Theme</h3>
-      <p>Theme updates automatically when signals change</p>
-      <button on:click={randomizeTheme}>Randomize Theme</button>
     </div>
   );
 };
@@ -335,25 +286,6 @@ cssVars({ flag: isActive });
 
 // ✅ Explicit conversion
 cssVars({ flag: () => isActive() ? '1' : '0' });
-```
-
-### Integration with Core Primitives
-
-Works seamlessly with all reactive primitives:
-
-```jsx
-import { signal, computed, effect } from '@hellajs/core';
-
-const colorSignal = signal('#ff0000');
-const computedColor = computed(() => adjustBrightness(colorSignal(), 0.8)); // user-defined helper
-
-const theme = cssVars({
-  colors: {
-    primary: colorSignal,           // Direct signal
-    primaryLight: computedColor,    // Computed signal
-    custom: () => mixColors()       // user-defined helper
-  }
-});
 ```
 
 ## Important Considerations

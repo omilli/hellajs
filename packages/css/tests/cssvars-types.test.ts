@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import {resetTestState} from "@utils/test-helpers.js";
+import { resetTestState } from "@utils/test-helpers.js";
 import { cssVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
@@ -28,7 +28,7 @@ describe("cssVars types", () => {
   });
 
   test("accepts string leaf", () => {
-    cssVars({ valid: 'string' });
+    cssVars({ valid: "string" });
   });
 
   test("accepts number leaf", () => {
@@ -36,16 +36,16 @@ describe("cssVars types", () => {
   });
 
   test("accepts function returning string", () => {
-    cssVars({ valid: () => 'value' });
+    cssVars({ valid: () => "value" });
   });
 
   test("accepts nested CSSVarInputObject", () => {
-    cssVars({ valid: { nested: 'value' } });
+    cssVars({ valid: { nested: "value" } });
   });
 
   test("return value's leaf type is string", () => {
-    const vars = cssVars({ color: 'red' });
+    const vars = cssVars({ color: "red" });
     const leaf: string = vars.color;
-    expect(leaf).toBe('var(--color)');
+    expect(leaf).toBe("var(--color)");
   });
 });
