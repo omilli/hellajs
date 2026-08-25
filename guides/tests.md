@@ -53,6 +53,7 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 - Never `await flush()` — synchronous, returns `void`. Use bare `flush()`.
 - Never use the double-delay (`await delay(); await delay()`). Use `await delay()`.
 - Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — use `mock()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. The only exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — use `mock()`.
+- Never assert generated output (CSS text, HTML strings, serialized forms) by substring alone when the artifact's **structure** is the contract — `toContain` passes inside structurally invalid output (`@font-face{{font-family:…}}` satisfied substring asserts while browsers parsed it to an empty rule). Every generated shape gets at least one exact-form `toBe` assert.
 
 ### Replace pattern
 
@@ -273,6 +274,7 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] No `it()` or `test.skip()`
 - [ ] No bare `await delay()` used as double-delay — single `delay()` for microtask flush
 - [ ] No boolean-flag or pure-integer call counters — `mock()` (exception: counter with observable side effects)
+- [ ] No substring-only asserts on generated output whose structure is the contract — at least one exact-form `toBe` per generated shape
 - [ ] No helper duplicated across files — extracted to `tests/helpers.ts`
 
 **State & cleanup**
