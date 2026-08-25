@@ -11,7 +11,7 @@ applyTo: "scripts/**"
   | Script | What it does |
   |---|---|
   | `bundle.ts` | Thin entry (55 lines): parse args → call `bundle/orchestrate.ts` → report. Flags: `[package]`, `--size-mode` (minified bundle variant only), `--clean` (purge dist + cache first). Callers pass `--quiet` but bundle does not read it. |
-  | `coverage.ts` | bundle → `bun test --coverage` → lint. Filters the coverage table to `[package]` rows and recalculates the `All files` average (Bun has no scope flag; the test preload forces `@hellajs/dom` into the instrumented set). CI runs this. |
+  | `coverage.ts` | bundle → `bun test --coverage` → lint. With `[package]`: tests + eslint scope to it (tsc + guards stay repo-wide — foreign failures are triaged per root AGENTS.md §Testing), and the coverage table filters to its rows with the `All files` average recalculated (Bun has no scope flag; the test preload forces `@hellajs/dom` into the instrumented set). CI runs this unscoped. |
   | `bench.ts` | Thin entry: parse args (`--variant`, `--runs`, `--throttle`, `--label`, `--ops`, `--headed`) → build + stage → serve → drive → report. Playwright + system Chrome macro-benchmark over `examples/bench`; appends self-describing entries to `.bench/results.md`. |
   | `clean.ts` | Remove `dist/` + `.build-cache/` per package. `bun clean [package]` scopes to one workspace. |
   | `release.ts` | Update `@hellajs/core` peer deps + `babel-plugin-hellajs` deps across packages, commit (`--no-verify`), then `changeset publish`. Run via `bun release` (the npm script bundles first). |
