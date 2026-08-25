@@ -1,15 +1,22 @@
 import { signal, computed, isFunction, isPlainObject, isObject } from "./core";
-import type { Store, PartialDeep, StoreOptions, StoreMiddleware } from "../types";
+import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware } from "../types";
 import { deepClone, extractChanges } from "./draft";
 import {
   reservedKeys,
   isObjectOrFunction,
   isStore,
-  readDeep,
   applyUpdate,
   wrapWithMiddleware,
   defineStoreProperty
 } from "./utils";
+
+/**
+ * @internal
+ * Non-enumerable registry of signal-backed (settable) keys, attached to every
+ * store. update() writes only these keys — reserved methods and preserved user
+ * functions are never settable. Composition threads the source store's registry.
+ */
+const settableRegistry = Symbol("hellajs.store.settableKeys");
 
 /**
  * @internal
@@ -34,10 +41,11 @@ export function createStore<T extends Record<string, unknown>>(
   const middlewares = options?.middleware;
 
   const result = {} as Store<T, never>;
+  const settableKeys = new Set<string>();
   let resultKeys: string[] = [];
 
-  const snapshotComputed = computed(() => {
-    const snapshotObj = {} as T;
+  const snapshotComputed = computed((): Snapshot<T> => {
+    const snapshotObj = {} as Record<string, unknown>;
     let i = 0;
     const len = resultKeys.length;
     while (i < len) {
@@ -46,33 +54,27 @@ export function createStore<T extends Record<string, unknown>>(
       const value = result[key as keyof T];
       const originalValue = initial[key as keyof T];
 
-      if (isFunction(originalValue)) {
-        snapshotObj[key as keyof T] = originalValue;
+      if (isFunction(originalValue) && !settableKeys.has(key)) {
+        snapshotObj[key] = originalValue;
       } else if (isStore(value)) {
-        if (isStore(initial[key as keyof T])) {
-          snapshotObj[key as keyof T] = {} as T[keyof T];
-          readDeep(
-            value as Record<string, unknown>,
-            snapshotObj[key as keyof T] as Record<string, unknown>
-          );
-        } else {
-          snapshotObj[key as keyof T] = (value as Record<"snapshot", () => T[keyof T]>).snapshot();
-        }
+        snapshotObj[key] = (value as { snapshot: () => unknown }).snapshot();
       } else if (isFunction(value)) {
-        snapshotObj[key as keyof T] = (value as () => T[keyof T])();
+        snapshotObj[key] = (value as () => unknown)();
+      } else {
+        snapshotObj[key] = value;
       }
       i++;
     }
-    return snapshotObj;
+    return snapshotObj as Snapshot<T>;
   });
 
   result.snapshot = snapshotComputed;
 
-  result.update = function (partial: PartialDeep<T> | ((draft: T) => void)) {
+  result.update = function (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) {
     let resolvedPartial: PartialDeep<T>;
 
     if (isFunction(partial)) {
-      const snapshot = this.snapshot();
+      const snapshot = this.snapshot() as unknown as T;
       const draft = deepClone(snapshot);
       (partial as (draft: T) => void)(draft);
       resolvedPartial = extractChanges(snapshot, draft) as PartialDeep<T>;
@@ -88,7 +90,7 @@ export function createStore<T extends Record<string, unknown>>(
       const current = this[key as keyof T];
       if (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "update")) {
         (current as unknown as Store<Record<string, unknown>>).update(value as object);
-      } else {
+      } else if (settableKeys.has(key)) {
         applyUpdate(current, value, middlewares, key as string);
       }
       i++;
@@ -123,6 +125,9 @@ export function createStore<T extends Record<string, unknown>>(
   };
 
   const initialIsStore = isStore(initial);
+  const sourceSettable = initialIsStore
+    ? ((initial as Record<symbol, Set<string> | undefined>)[settableRegistry])
+    : undefined;
 
   const initialEntries = Array.from(Object.entries(initial));
   let i = 0;
@@ -131,11 +136,12 @@ export function createStore<T extends Record<string, unknown>>(
     const [key, value] = initialEntries[i]!;
     if (reservedKeys.has(key)) {
       if (initialIsStore) { i++; continue; }
-      throw new Error(`[store] createStore: reserved key collision, received "${key}"`);
+      throw new Error(`[store] store: reserved key collision, received "${key}"`);
     }
 
     if (isFunction(value)) {
       defineStoreProperty(result, key, value);
+      if (sourceSettable?.has(key)) { settableKeys.add(key); }
       i++;
       continue;
     }
@@ -163,8 +169,11 @@ export function createStore<T extends Record<string, unknown>>(
         ? computed(() => wrapped())
         : wrapped
     );
+    settableKeys.add(key);
     i++;
   }
+
+  Object.defineProperty(result, settableRegistry, { value: settableKeys });
 
   resultKeys = Object.keys(result);
 

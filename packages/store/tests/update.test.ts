@@ -32,6 +32,33 @@ describe("store", () => {
       expect("c" in data).toBe(false);
     });
 
+    test("skips function-valued properties without invoking them", () => {
+      const onSave = mock(() => "old");
+      const data = store({ onSave, count: 0 });
+
+      // @ts-expect-error onSave is function-typed; update() ignores it by contract
+      data.update({ onSave: () => "new", count: 5 });
+
+      expect(onSave).not.toHaveBeenCalled();
+      expect(data.onSave()).toBe("old");
+      expect(data.count()).toBe(5);
+    });
+
+    test("ignores function reassignment in draft updates", () => {
+      const onSave = mock(() => "old");
+      const data = store({ onSave, count: 0 });
+
+      data.update(draft => {
+        // @ts-expect-error initial infers onSave as Mock<() => string>; the draft path accepts any function value
+        draft.onSave = () => "new";
+        draft.count = 1;
+      });
+
+      expect(onSave).not.toHaveBeenCalled();
+      expect(data.onSave()).toBe("old");
+      expect(data.count()).toBe(1);
+    });
+
     test("empty array update", () => {
       const data = store({ items: [1, 2, 3] });
 

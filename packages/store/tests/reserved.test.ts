@@ -4,7 +4,7 @@ import { store } from "@hellajs/store/bundle";
 describe("store", () => {
   describe("reserved keys", () => {
     test("throws on snapshot key collision with non-function value", () => {
-      expect(() => store({ snapshot: 1 })).toThrow("reserved key collision, received \"snapshot\"");
+      expect(() => store({ snapshot: 1 })).toThrow("[store] store: reserved key collision, received \"snapshot\"");
     });
 
     test("throws on cleanup key collision with non-function value", () => {
@@ -32,6 +32,16 @@ describe("store", () => {
       // @ts-expect-error snapshot is reserved — update must skip reserved keys
       data.update({ snapshot: "hijack" });
       expect(data.snapshot()).toEqual({ a: 1 });
+    });
+
+    test("skips the reserved update key without throwing", () => {
+      const data = store({ count: 0 });
+
+      // @ts-expect-error update is reserved — update must skip reserved keys
+      data.update({ update: { count: 99 } });
+
+      expect(data.count()).toBe(0);
+      expect(data.snapshot()).toEqual({ count: 0 });
     });
   });
 });

@@ -7,6 +7,7 @@ import { createStore } from "./internal/create";
  * @template R
  * @param initial Initial object to transform into a reactive store
  * @param options Object with readonly array of property keys to make readonly
+ * @throws {Error} When initial contains a reserved key (snapshot, update, or cleanup) and is not itself a store.
  */
 export function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
@@ -18,6 +19,7 @@ export function store<T extends Record<string, unknown>, R extends readonly (key
  * @template T
  * @param initial Initial object to transform into a reactive store
  * @param options Object with readonly: true to make all properties readonly
+ * @throws {Error} When initial contains a reserved key (snapshot, update, or cleanup) and is not itself a store.
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
@@ -29,6 +31,7 @@ export function store<T extends Record<string, unknown>>(
  * @template T
  * @param initial Initial object to transform into a reactive store
  * @param options Object with middleware functions for property transformations
+ * @throws {Error} When initial contains a reserved key (snapshot, update, or cleanup) and is not itself a store.
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
@@ -41,6 +44,7 @@ export function store<T extends Record<string, unknown>>(
  * @template R
  * @param initial Initial object to transform into a reactive store
  * @param options Object with readonly array and middleware functions
+ * @throws {Error} When initial contains a reserved key (snapshot, update, or cleanup) and is not itself a store.
  */
 export function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
@@ -52,24 +56,13 @@ export function store<T extends Record<string, unknown>, R extends readonly (key
  * @template T
  * @param initial Initial object to transform into a reactive store
  * @param options Optional configuration object
+ * @throws {Error} When initial contains a reserved key (snapshot, update, or cleanup) and is not itself a store.
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
   options?: { readonly?: false | undefined }
 ): Store<T, never>;
 
-/**
- * Transforms a plain object into a deeply reactive store.
- *
- * Primitives become signals, nested objects recursively become stores,
- * arrays become signals, and functions are preserved as-is.
- *
- * @template T
- * @param initial Initial object to transform
- * @param options Store configuration options
- * @returns Reactive store with snapshot, update, and cleanup methods
- * @throws {Error} When initial contains a reserved key (`snapshot`, `update`, or `cleanup`) with a non-function value.
- */
 export function store<T extends Record<string, unknown>>(
   initial: T,
   options?: StoreOptions<T>

@@ -38,11 +38,94 @@ Beyond basic get/set, stores offer several capabilities, each documented in deta
 - **Batching**: Wrap multiple store updates in [`batch`](/reference/core/batch) to defer computation until all changes are applied.
 - **Cleanup**: Recursively propagate teardown to nested stores when the store is no longer needed.
 
+## Deep Reactivity
+
+All nested objects are automatically converted to reactive stores, arrays become signals, and functions remain unchanged, creating a fully reactive state tree.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const userStore = store({
+  profile: { name: 'John', age: 30 },
+  settings: { theme: 'dark' }
+});
+
+effect(() => {
+  console.log(userStore.profile.name());
+  console.log(userStore.settings.theme());
+});
+```
+
+## Updating Stores
+
+### Partial Updates
+
+Pass a partial object to `update` for deep merging nested properties.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({
+  profile: { name: 'John', email: 'john@example.com' },
+  settings: { theme: 'light', notifications: true }
+});
+
+user.update({
+  profile: { name: 'Jane', email: 'jane@example.com' }
+});
+
+console.log(user.profile.name()); // Jane
+console.log(user.settings.theme()); // light (unchanged)
+```
+
+### Mutable Updates
+
+Pass a function to `update` for ergonomic mutations on arrays and complex nested transforms. The function receives a mutable draft.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const todos = store({
+  items: [
+    { id: 1, text: 'Learn HellaJS', done: false },
+    { id: 2, text: 'Build app', done: false }
+  ],
+  count: 2
+});
+
+todos.update(draft => {
+  draft.items.push({ id: 3, text: 'Ship it', done: false });
+  draft.items[0].done = true;
+  draft.count = draft.items.length;
+});
+
+console.log(todos.items().length); // 3
+console.log(todos.items()[0].done); // true
+```
+
 ## Important Store Behaviors
 
 ### Update Limitations
 
 The `update()` method only applies changes for properties that exist in the initial object. Any attempt to add new properties through update() will be silently ignored.
+
+Function-valued properties are also ignored — functions are methods and helpers, not state. Assign a new function directly instead:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const app = store({
+  count: 0,
+  onSave: () => {}
+});
+
+// This does nothing - 'onSave' holds a function, not a signal
+app.update({ onSave: () => {} });
+
+// Assign directly to swap the function
+app.onSave = () => {};
+```
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -62,25 +145,31 @@ app.update({ newProp: 'value' });
 
 ### Function Preservation
 
-Functions in the initial object are preserved as-is in the store. They are not wrapped in signals and remain functional, even in snapshots.
+Functions in the initial object are preserved as-is. They are not wrapped in signals and remain unchanged in the store and snapshot.
 
 ```typescript
-import { store } from '@hellajs/store';
+import { computed } from '@hellajs/core';
+import { store, type Store } from '@hellajs/store';
 
-const data = store({
+type DataStore = Store<{
+  count: number;
+  double: () => number;
+  logCount: () => void;
+}>;
+
+const data: DataStore = store({
   count: 0,
-  getCount: () => data.count(),
-  formatCount: (prefix) => `${prefix}: ${data.count()}`
+  double: computed(() => data.count() * 2),
+  logCount: () => console.log('Count is', data.count()),
 });
 
-data.count(5);
-data.getCount(); // 5
-data.formatCount('Items'); // "Items: 5"
+data.count(1);
+data.logCount(); // Count is 1
+data.double();   // 2
 
 // Functions remain functional in snapshots
 const snap = data.snapshot();
-snap.getCount(); // 5
-snap.formatCount('Count'); // "Count: 5"
+snap.logCount(); // Count is 1
 ```
 
 ### Middleware vs Effects
@@ -119,10 +208,10 @@ effect(() => {
 The property names `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Using them as property names in the initial object will throw an error.
 
 ```typescript
-// This will throw: Reserved key "snapshot"
+// Throws: Error '[store] store: reserved key collision, received "snapshot"'
 store({ snapshot: 1, name: 'test' });
 
-// This will throw: Reserved key "update"
+// Throws: Error '[store] store: reserved key collision, received "update"'
 store({ update: () => {}, value: 42 });
 
 // Valid property names
@@ -173,6 +262,6 @@ The store system includes several memory optimization strategies.
 
 - **Automatic Cleanup** - `cleanup()` recursively invokes teardown on nested stores; individual signals are not disposed
 - **No Cycle Detection** - Self-referential initial objects will recurse until the stack overflows; store initial state must be a tree
-- **Efficient Updates** - The `update()` function variant only applies changes that differ from the current state
+- **Efficient Updates** - The `update()` function variant compares the draft to the current state structurally: Dates, Maps, Sets, RegExps, class instances, and arrays compare by content, so untouched values are never rewritten and effects subscribed only to untouched properties do not fire
 
 </details>

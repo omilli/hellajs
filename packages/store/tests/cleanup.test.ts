@@ -77,5 +77,17 @@ describe("cleanup", () => {
     expect(() => data.cleanup()).not.toThrow();
     expect(data.x()).toBe(1);
   });
+
+  test("cleanup recurses into externally replaced plain object values", () => {
+    const innerCleaned = mock(() => {});
+    const data = store({ nested: { count: 0 } });
+
+    // @ts-expect-error external reassignment replaces the nested store with a plain tree (properties are writable)
+    data.nested = { group: { cleanup: innerCleaned } };
+
+    data.cleanup();
+
+    expect(innerCleaned).toHaveBeenCalledTimes(1);
+  });
 });
 });

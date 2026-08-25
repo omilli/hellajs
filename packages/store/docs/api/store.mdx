@@ -7,16 +7,25 @@ Converts a plain object into a deeply reactive store where primitives become sig
 ```typescript
 import { store } from '@hellajs/store';
 
+// All properties writable (default)
 function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
+
+// All properties readonly
 function store<T>(initial: T, options: { readonly: true }): Store<T, keyof T>
+
+// Specific properties readonly
 function store<T, R extends readonly (keyof T)[]>(
   initial: T,
   options: { readonly: R }
 ): Store<T, R[number]>
+
+// Middleware transformations only
 function store<T>(
   initial: T,
   options: { middleware: StoreMiddleware<T> }
 ): Store<T, never>
+
+// Specific properties readonly + middleware
 function store<T, R extends readonly (keyof T)[]>(
   initial: T,
   options: { readonly: R; middleware: StoreMiddleware<T> }
@@ -26,18 +35,26 @@ type Store<T, R extends PropertyKey = never> = {
   [K in keyof T]:
     T[K] extends (...args: unknown[]) => unknown ? T[K] :
     T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
-    T[K] extends Record<string, unknown> ? Store<T[K], R> :
+    T[K] extends Record<string, unknown> ? Store<T[K]> :
     K extends R ? () => T[K] : Signal<T[K]>;
 } & {
-  snapshot: () => T;
+  snapshot: () => Snapshot<T>;
   update: (partial: PartialDeep<T> | ((draft: T) => void)) => void;
   cleanup: () => void;
 }
 
-type StoreOptions<T> = {
+// Recursively unwraps composed store types so Snapshot matches the plain
+// values snapshot() actually returns
+
+type Snapshot<T> = {
+  [K in keyof T]:
+    T[K] extends Store<infer U, PropertyKey> ? Snapshot<U> : T[K];
+}
+
+interface StoreOptions<T> {
   readonly?: boolean | readonly (keyof T)[];
   middleware?: StoreMiddleware<T>;
-};
+}
 
 type StoreMiddleware<T> = {
   [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
@@ -70,7 +87,7 @@ const snapshot = appStore.snapshot();
 console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
 ```
 
-The snapshot is reactive across composed store boundaries. When one store is nested inside another, mutating a leaf signal in either store triggers re-computation of the outer snapshot:
+The snapshot is reactive across composed store boundaries. When one store is nested inside another, mutating a leaf signal in either store triggers re-computation of the outer snapshot, and composed leaves unwrap to their plain values:
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -80,7 +97,7 @@ const userStore = store({ name: 'Alice' });
 const appStore = store({ user: userStore });
 
 effect(() => {
-  console.log(appStore.snapshot());
+  console.log(appStore.snapshot()); // { user: { name: 'Alice' } }
 });
 
 userStore.name('Bob'); // triggers the effect — snapshot is reactive across composed stores
@@ -109,7 +126,7 @@ console.log(appStore.step());        // 2
 console.log(appStore.user.name());   // Bob
 ```
 
-> ⚠️ `update()` only applies changes for properties that exist in the initial object. Unknown keys are silently ignored.
+> ⚠️ `update()` writes only signal-backed properties — unknown keys, function-valued properties, and reserved keys are silently ignored. Swap functions by assigning directly: `appStore.onSave = newHandler`.
 
 ### `cleanup`
 
@@ -146,22 +163,7 @@ console.log(appStore.user.name());   // Bob
 
 ### Deep Reactivity
 
-All nested objects are automatically converted to reactive stores, arrays become signals, and functions remain unchanged, creating a fully reactive state tree.
-
-```typescript
-import { effect } from '@hellajs/core';
-import { store } from '@hellajs/store';
-
-const userStore = store({
-  profile: { name: 'John', age: 30 },
-  settings: { theme: 'dark' }
-});
-
-effect(() => {
-  console.log(userStore.profile.name());
-  console.log(userStore.settings.theme());
-});
-```
+All nested objects become stores, arrays become signals, and functions stay as-is — a fully reactive state tree. See [State](/learn/concepts/state) for the deep walk and effect examples.
 
 ### Middleware
 
@@ -275,124 +277,15 @@ userStore.name(); // 'Jane' — same signal reference
 
 ### Partial Updates
 
-Pass a partial object to `update` for deep merging nested properties.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const user = store({
-  profile: { name: 'John', email: 'john@example.com' },
-  settings: { theme: 'light', notifications: true }
-});
-
-user.update({
-  profile: { name: 'Jane', email: 'jane@example.com' }
-});
-
-console.log(user.profile.name()); // Jane
-console.log(user.settings.theme()); // light (unchanged)
-```
+Pass a partial object to `update()` for deep merging nested properties — unknown keys are ignored. See [State](/learn/concepts/state) for the pattern.
 
 ### Mutable Updates
 
-Pass a function to `update` for ergonomic mutations on arrays and complex nested transforms. The function receives a mutable draft.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const todos = store({
-  items: [
-    { id: 1, text: 'Learn HellaJS', done: false },
-    { id: 2, text: 'Build app', done: false }
-  ],
-  count: 2
-});
-
-todos.update(draft => {
-  draft.items.push({ id: 3, text: 'Ship it', done: false });
-  draft.items[0].done = true;
-  draft.count = draft.items.length;
-});
-
-console.log(todos.items().length); // 3
-console.log(todos.items()[0].done); // true
-```
+Pass a function to `update()` for ergonomic mutations on a mutable draft of the state. See [State](/learn/concepts/state) for array-operation examples.
 
 ### Function Preservation
 
-Functions in the initial object are preserved as-is. They are not wrapped in signals and remain unchanged in the store and snapshot.
-
-```typescript
-import { computed } from '@hellajs/core';
-import { store, type Store } from '@hellajs/store';
-
-type DataStore = Store<{
-  count: number;
-  double: () => number;
-  logCount: () => void;
-}>;
-
-const data: DataStore = store({
-  count: 0,
-  double: computed(() => data.count() * 2),
-  logCount: () => console.log('Count is', data.count()),
-});
-
-data.count(1);
-data.logCount(); // Count is 1
-data.double();   // 2
-```
-
-## Important Considerations
-
-### Reserved Keys
-
-The keys `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
-
-```typescript
-import { store } from '@hellajs/store';
-
-store({ snapshot: 1 }); // throws: Reserved key "snapshot"
-```
-
-### Memory Management
-
-`cleanup()` propagates teardown through the store tree, invoking each nested store's `cleanup`. Assign a custom `cleanup` method to release external resources (timers, listeners, subscriptions); the call recurses through the whole tree.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const userStore = store({ name: 'John' });
-userStore.cleanup();
-```
-
-### Nested Stores Do Not Inherit Readonly
-
-Readonly configuration applies to the current store level only. See [Readonly Options](#readonly-options) for the full explanation and examples.
-
-### Signals Survive Cleanup
-
-`cleanup()` recursively invokes `cleanup` on nested stores but does not dispose individual signals or null the store object. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
-
-### Effects vs Middleware
-
-- **Effects** run after changes — use for logging, persistence, derived state.
-- **Middleware** runs before changes — use for validation, transformation.
-
-```typescript
-import { effect } from '@hellajs/core';
-import { store } from '@hellajs/store';
-
-const data = store({ count: 0 }, {
-  middleware: { count: (v) => Math.max(0, v) }
-});
-
-effect(() => {
-  console.log('Count changed:', data.count());
-});
-```
-
-## Helper Types
+Functions in the initial object are preserved as-is — not wrapped in signals, functional in snapshots. See [State](/learn/concepts/state) for `computed`-in-store examples.
 
 ### `PartialDeep<T>`
 
@@ -456,4 +349,76 @@ type R2 = ReadonlyKeys<Config, { readonly: true }>;
 
 type R3 = ReadonlyKeys<Config, undefined>;
 // R3: never
+```
+
+## Important Considerations
+
+### Draft Updates Compare Structurally
+
+The `update(fn)` draft path diffs by content, not reference. Untouched `Date`, `Map`, `Set`, `RegExp`, and array values are not rewritten — their signals keep the same value and subscribers do not fire. Mutated class instances keep their prototype:
+
+```typescript
+import { store } from '@hellajs/store';
+
+class Point {
+  x: number;
+  constructor(x: number) { this.x = x; }
+}
+
+const data = store({ point: new Point(1), count: 0 });
+
+data.update(draft => {
+  draft.count = 1; // point is untouched — no write, no subscriber wakeups
+});
+
+data.update(draft => {
+  draft.point.x = 5; // written back as a Point, not a plain object
+});
+```
+
+### Reserved Keys
+
+The keys `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
+
+```typescript
+import { store } from '@hellajs/store';
+
+store({ snapshot: 1 }); // Throws: Error '[store] store: reserved key collision, received "snapshot"'
+```
+
+### Memory Management
+
+`cleanup()` propagates teardown through the store tree, invoking each nested store's `cleanup`. Assign a custom `cleanup` method to release external resources (timers, listeners, subscriptions); the call recurses through the whole tree.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const userStore = store({ name: 'John' });
+userStore.cleanup();
+```
+
+### Nested Stores Do Not Inherit Readonly
+
+Readonly configuration applies to the current store level only. See [Readonly Options](#readonly-options) for the full explanation and examples.
+
+### Signals Survive Cleanup
+
+`cleanup()` recursively invokes `cleanup` on nested stores but does not dispose individual signals or null the store object. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
+
+### Effects vs Middleware
+
+- **Effects** run after changes — use for logging, persistence, derived state.
+- **Middleware** runs before changes — use for validation, transformation.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const data = store({ count: 0 }, {
+  middleware: { count: (v) => Math.max(0, v) }
+});
+
+effect(() => {
+  console.log('Count changed:', data.count());
+});
 ```

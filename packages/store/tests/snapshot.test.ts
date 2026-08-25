@@ -117,6 +117,57 @@ describe("snapshot", () => {
     expect(tracker).toHaveBeenCalledTimes(2);
   });
 
+  test("composed snapshot returns plain values for leaf properties", () => {
+    const userStore = store({ name: "Alice" });
+    const appStore = store({ user: userStore });
+
+    const snap = appStore.snapshot();
+
+    expect(snap.user.name).toBe("Alice");
+    expect(typeof snap.user.name).not.toBe("function");
+  });
+
+  test("composed snapshot unwraps array leaf signals to values", () => {
+    const dataStore = store({ items: [1, 2, 3] });
+    const containerStore = store({ data: dataStore });
+
+    const snap = containerStore.snapshot();
+
+    expect(snap.data.items).toEqual([1, 2, 3]);
+  });
+
+  test("composed snapshot of nested composed stores returns plain values", () => {
+    const innerStore = store({ value: "a" });
+    const midStore = store({ inner: innerStore });
+    const outerStore = store({ mid: midStore });
+
+    const snap = outerStore.snapshot();
+
+    expect(snap.mid.inner.value).toBe("a");
+  });
+
+  test("composed snapshot preserves original functions", () => {
+    const helperStore = store({ count: 0, double: () => 4 });
+    const appStore = store({ helper: helperStore });
+
+    const snap = appStore.snapshot();
+
+    expect(typeof snap.helper.double).toBe("function");
+    expect(snap.helper.double()).toBe(4);
+  });
+
+  test("snapshot includes externally replaced leaf properties as plain values", () => {
+    const innerStore = store({ value: "a" });
+    const containerStore = store({ inner: innerStore });
+
+    // @ts-expect-error external reassignment replaces the signal (properties are writable) — drops reactivity
+    containerStore.inner.value = 42;
+
+    const snap = containerStore.snapshot();
+    // Runtime holds the plain replaced value; the store type still claims Signal<string>
+    expect(snap.inner.value as unknown as number).toBe(42);
+  });
+
   test("empty store snapshot", () => {
     const data = store({});
     expect(data.snapshot()).toEqual({});
