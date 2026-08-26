@@ -25,6 +25,7 @@ One public name per file (`lib/index.ts` is a pure re-export barrel); the `ssr` 
 | `lib/internal/serialize.ts` | `serializeProp`/`escapeHtml` (mirror dom's `renderProp`), `VOID` void-element set. |
 | `lib/internal/head.ts` | `buildHead(head)` — the single head builder used by both of `doc`'s modes (≥2 callers — `internal/` placement criterion); local helpers `buildAttrs`/`renderVoidTags` (non-exported). |
 | `lib/internal/resolve.ts` | `resolveValue`/`resolveAsync` (call-if-function, await-if-Promise resolvers); `isPromise` type guard (local). |
+| `lib/internal/assert.ts` | `assertNode` — the shared root guard behind all three members (≥2 callers — `internal/` placement criterion); two tiers: missing node / tag-less non-node (`ssr(App)` footgun). |
 | `lib/internal/walk.ts` | The shared async walker (`ssrNodeGen` exported; `walkChildGen`/`walkChildrenGen`/`renderDynamicGen` local) + `MARK_OPEN`/`MARK_CLOSE` and the `DynamicFn`/`PendingSwap` types. |
 
 `ssr`/`ssr.async` have no try/catch (walk failures, including rejected Promises, propagate). `ssr.stream` wraps its async drain in try/catch to route a rejected Promise into `controller.error()` — structurally required by `ReadableStream` semantics (a `ReadableStream` cannot propagate a throw synchronously to its consumer), not a swallow.
@@ -54,7 +55,7 @@ Every dynamic region (reactive child, isDynamic component, nested fragment) is w
 - `lazy` — renders `props.loading` if present; never awaits `loader`.
 - `suspense` — under `ssr`/`ssr.async` renders `children` directly (fallback dropped); under `ssr.stream` emits `fallback` inline + a sentinel comment (nodeValue = a `<template>` id), defers, and streams the resolved children as `<template id="hsN">…</template><script>$hs("hsN")</script>` — each swapped in the moment it arrives (progressive). A one-time `$hs` bootstrap (the `HS_SWAP_SCRIPT` const in `lib/ssrStream.ts`) precedes the templates; `hydrate` adopts already-swapped nodes (`swapSuspenseStage` is the no-script/HappyDOM fallback). `hydrate` resolves each template by id, so order-independent emission is safe.
 
-A user-authored isDynamic function with no `ssr` renders as nothing (not an error). User components (`component()`) expand to a HellaNode at template time, so they are plain recursion — no `ssr`.
+A user-authored isDynamic function with no `ssr` renders as an empty marker region (`<!--[--><!--]-->`), not an error — byte-identical across all three members. User components (`component()`) expand to a HellaNode at template time, so they are plain recursion — no `ssr`.
 
 ## Non-obvious behaviors (gotchas)
 
