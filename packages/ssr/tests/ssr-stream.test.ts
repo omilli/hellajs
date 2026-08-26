@@ -1,10 +1,10 @@
 import { describe, test, expect, mock } from "bun:test";
 import { signal } from "@hellajs/core";
+import { delay } from "@utils/test-helpers.js";
 import { html, ForEach, Transition, Portal, Lazy, Suspense } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { collect, parityCases, attributeCases, unknownKindNode } from "./helpers";
-import { delay } from "@utils/test-helpers.js";
 
 /** Stream/async parity cases — collecting `ssr.stream` must equal `ssr.async` (a distinct comparison from the `ssr` parity matrix). */
 const streamAsyncParityCases: { name: string; node: HellaNode }[] = [
@@ -185,6 +185,10 @@ describe("ssr.stream", () => {
 
   test("throws when node is null", () => {
     expect(() => ssr.stream(null as unknown as HellaNode)).toThrow("[ssr] ssr.stream: node is required");
+  });
+
+  test("throws synchronously when the root is a function (uninvoked component)", () => {
+    expect(() => ssr.stream((() => ({ tag: "div" })) as unknown as HellaNode)).toThrow(/^\[ssr\] ssr\.stream: node must be a HellaNode/);
   });
 
   test.each(parityCases)("parity: collecting ssr.stream matches ssr for $name", async ({ node }) => {

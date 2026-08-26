@@ -11,6 +11,13 @@ export async function collect(stream: ReadableStream<string>): Promise<string> {
   return out;
 }
 
+/** An isDynamic function carrying no `ssr` meta — every walker must render it as an empty marker region. */
+const bareDynamicFn = (() => {
+  const fn = () => "";
+  (fn as { isDynamic?: true }).isDynamic = true;
+  return fn;
+})();
+
 /** Parity node cases — inputs every walker (`ssr`/`ssr.async`/`ssr.stream`) must render byte-identically. */
 export const parityCases: { name: string; node: HellaNode }[] = [
   { name: "falsy child (false)", node: html`<div>${false}</div>` as HellaNode },
@@ -22,6 +29,7 @@ export const parityCases: { name: string; node: HellaNode }[] = [
   { name: "reactive getter returning an array of nodes", node: html`<ul>${() => [1, 2, 3].map((n) => html`<li>${n}</li>`)}</ul>` as HellaNode },
   { name: "reactive child resolving to a non-HellaNode object", node: html`<div>${signal({ notag: true } as unknown as HellaNode)}</div>` as HellaNode },
   { name: "reactive getter returning an isDynamic component", node: html`<div>${() => ForEach({ each: signal([1, 2, 3]), use: (n: number) => html`<li>${n}</li>` })}</div>` as HellaNode },
+  { name: "isDynamic function without ssr meta (empty region)", node: html`<div>${bareDynamicFn}</div>` as HellaNode },
 ];
 
 /** Attribute-serialization parity cases — exercise the `serializeProp` branches (void / boolean / array / falsy). */

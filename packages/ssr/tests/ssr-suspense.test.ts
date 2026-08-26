@@ -1,10 +1,10 @@
 import { describe, test, expect, beforeEach } from "bun:test";
+import { flush } from "@hellajs/core";
+import { setupContainer, resetTestState } from "@utils/test-helpers.js";
 import { html, Suspense, component, hydrate } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { collect } from "./helpers";
-import { setupContainer, resetTestState } from "@utils/test-helpers.js";
-import { flush } from "@hellajs/core";
 
 beforeEach(() => resetTestState());
 

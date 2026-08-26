@@ -183,4 +183,4 @@ None of the members has try/catch. The sync call throws, a rejected `Promise` re
 
 ### Throws on invalid input
 
-Every member throws the same shape when `node` is `null` or `undefined`: `[ssr] ssr: node is required, received <value>` for the sync call (`ssr.async` rejects its Promise with the `ssr.async` prefix, `ssr.stream` throws with the `ssr.stream` prefix).
+Every member throws the same shape when `node` is `null` or `undefined`: `[ssr] ssr: node is required, received <value>` for the sync call (`ssr.async` rejects its Promise with the `ssr.async` prefix, `ssr.stream` throws with the `ssr.stream` prefix). A root that is not a HellaNode — any non-object, or an object without a `tag` — throws `[ssr] <member>: node must be a HellaNode (object with a tag), received <typeof>` instead of silently serializing garbage HTML: passing an uninvoked component (`ssr(App)`) throws, `ssr(App())` renders.

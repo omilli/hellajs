@@ -1,10 +1,10 @@
 import { describe, test, expect, mock } from "bun:test";
+import { delay } from "@utils/test-helpers.js";
 import { html, Suspense } from "@hellajs/dom/bundle";
 import { ssr, doc } from "@hellajs/ssr/bundle";
 import type { DocOptions } from "@hellajs/ssr";
 import type { HellaNode } from "@hellajs/dom";
 import { collect } from "./helpers";
-import { delay } from "@utils/test-helpers.js";
 
 /** A ReadableStream<string> that emits the given chunks then closes — a deterministic body. */
 function streamOf(...chunks: string[]): ReadableStream<string> {

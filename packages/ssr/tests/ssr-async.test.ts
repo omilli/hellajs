@@ -130,6 +130,10 @@ describe("ssr.async", () => {
     await expect(ssr.async(null as unknown as HellaNode)).rejects.toThrow("[ssr] ssr.async: node is required");
   });
 
+  test("rejects when the root is a function (uninvoked component)", async () => {
+    await expect(ssr.async((() => ({ tag: "div" })) as unknown as HellaNode)).rejects.toThrow(/^\[ssr\] ssr\.async: node must be a HellaNode/);
+  });
+
   test.each(parityCases)("parity: ssr.async matches ssr for $name", async ({ node }) => {
     expect(await ssr.async(node)).toBe(ssr(node));
   });
