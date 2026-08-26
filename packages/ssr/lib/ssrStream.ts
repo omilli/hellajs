@@ -1,6 +1,7 @@
 import type { HellaNode } from "@hellajs/dom";
 import { ssrNodeGen } from "./internal/walk";
 import type { PendingSwap } from "./internal/walk";
+import { assertNode } from "./internal/assert";
 
 /**
  * The inline swap function emitted once at the start of a streamed `<Suspense>` flush (only when there are
@@ -50,12 +51,10 @@ const HS_SWAP_SCRIPT = `function $hs(id){
  * Bare Promises are awaited in-order; a rejected Promise errors the stream. Zero runtime imports.
  * @param node The HellaNode AST to serialize
  * @returns A `ReadableStream<string>` of HTML chunks
- * @throws {Error} When `node` is null or undefined.
+ * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
  */
 export function ssrStream(node: HellaNode): ReadableStream<string> {
-  if (node === null || node === undefined) {
-    throw new Error(`[ssr] ssr.stream: node is required, received ${node}`);
-  }
+  assertNode(node, "ssr.stream");
   const pending: PendingSwap[] = [];
   const gen = ssrNodeGen(node, pending);
   let done = false;                         // shared by start/cancel: suppress late concurrent enqueues once the stream is done (cancel/error)
@@ -74,7 +73,7 @@ export function ssrStream(node: HellaNode): ReadableStream<string> {
           for await (const chunk of swap.childGen) html += chunk;
           if (!done) controller.enqueue(`<template id="${swap.id}">${html}</template><script>$hs("${swap.id}")</script>`);
         }));
-        controller.close();
+        if (!done) controller.close();       // guard mirrors doc.ts's start tail — a cancel between the last enqueue and close() would otherwise throw here
       } catch (err) {
         done = true;                        // a sibling swap still mid-drain skips its late enqueue (errored stream would throw)
         controller.error(err);

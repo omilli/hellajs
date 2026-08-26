@@ -107,10 +107,10 @@ describe("ssr", () => {
     expect(ssr(node)).toBe("<div><!--[--><!--]--></div>");
   });
 
-  test("renders nothing for an isDynamic function without ssr", () => {
+  test("emits an empty marker region for an isDynamic function without ssr", () => {
     const fn = (() => { }) as unknown as { isDynamic?: true };
     fn.isDynamic = true;
-    expect(ssr(html`<div>${fn}</div>` as HellaNode)).toBe("<div></div>");
+    expect(ssr(html`<div>${fn}</div>` as HellaNode)).toBe("<div><!--[--><!--]--></div>");
   });
 
   test("renders an empty marker region and warns for an unknown ssr kind", () => {
@@ -174,5 +174,13 @@ describe("ssr", () => {
 
   test("throws when node is undefined", () => {
     expect(() => ssr(undefined as unknown as HellaNode)).toThrow(/^\[ssr\] ssr: node is required, received undefined$/);
+  });
+
+  test("throws when the root is a function (uninvoked component)", () => {
+    expect(() => ssr((() => ({ tag: "div" })) as unknown as HellaNode)).toThrow(/^\[ssr\] ssr: node must be a HellaNode/);
+  });
+
+  test("throws when the root is an object without a tag", () => {
+    expect(() => ssr({} as HellaNode)).toThrow(/^\[ssr\] ssr: node must be a HellaNode/);
   });
 });

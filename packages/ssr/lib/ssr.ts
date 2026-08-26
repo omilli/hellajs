@@ -1,6 +1,7 @@
 import type { HellaNode, HellaChild, SsrMeta } from "@hellajs/dom";
 import { serializeProp, escapeHtml, VOID } from "./internal/serialize";
 import { resolveValue } from "./internal/resolve";
+import { assertNode } from "./internal/assert";
 import { MARK_OPEN, MARK_CLOSE } from "./internal/walk";
 import type { DynamicFn } from "./internal/walk";
 import { ssrAsync } from "./ssrAsync";
@@ -59,8 +60,7 @@ function walkChild(child: HellaChild): string {
     let body: string;
     if ((child as DynamicFn).isDynamic) {
       const meta = (child as DynamicFn).ssr;
-      if (!meta) return "";                       // user-authored isDynamic fn — no region
-      body = renderDynamic(meta);
+      body = meta ? renderDynamic(meta) : "";       // no ssr meta (user-authored isDynamic fn) — empty region, parity with walkChildGen
     } else {
       const resolved = resolveValue(child);                            // reactive — resolve + classify
       if (typeof resolved === "function" && (resolved as DynamicFn).isDynamic) {
@@ -113,7 +113,7 @@ interface SsrFn {
    * `HellaNode` import (erased at compile time). Walk failures propagate to the caller (no try/catch).
    * @param node The HellaNode AST to serialize
    * @returns The rendered HTML string
-   * @throws {Error} When `node` is null or undefined.
+   * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
    */
   (node: HellaNode): string;
   /**
@@ -124,7 +124,7 @@ interface SsrFn {
    * (including rejected Promises) propagate to the caller (no try/catch).
    * @param node The HellaNode AST to serialize
    * @returns A Promise resolving to the rendered HTML string
-   * @throws {Error} When `node` is null or undefined.
+   * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
    */
   async(node: HellaNode): Promise<string>;
   /**
@@ -138,7 +138,7 @@ interface SsrFn {
    * `Response` body.
    * @param node The HellaNode AST to serialize
    * @returns A `ReadableStream<string>` of HTML chunks
-   * @throws {Error} When `node` is null or undefined.
+   * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
    */
   stream(node: HellaNode): ReadableStream<string>;
 }
@@ -152,9 +152,7 @@ export const ssr: SsrFn = Object.assign(ssrImpl, { async: ssrAsync, stream: ssrS
 
 /** Sync walk — the base call target of the `ssr` namespace (see `SsrFn` for the public contract). */
 function ssrImpl(node: HellaNode): string {
-  if (node === null || node === undefined) {
-    throw new Error(`[ssr] ssr: node is required, received ${node}`);
-  }
+  assertNode(node, "ssr");
   const tag = node.tag;
   if (tag === "$") return walkChildren(node.children);               // fragment — concatenate, no markers
   let open = `<${tag}`;

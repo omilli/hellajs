@@ -141,7 +141,7 @@ Fetch server-side data directly in the tree with [`ssr.async`](/reference/ssr/ss
 
 ```js
 import { html } from '@hellajs/dom';
-import { ssr.async } from '@hellajs/ssr';
+import { ssr } from '@hellajs/ssr';
 
 const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
 

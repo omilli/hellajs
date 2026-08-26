@@ -1,5 +1,6 @@
 import type { HellaNode } from "@hellajs/dom";
 import { ssrNodeGen } from "./internal/walk";
+import { assertNode } from "./internal/assert";
 
 /**
  * @internal
@@ -10,12 +11,10 @@ import { ssrNodeGen } from "./internal/walk";
  * unchanged. Walk failures (including rejected Promises) propagate to the caller (no try/catch).
  * @param node The HellaNode AST to serialize
  * @returns A Promise resolving to the rendered HTML string
- * @throws {Error} When `node` is null or undefined.
+ * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
  */
 export async function ssrAsync(node: HellaNode): Promise<string> {
-  if (node === null || node === undefined) {
-    throw new Error(`[ssr] ssr.async: node is required, received ${node}`);
-  }
+  assertNode(node, "ssr.async");
   let out = "";
   for await (const chunk of ssrNodeGen(node, undefined)) out += chunk;
   return out;

@@ -34,6 +34,7 @@ New symbol?
 │   ├─ Type consumers import → lib/types/*.d.ts
 │   └─ Barrel re-export from internal/ (utils, env) → stays in lib/internal/, re-exported by index.ts
 ├─ Not re-exported (internal)
+│   ├─ Callable-namespace member impl (@internal, attached via Object.assign in the namespace's file) → lib/{implName}.ts
 │   ├─ Helper function / logic → lib/internal/{concern}.ts (single noun/gerund)
 │   └─ Internal type → co-located with owning module
 └─ A file that seems to need two concerns → split it; the concern is one word
@@ -324,6 +325,8 @@ lib/
 
 Top-level `lib/*.ts` is **public API only**. A file whose exports are all `@internal`, or whose symbols are not re-exported by `index.ts`, is internal code and belongs under `lib/internal/` — never at the top level. The top-level folder is the package's public surface; an internal helper sitting there looks public but isn't, which hides the real API and defeats the one-export-per-file rule (an auditor cannot tell a misplaced internal file from a genuine public one).
 
+**Exception — callable-namespace member impls.** A member implementation attached to a callable-namespace export (`ssr` → `ssr.async`/`ssr.stream`) lives at top level as `lib/{implName}.ts` (filename = the impl function name, e.g. `ssrAsync.ts`), exported `@internal` and attached via `Object.assign` in the namespace's own file — not under `lib/internal/`. The file maps one-to-one onto a documented member of the public interface (the namespace's type declares it), and relocating it orphans the per-file coverage mapping and any parity comments co-located with the member. One-export-per-file and filename-matches-export still apply.
+
 ### `index.ts` Rules
 
 Named re-exports, `export type *`, global augmentations. No logic, no conditional exports, no transformations.
@@ -339,7 +342,7 @@ Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `script
 **Structure**
 - [ ] File sits at the right path per the File-placement decision tree
 - [ ] One public export per `lib/*.ts` file; filename matches the export name verbatim
-- [ ] Internal-only files live under `lib/internal/` (not at the top level)
+- [ ] Internal-only files live under `lib/internal/` (not at the top level — exception: callable-namespace member impls stay at `lib/{implName}.ts`)
 - [ ] Internal module named by a single noun/gerund concern
 - [ ] Public types live in `lib/types/*.d.ts`; internal types co-located with their owning module
 
