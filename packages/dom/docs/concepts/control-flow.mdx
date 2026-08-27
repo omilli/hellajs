@@ -45,14 +45,15 @@ const TodoList = () => {
 
   return (
     <ul>
-      <ForEach each={todos} use={(todo) => (
+      <ForEach each={todos} use={(todo: { id: number; text: string; done: boolean }) => (
         <li key={todo.id} class={todo.done ? "done" : ""}>
           <input
             type="checkbox"
             checked={todo.done}
             on:change={e => {
+              const target = e.target as HTMLInputElement;
               const updated = todos().map(t =>
-                t.id === todo.id ? { ...t, done: e.target.checked } : t
+                t.id === todo.id ? { ...t, done: target.checked } : t
               );
               todos(updated);
             }}
@@ -73,7 +74,7 @@ See [`ForEach`](/reference/dom/foreach) for keyed reconciliation details.
 
 ## Portals
 
-Render content to a different DOM location while maintaining reactivity.
+Render content to a different DOM location while maintaining reactivity — useful for modals, tooltips, and overlays that need to escape their parent's DOM tree.
 
 ```jsx
 import { mount, Portal } from "@hellajs/dom";
@@ -100,7 +101,21 @@ const Modal = () => {
 mount(Modal, "#app");
 ```
 
-**Portal types:** `append` (default), `prepend`, `replace`, `before`, `after`
+**Portal types:** `append` (default), `prepend`, `replace`, `before`, `after` — controlling how content is inserted relative to the target:
+
+```jsx
+// Append as last child (default)
+<Portal to="#container">
+  <span>Appended</span>
+</Portal>
+
+// Replace all target content
+<Portal to="#container" type="replace">
+  <span>Replaces everything</span>
+</Portal>
+```
+
+Portal content remains reactive — signal updates propagate to the portaled location — and is cleaned up automatically when the portal's parent element is removed. The target element must exist in the DOM when the portal renders; the target is queried by CSS selector at render time.
 
 See [`Portal`](/reference/dom/portal) for full details.
 
@@ -125,7 +140,58 @@ const Dashboard = () => {
 };
 ```
 
-- `loading`: Shown during async load (optional)
+- `loading`: Shown during async load (optional; without it the space stays empty)
 - `fallback`: Shown on loader error only (optional)
 
+The `loader` returns a Promise resolving to a component function or HellaNode. Loader errors are caught inside `Lazy` and trigger the `fallback` directly — they do not bubble to the global [`onError`](/reference/dom/onerror) handler.
+
+When the parent element is removed during loading, the loader is automatically cancelled. Loaders performing network requests can accept an options object with an `AbortSignal`:
+
+```jsx
+<Lazy
+  loader={({ signal } = {}) =>
+    fetch("/api/widget.js", { signal })
+      .then(r => r.text())
+      .then(html => ({ tag: "div", children: [html] }))
+  }
+  loading={<div>Loading widget...</div>}
+  fallback={<div>Widget unavailable</div>}
+/>
+```
+
+Plain `() => Promise` loaders work unchanged — the options argument is silently ignored. Pass props to the loaded component through the `props` attribute:
+
+```jsx
+<Lazy
+  loader={() => import("./UserProfile")}
+  props={{ userId: 123, theme: "dark" }}
+/>
+```
+
 See [`Lazy`](/reference/dom/lazy) for full details.
+
+## Transitions
+
+Animate show/hide content with enter/leave CSS classes using [`Transition`](/reference/dom/transition).
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount, Transition } from "@hellajs/dom";
+
+const visible = signal(false);
+
+const App = () => (
+  <div>
+    <button on:click={() => visible(!visible())}>Toggle</button>
+    <Transition show={visible} enter="fade-in" leave="fade-out" duration={300}>
+      <div class="panel">Hello</div>
+    </Transition>
+  </div>
+);
+
+mount(App, "#app");
+```
+
+When `show` turns `false` and a `leave` class is set, the class is added and the node is removed after `duration + 50` ms so the animation finishes; without a `leave` class, hiding removes the node synchronously. The `enter` class is suppressed on first render unless `appear` is set (`true` reuses `enter`, a string names a dedicated class). Toggling `show` back to `true` during a leave cancels the removal timer — repeated toggling is safe.
+
+See [`Transition`](/reference/dom/transition) for full details.

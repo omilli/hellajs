@@ -16,7 +16,25 @@ Route handlers execute immediately when their pattern matches. The typical patte
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const HomePage = () => <div>Home</div>;
+const AboutPage = () => <div>About</div>;
+const TodoDetail = ({ id }: { id?: string }) => <div>Todo {id}</div>;
+const NotFound = () => <div>Not found</div>;
+const UserTodo = ({ userId, todoId }: { userId?: string; todoId?: string }) => (
+  <div>Todo {todoId} of user {userId}</div>
+);
+const AdminDashboard = () => <div>Admin</div>;
+const UsersList = () => <div>Users</div>;
+const UserDetail = ({ id }: { id?: string }) => <div>User {id}</div>;
+const AdminSettings = () => <div>Settings</div>;
+const SearchResults = ({ term, sort }: { term?: string; sort?: string }) => (
+  <div>Results for {term} (sorted by {sort})</div>
+);
+const FileViewer = ({ path }: { path?: string }) => <div>File {path}</div>;
+const AdminPanel = () => <div>Admin</div>;
+const Feed = () => <div>Feed</div>;
+const Chat = () => <div>Chat</div>;
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -52,7 +70,7 @@ Parameters are extracted from the URL and passed as the first argument to route 
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -104,7 +122,7 @@ Routes can be organized hierarchically using the `children` property. Child rout
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -172,21 +190,26 @@ navigate('/users/:id', {
 ### Navigation in Components
 
 ```jsx
-const TodoList = ({ todos }) => {
-  const viewTodo = (id) => {
+import { ForEach } from '@hellajs/dom';
+
+type Todo = { id: number; text: string };
+
+const TodoList = ({ todos }: { todos: Todo[] }) => {
+  const viewTodo = (id: number) => {
     navigate('/todos/:id', { params: { id: String(id) } });
   };
 
   return (
     <ul>
-      <ForEach each={todos}>
-        {(todo) => (
+      <ForEach
+        each={todos}
+        use={(todo) => (
           <li>
             <span>{todo.text}</span>
             <button on:click={() => viewTodo(todo.id)}>View</button>
           </li>
         )}
-      </ForEach>
+      />
     </ul>
   );
 };
@@ -205,14 +228,14 @@ import { effect } from '@hellajs/core';
 // Update page title reactively
 effect(() => {
   const { meta, path } = route();
-  document.title = meta?.title || 'My App';
+  document.title = typeof meta?.title === "string" ? meta.title : "My App";
 });
 
 // Use in components
 const Breadcrumbs = () => (
   <nav>
     <span>Path: {route().path}</span>
-    {route().params.id && <span> / Item {route().params.id}</span>}
+    {route().params.id && <span> / Item {route().params.id ?? ""}</span>}
   </nav>
 );
 ```

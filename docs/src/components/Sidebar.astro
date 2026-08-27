@@ -74,12 +74,7 @@ const mainNavLinks = [
 <div class="drawer max-lg:drawer-end lg:drawer-open">
   <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
 
-  <!-- Main content area -->
-  <div class="drawer-content">
-    <slot />
-  </div>
-
-  <!-- Sidebar -->
+  <!-- Sidebar (before content in DOM so it follows the navbar in tab order) -->
   <div class="drawer-side">
     <label
       for="sidebar-drawer"
@@ -114,5 +109,10 @@ const mainNavLinks = [
         }
       </ul>
     </aside>
+  </div>
+
+  <!-- Main content area -->
+  <div class="drawer-content">
+    <slot />
   </div>
 </div>

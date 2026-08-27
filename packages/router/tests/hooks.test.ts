@@ -57,9 +57,9 @@ describe("hooks", () => {
     router({
       routes: {
         "/users/:id": {
-          before: ({ id }: { id: string }) => params.push(`before-${id}`),
-          handler: ({ id }: { id: string }) => render(`user-${id}`),
-          after: ({ id }: { id: string }) => params.push(`after-${id}`)
+          before: ({ id }) => params.push(`before-${id}`),
+          handler: ({ id }) => render(`user-${id}`),
+          after: ({ id }) => params.push(`after-${id}`)
         }
       }
     });
@@ -193,11 +193,11 @@ describe("hooks", () => {
     router({
       routes: {
         "/org/:orgId": {
-          before: ({ orgId }: { orgId: string }) =>
+          before: ({ orgId }) =>
             hookParams.push({ hook: "parent", orgId }),
           children: {
             "/projects/:projectId": {
-              before: ({ orgId, projectId }: { orgId: string, projectId: string }) =>
+              before: ({ orgId, projectId }) =>
                 hookParams.push({ hook: "child", orgId, projectId }),
               handler: () => render("project")
             }
@@ -290,28 +290,28 @@ describe("hooks", () => {
         "/users": {
           children: {
             "/:userId": {
-              before: ({ userId }: { userId: string }) => {
+              before: ({ userId }) => {
                 hookCalls.push(`nested-before-${userId}`);
               },
               children: {
                 "/posts": {
                   children: {
                     "/:postId": {
-                      before: ({ userId, postId }: { userId: string, postId: string }) => {
+                      before: ({ userId, postId }) => {
                         hookCalls.push(`deep-before-${userId}-${postId}`);
                       },
-                      handler: ({ userId, postId }: { userId: string, postId: string }) => {
+                      handler: ({ userId, postId }) => {
                         hookCalls.push(`handler-${userId}-${postId}`);
                         render(`post-${userId}-${postId}`);
                       },
-                      after: ({ userId, postId }: { userId: string, postId: string }) => {
+                      after: ({ userId, postId }) => {
                         hookCalls.push(`deep-after-${userId}-${postId}`);
                       }
                     }
                   }
                 }
               },
-              after: ({ userId }: { userId: string }) => {
+              after: ({ userId }) => {
                 hookCalls.push(`nested-after-${userId}`);
               }
             }

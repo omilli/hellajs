@@ -11,7 +11,8 @@ import { onError, html } from "@hellajs/dom";
 
 onError((error, context) => {
   console.error(`[${context.phase}]`, error.message);
-  return html`<div class="error">Something went wrong</div>`;
+  const fallback = html`<div class="error">Something went wrong</div>`;
+  return typeof fallback === "function" ? fallback() : fallback;
 });
 ```
 

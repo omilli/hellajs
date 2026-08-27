@@ -7,6 +7,9 @@ Event handlers attached directly to the element via `addEventListener`. Use `e:`
 ```jsx
 import { mount } from "@hellajs/dom";
 
+const parentHandler = () => console.log("parent");
+const childHandler = () => console.log("child");
+
 const App = () => (
   <form e:submit={(e) => e.preventDefault()}>
     <button type="submit">Submit</button>

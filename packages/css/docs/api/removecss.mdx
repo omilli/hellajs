@@ -122,9 +122,11 @@ const MyComponent = () => {
 import { signal } from '@hellajs/core';
 import { css, removeCss } from '@hellajs/css';
 
-let currentTheme = null;
+type ThemeStyles = { background: string; color: string; borderColor: string };
 
-const applyTheme = (colors) => {
+let currentTheme: ThemeStyles | null = null;
+
+const applyTheme = (colors: { background: string; text: string; border: string }) => {
   // Remove old theme if exists
   if (currentTheme) {
     removeCss(currentTheme, { name: 'theme' });
@@ -179,6 +181,8 @@ For bulk cleanup of all styles at once, use [`resetCss`](/reference/css/resetcss
 ### Global Styles
 
 ```jsx
+const globalStyles = { body: { margin: '0', fontFamily: 'system-ui, sans-serif' } };
+
 // Global styles don't need any options
 css(globalStyles);
 removeCss(globalStyles);

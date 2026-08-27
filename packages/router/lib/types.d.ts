@@ -17,9 +17,12 @@ export type ExtractParams<T extends string> =
         : {};
 
 /**
- * Generic function type for route handlers and hooks.
+ * Function type for route handlers and hooks. Declare the full
+ * `(params, query)` signature; runtime dispatch is by the handler's own
+ * arity (params present → fn(params, query); else fn.length >= 2 →
+ * fn(undefined, query); else fn(query)).
  */
-export type Handler = (...args: never[]) => unknown;
+export type Handler = (params: Params, query: Params) => unknown;
 
 /**
  * History mode for URL management.

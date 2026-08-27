@@ -17,7 +17,7 @@ describe("router", () => {
       router({
         routes: {
           "/users/admin": () => render("admin-user"),
-          "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
+          "/users/:id": ({ id }) => render(`user-${id}`)
         }
       });
 

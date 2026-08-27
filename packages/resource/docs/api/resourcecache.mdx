@@ -6,6 +6,7 @@ Global cache management providing advanced cache control, LRU eviction, and batc
 
 ```typescript
 import { resourceCache } from '@hellajs/resource';
+import type { Resource, ResourceError } from '@hellajs/resource';
 
 interface ResourceCache {
   readonly map: CacheMapView;
@@ -97,7 +98,7 @@ Retrieves data from the cache by key.
 resourceCache.set('user:123', { name: 'John' }, 60000);
 
 // Get cached data
-const user = resourceCache.get('user:123');
+const user = resourceCache.get<{ name: string }>('user:123');
 if (user) console.log('Cached user:', user.name);
 
 // Explicit type parameter for type safety
@@ -158,7 +159,7 @@ Updates existing cached data using an updater function or direct value.
 // Seed the cache entry first
 resourceCache.set('user:123', { name: 'John' }, 60000);
 
-const updated = resourceCache.update('user:123', old => ({
+const updated = resourceCache.update<{ name: string; lastSeen?: number }>('user:123', old => ({
   ...old,
   lastSeen: Date.now()
 }));
@@ -178,7 +179,9 @@ resourceCache.set('user:1', { name: 'Alice' }, 60000);
 resourceCache.set('user:2', { name: 'Bob' }, 60000);
 
 // Batch update multiple users
-resourceCache.updateMultiple([
+type UserRecord = { name: string; online?: boolean };
+
+resourceCache.updateMultiple<UserRecord>([
   { key: 'user:1', updater: user => ({ ...user, online: true }) },
   { key: 'user:2', updater: user => ({ ...user, online: false }) }
 ]);
@@ -280,6 +283,8 @@ Immediately invalidates all provided resources by calling their invalidate metho
 
 ```typescript
 import { resourceCache, resource } from '@hellajs/resource';
+
+const fetchUserPosts = (id: string) => fetch(`/api/users/${id}/posts`).then(r => r.json());
 
 const userResource = resource(fetchUser);
 const userPostsResource = resource(fetchUserPosts);

@@ -131,7 +131,7 @@ const spinner = css({
 
 ### Conditional Styles
 
-Use `null` or `undefined` to omit properties from the output. `css()` is static — resolve conditions before calling it.
+Use `undefined` to omit properties from the output. `css()` is static — resolve conditions before calling it.
 
 ```jsx
 import { css } from '@hellajs/css';
@@ -142,7 +142,7 @@ const button = css({
   padding: '0.5rem 1rem',
   background: '#3b82f6',
   color: 'white',
-  border: isActive ? '2px solid #1d4ed8' : null
+  border: isActive ? '2px solid #1d4ed8' : undefined
 }, { name: 'button' });
 ```
 

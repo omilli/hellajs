@@ -12,8 +12,8 @@ const App = () => (
     hook:beforeMount={() => console.log("Creating element")}
     hook:afterMount={(element) => {
       // Safe to measure dimensions, initialize libraries, etc.
-      const rect = element.getBoundingClientRect();
-      console.log("Element size:", rect.width, rect.height);
+      const rect = element?.getBoundingClientRect();
+      console.log("Element size:", rect?.width, rect?.height);
     }}
     hook:beforeUpdate={() => console.log("About to update")}
     hook:afterUpdate={() => console.log("Element updated")}
@@ -42,17 +42,17 @@ mount(App, "#app");
 
 ### Access to Element
 
-Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument.
+Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument. The element arrives as `Element | undefined` — narrow before using HTMLElement-specific APIs.
 
 ```jsx
 <div
   hook:afterMount={(element) => {
-    // element is the DOM node
-    element.style.color = "red";
+    // element is the DOM node (HTMLElement after an instanceof narrow)
+    if (element instanceof HTMLElement) element.style.color = "red";
   }}
   hook:beforeDestroy={(element) => {
-    // cleanup using element reference
-    element._instance?.destroy();
+    // cleanup using the element reference
+    console.log("cleaning up", element?.tagName);
   }}
 >
   Content
@@ -61,17 +61,48 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 
 ### Common Patterns
 
+Store per-element state in a `WeakMap` keyed by the element — typed, garbage-collectable, and no property stashing on DOM nodes.
+
+```jsx
+interface Instance {
+  destroy(): void;
+}
+
+const instances = new WeakMap<Element, Instance>();
+const subscribe = (onData: (data: string) => void) => ({
+  unsubscribe: () => console.log("unsubscribed"),
+});
+
+<div
+  hook:afterMount={(el) => {
+    if (!el) return;
+    instances.set(el, { destroy: () => console.log("destroyed", el.tagName) });
+  }}
+  hook:beforeDestroy={(el) => {
+    if (el) instances.get(el)?.destroy();
+  }}
+/>
+```
+
 #### Initialize Third-Party Library
 
 ```jsx
+interface Chart {
+  destroy(): void;
+}
+
+const charts = new WeakMap<Element, Chart>();
+const createChart = (el: Element) => ({
+  destroy: () => console.log("chart destroyed", el.tagName),
+});
+
 <div
   hook:afterMount={(el) => {
-    const chart = new Chart(el, config);
-    // Store reference for cleanup
-    el._chart = chart;
+    //… real libraries: const chart = new Chart(el, config)
+    if (el) charts.set(el, createChart(el));
   }}
   hook:beforeDestroy={(el) => {
-    el._chart?.destroy();
+    if (el) charts.get(el)?.destroy();
   }}
 />
 ```
@@ -81,7 +112,7 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 ```jsx
 <div
   hook:afterMount={(el) => {
-    const { width, height } = el.getBoundingClientRect();
+    const { width, height } = el?.getBoundingClientRect() ?? { width: 0, height: 0 };
     console.log("Dimensions:", width, height);
   }}
 />
@@ -90,14 +121,19 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 #### Setup and Cleanup Subscriptions
 
 ```jsx
+const subscriptions = new WeakMap<Element, { unsubscribe(): void }>();
+const dataSource = { subscribe: (onData: (data: string) => void) => ({ unsubscribe: () => console.log("done") }) };
+
 <div
   hook:afterMount={(el) => {
-    el.subscription = dataSource.subscribe((data) => {
-      el.textContent = data;
-    });
+    if (!el) return;
+    subscriptions.set(
+      el,
+      dataSource.subscribe((data) => (el.textContent = data))
+    );
   }}
   hook:beforeDestroy={(el) => {
-    el.subscription?.unsubscribe();
+    if (el) subscriptions.get(el)?.unsubscribe();
   }}
 />
 ```

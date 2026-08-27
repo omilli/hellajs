@@ -54,7 +54,7 @@ describe("router", () => {
     test("extracts route parameters", () => {
       router({
         routes: {
-          "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
+          "/users/:id": ({ id }) => render(`user-${id}`)
         }
       });
 
@@ -77,7 +77,7 @@ describe("router", () => {
     test("processes query parameters", () => {
       router({
         routes: {
-          "/search": (_p: unknown, query: { q: string }) => render(`query-${query?.q}`)
+          "/search": (_p, query) => render(`query-${query?.q}`)
         }
       });
 
@@ -86,10 +86,33 @@ describe("router", () => {
       expect(route().query["q"]).toBe("test");
     });
 
+    test("passes params and query to a populated route handler", () => {
+      router({
+        routes: {
+          "/users/:id": (params, query) =>
+            render(`user-${params["id"]}-page-${query["page"]}`)
+        }
+      });
+
+      navigate("/users/7", { query: { page: "2" } });
+      expect(container.textContent).toBe("user-7-page-2");
+    });
+
+    test("passes query as the only argument to a single-arity handler on a param-less route", () => {
+      router({
+        routes: {
+          "/search": (query) => render(`query-${query["q"]}`)
+        }
+      });
+
+      navigate("/search", { query: { q: "test" } });
+      expect(container.textContent).toBe("query-test");
+    });
+
     test("navigates using wildcard * parameter substitution", () => {
       router({
         routes: {
-          "/files/*": ({ "*": wildcard }: { "*": string }) => render(`files-${wildcard}`)
+          "/files/*": ({ "*": wildcard }) => render(`files-${wildcard}`)
         }
       });
 
@@ -116,7 +139,7 @@ describe("router", () => {
     test("removes unmatched :param patterns from URL", () => {
       router({
         routes: {
-          "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
+          "/users/:id": ({ id }) => render(`user-${id}`)
         }
       });
       // @ts-expect-error - testing behavior when required param is missing
@@ -131,7 +154,7 @@ describe("router", () => {
             handler: () => render("admin"),
             children: {
               "/users": () => render("users"),
-              "/:section": ({ section }: { section: string }) => render(`section-${section}`)
+              "/:section": ({ section }) => render(`section-${section}`)
             }
           }
         }
@@ -152,7 +175,7 @@ describe("router", () => {
         routes: {
           "/org/:orgId": {
             children: {
-              "/projects/:projectId": ({ orgId, projectId }: { orgId: string, projectId: string }) =>
+              "/projects/:projectId": ({ orgId, projectId }) =>
                 render(`${orgId}-${projectId}`)
             }
           }
@@ -170,7 +193,7 @@ describe("router", () => {
         routes: {
           "/files": {
             children: {
-              "/*": ({ "*": wildcard }: { "*": string }) => render(`files-${wildcard}`)
+              "/*": ({ "*": wildcard }) => render(`files-${wildcard}`)
             }
           }
         }

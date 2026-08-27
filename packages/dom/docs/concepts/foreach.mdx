@@ -29,7 +29,7 @@ const todos = signal([
 
 <ForEach
   each={todos}
-  use={(todo) => <li key={todo.id}>{todo.text}</li>}
+  use={(todo: { id: number; text: string }) => <li key={todo.id}>{todo.text}</li>}
 />
 ```
 

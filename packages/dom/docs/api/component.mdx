@@ -2,6 +2,11 @@
 
 Wraps a component function with automatic effect cleanup scope.
 
+<div role="alert" class="alert alert-info alert-soft">
+  <span>ℹ️</span>
+  <span>This is a low-level API used internally by the Babel plugin and `html` template system. You only need this when building components with raw HellaNode AST objects.</span>
+</div>
+
 ## API
 
 ```typescript
@@ -52,6 +57,8 @@ Without `component()`, effects created inside `Counter` would not be cleaned up 
 **With JSX (automatic):**
 
 ```jsx
+const Counter = ({ initial }: { initial: number }) => <div>Count: {initial}</div>;
+
 // Babel transforms this to component(Counter, { initial: 5 })
 <Counter initial={5} />
 ```
@@ -95,11 +102,14 @@ const app = {
 Some special components like `ForEach`, `Portal`, `Lazy`, and `Transition` bypass the `component()` wrapper because they manage their own cleanup:
 
 ```js
-import { ForEach, Portal, Lazy } from "@hellajs/dom";
+import { html, ForEach, Portal, Lazy } from "@hellajs/dom";
+
+const items = ["a", "b", "c"];
+const renderItem = (item: string) => html`<li>${item}</li>`;
 
 // These components have `isDynamic: true` and are called directly without the `component()` wrapper
 const list = ForEach({ each: items, use: renderItem });
-const portal = Portal({ to: "#modal", children: [...] });
+const portal = Portal({ to: "#modal", children: [html`<div>Modal content</div>`] });
 const lazy = Lazy({ loader: () => import("./Heavy.js") });
 ```
 

@@ -193,6 +193,29 @@ describe("core", () => {
       expect(cleanupRuns).toHaveBeenCalledTimes(2);
     });
 
+    test("ignores non-function return values while capturing function returns as cleanup", () => {
+      const count = signal(0);
+      const fnCleanup = mock(() => { });
+
+      const stopValue = effect(() => {
+        count();
+        return "ignored";
+      });
+      const stopFn = effect(() => {
+        count();
+        return fnCleanup;
+      });
+
+      count(1); // Re-runs both effects
+      expect(fnCleanup).toHaveBeenCalledTimes(1);
+
+      stopValue(); // Disposal of a value-returning effect performs no cleanup
+      expect(fnCleanup).toHaveBeenCalledTimes(1);
+
+      stopFn();
+      expect(fnCleanup).toHaveBeenCalledTimes(2);
+    });
+
     test("effect error during flush stops queue processing", () => {
       const a = signal(0);
       const b = signal(0);

@@ -47,7 +47,10 @@ import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 
 const name = signal("");
-const onNameInput = (e) => name(e.target.value);
+const onNameInput = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  name(target.value);
+};
 
 const template = <div>
   <input value={name} on:input={onNameInput} placeholder="Enter name" />
@@ -88,7 +91,7 @@ const items = signal([
   { id: 1, text: "First" },
   { id: 2, text: "Second" }
 ]);
-const renderItem = (item) => <li key={item.id}>{item.text}</li>;
+const renderItem = (item: { id: number; text: string }) => <li key={item.id}>{item.text}</li>;
 
 const template = <ul>
   <ForEach each={items} use={renderItem} />

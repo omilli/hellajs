@@ -134,6 +134,11 @@ const ThemeExample = () => {
 ### Mixed Static and Reactive Variables
 
 ```jsx
+import { signal } from '@hellajs/core';
+
+const primaryColor = signal('#3b82f6');
+const accentColor = () => '#64748b';
+
 const mixedTheme = cssVars({
   // Static values (no reactivity)
   fonts: {
@@ -143,8 +148,8 @@ const mixedTheme = cssVars({
 
   // Reactive values (with signals)
   colors: {
-    primary: primaryColorSignal,           // Direct signal
-    accent: () => getAccentColor(),        // Computed function
+    primary: primaryColor,                 // Direct signal
+    accent: () => accentColor(),           // Computed function
     surface: '#ffffff'                     // Static value
   }
 });
@@ -295,10 +300,12 @@ cssVars({ flag: () => isActive() ? '1' : '0' });
 Maintains full TypeScript support with nested object typing:
 
 ```tsx
+const primary = signal('#3b82f6');
+
 const theme = cssVars({
   colors: {
     primary: '#3b82f6',      // Valid
-    secondary: primarySignal  // Valid (signal)
+    secondary: primary       // Valid (signal)
   },
   spacing: {
     base: '1rem'            // Valid

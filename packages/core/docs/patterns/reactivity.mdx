@@ -125,7 +125,7 @@ import { signal, computed } from '@hellajs/core';
 
 const items = signal<number[]>([]);
 
-const total = computed((prev = { sum: 0, count: 0 }) => {
+const total = computed<{ sum: number; count: number }>((prev = { sum: 0, count: 0 }) => {
   const current = items();
   const newItems = current.slice(prev.count);
   const newSum = newItems.reduce((s, v) => s + v, 0);

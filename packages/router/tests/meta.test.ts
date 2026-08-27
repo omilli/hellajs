@@ -91,7 +91,7 @@ describe("router", () => {
           },
           "/users/:id": {
             meta: { title: "User Profile" },
-            handler: ({ id }: { id: string }) => render(`user-${id}`)
+            handler: ({ id }) => render(`user-${id}`)
           }
         }
       });

@@ -10,7 +10,12 @@ Routes can be defined as objects with `before`, `after`, and `handler` propertie
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const isAuthenticated = () => true;
+const trackPageView = (page: string) => console.log("viewed", page);
+const UserProfile = () => <div>User profile</div>;
+const Home = () => <div>Home</div>;
+const TodoList = () => <div>Todos</div>;
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -47,7 +52,7 @@ import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
 const loading = signal(false);
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -84,8 +89,11 @@ Basic guard that blocks unauthenticated access:
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const user = signal(null);
-const currentView = signal(null);
+const LoginPage = () => <div>Login</div>;
+const Dashboard = ({ user }: { user?: unknown }) => <div>Dashboard</div>;
+
+const user = signal<{ name: string; isAdmin?: boolean } | null>(null);
+const currentView = signal(<div>Loading</div>);
 
 router({
   routes: {
@@ -105,14 +113,18 @@ router({
 Redirect instead:
 
 ```jsx
-'/dashboard': {
-  before: () => {
-    if (!user()) return '/login';
-  },
-  handler: () => {
-    currentView(<Dashboard user={user()} />);
+router({
+  routes: {
+    '/dashboard': {
+      before: () => {
+        if (!user()) return '/login';
+      },
+      handler: () => {
+        currentView(<Dashboard user={user()} />);
+      }
+    }
   }
-}
+});
 ```
 
 Async `before` hooks cannot block. If you need async auth, use `navigate` inside the hook but also guard the handler:
@@ -122,14 +134,19 @@ const checkAuth = async () => {
   const ok = await fetch('/api/check-session');
   if (!ok.ok) navigate('/login');
 };
+const ProtectedPage = () => <div>Protected</div>;
 
-'/protected': {
-  before: checkAuth,
-  handler: () => {
-    if (!user()) return;
-    currentView(<ProtectedPage />);
+router({
+  routes: {
+    '/protected': {
+      before: checkAuth,
+      handler: () => {
+        if (!user()) return;
+        currentView(<ProtectedPage />);
+      }
+    }
   }
-}
+});
 ```
 
 On popstate/hashchange (browser back/forward), a cancelled guard restores the previous URL via `replaceState`, keeping the address bar consistent.
@@ -137,6 +154,11 @@ On popstate/hashchange (browser back/forward), a cancelled guard restores the pr
 Multiple guards stack through nesting; the first non-pass verdict short-circuits:
 
 ```jsx
+const requireAuth = () => {
+  if (!user()) return '/login';
+};
+const AdminSettings = () => <div>Admin settings</div>;
+
 router({
   routes: {
     '/admin': {
@@ -187,3 +209,93 @@ router({
 Redirect chains stop after 20 hops — a cyclic configuration logs `[router] redirect loop detected` and cancels the navigation (URL unchanged) instead of overflowing the stack.
 
 See [`router`](/reference/router/router) for the redirect configuration options, and [routing](/learn/concepts/routing) for the core routing model, parameter inheritance, and nested routes.
+
+## Route Metadata
+
+Attach metadata to routes for analytics, SEO, or feature flags. Access via [`route()`](/reference/router/route).meta.
+
+```typescript
+import { router, route } from '@hellajs/router';
+import { signal, effect } from '@hellajs/core';
+
+const checkAuth = () => true;
+const currentView = signal("");
+
+router({
+  routes: {
+    '/about': {
+      meta: { title: 'About Us', requiresAuth: false },
+      handler: () => currentView('About')
+    },
+    '/admin': {
+      meta: { title: 'Admin Panel', requiresAuth: true },
+      before: () => checkAuth(),
+      handler: () => currentView('Admin')
+    }
+  }
+});
+
+// Access in effects via [`effect`](/reference/core/effect)
+effect(() => {
+  const { meta } = route();
+  document.title = typeof meta?.title === "string" ? meta.title : 'My App';
+});
+```
+
+Set `inheritMeta: true` to inherit parent route meta through the nested match chain, mirroring parameter inheritance. Child keys override parent keys on conflict. Inline meta from [`navigate()`](/reference/router/navigate) always wins over the inherited result.
+
+```typescript
+import { router, route, navigate } from '@hellajs/router';
+
+router({
+  inheritMeta: true,
+  routes: {
+    '/admin': {
+      meta: { section: 'admin' },
+      children: {
+        '/users': {
+          meta: { title: 'Users' },
+          handler: () => {}
+        }
+      }
+    }
+  }
+});
+
+navigate('/admin/users');
+console.log(route().meta); // { section: 'admin', title: 'Users' }
+```
+
+Without `inheritMeta`, only the leaf route's meta is exposed. See [routing concepts](/learn/concepts/routing#route-signal) for more on meta inheritance.
+
+Each route can override the global flag with its own `inheritMeta` field. A route's flag controls whether *it* inherits from its parent — `false` makes the route a boundary that ignores ancestors above, starting the cascade fresh from itself. The boundary route's own meta still flows down to descendants.
+
+```typescript
+import { router, route, navigate } from '@hellajs/router';
+
+router({
+  inheritMeta: true,
+  routes: {
+    '/admin': {
+      meta: { root: true },
+      children: {
+        '/section': {
+          inheritMeta: false, // boundary: ignore /admin above
+          meta: { section: 'a' },
+          children: {
+            '/page': {
+              meta: { title: 'Page' },
+              handler: () => {}
+            }
+          }
+        }
+      }
+    }
+  }
+});
+
+navigate('/admin/section/page');
+console.log(route().meta); // { section: 'a', title: 'Page' } — root omitted, section flows down
+```
+
+Set `inheritMeta: true` on a route to opt it into inheritance when the global flag is `false`.

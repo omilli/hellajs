@@ -13,6 +13,7 @@ export default tseslint.config(
 			"**/coverage/**",
 			"docs/**",
 			".agents/**",
+			".doc-snippets/**",
 		],
 	},
 	js.configs.recommended,

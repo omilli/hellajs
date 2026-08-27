@@ -34,6 +34,11 @@ For convenience, bundle all the resets into a single helper in your test setup f
 
 ```typescript
 // test-setup.ts
+import { resetCss, resetCssVars } from "@hellajs/css";
+import { resetDom } from "@hellajs/dom";
+import { resetResource } from "@hellajs/resource";
+import { resetRouter } from "@hellajs/router";
+
 export function resetTestState() {
   resetCss();
   resetCssVars();
@@ -50,7 +55,7 @@ DOM mutations (mounting, attribute changes, style injection) are batched in a mi
 ```typescript
 import { mount, html } from "@hellajs/dom";
 
-const app = mount(() => html`<p>Hello</p>`);
+const app = mount(html`<p>Hello</p>`);
 
 await Promise.resolve(); // Drain the microtask queue
 
@@ -73,7 +78,11 @@ import { signal } from "@hellajs/core";
 import { mount, html } from "@hellajs/dom";
 
 const visible = signal(true);
-const app = mount(() => (visible() ? html`<p>Visible</p>` : null));
+const render = () => {
+  const node = visible() ? html`<p>Visible</p>` : html``;
+  return typeof node === "function" ? node() : node;
+};
+const app = mount(render);
 // afterMount already fired during mount() — no flush() needed
 console.log(document.body.textContent); // "Visible"
 
@@ -120,9 +129,9 @@ function suppressConsole() {
 // Usage in a test
 const { messages, restore } = suppressConsole();
 try {
-  someErrorProneOperation();
+  console.error("expected message"); //… stand-in for the error path under test
   console.log(messages.length); // 1
-  console.log(String(messages[0][0])); // "expected message"
+  console.log(String(messages[0]?.[0])); // "expected message"
 } finally {
   restore();
 }

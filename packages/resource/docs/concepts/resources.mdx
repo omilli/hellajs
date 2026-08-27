@@ -44,6 +44,8 @@ users.fetch({ force: true });
 Use the `key` option to parameterize resources with reactive values. Changing the key dependency does not trigger a refetch by itself; call `invalidate()` or `fetch()` to use the new key value.
 
 ```typescript
+import { signal } from '@hellajs/core';
+
 const userId = signal(1);
 
 const posts = resource(
@@ -80,31 +82,36 @@ For the full API surface including `initialData`, `enabled`, `timeout`, `dedupli
 Resources include a built-in mutation system with lifecycle hooks for optimistic updates and error rollback. The pattern uses two resources: one for reading data, one for writing.
 
 ```typescript
+import { resource } from '@hellajs/resource';
+
+type Todo = { id: number; text: string; completed: boolean; pending?: boolean };
+
 // Read resource
-const todosResource = resource(() =>
-  fetch('/api/todos').then(r => r.json())
+const todosResource = resource<Todo[]>(
+  () => fetch('/api/todos').then(r => r.json())
 );
 
 // Write resource with optimistic update
 const addTodoResource = resource(
-  async (todoData) => {
+  async (todoData: Omit<Todo, 'id'>) => {
     const response = await fetch('/api/todos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(todoData)
     });
-    return response.json();
+    return response.json() as Promise<Todo>;
   },
   {
     onMutate: async (variables) => {
-      const tempTodo = { id: Date.now(), ...variables, pending: true };
+      const tempTodo: Todo = { id: Date.now(), ...(variables as Omit<Todo, "id">), pending: true };
       todosResource.setData(todos => [...(todos || []), tempTodo]);
       return { tempTodo };
     },
     onSettled: async (newTodo, error, variables, context) => {
-      if (error && context?.tempTodo) {
+      const temp = (context as { tempTodo: Todo } | undefined)?.tempTodo;
+      if (error && temp) {
         todosResource.setData(todos =>
-          todos.filter(todo => todo.id !== context.tempTodo.id)
+          (todos || []).filter(todo => todo.id !== temp.id)
         );
       }
       todosResource.invalidate();
@@ -159,7 +166,7 @@ const userResource = resource(
 );
 
 // Boolean shorthand: true = retry once, false = no retries (default)
-{ retry: true }
+// e.g. resource(fetcher, { retry: true })
 
 // Conditional retry based on error category + exponential backoff
 const resilient = resource(
@@ -208,7 +215,10 @@ const health = resource(
 Continue polling when tab is hidden:
 
 ```typescript
-{ refetchInterval: 10000, refetchIntervalInBackground: true, refetchOnKeyChange: true }
+const stats = resource(
+  () => fetch('/api/stats').then(r => r.json()),
+  { refetchInterval: 10000, refetchIntervalInBackground: true, refetchOnKeyChange: true }
+);
 ```
 
 Always call `dispose()` to stop polling and clean up timers.

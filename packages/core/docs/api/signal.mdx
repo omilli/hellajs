@@ -99,7 +99,7 @@ The `equals` option replaces the default reference check. When it returns `true`
 import { signal, effect } from '@hellajs/core';
 
 const todos = signal([{ id: 1, done: false }], {
-  equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i].id)
+  equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i]?.id)
 });
 
 const stable = todos();

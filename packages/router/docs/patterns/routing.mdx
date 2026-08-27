@@ -11,7 +11,23 @@ Map URL patterns to handlers that update a signal. Each handler runs when its pa
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const HomePage = () => <div>Home</div>;
+const AboutPage = () => <div>About</div>;
+const UserProfile = ({ id }: { id?: string }) => <div>User {id}</div>;
+const NotFound = () => <div>Not found</div>;
+const DashboardLayout = () => <div>Dashboard</div>;
+const Overview = () => <div>Overview</div>;
+const UserDetail = ({ id }: { id?: string }) => <div>User {id}</div>;
+const SearchResults = ({ term, sort }: { term?: string; sort?: string }) => (
+  <div>Results for {term} (sorted by {sort})</div>
+);
+const Feed = () => <div>Feed</div>;
+const Settings = () => <div>Settings</div>;
+const Chat = () => <div>Chat</div>;
+const Docs = ({ path }: { path?: string }) => <div>Docs {path}</div>;
+const Users = () => <div>Users</div>;
+const Profile = ({ id }: { id?: string }) => <div>Profile {id}</div>;
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -31,7 +47,7 @@ The `notFound` handler runs when no route matches. Accepts a function or a redir
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 // Function handler
 router({
@@ -57,8 +73,11 @@ Use a `before` hook to block unauthenticated access by returning `false`. No han
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const user = signal(null);
-const currentView = signal(null);
+const LoginPage = () => <div>Login</div>;
+const Dashboard = ({ user }: { user?: unknown }) => <div>Dashboard</div>;
+
+const user = signal<{ name: string } | null>(null);
+const currentView = signal(<div>Loading</div>);
 
 router({
   routes: {
@@ -78,28 +97,36 @@ router({
 To redirect to login instead:
 
 ```jsx
-'/dashboard': {
-  before: () => {
-    if (!user()) return '/login';
-  },
-  handler: () => {
-    currentView(<Dashboard user={user()} />);
+router({
+  routes: {
+    '/dashboard': {
+      before: () => {
+        if (!user()) return '/login';
+      },
+      handler: () => {
+        currentView(<Dashboard user={user()} />);
+      }
+    }
   }
-}
+});
 ```
 
 Async guards cannot block — guard the handler too:
 
 ```jsx
-'/dashboard': {
-  before: async () => {
-    if (!user()) await navigate('/login');
-  },
-  handler: () => {
-    if (!user()) return;
-    currentView(<Dashboard user={user()} />);
+router({
+  routes: {
+    '/dashboard': {
+      before: async () => {
+        if (!user()) await navigate('/login');
+      },
+      handler: () => {
+        if (!user()) return;
+        currentView(<Dashboard user={user()} />);
+      }
+    }
   }
-}
+});
 ```
 
 ### Nested Routes
@@ -110,7 +137,7 @@ Organize routes hierarchically with `children`. Child routes inherit all parent 
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -136,7 +163,7 @@ Query parameters are parsed automatically and passed as the second argument. Pas
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -158,7 +185,7 @@ String values in the routes object act as redirects. Use the `redirects` array t
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -181,7 +208,7 @@ Control scroll position at three levels: global default, route-level override, a
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 router({
   scrollBehavior: 'top',
@@ -213,7 +240,7 @@ Same-origin `<a href>` clicks are intercepted by default and routed through `nav
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 // Plain <a> tags work out of the box
 router({
@@ -241,7 +268,7 @@ Use [`route`](/reference/router/route)`().active()` to highlight the current sec
 import { router, route, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
 router({
   routes: {
@@ -278,9 +305,9 @@ Render a breadcrumb trail from [`route`](/reference/router/route)`().crumbs`. Ea
 import { router, route, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
-const currentView = signal(null);
+const currentView = signal(<div>Loading…</div>);
 
-const labels = {
+const labels: Record<string, string> = {
   '/admin': 'Admin',
   '/admin/users': 'Users',
   '/admin/users/:id': 'Profile'
@@ -304,7 +331,7 @@ router({
 <ol class="breadcrumbs">
   {route().crumbs.map(crumb => (
     <li>
-      <a href={crumb.path} onClick={(e) => {
+      <a href={crumb.path} on:click={(e) => {
         e.preventDefault();
         navigate(crumb.path);
       }}>

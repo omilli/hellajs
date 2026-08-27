@@ -73,10 +73,10 @@ const { path, params, query } = route();
 
 // For URL: /admin/users/123/edit (nested route with inheritance)
 // Router config: /admin -> /users -> /:id -> /edit
-const { path, params, query } = route();
-// path: "/admin/users/123/edit"
-// params: { id: "123" } (inherited from parent route)
-// query: {}
+const nested = route();
+// nested.path: "/admin/users/123/edit"
+// nested.params: { id: "123" } (inherited from parent route)
+// nested.query: {}
 ```
 
 ### Route Metadata
@@ -87,6 +87,8 @@ Access metadata defined on the matched route via the `meta` property.
 import { router } from '@hellajs/router';
 
 // Router config with meta
+const showAbout = () => console.log('About');
+
 router({
   routes: {
     '/about': {
@@ -99,7 +101,7 @@ router({
 // Access in effects or components
 effect(() => {
   const { meta } = route();
-  document.title = meta?.title || 'My App';
+  document.title = typeof meta?.title === "string" ? meta.title : "My App";
 });
 ```
 
@@ -171,8 +173,8 @@ route().crumbs;
 //   { segment: '/users/:id', path: '/admin/users/123', params: { id: '123' } }
 // ]
 
-route().crumbs[0].path;  // '/admin' — linkable href for the parent
-route().crumbs[1].params; // { id: '123' } — params at the leaf
+route().crumbs[0]?.path;   // '/admin' — linkable href for the parent
+route().crumbs[1]?.params; // { id: '123' } — params at the leaf
 ```
 
 Use `path` for breadcrumb links (valid hrefs including dynamic segments) and `segment` for label lookup against a metadata dictionary.
@@ -184,6 +186,8 @@ Use `path` for breadcrumb links (valid hrefs including dynamic segments) and `se
 Destructure route data once at the start of effects for cleaner code.
 
 ```typescript
+import { computed } from '@hellajs/core';
+
 // ✅ Destructure once for cleaner code
 effect(() => {
   const { path, params, query } = route();
@@ -205,8 +209,8 @@ Parameters and query values are always strings - cast to other types as needed.
 ```typescript
 // ✅ Cast values as needed
 const { params, query } = route();
-const userId = parseInt(params.id);
-const page = parseInt(query.page) || 1;
+const userId = parseInt(params.id ?? "0");
+const page = parseInt(query.page ?? "1") || 1;
 ```
 
 ### Handler Availability

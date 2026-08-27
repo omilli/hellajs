@@ -85,7 +85,7 @@ Components are plain functions that return HellaNodes, no classes or special syn
 ```jsx
 import { mount } from "@hellajs/dom";
 
-const Greeting = ({name}) => <h1>Hello, {name}!</h1>;
+const Greeting = ({ name }: { name: string }) => <h1>Hello, {name}!</h1>;
 mount(<Greeting name="World" />);
 ```
 

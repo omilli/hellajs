@@ -19,7 +19,7 @@ describe("router", () => {
     ])("URL-encodes parameter %p", (input, encodedPath, decoded) => {
       router({
         routes: {
-          "/search/:term": ({ term }: { term: string }) => render(`term-${term}`)
+          "/search/:term": ({ term }) => render(`term-${term}`)
         }
       });
 
@@ -32,7 +32,7 @@ describe("router", () => {
     test("decodes wildcard parameters in matched paths", () => {
       router({
         routes: {
-          "/files/*": ({ "*": path }: { "*": string }) => render(`files-${path}`)
+          "/files/*": ({ "*": path }) => render(`files-${path}`)
         }
       });
 

@@ -5,7 +5,11 @@ Serialize a HellaNode AST into an HTML string — a pure stringifier with zero r
 ## API
 
 ```typescript
-function ssr(node: HellaNode): string
+declare const ssr: {
+  (node: HellaNode): string;
+  async(node: HellaNode): Promise<string>;
+  stream(node: HellaNode): ReadableStream<string>;
+};
 ```
 
 - `node`: A HellaNode AST (produced by [`html`](/reference/dom/html) or JSX) to serialize.
@@ -16,7 +20,9 @@ function ssr(node: HellaNode): string
 The async member — awaits any Promise a resolved value returns, then resolves to the concatenated HTML.
 
 ```typescript
-ssr.async(node: HellaNode): Promise<string>
+declare namespace ssr {
+  function async(node: HellaNode): Promise<string>;
+}
 ```
 
 A component may embed server-side async data directly: a getter that returns a `Promise` is awaited, and its resolved value is placed inside a marker-bounded region identical to the sync call.
@@ -36,7 +42,9 @@ const body = await ssr.async(html`<p>Hello ${() => user(1)}</p>`);
 The streaming member — yields chunks as the walk proceeds, flushing the static prefix before each awaited Promise.
 
 ```typescript
-ssr.stream(node: HellaNode): ReadableStream<string>
+declare namespace ssr {
+  function stream(node: HellaNode): ReadableStream<string>;
+}
 ```
 
 The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler.
@@ -105,7 +113,7 @@ const page = `<style>${button}</style><div id="app">${body}</div>`;
 import { ssr } from '@hellajs/ssr';
 
 // JSX compiles to the same HellaNode as the html tag
-const App = ({ name }) => <div><h1>Hello {name}</h1></div>;
+const App = ({ name }: { name: string }) => <div><h1>Hello {name}</h1></div>;
 const body = ssr(<App name="World" />);
 ```
 

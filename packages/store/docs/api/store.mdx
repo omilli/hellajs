@@ -163,91 +163,7 @@ console.log(appStore.user.name());   // Bob
 
 ### Deep Reactivity
 
-All nested objects become stores, arrays become signals, and functions stay as-is — a fully reactive state tree. See [State](/learn/concepts/state) for the deep walk and effect examples.
-
-### Middleware
-
-Transform or validate values before they are stored. Middleware runs synchronously on every set operation for the configured properties.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const user = store({
-  name: '',
-  email: '',
-  age: 0
-}, {
-  middleware: {
-    name: (v) => v.trim(),
-    email: (v) => v.toLowerCase(),
-    age: (v) => {
-      if (v < 0) throw new Error('Age cannot be negative');
-      return v;
-    }
-  }
-});
-
-user.name('John');              // stored as 'John'
-user.email('john@example.com'); // stored as 'john@example.com'
-user.age(-5);                   // throws Error
-```
-
-Middleware also applies through `update()`:
-
-```typescript
-user.update({ name: 'Jane', age: 30 });
-user.update(draft => { draft.email = 'jane@example.com'; });
-```
-
-Middleware works with nested stores too. Middleware for nested objects must be a nested object mapping individual property keys to their middleware functions:
-
-```typescript
-const app = store({
-  user: { name: '', email: '' },
-  settings: { theme: 'light' }
-}, {
-  middleware: {
-    user: {
-      name: (v) => v.trim(),
-      email: (v) => v.toLowerCase()
-    },
-    settings: {
-      theme: (v) => {
-        if (!['light', 'dark'].includes(v)) throw new Error('Invalid theme');
-        return v;
-      }
-    }
-  }
-});
-```
-
-### Readonly Options
-
-Granular control over which properties can be modified, enforced at the type level.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const configStore = store(
-  { apiUrl: 'https://api.com', theme: 'light', debug: false },
-  { readonly: ['apiUrl'] }
-);
-
-configStore.theme('dark');           // Updates normally
-configStore.apiUrl('new-url');       // Silently ignored at runtime, type error at compile time
-```
-
-Readonly keys do not propagate to nested stores. Each nested store requires its own readonly configuration. Pre-configured readonly stores retain their readonly state when composed:
-
-```typescript
-import { store } from '@hellajs/store';
-
-const user = store({ name: 'Alice' }, { readonly: true });
-const app = store({ user });
-
-app.user.name('Bob'); // No effect: user retains its readonly state
-app.user.name();      // 'Alice'
-```
+All nested objects become stores, arrays become signals, and functions stay as-is — a fully reactive state tree. Middleware transforms or validates values on every set; `readonly` restricts which properties can be modified. See [State](/learn/concepts/state) for the deep walk, effect examples, [middleware](/learn/concepts/state#middleware), and [readonly](/learn/concepts/state#readonly) configuration.
 
 ### Nested Stores
 
@@ -322,7 +238,7 @@ type PartialConfig = PartialDeep<Config>;
 
 ### `ReadonlyKeys<T, O>`
 
-Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [Readonly Options](#readonly-options) for usage.
+Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [readonly](/learn/concepts/state#readonly) for usage.
 
 ```typescript
 type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
@@ -399,7 +315,7 @@ userStore.cleanup();
 
 ### Nested Stores Do Not Inherit Readonly
 
-Readonly configuration applies to the current store level only. See [Readonly Options](#readonly-options) for the full explanation and examples.
+Readonly configuration applies to the current store level only. See [readonly](/learn/concepts/state#readonly) for the full explanation and examples.
 
 ### Signals Survive Cleanup
 

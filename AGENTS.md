@@ -65,7 +65,7 @@
 | bench | `bun bench [--variant=html\|jsx\|ts] [--runs=<n>] [--throttle=<x>] [--label=<text>] [--ops=<list>] [--headed]` | Playwright + system Chrome macro-benchmark over `examples/bench`: 4× CPU throttle, in-page click→verified-frame timing for all 8 krausest ops (median + mean), appends self-describing entries (label, HEAD sha, dirty flag, env) to `.bench/results.md`. A/B is manual: `git checkout <ref>` → run → checkout feature → run → read the log. Rebuilds all packages first (examples bundle against `dist/`). Requires local Google Chrome. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
   | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` + `bun lint:guards` (the four repo-wide guards). |
-  | lint:guards | `bun lint:guards` | The four guards composed: `visibility` + `dead-exports` + `jsdoc-params` + `doc-links`. Composed into `lint`; run standalone to skip tsc/eslint. |
+  | lint:guards | `bun lint:guards` | The five guards composed: `visibility` + `dead-exports` + `jsdoc-params` + `doc-links` + `lint:structure`. Composed into `lint`; run standalone to skip tsc/eslint. |
   | clean | `bun clean [package]` | Remove build artifacts. |
   | changeset | `bun changeset` | Add a changeset entry. |
   | release | `bun release` | Bundle, then publish via changesets. |
@@ -73,7 +73,9 @@
   | visibility | `bun visibility` | Guard: fail if a wholesale-exported `types*.d.ts` contains `@internal`-tagged types (would leak as public). |
   | dead-exports | `bun dead-exports` | Guard: fail if any exported symbol has zero value-position references across source, tests, and docs. |
   | jsdoc-params | `bun jsdoc-params` | Guard: fail if any `function` declaration's JSDoc has a `@param` tag whose name does not match a parameter. |
-  | doc-links | `bun doc-links` | Guard: fail if a doc link's display name is not a barrel export of its target package (catches `streamSsr` vs `ssr` rename drift), or if an internal site URL (`/learn`, `/reference`, `/plugins` — markdown link or `href`) matches no `.mdx` under `docs/src/pages/` (catches renamed-page/slug/wrapper link rot). Scans package docs+lib, plugin src, docs pages, and example tutorials. |
+  | lint:structure | `bun lint:structure` | Guard (`scripts/doc-structure.ts`): five docs-structure checks — fence parity (even top-level fence count per mdx), tutorial Complete-Code parity (each `### src/...` block byte-matches the real file; every real src file documented), anchor resolution (site `#`-fragments resolve against the target page's heading slugs, following wrapper imports), wrapper validity (frontmatter complete everywhere; import-rendering wrappers carry no body content — site-authored content pages and enumeration indexes exempt), nav/index registration (pages ↔ `docs/src/nav.ts` agree both ways; learn content pages listed in their enumeration page). |
+| doc-snippets | `bun doc-snippets` | Audit tool (`scripts/doc-snippets.ts`, NOT a guard): typecheck every package-doc code block — per-doc module emission (import union hoisted+merged, blocks nested-scoped inside an async IIFE so chaining stays legal and same-name reuse shadows), js-tagged blocks parsed loose (`checkJs: false`), ❌/exercise-blank/signature-only/external-import blocks skipped, two-pass tsc (grammar quarantine → semantic), diagnostics mapped back to mdx lines via `// AUDITSRC` breadcrumbs. Strict tier gates the exit code; tutorials report informationally. Emits into gitignored `.doc-snippets/`. |
+| doc-links | `bun doc-links` | Guard: fail if a doc link's display name is not a barrel export of its target package (catches `streamSsr` vs `ssr` rename drift), or if an internal site URL (`/learn`, `/reference`, `/plugins` — markdown link or `href`) matches no `.mdx` under `docs/src/pages/` (catches renamed-page/slug/wrapper link rot). Scans package docs+lib, plugin src, docs pages, and example tutorials. |
 
   ## Skills
 

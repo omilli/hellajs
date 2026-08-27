@@ -2,6 +2,15 @@
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 
+/* Docs content lives outside the docs/ site; without explicit @source entries
+   Tailwind never scans it and tree-shakes every daisyUI class used only there
+   (alert-info, alert-soft, ...) out of the build. Paths are relative to THIS
+   stylesheet (docs/src/), and a glob with a directory tail must end in a
+   recursive file tail — oxide does not auto-expand directories that already
+   contain glob wildcards. */
+@source "../../packages/*/docs/**/*";
+@source "../../examples/*/tutorial.mdx";
+
 @font-face {
   font-family: 'Mulish Variable';
   font-style: normal;
@@ -89,11 +98,21 @@ pre {
   display: none !important;
 }
 
-/* Sidebar toggle icons in navbar */
-#sidebar-drawer:checked~* .sidebar-hamburger {
+/* Sidebar toggle icons in navbar (labels live outside the drawer subtree, so :has() on a
+   shared ancestor reaches them — same pattern daisyUI uses for this checkbox) */
+body:has(#sidebar-drawer:checked) .sidebar-hamburger {
   @apply hidden;
 }
 
-#sidebar-drawer:checked~* .sidebar-close {
+body:has(#sidebar-drawer:checked) .sidebar-close {
   @apply block
+}
+
+/* Mobile "On this page" select: chevron flips while the dropdown is open */
+.toc-chevron {
+  transition: rotate 0.2s ease-out;
+}
+
+#toc-mobile:focus-within .toc-chevron {
+  rotate: 180deg;
 }

@@ -36,10 +36,13 @@ function router(config: RouterConfig): RouteInfo
 Define routes by mapping URL patterns to handler functions that update a signal.
 
 ```typescript
-import { router } from "@hellajs/router";
+import { router, route, navigate } from "@hellajs/router";
 import { signal } from "@hellajs/core";
 
-const currentView = signal(null);
+const checkAuth = () => true;
+const trackPageView = (page: string) => console.log("viewed", page);
+const someAsyncCheck = () => Promise.resolve(true);
+const currentView = signal("");
 
 router({
   routes: {
@@ -98,6 +101,8 @@ router({
 
 Global and per-route hooks with `before` and `after` execution points.
 
+Routes can also carry `meta` for analytics, SEO, or feature flags; `inheritMeta` cascades parent meta down the nested match chain. See [route hooks](/learn/concepts/route-hooks#route-metadata) for the cascade, per-route boundaries, and inline `navigate()` precedence.
+
 ```typescript
 router({
   routes: {
@@ -113,89 +118,6 @@ router({
   }
 });
 ```
-
-### Route Metadata
-
-Attach metadata to routes for analytics, SEO, or feature flags. Access via [`route()`](/reference/router/route).meta.
-
-```typescript
-router({
-  routes: {
-    '/about': {
-      meta: { title: 'About Us', requiresAuth: false },
-      handler: () => currentView('About')
-    },
-    '/admin': {
-      meta: { title: 'Admin Panel', requiresAuth: true },
-      before: () => checkAuth(),
-      handler: () => currentView('Admin')
-    }
-  }
-});
-
-// Access in effects via [`effect`](/reference/core/effect)
-effect(() => {
-  document.title = route().meta?.title || 'My App';
-});
-```
-
-Set `inheritMeta: true` to inherit parent route meta through the nested match chain, mirroring parameter inheritance. Child keys override parent keys on conflict. Inline meta from [`navigate()`](/reference/router/navigate) always wins over the inherited result.
-
-```typescript
-import { router, route, navigate } from '@hellajs/router';
-
-router({
-  inheritMeta: true,
-  routes: {
-    '/admin': {
-      meta: { section: 'admin' },
-      children: {
-        '/users': {
-          meta: { title: 'Users' },
-          handler: () => {}
-        }
-      }
-    }
-  }
-});
-
-navigate('/admin/users');
-console.log(route().meta); // { section: 'admin', title: 'Users' }
-```
-
-Without `inheritMeta`, only the leaf route's meta is exposed. See [routing concepts](/learn/concepts/routing#route-signal) for more on meta inheritance.
-
-Each route can override the global flag with its own `inheritMeta` field. A route's flag controls whether *it* inherits from its parent — `false` makes the route a boundary that ignores ancestors above, starting the cascade fresh from itself. The boundary route's own meta still flows down to descendants.
-
-```typescript
-import { router, route, navigate } from '@hellajs/router';
-
-router({
-  inheritMeta: true,
-  routes: {
-    '/admin': {
-      meta: { root: true },
-      children: {
-        '/section': {
-          inheritMeta: false, // boundary: ignore /admin above
-          meta: { section: 'a' },
-          children: {
-            '/page': {
-              meta: { title: 'Page' },
-              handler: () => {}
-            }
-          }
-        }
-      }
-    }
-  }
-});
-
-navigate('/admin/section/page');
-console.log(route().meta); // { section: 'a', title: 'Page' } — root omitted, section flows down
-```
-
-Set `inheritMeta: true` on a route to opt it into inheritance when the global flag is `false`.
 
 ### Scroll Behavior
 
@@ -262,15 +184,19 @@ Within nested routes, specific patterns take precedence over wildcards.
 `router()` resolves the initial route synchronously and returns the matched [`RouteInfo`](/reference/router/route). `handler`, `params`, `query`, and `path` are all set when the call returns.
 
 ```typescript
+import { effect } from "@hellajs/core";
+
 // ✅ The return value is the resolved route — read it directly
+const showUser = (params: Record<string, string>) => console.log(params);
 const { handler, params } = router({ routes: { '/users/:id': (params) => showUser(params) } });
 console.log(handler); // the matched handler function
 
 // ✅ Or react to later navigations inside an effect
+const showHome = () => console.log('home');
 router({ routes: { '/': () => showHome() } });
 effect(() => {
-  const { handler } = route();
-  if (handler) handler();
+  const { path } = route();
+  console.log(`Now at ${path}`);
 });
 ```
 
@@ -278,6 +204,8 @@ For SSR, pass the request URL so the router resolves against it instead of `wind
 
 ```typescript
 // server: pathname + search from the incoming request
+const routes = { '/': () => {} };
+const { pathname, search } = new URL('https://example.com/users/7?q=1');
 router({ routes, url: pathname + search });
 ```
 
@@ -286,18 +214,21 @@ router({ routes, url: pathname + search });
 All route parameters and query values are strings. Cast to other types as needed.
 
 ```typescript
-'/users/:id': (params) => {
-  const userId = parseInt(params.id);
-  // ...
-}
+router({
+  routes: {
+    '/users/:id': ({ id }) => {
+      const userId = parseInt(id ?? "0"); // params are strings — cast as needed
+    }
+  }
+});
 ```
 
 ### Arity-Based Dispatch Behavior
 
-When invoking hooks or handlers for static routes (which have no path parameters), the router uses function parameter arity (`fn.length`) to determine arguments:
+Handlers and hooks are typed `(params: Params, query: Params) => unknown`. On dynamic routes (which have path parameters) both arguments are always passed. For static routes (no path parameters), the router uses function parameter arity (`fn.length`) to determine arguments:
 
 - If a function declares 2 or more parameters (e.g. `(params, query) => ...`), the first argument (`params`) will be `undefined`, and the second argument will be the parsed `query` object.
-- If a function declares 0 or 1 parameter (e.g. `(query) => ...`), the first argument will be the parsed `query` object.
+- If a function declares 0 or 1 parameter (e.g. `(query) => ...`), the first argument will be the parsed `query` object — even though the type labels that parameter `params`.
 
 To ensure consistency and prevent errors, always declare handlers and hooks using the full `(params, query)` signature when you need to access query parameters:
 
@@ -327,29 +258,39 @@ const searchHandler = (params, query) => {
 
 ```typescript
 const authState = signal({ authenticated: false });
+const isAuthenticated = () => authState().authenticated;
+const currentView = (view: string) => console.log(view);
 
-'/protected': {
-  before: () => {
-    if (!isAuthenticated()) return false;
-  },
-  handler: () => {
-    currentView('ProtectedPage');
+router({
+  routes: {
+    '/protected': {
+      before: () => {
+        if (!isAuthenticated()) return false;
+      },
+      handler: () => {
+        currentView('ProtectedPage');
+      }
+    }
   }
-}
+});
 ```
 
 Async guards cannot block — guard the handler too:
 
 ```typescript
-'/protected': {
-  before: async () => {
-    if (!isAuthenticated()) await navigate('/login');
-  },
-  handler: () => {
-    if (!authState().authenticated) return;
-    currentView('ProtectedPage');
+router({
+  routes: {
+    '/protected': {
+      before: async () => {
+        if (!isAuthenticated()) await navigate('/login');
+      },
+      handler: () => {
+        if (!authState().authenticated) return;
+        currentView('ProtectedPage');
+      }
+    }
   }
-}
+});
 ```
 
 On `false` or throw in a popstate/hashchange event, the router restores the previous URL via `replaceState`.
@@ -394,6 +335,7 @@ Async hook rejections are caught and logged — they cannot block navigation.
 
 ```typescript
 router({
+  routes: {},
   hooks: {
     before: async () => {
       await someAsyncCheck();
