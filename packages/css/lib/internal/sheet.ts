@@ -61,7 +61,7 @@ export function upsertRule(id: string, key: string, cssText: string): void {
       indexMap.set(ruleKey, existing);
     } catch {
       // Some CSS rule types may not be parseable by the platform (e.g. @layer in happy-dom);
-      // indexMap stays clean and the textContent mirror still carries it.
+      // the rule is skipped entirely — indexMap stays clean, no fallback path carries it.
     }
     return;
   }

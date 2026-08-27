@@ -93,9 +93,11 @@ A dependency is only established when a signal is actually read during execution
 ```typescript
 import { signal, computed } from '@hellajs/core';
 
+type Todo = { id: number; text: string; done: boolean };
+
 const view = signal('counter');
 const count = signal(0);
-const todos = signal([]);
+const todos = signal<Todo[]>([]);
 
 const currentTitle = computed(() => {
   if (view() === 'counter') {
@@ -196,7 +198,7 @@ Both [`signal`](/reference/core/signal) and [`computed`](/reference/core/compute
 import { signal, effect } from '@hellajs/core';
 
 const todos = signal([{ id: 1 }], {
-  equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i].id)
+  equals: (a, b) => a.length === b.length && a.every((t, i) => t.id === b[i]?.id)
 });
 
 effect(() => console.log('Todos changed:', todos()));
@@ -228,53 +230,7 @@ multiplier(20);
 
 ### Error Handling
 
-Errors thrown inside reactive computations have specific behaviors that affect dependency tracking and flush execution.
-
-```typescript
-import { signal, effect } from '@hellajs/core';
-
-// Errors in effects abort the current flush queue
-const data = signal(0);
-
-effect(() => { data(); });
-const cleanup = effect(() => {
-  if (data() > 1) throw new Error('fail');
-  data();
-});
-effect(() => { data(); });
-
-data(1); // All three effects run (no error)
-data(2); // Throws: second effect aborts the flush, third effect never runs
-
-// After cleanup, subsequent updates process normally
-cleanup();
-data(3); // All remaining effects run
-```
-
-Dependency tracking is preserved when errors are caught with `try/catch`:
-
-```typescript
-import { signal, effect } from '@hellajs/core';
-
-const data = signal(10);
-const shouldThrow = signal(false);
-let result = 0;
-
-effect(() => {
-  const throwFlag = shouldThrow();
-  const value = data();
-  try {
-    if (throwFlag) throw new Error('fail');
-    result = value;
-  } catch {
-    result = -1;
-  }
-});
-
-shouldThrow(true);  // result: -1
-shouldThrow(false); // result: 10
-data(25);           // result: 25 (tracking preserved)
-```
+Errors thrown inside an effect propagate to the signal setter that triggered them and abort the current flush — remaining queued effects are skipped, and the next signal change starts a fresh flush with no corrupted state. Catching errors with `try/catch` inside the effect preserves dependency tracking. See [error propagation](/reference/core/effect#error-propagation) for the effect rules and [error recovery](/reference/core/computed#error-recovery) for computed behavior.
 
 ### Previous Computed Value
 
@@ -282,22 +238,7 @@ A [`computed`](/reference/core/computed) function receives the previously comput
 
 ### Lifecycle Management
 
-Use [`scope`](/reference/core/scope) to group multiple effects and clean them up together.
-
-```typescript
-import { signal, effect, scope } from '@hellajs/core';
-
-const userId = signal(1);
-
-const cleanup = scope(() => {
-  effect(() => console.log(`User: ${userId()}`));
-  effect(() => console.log(`Loading data for ${userId()}...`));
-});
-
-userId(2); // Both effects re-run
-
-cleanup(); // All effects stopped at once
-```
+Use [`scope`](/reference/core/scope) to group multiple effects and clean them up together — one `cleanup()` stops every effect created inside the scope. See the [`scope`](/reference/core/scope) reference for nested scopes, lazy scopes, and cleanup edge cases.
 
 <details>
 <summary>Internal Mechanics</summary>

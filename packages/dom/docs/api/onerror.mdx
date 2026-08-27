@@ -14,7 +14,9 @@ function onError(fn: ErrorFn | null): () => void
 ## Basic Usage
 
 ```jsx
-import { onError, html } from "@hellajs/dom";
+import { onError, html, mount } from "@hellajs/dom";
+
+const ChildComponent = () => html`<div>child content</div>`;
 
 // Set global handler
 onError((error, context) => {
@@ -22,14 +24,16 @@ onError((error, context) => {
   if (context.config?.fallback) {
     return context.config.fallback(error);
   }
-  // Default fallback
-  return html`<div class="error">${error.message}</div>`;
+  // Default fallback — html`` types as HellaNode | (() => HellaNode); a static
+  // template is always the node form
+  const fallback = html`<div class="error">${error.message}</div>`;
+  return typeof fallback === "function" ? fallback() : fallback;
 });
 
 // Element with custom fallback
 mount(html`
-  <div error:fallback=${(e) => html`<span>Error: ${e.message}</span>`}>
-    <ChildComponent />
+  <div error:fallback=${(e: Error) => html`<span>Error: ${e.message}</span>`}>
+    <${ChildComponent} />
   </div>
 `);
 ```
@@ -51,26 +55,34 @@ onError((error, context) => {
 ### Category-Based Handling
 
 ```jsx
+const reportToService = (error: Error) => console.error(error);
+
 onError((error, context) => {
   const category = context.config?.category;
 
   if (category === "critical") {
     reportToService(error);
-    return html`<div>Critical error occurred</div>`;
+    const critical = html`<div>Critical error occurred</div>`;
+    return typeof critical === "function" ? critical() : critical;
   }
 
   if (category === "modal") {
-    return html`<div class="modal-error">${error.message}</div>`;
+    const modal = html`<div class="modal-error">${error.message}</div>`;
+    return typeof modal === "function" ? modal() : modal;
   }
 
-  // Default handling
-  return html`<div>Something went wrong</div>`;
+  // Default handling — narrow the html`` union to the node form
+  const fallback = html`<div>Something went wrong</div>`;
+  return typeof fallback === "function" ? fallback() : fallback;
 });
 
 // Usage with categories
+const criticalFallback = (e: Error) => html`<div>Critical: ${e.message}</div>`;
+const App = () => html`<div>App content</div>`;
+
 mount(html`
   <div error:category="critical" error:fallback=${criticalFallback}>
-    <App />
+    <${App} />
   </div>
 `);
 ```
@@ -120,10 +132,14 @@ Use `error:` prefix attributes on elements to configure error behavior:
 
 Function that receives the error and returns a HellaNode:
 
-```jsx
-<div error:fallback=${(e) => html`<span>Failed: ${e.message}</span>`}>
-  <FlakyComponent />
-</div>
+```js
+const FlakyComponent = () => html`<div>Flaky content</div>`;
+
+mount(html`
+  <div error:fallback=${(e: Error) => html`<span>Failed: ${e.message}</span>`}>
+    <${FlakyComponent} />
+  </div>
+`);
 ```
 
 #### error:category
@@ -131,6 +147,8 @@ Function that receives the error and returns a HellaNode:
 String category passed to the global handler for filtering/logging:
 
 ```jsx
+const Sidebar = () => <div>Sidebar</div>;
+
 <div error:category="sidebar">
   <Sidebar />
 </div>
@@ -151,20 +169,25 @@ The error handler catches errors from:
 - **Event handlers** - `on:` and `e:` handler errors (fallback UI rendered)
 - **beforeMount hook** - `hook:beforeMount` errors (error logged, no fallback UI)
 
-```jsx
-<div error:fallback=${fallback}>
-  {/* Reactive child error - fallback rendered */}
-  ${() => { throw new Error("Render error"); }}
+```js
+const fallback = (e) => html`<div>Failed: ${e.message}</div>`;
+const mightThrow = () => "btn-primary"; // stand-in for a function that may throw
 
-  {/* Bind callback error - fallback rendered */}
-  <div class={() => mightThrow()} />
+mount(html`
+  <div error:fallback=${fallback}>
+    <!-- Reactive child error - fallback rendered -->
+    ${() => { throw new Error("Render error"); }}
 
-  {/* Event handler error - fallback rendered */}
-  <button on:click=${() => { throw new Error("Click error"); }}>Click</button>
+    <!-- Bind callback error - fallback rendered -->
+    <div class={() => mightThrow()} />
 
-  {/* Lifecycle hook error - logged, no fallback UI */}
-  <div hook:beforeMount=${() => { throw new Error("Hook error"); }} />
-</div>
+    <!-- Event handler error - fallback rendered -->
+    <button on:click=${() => { throw new Error("Click error"); }}>Click</button>
+
+    <!-- Lifecycle hook error - logged, no fallback UI -->
+    <div hook:beforeMount=${() => { throw new Error("Hook error"); }} />
+  </div>
+`);
 ```
 
 **Note**: `beforeUpdate` and `afterUpdate` hook errors are caught and dispatched, but no fallback UI is rendered for them.
@@ -173,12 +196,17 @@ The error handler catches errors from:
 
 When nested elements have error configs, the nearest one wins:
 
-```jsx
-<div error:category="outer" error:fallback=${outerFallback}>
-  <div error:category="inner" error:fallback=${innerFallback}>
-    ${() => { throw new Error("oops"); }}
+```js
+const outerFallback = (e) => html`<div>Outer error: ${e.message}</div>`;
+const innerFallback = (e) => html`<div>Inner error: ${e.message}</div>`;
+
+mount(html`
+  <div error:category="outer" error:fallback=${outerFallback}>
+    <div error:category="inner" error:fallback=${innerFallback}>
+      ${() => { throw new Error("oops"); }}
+    </div>
   </div>
-</div>
+`);
 // Result: innerFallback is used
 ```
 
@@ -188,6 +216,10 @@ When nested elements have error configs, the nearest one wins:
 import { signal } from "@hellajs/core";
 import { mount, html, onError } from "@hellajs/dom";
 
+const logError = (error: Error, info: Record<string, unknown>) =>
+  console.error(error, info);
+const DataDisplay = (props: { data: unknown }) => html`<div>Data view</div>`;
+
 // Global handler
 onError((error, context) => {
   // Log to service
@@ -196,16 +228,17 @@ onError((error, context) => {
     category: context.config?.category
   });
 
-  // Use element fallback or default
-  return context.config?.fallback?.(error)
+  // Use element fallback or default (narrow the html`` union to the node form)
+  const fallback = context.config?.fallback?.(error)
     ?? html`<div class="error">Something went wrong</div>`;
+  return typeof fallback === "function" ? fallback() : fallback;
 });
 
 const App = () => {
   const data = signal(null);
 
-  return html`
-    <div error:fallback=${(e) => html`
+  const node = html`
+    <div error:fallback=${(e: Error) => html`
       <div class="error-boundary">
         <p>${e.message}</p>
         <button on:click=${() => location.reload()}>
@@ -213,9 +246,11 @@ const App = () => {
         </button>
       </div>
     `}>
-      <DataDisplay data=${data} />
+      <${DataDisplay} data=${data} />
     </div>
   `;
+  // Narrow the html`` union to the node form for mount()
+  return typeof node === "function" ? node() : node;
 };
 
 mount(App, "#app");
@@ -224,14 +259,16 @@ mount(App, "#app");
 ### Per-Component Error Handling
 
 ```jsx
+const RiskyChild = () => html`<div>risky content</div>`;
+
 const SafeComponent = () => {
   return html`
-    <div error:category="safe-component" error:fallback=${(e) => html`
+    <div error:category="safe-component" error:fallback=${(e: Error) => html`
       <div class="safe-error">
         Component failed: ${e.message}
       </div>
     `}>
-      <RiskyChild />
+      <${RiskyChild} />
     </div>
   `;
 };

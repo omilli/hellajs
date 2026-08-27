@@ -6,7 +6,7 @@ Define reusable Web Components with reactive props, slots, and lifecycle managem
 import { element } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 
-element("my-counter", (props) => {
+element("my-counter", (props: { initial: () => string | null }) => {
   const count = signal(Number(props.initial()) || 0);
 
   return (
@@ -23,7 +23,7 @@ element("my-counter", (props) => {
 Props are reactive getter functions that track attribute changes. Missing attributes return `null`, so use nullish coalescing (`??`) for defaults:
 
 ```jsx
-element("my-greeter", (props) => (
+element("my-greeter", (props: { name: () => string | null }) => (
   <div>
     {() => `Hello, ${props.name() ?? "World"}!`}
   </div>

@@ -113,7 +113,7 @@ describe("navigate options", () => {
   test("combined options work together", () => {
     router({
       routes: {
-        "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
+        "/users/:id": ({ id }) => render(`user-${id}`)
       },
       scrollBehavior: "preserve"
     });

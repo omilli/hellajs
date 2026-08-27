@@ -7,6 +7,11 @@ Delegated event handlers attached globally to `document.body` in the capture pha
 ```jsx
 import { mount } from "@hellajs/dom";
 
+const parentHandler = () => console.log("parent");
+const childHandler = () => console.log("child");
+const handler1 = () => console.log("one");
+const handler2 = (e?: Event) => console.log("two");
+
 const App = () => {
   const handleClick = () => console.log("clicked");
 
@@ -19,6 +24,10 @@ mount(App, "#app");
 ```
 
 ```jsx
+const handleClick = () => console.log("clicked");
+const handleChange = (event: Event) => console.log(event.target);
+const handleFocus = () => console.log("focused");
+
 <button on:click={handleClick}>Click Me</button>
 <input on:input={handleChange} on:focus={handleFocus} />
 ```
@@ -42,8 +51,9 @@ Delegated events fire in the **capture phase** (before the event reaches the tar
 </div>
 
 // childHandler fires first, then parentHandler
-Handlers fire target-first (innermost element first) because the global listener walks `composedPath()` from the target outward.
 ```
+
+Handlers fire target-first (innermost element first) because the global listener walks `composedPath()` from the target outward.
 
 ### Propagation
 

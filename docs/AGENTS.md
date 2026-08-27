@@ -19,7 +19,7 @@
   | `src/nav.ts` | Sidebar tree (the nav contract); entry forms below. |
   | `src/types/navigation.ts` | `NavNode` interface (`title`, `url?`, `children?`). |
   | `src/global.css` | Tailwind v4 (`@import "tailwindcss"`) + `@tailwindcss/typography` + `daisyUI` plugins; Mulish font; dark-theme color overrides (`:root` + `@theme`). |
-  | `src/layouts/MainLayout.astro` | Docs layout: `Navbar` + `Sidebar` wrapper + inline client-side `<script>` that builds the "On this page" right-rail from `main h2, h3` at runtime. |
+  | `src/layouts/MainLayout.astro` | Docs layout: `Navbar` + `Sidebar` wrapper + mobile top-of-content "On this page" select-style dropdown (`#toc-mobile`) + inline client-side `<script>` that builds that dropdown and the desktop right-rail (`#toc-rail`) from `main h2, h3` at runtime. |
   | `src/layouts/LandingLayout.astro` | Landing-only layout (no sidebar/navbar); OG/Twitter meta. |
   | `src/components/Navbar.astro` | Top bar: logo, Learn/Reference/Plugins tabs, Pagefind `<Search>`, GitHub link, mobile hamburger. |
   | `src/components/Sidebar.astro` | Renders the current section's nav tree via `NavItem`; mobile drawer + persistent desktop. |
@@ -76,7 +76,7 @@
 
   ## Non-obvious behaviors
 
-  - **Right rail is runtime-scraped** — `MainLayout.astro`'s inline `<script>` reads `main h2, h3` after hydration to build "On this page"; headings rendered purely client-side won't appear. `RightSidebar.astro` is unused.
+  - **Right rail is runtime-scraped** — `MainLayout.astro`'s inline `<script>` reads `main h2, h3` after hydration to build "On this page" on both surfaces (desktop rail `#toc-rail`, mobile top-of-page select-style dropdown `#toc-mobile` — blur-closes on select and mirrors the chosen heading in its trigger label); headings rendered purely client-side won't appear. `RightSidebar.astro` is unused.
   - **Dark theme is hardcoded** — both layouts set `<html data-theme="dark">`; `global.css` overrides daisyUI `--color-base-*`. There is no theme toggle.
   - **SSR is unsupported** — packages are client-side; the site is a static `astro build`. `learn/index.mdx` carries an explicit "Server-side rendering is not currently supported" alert; do not silently remove it.
   - **`slug` vs `title`** — nav string entries map to URL slugs (lowercased), but the sidebar displays `frontmatter.title` when present. A page whose title casing differs from its slug still resolves correctly; only a missing/renamed *file* breaks the link.

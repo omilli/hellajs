@@ -56,7 +56,7 @@ describe("router", () => {
     test("extracts params in hash mode", () => {
       router({
         routes: {
-          "/users/:id": ({ id }: { id: string }) => render(`user-${id}`)
+          "/users/:id": ({ id }) => render(`user-${id}`)
         },
         mode: "hash"
       });
@@ -69,7 +69,7 @@ describe("router", () => {
     test("handles query params in hash mode", () => {
       router({
         routes: {
-          "/search": (_p: unknown, query: { q: string }) => render(`query-${query?.q}`)
+          "/search": (_p, query) => render(`query-${query?.q}`)
         },
         mode: "hash"
       });

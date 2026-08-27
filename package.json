@@ -39,7 +39,7 @@
 	},
 	"scripts": {
 		"lint": "tsc -p tsconfig.lint.json --noEmit && eslint . && bun lint:guards",
-		"lint:guards": "bun visibility && bun dead-exports && bun jsdoc-params && bun doc-links",
+		"lint:guards": "bun visibility && bun dead-exports && bun jsdoc-params && bun doc-links && bun lint:structure",
 		"bundle": "bun ./scripts/bundle.ts",
 		"clean": "bun ./scripts/clean.ts",
 		"coverage": "bun ./scripts/coverage.ts",
@@ -50,7 +50,9 @@
 		"visibility": "bun ./scripts/type-visibility.ts",
 		"dead-exports": "bun ./scripts/dead-exports.ts",
 		"jsdoc-params": "bun ./scripts/jsdoc-params.ts",
-		"doc-links": "bun ./scripts/doc-links.ts"
+		"doc-links": "bun ./scripts/doc-links.ts",
+	"lint:structure": "bun ./scripts/doc-structure.ts",
+	"doc-snippets": "bun ./scripts/doc-snippets.ts"
 	},
 	"version": ""
 }

@@ -33,7 +33,7 @@ css({
 }, { name: 'card' });
 
 // Components hardcode the class name (the `name` provided to css)
-const Card = ({ title, children }) => (
+const Card = ({ title, children }: { title: string; children?: unknown }) => (
   <div class="card">
     <h2>{title}</h2>
     {children}

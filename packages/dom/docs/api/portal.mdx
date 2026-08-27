@@ -22,8 +22,9 @@ Use `Portal` to render content outside the component tree, like modals or toolti
 
 ```jsx
 import { Portal } from "@hellajs/dom";
+import type { Signal } from "@hellajs/core";
 
-const Modal = ({ isOpen, children }) => {
+const Modal = ({ isOpen, children }: { isOpen: Signal<boolean>; children?: unknown }) => {
   if (!isOpen()) return null;
   
   return (
@@ -189,15 +190,15 @@ Children rendered through a portal maintain their lifecycle hooks and reactive b
 **Modals and Dialogs:**
 
 ```jsx
-const Dialog = ({ open, onClose, children }) => (
+const Dialog = ({ open, onClose, children }: { open: () => boolean; onClose: () => void; children?: unknown }) => (
   <Portal to="#dialog-root">
-    {open() && (
+    {[open() ? (
       <div class="dialog-backdrop" on:click={onClose}>
         <div class="dialog" on:click={(e) => e.stopPropagation()}>
           {children}
         </div>
       </div>
-    )}
+    ) : null]}
   </Portal>
 );
 ```
@@ -205,7 +206,7 @@ const Dialog = ({ open, onClose, children }) => (
 **Tooltips:**
 
 ```jsx
-const Tooltip = ({ target, content }) => (
+const Tooltip = ({ target, content }: { target: { x: number; y: number }; content: string }) => (
   <Portal to="body" type="append">
     <div class="tooltip" style={`top: ${target.y}px; left: ${target.x}px`}>
       {content}
@@ -217,7 +218,7 @@ const Tooltip = ({ target, content }) => (
 **Toast Notifications:**
 
 ```jsx
-const Toast = ({ message, type }) => (
+const Toast = ({ message, type }: { message: string; type: string }) => (
   <Portal to="#toast-container" type="prepend">
     <div class={`toast toast-${type}`}>{message}</div>
   </Portal>

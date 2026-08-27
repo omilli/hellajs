@@ -16,7 +16,9 @@ Decision index — jump to the section for the decision you are making. This gui
 | Which section does new content go in? | §Content Scope → What Goes Where |
 | Signature format in `## API`? | §API Section |
 | Overloaded function? | §API Section → Overloaded Functions |
+| Callable namespace member (`ssr.async`)? | §API Section → Callable Namespaces |
 | Language tag for a code block? | §Code Examples → Language Tags |
+| Both JSX and html in one example? | §Dual Syntax → Never Mix in One Block |
 | Import style? | §Code Examples → Import Style |
 | Cross-reference link format? | §Cross-References |
 | Frontmatter rules? | §File Locations & Naming → Frontmatter |
@@ -24,6 +26,7 @@ Decision index — jump to the section for the decision you are making. This gui
 | Section heading naming (banned generics)? | §Section Headings |
 | Tutorial progressive-build? | §Tutorial Docs |
 | Website wrapper page? | §Website Wrapper Pages |
+| Site-only / cross-package page? | §Website Wrapper Pages → Site-Authored Content Pages |
 
 Sections in order: File Locations & Naming · Decision Precedence · Template Selection · Function & Prefix Docs · Concept Docs · Pattern Docs · Index Docs · Tutorial Docs · Website Wrapper Pages · **Extending Existing Content** · Content Scope · API Section · Code Examples · Dual Syntax · Cross-References · Tables · Alert Boxes · `<details>` Sections · Content Tone · Section Headings · Length Targets · Verification Checklist.
 
@@ -270,9 +273,10 @@ Full runnable code matching the example app.
 - **Language tag**: `tsx` for TypeScript tutorials, `jsx` for JavaScript tutorials.
 - **Progressive build**: Each section adds code on top of the previous. Never removes or rewrites earlier code.
 - **Context markers**: Use `//...` comments to show placement (`//... add after X`, `//... rest of the code unchanged`). **Never show full file repeats** — only new/changed code with surrounding context. The reader builds up from previous sections.
+- **Exercise blanks**: `/**/` marks a blank the reader fills in (`const filter = /**/;`). Legal alongside `//...` context markers (counter uses markers, todo uses blanks). `bun doc-snippets` skips any block containing `/**/` — answers vary — so a blanked block is exempt from self-containment typechecking; every non-blank line must still be valid for the block's language tag, and the filled-in answer must appear in a later section or Complete Code.
 - **Code Explanation**: Always present after every code block. Bullet list with bold backtick-wrapped API names linking to reference docs on first mention. Factual tone (not conversational).
 - **Alert boxes**: Use `<div role="alert" class="alert alert-error">` with a `<span>⚠️</span>` for critical warnings (mutation pitfalls, reactivity gotchas). Follow with Good/Bad code examples. No component imports — content docs live outside `docs/`.
-- **Dev server callout**: Include `npm run dev` + URL (`http://localhost:5173`) in the section where the app first becomes interactive.
+- **Dev server callout**: In the section where the app first becomes reachable, include the actual run command and the URL it serves, matching the app's tooling — Vite apps: `npm run dev` + `http://localhost:5173`; Bun-served SSR apps: the serve command (`bun src/server.js`, `bun run dev`) + its URL (`http://localhost:3000`).
 - **What You'll Learn**: Bold concept labels with brief descriptions. Link to reference docs on first mention using `[Concept](/reference/path)`.
 - **Project Setup**: Always includes `### Installation` (npm commands) and `### Configuration` (vite config, tsconfig).
 - **Next Steps**: 3 links to relevant tutorials/guides/concepts + one-line closing sentence.
@@ -292,7 +296,7 @@ Adjust to match the app's build-up. State always comes first. Effects are option
 
 ## Website Wrapper Pages
 
-`docs/src/pages/` pages are thin wrappers that import and render package docs and example tutorials. **Zero content of their own.**
+`docs/src/pages/` pages are thin wrappers that import and render package docs and example tutorials. **Zero content of their own** — except the sanctioned site-authored kind below.
 
 ### Format
 
@@ -328,7 +332,11 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 - **Pattern wrapper** (`docs/src/pages/learn/patterns/{name}.mdx`): Imports `@{package}/patterns/{name}.mdx`.
 - **Component name**: PascalCase derived from the file name (`signal.mdx` → `SignalContent`).
 - **No content** between the import and the component tag.
-- A wrapper MAY import and render more than one package doc, separated by `<div class="...border-t..."></div>`, when the website joins related concepts from different packages under a single URL (e.g., core and store state docs colocated at one learn URL). Each import must still follow the alias and PascalCase-component-name rules, and the wrapper must still contain zero prose.
+- A wrapper MAY import and render more than one package doc, separated by `<div class="...border-t..."></div>`, when the website joins related concepts from different packages under a single URL. Each import must still follow the alias and PascalCase-component-name rules, and the wrapper must still contain zero prose.
+
+### Site-Authored Content Pages
+
+Content that spans packages or is site-only (quick-start, testing patterns) may live as a **site-authored content page** under `docs/src/pages/`: full body content, complete frontmatter (`title`, `description`, `layout`), no package-doc import. The zero-content rule applies only to import-rendering wrappers. Registration duties are unchanged — the page must appear in `docs/src/nav.ts` and its enumeration index. `bun lint:structure` check 4 detects the kind by the absence of a package-doc import and exempts it from the zero-content rule, never from the frontmatter rule.
 
 ## Extending Existing Content
 
@@ -416,6 +424,27 @@ function signal<T>(): {
   (value: T | undefined): void;
 };
 ```
+
+### Callable Namespaces
+
+Members of a callable namespace (`ssr.async`, `ssr.stream`) must be shown as valid TypeScript — a typed namespace-object signature block or a real call site. Never pseudo-syntax like `ssr.async(node: HellaNode): Promise<string>`: it parses as neither a declaration nor an expression, so a reader cannot paste it into a `.ts` file.
+
+```typescript
+// ✅ Signature — typed namespace-object declaration
+declare namespace ssr {
+  function async(node: HellaNode): Promise<string>;
+}
+
+// ✅ Call site — a real expression
+const body = await ssr.async(html`<p>Hello ${() => user(1)}</p>`);
+```
+
+```typescript
+// ❌ Pseudo-syntax — not valid TypeScript
+ssr.async(node: HellaNode): Promise<string>
+```
+
+Document each member as its own `###` under `## API` (Multi-Method Exports pattern) with the signature block above plus a self-contained example.
 
 ### Multi-Method Exports
 
@@ -555,6 +584,25 @@ Show only one syntax when:
 2. Show the html template equivalent immediately after, under the same section or a dedicated `### html Template Syntax` sub-heading.
 3. Both examples should be self-contained with imports.
 
+### Never Mix in One Block
+
+A single fenced block never mixes the two syntaxes: no `html` tagged literal inside a `jsx`-tagged block, no JSX inside a `js`-tagged template block. The language tag promises one syntax (§Language Tags); a mixed block breaks that contract and teaches neither form in isolation. Show dual syntax as two separately-tagged examples per §How to Show Both.
+
+```jsx
+// ❌ jsx-tagged block carrying an html`` body — mixed syntax
+onError(() => html`<div class="error">Something went wrong</div>`);
+```
+
+```jsx
+// ✅ jsx block — JSX only
+onError(() => <div class="error">Something went wrong</div>);
+```
+
+```js
+// ✅ js block — html`` template only
+onError(() => html`<div class="error">Something went wrong</div>`);
+```
+
 ## Cross-References
 
 ### Link Format
@@ -680,20 +728,27 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 **Frontmatter**
 - [ ] Package docs (`packages/*/docs/**/*.mdx`) have no frontmatter
 - [ ] Website wrappers (`docs/src/pages/**/*.mdx`) carry `title`, `description`, `layout`
+- [ ] Site-authored content pages (no package-doc import) carry complete frontmatter and are registered in `nav.ts` + their enumeration index
 
 **Structure (Function & Prefix docs)**
 - [ ] `# Title` matches the export name exactly (`# signal`, `# ForEach`, `# on:`)
 - [ ] One-line description immediately after the title
 - [ ] `## API` present (Function docs only); `## Basic Usage` (functions) / `## Usage` (prefixes)
 - [ ] Multi-method exports use `###` sub-headings under `## API`; no usage interleaved between methods
+- [ ] Callable-namespace members shown as valid TypeScript — typed namespace-object block or call site, never pseudo-syntax (§API Section → Callable Namespaces)
 
 **Code examples**
 - [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
+- [ ] No fenced block mixes JSX and html-template syntax — dual syntax is two separately-tagged blocks (§Dual Syntax → Never Mix in One Block)
 - [ ] Imports shown (package imports `@hellajs/...`, never relative); first example imports the documented export
 - [ ] No test-framework assertions (`expect` / `toBe` / `describe` / `it` / `test`) — use comments and `console.log`
 - [ ] No single-letter variable names (well-known `i`, `x`, `fn` excepted)
 - [ ] No silent no-op — every `get`/`read`/`data()` demo reads a key that was written earlier in the block
 - [ ] Blocks 5–30 lines; `//…` context markers for longer
+
+**Tutorials**
+- [ ] Dev-server callout: run command + served URL in the section where the app first becomes reachable (Vite `npm run dev` → `http://localhost:5173`; Bun-served → serve command + its URL)
+- [ ] Exercise blanks are `/**/` only, remaining lines valid for the language tag, answers appear in a later section or Complete Code (doc-snippets skips `/**/` blocks)
 
 **Accuracy**
 - [ ] Every code example compiles against current source signatures (cross-check `lib/index.ts`)

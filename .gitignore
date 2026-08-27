@@ -5,6 +5,7 @@ node_modules
 out
 dist
 .bench
+.doc-snippets/
 *.tgz
 
 # code coverage

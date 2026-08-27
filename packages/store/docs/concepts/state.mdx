@@ -1,8 +1,10 @@
 # State
 
-A [`store`](/reference/store/store) converts a plain object into deeply reactive state where each property is an independently reactive signal. Only the specific properties that change trigger re-computation.
+Signals are the foundation for all reactive state in HellaJS. Use them directly for local component state or module-level shared state — and when state grows into a nested object shared across components, reach for a [`store`](/reference/store/store). See [Reactivity](/learn/concepts/reactivity) for the signal model itself.
 
 ## Creating Stores
+
+A [`store`](/reference/store/store) converts a plain object into deeply reactive state where each property is an independently reactive signal. Only the specific properties that change trigger re-computation.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -96,12 +98,99 @@ const todos = store({
 
 todos.update(draft => {
   draft.items.push({ id: 3, text: 'Ship it', done: false });
-  draft.items[0].done = true;
+  const first = draft.items[0];
+  if (first) first.done = true;
   draft.count = draft.items.length;
 });
 
 console.log(todos.items().length); // 3
-console.log(todos.items()[0].done); // true
+console.log(todos.items()[0]?.done); // true
+```
+
+## Middleware
+
+Transform or validate values before they are stored. Middleware runs synchronously on every set operation for the configured properties.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({
+  name: '',
+  email: '',
+  age: 0
+}, {
+  middleware: {
+    name: (v) => v.trim(),
+    email: (v) => v.toLowerCase(),
+    age: (v) => {
+      if (v < 0) throw new Error('Age cannot be negative');
+      return v;
+    }
+  }
+});
+
+user.name('John');              // stored as 'John'
+user.email('john@example.com'); // stored as 'john@example.com'
+user.age(-5);                   // throws Error
+```
+
+Middleware also applies through `update()`:
+
+```typescript
+user.update({ name: 'Jane', age: 30 });
+user.update(draft => { draft.email = 'jane@example.com'; });
+```
+
+Middleware works with nested stores too. Middleware for nested objects must be a nested object mapping individual property keys to their middleware functions:
+
+```typescript
+const app = store({
+  user: { name: '', email: '' },
+  settings: { theme: 'light' }
+}, {
+  middleware: {
+    user: {
+      name: (v) => v.trim(),
+      email: (v) => v.toLowerCase()
+    },
+    settings: {
+      theme: (v) => {
+        if (!['light', 'dark'].includes(v)) throw new Error('Invalid theme');
+        return v;
+      }
+    }
+  }
+});
+```
+
+Middleware runs *before* changes are stored — use it for validation, transformation, or normalization. Effects run *after* — see [reactivity](/learn/concepts/reactivity) for logging, persistence, and derived-state patterns.
+
+## Readonly
+
+Granular control over which properties can be modified, enforced at the type level.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const configStore = store(
+  { apiUrl: 'https://api.com', theme: 'light', debug: false },
+  { readonly: ['apiUrl'] as const }
+);
+
+configStore.theme('dark');           // Updates normally
+// ❌ configStore.apiUrl('new-url'); — readonly: silently ignored at runtime
+```
+
+Readonly keys do not propagate to nested stores. Each nested store requires its own readonly configuration. Pre-configured readonly stores retain their readonly state when composed:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({ name: 'Alice' }, { readonly: true });
+const app = store({ user });
+
+// ❌ app.user.name('Bob'); — no effect: user retains its readonly state
+app.user.name();      // 'Alice'
 ```
 
 ## Important Store Behaviors
@@ -139,7 +228,7 @@ const app = store({
 app.update({ count: 5, name: 'updated' });
 
 // This does nothing - 'newProp' doesn't exist in initial object
-app.update({ newProp: 'value' });
+// ❌ app.update({ newProp: 'value' }); — newProp is ignored
 // app.newProp is undefined — accessing it returns undefined; calling it throws
 ```
 
@@ -170,37 +259,6 @@ data.double();   // 2
 // Functions remain functional in snapshots
 const snap = data.snapshot();
 snap.logCount(); // Count is 1
-```
-
-### Middleware vs Effects
-
-Understanding when to use middleware versus effects is crucial for proper state management:
-
-- **Middleware** runs *before* changes are stored - use for validation, transformation, or normalization
-- **Effects** run *after* changes are stored - use for logging, persistence, or derived state calculations
-
-```typescript
-import { store } from '@hellajs/store';
-import { effect } from '@hellajs/core';
-
-// Middleware: validates/transforms incoming values
-const user = store({
-  email: '',
-  age: 0
-}, {
-  middleware: {
-    email: (v) => v.toLowerCase().trim(),
-    age: (v) => {
-      if (v < 0) throw new Error('Age cannot be negative');
-      return v;
-    }
-  }
-});
-
-// Effects: respond to changes that have already occurred
-effect(() => {
-  console.log('User email changed to:', user.email());
-});
 ```
 
 ### Reserved Keys

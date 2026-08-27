@@ -26,7 +26,7 @@ const items = signal(["Apple", "Banana", "Cherry"]);
 <ul>
   <ForEach
     each={items}
-    use={(fruit) => <li>{fruit}</li>}
+    use={(fruit: string) => <li>{fruit}</li>}
   />
 </ul>
 ```
@@ -62,7 +62,7 @@ const items = signal([
 const Items = () => <ul>
   <ForEach
     each={items}
-    use={(item) => <li key={item.unique}>{item.tag}</li>}
+    use={(item: { unique: number; tag: string }) => <li key={item.unique}>{item.tag}</li>}
   />
 </ul>
 ```
@@ -83,7 +83,7 @@ const Users = () =>
   <ul>
     <ForEach
       each={users}
-      use={(user) => <li>{user.name}</li>}
+      use={(user: { id: number; name: string }) => <li>{user.name}</li>}
     />
   </ul>
 ```
@@ -129,6 +129,7 @@ For dynamic content inside list items, use [`signal`](/reference/core/signal) ch
 
 ```jsx
 import { signal } from "@hellajs/core";
+import type { Signal } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
 
 const items = signal([
@@ -139,7 +140,7 @@ const items = signal([
 // ✅ Signal children — DOM nodes reused when items reference changes
 <ForEach
   each={items}
-  use={(item) => <li key={item.id}>{item.name}</li>}
+  use={(item: { id: number; name: Signal<string> }) => <li key={item.id}>{item.name}</li>}
 />
 ```
 

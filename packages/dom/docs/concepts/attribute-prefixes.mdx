@@ -62,7 +62,7 @@ mount(App, "#app");
 
 ### `hook:` - Element Lifecycle Hooks
 
-Element-level lifecycle hooks that fire at specific points in an element's existence.
+Element-level lifecycle hooks that fire at specific points in an element's existence. Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope. Multiple hooks of the same type on the same element all execute in registration order.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -98,8 +98,10 @@ Element-level error configuration for fine-grained error boundaries.
 ```jsx
 import { mount } from "@hellajs/dom";
 
+const FlakyComponent = () => <div>Flaky content</div>;
+
 const App = () => (
-  <div error:fallback={(e) => <span>Error: {e.message}</span>} error:category="sidebar">
+  <div error:fallback={(e: Error) => <span>Error: {e.message}</span>} error:category="sidebar">
     <FlakyComponent />
   </div>
 );

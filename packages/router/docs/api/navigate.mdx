@@ -161,6 +161,9 @@ navigate('/users/:id', {
 Navigation is synchronous — `navigate()` resolves the route and writes `route()` before returning. `router()` likewise resolves the initial route during the call (see [`router`](/reference/router/router#router-return-value)).
 
 ```typescript
+import { effect } from '@hellajs/core';
+import { route } from '@hellajs/router';
+
 // ✅ Route is updated before navigate() returns
 navigate('/dashboard');
 console.log(route().path); // '/dashboard'

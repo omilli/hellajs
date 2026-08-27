@@ -5,12 +5,13 @@ Element-level error configuration for fallback UI, error categorization, and bou
 ## Usage
 
 ```jsx
-import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
+
+const FlakyComponent = () => <div>Flaky content</div>;
 
 const App = () => (
   <div
-    error:fallback={(e) => <span class="error">Failed: {e.message}</span>}
+    error:fallback={(e: Error) => <span class="error">Failed: {e.message}</span>}
     error:category="sidebar"
     error:boundary={true}
   >
@@ -28,7 +29,9 @@ mount(App, "#app");
 Function receiving the error and returning a HellaNode for fallback UI. When present, the element implicitly becomes an error boundary.
 
 ```jsx
-<div error:fallback={(e) => <div class="error">Error: {e.message}</div>}>
+const RiskyChild = () => <div>Risky content</div>;
+
+<div error:fallback={(e: Error) => <div class="error">Error: {e.message}</div>}>
   <RiskyChild />
 </div>
 ```
@@ -38,6 +41,8 @@ Function receiving the error and returning a HellaNode for fallback UI. When pre
 String category passed to the global [`onError`](/reference/dom/onerror) handler for filtering and logging.
 
 ```jsx
+const ImportantSection = () => <div>Important</div>;
+
 <div error:category="critical">
   <ImportantSection />
 </div>
@@ -48,6 +53,8 @@ String category passed to the global [`onError`](/reference/dom/onerror) handler
 Explicitly marks an element as an error boundary. When `true`, the element stops error propagation to parent boundaries even without a fallback function.
 
 ```jsx
+const Child = () => <div>Child content</div>;
+
 <div error:boundary={true}>
   {/* Errors here don't propagate to parent boundaries */}
   <Child />

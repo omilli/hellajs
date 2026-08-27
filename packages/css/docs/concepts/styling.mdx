@@ -39,7 +39,7 @@ const Counter = () => {
 Arrays provide a cleaner syntax for conditional classes. Falsy values are filtered out.
 
 ```jsx
-const TodoItem = ({ todo }) => {
+const TodoItem = ({ todo }: { todo: () => { done: boolean; text: string; priority: string; editing: boolean } }) => {
   return (
     <div class={() => [
       'todo-item',

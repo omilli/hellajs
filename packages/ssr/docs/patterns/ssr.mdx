@@ -28,7 +28,7 @@ Bun.serve({
 ```jsx
 import { ssr } from '@hellajs/ssr';
 
-const App = ({ name }) => <div><h1>Hello {name}</h1></div>;
+const App = ({ name }: { name: string }) => <div><h1>Hello {name}</h1></div>;
 
 const body = ssr(<App name="World" />);
 // body: "<div><h1>Hello World</h1></div>"

@@ -1,245 +1,220 @@
-# HellaJS @hellajs/ssr vs. Solid / Svelte / React / Vue
+# HellaJS @hellajs/ssr vs. Solid / Svelte 5 / React 19 / Vue 3
 
-A ground-up comparison based on the actual source code of `@hellajs/ssr` v2. Every HellaJS claim below was verified against `packages/ssr/lib/`. Competitor versions researched: Solid 1.9.13 (`solid-js/web`), Svelte 5.20.0, React 19.1.0 (`react-dom` server), Vue 3.5.13 (`@vue/server-renderer`).
+A ground-up comparison based on the actual source code of `@hellajs/ssr` v2. Every claim below was verified against `packages/ssr/lib/`. Competitor versions researched: Solid 1.9.15, Svelte 5.56, React 19.2, Vue 3.5.
 
 ---
 
 ## 1. At-a-Glance Summary
 
-| Dimension | HellaJS ssr | Solid | Svelte 5 | React | Vue 3 |
+| Dimension | HellaJS ssr | Solid | Svelte 5 | React 19 | Vue 3 |
 |---|---|---|---|---|---|
-| Rendering model | AST walk → string / stream | Reactive render → string/stream | Compiled imperative render → `{html,head,body}` | VDOM reconcile → string/stream | Reactive render → string |
-| Reactive runtime on server | No (pure read + await) | Yes (fine-grained) | No (compiled push) | Yes (reconciler + scheduler) | Yes (reactivity) |
-| Streaming | `ssr.stream` (`ReadableStream<string>`) | `renderToStream` / `pipeToNodeWritable` | No (sync; result is thenable) | `renderToPipeableStream` / `renderToReadableStream` | `renderToNodeStream` / `renderToWebStream` |
-| Suspense / async | `<Suspense>` (stream) + `ssr.async` (await) | `<Suspense>` | `{#await}` | `<Suspense>` | `<Suspense>` |
-| Hydration markers | `<!--[->…<!--]-->` region pairs + `<!--hsN-->` Suspense sentinel | `data-hk` attrs + `<!--!$-->` sep | `<!--[->…<!--]-->` region pairs | `<!-- -->` sep + `<!--$--><!--/$-->` segments | `<!--[->…<!--]-->` region pairs |
-| Output shape | `string` / `Promise<string>` / `ReadableStream<string>` | `string` / stream | `{ html, head, body }` | `string` / stream | `string` (Promise) |
-| Renderer gzip | ~3.4 KB (bundle.js) / ~2.6 KB (.min) | ~8 KB | ~10 KB (shared, tree-shaken) | ~41 KB | ~6 KB |
-| External deps | 0 (type-only peer) | reactive runtime | compiled + shared runtime | scheduler + reconciler | reactivity runtime |
+| Rendering model | HellaNode AST walk → string | Reactive render via compiled string ops | Compiled server blocks → buffer | Segment renderer (Fizz) | Vnode walk → buffered chunks |
+| API surface | `ssr` / `ssr.async` / `ssr.stream` + `doc` | `renderToString` / `renderToStringAsync` / `renderToStream` | `render` (sync getters or thenable) | `renderToString` / `renderToPipeableStream` / `renderToReadableStream` / `prerender` | `renderToString` / `renderToWebWritable` |
+| Sync string render | Yes | Yes | Yes | Yes — suspending throws | No — always a Promise |
+| Streaming | Web `ReadableStream<string>` | Writable pipe, shell/all callbacks | None | Pipeable / readable, per-platform builds | Web / node streams, in-order |
+| Out-of-order reveal | `<template>` + `$hs` script | `<template>` + `$df` script | Framework-level only | Hidden segments + `$RC`/`$RS` scripts | None at stringifier level |
+| Hydration markers | `<!--[-->`/`<!--]-->` comments | `data-hk` attributes + `<!--!$-->` | `<!--[-->`/`<!--]-->` + `<!---->` | `<!--$-->` pairs + `<!-- -->` | `<!--[-->`/`<!--]-->` + teleport anchors |
+| Event replay before hydrate | No | Yes (`_$HY`) | No | Yes (`hydrateRoot`) | No |
+| Server→client data serialization | None | seroval promises / resources | None (SvelteKit streams) | Flight payloads / bootstrap scripts | None (Nuxt payloads) |
+| Runtime deps | 0 | 3 | 16 | 1 (+ `react` peer) | 3 |
+| Host coupling | None (web streams only) | Node + web variants | None | Per-platform entry builds | Node + web variants |
 
-`@hellajs/ssr` is a stringifier, not a renderer-with-runtime. Its three walkers — `ssr` (synchronous), `ssr.async` (await Promises), `ssr.stream` (flush a shell, then resolve) — read current values, await any Promise a resolved value returns, and emit strings; `ssr.stream` flushes the static prefix ahead of an awaited value, and a `<Suspense>` boundary opts a subtree into out-of-order streaming with a fallback-first, resolved-children-later shape. What it does *not* bring to the server is a reactive runtime, a scheduler, or a reconciler — the three things Solid, React, and Vue do bring. It leans on `@hellajs/dom`'s `hydrate()` (the consumer of its markers) for everything interactive, and on the separate `doc()` helper for document assembly.
+HellaJS ssr is the only entry here that is a pure stringifier rather than a framework's server half — it walks a plain-object AST it does not import at runtime, emits web-standard streams with no host APIs, and leaves document assembly, routing, and serving to the caller. Solid and React match it on streaming mechanics (staged templates plus inline swap scripts) but carry their framework's serialization machinery; Svelte and Vue compile or buffer their way to a string without an out-of-order story at this layer.
 
 ---
 
-## 2. Stringifier Architecture
+## 2. Stringification Architecture
 
 ### HellaJS
 
-The package is one public name per file over a shared async walker. `ssr(node): string` (`lib/ssr.ts`) is the synchronous recursive walk — `<tag attrs>body</tag>`, a root fragment (`tag: "$"`) concatenating its children, void elements (`area`, `br`, `img`, `input`, …, the `VOID` set) emitting no closing tag. `ssr.async(node): Promise<string>` (`lib/ssrAsync.ts`, `@internal`, attached as the `ssr.async` member) is a thin collect-wrapper over the shared async generator `ssrNodeGen`, awaiting any Promise a resolved value returns before classifying it; its concatenated output is byte-identical to `ssr` when no value is a Promise. `ssr.stream(node): ReadableStream<string>` (`lib/ssrStream.ts`, `@internal`, attached as the `ssr.stream` member) wraps that generator in a web `ReadableStream`, enqueuing each chunk as it is produced so the static prefix ahead of an awaited value flushes before the await resolves. The shared async machinery — `ssrNodeGen`, `walkChildGen`, `walkChildrenGen`, `renderDynamicGen`, the `MARK_OPEN`/`MARK_CLOSE` constants, and the `PendingSwap` staging list — lives under `lib/internal/walk.ts`; the synchronous `walkChild`/`walkChildren`/`renderDynamic` live co-located in `lib/ssr.ts` and are kept in manual parity with their async twins (a parity invariant enforced by the `ssr-async`/`ssr-stream` parity tests).
+Rendering is a one-way recursive walk over a plain-object HellaNode AST — no reactivity runs on the server, no scheduler, no component lifecycle:
 
-- Attribute serialization mirrors `@hellajs/dom`'s internal `renderProp` rules — falsy → omit, `true` → bare attribute, arrays → space-joined, else → quoted+escaped — but intentionally drops the `DIRECT_PROPS` special-case (value/checked/selected/innerHTML) because emitting `checked=""` would mean *checked* in HTML (`lib/internal/serialize.ts`, `serializeProp`).
-- Text escaping is the HTML-significant set (`& < > "`), applied to resolved interpolation and double-quoted attribute values; static template text is emitted **raw**, only *resolved* interpolation is escaped (`lib/internal/serialize.ts`, `escapeHtml`).
-- A bare Promise in any resolved position (child, function-ref prop, `each`, `show`) is awaited exactly once by `resolveAsync` / `isPromise`, which fully unwraps nested thenables in a single `await` (`lib/internal/resolve.ts`).
-- Zero runtime imports. Every `lib/*.ts` stringifier carries only `import type { HellaNode, HellaChild, SsrMeta } from "@hellajs/dom"`, erased at compile time (`lib/ssr.ts:1`, mirrored in `lib/ssrAsync.ts` and `lib/ssrStream.ts`). None touches the DOM, the reactive system, or a scheduler. There is no `try/catch` in `ssr` or `ssr.async`: a throwing child/bind/`use` getter propagates to the caller, and under `ssr.stream` a rejected Promise errors the stream (the `try/catch` there exists only to route a throw into `controller.error()`, which `ReadableStream` semantics require).
+- `ssr(node)` walks `<tag attrs>body</tag>`, concatenates fragment roots (`tag: "$"`), and emits void elements without closing tags (`lib/ssr.ts`). The only shared root guard, `assertNode`, rejects missing and tag-less roots up front (`lib/internal/assert.ts`).
+- Reactive values are read exactly once: `resolveValue` calls a function-valued child or prop and serializes the result (`lib/internal/resolve.ts`). A function-ref prop emits its current value as an attribute; there is no second read.
+- Control flow dispatches on a descriptor dom attaches to its built-ins (`fn.ssr = { kind, props }`): `forEach` maps `use` over the resolved `each`, `transition` gates on `show`, `portal` renders nothing, `lazy` renders `loading`, `suspense` renders children directly under the sync and async members (`lib/ssr.ts`, `lib/internal/walk.ts`). User components expand to plain HellaNodes at template time, so they are ordinary recursion — no `ssr`-aware wrapping.
+- Escaping mirrors dom's `renderProp` rules — falsy omitted, `true` bare, arrays space-joined, strings quoted and escaped (`lib/internal/serialize.ts`) — while deliberately not mirroring `renderProp`'s IDL-property special case, since emitting `checked=""` would mean checked in HTML (`lib/internal/serialize.ts`).
+- The package's defining constraint holds across every file: imports from `@hellajs/dom` are type-only and erased, so `lib/` has zero runtime imports from any `@hellajs/*` package (`lib/ssr.ts`, `lib/ssrAsync.ts`, `lib/ssrStream.ts`, `lib/internal/walk.ts`). The `raw()` child is duck-typed via `"raw" in child` precisely to preserve that invariant (`lib/ssr.ts`).
 
 ### Solid
 
-- `renderToString` is synchronous; `renderToStringAsync`, `renderToStream`, and `pipeToNodeWritable` cover async and streaming (`solid-js@1.9.13/web/dist/server.js`). Solid's fine-grained reactivity genuinely runs on the server — `createSignal`/`createMemo` are evaluated and their current values serialized, so the same reactive graph that drives the client also drives the render.
-- Components render through the `ssr` / `ssrElement` / `resolveSSRNode` helpers, with a `data-hk` hydration-key attribute stamped onto each element (`getHydrationKey`, `server.js:541-542`) so the client can locate it during hydration.
+Solid's server renderer runs the real reactive system under `sharedConfig.context`: `renderToString` creates a root, executes the component tree synchronously, and collects anything asynchronous (suspense content, resources, lazy fragments) through a seroval serializer into inline scripts appended to the HTML (solid-js 1.9.15, `web/dist/server.js`). The `ssr` tagged template is a compile-time construct — `babel-preset-solid` rewrites templates into direct string concatenation against `ssrElement`/`ssrAttribute` helpers — so the server output is compiled code, not a runtime walk. This is the closest architectural sibling to HellaJS's approach (template → string ops), with the trade that it depends on the compiler, the reactive runtime, and seroval all being present.
 
 ### Svelte 5
 
-- `render(component, { props })` returns `{ html, head, body }` synchronously, and the result is also thenable for async work (`svelte@5.20.0/src/internal/server/index.js:101`, the return at `:147-150`). The compiler emits imperative per-component render functions that push strings onto a renderer buffer — there is no reactive runtime evaluating on the server, only generated string-concatenation code.
-- Head and CSS are collected during the walk and returned as separate fields, so `<svelte:head>` and component `<style>` blocks land in the right place without caller assembly.
+Svelte compiles each component twice — once for the client, once for the server — and the server build emits calls into `svelte/internal/server` block helpers (`element()`, `await_block()`, snippet and html blocks) that push strings into a renderer buffer (svelte 5.56, `src/internal/server/index.js`). `render(component)` from `svelte/server` returns a lazy object whose `html`/`head`/`body` getters trigger the synchronous render, or a thenable that awaits the tree when compiled with `experimental.async` (the `async_mode_flag`, `src/internal/server/renderer.js`). There is no reactive runtime on the server at all — the compiler already flattened reactivity into straight-line code — making Svelte the purest compile-to-string entry in the group, and the only one whose SSR output quality is decided entirely at build time.
 
-### React
+### React 19
 
-- `renderToString` produces a complete string (synchronous, discouraged for real servers); `renderToPipeableStream` (Node) and `renderToReadableStream` (web streams) are the recommended paths (`react-dom@19.1.0`). The full client renderer — reconciler, scheduler, fiber machinery — runs server-side; the same component code path is reused. The Node server production bundle is ~226 KB raw / ~41 KB gzipped (`cjs/react-dom-server.node.production.js`).
-- Streaming is paired with `<Suspense>` for progressive rendering and selective hydration: the server can flush an HTML shell, then stream in suspended subtrees as their data resolves.
+React renders through Fizz, a segment-based renderer: the component tree is cut into boundaries and segments tracked in resumable state, and flushed to a platform-specific write destination. The package ships per-platform entry builds (`server.node.js`, `server.bun.js`, `server.edge.js`, `server.browser.js`, verified in the 19.2.8 package), exposing `renderToPipeableStream`, `renderToReadableStream`, and — alongside the legacy `renderToString` — the `prerender`/`resume` pair for postponed, resumable partial renders (react-dom 19.2.8, `cjs/react-dom-server.node.development.js`). The legacy `renderToString` throws when a `<Suspense>` boundary suspends, with an error directing callers to `renderToPipeableStream` (verified in `cjs/react-dom-server-legacy.node.development.js`). React is the most infrastructure-complete stringifier here, and the heaviest: every render carries scheduling, segmentation, and resource-tracking machinery.
 
 ### Vue 3
 
-- `renderToString` is `async` (`@vue/server-renderer`, `renderToString.ts`); the returned promise resolves to the full HTML string. Vue's reactivity runs on the server — refs/reactive state are read at their current value during the walk.
-- `renderToNodeStream` / `renderToWebStream` cover streaming, and `resolveTeleports` collects `<Teleport>` targets for separate emission.
+Vue's server renderer walks a vnode tree produced by SSR-compiled render functions (`@vue/compiler-ssr` emits `ssrRender*` code, distinct from the client's DOM codegen). Output is pushed into nested buffers whose `hasAsync` flag controls whether unrolling awaits: `renderToString` always returns a Promise, awaiting `async setup()` and `serverPrefetch`, then resolving teleport buffers into `context.teleports` (@vue/server-renderer 3.5.42, `dist/server-renderer.esm-bundler.js`). Streaming variants (`renderToWebWritable`, `pipeToNodeWritable`) unroll the same buffer in document order. Vue sits between Svelte and React: compiled render code, like Svelte, but running through a vnode layer and runtime component machinery closer to React's model.
 
-**Verdict:** HellaJS alone brings *none* of its reactive machinery to the server. Solid, React, and Vue evaluate their client reactivity during the render; Svelte offloads it to a compiler. HellaJS treats the server as a pure serialization target that may `await` — the walk reads getters once (or awaits the Promise they return) and emits strings — which is the source of both its size advantage (§3) and the shape of its feature gaps (§5).
+**Verdict:** Two camps. Svelte and HellaJS stringify a static artifact — compiled blocks or a plain AST — with no runtime reactivity on the server; Solid, React, and Vue execute live component machinery to produce HTML. HellaJS is alone in the second camp's absence *and* the first camp's flexibility: like Solid's templates it accepts runtime-authored `html\`\`` trees with no compiler, yet like Svelte's server build it drags zero framework runtime into the process.
 
 ---
 
-## 3. Bundle Size & Dependencies
+## 3. Dependencies
 
-|  | HellaJS ssr | Solid (web server) | Svelte (server runtime) | React (react-dom server) | Vue (@vue/server-renderer) |
+| | HellaJS (ssr) | Solid | Svelte | React (react-dom) | Vue (@vue/server-renderer) |
 |---|---|---|---|---|---|
-| Renderer gzip | ~3.4 KB (bundle.js) / ~2.6 KB (.min) | ~8 KB | ~10 KB (shared, tree-shaken) | ~41 KB | ~6 KB |
+| Runtime deps | 0 | 3 (`csstype`, `seroval`, `seroval-plugins`) | 16 (compiler toolchain) | 1 (`scheduler`) | 3 (`@vue/compiler-ssr`, `@vue/runtime-dom`, `@vue/shared`) |
+| Peer deps | `@hellajs/dom` (type-only, erased) | none | none | `react` | none |
 
-- `@hellajs/ssr` declares zero runtime dependencies and a single type-only peer dependency on `@hellajs/dom` (`packages/ssr/package.json`). The shipped `dist/bundle.js` is ~14.2 KB raw / ~3.4 KB gzipped, and `bundle.min.js` is ~7.5 KB raw / ~2.6 KB gzipped (`dist/sizes.json`). The source splits one public name per file (`ssr`/`ssr.async`/`ssr.stream`/`doc`) plus a shared `lib/internal/` layer (`walk`/`resolve`/`serialize`/`head`), but the bundler concatenates them into a single shipped `bundle.js` carrying the shared async generator (`ssrNodeGen`/`walkChildGen`/`renderDynamicGen`), the Suspense staging path, and the shared head builder — one runtime artifact, ~2.6 KB min+gzip.
-- The other renderers carry their runtime with them. Solid's server build includes the reactive system (~8 KB gzip, `solid-js/web/dist/server.js`). React's server production bundle ships the full reconciler + scheduler (~41 KB gzip, `cjs/react-dom-server.node.production.js`). Vue splits SSR into a separate `@vue/server-renderer` package (~6 KB gzip) layered on the reactivity runtime. Svelte's shared server runtime is ~10 KB of uncompiled ESM that a bundler tree-shakes, with additional per-component compiled code generated at build time.
-- HellaJS is the only one here that is a standalone stringifier rather than a renderer-with-runtime. It composes with the rest of the ecosystem — `@hellajs/dom` for the AST and `hydrate()`, `@hellajs/css` for CSS text — but ships none of them in its own bundle. The caller composes the head explicitly and `doc()` (`lib/doc.ts`) assembles the document skeleton (escaping, void elements, body or mount wrapper); the benefit is that a server needing only `ssr()`/`ssr.async()`/`ssr.stream()` (plus `doc()`) adds ~2.6 KB min+gzip and nothing else. At ~2.6 KB min+gzip it is still under half of Vue's renderer and ~15× smaller than React's server bundle; against Svelte's ~10 KB shared runtime it is smaller still, though Svelte's per-component compiled code is not counted in that figure.
-
----
-
-## 4. Hydration Markers
-
-This is the load-bearing section: the markers a stringifier emits are the contract its hydrator consumes, and the format choice ripples into payload size, client complexity, and interop.
-
-HellaJS wraps every dynamic region — a reactive child, an `isDynamic` component (`ForEach`/`Transition`/`Portal`/`Lazy`/`Suspense`), or a nested fragment — in `<!--[-->` … `<!--]-->` and leaves static elements and text unwrapped (`lib/internal/walk.ts`, `MARK_OPEN`/`MARK_CLOSE`, and the `walkChild` / `walkChildGen` dispatchers). The HTML parser turns each comment into a `Comment` node; the client's `hydrate()` walks those comments to locate each region in place, never inferring structure and never rebuilding coalesced text. Under `ssr.stream`, a `<Suspense>` region adds one HellaJS-specific marker inside the region: a sentinel comment `<!--hsN-->` (nodeValue `hsN`) carrying the id of a staged `<template id="hsN">` appended at stream end with the resolved children (`lib/internal/walk.ts`, `renderDynamicGen` suspense branch; `lib/ssrStream.ts`, the `pending` flush loop). That sentinel is what `hydrate`'s `swapSuspenseStage` looks up as the no-script fallback; in a browser an inline `$hs` script swaps each region the moment its `<template>` arrives (see §5).
-
-The same `<!--[-->` / `<!--]-->` pair is used by both Vue and Svelte, verified from source:
-
-- **Vue 3.5.13** — `server-renderer/src/render.ts:253` emits `push('<!--[-->')` to open a `Fragment` (`case Fragment:` at `:248`), and `:260` emits `push('<!--]-->')` to close it.
-- **Svelte 5.20.0** — `src/constants.js:21,24` define `HYDRATION_START = '['` and `HYDRATION_END = ']'`; `src/internal/server/hydration.js:3,5` compose them into `BLOCK_OPEN = <!--[-->` and `BLOCK_CLOSE = <!--]-->`. Svelte adds `BLOCK_OPEN_ELSE = <!--[!-->` (`constants.js:23`, `HYDRATION_START_ELSE = '[!'`) for the `{#await}` else branch.
-
-Solid and React take a different shape:
-
-- **Solid 1.9.13** — does not use comment-pair region markers. It stamps a `data-hk` hydration-key attribute on each element (`getHydrationKey`, `server.js:541-542`), uses `<!--!$-->` as a separator between adjacent primitives, `<!--pl-${key}-->` and `<!--!$${id}-->` / `<!--!$/${id}-->` for streaming placeholders, and `<!--xs-->` as an end-of-stream terminator after the inline `_$HY` hydration script (`server.js:625`, `generateHydrationScript`). (The comment-pair `<!--#-->`/`<!--/-->` shape sometimes attributed to Solid is not present in the 1.9.x server output.)
-- **React 19.1.0** — emits `<!-- -->` as a text separator between adjacent text nodes (`ReactFizzConfigDOM.js:877`), `<!--$-->`/`<!--/$-->` to bound completed `<Suspense>` segments (`:4034`, `:4041`), `<!--$?--><template id="…">` for pending segments (`:4019`, `:4036`), `<!--$!-->` for client-rendered segments (`:4040`), plus `<!--F!-->`/`<!--F-->` form-state markers (`:1921-1922`).
-
-The practical consequence: HellaJS, Vue, and Svelte share a hydration contract a reader can recognize across frameworks, where every dynamic region is an explicit bracketed extent. HellaJS's Suspense sentinel + staged `<template>` is closest in spirit to React's `<!--$?-->` + `<template id>` pending-segment pair — both defer resolved content to a template the client swaps in — HellaJS now swaps each region via an inline `$hs` script the moment its template arrives (React `$RC` / Solid `_$HY` parity); `hydrate` later adopts the already-swapped nodes. Solid's attribute-stamping scales naturally to large static subtrees (one `data-hk` per element, no per-region comments) but bloats the attribute payload and requires shipping the `_$HY` hydration script inline. React's comment density is the highest of the group because every adjacent-text boundary and every suspense segment is marked, which is the price of its streaming + selective-hydration model. HellaJS's choice to mark only dynamic regions and leave static elements unwrapped keeps the payload minimal while staying readable — its region format matches the one Vue and Svelte emit, and it reaches for React's template-staging idea only where out-of-order streaming actually needs it.
+- `@hellajs/ssr` declares zero runtime dependencies and a single type-only peer (`package.json`) — the stringifier can serialize a HellaNode AST whether or not any other `@hellajs/*` package is installed in the server process, and adds nothing to the server bundle but its own code.
+- Svelte's sixteen dependencies are the compiler toolchain (acorn, magic-string, esrap, zimmerframe, and friends, verified in the 5.56 package) — only relevant at build time, but unavoidable in the package. React pays `scheduler` plus a peer on `react` itself; Solid pays seroval to serialize reactive state; Vue pulls its compiler and runtime-dom.
+- React is the only competitor with host-conditional entry points — a server bundler must resolve the right build per platform (`server.bun.js`, `server.edge.js`, `server.node.js`). HellaJS emits standard web `ReadableStream<string>` and plain strings, so the same code runs under Bun, Node, Deno, workers, and edge runtimes unchanged (`lib/ssrStream.ts`, `lib/doc.ts`).
 
 ---
 
-## 5. Streaming, Async & Suspense
+## 4. Hydration Marker Model
 
-HellaJS ships three rendering modes. Two of them — `ssr.async` and `ssr.stream` — share one async generator (`lib/internal/walk.ts`, `ssrNodeGen`); `ssr` is a separate synchronous walker whose `walkChild`/`renderDynamic` are kept in byte-identical parity with their async twins via parity tests:
+This is the load-bearing decision. Every stringifier must leave enough evidence in the HTML for the client to rebind interactivity, and each library's choice reveals its hydration philosophy.
 
-- **`ssr(node): string`** (`lib/ssr.ts`) — synchronous end to end. The walk resolves each getter at its current value and returns a string; no effect scheduling, no batching, no promise awaiting. `Lazy` renders its `loading` fallback and never awaits its loader; `resource` no-ops its fetch pipeline on the server (the `run()` fetch path is guarded by `hasWindow()` in `@hellajs/resource`), so embedded resources never trigger network calls. The caller resolves data with direct `fetch()` before building the tree (`lib/internal/resolve.ts`, `resolveValue`).
-- **`ssr.async(node): Promise<string>`** (`lib/ssrAsync.ts`) — the async counterpart. Any resolved value (a child, a function-ref prop getter, `each`, `show`) that returns a Promise is awaited exactly once before classification; the rest of the walk is identical to `ssr`. The output and markers are byte-identical to `ssr`, so `hydrate` consumes either the same way (`lib/internal/walk.ts`, `ssrNodeGen` over `walkChildGen`). `<Suspense>` renders its `children` directly and drops `fallback` — everything resolves before the string returns.
-- **`ssr.stream(node): ReadableStream<string>`** (`lib/ssrStream.ts`) — streaming counterpart. The generator yields chunks as the walk proceeds, so static markup ahead of an awaited Promise flushes immediately (progressive paint / TTFB). It returns a standard web `ReadableStream<string>`; pipe through `new TextEncoderStream()` for a `Response` body. Cancellation calls `gen.return()` for best-effort stop; a rejected Promise errors the stream (`lib/ssrStream.ts`, `start`/`cancel`).
+### HellaJS
 
-`<Suspense>` is the out-of-order escape hatch, and only `ssr.stream` exercises it. Under `ssr.stream`, a `<Suspense>` boundary flushes its `fallback` inline, emits a sentinel comment `<!--hsN-->` carrying a `<template>` id, defers the resolved children onto a `pending` list, and at stream end appends each staged `<template id="hsN">` with the resolved HTML, each followed by an inline `<script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) — nested Suspense resolves eagerly within its template (non-streaming) (`lib/internal/walk.ts`, `renderDynamicGen`; `lib/ssrStream.ts`, the `pending` flush). Each staged `<template>` is followed by an inline `<script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) that swaps the fallback for the resolved children the moment it arrives — progressive reveal, React/Solid parity. `hydrate` then adopts the already-swapped nodes; its `swapSuspenseStage` (`packages/dom/lib/internal/hydrate.ts`) is the no-script/HappyDOM fallback — it runs when the inline script hasn't (e.g. in tests, where HappyDOM does not execute innerHTML-inserted scripts). This supersedes the earlier β “stage-all, swap-at-hydrate” model: HellaJS now does progressive content reveal. The remaining gap vs React is per-segment *selective hydration of interactivity* — hydrate still runs once (handlers attach in that single pass, not per-segment as segments arrive).
+Every dynamic region — a reactive child, an `isDynamic` component, a nested fragment, a `raw()` child — is wrapped in `MARK_OPEN`/`MARK_CLOSE` (`<!--[-->` / `<!--]-->`), which the browser parses to Comment nodes with nodeValue `[` / `]` that `@hellajs/dom`'s `hydrate` locates without structural inference (`lib/internal/walk.ts`, `lib/ssr.ts`). Static elements and static text are emitted unwrapped and matched by position, so a page of static markup carries zero marker bytes (`lib/ssr.ts`). The format is the same one Vue uses for its slot and fragment boundaries — chosen precisely because comment-node region bounds survive HTML parsing, delimit mixed text-and-element regions that no attribute scheme can express, and let adjacent reactive text hydrate as its own text node rather than a coalesced run (`lib/ssr.ts`, verified by the integration tests in `tests/hydrate-integration.test.ts`). Streamed `<Suspense>` regions add one sentinel comment carrying a `<template>` id, resolved by `getElementById` so emission order never matters (`lib/internal/walk.ts`, `lib/ssrStream.ts`).
 
-Against the competitors, the honest gaps are real:
+### Solid
 
-- **In-order streaming for bare Promises.** `ssr.stream` awaits Promises in tree order, so a slow Promise delays everything after it. React's `renderToPipeableStream` + `<Suspense>` and Solid's `renderToStream` reorder around slow subtrees; HellaJS only reorders inside an explicit `<Suspense>`. A bare awaited getter without a `<Suspense>` wrapper blocks the stream.
-- **`<Suspense>` is stream-only.** Under `ssr`/`ssr.async` a `<Suspense>` renders its children directly and drops the fallback — there is no async boundary, because those modes resolve everything before returning. Out-of-order streaming exists only via `ssr.stream`.
-- **Progressive content reveal; single-pass interactivity hydration.** Each `<Suspense>` region's content swaps in the moment it arrives via an inline `$hs` script (React/Solid parity) — but `hydrate` still runs once, so per-segment *interactivity* (handlers going live as each segment arrives — React's selective hydration) remains the gap.
-- **No `<Suspense>` fallback transitions or nested streaming suspension semantics.** HellaJS's Suspense is a single fallback → resolved-children swap, not the richer suspended-fallback / nonce / segment-hole machinery React exposes.
+Solid marks elements, not regions: hydration keys (`data-hk="${hk}"`) are emitted as attributes via `ssrHydrationKey()`, and adjacent dynamic nodes are separated with `<!--!$-->` comments; the client hydrates by walking `data-hk`-tagged elements (solid-js 1.9.15, `web/dist/server.js`). Deferred fragments use `<!--pl-${key}-->` placeholder comments that the inline `$df` script replaces with `<template>` content on arrival. The attribute approach means every hydration-eligible element carries visible payload in the markup itself — an attribute per element versus HellaJS's two comments per dynamic region — but it also gives Solid element-identity matching rather than positional matching inside regions.
 
-For SEO-first and content sites the synchronous `ssr()` path is a reasonable trade; for data-heavy dashboards, `ssr.stream` + `<Suspense>` covers the shell-first + resolve-later pattern the competitors are known for, at the cost of the explicit boundary and the single-hydrate model.
+### Svelte 5
 
----
+Svelte uses the same `[` / `]` comment convention as HellaJS and Vue: blocks open with `<!--[-->` (else-branches with `<!--[!-->`, failed awaits with `<!--[?-->`), close with `<!--]-->`, and empty anchors render as `<!---->` (svelte 5.56, `src/internal/server/hydration.js`). The client's `hydrate` re-runs each component and walks the existing DOM against the expected structure, adopting matching nodes. The marker vocabularies are near-identical; the difference is scope — Svelte's markers wrap every compiled block, HellaJS wraps every region dom's hydrator needs and nothing else.
 
-## 6. Control Flow & Reactive Reads on the Server
+### React 19
 
-HellaJS handles the five `isDynamic` control-flow components through `renderDynamic` (sync, `lib/ssr.ts`) and `renderDynamicGen` (async, `lib/internal/walk.ts`), which dispatch on an `fn.ssr.kind` descriptor rather than executing the component's client logic:
+React encodes lifecycle state into comments: completed boundaries as `<!--$-->`/`<!--/$-->`, pending boundaries as `<!--$?-->` followed by `<template id="B:…">`, client-rendered boundaries as `<!--$!-->`, and resumable-in-progress boundaries as `<!--$~-->`; adjacent text from separate expressions is separated with `<!-- -->` (react-dom 19.2.8, `cjs/react-dom-server.node.development.js` — `startPendingSuspenseBoundary1 = '<!--$?--><template id="'`, `textSeparator`). Streamed segments arrive as `<div hidden id="S:…">` blocks flushed after the shell, and inline `$RC`/`$RS` scripts perform the swaps, with `$RX` handling client-render fallbacks. This is the richest marker vocabulary in the group — enough for selective hydration, where `hydrateRoot` hydrates exactly the boundary a user interacted with and replays the event (verified in `cjs/react-dom-client.development.js`, `attemptExplicitHydrationTarget` over `listenToAllSupportedEvents`).
 
-- `forEach` — resolves `each` (calling/awaiting it if it is a getter/Promise), maps each item through `use(item, index)` into `walkChild`/`walkChildGen`, and concatenates the results in array order. Keys are irrelevant server-side; there is no reconciliation to do.
-- `transition` — renders `children` when `show` is truthy, nothing otherwise (enter/leave animations are client-only).
-- `portal` — renders nothing, because there is no document to teleport into.
-- `lazy` — renders `props.loading` if present, never calls `loader` (the loader runs client-side after hydrate).
-- `suspense` — under `ssr`/`ssr.async` renders `children` directly (fallback dropped); under `ssr.stream` emits `fallback` + a sentinel comment, defers, and stages resolved children in a `<template id="hsN">` for `hydrate` to swap in (see §5).
+### Vue 3
 
-Reactive reads are deliberately one-shot. A function-ref prop (a signal or `() => …` wrapper passed as a plain prop value) resolves exactly once via `resolveValue` (`ssr`) or resolves-and-awaits it (`ssr.async`/`ssr.stream`) and serializes its current value as an attribute; there is no subscription, no effect, and no subsequent update (`lib/ssr.ts` and `lib/internal/walk.ts`, the props loops). A *called* expression (`value={fn()}`) is evaluated once at template time and stays static — pass a signal reference or wrapper for a reactive attribute. User-authored components (`component()`) expand to a HellaNode at template time and become plain recursion; an `isDynamic` function with no `ssr` descriptor renders as an empty marker region (`<!--[--><!--]-->`) rather than throwing.
+Vue wraps slot outlets and fragment vnodes in `<!--[-->`/`<!--]-->` and delimits teleports with `<!--teleport start-->`/`<!--teleport end-->` anchors, collecting the teleported content into `context.teleports` for the host framework to inline (@vue/server-renderer 3.5.42, `dist/server-renderer.esm-bundler.js`). The client (`createSSRApp` + `mount`) hydrates by matching the vnode tree against the existing DOM. Vue's marker set is minimal like HellaJS's — dynamic boundaries only, static content untouched — because its hydrator, like HellaJS's, trusts element structure outside marked regions.
 
-The competitors' control flow is richer but heavier. Solid's `<For>`, `<Show>`, `<Switch>`, and `<Suspense>` all run their reactive logic server-side. Svelte's `{#each}`, `{#if}`, `{#await}` compile to imperative push calls in the generated render function — closest in spirit to HellaJS's "walk and concatenate," except the code is generated per-component at build time rather than interpreted from a shared walker. React and Vue evaluate their full control-flow primitives (`map`, conditionals, `<Suspense>`, `<Transition>`) through their runtimes. HellaJS's `renderDynamic` is the most austere of the group: five kinds, no keys, no animation, just serialization — with `suspense` the one kind that participates in out-of-order streaming and the only kind that needs async awareness.
+**Verdict:** HellaJS shares Vue's and Svelte's comment-region format but applies it at a different granularity: per dynamic region in the AST rather than per slot or per compiled block. Against Solid's attribute keys, comments cost two nodes per region but delimit text-only regions that `data-hk` cannot; against React's state-encoding comments, HellaJS's markers carry no lifecycle semantics — the pending/resolved state of a streamed region lives in the sentinel/template pair instead (`lib/internal/walk.ts`). The honest cost: HellaJS's `hydrate` is one pass, so nothing marks time the way `<!--$?-->` does, and there is no marker-level protocol for replaying pre-hydration interactions.
 
 ---
 
-## 7. Document Assembly (`doc`)
+## 5. Async Rendering & Streaming
 
-`doc(options): string` (`lib/doc.ts`) assembles a rendered body and an optional head into a full HTML document string — `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>…</body></html>`. It is a pure string builder with zero server-runtime coupling (no Request/Response, no host API), so it runs identically in Bun, Node, Deno, Express, and Hono. Head fields emit in declaration order — `title` (text-escaped), `meta` (void), `links` (void), `styles` (joined into one `<style>`), `scripts` (`{ src }` external or `{ content }` inline), then `raw` — each running through the same `serializeProp`/`escapeHtml` rules the stringifiers apply to attributes (`lib/internal/head.ts`, `buildHead`/`buildAttrs`/`renderVoidTags`). The `body` is the output of `ssr`/`ssr.async` placed verbatim (not re-escaped), and `<meta>`/`<link>` render void with no trailing slash.
+### HellaJS
 
-`doc(options): ReadableStream<string>` (`lib/doc.ts`) is the streaming counterpart: it emits the same shell first (`<!DOCTYPE html>`, the head, an optional `mount` wrapper), pipes each body chunk through as it arrives, then the closing tags — nothing is collected, so progressive paint holds end-to-end. The head renders through the same `buildHead` as `doc`'s (one builder, two assemblers — zero drift), and the suffix lands only after the body stream closes, which for an `ssr.stream` body means after every staged `<Suspense>` `<template>` has flushed. `mount` takes the selector string `hydrate(node, selector)` targets on the client (`'#app'`, `'main#app'`, `'.wrap.x'` — tag defaults to `div`, classes join in order; anything beyond tag/`#id`/`.class` throws) and emits both wrapper tags itself, so a mount can never be left unclosed mid-stream. A body-stream error errors the document stream; cancelling it cancels the body.
+One callable namespace covers three timing strategies with one output contract:
 
-Against the competitors, this is explicit head assembly rather than automatic hoisting. Svelte's `render` returns `{ html, head, body }` and drains `<svelte:head>` + component `<style>` blocks automatically (`server/index.js:147-150`). Solid offers `<Head>`/`<Assets>`/`<Styles>` components collected during the render. React and Vue rely on framework-specific libraries (`react-helmet`, `useHead`) for head management. HellaJS takes the opposite stance: `doc()` does not collect `css()`/`cssVars()` calls or hoist `<head>` from the rendered tree — the caller drains the stringifier's output and passes it in. The trade is explicit control and zero coupling; the cost is that head/CSS composition is the caller's job, not the renderer's.
+- `ssr(node)` is the synchronous walk — getters are read at their current value, Promises are stringified, not awaited (`lib/ssr.ts`).
+- `ssr.async(node)` awaits any Promise a resolved value returns — child, function-ref prop, `each`, `show` — through the shared async generator, fully unwrapping nested thenables (`lib/ssrAsync.ts`, `lib/internal/walk.ts`, `lib/internal/resolve.ts`). Marker wrapping is byte-identical to the sync walk; the parity tests assert it branch-by-branch (`tests/helpers.ts`, `tests/ssr-async.test.ts`).
+- `ssr.stream(node)` yields chunks as the walk proceeds, flushing static markup before each await; bare Promises are awaited in tree order (`lib/ssrStream.ts`).
+- A `<Suspense>` boundary opts a subtree into out-of-order streaming: the `fallback` flushes inline, a sentinel comment marks the region, and the resolved children stream later as `<template id="hsN">` followed by an inline `<script>$hs("hsN")</script>` that swaps the region in the moment it arrives — a one-time `$hs` bootstrap precedes the templates, and the swap wraps the inserted content in a fresh marker pair so hydrate adopts it without re-evaluating the getter (`lib/ssrStream.ts`, `lib/internal/walk.ts`). Staged regions flush concurrently in completion order, not document order (`lib/ssrStream.ts`).
+- Errors propagate everywhere: the sync walk throws, `ssr.async` rejects, and `ssr.stream` errors its `ReadableStream` — the try/catch in the stream wrapper exists only because `ReadableStream` cannot throw synchronously to its consumer (`lib/ssrStream.ts`). Cancelling the stream returns the main generator and every staged swap generator (`lib/ssrStream.ts`).
+
+### Solid
+
+`renderToStringAsync` races `renderToStream` against a timeout (30 s default); `renderToStream` flushes the shell, registers deferred fragments, and streams their resolution as `<template>` + `$df` replacement scripts, with `onCompleteShell`/`onCompleteAll` callbacks and `block()` promises for shell-blocking awaits (solid-js 1.9.15, `web/dist/server.js`). The extra capability HellaJS does not attempt: seroval serializes live Promises and resources into the HTML so the client's `createResource` resumes with server-fetched data — state transfer, not just markup.
+
+### Svelte 5
+
+`svelte/server`'s `render` has no streaming mode: sync renders emit only `{#await}` pending blocks (a promise child gets `BLOCK_OPEN` and its `then` branch never runs, verified in `src/internal/server/index.js`), and the experimental async mode awaits the whole tree into one string. Out-of-order streaming exists only at the framework layer — SvelteKit streams promise values with its own script protocol. The stringifier itself is strictly collect-then-return.
+
+### React 19
+
+`renderToPipeableStream`/`renderToReadableStream` are the primary APIs: Suspense boundaries render fallbacks inline, resolved segments stream as hidden `<div id="S:…">` blocks, and `$RC`/`$RS` scripts swap them in with view-batching (`$RV`) that preserves ordering semantics; `$RR` resumes stylesheets by precedence before revealing content (react-dom 19.2.8, `cjs/react-dom-server.node.development.js`). `prerender` can postpone at dynamic boundaries and hand a `postponedState` to `resume` for later completion — a two-phase model none of the others ship. Combined with selective hydration and event replay on the client, React's async story is the deepest in the group.
+
+### Vue 3
+
+`renderToString` awaits `async setup()` and `serverPrefetch` through its buffer before returning; the stream variants (`renderToWebWritable`, `pipeToNodeWritable`) unroll the same buffer strictly in document order (@vue/server-renderer 3.5.42). There is no boundary-level fallback streaming, no inline swap script, and no out-of-order emission at the stringifier layer — a slow async component delays everything after it unless the host framework (Nuxt) layers its own protocol on top.
+
+**Verdict:** HellaJS and Solid and React all ship the staged-template-plus-inline-script progressive-reveal mechanism; HellaJS's `$hs` is the smallest of the three (a balance-walking DOM swap, `lib/ssrStream.ts`) and the only one available with zero framework runtime attached. HellaJS's concurrent completion-order flush matches React's segment behavior. The gap against React is real: no selective hydration, no event replay, no resumable prerender. The gap against Solid is data: no serialization of server-resolved state into the client.
 
 ---
 
-## 8. Built-in Features Matrix
+## 6. Document Assembly & Head Management
 
-| Feature | HellaJS | Solid | Svelte 5 | React | Vue 3 |
+### HellaJS
+
+`doc(options)` assembles the full document with zero server-runtime coupling — no Request/Response, no host API — in two modes discriminated by the `body` type: a string body returns a string document, a `ReadableStream<string>` body returns a streaming document that emits the shell first, pipes body chunks through, and holds the closing tags until the body closes (`lib/doc.ts`, `lib/types.d.ts`). The `mount` selector parses tag/`#id`/`.class` into the wrapper element `hydrate(node, selector)` will target on the client, throwing on anything a single wrapping element cannot express (`lib/doc.ts`). Head content renders through one shared builder for both modes — `title`, `meta`, `links`, `styles`, `scripts`, `raw` in declaration order, with the same escaping rules as the stringifier (`lib/internal/head.ts`). What it deliberately does not do: collect CSS or hoist `<head>` elements from the rendered tree — the caller drains `@hellajs/css` server output and passes it in.
+
+### Solid
+
+Solid provides `Assets`/`getAssets`/`getHeadInfo` injection components the tree can populate during render, `injectAssets`/`injectScripts` placement helpers, a `generateHydrationScript` for manual embedding, and `nonce` options threaded through every emitted script (solid-js 1.9.15, `web/dist/server.js`). Head management is component-tree-driven — the opposite pole from `doc`'s explicit options object.
+
+### Svelte 5
+
+`<svelte:head>` is a first-class language feature: the server renderer maintains a separate head buffer per render and returns it alongside the body, so tree-driven head collection is built in and requires no options (svelte 5.56, `src/internal/server/renderer.js`). This is the most ergonomic head story in the group for tree-authored content.
+
+### React 19
+
+React 19's document story is resource-centric: `preinit`/`preload` calls during render plus `bootstrapScripts`/`bootstrapModules` options produce hoisted `<link>`/`<script>` tags with `data-precedence` attributes, and the `$RR` resume script flushes stylesheets in precedence order before revealing streamed boundaries (react-dom 19.2.8, `cjs/react-dom-server.node.development.js`). `<title>`/`<meta>` hoisting from the tree landed with React 19's document metadata support, handled by the Fizz renderer rather than an options object.
+
+### Vue 3
+
+Vue's stringifier resolves teleports into `context.teleports` and leaves placement to the host; `<head>` management is not part of `@vue/server-renderer` at all — ecosystem utilities (`@unhead` via Nuxt) own that layer (@vue/server-renderer 3.5.42).
+
+**Verdict:** The spectrum runs from tree-driven (Svelte, React, Solid) to caller-driven (Vue, HellaJS). HellaJS's `doc` is the only entry that treats document assembly as a standalone pure function over already-rendered output — string in/string out, stream in/stream out — which is exactly right for a library that also supports island mounting and `$ref` enhancement over HTML it did not generate, and exactly wrong for anyone expecting `<svelte:head>`-style automation.
+
+---
+
+## 7. Built-in Features Matrix
+
+| Feature | HellaJS | Solid | Svelte 5 | React 19 | Vue 3 |
 |---|---|---|---|---|---|
-| Streaming response | `ssr.stream` (`ReadableStream<string>`) | `renderToStream` / `pipeToNodeWritable` | No (sync; thenable) | `renderToPipeableStream` / `renderToReadableStream` | `renderToNodeStream` / `renderToWebStream` |
-| Suspense / async boundaries | `<Suspense>` (stream) + `ssr.async` (await) | `<Suspense>` | `{#await}` | `<Suspense>` | `<Suspense>` |
-| Head / document management | `doc()` helper (string/stream overloads, explicit fields, no hoisting) | `<Head>` / `<Assets>` | Automatic (`render` returns `head`) | Manual (library) | Manual (`useHead` / library) |
-| CSS extraction | Manual (`@hellajs/css` text via `doc` `styles`) | `<Style>` / `<Assets>` | Automatic (`render` returns `css`) | Manual / styled-components SSR | Collected component styles |
-| Server data fetching | `resource` no-ops; `fetch()` in a getter (awaited) | `createResource` (runs on server) | `load` / module context | Server Components / `fetch` | `serverPrefetch` / `loadResource` |
-| Keyed list rendering | `ForEach` (order only; no keys needed) | `<For>` keyed | `{#each}` keyed | array reconciliation | `v-for` keyed |
-| Conditional rendering | `Transition` (show truthy) | `<Show>` / `<Switch>` | `{#if}` | conditional render | `v-if` |
-| Lazy / async components | `Lazy` (loading fallback only) | `lazy` + `<Suspense>` | dynamic import + `{#await}` | `React.lazy` + `<Suspense>` | `defineAsyncComponent` |
-| Portal / Teleport | `Portal` (renders nothing) | `Portal` | — | `createPortal` | `<Teleport>` (`resolveTeleports`) |
-| HTML escaping | `& < > "` (`escapeHtml`) | `escape` / `escapeHTML` | `escape_html` | automatic | automatic |
-| Void elements | `VOID` set (no closing tag) | yes | yes | yes | yes |
-| Runtime dependencies | 0 (type-only peer) | reactive runtime | compiled + shared runtime | scheduler + reconciler | reactivity runtime |
+| Sync string render | `ssr(node)` (`lib/ssr.ts`) | `renderToString` | `render` sync getters | `renderToString` (suspending throws) | — (always async) |
+| Async render (awaits) | `ssr.async(node)` (`lib/ssrAsync.ts`) | `renderToStringAsync` (30 s timeout) | `render` thenable (`experimental.async`) | — (streaming APIs await) | `renderToString` awaits setup/prefetch |
+| Streaming render | `ssr.stream(node)` → web `ReadableStream` (`lib/ssrStream.ts`) | `renderToStream` (shell/all callbacks) | — | `renderToPipeableStream` / `renderToReadableStream` | `renderToWebWritable` / node stream |
+| Out-of-order boundary streaming | `<Suspense>` + `$hs` script (`lib/ssrStream.ts`) | Deferred fragments + `$df` script | Framework-level (SvelteKit) | Suspense segments + `$RC`/`$RS` scripts | — |
+| Completion-order flush | Concurrent staged swaps (`lib/ssrStream.ts`) | Fragment registry | n/a | Segment-based | n/a |
+| Stream cancellation | Returns generator + staged swaps (`lib/ssrStream.ts`) | Pipe abort | n/a | Pipe abort | n/a |
+| Document assembly | `doc` — string/stream, `mount`, head (`lib/doc.ts`) | Assets/head components + helpers | Built-in `<svelte:head>` | Bootstrap/preinit/precedence | Teleport buffers; head via ecosystem |
+| Server→client data serialization | — | seroval promises/resources | — (SvelteKit streams) | Flight / bootstrap payloads | — (Nuxt payloads) |
+| Event replay before hydrate | — | `_$HY` capture script | — | `hydrateRoot` selective hydration | — |
+| Resumable / partial prerender | — | — | — | `prerender` + `resume` | — |
+| Control flow on server | `ForEach`/`Transition`/`Portal`/`Lazy`/`Suspense` descriptors (`lib/internal/walk.ts`) | Compiled control flow | Compiled blocks | Tree-cutting boundaries | Compiled `ssrRender*` blocks |
+| Invalid-root guard | `assertNode` two-tier throw (`lib/internal/assert.ts`) | — | — | — | — |
+| Runtime deps | 0 | 3 | 16 | 1 (+ peer) | 3 |
 
 ### Notable HellaJS differentiators
 
-- Zero runtime imports across all three modes — the only stringifier in this group with no reactive/reconciler/scheduler runtime; `@hellajs/dom` is a type-only peer erased at compile time, and `ssr.stream` is a plain web `ReadableStream` with no host-specific streaming lib — `(lib/ssr.ts)`, `(lib/ssrAsync.ts)`, `(lib/ssrStream.ts)`.
-- Streaming + Suspense at stringifier cost — `ssr.stream` flushes a shell before awaited values resolve and `<Suspense>` defers resolved children into a staged `<template>` the hydrator swaps in, all from the same ~2.6 KB min+gzip package no competitor's streaming path matches on size — `(lib/ssrStream.ts)`, `(lib/internal/walk.ts)`.
-- Byte-identical markers across modes via parity discipline — `ssr` (sync, `lib/ssr.ts`) and `ssr.async`/`ssr.stream` (async, over `ssrNodeGen` in `lib/internal/walk.ts`) are separate walkers whose `walkChild`/`renderDynamic` and `walkChildGen`/`renderDynamicGen` twins are kept in manual parity (enforced by the `ssr-async`/`ssr-stream` parity tests), so marker output is byte-identical and `hydrate` consumes any mode the same way.
-- Minimal, position-correct markers — only dynamic regions (reactive child, `isDynamic` component, nested fragment) are wrapped; static elements and text carry no comment payload; the lone extra marker is the `<!--hsN-->` Suspense sentinel, and only under `ssr.stream` — `(lib/internal/walk.ts)`, `MARK_OPEN`/`MARK_CLOSE` and `walkChildGen`.
-- Honest attribute semantics — `serializeProp` mirrors dom's `renderProp` minus the IDL `DIRECT_PROPS` special-case, so `checked`/`selected` are emitted correctly rather than as presence-implying empty strings — `(lib/internal/serialize.ts)`, `serializeProp`.
-- Shared marker contract with Vue and Svelte — `<!--[->`/`<!--]-->` is the format both Vue 3 and Svelte 5 emit, so HellaJS's hydration boundary is recognizable across frameworks — `(lib/internal/walk.ts)`, `MARK_OPEN`/`MARK_CLOSE`.
+- One output contract across three timing modes — `ssr`, `ssr.async`, and `ssr.stream` emit byte-identical marker wrapping, so `hydrate` consumes any member's output unchanged; the parity tests pin every classification branch (`lib/ssr.ts`, `lib/internal/walk.ts`, `tests/helpers.ts`).
+- Zero runtime imports, type-only peer — the package stringifies a HellaNode AST without `@hellajs/dom` present in the server process (`lib/ssr.ts`, `package.json`).
+- `doc`'s stream-mode suffix hold — the closing tags flush only after the body stream closes, so progressive paint holds end-to-end with staged `<Suspense>` swaps, and a reader acquired up front propagates cancellation into the body (`lib/doc.ts`).
+- Marker-minimal payload — static elements and text ship unwrapped and hydrate by position; only dynamic regions pay the two-comment cost (`lib/ssr.ts`).
+- `raw()` as an opaque, marker-bounded region — foreign HTML (e.g. a meta-framework's slot output) embeds verbatim and hydrate adopts it without binding inside (`lib/ssr.ts`).
 
 ---
 
-## 9. Ergonomics & Syntax
+## 8. Ergonomics & Syntax
+
+One namespace, three call shapes, one assembler:
 
 ```js
 import { html } from '@hellajs/dom';
-import { ssr } from '@hellajs/ssr';
-
-const page = (name) => html`<div><h1>Hello ${name}</h1></div>`;
-
-const body = ssr(page('World'));
-// "<div><h1>Hello World</h1></div>"
-```
-
-A bare signal in a child position becomes a marker-bounded region whose current value is read once:
-
-```js
-import { signal } from '@hellajs/core';
-import { html } from '@hellajs/dom';
-import { ssr } from '@hellajs/ssr';
-
-const count = signal(5);
-const body = ssr(html`<p>Count: ${count}</p>`);
-// "<p>Count: <!--[-->5<!--]--></p>"
-```
-
-For data fetched during render, `ssr.async` awaits a Promise a getter returns, and `ssr.stream` flushes the static shell before it resolves:
-
-```js
-import { html } from '@hellajs/dom';
-import { ssr } from '@hellajs/ssr';
-
-const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
-
-// await the whole string
-const body = await ssr.async(html`<p>${() => user(1)}</p>`);
-
-// or stream: shell flushes, then the resolved name
-const stream = ssr.stream(html`<p>${() => user(1)}</p>`)
-  .pipeThrough(new TextEncoderStream());
-return new Response(stream, { headers: { 'content-type': 'text/html' } });
-```
-
-Out-of-order streaming wraps the async subtree in `<Suspense>` so a slow fetch does not block the rest of the page, and `doc()` assembles the full document without collecting the stream:
-
-```jsx
-import { html, Suspense } from '@hellajs/dom';
 import { ssr, doc } from '@hellajs/ssr';
 
-const App = () => html`
-  <div>
-    <h1>Profile</h1>
-    <${Suspense} fallback=${html`<p>Loading…</p>`}>
-      ${() => user(1).then(name => html`<p>${name}</p>`)}
-    </${Suspense}>
-  </div>
-`;
-// ssr.stream(App()) flushes "<div><h1>Profile</h1><!--[--><p>Loading…</p><!--hs0--><!--]--></div>"
-// then appends <template id="hs0"><p>Ada</p></template>; hydrate swaps it in.
-// doc({ mount: '#app', head: { title: 'Profile' }, body: ssr.stream(App()) })
-// wraps it in a full HTML document — the closing tags flush only after the staged template.
+const user = (id) => fetch(`/api/users/${id}`).then(r => r.text());
+const page = (id) => html`<div><h1>Hello</h1><p>${() => user(id)}</p></div>`;
+
+const body = ssr(page(1));                    // sync string
+const asyncBody = await ssr.async(page(1));   // awaits the user() Promise
+const chunks = ssr.stream(page(1));           // ReadableStream<string>
+
+doc({ mount: '#app', head: { title: 'Home' }, body: ssr.stream(page(1)) });
+// streaming document: shell first, closing tags after the last staged swap
 ```
 
-The API is three stringifiers taking the same HellaNode AST that `@hellajs/dom`'s `mount` consumes — so a component renders identically on the server and the client, differing only in whether the output is a string, a Promise of one, or a stream — plus the `doc()` document assembler (string or streamed body, same head builder). Reactivity is opt-in per attribute via a function-ref prop value. Against the competitors, this is the most explicit surface in the group. Solid wraps rendering in `renderToString`/`renderToStream` calls with options objects. Svelte's `render(Component, { props })` returns a structured `{ html, head, body }`. React and Vue require their framework's root API (`createRoot`/`renderToString`) and produce a string or stream. HellaJS asks for the AST directly and returns a string, a Promise, or a `ReadableStream` — no options object on the stringifiers, no structured output — which is the smallest possible contract and the one that composes most freely with whatever server framework is hosting it (the package's own pattern docs show `Bun.serve`, Express, and island-mount recipes, all calling `ssr()`/`ssr.stream()` inline).
+The callable-namespace shape (`ssr`, `ssr.async`, `ssr.stream`) keeps the timing decision at the call site with one import, versus Solid's three named functions and React's split across `renderToString`, `renderToPipeableStream`, and platform-specific entries. Data-loading is symmetric with the client: the same function-ref convention that makes a child reactive in dom makes it awaitable on the server — a getter returning a `Promise` is simply awaited by `ssr.async` (`lib/internal/resolve.ts`) — where Solid needs `createResource` + seroval and React needs the RSC or `use()` machinery. The cost of the minimalism is explicitness: nothing collects styles, nothing serializes state, nothing manages the head — the caller wires all three, and the docs say so plainly.
 
 ---
 
 ## Bottom Line
 
-Architecturally, `@hellajs/ssr` is the minimal pole of the SSR-renderer spectrum — a stringifier with zero runtime dependencies, sharing the `<!--[->`/`<!--]-->` marker format that Vue 3 and Svelte 5 also emit. "Minimal" here spans sync, async, and streaming: `ssr.async` awaits Promise-returning values, `ssr.stream` flushes a shell before they resolve, and `<Suspense>` defers resolved children into a staged `<template>` the single `hydrate` pass swaps in — all from the same type-only `@hellajs/dom` peer and one ~2.6 KB min+gzip package whose async machinery lives under `lib/internal/`. Where Solid, React, and Vue bring their client runtimes to the server, and Svelte brings a compiler, HellaJS brings only a walk that reads current values (and may `await` them), then hands off to `@hellajs/dom`'s `hydrate()` for everything interactive.
+Architecturally, `@hellajs/ssr` is a sibling to Svelte's server build in purity (no runtime reactivity on the server) and to Solid and React in streaming mechanics (staged templates plus inline swap scripts) — while being the only one that is a standalone stringifier rather than a framework's server half. Its walk is the smallest correct one: read-once getters, descriptor-dispatched control flow, markers only where hydration needs them.
 
 What sets HellaJS apart — and no single competitor matches all of:
 
-1. **Zero runtime imports, across sync, async, and streaming** — a type-only `@hellajs/dom` peer and nothing else; the only stringifier here with no reactive, scheduler, or reconciler code on the server, and the only streaming path that is a plain web `ReadableStream` with no host lib.
-2. **~2.6 KB min+gzip for the entire package** — one shipped bundle carrying the sync walker, the shared async generator, the Suspense staging path, and both document assemblers; still under half of Vue's renderer and ~15× smaller than React's server bundle.
-3. **Streaming + Suspense at stringifier cost** — `ssr.stream` + `<Suspense>` deliver shell-first progressive paint and out-of-order resolution from the same tiny walker, with progressive inline `$hs` swaps (staged `<template>` + swap script, React/Solid parity) the competitors implement with a far heavier runtime.
-4. **Byte-identical markers across modes via parity discipline** — a separate sync walker and a shared async generator, kept in parity by tests, so `ssr`/`ssr.async`/`ssr.stream` emit the same `<!--[->`/`<!--]-->` contract and `hydrate` consumes any mode unchanged.
-5. **Minimal position-correct markers** — only dynamic regions are wrapped; static elements and text carry no comment payload, and the lone extra marker (the `<!--hsN-->` Suspense sentinel) appears only under `ssr.stream`.
-6. **Shared marker contract with Vue and Svelte** — the hydration boundary format HellaJS emits is the one two of its competitors converge on, so the contract is recognizable across frameworks rather than a proprietary invention.
-7. **Honest attribute semantics out of the box** — `serializeProp` mirrors dom's `renderProp` minus the IDL property special-case, avoiding the `checked=""` footgun that naive stringifiers ship.
+1. **Zero runtime footprint** — no runtime dependencies, type-only peer import, no host APIs; the same code runs in Bun, Node, Deno, workers, and edge runtimes (`lib/ssr.ts`, `lib/doc.ts`, `package.json`).
+2. **Three timing modes, one byte-identical contract** — sync, async, and streaming behind one callable namespace, all hydratable by the same marker reader, pinned by parity tests (`lib/ssr.ts`, `lib/ssrStream.ts`, `tests/helpers.ts`).
+3. **Progressive out-of-order streaming at library level** — `<Suspense>` fallbacks flush inline, resolved regions swap in on arrival via `$hs`, concurrent regions flush in completion order, and `doc` holds the document suffix until the last swap (`lib/ssrStream.ts`, `lib/doc.ts`).
+4. **Marker-minimal hydration payload** — two comments per dynamic region, nothing on static markup, position-matched elements (`lib/ssr.ts`).
+5. **Pure-function document assembly** — `doc` builds a full document from a string or a stream with no server-runtime coupling and a `mount` selector that mirrors hydrate's target (`lib/doc.ts`).
 
-Its gaps are honest: bare-Promise streaming is in-order (a slow Promise delays everything after it unless wrapped in `<Suspense>`); `<Suspense>` is stream-only (under `ssr`/`ssr.async` it renders children directly and drops the fallback); content reveals progressively via inline swaps (React/Solid parity), but interactivity hydrates in a single pass rather than React-style per-segment selective hydration; there is no automatic head or CSS extraction (`doc()` assembles a document from explicit head fields, but neither head markup nor CSS is drained from the rendered tree); no built-in server data-fetching (`resource` no-ops, so data is fetched directly and passed in); function-ref props are initial-value only with no reactive updates server-side; and ecosystem maturity — far fewer SSR integrations, middleware, and framework adapters than React, Vue, or Solid. For content- and SEO-first rendering where a synchronous full-string render is acceptable, the size and contract simplicity are the argument; for streaming data-heavy UIs, `ssr.stream` + `<Suspense>` covers the core shell-first pattern, with per-segment *interactivity* hydration (selective hydration of handlers) the main capability HellaJS does not match.
+Its gaps are the predictable ones: hydration is a single pass — content reveals progressively, but there is no selective hydration and no event replay before hydrate runs (React and Solid territory), and no marker-level pending/resolved protocol. There is no server→client data serialization — no seroval, no Flight — so client state must initialize to server values by construction. No head or CSS collection from the tree, `Lazy` renders only its fallback, `resource` no-ops on the server, and in-order bare-Promise awaits delay trailing content unless wrapped in `<Suspense>`. And it is a stringifier, not a framework: routing, serving, and error pages are the caller's job, with the ecosystem size and adoption maturity that implies.

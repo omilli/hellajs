@@ -12,8 +12,11 @@ function resetRouter(): void
 
 Use `resetRouter` to tear down routing state for session reset, HMR, or return-to-initial-state scenarios. The URL is left untouched — call `navigate` explicitly if a new path is needed.
 
-```typescript
+```jsx
+import { mount } from "@hellajs/dom";
 import { router, navigate, resetRouter } from "@hellajs/router";
+
+const HomePage = () => <div>Home</div>;
 
 router({ routes: { home: () => mount(<HomePage />) } });
 navigate("/home");

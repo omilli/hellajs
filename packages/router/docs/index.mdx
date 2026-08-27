@@ -14,6 +14,12 @@ npm install @hellajs/core @hellajs/router
 import { mount } from '@hellajs/dom';
 import { router, navigate } from '@hellajs/router';
 
+const HomePage = () => <div>Home</div>;
+const UserProfile = ({ id }: { id?: string }) => <div>User {id}</div>;
+const Settings = () => <div>Settings</div>;
+const NotFoundPage = () => <div>Not found</div>;
+const checkAuth = () => true;
+
 mount(<>Loading...</>);
 
 // router() resolves synchronously — the matched handler's mount() replaces Loading before paint

@@ -218,12 +218,14 @@ userResource.invalidate(); // Cache cleared - next fetch goes to the network
 Updates the resource data with a new value or updater function. When `cacheTime` is greater than 0, also writes to the cache.
 
 ```typescript
-const userResource = resource(
+type User = { id: number; name: string; lastSeen?: number };
+
+const userResource = resource<User>(
   () => fetch('/api/user').then(r => r.json()),
   { cacheTime: 300000 }
 );
 userResource.setData({ id: 1, name: 'Updated Name' });
-userResource.setData(old => ({ ...old, lastSeen: Date.now() }));
+userResource.setData(old => ({ ...old, lastSeen: Date.now() }) as User);
 ```
 
 When `cacheTime` is `0` (the default), `setData` updates the reactive signal but does not write to cache. The updater function still receives the current signal value, not a cached value.
@@ -385,7 +387,7 @@ const r = resource(
   { key: () => userId(), enabled: () => userId() !== null, refetchOnKeyChange: true }
 );
 
-userId(123); // getter re-evaluates to true -> fetch triggers automatically
+userId("7"); // getter re-evaluates to true -> fetch triggers automatically
 r.fetch();   // manual fetch bypasses the getter, executes regardless
 ```
 

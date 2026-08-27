@@ -103,13 +103,13 @@ Bun.serve({
 
 ### Server — ssr.stream()
 
-[`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell before async values resolve. Wrap an async subtree in [`<Suspense>`](/reference/dom/suspense) for out-of-order streaming — the shell and the `fallback` flush immediately while the children resolve. A full document needs a prefix and suffix around the streamed body.
+[`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell before async values resolve. Wrap an async subtree in [`<Suspense>`](/reference/dom/suspense) for out-of-order streaming — the shell and the `fallback` flush immediately while the children resolve. Assemble the full document with [`doc`](/reference/ssr/doc)'s stream overload: the head and mount wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after the body closes.
 
 ```js
 import { signal } from '@hellajs/core';
 import { html, Suspense } from '@hellajs/dom';
 import { router } from '@hellajs/router';
-import { ssr } from '@hellajs/ssr';
+import { ssr, doc } from '@hellajs/ssr';
 
 const loadName = (id) => fetch(`/api/users/${id}`).then((r) => r.text());
 const Profile = ({ id }) => html`
@@ -124,26 +124,21 @@ const routes = {
 };
 const App = () => html`<main>${currentView}</main>`;
 
-const prefix = '<!DOCTYPE html><html lang="en"><head><title>App</title></head><body><div id="app">';
-const suffix = '</div><script type="module" src="/client.js"></script></body></html>';
-
 Bun.serve({
   port: 3000,
   fetch(req) {
     const { pathname, search } = new URL(req.url);
     router({ routes, url: pathname + search });
 
-    const body = ssr.stream(html`<${App} />`);
-    const stream = new ReadableStream({
-      async start(controller) {
-        const enc = new TextEncoder();
-        controller.enqueue(enc.encode(prefix));
-        for await (const chunk of body) controller.enqueue(enc.encode(chunk));
-        controller.enqueue(enc.encode(suffix));
-        controller.close();
-      }
-    });
-    return new Response(stream, { headers: { 'content-type': 'text/html' } });
+    return new Response(
+      doc({
+        lang: 'en',
+        head: { title: 'App', scripts: [{ src: '/client.js', type: 'module' }] },
+        body: ssr.stream(html`<${App} />`),
+        mount: '#app'
+      }).pipeThrough(new TextEncoderStream()),
+      { headers: { 'content-type': 'text/html' } }
+    );
   }
 });
 ```

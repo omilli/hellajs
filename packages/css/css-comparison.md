@@ -1,6 +1,6 @@
 # HellaJS @hellajs/css vs. Emotion / Styled Components / vanilla-extract / Panda CSS
 
-A ground-up comparison based on the actual source code of `@hellajs/css` v2. Every HellaJS claim below was verified against `packages/css/lib/` (including `lib/internal/`). Competitor facts were sourced this session from each project's official docs (emotion.sh, styled-components.com, vanilla-extract.style, panda-css.com) and from the bundlephobia size API.
+A ground-up comparison based on the actual source code of `@hellajs/css` v2. Every claim below was verified against `packages/css/lib/` (including `lib/internal/`). Competitor versions researched this session: Emotion 11.14 (`@emotion/css` 11.13.5, `@emotion/react` 11.14.0, `@emotion/styled` 11.14.1), styled-components 6.5.3, vanilla-extract 1.21.2, Panda CSS 1.12.0 — facts sourced from each project's official docs and npm registry manifests.
 
 ---
 
@@ -8,18 +8,17 @@ A ground-up comparison based on the actual source code of `@hellajs/css` v2. Eve
 
 | Dimension | HellaJS css | Emotion | Styled Components | vanilla-extract | Panda CSS |
 |---|---|---|---|---|---|
-| Styling approach | Runtime, object-only, CSSOM surgical | Runtime, string + object | Runtime, tagged templates | Build-time extraction (zero-runtime) | Build-time codegen (near-zero runtime) |
-| Class names | User-chosen (`name`) or global | Auto-hashed (`css-…`) | Auto-hashed (unique per component) | Auto-hashed (`styles_x__1hiof570`) | Atomic utilities + `@layer` |
-| Global by default | Yes — empty string return, no wrapper | No — always class-scoped | No — always class-scoped | No — always locally scoped | No — utilities/recipes |
-| Reactive CSS vars | First-class (`cssVars()` + signals) | Manual `--var` + theme context | Manual, via props/theme | `createVar` / `createTheme` (static) | Token-driven (static at runtime) |
-| Memory model | Ref counting, DOM cleanup at zero | Inject-and-leave, cache only | Inject-and-leave, automatic critical CSS | Build-time; nothing at runtime | Build-time; static CSS shipped |
-| SSR | Platform-dependent return (text on server, stateless), manual extraction | Zero-config SSR (React), manual (`@emotion/css`) | Via babel/SWC plugin, extract to HTML | Bundler CSS output (static) | Static CSS file output |
-| Type safety | `csstype` properties + recursive `CSSVars<T>` | Template literals; object styles typed via `@emotion/serialize` | Template literals; TS via generic props | Full TS, `.css.ts` authoring | Full TS via codegen, token autocomplete |
-| Gzipped size | ~2.5 KB (bundle) / ~0.83 KB (css only) | ~5.4 KB (`@emotion/styled`) | ~11.1 KB | 0 KB runtime | ~0.6 KB runtime + static CSS |
-| External deps | `csstype` + core peer | 8+ (`@emotion/*`, `@babel/runtime`) | 6+ (`stylis`, `tslib`, `shallowequal`) | Build-only (`css-what`, `lru-cache`, etc.) | Build-only (codegen pipeline) |
-| Framework coupling | None | React-primary, framework-agnostic subset | React + React DOM (peer) | None (bundler-coupled) | None (works with most frameworks) |
+| Styling approach | Runtime, object-only, surgical CSSOM | Runtime, string + object (stylis) | Runtime, tagged templates (stylis) | Build-time extraction, zero runtime | Build-time codegen, near-zero runtime |
+| Class names | User-chosen (`name`) or global | Auto-hashed (`css-…`) | Unique generated per component | Hashed local scopes | Atomic utilities + recipes, `@layer` |
+| Global by default | Yes — unnamed call, returns `""` | Separate `<Global>` API | Separate `createGlobalStyle` | Separate `globalStyle` | Utilities/recipes model |
+| Reactive CSS vars | First-class — `cssVars()` + signals | Theme context / props | Theme / props | `createTheme` (build-time, static) | Tokens (build-time, static) |
+| Memory model | Reference counting, DOM removal at zero | Inject-and-cache | Inject-and-cache (rendered components only) | N/A — static CSS artifact | N/A — static CSS artifact |
+| SSR | Stateless text return on server | Zero-config (`@emotion/react`), manual (`@emotion/css`) | Via plugin, extract to HTML | Bundler CSS artifact | Static CSS artifact |
+| Type safety | `csstype` + recursive `CSSVars<T>` | Object styles typed; templates unvalidated | Generic props; templates unvalidated | Full TS (`.css.ts` authoring) | Full TS via codegen + token autocomplete |
+| Runtime deps | 1 (`csstype` — types-only) | 8 (`@emotion/react`) | 4 (`stylis`, …) | 11 (build-only) | 11 (build-only) |
+| Framework coupling | None | React-primary; `@emotion/css` agnostic | React + React DOM peers | None (bundler-coupled) | None |
 
-HellaJS sits in the runtime camp alongside Emotion and Styled Components, but with a fundamentally different default mode (global, user-named), a memory model none of the runtime competitors offer (reference counting with DOM cleanup), and a first-class reactive-variable primitive that wires signals directly into CSS custom properties. Against vanilla-extract and Panda it trades the zero-runtime property for a dependency-light, no-build-step authoring model with live reactivity.
+HellaJS sits in the runtime camp alongside Emotion and Styled Components, but with three structural choices neither of them makes: it defaults to global styles with user-chosen class names (no hashed identifiers, no wrapper API), it reference-counts every rule and variable and removes them from the DOM at zero refs, and it wires signal reactivity directly into CSS custom-property generation. Against vanilla-extract and Panda it trades the zero-runtime property for a no-build, no-bundler authoring model with live reactivity.
 
 ---
 
@@ -27,94 +26,102 @@ HellaJS sits in the runtime camp alongside Emotion and Styled Components, but wi
 
 ### HellaJS
 
-HellaJS is a runtime CSS-in-JS library with no template-literal parser and no CSS preprocessing dependency. `css()` walks a plain JavaScript object in a single `while` loop (`lib/css.ts`), accumulating property strings and recursing into nested selectors. CamelCase keys convert to kebab-case via a single regex replace (`lib/css.ts`); keys starting with `--` are preserved as custom properties (`lib/css.ts`); `content` values are auto-quoted unless already quoted (`lib/css.ts`); array values join with `", "` (`lib/css.ts`); `null`/`undefined` values are skipped entirely (`lib/css.ts`). The `&` token is replaced with the parent selector via `AMP_REGEX` (`lib/css.ts`), and at-rules split by category: conditional at-rules (`@media`/`@container`/`@supports`/`@starting-style`) inherit any active parent selector (`name` scope or a nested selector), and a selector-less conditional body containing direct declarations throws an explicit error, while definitional at-rules (`@keyframes`/`@font-face`/`@layer`/`@import`) process with an empty selector so they never nest under a class, their direct declarations emitting bare inside the at-rule block (`lib/css.ts`).
+HellaJS generates styles with no CSS parser and no template-literal preprocessing — a plain-object walk produces CSS text, and the text drives surgical CSSOM insertion. The mechanism:
 
-The resulting CSS text is split into individual top-level rules at brace-depth boundaries (`lib/css.ts`), and each rule is inserted into the stylesheet via `internal/sheet.ts`'s `upsertRule` (`lib/css.ts`). `upsertRule` uses `CSSStyleSheet.insertRule` for O(1) per-rule insertion and an `indexMap` keyed by `id:key` to skip no-op writes when the existing rule's `cssText` already matches (`lib/internal/sheet.ts`). This is surgical CSSOM mutation — the CSSOM is the only write path; rules live in `el.sheet` (whose identity stays stable), with no `textContent` mirror or full-text rewrite on update. The CSS text is the identity key for dedup and reference counting (`injectedMap` in `lib/internal/injection.ts`), replacing the former four-map state. On the server (no DOM), `css()` returns the text directly with zero state mutation — platform-dependent return (`lib/css.ts`).
+- `css()` walks a plain JavaScript object in one pass — `process()` accumulates property strings and recurses into nested selectors in a single `while` loop (`lib/css.ts`). CamelCase keys convert via one regex replace, `--`-prefixed keys pass through verbatim, `content` strings auto-quote unless quoted, array values join with `", "`, and `null`/`undefined` values drop out entirely (`lib/css.ts`).
+- Nesting is two-rule: a key starting with `&` substitutes the parent selector at every occurrence (`&&:hover` → `.btn.btn:hover`), any other nested key composes as a descendant (`{selector} {key}`); at top level in a global call the key is a raw, unwrapped selector (`lib/css.ts`).
+- At-rules split by category (`CONDITIONAL_AT_RULES` in `lib/css.ts`): conditional rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the active selector — under a `name`, their bodies re-scope to `.{name}` — while a selector-less conditional body containing direct declarations throws instead of emitting a block the browser would drop; definitional rules (`@keyframes`, `@font-face`, `@layer`, `@import`, …) always process with an empty selector so they never nest under a class (`lib/css.ts`).
+- The produced CSS text splits into top-level rules at brace-depth boundaries, and each rule is inserted individually through `upsertRule` — `CSSStyleSheet.insertRule`/`deleteRule` against `el.sheet`, with an `indexMap` keyed `id:key` that early-returns when the existing rule's `cssText` is unchanged (`lib/css.ts`, `lib/internal/sheet.ts`). The CSSOM is the only write path: there is no `textContent` mirror and no full-sheet rewrite on update (`lib/internal/sheet.ts`).
+- CSS text is the identity: `injectedMap` maps `cssText → { count, ruleCount }`, giving O(1) dedup for repeat calls (`lib/internal/injection.ts`). On the server (no DOM), `css()` returns the text before touching any state — zero mutation, zero injection (`lib/css.ts`).
 
 ### Emotion
 
-Emotion is a runtime CSS-in-JS library that accepts both tagged-template strings and object styles. It depends on `stylis` (via `@emotion/serialize`) for CSS preprocessing — handling nesting, vendor prefixing, and minification at runtime. The framework-agnostic entry (`@emotion/css`) returns hashed class names from a `css` tag; `cx` composes them. The React entry (`@emotion/react`) adds a `css` prop, theme context, and zero-config SSR; `@emotion/styled` provides the `styled.div`...`` factory. Production relies on heavy caching to amortize the stylis parse cost. Per the official docs, a Babel plugin is optional but enables optimizations and source maps.
+Emotion is a runtime library accepting both tagged-template strings and object styles, compiled at runtime by `stylis` (a dependency of `@emotion/cache`, which every entry pulls in) for nesting, vendor prefixing, and minification. Three entries share the core: `@emotion/css` (framework-agnostic `css`/`cx`, hashed class names, no setup required, SSR "requires additional work"), `@emotion/react` (`css` prop, theme context, zero-config SSR, theming out of the box), and `@emotion/styled` (the `styled.div`…`` factory). Heavy caching amortizes the stylis parse cost, and an optional Babel plugin adds source maps and labels (per emotion.sh docs).
 
 ### Styled Components
 
-Styled Components is a runtime CSS-in-JS library built around tagged template literals and the React component model. Each `styled.tagname`...`` call returns a React component; stylis (bundled) parses the template at runtime, handling SCSS-like nesting, `&` self-references, and `&&` precedence boosts. The library tracks which components are rendered and injects only their styles ("automatic critical CSS"), generating unique hashed class names per component instance. Per the official docs, vendor prefixing is disabled by default in v6+ (opt-in via `StyleSheetManager`), and a Babel or SWC plugin is recommended for legible class names, smaller bundles, and SSR compatibility. It has the heaviest runtime of the four competitors.
+Styled Components is built on tagged template literals and the React component model — each `styled.tagname`…`` call returns a React component. It tracks which components are rendered and injects only their styles ("automatic critical CSS"), generates unique class names per component, and adapts styles via props or theme without manual class juggling. Vendor prefixing is opt-in through `StyleSheetManager` (legacy browser support on demand), and a Babel or SWC plugin is recommended for legible class names, smaller output, and SSR extraction (per styled-components.com docs, researched at 6.5.3; a v7 alpha is published alongside).
 
 ### vanilla-extract
 
-vanilla-extract is a zero-runtime CSS-in-TypeScript system. Styles are authored in `.css.ts` files; a bundler integration (Vite, webpack, esbuild, Next, Parcel, Rollup, Gatsby) extracts the CSS at build time and emits a static stylesheet. `style({ padding: 10 })` runs once at build time, produces a locally-scoped hashed class name (e.g. `styles_container__1hiof570`), and exports that string for use in markup. The browser ships zero styling JS — only the resolved class name strings. The build-time bundle (`@vanilla-extract/css@1.17.0`) is ~70.9 KB / ~22.2 KB gzip but runs only in the bundler; runtime cost is 0 KB. Dynamic values flow through `createVar`/`createTheme` (CSS variables generated at build time).
+vanilla-extract is a zero-runtime system: styles are authored in `.css.ts` files, and a bundler integration (official plugins for webpack, esbuild, Vite, and Next.js) executes those files at build time, emitting a static stylesheet. `style({ … })` returns a locally-scoped class name; `createTheme` returns a `[themeClass, vars]` pair backed by type-safe token contracts. The browser ships zero styling JS — only resolved class-name strings (per vanilla-extract.style).
 
 ### Panda CSS
 
-Panda CSS is a build-time, type-safe CSS-in-JS system from the Chakra team. A codegen pipeline (`@pandacss/dev`) AST-scans source files and emits a `styled-system/` directory containing static CSS (cascade layers via `@layer`, CSS variables, atomic utility classes — the Tailwind-inspired JIT strategy) plus small TypeScript helpers. `css({ fontSize: 'lg', color: 'red.400' })` returns a class string resolved against a token config; recipes and variants (Stitches-inspired) encode multi-variant components. Runtime JS is minimal (~0.6 KB gzip for the entry, per the bundlephobia API); the bulk of styling work is the static CSS file. Works with most JS frameworks because output is plain CSS + class strings.
+Panda CSS runs a codegen pipeline: the CLI AST-scans source files and emits a `styled-system/` directory containing static CSS (cascade layers via `@layer`, CSS variables, atomic utility classes — the Tailwind-inspired JIT strategy) plus small TypeScript helpers. `css({ fontSize: 'lg' })` resolves against the generated class map at runtime; recipes and variants (Stitches-inspired) encode multi-variant components, and design tokens support simultaneous themes. The bulk of styling work is the static artifact; the runtime is class-string resolution (per the Panda README and docs, researched at 1.12.0).
 
-**Verdict:** HellaJS, Emotion, and Styled Components share the runtime camp; vanilla-extract and Panda are the build-time counterpoint. HellaJS is the only runtime library that skips the CSS preprocessor dependency entirely (no stylis, no `css-what`, no parsing of template literals) — it walks a plain object once and talks to the CSSOM directly. That makes its runtime the smallest of the runtime camp (~2.48 KB gzip full bundle vs. Emotion's ~5.4 KB and Styled Components' ~11.1 KB), at the cost of supporting object styles only (no template literals).
+**Verdict:** HellaJS, Emotion, and Styled Components share the runtime camp; vanilla-extract and Panda are the build-time counterpoint. HellaJS is the only runtime library in this group that ships no CSS preprocessor — no stylis, no `css-what`, no template parsing — a plain object walk talks to the CSSOM directly, which also means its runtime dependency footprint is one types-only package. The trade is that it accepts object styles only: no template literals, and no runtime vendor prefixing (modern browsers handle the unprefixed properties it emits).
 
 ---
 
-## 3. Bundle Size & Dependencies
+## 3. Dependencies
 
-|  | HellaJS (css only, min) | HellaJS (bundle, min) | HellaJS (+ core peer) | Emotion (`@emotion/styled`) | Styled Components | vanilla-extract | Panda CSS |
-|---|---|---|---|---|---|---|---|
-| Min+gzip | ~0.83 KB (css module) | ~2.48 KB | ~2.5 KB + ~3 KB core | ~5.4 KB | ~11.1 KB | 0 KB runtime | ~0.6 KB runtime + static CSS |
+Bundle/byte-size numbers are intentionally excluded — they are point-in-time and drift faster than any other claim in this doc. Dependency facts come from each package's `package.json` (npm registry manifests fetched this session).
 
-Sizes for competitors are from the bundlephobia API fetched this session: `@emotion/styled@11.13.5` reports 12,175 B min / 5,366 B gzip with 8 dependencies; `styled-components@6.1.18` reports 29,613 B min / 11,142 B gzip with 9 dependencies; `@vanilla-extract/css@1.17.0` reports 70,915 B / 22,188 B gzip (build-only). HellaJS figures are from `packages/css/dist/sizes.json`: css module 1.46 KB min / 0.83 KB gzip; full bundle 6.05 KB min / 2.48 KB gzip.
+| | HellaJS (css) | Emotion (`@emotion/react`) | Styled Components | vanilla-extract | Panda CSS |
+|---|---|---|---|---|---|
+| Runtime deps | 1 — `csstype` | 8 — `@emotion/*`, `@babel/runtime`, `hoist-non-react-statics`, … | 4 — `stylis`, `csstype`, `css-to-react-native`, `@emotion/is-prop-valid` | 11 — `@emotion/hash`, `css-what`, `lru-cache`, `media-query-parser`, … | 11 — `cac`, `@clack/prompts`, 8× `@pandacss/*` |
+| Peer deps | `@hellajs/core` | `react` ≥ 16.8 | `react`, `react-dom` | none | none |
 
-- `@hellajs/css` declares exactly one runtime dependency (`csstype`, type-only) and one peer dependency (`@hellajs/core`) (`package.json:26-31`). No `stylis`, no `tslib`, no `shallowequal`, no `@emotion/*` packages.
-- The package is split into individually-published modules (`dist/css.js`, `dist/cssVars.js`, `dist/removeCss.js`, `dist/removeCssVars.js`, `dist/resetCss.js`, `dist/resetCssVars.js`, `dist/index.js`, `dist/internal/{core,injection,reactive,shared,sheet,vars}.js`) so consumers can tree-shake to just the `css` module if reactive variables are unused.
-- vanilla-extract and Panda ship zero (or near-zero) runtime JS, but move all the work into a bundler plugin and a static CSS artifact. HellaJS keeps the work at runtime but pays for it in less than 2.5 KB gzip including reactivity.
+- `@hellajs/css` declares exactly one runtime dependency, `csstype`, and consumes it exclusively through `import type` (`lib/types.d.ts`) — the package's own published files are declaration-only (`"main": ""`), so nothing beyond type information ships to the browser. The reactivity it needs arrives through a single peer, `@hellajs/core`, which the application already carries when it renders.
+- The package exposes per-function subpath exports (`./css`, `./cssVars`, `./removeCss`, `./removeCssVars`, `./resetCss`, `./resetCssVars`, plus a pre-bundled `./bundle`) so consumers tree-shake to just the modules they call (`package.json`).
+- Emotion's framework-agnostic entry, `@emotion/css`, is the closest dependency shape to HellaJS (5 deps, no peers), but every entry pays for `stylis` compilation at runtime — and, curiously, carries `@emotion/babel-plugin` as a regular runtime dependency. Styled Components bundles `stylis` in the browser plus React/React DOM peers.
+- vanilla-extract's and Panda's eleven dependencies apiece run only inside the bundler/CLI — the browser cost is the static CSS artifact itself. That is the zero-runtime trade: tooling complexity moves to the build, and dynamic styling needs a separate mechanism at runtime.
 
 ---
 
 ## 4. Scoping Model
 
-HellaJS inverts the default of every competitor here. `css()` is **global by default**: when no `name` option is provided, `isGlobal = !name` is true, the selector is the empty string, and the function returns `""` (`lib/css.ts`, `lib/css.ts`). Top-level keys are treated as raw CSS selectors — `body`, `*`, `.card`, `@media (…)` — and injected unwrapped (`lib/css.ts`). Passing `{ name: 'card' }` opts into scoping: the selector becomes `.card` and the function returns `"card"` for `class` attributes. Nested descendant keys compose against their parent selector in both global and scoped mode (`.card .child` when scoped, `nav a` when nested under a global `nav`) unless they start with `&`, in which case `&` is replaced with the parent selector verbatim; only top-level keys in a global call are raw, unwrapped selectors (`lib/css.ts`).
+HellaJS inverts the default of every competitor here. `css(obj)` with no options is a **global** call: the selector is the empty string, top-level keys are raw CSS selectors (`body`, `*`, `.card`, `nav a`, `@media (…)`), rules inject unwrapped, and the return value is `""` (`lib/css.ts`). Passing `{ name: 'card' }` opts into scoping: the selector becomes `.card`, nested keys compose against it (`.card .child`, `.card span`), `&` substitutes it, conditional at-rules inherit it, and the function returns `"card"` for `class` attributes (`lib/css.ts`).
 
-This is a deliberate split: global styles (resets, `@keyframes`, `@font-face`, `@layer`) go through unnamed calls, and component-scoped styles go through named calls. The class names are **user-chosen, not hashed** — `name: 'btn'` produces `.btn`, not `.css-a1b2c3`. That makes the generated stylesheet legible in DevTools and stable across rebuilds, at the cost of requiring the author to avoid collisions (HellaJS will not synthesize uniqueness).
+The class name is **user-chosen, not hashed** — `name: 'btn'` produces `.btn` in the stylesheet, legible in DevTools and stable across rebuilds. The author owns namespace hygiene in exchange: HellaJS synthesizes no uniqueness, two different objects registered under the same `name` both inject rules on that selector (identity is the CSS text, not the name — `lib/internal/injection.ts`), and only structurally identical objects dedup. This split makes the two authoring modes explicit: resets, `@keyframes`, `@font-face`, and `@layer` go through unnamed calls (definitional at-rules never pick up a scope even when `name` is set, `lib/css.ts`), component styles go through named calls.
 
-Emotion and Styled Components hash every class by default and expose globals only through a separate `<Global>` / `createGlobalStyle` API. vanilla-extract hashes locally-scoped identifiers (`styles_container__1hiof570`) — the author writes `style({…})` and receives an opaque string; global styles go through a separate `globalStyle` API. Panda emits atomic utility classes and recipe classes under `@layer`. None of the four lets the author write `name: 'btn'` and get back `.btn` in the stylesheet the way HellaJS does.
+`cssVars()` scopes independently of `css()`: variables default to `:root`, and `scoped: '.card'` / `prefix: 'app'` resolve through a single options-resolution point (`resolveVarsOptions` in `lib/internal/vars.ts`). Multiple `cssVars()` calls targeting one scope accumulate into a merged rule rather than overwriting each other (`scopedVarsRulesMap`, `lib/internal/vars.ts`).
 
-**Verdict:** HellaJS's global-default + user-named-scoped model is the closest of any competitor to writing plain CSS by hand, and the only one that produces human-readable class names without a build step. The trade-off is the author owns namespace hygiene — there is no automatic uniqueness, and a duplicated `name` across two `css()` calls merges into the same selector (deduplicated via reference counting, `lib/css.ts`).
+Emotion and Styled Components hash every class and route globals through a dedicated API (`<Global>`, `createGlobalStyle`). vanilla-extract hashes locally-scoped identifiers and exposes globals via `globalStyle`; `createTheme` scopes variables under a generated theme class. Panda emits atomic utilities and recipe classes under `@layer`, keyed by token paths rather than author-chosen names. None of the four lets the author write `name: 'btn'` and get `.btn` back, and none makes global styles the no-ceremony default — HellaJS's model is the closest of the group to writing plain CSS by hand.
+
+**Verdict:** For teams that want stylesheet output they can read and debug without source maps, user-chosen names are a real advantage — at the documented cost of manual namespace hygiene and no collision detection.
 
 ---
 
 ## 5. Reactive Variables
 
-This is HellaJS's clearest differentiator. `cssVars()` takes an object — possibly nested, possibly containing signal functions — and produces two things in one call: a set of `--var-name` CSS custom properties written to the `hella-vars` style element, and a proxy object whose leaf values are pre-built `var(--var-name)` references for use in `css()` calls (`lib/cssVars.ts`).
+This is HellaJS's clearest differentiator. `cssVars(vars)` takes a nested object — leaves may be plain values or functions (signals, computeds, plain getters) — and produces two things in one call: `--var-name` custom properties written to the `hella-vars` style element, and a same-shaped result object whose leaves are pre-built `var(--var-name)` references for use inside `css()` calls (`lib/cssVars.ts`).
 
-A single-pass flattener, `flattenVars`, walks the input, dot-joins nested keys (`colors.primary` → `colors.primary`), resolves function values immediately, and sets a `hasFns` flag if any function was encountered (`lib/cssVars.ts`). That flag routes the call:
+A single-pass flattener, `flattenVars`, dot-joins nested keys, calls each function leaf a single time to resolve its initial value, and sets a `hasFns` flag from the same traversal — the static/reactive routing decision costs no extra walk (`lib/cssVars.ts`):
 
-- **Static path** (no functions): the input is hashed via a DJB2 hash of its deterministically-sorted stringification (`lib/cssVars.ts`, `lib/internal/shared.ts`), checked against an LRU cache capped at 100 entries (`lib/internal/vars.ts`, `lib/internal/vars.ts`), and the cached result proxy is returned on hit (`lib/internal/vars.ts`). Cache access promotes the entry to most-recently-used, protecting it from eviction (`lib/internal/vars.ts`).
-- **Reactive path** (functions present): `applyRules` + `buildResult` run synchronously first so the returned proxy is populated immediately (`lib/cssVars.ts`), then `createVarsEffect(run)` registers a reactive effect that re-flattens and re-applies on signal change (`lib/cssVars.ts`, `lib/internal/reactive.ts`).
+- **Static path** (no functions): the input is hashed — DJB2 over a recursively key-sorted stringification, so key order can't split the cache (`lib/internal/shared.ts`) — and checked against an LRU cache capped at 100 entries (`lib/internal/vars.ts`). Hits promote the entry (delete + re-set) and bump the registry refCount; misses apply rules, build the result, and evict the oldest key at capacity (`lib/cssVars.ts`).
+- **Reactive path** (any function leaf): rules and result are built synchronously so the returned object is populated immediately, then one effect per vars-object **reference** re-flattens the live object and re-applies on dependency change (`lib/cssVars.ts`, `lib/internal/reactive.ts`). The result object never mutates after that: `buildResult` emits `var()` strings from the flat keys only, and live values reach the stylesheet exclusively through `applyRules` writing into the scope map (`lib/cssVars.ts`).
 
-Dots in keys become hyphens in the output custom-property names (`colors.primary` → `--colors-primary`) via `DOT_REGEX` (`lib/internal/vars.ts`, applied at `lib/internal/vars.ts`, `lib/internal/vars.ts`, `lib/internal/vars.ts`, `lib/internal/vars.ts`). Multiple `cssVars()` calls to the same scope accumulate rather than overwrite — the `scopedVarsRulesMap` (`lib/internal/vars.ts`) is a `Map<scope, Map<varName, value>>`, and `applyRules` merges into the existing scope map before re-emitting the merged scope rule (`lib/internal/vars.ts`). Scoping to `.card` or `#main` and prefixing with a namespace are both first-class options (`lib/types.d.ts`).
+Dots fold to hyphens on both paths (`colors.primary` → `--colors-primary`, `DOT_REGEX` in `lib/internal/vars.ts`). On the server, `cssVars()` returns the declarations as CSS text with zero effects and zero state (`lib/cssVars.ts`).
 
-No competitor wires signal reactivity directly into CSS variable generation. Emotion and Styled Components handle dynamic values via component props / theme context (re-running the style function on every render or prop change). vanilla-extract's `createVar` and `createTheme` produce variables at build time — dynamic updates require the consumer to write the `var(--…)` value somewhere and mutate it via a separate mechanism. Panda's tokens are static at runtime. HellaJS's `cssVars()` is the only API here that says "give me an object of signals, I'll keep a CSS custom property in sync with each one for you."
+No competitor wires signal reactivity into CSS variable generation. Emotion and Styled Components handle dynamic values through theme context and props — the style function re-runs on render or prop change, and the consumer re-renders to see it. vanilla-extract's `createTheme` and `createVar` produce variables at build time; runtime updates require hand-written `var(--…)` consumption plus a separate mutation mechanism. Panda's tokens are build-time artifacts. HellaJS is the only one of the five where "give me an object of signals, I'll keep a CSS custom property in sync with each one" is a single API call, updating through the same batch/flush scheduling the rest of the application uses.
 
-**Verdict:** For reactive theming driven by signals, HellaJS is the only one of the five that makes CSS custom properties a first-class reactive primitive rather than a manual wiring exercise.
+**Verdict:** For signal-driven theming, HellaJS is the only library here that treats CSS custom properties as a reactive primitive rather than a manual wiring exercise.
 
 ---
 
 ## 6. Memory Management
 
-HellaJS is the only library in this comparison with explicit, symmetrical reference counting on both style rules and CSS variables. Every `css()` call increments a per-text `count` — including cache hits (`lib/css.ts`, `lib/internal/injection.ts`). `removeCss(obj, options)` re-derives the CSS text via the same deterministic `process()` transform, decrements; only when the count reaches zero are the individual CSSOM rules removed from the sheet (`lib/removeCss.ts`). Removing one reference of a multi-referenced style is a pure decrement — the rule stays injected (`lib/removeCss.ts`).
+HellaJS is the only library in this comparison with explicit, symmetrical reference counting on both style rules and CSS variables. Every `css()` call — including dedup hits — increments a per-text `count` (`lib/css.ts`, `lib/internal/injection.ts`). `removeCss(obj, options)` re-derives the CSS text through the same deterministic `process()` transform, decrements, and only at zero removes each CSSOM rule by its recorded key before dropping the entry (`lib/removeCss.ts`). A structurally equal object locates the entry; the same reference is not required (`lib/removeCss.ts`).
 
-`cssVars()` mirrors this with two parallel registries: `varsRegistryStatic` (a `Map<string, VarsEntry>` keyed by hash) for static var sets, and `varsRegistryReactive` (a `WeakMap<object, VarsEntry>` keyed by the original vars object reference) for reactive var sets (`lib/internal/vars.ts`). Each `VarsEntry` tracks `flatKeys`, `scope`, `fullPrefix` (the resolved trailing-hyphen form from `resolveVarsOptions`), `refCount`, and an optional reactive `cleanup` disposer (`lib/internal/vars.ts`). `removeCssVars()` decrements; at zero, reactive entries dispose their effect via the stored cleanup (so subsequent signal updates stop mutating the stylesheet) and call `removeFromScope`, which deletes only that call's keys from the shared scope map, re-emits the merged scope rule if other calls contribute to it, or removes the scope rule entirely if the scope is empty (`lib/internal/vars.ts`). Reactive removal also re-resolves the original object reference, so the caller must pass the same object they passed to `cssVars()` (documented behavior, `lib/internal/vars.ts`).
+`cssVars()` mirrors this with two registries — `varsRegistryStatic` (a `Map` keyed by hash) and `varsRegistryReactive` (a `WeakMap` keyed by the original object reference, so reactive entries GC with their owners) (`lib/internal/vars.ts`). `removeCssVars()` checks the reactive registry first, then static (`lib/removeCssVars.ts`). At zero, a reactive entry disposes its effect — subsequent signal writes stop touching the stylesheet — and `removeFromScope` deletes only that call's flat keys from the shared scope map, re-emitting the merged rule for surviving contributors or removing the scope rule entirely when the scope empties (`lib/internal/vars.ts`). One subtlety the code handles explicitly: an LRU eviction drops the cache entry but not the registry entry, so a re-registration joins the surviving refCount instead of resetting it (`lib/cssVars.ts`).
 
-Bulk disposal is provided by `resetCss()` and `resetCssVars()`. `resetCssVars()` calls `cleanupVarsEffects()`, which iterates the lazily-allocated `activeEffects` Set and disposes every registered effect before clearing it (`lib/internal/reactive.ts`, `lib/internal/reactive.ts`), then clears all maps, registries, and the sheet (`lib/internal/vars.ts`). Two separate style elements — `hella-css` for rules and `hella-vars` for custom properties (`lib/css.ts`, `lib/internal/vars.ts`) — keep the two concerns independently clearable.
+Bulk disposal is split along the same seam: `resetCss()` clears the css-side map and `hella-css` sheet; `resetCssVars()` disposes every registered effect, clears the vars maps, resets the `hella-vars` sheet, and swaps in fresh WeakMaps (they cannot be enumerated) (`lib/resetCss.ts`, `lib/resetCssVars.ts`, `lib/internal/reactive.ts`). Two separate style elements — `hella-css` and `hella-vars`, each lazily created — keep the two systems independently clearable (`lib/internal/injection.ts`, `lib/internal/vars.ts`).
 
-Emotion and Styled Components inject styles and rely on cache hits for subsequent renders; neither removes styles from the DOM when components unmount (Styled Components' "automatic critical CSS" tracks what's rendered, but does not decrement-and-remove on unmount). vanilla-extract and Panda are build-time — there is no runtime removal because there is no runtime injection. HellaJS's model is the only one that treats style injection as a resource with a lifecycle the caller controls.
+Emotion and Styled Components inject and cache; neither documents a removal API, and Styled Components' rendered-component tracking governs injection, not disposal. vanilla-extract and Panda have no runtime memory question at all — the static artifact is the memory model. HellaJS's approach costs the caller one `removeCss()`/`removeCssVars()` per `css()`/`cssVars()` call (or a bulk reset) and returns deterministic DOM cleanup that the runtime competitors do not offer. One honest limitation: rules a platform refuses to parse (an `insertRule` throw for e.g. `@layer` under some DOM implementations) are skipped silently with no fallback path — the rule is absent from the stylesheet (`lib/internal/sheet.ts`).
 
-**Verdict:** The reference-counting model is unique in this group. It costs the caller a `removeCss()`/`removeCssVars()` call per `css()`/`cssVars()` call (or a bulk `resetCss()`/`resetCssVars()`), and in return gives deterministic DOM cleanup that the runtime competitors don't offer at all.
+**Verdict:** Style injection as a resource with a caller-controlled lifecycle is unique here; it is the feature that makes hot-reload-safe and island-style usage cheap, and it has no counterparty in either camp.
 
 ---
 
 ## 7. Type Safety
 
-HellaJS uses `csstype` for full CSS property coverage (`lib/types.d.ts`). `CSSObject` is the intersection of a selector-keyed map (tag names, at-rules, pseudo-classes, arbitrary strings) and `CSS.Properties` keyed with values allowing arrays and primitives (`lib/types.d.ts`). `CSSVars<T>` is a recursive conditional type that transforms an input object's leaves to `string` while preserving nesting (`lib/types.d.ts`), so `cssVars({ colors: { primary: '…' } })` returns `{ colors: { primary: 'var(--colors-primary)' } }` with the original shape intact and the leaves typed as `string`.
+HellaJS uses `csstype` for full CSS property coverage (`lib/types.d.ts`). `CSSObject` intersects a selector-keyed map (tag names, at-rules, pseudo-classes, arbitrary strings) with `CSS.Properties` keyed values allowing primitives and arrays (`lib/types.d.ts`). `CSSVarLeaf` restricts variable leaves to `string | number | (() => string | number)` — `boolean` and `Date` values are compile-time rejections, and `CSSVars<T>` is a recursive conditional type that preserves the input's nesting while widening every leaf to `string`, so `cssVars({ colors: { primary: '…' } })` returns `{ colors: { primary: string } }` carrying `'var(--colors-primary)'` at runtime (`lib/types.d.ts`).
 
-Emotion types object styles via `@emotion/serialize`; template-literal styles are typed at the tagged-template level. Styled Components types via generic component props (`styled.button<{ $primary?: boolean }>`) and does not validate CSS property names inside template literals. vanilla-extract is TypeScript-first and full-type-safe at author time in `.css.ts` files. Panda generates type definitions from the user's token config, giving autocomplete on token paths (`color: 'red.400'`).
+Emotion types object styles through `@emotion/serialize` and theme generics; template-literal CSS is not property-validated. Styled Components types the component's props (`styled.button<{ $primary?: boolean }>`) but does not validate CSS inside templates. vanilla-extract is TypeScript-first end to end — `.css.ts` authoring with token-contract checking against `createTheme`. Panda generates type definitions from the token config, giving autocomplete on token paths (`color: 'red.400'`).
 
-HellaJS matches vanilla-extract and Panda on compile-time CSS property validation (via `csstype`) and is the only one of the runtime libraries that does so without a Babel plugin or codegen step. Its one gap is that the leaf type cannot distinguish a signal from a plain getter — any `() => 'x'` takes the reactive path and creates an effect, even when the function closes over no signals (`lib/types.d.ts`).
+HellaJS matches the build-time pair on compile-time CSS property validation with zero codegen, and out-types the runtime pair. Its gaps are honest: `CSSVarLeaf` cannot distinguish a signal from a plain getter — any function leaf takes the reactive path and creates an effect even when it closes over no signals (`lib/cssVars.ts`) — and `css()` itself evaluates eagerly, so a function passed as a property value stringifies rather than tracks (reactive values must travel through `cssVars()`).
 
 ---
 
@@ -124,82 +131,79 @@ HellaJS matches vanilla-extract and Panda on compile-time CSS property validatio
 |---|---|---|---|---|---|
 | Object styles | Yes (`lib/css.ts`) | Yes | Via `css` helper | Yes (`style()`) | Yes (`css()`) |
 | Template-literal styles | No | Yes | Yes | No | No |
-| Nested selectors (`&`) | Yes (`lib/css.ts`) | Yes (stylis) | Yes (stylis) | Yes | Yes |
-| `@media` / `@keyframes` / `@font-face` / `@container` / `@supports` / `@layer` | Yes, all (`lib/css.ts`) | Yes | Yes | Yes (`keyframes`, `fontFace`, `layer`, `createContainer`) | Yes (`@layer`-native) |
-| Reactive CSS variables (signal-driven) | Yes (`lib/cssVars.ts`) | Manual | Manual | Static only (`createVar`) | Static only (tokens) |
-| Reference counting + DOM cleanup | Yes (`lib/css.ts`, `lib/internal/vars.ts`) | No | No | N/A (build-time) | N/A (build-time) |
-| Global styles as default mode | Yes (`lib/css.ts`) | Separate `<Global>` | Separate `createGlobalStyle` | Separate `globalStyle` | Separate utilities/recipes |
-| User-chosen class names | Yes (`lib/css.ts`) | No (hashed) | No (hashed) | No (hashed) | No (atomic/hashed) |
-| Deterministic caching (sorted-key hash) | Yes (`lib/internal/shared.ts`) | Yes (`@emotion/hash`) | Yes | Build-time dedupe | Build-time dedupe |
-| Bounded cache (LRU eviction) | Yes, 100 entries (`lib/internal/vars.ts`, `lib/internal/vars.ts`) | No eviction | No eviction | N/A | N/A |
-| SSR-safe (no throw without `document`) | Yes — returns CSS text, stateless (`lib/css.ts`) | Yes (React), partial (`@emotion/css`) | Yes (with plugin) | N/A (static) | N/A (static) |
-| SSR critical-CSS extraction to HTML | Yes — text return (`lib/css.ts`) | Yes (React zero-config) | Yes (babel/SWC plugin) | Yes (bundler CSS) | Yes (static CSS file) |
-| Theming primitive | `cssVars()` only | `ThemeProvider` context | `ThemeProvider` context | `createTheme` / `createThemeContract` | Token config + semantic tokens |
-| Source maps | No | Yes | Yes | N/A (static) | N/A (static) |
-| Vendor prefixing | No | Yes (stylis) | Opt-in v6+ (`StyleSheetManager`) | N/A (post-build) | N/A (post-build) |
+| Nested selectors (`&`) | Yes (`lib/css.ts`) | Yes (stylis) | Yes (stylis) | Yes (`selectors: { '&…' }`) | Yes |
+| `@media` / `@keyframes` / `@font-face` / `@container` / `@supports` / `@layer` | Yes, all — with conditional-vs-definitional scoping rules (`lib/css.ts`) | Yes | Yes | Yes (`keyframes`, `fontFace`, `layer`, `@container`) | Yes (`@layer`-native) |
+| Signal-reactive CSS variables | Yes (`lib/cssVars.ts`) | Manual (theme/props) | Manual (theme/props) | Static only (`createTheme`) | Static only (tokens) |
+| Reference counting + DOM cleanup | Yes, rules and vars (`lib/removeCss.ts`, `lib/removeCssVars.ts`) | No | No | N/A (build-time) | N/A (build-time) |
+| Global styles as default mode | Yes (`lib/css.ts`) | Separate `<Global>` | Separate `createGlobalStyle` | Separate `globalStyle` | Utilities/recipes |
+| User-chosen class names | Yes (`lib/css.ts`) | No (hashed) | No (unique generated) | No (hashed) | No (atomic/token-keyed) |
+| Scoped CSS-variable scopes | `:root` default, any selector, prefix (`lib/internal/vars.ts`) | Manual | Manual | `createTheme` class | Token scopes |
+| Bounded cache (LRU eviction) | Yes, 100 entries (`lib/internal/vars.ts`) | Unbounded cache | Unbounded cache | N/A | N/A |
+| Deterministic identity | Sorted-key hash + text identity (`lib/internal/shared.ts`, `lib/internal/injection.ts`) | `@emotion/hash` | Content-based | Build-time dedup | Build-time dedup |
+| SSR without DOM | Yes — stateless text return (`lib/css.ts`, `lib/cssVars.ts`) | Yes (React), manual (`@emotion/css`) | Yes (with plugin) | N/A (static) | N/A (static) |
+| Theming primitive | `cssVars()` (reactive) | `ThemeProvider` context | `ThemeProvider` context | `createTheme` contracts | Tokens + semantic tokens |
+| Vendor prefixing | No | Yes (stylis) | Opt-in via `StyleSheetManager` | Post-build pipeline | Post-build pipeline |
+| Source maps | No | Yes (Babel plugin) | Yes (plugin) | N/A (static) | N/A (static) |
+| Works without framework or bundler | Yes | `@emotion/css` only | No | No | No |
 
 ### Notable HellaJS differentiators
 
-- **Signal-driven reactive CSS custom properties** — `cssVars()` detects function values in a single flatten pass and creates a reactive effect that re-writes the `--var-name` declarations on signal change (`lib/cssVars.ts`, `lib/internal/reactive.ts`). No competitor integrates signals into CSS variable generation.
-- **Symmetrical reference counting with DOM cleanup at zero** — `removeCss()` and `removeCssVars()` decrement per-call ref counts and remove the actual CSSOM rules / scope rules only at zero (`lib/css.ts`, `lib/removeCss.ts`, `lib/internal/vars.ts`).
-- **Platform-dependent return (SSR stateless)** — `css()` and `cssVars()` return CSS text on the server with zero state mutation; the client path injects into the CSSOM and returns the class name / proxy (`lib/css.ts`, `lib/cssVars.ts`).
-- **Global-by-default with user-chosen scoped class names** — no hashed class names; `name: 'btn'` produces `.btn` and returns `"btn"` (`lib/css.ts`, `lib/css.ts`).
-- **CSSOM surgical updates, no textContent rewrite** — each rule is upserted individually via `CSSStyleSheet.insertRule` with an index map that skips no-op writes (`lib/internal/sheet.ts`).
-- **LRU-bounded static-var cache** — 100-entry cap with access-order promotion prevents unbounded growth (`lib/internal/vars.ts`, `lib/internal/vars.ts`, `lib/internal/vars.ts`).
-- **Single-pass reactive detection** — `flattenVars` returns a `hasFns` flag from the same traversal that resolves initial values, so the static/reactive routing decision costs no extra walk (`lib/cssVars.ts`).
-- **No CSS preprocessor dependency** — `process()` walks the object directly (`lib/css.ts`); the package has zero runtime deps beyond types (`package.json:26-31`).
+- **Signal-driven reactive CSS custom properties** — `flattenVars` detects function leaves in the same pass that resolves initial values, and one effect per object reference rewrites the declarations on signal change (`lib/cssVars.ts`, `lib/internal/reactive.ts`).
+- **Symmetrical reference counting with DOM cleanup at zero** — `removeCss()` re-derives text deterministically; `removeCssVars()` disposes effects and removes only the caller's keys from shared scopes (`lib/removeCss.ts`, `lib/removeCssVars.ts`, `lib/internal/vars.ts`).
+- **Platform-dependent return** — both `css()` and `cssVars()` return CSS text on the server with zero state mutation, before any injection logic runs (`lib/css.ts`, `lib/cssVars.ts`).
+- **Global-by-default with user-chosen scoped names** — no hashed identifiers anywhere; `name: 'btn'` produces `.btn` and returns `"btn"` (`lib/css.ts`).
+- **Surgical CSSOM writes with no preprocessor** — `upsertRule` inserts per-rule via `insertRule` and skips no-op writes via an index map; the package parses no CSS strings at runtime (`lib/internal/sheet.ts`, `lib/css.ts`).
+- **LRU-bounded static-var cache with refCount-preserving eviction** — 100-entry cap, access-order promotion, and registry entries that survive cache eviction so re-registration joins outstanding counts (`lib/internal/vars.ts`, `lib/cssVars.ts`).
 
 ---
 
 ## 9. Ergonomics & Syntax
 
 ```tsx
-import { signal, batch } from '@hellajs/core';
+import { signal } from '@hellajs/core';
 import { css, cssVars } from '@hellajs/css';
 
-// Global styles — returns ""
-css({
-  body: { margin: 0, fontFamily: 'system-ui, sans-serif' },
-  '*': { boxSizing: 'border-box' },
-  '@keyframes spin': { from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } },
-});
-
-// Scoped styles — returns the name for class=""
-const btn = css({
-  padding: '0.75rem 1.5rem',
-  borderRadius: '0.5rem',
-  backgroundColor: theme.colors.primary,   // var(--colors-primary)
-  '&:hover': { transform: 'translateY(-1px)' },
-}, { name: 'btn' });
-// <button class={btn}>…</button>
-
-// Reactive CSS variables — signal updates propagate to the stylesheet
 const dark = signal(false);
-const theme = cssVars({
-  colors: {
-    primary: '#3b82f6',
-    background: () => dark() ? '#1a1a1a' : '#ffffff',  // reactive leaf
+
+// Global styles — raw selector keys, returns ""
+css({
+  body: { margin: 0 },
+  '@keyframes spin': {
+    from: { transform: 'rotate(0deg)' },
+    to: { transform: 'rotate(360deg)' },
   },
 });
-// theme.colors.primary === 'var(--colors-primary)'
 
-batch(() => dark(true));   // hella-vars element now shows --colors-background: #1a1a1a
+// Reactive CSS variables — one function leaf makes the set live
+const theme = cssVars({
+  colors: { background: () => dark() ? '#1a1a1a' : '#ffffff' },
+});
+// theme.colors.background === 'var(--colors-background)'
+
+// Scoped styles — user-chosen name, returned for class attributes
+const card = css({
+  background: theme.colors.background,
+  borderRadius: '0.5rem',
+  '&:hover': { opacity: 0.8 },
+}, { name: 'card' });
+
+dark(true);  // hella-vars rule rewrites to #1a1a1a when the effect flushes
 ```
 
-The API shape is two functions (`css`, `cssVars`) plus their remove/reset pairs. Emotion and Styled Components center on `styled.tagname`...`` factories that return React components — a different ergonomic: you get a component, not a class name, and props drive dynamic values. HellaJS returns strings and leaves component composition to the view layer, so the same `css()` output works in JSX, `html\`\`` templates, raw DOM, or any string-based markup. vanilla-extract and Panda return class-name strings too, but require a `.css.ts` file (vanilla-extract) or a generated `styled-system/` directory (Panda) and a configured bundler. HellaJS's authoring model is the closest to writing inline styles — no separate file, no build step, no framework.
+The API is six functions — `css`, `cssVars`, and their remove/reset pairs — returning strings and plain objects. Emotion and Styled Components center on `styled.tagname`…`` factories that return React components: dynamic values arrive through props, and the styling is coupled to the component model. HellaJS returns class names and `var()` strings, so the same output drops into JSX, tagged templates, raw DOM manipulation, or any string-based markup, with reactivity attached at the variable layer rather than the component layer. vanilla-extract and Panda also return class strings, but the authoring contract is a `.css.ts` file or a generated `styled-system/` directory plus a configured bundler; HellaJS's contract is a function call at module scope with no configuration file, no plugin, and no framework — the closest of the five to inline styling ergonomics with real CSS power.
 
 ---
 
 ## Bottom Line
 
-Architecturally, HellaJS css is a runtime CSS-in-JS library in the Emotion / Styled Components family, but with three structural choices none of them make: it defaults to global styles with user-chosen class names (no hashed identifiers, no mandatory class wrapper), it reference-counts every style and variable and removes them from the DOM at zero refs, and it wires signal reactivity directly into CSS custom property generation via a dedicated `cssVars()` primitive. Against vanilla-extract and Panda it trades the zero-runtime property for a no-build, no-bundler authoring model with live reactivity in under 2.5 KB gzip including the core peer.
+Architecturally, HellaJS css is a runtime CSS-in-JS library in the Emotion / Styled Components family, built on three choices neither runtime competitor makes: global-by-default injection with user-chosen class names, reference-counted cleanup of both rules and variables, and a dedicated reactive-variable primitive that drives CSS custom properties from signals. Against vanilla-extract and Panda it concedes the zero-runtime property and keeps what they cannot have — live reactivity and a no-build authoring model in a package whose only runtime dependency is types.
 
 What sets HellaJS apart — and no single competitor matches all of:
 
-1. **Signal-reactive CSS variables as a first-class primitive** — `cssVars()` flattens nested objects, detects functions in one pass, and creates effects that re-write CSS custom properties on signal change (`lib/cssVars.ts`).
-2. **Reference-counted DOM cleanup** — both rules and vars track per-call ref counts and remove themselves from the stylesheet at zero (`lib/css.ts`, `lib/internal/vars.ts`).
-3. **Global-by-default with user-chosen scoped names** — `name: 'btn'` produces `.btn`, not a hash; global styles need no wrapper API (`lib/css.ts`).
-4. **No CSS preprocessor dependency** — a single `process()` walk talks to the CSSOM directly; the only runtime dep is `csstype` (types-only) (`package.json:26-31`, `lib/css.ts`).
-5. **Smallest runtime in the runtime camp** — ~2.48 KB gzip full bundle vs. Emotion's ~5.4 KB and Styled Components' ~11.1 KB.
+1. **Signal-reactive CSS variables as a first-class primitive** — `cssVars()` flattens nested objects, detects functions in one pass, and creates effects that rewrite custom properties on dependency change, batch-scheduled with the rest of the app (`lib/cssVars.ts`).
+2. **Reference-counted DOM cleanup on both sides** — rules and vars track per-call counts and remove themselves from the stylesheet at zero, with partial-removal semantics on shared variable scopes (`lib/removeCss.ts`, `lib/removeCssVars.ts`, `lib/internal/vars.ts`).
+3. **Global-by-default with user-chosen names and no build step** — `name: 'btn'` produces `.btn`, globals need no wrapper API, and there is no bundler, plugin, or codegen to configure (`lib/css.ts`).
+4. **No CSS preprocessor in the runtime** — a single object walk produces text and talks to the CSSOM directly; the only runtime dependency is `csstype`, which is types-only (`lib/css.ts`, `lib/types.d.ts`).
+5. **Stateless server path** — both entry functions return CSS text with zero mutation when no DOM exists, making SSR extraction a return value rather than a pipeline (`lib/css.ts`, `lib/cssVars.ts`).
 
-Its gaps are the predictable ones: no build-time / zero-runtime mode, no vendor prefixing, no source maps, no `styled()` component factory (returns class strings — the consumer wires up `class` attributes), no build-time token system (Panda-style semantic tokens / vanilla-extract contract extraction) — reactive theming via `cssVars()` is first-class, but there is no structured design-token authoring layer, and a much smaller ecosystem with no dedicated devtools or framework-specific integrations. SSR critical-CSS extraction is available via the platform-dependent text return (manual — the caller embeds the returned CSS text in their HTML), unlike Emotion React's zero-config streaming or vanilla-extract's static bundler output.
+Its gaps are the predictable ones: no zero-runtime or build-time mode, object styles only (no template literals), no vendor prefixing, no source maps, and no `styled()` component factory — the consumer wires `class` attributes themselves. There is no structured design-token layer (Panda-style semantic tokens or vanilla-extract theme contracts); reactive theming rides entirely on `cssVars()` plus signals. SSR extraction is manual (embed the returned text), platform-rejected rules are skipped from the CSSOM silently with no text fallback (`lib/internal/sheet.ts`), and the ecosystem — devtools, framework integrations, community recipes — is a fraction of what Emotion, Styled Components, and the build-time tools have accumulated.

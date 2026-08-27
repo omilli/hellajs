@@ -151,3 +151,22 @@ shouldThrow(false); // Effect recovers and re-runs normally
 
 cleanup();
 ```
+
+### Returned Functions Become Cleanup
+
+A run's return value is checked with a function test: returning a function installs it as the cleanup for that run — even when returning it was accidental. Any other return value is ignored. Return nothing unless cleanup is intended.
+
+```typescript
+import { signal, effect } from "@hellajs/core";
+
+const save = () => console.log("saved");
+const onSave = signal(save);
+
+// ❌ Returns the resolved function — it is captured as cleanup and invoked on re-run/dispose
+effect(() => onSave());
+
+// ✅ Consume the function inside the run; return nothing
+effect(() => {
+  onSave()();
+});
+```

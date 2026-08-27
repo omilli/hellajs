@@ -50,13 +50,13 @@ The `loader` function should return a Promise that resolves to either a componen
 
 ```jsx
 // Function component
-const loader = () => import("./MyComponent").then(mod => mod.default);
+const fromModule = () => import("./MyComponent").then(mod => mod.default);
 
 // Direct HellaNode
-const loader = () => Promise.resolve({ tag: "div", children: ["Loaded"] });
+const fromNode = () => Promise.resolve({ tag: "div", children: ["Loaded"] });
 
 // Factory function
-const loader = () => Promise.resolve((props) => (
+const fromFactory = () => Promise.resolve((props: { message: string }) => (
   <div>{props.message}</div>
 ));
 ```
@@ -81,7 +81,11 @@ When the parent element is removed during loading, the loader is automatically c
 
 ```jsx
 <Lazy
-  loader={({ signal }) => fetch("/api/component.js", { signal }).then(r => r.text())}
+  loader={({ signal } = {}) =>
+    fetch("/api/component.js", { signal })
+      .then(r => r.text())
+      .then(html => ({ tag: "div", props: { class: "external" }, children: [html] }))
+  }
   loading={<div>Loading...</div>}
   fallback={<div>Failed to load</div>}
 />
@@ -120,7 +124,7 @@ The loaded component receives these props:
 
 ```jsx
 // UserProfile component
-const UserProfile = ({ userId, theme }) => (
+const UserProfile = ({ userId, theme }: { userId: number; theme: string }) => (
   <div class={`profile profile-${theme}`}>
     Loading profile for user: {userId}
   </div>
@@ -183,7 +187,7 @@ The loader can resolve to different component types:
 
 ```jsx
 // Function component
-const functionLoader = () => Promise.resolve((props) => <div>{props.text}</div>);
+const functionLoader = () => Promise.resolve((props: { text: string }) => <div>{props.text}</div>);
 
 // Direct HellaNode object
 const nodeLoader = () => Promise.resolve({ tag: "span", children: ["Direct node"] });
@@ -197,16 +201,21 @@ const importLoader = () => import("./Component").then(mod => mod.default);
 Lazy components integrate seamlessly with ForEach lists.
 
 ```jsx
-const lazyItems = signal([
-  { id: 1, loader: () => import("./Component1") },
-  { id: 2, loader: () => import("./Component2") }
+import { signal } from "@hellajs/core";
+import { ForEach } from "@hellajs/dom";
+import type { ComponentFn, HellaNode } from "@hellajs/dom";
+
+type LazyItem = { id: number; loader: () => Promise<ComponentFn | HellaNode> };
+
+const lazyItems = signal<LazyItem[]>([
+  { id: 1, loader: () => import("./Component1").then(mod => mod.default) },
+  { id: 2, loader: () => import("./Component2").then(mod => mod.default) }
 ]);
 
 <ForEach
   each={lazyItems}
-  use={(item) => (
+  use={(item: LazyItem) => (
     <Lazy
-      key={item.id}
       loader={item.loader}
       fallback={<div>Failed to load {item.id}</div>}
     />
@@ -230,7 +239,7 @@ const AdminPanel = () => (
 **Conditional Loading:**
 
 ```jsx
-const FeatureFlag = ({ flag, children }) => (
+const FeatureFlag = ({ flag, children }: { flag: () => boolean; children?: unknown }) => (
   flag() ? (
     children
   ) : (
@@ -245,11 +254,19 @@ const FeatureFlag = ({ flag, children }) => (
 **External Components:**
 
 ```jsx
+const widgetConfig = { theme: "dark" };
+
 const ThirdPartyWidget = () => (
   <Lazy
     loader={async () => {
-      const widget = await loadExternalWidget();
-      return (props) => widget.render(props.config);
+      //… real loader: const widget = await loadExternalWidget()
+      const widget = {
+        render: (config: { theme: string }) => ({ tag: "div", children: [`Widget ${config.theme}`] }),
+      };
+      return (props: Record<string, unknown>) => {
+        const { config } = props as { config: { theme: string } };
+        return widget.render(config);
+      };
     }}
     fallback={<div>Widget loading...</div>}
     props={{ config: widgetConfig }}

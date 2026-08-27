@@ -87,7 +87,9 @@ Update UI immediately, then sync with the server using `onMutate`/`onSettled`.
 ```typescript
 import { resource } from '@hellajs/resource';
 
-const todos = resource(
+type Todo = { id: number; text: string; done: boolean };
+
+const todos = resource<Todo[]>(
   () => fetch('/api/todos').then(r => r.json())
 );
 
@@ -101,14 +103,15 @@ const addTodo = resource(
   },
   {
     onMutate: (text) => {
-      const temp = { id: Date.now(), text, done: false };
+      const temp: Todo = { id: Date.now(), text: String(text), done: false };
       todos.setData(old => [...(old || []), temp]);
       return { temp };
     },
     onSettled: (data, err, vars, ctx) => {
-      if (err && ctx?.temp) {
+      const temp = (ctx as { temp: Todo } | undefined)?.temp;
+      if (err && temp) {
         // Roll back on failure
-        todos.setData(old => (old || []).filter(t => t.id !== ctx.temp.id));
+        todos.setData(old => (old || []).filter(t => t.id !== temp.id));
       }
       todos.invalidate();
     }
