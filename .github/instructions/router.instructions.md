@@ -13,7 +13,7 @@ applyTo: "packages/router/**"
   | `route` | `route.ts` | Reactive signal holding the current `RouteInfo` (`path`, `params`, `query`, `handler`, `meta`, `crumbs`, `active`). |
   | `navigate` | `navigate.ts` | Programmatic nav: `:param`/`*` substitution, query serialize, history push/replace. |
   | `resetRouter` | `resetRouter.ts` | Factory-reset: resets all config signals + `route()` to defaults, detaches listeners. Does NOT mutate the URL. |
-  | `type *` | `types.d.ts` | `RouterConfig`, `RouteInfo`, `RouteWithHooks`, `NavigateOptions`, `Redirect`, `ScrollBehavior`, `HistoryMode`, `Crumb`, `ExtractParams`. |
+  | `type *` | `types.d.ts` | `RouterConfig`, `RouteInfo`, `RouteWithHooks`, `Handler` (full `(params: Params, query: Params) => unknown` signature; runtime dispatch is arity-based), `NavigateOptions`, `Redirect`, `ScrollBehavior`, `HistoryMode`, `Crumb`, `ExtractParams`. |
 
   ## File map
 
