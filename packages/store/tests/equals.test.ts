@@ -112,5 +112,32 @@ describe("equals", () => {
     data.a("world");
     expect(data.a()).toBe("world");
   });
+
+  test("throws at create time for an invalid nested equals map", () => {
+    expect(() => store({ user: { name: "a" } }, {
+      equals: {
+        // @ts-expect-error object keys accept nested maps only — 42 must be rejected
+        user: 42
+      }
+    })).toThrow('[store] store: equals for "user" must be a nested equals map, received number');
+  });
+
+  test("rejects the 'structural' preset on object keys", () => {
+    expect(() => store({ user: { name: "a" } }, {
+      equals: {
+        // @ts-expect-error 'structural' is a leaf preset — object keys require a nested map
+        user: "structural"
+      }
+    })).toThrow('[store] store: equals for "user" must be a nested equals map, received string');
+  });
+
+  test("ignores nested equals entries for keys the nested store does not define", () => {
+    const data = store({ user: { name: "a" } }, {
+      equals: { user: { ghost: "structural" } as StoreEquals<{ name: string }> }
+    });
+
+    data.user.name("b");
+    expect(data.user.name()).toBe("b");
+  });
 });
 });

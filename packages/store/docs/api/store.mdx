@@ -280,6 +280,7 @@ appStore.items([1, 2]); // same content, new reference — write skipped, no sub
 
 - A comparator receives `(previous, next)` and returns `true` to skip the write. `'structural'` compares arrays, `Date`, `Map`, `Set`, `RegExp`, and class instances by content.
 - Nested maps reach nested stores, like `middleware`. Every write path inherits the comparator — direct calls, `update(partial)`, and the draft path.
+- Invalid values throw at create time: a leaf must be a comparator function or `'structural'` (`[store] store: equals for "<key>" must be a function or "structural", received …`), and an object key's entry must be a nested equals map (`[store] store: equals for "<key>" must be a nested equals map, received …`) — `'structural'` on an object key is rejected.
 - Equality runs after middleware, inside the signal: the comparator sees the transformed value.
 - ⚠️ `'structural'` costs O(n) per write — opt in per key, exactly where large array or object leaves live.
 

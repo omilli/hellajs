@@ -189,7 +189,7 @@ effect(() => {
 appStore.items([1, 2]); // same content — write skipped, effect stays asleep
 ```
 
-A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it — direct calls, `update(partial)`, and `update(draft => …)` — and equality runs after middleware, so the comparator sees the transformed value.
+A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it — direct calls, `update(partial)`, and `update(draft => …)` — and equality runs after middleware, so the comparator sees the transformed value. Invalid values throw at create time: a leaf accepts a comparator function or `'structural'`; an object key accepts a nested map only, so `'structural'` on an object key throws.
 
 Prefer the draft path for fine-grained array edits and reserve `'structural'` for large leaves that are replaced wholesale — it costs O(n) per write. See [write equality](/reference/store/store#write-equality) for the full option shape.
 
