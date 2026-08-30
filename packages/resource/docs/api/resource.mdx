@@ -67,7 +67,7 @@ interface ResourceOptions<T, K, TTransformed = T> {
   deduplicate?: boolean;
   /** Preserve object/array references for structurally unchanged subtrees on fetch success, preventing redundant reactive cascades (default: false) */
   structuralSharing?: boolean;
-  /** Retry count on failure, boolean for simple on/off, or function for conditional retry */
+  /** Retry count on failure (fetches and mutations alike), boolean for simple on/off, or function for conditional retry */
   retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
   /** Delay between retries in ms, or function returning delay based on attempt number */
   retryDelay?: number | ((attempt: number, error: ResourceError) => number);
@@ -278,6 +278,8 @@ await saveUser.mutate({ name: 'John Doe' });
 
 When a mutation succeeds, `onSuccess` fires with the result data, just like a regular fetch. If a mutation is aborted (via `abort()`, `timeout`, or external signal), `onSettled` is **not** called, even if `onMutate` already ran.
 
+Concurrent mutations run independently: each `mutate()` call owns its abort controller and its `onMutate` context, so a second call never aborts the first — both fetchers run and both settle individually with their own `(variables, context)` pair. Mutations honor `retry`/`retryDelay` just like reads. Reads and mutations never abort each other; `abort()` is the cancel-all — it aborts the active read and every in-flight mutation. For operations that must not overlap, guard the trigger with `isFetching()` (see [Resources](/learn/concepts/resources#concurrent-mutations)).
+
 ### `reset`
 
 Resets resource state to initial values, clearing data and errors.
@@ -326,7 +328,7 @@ Control data freshness with `staleTime`. When data is stale but cached, `.fetch(
 
 ### Automatic Retry
 
-Configure retry behavior with count, conditional logic, and custom delays. The `retry` predicate receives the failure count starting at `1` on the first failure. See [Resources](/learn/concepts/resources#automatic-retry) for conditional retry and delay configuration.
+Configure retry behavior with count, conditional logic, and custom delays. The `retry` predicate receives the failure count starting at `1` on the first failure. Applies to both reads and mutations — `mutate()` runs through the same retry loop. See [Resources](/learn/concepts/resources#automatic-retry) for conditional retry and delay configuration.
 
 ### Polling / Interval Refetch
 

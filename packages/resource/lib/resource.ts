@@ -4,7 +4,7 @@ import type { CacheEntry } from "./types/cache";
 import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
 import { isAbortError, categorizeError } from "./internal/errors";
 import { resolveRetryConfig, fetchWithRetry } from "./internal/retry";
-import { raceAbort, wireRequestControls } from "./internal/abort";
+import { wireRequestControls } from "./internal/abort";
 import { createPolling } from "./internal/polling";
 import { createFocus, createReconnect } from "./internal/lifecycle";
 import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
@@ -160,7 +160,8 @@ export function resource<T, K = undefined, TTransformed = T>(
   // eslint-disable-next-line prefer-const
   let cleanupEffect: (() => void) | undefined;
   let currentAbortController: AbortController | undefined;
-  let mutationContext: unknown;
+  /** Live mutation controllers — one per in-flight `mutate()`, self-removed on settle. */
+  let mutationControllers: Set<AbortController> | undefined;
 
   const polling = createPolling<TTransformed>({ refetchInterval, refetchIntervalInBackground, data, run });
   const focus = createFocus(run);
@@ -288,6 +289,7 @@ export function resource<T, K = undefined, TTransformed = T>(
       currentAbortController.abort();
       currentAbortController = undefined;
     }
+    mutationControllers?.forEach((controller) => controller.abort());
     rawData(options.initialData);
     handleError();
   }
@@ -375,32 +377,36 @@ export function resource<T, K = undefined, TTransformed = T>(
   };
 
   /**
-   * Executes a mutation against the resource's fetcher with abort and timeout support.
+   * Executes a mutation against the resource's fetcher with abort, timeout, and retry support.
    * Invokes onMutate, onSuccess/onError, and onSettled hooks; bypasses cache and deduplication.
+   * Concurrent mutations run independently — each call owns its abort controller and its
+   * onMutate context; only `abort()` (or per-call timeout/abortSignal) cancels it.
    * @param variables - Argument passed to the fetcher for the mutation
    * @returns The raw fetcher result on success
    */
   const mutate = async <TVariables = unknown>(variables: TVariables): Promise<T> => {
-    currentAbortController = cleanAbort();
-    const releaseControls = wireRequestControls(currentAbortController, { timeout, abortSignal });
-    const signal = currentAbortController.signal;
+    const controller = new AbortController();
+    (mutationControllers ??= new Set()).add(controller);
+    const releaseControls = wireRequestControls(controller, { timeout, abortSignal });
+    const signal = controller.signal;
+    const retryConfig = resolveRetryConfig(retry, retryDelay);
+    // Per-call rollback context: concurrent mutations never see each other's snapshots
+    let ctx: unknown;
 
     try {
       const hasData = untracked(rawData) !== undefined;
       handleError(undefined, !hasData, true);
 
-      if (options.onMutate)
-        mutationContext = await options.onMutate(variables);
+      ctx = options.onMutate ? await options.onMutate(variables) : undefined;
 
-      const result = await raceAbort(
-        (fetcherFn as unknown as (vars: TVariables) => Promise<T>)(variables),
-        signal,
-        "Mutation was aborted"
+      const result = await fetchWithRetry(
+        () => (fetcherFn as unknown as (vars: TVariables) => Promise<T>)(variables),
+        { signal, retryConfig }
       );
 
       if (!signal.aborted) {
         handleSuccess(result);
-        await options.onSettled?.(result, undefined, variables, mutationContext);
+        await options.onSettled?.(result, undefined, variables, ctx);
         if (invalidates) {
           let i = 0;
           const len = invalidates.length;
@@ -420,7 +426,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     } catch (err) {
       if (!signal.aborted) {
         handleSuccessError(err);
-        await options.onSettled?.(undefined, err, variables, mutationContext);
+        await options.onSettled?.(undefined, err, variables, ctx);
       }
 
       throw err;
@@ -431,6 +437,7 @@ export function resource<T, K = undefined, TTransformed = T>(
         isLoading(false);
         isFetching(false);
       }
+      mutationControllers?.delete(controller);
       releaseControls();
     }
   };
@@ -445,7 +452,6 @@ export function resource<T, K = undefined, TTransformed = T>(
     reconnect.clear();
     rawData(options.initialData);
     handleError();
-    mutationContext = undefined;
   };
 
   /** Returns true when the resource status is idle (never fetched or reset to initial state). */

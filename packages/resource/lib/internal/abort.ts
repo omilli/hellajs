@@ -6,23 +6,21 @@
 /**
  * @internal
  * Races a request promise against its abort signal: rejects with a DOMException
- * named AbortError (message configurable) when the signal fires or has already fired.
+ * named AbortError when the signal fires. Callers pre-check
+ * aborted signals before entering (the retry loop's top-of-loop check), so this
+ * races live signals only — an already-aborted signal's `abort` event has fired
+ * and would never trigger a listener attached here.
  * The abort listener is removed when it fires ({ once }) so repeated races on one
  * signal do not accumulate listeners.
  * @param promise - The in-flight request promise to race against abort
- * @param signal - The request's own abort signal
- * @param message - Rejection message; defaults to "Request was aborted"
+ * @param signal - The request's own abort signal (not yet aborted)
  */
-export function raceAbort<T>(promise: Promise<T>, signal: AbortSignal, message = "Request was aborted"): Promise<T> {
+export function raceAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   return Promise.race([
     promise,
     new Promise<never>((_, reject) => {
-      const onAbort = () => reject(new DOMException(message, "AbortError"));
-      if (signal.aborted) {
-        onAbort();
-      } else {
-        signal.addEventListener("abort", onAbort, { once: true });
-      }
+      const onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
+      signal.addEventListener("abort", onAbort, { once: true });
     })
   ]);
 }

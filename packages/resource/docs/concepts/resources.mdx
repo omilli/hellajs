@@ -128,6 +128,19 @@ addTodoResource.mutate({ text: 'Learn mutations', completed: false });
 
 The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for optimistic updates with rollback. See [`resource`](/reference/resource/resource) for the full lifecycle API.
 
+### Concurrent Mutations
+
+Each `mutate()` call runs independently — a second call never aborts the first. Both fetchers run, both settle with their own `variables` and `onMutate` context, and `retry`/`retryDelay` apply to mutations just like reads. Reads and mutations never abort each other either; `abort()` is the cancel-all — it aborts the active read and every in-flight mutation, resetting the resource to its `initialData`.
+
+Double-clicks fire two mutations. For operations that must not overlap (payments, duplicate row creation), guard the trigger while a mutation is in flight:
+
+```typescript
+const submitTodo = () => {
+  if (addTodoResource.isFetching()) return; // single-flight guard: ignore double-submits
+  addTodoResource.mutate({ text: 'Learn mutations', completed: false });
+};
+```
+
 ## Features
 
 Resources provide several built-in features for production data fetching. Each is documented in full detail in the [`resource`](/reference/resource/resource) reference.
