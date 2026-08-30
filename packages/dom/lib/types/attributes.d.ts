@@ -1,4 +1,4 @@
-import type { HellaPrimitive, ElementHooks } from "./nodes";
+import type { DirectListenerSpec, HellaPrimitive, ElementHooks } from "./nodes";
 
 /**
  * Event handler mapping for DOM events
@@ -55,9 +55,13 @@ type PrefixedEventHandlers = {
 /**
  * Direct event handlers with e: prefix (e.g., e:input, e:click)
  * Non-delegated — attached directly to the element via addEventListener.
+ * The value is the handler function, or a spec object pairing the handler
+ * with native listener options (`once`/`passive`/`capture`).
  */
 type DirectEventHandlers = {
-  [K in keyof DOMEventMap as `e:${K}`]?: (this: HTMLElement, event: DOMEventMap[K]) => void;
+  [K in keyof DOMEventMap as `e:${K}`]?:
+    ((this: HTMLElement, event: DOMEventMap[K]) => void)
+    | DirectListenerSpec<DOMEventMap[K]>;
 };
 
 /**

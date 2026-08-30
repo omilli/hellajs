@@ -1,4 +1,4 @@
-import type { HellaNode } from "../types/nodes";
+import type { HellaNode, DirectListenerSpec } from "../types/nodes";
 import { dispatchError, findBoundary, resolveErrorConfig, toError, getMountNode } from "./dispatch";
 import { getState, peekState } from "./state";
 
@@ -74,15 +74,24 @@ function delegatedHandler(event: Event) {
  * Replaces existing handler for same event type.
  * @param element Target element
  * @param type Event type (e.g., 'focus', 'blur', 'load')
- * @param handler Event handler function
+ * @param handler Event handler function, or a `{ handler, options }` spec whose
+ * native listener options (once/passive/capture) are forwarded to addEventListener
  */
-export function setDirectHandler(element: Element, type: string, handler: EventListener) {
+export function setDirectHandler(
+  element: Element,
+  type: string,
+  handler: EventListener | DirectListenerSpec
+) {
   const state = getState(element);
   const handlers = state.directHandlers ?? (state.directHandlers = new Map());
 
+  const isSpec = typeof handler === "object";
+  const listener = isSpec ? handler.handler : handler;
+  const options = isSpec ? handler.options : undefined;
+
   const wrappedHandler = (event: Event) => {
     try {
-      handler.call(element, event);
+      listener.call(element, event);
     } catch (e) {
       const config = resolveErrorConfig(element);
       const fallback = dispatchError(toError(e), { phase: "event", element, event, config });
@@ -90,8 +99,8 @@ export function setDirectHandler(element: Element, type: string, handler: EventL
     }
   };
 
-  element.addEventListener(type, wrappedHandler);
-  handlers.set(type, wrappedHandler);
+  element.addEventListener(type, wrappedHandler, options);
+  handlers.set(type, { handler: wrappedHandler, options });
 }
 
 /**
@@ -107,7 +116,8 @@ export function removeDirectHandlers(node: Node) {
   let result = iter.next();
   while (!result.done) {
     const key = result.value;
-    node.removeEventListener(key, handlers.get(key)!);
+    const stored = handlers.get(key)!;
+    node.removeEventListener(key, stored.handler, stored.options);
     result = iter.next();
   }
   handlers.clear();

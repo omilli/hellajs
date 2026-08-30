@@ -64,6 +64,20 @@ export interface ErrorContext {
 export type ErrorFn = (error: Error, context: ErrorContext) => HellaNode | null | void;
 
 /**
+ * Direct event listener paired with native listener options.
+ * Passed as an `e:` attribute value to forward `once`/`passive`/`capture`
+ * semantics to `addEventListener`.
+ * @template E Event type the handler receives — `Event` on the loose `HellaNode.e`
+ * AST surface, the concrete event type on the typed JSX attribute surface.
+ */
+export interface DirectListenerSpec<E extends Event = Event> {
+  /** The event handler invoked on dispatch. */
+  handler: (this: HTMLElement, event: E) => void;
+  /** Native `addEventListener` options, forwarded verbatim. */
+  options?: AddEventListenerOptions;
+}
+
+/**
  * Represents a virtual DOM node.
  * @template T
  */
@@ -74,8 +88,8 @@ export interface HellaNode<T extends HTMLTagName = HTMLTagName> {
   props?: HTMLAttributes<T>;
   /** Delegated event handlers mapped by event name. */
   on?: Record<string, EventListener>;
-  /** Direct (non-delegated) event handlers mapped by event name. */
-  e?: Record<string, EventListener>;
+  /** Direct (non-delegated) event handlers mapped by event name, or spec objects carrying native listener options. */
+  e?: Record<string, EventListener | DirectListenerSpec>;
   /** Hooks for the element. */
   hooks?: ElementHooks;
   /** The children of the node. */

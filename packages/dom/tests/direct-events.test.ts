@@ -169,5 +169,91 @@ describe("dom", () => {
       btn.click();
       expect(clickHandler).toHaveBeenCalledTimes(1);
     });
+
+    test("once: true fires the handler exactly once", () => {
+      const clickHandler = mock(() => {});
+      mount(html`<button id="btn" e:click=${{ handler: clickHandler, options: { once: true } }}>Click</button>`);
+
+      const btn = document.getElementById("btn")!;
+      btn.click();
+      btn.click();
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+    });
+
+    test("capture: true fires the parent handler before the target handler", () => {
+      const order: string[] = [];
+      const parentCapture = mock(() => { order.push("parent"); });
+      const childHandler = mock(() => { order.push("child"); });
+
+      mount(html`
+        <div id="parent" e:click=${{ handler: parentCapture, options: { capture: true } }}>
+          <button id="child" e:click=${childHandler}>Click</button>
+        </div>
+      `);
+
+      document.getElementById("child")!.click();
+
+      expect(parentCapture).toHaveBeenCalledTimes(1);
+      expect(childHandler).toHaveBeenCalledTimes(1);
+      expect(order).toEqual(["parent", "child"]);
+    });
+
+    test("passive: true is forwarded to addEventListener", () => {
+      const original = Element.prototype.addEventListener;
+      const addSpy = mock<(type: string, listener: unknown, options?: unknown) => void>(() => {});
+      Element.prototype.addEventListener = addSpy as unknown as typeof original;
+      try {
+        mount(html`<div id="test" e:touchstart=${{ handler: mock(() => {}), options: { passive: true } }}>Test</div>`);
+
+        const call = addSpy.mock.calls.find(([type]) => type === "touchstart");
+        expect(call?.[2]).toEqual({ passive: true });
+      } finally {
+        Element.prototype.addEventListener = original;
+      }
+    });
+
+    test("cleanup removes the listener with the stored options object", () => {
+      const original = Element.prototype.removeEventListener;
+      const removeSpy = mock(function (this: Element, ...args: Parameters<Element["removeEventListener"]>) {
+        return original.apply(this, args);
+      });
+      Element.prototype.removeEventListener = removeSpy as unknown as typeof original;
+      try {
+        const clickHandler = mock(() => {});
+        const options = { capture: true };
+        const app = mount(html`<div id="test" e:click=${{ handler: clickHandler, options }}>Test</div>`);
+        const el = document.getElementById("test")!;
+
+        app.unmount();
+
+        const call = removeSpy.mock.calls.find(([type]) => type === "click");
+        expect(call?.[2]).toBe(options);
+
+        el.click();
+        expect(clickHandler).not.toHaveBeenCalled();
+      } finally {
+        Element.prototype.removeEventListener = original;
+      }
+    });
+
+    test("plain function and spec forms coexist on the same element", () => {
+      const plainHandler = mock(() => {});
+      const specHandler = mock(() => {});
+
+      mount(html`
+        <div
+          id="test"
+          e:click=${plainHandler}
+          e:mouseenter=${{ handler: specHandler, options: { once: true } }}
+        >Test</div>
+      `);
+
+      const el = document.getElementById("test")!;
+      el.click();
+      el.dispatchEvent(new Event("mouseenter"));
+
+      expect(plainHandler).toHaveBeenCalledTimes(1);
+      expect(specHandler).toHaveBeenCalledTimes(1);
+    });
   });
 });

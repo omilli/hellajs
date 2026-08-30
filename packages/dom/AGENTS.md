@@ -13,7 +13,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `resetDom` | State reset (test/introspection) | `lib/internal/reset.ts` |
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
 | `getState`, `hasState`, `peekState`, `deleteState` | ElementState access (test/introspection) | `lib/internal/state.ts` |
-| `HellaNode`, `HellaChild`, `ElementHooks`, `HookType`, `HookFn`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `SuspenseProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
+| `HellaNode`, `HellaChild`, `ElementHooks`, `HookType`, `HookFn`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DirectListenerSpec`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `SuspenseProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
 | `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes` | Type-only | `lib/types/attributes.d.ts` |
 
 **Throw contracts.** `mount` → `[dom] mount: target "<target>" not found in document`. `ForEach` → `[dom] ForEach: each is required` / `[dom] ForEach: use must be a function`. `element` → `[dom] element: tagName must be a hyphenated string / render must be a function`. `Lazy` → `[dom] Lazy: loader must be a function`. `Portal` → `[dom] Portal: target "<to>" not found in document` (at first effect run, not at construction).
@@ -26,7 +26,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 |---|---|
 | `effects` | `(() => void)[]` effect disposers; drained during cleanup. |
 | `handlers` | `Record<type, EventListener>` delegated handlers (one per type per element); lazily allocated by `setNodeHandler`. |
-| `directHandlers` | `Map<type, EventListener>` `e:` handlers; `removeEventListener`-ed on cleanup. |
+| `directHandlers` | `Map<type, DirectListenerSpec>` — wrapped `e:` handler + caller options; `removeEventListener`-ed with the same options on cleanup. |
 | `hooks` | `Partial<Record<HookType, fn[]>>` stacked lifecycle hooks; all execute in insertion order. |
 | `isMounted` | `true` once `afterMount` has fired. Set for root + descendants at the end of `attach()` via the handle's `flush()` — but only while any lifecycle hook exists anywhere (`mountHooksExist` in `queue.ts`, flipped by the first `registry.addHook`; hook-free apps skip the walk entirely). For hooks registered post-mount, mounted-ness resolves lazily: `registry.addHook`'s `afterMount` immediate-fire and `registry.addEffect`'s update-hook gate both fall back to `element.isConnected` (suppressed while `isMountInFlight()` — a mount/hydrate attach is running). The scoped `MutationObserver` only catches *later* dynamic additions. |
 | `componentScope` | Dispose fn from `scope()`, attached when a node is created by `component()`. |
@@ -44,7 +44,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 | `tag` | Element tag, or `"$"` for fragment. |
 | `props` | Static attributes applied once at mount via `renderProp`. |
 | `on` | Delegated handlers (`on:` prefix). |
-| `e` | Direct non-delegated handlers (`e:` prefix). |
+| `e` | Direct non-delegated handlers (`e:` prefix); value = handler function or `{ handler, options }` spec. |
 | `hooks` | Lifecycle hooks (`hook:` prefix). |
 | `error` | `error:fallback` / `error:category` / `error:boundary` (`error:` prefix). |
 | `children` | Always flat (`.flat()` runs during template substitution). |
@@ -60,7 +60,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 | Prefix | Bucket | Behavior |
 |---|---|---|
 | `on:` | `node.on` | Delegated: one `document.body.addEventListener(type, …, true)` (capture phase) per type. |
-| `e:` | `node.e` | Direct: per-instance `addEventListener` (bubble phase), error-boundary-wrapped. |
+| `e:` | `node.e` | Direct: per-instance `addEventListener` (bubble phase), error-boundary-wrapped. Value = handler function or `{ handler, options }` spec forwarding native listener options (`once`/`passive`/`capture`). |
 | `hook:` | `node.hooks` | Lifecycle: `beforeMount` / `afterMount` / `beforeDestroy` / `afterDestroy` / `beforeUpdate` / `afterUpdate`. |
 | `error:` | `node.error` | Config: `error:fallback` (fn) / `error:category` (string) / `error:boundary` (boolean). |
 | (none) | `node.props` | Attribute; a function-ref value (signal / `() => …`) is reactive (effect-wrapped), else applied once. |
@@ -123,7 +123,7 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 - **One Set tracks types.** `globalListeners: Set<string>` holds every type with a registered `document.body.addEventListener(type, delegatedHandler, true)` (capture) listener; it is also the fast-exit checked at the top of `delegatedHandler`. **Never decremented** — types stay registered until `resetEventState()`.
 - **`delegatedHandler`** reads `event.composedPath()` and walks it target-first; for each path element with `state.handlers[type]`, invokes `handler.call(element, event)` in try/catch. The walk checks `event.cancelBubble` at each iteration — a handler calling `stopPropagation()`/`stopImmediatePropagation()` halts it (later path handlers do not fire). Errors dispatch with `phase: 'event'` and render fallback on `findBoundary(element) ?? element` via `replaceChildren`. **No automatic `stopPropagation`** — every handler on the path fires unless one stops it.
-- **Direct (`e:`) handlers** are wrapped per-instance with the same error handling, stored in `state.directHandlers` (Map keyed by type), and `removeEventListener`-ed each on cleanup.
+- **Direct (`e:`) handlers** are wrapped per-instance with the same error handling, stored in `state.directHandlers` (Map of `{ handler, options }` per type), and `removeEventListener`-ed with the same options on cleanup (`capture` is the discriminating flag for removal). The `e:` value is the handler function or a `DirectListenerSpec`; options forward verbatim to `addEventListener`. Delegated `on:` stays options-less **by design** — the body-level listener is shared per type, and making it non-passive for touch/wheel would degrade scrolling for every app; browsers treat body-level touch/wheel listeners as passive by default, silently no-oping `preventDefault()` in `on:` handlers — cancelable gestures use `e:` with `passive: false`.
 
 ## Keyed reconciliation — `ForEach` (`lib/ForEach.ts`)
 

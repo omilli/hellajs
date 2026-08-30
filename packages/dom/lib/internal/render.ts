@@ -1,4 +1,4 @@
-import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn } from "../types/nodes";
+import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, objectLoop } from "./core";
 import { renderProp, toText, resolveValue } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
@@ -205,7 +205,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
 
   if (e) {
     objectLoop(e, (eventName, handler) =>
-      setDirectHandler(element, eventName, handler as EventListener)
+      setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec)
     );
   }
 
