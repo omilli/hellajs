@@ -51,6 +51,8 @@ interface ResourceOptions<T, K, TTransformed = T> {
   enabled?: boolean | (() => boolean);
   /** Auto-refetch when key dependencies change (default: false). Skips fetch while key resolves to null or undefined. */
   refetchOnKeyChange?: boolean;
+  /** Keep the previous key's data visible while a key-change refetch is in flight (default: true). When false, a key change clears data — isLoading() true, data() undefined, status() 'loading' — until the new key's fetch settles; initialData is not re-applied. */
+  keepPreviousData?: boolean;
   /** Initial data before first request completes */
   initialData?: T;
   /** Cache TTL in milliseconds (0 = no caching) */
@@ -202,6 +204,8 @@ await bad.fetch(); // resolves undefined — the failure surfaces in bad.error()
 console.log(cached, bad.error()?.category);
 ```
 
+On key-change refetches (`refetchOnKeyChange`), the previous key's data stays visible while the new fetch is in flight. Pass `keepPreviousData: false` for a loading-state transition instead — see [Keep Previous Data](#keep-previous-data).
+
 ### `abort`
 
 Cancels the ongoing request and resets resource to initial state.
@@ -325,6 +329,23 @@ console.log(userResource.status()); // 'loading', then 'success' or 'error'
 ### Stale-While-Revalidate (SWR)
 
 Control data freshness with `staleTime`. When data is stale but cached, `.fetch()` returns it immediately while fetching fresh data in the background. See [Resources](/learn/concepts/resources#stale-while-revalidate-swr) for `staleTime` options and refresh indicator patterns.
+
+### Keep Previous Data
+
+On a key-change refetch (`refetchOnKeyChange`), the previous key's data stays visible by default: `data()` keeps returning the old value, `isLoading()` stays false, and `isFetching()` flips true for the in-flight fetch. Set `keepPreviousData: false` to clear data on key change instead — during the fetch window `data()` is `undefined`, `isLoading()` is `true`, and `status()` is `'loading'`, the transition pagination and search UIs need. `initialData` is not re-applied on a key change: a key change is a refetch with new parameters, not a return to the never-fetched state.
+
+```typescript
+import { signal } from '@hellajs/core';
+import { resource } from '@hellajs/resource';
+
+const userId = signal(1);
+const user = resource(
+  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => userId(), refetchOnKeyChange: true, keepPreviousData: false }
+);
+
+userId(2); // data() undefined + isLoading() true until User 2 lands
+```
 
 ### Automatic Retry
 
