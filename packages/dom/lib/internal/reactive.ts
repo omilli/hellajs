@@ -2,7 +2,7 @@ import type { DomWrapper, HellaPrimitive, HellaProps, HellaElement, ElementHooks
 import type { DOMEventMap } from "../types/attributes";
 import { registry } from "../registry";
 import { isFunction, isPlainObject, objectLoop } from "./core";
-import { renderProp, resolveText } from "./utils";
+import { renderProp, resolveValue, resolveText } from "./utils";
 import { setNodeHandler } from "./events";
 
 const FORM_ELEMENTS = Object.freeze(new Set(["INPUT", "TEXTAREA", "SELECT"]));
@@ -17,7 +17,7 @@ export function createReactive<T extends HellaElement>(element: T): DomWrapper<T
     bind: (value: HellaPrimitive | HellaProps) => {
       if (isPlainObject(value)) {
         objectLoop(value as HellaProps, (key, val) => {
-          const set = () => renderProp(element, key, resolveText(val));
+          const set = () => renderProp(element, key, resolveValue(val));
           isFunction(val) ? registry.addEffect(element, set) : set();
         });
       } else {

@@ -237,6 +237,7 @@ Attribute prefixes are explicit and uniform across JSX and `html\`\``:
   on:click={handler}        // delegated event (capture phase)
   e:click={handler}         // direct listener (bubble phase)
   class={fn}                // function-ref prop → reactive binding
+  style={{ color: theme() }}// style object → kebab-case, no auto-px
   hook:afterMount={fn}      // lifecycle
   error:fallback={<Fail/>}  // error config
 >

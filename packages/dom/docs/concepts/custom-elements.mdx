@@ -55,6 +55,22 @@ Usage in HTML:
 </my-card>
 ```
 
+## Consuming Third-Party Custom Elements
+
+Custom elements you consume (rather than author with [`element`](/reference/dom/element)) get property pass-through: on a hyphenated tag, a prop whose key exists as a property on the element is assigned to that property directly — objects and arrays included, by reference — instead of stringifying through `setAttribute`.
+
+```js
+import { mount, html } from "@hellajs/dom";
+
+const points = { series: [1, 2, 3] };
+
+mount(html`<x-chart data=${points}></x-chart>`, "#app");
+```
+
+The gate is conservative: a prop falls back to a regular attribute when the key is not present on the element (an unregistered tag, or a property the element never defines). `class` is never a property, so class arrays keep joining into a string even on custom elements.
+
+**SSR caveat:** there is no element instance on the server, so the property probe cannot run — object and array props serialize as stringified attributes (`data="[object Object]"`). Pass object props as function refs (`data=${() => points}`): `ssr` emits the stringified initial value, and `hydrate` re-wires the function ref and assigns the real object to the property on the client. Static object props are skipped by `hydrate` entirely, so they never reach the property — use reactive props (or imperative setup in a `hook:afterMount`) for non-serializable custom-element state.
+
 ## Lifecycle
 
 When a custom element is disconnected from the DOM, all effects are disposed and internal state resets. Reconnection triggers a fresh render from scratch.
