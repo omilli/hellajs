@@ -54,6 +54,7 @@ type Snapshot<T> = {
 interface StoreOptions<T> {
   readonly?: boolean | readonly (keyof T)[];
   middleware?: StoreMiddleware<T>;
+  equals?: StoreEquals<T>;
 }
 
 type StoreMiddleware<T> = {
@@ -65,18 +66,28 @@ type StoreMiddleware<T> = {
   ? StoreMiddleware<T[K]>
   : (value: T[K]) => T[K];
 };
+
+type StoreEquals<T> = {
+  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown ? never
+    : T[K] extends unknown[] ? EqualsFor<T[K]>
+    : T[K] extends Record<string, unknown> ? StoreEquals<T[K]>
+    : EqualsFor<T[K]>;
+};
+
+type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 ```
 
 - `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, arrays become signals.
 - `options.readonly`: `true` for all properties readonly, or an array of keys to lock.
 - `options.middleware`: Per-key transform functions applied on every set.
+- `options.equals`: Per-key write-equality comparators. A comparator returning `true` — or the `'structural'` content-equality preset — skips the write entirely: the value, the old reference, and all subscriptions stay untouched.
 - **Returns**: A reactive store with `snapshot`, `update`, and `cleanup` methods.
 
 ### `snapshot`
 
 A reactive snapshot of the entire store state as a plain JavaScript object. The snapshot function is reactive and will re-compute when any store property changes.
 
-> ⚠️ **Performance**: snapshot accesses every signal in the store. When composed stores are nested, the dependency footprint covers the full composed tree — any leaf signal change triggers re-computation. Use individual property access for targeted reactivity in wide or deeply composed stores.
+> ⚠️ **Performance**: snapshot accesses every signal in the store. When composed stores are nested, the dependency footprint covers the full composed tree — any leaf signal change triggers re-computation. Use individual property access for targeted reactivity in wide or deeply composed stores. Writes that compare equal under the [`equals` option](#write-equality) never trigger re-computation.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -198,6 +209,30 @@ Pass a partial object to `update()` for deep merging nested properties — unkno
 ### Mutable Updates
 
 Pass a function to `update()` for ergonomic mutations on a mutable draft of the state. See [State](/learn/concepts/state) for array-operation examples.
+
+### Write Equality
+
+By default every write is reference-compared — `store.items(newArrayWithSameContent)` wakes every subscriber. The `equals` option replaces that per key with a comparator function or the `'structural'` preset, which compares by content using the same comparator as the draft path:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ items: [1, 2], user: { name: 'a' } }, {
+  equals: {
+    items: 'structural',
+    user: { name: (prev, next) => prev === next },
+  },
+});
+
+appStore.items([1, 2]); // same content, new reference — write skipped, no subscriber wakes
+```
+
+- A comparator receives `(previous, next)` and returns `true` to skip the write. `'structural'` compares arrays, `Date`, `Map`, `Set`, `RegExp`, and class instances by content.
+- Nested maps reach nested stores, like `middleware`. Every write path inherits the comparator — direct calls, `update(partial)`, and the draft path.
+- Equality runs after middleware, inside the signal: the comparator sees the transformed value.
+- ⚠️ `'structural'` costs O(n) per write — opt in per key, exactly where large array or object leaves live.
+
+See [write equality](/learn/concepts/state#write-equality) for when to reach for it.
 
 ### Function Preservation
 

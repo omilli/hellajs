@@ -30,6 +30,25 @@ export type StoreMiddleware<T> = {
 };
 
 /**
+ * Per-key write-equality comparators, nested for object values like StoreMiddleware.
+ * A comparator returns true to skip the write entirely; "structural" compares by
+ * content, reusing the draft path's comparator. Function properties are never
+ * settable, so they accept no comparator.
+ */
+export type StoreEquals<T> = {
+  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown ? never
+    : T[K] extends unknown[] ? EqualsFor<T[K]>
+    : T[K] extends Record<string, unknown> ? StoreEquals<T[K]>
+    : EqualsFor<T[K]>;
+};
+
+/**
+ * A single leaf's write-equality control: a custom (previous, next) comparator
+ * returning true to skip the write, or the "structural" content-equality preset.
+ */
+type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
+
+/**
  * Configuration options for creating a store.
  */
 export interface StoreOptions<T> {
@@ -37,6 +56,8 @@ export interface StoreOptions<T> {
   readonly?: boolean | readonly (keyof T)[];
   /** Transform functions applied before setting values, nested for specific properties */
   middleware?: StoreMiddleware<T>;
+  /** Per-key write-equality comparators; equal writes are skipped and wake no subscriber. "structural" compares by content */
+  equals?: StoreEquals<T>;
 }
 
 /**

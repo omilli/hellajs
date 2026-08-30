@@ -78,6 +78,28 @@ todos.count(); // 2
 // The draft function runs synchronously and all changes are applied as individual writes — wrap the call in [`batch`](/reference/core/batch)`()` to fire effects once
 ```
 
+### Structural Array Equality
+
+Silence content-equal array replacements with the `'structural'` write-equality preset — useful when a big array leaf is rewritten wholesale on every save and the content usually hasn't changed.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const board = store({
+  columns: ['todo', 'doing', 'done'],
+}, {
+  equals: { columns: 'structural' },
+});
+
+effect(() => {
+  console.log(board.columns().join(',')); // Logs: todo,doing,done
+});
+
+board.columns(['todo', 'doing', 'done']); // same content — write skipped, effect stays asleep
+board.columns(['todo', 'blocked', 'done']); // changed — effect re-runs
+```
+
 ### Readonly Properties
 
 Lock specific keys to read-only access using the `readonly` option.
