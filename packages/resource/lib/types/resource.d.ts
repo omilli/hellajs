@@ -76,7 +76,7 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   deduplicate?: boolean;
   /** Preserve object/array references for structurally unchanged subtrees on fetch success, preventing redundant reactive cascades (default: false) */
   structuralSharing?: boolean;
-  /** Number of retry attempts on failure, or function to determine if retry should occur (predicate receives the failure count starting at 1 on the first failure) */
+  /** Number of retry attempts on failure (fetches and mutations alike), or function to determine if retry should occur (predicate receives the failure count starting at 1 on the first failure) */
   retry?: number | boolean | ((failureCount: number, error: ResourceError) => boolean);
   /** Delay between retries in ms, or function returning delay based on attempt number */
   retryDelay?: number | ((attempt: number, error: ResourceError) => number);
@@ -136,7 +136,7 @@ export interface Resource<TTransformed, T = TTransformed> {
    * `error()`/`onError`, so fire-and-forget callers gain no unhandled rejections.
    */
   fetch(options?: FetchOptions): Promise<T | undefined>;
-  /** Cancels ongoing request and resets to initial state */
+  /** Cancels ongoing fetches and mutations, and resets to initial state */
   abort(): void;
   /** Clears cache entry and triggers fresh request */
   invalidate(): void;
@@ -147,7 +147,11 @@ export interface Resource<TTransformed, T = TTransformed> {
   setData: (updater: T | ((old: T | undefined) => T)) => void;
   /** Gets the current cache key */
   cacheKey: () => unknown;
-  /** Executes a mutation with given variables (returns raw type) */
+  /**
+   * Executes a mutation with given variables (returns raw type). Concurrent mutations run
+   * independently: each owns its abort controller and `onMutate` context, honors `retry`/`retryDelay`,
+   * and settles individually. `abort()` cancels all in-flight mutations.
+   */
   mutate: <TVariables = unknown>(variables: TVariables) => Promise<T>;
   /** Resets resource state to initial values */
   reset(): void;

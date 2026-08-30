@@ -145,9 +145,11 @@ HellaJS and VueUse are the only two with a built-in request `timeout` option; Ta
 HellaJS mutations live on the resource itself — `resource.mutate(variables)` — rather than in a separate hook. The mutation path bypasses cache and dedup entirely: results are never written to the cache (`lib/resource.ts`).
 
 1. `onMutate(variables)` runs first and may return a context object — the rollback snapshot (`lib/resource.ts`).
-2. The fetcher runs through the same abort race used for reads (`lib/resource.ts`).
+2. The fetcher runs through the same `fetchWithRetry` loop used by reads — same abort race, same `retry`/`retryDelay` support (`lib/internal/retry.ts`).
 3. On success: `handleSuccess` writes data and fires `onSuccess`, then `onSettled(result, undefined, variables, context)` fires (`lib/resource.ts`).
 4. On failure: `onSettled(undefined, err, variables, context)` fires with the context, enabling rollback (`lib/resource.ts`).
+
+Concurrent mutations run independently — each call owns its abort controller and its `onMutate` rollback context and settles individually, matching TanStack's concurrency model (server-side idempotency is the application's concern; guard double-submits with `isFetching()`). Reads and mutations never abort each other; `abort()` cancels the active read and every live mutation (`lib/resource.ts`).
 
 A subtle behavior the test suite pins down: **`onSettled` is not called when a mutation is aborted** — even if `onMutate` already ran and produced a rollback context (`lib/resource.ts`, `tests/mutations.test.ts`). Abort is a cancellation, not a failure; anything staged in `onMutate` is the caller's responsibility to undo.
 
@@ -155,7 +157,7 @@ On success, the optional `invalidates: Array<string | RegExp>` option drives cro
 
 | Library | Mutation API |
 |---|---|
-| HellaJS | `resource.mutate(vars)` with `onMutate`/`onSuccess`/`onError`/`onSettled` + `invalidates` (prefix/regex); same resource shape as reads (`lib/resource.ts`) |
+| HellaJS | `resource.mutate(vars)` with `onMutate`/`onSuccess`/`onError`/`onSettled` + `invalidates` (prefix/regex); same resource shape as reads; concurrent mutations run independently (`lib/resource.ts`) |
 | TanStack Query | `useMutation({ mutationFn, onMutate, onSuccess, onError, onSettled })` + `mutate(variables, callbacks)`; rollback via `setQueryData` in `onError` (per the v5 Mutations guide) |
 | SWR | `useSWRMutation(key, fetcher, options)` → `trigger(variables)` with `optimisticData`, `rollbackOnError`, `populateCache`, `revalidate` (source, v2.5.1) |
 | RTK Query | `build.mutation()` endpoints → generated hooks; `invalidatesTags` auto-refetches active subscriptions (per the automated-refetching docs) |
@@ -192,7 +194,7 @@ The defaults are the philosophical divide: TanStack and SWR revalidate aggressiv
 
 ## 9. Retry & Polling
 
-HellaJS normalizes retry configuration into `{ maxRetries, shouldRetry, getDelay }`: `retry` accepts a number, a boolean (`true` = retry once), or a predicate receiving the failure count (starting at 1 on the first failure) and the categorized `ResourceError`; `retryDelay` accepts a fixed ms or a function of attempt and error (`lib/internal/retry.ts`, `lib/types/resource.d.ts`). The shared `fetchWithRetry` loop is consumed by both `run` and `prefetch` (`lib/internal/retry.ts`, `lib/cache.ts`):
+HellaJS normalizes retry configuration into `{ maxRetries, shouldRetry, getDelay }`: `retry` accepts a number, a boolean (`true` = retry once), or a predicate receiving the failure count (starting at 1 on the first failure) and the categorized `ResourceError`; `retryDelay` accepts a fixed ms or a function of attempt and error (`lib/internal/retry.ts`, `lib/types/resource.d.ts`). The shared `fetchWithRetry` loop is consumed by `run`, `mutate`, and `prefetch` — mutations retry with the same abort-interruptible delays as reads (`lib/internal/retry.ts`, `lib/resource.ts`, `lib/cache.ts`):
 
 ```typescript
 // Exponential backoff with conditional retry
