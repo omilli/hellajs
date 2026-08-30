@@ -172,5 +172,20 @@ describe("snapshot", () => {
     const data = store({});
     expect(data.snapshot()).toEqual({});
   });
+
+  test("excludes the reserved subscribe method from snapshot", () => {
+    const data = store({ count: 0 });
+    expect("subscribe" in data.snapshot()).toBe(false);
+  });
+
+  test("silently skips update on the reserved subscribe key", () => {
+    const data = store({ count: 0 });
+
+    // @ts-expect-error subscribe is reserved — update must skip reserved keys
+    data.update({ subscribe: 1 });
+
+    expect(data.snapshot()).toEqual({ count: 0 });
+    expect(typeof data.subscribe).toBe("function");
+  });
 });
 });

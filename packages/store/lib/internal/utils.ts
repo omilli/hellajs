@@ -5,7 +5,7 @@ import type { Signal } from "./core";
  * @internal
  * Property names reserved by the store implementation
  */
-export const reservedKeys = new Set(["snapshot", "update", "cleanup"]);
+export const reservedKeys = new Set(["snapshot", "update", "cleanup", "subscribe"]);
 
 /**
  * @internal
