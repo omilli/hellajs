@@ -81,7 +81,7 @@ interface ResourceOptions<T, K, TTransformed = T> {
   refetchInterval?: number | false | ((data: TTransformed | undefined) => number | false);
   /** Continue polling when tab is hidden (default: false) */
   refetchIntervalInBackground?: boolean;
-  /** Refetch when window regains focus (default: false) */
+  /** Refetch on tab return or window focus — both visibilitychange and focus events (default: false) */
   refetchOnWindowFocus?: boolean;
   /** Refetch when browser reconnects after going offline (default: false) */
   refetchOnReconnect?: boolean;
@@ -319,7 +319,7 @@ Periodically refresh data for real-time updates. See [Resources](/learn/concepts
 
 ### Window Focus / Reconnect Refetch
 
-Automatically refetch when the user returns to the tab or when the browser reconnects. See [Resources](/learn/concepts/resources#window-focus--reconnect-refetch) for setup details.
+Automatically refetch when the user returns to the tab or window, or when the browser reconnects. See [Resources](/learn/concepts/resources#window-focus--reconnect-refetch) for setup details.
 
 ### Data Transformation
 
