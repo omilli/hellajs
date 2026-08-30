@@ -8,7 +8,7 @@ Creates CSS custom properties (variables) from JavaScript objects with automatic
 function cssVars<T extends CSSVarInputObject>(vars: T, options?: CSSVarsOptions): CSSVars<T>
 ```
 - `vars`: Object containing CSS variable definitions. Can include nested objects and reactive signals.
-- `options`: Optional configuration for scoping and prefixing
+- `options`: Optional configuration for scoping, prefixing, and media conditions
 - **Returns**: On the client (DOM available), an object with `var()` references to the CSS custom properties. On the server (no DOM), the CSS text — the return type stays `CSSVars<T>` for client ergonomics; narrow with `typeof` if reading the value in isomorphic code.
 
 ### Options
@@ -17,11 +17,13 @@ function cssVars<T extends CSSVarInputObject>(vars: T, options?: CSSVarsOptions)
 interface CSSVarsOptions {
   scoped?: string;  // CSS selector to scope variables to
   prefix?: string;  // Prefix for all CSS variable names
+  media?: string;   // Media condition the variables live under
 }
 ```
 
 - **`scoped`**: CSS selector to limit variable scope (e.g., `.theme-container`, `#app`, `[data-theme]`)
 - **`prefix`**: Prefix added to all CSS variable names for namespace organization
+- **`media`**: Media condition wrapping the declarations, e.g. `(prefers-color-scheme: dark)` — interpolated verbatim into `@media (…)`
 
 ### Types
 
@@ -207,7 +209,7 @@ cssVars({
 
 ### Reactive Vars Are Keyed by Reference
 
-A **reactive** vars object (one with any function leaf) is registered by object **reference**, not by value. A second `cssVars()` call passing the *same* reference returns the same result proxy and bumps its reference count. Passing the same reference a second time with *different* `scoped`/`prefix` options throws — use a distinct object per scope so each gets its own reactive effect:
+A **reactive** vars object (one with any function leaf) is registered by object **reference**, not by value. A second `cssVars()` call passing the *same* reference returns the same result proxy and bumps its reference count. Passing the same reference a second time with *different* `scoped`/`prefix`/`media` options throws — use a distinct object per scope so each gets its own reactive effect:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -263,6 +265,34 @@ const themed = cssVars({
 // themed.spacing.small = 'var(--my-theme-spacing-small)'
 // Only available within .theme-container
 ```
+
+### Media-Scoped Variables
+
+The `media` option places the declarations under a `@media` at-rule — variables that follow the environment instead of JavaScript state. The canonical case is system-driven dark mode with [`prefers-color-scheme`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme): declare light values unscoped, dark values under the media condition, and the OS setting picks the winner with zero reactivity:
+
+```jsx
+import { cssVars } from '@hellajs/css';
+
+// Default (light) values
+cssVars({
+  colors: {
+    background: '#ffffff',
+    text: '#111827'
+  }
+});
+
+// Dark values — applied only when the OS prefers dark
+cssVars(
+  { colors: { background: '#1a1a1a', text: '#e5e7eb' } },
+  { media: '(prefers-color-scheme: dark)' }
+);
+
+// Generated:
+// :root{--colors-background:#ffffff;--colors-text:#111827}
+// @media (prefers-color-scheme: dark){:root{--colors-background:#1a1a1a;--colors-text:#e5e7eb}}
+```
+
+`media` composes with `scoped` and `prefix`, and the same scope under different conditions coexists as separate rules — each `(scope, media)` pair is its own bucket. It interpolates verbatim (no validation), matching `scoped`'s permissive contract. For JS-driven theming (a toggle signal instead of the OS), see [Reactive CSS Variables](#reactive-css-variables) — the two modes combine freely.
 
 ### Accepted Value Types
 

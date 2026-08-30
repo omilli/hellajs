@@ -84,6 +84,24 @@ const btn = css({
 }, { name: 'btn' });
 ```
 
+For a theme that follows the OS setting instead of app state, pass `media` to [`cssVars`](/reference/css/cssvars) — the declarations live under `@media (prefers-color-scheme: dark)` with no signals, and the browser picks the winner:
+
+```jsx
+import { cssVars } from '@hellajs/css';
+
+// Light values by default
+cssVars({
+  bg: '#ffffff',
+  text: '#111827'
+});
+
+// Dark values when the OS prefers dark — pure CSS, no JS state
+cssVars(
+  { bg: '#1a1a1a', text: '#e5e7eb' },
+  { media: '(prefers-color-scheme: dark)' }
+);
+```
+
 ### Responsive Styles
 
 Use `@media` queries inside [`css`](/reference/css/css).
