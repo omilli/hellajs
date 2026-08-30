@@ -8,6 +8,8 @@
 * **Creation**: Added concept [060](entries/060.md) (type: decision).
 * **Creation**: Added concept [061](entries/061.md) (type: decision).
 * **Creation**: Added concept [062](entries/062.md) (type: correction).
+* **Creation**: Added concept [063](entries/063.md) (type: decision).
+* **Creation**: Added concept [064](entries/064.md) (type: decision).
 
 ## 2026-08-27
 * **Creation**: Added concept [053](entries/053.md) (type: decision).

@@ -69,7 +69,7 @@ export function isStale<T>(entry: CacheEntry<T>): boolean {
   return Date.now() - entry.timestamp > entry.staleTime;
 }
 
-/** @internal Batch deletes TTL-expired entries; throttled to 60s, 100-entry cap. */
+/** @internal Batch deletes TTL-expired entries and reaps emptied scopes; throttled to 60s, 100-entry cap. */
 export function cleanupExpiredCache() {
   const now = Date.now();
 
@@ -78,13 +78,13 @@ export function cleanupExpiredCache() {
   lastCleanupTime = now;
   let cleanedCount = 0;
 
-  const scopes = Array.from(cacheMap.values());
+  const scopes = Array.from(cacheMap.entries());
   let si = 0;
   const sLen = scopes.length;
   while (si < sLen) {
     if (cleanedCount >= 100) break;
 
-    const inner = scopes[si++]!;
+    const [scope, inner] = scopes[si++]!;
     const keysToDelete: unknown[] = [];
     const entries = Array.from(inner.entries());
     let i = 0;
@@ -99,6 +99,7 @@ export function cleanupExpiredCache() {
     let ki = 0;
     const kLen = keysToDelete.length;
     while (ki < kLen) inner.delete(keysToDelete[ki++]!);
+    if (inner.size === 0) cacheMap.delete(scope);
   }
 }
 
