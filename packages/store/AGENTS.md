@@ -44,13 +44,13 @@ Plus built-ins: `snapshot: () => Snapshot<T>` (composed nested stores unwrap to 
 
 Resolves: `readonlyAll = options.readonly === true`; `readonlyKeys = Array.isArray(options.readonly) ? options.readonly : []`; `middlewares = options.middleware`; `equalsOptions = options.equals`.
 
-**snapshot** — a `computed` assigned to `result.snapshot` (return type `Snapshot<T>`). Iterates cached `Object.keys(result)`, skips reserved keys, and for each key takes the FIRST matching branch: (1) `initial[key]` is a function AND the key is not settable (a preserved user function) → use the **original** `initial` value — the settable-keys registry is the discriminator, since under composition `initial`'s signal properties are functions too; (2) store value is a store (`isStore`) → delegate to `value.snapshot()`, chaining computeds so the parent subscribes to the nested snapshot and through it to the full composed tree; (3) store value is a function → call `value()`; (4) anything else (externally replaced plain values) → mirror as-is. The computed subscribes to every signal it reads (directly or through chained nested snapshot computeds), so any property change re-runs it and re-flattens the whole tree. Reactive across composed store boundaries; composed leaves unwrap to plain values.
+**snapshot** — a `computed` defined non-writable as `result.snapshot` (return type `Snapshot<T>`). Iterates cached `Object.keys(result)`, skips reserved keys, and for each key takes the FIRST matching branch: (1) `initial[key]` is a function AND the key is not settable (a preserved user function) → use the **original** `initial` value — the settable-keys registry is the discriminator, since under composition `initial`'s signal properties are functions too; (2) store value is a store (`isStore`) → delegate to `value.snapshot()`, chaining computeds so the parent subscribes to the nested snapshot and through it to the full composed tree; (3) store value is a function → call `value()`; (4) anything else (externally replaced plain values) → mirror as-is. The computed subscribes to every signal it reads (directly or through chained nested snapshot computeds), so any property change re-runs it and re-flattens the whole tree. Reactive across composed store boundaries; composed leaves unwrap to plain values.
 
 **update(partial)** — two paths:
 - *Draft path* (`isFunction(partial)`): calls `this.snapshot()` (materializes the full snapshot), `deepClone`s it, runs `partial(draft)`, then `extractChanges(snapshot, draft)` produces the resolved partial.
 - *Direct path*: uses `partial` as-is.
 
-Then for each `[key, value]`: if `isPlainObject(value)` AND `current = this[key]` is a truthy object with `Object.hasOwn(current, "update")` → recurse via `current.update(value)`; otherwise `applyUpdate(current, value, middlewares, key)`. The recursion check uses `isPlainObject`, so partial arrays replace (no per-element merge).
+Then for each `[key, value]`: if `isPlainObject(value)` AND `current = this[key]` is a truthy object with `Object.hasOwn(current, "update")` → recurse via `current.update(value)`; if `settableKeys.has(key)` → `applyUpdate(current, value, middlewares, key)`; otherwise **throw**, reason selected in order: reserved key → `[store] update: reserved key "<key>"`; own function key of `initial` → `"<key>" is a function property, not state — assign it directly`; object with own `update` (store key given a non-object value) → `store key "<key>" requires an object value`; else `unknown key "<key>"`. The throw fires at the first offending key in partial-key order — earlier keys are already applied (no atomicity). The recursion check uses `isPlainObject`, so partial arrays replace (no per-element merge).
 
 **cleanup()** — defines and runs `deepCleanup(this)`: walks own keys, skips reserved, and for each object value either calls its own `cleanup` fn (nested stores) or recurses. Individual signals are functions, so they are **never disposed** — they keep working post-cleanup. Idempotent; does not null properties, the store object stays intact.
 
@@ -58,11 +58,11 @@ Then for each `[key, value]`: if `isPlainObject(value)` AND `current = this[key]
 
 **Init pass** — iterates `Object.entries(initial)`:
 - Reserved key (`snapshot`/`update`/`cleanup`/`subscribe`): if `isStore(initial)` (composition) → skip silently; else throw `[store] store: reserved key collision, received "${key}"`.
-- Function value → `defineStoreProperty` as-is.
-- `isPlainObject` value → recurse `createStore(value, { middleware: nested, equals: nested } or undefined)`. Readonly is NOT passed down.
-- Else (primitive/array) → `signal(value)` with an optional per-key write-equality comparator from `options.equals` — `'structural'` maps to `structurallyEqual`, a function passes through, any other value throws `[store] store: equals for "<key>" must be a function or "structural", received …` at create time — optionally middleware-wrapped, then if readonly wrapped again as `computed(() => wrapped())`; assigned via `defineStoreProperty`.
+- Function value → `defineStoreProperty` as-is (writable — the function-swap contract).
+- `isPlainObject` value → recurse `createStore(value, { middleware: nested, equals: nested } or undefined)`, defined `writable: false`. Readonly is NOT passed down.
+- Else (primitive/array) → `signal(value)` with an optional per-key write-equality comparator from `options.equals` — `'structural'` maps to `structurallyEqual`, a function passes through, any other value throws `[store] store: equals for "<key>" must be a function or "structural", received …` at create time — optionally middleware-wrapped; readonly keys get an arity-0 guard `function (...args) { if (args.length > 0) throw new Error('[store] readonly key "<key>"'); return ro(); }` wrapping `computed(() => wrapped())` — reads are unchanged (`key.length === 0`), any write call throws. All leaf props are defined `writable: false`.
 
-`defineStoreProperty` uses `{ writable: true, enumerable: true, configurable: true }` — store properties can be externally reassigned, which drops reactivity.
+The four store methods (snapshot/update/cleanup/subscribe) are defined via the same non-writable descriptor (spying on them in tests requires `Object.defineProperty` — `configurable: true` stays). `defineStoreProperty` uses `{ writable, enumerable: true, configurable: true }` — signal-backed leaves, readonly guards, nested stores, and methods are non-writable (strict-mode reassignment throws TypeError); preserved functions (including adopted composed-store signals) stay writable.
 
 ## Composition (store-of-store)
 
@@ -70,8 +70,8 @@ Passing an existing store as a value inside another store's initial object: the 
 
 ## `update()` gotchas
 
-- **New keys silently ignored**: `applyUpdate` early-returns on falsy `target`; `this[key]` is undefined for keys absent from `initial`.
-- **update() writes only settable keys** — each store tracks its signal-backed keys in a non-enumerable registry (`settableRegistry` symbol, `lib/internal/create.ts`); unknown keys, reserved keys, and preserved user functions are never in it, so `update({ snapshot: ... })` cannot hijack the store and `update({ onSave: fn })` never invokes the function. Composition threads the source store's registry so composed leaves stay writable. Functions swap via direct assignment.
+- **Every out-of-contract write throws** — no silent drops. `applyUpdate` runs only for registry keys; the update loop throws on the first offending key (partial application of earlier keys stands). Four direct-path reasons (reserved / function property / store-key-non-object / unknown) plus `[store] readonly key` from the readonly guard when `update()` targets a readonly key (readonly keys ARE settable — the guard is the throw site). The draft path inherits all of them through `extractChanges`.
+- **update() writes only settable keys** — each store tracks its signal-backed keys in a non-enumerable registry (`settableRegistry` symbol, `lib/internal/create.ts`); unknown keys, reserved keys, and preserved user functions are never in it, so `update({ snapshot: ... })` cannot hijack the store and `update({ onSave: fn })` throws without invoking the function. Composition threads the source store's registry so composed leaves stay writable. Functions swap via direct assignment.
 - **`isPlainObject` gates deep-merge**: partial arrays are replaced, not element-merged.
 - **`extractChanges` compares structurally** (`lib/internal/draft.ts`). Arrays, Dates, Maps, Sets, RegExps, and class instances compare by content — untouched values are never rewritten and their subscribers do not fire; mutated values are recorded as the draft clone.
 - **Draft path materializes the snapshot** — calls `this.snapshot()`, subscribing the active reactive context (if any) to every signal.
@@ -95,10 +95,11 @@ Passing an existing store as a value inside another store's initial object: the 
 ## Other non-obvious behaviors
 
 - **Reserved keys throw at create time** for any non-store-shaped `initial` and any value type (including functions); skipped silently when `isStore(initial)`.
-- **Functions in snapshot**: snapshot stores the **original** `initial` function reference (`lib/internal/create.ts:49-50`), not the store property.
+- **Functions in snapshot**: snapshot stores the **original** `initial` function reference (`lib/internal/create.ts`), not the store property — a swapped-in replacement (`data.onSave = fn`) is not what `snapshot()` returns.
 - **No cycle detection**: self-referential initial objects recurse until stack overflow; initial state must be a tree.
 - **null/undefined** become signals like any primitive.
-- **Readonly is creation-time only**: enforced via `computed(() => wrapped())` — the setter is a silent runtime no-op (computed ignores args), not a runtime check.
+- **Readonly is creation-time config, runtime-enforced by a throwing guard**: the arity-0 wrapper around `computed(() => wrapped())` returns the value on read and throws `[store] readonly key "<key>"` on any write call (setter call or `update()`). Not inherited by nested levels.
+- **Data properties and methods are non-writable**: external reassignment (`store.count = 5`, `store.cleanup = fn`) throws TypeError in strict-mode ESM. Function-valued props are the exemption — including a composed store's adopted signal functions (`parent.user.name = fn` stays possible); the function-writability rule is the documented contract. `configurable: true` stays, so `Object.defineProperty` redefinition (test spies) works.
 - **No proxies, no diffing on the hot path** — direct property access; only the draft path diffs.
 
 ## Testing
@@ -108,7 +109,7 @@ Tests live in `tests/` (11 files: `data`, `functions`, `update`, `snapshot`, `ne
 - Cover each `update` path (partial, draft, middleware) independently.
 - Snapshot reactivity tested flat and deeply nested.
 - Cleanup: nested disposed, signals stay alive, idempotent.
-- Readonly: setter is a runtime no-op; not inherited by nested.
+- Readonly: setter calls and `update()` throw; not inherited by nested.
 - Track effect runs with `mock()` from `bun:test`.
 
 Run with `bun coverage store`.

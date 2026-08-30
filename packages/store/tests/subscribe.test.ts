@@ -97,9 +97,9 @@ describe("subscribe", () => {
     const seen = mock<(next: number, prev: number) => void>(() => {});
 
     data.subscribe("count", seen);
-    data.update({ count: 99 });
-    // @ts-expect-error readonly keys are typed without a setter; the runtime call is a no-op
-    data.count(99);
+    expect(() => data.update({ count: 99 })).toThrow('[store] readonly key "count"');
+    // @ts-expect-error readonly keys are typed without a setter; the runtime call throws
+    expect(() => data.count(99)).toThrow('[store] readonly key "count"');
 
     expect(seen).not.toHaveBeenCalled();
     expect(data.count()).toBe(0);
