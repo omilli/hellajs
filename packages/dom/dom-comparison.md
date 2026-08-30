@@ -112,7 +112,7 @@ HellaJS uses global event delegation by default through the `on:` prefix:
 
 - One `document.body.addEventListener(type, handler, true)` listener per event type, in the capture phase; a `globalListeners` Set short-circuits types with no handlers (`lib/internal/events.ts`).
 - Dispatch walks `event.composedPath()` and looks up `peekState(element)?.handlers[type]` on each path element — one WeakMap peek per ancestor, no DOM walking (`lib/internal/events.ts`).
-- The `e:` prefix attaches direct, bubble-phase listeners per element for cases delegation handles poorly (focus/blur semantics, opt-out of shared dispatch), wrapped in the same error-boundary handling (`lib/internal/events.ts`).
+- The `e:` prefix attaches direct, bubble-phase listeners per element for cases delegation handles poorly (focus/blur semantics, opt-out of shared dispatch) or for native listener options (`once`/`passive`/`capture` via a `{ handler, options }` spec — `DirectListenerSpec` in `lib/types/nodes.d.ts`), wrapped in the same error-boundary handling (`lib/internal/events.ts`).
 
 | Framework | Strategy |
 |---|---|
@@ -123,7 +123,7 @@ HellaJS uses global event delegation by default through the `on:` prefix:
 | Vue | `v-on` → native per-element listeners |
 | Angular | Per-element listeners via `(click)` |
 
-HellaJS delegates every `on:` type uniformly rather than a curated set (verified against Solid's `DelegatedEvents` set in its 1.9.15 bundle). The trade-off vs Svelte/Solid: the whole delegated walk runs from a single capture-phase `document.body` listener per type, ahead of any native listener below `body` (a handler's `stopPropagation()` halts the walk, but ordering with directly-attached third-party listeners still differs from per-element attachment), and registered event types stay live for the page lifetime rather than being torn down with the last handler (`lib/internal/events.ts`).
+HellaJS delegates every `on:` type uniformly rather than a curated set (verified against Solid's `DelegatedEvents` set in its 1.9.15 bundle). The trade-off vs Svelte/Solid: the whole delegated walk runs from a single capture-phase `document.body` listener per type, ahead of any native listener below `body` (a handler's `stopPropagation()` halts the walk, but ordering with directly-attached third-party listeners still differs from per-element attachment), and registered event types stay live for the page lifetime rather than being torn down with the last handler (`lib/internal/events.ts`). The `e:` escape hatch closes the gesture side of this trade: its `{ handler, options }` spec forwards native listener options verbatim, including `passive: false` — required for cancelable gestures because browsers treat the body-level delegated listener as passive by default for touch and wheel, silently no-oping `preventDefault()` in `on:` handlers (`lib/internal/events.ts`).
 
 ---
 

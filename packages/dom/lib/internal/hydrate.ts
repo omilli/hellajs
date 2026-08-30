@@ -1,4 +1,4 @@
-import type { HellaNode, HellaChild, HellaElement, RenderFn, ElementMountFn } from "../types/nodes";
+import type { HellaNode, HellaChild, HellaElement, RenderFn, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, objectLoop } from "./core";
 import { renderProp, resolveValue, isHellaNode } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
@@ -305,7 +305,7 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
 
   if (e) {
     objectLoop(e, (eventName, handler) =>
-      setDirectHandler(element, eventName, handler as EventListener)
+      setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec)
     );
   }
 

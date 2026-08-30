@@ -77,3 +77,21 @@ HellaJS never stops propagation automatically — by default every `on:` handler
   </div>
 </div>
 ```
+
+## Important Considerations
+
+### Touch and Wheel Are Passive by Default
+
+Delegated listeners live on `document.body`, and browsers treat body-level `touchstart`, `touchmove`, and `wheel` listeners as passive by default. Calling `event.preventDefault()` inside a delegated `on:` handler for these events silently does nothing — the scroll cannot be canceled.
+
+For cancelable gestures, attach a direct listener with the spec form and opt out explicitly:
+
+```jsx
+<div
+  e:touchmove={{ handler: (event) => event.preventDefault(), options: { passive: false } }}
+>
+  Drag to reorder
+</div>
+```
+
+See [`e:`](/reference/dom/e) for the full direct-listener contract.

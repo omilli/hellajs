@@ -20,6 +20,8 @@ mount(App, "#app");
 
 See [`on:`](/reference/dom/on) for full details.
 
+**Passive by default:** browsers treat body-level `touchstart`/`touchmove`/`wheel` listeners as passive by default, so `event.preventDefault()` inside delegated handlers for these events silently fails. Use [`e:`](/reference/dom/e) with `{ passive: false }` for cancelable gestures.
+
 ### `e:` - Direct Events
 
 Non-delegated event handlers attached directly to elements in the bubble phase. Use when a handler must be a real listener on the element — non-bubbling events (`focus`, `blur`) or third-party libraries that expect direct listeners.
@@ -38,6 +40,8 @@ mount(App, "#app");
 ```
 
 See [`e:`](/reference/dom/e) for full details.
+
+The value may also be a `{ handler, options }` spec forwarding native listener options (`once`/`passive`/`capture`) to `addEventListener`.
 
 ## Reactive Attributes
 

@@ -1,4 +1,4 @@
-import type { ErrorConfig, HellaNode, HookType, HookFn } from "../types/nodes";
+import type { ErrorConfig, HellaNode, HookType, HookFn, DirectListenerSpec } from "../types/nodes";
 
 /**
  * @internal
@@ -12,7 +12,7 @@ import type { ErrorConfig, HellaNode, HookType, HookFn } from "../types/nodes";
 export interface ElementState {
   effects?: (() => void)[];
   handlers?: Record<string, EventListener>;
-  directHandlers?: Map<string, EventListener>;
+  directHandlers?: Map<string, DirectListenerSpec>;
   hooks?: Partial<Record<HookType, Array<HookFn>>>;
   isMounted: boolean;
   componentScope?: () => void;

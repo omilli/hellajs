@@ -58,3 +58,25 @@ With `e:` handlers, `stopPropagation()` works through the browser's native liste
 
 // Only "child - stops here" is logged
 ```
+
+### Listener Options
+
+The `e:` value is either the handler function or a spec object pairing the handler with native listener options — `once`, `passive`, and `capture` are forwarded to `addEventListener` verbatim. The spec matches the exported `DirectListenerSpec` type.
+
+```ts
+import { html } from "@hellajs/dom";
+
+const onceHandler = () => console.log("fired");
+
+html`<button e:click={{ handler: onceHandler, options: { once: true } }}>Fire once</button>`;
+```
+
+```jsx
+const trackMove = (event: MouseEvent) => console.log(event.clientX);
+
+<div e:mousemove={{ handler: trackMove, options: { passive: true } }}>
+  Move the pointer
+</div>
+```
+
+Use the spec form when a gesture must be cancelable: `passive: false` opts out of the browser's passive-by-default touch and wheel treatment — see [`on:`](/reference/dom/on) for why delegated handlers cannot do this.
