@@ -23,7 +23,7 @@ export function removeCssVars<T extends CSSVarInputObject>(vars: T, options: CSS
     if (reactiveEntry.refCount > 0) return;
 
     if (reactiveEntry.cleanup) reactiveEntry.cleanup();
-    removeFromScope(reactiveEntry.scope, reactiveEntry.flatKeys, reactiveEntry.fullPrefix);
+    removeFromScope(reactiveEntry.flatKeys, reactiveEntry);
     varsRegistryReactive.delete(vars);
     varsResultReactive.delete(vars);
     return;
@@ -37,6 +37,6 @@ export function removeCssVars<T extends CSSVarInputObject>(vars: T, options: CSS
   if (staticEntry.refCount > 0) return;
 
   cache.delete(inputHash);
-  removeFromScope(staticEntry.scope, staticEntry.flatKeys, staticEntry.fullPrefix);
+  removeFromScope(staticEntry.flatKeys, staticEntry);
   varsRegistryStatic.delete(inputHash);
 }

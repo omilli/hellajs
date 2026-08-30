@@ -60,4 +60,6 @@ export interface CSSVarsOptions {
   scoped?: string;
   /** A prefix to add to all CSS variable names. */
   prefix?: string;
+  /** A media condition to place the variables under, e.g. `(prefers-color-scheme: dark)`. Interpolated verbatim. */
+  media?: string;
 }
