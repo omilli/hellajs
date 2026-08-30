@@ -27,6 +27,11 @@ describe("platform-dependent return (no document)", () => {
     expect(result).toBe("body{margin:0}");
   });
 
+  test("css() appends px to numeric length values on the server", () => {
+    const result = css({ width: 5, margin: 0 }, { name: "x" });
+    expect(result).toBe(".x{width:5px;margin:0px}");
+  });
+
   test("css() returns text for complex nested styles", () => {
     const result = css({
       color: "red",

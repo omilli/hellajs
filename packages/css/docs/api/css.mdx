@@ -229,6 +229,8 @@ The same input throws in [`removeCss`](/reference/css/removecss) — the check r
 
 ### Special Value Handling
 
+Numbers append `px` on length properties (React/Emotion semantics); unitless properties (`zIndex`, `opacity`, `lineHeight`, `flexGrow`, …) and `--` custom properties keep bare numbers. Array values join with commas, `content` auto-quotes unquoted strings, and `null`/`undefined` values are skipped:
+
 ```jsx
 css({
   fontFamily: ['Helvetica', 'Arial', 'sans-serif'],
@@ -249,11 +251,23 @@ css({
   margin: undefined
 }, { name: 'test' });
 
+// Numeric lengths append px
+
+css({
+  width: 5,
+  margin: 0
+}, { name: 'box' });
+// .box{width:5px;margin:0px}
+
+// Unitless properties and -- custom properties keep bare numbers
+
 css({
   zIndex: 10,
   opacity: 0.5,
-  lineHeight: 1.5
+  lineHeight: 1.5,
+  '--gap': 4
 }, { name: 'layer' });
+// .layer{z-index:10;opacity:0.5;line-height:1.5;--gap:4}
 ```
 
 ### Definitional at-rules stay global
