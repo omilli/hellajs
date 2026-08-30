@@ -8,7 +8,7 @@ Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain objec
 | `lib/index.ts` | Barrel — exports `store`, re-exports types |
 | `lib/store.ts` | Public `store()` overloads; all delegate to `createStore` |
 | `lib/internal/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, `subscribe`, recursive init |
-| `lib/internal/draft.ts` | `deepClone` + `structurallyEqual` + `extractChanges` — used only by the draft-mutator path |
+| `lib/internal/draft.ts` | `deepClone` + `structurallyEqual` + `extractChanges` — used by the draft-mutator path and the `equals` `'structural'` leaf branch |
 | `lib/internal/utils.ts` | `reservedKeys` Set, `isStore`, `isObjectOrFunction`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
 | `lib/types.d.ts` | `Store<T,R>`, `SettableKeyOf<T>` (non-exported, subscribe-only), `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys` |
 | `lib/internal/core.ts` | Re-exports `signal`/`computed`/`effect`/`untracked`/`isFunction`/`isPlainObject`/`isObject` + `Signal` type from core |
@@ -59,14 +59,14 @@ Then for each `[key, value]`: if `isPlainObject(value)` AND `current = this[key]
 **Init pass** — iterates `Object.entries(initial)`:
 - Reserved key (`snapshot`/`update`/`cleanup`/`subscribe`): if `isStore(initial)` (composition) → skip silently; else throw `[store] store: reserved key collision, received "${key}"`.
 - Function value → `defineStoreProperty` as-is (writable — the function-swap contract).
-- `isPlainObject` value → recurse `createStore(value, nestedOptions)`, defined `writable: false` — `nestedOptions` carries the nested middleware, the nested equals, and, when `readonlyAll` or the key is listed, `readonly: true` (deep propagation). A composed store reached on this path ignores the threading: its `isStore(initial)` adoption preserves signals verbatim, so it keeps its own readonly/writable config.
+- `isPlainObject` value → recurse `createStore(value, nestedOptions)`, defined `writable: false` — `nestedOptions` carries the nested middleware, the nested equals (a nested map — any other value throws `[store] store: equals for "<key>" must be a nested equals map, received …` at create time), and, when `readonlyAll` or the key is listed, `readonly: true` (deep propagation). A composed store reached on this path ignores the threading: its `isStore(initial)` adoption preserves signals verbatim, so it keeps its own readonly/writable config.
 - Else (primitive/array) → `signal(value)` with an optional per-key write-equality comparator from `options.equals` — `'structural'` maps to `structurallyEqual`, a function passes through, any other value throws `[store] store: equals for "<key>" must be a function or "structural", received …` at create time — optionally middleware-wrapped; readonly keys get an arity-0 guard `function (...args) { if (args.length > 0) throw new Error('[store] readonly key "<key>"'); return ro(); }` wrapping `computed(() => wrapped())` — reads are unchanged (`key.length === 0`), any write call throws. All leaf props are defined `writable: false`.
 
 The four store methods (snapshot/update/cleanup/subscribe) are defined via the same non-writable descriptor (spying on them in tests requires `Object.defineProperty` — `configurable: true` stays). `defineStoreProperty` uses `{ writable, enumerable: true, configurable: true }` — signal-backed leaves, readonly guards, nested stores, and methods are non-writable (strict-mode reassignment throws TypeError); preserved functions (including adopted composed-store signals) stay writable.
 
 ## Composition (store-of-store)
 
-Passing an existing store as a value inside another store's initial object: the nested store is `isPlainObject` (its object-literal base has `Object.prototype`), so the init pass recurses into `createStore(nestedStore)`. There `isStore(initial)` is true → the nested store's own `snapshot`/`update`/`cleanup` (reserved keys) are skipped rather than throwing, and its data properties (all signals = functions) are preserved as-is. The composed store gets fresh top-level methods but **shares every data signal reference** with the original — writes propagate bidirectionally. This is the mechanism behind `appStore.user.name("Bob")` also updating `userStore.name()`. Subscription follows the same ownership: `appStore.subscribe("user", …)` throws (`user` is a nested-store key, absent from the parent's registry), and while the adopted reference `appStore.user` carries the threaded registry at runtime, its composed type (`Store<Store<…>>`, all members function-typed) yields `SettableKeyOf = never` — subscribe on the owning store instance (`userStore.subscribe`), which types cleanly.
+Passing an existing store as a value inside another store's initial object: the nested store is `isPlainObject` (its object-literal base has `Object.prototype`), so the init pass recurses into `createStore(nestedStore)`. There `isStore(initial)` is true → the nested store's own reserved keys (`snapshot`/`update`/`cleanup`/`subscribe`) are skipped rather than throwing, and its data properties (all signals = functions) are preserved as-is. The composed store gets fresh top-level methods but **shares every data signal reference** with the original — writes propagate bidirectionally. This is the mechanism behind `appStore.user.name("Bob")` also updating `userStore.name()`. Subscription follows the same ownership: `appStore.subscribe("user", …)` throws (`user` is a nested-store key, absent from the parent's registry), and while the adopted reference `appStore.user` carries the threaded registry at runtime, its composed type (`Store<Store<…>>`, all members function-typed) yields `SettableKeyOf = never` — subscribe on the owning store instance (`userStore.subscribe`), which types cleanly.
 
 ## `update()` gotchas
 
@@ -104,7 +104,7 @@ Passing an existing store as a value inside another store's initial object: the 
 
 ## Testing
 
-Tests live in `tests/` (11 files: `data`, `functions`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `subscribe`) and import `store` from `@hellajs/store/bundle`. Reactive primitives (`signal`/`effect`/`computed`/`batch`/`flush`) import from `@hellajs/core`. Test helpers import from `@utils/test-helpers.js`. See `guides/tests.md` for the full rules.
+Tests live in `tests/` (12 files: `data`, `equals`, `functions`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `subscribe`) and import `store` from `@hellajs/store/bundle`. Reactive primitives (`signal`/`effect`/`computed`/`batch`/`flush`) import from `@hellajs/core`. Test helpers import from `@utils/test-helpers.js`. See `guides/tests.md` for the full rules.
 
 - Cover each `update` path (partial, draft, middleware) independently.
 - Snapshot reactivity tested flat and deeply nested.

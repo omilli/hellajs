@@ -71,6 +71,11 @@ export function createStore<T extends Record<string, unknown>>(
 
   defineStoreProperty(result, "snapshot", snapshotComputed, { writable: false });
 
+  /**
+   * Resolves a partial or draft-mutator into a per-key partial, then walks it:
+   * plain-object values recurse into nested stores, registry keys write through
+   * applyUpdate (middleware-aware), everything else throws.
+   */
   defineStoreProperty(
     result,
     "update",
@@ -199,6 +204,9 @@ export function createStore<T extends Record<string, unknown>>(
     if (isPlainObject(value)) {
       const nestedMiddleware = middlewares?.[key as keyof T];
       const nestedEquals = equalsOptions?.[key as keyof T] as StoreEquals<typeof value> | undefined;
+      if (nestedEquals !== undefined && !isPlainObject(nestedEquals)) {
+        throw new Error(`[store] store: equals for "${key}" must be a nested equals map, received ${typeof nestedEquals}`);
+      }
       const nestedReadonly = readonlyAll || readonlyKeys.includes(key as PropertyKey);
       const nestedOptions: StoreOptions<typeof value> | undefined =
         nestedReadonly || nestedMiddleware || nestedEquals
@@ -234,7 +242,7 @@ export function createStore<T extends Record<string, unknown>>(
       defineStoreProperty(
         result,
         key,
-        function (...args: unknown[]) {
+        (...args: unknown[]) => {
           if (args.length > 0) {
             throw new Error(`[store] readonly key "${key}"`);
           }
