@@ -21,42 +21,59 @@ describe("store", () => {
       expect(user.settings.notifications()).toBe(true);
     });
 
-    test("silently ignores keys absent from initial object", () => {
+    test("throws on keys absent from initial object", () => {
       const data = store({ a: 1, b: 2 });
 
-      // @ts-expect-error c is absent from initial — update must ignore unknown keys
-      data.update({ a: 10, c: 99 });
+      expect(() => {
+        // @ts-expect-error c is absent from initial — update() rejects unknown keys
+        data.update({ c: 99, a: 10 });
+      }).toThrow('[store] update: unknown key "c"');
 
-      expect(data.a()).toBe(10);
+      expect(data.a()).toBe(1);
       expect(data.b()).toBe(2);
       expect("c" in data).toBe(false);
     });
 
-    test("skips function-valued properties without invoking them", () => {
+    test("throws on function-valued properties without invoking them", () => {
       const onSave = mock(() => "old");
       const data = store({ onSave, count: 0 });
 
-      // @ts-expect-error onSave is function-typed; update() ignores it by contract
-      data.update({ onSave: () => "new", count: 5 });
+      expect(() => {
+        // @ts-expect-error onSave is function-typed; update() rejects function properties
+        data.update({ onSave: () => "new", count: 5 });
+      }).toThrow('[store] update: "onSave" is a function property, not state');
 
       expect(onSave).not.toHaveBeenCalled();
+      expect(data.count()).toBe(0);
       expect(data.onSave()).toBe("old");
-      expect(data.count()).toBe(5);
     });
 
-    test("ignores function reassignment in draft updates", () => {
+    test("throws on function reassignment in draft updates", () => {
       const onSave = mock(() => "old");
       const data = store({ onSave, count: 0 });
 
-      data.update(draft => {
-        // @ts-expect-error initial infers onSave as Mock<() => string>; the draft path accepts any function value
-        draft.onSave = () => "new";
-        draft.count = 1;
-      });
+      expect(() => {
+        data.update(draft => {
+          // @ts-expect-error initial infers onSave as Mock<() => string>; the draft path accepts any function value
+          draft.onSave = () => "new";
+          draft.count = 1;
+        });
+      }).toThrow('"onSave" is a function property, not state');
 
       expect(onSave).not.toHaveBeenCalled();
+      expect(data.count()).toBe(0);
       expect(data.onSave()).toBe("old");
-      expect(data.count()).toBe(1);
+    });
+
+    test("throws on non-object values for store keys", () => {
+      const data = store({ user: { name: "Alice" } });
+
+      expect(() => {
+        // @ts-expect-error user is a nested store — update() requires an object value for store keys
+        data.update({ user: "x" });
+      }).toThrow('[store] update: store key "user" requires an object value');
+
+      expect(data.user.name()).toBe("Alice");
     });
 
     test("empty array update", () => {

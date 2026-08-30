@@ -119,10 +119,16 @@ describe("store", () => {
 
       const nestedCleaned = mock(() => {});
       const origCleanup = outer.inner.nested.cleanup;
-      outer.inner.nested.cleanup = function () {
-        nestedCleaned();
-        origCleanup.call(this);
-      };
+      // Store methods are non-writable — redefine via defineProperty to spy (configurable stays true)
+      Object.defineProperty(outer.inner.nested, "cleanup", {
+        value: function () {
+          nestedCleaned();
+          origCleanup.call(this);
+        },
+        writable: false,
+        enumerable: true,
+        configurable: true
+      });
 
       outer.cleanup();
 

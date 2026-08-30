@@ -70,11 +70,20 @@ export function wrapWithMiddleware(sig: Signal<unknown>, middleware: (val: unkno
 /**
  * @internal
  * Defines a property on the store object with full descriptors.
+ * @param result Store object receiving the property.
+ * @param key Property name.
+ * @param value Property value (signal, readonly guard, nested store, preserved function, or reserved method).
+ * @param options.writable Whether external assignment may replace the property — false for signal-backed leaves, readonly guards, nested stores, and reserved methods; functions stay swappable.
  */
-export function defineStoreProperty(result: Record<string, unknown>, key: string, value: unknown) {
+export function defineStoreProperty(
+  result: Record<string, unknown>,
+  key: string,
+  value: unknown,
+  options?: { writable?: boolean }
+) {
   return Object.defineProperty(result, key, {
     value,
-    writable: true,
+    writable: options?.writable ?? true,
     enumerable: true,
     configurable: true,
   });

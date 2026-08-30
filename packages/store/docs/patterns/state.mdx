@@ -30,7 +30,7 @@ form.name('John');  // stored as 'John'
 
 ### Partial Deep Updates
 
-Update nested properties without replacing the entire object using `update()` with a partial. The update only applies changes for properties that exist in the initial object - unknown keys are silently ignored.
+Update nested properties without replacing the entire object using `update()` with a partial. The update only applies changes for properties that exist in the initial object — unknown keys throw.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -48,7 +48,8 @@ app.update({
 app.user.name(); // 'Bob'
 app.user.role(); // 'viewer' (unchanged - not included in update)
 app.theme();     // 'dark'
-// Note: Trying to add new properties like app.update({ newProp: 'value' }) would be ignored
+// Note: Trying to add new properties like app.update({ newProp: 'value' }) throws
+// [store] update: unknown key "newProp" — the store's shape is fixed at creation
 ```
 
 ### Mutable Draft Updates
@@ -94,7 +95,7 @@ const config = store({
 });
 
 config.theme('dark');       // Updates normally
-// ❌ config.apiUrl('localhost'); — no effect: readonly
+// ❌ config.apiUrl('localhost'); — throws: [store] readonly key "apiUrl"
 config.apiUrl();            // 'https://api.example.com'
 ```
 

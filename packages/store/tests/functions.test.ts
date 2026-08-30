@@ -75,5 +75,15 @@ describe("store", () => {
       data.count(5);
       expect(snap.logCount()).toBe("Count is 5");
     });
+
+    test("function properties swap via direct assignment", () => {
+      const onSave = mock((): string => "new");
+      const data: Store<{ count: number; onSave: () => string }> = store({ count: 0, onSave: () => "old" });
+
+      data.onSave = onSave;
+
+      expect(data.onSave()).toBe("new");
+      expect(onSave).toHaveBeenCalledTimes(1);
+    });
   });
 });

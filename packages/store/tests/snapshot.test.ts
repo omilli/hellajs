@@ -156,11 +156,25 @@ describe("snapshot", () => {
     expect(snap.helper.double()).toBe(4);
   });
 
-  test("snapshot includes externally replaced leaf properties as plain values", () => {
+  test("external reassignment of signal properties throws TypeError", () => {
+    const data = store({ value: "a" });
+
+    expect(() => {
+      // @ts-expect-error signal-backed properties are non-writable — reassignment would drop reactivity
+      data.value = 42;
+    }).toThrow(TypeError);
+
+    expect(data.snapshot()).toEqual({ value: "a" });
+    data.value("b");
+    expect(data.snapshot()).toEqual({ value: "b" });
+  });
+
+  test("snapshot includes externally replaced composed leaves as plain values", () => {
     const innerStore = store({ value: "a" });
     const containerStore = store({ inner: innerStore });
 
-    // @ts-expect-error external reassignment replaces the signal (properties are writable) — drops reactivity
+    // Composed leaves are adopted signal functions — function-valued properties stay swappable
+    // @ts-expect-error external reassignment replaces the adopted signal (function props are writable)
     containerStore.inner.value = 42;
 
     const snap = containerStore.snapshot();

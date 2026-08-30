@@ -126,7 +126,14 @@ console.log(appStore.step());        // 2
 console.log(appStore.user.name());   // Bob
 ```
 
-> ⚠️ `update()` writes only signal-backed properties — unknown keys, function-valued properties, and reserved keys are silently ignored. Swap functions by assigning directly: `appStore.onSave = newHandler`.
+> ⚠️ `update()` writes only signal-backed properties and throws on everything else — nothing is silently dropped:
+> - **Unknown key**: `update({ newProp: 1 })` throws `[store] update: unknown key "newProp"` — the store's shape is fixed at creation.
+> - **Function property**: `update({ onSave: fn })` throws `[store] update: "onSave" is a function property, not state — assign it directly`. Swap functions by assigning directly: `appStore.onSave = newHandler`.
+> - **Reserved key**: `update({ snapshot: 1 })` throws `[store] update: reserved key "snapshot"`.
+> - **Store key with a non-object value**: `update({ user: 'x' })` where `user` is a nested store throws `[store] update: store key "user" requires an object value`.
+> - **Readonly key**: writing a readonly property throws `[store] readonly key "<key>"` — the same error its setter call throws.
+>
+> The draft path applies the same rules. `update()` throws at the first offending key, in partial-key order — keys processed before it are already applied.
 
 ### `cleanup`
 
@@ -193,7 +200,7 @@ userStore.name(); // 'Jane' — same signal reference
 
 ### Partial Updates
 
-Pass a partial object to `update()` for deep merging nested properties — unknown keys are ignored. See [State](/learn/concepts/state) for the pattern.
+Pass a partial object to `update()` for deep merging nested properties — keys outside the initial object throw. See [State](/learn/concepts/state) for the pattern.
 
 ### Mutable Updates
 
@@ -294,7 +301,7 @@ data.update(draft => {
 
 ### Reserved Keys
 
-The keys `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
+The keys `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Passing them as properties in the initial object throws an error, and passing them to `update()` throws `[store] update: reserved key "<key>"`.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -320,6 +327,10 @@ Readonly configuration applies to the current store level only. See [readonly](/
 ### Signals Survive Cleanup
 
 `cleanup()` recursively invokes `cleanup` on nested stores but does not dispose individual signals or null the store object. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
+
+### Store Properties Are Non-Writable
+
+Signal-backed properties, nested stores, and the built-in methods are defined non-writable — external reassignment (`appStore.count = 5`) throws a `TypeError` in strict-mode ESM instead of silently dropping reactivity. Write through the signal (`appStore.count(5)`), or `update()`. Function-valued properties are the exemption: they stay writable so handlers can be swapped (`appStore.onSave = newHandler`), including the adopted signal functions of composed-store leaves.
 
 ### Effects vs Middleware
 
