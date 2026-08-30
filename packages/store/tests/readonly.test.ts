@@ -25,19 +25,19 @@ describe("store", () => {
       expect(readonlyPartial.rating()).toBe(5.0);
     });
 
-    test("readonly properties not updated via update()", () => {
+    test("readonly properties throw via update()", () => {
       const data = store({ locked: "original", writable: "a" }, { readonly: ["locked"] });
 
-      data.update({ locked: "new", writable: "b" });
+      expect(() => data.update({ locked: "new", writable: "b" })).toThrow('[store] readonly key "locked"');
 
       expect(data.locked()).toBe("original");
-      expect(data.writable()).toBe("b");
+      expect(data.writable()).toBe("a");
     });
 
-    test("readonly: true setter is a no-op at runtime", () => {
+    test("readonly: true setter throws at runtime", () => {
       const data = store({ count: 0, name: "init" }, { readonly: true });
 
-      ;(data.count as unknown as (v: number) => void)(999);
+      expect(() => (data.count as unknown as (v: number) => void)(999)).toThrow('[store] readonly key "count"');
 
       expect(data.count()).toBe(0);
       expect(data.name()).toBe("init");
@@ -77,12 +77,12 @@ describe("store", () => {
       expect(data.items.length).toBe(0);
     });
 
-    test("readonly array setter is a no-op at runtime", () => {
+    test("readonly array setter throws at runtime", () => {
       const data = store({
         items: [1, 2, 3]
       }, { readonly: true });
 
-      ;(data.items as unknown as (v: number[]) => void)([4, 5, 6]);
+      expect(() => (data.items as unknown as (v: number[]) => void)([4, 5, 6])).toThrow('[store] readonly key "items"');
 
       expect(data.items()).toEqual([1, 2, 3]);
     });
@@ -93,7 +93,7 @@ describe("store", () => {
         name: "mutable"
       }, { readonly: ["items"] });
 
-      ;(data.items as unknown as (v: number[]) => void)([9]);
+      expect(() => (data.items as unknown as (v: number[]) => void)([9])).toThrow('[store] readonly key "items"');
 
       expect(data.items()).toEqual([1, 2]);
       data.name("changed");

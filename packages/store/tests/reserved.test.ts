@@ -27,18 +27,18 @@ describe("store", () => {
       expect(() => store({ cleanup: () => "dispose" })).toThrow("reserved key collision, received \"cleanup\"");
     });
 
-    test("update method skips keys not present in initial object", () => {
+    test("update method throws on the reserved snapshot key", () => {
       const data = store({ a: 1 });
-      // @ts-expect-error snapshot is reserved — update must skip reserved keys
-      data.update({ snapshot: "hijack" });
+      // @ts-expect-error snapshot is reserved — update() rejects reserved keys
+      expect(() => data.update({ snapshot: "hijack" })).toThrow('[store] update: reserved key "snapshot"');
       expect(data.snapshot()).toEqual({ a: 1 });
     });
 
-    test("skips the reserved update key without throwing", () => {
+    test("update method throws on the reserved update key", () => {
       const data = store({ count: 0 });
 
-      // @ts-expect-error update is reserved — update must skip reserved keys
-      data.update({ update: { count: 99 } });
+      // @ts-expect-error update is reserved — update() rejects reserved keys
+      expect(() => data.update({ update: { count: 99 } })).toThrow('[store] update: reserved key "update"');
 
       expect(data.count()).toBe(0);
       expect(data.snapshot()).toEqual({ count: 0 });

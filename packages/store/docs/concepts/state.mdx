@@ -178,7 +178,7 @@ const configStore = store(
 );
 
 configStore.theme('dark');           // Updates normally
-// ❌ configStore.apiUrl('new-url'); — readonly: silently ignored at runtime
+// ❌ configStore.apiUrl('new-url'); — throws: readonly key
 ```
 
 Readonly keys do not propagate to nested stores. Each nested store requires its own readonly configuration. Pre-configured readonly stores retain their readonly state when composed:
@@ -189,48 +189,63 @@ import { store } from '@hellajs/store';
 const user = store({ name: 'Alice' }, { readonly: true });
 const app = store({ user });
 
-// ❌ app.user.name('Bob'); — no effect: user retains its readonly state
+// ❌ app.user.name('Bob'); — throws: user retains its readonly state
 app.user.name();      // 'Alice'
 ```
 
 ## Important Store Behaviors
 
-### Update Limitations
+### Update Errors
 
-The `update()` method only applies changes for properties that exist in the initial object. Any attempt to add new properties through update() will be silently ignored.
-
-Function-valued properties are also ignored — functions are methods and helpers, not state. Assign a new function directly instead:
+The `update()` method only applies changes for properties that exist in the initial object and are backed by signals. Writes outside that contract throw an `Error` naming the offending key — nothing is silently dropped:
 
 ```typescript
 import { store } from '@hellajs/store';
 
 const app = store({
   count: 0,
+  user: { name: 'Alice' },
   onSave: () => {}
 });
 
-// This does nothing - 'onSave' holds a function, not a signal
-app.update({ onSave: () => {} });
+app.update({ count: 5 });              // ✅ works — count is in the initial object
+app.update({ user: { name: 'Bob' } }); // ✅ works — nested stores accept object partials
 
-// Assign directly to swap the function
-app.onSave = () => {};
+// ❌ app.update({ newProp: 'value' }); // throws: [store] update: unknown key "newProp"
+// ❌ app.update({ onSave: () => {} }); // throws: [store] update: "onSave" is a function property, not state — assign it directly
+// ❌ app.update({ snapshot: 1 });      // throws: [store] update: reserved key "snapshot"
+// ❌ app.update({ user: 'x' });        // throws: [store] update: store key "user" requires an object value
 ```
+
+Readonly keys throw on every write path — `update()`, the direct setter call, and the draft path:
 
 ```typescript
 import { store } from '@hellajs/store';
 
-const app = store({
-  count: 0,
-  name: 'initial'
-});
+const locked = store({ apiKey: 'a', count: 0 }, { readonly: ['apiKey'] as const });
 
-// This works - updating existing properties
-app.update({ count: 5, name: 'updated' });
-
-// This does nothing - 'newProp' doesn't exist in initial object
-// ❌ app.update({ newProp: 'value' }); — newProp is ignored
-// app.newProp is undefined — accessing it returns undefined; calling it throws
+// ❌ locked.update({ apiKey: 'b' }); // throws: [store] readonly key "apiKey"
+// ❌ locked.apiKey('b');             // throws: [store] readonly key "apiKey"
 ```
+
+The draft path applies the same rules: assigning a function property or an unknown key inside `update(draft => ...)` throws when the changes are extracted and applied.
+
+`update()` throws at the first offending key, in partial-key order — keys processed before the offending one are already applied. Validate input before calling `update()` if you need all-or-nothing semantics.
+
+### Non-Writable Properties
+
+Signal-backed properties, nested stores, and the built-in methods (`snapshot`, `update`, `cleanup`) are defined non-writable. External reassignment would replace the signal with a plain value and silently drop reactivity, so in strict-mode ESM it throws instead:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const app = store({ count: 0 });
+
+// ❌ app.count = 5; — TypeError: signal-backed properties are non-writable
+app.count(5); // ✅ write through the signal
+```
+
+Function-valued properties are the exemption — they stay writable so handlers can be swapped (`app.onSave = newHandler`). This includes the adopted signal functions of a composed store's leaves, whose replacement remains possible for the same reason.
 
 ### Function Preservation
 
@@ -303,6 +318,8 @@ When a store is created, the system transforms each property based on its type a
 - **Objects** become nested stores with recursive property transformation
 - **Arrays** become signals containing the array value
 - **Functions** remain unchanged, preserving their original behavior
+
+Signal-backed properties, nested stores, and the built-in methods are defined with `writable: false` — external reassignment throws a `TypeError` instead of silently dropping reactivity. Function-valued properties keep `writable: true` so handlers stay swappable.
 
 ### Update Propagation
 
