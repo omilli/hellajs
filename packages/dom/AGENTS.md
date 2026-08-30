@@ -14,7 +14,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
 | `getState`, `hasState`, `peekState`, `deleteState` | ElementState access (test/introspection) | `lib/internal/state.ts` |
 | `HellaNode`, `HellaChild`, `ElementHooks`, `HookType`, `HookFn`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `SuspenseProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
-| `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes` | Type-only | `lib/types/attributes.d.ts` |
+| `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes`, `StyleObject` | Type-only | `lib/types/attributes.d.ts` |
 
 **Throw contracts.** `mount` → `[dom] mount: target "<target>" not found in document`. `ForEach` → `[dom] ForEach: each is required` / `[dom] ForEach: use must be a function`. `element` → `[dom] element: tagName must be a hyphenated string / render must be a function`. `Lazy` → `[dom] Lazy: loader must be a function`. `Portal` → `[dom] Portal: target "<to>" not found in document` (at first effect run, not at construction).
 
@@ -202,7 +202,7 @@ Returns a function with `isDynamic: true` and `fn.ssr = { kind: "suspense", prop
 
 ## `$ref` / `$collection` (`lib/$ref.ts`, `lib/$collection.ts`, `lib/internal/reactive.ts`, `lib/internal/selectors.ts`)
 
-Imperative escape hatch over existing DOM. `createReactive(element)` builds the shared `DomWrapper` (`bind`/`on`/`hooks` returning the wrapper for chaining, plus a `node` getter). `bind` detects `INPUT`/`TEXTAREA`/`SELECT` (frozen `FORM_ELEMENTS`) and targets `.value` instead of `.textContent` for primitives; an object arg sets arbitrary attributes. `hooks` **fires `afterMount` immediately** if the element is already `isMounted` (handled centrally by `registry.addHook`).
+Imperative escape hatch over existing DOM. `createReactive(element)` builds the shared `DomWrapper` (`bind`/`on`/`hooks` returning the wrapper for chaining, plus a `node` getter). `bind` detects `INPUT`/`TEXTAREA`/`SELECT` (frozen `FORM_ELEMENTS`) and targets `.value` instead of `.textContent` for primitives; an object arg resolves each entry (`resolveValue`, **not** `resolveText` — stringifying pre-`renderProp` broke booleans, arrays, style objects, and CE properties) and routes it through `renderProp`, inheriting the full branch order (§renderProp) — booleans bare/removed, arrays space-joined, `StyleObject` kebab serialization, CE raw property assignment. `hooks` **fires `afterMount` immediately** if the element is already `isMounted` (handled centrally by `registry.addHook`).
 
 - **`$ref(selector)`** — `document.querySelector` synchronously; wraps immediately if found. Otherwise lazily starts watching on the first `bind`/`on`/`hooks` call: registers an op in the global `multiSelectors` Map, ensures `refObserver`. The watcher's `processNode` takes the first match, drains queued ops, then runs `processMountQueue` so `afterMount` hooks fire. Returns a callable `DomRef` — `ref()` / `ref.node` returns the node; methods chain. Also exposes a `.node` getter.
 - **`$collection(selector)`** — wraps every current match and registers with `registerMultiOp` so new matches auto-apply queued ops. Returns a `DomCollection`: callable `collection(index = 0)`, dynamic `length`, `forEach`, `bind`/`on`/`hooks` (all current + future), `dispose()`. Indexed `[i]` access is populated **only for the initial set** — use the callable form for dynamically-added elements.
@@ -214,7 +214,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 
 ## `renderProp` (`lib/internal/utils.ts`)
 
-`value`/`checked`/`selected`/`innerHTML` → set the IDL property directly (falsy → `''`, never `removeAttribute`). Other keys: `isFalsy` (`false`/`null`/`undefined`) → `removeAttribute`; `true` → empty string; arrays → space-joined filtering falsy (class lists); else `setAttribute`. **`isFalsy(0)` is false** — signal `0` renders `"0"`.
+Branch order: `value`/`checked`/`selected`/`innerHTML` → set the IDL property directly (falsy → `''`, never `removeAttribute`); `isFalsy` (`false`/`null`/`undefined`) → `removeAttribute`; `key === "style"` + plain object (`isPlainObject` from `./core`) → kebab-case serialization — camelCase→kebab keys, falsy declarations dropped, **no auto-px** on numbers, `"; "` join, one `setAttribute("style", …)`; custom elements (`tagName` contains `-` **and** `key in element`) → raw property assignment, objects/arrays by reference — the `in` chain check is deliberate (CE props live on prototypes as often as instances; standard tags are never hyphenated, `class` is never `in` an element, so class arrays still join); `true` → empty string; arrays → space-joined filtering falsy (class lists); else `setAttribute`. **`isFalsy(0)` is false** — signal `0` renders `"0"`.
 
 ## Non-obvious behaviors (gotchas)
 

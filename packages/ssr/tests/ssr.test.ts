@@ -101,6 +101,14 @@ describe("ssr", () => {
     expect(ssr(html`<div class=${false} id=${undefined} />` as HellaNode)).toBe("<div></div>");
   });
 
+  test("serializes a style object to kebab-case declarations (byte-parity with dom renderProp)", () => {
+    // The literal below is the exact string the dom style-props suite asserts on the
+    // mounted element's style attribute — client and server must agree byte-for-byte.
+    expect(ssr(html`<div style=${{ color: "red", fontSize: "12px" }}>x</div>` as HellaNode)).toBe(
+      '<div style="color:red; font-size:12px">x</div>',
+    );
+  });
+
   test("emits an empty marker region when Lazy has no loading fallback", () => {
     const loader = mock(async () => html`<div />` as HellaNode);
     const node = html`<div><${Lazy} loader=${loader} /></div>` as HellaNode;
