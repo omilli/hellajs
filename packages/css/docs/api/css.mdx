@@ -280,3 +280,14 @@ css({
 }, { name: 'btn' });
 // @keyframes spin{from{transform:rotate(0deg)}} - no .btn wrapping
 ```
+
+### Platform-Rejected Rules Are Skipped With a Warning
+
+Injection goes through the CSSOM (`insertRule`), so a rule the platform cannot parse is skipped from the stylesheet rather than injected via a text fallback. When that happens, [`css`](/reference/css/css) logs a `console.warn` naming the dropped rule — the rule's absence from the stylesheet is deliberate, not a silent failure:
+
+```typescript
+// In an environment whose CSSOM rejects @layer (e.g. some test DOMs),
+// the rule is skipped and a warning is logged:
+// [css] rule rejected by the platform and skipped: @layer base{body{margin:0px}}
+css({ '@layer base': { body: { margin: 0 } } });
+```
