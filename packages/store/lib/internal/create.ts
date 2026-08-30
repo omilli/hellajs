@@ -1,6 +1,6 @@
-import { signal, computed, isFunction, isPlainObject, isObject } from "./core";
-import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware, StoreEquals } from "../types";
-import { deepClone, extractChanges, structurallyEqual } from "./draft";
+import { signal, computed, effect, untracked, isFunction, isPlainObject, isObject } from "./core";
+import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware } from "../types";
+import { deepClone, extractChanges } from "./draft";
 import {
   reservedKeys,
   isObjectOrFunction,
@@ -30,7 +30,7 @@ const settableRegistry = Symbol("hellajs.store.settableKeys");
  * @template T
  * @param initial Initial object to transform
  * @param options Configuration for readonly properties and middleware
- * @returns Reactive store with snapshot, update, and cleanup methods
+ * @returns Reactive store with snapshot, update, cleanup, and subscribe methods
  */
 export function createStore<T extends Record<string, unknown>>(
   initial: T,
@@ -123,6 +123,32 @@ export function createStore<T extends Record<string, unknown>>(
       }
     };
     deepCleanup(this);
+  };
+
+  /**
+   * Subscribes to changes of a single signal-backed property. Thin wrapper over a core
+   * effect: the initial run captures the current value and is suppressed from the
+   * callback; later runs fire the callback with (next, prev) inside untracked so reads
+   * in the callback never widen the subscription. Returns the effect's disposer.
+   */
+  result.subscribe = <K extends keyof T>(key: K, callback: (next: T[K], prev: T[K]) => void): (() => void) => {
+    const keyName = key as string;
+    if (!settableKeys.has(keyName)) {
+      throw new Error(`[store] subscribe: "${keyName}" is not a settable key`);
+    }
+    const target = result[key] as () => unknown;
+    let prev: unknown;
+    let started = false;
+    return effect(() => {
+      const next = target();
+      if (!started) {
+        prev = next;
+        started = true;
+        return;
+      }
+      untracked(() => { callback(next as T[K], prev as T[K]); });
+      prev = next;
+    });
   };
 
   const initialIsStore = isStore(initial);

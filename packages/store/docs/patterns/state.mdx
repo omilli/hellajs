@@ -148,6 +148,28 @@ userStore.name(); // 'Bob': same signal reference
 appStore.ui.theme(); // 'dark'
 ```
 
+### Subscribe to Property Changes
+
+Observe a single property with `subscribe()` for logging, analytics, or any side effect that needs the previous value. The callback receives `(next, prev)`, does not fire on subscribe, and the returned function stops notifications.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const cart = store({
+  items: [{ id: 1, price: 10 }],
+  discount: 0.1,
+});
+
+const trackDiscount = cart.subscribe('discount', (next, prev) => {
+  console.log(`discount: ${prev} → ${next}`);
+  // analytics: report(prev, next) — reads here stay untracked
+});
+
+cart.discount(0.2); // Logs: discount: 0.1 → 0.2
+trackDiscount();
+cart.discount(0.3); // silent — unsubscribed
+```
+
 ### Store Snapshot
 
 Get a plain object snapshot of the entire store. Snapshots are reactive: use them in [`computed`](/reference/core/computed) for derived state.
