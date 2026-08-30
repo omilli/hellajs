@@ -41,7 +41,16 @@ type Store<T, R extends PropertyKey = never> = {
   snapshot: () => Snapshot<T>;
   update: (partial: PartialDeep<T> | ((draft: T) => void)) => void;
   cleanup: () => void;
+  subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void;
 }
+
+// Keys of T that become signal-backed (settable) store properties.
+// Function-valued keys and plain-object keys (nested stores) are excluded.
+type SettableKeyOf<T> = {
+  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? never
+  : T[K] extends Record<string, unknown> ? never
+  : K;
+}[keyof T];
 
 // Recursively unwraps composed store types so Snapshot matches the plain
 // values snapshot() actually returns
@@ -80,8 +89,7 @@ type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 - `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, arrays become signals.
 - `options.readonly`: `true` for all properties readonly, or an array of keys to lock.
 - `options.middleware`: Per-key transform functions applied on every set.
-- `options.equals`: Per-key write-equality comparators. A comparator returning `true` — or the `'structural'` content-equality preset — skips the write entirely: the value, the old reference, and all subscriptions stay untouched.
-- **Returns**: A reactive store with `snapshot`, `update`, and `cleanup` methods.
+- **Returns**: A reactive store with `snapshot`, `update`, `cleanup`, and `subscribe` methods.
 
 ### `snapshot`
 
@@ -151,6 +159,42 @@ appStore.cleanup();
 
 appStore.count(10);
 console.log(appStore.count()); // 10
+```
+
+### `subscribe`
+
+Observes changes to a single signal-backed property. The callback receives `(next, prev)`; the initial subscribe does not fire it — only subsequent changes do. Returns an unsubscribe function.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0 });
+
+const unsub = appStore.subscribe('count', (next, prev) => {
+  console.log(prev, '→', next);
+});
+
+appStore.count(5); // Logs: 0 → 5
+unsub();
+appStore.count(6); // silent — unsubscribed
+```
+
+- `key`: Name of a settable (signal-backed) property. Nested-store keys, function properties, reserved keys, and unknown keys throw.
+- `callback`: Receives the next and previous values. Runs untracked — reading signals inside it never widens the subscription. Skipped when a write compares equal to the current value.
+- **Returns**: An unsubscribe function; calling it more than once is safe.
+
+Unlike an [`effect`](/reference/core/effect) reading [`snapshot()`](#snapshot), `subscribe` tracks one property only — no whole-store dependency — and hands you the previous value, which effects never see. Writes inside [`batch`](/reference/core/batch)`()` fire the callback once per subscribed key when the batch ends.
+
+Subscriptions belong to the store that owns the key: a composed parent exposes only its own signal-backed keys, so `appStore.subscribe('user', cb)` throws — subscribe on the nested store itself:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const userStore = store({ name: 'Alice' });
+const appStore = store({ user: userStore });
+
+userStore.subscribe('name', (next) => console.log(next));
+appStore.user.name('Bob'); // Logs: Bob — shared signals fire the subscription
 ```
 
 ## Basic Usage
@@ -329,7 +373,7 @@ data.update(draft => {
 
 ### Reserved Keys
 
-The keys `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
+The keys `snapshot`, `update`, `cleanup`, and `subscribe` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
 
 ```typescript
 import { store } from '@hellajs/store';

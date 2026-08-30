@@ -34,6 +34,7 @@ Beyond basic get/set, stores offer several capabilities, each documented in deta
 
 - **Readonly**: Restrict specific properties or the entire store to read-only access, enforced at the type level.
 - **Snapshots**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
+- **Subscriptions**: Observe a single property with `subscribe(key, cb)` — the callback receives `(next, prev)` and the call returns an unsubscribe function.
 - **Updates**: Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
 - **Middleware**: Validate and transform values before they're stored. Runs synchronously on every set operation.
 - **Write equality**: Skip writes whose content matches the stored value — per-key comparators or the `'structural'` content-equality preset.
@@ -220,6 +221,30 @@ const app = store({ user });
 app.user.name();      // 'Alice'
 ```
 
+## Subscriptions
+
+`subscribe` observes one signal-backed property without reading the rest of the store. The callback receives the next and previous values; the initial subscribe does not fire it.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+const unsub = appStore.subscribe('count', (next, prev) => {
+  console.log(prev, '→', next);
+});
+
+appStore.count(5); // Logs: 0 → 5
+unsub();
+appStore.count(6); // silent — unsubscribed
+```
+
+The callback runs untracked: reading other signals inside it never widens the subscription. Writes that compare equal to the current value skip the callback entirely, and multiple writes inside [`batch`](/reference/core/batch)`()` fire it once, with the final value, when the batch ends.
+
+Only signal-backed properties are subscribable — nested stores, preserved functions, reserved keys, and unknown keys throw. A composed parent exposes only its own signal-backed keys: subscribe on the store that owns the key (the nested store itself), and writes through either reference fire it because composed stores share signals.
+
+Use `subscribe` where an [`effect`](/reference/core/effect) falls short: effects see no previous value, fire on setup, and reading `snapshot()` inside one subscribes to the entire tree. `subscribe` is per-property, silent on setup, and carries `(next, prev)` — the shape logging, analytics, and undo stacks want.
+
 ## Important Store Behaviors
 
 ### Update Limitations
@@ -290,11 +315,14 @@ snap.logCount(); // Count is 1
 
 ### Reserved Keys
 
-The property names `snapshot`, `update`, and `cleanup` are reserved by the store implementation. Using them as property names in the initial object will throw an error.
+The property names `snapshot`, `update`, `cleanup`, and `subscribe` are reserved by the store implementation. Using them as property names in the initial object will throw an error.
 
 ```typescript
 // Throws: Error '[store] store: reserved key collision, received "snapshot"'
 store({ snapshot: 1, name: 'test' });
+
+// Throws: Error '[store] store: reserved key collision, received "subscribe"'
+store({ subscribe: () => {}, value: 42 });
 
 // Throws: Error '[store] store: reserved key collision, received "update"'
 store({ update: () => {}, value: 42 });
