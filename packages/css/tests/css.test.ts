@@ -112,12 +112,24 @@ describe("css", () => {
     expect(sheetText).toBe("");
   });
 
-  test("number values in CSS properties", () => {
-    css({ zIndex: 10, opacity: 0.5, lineHeight: 1.5 }, { name: "test" });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("z-index:10");
-    expect(content).toContain("opacity:0.5");
-    expect(content).toContain("line-height:1.5");
+  test("number values append px for length properties", () => {
+    css({ width: 5, margin: 0 }, { name: "x" });
+    expect(getStylesheet("hella-css")).toBe(".x{width:5px;margin:0px}");
+  });
+
+  test("number values stay bare for unitless properties", () => {
+    css({ zIndex: 10, opacity: 0.5, lineHeight: 1.5, fontWeight: 600, flexGrow: 1 }, { name: "test" });
+    expect(getStylesheet("hella-css")).toBe(".test{z-index:10;opacity:0.5;line-height:1.5;font-weight:600;flex-grow:1}");
+  });
+
+  test("number values stay bare for custom properties", () => {
+    css({ "--gap": 4 }, { name: "test" });
+    expect(getStylesheet("hella-css")).toBe(".test{--gap:4}");
+  });
+
+  test("array number values join without per-element px", () => {
+    css({ strokeDasharray: [1, 2] }, { name: "test" });
+    expect(getStylesheet("hella-css")).toBe(".test{stroke-dasharray:1,2}");
   });
 
   test("multiple & in selector are all replaced", () => {

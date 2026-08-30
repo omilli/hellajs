@@ -8,6 +8,21 @@ const AMP_REGEX = /&/g;
 const CAMEL_REGEX = /[A-Z]/g;
 
 /**
+ * CamelCase property names whose numeric values stay unitless. Every other property
+ * appends `px` to numeric values (px-by-default with a unitless allowlist — the inverse,
+ * a length-property list, is unbounded and drifts with CSS). `--` custom properties never
+ * take a unit; they bypass this set via the custom-property key check in process().
+ */
+const UNITLESS_PROPERTIES = new Set([
+  "animationIterationCount", "aspectRatio", "borderImageOutset", "borderImageSlice", "borderImageWidth",
+  "columnCount", "columns", "flex", "flexGrow", "flexPositive", "flexShrink", "flexNegative", "flexOrder",
+  "gridArea", "gridRow", "gridRowEnd", "gridRowSpan", "gridRowStart", "gridColumn", "gridColumnEnd",
+  "gridColumnSpan", "gridColumnStart", "fontWeight", "lineClamp", "lineHeight", "opacity", "order",
+  "orphans", "scale", "tabSize", "widows", "zIndex", "zoom", "fillOpacity", "floodOpacity", "stopOpacity",
+  "strokeDasharray", "strokeDashoffset", "strokeMiterlimit", "strokeOpacity", "strokeWidth"
+]);
+
+/**
  * At-rule prefixes that wrap style declarations (as opposed to defining top-level constructs).
  * When a class scope is active (css() called with `name`), content inside these at-rules
  * inherits the parent selector instead of being processed with an empty selector. Unchanged
@@ -87,7 +102,8 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * in nested selectors is replaced with the parent selector. CamelCase property keys
  * convert to kebab-case.
  * The `content` property auto-quotes unquoted strings. Array values join with
- * commas. Null and undefined values are skipped. Function values throw —
+ * commas. Numeric values append `px` except on unitless properties and `--` custom
+ * properties. Null and undefined values are skipped. Function values throw —
  * reactive values belong to `cssVars()`.
  *
  * Exported so removeCss can re-derive the same text from (obj, options) —
@@ -158,8 +174,16 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
       if (typeof value === "function") {
         throw new Error(`[css] function values are not supported in css objects — use cssVars() for reactive values, key: ${key}`);
       }
-      const property = key.startsWith("--") ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
-      let cssValue = Array.isArray(value) ? value.join(", ") : String(value);
+      const isCustom = key.startsWith("--");
+      const property = isCustom ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
+      let cssValue: string;
+      if (Array.isArray(value)) {
+        cssValue = value.join(", ");
+      } else if (typeof value === "number" && !isCustom && !UNITLESS_PROPERTIES.has(key)) {
+        cssValue = `${value}px`;
+      } else {
+        cssValue = String(value);
+      }
 
       if (property === "content" && typeof value === "string" && !value.startsWith("\"") && !value.startsWith("'")) {
         cssValue = `"${value}"`;
