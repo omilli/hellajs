@@ -75,6 +75,7 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 | nested obj, plain key, non-empty `selector` | descendant: `${selector} ${key}` (scoped `.{name}` or any nested global key) |
 | nested obj, plain key, empty `selector` (top-level global) | key unwrapped |
 | array value | joined with `", "` |
+| number value | appends `px` unless the key is unitless (`UNITLESS_PROPERTIES` in `css.ts`) or `--`-prefixed |
 | camelCase key | kebab-case (`fontSize` → `font-size`) |
 | `--`-prefixed key | preserved verbatim |
 | `content` string value | auto-wrapped in `"…"` unless already `"…"` / `'…'` |
