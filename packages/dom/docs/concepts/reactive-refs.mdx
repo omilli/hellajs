@@ -32,6 +32,17 @@ $ref(".node")
 
 When binding a primitive value to form elements (INPUT, TEXTAREA, SELECT), `.value` is used instead of `.textContent`.
 
+Attribute bindings follow the same value rules as template props: `true` renders a bare attribute, `false` removes it, arrays join with spaces, and `style` objects serialize to kebab-case declarations.
+
+```js
+import { signal } from "@hellajs/core";
+import { $ref } from "@hellajs/dom";
+
+const theme = signal("light");
+
+$ref(".hero").bind({ style: () => ({ color: theme() === "dark" ? "#fff" : "#000" }) });
+```
+
 ## `$collection` - Multiple Elements
 
 Select multiple elements and apply operations to all of them:

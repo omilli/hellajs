@@ -14,7 +14,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
 | `getState`, `hasState`, `peekState`, `deleteState` | ElementState access (test/introspection) | `lib/internal/state.ts` |
 | `HellaNode`, `HellaChild`, `ElementHooks`, `HookType`, `HookFn`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `SuspenseProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
-| `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes` | Type-only | `lib/types/attributes.d.ts` |
+| `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes`, `StyleObject` | Type-only | `lib/types/attributes.d.ts` |
 
 **Throw contracts.** `mount` → `[dom] mount: target "<target>" not found in document`. `ForEach` → `[dom] ForEach: each is required` / `[dom] ForEach: use must be a function`. `element` → `[dom] element: tagName must be a hyphenated string / render must be a function`. `Lazy` → `[dom] Lazy: loader must be a function`. `Portal` → `[dom] Portal: target "<to>" not found in document` (at first effect run, not at construction).
 
@@ -111,7 +111,7 @@ Attaches reactivity to existing server-rendered HTML in place — re-executes th
 Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 - **Sync `cleanupSubtree(root)`** — called directly by `appendToParent` (reactive child swap), ForEach (stale-removal + list clear), Transition (leave completion). `traverseDescendants` (iterative stack) → per descendant `clean(node)`: `beforeDestroy` → `componentScope?.()` → `portalCleanup?.()` → `lazyCleanup?.()` → `transitionCleanup?.()` → `suspenseCleanup?.()` → drain `effects` → `removeDirectHandlers` → `afterDestroy` → `deleteState`.
-- **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which collects removed nodes with state → `cleanupQueue` — a stateful node is queued WITHOUT recursing into it (`processCleanupQueue`'s `cleanupSubtree` already traverses its descendants; only stateless intermediates are walked through); added element nodes → `mountQueue` (scheduled only when `mountHooksExist`); both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
+- **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`; accepts an `Element` or a shadow root) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element | ShadowRoot>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which collects removed nodes with state → `cleanupQueue` — a stateful node is queued WITHOUT recursing into it (`processCleanupQueue`'s `cleanupSubtree` already traverses its descendants; only stateless intermediates are walked through); added element nodes → `mountQueue` (scheduled only when `mountHooksExist`); both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
 - **`runHooks` element-argument rule.** `beforeMount` and `afterDestroy` are called with **no** argument; every other hook receives the element.
 - **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, the `staticDom` cache, between tests.
 
@@ -192,17 +192,17 @@ Returns a function with `isDynamic: true` and `fn.ssr = { kind: "suspense", prop
 
 ## `element()` custom elements (`lib/element.ts`)
 
-`customElements.define` wrapper. **Light DOM only** (shadow DOM would break reactivity internals). Per instance:
+`customElements.define` wrapper. **Light DOM by default** — opt-in shadow DOM via the third `options` param (`ElementOptions.shadow`: `true` → `attachShadow({ mode: "open" })`, a `ShadowRootInit` object verbatim, incl. `mode: "closed"`). The root is cached on `_shadowRoot`: `attachShadow` throws on a host that already carries a root (reconnects), and `this.shadowRoot` reads `null` for closed roots. Under `shadow`, `mount` renders into the root — the observer safety net and delegated events work inside it (`registerContainer` accepts `ShadowRoot`); captured `props.children`/`props.slots` nodes are projected into the shadow render output, so native `<slot>` projection is unavailable. Per instance:
 
 - **connectedCallback** — guards on `_isInitialized`, defers `_mount` via `Promise.resolve().then()` so children are parsed before capture.
 - **Child capture** — iterates `childNodes`; nodes with a `slot` attribute → `slots[slotName]`; others (text nodes only if `textContent.trim()`) → `children`. Captured once, projected as **raw DOM nodes — not reactive** to later slot changes.
 - **Props Proxy** — `props.children` → children array, `props.slots` → slots record, any other key → `() => { version(); return self.getAttribute(name); }`. Attributes reactive via an internal `_version` signal; `setAttribute`/`removeAttribute` are overridden to bump it and `flush()` for synchronous propagation. Missing attributes return `null`.
-- **Render scope** — `_mount` wraps `mount(render(props), this)` in `scope()`, storing dispose on `_dispose`.
+- **Render scope** — `_mount` computes the render root (`options.shadow ? cached shadow root : this`), then wraps `mount(render(props), root)` in `scope()`, storing dispose on `_dispose`.
 - **disconnectedCallback** — calls `_dispose()`, resets `_isInitialized` → reconnect re-runs render from scratch.
 
 ## `$ref` / `$collection` (`lib/$ref.ts`, `lib/$collection.ts`, `lib/internal/reactive.ts`, `lib/internal/selectors.ts`)
 
-Imperative escape hatch over existing DOM. `createReactive(element)` builds the shared `DomWrapper` (`bind`/`on`/`hooks` returning the wrapper for chaining, plus a `node` getter). `bind` detects `INPUT`/`TEXTAREA`/`SELECT` (frozen `FORM_ELEMENTS`) and targets `.value` instead of `.textContent` for primitives; an object arg sets arbitrary attributes. `hooks` **fires `afterMount` immediately** if the element is already `isMounted` (handled centrally by `registry.addHook`).
+Imperative escape hatch over existing DOM. `createReactive(element)` builds the shared `DomWrapper` (`bind`/`on`/`hooks` returning the wrapper for chaining, plus a `node` getter). `bind` detects `INPUT`/`TEXTAREA`/`SELECT` (frozen `FORM_ELEMENTS`) and targets `.value` instead of `.textContent` for primitives; an object arg resolves each entry (`resolveValue`, **not** `resolveText` — stringifying pre-`renderProp` broke booleans, arrays, style objects, and CE properties) and routes it through `renderProp`, inheriting the full branch order (§renderProp) — booleans bare/removed, arrays space-joined, `StyleObject` kebab serialization, CE raw property assignment. `hooks` **fires `afterMount` immediately** if the element is already `isMounted` (handled centrally by `registry.addHook`).
 
 - **`$ref(selector)`** — `document.querySelector` synchronously; wraps immediately if found. Otherwise lazily starts watching on the first `bind`/`on`/`hooks` call: registers an op in the global `multiSelectors` Map, ensures `refObserver`. The watcher's `processNode` takes the first match, drains queued ops, then runs `processMountQueue` so `afterMount` hooks fire. Returns a callable `DomRef` — `ref()` / `ref.node` returns the node; methods chain. Also exposes a `.node` getter.
 - **`$collection(selector)`** — wraps every current match and registers with `registerMultiOp` so new matches auto-apply queued ops. Returns a `DomCollection`: callable `collection(index = 0)`, dynamic `length`, `forEach`, `bind`/`on`/`hooks` (all current + future), `dispose()`. Indexed `[i]` access is populated **only for the initial set** — use the callable form for dynamically-added elements.
@@ -214,7 +214,7 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 
 ## `renderProp` (`lib/internal/utils.ts`)
 
-`value`/`checked`/`selected`/`innerHTML` → set the IDL property directly (falsy → `''`, never `removeAttribute`). Other keys: `isFalsy` (`false`/`null`/`undefined`) → `removeAttribute`; `true` → empty string; arrays → space-joined filtering falsy (class lists); else `setAttribute`. **`isFalsy(0)` is false** — signal `0` renders `"0"`.
+Branch order: `value`/`checked`/`selected`/`innerHTML` → set the IDL property directly (falsy → `''`, never `removeAttribute`); `isFalsy` (`false`/`null`/`undefined`) → `removeAttribute`; `key === "style"` + plain object (`isPlainObject` from `./core`) → kebab-case serialization — camelCase→kebab keys, falsy declarations dropped, **no auto-px** on numbers, `"; "` join, one `setAttribute("style", …)`; custom elements (`tagName` contains `-` **and** `key in element`) → raw property assignment, objects/arrays by reference — the `in` chain check is deliberate (CE props live on prototypes as often as instances; standard tags are never hyphenated, `class` is never `in` an element, so class arrays still join); `true` → empty string; arrays → space-joined filtering falsy (class lists); else `setAttribute`. **`isFalsy(0)` is false** — signal `0` renders `"0"`.
 
 ## Non-obvious behaviors (gotchas)
 

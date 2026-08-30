@@ -1,4 +1,4 @@
-import { isFunction } from "./core";
+import { isFunction, isPlainObject } from "./core";
 import type { HellaNode, HellaElement } from "../types/nodes";
 
 /**
@@ -44,6 +44,9 @@ export function resolveText(value: unknown): string {
  * Renders a property/attribute to a DOM element.
  * Handles array values by joining with spaces (useful for CSS classes).
  * Removes attribute when value is false/null/undefined, sets empty string for true.
+ * Plain-object `style` values serialize to kebab-case declarations; props on custom
+ * elements (hyphenated tag + key present on the element) assign the raw value to
+ * the element property instead of stringifying through setAttribute.
  * @param element The DOM element to set the property on
  * @param key The property/attribute key name
  * @param value The value to set
@@ -56,6 +59,29 @@ export function renderProp(element: HellaElement, key: string, value: unknown) {
   }
   if (isFalsyVal) {
     element.removeAttribute(key);
+    return;
+  }
+  if (key === "style" && isPlainObject(value)) {
+    const entries = Object.entries(value);
+    let i = 0;
+    const len = entries.length;
+    const declarations: string[] = [];
+    while (i < len) {
+      const [prop, val] = entries[i]!;
+      // falsy declarations drop (e.g. background: null clears the rule) — no auto-px on numbers
+      if (val) {
+        declarations.push(`${prop.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase())}:${val}`);
+      }
+      i++;
+    }
+    element.setAttribute("style", declarations.join("; "));
+    return;
+  }
+  if (element.tagName.includes("-") && key in element) {
+    // `in` (not hasOwn) is deliberate: custom-element props live on the prototype
+    // (getters/setters) as often as on the instance. Standard elements never carry
+    // hyphenated tag names, so this gate cannot reach them.
+    (element as unknown as Record<string, unknown>)[key] = value;
     return;
   }
   if (Array.isArray(value)) {

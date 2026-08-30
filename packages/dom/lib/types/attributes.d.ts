@@ -75,10 +75,17 @@ type PrefixedHooks = {
 /**
  * Core HTML attributes without prefixes.
  */
+/**
+ * CSS declarations for the `style` attribute. camelCase keys serialize to
+ * kebab-case, falsy declarations are skipped, and numbers carry no automatic
+ * units — write `"12px"`, not `12`.
+ */
+export type StyleObject = Record<string, string | number | null | undefined>;
+
 interface CoreHTMLAttributes {
   id?: HellaPrimitive;
   class?: HellaPrimitive | (string | null | undefined | boolean)[];
-  style?: HellaPrimitive;
+  style?: HellaPrimitive | StyleObject;
   title?: HellaPrimitive;
   tabindex?: HellaPrimitive<number>;
   hidden?: HellaPrimitive<boolean>;

@@ -139,7 +139,7 @@ const Counter = () => {
 };
 ```
 
-Five built-ins — `ForEach`, `Portal`, `Lazy`, `Transition`, `Suspense` — bypass `component()` entirely via an `isDynamic` flag and receive the parent element directly, mounting and updating themselves (`lib/ForEach.ts`, `lib/Portal.ts`, `lib/Lazy.ts`, `lib/Transition.ts`, `lib/Suspense.ts`). For custom elements, `element()` registers a real `HTMLElement` subclass with light DOM, a Proxy props object where any attribute reads as a tracked getter, synchronous attribute reactivity via overridden `setAttribute`/`removeAttribute`, and one-time slot capture (`lib/element.ts`).
+Five built-ins — `ForEach`, `Portal`, `Lazy`, `Transition`, `Suspense` — bypass `component()` entirely via an `isDynamic` flag and receive the parent element directly, mounting and updating themselves (`lib/ForEach.ts`, `lib/Portal.ts`, `lib/Lazy.ts`, `lib/Transition.ts`, `lib/Suspense.ts`). For custom elements, `element()` registers a real `HTMLElement` subclass with light DOM by default and opt-in shadow roots (`ElementOptions.shadow`), a Proxy props object where any attribute reads as a tracked getter, synchronous attribute reactivity via overridden `setAttribute`/`removeAttribute`, and one-time slot capture (`lib/element.ts`).
 
 | Framework | Component form |
 |---|---|
@@ -237,6 +237,7 @@ Attribute prefixes are explicit and uniform across JSX and `html\`\``:
   on:click={handler}        // delegated event (capture phase)
   e:click={handler}         // direct listener (bubble phase)
   class={fn}                // function-ref prop → reactive binding
+  style={{ color: theme() }}// style object → kebab-case, no auto-px
   hook:afterMount={fn}      // lifecycle
   error:fallback={<Fail/>}  // error config
 >
@@ -261,7 +262,7 @@ What sets HellaJS apart — and no single competitor matches all of:
 2. **Runtime static analysis** — `markIfStatic` shares zero-dependency subtrees by reference and `staticDom` clones them in O(1); compile-time-style optimization with no build step (`lib/internal/template.ts`, `lib/internal/render.ts`).
 3. **Dual JSX + `html\`\`` syntax** — the same HellaNode AST from both, per file (`lib/html.ts`).
 4. **Marker-based adopt-in-place hydration** — reads `<!--[-->…<!--]-->` regions, adopts server DOM per region, subtree-replaces only mismatches, and degrades gracefully on interrupted streams (`lib/internal/hydrate.ts`).
-5. **Web-Components-first `element()`** — light-DOM custom elements with Proxy reactive props and synchronous attribute propagation (`lib/element.ts`).
+5. **Web-Components-first `element()`** — custom elements with Proxy reactive props, synchronous attribute propagation, and opt-in shadow DOM (`lib/element.ts`).
 6. **Reactive external-DOM refs** — `$ref`/`$collection` auto-watch nodes outside the render tree, queueing ops until they exist (`lib/$ref.ts`, `lib/internal/selectors.ts`).
 7. **Auto-cleanup of externally-removed DOM** — the observer safety net disposes effects on third-party `removeChild` inside observed containers (`lib/internal/queue.ts`).
 8. **Robust lazy cancellation** — `AbortSignal` propagated into the loader, guards on both settle paths (`lib/Lazy.ts`).
