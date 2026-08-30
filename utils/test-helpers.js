@@ -12,11 +12,15 @@ export function delay(val, ms) {
 
 export function suppressConsole() {
   const errors = [];
+  const warns = [];
   const origError = console.error;
+  const origWarn = console.warn;
   console.error = (...args) => errors.push(args);
+  console.warn = (...args) => warns.push(args);
   return {
     errors,
-    restore: () => { console.error = origError; }
+    warns,
+    restore: () => { console.error = origError; console.warn = origWarn; }
   };
 }
 
