@@ -1,5 +1,5 @@
 import { hasDocument, isPlainObject } from "./internal/core";
-import { removeRule } from "./internal/sheet";
+import { hostQualifier, removeRule } from "./internal/sheet";
 import { STYLE_ID, injectedMap } from "./internal/injection";
 import { process } from "./css";
 import type { CSSObject, CSSOptions } from "./types";
@@ -22,9 +22,10 @@ export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
 
   const selector = options.name ? `.${options.name}` : "";
   const isGlobal = !options.name;
+  const host = options.host;
   const cssText = process(obj, selector, isGlobal);
 
-  const entry = injectedMap.get(cssText);
+  const entry = injectedMap.get(`${hostQualifier(host)}${cssText}`);
   if (!entry) return;
 
   entry.count--;
@@ -33,8 +34,8 @@ export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
   let i = 0;
   const ruleCount = entry.ruleCount;
   while (i < ruleCount) {
-    removeRule(STYLE_ID, `${cssText}:${i}`);
+    removeRule(STYLE_ID, `${cssText}:${i}`, host);
     i++;
   }
-  injectedMap.delete(cssText);
+  injectedMap.delete(`${hostQualifier(host)}${cssText}`);
 }

@@ -137,6 +137,20 @@ describe("removeCssVars", () => {
     expect(varsText).toContain(".comp2");
   });
 
+  test("removing an earlier scoped bucket leaves later buckets exactly removable", () => {
+    cssVars({ a: 1 }, { scoped: ".one" });
+    cssVars({ b: 2 }, { scoped: ".two" });
+    flush();
+
+    removeCssVars({ a: 1 }, { scoped: ".one" });
+    flush();
+    expect(getStylesheet("hella-vars")).toBe(".two{--b:2}");
+
+    removeCssVars({ b: 2 }, { scoped: ".two" });
+    flush();
+    expect(getStylesheet("hella-vars")).toBe("");
+  });
+
   test("removeCssVars at zero refs removes from cache and registry", () => {
     cssVars({ key: "value" });
 

@@ -2,6 +2,7 @@ import type { CSSVarsOptions, CSSVars, CSSVarInputObject } from "./types";
 import { hash, stringify } from "./internal/shared";
 import { createVarsEffect } from "./internal/reactive";
 import { hasDocument, isFunction, isPlainObject } from "./internal/core";
+import { hostQualifier } from "./internal/sheet";
 import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules, resolveVarsOptions, serializeDecls, varsRuleText } from "./internal/vars";
 
 /**
@@ -14,24 +15,24 @@ import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, 
  * as `string` (narrow with `typeof` if reading it in isomorphic code).
  * @template T
  * @param vars Object containing CSS variable definitions. Can include nested objects and reactive signals.
- * @param options Configuration options for scoping, prefixing, and media conditions
+ * @param options Configuration options for scoping, prefixing, media conditions, and style host
  * @returns Proxy object with var() references on the client; CSS text on the server.
  * @throws {Error} When vars is not a plain object.
- * @throws {Error} When the same reactive vars object is registered a second time with differing scoped/prefix/media options.
+ * @throws {Error} When the same reactive vars object is registered a second time with differing scoped/prefix/media/host options.
  */
 export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): CSSVars<T> {
   if (!isPlainObject(vars)) throw new Error(`[css] cssVars: expected a plain object, received ${String(vars)}`);
 
   const { flat, hasFns } = flattenVars(vars);
-  const { scope, fullPrefix, media } = resolveVarsOptions(options);
-  const resolved = { scope, fullPrefix, media };
+  const { scope, fullPrefix, media, host } = resolveVarsOptions(options);
+  const resolved = { scope, fullPrefix, media, host };
 
   if (!hasDocument()) {
     return varsRuleText(scope, media, serializeDecls(Object.entries(flat).map(([k, v]) => [`${fullPrefix}${k}`, v] as [string, unknown]))) as unknown as CSSVars<T>;
   }
 
   if (!hasFns) {
-    const inputHash = hash(stringify(vars) + stringify(options));
+    const inputHash = hash(stringify(vars) + stringify(options) + hostQualifier(host));
     const cached = cache.get(inputHash);
     if (cached) {
       cache.delete(inputHash);
@@ -61,6 +62,7 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
         scope,
         fullPrefix,
         media,
+        host,
         refCount: 1,
       });
     }
@@ -69,8 +71,8 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
 
   const existingEntry = varsRegistryReactive.get(vars);
   if (existingEntry) {
-    if (scope !== existingEntry.scope || fullPrefix !== existingEntry.fullPrefix || media !== existingEntry.media) {
-      throw new Error(`[css] cssVars: reactive vars object already registered with different options (scoped/prefix/media); use a separate object per scope, received ${String(vars)}`);
+    if (scope !== existingEntry.scope || fullPrefix !== existingEntry.fullPrefix || media !== existingEntry.media || host !== existingEntry.host) {
+      throw new Error(`[css] cssVars: reactive vars object already registered with different options (scoped/prefix/media/host); use a separate object per scope, received ${String(vars)}`);
     }
     existingEntry.refCount++;
     applyRules(flat, resolved);
@@ -92,6 +94,7 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
     scope,
     fullPrefix,
     media,
+    host,
     refCount: 1,
     cleanup,
   });

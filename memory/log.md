@@ -1,5 +1,11 @@
 # Memory Update Log
 
+## 2026-08-30
+* **Creation**: Added concept [057](entries/057.md) (type: decision).
+* **Creation**: Added concept [058](entries/058.md) (type: decision).
+* **Creation**: Added concept [059](entries/059.md) (type: decision).
+* **Deprecation**: Archived [057](archive/057.md) → superseded by [058](entries/058.md).
+
 ## 2026-08-27
 * **Creation**: Added concept [053](entries/053.md) (type: decision).
 * **Creation**: Added concept [054](entries/054.md) (type: decision).

@@ -157,6 +157,25 @@ const ThemeButton = () => {
 
 All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`). See the [css reference](/reference/css/css) for details.
 
+### Web Components and Shadow DOM
+
+The `host` option on [`css`](/reference/css/css) and [`cssVars`](/reference/css/cssvars) redirects the generated `<style>` elements into any parent node — most commonly a shadow root. Each host gets its own sheets: the same styles injected into two hosts produce independent `<style>` elements with separate reference counting, so N web component instances never share or dedup into one sheet.
+
+```typescript
+import { css, cssVars } from '@hellajs/css';
+
+const hostElement = document.createElement('my-card');
+const root = hostElement.attachShadow({ mode: 'open' });
+
+// Shadow roots don't match :root — scope vars to the host element
+const theme = cssVars({ accent: '#3b82f6' }, { host: root, scoped: ':host' });
+
+css({ color: theme.accent }, { name: 'card', host: root });
+// <style> created inside the shadow root, not document.head
+```
+
+Styles injected with a host never reach `document.head`. [`removeCss`](/reference/css/removecss) and [`removeCssVars`](/reference/css/removecssvars) remove from the same host when passed the same option. See [Shadow DOM Hosts](/reference/css/css#shadow-dom-hosts) for the full web-components example.
+
 <details>
 <summary>Internal Mechanics</summary>
 

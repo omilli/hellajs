@@ -4,7 +4,7 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 
 ## Mental model
 
-- Two style elements: `hella-css` (rules) and `hella-vars` (custom properties), each lazily created and independently reset. The `<style>` element is never removed, only cleared (rules deleted, textContent emptied).
+- Two style elements: `hella-css` (rules) and `hella-vars` (custom properties), each lazily created and independently reset. The `<style>` element is never removed, only cleared (rules deleted, textContent emptied). A per-call `host` (e.g. a `ShadowRoot`) redirects both into the host: one `<style>` per sheet id inside it (no id attribute), registered weakly per host.
 - `css(obj)` injects globally and returns `""`; `css(obj, { name })` wraps in `.{name}` and returns `name`. On the server (no DOM), both return the CSS text directly (stateless — no `injectedMap` mutation).
 - `cssVars(vars)` flattens nested keys to `--a-b-c` and returns a same-shaped object of `var(--a-b-c)` strings.
 - Static path (no function leaves) is hash-cached + LRU; reactive path (any function leaf) creates one effect per vars object **reference**.
@@ -14,17 +14,17 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 
 | File | Responsibility |
 |---|---|
-| `css.ts` | `css()` + `process()` (exported `@internal`). Platform-dependent return: client injects + dedup via `injectedMap`; server returns text. Brace-depth-0 rule splitting, CSSOM injection, refCount increment. Throws on non-object; throws on function property values at any nesting depth (reactive leaves belong to `cssVars`); throws on direct declarations inside a selector-less conditional at-rule body. |
-| `removeCss.ts` | `removeCss()` — re-derives text via `process()`, decrements `injectedMap` count; at zero drops CSSOM rules + entry. No-op for unknown. No-op on server (`!hasDocument()`). Throws on non-object. |
+| `css.ts` | `css()` + `process()` (exported `@internal`). Platform-dependent return: client injects + dedup via `injectedMap`; server returns text. Brace-depth-0 rule splitting, CSSOM injection, refCount increment. `host` option qualifies the `injectedMap` key and the `upsertRule` target. Throws on non-object; throws on function property values at any nesting depth (reactive leaves belong to `cssVars`); throws on direct declarations inside a selector-less conditional at-rule body. |
+| `removeCss.ts` | `removeCss()` — re-derives text via `process()`, decrements `injectedMap` count under the same host-qualified key; at zero drops CSSOM rules + entry. No-op for unknown. No-op on server (`!hasDocument()`). Throws on non-object. |
 | `resetCss.ts` | `resetCss()` — clears `injectedMap` + resets `hella-css` sheet. Does **not** touch vars state. No-op on server. |
-| `cssVars.ts` | `cssVars()` + private `flattenVars()` / `buildResult()`. Platform-dependent return: server early-returns text (via `varsRuleText`, media-wrapped when set); client routes static vs reactive. Throws on non-object. |
-| `removeCssVars.ts` | `removeCssVars()` — reactive-first (by ref) then static (by hash) lookup; at zero disposes effect + removes scope keys. No-op for unknown. No-op on server. Throws on non-object. |
+| `cssVars.ts` | `cssVars()` + private `flattenVars()` / `buildResult()`. Platform-dependent return: server early-returns text (via `varsRuleText`, media-wrapped when set); client routes static vs reactive. `host` threads into `applyRules` (sheet placement), the static hash input (+`hostQualifier(host)`), and `VarsEntry`. Throws on non-object. |
+| `removeCssVars.ts` | `removeCssVars()` — reactive-first (by ref) then static (by hash + host qualifier) lookup; at zero disposes effect + removes scope keys. No-op for unknown. No-op on server. Throws on non-object. |
 | `resetCssVars.ts` | `resetCssVars()` — disposes all vars effects, clears vars maps, resets `hella-vars` sheet, replaces reactive WeakMaps. |
-| `types.d.ts` | `CSSOptions` (`name?`), `CSSVarsOptions` (`scoped?`, `prefix?`), `CSSObject`, `CSSValue`, `CSSSelector`, `CSSVarLeaf`, `CSSVarInputObject`, `CSSVars<T>`. Uses `csstype`. |
+| `types.d.ts` | `CSSOptions` (`name?`, `host?`), `CSSVarsOptions` (`scoped?`, `prefix?`, `media?`, `host?`), `CSSObject`, `CSSValue`, `CSSSelector`, `CSSVarLeaf`, `CSSVarInputObject`, `CSSVars<T>`. Uses `csstype`. |
 | `internal/core.ts` | Re-exports `effect`, `isFunction`, `isPlainObject`, `isObject`, `hasDocument` from `@hellajs/core`. |
-| `internal/injection.ts` | css-side state: `STYLE_ID="hella-css"`, `InjectedEntry` (`{ count, ruleCount }`), `injectedMap: Map<cssText, InjectedEntry>` (1 map: dedup + refCount). |
-| `internal/vars.ts` | vars-side state + logic: `VARS_ID="hella-vars"`, `scopedVarsRulesMap`, `cache`, `CACHE_MAX=100`, `DOT_REGEX`, `VarsEntry`, `varsRegistryStatic`, `varsRegistryReactive` / `varsResultReactive` (reassignable `let` WeakMaps), `resolveVarsOptions()` (single scope/prefix/media derivation), `varsBucketKey()` (composite bucket key), `applyRules(flat, resolved)`, `removeFromScope(flatKeys, resolved)`, `resetReactiveRegistries()`, exported `serializeDecls()` / `varsRuleText()`. |
-| `internal/sheet.ts` | CSSOM helper shared by both sheets: module-private `indexMap` + `sheets`, lazy `getSheet()` (creates `<style id>`), `upsertRule()` (skips platform-rejected rules with a `console.warn`, try/catch for invalid/unparseable rules), `removeRule()`, `resetSheet()`. |
+| `internal/injection.ts` | css-side state: `STYLE_ID="hella-css"`, `InjectedEntry` (`{ count, ruleCount }`), `injectedMap: Map<hostQualifiedCssText, InjectedEntry>` (1 map: dedup + refCount; key is `${hostQualifier(host)}${cssText}` — `""` on the default path). |
+| `internal/vars.ts` | vars-side state + logic: `VARS_ID="hella-vars"`, `scopedVarsRulesMap`, `cache`, `CACHE_MAX=100`, `DOT_REGEX`, `VarsEntry` (carries `host`), `varsRegistryStatic`, `varsRegistryReactive` / `varsResultReactive` (reassignable `let` WeakMaps), `resolveVarsOptions()` (single scope/prefix/media/host derivation), `varsBucketKey()` (composite, host-qualified bucket key), `applyRules(flat, resolved)`, `removeFromScope(flatKeys, resolved)`, `resetReactiveRegistries()`, exported `serializeDecls()` / `varsRuleText()`. |
+| `internal/sheet.ts` | CSSOM helper shared by both sheets: module-private `indexMap` + `sheets` (document sheets, unqualified keys), `hostIds` (stable per-host serial WeakMap — never reset), `hostQualifier()` (@internal, `""` / `#n`), `sheetKey()` (`${id}#${n}`), `hostSheets` (per-id `WeakMap<ParentNode, CSSStyleSheet>`), lazy `getSheet(id, host?)` (hosted path skips `getElementById`, creates id-less `<style>` per sheet id in the host), `upsertRule()`/`removeRule()` (host param → qualified indexMap keys; skips platform-rejected rules with a `console.warn`, try/catch for invalid/unparseable rules; every successful `deleteRule` calls module-private `rebaseIndexes(qid, i)` — decrements same-sheet `${qid}:`-prefixed entries above `i`, so stored indexes never go stale), `resetSheet()` (drops that id's host WeakMap — hosted sheets are abandoned, not enumerated; lazily re-created). |
 | `internal/reactive.ts` | `activeEffects` (lazily-allocated `Set`), `createVarsEffect()` (wraps `effect()`; returns a cleanup that disposes + self-removes), `cleanupVarsEffects()` (bulk dispose). |
 | `internal/shared.ts` | `stringify()` (recursive, key-sorting) + `hash()` (DJB2 → base36). |
 | `index.ts` | Re-exports the 6 functions + `export type *`. |
@@ -35,7 +35,7 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 
 | Map | Type | Purpose |
 |---|---|---|
-| `injectedMap` | `Map<cssText, { count, ruleCount }>` | text → ref count + split-rule count; dedup (`has(text)`), refCount (`count`) |
+| `injectedMap` | `Map<hostQualifiedCssText, { count, ruleCount }>` | `${hostQualifier}${cssText}` → ref count + split-rule count; dedup (`has(key)`), refCount (`count`); the `""` qualifier keeps the default path byte-identical |
 
 **vars-side** (`vars.ts`):
 
@@ -48,16 +48,16 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 | `varsResultReactive` | `WeakMap<object, CSSVars>` | cached result returned for repeat reactive calls |
 | `activeEffects` | `Set<() => void> \| undefined` | lazily allocated; bulk-disposal target for `resetCssVars` |
 
-`VarsEntry = { flatKeys, scope, fullPrefix, media, refCount, cleanup? }`. `fullPrefix`/`media` are the resolved forms from `resolveVarsOptions` (trailing hyphen included; `""` when no media).
+`VarsEntry = { flatKeys, scope, fullPrefix, media, host, refCount, cleanup? }`. `fullPrefix`/`media` are the resolved forms from `resolveVarsOptions` (trailing hyphen included; `""` when no media); `host` is the raw host node (sheet placement + re-derived qualifier).
 
 ## css() flow
 
 1. `isPlainObject(obj)` guard — throws `[css] css: expected a CSS object, received …`.
 2. `cssText = process(obj, selector, isGlobal)` — builds the CSS text (always; text is the identity).
 3. `if (!hasDocument()) return cssText` — server: pure text, zero state.
-4. `injectedMap.get(cssText)` hit → `count++`, return `name || ""`.
-5. Miss → split into top-level rules at brace-depth 0; `upsertRule(STYLE_ID, ${cssText}:${i}, rule)` per split rule.
-6. `injectedMap.set(cssText, { count: 1, ruleCount: rules.length })`; return `name || ""`.
+4. `injectedMap.get(hostQualified(cssText))` hit → `count++`, return `name || ""`.
+5. Miss → split into top-level rules at brace-depth 0; `upsertRule(STYLE_ID, ${cssText}:${i}, rule, host)` per split rule.
+6. `injectedMap.set(hostQualified(cssText), { count: 1, ruleCount: rules.length })`; return `name || ""`.
 
 ### process() — value handling
 
@@ -83,17 +83,17 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 1. `isPlainObject(vars)` guard — throws `[css] cssVars: expected a plain object, received …`.
 2. `if (!hasDocument())` → build `varsRuleText(scope, media, serializeDecls(prefixed entries))` (no-space CSSOM form, `@media`-wrapped when set) and return it as text — server: zero state, zero effects. Return type stays `CSSVars<T>` (cast); narrow with `typeof` in isomorphic code.
 3. Single `flattenVars()` pass → `{ flat, hasFns }`: nested objects become dot-keys; function leaves are **called once** synchronously (per flatten) and `hasFns` is flagged.
-4. **Static** (`!hasFns`): `h = hash(stringify(vars) + stringify(options))`.
+4. **Static** (`!hasFns`): `h = hash(stringify(vars) + stringify(options) + hostQualifier(host))`.
    - cache hit → promote (delete + re-set), `varsRegistryStatic.refCount++`, re-`applyRules`, return cached result.
-   - miss → `applyRules(flat)`, `buildResult(flat)`, LRU enforce (`cache.size >= 100` → drop oldest = `keys().next().value`), store cache + registry entry (`scope`/`fullPrefix`/`media` from `resolveVarsOptions`; `media` is part of the options hash, so same-vars/different-media dedups into separate entries), `refCount = 1`.
+   - miss → `applyRules(flat)`, `buildResult(flat)`, LRU enforce (`cache.size >= 100` → drop oldest = `keys().next().value`), store cache + registry entry (`scope`/`fullPrefix`/`media`/`host` from `resolveVarsOptions`; `media` and `host` are part of the options hash, so same-vars/different-media or different-host dedups into separate entries), `refCount = 1`.
 5. **Reactive** (`hasFns`):
-   - same `vars` ref seen before → `refCount++`, re-`applyRules`, return the **same** result object (`varsResultReactive`).
+   - same `vars` ref seen before → `refCount++`, re-`applyRules`, return the **same** result object (`varsResultReactive`). A differing resolved `scope`/`prefix`/`media`/`host` throws before any stray rule is written.
    - new ref → `applyRules(flat)`, `buildResult(flat)`, `run = () => { const { flat } = flattenVars(vars); applyRules(flat, options) }` (fresh flat each run), `cleanup = createVarsEffect(run)`, store registry + result entries, `refCount = 1`.
 6. Result is populated immediately in both paths (no effect await).
 
 **Why the reactive result is stable** — `buildResult` only reads the flat **keys** (structure) to emit `var(--…)` strings; live **values** reach the sheet only via `applyRules` writing into `scopedVarsRulesMap`. The returned proxy therefore never mutates; signal writes update the CSSOM/scope map, not the object.
 
-`applyRules(flat, resolved)` — takes `resolveVarsOptions(options)` output (`{ scope, fullPrefix, media }`); merge each flat key into the `varsBucketKey(scope, media)` bucket as `${fullPrefix}${key}`; rebuild via `varsRuleText(scope, media, …)` and `upsertRule(VARS_ID, bucketKey, …)` (no space after `:`).
+`applyRules(flat, resolved)` — takes `resolveVarsOptions(options)` output (`{ scope, fullPrefix, media, host }`); merge each flat key into the `varsBucketKey(scope, media, host)` bucket as `${fullPrefix}${key}`; rebuild via `varsRuleText(scope, media, …)` and `upsertRule(VARS_ID, bucketKey, …, host)` (no space after `:`).
 
 `buildResult(flat, fullPrefix)`: reconstructs the nested shape from dot-keys; every leaf → `var(--${fullPrefix}${key with dots→hyphens})`.
 
@@ -104,15 +104,17 @@ Server return (in `cssVars`): `varsRuleText(scope, media, serializeDecls(prefixe
 Highest-signal gotchas; verify any change against these:
 
 - **Two style elements, one write path** — `hella-css` and `hella-vars` are separate `<style>` elements, but neither is textContent-managed in steady state: all writes go through `upsertRule`/`removeRule` against `el.sheet`. `resetSheet` is the only place that clears `textContent` (reset-to-pristine).
-- **Rejected rules skip with a console.warn** — `upsertRule` wraps `insertRule`/`deleteRule`/cssText-access in try/catch; a rule the platform refuses to insert (e.g. `@layer` under happy-dom) is skipped from the CSSOM with `` console.warn(`[css] rule rejected by the platform and skipped: ${rule}`) `` — only the two `insertRule` catches warn; `deleteRule`/cssText catches are recovery paths and stay silent. There is no textContent mirror, so a skipped rule is still invisible to sheet-reading tests (assert such compositions via the server text return instead). A failed `insertRule` formerly left a phantom `indexMap` entry, causing subsequent rules to be injected at a stale index and corrupting the sheet; now `indexMap.set` runs only on successful `insertRule`. Both the new-rule and update paths follow the same discipline — `indexMap.delete(ruleKey)` clears before the `deleteRule`/`insertRule` try-chain and `indexMap.set` re-runs only inside the successful-`insertRule` try, so a rejected update leaves no stale entry.
+- **Rejected rules skip with a console.warn** — `upsertRule` wraps `insertRule`/`deleteRule`/cssText-access in try/catch; a rule the platform refuses to insert (e.g. `@layer` under happy-dom) is skipped from the CSSOM with `` console.warn(`[css] rule rejected by the platform and skipped: ${rule}`) `` — only the two `insertRule` catches warn; `deleteRule`/cssText catches are recovery paths and stay silent. There is no textContent mirror, so a skipped rule is still invisible to sheet-reading tests (assert such compositions via the server text return instead). A failed `insertRule` formerly left a phantom `indexMap` entry, causing subsequent rules to be injected at a stale index and corrupting the sheet; now `indexMap.set` runs only on successful `insertRule`. Both the new-rule and update paths follow the same discipline — `indexMap.delete(ruleKey)` clears before the `deleteRule`/`insertRule` try-chain and `indexMap.set` re-runs only inside the successful-`insertRule` try, so a rejected update leaves no stale entry. Every successful `deleteRule` then rebases: `rebaseIndexes(qid, index)` decrements each same-sheet entry above the removed index (scope is the qualified `${qid}:` prefix — the other sheet id and other hosts never shift), keeping multi-rule `removeCss` and interleaved removals exact; a throwing `deleteRule` shifted nothing, so its catch skips the rebase. The update path rebases a rejected re-insert iff its `deleteRule` succeeded — the delete left a hole the failed insert never refilled (unreachable via the public API under happy-dom; the sole uncovered pair in `bun coverage css`).
 - **Static writes sync, reactive writes scheduled** — `css()` writes the sheet synchronously; `cssVars()` reactive leaves are core effects, so writes inside `batch()` update the sheet when the batch flushes (use bare `flush()` in tests).
 - **Reactive keyed by reference, static by hash** — repeat `cssVars(sameRef)` returns the same result object and bumps refCount; structurally-equal static objects collide by hash. `removeCssVars` checks reactive (by ref) **first**, then static (by hash).
-- **Reactive repeat-ref + differing options throws** — a second `cssVars(sameRef, {scoped|prefix|media})` whose resolved scope/prefix/media differs from the first throws `[css] cssVars: …` before any stray scope rule is written; reactive entries are one-per-object-reference. The static path remains keyed by `hash(vars+options)` and supports differing options across distinct calls.
+- **Reactive repeat-ref + differing options throws** — a second `cssVars(sameRef, {scoped|prefix|media|host})` whose resolved scope/prefix/media/host differs from the first throws `[css] cssVars: …` before any stray scope rule is written; reactive entries are one-per-object-reference. The static path remains keyed by `hash(vars+options+hostQualifier)` and supports differing options across distinct calls.
 - **Global default** — `css(obj)` injects unwrapped and returns `""`; `name: ""` is also global (`!name`).
 - **Conditional at-rules inherit any active selector** — under a `name`, `@media`/`@container`/`@supports`/`@starting-style` bodies use that selector; nested under a plain selector, they compose with it. With no selector in scope, a body containing direct declarations throws; null-only bodies emit an empty at-rule. `&` and descendant composition work inside them.
 - **Definitional at-rules stay global** — `@keyframes`, `@font-face`, `@layer`, `@import` never pick up `.{name}`, even when `name` is set.
 - **cssVars default scope `:root`** — `scoped` overrides to any selector; `prefix` appends `${prefix}-` (trailing hyphen auto-inserted); `media` interpolates verbatim (no validation, matching `scoped`'s permissive contract).
 - **Composite scope+media buckets** — `scopedVarsRulesMap` keys and CSSOM rule keys are the composite `@media …|scope` (`varsBucketKey`): the same scope under different `media` coexists as separate rules, each bucket merging/accumulating independently. With no `media` the emitted rule text is byte-identical to the pre-media form — the option is invisible to no-media callers.
+- **Host-qualified registries, per-id hosted sheets** — every registry keyed by cssText or scope embeds `hostQualifier(host)` (`injectedMap` key prefix, `varsBucketKey` prefix, static-vars hash suffix, `indexMap` via `sheetKey`), so the same text/scope in two hosts never dedups into one sheet. The `""` default keeps every no-host key byte-identical. Hosted `<style>` elements are one per sheet id inside the host (css and vars indexes never share a `cssRules` list), carry no id attribute, and live in per-id `WeakMap<ParentNode, CSSStyleSheet>` registries — `resetSheet(id)` drops that id's registry entry (hosted sheets are **abandoned**, not cleared: their `<style>` elements keep their rules; the registry is lazily re-created on the next hosted call) and deletes all `${id}#` indexMap entries. `hostIds` serials are never reset, so a host re-registered after a reset reuses its key space; a discarded host's WeakMap entries drop automatically.
+- **`:root` is inert inside a shadow root** — a hosted `cssVars()` still defaults to `:root`, which matches nothing inside a `ShadowRoot`; pair `host` with `scoped: ':host'` (the documented pattern). A reactive vars object is one-per-reference across hosts too: re-registering the same reference under a different `host` throws (same class as differing `scoped`/`prefix`/`media`).
 - **Dots → hyphens** — `colors.primary` → `--colors-primary` (`DOT_REGEX = /\./g` on both apply and result paths).
 - **Scope accumulation** — multiple `cssVars()` to one scope+media bucket merge; `removeCssVars` removes only that call's flatKeys; the bucket rule is dropped entirely when its map empties.
 - **`removeCssVars` no-op for unknown** input; reactive removal disposes the effect (later signal writes don't touch the sheet).
@@ -128,7 +130,7 @@ Highest-signal gotchas; verify any change against these:
 - **Static fast path** — `hasFns === false` skips effect creation entirely.
 - **LRU (static vars)** — `cache` capped at 100; access promotes via delete+set (protects from eviction); insertion at capacity evicts the oldest key.
 - **Deterministic keys** — `stringify` sorts keys recursively so key-order-independent objects collide; DJB2 → base36 hash.
-- **Surgical CSSOM** — `upsertRule` early-returns when the existing rule's `cssText` is unchanged; `indexMap` (keyed `${id}:${key}`) avoids full-sheet rewrites.
+- **Surgical CSSOM** — `upsertRule` early-returns when the existing rule's `cssText` is unchanged; `indexMap` (keyed `${id}:${key}`) avoids full-sheet rewrites; delete-time rebasing (cold O(entries) walk) keeps stored indexes exact so removals stay surgical without sheet rebuilds.
 - **While-loops with cached length** throughout hot paths.
 
 ## Testing
@@ -136,15 +138,16 @@ Highest-signal gotchas; verify any change against these:
 - Import from `@hellajs/css/bundle`; `beforeEach` runs `resetTestState()`.
 - Assert via `getStylesheet('hella-css' | 'hella-vars')` from `@utils/test-helpers.js` — the live `sheet.cssRules` joined and squeezed to the no-space form the package inserts (vars included: `--k:v`). When patching `globalThis.document` for server-text asserts, capture the return value and restore the global **before** asserting — a throwing `expect` must not leak the patch into sibling tests.
 - happy-dom rejects or under-serializes some at-rules (`@layer`/`@starting-style` rejected, `@font-face` serialized as an empty block) — assert those compositions via the server text return (same `process()` derivation), not the CSSOM. Rejected inserts warn (the behavior `sheet-warn.test.ts` pins); `css-at-rules.test.ts` runs the whole file under `suppressConsole()` to keep that noise out of test output.
-- `css.test.ts` — global/scoped, `&` (incl. multiple `&`), descendants, null/undefined skip, array join, number values, `content` auto-quote, ref counting, cache reuse, `removeCss` no-op, `resetCss`, `test.each` input validation.
+- `css.test.ts` — global/scoped, `&` (incl. multiple `&`), descendants, null/undefined skip, array join, number values, `content` auto-quote, ref counting, cache reuse, `removeCss` no-op, multi-rule/interleaved `removeCss` exact-form removal, `resetCss`, `test.each` input validation.
 - `css-at-rules.test.ts` — every `@`-rule with the conditional-vs-definitional split (scoped `@media`/`@container`/`@supports`/`@starting-style` inherit; `@keyframes`/`@font-face`/`@layer` stay global even with `name`); failed-insertRule phantom-indexMap regression pair (file runs under `suppressConsole()`).
 - `sheet-warn.test.ts` — platform-rejection warn surface: a happy-dom-rejected `@layer` insert warns with the rule text (mocked `console.warn`), an accepted insert does not warn, `removeCss` of a rejected rule stays silent.
 - `cssvars.test.ts` — static caching, deep nesting, signal/computed/batched updates, mixed static+reactive, multi-call accumulation, independent reactive updates, effect cleanup on reset, **LRU eviction + promotion-on-access**, input validation.
 - `cssvars-scoped.test.ts` — class/ID selectors, prefix, scoped+prefix, multi-scope accumulation, reactive scoped, options-hash caching.
 - `cssvars-media.test.ts` — `media` option: at-rule-wrapped static/reactive emission (exact CSSOM form), media+scoped+prefix composition, same-scope different-media coexistence, bucket-isolated `removeCssVars`, differing-media reactive throw, server text return wrapped.
+- `style-host.test.ts` — `host` option: per-host `<style>` creation (not `document.head`), same-text two-host independence with per-host refcounts, hosted `removeCss` at zero refs (incl. multi-rule then single-rule text in one host), hosted `cssVars` + `:host` composition, exact-form default-path asserts, `resetCss` after hosted injection (no throw), reactive same-ref different-host throw. Reads hosted sheets via `getHostStylesheet` from `@utils/test-helpers.js`.
 - `cssvars-flatten.test.ts` — static flatten, nested fn resolution, mixed deep nesting, dot→hyphen keys.
 - `cssvars-types.test.ts` — compile-time type rejections (boolean / Date / boolean-returning fn); acceptance of string/number/string-fn/nested; leaf type is `string`.
-- `cssvars-remove.test.ts` — static removal, ref counting (3 calls → 3 removes), reactive effect disposal, shared-scope partial removal, scoped/prefixed removal, reactive refCount (2 calls → 1 remove leaves effect active), no-op unknown, input validation.
+- `cssvars-remove.test.ts` — static removal, ref counting (3 calls → 3 removes), reactive effect disposal, shared-scope partial removal, scoped/prefixed removal, sequential scoped-bucket removal exactness, reactive refCount (2 calls → 1 remove leaves effect active), no-op unknown, input validation.
 - `ssr.test.ts` — platform-dependent return: unsets `globalThis.document` (save in `beforeEach`, restore in `afterEach`); css/cssVars return CSS text on server, no DOM injection, `removeCss`/`removeCssVars` no-ops, `resetCss`/`resetCssVars` don't throw.
 
 Run with `bun coverage css`.

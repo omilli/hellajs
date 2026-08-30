@@ -101,7 +101,7 @@ removeCssVars({ theme: { primary: 'red' } });
 
 ### Exact Options Match (Static Path)
 
-For **static** vars, the `options` argument must match the `options` used in the original `cssVars` call, including `scoped` and `prefix` — they feed the hash that locates the entry:
+For **static** vars, the `options` argument must match the `options` used in the original `cssVars` call, including `scoped`, `prefix`, and `host` — they feed the hash that locates the entry:
 
 ```jsx
 cssVars({ color: 'red' }, { scoped: '.card', prefix: 'ui' });

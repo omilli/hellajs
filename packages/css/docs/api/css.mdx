@@ -10,6 +10,7 @@ function css(obj: CSSObject, options?: CSSOptions): string
 - `obj`: CSS object containing style properties and nested selectors
 - `options`: Optional configuration object
   - `name`: Class name to scope styles to. Creates a `.{name}` selector and returns the name for use in `class` attributes.
+  - `host`: Parent node the `<style>` element is created in — e.g. a `ShadowRoot` for web components. Defaults to `document.head`.
 - **Returns**: On the client (DOM available), the provided `name` string (or empty string for global). On the server (no DOM), the generated CSS text.
 
 ## Basic Usage
@@ -178,6 +179,37 @@ css({ '@media (min-width: 1px)': { color: 'red' } });
 ```
 
 Nest selectors under the at-rule (or use the `name` option) so every declaration has a selector to attach to. The same input throws in [`removeCss`](/reference/css/removecss) and on the server — the check runs in the shared CSS derivation before any platform branching. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) never inherit a scope; their direct declarations are their normal shape (`@font-face{font-family:…}`).
+
+### Shadow DOM Hosts
+
+Pass `host` to create the `<style>` element inside a shadow root instead of `document.head`. Each call site gets its own sheet per host — the same styles injected into two hosts produce two independent `<style>` elements with separate reference counting, and [`removeCss`](/reference/css/removecss) with the same `host` removes from that host's sheet:
+
+```typescript
+import { css, cssVars } from '@hellajs/css';
+
+class MyCard extends HTMLElement {
+  connectedCallback() {
+    const root = this.attachShadow({ mode: 'open' });
+
+    // Shadow roots don't match :root — scope the vars to the host element
+    const theme = cssVars(
+      { accent: '#3b82f6' },
+      { host: root, scoped: ':host' }
+    );
+
+    css({
+      padding: '1rem',
+      color: theme.accent,
+      border: '1px solid #e5e7eb'
+    }, { name: 'card', host: root });
+
+    root.innerHTML = '<div class="card"><slot></slot></div>';
+  }
+}
+customElements.define('my-card', MyCard);
+```
+
+Styles injected with `host` never reach `document.head`, and `resetCss()` clears only the document sheet — hosted sheets are abandoned, not cleared.
 
 ## Important Considerations
 

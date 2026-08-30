@@ -1,6 +1,7 @@
 import type { CSSVarInputObject, CSSVarsOptions } from "./types";
 import { hash, stringify } from "./internal/shared";
 import { varsRegistryReactive, varsResultReactive, varsRegistryStatic, cache, removeFromScope } from "./internal/vars";
+import { hostQualifier } from "./internal/sheet";
 import { hasDocument, isPlainObject } from "./internal/core";
 
 /**
@@ -29,7 +30,7 @@ export function removeCssVars<T extends CSSVarInputObject>(vars: T, options: CSS
     return;
   }
 
-  const inputHash = hash(stringify(vars) + stringify(options));
+  const inputHash = hash(stringify(vars) + stringify(options) + hostQualifier(options.host));
   const staticEntry = varsRegistryStatic.get(inputHash);
   if (!staticEntry) return;
 
