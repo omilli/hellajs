@@ -5,6 +5,7 @@
 * **Creation**: Added concept [058](entries/058.md) (type: decision).
 * **Creation**: Added concept [059](entries/059.md) (type: decision).
 * **Deprecation**: Archived [057](archive/057.md) → superseded by [058](entries/058.md).
+* **Creation**: Added concept [060](entries/060.md) (type: decision).
 
 ## 2026-08-27
 * **Creation**: Added concept [053](entries/053.md) (type: decision).

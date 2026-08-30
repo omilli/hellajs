@@ -106,3 +106,35 @@ const isActive = signal(true);
   {/* Compiled: isActive() auto-wraps — class="base active always"; → "base always" once false */}
 </div>
 ```
+
+## SVG and MathML
+
+SVG and MathML mount in their correct namespaces automatically — an `<svg>` root creates in the SVG namespace, descendants inherit it, and a `<math>` root creates in the MathML namespace. Both JSX and `html\`\`` behave identically; no wrappers or namespace configuration are needed.
+
+```js
+import { mount, html } from "@hellajs/dom";
+
+mount(html`<svg width="24" height="24">
+  <clipPath id="clip"><rect width="10" height="10" /></clipPath>
+</svg>`, "#app");
+```
+
+Dynamic content works the same way — [`ForEach`](/reference/dom/foreach), [`Lazy`](/reference/dom/lazy), and reactive children under an SVG parent all create their elements in the inherited namespace.
+
+### CamelCase Tags
+
+Multi-word SVG and MathML tags are authored camelCase — `clipPath`, `linearGradient`, `feGaussianBlur` — exactly as in hand-written SVG. Both template forms preserve tag case, and cased attributes like `viewBox` and `patternUnits` pass through unchanged.
+
+### foreignObject Resets to HTML
+
+Inside `<foreignObject>` the namespace resets to HTML — its children are regular HTML elements. To re-enter SVG, open a new `<svg>` element inside.
+
+```jsx
+<svg>
+  <foreignObject width="100" height="50">
+    <div>HTML content here</div>
+  </foreignObject>
+</svg>
+```
+
+One edge: error fallback UI (from [`error:fallback`](/reference/dom/error)) always renders as HTML, even when the failing boundary sits inside an SVG subtree — keep fallback markup HTML-only.

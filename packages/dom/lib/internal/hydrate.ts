@@ -5,7 +5,7 @@ import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
 import { getState } from "./state";
-import { mountNode, resolveNode, getBoundaryConfig, clearRenderedNodes } from "./render";
+import { mountNode, resolveNode, getBoundaryConfig, clearRenderedNodes, childNamespaceOf, HTML_NS } from "./render";
 
 /**
  * @internal
@@ -184,7 +184,7 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
         (resolved as RenderFn)(proxyParent as HellaElement);
         return;
       }
-      const node = resolveNode(resolved as HellaChild, parent);
+      const node = resolveNode(resolved as HellaChild, parent, childNamespaceOf(parent));
       if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
         let f: ChildNode | null = node.firstChild;
         while (f) {
@@ -204,10 +204,19 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
 }
 
 /**
+ * Tag equality against an existing server node: HTML parsers uppercase `tagName`, while elements
+ * in a foreign namespace (SVG, MathML) keep the authored case — compare exact-case there.
+ */
+function tagMatches(element: Element, tag: string): boolean {
+  const ns = element.namespaceURI;
+  return element.tagName === (ns && ns !== HTML_NS ? tag : tag.toUpperCase());
+}
+
+/**
  * Replaces a mismatched server node with a freshly mounted subtree in place.
  */
 function replaceMismatch(node: HellaNode, existing: Node | null, boundaryElement?: Element): Node {
-  const fresh = mountNode(node, boundaryElement);
+  const fresh = mountNode(node, boundaryElement, childNamespaceOf(existing));
   if (existing && existing.parentNode) {
     existing.parentNode.replaceChild(fresh, existing);
   }
@@ -225,7 +234,7 @@ function replaceMismatch(node: HellaNode, existing: Node | null, boundaryElement
 export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElement?: Element): Node {
   if (node.static && existing && existing.nodeType === Node.ELEMENT_NODE) {
     const staticTag = node.tag as string | undefined;
-    if (staticTag && (existing as Element).tagName !== staticTag.toUpperCase()) {
+    if (staticTag && !tagMatches(existing as Element, staticTag)) {
       console.warn(`[dom] hydrate mismatch: expected <${staticTag}>, found <${(existing as Element).tagName.toLowerCase()}>`);
       return replaceMismatch(node, existing, boundaryElement);
     }
@@ -240,7 +249,7 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
   }
 
   const element = existing as HellaElement;
-  if (tag && element.tagName !== (tag as string).toUpperCase()) {
+  if (tag && !tagMatches(element, tag as string)) {
     console.warn(`[dom] hydrate mismatch: expected <${tag}>, found <${element.tagName.toLowerCase()}>`);
     return replaceMismatch(node, existing, boundaryElement);
   }

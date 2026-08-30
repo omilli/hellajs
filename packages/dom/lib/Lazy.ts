@@ -1,6 +1,6 @@
 import { isFunction } from "./internal/core";
 import { getState } from "./internal/state";
-import { mountNode, resolveNode } from "./internal/render";
+import { mountNode, resolveNode, childNamespaceOf } from "./internal/render";
 import { peekHydrateContext } from "./internal/hydrate";
 import type { LazyProps, HellaNode } from "./types/nodes";
 
@@ -21,7 +21,7 @@ export function Lazy(props: LazyProps): JSX.Element {
 
     let loadingNode: Node | null = null;
     if (props.loading) {
-      loadingNode = resolveNode(props.loading);
+      loadingNode = resolveNode(props.loading, undefined, childNamespaceOf(anchor.parentNode));
       anchor.parentNode?.insertBefore(loadingNode, anchor);
     }
 
@@ -39,14 +39,14 @@ export function Lazy(props: LazyProps): JSX.Element {
         if (isCancelled || !anchor.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         const resolved = isFunction(component) ? component(props.props) : component;
-        const mounted = mountNode(resolved as HellaNode);
+        const mounted = mountNode(resolved as HellaNode, undefined, childNamespaceOf(anchor.parentNode));
         anchor.parentNode.insertBefore(mounted, anchor);
       })
       .catch((err: unknown) => {
         if (isCancelled || !anchor.parentNode) return;
         if (loadingNode?.parentNode) loadingNode.parentNode.removeChild(loadingNode);
         if (props.fallback) {
-          const mounted = resolveNode(props.fallback);
+          const mounted = resolveNode(props.fallback, undefined, childNamespaceOf(anchor.parentNode));
           anchor.parentNode.insertBefore(mounted, anchor);
         } else {
           console.error("[dom] Lazy:", err);

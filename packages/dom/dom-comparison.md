@@ -27,7 +27,7 @@ HellaJS sits closest to Solid philosophically — signal-driven, no VDOM, surgic
 
 Rendering is a one-way function from a plain-object AST to the live DOM, with reactivity attached per binding — there is no render loop, no reconciliation pass, and no tree to diff. The mechanism:
 
-- No virtual DOM. JSX or `html\`\`` produce a plain-object HellaNode AST; `mountNode()` turns it into real DOM nodes directly, with no intermediate tree and no diffing (`lib/internal/render.ts`, driven by `lib/mount.ts`).
+- No virtual DOM. JSX or `html\`\`` produce a plain-object HellaNode AST; `mountNode()` turns it into real DOM nodes directly, with no intermediate tree and no diffing (`lib/internal/render.ts`, driven by `lib/mount.ts`). Element creation is namespace-aware: `svg`/`math` roots and their descendants create via `createElementNS`, with `foreignObject` resetting children to HTML (`lib/internal/render.ts`).
 - Surgical updates: each reactive binding registers its own effect. A function-valued prop gets one effect wrapping `renderProp` (`lib/internal/render.ts`); a reactive child gets a persistent empty text-node anchor plus a `renderedNodes` array and one effect that clears and re-inserts exactly the nodes it owns (`lib/internal/render.ts`). When a signal changes, only those bindings re-run — no tree walk, no sibling reconciliation.
 - `html\`\`` caches the parsed AST by `TemplateStringsArray` identity in a `WeakMap` (`lib/html.ts`). On first parse, `markIfStatic` tags every subtree with zero placeholder dependencies as `static` (`lib/internal/template.ts`); `cloneWithValues` then returns static subtrees by reference on every later invocation (`lib/internal/template.ts`), and `mountNode` keeps a prototype DOM subtree in a `staticDom` WeakMap so re-mounting a static branch is one `cloneNode(true)` instead of O(nodes) construction (`lib/internal/render.ts`). This is compile-time-style hoisting performed at runtime, with no build step — and the Babel plugin performs the same hoist at compile time for JSX and compiled `html\`\`` (fully-static subtrees become module constants tagged `static: true`).
 - The client DOM carries no comment markers: list, portal, lazy, transition, suspense, and reactive-child regions all anchor on invisible empty text nodes (`lib/ForEach.ts`, `lib/Portal.ts`, `lib/Lazy.ts`, `lib/Transition.ts`, `lib/internal/render.ts`).
@@ -215,6 +215,7 @@ HellaJS's DOM-tree-walking boundary lookup is unique — errors find their bound
 | SSR + hydration | `ssr` + marker-reader `hydrate` (`lib/internal/hydrate.ts`) | `renderToString` + `data-hk` hydrate | Compiled SSR + hydrate | Streaming + selective hydration | `renderToString` + hydrate | Hydration (non-destructive) |
 | Streaming SSR | `ssr.stream` + `$hs` progressive reveal (`lib/internal/hydrate.ts`) | Streaming SSR | via SvelteKit | `renderToPipeableStream` | via meta-framework | — |
 | Keyed lists | `ForEach` LIS (`lib/ForEach.ts`) | `<For>` / `<Index>` | keyed `{#each}` | keys | `v-for :key` | `@for track` |
+| SVG / MathML | Namespaced (`createElementNS`, `foreignObject` resets) (`lib/internal/render.ts`) | Yes | Yes | Yes | Yes | Yes |
 | Context / DI | None — signals + props | `createContext` | `setContext`/`getContext` | Context | provide / inject | DI + inject |
 
 ### Notable HellaJS differentiators
