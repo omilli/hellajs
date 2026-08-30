@@ -121,7 +121,7 @@ export type HellaElement = Element & {
  * Handle returned by mount() for controlling a mounted tree.
  */
 export interface MountHandle {
-  container: Element;
+  container: Element | ShadowRoot;
   flush(): void;
   unmount(): void;
 }
@@ -196,6 +196,14 @@ export interface ComponentSlots {
   children: Node[];
   /** Named slots mapped by slot name */
   slots: Record<string, Node[]>;
+}
+
+/**
+ * Options for defining a custom element.
+ */
+export interface ElementOptions {
+  /** Attach a shadow root instead of rendering to light DOM. `true` uses `{ mode: "open" }`; an object is passed to `attachShadow` verbatim. */
+  shadow?: boolean | ShadowRootInit;
 }
 
 // ============================================================================

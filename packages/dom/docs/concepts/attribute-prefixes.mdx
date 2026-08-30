@@ -62,6 +62,33 @@ const App = () => (
 mount(App, "#app");
 ```
 
+### Style Objects
+
+The `style` attribute accepts an object of CSS declarations alongside plain strings. camelCase keys serialize to kebab-case, falsy declarations are skipped, and numbers carry no automatic units — write `"12px"`, not `12`.
+
+```js
+import { mount, html } from "@hellajs/dom";
+import { signal } from "@hellajs/core";
+
+const theme = signal("light");
+
+mount(html`<div style=${() => ({ color: theme() === "dark" ? "#fff" : "#000", fontSize: "12px" })}>hi</div>`, "#app");
+```
+
+A function-ref style object re-serializes the whole declaration list when its dependencies change; a static object serializes once. String style values pass through unchanged.
+
+In JSX/TSX the static form is a plain object expression (typed via the exported `StyleObject` — camelCase keys, explicit units):
+
+```jsx
+import { mount } from "@hellajs/dom";
+
+const App = () => (
+  <div style={{ color: "#333", fontSize: "12px" }}>hi</div>
+);
+
+mount(App, "#app");
+```
+
 ## Lifecycle Hooks
 
 ### `hook:` - Element Lifecycle Hooks
