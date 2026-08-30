@@ -89,7 +89,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `isFetching` | `() => boolean` | True for any network activity (incl. background). |
 | `isIdle` | `() => boolean` | `status() === "idle"`. |
 | `status` | `() => ResourceStatus` | Reads `rawData()` (not `data()`); transform-invisible. |
-| `fetch` | `(opts?: { force? }) => void` | Manual; `force` bypasses cache + dedup lookup. |
+| `fetch` | `(opts?: { force? }) => Promise<T \| undefined>` | Manual; `force` bypasses cache + dedup lookup. Resolves data (raw type) on success/cache-hit/dedup-join, `undefined` on error/skip/abort — never rejects. |
 | `abort` | `() => void` | Aborts, resets data to `initialData`, clears flags/listeners. |
 | `invalidate` | `() => void` | Deletes this fetcher's cache entry for the key, then `run(true)`. |
 | `setData` | `(T \| ((old) => T)) => void` | Updates `rawData`; caches only if `cacheTime > 0`. |
