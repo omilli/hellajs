@@ -35,11 +35,11 @@ type Store<T, R extends PropertyKey = never> = {
   [K in keyof T]:
     T[K] extends (...args: unknown[]) => unknown ? T[K] :
     T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
-    T[K] extends Record<string, unknown> ? Store<T[K]> :
+    T[K] extends Record<string, unknown> ? (K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>) :
     K extends R ? () => T[K] : Signal<T[K]>;
 } & {
   snapshot: () => Snapshot<T>;
-  update: (partial: PartialDeep<T> | ((draft: T) => void)) => void;
+  update: (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) => void;
   cleanup: () => void;
 }
 
@@ -68,7 +68,7 @@ type StoreMiddleware<T> = {
 ```
 
 - `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, arrays become signals.
-- `options.readonly`: `true` for all properties readonly, or an array of keys to lock.
+- `options.readonly`: `true` for all properties readonly, or an array of keys to lock. Propagates deep — `true` locks every plain-object level; a listed object key locks its entire subtree. Composed stores keep their own readonly config.
 - `options.middleware`: Per-key transform functions applied on every set.
 - **Returns**: A reactive store with `snapshot`, `update`, and `cleanup` methods.
 
@@ -313,9 +313,9 @@ const userStore = store({ name: 'John' });
 userStore.cleanup();
 ```
 
-### Nested Stores Do Not Inherit Readonly
+### Readonly Propagates Deep
 
-Readonly configuration applies to the current store level only. See [readonly](/learn/concepts/state#readonly) for the full explanation and examples.
+`readonly: true` locks every plain-object level of the store tree, and a listed object key locks its entire subtree. Composed stores are the exception: adoption preserves their signals, so a composed store keeps its own readonly configuration regardless of the parent's. See [readonly](/learn/concepts/state#readonly) for the full explanation and examples.
 
 ### Signals Survive Cleanup
 

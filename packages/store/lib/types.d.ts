@@ -66,9 +66,10 @@ export type Snapshot<T> = {
  * Property transformations:
  * - Functions: preserved as-is
  * - Arrays: become Signal<Array>
- * - Objects: recursively become nested Store
+ * - Objects: recursively become nested Store; readonly object keys propagate deep (`Store<T[K], keyof T[K]>`)
  * - Primitives: become Signal<T>
  * - Readonly properties: wrapped in getter functions
+ * - Composed stores keep their own config — adoption preserves their signals as-is
  *
  * Built-in methods:
  * - snapshot(): Returns plain object representation of current state
@@ -82,7 +83,7 @@ export type Store<
   [K in keyof T]:
   T[K] extends (...args: unknown[]) => unknown ? T[K] :
   T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
-  T[K] extends Record<string, unknown> ? Store<T[K]> :
+  T[K] extends Record<string, unknown> ? (K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>) :
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {
   /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types */
