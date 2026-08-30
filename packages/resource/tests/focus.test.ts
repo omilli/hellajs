@@ -52,6 +52,50 @@ describe("resource", () => {
       r.dispose();
     });
 
+    test("refetches on window focus event", async () => {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
+        refetchOnWindowFocus: true,
+        refetchOnKeyChange: true,
+      });
+
+      effect(() => { r.status(); });
+      await delay(20);
+
+      expect(fetcher).toHaveBeenCalledTimes(1);
+
+      window.dispatchEvent(new Event("focus"));
+
+      await delay(20);
+
+      expect(fetcher).toHaveBeenCalledTimes(2);
+
+      r.dispose();
+    });
+
+    test("deduplicates back-to-back visibility and focus triggers", async () => {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
+        refetchOnWindowFocus: true,
+        refetchOnKeyChange: true,
+      });
+
+      effect(() => { r.status(); });
+      await delay(20);
+
+      expect(fetcher).toHaveBeenCalledTimes(1);
+
+      // Tab return fires both events in the same tick - dedup absorbs the duplicate
+      setVisibility("visible");
+      window.dispatchEvent(new Event("focus"));
+
+      await delay(20);
+
+      expect(fetcher).toHaveBeenCalledTimes(2);
+
+      r.dispose();
+    });
+
     test("does not refetch when disabled", async () => {
       const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
@@ -90,6 +134,27 @@ describe("resource", () => {
 
       setVisibility("hidden");
       setVisibility("visible");
+
+      await delay(20);
+
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+    test("does not refetch on focus after dispose", async () => {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
+        refetchOnWindowFocus: true,
+        refetchOnKeyChange: true,
+      });
+
+      effect(() => { r.status(); });
+      await delay(20);
+
+      expect(fetcher).toHaveBeenCalledTimes(1);
+
+      r.dispose();
+
+      window.dispatchEvent(new Event("focus"));
 
       await delay(20);
 

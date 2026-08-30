@@ -225,7 +225,7 @@ Always call `dispose()` to stop polling and clean up timers.
 
 ### Window Focus / Reconnect Refetch
 
-Automatically refetch when the user returns to the tab or when the browser reconnects. Both require `refetchOnKeyChange: true` for automatic initial fetch.
+Automatically refetch when the user returns to the tab, focuses the browser window (switching back from another app), or when the browser reconnects. Both require `refetchOnKeyChange: true` for automatic initial fetch.
 
 ```typescript
 const session = resource(
@@ -233,6 +233,8 @@ const session = resource(
   { refetchOnWindowFocus: true, refetchOnReconnect: true, refetchOnKeyChange: true }
 );
 ```
+
+`refetchOnWindowFocus` fires on both `visibilitychange` (the tab becomes visible) and the window `focus` event, so switching between OS windows without hiding the tab also refetches. The browser fires `focus` once at page load — expect one extra fetch on load. When a tab return fires both events back-to-back, request deduplication collapses them into a single network call.
 
 Without `refetchOnKeyChange: true`, call `fetch()` manually first; the focus/reconnect listeners still work for subsequent refetches.
 
