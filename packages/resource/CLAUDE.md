@@ -131,6 +131,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `key` | `() => undefined` | `(() => K) \| K`. Function or static value. |
 | `enabled` | `true` | `boolean \| () => boolean`. Getter re-evaluated reactively in the key-change effect. |
 | `refetchOnKeyChange` | `false` | Gates auto-fetch and the reactive key-tracking effect. |
+| `keepPreviousData` | `true` | Keep the previous key's data during a key-change refetch. `false` clears `rawData` to `undefined` (never `initialData`) before the auto-fetch — a loading window. Only meaningful with `refetchOnKeyChange`. |
 | `initialData` | `undefined` | Seeds `rawData`; status stays `idle` while `rawData === initialData`. |
 | `cacheTime` | `0` | TTL ms. `0` disables caching entirely. |
 | `staleTime` | `Infinity` (resource) | Freshness ms. `0` = always stale. (`resourceCache.set` defaults this to `0`.) |
@@ -203,6 +204,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - `status()` reads `rawData()` directly, so `transform` cannot change status. A fetch returning a value equal to `initialData` leaves status `idle`. (resource.ts `status`)
 - Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts:161-162, retry.test.ts:153)
 - Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts key-change effect, fetching.test.ts)
+- `keepPreviousData: false` clears `rawData(undefined)` when the tracked key changes, before the auto `run(false)` — the fetch window reads `data()` `undefined`, `isLoading()` true, `status()` `"loading"`. `initialData` is deliberately not re-applied (a key change is a refetch, not the never-fetched state). The effect's `prevKey`/`hasPrevKey` closure updates on every key evaluation: the first evaluation and enabled flips with an unchanged key never clear; a key passing through `null`/`undefined` still counts as changed on the next non-null value. (resource.ts key-change effect, keep-previous-data.test.ts)
 - `polling.setup()` is gated on `isEnabled() && refetchInterval` (standalone — no auto-fetch opt-in) and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the effect; not re-armed by key changes or after `abort`, re-armed by `reset()`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts setup gates, focus.test.ts)
 - `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained while their scope holds entries — reaped once empty); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (cache.ts:12, dedupe.ts:17)
 - Cache entries are module-level and survive `dispose()`/resource recreation. (cache.ts:12)
