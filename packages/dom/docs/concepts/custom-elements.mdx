@@ -73,8 +73,8 @@ The gate is conservative: a prop falls back to a regular attribute when the key 
 
 ## Lifecycle
 
-When a custom element is disconnected from the DOM, all effects are disposed and internal state resets. Reconnection triggers a fresh render from scratch.
+When a custom element is disconnected from the DOM, all effects are disposed and internal state resets. Reconnection triggers a fresh render from scratch — the shadow root (if any) is reused.
 
-**Important:** Custom elements use light DOM rendering, not shadow DOM. Page styles apply normally to the element's content.
+**Important:** Custom elements render to light DOM by default; pass `{ shadow: true }` for style encapsulation (see [Shadow DOM](#shadow-dom)).
 
 See [`element`](/reference/dom/element) for full API details.

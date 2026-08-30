@@ -111,7 +111,7 @@ Attaches reactivity to existing server-rendered HTML in place — re-executes th
 Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 - **Sync `cleanupSubtree(root)`** — called directly by `appendToParent` (reactive child swap), ForEach (stale-removal + list clear), Transition (leave completion). `traverseDescendants` (iterative stack) → per descendant `clean(node)`: `beforeDestroy` → `componentScope?.()` → `portalCleanup?.()` → `lazyCleanup?.()` → `transitionCleanup?.()` → `suspenseCleanup?.()` → drain `effects` → `removeDirectHandlers` → `afterDestroy` → `deleteState`.
-- **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which collects removed nodes with state → `cleanupQueue` — a stateful node is queued WITHOUT recursing into it (`processCleanupQueue`'s `cleanupSubtree` already traverses its descendants; only stateless intermediates are walked through); added element nodes → `mountQueue` (scheduled only when `mountHooksExist`); both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
+- **Scoped observer safety net.** `registerContainer(container)` (called from `mount()`; accepts an `Element` or a shadow root) + `ensureContainerObserver` lazily create one `MutationObserver` shared across all mount targets (`observedContainers: WeakSet<Element | ShadowRoot>`), observing `{ childList: true, subtree: true }`. Removed nodes' traversed via `registerNode`, which collects removed nodes with state → `cleanupQueue` — a stateful node is queued WITHOUT recursing into it (`processCleanupQueue`'s `cleanupSubtree` already traverses its descendants; only stateless intermediates are walked through); added element nodes → `mountQueue` (scheduled only when `mountHooksExist`); both drain on `queueMicrotask`. `processCleanupQueue` skips nodes still `isConnected` (re-attached, not removed).
 - **`runHooks` element-argument rule.** `beforeMount` and `afterDestroy` are called with **no** argument; every other hook receives the element.
 - **Reset (test).** `resetEventState` / `resetQueueState` / `resetSelectorState` / `resetDom` tear down listeners, observers, queues, the `staticDom` cache, between tests.
 
@@ -192,12 +192,12 @@ Returns a function with `isDynamic: true` and `fn.ssr = { kind: "suspense", prop
 
 ## `element()` custom elements (`lib/element.ts`)
 
-`customElements.define` wrapper. **Light DOM only** (shadow DOM would break reactivity internals). Per instance:
+`customElements.define` wrapper. **Light DOM by default** — opt-in shadow DOM via the third `options` param (`ElementOptions.shadow`: `true` → `attachShadow({ mode: "open" })`, a `ShadowRootInit` object verbatim, incl. `mode: "closed"`). The root is cached on `_shadowRoot`: `attachShadow` throws on a host that already carries a root (reconnects), and `this.shadowRoot` reads `null` for closed roots. Under `shadow`, `mount` renders into the root — the observer safety net and delegated events work inside it (`registerContainer` accepts `ShadowRoot`); captured `props.children`/`props.slots` nodes are projected into the shadow render output, so native `<slot>` projection is unavailable. Per instance:
 
 - **connectedCallback** — guards on `_isInitialized`, defers `_mount` via `Promise.resolve().then()` so children are parsed before capture.
 - **Child capture** — iterates `childNodes`; nodes with a `slot` attribute → `slots[slotName]`; others (text nodes only if `textContent.trim()`) → `children`. Captured once, projected as **raw DOM nodes — not reactive** to later slot changes.
 - **Props Proxy** — `props.children` → children array, `props.slots` → slots record, any other key → `() => { version(); return self.getAttribute(name); }`. Attributes reactive via an internal `_version` signal; `setAttribute`/`removeAttribute` are overridden to bump it and `flush()` for synchronous propagation. Missing attributes return `null`.
-- **Render scope** — `_mount` wraps `mount(render(props), this)` in `scope()`, storing dispose on `_dispose`.
+- **Render scope** — `_mount` computes the render root (`options.shadow ? cached shadow root : this`), then wraps `mount(render(props), root)` in `scope()`, storing dispose on `_dispose`.
 - **disconnectedCallback** — calls `_dispose()`, resets `_isInitialized` → reconnect re-runs render from scratch.
 
 ## `$ref` / `$collection` (`lib/$ref.ts`, `lib/$collection.ts`, `lib/internal/reactive.ts`, `lib/internal/selectors.ts`)

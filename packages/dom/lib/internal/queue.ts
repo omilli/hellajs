@@ -25,7 +25,7 @@ let mountHooksExist = false;
 /** Depth of mount()/hydrate() attaches currently running. */
 let activeMounts = 0;
 
-let observedContainers = new WeakSet<Element>();
+let observedContainers = new WeakSet<Element | ShadowRoot>();
 let containerObserver: MutationObserver | null = null;
 
 /**
@@ -131,10 +131,10 @@ function ensureContainerObserver() {
 
 /**
  * @internal
- * Registers an element for MutationObserver-based cleanup/mount tracking.
- * @param container The container element to observe
+ * Registers a container (element or shadow root) for MutationObserver-based cleanup/mount tracking.
+ * @param container The container to observe
  */
-export function registerContainer(container: Element) {
+export function registerContainer(container: Element | ShadowRoot) {
   if (observedContainers.has(container)) return;
   observedContainers.add(container);
   ensureContainerObserver();

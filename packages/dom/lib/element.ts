@@ -1,6 +1,6 @@
 import { flush, scope, signal } from "./internal/core";
 import { mount } from "./mount";
-import type { ComponentProps, ComponentRenderFn, ComponentSlots, HellaNode } from "./types/nodes";
+import type { ComponentProps, ComponentRenderFn, ComponentSlots, ElementOptions, HellaNode } from "./types/nodes";
 
 /**
  * Defines a custom element with light DOM and slot support.
@@ -8,15 +8,18 @@ import type { ComponentProps, ComponentRenderFn, ComponentSlots, HellaNode } fro
  * Children are captured before mount and available via props.children and props.slots.
  * @param tagName The custom element tag name (must contain a hyphen)
  * @param render Render function that receives props and returns a HellaNode
+ * @param options Optional element options — `shadow` attaches a shadow root instead of rendering to light DOM
  * @throws {Error} When tagName is not a hyphenated string or render is not a function.
  */
 export function element<T extends object = ComponentProps & Partial<ComponentSlots>>(
   tagName: string,
-  render: ComponentRenderFn<T>
+  render: ComponentRenderFn<T>,
+  options: ElementOptions = {}
 ): void {
   class HellaCustomElement extends HTMLElement {
     private _dispose?: () => void;
     private _isInitialized = false;
+    private _shadowRoot?: ShadowRoot;
     private _version = signal(0);
 
     private _bumpVersion() {
@@ -70,8 +73,14 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
         this._bumpVersion();
       };
 
+      // attachShadow throws on a host that already carries a shadow root (reconnects), and
+      // this.shadowRoot reads null for closed roots — so the reference lives on the instance.
+      const root = options.shadow
+        ? (this._shadowRoot ??= this.attachShadow(options.shadow === true ? { mode: "open" } : options.shadow))
+        : this;
+
       this._dispose = scope(() => {
-        mount(render(props) as HellaNode, this);
+        mount(render(props) as HellaNode, root);
       });
     }
 

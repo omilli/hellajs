@@ -8,30 +8,30 @@ Renders HellaNodes to the DOM with reactive updates and lifecycle management.
 // With a sync node or component function
 function mount(
   hellaNode: HellaNode | (() => HellaNode),
-  target?: string | Element
+  target?: string | Element | ShadowRoot
 ): MountHandle
 
 // With an async component function
 function mount(
   hellaNode: () => Promise<HellaNode | (() => HellaNode)>,
-  target?: string | Element
+  target?: string | Element | ShadowRoot
 ): MountHandle
 ```
 - `hellaNode`: A JSX element ([HellaNode](/learn/concepts/templates)) object or a function that returns one.
-- `target`: A CSS selector string or DOM Element for the container. Defaults to `"#app"`.
+- `target`: A CSS selector string, DOM Element, or ShadowRoot for the container. Defaults to `"#app"`.
 - **Returns**: A [`MountHandle`](#mounthandle) with `flush()` and `unmount()` methods.
 
 ### MountHandle
 
 ```typescript
 interface MountHandle {
-  container: Element;
+  container: Element | ShadowRoot;
   flush(): void;
   unmount(): void;
 }
 ```
 
-- `container`: The DOM element the tree was mounted into.
+- `container`: The DOM element or shadow root the tree was mounted into.
 - `flush()`: Optional escape hatch that drains the mount/cleanup queues synchronously. `afterMount` already fires during `mount()`, so this is only needed to force synchronous processing (e.g. `afterDestroy` in tests, or dynamically-added nodes).
 - `unmount()`: Clean up and remove the mounted tree.
 
