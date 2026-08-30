@@ -2,7 +2,7 @@ import type { Store, StoreOptions, StoreMiddleware, StoreEquals } from "./types"
 import { createStore } from "./internal/create";
 
 /**
- * Creates a reactive store with specific readonly properties.
+ * Creates a reactive store with specific readonly properties. Listed plain-object keys propagate deep — every nested level below them is readonly too.
  * @template T
  * @template R
  * @param initial Initial object to transform into a reactive store
@@ -15,7 +15,7 @@ export function store<T extends Record<string, unknown>, R extends readonly (key
 ): Store<T, R[number]>;
 
 /**
- * Creates a reactive store with all properties readonly.
+ * Creates a reactive store with all properties readonly. Readonly propagates deep — every plain-object level below the top is readonly too; composed stores keep their own config.
  * @template T
  * @param initial Initial object to transform into a reactive store
  * @param options Object with readonly: true to make all properties readonly

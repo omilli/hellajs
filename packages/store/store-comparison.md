@@ -111,11 +111,11 @@ HellaJS's snapshot is closer to Valtio's `useSnapshot` than to RTK's `useSelecto
 
 HellaJS makes each primitive property its own signal (`lib/internal/create.ts`). Two effects that read different properties of the same store never interfere — only the signal that actually changed propagates through core's graph. Arrays are a deliberate exception: an array becomes a single `Signal<Array>`, not per-element signals (`lib/internal/create.ts`), so any element change rewrites the array and wakes its subscribers; the draft-mutator path is the intended tool for fine-grained array edits, and its structural diff keeps untouched sibling values from rewriting (`lib/internal/draft.ts`). Direct writes are reference-compared by default, but the `equals` option opts individual keys into content equality — `'structural'` reuses the draft comparator, or a custom `(previous, next)` comparator runs inside the signal, after middleware — so an equal-content replacement wakes no subscriber (`lib/internal/create.ts`, verified by `tests/equals.test.ts`).
 
-Readonly enforcement wraps the underlying signal in a `computed()` behind an arity-0 guard: the property works as a getter, and any call with an argument throws `[store] readonly key "<key>"` (`lib/internal/create.ts`, verified by `tests/readonly.test.ts`). Readonly does not propagate into nested stores — recursive `createStore()` calls receive only nested middleware, never the readonly option (`lib/internal/create.ts`) — so each level is configured independently, while a pre-configured readonly store composed into a parent retains its readonly state because its signals are adopted verbatim on the `isStore` path (`lib/internal/create.ts`).
+Readonly enforcement wraps the underlying signal in a `computed()` behind an arity-0 guard: the property works as a getter, and any call with an argument throws `[store] readonly key "<key>"` (`lib/internal/create.ts`, verified by `tests/readonly.test.ts`). Readonly propagates deep — recursive `createStore()` calls receive `readonly: true` in their options when the parent is fully readonly or the key is listed (`lib/internal/create.ts`), so `readonly: true` locks every plain-object level and a listed object key locks its entire subtree; the mapped type mirrors this by deriving `keyof T[K]` fresh per level, so nested typing matches the runtime without name-collision false lockdowns (`lib/types.d.ts`). Composed stores are the exception: a pre-configured readonly store composed into a parent retains its readonly state and a writable one stays writable, because its signals are adopted verbatim on the `isStore` path (`lib/internal/create.ts`, verified by `tests/nested.test.ts`).
 
 | Library | Granularity | Deep reactivity | Notes |
 |---|---|---|---|
-| HellaJS | Per-property signals; arrays as one signal | Yes, recursive | Readonly via throwing guard; top-level keys only |
+| HellaJS | Per-property signals; arrays as one signal | Yes, recursive | Readonly via throwing guard; propagates deep |
 | Zustand | Selector output | No | Whole-state replacement |
 | Redux Toolkit | Selector output | No | Tree replaced per action |
 | Jotai | Per-atom | Manual (one atom per node) | No implicit nesting |
@@ -132,14 +132,14 @@ HellaJS's `Store<T, R>` mapped type encodes the entire transformation in the typ
 
 - Functions preserve their original signature (`T[K] extends (...args) => unknown ? T[K]`).
 - Arrays become `Signal<Array>` when writable, `() => Array` when the key is in `R`.
-- Plain objects recurse as `Store<T[K]>` — readonly applies to top-level keys only; nested levels are independently configured, matching the runtime (`lib/types.d.ts`).
+- Plain objects recurse as `K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>` — readonly object keys propagate deep, each nested level deriving its own full key set; composed stores keep their own config because their function-typed members land in the function-preservation row regardless of `R` (`lib/types.d.ts`).
 - Primitives become `Signal<T>` when writable, `() => T` when readonly.
 
 `ReadonlyKeys<T, O>` extracts the readonly key set from the options object conditionally (`lib/types.d.ts`), so `store(initial, { readonly: ['apiUrl'] })` produces a type where `apiUrl` is a `() => string` and the rest are signals. `PartialDeep<T>` types the `update()` argument, preserving arrays and functions as leaves so a partial update to `{ items: [...] }` is a full replacement, not a deep merge (`lib/types.d.ts`). `StoreMiddleware<T>` mirrors the same shape for nested middleware.
 
 | Library | Inference | Readonly typing |
 |---|---|---|
-| HellaJS | Conditional on initial shape | First-class — `R` parameter at the type level |
+| HellaJS | Conditional on initial shape | First-class and deep — `R` recurses per level (`keyof T[K]`) |
 | Zustand | Manual `create<T>()` | Manual; no compile-time enforcement |
 | Redux Toolkit | Manual `createSlice<T>` | Manual; Immer-wrapped reducers infer state |
 | Jotai | Inferred from atom initial value | Manual via read-only atoms |
@@ -177,7 +177,7 @@ HellaJS's recursive cleanup is the most explicit of the group — one call on th
 | Partial deep merge | Yes (`lib/internal/create.ts`) | Shallow only | Per-reducer | N/A | N/A | N/A |
 | Unknown-key update | Throws (`lib/internal/create.ts`) | Adds key | Adds via reducer | New atom needed | Adds key | Adds key |
 | Reactive snapshot | Yes (`snapshot()`) | Selector | Selector | Derived atom | `useSnapshot` | Auto-track |
-| Compile-time readonly | Yes (`lib/types.d.ts`) | No | No | No (manual) | Over-strict | No |
+| Compile-time readonly | Yes, deep (`lib/types.d.ts`) | No | No | No (manual) | Over-strict | No |
 | Per-key middleware | Yes, nested (`lib/internal/utils.ts`) | Via middleware | Via middleware | Via atom write fn | No | Yes (`intercept`, `observe`) |
 | Custom write equality | Yes, per key (`equals`: comparator or `'structural'`, `lib/internal/create.ts`) | On selectors (`useStoreWithEqualityFn`, `subscribeWithSelector`) | No | No | No | Yes (`comparer.structural` on computed) |
 | Subscription API | Per-key `subscribe(key, cb)` with `(next, prev)` | Whole-store `subscribe(listener)` | `store.subscribe()` per store | `sub()` per atom | `subscribe(proxy, cb)` per object | `observe`/`intercept` per observable |
@@ -189,7 +189,7 @@ HellaJS's recursive cleanup is the most explicit of the group — one call on th
 
 ### Notable HellaJS differentiators
 
-- **Compile-time readonly inference from a single option** — `{ readonly: ['apiUrl'] }` or `{ readonly: true }` produces a store type where the disallowed setters are absent, not merely runtime no-ops (`lib/internal/create.ts`, `lib/types.d.ts`).
+- **Compile-time readonly inference from a single option** — `{ readonly: ['apiUrl'] }` or `{ readonly: true }` produces a store type where the disallowed setters are absent, not merely runtime no-ops, and the lock is deep: listed object keys and `readonly: true` lock every nested plain-object level (`lib/internal/create.ts`, `lib/types.d.ts`).
 - **Three explicit update paths in one API** — direct signal call, `update(partial)` deep merge, and `update(draft => …)` mutation diff, with no external Immer dependency (`lib/internal/create.ts`, `lib/internal/draft.ts`).
 - **Per-key middleware with deep nesting** — middleware recurses into nested store keys automatically through the store factory (`lib/internal/create.ts`, `lib/internal/utils.ts`).
 - **Properties are real signals, not Proxy traps** — `Object.defineProperty` (non-writable for data properties and methods, writable for functions) makes each property a callable signal function; nothing intercepts reads or writes after construction (`lib/internal/utils.ts`).
@@ -242,7 +242,7 @@ Architecturally, `@hellajs/store` belongs to the deeply reactive camp alongside 
 
 What sets HellaJS apart — and no single competitor matches all of:
 
-1. **Compile-time readonly from a single declaration** — Valtio and MobX have no static readonly; Zustand and RTK leave it to user discipline (`lib/types.d.ts`).
+1. **Deep compile-time readonly from a single declaration** — one option locks the whole subtree at the type level and at runtime, nested levels included; Valtio and MobX have no static readonly, and Zustand and RTK leave it to user discipline (`lib/types.d.ts`, `lib/internal/create.ts`).
 2. **Properties as real signal functions, not Proxy traps** — Valtio and MobX intercept on every access; HellaJS converts once at creation and never intercepts again, and data properties are non-writable so external reassignment throws instead of silently dropping reactivity (`lib/internal/utils.ts`).
 3. **Three first-class update paths without an Immer dependency** — direct call, `update(partial)`, and `update(draft => …)` over a hand-written structural diff (`lib/internal/draft.ts`).
 4. **Framework-agnostic with no Provider and no hook requirement** — Zustand, Jotai, and Valtio are React-first with vanilla escape hatches; RTK reaches React through react-redux; HellaJS works anywhere `@hellajs/core` works (`package.json`).

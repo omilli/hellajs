@@ -209,7 +209,30 @@ configStore.theme('dark');           // Updates normally
 // ❌ configStore.apiUrl('new-url'); — throws: readonly key
 ```
 
-Readonly keys do not propagate to nested stores. Each nested store requires its own readonly configuration. Pre-configured readonly stores retain their readonly state when composed:
+Readonly propagates deep. `readonly: true` locks every plain-object level of the tree, and a listed object key locks the entire subtree below it — `readonly: ['user']` makes `user` and everything inside it readonly. Each nested level derives its own full readonly key set, so intermediate objects stay locked too:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const app = store(
+  { user: { name: 'Alice', prefs: { theme: 'dark' } }, version: 1 },
+  { readonly: true }
+);
+
+// ❌ app.user.name('Bob'); — throws: readonly propagates into nested objects
+// ❌ app.user.prefs.theme('light'); — throws: every plain-object level is locked
+app.user.prefs.theme(); // 'dark' — reading works everywhere
+
+const partial = store(
+  { user: { name: 'Alice' }, theme: 'light' },
+  { readonly: ['user'] as const }
+);
+
+// ❌ partial.user.name('Bob'); — throws: the whole user subtree is readonly
+partial.theme('dark');  // Updates normally — only listed keys lock
+```
+
+Composed stores keep their own readonly configuration. A pre-configured readonly store stays readonly when composed into a writable parent, and a writable store composed into a `readonly: true` parent stays writable — composition adopts the inner store's signals as-is:
 
 ```typescript
 import { store } from '@hellajs/store';

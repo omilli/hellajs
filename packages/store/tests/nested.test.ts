@@ -145,6 +145,26 @@ describe("store", () => {
       }).not.toThrow();
     });
 
+    test("composed pre-configured readonly store keeps readonly inside a writable parent", () => {
+      const readonlyUser = store({ name: "Alice" }, { readonly: true });
+      const appStore = store({ user: readonlyUser });
+
+      // @ts-expect-error user retains its own readonly config under composition
+      expect(() => appStore.user.name("Bob")).toThrow('[store] readonly key "name"');
+
+      expect(appStore.user.name()).toBe("Alice");
+    });
+
+    test("composed writable store stays writable inside a readonly: true parent", () => {
+      const userStore = store({ name: "Alice" });
+      const appStore = store({ user: userStore }, { readonly: true });
+
+      appStore.user.name("Bob");
+
+      expect(appStore.user.name()).toBe("Bob");
+      expect(userStore.name()).toBe("Bob"); // same signal reference — adoption keeps signals
+    });
+
     test("snapshot is reactive across composed stores", () => {
       const userStore = store({ name: "Alice" });
       const appStore = store({ user: userStore });
