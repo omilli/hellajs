@@ -19,7 +19,7 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 | `lib/internal/retry.ts` | `resolveRetryConfig(retry, retryDelay)` → `{ maxRetries, shouldRetry, getDelay }`. Boolean→count, function→predicate. `fetchWithRetry(start, { signal, retryConfig })` — shared race-against-abort + retry loop (used by `run` and `prefetch`). |
 | `lib/internal/abort.ts` | `wireRequestControls(controller, { timeout?, abortSignal? })` → release() clearing timer + external listener (shared by `run`/`mutate`/`prefetch`); `raceAbort(promise, signal, message?)`. |
 | `lib/internal/polling.ts` | `createPolling` — recursive `setTimeout`, visibility-aware, dynamic interval via `untracked(data)`. |
-| `lib/internal/lifecycle.ts` | `createFocus` (visibilitychange→visible), `createReconnect` (`resourceCache.onOnlineChange`→online). |
+| `lib/internal/lifecycle.ts` | `createFocus` (visibilitychange→visible + window `focus`), `createReconnect` (`resourceCache.onOnlineChange`→online). |
 | `lib/internal/structural.ts` | `structuralShare(prev, next)` — reference-preserving deep merge over arrays/plain objects. |
 | `lib/internal/errors.ts` | `isAbortError` (DOMException+AbortError), `categorizeError` (regex `HTTP N:` → statusCode → category). |
 
@@ -65,7 +65,7 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 ### Polling / focus / reconnect (polling.ts, lifecycle.ts)
 
 - `createPolling`: recursive `setTimeout`; skips tick when `document.visibilityState === "hidden"` unless `refetchIntervalInBackground`; dynamic interval re-evaluated via `untracked(data)` after each tick. `false`/`0`/`undefined` disable.
-- `createFocus`: `visibilitychange` → `run(false)` only when becoming visible.
+- `createFocus`: `visibilitychange` → `run(false)` only when becoming visible; window `focus` → `run(false)` unconditionally (app-switch without tab hide). A tab return fires both — dedup absorbs the duplicate.
 - `createReconnect`: subscribes via `resourceCache.onOnlineChange` → `run(false)` on transition to online.
 - **Setup gates differ**: `polling.setup()` requires `refetchOnKeyChange && isEnabled() && refetchInterval` and arms **once** — at creation when enabled, otherwise on the first truthy enabled evaluation inside the key-change effect (an `enabled` getter flipping false→true starts polling); key changes never reset the cadence. `focus.setup()` and `reconnect.setup()` require only their own boolean flags (work without auto-fetch). All three are cleared by `abort`/`reset`/`dispose`; polling does not re-arm after `abort`/`reset` until the resource is recreated.
 
@@ -149,7 +149,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `onSuccess` / `onError` | `—` | `(data) => void` / `(err) => void`. |
 | `refetchInterval` | `undefined` | `number \| false \| ((data?) => number \| false)`. |
 | `refetchIntervalInBackground` | `false` | Keep polling when tab hidden. |
-| `refetchOnWindowFocus` | `false` | Refetch on tab visible. |
+| `refetchOnWindowFocus` | `false` | Refetch on tab visible or window focus. |
 | `refetchOnReconnect` | `false` | Refetch on network online. |
 | `onMutate` | `—` | `(variables) => context`; runs before mutation, enables optimistic updates. |
 | `onSettled` | `—` | `(data?, error?, variables?, context?) => ...`; **skipped on mutation abort**. |
