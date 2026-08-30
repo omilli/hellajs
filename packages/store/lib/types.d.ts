@@ -61,6 +61,18 @@ export type Snapshot<T> = {
 };
 
 /**
+ * Keys of T whose store properties are signal-backed (settable). Function-valued
+ * keys (preserved as-is, including composed stores) and plain-object keys (nested
+ * stores) never become signals, so they are excluded. Class instances lack a string
+ * index signature and stay settable — they become signals like primitives.
+ */
+type SettableKeyOf<T> = {
+  [K in keyof T]: T[K] extends (...args: unknown[]) => unknown ? never
+  : T[K] extends Record<string, unknown> ? never
+  : K;
+}[keyof T];
+
+/**
  * Reactive store type that transforms an object's properties.
  *
  * Property transformations:
@@ -74,6 +86,7 @@ export type Snapshot<T> = {
  * - snapshot(): Returns plain object representation of current state
  * - update(partial): Deep merge partial updates into store
  * - cleanup(): Dispose all reactive subscriptions
+ * - subscribe(key, callback): Observe changes to a single settable property
  */
 export type Store<
   T extends Record<string, unknown> = Record<string, never>,
@@ -91,4 +104,12 @@ export type Store<
   update: (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) => void;
   /** Recursively invokes cleanup on nested stores; individual signals are not disposed — they remain functional */
   cleanup: () => void;
+  /**
+   * Subscribes to changes of a single signal-backed (settable) property.
+   * @param key Name of a settable property — nested-store keys, preserved functions, reserved keys, and unknown keys throw
+   * @param callback Receives the next and previous values; runs untracked, so signal reads inside it never widen the subscription. Not called for the initial value
+   * @returns Unsubscribe function; safe to call more than once
+   * @throws {Error} When key is not a settable key of the store.
+   */
+  subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void;
 };

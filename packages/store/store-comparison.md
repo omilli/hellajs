@@ -156,7 +156,7 @@ HellaJS `cleanup()` recursively walks the store tree, skips reserved keys, and c
 
 | Library | Cleanup model | What's disposed |
 |---|---|---|
-| HellaJS | Explicit `store.cleanup()` | Nested store structure; leaf signals intentionally survive |
+| HellaJS | Explicit `store.cleanup()` + per-key `subscribe` disposers | Nested store structure; leaf signals intentionally survive; subscribe effects are user-managed |
 | Zustand | Manual subscriber unsubscribe | Whatever the caller unsubscribes |
 | Redux Toolkit | Store lives for the app lifetime | Entire store on teardown |
 | Jotai | Atom values per Provider/store | Atom cache when the store is dropped |
@@ -178,6 +178,7 @@ HellaJS's recursive cleanup is the most explicit of the group — one call on th
 | Reactive snapshot | Yes (`snapshot()`) | Selector | Selector | Derived atom | `useSnapshot` | Auto-track |
 | Compile-time readonly | Yes (`lib/types.d.ts`) | No | No | No (manual) | Over-strict | No |
 | Per-key middleware | Yes, nested (`lib/internal/utils.ts`) | Via middleware | Via middleware | Via atom write fn | No | Yes (`intercept`, `observe`) |
+| Subscription API | Per-key `subscribe(key, cb)` with `(next, prev)` | Whole-store `subscribe(listener)` | `store.subscribe()` per store | `sub()` per atom | `subscribe(proxy, cb)` per object | `observe`/`intercept` per observable |
 | Async actions | Via `resource` package | Yes (async `set`) | `createAsyncThunk` | Async atoms + Suspense | Suspense-compatible | `flow` |
 | DevTools integration | None | Redux DevTools | Redux DevTools (best-in-class) | Separate `jotai-devtools` package | Redux DevTools | mobx-devtools extension |
 | Persistence | None | `persist` middleware | Via middleware | `atomWithStorage` | Manual via `subscribe` | Manual |
@@ -229,7 +230,7 @@ app.update(draft => {
 effect(() => console.log(app.user.name()));
 ```
 
-The API is one function plus three methods. Compared to the field: Zustand stores are hooks, so reads and writes route through `useStore`/`set` and the most idiomatic usage lives inside React; HellaJS exposes plain functions callable anywhere with no hook or Provider requirement. RTK asks for a slice definition, action creators, a reducer, a provider, and a selector for each piece of state, returning the investment at scale in devtools, time travel, and RTK Query — HellaJS optimizes for the case where you just want reactive state. Jotai derives its structure from atom declarations rather than the initial object, and its `atom((get) => …)` composition has no direct HellaJS equivalent — HellaJS stores compose by passing store instances as values, sharing signals rather than deriving them. Valtio is the closest in feel — `proxy(state)` + `useSnapshot` versus `store(state)` + property calls — and its mutation ergonomics (`state.x = v`) read cleaner than `s.x(v)`, at the price of Proxy interception on every access and an over-strict snapshot type. MobX matches HellaJS's deep reactivity and adds transparent tracking (`observer` auto-tracks reads with no explicit `effect()` wiring); it is strictly more feature-rich, and strictly larger.
+The API is one function plus four methods. Compared to the field: Zustand stores are hooks, so reads and writes route through `useStore`/`set` and the most idiomatic usage lives inside React; HellaJS exposes plain functions callable anywhere with no hook or Provider requirement. RTK asks for a slice definition, action creators, a reducer, a provider, and a selector for each piece of state, returning the investment at scale in devtools, time travel, and RTK Query — HellaJS optimizes for the case where you just want reactive state. Jotai derives its structure from atom declarations rather than the initial object, and its `atom((get) => …)` composition has no direct HellaJS equivalent — HellaJS stores compose by passing store instances as values, sharing signals rather than deriving them. Valtio is the closest in feel — `proxy(state)` + `useSnapshot` versus `store(state)` + property calls — and its mutation ergonomics (`state.x = v`) read cleaner than `s.x(v)`, at the price of Proxy interception on every access and an over-strict snapshot type. MobX matches HellaJS's deep reactivity and adds transparent tracking (`observer` auto-tracks reads with no explicit `effect()` wiring); it is strictly more feature-rich, and strictly larger.
 
 ---
 
@@ -244,6 +245,7 @@ What sets HellaJS apart — and no single competitor matches all of:
 3. **Three first-class update paths without an Immer dependency** — direct call, `update(partial)`, and `update(draft => …)` over a hand-written structural diff (`lib/internal/draft.ts`).
 4. **Framework-agnostic with no Provider and no hook requirement** — Zustand, Jotai, and Valtio are React-first with vanilla escape hatches; RTK reaches React through react-redux; HellaJS works anywhere `@hellajs/core` works (`package.json`).
 5. **Per-key middleware wired into the construction loop** — nested middleware distributes into nested stores at creation, and every write path — direct, partial, and draft — passes through it (`lib/internal/create.ts`, `lib/internal/utils.ts`).
-6. **Recursive cleanup that preserves shared leaf signals** — composed stores tear down without killing signals that other contexts own (`lib/internal/create.ts`).
+6. **Per-key subscription with previous-value callbacks** — `subscribe(key, cb)` hands side effects `(next, prev)` for a single property with no whole-tree read and no Proxy interception; Zustand and RTK subscribe to whole state, Jotai per atom, Valtio per proxy object, MobX per observable (`lib/internal/create.ts`, verified by `tests/subscribe.test.ts`).
+7. **Recursive cleanup that preserves shared leaf signals** — composed stores tear down without killing signals that other contexts own (`lib/internal/create.ts`).
 
 Its gaps are the predictable ones: ecosystem size (no devtools bridge, no `persist` middleware, no Redux DevTools story), no per-element array reactivity (arrays are single signals — the draft path is the escape hatch), a fixed creation-time shape (`update()` cannot introduce keys the initial object did not have, while Valtio and MobX observe new properties on assignment), no async or suspense primitives in the package itself (delegated to `@hellajs/resource`), and a whole-tree re-computation cost on `snapshot()` that makes wide stores read better through individual signals. For applications living in the HellaJS ecosystem that want deeply reactive state with the strongest readonly typing at the smallest dependency cost, it is the leanest option here. For applications that need devtools, time travel, async flows, or runtime-shape growth, Valtio and MobX remain the safer bets.

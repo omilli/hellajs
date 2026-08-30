@@ -27,6 +27,10 @@ describe("store", () => {
       expect(() => store({ cleanup: () => "dispose" })).toThrow("reserved key collision, received \"cleanup\"");
     });
 
+    test("rejects function value on subscribe reserved key", () => {
+      expect(() => store({ subscribe: () => "listen" })).toThrow("reserved key collision, received \"subscribe\"");
+    });
+
     test("update method skips keys not present in initial object", () => {
       const data = store({ a: 1 });
       // @ts-expect-error snapshot is reserved — update must skip reserved keys
