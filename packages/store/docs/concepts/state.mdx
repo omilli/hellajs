@@ -36,6 +36,7 @@ Beyond basic get/set, stores offer several capabilities, each documented in deta
 - **Snapshots**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
 - **Updates**: Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
 - **Middleware**: Validate and transform values before they're stored. Runs synchronously on every set operation.
+- **Write equality**: Skip writes whose content matches the stored value — per-key comparators or the `'structural'` content-equality preset.
 - **Nested stores**: Compose stores hierarchically. Nested stores share signal references bidirectionally.
 - **Batching**: Wrap multiple store updates in [`batch`](/reference/core/batch) to defer computation until all changes are applied.
 - **Cleanup**: Recursively propagate teardown to nested stores when the store is no longer needed.
@@ -164,6 +165,32 @@ const app = store({
 ```
 
 Middleware runs *before* changes are stored — use it for validation, transformation, or normalization. Effects run *after* — see [reactivity](/learn/concepts/reactivity) for logging, persistence, and derived-state patterns.
+
+## Write Equality
+
+Direct writes are reference-compared by default: writing a new array with identical content wakes every subscriber of that leaf. The `equals` option opts a key into content equality — reach for it when a store holds object, array, `Date`, `Map`, or class-instance leaves that are replaced wholesale on every save:
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const appStore = store({ items: [1, 2], user: { name: 'a' } }, {
+  equals: {
+    items: 'structural', // compares by content, like the draft path
+    user: { name: (prev, next) => prev === next }, // nested maps reach nested stores
+  },
+});
+
+effect(() => {
+  console.log(appStore.items()); // Logs: [1, 2]
+});
+
+appStore.items([1, 2]); // same content — write skipped, effect stays asleep
+```
+
+A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it — direct calls, `update(partial)`, and `update(draft => …)` — and equality runs after middleware, so the comparator sees the transformed value.
+
+Prefer the draft path for fine-grained array edits and reserve `'structural'` for large leaves that are replaced wholesale — it costs O(n) per write. See [write equality](/reference/store/store#write-equality) for the full option shape.
 
 ## Readonly
 

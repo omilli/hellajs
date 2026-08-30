@@ -8,10 +8,10 @@ Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain objec
 | `lib/index.ts` | Barrel — exports `store`, re-exports types |
 | `lib/store.ts` | Public `store()` overloads; all delegate to `createStore` |
 | `lib/internal/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, recursive init |
-| `lib/internal/draft.ts` | `deepClone` + `structurallyEqual` + `extractChanges` — used only by the draft-mutator path |
+| `lib/internal/draft.ts` | `deepClone` + `structurallyEqual` + `extractChanges` — used by the draft-mutator path and the `equals` `'structural'` preset |
 | `lib/internal/utils.ts` | `reservedKeys` Set, `isStore`, `isObjectOrFunction`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
-| `lib/types.d.ts` | `Store<T,R>`, `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys` |
-| `lib/internal/core.ts` | Re-exports `signal`/`computed`/`isFunction`/`isPlainObject`/`isObject` + `Signal` type from core |
+| `lib/types.d.ts` | `Store<T,R>`, `PartialDeep`, `StoreMiddleware`, `StoreEquals`, `StoreOptions`, `ReadonlyKeys` |
+| `lib/internal/core.ts` | Re-exports `signal`/`computed`/`isFunction`/`isPlainObject`/`isObject` + `Signal`/`EqualsOptions` types from core |
 
 ## `store()` overloads (`lib/store.ts`)
 
@@ -22,6 +22,7 @@ Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain objec
 | `{ readonly: R }` | `Store<T, R[number]>` |
 | `{ middleware }` | `Store<T, never>` |
 | `{ readonly: R; middleware }` | `Store<T, R[number]>` |
+| any of the above + `equals` | same as the base shape — `equals?: StoreEquals<T>` never changes the return type |
 
 ## Property mapping — `Store<T, R>` (`lib/types.d.ts`)
 
@@ -41,7 +42,7 @@ Plus built-ins: `snapshot: () => Snapshot<T>` (composed nested stores unwrap to 
 
 ## `createStore` pipeline (`lib/internal/create.ts`)
 
-Resolves: `readonlyAll = options.readonly === true`; `readonlyKeys = Array.isArray(options.readonly) ? options.readonly : []`; `middlewares = options.middleware`.
+Resolves: `readonlyAll = options.readonly === true`; `readonlyKeys = Array.isArray(options.readonly) ? options.readonly : []`; `middlewares = options.middleware`; `equalsOptions = options.equals`.
 
 **snapshot** — a `computed` assigned to `result.snapshot` (return type `Snapshot<T>`). Iterates cached `Object.keys(result)`, skips reserved keys, and for each key takes the FIRST matching branch: (1) `initial[key]` is a function AND the key is not settable (a preserved user function) → use the **original** `initial` value — the settable-keys registry is the discriminator, since under composition `initial`'s signal properties are functions too; (2) store value is a store (`isStore`) → delegate to `value.snapshot()`, chaining computeds so the parent subscribes to the nested snapshot and through it to the full composed tree; (3) store value is a function → call `value()`; (4) anything else (externally replaced plain values) → mirror as-is. The computed subscribes to every signal it reads (directly or through chained nested snapshot computeds), so any property change re-runs it and re-flattens the whole tree. Reactive across composed store boundaries; composed leaves unwrap to plain values.
 
@@ -56,8 +57,8 @@ Then for each `[key, value]`: if `isPlainObject(value)` AND `current = this[key]
 **Init pass** — iterates `Object.entries(initial)`:
 - Reserved key (`snapshot`/`update`/`cleanup`): if `isStore(initial)` (composition) → skip silently; else throw `[store] store: reserved key collision, received "${key}"`.
 - Function value → `defineStoreProperty` as-is.
-- `isPlainObject` value → recurse `createStore(value, { middleware: nested } or undefined)`. Readonly is NOT passed down.
-- Else (primitive/array) → `signal(value)`, optionally middleware-wrapped, then if readonly wrapped again as `computed(() => wrapped())`; assigned via `defineStoreProperty`.
+- `isPlainObject` value → recurse `createStore(value, { middleware: nested, equals: nested } or undefined)`. Readonly is NOT passed down.
+- Else (primitive/array) → `signal(value)` with an optional per-key write-equality comparator from `options.equals` — `'structural'` maps to `structurallyEqual`, a function passes through, any other value throws `[store] store: equals for "<key>" must be a function or "structural", received …` at create time — optionally middleware-wrapped, then if readonly wrapped again as `computed(() => wrapped())`; assigned via `defineStoreProperty`.
 
 `defineStoreProperty` uses `{ writable: true, enumerable: true, configurable: true }` — store properties can be externally reassigned, which drops reactivity.
 
@@ -82,6 +83,7 @@ Passing an existing store as a value inside another store's initial object: the 
 - Also applied through `update()` via `applyUpdate`'s per-key lookup.
 - A middleware that **throws** rejects the write (propagates to caller); the signal is unchanged.
 - Combines with readonly: the middleware-wrapped signal is further wrapped in `computed(() => wrapped())`.
+- Combines with `equals` on the same key: the comparator runs **inside the signal, after middleware** — it sees the transformed value (`wrapWithMiddleware` writes `sig(mw(value))`), and every write path (direct call, `update(partial)`, draft) inherits it.
 
 ## `deepClone` & `extractChanges` (`lib/internal/draft.ts`)
 
@@ -99,7 +101,7 @@ Passing an existing store as a value inside another store's initial object: the 
 
 ## Testing
 
-Tests live in `tests/` (10 files: `data`, `functions`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`) and import `store` from `@hellajs/store/bundle`. Reactive primitives (`signal`/`effect`/`computed`/`batch`/`flush`) import from `@hellajs/core`. Test helpers import from `@utils/test-helpers.js`. See `guides/tests.md` for the full rules.
+Tests live in `tests/` (11 files: `data`, `functions`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `equals`) and import `store` from `@hellajs/store/bundle`. Reactive primitives (`signal`/`effect`/`computed`/`batch`/`flush`) import from `@hellajs/core`. Test helpers import from `@utils/test-helpers.js`. See `guides/tests.md` for the full rules.
 
 - Cover each `update` path (partial, draft, middleware) independently.
 - Snapshot reactivity tested flat and deeply nested.
