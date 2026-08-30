@@ -67,7 +67,7 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 - `createPolling`: recursive `setTimeout`; skips tick when `document.visibilityState === "hidden"` unless `refetchIntervalInBackground`; dynamic interval re-evaluated via `untracked(data)` after each tick. `false`/`0`/`undefined` disable.
 - `createFocus`: `visibilitychange` → `run(false)` only when becoming visible; window `focus` → `run(false)` unconditionally (app-switch without tab hide). A tab return fires both — dedup absorbs the duplicate.
 - `createReconnect`: subscribes via `resourceCache.onOnlineChange` → `run(false)` on transition to online.
-- **Setup gates differ**: `polling.setup()` requires `refetchOnKeyChange && isEnabled() && refetchInterval` and arms **once** — at creation when enabled, otherwise on the first truthy enabled evaluation inside the key-change effect (an `enabled` getter flipping false→true starts polling); key changes never reset the cadence. `focus.setup()` and `reconnect.setup()` require only their own boolean flags (work without auto-fetch). All three are cleared by `abort`/`reset`/`dispose`; polling does not re-arm after `abort`/`reset` until the resource is recreated.
+- **Setup gates differ**: `polling.setup()` requires `isEnabled() && refetchInterval` — it works standalone, no auto-fetch opt-in — and arms **once**: at creation when enabled, otherwise on the first truthy enabled evaluation inside the effect (an `enabled` getter flipping false→true starts polling); key changes never reset the cadence. `focus.setup()` and `reconnect.setup()` require only their own boolean flags (work without auto-fetch). All three are cleared by `abort`/`reset`/`dispose`; `reset()` re-arms polling, `abort()` does not (recreate to resume).
 
 ### LRU eviction (cache.ts:111)
 
@@ -134,7 +134,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 |---|---|---|
 | `key` | `() => undefined` | `(() => K) \| K`. Function or static value. |
 | `enabled` | `true` | `boolean \| () => boolean`. Getter re-evaluated reactively in the key-change effect. |
-| `refetchOnKeyChange` | `false` | Gates auto-fetch, polling setup, and the reactive key-tracking effect. |
+| `refetchOnKeyChange` | `false` | Gates auto-fetch and the reactive key-tracking effect. |
 | `initialData` | `undefined` | Seeds `rawData`; status stays `idle` while `rawData === initialData`. |
 | `cacheTime` | `0` | TTL ms. `0` disables caching entirely. |
 | `staleTime` | `Infinity` (resource) | Freshness ms. `0` = always stale. (`resourceCache.set` defaults this to `0`.) |
@@ -207,7 +207,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - `status()` reads `rawData()` directly, so `transform` cannot change status. A fetch returning a value equal to `initialData` leaves status `idle`. (resource.ts `status`)
 - Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts:161-162, retry.test.ts:153)
 - Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts key-change effect, fetching.test.ts)
-- `polling.setup()` is gated on `refetchOnKeyChange && isEnabled() && refetchInterval` and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the key-change effect; not re-armed by key changes or after `abort`/`reset`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts setup gates, focus.test.ts)
+- `polling.setup()` is gated on `isEnabled() && refetchInterval` (standalone — no auto-fetch opt-in) and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the effect; not re-armed by key changes or after `abort`, re-armed by `reset()`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts setup gates, focus.test.ts)
 - `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained while their scope holds entries — reaped once empty); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (cache.ts:12, dedupe.ts:17)
 - Cache entries are module-level and survive `dispose()`/resource recreation. (cache.ts:12)
 
