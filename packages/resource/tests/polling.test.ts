@@ -34,20 +34,20 @@ describe("resource", () => {
       r.dispose();
     });
 
-    test("requires refetchOnKeyChange to poll", async () => {
+    test("polls without refetchOnKeyChange", async () => {
       const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 30,
       });
 
       effect(() => { r.status(); });
-      await delay(80);
+      await delay(100);
 
-      expect(fetcher).toHaveBeenCalledTimes(0);
+      expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
       r.dispose();
     });
 
-    test.each(["abort", "reset"] as const)("stops polling on %s", async (method) => {
+    test("stops polling on abort", async () => {
       const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
         refetchInterval: 20,
@@ -56,11 +56,28 @@ describe("resource", () => {
 
       effect(() => { r.status(); });
       await delay(50);
-      r[method]();
+      r.abort();
       const countAfter = fetcher.mock.calls.length;
 
       await delay(50);
       expect(fetcher.mock.calls.length).toBe(countAfter);
+      r.dispose();
+    });
+
+    test("restarts polling after reset", async () => {
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
+        refetchInterval: 20,
+        refetchOnKeyChange: true,
+      });
+
+      effect(() => { r.status(); });
+      await delay(50);
+      r.reset();
+      const countAfterReset = fetcher.mock.calls.length;
+
+      await delay(50);
+      expect(fetcher.mock.calls.length).toBeGreaterThan(countAfterReset);
       r.dispose();
     });
 
@@ -189,6 +206,26 @@ describe("resource", () => {
 
       // 1 auto-fetch on flip + multiple interval ticks — pre-fix this was exactly 1.
       expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(4);
+      r.dispose();
+    });
+
+    test("arms polling when enabled getter flips true without refetchOnKeyChange", async () => {
+      const flag = signal(false);
+      const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
+      const r = resource(fetcher, {
+        refetchInterval: 20,
+        enabled: () => flag(),
+      });
+
+      effect(() => { r.status(); });
+      await delay(40);
+      expect(fetcher.mock.calls.length).toBe(0);
+
+      flag(true);
+      await delay(100);
+
+      // Interval ticks only — no auto-fetch without refetchOnKeyChange.
+      expect(fetcher.mock.calls.length).toBeGreaterThanOrEqual(2);
       r.dispose();
     });
 
