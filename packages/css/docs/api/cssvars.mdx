@@ -15,15 +15,17 @@ function cssVars<T extends CSSVarInputObject>(vars: T, options?: CSSVarsOptions)
 
 ```typescript
 interface CSSVarsOptions {
-  scoped?: string;  // CSS selector to scope variables to
-  prefix?: string;  // Prefix for all CSS variable names
-  media?: string;   // Media condition the variables live under
+  scoped?: string;   // CSS selector to scope variables to
+  prefix?: string;   // Prefix for all CSS variable names
+  media?: string;    // Media condition the variables live under
+  host?: ParentNode; // Node the <style> element is created in
 }
 ```
 
 - **`scoped`**: CSS selector to limit variable scope (e.g., `.theme-container`, `#app`, `[data-theme]`)
 - **`prefix`**: Prefix added to all CSS variable names for namespace organization
 - **`media`**: Media condition wrapping the declarations, e.g. `(prefers-color-scheme: dark)` — interpolated verbatim into `@media (…)`
+- **`host`**: Parent node the `<style>` element is created in — e.g. a `ShadowRoot`. Defaults to `document.head`. Shadow roots don't match `:root`, so pair `host` with `scoped: ':host'` to apply variables to the host element
 
 ### Types
 
@@ -265,6 +267,26 @@ const themed = cssVars({
 // themed.spacing.small = 'var(--my-theme-spacing-small)'
 // Only available within .theme-container
 ```
+
+### Shadow DOM Hosts
+
+`host` redirects the variables into a shadow root. The default `:root` scope doesn't match inside one — `scoped: ':host'` targets the host element itself:
+
+```typescript
+import { cssVars } from '@hellajs/css';
+
+const hostElement = document.createElement('my-card');
+const root = hostElement.attachShadow({ mode: 'open' });
+
+const theme = cssVars(
+  { accent: '#3b82f6' },
+  { host: root, scoped: ':host' }
+);
+
+// Generated inside the shadow root: :host{--accent:#3b82f6}
+```
+
+Sheets are per host: the same vars injected into two hosts create independent rules with separate reference counting, and [`removeCssVars`](/reference/css/removecssvars) with the same `host` removes from that host's bucket. See [Shadow DOM Hosts](/reference/css/css#shadow-dom-hosts) for the full web-components example.
 
 ### Media-Scoped Variables
 

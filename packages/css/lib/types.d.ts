@@ -6,6 +6,8 @@ import type * as CSS from "csstype";
 export interface CSSOptions {
   /** A class name to scope styles to. When provided, creates `.{name}` selector and returns the name for use in `class` attributes. */
   name?: string;
+  /** Node the `<style>` element is created in — e.g. a `ShadowRoot` for web components. Defaults to `document.head`. */
+  host?: ParentNode;
 }
 
 /**
@@ -62,4 +64,6 @@ export interface CSSVarsOptions {
   prefix?: string;
   /** A media condition to place the variables under, e.g. `(prefers-color-scheme: dark)`. Interpolated verbatim. */
   media?: string;
+  /** Node the `<style>` element is created in — e.g. a `ShadowRoot` for web components. Defaults to `document.head`. */
+  host?: ParentNode;
 }

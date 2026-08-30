@@ -1,4 +1,4 @@
-import { removeRule, upsertRule } from "./sheet";
+import { hostQualifier, removeRule, upsertRule } from "./sheet";
 import type { CSSVars, CSSVarsOptions } from "../types";
 /**
  * @internal
@@ -28,13 +28,14 @@ export const DOT_REGEX = /\./g;
 /**
  * Registry entry tracking a single cssVars() call's flat keys, scope,
  * resolved prefix (trailing hyphen included), resolved media condition,
- * reference count, and optional effect cleanup.
+ * style host, reference count, and optional effect cleanup.
  */
 interface VarsEntry {
   flatKeys: string[];
   scope: string;
   fullPrefix: string;
   media: string;
+  host?: ParentNode;
   refCount: number;
   cleanup?: () => void;
 }
@@ -60,35 +61,39 @@ export let varsResultReactive = new WeakMap<object, CSSVars<Record<string, unkno
 
 /**
  * CSSVarsOptions in emitted form: scope default resolved, prefix
- * trailing-hyphenated, media normalized to `""` when absent.
+ * trailing-hyphenated, media normalized to `""` when absent, host passed
+ * through for sheet placement and key qualification.
  */
 interface ResolvedVarsOptions {
   scope: string;
   fullPrefix: string;
   media: string;
+  host?: ParentNode;
 }
 
 /**
  * @internal
  * Resolves CSSVarsOptions once: scope falls back to `:root`, the raw prefix
  * gains its trailing hyphen, media normalizes to `""`. Every cssVars path
- * derives scope/prefix/media through this — the single definition (no
+ * derives scope/prefix/media/host through this — the single definition (no
  * per-site duplication to drift).
  */
-export function resolveVarsOptions({ scoped, prefix: rawPrefix = "", media }: CSSVarsOptions): ResolvedVarsOptions {
+export function resolveVarsOptions({ scoped, prefix: rawPrefix = "", media, host }: CSSVarsOptions): ResolvedVarsOptions {
   return {
     scope: scoped || ":root",
     fullPrefix: rawPrefix ? `${rawPrefix}-` : "",
     media: media || "",
+    host,
   };
 }
 
 /**
- * Composite bucket/rule key for one scope+media pair — the same scope under
- * different media conditions coexists as separate buckets.
+ * Composite bucket/rule key for one scope+media pair under an optional host —
+ * the same scope under different media conditions or in different hosts
+ * coexists as separate buckets.
  */
-function varsBucketKey(scope: string, media: string): string {
-  return `${media ? `@media ${media}` : ""}|${scope}`;
+function varsBucketKey(scope: string, media: string, host?: ParentNode): string {
+  return `${media ? `@media ${media}` : ""}|${hostQualifier(host)}${scope}`;
 }
 
 /**
@@ -106,10 +111,10 @@ export function varsRuleText(scope: string, media: string, decls: string): strin
  * and upserts the scope rule into the stylesheet.
  * Takes the pre-resolved options from `resolveVarsOptions`.
  */
-export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, media }: ResolvedVarsOptions) {
+export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, media, host }: ResolvedVarsOptions) {
   const entries = Object.entries(flat);
   const len = entries.length;
-  const key = varsBucketKey(scope, media);
+  const key = varsBucketKey(scope, media, host);
 
   if (!scopedVarsRulesMap.has(key)) {
     scopedVarsRulesMap.set(key, new Map());
@@ -122,7 +127,7 @@ export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, m
     scopeMap.set(`${fullPrefix}${k}`, String(v));
   }
 
-  upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(scopeMap)));
+  upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(scopeMap)), host);
 }
 
 /**
@@ -132,8 +137,8 @@ export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, m
  * is removed entirely.
  * Takes the pre-resolved options from `resolveVarsOptions`.
  */
-export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media }: ResolvedVarsOptions): void {
-  const key = varsBucketKey(scope, media);
+export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media, host }: ResolvedVarsOptions): void {
+  const key = varsBucketKey(scope, media, host);
   const scopeMap = scopedVarsRulesMap.get(key);
   if (!scopeMap) return;
 
@@ -145,9 +150,9 @@ export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media }
 
   if (scopeMap.size === 0) {
     scopedVarsRulesMap.delete(key);
-    removeRule(VARS_ID, key);
+    removeRule(VARS_ID, key, host);
   } else {
-    upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(scopeMap)));
+    upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(scopeMap)), host);
   }
 }
 

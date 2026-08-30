@@ -1,5 +1,5 @@
 import { hasDocument, isPlainObject } from "./internal/core";
-import { upsertRule } from "./internal/sheet";
+import { hostQualifier, upsertRule } from "./internal/sheet";
 import { STYLE_ID, injectedMap } from "./internal/injection";
 import type { InjectedEntry } from "./internal/injection";
 import type { CSSObject, CSSOptions } from "./types";
@@ -37,7 +37,7 @@ const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-st
  * `name` (or empty string for global). On the server (no DOM): returns the generated CSS
  * text directly, with zero state mutation.
  * @param obj CSS object containing style properties and nested selectors
- * @param options Optional configuration. Provide `name` to create a scoped `.{name}` selector and get a return value for `class` attributes.
+ * @param options Optional configuration. Provide `name` to create a scoped `.{name}` selector and get a return value for `class` attributes. Provide `host` to create the `<style>` element in a shadow root or other parent node instead of `document.head`.
  * @returns The provided `name` string (or empty string for global) on the client; the CSS text on the server.
  * @throws {Error} When obj is not a plain object, when a property value is a function — use `cssVars()`
  * for reactive values, or when a conditional at-rule body contains direct style declarations with no
@@ -46,14 +46,14 @@ const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-st
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
 
-  const { name } = options;
+  const { name, host } = options;
   const isGlobal = !name;
   const selector = name ? `.${name}` : "";
   const cssText = process(obj, selector, isGlobal);
 
   if (!hasDocument()) return cssText;
 
-  const existing = injectedMap.get(cssText);
+  const existing = injectedMap.get(`${hostQualifier(host)}${cssText}`);
   if (existing) {
     existing.count++;
     return name || "";
@@ -80,12 +80,12 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
   let ri = 0;
   const rlen = rules.length;
   while (ri < rlen) {
-    upsertRule(STYLE_ID, `${cssText}:${ri}`, rules[ri]!);
+    upsertRule(STYLE_ID, `${cssText}:${ri}`, rules[ri]!, host);
     ri++;
   }
 
   const entry: InjectedEntry = { count: 1, ruleCount: rules.length };
-  injectedMap.set(cssText, entry);
+  injectedMap.set(`${hostQualifier(host)}${cssText}`, entry);
 
   return name || "";
 }

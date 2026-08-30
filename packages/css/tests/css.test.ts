@@ -94,6 +94,28 @@ describe("css", () => {
     expect(getStylesheet("hella-css")).toContain("color:purple");
   });
 
+  test("removeCss removes all rules of a multi-rule object", () => {
+    const styles = { color: "red", "&:hover": { color: "blue" }, ".child": { display: "block" } };
+    css(styles, { name: "x" });
+    expect(getStylesheet("hella-css")).toBe(".x{color:red}.x:hover{color:blue}.x .child{display:block}");
+
+    removeCss(styles, { name: "x" });
+    expect(getStylesheet("hella-css")).toBe("");
+  });
+
+  test("interleaved removeCss removes each text's rules exactly", () => {
+    const first = { color: "red", "&:hover": { color: "blue" } };
+    const second = { color: "green" };
+    css(first, { name: "a" });
+    css(second, { name: "b" });
+
+    removeCss(first, { name: "a" });
+    expect(getStylesheet("hella-css")).toBe(".b{color:green}");
+
+    removeCss(second, { name: "b" });
+    expect(getStylesheet("hella-css")).toBe("");
+  });
+
   test("removeCss is a no-op for unknown styles", () => {
     removeCss({ color: "neveradded" });
     expect(getStylesheet("hella-css")).toBe("");

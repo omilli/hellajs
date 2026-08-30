@@ -10,6 +10,7 @@ function removeCss(obj: CSSObject, options?: CSSOptions): void
 - `obj`: CSS object to remove (structurally identical objects match)
 - `options`: Optional configuration object (must match the options used in `css()`)
   - `name`: Custom class name used when creating the style
+  - `host`: Parent node the style was injected into — a removal without the same `host` targets a different entry
 - **Returns**: `void`
 
 ## Basic Usage

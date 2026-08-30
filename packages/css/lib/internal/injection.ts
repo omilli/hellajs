@@ -16,7 +16,9 @@ export interface InjectedEntry {
 /**
  * @internal
  * Text is the identity: the same CSS object always produces the same cssText,
- * so the text doubles as the dedup key. Replaces the former refCounts +
- * inlineCache + cssRulesMap + ruleCounts.
+ * so the text doubles as the dedup key. Keys are host-qualified — a per-call
+ * `host` prefixes its serial (`#n`) so the same text in two hosts injects into
+ * both; the default document host keeps the bare-text key. Replaces the former
+ * refCounts + inlineCache + cssRulesMap + ruleCounts.
  */
 export const injectedMap = new Map<string, InjectedEntry>();
