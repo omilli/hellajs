@@ -1,13 +1,14 @@
 # element
 
-Defines reactive custom elements with light DOM rendering and slot support.
+Defines reactive custom elements with light DOM rendering, opt-in shadow DOM, and slot support.
 
 ## API
 
 ```typescript
 function element<T extends object = ComponentProps & Partial<ComponentSlots>>(
   tagName: string,
-  render: ComponentRenderFn<T>
+  render: ComponentRenderFn<T>,
+  options?: ElementOptions
 ): void
 
 type ComponentRenderFn<T> = (props: T) => HellaNode | (() => HellaNode);
@@ -19,6 +20,10 @@ interface ComponentProps {
 interface ComponentSlots {
   children?: Node[];                    // Default slot content
   slots?: Record<string, Node[]>;       // Named slot content
+}
+
+interface ElementOptions {
+  shadow?: boolean | ShadowRootInit;    // Attach a shadow root (defaults to light DOM)
 }
 ```
 
@@ -134,6 +139,20 @@ element("user-badge", (props) => html`
 `);
 ```
 
+### Shadow DOM
+
+Pass `{ shadow: true }` to render into an open shadow root instead of light DOM — page CSS no longer leaks into the element's content.
+
+```js
+import { html, element } from "@hellajs/dom";
+
+element("my-widget", (props) => html`<div class="box">${props.children}</div>`, { shadow: true });
+```
+
+An object is passed to `attachShadow` verbatim, so `mode: "closed"` works too: outside JavaScript cannot reach the root via `el.shadowRoot`, while the element itself keeps rendering and updating normally.
+
+Projection still uses captured `props.children`/`props.slots` nodes moved into the shadow render output — native `<slot>` element projection is not available under `shadow: true` (see [Custom Elements](/learn/concepts/custom-elements)).
+
 ### Complex Components
 
 Combine with ForEach, signals, and other features.
@@ -241,7 +260,7 @@ element("mycomponent", render);
 element("button", render);
 ```
 
-### Light DOM Rendering
+### Light DOM by Default
 
 Content renders in the element's light DOM, not shadow DOM. Styles from the page apply normally.
 
@@ -251,6 +270,8 @@ element("styled-box", () => ({
   props: { class: "box" }  // Styled by page CSS
 }));
 ```
+
+Pass `{ shadow: true }` in the third argument to opt into shadow DOM encapsulation (see [Shadow DOM](#shadow-dom)).
 
 ### Attribute vs Property
 
