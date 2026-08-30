@@ -170,6 +170,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Core fetch logic with caching, deduplication, and abort handling.
    * @param force - When true, bypasses cache and deduplication
    * @param manual - When true, bypasses reactive enabled checks (manual fetch)
+   * @returns Promise resolving with the data on cache hit (including SWR-stale), dedup join, or network success; `undefined` on error, skip, SSR, or abort-supersede. Never rejects — errors surface via `error()`/`onError`.
    */
   async function run(force = false, manual = false) {
     if (!hasWindow()) return;
@@ -196,7 +197,7 @@ export function resource<T, K = undefined, TTransformed = T>(
             run(true);
           }
 
-          return;
+          return entry.data;
         }
       }
 
@@ -216,7 +217,11 @@ export function resource<T, K = undefined, TTransformed = T>(
           handleError(undefined, !hasData, true);
           try {
             // Wait for shared promise only if not already aborted
-            !abortController.signal.aborted && handleSuccess(await promise);
+            if (!abortController.signal.aborted) {
+              const shared = await promise;
+              handleSuccess(shared);
+              return shared;
+            }
           } catch (err) {
             handleSuccessError(err);
           }
@@ -262,6 +267,8 @@ export function resource<T, K = undefined, TTransformed = T>(
       setCacheData(fetcherFn, cacheKey, shared, cacheTime, staleTime ?? Infinity);
       !currentSignal.aborted && handleSuccess(shared);
       settleRun(resolvePromise!, shared, cacheKey);
+      // Superseded-by-abort fetches never applied the data — resolve without it
+      return currentSignal.aborted ? undefined : shared;
     } catch (err) {
       handleSuccessError(err);
       settleRun(rejectPromise!, err, cacheKey);

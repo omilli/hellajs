@@ -314,5 +314,43 @@ describe("resource", () => {
       expect(listenerCounts.added).toBe(3);
       expect(listenerCounts.removed).toBe(3);
     });
+
+    test("resolves with fetched data", async () => {
+      const r = resource(() => delay(mockUser));
+      const data = await r.fetch({ force: true });
+      expect(data).toEqual(mockUser);
+      expect(r.data()).toEqual(mockUser);
+    });
+
+    test("resolves with cached data without refetching", async () => {
+      const fetcher = mock(() => delay(mockUser));
+      const r = resource(fetcher, { cacheTime: 1000 });
+
+      const first = await r.fetch({ force: true });
+      const second = await r.fetch();
+
+      expect(second).toBe(first);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+    test("resolves undefined on failure without rejecting", async () => {
+      const r = resource(() => Promise.reject(new Error("boom")));
+      const data = await r.fetch({ force: true });
+      expect(data).toBeUndefined();
+      expect(r.error()?.message).toBe("boom");
+    });
+
+    test("resolves undefined when statically disabled", async () => {
+      const r = resource(() => delay(mockUser), { enabled: false });
+      const data = await r.fetch({ force: true });
+      expect(data).toBeUndefined();
+    });
+
+    test("failed fire-and-forget fetch produces no unhandled rejection", async () => {
+      const r = resource(() => Promise.reject(new Error("boom")));
+      r.fetch({ force: true });
+      await delay(20);
+      expect(r.error()?.message).toBe("boom");
+    });
   });
 });
