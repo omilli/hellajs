@@ -80,7 +80,7 @@ todos.count(); // 2
 
 ### Readonly Properties
 
-Lock specific keys to read-only access using the `readonly` option.
+Lock specific keys to read-only access using the `readonly` option. Object keys lock their whole subtree — every nested level below a listed key is readonly too.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -88,13 +88,15 @@ import { store } from '@hellajs/store';
 const config = store({
   apiUrl: 'https://api.example.com',
   theme: 'light',
-  debug: false,
+  limits: { maxItems: 100 },
 }, {
-  readonly: ['apiUrl'] as const,
+  readonly: ['apiUrl', 'limits'] as const,
 });
 
 config.theme('dark');       // Updates normally
 // ❌ config.apiUrl('localhost'); — no effect: readonly
+// ❌ config.limits.maxItems(50); — no effect: object keys lock their whole subtree
+config.limits.maxItems();   // 100
 config.apiUrl();            // 'https://api.example.com'
 ```
 

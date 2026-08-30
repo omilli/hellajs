@@ -148,9 +148,14 @@ export function createStore<T extends Record<string, unknown>>(
 
     if (isPlainObject(value)) {
       const nestedMiddleware = middlewares?.[key as keyof T];
-      const nestedOptions: StoreOptions<typeof value> | undefined = nestedMiddleware
-        ? { middleware: nestedMiddleware as StoreMiddleware<typeof value> }
-        : undefined;
+      const nestedReadonly = readonlyAll || readonlyKeys.includes(key as PropertyKey);
+      const nestedOptions: StoreOptions<typeof value> | undefined =
+        nestedReadonly || nestedMiddleware
+          ? {
+              ...(nestedReadonly && { readonly: true }),
+              ...(nestedMiddleware && { middleware: nestedMiddleware as StoreMiddleware<typeof value> })
+            }
+          : undefined;
       defineStoreProperty(result, key, createStore(value, nestedOptions));
       i++;
       continue;
