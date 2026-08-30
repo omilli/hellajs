@@ -121,7 +121,7 @@ HellaJS uses `csstype` for full CSS property coverage (`lib/types.d.ts`). `CSSOb
 
 Emotion types object styles through `@emotion/serialize` and theme generics; template-literal CSS is not property-validated. Styled Components types the component's props (`styled.button<{ $primary?: boolean }>`) but does not validate CSS inside templates. vanilla-extract is TypeScript-first end to end — `.css.ts` authoring with token-contract checking against `createTheme`. Panda generates type definitions from the token config, giving autocomplete on token paths (`color: 'red.400'`).
 
-HellaJS matches the build-time pair on compile-time CSS property validation with zero codegen, and out-types the runtime pair. Its gaps are honest: `CSSVarLeaf` cannot distinguish a signal from a plain getter — any function leaf takes the reactive path and creates an effect even when it closes over no signals (`lib/cssVars.ts`) — and `css()` itself evaluates eagerly, so a function passed as a property value stringifies rather than tracks (reactive values must travel through `cssVars()`).
+HellaJS matches the build-time pair on compile-time CSS property validation with zero codegen, and out-types the runtime pair. Its gaps are honest: `CSSVarLeaf` cannot distinguish a signal from a plain getter — any function leaf takes the reactive path and creates an effect even when it closes over no signals (`lib/cssVars.ts`) — and `css()` itself evaluates eagerly, so a function passed as a property value throws rather than stringifies (reactive values must travel through `cssVars()`, `lib/css.ts`).
 
 ---
 

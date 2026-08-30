@@ -24,9 +24,9 @@ const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-st
  * @param obj CSS object containing style properties and nested selectors
  * @param options Optional configuration. Provide `name` to create a scoped `.{name}` selector and get a return value for `class` attributes.
  * @returns The provided `name` string (or empty string for global) on the client; the CSS text on the server.
- * @throws {Error} When obj is not a plain object, or when a conditional at-rule body contains
- * direct style declarations with no selector in scope (global mode) — nest selectors under
- * the at-rule or use the `name` option.
+ * @throws {Error} When obj is not a plain object, when a property value is a function — use `cssVars()`
+ * for reactive values, or when a conditional at-rule body contains direct style declarations with no
+ * selector in scope (global mode) — nest selectors under the at-rule or use the `name` option.
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
@@ -87,7 +87,8 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * in nested selectors is replaced with the parent selector. CamelCase property keys
  * convert to kebab-case.
  * The `content` property auto-quotes unquoted strings. Array values join with
- * commas. Null and undefined values are skipped.
+ * commas. Null and undefined values are skipped. Function values throw —
+ * reactive values belong to `cssVars()`.
  *
  * Exported so removeCss can re-derive the same text from (obj, options) —
  * deterministic: the same object always produces the same text.
@@ -154,6 +155,9 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
         rules.push(process(value as CSSObject, nestedSelector, isGlobal));
       }
     } else {
+      if (typeof value === "function") {
+        throw new Error(`[css] function values are not supported in css objects — use cssVars() for reactive values, key: ${key}`);
+      }
       const property = key.startsWith("--") ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
       let cssValue = Array.isArray(value) ? value.join(", ") : String(value);
 

@@ -280,5 +280,34 @@ describe("css", () => {
       // @ts-expect-error - testing invalid input
       expect(() => removeCss(invalid)).toThrow("[css] removeCss:");
     });
+
+    test("css throws on function values", () => {
+      // @ts-expect-error - testing invalid input
+      expect(() => css({ padding: () => "1px" }, { name: "x" })).toThrow(
+        "[css] function values are not supported in css objects — use cssVars() for reactive values, key: padding"
+      );
+    });
+
+    test("removeCss throws on function values", () => {
+      // @ts-expect-error - testing invalid input
+      expect(() => removeCss({ padding: () => "1px" })).toThrow(
+        "[css] function values are not supported in css objects — use cssVars() for reactive values, key: padding"
+      );
+    });
+
+    test("throws on function values at any nesting depth", () => {
+      // @ts-expect-error - testing invalid input
+      expect(() => css({ "&:hover": { padding: () => "1px" } }, { name: "x" })).toThrow(
+        "[css] function values are not supported in css objects"
+      );
+      // @ts-expect-error - testing invalid input
+      expect(() => css({ ".card": { padding: () => "1px" } })).toThrow(
+        "[css] function values are not supported in css objects"
+      );
+      // @ts-expect-error - testing invalid input
+      expect(() => css({ "@media (min-width: 1px)": { ".card": { padding: () => "1px" } } })).toThrow(
+        "[css] function values are not supported in css objects"
+      );
+    });
   });
 });

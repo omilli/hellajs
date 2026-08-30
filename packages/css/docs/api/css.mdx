@@ -203,6 +203,30 @@ Fully typed with TypeScript using `csstype`. Property names and values are valid
 
 Use [`removeCss`](/reference/css/removecss) to clean up styles when components are destroyed, or [`resetCss`](/reference/css/resetcss) to clear all styles.
 
+### Function Values Throw
+
+`css()` evaluates values eagerly. A function passed as a property value throws at any nesting depth — under `&`, descendant selectors, or at-rule bodies — on both client and server. Reactive values travel through [`cssVars`](/reference/css/cssvars) instead:
+
+```typescript
+import { signal } from '@hellajs/core';
+import { css, cssVars } from '@hellajs/css';
+
+const spacing = signal('1rem');
+
+// ❌ Throws — css() never calls property functions
+try {
+  css({ padding: () => spacing() }, { name: 'card' });
+} catch {}
+// Error: [css] function values are not supported in css objects —
+//        use cssVars() for reactive values, key: padding
+
+// ✅ Reactive values are cssVars leaves
+const theme = cssVars({ spacing: () => spacing() });
+// theme.spacing === 'var(--spacing)'
+```
+
+The same input throws in [`removeCss`](/reference/css/removecss) — the check runs in the shared CSS derivation before any platform branching.
+
 ### Special Value Handling
 
 ```jsx

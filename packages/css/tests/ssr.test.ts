@@ -62,6 +62,13 @@ describe("platform-dependent return (no document)", () => {
     );
   });
 
+  test("css() throws for function values on the server too", () => {
+    // @ts-expect-error - testing invalid input
+    expect(() => css({ padding: () => "1px" }, { name: "x" })).toThrow(
+      "[css] function values are not supported in css objects — use cssVars() for reactive values, key: padding"
+    );
+  });
+
   test("cssVars() returns vars text for static values", () => {
     const result = cssVars({ theme: { color: "red" } });
     expect(result as unknown as string).toBe(":root{--theme-color:red}");

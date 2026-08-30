@@ -12,7 +12,8 @@ import type { CSSObject, CSSOptions } from "./types";
  * a no-op when no DOM is available.
  * @param obj CSS object to remove (structurally identical objects match, same reference not required)
  * @param options Optional configuration object (must match the options used in css())
- * @throws {Error} When obj is not a plain object.
+ * @throws {Error} When obj is not a plain object, or when a property value is a function —
+ * use `cssVars()` for reactive values.
  */
 export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
   if (!isPlainObject(obj)) throw new Error(`[css] removeCss: expected a CSS object, received ${String(obj)}`);
