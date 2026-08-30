@@ -279,7 +279,9 @@ export function resource<T, K = undefined, TTransformed = T>(
   }
 
   /**
-   * Aborts current request and resets resource to initial state
+   * Aborts current request and resets resource to initial state.
+   * Polling stops permanently — unlike reset(), it does not re-arm;
+   * recreate the resource to resume polling.
    */
   function abort() {
     polling.clear();
@@ -306,27 +308,32 @@ export function resource<T, K = undefined, TTransformed = T>(
   // When user provides an explicit key, skip fetches while it's null/undefined
   const hasExplicitKey = Object.hasOwn(options, "key");
 
-  // Polling arms once: at creation when enabled, or on the first truthy enabled
-  // evaluation inside the key-change effect. Key changes never reset the cadence.
+  // Polling arms on (refetchInterval, enabled) alone — independent of auto-fetch.
+  // Arms once: at creation when enabled, or on the first truthy enabled evaluation
+  // inside the effect. Key changes never reset the cadence; reset() re-arms, abort() does not.
   let pollingArmed = false;
+
+  /** Arms the polling timer once, keyed on refetchInterval and enabled alone. */
+  const armPolling = () => {
+    if (refetchInterval && !pollingArmed) {
+      pollingArmed = true;
+      polling.setup();
+    }
+  };
 
   cleanupEffect?.();
   cleanupEffect = effect(() => {
-    if (refetchOnKeyChange && isEnabled()) {
-      if (refetchInterval && !pollingArmed) {
-        pollingArmed = true;
-        polling.setup();
+    if (isEnabled()) {
+      armPolling();
+      if (refetchOnKeyChange) {
+        const keyVal = resolveKey(); // Track key reactively
+        if (!hasExplicitKey || keyVal != null) run(false); // Auto-fetch on key change
       }
-      const keyVal = resolveKey(); // Track key reactively
-      if (!hasExplicitKey || keyVal != null) run(false); // Auto-fetch on key change
     }
   });
 
   // Set up polling synchronously during initialization
-  if (refetchOnKeyChange && isEnabled() && refetchInterval && !pollingArmed) {
-    pollingArmed = true;
-    polling.setup();
-  }
+  if (untracked(isEnabled)) armPolling();
 
   // Set up focus listener synchronously during initialization
   if (refetchOnWindowFocus) {
@@ -444,12 +451,15 @@ export function resource<T, K = undefined, TTransformed = T>(
 
   /**
    * Returns the resource to its initial state. Reusable after calling.
-   * Clears polling, focus, and reconnect listeners, resets data to initialData, and clears error state.
+   * Resets data to initialData and clears error state; focus/reconnect listeners are cleared.
+   * Polling restarts at its interval (abort() stops it permanently; recreate to resume).
    */
   const reset = () => {
     polling.clear();
     focus.clear();
     reconnect.clear();
+    pollingArmed = false;
+    armPolling();
     rawData(options.initialData);
     handleError();
   };

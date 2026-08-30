@@ -77,7 +77,7 @@ interface ResourceOptions<T, K, TTransformed = T> {
   onSuccess?: (data: T) => void;
   /** Callback when request fails */
   onError?: (err: unknown) => void;
-  /** Refetch interval in ms, false to disable, or function returning interval based on data (arms when enabled first evaluates true, including a later flip from false; not reset by key changes) */
+  /** Refetch interval in ms, false to disable, or function returning interval based on data — works standalone (arms when enabled first evaluates true, including a later flip from false; key changes never reset the cadence; reset() re-arms, abort() does not) */
   refetchInterval?: number | false | ((data: TTransformed | undefined) => number | false);
   /** Continue polling when tab is hidden (default: false) */
   refetchIntervalInBackground?: boolean;
@@ -282,7 +282,7 @@ Concurrent mutations run independently: each `mutate()` call owns its abort cont
 
 ### `reset`
 
-Resets resource state to initial values, clearing data and errors.
+Resets resource state to initial values, clearing data and errors. Polling restarts at its interval — unlike `abort()`, which stops polling permanently (recreate the resource to resume).
 
 ```typescript
 const userResource = resource(

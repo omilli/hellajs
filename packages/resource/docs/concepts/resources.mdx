@@ -207,13 +207,13 @@ setTimeout(() => r.abort(), 2000); // Cancel during retry delay
 
 ### Polling / Interval Refetch
 
-Periodically refresh data for real-time updates. Polling requires `refetchOnKeyChange: true`. Without it, the polling cycle never starts. Polling arms when `enabled` first evaluates `true` — including a later flip from `false` — and key changes never reset the cadence. `abort()`/`reset()` stop polling until the resource is recreated.
+Periodically refresh data for real-time updates. `refetchInterval` works standalone — no `refetchOnKeyChange` needed. Polling arms when `enabled` first evaluates `true` — including a later flip from `false` — and key changes never reset the cadence. `reset()` restarts polling at its interval; `abort()` stops it permanently (recreate the resource to resume).
 
 ```typescript
 // Fixed interval: every 5 seconds
 const stockPrice = resource(
   () => fetch('/api/stock/price').then(r => r.json()),
-  { refetchInterval: 5000, refetchOnKeyChange: true }
+  { refetchInterval: 5000 }
 );
 ```
 
@@ -223,8 +223,7 @@ Dynamic interval based on data:
 const health = resource(
   () => fetch('/api/health').then(r => r.json()),
   {
-    refetchInterval: (data) => data?.status === 'unhealthy' ? 1000 : 30000,
-    refetchOnKeyChange: true
+    refetchInterval: (data) => data?.status === 'unhealthy' ? 1000 : 30000
   }
 );
 ```
@@ -234,7 +233,7 @@ Continue polling when tab is hidden:
 ```typescript
 const stats = resource(
   () => fetch('/api/stats').then(r => r.json()),
-  { refetchInterval: 10000, refetchIntervalInBackground: true, refetchOnKeyChange: true }
+  { refetchInterval: 10000, refetchIntervalInBackground: true }
 );
 ```
 
