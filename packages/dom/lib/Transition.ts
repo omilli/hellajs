@@ -1,5 +1,5 @@
 import { resolveValue, isHellaNode } from "./internal/utils";
-import { resolveNode } from "./internal/render";
+import { resolveNode, childNamespaceOf } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
@@ -61,7 +61,7 @@ export function Transition(props: TransitionProps): JSX.Element {
 
         if (current) return;
 
-        current = resolveNode(children, parent);
+        current = resolveNode(children, parent, childNamespaceOf(parent));
         anchor.parentNode?.insertBefore(current, anchor);
 
         if (isFirst && appear) {

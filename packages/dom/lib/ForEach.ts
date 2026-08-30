@@ -1,6 +1,6 @@
 import { isHellaNode, resolveValue } from "./internal/utils";
 import { registry } from "./registry";
-import { resolveNode } from "./internal/render";
+import { resolveNode, childNamespaceOf } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
 import { peekHydrateContext } from "./internal/hydrate";
 import type { HellaNode, ForEachProps } from "./types/nodes";
@@ -36,6 +36,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
     registry.addEffect(parent, () => {
       const actualParent = anchor.parentNode as Element;
       if (!actualParent) return;
+      const itemNs = childNamespaceOf(actualParent);
 
       const arr: T[] = resolveValue(each) as T[];
 
@@ -85,7 +86,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             const key = element && isHellaNode(element)
               ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
               : (item as { id?: unknown })?.id ?? index;
-            const node = resolveNode(element);
+            const node = resolveNode(element, undefined, itemNs);
             fragment.appendChild(node);
             keyToNode.set(key, node);
             keyToItem.set(key, item);
@@ -131,7 +132,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           let node = keyToNode.get(key);
           const oldItem = keyToItem.get(key);
           if (!node || (!hasExplicitKey && oldItem !== item)) {
-            node = resolveNode(element);
+            node = resolveNode(element, undefined, itemNs);
           }
           newKeyToNode.set(key, node);
           newKeyToItem.set(key, item);

@@ -1,5 +1,5 @@
 import { isFunction } from "./internal/core";
-import { resolveNode, clearRenderedNodes } from "./internal/render";
+import { resolveNode, clearRenderedNodes, childNamespaceOf } from "./internal/render";
 import { peekHydrateContext, hydrateSequence } from "./internal/hydrate";
 import { dispatchError, toError, resolveErrorConfig } from "./internal/dispatch";
 import { getState } from "./internal/state";
@@ -17,6 +17,7 @@ function suspendChild(
   value: HellaChild | HellaChild[],
   clearFallback: () => void
 ): void {
+  const ns = childNamespaceOf(parent);
   if (value && typeof (value as Promise<unknown>).then === "function") {
     let cancelled = false;
     getState(parent).suspenseCleanup = () => { cancelled = true; };
@@ -24,18 +25,18 @@ function suspendChild(
       .then((resolved) => {
         if (cancelled || !anchor.parentNode) return;
         clearFallback();
-        parent.insertBefore(resolveNode(resolved), anchor);
+        parent.insertBefore(resolveNode(resolved, undefined, ns), anchor);
       })
       .catch((err: unknown) => {
         if (cancelled || !anchor.parentNode) return;
         clearFallback();
         const errNode = dispatchError(toError(err), { phase: "mount", element: parent as HellaElement, config: resolveErrorConfig(parent) });
-        if (errNode) anchor.parentNode?.insertBefore(resolveNode(errNode), anchor);
+        if (errNode) anchor.parentNode?.insertBefore(resolveNode(errNode, undefined, ns), anchor);
       });
     return;
   }
   clearFallback();
-  parent.insertBefore(resolveNode(value), anchor);
+  parent.insertBefore(resolveNode(value, undefined, ns), anchor);
 }
 
 /**
@@ -80,7 +81,7 @@ export function Suspense(props: SuspenseProps): JSX.Element {
       if (fallbackNode?.parentNode) fallbackNode.parentNode.removeChild(fallbackNode);
     };
     if (value && typeof (value as Promise<unknown>).then === "function" && props.fallback) {
-      fallbackNode = resolveNode(props.fallback);
+      fallbackNode = resolveNode(props.fallback, undefined, childNamespaceOf(parent));
       anchor.parentNode?.insertBefore(fallbackNode, anchor);
     }
     suspendChild(parent, anchor, value, clearFallback);

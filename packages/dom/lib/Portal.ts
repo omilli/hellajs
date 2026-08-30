@@ -1,4 +1,4 @@
-import { resolveNode } from "./internal/render";
+import { resolveNode, childNamespaceOf } from "./internal/render";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
 import { peekHydrateContext } from "./internal/hydrate";
@@ -35,13 +35,14 @@ export function Portal(props: PortalProps): JSX.Element {
 
       const target = document.querySelector(to);
       if (!target) throw new Error(`[dom] Portal: target "${to}" not found in document`);
+      const ns = childNamespaceOf(target);
 
       const fragment = document.createDocumentFragment();
       let i = 0;
       const len = childNodes.length;
       while (i < len) {
         const child = childNodes[i++] as HellaChild;
-        const node = resolveNode(child, anchor);
+        const node = resolveNode(child, anchor, ns);
         portalNodes.push(node);
         fragment.appendChild(node);
       }
