@@ -168,6 +168,19 @@ css({ color: 'red' });
 removeCss({ color: 'blue' }); // Different CSS text
 ```
 
+### Function Values Throw
+
+`removeCss()` re-derives the CSS text through the same transform as [`css`](/reference/css/css), so an object containing a function property value throws here too — the same error both entry points report. Build reactive values with [`cssVars`](/reference/css/cssvars) instead:
+
+```jsx
+// ❌ Throws — functions are not CSS values in css() or removeCss()
+try {
+  removeCss({ padding: () => '1rem' }, { name: 'card' });
+} catch {}
+// Error: [css] function values are not supported in css objects —
+//        use cssVars() for reactive values, key: padding
+```
+
 ### Use Cases
 
 Perfect for:

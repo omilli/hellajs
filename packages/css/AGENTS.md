@@ -14,7 +14,7 @@ Type-safe CSS-in-JS. `css()` generates rules from JS objects (global by default;
 
 | File | Responsibility |
 |---|---|
-| `css.ts` | `css()` + `process()` (exported `@internal`). Platform-dependent return: client injects + dedup via `injectedMap`; server returns text. Brace-depth-0 rule splitting, CSSOM injection, refCount increment. Throws on non-object; throws on direct declarations inside a selector-less conditional at-rule body. |
+| `css.ts` | `css()` + `process()` (exported `@internal`). Platform-dependent return: client injects + dedup via `injectedMap`; server returns text. Brace-depth-0 rule splitting, CSSOM injection, refCount increment. Throws on non-object; throws on function property values at any nesting depth (reactive leaves belong to `cssVars`); throws on direct declarations inside a selector-less conditional at-rule body. |
 | `removeCss.ts` | `removeCss()` — re-derives text via `process()`, decrements `injectedMap` count; at zero drops CSSOM rules + entry. No-op for unknown. No-op on server (`!hasDocument()`). Throws on non-object. |
 | `resetCss.ts` | `resetCss()` — clears `injectedMap` + resets `hella-css` sheet. Does **not** touch vars state. No-op on server. |
 | `cssVars.ts` | `cssVars()` + private `flattenVars()` / `buildResult()`. Platform-dependent return: server early-returns text (inline `buildVarsText` logic); client routes static vs reactive. Throws on non-object. |
@@ -115,7 +115,7 @@ Highest-signal gotchas; verify any change against these:
 - **Scope accumulation** — multiple `cssVars()` to one scope merge; `removeCssVars` removes only that call's flatKeys; the scope rule is dropped entirely when its map empties.
 - **`removeCssVars` no-op for unknown** input; reactive removal disposes the effect (later signal writes don't touch the sheet).
 - **SSR-safe / platform-dependent return** — `css()`/`cssVars()` return CSS text on the server (no DOM) with zero state mutation; the client path injects into the CSSOM and returns the class name / proxy. `removeCss`/`removeCssVars` are no-ops on server (`!hasDocument()` early return).
-- **Throws wording differs by family** — css/removeCss: `[css] <fn>: expected a CSS object, received …`; cssVars/removeCssVars: `[css] <fn>: expected a plain object, received …`; both families additionally share process()'s conditional-at-rule throw: `[css] conditional at-rule "<key>" contains declarations with no selector — nest selectors under it or use the name option` (fires in `css` and `removeCss`, client and server).
+- **Throws wording differs by family** — css/removeCss: `[css] <fn>: expected a CSS object, received …`; cssVars/removeCssVars: `[css] <fn>: expected a plain object, received …`; both families additionally share process()'s conditional-at-rule throw: `[css] conditional at-rule "<key>" contains declarations with no selector — nest selectors under it or use the name option` and function-value throw: `[css] function values are not supported in css objects — use cssVars() for reactive values, key: <key>` (both fire in `css` and `removeCss`, client and server).
 - **Reset isolation** — `resetCss` touches only css-side state (4 maps + `hella-css` sheet); `resetCssVars` touches only vars-side state (effects + maps + `hella-vars` sheet + replaces the two reactive WeakMaps, since WeakMap entries can't be enumerated).
 - **Lazy style elements** — `<style id="hella-css"|"hella-vars">` created by `getSheet()` on first write; `resetSheet` clears content but leaves the element in the DOM.
 
