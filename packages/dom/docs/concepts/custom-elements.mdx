@@ -55,10 +55,24 @@ Usage in HTML:
 </my-card>
 ```
 
+## Shadow DOM
+
+By default, custom elements render to light DOM. Pass `{ shadow: true }` as the third argument to render into an open shadow root instead — page CSS no longer applies to the element's content:
+
+```jsx
+element("my-widget", (props) => (
+  <div class="box">{props.children}</div>
+), { shadow: true });
+```
+
+An object is passed to `attachShadow` verbatim, so `{ shadow: { mode: "closed" } }` also works: outside JavaScript cannot reach the root via `el.shadowRoot`, while the element keeps rendering and updating normally.
+
+**Limitation:** projection uses captured `props.children` and `props.slots` nodes moved into the shadow render output — native `<slot>` element projection is **not** available under `shadow: true`. Slotted content still works through the captured-props API shown above.
+
 ## Lifecycle
 
-When a custom element is disconnected from the DOM, all effects are disposed and internal state resets. Reconnection triggers a fresh render from scratch.
+When a custom element is disconnected from the DOM, all effects are disposed and internal state resets. Reconnection triggers a fresh render from scratch — the shadow root (if any) is reused.
 
-**Important:** Custom elements use light DOM rendering, not shadow DOM. Page styles apply normally to the element's content.
+**Important:** Custom elements render to light DOM by default; pass `{ shadow: true }` for style encapsulation (see [Shadow DOM](#shadow-dom)).
 
 See [`element`](/reference/dom/element) for full API details.

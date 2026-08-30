@@ -12,13 +12,13 @@ setMountNode((node: HellaNode) => mountNode(node) as Node);
  * Mounts a HellaNode to a DOM element, replacing all existing content.
  * Supports async component functions — the container mounts the resolved node when the Promise settles.
  * @param node The HellaNode or component function to mount (sync or async)
- * @param target CSS selector string or Element to mount into (defaults to "#app")
+ * @param target CSS selector string, Element, or ShadowRoot to mount into (defaults to "#app")
  * @returns A MountHandle for controlling the mounted tree
  * @throws {Error} When target is a selector string that matches no element in the document.
  */
 export function mount(
   node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
-  target: string | Element = "#app"
+  target: string | Element | ShadowRoot = "#app"
 ): MountHandle {
   const container = typeof target === "string" ? document.querySelector(target) : target;
   if (!container) throw new Error(`[dom] mount: target "${target}" not found in document`);
