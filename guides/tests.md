@@ -186,6 +186,7 @@ Prefer over waiting for the scoped MutationObserver.
 - Pure call-tracking uses `mock()`. Signal reads/value returns don't qualify for the side-effect counter exception (see Anti-Patterns).
 - Global mocking: save in `beforeEach`, restore in `afterEach`, cast `as unknown as typeof X`.
 - DOM API mocking: `Object.defineProperty` for readonly props; save/restore for prototype patching.
+- Spy typing: type a spy's recorded call signature with `mock`'s explicit generic (`mock<(type: string, opts?: unknown) => void>(() => {})`), never named-but-unused `_` params on the implementation — the eslint config carries no `argsIgnorePattern`, so they fail the gate.
 - Time mocking (`Date.now`, `performance.now`): declare the mock-time closure at describe scope, override in `beforeEach`, restore in `afterEach`. Tests advance the closure; they never own the save/restore pair, so a failing assertion can't leak a frozen clock.
 - Error handler setup: extract the common `onError` pattern into a shared helper (e.g. `fallbackHandler(defaultNode)`) in `tests/helpers.ts`. Call the helper at the top of each test instead of repeating the full lambda.
 
