@@ -1,9 +1,18 @@
-import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { resetTestState, getStylesheet, suppressConsole } from "@utils/test-helpers.js";
 import { css, removeCss } from "@hellajs/css/bundle";
+
+let sup: ReturnType<typeof suppressConsole>;
 
 beforeEach(() => {
   resetTestState();
+  // happy-dom rejects @layer/@starting-style insertRule, so several tests in this
+  // file trigger the skip-with-warning path — capture instead of print.
+  sup = suppressConsole();
+});
+
+afterEach(() => {
+  sup.restore();
 });
 
 describe("css at-rules", () => {
