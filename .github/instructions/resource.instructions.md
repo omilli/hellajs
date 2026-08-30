@@ -16,8 +16,8 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 | `lib/types/cache.d.ts` | `CacheEntry`, `CacheConfig`, `CacheUpdate`, `CacheMapView`, `ResourceCache`. |
 | `lib/internal/core.ts` | Thin re-export from `@hellajs/core`: `signal/computed/effect/untracked/isFunction/isPlainObject/hasDocument/hasNavigator/hasWindow`. |
 | `lib/internal/dedupe.ts` | `ongoingRequestsMap` (`WeakMap<object, Map<key, OngoingRequest>>`) + `getOngoing/setOngoing/deleteOngoing`. `OngoingRequest = { promise, abortController }`. |
-| `lib/internal/retry.ts` | `resolveRetryConfig(retry, retryDelay)` → `{ maxRetries, shouldRetry, getDelay }`. Boolean→count, function→predicate. `fetchWithRetry(start, { signal, retryConfig })` — shared race-against-abort + retry loop (used by `run` and `prefetch`). |
-| `lib/internal/abort.ts` | `wireRequestControls(controller, { timeout?, abortSignal? })` → release() clearing timer + external listener (shared by `run`/`mutate`/`prefetch`); `raceAbort(promise, signal, message?)`. |
+| `lib/internal/retry.ts` | `resolveRetryConfig(retry, retryDelay)` → `{ maxRetries, shouldRetry, getDelay }`. Boolean→count, function→predicate. `fetchWithRetry(start, { signal, retryConfig })` — shared race-against-abort + retry loop (used by `run`, `mutate`, and `prefetch`). |
+| `lib/internal/abort.ts` | `wireRequestControls(controller, { timeout?, abortSignal? })` → release() clearing timer + external listener (shared by `run`/`mutate`/`prefetch`); `raceAbort(promise, signal)` — races live signals only (callers pre-check `aborted`). |
 | `lib/internal/polling.ts` | `createPolling` — recursive `setTimeout`, visibility-aware, dynamic interval via `untracked(data)`. |
 | `lib/internal/lifecycle.ts` | `createFocus` (visibilitychange→visible + window `focus`), `createReconnect` (`resourceCache.onOnlineChange`→online). |
 | `lib/internal/structural.ts` | `structuralShare(prev, next)` — reference-preserving deep merge over arrays/plain objects. |
@@ -53,7 +53,7 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 
 ### Abort / timeout / external signal
 
-- One internal `AbortController` per request, stored as `currentAbortController`. External `abortSignal` and `timeout` both wire listeners onto it; already-aborted external signal aborts immediately.
+- Reads share one internal `AbortController` (`currentAbortController`) — a new read aborts the prior via `cleanAbort`. Each `mutate()` owns a separate controller tracked in `mutationControllers` (added at start, self-removed on settle): concurrent mutations never abort each other, and reads and mutations never abort each other. `abort()` aborts the read controller and every live mutation controller. External `abortSignal` and `timeout` wire onto each controller; already-aborted external signal aborts immediately.
 - Fetcher is raced against a promise that rejects with `DOMException("...","AbortError")` on `currentSignal.addEventListener("abort", ...)`.
 - AbortError path clears `isLoading`/`isFetching` and **does not** set `error()` (status stays derived, typically `idle`).
 
@@ -98,8 +98,8 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `invalidate` | `() => void` | Deletes this fetcher's cache entry for the key, then `run(true)`. |
 | `setData` | `(T \| ((old) => T)) => void` | Updates `rawData`; caches only if `cacheTime > 0`. |
 | `cacheKey` | `() => unknown` | `untracked(resolveKey)`. |
-| `mutate` | `<V>(vars) => Promise<T>` | Bypasses cache + dedup; result not cached. |
-| `reset` | `() => void` | Like `abort` but also clears `mutationContext`; reusable. |
+| `mutate` | `<V>(vars) => Promise<T>` | Bypasses cache + dedup; result not cached; honors `retry`/`retryDelay`; concurrent calls run independently. |
+| `reset` | `() => void` | Clears timers/listeners + state; does not abort in-flight (unlike `abort`); reusable. |
 | `dispose` | `() => void` | One-way teardown of effects/timers/listeners; does **not** abort in-flight, does **not** clear cache. |
 
 ### `CacheEntry<T>`
@@ -143,7 +143,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `abortSignal` | `undefined` | External `AbortSignal` wired onto the internal controller. |
 | `deduplicate` | `true` | Join in-flight same-fetcher+key requests. |
 | `structuralSharing` | `false` | Preserve unchanged subtree references on fetch success. |
-| `retry` | `0` | `number \| boolean \| (count, error) => boolean`. |
+| `retry` | `0` | `number \| boolean \| (count, error) => boolean`. Fetches and mutations alike. |
 | `retryDelay` | `1000` | `number \| (attempt, error) => number`. |
 | `transform` | `—` | `(data: T) => TTransformed`. |
 | `onSuccess` / `onError` | `—` | `(data) => void` / `(err) => void`. |
@@ -182,11 +182,11 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 ## Non-obvious behaviors
 
 **Fetch & cache**
-- `fetch({force:true})` skips cache + dedup **lookup** but still calls `setOngoing`, so later non-force fetches join it while in flight. (resource.ts:245)
+- `fetch({force:true})` skips cache + dedup **lookup** but still calls `setOngoing`, so later non-force fetches join it while in flight. (resource.ts `run`)
 - SWR background call is `run(true)` (force): it skips the cache lookup but re-enters dedup. (resource.ts:179-184)
 - With `cacheTime=0` (default), every non-force `fetch()` falls through to dedup/network — no cache phase runs. (resource.ts:168)
-- `setData` always updates `rawData`; cache write is gated on `cacheTime > 0`. With an expired cache entry, `setData`'s `getCacheData` deletes the stale entry and the updater still sees `rawData()` as the old value, then re-creates the entry. (resource.ts:397, resource-cache.test.ts:239)
-- `mutate` results are **not** cached and do not dedup; `handleSuccess` fires (and `onSuccess`) but `setCacheData` is never called. (resource.ts:420-452)
+- `setData` always updates `rawData`; cache write is gated on `cacheTime > 0`. With an expired cache entry, `setData`'s `getCacheData` deletes the stale entry and the updater still sees `rawData()` as the old value, then re-creates the entry. (resource.ts `setData`, resource-cache.test.ts)
+- `mutate` results are **not** cached and do not dedup; `handleSuccess` fires (and `onSuccess`) but `setCacheData` is never called. (resource.ts `mutate`)
 - Cache + dedup are keyed by **fetcher reference identity**. Each `resource("url")` call builds a fresh fetcher closure → two URL resources with the same URL get **separate** cache/dedup scopes. Share a named fetcher function to share scope (needed for transform-sharing). (resource.ts:50-58)
 - `resourceCache.set()` targets `PUBLIC_SCOPE`; a manual entry and a resource entry with the same key coexist as two entries. (cache.ts:229, collision.test.ts:167)
 - `resourceCache.map.get` does **not** refresh `lastAccess`; `resourceCache.get` does. They are different code paths. (cache.ts:183 vs 232)
@@ -194,19 +194,20 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 **Abort & error**
 - AbortError never sets `error()`; status falls back to data-derived (typically `idle`). Check `isIdle() && !isFetching()` rather than `error()` after abort/timeout. (resource.ts:119-126)
 - `onError` fires only when a truthy error reaches `handleError` — never on the state-clearing calls (fetch start, cache hit, dedup join, abort, reset).
-- `dispose()` does **not** abort in-flight requests and does **not** touch the cache; a resolving fetcher promise still updates `rawData` after dispose. It only clears polling/focus/reconnect + the key-change effect. One-way (resource is dead after). (resource.ts:489, fetching.test.ts:267)
+- `dispose()` does **not** abort in-flight requests and does **not** touch the cache; a resolving fetcher promise still updates `rawData` after dispose. It only clears polling/focus/reconnect + the key-change effect. One-way (resource is dead after). (resource.ts `dispose`, fetching.test.ts)
 - Dedup joiners adopt the shared `abortController`; aborting one joined resource aborts the shared controller and resets **all** joiners to their `initialData`. (resource.ts:200, deduplication.test.ts:110)
-- `onSettled` is skipped on mutation abort — even if `onMutate` already ran and produced a context for rollback. (resource.ts:449-460, mutations.test.ts:135)
+- `onSettled` is skipped on mutation abort — even if `onMutate` already ran and produced a context for rollback. (resource.ts `mutate`, mutations.test.ts)
+- Concurrent `mutate()` calls are independent — per-call abort controller, per-call `onMutate` context threaded to that call's `onSettled` (no shared `mutationContext` closure); only `abort()`, `timeout`, or the external signal cancels a mutation. (resource.ts `mutate`)
 - External `abortSignal` already-aborted at call time → internal controller aborted synchronously before the fetcher runs. (resource.ts:218-221)
 - `timeout` and external `abortSignal` compose: both attach listeners to the same internal controller. (resource.ts:218-227)
-- Late fetcher resolution after `abort()` is ignored: success path checks `!currentSignal.aborted` before `handleSuccess`. (resource.ts:276, errors.test.ts:129)
+- Late fetcher resolution after `abort()` is ignored: success path checks `!currentSignal.aborted` before `handleSuccess`. (resource.ts `run`, errors.test.ts)
 
 **Lifecycle & reactivity**
 - `data` is **always** a `computed` (with or without transform); reading `data()` inside an effect tracks `rawData`. (resource.ts:66-71)
-- `status()` reads `rawData()` directly, so `transform` cannot change status. A fetch returning a value equal to `initialData` leaves status `idle`. (resource.ts:380-389)
+- `status()` reads `rawData()` directly, so `transform` cannot change status. A fetch returning a value equal to `initialData` leaves status `idle`. (resource.ts `status`)
 - Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts:161-162, retry.test.ts:153)
-- Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts:352-359, fetching.test.ts:236)
-- `polling.setup()` is gated on `refetchOnKeyChange && isEnabled() && refetchInterval` and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the key-change effect; not re-armed by key changes or after `abort`/`reset`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts:363-375, focus.test.ts:119)
+- Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts key-change effect, fetching.test.ts)
+- `polling.setup()` is gated on `refetchOnKeyChange && isEnabled() && refetchInterval` and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the key-change effect; not re-armed by key changes or after `abort`/`reset`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts setup gates, focus.test.ts)
 - `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained while their scope holds entries — reaped once empty); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (cache.ts:12, dedupe.ts:17)
 - Cache entries are module-level and survive `dispose()`/resource recreation. (cache.ts:12)
 
@@ -215,7 +216,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - `update`/`updateCacheData` return `false` on miss or expired entry (and delete the expired entry in passing). (cache.ts:156-179)
 - LRU eviction is **global** across all scopes; runs only when `totalSize()` exceeds `maxSize` after a `setCacheData`. (cache.ts:111-137, collision.test.ts:130)
 - `cleanupExpiredCache` is throttled (60s) and capped (100 deletions/pass); invoked lazily from `setCacheData` and the cache-lookup phase of `run`; reaps scopes it empties, while invalidation/LRU-emptied scopes await the next throttled pass. (cache.ts:71-103)
-- `staleTime` default differs by entry point: resources pass `staleTime ?? Infinity` (never stale); `resourceCache.set` defaults `staleTime` to `0` (always stale). (resource.ts:275, cache.ts:224)
+- `staleTime` default differs by entry point: resources pass `staleTime ?? Infinity` (never stale); `resourceCache.set` defaults `staleTime` to `0` (always stale). (resource.ts `run`, cache.ts:224)
 - `invalidateResources` calls `.invalidate()` on each member synchronously (no batching/dedup of the resulting refetches). (cache.ts:345)
 
 ## Performance & memory
