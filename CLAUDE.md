@@ -26,8 +26,8 @@
   `AGENTS.md` is the single source of truth for agent instructions. **Never edit `CLAUDE.md` or `.github/instructions/*.instructions.md` directly** — they are generated.
 
   - **`bun sync`** reads every `AGENTS.md` and regenerates: a `CLAUDE.md` mirror in the same directory, one `.github/instructions/{folder}.instructions.md` (with `applyTo:` frontmatter) per folder under `packages/`/`plugins/`/`docs/`/`scripts/`, and the root `.github/copilot-instructions.md` (`applyTo: "**"`).
-  - **post-commit hook** (`.github/hooks/post-commit`) auto-runs `bun sync` when an `AGENTS.md` changes, then auto-commits the generated files with `--no-verify`. CI also runs `bun sync` and commits any drift.
-  - **commit-msg hook** (`.github/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
+  - **post-commit hook** (installed at `.git/hooks/post-commit`) auto-runs `bun sync` when an `AGENTS.md` changes, then auto-commits the generated files with `--no-verify`. Its `Auto-committed…` echo is unconditional — on any git error in hook output, verify actual state (`git status` / `git log -1`) and commit the already-generated mirrors directly (`chore: sync CLAUDE.md and instruction files from AGENTS.md`); a failed nested commit can tear the index (recovery: `memory/entries/062.md`). CI also runs `bun sync` and commits any drift.
+  - **commit-msg hook** (installed at `.git/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
   - **Do not run `bun sync` manually.** The post-commit hook regenerates all mirrors automatically when an `AGENTS.md` change is committed; CI catches any drift. Editing `AGENTS.md` is enough — never touch `CLAUDE.md` or `.github/instructions/*` by hand.
 
   ## Packages
@@ -135,7 +135,7 @@
 
   - `.agents/skills/` — (the `brain-*` pack: 10 vendored skills) + `comparison/` (standalone). See §Skills.
   - `.changeset/` — changeset config
-  - `.github/` — `workflows/` (CI + release), git hooks (`post-commit` → sync, `commit-msg` → commitlint), generated `instructions/` + `copilot-instructions.md`
+  - `.github/` — `workflows/` (CI + release), generated `instructions/` + `copilot-instructions.md`
   - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`). **A Docs task spans the full site surface, not just the API page**: `src/pages/learn/concepts/` + `learn/patterns/` + `learn/tutorials/` (wrapper pages importing `@{pkg}/{type}/{name}.mdx` from `packages/*/docs/`, and `@examples/{name}/tutorial.mdx` for tutorials), `src/pages/reference/{pkg}/` (API wrappers), `src/nav.ts` (sidebar registration), and the enumeration pages (`learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx`). A feature with user-facing behavior needs: a concept doc, a pattern doc when copy-paste recipes apply, `nav.ts` registration under Concepts/Patterns/reference, and an update to every enumeration listing it. Before scoping a Docs task: read `src/pages/learn/index.mdx` and grep the site for prose claims the change falsifies (e.g. an "X not supported" alert the feature now makes false).
   - `examples/` — `bench`, `blog`, `counter`, `theme-switcher`, `todo`, `ssr-islands`, `ssr-routing`, `ssr-streaming`. Every example except `bench` carries its tutorial as `tutorial.mdx` next to the code it documents (imported by the docs site's tutorial wrappers; `guides/docs.md` §Tutorial Docs governs it)
   - `guides/` — style guides (see above)
