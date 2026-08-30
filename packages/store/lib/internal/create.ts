@@ -1,6 +1,6 @@
 import { signal, computed, effect, untracked, isFunction, isPlainObject, isObject } from "./core";
-import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware } from "../types";
-import { deepClone, extractChanges } from "./draft";
+import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware, StoreEquals } from "../types";
+import { deepClone, extractChanges, structurallyEqual } from "./draft";
 import {
   reservedKeys,
   isObjectOrFunction,
@@ -69,61 +69,79 @@ export function createStore<T extends Record<string, unknown>>(
     return snapshotObj as Snapshot<T>;
   });
 
-  result.snapshot = snapshotComputed;
+  defineStoreProperty(result, "snapshot", snapshotComputed, { writable: false });
 
-  result.update = function (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) {
-    let resolvedPartial: PartialDeep<T>;
+  defineStoreProperty(
+    result,
+    "update",
+    function (this: Store<T, never>, partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) {
+      let resolvedPartial: PartialDeep<T>;
 
-    if (isFunction(partial)) {
-      const snapshot = this.snapshot() as unknown as T;
-      const draft = deepClone(snapshot);
-      (partial as (draft: T) => void)(draft);
-      resolvedPartial = extractChanges(snapshot, draft) as PartialDeep<T>;
-    } else {
-      resolvedPartial = partial as PartialDeep<T>;
-    }
-
-    const entries = Object.entries(resolvedPartial as Record<string, unknown>);
-    let i = 0;
-    const len = entries.length;
-    while (i < len) {
-      const [key, value] = entries[i]!;
-      const current = this[key as keyof T];
-      if (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "update")) {
-        (current as unknown as Store<Record<string, unknown>>).update(value as object);
-      } else if (settableKeys.has(key)) {
-        applyUpdate(current, value, middlewares, key as string);
+      if (isFunction(partial)) {
+        const snapshot = this.snapshot() as unknown as T;
+        const draft = deepClone(snapshot);
+        (partial as (draft: T) => void)(draft);
+        resolvedPartial = extractChanges(snapshot, draft) as PartialDeep<T>;
+      } else {
+        resolvedPartial = partial as PartialDeep<T>;
       }
-      i++;
-    }
-  };
+
+      const entries = Object.entries(resolvedPartial as Record<string, unknown>);
+      let i = 0;
+      const len = entries.length;
+      while (i < len) {
+        const [key, value] = entries[i]!;
+        const current = this[key as keyof T];
+        if (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "update")) {
+          (current as unknown as Store<Record<string, unknown>>).update(value as object);
+        } else if (settableKeys.has(key)) {
+          applyUpdate(current, value, middlewares, key as string);
+        } else if (reservedKeys.has(key)) {
+          throw new Error(`[store] update: reserved key "${key}"`);
+        } else if (Object.hasOwn(initial, key) && isFunction(initial[key as keyof T])) {
+          throw new Error(`[store] update: "${key}" is a function property, not state — assign it directly`);
+        } else if (isObject(current) && Object.hasOwn(current, "update")) {
+          throw new Error(`[store] update: store key "${key}" requires an object value`);
+        } else {
+          throw new Error(`[store] update: unknown key "${key}"`);
+        }
+        i++;
+      }
+    },
+    { writable: false }
+  );
 
   /**
    * Internal recursive teardown that walks the store tree disposing all nested stores.
    * Individual signals are not disposed — they remain functional. Only the store structure is torn down.
    */
-  result.cleanup = function () {
-    const deepCleanup = (obj: unknown) => {
-      if (!obj || !isObjectOrFunction(obj)) return;
-      const objKeys = Object.keys(obj);
-      let i = 0;
-      const len = objKeys.length;
-      while (i < len) {
-        const key = objKeys[i]!;
-        if (reservedKeys.has(key)) { i++; continue; }
-        const value = (obj as Record<string, unknown>)[key];
-        if (value && isObject(value)) {
-          if (Object.hasOwn(value, "cleanup") && isFunction((value as Record<"cleanup", unknown>).cleanup)) {
-            (value as Record<"cleanup", () => void>).cleanup();
-          } else {
-            deepCleanup(value);
+  defineStoreProperty(
+    result,
+    "cleanup",
+    function (this: Store<T, never>) {
+      const deepCleanup = (obj: unknown) => {
+        if (!obj || !isObjectOrFunction(obj)) return;
+        const objKeys = Object.keys(obj);
+        let i = 0;
+        const len = objKeys.length;
+        while (i < len) {
+          const key = objKeys[i]!;
+          if (reservedKeys.has(key)) { i++; continue; }
+          const value = (obj as Record<string, unknown>)[key];
+          if (value && isObject(value)) {
+            if (Object.hasOwn(value, "cleanup") && isFunction((value as Record<"cleanup", unknown>).cleanup)) {
+              (value as Record<"cleanup", () => void>).cleanup();
+            } else {
+              deepCleanup(value);
+            }
           }
+          i++;
         }
-        i++;
-      }
-    };
-    deepCleanup(this);
-  };
+      };
+      deepCleanup(this);
+    },
+    { writable: false }
+  );
 
   /**
    * Subscribes to changes of a single signal-backed property. Thin wrapper over a core
@@ -131,25 +149,30 @@ export function createStore<T extends Record<string, unknown>>(
    * callback; later runs fire the callback with (next, prev) inside untracked so reads
    * in the callback never widen the subscription. Returns the effect's disposer.
    */
-  result.subscribe = <K extends keyof T>(key: K, callback: (next: T[K], prev: T[K]) => void): (() => void) => {
-    const keyName = key as string;
-    if (!settableKeys.has(keyName)) {
-      throw new Error(`[store] subscribe: "${keyName}" is not a settable key`);
-    }
-    const target = result[key] as () => unknown;
-    let prev: unknown;
-    let started = false;
-    return effect(() => {
-      const next = target();
-      if (!started) {
-        prev = next;
-        started = true;
-        return;
+  defineStoreProperty(
+    result,
+    "subscribe",
+    <K extends keyof T>(key: K, callback: (next: T[K], prev: T[K]) => void): (() => void) => {
+      const keyName = key as string;
+      if (!settableKeys.has(keyName)) {
+        throw new Error(`[store] subscribe: "${keyName}" is not a settable key`);
       }
-      untracked(() => { callback(next as T[K], prev as T[K]); });
-      prev = next;
-    });
-  };
+      const target = result[key] as () => unknown;
+      let prev: unknown;
+      let started = false;
+      return effect(() => {
+        const next = target();
+        if (!started) {
+          prev = next;
+          started = true;
+          return;
+        }
+        untracked(() => { callback(next as T[K], prev as T[K]); });
+        prev = next;
+      });
+    },
+    { writable: false }
+  );
 
   const initialIsStore = isStore(initial);
   const sourceSettable = initialIsStore
@@ -182,7 +205,7 @@ export function createStore<T extends Record<string, unknown>>(
             equals: nestedEquals
           }
         : undefined;
-      defineStoreProperty(result, key, createStore(value, nestedOptions));
+      defineStoreProperty(result, key, createStore(value, nestedOptions), { writable: false });
       i++;
       continue;
     }
@@ -203,13 +226,22 @@ export function createStore<T extends Record<string, unknown>>(
       ? wrapWithMiddleware(sig, middleware as (val: unknown) => unknown)
       : sig;
 
-    defineStoreProperty(
-      result,
-      key,
-      (readonlyAll || readonlyKeys.includes(key as PropertyKey))
-        ? computed(() => wrapped())
-        : wrapped
-    );
+    if (readonlyAll || readonlyKeys.includes(key as PropertyKey)) {
+      const ro = computed(() => wrapped());
+      defineStoreProperty(
+        result,
+        key,
+        function (...args: unknown[]) {
+          if (args.length > 0) {
+            throw new Error(`[store] readonly key "${key}"`);
+          }
+          return ro();
+        },
+        { writable: false }
+      );
+    } else {
+      defineStoreProperty(result, key, wrapped, { writable: false });
+    }
     settableKeys.add(key);
     i++;
   }

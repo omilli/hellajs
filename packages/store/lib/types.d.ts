@@ -101,7 +101,7 @@ type SettableKeyOf<T> = {
  * - Arrays: become Signal<Array>
  * - Objects: recursively become nested Store
  * - Primitives: become Signal<T>
- * - Readonly properties: wrapped in getter functions
+ * - Readonly properties: wrapped in getter functions that throw on write attempts
  *
  * Built-in methods:
  * - snapshot(): Returns plain object representation of current state
@@ -121,7 +121,10 @@ export type Store<
 } & {
   /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types */
   snapshot: () => Snapshot<T>;
-  /** Deep merge partial updates or apply mutations via draft function */
+  /**
+   * Deep merge partial updates or apply mutations via draft function.
+   * @throws {Error} When `partial` touches an unknown key, a reserved key, a function property, a store key with a non-object value, or a readonly key.
+   */
   update: (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) => void;
   /** Recursively invokes cleanup on nested stores; individual signals are not disposed — they remain functional */
   cleanup: () => void;

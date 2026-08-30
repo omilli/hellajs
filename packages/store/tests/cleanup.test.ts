@@ -15,15 +15,26 @@ describe("cleanup", () => {
     const originalLevel1Cleanup = data.level1.cleanup;
     const originalLevel2Cleanup = data.level1.level2.cleanup;
 
-    data.level1.cleanup = function () {
-      level1Cleaned();
-      originalLevel1Cleanup.call(this);
-    };
+    // Store methods are non-writable — redefine via defineProperty to spy (configurable stays true)
+    Object.defineProperty(data.level1, "cleanup", {
+      value: function () {
+        level1Cleaned();
+        originalLevel1Cleanup.call(this);
+      },
+      writable: false,
+      enumerable: true,
+      configurable: true
+    });
 
-    data.level1.level2.cleanup = function () {
-      level2Cleaned();
-      originalLevel2Cleanup.call(this);
-    };
+    Object.defineProperty(data.level1.level2, "cleanup", {
+      value: function () {
+        level2Cleaned();
+        originalLevel2Cleanup.call(this);
+      },
+      writable: false,
+      enumerable: true,
+      configurable: true
+    });
 
     data.cleanup();
 
@@ -78,12 +89,27 @@ describe("cleanup", () => {
     expect(data.x()).toBe(1);
   });
 
-  test("cleanup recurses into externally replaced plain object values", () => {
+  test("external reassignment of nested store properties throws TypeError", () => {
+    const data = store({ nested: { count: 0 } });
+
+    expect(() => {
+      // @ts-expect-error nested-store properties are non-writable — reassignment would drop reactivity
+      data.nested = { group: { cleanup: () => {} } };
+    }).toThrow(TypeError);
+
+    expect(data.nested.count()).toBe(0);
+  });
+
+  test("cleanup recurses into plain object values defined via defineProperty", () => {
     const innerCleaned = mock(() => {});
     const data = store({ nested: { count: 0 } });
 
-    // @ts-expect-error external reassignment replaces the nested store with a plain tree (properties are writable)
-    data.nested = { group: { cleanup: innerCleaned } };
+    Object.defineProperty(data, "nested", {
+      value: { group: { cleanup: innerCleaned } },
+      writable: false,
+      enumerable: true,
+      configurable: true
+    });
 
     data.cleanup();
 
