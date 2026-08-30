@@ -79,6 +79,24 @@ userId(2); // Automatically fetches posts for user 2
 
 When the key resolves to `null` or `undefined`, the fetch is skipped. This prevents premature requests when key dependencies haven't loaded yet.
 
+The previous key's data stays visible for the whole key-change fetch window — `data()` keeps returning User 1's posts while User 2's fetch is in flight, with `isLoading()` false and `isFetching()` true. Nothing signals that the data belongs to the old key. Set `keepPreviousData: false` to clear data on key change instead: `data()` becomes `undefined`, `isLoading()` turns true, and `status()` reports `'loading'` until the new key's fetch settles — the transition pagination and search UIs need. `initialData` is not re-applied on a key change; a key change is a refetch with new parameters, not a return to the never-fetched state.
+
+```typescript
+// Default: User 1 stays visible while User 2 loads — isLoading() false
+const keptPosts = resource(
+  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+  { key: () => userId(), refetchOnKeyChange: true }
+);
+
+// keepPreviousData: false — data clears, status() 'loading' until User 2 lands
+const freshPosts = resource(
+  id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
+  { key: () => userId(), refetchOnKeyChange: true, keepPreviousData: false }
+);
+
+userId(2);
+```
+
 For the full API surface including `initialData`, `enabled`, `timeout`, `deduplicate`, and all reactive getters, see [`resource`](/reference/resource/resource).
 
 ## Mutations

@@ -179,9 +179,11 @@ Defaults: `cacheTime: 0` (no caching) and `staleTime: Infinity` for resources (`
 
 The dual-flag design is what enables the `isLoading` vs `isFetching` distinction: `isLoading` is true only when there is no data at all; `isFetching` is true for any network activity including background refetches (`lib/resource.ts`). SWR names the same split `isLoading` vs `isValidating`; TanStack splits `status` (`pending`/`error`/`success`) from `fetchStatus` (`fetching`/`paused`/`idle`) (per the v5 Queries guide).
 
+Key changes cut the other way on defaults: HellaJS keeps the previous key's data visible across a key-change refetch, and `keepPreviousData: false` opts into the reset-to-loading transition (`data()` undefined, `status()` `"loading"`) that TanStack Query and SWR ship by default — their keep flags (TanStack v5 `placeholderData: keepPreviousData`, SWR `keepPreviousData`) are the opt-ins (`lib/resource.ts`).
+
 | Library | SWR implementation |
 |---|---|
-| HellaJS | Per-entry `staleTime`/`cacheTime`, background refetch on stale cache hit (`lib/resource.ts`) |
+| HellaJS | Per-entry `staleTime`/`cacheTime`, background refetch on stale cache hit, `keepPreviousData` key-change opt-out (`lib/resource.ts`) |
 | TanStack Query | `staleTime` (default 0) + refetch on mount/focus/reconnect; structural sharing keeps references stable across refetches (per the v5 Important Defaults guide) |
 | SWR | Core feature — `revalidateIfStale` (default true), `revalidateOnFocus`/`revalidateOnReconnect` (default true), `keepPreviousData`, `focusThrottleInterval` 5 s (source, v2.5.1) |
 | RTK Query | `refetchOnMountOrArgChange`, `refetchOnFocus`/`refetchOnReconnect` enabled via `setupListeners` (per its docs) |
@@ -233,6 +235,7 @@ Polling arms on `refetchInterval` and `enabled` alone — it works standalone li
 | Request timeout | Built-in (`lib/internal/abort.ts`) | Via signal in fetcher | Via signal in fetcher | Via signal in fetcher | Manual | Built-in |
 | Retry with predicate + custom delay | Yes (`lib/internal/retry.ts`) | Yes | Predicate-free (count/interval) | Wrapper (count/backoff) | None | None |
 | Stale-while-revalidate | Yes (`lib/resource.ts`) | Yes | Yes (core feature) | Partial | None | None |
+| Keep previous data on key change | Kept by default; `keepPreviousData: false` clears to a loading window (`lib/resource.ts`) | Reset to pending by default; keep via `placeholderData` (v5) | Reset by default; keep via `keepPreviousData` | Reset — a new arg reads a fresh cache entry | Reset to pending; `.latest` keeps the previous value | None |
 | Polling (fixed + dynamic) | Yes (`lib/internal/polling.ts`) | Yes | Yes | Yes | None | None |
 | Refetch on focus / reconnect | Yes (`lib/internal/lifecycle.ts`) | Yes (defaults on) | Yes (defaults on) | Yes (via `setupListeners`) | None | None |
 | Mutations with rollback context | Yes (`lib/resource.ts`) | Yes | Yes (`optimisticData`) | Via `onQueryStarted` | No | No |

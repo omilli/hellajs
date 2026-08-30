@@ -79,6 +79,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   const {
     enabled = true,
     refetchOnKeyChange = false,
+    keepPreviousData = true,
     deduplicate = true,
     structuralSharing = false,
     cacheTime = 0,
@@ -313,6 +314,11 @@ export function resource<T, K = undefined, TTransformed = T>(
   // inside the effect. Key changes never reset the cadence; reset() re-arms, abort() does not.
   let pollingArmed = false;
 
+  // Key-change tracking for keepPreviousData:false — updated on every key
+  // evaluation inside the effect; enabled flips re-run with an unchanged key.
+  let hasPrevKey = false;
+  let prevKey: K | undefined;
+
   /** Arms the polling timer once, keyed on refetchInterval and enabled alone. */
   const armPolling = () => {
     if (refetchInterval && !pollingArmed) {
@@ -327,7 +333,15 @@ export function resource<T, K = undefined, TTransformed = T>(
       armPolling();
       if (refetchOnKeyChange) {
         const keyVal = resolveKey(); // Track key reactively
-        if (!hasExplicitKey || keyVal != null) run(false); // Auto-fetch on key change
+        const keyChanged = hasPrevKey && keyVal !== prevKey;
+        prevKey = keyVal;
+        hasPrevKey = true;
+        if (!hasExplicitKey || keyVal != null) {
+          // A key change with keepPreviousData:false is a fresh load — the old
+          // key's data no longer describes the resource
+          if (keyChanged && !keepPreviousData) rawData(undefined);
+          run(false); // Auto-fetch on key change
+        }
       }
     }
   });

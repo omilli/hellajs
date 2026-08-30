@@ -60,6 +60,8 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   enabled?: boolean | (() => boolean);
   /** Whether to automatically refetch when key dependencies change */
   refetchOnKeyChange?: boolean;
+  /** Keep the previous key's data visible while a key-change refetch is in flight (default: true). When false, a key change clears data — `isLoading()` true, `data()` undefined, `status()` `"loading"` — until the new key's fetch settles; `initialData` is not re-applied. */
+  keepPreviousData?: boolean;
   /** Initial data value to use before any requests complete */
   initialData?: T;
   /** Cache time-to-live in milliseconds (0 = no caching) */
