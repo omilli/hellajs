@@ -62,6 +62,7 @@ export function upsertRule(id: string, key: string, cssText: string): void {
     } catch {
       // Some CSS rule types may not be parseable by the platform (e.g. @layer in happy-dom);
       // the rule is skipped entirely — indexMap stays clean, no fallback path carries it.
+      console.warn(`[css] rule rejected by the platform and skipped: ${cssText}`);
     }
     return;
   }
@@ -72,6 +73,7 @@ export function upsertRule(id: string, key: string, cssText: string): void {
     indexMap.set(ruleKey, index);
   } catch {
     // skip — rule not supported by runtime; indexMap stays clean
+    console.warn(`[css] rule rejected by the platform and skipped: ${cssText}`);
   }
 }
 
