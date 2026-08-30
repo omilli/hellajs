@@ -1,6 +1,6 @@
 import { signal, computed, isFunction, isPlainObject, isObject } from "./core";
-import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware } from "../types";
-import { deepClone, extractChanges } from "./draft";
+import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware, StoreEquals } from "../types";
+import { deepClone, extractChanges, structurallyEqual } from "./draft";
 import {
   reservedKeys,
   isObjectOrFunction,
@@ -39,6 +39,7 @@ export function createStore<T extends Record<string, unknown>>(
   const readonlyAll = options?.readonly === true;
   const readonlyKeys = Array.isArray(options?.readonly) ? options.readonly : [];
   const middlewares = options?.middleware;
+  const equalsOptions = options?.equals;
 
   const result = {} as Store<T, never>;
   const settableKeys = new Set<string>();
@@ -148,15 +149,29 @@ export function createStore<T extends Record<string, unknown>>(
 
     if (isPlainObject(value)) {
       const nestedMiddleware = middlewares?.[key as keyof T];
-      const nestedOptions: StoreOptions<typeof value> | undefined = nestedMiddleware
-        ? { middleware: nestedMiddleware as StoreMiddleware<typeof value> }
+      const nestedEquals = equalsOptions?.[key as keyof T] as StoreEquals<typeof value> | undefined;
+      const nestedOptions: StoreOptions<typeof value> | undefined = nestedMiddleware || nestedEquals
+        ? {
+            middleware: nestedMiddleware as StoreMiddleware<typeof value>,
+            equals: nestedEquals
+          }
         : undefined;
       defineStoreProperty(result, key, createStore(value, nestedOptions));
       i++;
       continue;
     }
 
-    const sig = signal(value);
+    const equalsOpt = equalsOptions?.[key as keyof T];
+    if (equalsOpt !== undefined && equalsOpt !== "structural" && !isFunction(equalsOpt)) {
+      throw new Error(`[store] store: equals for "${key}" must be a function or "structural", received ${typeof equalsOpt}`);
+    }
+    // Equality runs inside the signal, after middleware: wrapWithMiddleware writes sig(mw(value)).
+    const equalsFn = equalsOpt === "structural"
+      ? structurallyEqual
+      : equalsOpt as ((previous: typeof value, next: typeof value) => boolean) | undefined;
+    const sig = equalsFn === undefined
+      ? signal(value)
+      : signal(value, { equals: equalsFn });
     const middleware = middlewares?.[key as keyof T];
     const wrapped = middleware
       ? wrapWithMiddleware(sig, middleware as (val: unknown) => unknown)
