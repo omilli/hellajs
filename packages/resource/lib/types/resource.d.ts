@@ -129,8 +129,13 @@ export interface Resource<TTransformed, T = TTransformed> {
   isIdle: () => boolean;
   /** Computed signal showing current resource status */
   status: () => ResourceStatus;
-  /** Fetches data using cache-first strategy, or force fresh with `{ force: true }` */
-  fetch(options?: FetchOptions): void;
+  /**
+   * Fetches data using cache-first strategy, or force fresh with `{ force: true }`.
+   * Resolves with the fetched data (raw type, pre-transform) on success or cache hit;
+   * `undefined` on error, skip, or abort. Never rejects — errors surface via
+   * `error()`/`onError`, so fire-and-forget callers gain no unhandled rejections.
+   */
+  fetch(options?: FetchOptions): Promise<T | undefined>;
   /** Cancels ongoing request and resets to initial state */
   abort(): void;
   /** Clears cache entry and triggers fresh request */

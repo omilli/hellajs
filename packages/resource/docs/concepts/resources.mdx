@@ -27,6 +27,10 @@ console.log(todos.status());    // 'loading'
 // After completion:
 // todos.data() -> [{ id: 1, text: "Learn resources", completed: false }]
 // todos.status() -> 'success'
+
+// fetch() is awaitable: resolves the fetched data (or undefined on error), never rejects
+const todosData = await todos.fetch();
+console.log(todosData);
 ```
 
 ### URL-Based Resources

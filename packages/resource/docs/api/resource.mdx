@@ -19,7 +19,7 @@ interface Resource<TTransformed, T = TTransformed> {
   isFetching: () => boolean;
   isIdle: () => boolean;
   status: () => ResourceStatus;
-  fetch(options?: FetchOptions): void;
+  fetch(options?: FetchOptions): Promise<T | undefined>;
   abort(): void;
   invalidate(): void;
   setData: (updater: T | ((old: T | undefined) => T)) => void;
@@ -178,6 +178,8 @@ console.log(userResource.status()); // 'loading', then 'success' or 'error'
 
 Fetches data using a cache-first strategy by default. Pass `{ force: true }` to bypass the cache lookup and skip joining in-flight requests for the same key. A force fetch still registers itself in the dedup map, so subsequent non-force fetches can join it while it is in flight.
 
+`fetch()` is awaitable: it resolves with the fetched data (raw type, before `transform`) on success or cache hit, and `undefined` on error, skip, or abort — it never rejects. Errors surface through `error()` and `onError` as usual, so fire-and-forget callers stay source-compatible.
+
 ```typescript
 const userResource = resource(
   () => fetch('/api/user').then(r => r.json()),
@@ -185,6 +187,19 @@ const userResource = resource(
 );
 userResource.fetch(); // Cache-first - uses cached data if valid
 userResource.fetch({ force: true }); // Bypasses cache lookup and dedup check
+```
+
+```typescript
+const user = resource(
+  () => fetch('/api/user').then(r => r.json()),
+  { cacheTime: 60000 }
+);
+await user.fetch(); // network → User
+const cached = await user.fetch(); // cache hit → same User, no network
+
+const bad = resource(() => fetch('/api/broken').then(r => r.json()));
+await bad.fetch(); // resolves undefined — the failure surfaces in bad.error()
+console.log(cached, bad.error()?.category);
 ```
 
 ### `abort`

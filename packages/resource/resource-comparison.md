@@ -287,7 +287,7 @@ const user = resource(
 effect(() => console.log(user.isLoading(), user.isFetching(), user.data()));
 
 // Control methods
-user.fetch();                    // cache-first
+await user.fetch();               // cache-first; resolves the data (or undefined), never rejects
 user.fetch({ force: true });     // bypass cache
 user.invalidate();               // clear cache entry + refetch
 user.setData(old => ({ ...old, lastSeen: Date.now() }));
