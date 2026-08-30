@@ -32,13 +32,13 @@ For each key `K` of `T` (R = set of readonly keys, default `never`):
 |---|---|---|
 | function | `T[K]` (preserved) | `T[K]` (preserved) |
 | array | `Signal<T[K]>` | `() => T[K]` |
-| plain object | `Store<T[K]>` | `Store<T[K]>` |
+| plain object | `Store<T[K]>` | `K ∈ R ? Store<T[K], keyof T[K]> : Store<T[K]>` |
 | primitive | `Signal<T[K]>` | `() => T[K]` |
 
 Plus built-ins: `snapshot: () => Snapshot<T>` (composed nested stores unwrap to their data types), `update: (PartialDeep<T> or (draft: Snapshot<T>) => void) => void`, `cleanup: () => void`, `subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void`.
 
 - **"plain object"** = a value `isPlainObject` returns true for (excludes arrays, `null`, functions, and class instances). `Date`/`Map`/`Set`/`RegExp`/custom instances fall into the primitive row → become a `Signal`, not a nested store.
-- **`R` applies to top-level keys only** — nested stores are typed `Store<T[K]>` (no `R` argument), matching the runtime (readonly never propagates into recursion) and the docs' "do not propagate" claim. Threading `R` into nested levels was a false lockdown: a nested key sharing a name with a top-level readonly key (near-guaranteed under `readonly: true`, where `R = keyof T`) was typed readonly while remaining writable at runtime.
+- **`R` propagates into nested plain objects, not composed stores** — a plain-object key under `R` is typed `Store<T[K], keyof T[K]>`: each nested level derives its own full key set, so no name-collision false lockdown (the reverted design threaded the parent's `R` down verbatim, typing a nested key readonly merely for sharing a name with a top-level readonly key — near-guaranteed under `readonly: true`, where `R = keyof T`). Composed stores pass through with their own config: their data properties are function-typed and land in the function-preservation row regardless of `R`, matching adoption semantics at the runtime.
 
 ## `createStore` pipeline (`lib/internal/create.ts`)
 
@@ -59,7 +59,7 @@ Then for each `[key, value]`: if `isPlainObject(value)` AND `current = this[key]
 **Init pass** — iterates `Object.entries(initial)`:
 - Reserved key (`snapshot`/`update`/`cleanup`/`subscribe`): if `isStore(initial)` (composition) → skip silently; else throw `[store] store: reserved key collision, received "${key}"`.
 - Function value → `defineStoreProperty` as-is (writable — the function-swap contract).
-- `isPlainObject` value → recurse `createStore(value, { middleware: nested, equals: nested } or undefined)`, defined `writable: false`. Readonly is NOT passed down.
+- `isPlainObject` value → recurse `createStore(value, nestedOptions)`, defined `writable: false` — `nestedOptions` carries the nested middleware, the nested equals, and, when `readonlyAll` or the key is listed, `readonly: true` (deep propagation). A composed store reached on this path ignores the threading: its `isStore(initial)` adoption preserves signals verbatim, so it keeps its own readonly/writable config.
 - Else (primitive/array) → `signal(value)` with an optional per-key write-equality comparator from `options.equals` — `'structural'` maps to `structurallyEqual`, a function passes through, any other value throws `[store] store: equals for "<key>" must be a function or "structural", received …` at create time — optionally middleware-wrapped; readonly keys get an arity-0 guard `function (...args) { if (args.length > 0) throw new Error('[store] readonly key "<key>"'); return ro(); }` wrapping `computed(() => wrapped())` — reads are unchanged (`key.length === 0`), any write call throws. All leaf props are defined `writable: false`.
 
 The four store methods (snapshot/update/cleanup/subscribe) are defined via the same non-writable descriptor (spying on them in tests requires `Object.defineProperty` — `configurable: true` stays). `defineStoreProperty` uses `{ writable, enumerable: true, configurable: true }` — signal-backed leaves, readonly guards, nested stores, and methods are non-writable (strict-mode reassignment throws TypeError); preserved functions (including adopted composed-store signals) stay writable.
@@ -98,7 +98,7 @@ Passing an existing store as a value inside another store's initial object: the 
 - **Functions in snapshot**: snapshot stores the **original** `initial` function reference (`lib/internal/create.ts`), not the store property — a swapped-in replacement (`data.onSave = fn`) is not what `snapshot()` returns.
 - **No cycle detection**: self-referential initial objects recurse until stack overflow; initial state must be a tree.
 - **null/undefined** become signals like any primitive.
-- **Readonly is creation-time config, runtime-enforced by a throwing guard**: the arity-0 wrapper around `computed(() => wrapped())` returns the value on read and throws `[store] readonly key "<key>"` on any write call (setter call or `update()`). Not inherited by nested levels.
+- **Readonly is creation-time config, runtime-enforced by a throwing guard**: the arity-0 wrapper around `computed(() => wrapped())` returns the value on read and throws `[store] readonly key "<key>"` on any write call (setter call or `update()`). Propagates deep into nested plain objects; composed stores keep their own config.
 - **Data properties and methods are non-writable**: external reassignment (`store.count = 5`, `store.cleanup = fn`) throws TypeError in strict-mode ESM. Function-valued props are the exemption — including a composed store's adopted signal functions (`parent.user.name = fn` stays possible); the function-writability rule is the documented contract. `configurable: true` stays, so `Object.defineProperty` redefinition (test spies) works.
 - **No proxies, no diffing on the hot path** — direct property access; only the draft path diffs.
 
@@ -109,7 +109,7 @@ Tests live in `tests/` (11 files: `data`, `functions`, `update`, `snapshot`, `ne
 - Cover each `update` path (partial, draft, middleware) independently.
 - Snapshot reactivity tested flat and deeply nested.
 - Cleanup: nested disposed, signals stay alive, idempotent.
-- Readonly: setter calls and `update()` throw; not inherited by nested.
+- Readonly: setter calls and `update()` throw; propagates deep into nested plain objects (composed stores keep their own config).
 - Track effect runs with `mock()` from `bun:test`.
 
 Run with `bun coverage store`.
