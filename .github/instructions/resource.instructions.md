@@ -38,12 +38,12 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 
 ### Cache (`cacheMap`, cache.ts:12)
 
-- `cacheMap = new Map<unknown, Map<unknown, CacheEntry>>()` — **strong Map**, outer key = fetcher function reference, inner key = cache key. Fetchers are retained for the cache's lifetime (agent: avoid unbounded unique-fetcher patterns).
+- `cacheMap = new Map<unknown, Map<unknown, CacheEntry>>()` — **strong Map**, outer key = fetcher function reference, inner key = cache key. Fetchers are retained while their scope holds entries; `cleanupExpiredCache` reaps a scope once its last entry expires, and `getScope` recreates it on the next write (agent: avoid unbounded unique-fetcher patterns — live entries still pin their fetcher).
 - `PUBLIC_SCOPE = Symbol("public")` — target scope for `resourceCache.set()`.
 - `setCacheData(scope, key, data, cacheTime=0, staleTime=0)`: **no-op if `cacheTime` is 0**; else sets `{data, timestamp, cacheTime, staleTime, lastAccess}` and runs global LRU eviction if over `maxSize`.
 - `getCacheData`: TTL-valid check, deletes expired, refreshes `lastAccess` on hit.
 - `updateCacheData`: returns `false` on miss/expired (deletes expired), `true` on success; mutates `entry.data` in place.
-- `cleanupExpiredCache`: throttled to 60s (`lastCleanupTime` module var), 100-entry batch cap, deletes where `now - timestamp > cacheTime`.
+- `cleanupExpiredCache`: throttled to 60s (`lastCleanupTime` module var), 100-entry batch cap, deletes where `now - timestamp > cacheTime`, then reapes scopes left empty (`cacheMap.delete(scope)`) — the only empty-scope reap site; scopes emptied by invalidation or LRU eviction are released by the next throttled pass (≤60 s + next cache write).
 - `isStale(entry)`: `staleTime === Infinity` → false; else `now - timestamp > staleTime`.
 
 ### Deduplication (`ongoingRequestsMap`, dedupe.ts:17)
@@ -207,14 +207,14 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts:161-162, retry.test.ts:153)
 - Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts:352-359, fetching.test.ts:236)
 - `polling.setup()` is gated on `refetchOnKeyChange && isEnabled() && refetchInterval` and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the key-change effect; not re-armed by key changes or after `abort`/`reset`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts:363-375, focus.test.ts:119)
-- `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained for cache lifetime); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (cache.ts:12, dedupe.ts:17)
+- `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained while their scope holds entries — reaped once empty); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (cache.ts:12, dedupe.ts:17)
 - Cache entries are module-level and survive `dispose()`/resource recreation. (cache.ts:12)
 
 **Cache invalidation**
 - `invalidateByPrefix` / `invalidateByPattern` match **string keys only**; non-string keys are skipped silently. (cache.ts:300,326, batch-invalidation.test.ts:35)
 - `update`/`updateCacheData` return `false` on miss or expired entry (and delete the expired entry in passing). (cache.ts:156-179)
 - LRU eviction is **global** across all scopes; runs only when `totalSize()` exceeds `maxSize` after a `setCacheData`. (cache.ts:111-137, collision.test.ts:130)
-- `cleanupExpiredCache` is throttled (60s) and capped (100 deletions/pass); invoked lazily from `setCacheData` and the cache-lookup phase of `run`. (cache.ts:65-95)
+- `cleanupExpiredCache` is throttled (60s) and capped (100 deletions/pass); invoked lazily from `setCacheData` and the cache-lookup phase of `run`; reaps scopes it empties, while invalidation/LRU-emptied scopes await the next throttled pass. (cache.ts:71-103)
 - `staleTime` default differs by entry point: resources pass `staleTime ?? Infinity` (never stale); `resourceCache.set` defaults `staleTime` to `0` (always stale). (resource.ts:275, cache.ts:224)
 - `invalidateResources` calls `.invalidate()` on each member synchronously (no batching/dedup of the resulting refetches). (cache.ts:345)
 
@@ -227,9 +227,9 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - **Signal capture**: `currentSignal` captured before async work avoids repeated `aborted` checks.
 - **Computed transform**: applied per `data()` read; always consistent with `rawData`.
 - **Manual loop unrolling** (`while (i < len)` + indexed access) across cache/dedupe/flatView hot paths.
-- Memory: fetcher-scoped strong `cacheMap` retains fetchers; `WeakMap` dedup releases them. `dispose()` clears effects/timers/listeners but not the cache or in-flight promise.
+- Memory: fetcher-scoped strong `cacheMap` retains fetchers until their scope empties and cleanup reaps it; `WeakMap` dedup releases them. `dispose()` clears effects/timers/listeners but not the cache or in-flight promise.
 
 ## Testing
 
-Follow `guides/tests.md` (rules) and `guides/code.md` (source). Tests import from `@hellajs/resource/bundle` (the built bundle, instrumented for coverage per `bunfig.toml`); coverage target is `dist/`. Shared fixtures live in `tests/helpers.ts` (`mockUser`, `mockPosts`). Reactive primitives (`signal`, `effect`, `computed`, `flush`) import from `@hellajs/core`. Test helpers (`delay`) import from `@utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`. Time-sensitive cache/TTL tests mock `Date.now`. Run with `bun coverage resource`.
+Follow `guides/tests.md` (rules) and `guides/code.md` (source). Tests import from `@hellajs/resource/bundle` (the built bundle, instrumented for coverage per `bunfig.toml`); coverage target is `dist/`. Shared fixtures live in `tests/helpers.ts` (`mockUser`, `mockPosts`). Reactive primitives (`signal`, `effect`, `computed`, `flush`) import from `@hellajs/core`. Test helpers (`delay`) import from `@utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`. Time-sensitive cache/TTL tests mock `Date.now`. GC assertions use a WeakRef on the dropped reference, an `await delay(0)` macrotask turn before `Bun.gc(true)` (JSC pins objects reachable from scheduled-but-unprocessed async machinery — a bare double-GC flakes), and no post-settle access to the resource under test (see `tests/cache-scope-gc.test.ts`). Assert settlement via module state (e.g. `resourceCache.map.size`), never via the resource, and run turn+GC+deref only after the function that created or accessed the resource has returned: JSC's suspended async activation conservatively retains the closure graph of objects whose methods it called — nulling every reference does not release it — so an in-body deref false-pins even with no hellajs-owned reference left (memory 064; runtime-attributed, no upstream issue identified). Run with `bun coverage resource`.
 </resource-package-instructions>
