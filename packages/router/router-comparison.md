@@ -199,7 +199,7 @@ The competitors layer progressively more typing and data structure onto params a
 | Route metadata | Per-route `meta` + opt-in cascade + inline merge | Route `meta`, `staticData` | Route `meta` fields | Route `info` | Route `data` + resolvers | `metadata` export |
 | Match chain / breadcrumbs | `route().crumbs` built-in | `useMatches()` | `route.matched` | `useCurrentMatches()` | `ActivatedRoute.pathFromRoot` | — |
 | Active-link helper | `route().active()` (ancestor, reactive) | `<Link activeOptions>` | `router-link-active` classes | `<A activeClass end>` | `routerLinkActive` | `usePathname` manual |
-| Scroll control | 3 tiers + custom fn | `scrollRestoration` | `scrollBehavior(to, from, saved)` | `noScroll` per link | `withInMemoryScrolling` | `scroll={false}` per `<Link>` |
+| Scroll control | 3 tiers + custom fn `(to, from, savedPosition)` | `scrollRestoration` | `scrollBehavior(to, from, saved)` | `noScroll` per link | `withInMemoryScrolling` | `scroll={false}` per `<Link>` |
 | Type-safe routes | `ExtractParams<T>`, no codegen | Generated route tree (full) | Codegen (bundled) | Manual + `MatchFilters` | Manual | `PageProps` (async params) |
 | SSR | `router({ url })` + `@hellajs/ssr` hydrate | Yes (TanStack Start) | Yes (Nuxt) | Yes (`<Router url>`) | Yes (Angular SSR) | Native |
 | Code splitting | User-managed (dom `Lazy`) | Built-in (route files) | `() => import(...)` | `lazy(() => import(...))` | `loadComponent`/`loadChildren` | Built-in per route |
@@ -211,7 +211,7 @@ The competitors layer progressively more typing and data structure onto params a
 - **Atomic route commits** — every navigation path (`navigate`, `popstate`, `hashchange`, init) funnels through one `route()` write inside `commitMatch`, so path/params/query/handler/meta/crumbs always describe the same match (`lib/internal/resolve.ts`).
 - **Sync init + server `url` mode** — `router()` returns the resolved `RouteInfo`, and `router({ url })` re-resolves per call for request-scoped SSR with no `window` (`lib/router.ts`).
 - **`resetRouter()` teardown** — factory-resets all ten signals and detaches listeners without touching the URL, for HMR and session resets (`lib/resetRouter.ts`).
-- **Three-tier scroll behavior** — inline `navigate({ scroll })` > route-level `scroll` > global `scrollBehavior`, with custom `(to, from) => { top, left? } | null` functions, `false` to disable at any tier, and an auto-skip when `to === from` (`lib/internal/matched.ts`).
+- **Three-tier scroll behavior** — inline `navigate({ scroll })` > route-level `scroll` > global `scrollBehavior`, with custom `(to, from, savedPosition) => { top, left? } | null` functions (`savedPosition` restores the captured position on back/forward; the stack mirrors pushState entries — replaces never push), `false` to disable at any tier, and an auto-skip when `to === from` (`lib/internal/matched.ts`, `lib/internal/resolve.ts`).
 - **Frozen singletons on the hot path** — param-less matches and childless crumbs reuse `EMPTY_OBJECT`/`EMPTY_CRUMBS`; params allocation defers behind `hasParams` (`lib/internal/utils.ts`, `lib/internal/match.ts`).
 - **Reactive reconfiguration** — re-calling `router()` swaps the whole route map, hooks, redirects, and listeners atomically (`lib/router.ts`).
 

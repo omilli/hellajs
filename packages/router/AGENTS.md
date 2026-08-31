@@ -9,14 +9,14 @@
   | `route` | `route.ts` | Reactive signal holding the current `RouteInfo` (`path`, `params`, `query`, `handler`, `meta`, `crumbs`, `active`). |
   | `navigate` | `navigate.ts` | Programmatic nav: `:param`/`:param?`/`*` substitution, query serialize, history push/replace. |
 | `href` | `href.ts` | Typed URL builder: same `:param`/`:param?`/`*`/query semantics as `navigate` via shared `buildPath`; returns the string, no history touched. |
-  | `resetRouter` | `resetRouter.ts` | Factory-reset: resets all config signals + `route()` to defaults, detaches listeners. Does NOT mutate the URL. |
+  | `resetRouter` | `resetRouter.ts` | Factory-reset: resets all config signals + `route()` to defaults, clears the saved scroll-position stack, detaches listeners. Does NOT mutate the URL. |
   | `type *` | `types.d.ts` | `RouterConfig`, `RouteInfo`, `RouteWithHooks`, `Handler` (full `(params: Params, query: Params) => unknown` signature; runtime dispatch is arity-based), `NavigateOptions`, `Redirect`, `ScrollBehavior`, `HistoryMode`, `Crumb`, `ExtractParams`. |
 
   ## File map
 
   | File | Responsibility |
   |---|---|
-  | `router.ts` | Config → state signals (validates + normalizes `base`, throwing on non-`'/'`-prefixed values); initial-path detection (`url` override / hash vs history / memory → `/`; base stripped from every read); popstate/hashchange + click listeners with composed cleanup (none attached in memory mode); synchronous `updateRoute()` on return. |
+  | `router.ts` | Config → state signals (validates + normalizes `base`, throwing on non-`'/'`-prefixed values); initial-path detection (`url` override / hash vs history / memory → `/`; base stripped from every read); popstate/hashchange + click listeners with composed cleanup (none attached in memory mode; pop handlers pass `isPop` so pops pop the scroll stack); synchronous `updateRoute()` on return. |
   | `state.ts` | 9 config signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `base`, `scrollBehavior`, `previousPath`, `inheritMeta`). |
   | `route.ts` | The `route` signal (current `RouteInfo`) + the shared `activeFn` ancestor-match predicate. |
   | `navigate.ts` | Path validation + option unpack; delegates substitution to `internal/path.ts buildPath`, then `go()`. |
@@ -24,8 +24,8 @@
   | `match.ts` | `parseQuery`, `matchPattern` (segment/optional/wildcard extraction), `matchSegments` (recursive aligner, `:name?` consume-first backtracking), `matchNestedEntry` (single-entry chain resolver), `matchNestedRoute` (specificity-sorted loop over entries, params spread-merged), `matchRoute` (flat). |
   | `hooks.ts` | `executeHook` (arity dispatch + try/catch + promise.catch), `executeGlobalHook` (`(to, from)` paths). |
   | `utils.ts` | `EMPTY_OBJECT`/`EMPTY_CRUMBS`, `hasChildren`, `getHashPath`, `stripBase`, `sortRoutesBySpecificity`. Leaf module — no internal imports. |
-  | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict` + hop counter (`updateRoute`), `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase` via shared `commitMatch` + `mergeRouteMeta`, `buildRouteInfo`, `go` (guard-aware history commit, `base`-prefixed in history mode; memory mode commits none). |
-  | `internal/matched.ts` | `handleScroll`, `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuardsNested`/`runGuardsFlat` (shared global-before prologue; the global hook receives `(toPath, route().path)`), `executeRouteWithHooks` (threads `(to, from)` into `global.after`). |
+  | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict` + hop counter (`updateRoute`), `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase` via shared `commitMatch` + `mergeRouteMeta`, `buildRouteInfo`, `go` (guard-aware history commit, `base`-prefixed in history mode; memory mode commits none). Pop-aware scroll stack: `go` captures `window.scrollX/scrollY` before resolution and pushes on non-replace commits; pop commits (`isPop` threaded through `updateRoute` → `commitMatch` → `handleScroll`) pop it via `takeSavedScroll`; `resetScrollStack` backs `resetRouter`. |
+  | `internal/matched.ts` | `handleScroll` (custom fns receive `(to, from, savedPosition)` — `savedPosition` passed only on pops), `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuardsNested`/`runGuardsFlat` (shared global-before prologue; the global hook receives `(toPath, route().path)`), `executeRouteWithHooks` (threads `(to, from)` into `global.after`). |
 | `internal/path.ts` | `buildPath` — the single substitution truth (`:param` → `encodeURIComponent`, absent `:param?` strips token + preceding slash, `*` → raw insert, strip unmatched, query serialize); shared by `navigate` + `href`. |
   | `internal/core.ts` | Re-exports `signal`, `isFunction`, `isString`, `isPlainObject`, `hasWindow` from `@hellajs/core`. |
 
@@ -72,7 +72,7 @@
 
     **Memory mode is URL-less and listener-less** — `mode: "memory"` seeds the initial path from `url` (parsed) or `/`, never reads `window.location`, attaches no popstate/hashchange/click listeners, and `go()` performs no history commit (`router.ts` init, `internal/resolve.ts go`). `route()` advances only via `navigate()`; browser back/forward are no-ops (no entry stack — no `back()`/`forward()` exports).
 
-    **Scroll no-op on init** — `previousPath` is seeded with `initialPath` (`router.ts` previousPath seed), so the first `updateRoute()` sees `from === to` and skips (`matched.ts handleScroll`). **Scroll priority**: inline `navigate({scroll})` > route-level `scroll` > global `scrollBehavior`; `false` at any level disables; `"auto"`/`"preserve"` skip `scrollTo`; custom fn returning `null` skips.
+    **Scroll no-op on init** — `previousPath` is seeded with `initialPath` (`router.ts` previousPath seed), so the first `updateRoute()` sees `from === to` and skips (`matched.ts handleScroll`). **Scroll priority**: inline `navigate({scroll})` > route-level `scroll` > global `scrollBehavior`; `false` at any level disables; `"auto"`/`"preserve"` skip `scrollTo`; custom fn returning `null` skips. **`savedPosition`**: `go` captures `scrollX/scrollY` before resolution and pushes it on non-replace commits (stack mirrors pushState entries — init and replaces never push); popstate/hashchange handlers pass `isPop`, and the commit pops the stack into the custom fn's third arg (null on empty stack). String presets ignore it — `"top"` scrolls top even on back. Forward-after-back loses the forward entries (no `history.state` ownership — documented imprecision).
 
     **`intercept` defaults true** — same-origin `<a>` clicks route through `navigate()`. Skipped when: already `defaultPrevented`, modifier keys, `target !== "_self"`, `download`, non-http(s), cross-origin, malformed href. History mode also skips hrefs differing from the current URL only by hash (in-page anchors stay native). Hash mode requires the hash start with `#/`; plain hash changes (`#section`) are ignored by the hashchange handler (`router.ts` clickHandler).
 
@@ -80,7 +80,7 @@
 
     **`crumbs` parent-to-leaf** — each crumb `{segment: pattern key, path: cumulative URL (query excluded), params: inherited through that level}`; `notFound` resolution → empty array (`resolve.ts` crumb build). Use `crumb.path` for hrefs, `crumb.segment` for label lookup.
 
-    **`resetRouter` resets everything** — all 10 signals (9 config + `route()`) reset to defaults, listeners detached. Does NOT mutate `window.location` or `history`. Re-init with `router()` after reset.
+    **`resetRouter` resets everything** — all 10 signals (9 config + `route()`) reset to defaults, the saved scroll-position stack cleared, listeners detached. Does NOT mutate `window.location` or `history`. Re-init with `router()` after reset.
 
     **Sync/async `before` asymmetry** — sync `before` can block via `false`/throw/string return; async `before` (returning `Promise`) cannot block — treated as proceed, rejection `.catch`-logged. This is intentional: `navigate` stays `void`; async can't retroactively block a synchronous navigation.
 

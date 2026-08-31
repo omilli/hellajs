@@ -85,7 +85,7 @@ export function router(config: RouterConfig): RouteInfo {
         // resolution so they don't churn notFound. Only #/… hashes are routes.
         const hashPath = getHashPath();
         if (!hashPath.startsWith("/")) return;
-        const verdict = updateRoute(hashPath);
+        const verdict = updateRoute(hashPath, undefined, undefined, true);
         if (verdict === "cancelled") {
           window.history.replaceState(null, "", `#${previousPath()}`);
         }
@@ -93,7 +93,7 @@ export function router(config: RouterConfig): RouteInfo {
     } else {
       eventType = "popstate";
       handler = () => {
-        const verdict = updateRoute(stripBase(window.location.pathname + window.location.search, base()));
+        const verdict = updateRoute(stripBase(window.location.pathname + window.location.search, base()), undefined, undefined, true);
         if (verdict === "cancelled") {
           window.history.replaceState(null, "", base() + previousPath());
         }

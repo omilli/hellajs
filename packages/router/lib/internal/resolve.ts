@@ -21,6 +21,30 @@ const MAX_REDIRECT_HOPS = 20;
 let resolveDepth = 0;
 
 /**
+ * Scroll positions saved at each committed push navigation (`go` pushState), popped on
+ * popstate/hashchange restores — one entry per history push; replaces and init never push.
+ */
+const scrollStack: { top: number; left: number }[] = [];
+
+/**
+ * Pops the saved scroll position for a pop navigation; null on pushes/replaces
+ * (their commit pushes onto the stack in `go`) and when the stack is empty.
+ * @param isPop Whether the navigation came from browser back/forward.
+ */
+function takeSavedScroll(isPop: boolean | undefined): { top: number; left: number } | null {
+  return isPop ? scrollStack.pop() ?? null : null;
+}
+
+/**
+ * Clears the saved scroll-position stack so a fresh session (or test isolation)
+ * starts clean. Called by `resetRouter()`.
+ * @internal
+ */
+export function resetScrollStack(): void {
+  scrollStack.length = 0;
+}
+
+/**
  * Constructs RouteInfo with the shared active-link predicate attached.
  * @param base Route fields excluding active.
  * @returns Complete RouteInfo with the active predicate.
@@ -42,12 +66,15 @@ function buildRouteInfo(base: {
  * @param nextPath Optional new path. When omitted, reads from route().path.
  * @param inlineScroll Optional inline scroll behavior from navigate()
  * @param inlineMeta Optional inline meta from navigate()
+ * @param isPop True when triggered by browser back/forward (popstate/hashchange) — pops the
+ * saved-position stack so custom scroll fns receive a `savedPosition`.
  * @returns The resolution verdict: `"matched"`, `"cancelled"` (a guard blocked), or `"redirected".
  */
 export function updateRoute(
   nextPath?: string,
   inlineScroll?: ScrollBehavior | false,
-  inlineMeta?: Record<string, unknown>
+  inlineMeta?: Record<string, unknown>,
+  isPop?: boolean
 ): RouteVerdict {
   if (resolveDepth >= MAX_REDIRECT_HOPS) {
     console.error("[router] redirect loop detected:", new Error(`exceeded ${MAX_REDIRECT_HOPS} hops resolving ${nextPath ?? route().path}`));
@@ -61,7 +88,7 @@ export function updateRoute(
       return "redirected";
     }
 
-    const matchVerdict = tryMatchRoute(currentPath, inlineScroll, inlineMeta);
+    const matchVerdict = tryMatchRoute(currentPath, inlineScroll, inlineMeta, isPop);
     if (matchVerdict !== "none") {
       return matchVerdict;
     }
@@ -83,7 +110,7 @@ export function updateRoute(
     }));
 
     notFoundValue && notFoundValue(currentPath);
-    handleScroll(currentPath, inlineScroll);
+    handleScroll(currentPath, inlineScroll, undefined, isPop, takeSavedScroll(isPop));
     return "matched";
   } finally {
     resolveDepth--;
@@ -111,10 +138,17 @@ export function go(
   const finalTo = routerMode === "hash" ? `#${to}` : base() + to;
   const action = replace ? "replaceState" : "pushState";
 
+  // Capture the position of the page being left before guards/handlers run — it becomes
+  // the `savedPosition` a later pop restores.
+  const capturedScroll = hasWindow() ? { top: window.scrollY, left: window.scrollX } : null;
+
   const verdict = updateRoute(to, scroll, meta);
 
   if (verdict === "matched" && hasWindow() && routerMode !== "memory") {
     window.history[action](null, "", finalTo);
+    if (!replace && capturedScroll) {
+      scrollStack.push(capturedScroll);
+    }
   }
 }
 
@@ -142,6 +176,7 @@ function mergeRouteMeta(inlineMeta: Record<string, unknown> | undefined, routeMe
  * @param routeScroll Route-level scroll override.
  * @param routeValue The matched route value (flat) or top-level candidate (nested), forwarded to hook execution.
  * @param nestedMatches Parent-to-leaf match chain for nested routes; absent for flat routes.
+ * @param isPop True when the navigation came from browser back/forward — pops the saved-position stack.
  * @returns The resolution verdict: `"matched"`, `"cancelled"`, or `"redirected"`.
  */
 function commitMatch(
@@ -155,7 +190,8 @@ function commitMatch(
   inlineScroll: ScrollBehavior | false | undefined,
   routeScroll: ScrollBehavior | false | undefined,
   routeValue: unknown,
-  nestedMatches?: RouteMatch[]
+  nestedMatches?: RouteMatch[],
+  isPop?: boolean
 ): RouteVerdict {
   if (guardVerdict === "cancel") {
     return "cancelled";
@@ -175,7 +211,7 @@ function commitMatch(
     crumbs
   }));
   executeRouteWithHooks(handler, params, query, currentPath, fromPath, routeValue, nestedMatches);
-  handleScroll(currentPath, inlineScroll, routeScroll);
+  handleScroll(currentPath, inlineScroll, routeScroll, isPop, takeSavedScroll(isPop));
   return "matched";
 }
 
@@ -235,6 +271,7 @@ function tryRedirect(currentPath: string): boolean {
  * @param currentPath The current URL path.
  * @param inlineScroll Optional inline scroll behavior from navigate().
  * @param inlineMeta Optional inline meta from navigate().
+ * @param isPop True when the navigation came from browser back/forward.
  * @returns `"matched"` (guards passed, signal written), `"cancelled"` (a guard blocked),
  * `"redirected"` (a guard redirected via a nested `go`), or `"none"` (no nested route matched).
  */
@@ -242,7 +279,8 @@ function matchNestedPhase(
   routeMap: Record<string, RouteValue | string>,
   currentPath: string,
   inlineScroll: ScrollBehavior | false | undefined,
-  inlineMeta: Record<string, unknown> | undefined
+  inlineMeta: Record<string, unknown> | undefined,
+  isPop?: boolean
 ): "none" | RouteVerdict {
   const pathWithoutQuery = currentPath.split("?")[0]!;
 
@@ -306,7 +344,8 @@ function matchNestedPhase(
         inlineScroll,
         extractScroll(lastMatch.routeValue),
         routeValue,
-        nestedMatches
+        nestedMatches,
+        isPop
       );
     }
   }
@@ -320,6 +359,7 @@ function matchNestedPhase(
  * @param currentPath The current URL path.
  * @param inlineScroll Optional inline scroll behavior from navigate().
  * @param inlineMeta Optional inline meta from navigate().
+ * @param isPop True when the navigation came from browser back/forward.
  * @returns `"matched"` (guards passed, signal written), `"cancelled"` (a guard blocked),
  * `"redirected"` (a guard redirected via a nested `go`), or `"none"` (no flat route matched).
  */
@@ -327,7 +367,8 @@ function matchFlatPhase(
   routeMap: Record<string, RouteValue | string>,
   currentPath: string,
   inlineScroll: ScrollBehavior | false | undefined,
-  inlineMeta: Record<string, unknown> | undefined
+  inlineMeta: Record<string, unknown> | undefined,
+  isPop?: boolean
 ): "none" | RouteVerdict {
   const pathWithoutQuery = currentPath.split("?")[0]!;
 
@@ -356,7 +397,9 @@ function matchFlatPhase(
         currentPath,
         inlineScroll,
         extractScroll(routeValue),
-        routeValue
+        routeValue,
+        undefined,
+        isPop
       );
     }
   }
@@ -368,23 +411,25 @@ function matchFlatPhase(
  * @param currentPath The current URL path.
  * @param inlineScroll Optional inline scroll behavior from navigate().
  * @param inlineMeta Optional inline meta from navigate().
+ * @param isPop True when the navigation came from browser back/forward.
  * @returns `"matched"` (guards passed, signal written), `"cancelled"` (a guard blocked),
  * `"redirected"` (a guard redirected via a nested `go`), or `"none"` (no route matched).
  */
 function tryMatchRoute(
   currentPath: string,
   inlineScroll: ScrollBehavior | false | undefined,
-  inlineMeta: Record<string, unknown> | undefined
+  inlineMeta: Record<string, unknown> | undefined,
+  isPop?: boolean
 ): "none" | RouteVerdict {
   const routeMap = routes();
   if (!routeMap) {
     return "none";
   }
 
-  const nestedVerdict = matchNestedPhase(routeMap, currentPath, inlineScroll, inlineMeta);
+  const nestedVerdict = matchNestedPhase(routeMap, currentPath, inlineScroll, inlineMeta, isPop);
   if (nestedVerdict !== "none") {
     return nestedVerdict;
   }
 
-  return matchFlatPhase(routeMap, currentPath, inlineScroll, inlineMeta);
+  return matchFlatPhase(routeMap, currentPath, inlineScroll, inlineMeta, isPop);
 }

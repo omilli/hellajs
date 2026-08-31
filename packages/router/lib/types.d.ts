@@ -49,13 +49,15 @@ export type HistoryMode = "history" | "hash" | "memory";
  * - "auto": Browser default (no intervention)
  * - "top": Always scroll to top on navigation
  * - "preserve": Keep current scroll position
- * - Custom function returning scroll position or null to skip
+ * - Custom function returning scroll position or null to skip. Receives `(to, from, savedPosition)`;
+ *   `savedPosition` is the scroll position captured when the returned-to page was last left,
+ *   non-null only on back/forward navigations (null on pushes and replaces).
  */
 export type ScrollBehavior =
   | "auto"
   | "top"
   | "preserve"
-  | ((to: string, from: string) => { top: number; left?: number } | null);
+  | ((to: string, from: string, savedPosition: { top: number; left: number } | null) => { top: number; left?: number } | null);
 
 /**
  * Type-safe route map with string keys and route values.

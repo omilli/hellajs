@@ -27,7 +27,7 @@ function router(config: RouterConfig): RouteInfo
 - `notFound`: Optional handler for unmatched routes — receives the attempted path (query included — same shape as `route().path`); or a string to replace-redirect to.
 - `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing — no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
 - `base`: Base path for apps deployed under a subpath (e.g. `'/app'` when served from `https://example.com/app/`). History mode only — stripped from the URL on every read and re-added on every history commit; hash mode ignores it. Must be a `'/'`-prefixed string (invalid values throw); trailing slashes are normalized (`'/app/'` → `'/app'`). Route patterns, `navigate()` targets, and `route().path` stay base-free. Default: unset.
-- `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
+- `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function `(to, from, savedPosition)`.
 - `intercept`: Enable automatic same-origin `<a>` click interception. Default `true`.
 - `inheritMeta`: Parent-to-child meta inheritance through nested routes. Default `false` (leaf-only meta).
 - `url`: Resolve against this URL instead of `window.location`. Accepts a full request URL (e.g. `req.url` in Bun.serve, like `https://host/users/7?q=1`) or a path (`/users/7?q=1`) — the origin and hash fragment are ignored. Invalid URLs throw. Used for SSR, where there is no window. Resolution is synchronous either way.
@@ -154,7 +154,22 @@ Zero-argument global hooks keep working — the paths are additional arguments, 
 
 ### Scroll Behavior
 
-Control scroll position after navigation at three levels: global `scrollBehavior`, route-level `scroll`, and inline `navigate({ scroll })`. Priority: inline > route-level > global. Custom scroll functions receive `(to, from)` paths and return `{ top, left? }` or `null` to skip.
+Control scroll position after navigation at three levels: global `scrollBehavior`, route-level `scroll`, and inline `navigate({ scroll })`. Priority: inline > route-level > global. Custom scroll functions receive `(to, from, savedPosition)` and return `{ top, left? }` or `null` to skip.
+
+`savedPosition` is the scroll position captured when the returned-to page was last left — non-null only on browser back/forward navigations, `null` on pushes and replaces. Restoring it enables the top-on-push / restore-on-back policy (Vue Router's default):
+
+```typescript
+router({
+  routes: {
+    '/': () => {},
+    '/about': () => {}
+  },
+  // Top on push, restore on back/forward
+  scrollBehavior: (to, from, savedPosition) => savedPosition ?? { top: 0 }
+});
+```
+
+The saved-position stack mirrors pushState entries: `navigate({ replace: true })` and redirects never push, and back/forward pops. Forward-after-back is not tracked per index (the router doesn't own `history.state`), so a forward after a back reports `null`.
 
 See [routing concepts](/learn/concepts/routing) for scroll priority and per-route overrides.
 
