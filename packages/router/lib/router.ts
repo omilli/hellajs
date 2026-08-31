@@ -1,9 +1,9 @@
 import { isFunction, hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
-import { hooks, routes, redirects, notFound, mode, scrollBehavior, previousPath, inheritMeta } from "./internal/state";
+import { hooks, routes, redirects, notFound, mode, base, scrollBehavior, previousPath, inheritMeta } from "./internal/state";
 import { route } from "./route";
 import { updateRoute } from "./internal/resolve";
-import { getHashPath } from "./internal/utils";
+import { getHashPath, stripBase } from "./internal/utils";
 import { navigate } from "./navigate";
 
 let cleanupListener: (() => void) | null = null;
@@ -27,6 +27,9 @@ export function router(config: RouterConfig): RouteInfo {
   if (config === null || config === undefined || typeof config !== "object" || Array.isArray(config)) {
     throw new Error(`[router] router: config must be an object, received ${config === null ? "null" : typeof config}`);
   }
+  if (config.base !== undefined && (typeof config.base !== "string" || !config.base.startsWith("/"))) {
+    throw new Error(`[router] router: base must be a '/'-prefixed string, received ${JSON.stringify(config.base)}`);
+  }
   routes(config.routes as Record<string, RouteValue | string>);
   hooks(config.hooks || {});
   redirects(config.redirects || []);
@@ -36,6 +39,7 @@ export function router(config: RouterConfig): RouteInfo {
 
   const routerMode: HistoryMode = config.mode || "history";
   mode(routerMode);
+  base(typeof config.base === "string" ? config.base.replace(/\/+$/, "") : "");
 
   const intercept: boolean = config.intercept !== false;
 
@@ -47,10 +51,10 @@ export function router(config: RouterConfig): RouteInfo {
     } catch {
       throw new Error(`[router] router: invalid url, received ${JSON.stringify(config.url)}`);
     }
-    initialPath = parsedInitial.pathname + parsedInitial.search;
+    initialPath = stripBase(parsedInitial.pathname + parsedInitial.search, base());
   } else {
     initialPath = hasWindow() && routerMode !== "memory"
-      ? (routerMode === "hash" ? getHashPath() : window.location.pathname + window.location.search)
+      ? (routerMode === "hash" ? getHashPath() : stripBase(window.location.pathname + window.location.search, base()))
       : "/";
   }
 
@@ -89,9 +93,9 @@ export function router(config: RouterConfig): RouteInfo {
     } else {
       eventType = "popstate";
       handler = () => {
-        const verdict = updateRoute(window.location.pathname + window.location.search);
+        const verdict = updateRoute(stripBase(window.location.pathname + window.location.search, base()));
         if (verdict === "cancelled") {
-          window.history.replaceState(null, "", previousPath());
+          window.history.replaceState(null, "", base() + previousPath());
         }
       };
     }
@@ -134,7 +138,7 @@ export function router(config: RouterConfig): RouteInfo {
           // Same URL differing only by hash (in-page anchor): leave the native
           // jump alone instead of re-navigating the current path.
           if (parsedURL.hash && parsedURL.pathname === window.location.pathname && parsedURL.search === window.location.search) return;
-          resolvedPath = parsedURL.pathname + parsedURL.search;
+          resolvedPath = stripBase(parsedURL.pathname + parsedURL.search, base());
         }
 
         event.preventDefault();

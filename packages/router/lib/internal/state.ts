@@ -32,6 +32,12 @@ export const notFound = signal<string | (() => void) | null>(null);
 export const mode = signal<HistoryMode>("history");
 
 /**
+ * Signal containing the base path stripped from URLs on read and re-added on history commits.
+ * @internal
+ */
+export const base = signal<string>("");
+
+/**
  * Signal containing scroll behavior configuration.
  * @internal
  */

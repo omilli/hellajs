@@ -23,6 +23,21 @@ export const hasChildren = (routeValue: RouteValue): routeValue is RouteWithHook
   isPlainObject(routeValue) && !!(routeValue as RouteWithHooks).children;
 
 /**
+ * Strips the base path prefix from a URL path, preserving the query string.
+ * @internal
+ * @param path URL path including any query string.
+ * @param basePath Normalized base path (no trailing slash); empty string is an identity no-op.
+ * @returns The base-less path, or the original path when the base does not prefix it.
+ */
+export function stripBase(path: string, basePath: string): string {
+  if (!basePath) return path;
+  if (path === basePath) return "/";
+  if (path.startsWith(basePath + "/")) return path.slice(basePath.length);
+  if (path.startsWith(basePath + "?")) return "/" + path.slice(basePath.length);
+  return path;
+}
+
+/**
  * Extracts the path from the hash portion of the URL.
  * @internal
  * @returns The path from hash (without #), or "/" if empty.

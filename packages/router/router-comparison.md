@@ -25,7 +25,7 @@ HellaJS is the minimalist here: a standalone signal-driven router with four expo
 
 ### HellaJS
 
-The router is a singleton state machine over `@hellajs/core` signals: one `route` signal holds the complete current match, and eight config signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `scrollBehavior`, `previousPath`, `inheritMeta`) hold the configuration (`lib/route.ts`, `lib/internal/state.ts`). Re-calling `router()` rewrites all of them and swaps the listeners in place (`lib/router.ts`).
+The router is a singleton state machine over `@hellajs/core` signals: one `route` signal holds the complete current match, and nine config signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `base`, `scrollBehavior`, `previousPath`, `inheritMeta`) hold the configuration (`lib/route.ts`, `lib/internal/state.ts`). Re-calling `router()` rewrites all of them and swaps the listeners in place (`lib/router.ts`).
 
 - **Five-phase resolution pipeline with early exit:** global redirects (exact path match, query ignored) → string redirects in the route map → nested routes (sorted by specificity) → flat routes (object entry order) → `notFound` (string → replace-redirect, function → handler) (`lib/internal/resolve.ts`). A synchronous hop counter caps re-entrant resolutions at 20 and logs `[router] redirect loop detected` instead of overflowing the stack on cyclic configs (`lib/internal/resolve.ts`).
 - **Synchronous end to end.** `router()` resolves the initial route inline and returns the matched `RouteInfo`; `navigate()` resolves, writes the signal, and commits history before returning (`lib/router.ts`, `lib/internal/resolve.ts`). There is no pending state and no microtask window.
@@ -103,7 +103,7 @@ HellaJS's matcher is the simplest in this group — no regex engine, no codegen,
 
 ### HellaJS
 
-Navigation funnels through one guard-aware path: `go()` runs the full resolution pipeline first and only commits `pushState`/`replaceState` when the verdict is `"matched"` — a cancelled guard never leaves a stray history entry (`lib/internal/resolve.ts`). Hash mode prefixes the target with `#`; history mode uses the path as-is; memory mode skips the history commit entirely — `route()` advances while the URL stays untouched (`lib/internal/resolve.ts`).
+Navigation funnels through one guard-aware path: `go()` runs the full resolution pipeline first and only commits `pushState`/`replaceState` when the verdict is `"matched"` — a cancelled guard never leaves a stray history entry (`lib/internal/resolve.ts`). Hash mode prefixes the target with `#` and ignores `base`; history mode uses the path as-is, prefixed with the configured `base` on commit and stripped again on every URL read (init, `popstate`, intercepted clicks) so subpath deploys — GitHub Pages, `/~user/`, shared hosts — never hand-prefix patterns or links (`lib/internal/resolve.ts`, `lib/internal/utils.ts`); memory mode skips the history commit entirely — `route()` advances while the URL stays untouched (`lib/internal/resolve.ts`).
 
 - `navigate(pattern, options)` substitutes `:param` values through `encodeURIComponent`, inserts `*` raw via a replacer function (wildcards carry path slashes; the function form defeats `$&`/`$$` interpretation), strips unmatched `:param` tokens, and serializes query keys and values encoded (`lib/navigate.ts`).
 - One `popstate` listener (history mode) or `hashchange` listener (hash mode) drives browser back/forward; on a cancelled guard the handler restores the previous URL with `replaceState` so the address bar never lies (`lib/router.ts`). Hash mode ignores hashes that don't start with `#/` — plain in-page anchors stay native (`lib/router.ts`).
@@ -115,7 +115,7 @@ Navigation funnels through one guard-aware path: `go()` runs the full resolution
 Every router here integrates the History API behind its own abstraction layer, and every one intercepts anchor clicks — through a component (`<Link>` / `<RouterLink>` / `<A>`) or, for Solid and HellaJS, plain `<a>` tags by default.
 
 - Solid opts out via `explicitLinks: true`, HellaJS via `intercept: false`.
-- **Vue Router** decouples history strategy into factory functions (web/hash/memory); HellaJS folds the choice into one `mode` config field with three values — `history`, `hash`, and `memory` (location-less, seeded from `url` or `/`, driven by `navigate()` alone) (`lib/types.d.ts`, `lib/router.ts`).
+- **Vue Router** decouples history strategy into factory functions (web/hash/memory) and takes the deploy subpath as `createWebHistory(base)`; HellaJS folds both into config — one `mode` field with three values and a `base` field (history mode only) that keeps route patterns and `navigate()` targets base-free (`lib/types.d.ts`, `lib/router.ts`).
 - **Solid Router's** `useBeforeLeave` hook offers `preventDefault` and `retry(force?)` for unsaved-form flows; HellaJS's sync `before` covers cancel and redirect but has no retry-with-force analog (`lib/internal/matched.ts`).
 - **Next.js** prefetches `<Link>` targets on viewport entry — link-granular prefetching none of the others match (TanStack and Solid preload via route hooks, not link visibility).
 - **TanStack** abstracts history behind `@tanstack/history` to support its own navigation lifecycles and streaming transitions.
@@ -186,6 +186,7 @@ The competitors layer progressively more typing and data structure onto params a
 | Optional params | No | Yes | Yes (`:id?`) | Yes (`:id?`) | No | Route groups |
 | Regex matchers | No | Param parsers | Yes | Yes (filters) | Yes (`UrlMatcher`) | No |
 | History modes | `history`, `hash`, `memory` | Custom history | web, hash, memory | web, hash, memory, static | Path, Hash | History (built-in) |
+| Base path | Yes (`base` config, history mode) | Yes (`basepath`) | Yes (`createWebHistory(base)`) | Yes (`base`) | Yes (`APP_BASE_HREF`) | Yes (`basePath`) |
 | Programmatic navigation | `navigate()` | `navigate()` | `router.push/replace` | `useNavigate()` | `router.navigate` | `useRouter().push/replace` |
 | Anchor interception | Plain `<a>`, default-on | `<Link>` | `<RouterLink>` | Plain `<a>`, default-on | `RouterLink` | `<Link>` |
 | Global hooks | `hooks.before`/`after` (sync-blocking) | `beforeLoad` per route | `beforeEach`/`afterEach` | `useBeforeLeave` | Guards | Middleware |
@@ -208,7 +209,7 @@ The competitors layer progressively more typing and data structure onto params a
 - **Single reactive route signal** — `route()` exposes handler, params, query, path, meta, crumbs, and the shared `active` predicate in one object (`lib/route.ts`). No `useParams` + `useLocation` + `useMatch` decomposition.
 - **Atomic route commits** — every navigation path (`navigate`, `popstate`, `hashchange`, init) funnels through one `route()` write inside `commitMatch`, so path/params/query/handler/meta/crumbs always describe the same match (`lib/internal/resolve.ts`).
 - **Sync init + server `url` mode** — `router()` returns the resolved `RouteInfo`, and `router({ url })` re-resolves per call for request-scoped SSR with no `window` (`lib/router.ts`).
-- **`resetRouter()` teardown** — factory-resets all nine signals and detaches listeners without touching the URL, for HMR and session resets (`lib/resetRouter.ts`).
+- **`resetRouter()` teardown** — factory-resets all ten signals and detaches listeners without touching the URL, for HMR and session resets (`lib/resetRouter.ts`).
 - **Three-tier scroll behavior** — inline `navigate({ scroll })` > route-level `scroll` > global `scrollBehavior`, with custom `(to, from) => { top, left? } | null` functions, `false` to disable at any tier, and an auto-skip when `to === from` (`lib/internal/matched.ts`).
 - **Frozen singletons on the hot path** — param-less matches and childless crumbs reuse `EMPTY_OBJECT`/`EMPTY_CRUMBS`; params allocation defers behind `hasParams` (`lib/internal/utils.ts`, `lib/internal/match.ts`).
 - **Reactive reconfiguration** — re-calling `router()` swaps the whole route map, hooks, redirects, and listeners atomically (`lib/router.ts`).

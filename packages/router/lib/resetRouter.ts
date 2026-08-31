@@ -4,6 +4,7 @@ import {
   redirects,
   notFound,
   mode,
+  base,
   scrollBehavior,
   previousPath,
   inheritMeta
@@ -21,6 +22,7 @@ export function resetRouter(): void {
   redirects([]);
   notFound(null);
   mode("history");
+  base("");
   scrollBehavior(undefined);
   previousPath("/");
   inheritMeta(false);
