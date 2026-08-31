@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { delay } from "@utils/test-helpers.js";
 
-import { router, navigate } from "@hellajs/router/bundle";
+import { router, navigate, route } from "@hellajs/router/bundle";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
@@ -35,6 +35,89 @@ describe("hooks", () => {
 
     navigate("/");
     expect(log).toEqual(["global-before", "home", "global-after"]);
+  });
+
+  test("passes to and from paths to global before hook", () => {
+    const globalBefore = mock(() => {});
+    router({
+      routes: {
+        "/home": () => render("home"),
+        "/users/:id": ({ id }) => render(`user-${id}`)
+      },
+      hooks: { before: globalBefore }
+    });
+
+    navigate("/home");
+    globalBefore.mockClear();
+
+    navigate("/users/7?tab=posts");
+
+    expect(globalBefore).toHaveBeenCalledWith("/users/7?tab=posts", "/home");
+  });
+
+  test("passes to and from paths to global after hook", () => {
+    const globalAfter = mock(() => {});
+    router({
+      routes: {
+        "/home": () => render("home"),
+        "/users/:id": ({ id }) => render(`user-${id}`)
+      },
+      hooks: { after: globalAfter }
+    });
+
+    navigate("/home");
+    globalAfter.mockClear();
+
+    navigate("/users/7");
+
+    expect(globalAfter).toHaveBeenCalledWith("/users/7", "/home");
+  });
+
+  test("runs zero-arg and single-arg global hooks", () => {
+    const calls: string[] = [];
+    router({
+      routes: {
+        "/home": () => render("home"),
+        "/about": () => render("about")
+      },
+      hooks: {
+        before: () => calls.push("before"),
+        after: (to) => calls.push(`after:${to}`)
+      }
+    });
+
+    navigate("/home");
+    calls.length = 0;
+
+    navigate("/about");
+
+    expect(calls).toEqual(["before", "after:/about"]);
+    expect(container.textContent).toBe("about");
+  });
+
+  test("redirects to login carrying the attempted path from global before", () => {
+    let authed = true;
+    router({
+      routes: {
+        "/home": () => render("home"),
+        "/login": (params, query) => render(`login?next=${query.next ?? "/"}`),
+        "/admin": () => render("admin")
+      },
+      hooks: {
+        before: (to) =>
+          authed || to.startsWith("/login")
+            ? true
+            : `/login?next=${encodeURIComponent(to)}`
+      }
+    });
+
+    navigate("/home");
+    authed = false;
+
+    navigate("/admin");
+
+    expect(route().path).toBe("/login?next=%2Fadmin");
+    expect(container.textContent).toBe("login?next=/admin");
   });
 
   test("executes route-specific hooks", () => {

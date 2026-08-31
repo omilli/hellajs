@@ -22,7 +22,7 @@ function router(config: RouterConfig): RouteInfo
 // }
 ```
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
-- `hooks`: Optional global hooks (`before`, `after`).
+- `hooks`: Optional global hooks — `before(to, from)` guards every navigation (`to` is the incoming path with its query string, `from` is the pre-commit path being left; can cancel or redirect), `after(to, from)` runs once the route commits.
 - `redirects`: Optional array of redirect objects with `from` and `to` properties.
 - `notFound`: Optional handler for unmatched routes.
 - `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing — no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
@@ -130,6 +130,27 @@ router({
   }
 });
 ```
+
+Global hooks receive `(to, from)` paths — `to` is the incoming path with its query string, `from` is the path being left before the commit. The login-redirect pattern uses `to` to preserve the attempted destination:
+
+```typescript
+const user = signal<string | null>(null);
+
+router({
+  routes: {
+    '/login': (params, query) => currentView(`Login: continue to ${query.next ?? '/'}`),
+    '/admin': () => currentView('AdminPage')
+  },
+  hooks: {
+    before: (to) =>
+      user() || to.startsWith('/login')
+        ? true
+        : `/login?next=${encodeURIComponent(to)}`
+  }
+});
+```
+
+Zero-argument global hooks keep working — the paths are additional arguments, ignored by hooks that don't declare them.
 
 ### Scroll Behavior
 
