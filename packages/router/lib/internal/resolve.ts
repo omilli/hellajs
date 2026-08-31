@@ -92,7 +92,7 @@ export function updateRoute(
 /**
  * Resolves a URL through the route pipeline and, only on a committed match (guards passed),
  * updates the browser history. A cancelled guard produces no history change; a redirect's nested
- * `go` already updated history, so the outer call skips.
+ * `go` already updated history, so the outer call skips. Memory mode performs no history commit.
  * @internal
  * @param to The URL to navigate to.
  * @param options Navigation options including replace, scroll, and meta.
@@ -106,13 +106,13 @@ export function go(
   } = {}
 ): void {
   const { replace = false, scroll, meta } = options;
-  const isHashMode = mode() === "hash";
-  const finalTo = isHashMode ? `#${to}` : to;
+  const routerMode = mode();
+  const finalTo = routerMode === "hash" ? `#${to}` : to;
   const action = replace ? "replaceState" : "pushState";
 
   const verdict = updateRoute(to, scroll, meta);
 
-  if (verdict === "matched" && hasWindow()) {
+  if (verdict === "matched" && hasWindow() && routerMode !== "memory") {
     window.history[action](null, "", finalTo);
   }
 }

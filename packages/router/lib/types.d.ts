@@ -25,9 +25,10 @@ export type ExtractParams<T extends string> =
 export type Handler = (params: Params, query: Params) => unknown;
 
 /**
- * History mode for URL management.
+ * History mode for URL management. `"memory"` routes without a URL — no history
+ * commits and no listeners; the route is driven by `navigate()` alone.
  */
-export type HistoryMode = "history" | "hash";
+export type HistoryMode = "history" | "hash" | "memory";
 
 /**
  * Scroll behavior configuration.
@@ -94,7 +95,7 @@ export interface RouterConfig {
   notFound?: string | (() => void);
   /** Array of redirect rules mapping source paths to targets */
   redirects?: Redirect[];
-  /** URL management mode: "history" for clean URLs, "hash" for hash-based routing */
+  /** URL management mode: "history" for clean URLs, "hash" for `#/path` URLs, "memory" for location-less routing (no URL/history writes, no listeners — drive it with navigate()) */
   mode?: HistoryMode;
   /** Default scroll behavior applied to all routes unless overridden */
   scrollBehavior?: ScrollBehavior;

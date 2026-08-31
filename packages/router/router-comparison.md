@@ -10,7 +10,7 @@ A ground-up comparison based on the actual source code of `@hellajs/router` v2. 
 |---|---|---|---|---|---|---|
 | Routing model | Declarative object map, 5-phase pipeline | Generated route tree, type-safe | `createRouter` + `Routes` array | JSX `<Route>` tree or config array | `Routes` array + DI (`provideRouter`) | File-system (folders = routes) |
 | Reactive model | Signals from `@hellajs/core` | `@tanstack/store` | Vue reactivity (proxy) | Solid signals | Angular Signals + RxJS | React state / Server Components |
-| Navigation model | History API (`popstate` / `hashchange`) | `@tanstack/history` (custom) | Pluggable: web / hash / memory | `window` history behind a Router abstraction | `Location` + `UrlSerializer` + History | App Router + `useRouter` |
+| Navigation model | History API (`popstate` / `hashchange`) or memory (no URL) | `@tanstack/history` (custom) | Pluggable: web / hash / memory | `window` history behind a Router abstraction | `Location` + `UrlSerializer` + History | App Router + `useRouter` |
 | Type safety | Template-literal `ExtractParams<T>`, no codegen | Generated route tree (full, codegen) | Typed routes via bundled codegen | Manual + `MatchFilters` | Manual | File-based `params`/`PageProps` (async) |
 | Compile step | None | `routeTree.gen.ts` codegen | Optional (codegen ships in-package) | None | Decorators / standalone | Required (Next.js build) |
 | Runtime deps | 0 (+ `@hellajs/core` peer) | 4 (+ react peers) | 17 (codegen toolchain in-package) | 0 (+ solid-js peer) | 1 (+ 4 Angular peers) | 6 (framework-bundled) |
@@ -103,7 +103,7 @@ HellaJS's matcher is the simplest in this group — no regex engine, no codegen,
 
 ### HellaJS
 
-Navigation funnels through one guard-aware path: `go()` runs the full resolution pipeline first and only commits `pushState`/`replaceState` when the verdict is `"matched"` — a cancelled guard never leaves a stray history entry (`lib/internal/resolve.ts`). Hash mode prefixes the target with `#`; history mode uses the path as-is (`lib/internal/resolve.ts`).
+Navigation funnels through one guard-aware path: `go()` runs the full resolution pipeline first and only commits `pushState`/`replaceState` when the verdict is `"matched"` — a cancelled guard never leaves a stray history entry (`lib/internal/resolve.ts`). Hash mode prefixes the target with `#`; history mode uses the path as-is; memory mode skips the history commit entirely — `route()` advances while the URL stays untouched (`lib/internal/resolve.ts`).
 
 - `navigate(pattern, options)` substitutes `:param` values through `encodeURIComponent`, inserts `*` raw via a replacer function (wildcards carry path slashes; the function form defeats `$&`/`$$` interpretation), strips unmatched `:param` tokens, and serializes query keys and values encoded (`lib/navigate.ts`).
 - One `popstate` listener (history mode) or `hashchange` listener (hash mode) drives browser back/forward; on a cancelled guard the handler restores the previous URL with `replaceState` so the address bar never lies (`lib/router.ts`). Hash mode ignores hashes that don't start with `#/` — plain in-page anchors stay native (`lib/router.ts`).
@@ -115,12 +115,12 @@ Navigation funnels through one guard-aware path: `go()` runs the full resolution
 Every router here integrates the History API behind its own abstraction layer, and every one intercepts anchor clicks — through a component (`<Link>` / `<RouterLink>` / `<A>`) or, for Solid and HellaJS, plain `<a>` tags by default.
 
 - Solid opts out via `explicitLinks: true`, HellaJS via `intercept: false`.
-- **Vue Router** decouples history strategy into factory functions (web/hash/memory); HellaJS folds the choice into one `mode` config field with two values — there is no memory mode.
+- **Vue Router** decouples history strategy into factory functions (web/hash/memory); HellaJS folds the choice into one `mode` config field with three values — `history`, `hash`, and `memory` (location-less, seeded from `url` or `/`, driven by `navigate()` alone) (`lib/types.d.ts`, `lib/router.ts`).
 - **Solid Router's** `useBeforeLeave` hook offers `preventDefault` and `retry(force?)` for unsaved-form flows; HellaJS's sync `before` covers cancel and redirect but has no retry-with-force analog (`lib/internal/matched.ts`).
 - **Next.js** prefetches `<Link>` targets on viewport entry — link-granular prefetching none of the others match (TanStack and Solid preload via route hooks, not link visibility).
 - **TanStack** abstracts history behind `@tanstack/history` to support its own navigation lifecycles and streaming transitions.
 
-**Verdict:** HellaJS and Solid are the only routers here that intercept plain `<a>` clicks out of the box, and HellaJS's guard-aware `go()` means history and route state can never disagree. The gaps are link prefetching (Next.js only, at viewport granularity), no memory history for tests, and no `retry(force?)` flow for overrideable guards.
+**Verdict:** HellaJS and Solid are the only routers here that intercept plain `<a>` clicks out of the box, and HellaJS's guard-aware `go()` means history and route state can never disagree. The gaps are link prefetching (Next.js only, at viewport granularity) and no `retry(force?)` flow for overrideable guards.
 
 ---
 
@@ -185,7 +185,7 @@ The competitors layer progressively more typing and data structure onto params a
 | Wildcard / catch-all | `*` | `*` splat | `:param(.*)` | `*` / `*name` | `**` | `[...slug]` |
 | Optional params | No | Yes | Yes (`:id?`) | Yes (`:id?`) | No | Route groups |
 | Regex matchers | No | Param parsers | Yes | Yes (filters) | Yes (`UrlMatcher`) | No |
-| History modes | `history`, `hash` | Custom history | web, hash, memory | web, hash, memory, static | Path, Hash | History (built-in) |
+| History modes | `history`, `hash`, `memory` | Custom history | web, hash, memory | web, hash, memory, static | Path, Hash | History (built-in) |
 | Programmatic navigation | `navigate()` | `navigate()` | `router.push/replace` | `useNavigate()` | `router.navigate` | `useRouter().push/replace` |
 | Anchor interception | Plain `<a>`, default-on | `<Link>` | `<RouterLink>` | Plain `<a>`, default-on | `RouterLink` | `<Link>` |
 | Global hooks | `hooks.before`/`after` (sync-blocking) | `beforeLoad` per route | `beforeEach`/`afterEach` | `useBeforeLeave` | Guards | Middleware |
@@ -274,4 +274,4 @@ What sets HellaJS apart — and no single competitor matches all of:
 6. **Atomic pre-commit guards with URL restoration** — guards run before the signal write and history commit; cancelled popstate/hashchange restores the address bar via `replaceState` (`lib/internal/matched.ts`, `lib/router.ts`).
 7. **Built-in match-chain ergonomics** — `crumbs` (linkable parent-to-leaf chain) and the shared `active()` ancestor predicate come off the route signal; competitors assemble these from `route.matched`/`useMatches`/`useCurrentMatches` by hand (`lib/internal/resolve.ts`, `lib/route.ts`).
 
-Its gaps: **no async-blocking guards** (a `Promise`-returning `before` proceeds; Vue/Angular/TanStack block on async), **no loaders, data cache, or prefetching** (pair `@hellajs/resource`; TanStack and Solid ship these), **no query-param schemas or regex matchers** (params and query stay string records; no optional params), **no memory history mode**, **no route-level code-splitting primitives** (dom's `Lazy` is user-managed), a **single global router instance** — configuration is module-level singleton state, so concurrent streaming SSR relies on synchronous resolution rather than a router-per-request scope (documented in `docs/patterns/routing-ssr.mdx`) — and an **ecosystem** orders of magnitude behind Vue Router and Next.js. If you need async guards, typed search schemas, loaders, or link prefetching, TanStack Router or one of the framework routers is the better tool. If you want a tiny, framework-agnostic reactive router with default-on SPA links, sync guards, and SSR without a meta-framework, HellaJS is the leanest option here.
+Its gaps: **no async-blocking guards** (a `Promise`-returning `before` proceeds; Vue/Angular/TanStack block on async), **no loaders, data cache, or prefetching** (pair `@hellajs/resource`; TanStack and Solid ship these), **no query-param schemas or regex matchers** (params and query stay string records; no optional params), **no route-level code-splitting primitives** (dom's `Lazy` is user-managed), a **single global router instance** — configuration is module-level singleton state, so concurrent streaming SSR relies on synchronous resolution rather than a router-per-request scope (documented in `docs/patterns/routing-ssr.mdx`) — and an **ecosystem** orders of magnitude behind Vue Router and Next.js. If you need async guards, typed search schemas, loaders, or link prefetching, TanStack Router or one of the framework routers is the better tool. If you want a tiny, framework-agnostic reactive router with default-on SPA links, sync guards, and SSR without a meta-framework, HellaJS is the leanest option here.

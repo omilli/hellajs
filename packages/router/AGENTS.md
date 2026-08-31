@@ -1,5 +1,5 @@
 <router-package-instructions>
-  Reactive client-side router over `@hellajs/core` signals. Strict resolution pipeline (redirects → nested → flat → notFound), lifecycle hooks, parameter inheritance, History/hash modes, scroll control, and same-origin link interception. Barrel: `lib/index.ts`.
+  Reactive client-side router over `@hellajs/core` signals. Strict resolution pipeline (redirects → nested → flat → notFound), lifecycle hooks, parameter inheritance, History/hash/memory modes, scroll control, and same-origin link interception. Barrel: `lib/index.ts`.
 
   ## Public exports (`lib/index.ts`)
 
@@ -15,14 +15,14 @@
 
   | File | Responsibility |
   |---|---|
-  | `router.ts` | Config → state signals; initial-path detection (`url` override / hash vs history); popstate/hashchange + click listeners with composed cleanup; synchronous `updateRoute()` on return. |
+  | `router.ts` | Config → state signals; initial-path detection (`url` override / hash vs history / memory → `/`); popstate/hashchange + click listeners with composed cleanup (none attached in memory mode); synchronous `updateRoute()` on return. |
   | `state.ts` | 8 config signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `scrollBehavior`, `previousPath`, `inheritMeta`). |
   | `route.ts` | The `route` signal (current `RouteInfo`) + the shared `activeFn` ancestor-match predicate. |
   | `navigate.ts` | `:key` → `encodeURIComponent`, `*` → raw insert, strip unmatched `:param`, query string, → `go()`. |
   | `match.ts` | `parseQuery`, `matchPattern` (segment/wildcard extraction), `matchNestedEntry` (single-entry chain resolver), `matchNestedRoute` (specificity-sorted loop over entries, params spread-merged), `matchRoute` (flat). |
   | `hooks.ts` | `executeHook` (arity dispatch + try/catch + promise.catch), `executeGlobalHook` (no args). |
   | `utils.ts` | `EMPTY_OBJECT`/`EMPTY_CRUMBS`, `hasChildren`, `getHashPath`, `sortRoutesBySpecificity`. Leaf module — no internal imports. |
-  | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict` + hop counter (`updateRoute`), `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase` via shared `commitMatch` + `mergeRouteMeta`, `buildRouteInfo`, `go` (guard-aware history commit). |
+  | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict` + hop counter (`updateRoute`), `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase` via shared `commitMatch` + `mergeRouteMeta`, `buildRouteInfo`, `go` (guard-aware history commit; memory mode commits none). |
   | `internal/matched.ts` | `handleScroll`, `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuardsNested`/`runGuardsFlat` (shared global-before prologue), `executeRouteWithHooks`. |
   | `internal/core.ts` | Re-exports `signal`, `isFunction`, `isString`, `isPlainObject`, `hasWindow` from `@hellajs/core`. |
 
@@ -62,6 +62,8 @@
     **Meta cascade is leaf-only by default** — `inheritMeta: false` (default) replaces meta at each nested level, final = leaf meta. `inheritMeta: true` merges parent→child (child wins on conflict). Per-route `inheritMeta` overrides global: `false` = boundary (drops ancestors above, its own meta still flows down), `true` = opt-in when global is false (`resolve.ts matchNestedPhase` — meta fold). Inline `navigate({meta})` merges over the resolved route meta and wins on conflict.
 
     **Listener cleanup on re-init** — calling `router()` again removes the prior popstate/hashchange **and** click handler via the composed `cleanupListener` (`router.ts resetListeners`).
+
+    **Memory mode is URL-less and listener-less** — `mode: "memory"` seeds the initial path from `url` (parsed) or `/`, never reads `window.location`, attaches no popstate/hashchange/click listeners, and `go()` performs no history commit (`router.ts` init, `internal/resolve.ts go`). `route()` advances only via `navigate()`; browser back/forward are no-ops (no entry stack — no `back()`/`forward()` exports).
 
     **Scroll no-op on init** — `previousPath` is seeded with `initialPath` (`router.ts` previousPath seed), so the first `updateRoute()` sees `from === to` and skips (`matched.ts handleScroll`). **Scroll priority**: inline `navigate({scroll})` > route-level `scroll` > global `scrollBehavior`; `false` at any level disables; `"auto"`/`"preserve"` skip `scrollTo`; custom fn returning `null` skips.
 
