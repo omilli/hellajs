@@ -1,7 +1,8 @@
 import { isFunction, isPlainObject, hasWindow } from "./core";
 import { hooks, previousPath, scrollBehavior } from "./state";
 import { executeHook, executeGlobalHook } from "./hooks";
-import type { Handler, Params, RouteWithHooks, GlobalHooks, ScrollBehavior } from "../types";
+import { route } from "../route";
+import type { Handler, Params, RouteWithHooks, ScrollBehavior } from "../types";
 import type { RouteMatch } from "./match";
 
 /**
@@ -124,8 +125,8 @@ export function extractScroll(routeValue: unknown): ScrollBehavior | false | und
 export function extractRouteHooks(routeValue: unknown): { before: Handler | null; after: Handler | null } {
   const isObj = isPlainObject(routeValue);
   return {
-    before: isObj ? (routeValue as GlobalHooks).before || null : null,
-    after: isObj ? (routeValue as GlobalHooks).after || null : null
+    before: isObj ? (routeValue as RouteWithHooks).before || null : null,
+    after: isObj ? (routeValue as RouteWithHooks).after || null : null
   };
 }
 
@@ -190,10 +191,12 @@ function invokeRouteGuard(
 }
 
 /**
- * Runs the global `before` hook and interprets its verdict.
+ * Runs the global `before` hook and interprets its verdict. The hook receives `to` (the incoming
+ * path, query included) and `from` (`route().path` pre-commit — the previous route).
+ * @param toPath The path being navigated to (query included).
  * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
  */
-function runGlobalBefore(): GuardVerdict {
+function runGlobalBefore(toPath: string): GuardVerdict {
   const { before: globalBefore } = hooks();
 
   if (!isFunction(globalBefore)) {
@@ -202,7 +205,7 @@ function runGlobalBefore(): GuardVerdict {
 
   let result: unknown;
   try {
-    result = (globalBefore as () => unknown)();
+    result = (globalBefore as (to: string, from: string) => unknown)(toPath, route().path);
   } catch (error) {
     console.error("[router] Global before:", error);
     return "cancel";
@@ -216,10 +219,11 @@ function runGlobalBefore(): GuardVerdict {
  * so a cancel/redirect never produces an observable route change.
  * @internal
  * @param nestedMatches The parent-to-leaf nested match chain.
+ * @param toPath The path being navigated to (query included), passed to the global before hook.
  * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
  */
-export function runGuardsNested(nestedMatches: RouteMatch[]): GuardVerdict {
-  const globalVerdict = runGlobalBefore();
+export function runGuardsNested(nestedMatches: RouteMatch[], toPath: string): GuardVerdict {
+  const globalVerdict = runGlobalBefore(toPath);
   if (globalVerdict !== "pass") {
     return globalVerdict;
   }
@@ -249,14 +253,16 @@ export function runGuardsNested(nestedMatches: RouteMatch[]): GuardVerdict {
  * @param routeValue The flat route value.
  * @param params Leaf-level parameters.
  * @param query Leaf-level query.
+ * @param toPath The path being navigated to (query included), passed to the global before hook.
  * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
  */
 export function runGuardsFlat(
   routeValue: unknown,
   params: Params,
-  query: Params
+  query: Params,
+  toPath: string
 ): GuardVerdict {
-  const globalVerdict = runGlobalBefore();
+  const globalVerdict = runGlobalBefore(toPath);
   if (globalVerdict !== "pass") {
     return globalVerdict;
   }
@@ -275,11 +281,13 @@ export function runGuardsFlat(
 /**
  * Executes route handler and after-hooks. The before chain is run separately by `runGuards`
  * before the route signal is written; this runs only on a pass: handler, then nested `after`
- * hooks bottom-up (LIFO), then the global `after` hook.
+ * hooks bottom-up (LIFO), then the global `after` hook with `(to, from)` paths.
  * @internal
  * @param handler The main route handler.
  * @param params Route parameters.
  * @param query Query parameters.
+ * @param toPath The path navigated to (query included), passed to the global after hook.
+ * @param fromPath The pre-commit path navigated from (query included).
  * @param routeValue Optional route value for extracting hooks.
  * @param nestedMatches Optional nested route matches for nested execution.
  */
@@ -287,6 +295,8 @@ export function executeRouteWithHooks(
   handler: Handler | null,
   params: Params,
   query: Params,
+  toPath: string,
+  fromPath: string,
   routeValue?: unknown,
   nestedMatches?: RouteMatch[]
 ): void {
@@ -308,5 +318,5 @@ export function executeRouteWithHooks(
     executeHook(routeAfter, params, query, "hook");
   }
 
-  executeGlobalHook(after, "Global after");
+  executeGlobalHook(after, toPath, fromPath, "Global after");
 }

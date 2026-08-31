@@ -69,6 +69,33 @@ router({
 });
 ```
 
+Global hooks receive `(to, from)` paths: `to` is the incoming path with its query string (the same shape as [`route()`](/reference/router/route).path) and `from` is the path being left, captured before the route commits. A `before` hook still sees the previous route in [`route()`](/reference/router/route); by the time `after` runs the route is already committed, so `from` is the only way to see where navigation started.
+
+The login-redirect guard uses `to` to preserve the attempted destination:
+
+```jsx
+import { signal } from '@hellajs/core';
+
+const user = signal(null);
+const LoginPage = () => <div>Login</div>;
+const Dashboard = () => <div>Dashboard</div>;
+
+router({
+  routes: {
+    '/login': () => currentView(<LoginPage />),
+    '/dashboard': () => currentView(<Dashboard />)
+  },
+  hooks: {
+    before: (to) =>
+      user() || to.startsWith('/login')
+        ? true
+        : `/login?next=${encodeURIComponent(to)}`
+  }
+});
+```
+
+The login handler reads the encoded target from `query.next` and navigates back after sign-in. Zero-argument global hooks keep working — the paths are additional arguments, ignored by hooks that don't declare them.
+
 See the [`router`](/reference/router/router) reference for all hook configuration options.
 
 ## Route Guards

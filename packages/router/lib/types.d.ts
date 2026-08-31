@@ -114,15 +114,21 @@ export interface RouterConfig {
  */
 export interface GlobalHooks {
   /**
-   * Hook executed before every route change. Acts as a global guard. Sync return contract:
-   * return `false` to cancel (no URL/signal/handler change); return a non-empty `string` to
-   * redirect (replace) to that path; any other return proceeds. Throwing cancels and logs
-   * `[router] Global before:`. A returned `Promise` does NOT block — the navigation proceeds
+   * Hook executed before every route change. Acts as a global guard. Receives `to` (the incoming
+   * path, query included — same shape as `route().path`) and `from` (the pre-commit current path,
+   * matching the route-level `before` rule that `route()` still holds the previous route). Sync
+   * return contract: return `false` to cancel (no URL/signal/handler change); return a non-empty
+   * `string` to redirect (replace) to that path; any other return proceeds. Throwing cancels and
+   * logs `[router] Global before:`. A returned `Promise` does NOT block — the navigation proceeds
    * immediately and only a rejection is logged. Decide synchronously to block.
    */
-  before?: () => Promise<unknown> | unknown;
-  /** Hook executed after every route change */
-  after?: () => Promise<unknown> | unknown;
+  before?: (to: string, from: string) => Promise<unknown> | unknown;
+  /**
+   * Hook executed after every route change. Receives `to` and `from` paths (query included) —
+   * `route()` already holds the committed `to` route when it runs, so `from` supplies the prior
+   * path without capturing it yourself.
+   */
+  after?: (to: string, from: string) => Promise<unknown> | unknown;
 }
 
 /**

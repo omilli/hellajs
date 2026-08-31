@@ -164,6 +164,7 @@ function commitMatch(
     return "redirected";
   }
 
+  const fromPath = route().path;
   route(buildRouteInfo({
     handler,
     params,
@@ -172,7 +173,7 @@ function commitMatch(
     meta,
     crumbs
   }));
-  executeRouteWithHooks(handler, params, query, routeValue, nestedMatches);
+  executeRouteWithHooks(handler, params, query, currentPath, fromPath, routeValue, nestedMatches);
   handleScroll(currentPath, inlineScroll, routeScroll);
   return "matched";
 }
@@ -254,7 +255,7 @@ function matchNestedPhase(
       const lastMatch = nestedMatches[nestedMatches.length - 1]!;
       const { params, query } = lastMatch;
 
-      const guardVerdict = runGuardsNested(nestedMatches);
+      const guardVerdict = runGuardsNested(nestedMatches, currentPath);
 
       let routeMeta: Record<string, unknown> | undefined;
       {
@@ -336,7 +337,7 @@ function matchFlatPhase(
     const match = matchRoute(pattern, currentPath);
     if (match) {
       const { params, query } = match;
-      const guardVerdict = runGuardsFlat(routeValue, params, query);
+      const guardVerdict = runGuardsFlat(routeValue, params, query, currentPath);
 
       return commitMatch(
         guardVerdict,

@@ -44,12 +44,19 @@ export function executeHook(
  * Executes a global hook with error handling.
  * @internal
  * @param hookFn The global hook function to execute.
+ * @param to The path navigated to (query included).
+ * @param from The path navigated from (query included).
  * @param errorPrefix Error message prefix for logging.
  */
-export function executeGlobalHook(hookFn: (() => unknown) | null | undefined, errorPrefix: string): void {
+export function executeGlobalHook(
+  hookFn: ((to: string, from: string) => unknown) | null | undefined,
+  to: string,
+  from: string,
+  errorPrefix: string
+): void {
   if (!isFunction(hookFn)) return;
   try {
-    const result = hookFn();
+    const result = hookFn(to, from);
     if (result instanceof Promise) {
       result.catch((error) =>
         console.error(`[router] ${errorPrefix}:`, error)
