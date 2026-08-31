@@ -37,7 +37,7 @@ applyTo: "packages/router/**"
 
   | # | Phase | Source | Match rule | Evidence |
   |---|---|---|---|---|
-  | 1 | Global redirect | `redirects[].from` | Exact equality on path **without query** | `resolve.ts tryRedirect` |
+  | 1 | Global redirect | `redirects[].from` | `matchRoute` pattern per entry (query ignored); captured params substitute into `to` via `buildPath` | `resolve.ts tryRedirect` |
   | 2 | String redirect | `routes{k: string}` | `matchRoute` (flat pattern, non-nested) | `resolve.ts tryRedirect` |
   | 3 | Nested route | `routes{k: RouteWithHooks with children}` | `matchNestedRoute`, sorted by specificity | `resolve.ts matchNestedPhase` |
   | 4 | Flat route | `routes{k: RouteValue}`, object entry order | `matchRoute`, first hit wins | `resolve.ts matchFlatPhase` |
