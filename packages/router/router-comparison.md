@@ -195,7 +195,7 @@ The competitors layer progressively more typing and data structure onto params a
 | Async-blocking guards | No | Yes | Yes | Partial (leave only) | Yes | n/a (server-side) |
 | Loaders / data fetching | No (pair `@hellajs/resource`) | Yes (typed loaders, cache, prefetch) | Experimental (`pinia-colada`) | Yes (`preload`, `query`, `createAsync`) | Yes (resolvers, blocking) | Yes (Server Components) |
 | Redirects | String map + `redirects` array, 20-hop loop cap | `redirect()` helper | `redirect` on route/config | `throw redirect()` | `redirectTo`, `RedirectCommand` | `redirect()` server-side |
-| 404 handling | `notFound` (fn or string) | `notFoundComponent` | Catch-all route | `*404` route | `**` route | `not-found` file |
+| 404 handling | `notFound` (fn receives attempted path, or string) | `notFoundComponent` | Catch-all route | `*404` route | `**` route | `not-found` file |
 | Route metadata | Per-route `meta` + opt-in cascade + inline merge | Route `meta`, `staticData` | Route `meta` fields | Route `info` | Route `data` + resolvers | `metadata` export |
 | Match chain / breadcrumbs | `route().crumbs` built-in | `useMatches()` | `route.matched` | `useCurrentMatches()` | `ActivatedRoute.pathFromRoot` | — |
 | Active-link helper | `route().active()` (ancestor, reactive) | `<Link activeOptions>` | `router-link-active` classes | `<A activeClass end>` | `routerLinkActive` | `usePathname` manual |

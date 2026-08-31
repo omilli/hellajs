@@ -73,7 +73,7 @@ export function updateRoute(
     }
 
     route(buildRouteInfo({
-      handler: notFoundValue,
+      handler: notFoundValue as Handler | null,
       params: EMPTY_OBJECT,
       query: EMPTY_OBJECT,
       path: currentPath,
@@ -81,7 +81,7 @@ export function updateRoute(
       crumbs: EMPTY_CRUMBS
     }));
 
-    notFoundValue && notFoundValue();
+    notFoundValue && notFoundValue(currentPath);
     handleScroll(currentPath, inlineScroll);
     return "matched";
   } finally {
