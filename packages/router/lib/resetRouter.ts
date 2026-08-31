@@ -12,6 +12,7 @@ import {
 import { route, activeFn } from "./route";
 import { resetListeners } from "./router";
 import { resetScrollStack } from "./internal/resolve";
+import { setMatchedChain } from "./internal/matched";
 
 /**
  * Factory-resets the router singleton to defaults and detaches all listeners.
@@ -38,4 +39,5 @@ export function resetRouter(): void {
   });
   resetListeners();
   resetScrollStack();
+  setMatchedChain(null);
 }

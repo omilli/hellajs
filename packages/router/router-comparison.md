@@ -116,11 +116,11 @@ Every router here integrates the History API behind its own abstraction layer, a
 
 - Solid opts out via `explicitLinks: true`, HellaJS via `intercept: false`.
 - **Vue Router** decouples history strategy into factory functions (web/hash/memory) and takes the deploy subpath as `createWebHistory(base)`; HellaJS folds both into config — one `mode` field with three values and a `base` field (history mode only) that keeps route patterns and `navigate()` targets base-free (`lib/types.d.ts`, `lib/router.ts`).
-- **Solid Router's** `useBeforeLeave` hook offers `preventDefault` and `retry(force?)` for unsaved-form flows; HellaJS's sync `before` covers cancel and redirect but has no retry-with-force analog (`lib/internal/matched.ts`).
+- **Solid Router's** `useBeforeLeave` hook offers `preventDefault` and `retry(force?)` for unsaved-form flows; HellaJS covers the same flow with route-level `leave` guards and the `navigate({ force: true })` override (`lib/internal/matched.ts`, `lib/navigate.ts`).
 - **Next.js** prefetches `<Link>` targets on viewport entry — link-granular prefetching none of the others match (TanStack and Solid preload via route hooks, not link visibility).
 - **TanStack** abstracts history behind `@tanstack/history` to support its own navigation lifecycles and streaming transitions.
 
-**Verdict:** HellaJS and Solid are the only routers here that intercept plain `<a>` clicks out of the box, and HellaJS's guard-aware `go()` means history and route state can never disagree. The gaps are link prefetching (Next.js only, at viewport granularity) and no `retry(force?)` flow for overrideable guards.
+**Verdict:** HellaJS and Solid are the only routers here that intercept plain `<a>` clicks out of the box, and HellaJS's guard-aware `go()` means history and route state can never disagree. The remaining gap is link prefetching (Next.js only, at viewport granularity).
 
 ---
 
@@ -128,9 +128,10 @@ Every router here integrates the History API behind its own abstraction layer, a
 
 ### HellaJS
 
-Guards run before the route signal is written — a cancelled navigation produces no observable route change, no handler execution, and no history commit (`lib/internal/matched.ts`). The execution order is strict: global `before` → parent `before` → child `before` (top-down) → `handler` → child `after` → parent `after` (bottom-up, LIFO) → global `after`, with each nested level's hooks receiving that level's cumulative inherited params (`lib/internal/matched.ts`).
+Guards run before the route signal is written — a cancelled navigation produces no observable route change, no handler execution, and no history commit (`lib/internal/matched.ts`). The execution order is strict: departing-route `leave` guards (global `leave` → child `leave` → parent `leave`) → global `before` → parent `before` → child `before` (top-down) → `handler` → child `after` → parent `after` (bottom-up, LIFO) → global `after`, with each nested level's hooks receiving that level's cumulative inherited params (`lib/internal/matched.ts`).
 
 - **Sync guards block with three verdicts:** `false` cancels, a non-empty string redirects via replace, a throw cancels and logs `[router] …`; `void`/`true`/anything else proceeds (`lib/internal/matched.ts`). The first non-pass verdict short-circuits the chain — a failing parent `before` means the child's never runs.
+- **Leave guards guard the departed route.** A module-level snapshot of the last committed match (root→leaf route values, recorded in `commitMatch`, cleared on notFound commits and `resetRouter`) backs `leave` guards: global `hooks.leave(to, from)` runs first, then the chain's `leave` hooks child→parent with the departed route's params/query, sharing the same verdict interpretation. `navigate({ force: true })` skips them, same-path navigation (query ignored) never fires them, and they never run on init/SSR — there is no chain until the first commit (`lib/internal/matched.ts`, `lib/navigate.ts`).
 - **Global hooks carry navigation context.** `hooks.before`/`after` receive `(to, from)` paths — `to` is the incoming path including its query string, `from` is the pre-commit source path — so redirect-to-login-with-`?next=<target>` guards and analytics read the destination directly (`lib/internal/matched.ts`, `lib/internal/hooks.ts`).
 - **Async `before` cannot block.** A returned `Promise` is treated as "proceed" with only its rejection `.catch`-logged, because `navigate()` is synchronous and cannot retroactively cancel (`lib/internal/matched.ts`). The documented pattern for async auth is an optimistic sync redirect plus handler-side revalidation (`docs/concepts/route-hooks.mdx`).
 - **Arity-based dispatch.** On param-less routes, `executeHook()` inspects `fn.length`: two-or-more parameters receives `(undefined, query)`, otherwise `(query)` — so the recommended full `(params, query)` signature receives query on every route shape (`lib/internal/hooks.ts`).
@@ -147,7 +148,7 @@ The framework routers treat guards as async-capable first-class citizens, with t
 - **Solid Router** has `useBeforeLeave` with `preventDefault()` and `retry(force?)`; its `preload` functions run on hover/navigate with an `intent` argument.
 - **Next.js** handles gates at the segment level (middleware, layout server checks), not through per-route hooks.
 
-**Verdict:** HellaJS ships real sync guards with atomic pre-commit semantics — cancel, redirect, URL restoration on popstate/hashchange cancels — matching the synchronous subset of Vue/Angular/TanStack. The asymmetry is async: a `Promise`-returning `before` cannot block, so server-validated navigation flows need handler-side revalidation or a router with an async pipeline.
+**Verdict:** HellaJS ships real sync guards with atomic pre-commit semantics — cancel, redirect, URL restoration on popstate/hashchange cancels, plus departing-route `leave` guards with a `force` override (Angular `CanDeactivate` / Vue `onBeforeRouteLeave` / Solid `useBeforeLeave` parity) — matching the synchronous subset of Vue/Angular/TanStack. The asymmetry is async: a `Promise`-returning `before` cannot block, so server-validated navigation flows need handler-side revalidation or a router with an async pipeline.
 
 ---
 
@@ -190,8 +191,9 @@ The competitors layer progressively more typing and data structure onto params a
 | Base path | Yes (`base` config, history mode) | Yes (`basepath`) | Yes (`createWebHistory(base)`) | Yes (`base`) | Yes (`APP_BASE_HREF`) | Yes (`basePath`) |
 | Programmatic navigation | `navigate()` | `navigate()` | `router.push/replace` | `useNavigate()` | `router.navigate` | `useRouter().push/replace` |
 | Anchor interception | Plain `<a>`, default-on | `<Link>` | `<RouterLink>` | Plain `<a>`, default-on | `RouterLink` | `<Link>` |
-| Global hooks | `hooks.before`/`after` (sync-blocking) | `beforeLoad` per route | `beforeEach`/`afterEach` | `useBeforeLeave` | Guards | Middleware |
-| Per-route guards | `before` (sync-blocking) | `beforeLoad` (blocking) | `beforeEnter` (blocking) | `useBeforeLeave` (blocking) | `CanActivate` etc. (blocking) | Layout/middleware checks |
+| Global hooks | `hooks.leave`/`before`/`after` (sync-blocking) | `beforeLoad` per route | `beforeEach`/`afterEach` | `useBeforeLeave` | Guards | Middleware |
+| Per-route guards | `before` incoming, `leave` departing (sync-blocking) | `beforeLoad` (blocking) | `beforeEnter` (blocking) | `useBeforeLeave` (blocking) | `CanActivate` etc. (blocking) | Layout/middleware checks |
+| Leave guards | `leave` (sync-blocking) + `navigate({ force })` override | No | `beforeRouteLeave` (blocking) | `useBeforeLeave` (blocking) | `CanDeactivate` (blocking) | No |
 | Async-blocking guards | No | Yes | Yes | Partial (leave only) | Yes | n/a (server-side) |
 | Loaders / data fetching | No (pair `@hellajs/resource`) | Yes (typed loaders, cache, prefetch) | Experimental (`pinia-colada`) | Yes (`preload`, `query`, `createAsync`) | Yes (resolvers, blocking) | Yes (Server Components) |
 | Redirects | String map + `redirects` array (pattern `from`, param substitution), 20-hop loop cap | `redirect()` helper | `redirect` on route/config | `throw redirect()` | `redirectTo`, `RedirectCommand` | `redirect()` server-side |
@@ -273,7 +275,7 @@ What sets HellaJS apart — and no single competitor matches all of:
 3. **Synchronous resolution end to end** — init and `navigate()` both return fully resolved, no pending state, with guard-aware history commits that never leave a stray entry (`lib/router.ts`, `lib/internal/resolve.ts`).
 4. **Server-runnable without a framework** — `router({ url })` resolves per request against the incoming URL, pairing with `@hellajs/ssr` and `hydrate` for isomorphic apps (`lib/router.ts`).
 5. **Compile-time param typing without codegen** — `ExtractParams<T>` infers param names from any string literal at zero runtime cost; TanStack and Next.js need generated files for the same guarantee (`lib/types.d.ts`).
-6. **Atomic pre-commit guards with URL restoration** — guards run before the signal write and history commit; cancelled popstate/hashchange restores the address bar via `replaceState` (`lib/internal/matched.ts`, `lib/router.ts`).
+6. **Atomic pre-commit guards — incoming `before` and departing `leave` — with URL restoration** — guards run before the signal write and history commit; cancelled popstate/hashchange restores the address bar via `replaceState`, and `navigate({ force: true })` overrides leave guards for unsaved-form flows (`lib/internal/matched.ts`, `lib/router.ts`).
 7. **Built-in match-chain ergonomics** — `crumbs` (linkable parent-to-leaf chain) and the shared `active()` ancestor predicate come off the route signal; competitors assemble these from `route.matched`/`useMatches`/`useCurrentMatches` by hand (`lib/internal/resolve.ts`, `lib/route.ts`).
 
 Its gaps: **no async-blocking guards** (a `Promise`-returning `before` proceeds; Vue/Angular/TanStack block on async), **no loaders, data cache, or prefetching** (pair `@hellajs/resource`; TanStack and Solid ship these), **no query-param schemas or regex matchers** (params and query stay string records, and optional params stay untyped `string | undefined` at the handler), **no route-level code-splitting primitives** (dom's `Lazy` is user-managed), a **single global router instance** — configuration is module-level singleton state, so concurrent streaming SSR relies on synchronous resolution rather than a router-per-request scope (documented in `docs/patterns/routing-ssr.mdx`) — and an **ecosystem** orders of magnitude behind Vue Router and Next.js. If you need async guards, typed search schemas, loaders, or link prefetching, TanStack Router or one of the framework routers is the better tool. If you want a tiny, framework-agnostic reactive router with default-on SPA links, sync guards, and SSR without a meta-framework, HellaJS is the leanest option here.

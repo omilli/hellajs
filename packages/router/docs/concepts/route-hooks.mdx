@@ -37,11 +37,12 @@ router({
 
 Hooks execute in cascade order for nested routes:
 
-1. Global `before` hooks
-2. Parent `before` → child `before` (top-down)
-3. Route `handler`
-4. Child `after` → parent `after` (bottom-up)
-5. Global `after` hooks
+1. Global `leave` hook, then child `leave` → parent `leave` (only when leaving a matched route)
+2. Global `before` hooks
+3. Parent `before` → child `before` (top-down)
+4. Route `handler`
+5. Child `after` → parent `after` (bottom-up)
+6. Global `after` hooks
 
 ### Global Hooks
 
@@ -206,6 +207,40 @@ router({
 ```
 
 If `requireAuth` returns `false`, the child's `before` never runs. If it passes but the admin check fails, navigation redirects.
+
+## Leave Guards
+
+`leave` hooks guard the route being *departed* — the unsaved-form flow every app needs. They run on every navigation away from a matched route (browser back/forward included), before any incoming `before` hook: the global `hooks.leave(to, from)` first, then the route chain's `leave` hooks child→parent. Verdicts share the `before` contract from the table above — `false` cancels, a non-empty string redirects, a throw cancels and logs, and a `Promise` cannot block.
+
+```jsx
+import { router, navigate } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const Editor = () => <div>Editor</div>;
+const Dashboard = () => <div>Dashboard</div>;
+const currentView = signal(<div>Loading…</div>);
+const dirty = signal(false);
+
+router({
+  routes: {
+    '/editor': {
+      leave: () => (dirty() ? false : undefined),
+      handler: () => currentView(<Editor />)
+    },
+    '/dashboard': () => currentView(<Dashboard />)
+  }
+});
+
+navigate('/editor');
+dirty(true);
+
+navigate('/dashboard'); // cancelled — unsaved changes, URL and route unchanged
+navigate('/dashboard', { force: true }); // override — leave guards skipped
+```
+
+[`navigate()`](/reference/router/navigate) accepts `{ force: true }` to skip leave guards — the override for a "discard changes?" confirmation. Force skips only leave guards; incoming `before` guards on the target still run, so target auth checks are never bypassable.
+
+Leave guards never fire on same-path navigation (a query-only change stays on the route), on the initial resolution, or when the current position came from a `notFound` landing. A cancelled back/forward restores the previous URL via `replaceState`, same as a cancelled `before`.
 
 ## Redirects
 

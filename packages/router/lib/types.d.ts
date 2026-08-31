@@ -89,6 +89,17 @@ export interface RouteWithHooks {
   before?: Handler;
   /** Hook executed after the main handler */
   after?: Handler;
+  /**
+   * Guard executed when navigating away from this route. Same verdict contract as
+   * `before`: sync return `false` cancels (no URL/signal/handler change), a non-empty
+   * `string` redirects (replace) to that path, any other return proceeds. Throwing cancels
+   * and logs `[router] leave:`. A returned `Promise` does NOT block — the navigation
+   * proceeds immediately and only a rejection is logged. Receives the departed route's
+   * params/query (arity-dispatched). Leave hooks run child→parent after the global `leave`
+   * hook on every navigation away from this route, including browser back/forward. Skipped
+   * by `navigate(path, { force: true })` and on same-path navigation (query ignored).
+   */
+  leave?: Handler;
   /** Arbitrary metadata attached to this route */
   meta?: Record<string, unknown>;
   /** Per-route override of the router's inheritMeta flag. True opts this route into the meta cascade; false opts out. */
@@ -130,6 +141,17 @@ export interface RouterConfig {
  */
 export interface GlobalHooks {
   /**
+   * Guard executed before every route change while leaving a matched route. Receives `to`
+   * (the incoming path, query included — same shape as `route().path`) and `from` (`route().path`
+   * pre-commit — the route being left). Same verdict contract as `before`: sync return `false`
+   * to cancel (no URL/signal/handler change); return a non-empty `string` to redirect (replace)
+   * to that path; any other return proceeds. Throwing cancels and logs `[router] Global leave:`.
+   * A returned `Promise` does NOT block — the navigation proceeds immediately and only a
+   * rejection is logged. Runs before route-level `leave` hooks (which then run child→parent);
+   * skipped by `navigate(path, { force: true })` and on same-path navigation (query ignored).
+   */
+  leave?: (to: string, from: string) => Promise<unknown> | unknown;
+  /**
    * Hook executed before every route change. Acts as a global guard. Receives `to` (the incoming
    * path, query included — same shape as `route().path`) and `from` (the pre-commit current path,
    * matching the route-level `before` rule that `route()` still holds the previous route). Sync
@@ -157,6 +179,8 @@ export interface NavigateOptions<T extends string = string> {
   query?: Params;
   /** Replace the current history entry instead of pushing a new one */
   replace?: boolean;
+  /** Skip leave guards on this navigation — the route being left does not run its `leave` hooks. Incoming `before` guards still run. */
+  force?: boolean;
   /** Scroll behavior override for this navigation */
   scroll?: ScrollBehavior | false;
   /** Arbitrary metadata attached to this navigation */

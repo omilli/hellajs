@@ -11,6 +11,7 @@ function navigate<T extends string>(
     params?: ExtractParams<T>;
     query?: Record<string, string>;
     replace?: boolean;
+    force?: boolean;
     scroll?: ScrollBehavior | false;
     meta?: Record<string, unknown>;
   }
@@ -111,6 +112,18 @@ navigate('/dashboard');
 
 // Replace - overwrites history entry, user cannot go back
 navigate('/login', { replace: true });
+```
+
+### force
+
+Skip leave guards on this navigation — the route being left does not run its `leave` hooks (nor the global `hooks.leave`). The override path for unsaved-form flows; incoming `before` guards on the target still run.
+
+```typescript
+// The editor's leave guard blocks while the form is dirty
+navigate('/dashboard'); // cancelled — route and URL unchanged
+
+// Override it — leave guards skipped, target guards still run
+navigate('/dashboard', { force: true });
 ```
 
 ### scroll
