@@ -14,10 +14,10 @@ A ground-up comparison based on the actual source code of `@hellajs/router` v2. 
 | Type safety | Template-literal `ExtractParams<T>`, no codegen | Generated route tree (full, codegen) | Typed routes via bundled codegen | Manual + `MatchFilters` | Manual | File-based `params`/`PageProps` (async) |
 | Compile step | None | `routeTree.gen.ts` codegen | Optional (codegen ships in-package) | None | Decorators / standalone | Required (Next.js build) |
 | Runtime deps | 0 (+ `@hellajs/core` peer) | 4 (+ react peers) | 17 (codegen toolchain in-package) | 0 (+ solid-js peer) | 1 (+ 4 Angular peers) | 6 (framework-bundled) |
-| API surface | 4 exports (`router`, `route`, `navigate`, `resetRouter`) | Large (router, Link, navigate, loaders, search schemas) | `createRouter`, `RouterView`, `RouterLink`, composables | `<Router>`, `<Route>`, `<A>`, `useX` primitives | `provideRouter`, `RouterOutlet`, `RouterLink`, guards | File conventions + `<Link>` + `useRouter` |
+| API surface | 5 exports (`router`, `route`, `navigate`, `href`, `resetRouter`) | Large (router, Link, navigate, loaders, search schemas) | `createRouter`, `RouterView`, `RouterLink`, composables | `<Router>`, `<Route>`, `<A>`, `useX` primitives | `provideRouter`, `RouterOutlet`, `RouterLink`, guards | File conventions + `<Link>` + `useRouter` |
 | Anchor interception | Plain `<a>`, default-on (`intercept: false` opts out) | `<Link>` | `<RouterLink>` | Plain `<a>`, default-on (`explicitLinks` opts out) | `RouterLink` | `<Link>` (prefetch + client nav) |
 
-HellaJS is the minimalist here: a standalone signal-driven router with four exports, one resolution algorithm, and no framework entanglement. TanStack and Next.js push toward full-stack type-safe contracts; Vue, Solid, and Angular are coupled to their component trees. HellaJS sits closest architecturally to Solid Router — both are signal-based and intercept plain anchors by default — but HellaJS exposes the entire route state as one reactive signal, keeps resolution synchronous end to end, and runs server-side via a `url` option rather than a framework SSR stack.
+HellaJS is the minimalist here: a standalone signal-driven router with five exports, one resolution algorithm, and no framework entanglement. TanStack and Next.js push toward full-stack type-safe contracts; Vue, Solid, and Angular are coupled to their component trees. HellaJS sits closest architecturally to Solid Router — both are signal-based and intercept plain anchors by default — but HellaJS exposes the entire route state as one reactive signal, keeps resolution synchronous end to end, and runs server-side via a `url` option rather than a framework SSR stack.
 
 ---
 
@@ -206,7 +206,7 @@ The competitors layer progressively more typing and data structure onto params a
 
 ### Notable HellaJS differentiators
 
-- **Four exports, period** — `router`, `route`, `navigate`, `resetRouter` (`lib/index.ts`). No link component, no outlet, no `useX` hooks, no provider, no DI.
+- **Five exports, period** — `router`, `route`, `navigate`, `href`, `resetRouter` (`lib/index.ts`). No link component, no outlet, no `useX` hooks, no provider, no DI.
 - **Single reactive route signal** — `route()` exposes handler, params, query, path, meta, crumbs, and the shared `active` predicate in one object (`lib/route.ts`). No `useParams` + `useLocation` + `useMatch` decomposition.
 - **Atomic route commits** — every navigation path (`navigate`, `popstate`, `hashchange`, init) funnels through one `route()` write inside `commitMatch`, so path/params/query/handler/meta/crumbs always describe the same match (`lib/internal/resolve.ts`).
 - **Sync init + server `url` mode** — `router()` returns the resolved `RouteInfo`, and `router({ url })` re-resolves per call for request-scoped SSR with no `window` (`lib/router.ts`).
@@ -258,17 +258,17 @@ navigate("/users/:id", {
 });
 ```
 
-The API is a configuration object plus three functions, not a component tree. Vue and Angular also use config objects but require a render outlet (`<RouterView>` / `<router-outlet>`); HellaJS handlers are plain functions that typically write to a signal the consumer owns. Solid and TanStack lean on JSX and context-bound primitives (`useNavigate`, `useParams`, `useMatch`) — familiar, but more API to learn and unusable outside their framework. Next.js removes configuration entirely (the file system is the config) at the cost of the framework's build pipeline. Active links and breadcrumbs read straight off `route()` — `route().active("/dashboard")` and `route().crumbs.map(c => c.path)` — where Solid needs `<A>`/`useCurrentMatches`, Vue needs `RouterLink` classes/`route.matched`, and TanStack needs `activeOptions`/`useMatches`.
+The API is a configuration object plus four functions, not a component tree. Vue and Angular also use config objects but require a render outlet (`<RouterView>` / `<router-outlet>`); HellaJS handlers are plain functions that typically write to a signal the consumer owns. Solid and TanStack lean on JSX and context-bound primitives (`useNavigate`, `useParams`, `useMatch`) — familiar, but more API to learn and unusable outside their framework. Next.js removes configuration entirely (the file system is the config) at the cost of the framework's build pipeline. Active links and breadcrumbs read straight off `route()` — `route().active("/dashboard")` and `route().crumbs.map(c => c.path)` — where Solid needs `<A>`/`useCurrentMatches`, Vue needs `RouterLink` classes/`route.matched`, and TanStack needs `activeOptions`/`useMatches`.
 
 ---
 
 ## Bottom Line
 
-Architecturally, HellaJS router is the minimalist of this group: a signal-driven config-object router with a five-phase resolution pipeline, nested param inheritance, a complete sync hook lifecycle, and built-in match-chain introspection — four exports, zero runtime dependencies, no build step. It belongs in the client-side reactive-router camp alongside Solid Router, with Vue Router as the mature elder sibling and TanStack/Angular as the maximalist alternatives; Next.js is a different paradigm and not directly comparable on mechanism.
+Architecturally, HellaJS router is the minimalist of this group: a signal-driven config-object router with a five-phase resolution pipeline, nested param inheritance, a complete sync hook lifecycle, and built-in match-chain introspection — five exports, zero runtime dependencies, no build step. It belongs in the client-side reactive-router camp alongside Solid Router, with Vue Router as the mature elder sibling and TanStack/Angular as the maximalist alternatives; Next.js is a different paradigm and not directly comparable on mechanism.
 
 What sets HellaJS apart — and no single competitor matches all of:
 
-1. **Routing as one reactive signal, four exports total** — `route()` carries the entire match (handler, params, query, meta, crumbs, `active`) with no provider, outlet, hooks, or DI; usable outside any UI framework (`lib/route.ts`, `lib/index.ts`).
+1. **Routing as one reactive signal, five exports total** — `route()` carries the entire match (handler, params, query, meta, crumbs, `active`) with no provider, outlet, hooks, or DI; usable outside any UI framework (`lib/route.ts`, `lib/index.ts`).
 2. **Zero runtime dependencies, one reactivity peer** — the only router here whose sole dependency is a signals package rather than a framework (`package.json`).
 3. **Synchronous resolution end to end** — init and `navigate()` both return fully resolved, no pending state, with guard-aware history commits that never leave a stray entry (`lib/router.ts`, `lib/internal/resolve.ts`).
 4. **Server-runnable without a framework** — `router({ url })` resolves per request against the incoming URL, pairing with `@hellajs/ssr` and `hydrate` for isomorphic apps (`lib/router.ts`).

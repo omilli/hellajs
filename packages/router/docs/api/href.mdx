@@ -1,0 +1,97 @@
+# href
+
+Builds a typed, URL-encoded URL string from a route pattern — the same substitution and query serialization as `navigate`, without touching history.
+
+## API
+
+```typescript
+function href<T extends string>(
+  path: T,
+  options?: {
+    params?: ExtractParams<T>;
+    query?: Record<string, string>;
+  }
+): string
+```
+
+- `path`: The route pattern to build a URL from.
+- `options.params`: Parameters substituted into `:param` tokens. Type-checked against the pattern — a wrong key is a compile error.
+- `options.query`: Query parameters appended to the URL.
+- **Returns**: The built URL string.
+
+## Basic Usage
+
+Same-origin `<a>` clicks are intercepted and routed through [`navigate`](/reference/router/navigate) by default, so `href()` paired with a plain anchor is the primary navigation path — no click handler, no hand-written template strings.
+
+```js
+import { html } from '@hellajs/dom';
+import { href } from '@hellajs/router';
+
+const Nav = (user) =>
+  html`<a href=${href("/users/:id", { params: { id: user.id }, query: { tab: "overview" } })}>Profile</a>`;
+```
+
+It also works as a plain string builder anywhere a URL is needed:
+
+```typescript
+import { href } from '@hellajs/router';
+
+href('/users/:id', { params: { id: '123' }, query: { tab: 'overview' } });
+// '/users/123?tab=overview'
+
+href('/search', { query: { q: 'hello world' } });
+// '/search?q=hello%20world'
+```
+
+## Key Concepts
+
+### Typed Params
+
+Param names are inferred from the pattern via `ExtractParams<T>` — the same typing as [`navigate`](/reference/router/navigate). A wrong key fails at compile time; no codegen, no route-tree build step.
+
+```typescript
+// ❌ Compile error — the pattern declares `id`, not `userId`
+href('/users/:id', { params: { userId: '123' } });
+
+// ✅ Param names must match the pattern
+href('/users/:id', { params: { id: '123' } });
+```
+
+### Substitution Semantics
+
+Identical to [`navigate`](/reference/router/navigate) — both call the same builder:
+
+- `:param` values are **URL-encoded automatically** (`'hello world'` → `hello%20world`)
+- `"*"` wildcard values are inserted **raw** — they may contain `/`
+- Unmatched `:param` tokens are **stripped** from the result
+- Query keys and values are **encoded**, with `?` only appearing when the query is non-empty
+
+```typescript
+href('/search/:term', { params: { term: 'hello world & more!' } });
+// '/search/hello%20world%20%26%20more!'
+
+href('/files/*', { params: { '*': 'docs/readme.md' } });
+// '/files/docs/readme.md'
+
+href('/users/:id'); // '/users/'
+```
+
+## Important Considerations
+
+### Base Path
+
+`href()` returns **logical** paths — the same targets [`navigate`](/reference/router/navigate) accepts. In history mode with a `base` configured, a physical anchor `href` carries the base prefix (middle-click and hard reload hit the server):
+
+```typescript
+// router({ base: '/app', ... })
+html`<a href=${'/app' + href('/users/:id', { params: { id: user.id } })}>Profile</a>`;
+```
+
+### Input Validation
+
+`href()` throws if `path` is `null`, `undefined`, or not a string, following the same shape as `navigate`: `[router] href: path must be a string, received <value>`.
+
+```typescript
+// ❌ Throws
+href(null); // [router] href: path must be a string, received null
+```

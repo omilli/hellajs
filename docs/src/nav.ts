@@ -73,7 +73,7 @@ export const navigation = {
     },
     { css: ["css", "cssVars", "removeCss", "resetCss", "removeCssVars", "resetCssVars"] },
     { store: ["store"] },
-    { router: ["router", "route", "navigate", "resetrouter"] },
+    { router: ["router", "route", "navigate", "href", "resetrouter"] },
     { resource: ["resource", "resourcecache", "resetresource"] },
     { ssr: ["ssr", "doc"] },
   ],
