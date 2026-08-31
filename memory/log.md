@@ -3,6 +3,8 @@
 ## 2026-08-31
 * **Creation**: Added concept [065](entries/065.md) (type: decision).
 * **Creation**: Added concept [066](entries/066.md) (type: decision).
+* **Creation**: Added concept [067](entries/067.md) (type: decision) — template-literal `infer` slots cross `/` boundaries; pattern-grammar token typing recurses per segment.
+* **Creation**: Added concept [068](entries/068.md) (type: decision).
 
 ## 2026-08-30
 * **Creation**: Added concept [057](entries/057.md) (type: decision).
@@ -121,6 +123,3 @@
 ## 2026-06-29
 * **Creation**: Added concept [001](entries/001.md) (type: decision).
 * **Update**: Recorded esbuild external-import dedup fact; deleted delete-core-shim plan, updated fold-error-into-dispatch with docs evidence
-
-## 2026-08-31
-* **Creation**: Added concept [067](entries/067.md) (type: decision) — template-literal `infer` slots cross `/` boundaries; pattern-grammar token typing recurses per segment.

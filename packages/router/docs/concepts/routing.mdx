@@ -378,7 +378,15 @@ router({
 navigate('/long-page', { scroll: 'top' });
 ```
 
-Custom scroll functions receive `(to, from)` paths and return `{ top, left? }` or `null` to skip.
+Custom scroll functions receive `(to, from, savedPosition)` and return `{ top, left? }` or `null` to skip. `savedPosition` is the scroll position captured when the returned-to page was last left — non-null only on browser back/forward, `null` on pushes and replaces.
+
+```typescript
+// Top on push, restore on back/forward (the Vue Router default policy)
+router({
+  scrollBehavior: (to, from, savedPosition) => savedPosition ?? { top: 0 },
+  routes: { /* ... */ }
+});
+```
 
 **Scroll priority:** Inline `navigate()` > Route-level `scroll` > Global `scrollBehavior`
 

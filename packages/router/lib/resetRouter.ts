@@ -11,6 +11,7 @@ import {
 } from "./internal/state";
 import { route, activeFn } from "./route";
 import { resetListeners } from "./router";
+import { resetScrollStack } from "./internal/resolve";
 
 /**
  * Factory-resets the router singleton to defaults and detaches all listeners.
@@ -36,4 +37,5 @@ export function resetRouter(): void {
     active: activeFn
   });
   resetListeners();
+  resetScrollStack();
 }

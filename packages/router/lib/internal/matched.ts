@@ -11,11 +11,16 @@ import type { RouteMatch } from "./match";
  * @param toPath The path navigated to
  * @param inlineScroll Optional inline scroll behavior (highest priority)
  * @param routeScroll Optional route-level scroll behavior
+ * @param isPop True when the navigation came from browser back/forward (popstate/hashchange)
+ * @param savedPosition Scroll position captured when the returned-to page was last left;
+ * null on pushes and replaces. Passed to custom fns only when `isPop` is true.
  */
 export function handleScroll(
   toPath: string,
   inlineScroll?: ScrollBehavior | false,
-  routeScroll?: ScrollBehavior | false
+  routeScroll?: ScrollBehavior | false,
+  isPop?: boolean,
+  savedPosition?: { top: number; left: number } | null
 ): void {
   const fromPath = previousPath();
 
@@ -49,7 +54,7 @@ export function handleScroll(
   if (behavior === "top") {
     scrollPos = { top: 0, left: 0 };
   } else if (isFunction(behavior)) {
-    scrollPos = behavior(toPath, fromPath);
+    scrollPos = behavior(toPath, fromPath, isPop ? savedPosition ?? null : null);
   }
 
   if (scrollPos && hasWindow()) {
