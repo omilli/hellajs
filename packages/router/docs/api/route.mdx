@@ -12,6 +12,7 @@ interface RouteInfo {
   params: Record<string, string>;
   query: Record<string, string>;
   path: string;
+  pending: boolean;
   meta?: Record<string, unknown>;
   crumbs: ReadonlyArray<Crumb>;
   active: (pattern: string) => boolean;
@@ -78,6 +79,30 @@ const nested = route();
 // nested.params: { id: "123" } (inherited from parent route)
 // nested.query: {}
 ```
+
+### Pending State
+
+`pending` is `true` while an async guard (a `Promise`-returning `before`/`leave`) defers a navigation commit. During the wait the signal keeps the previous match — `path`, `params`, `handler` all still describe the current route — and flips back to `false` when the navigation commits, cancels, or is superseded by a newer one. Always `false` on the server, where async guards proceed without blocking.
+
+```typescript
+import { router, route, navigate } from '@hellajs/router';
+
+router({
+  routes: {
+    '/dashboard': {
+      before: async () => (await fetch('/api/session')).ok ? true : '/login',
+      handler: () => {}
+    },
+    '/login': () => {}
+  }
+});
+
+navigate('/dashboard');
+route().pending;  // true — the previous match is still current
+route().path;    // the path being left, until the guard settles
+```
+
+Use it to render a loading state for the incoming navigation without committing to it.
 
 ### Route Metadata
 

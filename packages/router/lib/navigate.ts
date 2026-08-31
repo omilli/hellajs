@@ -5,6 +5,8 @@ import type { NavigateOptions, Params } from "./types";
 
 /**
  * Programmatically navigates to a new route with parameter substitution and query string handling.
+ * Navigation may complete asynchronously when an async guard is involved — a Promise-returning
+ * `before`/`leave` defers the commit with `route().pending === true` until it settles.
  * @template T The route path pattern.
  * @param path The route pattern to navigate to.
  * @param options Navigation options including params, query, replace, scroll, meta, and force.

@@ -111,23 +111,27 @@ router({
 });
 ```
 
-Async guards cannot block — guard the handler too:
+Async guards block — return the verdict from the guard itself:
 
 ```jsx
 router({
   routes: {
     '/dashboard': {
       before: async () => {
-        if (!user()) await navigate('/login');
+        if (!user()) {
+          const res = await fetch('/api/check-session');
+          return res.ok ? undefined : '/login';
+        }
       },
       handler: () => {
-        if (!user()) return;
         currentView(<Dashboard user={user()} />);
       }
     }
   }
 });
 ```
+
+While the guard is in flight, [`route`](/reference/router/route)`().pending` is `true` and the current match stays committed — use it to render a loading state. No handler-side revalidation is needed: the handler runs only after the guard settles.
 
 ### Nested Routes
 

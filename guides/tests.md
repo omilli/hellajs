@@ -51,7 +51,7 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 - Never mock reactive primitives — use real ones.
 - Never repeat a helper across files — extract.
 - Never `await flush()` — synchronous, returns `void`. Use bare `flush()`.
-- Never use the double-delay (`await delay(); await delay()`). Use `await delay()`.
+- Never use the double-delay (`await delay(); await delay()`). Use `await delay(0)` (macrotask) instead.
 - Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — use `mock()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. The only exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — use `mock()`.
 - Never assert generated output (CSS text, HTML strings, serialized forms) by substring alone when the artifact's **structure** is the contract — `toContain` passes inside structurally invalid output (`@font-face{{font-family:…}}` satisfied substring asserts while browsers parsed it to an empty rule). Every generated shape gets at least one exact-form `toBe` assert.
 
@@ -164,11 +164,12 @@ Any test that reassigns a global (`window.scrollTo = ...`, `global.window = {...
 
 - Mark `async` only when it `await`s.
 - Structure: **act → await → assert**.
-- Use `delay()` (no args) to flush the microtask queue — equivalent to `await Promise.resolve()`.
+- Use `delay()` (no args) to drain one microtask hop — equivalent to `await Promise.resolve()`. This is sufficient when exactly one microtask-bound continuation needs to settle (e.g. `signal.set(x)` → one effect callback). It is **NOT** sufficient for multi-hop chains (see below).
+- Use `await delay(0)` (setTimeout 0) to cross a macrotask boundary — drains the entire pending microtask queue. Use when a multi-hop promise chain (`.then().catch()`), an async generator yield (the generator resumes on a separate microtask from each `yield`), or GC setup needs a full queue flush. This is the sanctioned alternative to the banned double-`delay()`.
 - Use `await delay(N)` for a real-time wait of N ms (e.g. transition leave timer: `await delay(160); // duration(100) + safety buffer(50) + frame slack`).
 - Use `await delay(val, ms)` to resolve a value after ms (mocking async APIs).
 - Use a polling loop with `await delay(10)` for conditions where timing isn't contractually fixed: `for (let i = 0; i < 100; i++) { if (condition) break; await delay(10); }`.
-- Never double-delay — `delay()` for a single microtask flush.
+- Never double-delay — use `delay(0)` instead of `await delay(); await delay()`.
 
 ### Package-Exported Testing Utilities
 
@@ -273,7 +274,7 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test`
 - [ ] No `any` (`unknown` only)
 - [ ] No `it()` or `test.skip()`
-- [ ] No bare `await delay()` used as double-delay — single `delay()` for microtask flush
+- [ ] No bare `await delay()` used as double-delay — use `delay(0)` (macrotask) for multi-hop chains
 - [ ] No boolean-flag or pure-integer call counters — `mock()` (exception: counter with observable side effects)
 - [ ] No substring-only asserts on generated output whose structure is the contract — at least one exact-form `toBe` per generated shape
 - [ ] No helper duplicated across files — extracted to `tests/helpers.ts`

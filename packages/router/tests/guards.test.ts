@@ -131,7 +131,7 @@ describe("router", () => {
       expectLoggedError(sup, "[router] hook:", "nope");
     });
 
-    test("before returning a Promise proceeds without blocking", async () => {
+    test("before returning a rejected Promise defers then cancels and logs", async () => {
       const handler = mock(() => {});
       router({
         routes: {
@@ -144,8 +144,11 @@ describe("router", () => {
 
       navigate("/x");
 
-      expect(handler).toHaveBeenCalledTimes(1);
-      await delay();
+      expect(handler).not.toHaveBeenCalled();
+      expect(route().pending).toBe(true);
+      await delay(0);
+      expect(handler).not.toHaveBeenCalled();
+      expect(route().pending).toBe(false);
       expectLoggedError(sup, "[router] hook:", "async nope");
     });
 

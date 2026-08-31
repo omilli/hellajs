@@ -206,7 +206,7 @@ describe("hooks", () => {
     ]);
   });
 
-  test("handles async hooks without blocking", async () => {
+  test("defers the handler until an async before resolves", async () => {
     const done = mock();
 
     router({
@@ -222,11 +222,12 @@ describe("hooks", () => {
     });
 
     navigate("/test");
-    expect(container.textContent).toBe("test");
+    expect(container.textContent).toBe("");
     expect(done).toHaveBeenCalledTimes(0);
 
     await delay(20);
     expect(done).toHaveBeenCalled();
+    expect(container.textContent).toBe("test");
   });
 
   test("supports mixed sync and async hooks", async () => {

@@ -156,25 +156,59 @@ export function extractRouteHooks(routeValue: unknown): { before: Handler | null
 }
 
 /**
- * Result of evaluating a guard chain.
+ * Sync resolution of a single guard's return value: `false` cancels, a non-empty
+ * string redirects, anything else proceeds.
  * @internal
  */
-export type GuardVerdict =
+type GuardResolution =
   | "pass"
   | "cancel"
   | { redirect: string };
 
 /**
- * Interprets a single guard's return value into a verdict. A `Promise` return does NOT block
- * (sync-only pipeline) — navigation proceeds and only a rejection is logged.
+ * Result of evaluating a guard chain. On the client, a `Promise`-returning guard defers
+ * the navigation — `deferred` resolves to that guard's interpreted verdict (rejection
+ * resolves to `"cancel"` after logging).
+ * @internal
+ */
+export type GuardVerdict =
+  | GuardResolution
+  | { deferred: Promise<GuardResolution> };
+
+/**
+ * Interprets a single guard's return value into a verdict. On the client a `Promise` return
+ * BLOCKS — the navigation defers and the wrapped resolution is interpreted as the verdict
+ * (`false` cancels, non-empty string redirects, else proceeds; rejection cancels + logs).
+ * With no window (SSR `url` mode) a `Promise` does NOT block — the pipeline must stay
+ * synchronous, so navigation proceeds and only a rejection is logged.
  * @param result The guard's returned value.
  * @param errorPrefix Prefix for rejection logging.
  */
 function interpretGuardResult(result: unknown, errorPrefix: string): GuardVerdict {
   if (result instanceof Promise) {
-    result.catch((error) => console.error(`[router] ${errorPrefix}:`, error));
-    return "pass";
+    if (!hasWindow()) {
+      result.catch((error) => console.error(`[router] ${errorPrefix}:`, error));
+      return "pass";
+    }
+    return {
+      deferred: result.then(
+        (value: unknown) => interpretSyncResult(value),
+        (error: unknown) => {
+          console.error(`[router] ${errorPrefix}:`, error);
+          return "cancel";
+        }
+      )
+    };
   }
+  return interpretSyncResult(result);
+}
+
+/**
+ * Interprets a non-Promise guard return: `false` cancels, a non-empty string redirects,
+ * anything else proceeds.
+ * @param result The guard's synchronous (or awaited) return value.
+ */
+function interpretSyncResult(result: unknown): GuardResolution {
   if (result === false) {
     return "cancel";
   }
@@ -243,8 +277,9 @@ function runGlobalBefore(toPath: string): GuardVerdict {
  * (receiving `(to, from)` paths), then the last matched chain's `leave` hooks
  * child→parent (teardown order, mirroring `after`) with the departed route's
  * params/query. Shares the guard verdict contract — `false` cancels, a non-empty
- * string redirects (replace), a throw cancels and logs, a `Promise` proceeds with
- * only its rejection logged. No-op when `force` is set (`navigate({ force: true })`
+ * string redirects (replace), a throw cancels and logs, and on the client a `Promise`
+ * defers the navigation (its resolution is the verdict; on the server it proceeds
+ * with only its rejection logged). No-op when `force` is set (`navigate({ force: true })`
  * override), when no chain is recorded (init/SSR/notFound/reset), or when the
  * target equals the current path (query ignored) — same-path navigation leaves
  * nothing.

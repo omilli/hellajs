@@ -9,16 +9,34 @@ import { EMPTY_OBJECT, EMPTY_CRUMBS, hasChildren, sortRoutesBySpecificity } from
 import type { RouteValue, Crumb, ScrollBehavior, Handler, Params, RouteInfo } from "../types";
 
 /**
- * Resolution verdict propagated up from `tryMatchRoute`/`updateRoute` to `go` and the popstate handler.
- * `"matched"` commits the navigation (signal written, history updated); `"cancelled"` means a guard
- * blocked (no signal write, no history change from this call); `"redirected"` means a guard or
- * redirect rule issued a nested `go` that handled history itself.
+ * Resolution verdict propagated up from `tryMatchRoute`/`updateRoute` to `go` and the popstate
+ * handler. `"matched"` commits the navigation (signal written, history updated); `"cancelled"`
+ * means a guard blocked (no signal write, no history change from this call); `"redirected"` means
+ * a guard or redirect rule issued a nested `go` that handled history itself (possibly through a
+ * deferral); `"deferred"` means an async guard is holding the commit — the continuation owns the
+ * signal write, history, and the `pending` flag from here.
  */
-type RouteVerdict = "matched" | "cancelled" | "redirected";
+type RouteVerdict = "matched" | "cancelled" | "redirected" | "deferred";
 
 /** Caps synchronous re-entrant resolutions so cyclic redirect/guard configs cancel instead of overflowing the stack. */
 const MAX_REDIRECT_HOPS = 20;
 let resolveDepth = 0;
+
+/**
+ * Bumped at every `updateRoute` entry. A deferred continuation whose captured epoch no longer
+ * matches abandons — a newer navigation owns the URL and the `pending` flag.
+ */
+let navEpoch = 0;
+
+/** Deferred redirect hops since the last terminal commit/cancel — the sync `resolveDepth` counter cannot see across awaits. */
+let asyncHops = 0;
+
+/**
+ * History-commit closure of the `go` call currently resolving. A deferred pipeline captures it
+ * for the continuation (the awaited pass commits history); every other verdict clears it.
+ * Popstate/hashchange entries never set it — the browser already committed.
+ */
+let pendingHistoryCommit: (() => void) | null = null;
 
 /**
  * Scroll positions saved at each committed push navigation (`go` pushState), popped on
@@ -45,6 +63,41 @@ export function resetScrollStack(): void {
 }
 
 /**
+ * Kills in-flight deferred navigations (the epoch bump abandons their continuations) and
+ * resets the async redirect-hop counter. Called by `resetRouter()`.
+ * @internal
+ */
+export function resetAsyncNavigation(): void {
+  navEpoch++;
+  asyncHops = 0;
+  pendingHistoryCommit = null;
+}
+
+/**
+ * Clears a stale `pending` flag after a terminal cancellation — a superseded deferral may
+ * have left it set. No signal write unless a deferral is actually in flight.
+ */
+function clearPending(): void {
+  if (route().pending) {
+    route({ ...route(), pending: false });
+  }
+}
+
+/**
+ * Restores the URL after a deferred popstate/hashchange navigation cancels — the browser
+ * already moved the address bar, so the continuation replace-states back to the from-path
+ * captured at deferral time. Mirrors the synchronous restore in `router.ts` handlers.
+ * @param isPop True when the deferred navigation came from browser back/forward.
+ * @param fromPath The pre-navigation path (query included), captured at deferral time.
+ */
+function restorePopUrl(isPop: boolean | undefined, fromPath: string): void {
+  if (!isPop || !hasWindow()) {
+    return;
+  }
+  window.history.replaceState(null, "", mode() === "hash" ? `#${fromPath}` : base() + fromPath);
+}
+
+/**
  * Constructs RouteInfo with the shared active-link predicate attached.
  * @param base Route fields excluding active.
  * @returns Complete RouteInfo with the active predicate.
@@ -57,7 +110,7 @@ function buildRouteInfo(base: {
   meta?: Record<string, unknown>;
   crumbs: ReadonlyArray<Crumb>;
 }): RouteInfo {
-  return { ...base, active: activeFn };
+  return { ...base, pending: false, active: activeFn };
 }
 
 /**
@@ -69,7 +122,8 @@ function buildRouteInfo(base: {
  * @param isPop True when triggered by browser back/forward (popstate/hashchange) — pops the
  * saved-position stack so custom scroll fns receive a `savedPosition`.
  * @param force True to skip leave guards (`navigate({ force: true })`) — incoming guards still run.
- * @returns The resolution verdict: `"matched"`, `"cancelled"` (a guard blocked), or `"redirected".
+ * @returns The resolution verdict: `"matched"`, `"cancelled"` (a guard blocked), `"redirected",
+ * or `"deferred"` (an async guard holds the commit — the continuation owns the rest).
  */
 export function updateRoute(
   nextPath?: string,
@@ -78,8 +132,11 @@ export function updateRoute(
   isPop?: boolean,
   force?: boolean
 ): RouteVerdict {
+  navEpoch++;
   if (resolveDepth >= MAX_REDIRECT_HOPS) {
     console.error("[router] redirect loop detected:", new Error(`exceeded ${MAX_REDIRECT_HOPS} hops resolving ${nextPath ?? route().path}`));
+    clearPending();
+    asyncHops = 0;
     return "cancelled";
   }
   resolveDepth++;
@@ -112,6 +169,7 @@ export function updateRoute(
       crumbs: EMPTY_CRUMBS
     }));
 
+    asyncHops = 0;
     notFoundValue && notFoundValue(currentPath);
     handleScroll(currentPath, inlineScroll, undefined, isPop, takeSavedScroll(isPop));
     return "matched";
@@ -123,7 +181,9 @@ export function updateRoute(
 /**
  * Resolves a URL through the route pipeline and, only on a committed match (guards passed),
  * updates the browser history. A cancelled guard produces no history change; a redirect's nested
- * `go` already updated history, so the outer call skips. Memory mode performs no history commit.
+ * `go` already updated history, so the outer call skips. A deferred navigation (async guard)
+ * leaves history to the continuation, which commits only on the awaited `"matched"` verdict.
+ * Memory mode performs no history commit.
  * @internal
  * @param to The URL to navigate to.
  * @param options Navigation options including replace, scroll, meta, and force.
@@ -146,13 +206,26 @@ export function go(
   // the `savedPosition` a later pop restores.
   const capturedScroll = hasWindow() ? { top: window.scrollY, left: window.scrollX } : null;
 
+  // The commit runs only on a "matched" verdict — synchronously below, or from the
+  // deferred continuation (which captures this closure) after an async guard passes.
+  const historyCommit = () => {
+    if (hasWindow() && routerMode !== "memory") {
+      window.history[action](null, "", finalTo);
+      if (!replace && capturedScroll) {
+        scrollStack.push(capturedScroll);
+      }
+    }
+  };
+
+  pendingHistoryCommit = historyCommit;
   const verdict = updateRoute(to, scroll, meta, undefined, force);
 
-  if (verdict === "matched" && hasWindow() && routerMode !== "memory") {
-    window.history[action](null, "", finalTo);
-    if (!replace && capturedScroll) {
-      scrollStack.push(capturedScroll);
-    }
+  if (verdict === "deferred") {
+    return; // the deferral consumed the closure — its continuation owns history
+  }
+  pendingHistoryCommit = null;
+  if (verdict === "matched") {
+    historyCommit();
   }
 }
 
@@ -167,8 +240,13 @@ function mergeRouteMeta(inlineMeta: Record<string, unknown> | undefined, routeMe
 }
 
 /**
- * Shared post-match pipeline for both matching phases: maps the guard verdict (cancel/redirect)
- * and, only on a pass, commits the match — route signal write, handler + after-hooks, scroll.
+ * Shared post-match pipeline for both matching phases: maps the guard verdict (cancel/redirect/
+ * deferred) and, only on a pass, commits the match — route signal write, handler + after-hooks,
+ * scroll. A deferred verdict attaches the continuation: it writes `pending: true` (the one
+ * documented non-commit `route()` write — match fields preserved via spread), then interprets
+ * the awaited resolution — `false` cancels (restoring the URL on a deferred pop), a string
+ * redirect chains via `go` (hop-capped), a pass commits through this same function plus the
+ * captured history commit. Both sync and deferred passes funnel through the commit below.
  * @param guardVerdict Verdict from the phase's guard chain.
  * @param handler Extracted handler (or null).
  * @param params Matched parameters.
@@ -198,13 +276,54 @@ function commitMatch(
   isPop?: boolean
 ): RouteVerdict {
   if (guardVerdict === "cancel") {
+    clearPending();
+    asyncHops = 0;
     return "cancelled";
   }
   if (guardVerdict !== "pass") {
+    if ("deferred" in guardVerdict) {
+      // Fast-path deferral: the first Promise-returning guard defers the commit. The
+      // epoch check makes double-navigate races safe — the first continuation abandons
+      // silently; the superseding navigation's own terminal state owns the final clear.
+      const epoch = navEpoch;
+      const historyCommit = pendingHistoryCommit;
+      const fromPath = route().path;
+      pendingHistoryCommit = null;
+      if (!route().pending) {
+        route({ ...route(), pending: true });
+      }
+      guardVerdict.deferred.then((resolved) => {
+        if (epoch !== navEpoch) {
+          return; // superseded — a newer navigation owns the URL and the pending flag
+        }
+        if (resolved === "cancel") {
+          clearPending();
+          restorePopUrl(isPop, fromPath);
+          asyncHops = 0;
+          return;
+        }
+        if (resolved !== "pass") {
+          asyncHops++;
+          if (asyncHops > MAX_REDIRECT_HOPS) {
+            console.error("[router] async redirect loop detected:", new Error(`exceeded ${MAX_REDIRECT_HOPS} async redirect hops resolving ${currentPath}`));
+            clearPending();
+            restorePopUrl(isPop, fromPath);
+            asyncHops = 0;
+            return;
+          }
+          go(resolved.redirect, { replace: true });
+          return;
+        }
+        commitMatch("pass", handler, params, query, meta, crumbs, currentPath, inlineScroll, routeScroll, routeValue, nestedMatches, isPop);
+        historyCommit?.();
+      });
+      return "deferred";
+    }
     go(guardVerdict.redirect, { replace: true });
     return "redirected";
   }
 
+  asyncHops = 0;
   const fromPath = route().path;
   route(buildRouteInfo({
     handler,

@@ -109,7 +109,7 @@ See the [`router`](/reference/router/router) reference for all hook configuratio
 | `false` | Cancel — navigation is blocked, URL stays unchanged |
 | `string` | Redirect — navigates to the returned path |
 | `throw` | Cancel — navigation is blocked, error logged |
-| `Promise` | Cannot block — treated as proceed, rejection `.catch`-logged |
+| `Promise` | Blocks on the client — navigation defers until resolution, which is interpreted as the verdict; proceeds + logs on the server |
 
 Basic guard that blocks unauthenticated access:
 
@@ -155,12 +155,12 @@ router({
 });
 ```
 
-Async `before` hooks cannot block. If you need async auth, use `navigate` inside the hook but also guard the handler:
+Async `before` hooks block. A `Promise`-returning guard defers the commit — [`route`](/reference/router/route)`().pending` is `true` while the previous match stays current, and the resolution is interpreted as the verdict (`false` cancels, a non-empty string redirects, anything else proceeds; a rejection cancels and logs). Async auth is just an async guard:
 
 ```jsx
 const checkAuth = async () => {
-  const ok = await fetch('/api/check-session');
-  if (!ok.ok) navigate('/login');
+  const res = await fetch('/api/check-session');
+  return res.ok ? true : '/login';
 };
 const ProtectedPage = () => <div>Protected</div>;
 
@@ -168,14 +168,13 @@ router({
   routes: {
     '/protected': {
       before: checkAuth,
-      handler: () => {
-        if (!user()) return;
-        currentView(<ProtectedPage />);
-      }
+      handler: () => currentView(<ProtectedPage />)
     }
   }
 });
 ```
+
+No handler-side revalidation is needed — the handler runs only after the guard passes. On the server (`url` mode) an async guard cannot block the synchronous render: navigation proceeds and only a rejection is logged.
 
 On popstate/hashchange (browser back/forward), a cancelled guard restores the previous URL via `replaceState`, keeping the address bar consistent.
 
@@ -210,7 +209,7 @@ If `requireAuth` returns `false`, the child's `before` never runs. If it passes 
 
 ## Leave Guards
 
-`leave` hooks guard the route being *departed* — the unsaved-form flow every app needs. They run on every navigation away from a matched route (browser back/forward included), before any incoming `before` hook: the global `hooks.leave(to, from)` first, then the route chain's `leave` hooks child→parent. Verdicts share the `before` contract from the table above — `false` cancels, a non-empty string redirects, a throw cancels and logs, and a `Promise` cannot block.
+`leave` hooks guard the route being *departed* — the unsaved-form flow every app needs. They run on every navigation away from a matched route (browser back/forward included), before any incoming `before` hook: the global `hooks.leave(to, from)` first, then the route chain's `leave` hooks child→parent. Verdicts share the `before` contract from the table above — `false` cancels, a non-empty string redirects, a throw cancels and logs, and a `Promise` blocks on the client (deferring the commit until its resolution; proceeds + logs on the server).
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
