@@ -22,7 +22,7 @@ npm install @hellajs/core @hellajs/router
 
 ```typescript
 import { effect } from '@hellajs/core';
-import { router, navigate, route } from '@hellajs/router';
+import { router, navigate, route, href } from '@hellajs/router';
 
 // Define routes
 router({
@@ -42,6 +42,9 @@ effect(() => {
 
 // Navigate programmatically
 navigate('/users/:id', { params: { id: '123' } });
+
+// Build a typed href for plain anchors (same params/query handling)
+const userHref = href('/users/:id', { params: { id: '123' } }); // '/users/123'
 ```
 
 ## License
