@@ -97,6 +97,8 @@ export interface RouterConfig {
   redirects?: Redirect[];
   /** URL management mode: "history" for clean URLs, "hash" for `#/path` URLs, "memory" for location-less routing (no URL/history writes, no listeners — drive it with navigate()) */
   mode?: HistoryMode;
+  /** Base path for apps deployed under a subpath (e.g. `"/app"` when served from `https://example.com/app/`). History mode only: stripped from the URL on every read and re-added on every history commit; hash mode ignores it. Route patterns, `navigate()` targets, and `route().path` stay base-free. Must be a `"/"`-prefixed string; trailing slashes are normalized away. */
+  base?: string;
   /** Default scroll behavior applied to all routes unless overridden */
   scrollBehavior?: ScrollBehavior;
   /** Enable automatic interception of same-origin <a> link clicks for client-side navigation. Enabled by default. */

@@ -14,6 +14,7 @@ function router(config: RouterConfig): RouteInfo
 //   redirects?: { from: readonly string[]; to: string }[],
 //   notFound?: string | (() => void),
 //   mode?: 'history' | 'hash' | 'memory',
+//   base?: string,
 //   scrollBehavior?: ScrollBehavior,
 //   intercept?: boolean,
 //   inheritMeta?: boolean,
@@ -25,6 +26,7 @@ function router(config: RouterConfig): RouteInfo
 - `redirects`: Optional array of redirect objects with `from` and `to` properties.
 - `notFound`: Optional handler for unmatched routes.
 - `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing — no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
+- `base`: Base path for apps deployed under a subpath (e.g. `'/app'` when served from `https://example.com/app/`). History mode only — stripped from the URL on every read and re-added on every history commit; hash mode ignores it. Must be a `'/'`-prefixed string (invalid values throw); trailing slashes are normalized (`'/app/'` → `'/app'`). Route patterns, `navigate()` targets, and `route().path` stay base-free. Default: unset.
 - `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
 - `intercept`: Enable automatic same-origin `<a>` click interception. Default `true`.
 - `inheritMeta`: Parent-to-child meta inheritance through nested routes. Default `false` (leaf-only meta).

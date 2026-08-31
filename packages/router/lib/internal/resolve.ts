@@ -1,5 +1,5 @@
 import { isString, hasWindow } from "./core";
-import { routes, notFound, redirects, inheritMeta, mode } from "./state";
+import { routes, notFound, redirects, inheritMeta, mode, base } from "./state";
 import { route, activeFn } from "../route";
 import { matchRoute, matchNestedEntry } from "./match";
 import type { RouteMatch } from "./match";
@@ -107,7 +107,7 @@ export function go(
 ): void {
   const { replace = false, scroll, meta } = options;
   const routerMode = mode();
-  const finalTo = routerMode === "hash" ? `#${to}` : to;
+  const finalTo = routerMode === "hash" ? `#${to}` : base() + to;
   const action = replace ? "replaceState" : "pushState";
 
   const verdict = updateRoute(to, scroll, meta);

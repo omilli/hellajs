@@ -290,6 +290,34 @@ navigate('/about'); // route() updates; window.location and history are untouche
 
 Memory mode routes without a URL — the initial path comes from the `url` option or `/`, nothing is written to `window.location` or history, and no listeners are attached. It fits tests, Storybook, and non-DOM environments. There is no history stack in memory mode: browser back/forward do nothing, and back/forward navigation APIs do not exist — drive the route with `navigate()`.
 
+## Base Path
+
+Apps deployed under a subpath — GitHub Pages project sites, `/~user/` directories, shared hosts — set `base` so the router owns the URL prefix once, instead of hand-prefixing every route pattern, `navigate()` target, and `<a href>`.
+
+```jsx
+import { router, navigate } from '@hellajs/router';
+
+router({
+  base: '/app', // served from https://example.com/app/
+  routes: {
+    '/': () => currentView(<HomePage />),
+    '/users/:id': (params) => currentView(<UserDetail id={params.id} />)
+  }
+});
+
+navigate('/users/:id', { params: { id: '7' } });
+// URL: /app/users/7
+// route().path: '/users/7' — logical, base-free
+```
+
+Everything inside the router stays **logical**: route patterns, `navigate()` targets, `route().path`, `active()`, and `crumbs` never see the base. The router strips it from the URL on every read — initial load, `popstate`, intercepted link clicks — and re-adds it on every history commit. Links carry the full deployed URL:
+
+```typescript
+// <a href="/app/users/8"> routes logically to /users/8 — the base is stripped on click
+```
+
+`base` applies to history mode only — hash mode never touches the pathname, so the base is ignored there (documented, not an error). A trailing slash is normalized away (`'/app/'` behaves as `'/app'`), and the value must start with `'/'` or `router()` throws.
+
 ## Scroll Behavior
 
 Control scroll position after navigation at three levels of specificity.

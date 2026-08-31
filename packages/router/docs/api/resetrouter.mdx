@@ -30,13 +30,14 @@ resetRouter();
 
 ### What gets reset
 
-`resetRouter` resets all nine singleton signals to their defaults — the eight config signals plus the `route` signal:
+`resetRouter` resets all ten singleton signals to their defaults — the nine config signals plus the `route` signal:
 
 - `routes` → `{}`
 - `hooks` → `{}`
 - `redirects` → `[]`
 - `notFound` → `null`
 - `mode` → `"history"`
+- `base` → `""`
 - `scrollBehavior` → `undefined`
 - `previousPath` → `"/"`
 - `inheritMeta` → `false`
