@@ -115,8 +115,8 @@ Global and per-route hooks with `leave`, `before`, and `after` execution points.
 
 | Hook | Runs | Return contract |
 |---|---|---|
-| `hooks.leave(to, from)` | First — when leaving a matched route, before any `before` hook | Same verdicts as `before`: `false` cancels, a non-empty `string` redirects (replace) |
-| `hooks.before(to, from)` | Before the incoming route's guards | `false` cancels, a non-empty `string` redirects (replace) |
+| `hooks.leave(to, from)` | First — when leaving a matched route, before any `before` hook | Same verdicts as `before`: `false` cancels, a non-empty `string` redirects (replace), a `Promise` blocks on the client |
+| `hooks.before(to, from)` | Before the incoming route's guards | `false` cancels, a non-empty `string` redirects (replace), a `Promise` blocks on the client |
 | `hooks.after(to, from)` | After the route commits | Cannot block |
 
 Route-level `leave` hooks run child→parent after the global `leave`, receiving the departed route's params/query — the unsaved-form flow, with [`navigate(path, { force: true })`](/reference/router/navigate) as the override. See [Leave Guards](/learn/concepts/route-hooks#leave-guards) for the full contract.
@@ -310,7 +310,7 @@ const searchHandler = (params, query) => {
 | `false` | Cancel — navigation is blocked, URL unchanged |
 | `string` | Redirect — navigates to the returned path |
 | `throw` | Cancel — navigation is blocked, error logged |
-| `Promise` | Cannot block — treated as proceed, rejection `.catch`-logged |
+| `Promise` | Blocks on the client — the navigation defers until resolution, which is interpreted as the verdict (rejection cancels + logs). On the server it proceeds with only the rejection logged |
 
 ```typescript
 const authState = signal({ authenticated: false });
@@ -331,25 +331,32 @@ router({
 });
 ```
 
-Async guards cannot block — guard the handler too:
+Async guards block. A `Promise`-returning `before`/`leave` defers the commit — the route signal keeps the previous match with `route().pending === true` until the Promise settles, and its resolution is interpreted as the verdict. The URL, handler, and `after` hooks are untouched until then:
 
 ```typescript
 router({
   routes: {
     '/protected': {
       before: async () => {
-        if (!isAuthenticated()) await navigate('/login');
+        const ok = await someAsyncCheck();
+        return ok ? true : '/login';
       },
-      handler: () => {
-        if (!authState().authenticated) return;
-        currentView('ProtectedPage');
-      }
-    }
+      handler: () => currentView('ProtectedPage')
+    },
+    '/login': () => currentView('LoginPage')
   }
 });
+
+navigate('/protected');
+// route().pending === true — nothing committed yet
+// …resolution `true` commits; `'/login'` replaces to the login page instead
 ```
 
-On `false` or throw in a popstate/hashchange event, the router restores the previous URL via `replaceState`.
+Render a loading state off `route().pending` while a deferred navigation is in flight. A second navigation during the wait supersedes the deferred one — the newer navigation owns the URL, and the abandoned continuation never commits.
+
+On the server (`url` mode) there is no deferral: an async guard cannot block a synchronous render, so navigation proceeds and only a rejection is logged.
+
+On `false` or throw in a popstate/hashchange event, the router restores the previous URL via `replaceState` — synchronously for sync guards, or from the continuation once an async guard's awaited verdict cancels.
 
 ### Global Redirects
 
@@ -389,18 +396,17 @@ router({
 
 Errors in `after` hooks are logged but do not affect the already-completed navigation.
 
-Async hook rejections are caught and logged — they cannot block navigation.
+Async guard rejections cancel the deferred navigation and are logged; async handler/`after` rejections only log.
 
 ```typescript
 router({
   routes: {},
   hooks: {
     before: async () => {
-      await someAsyncCheck();
+      await someAsyncCheck(); // A rejection here cancels the navigation and logs `[router] Global before:`
     }
   }
 });
-// Rejection is `.catch`-logged; navigation proceeds
 ```
 
 For recovery patterns, see [Route Guards](/learn/concepts/route-hooks).

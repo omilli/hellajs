@@ -226,7 +226,7 @@ describe("router", () => {
       expect(route().path).toBe("/dashboard");
     });
 
-    test("leave returning a Promise proceeds without blocking", async () => {
+    test("leave returning a rejected Promise blocks the navigation and logs", async () => {
       const leave = mock(() => Promise.reject(new Error("async leave nope")));
       const dashboardHandler = mock(() => {});
       router({
@@ -239,10 +239,14 @@ describe("router", () => {
       navigate("/editor");
       navigate("/dashboard");
 
-      expect(dashboardHandler).toHaveBeenCalledTimes(1);
-      expect(route().path).toBe("/dashboard");
-      await delay();
+      expect(dashboardHandler).not.toHaveBeenCalled();
+      expect(route().path).toBe("/editor");
+      expect(route().pending).toBe(true);
+      await delay(0);
       expectLoggedError(sup, "[router] leave:", "async leave nope");
+      expect(dashboardHandler).not.toHaveBeenCalled();
+      expect(route().path).toBe("/editor");
+      expect(route().pending).toBe(false);
     });
   });
 });

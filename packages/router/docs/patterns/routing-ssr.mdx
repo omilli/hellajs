@@ -166,3 +166,5 @@ Route handlers should be pure state-setters (`() => currentView(View())`). Put s
 ### Concurrency
 
 Synchronous [`ssr`](/reference/ssr/ssr) is concurrency-safe: [`router`](/reference/router/router)`({ url })` + the render is one synchronous block with no `await`, so no second request can interleave and overwrite the router's module-level signals mid-render. [`ssr.async`](/reference/ssr/ssr#async) and [`ssr.stream`](/reference/ssr/ssr#stream) yield at each awaited Promise — they stay correct while every shared-signal read (the router's [`route`](/reference/router/route)`()`, your `currentView`) happens before the first `await` in tree order. Full safety under arbitrary streaming concurrency needs a router instance per request; revisit it only when a real concurrent-streaming workload demands it.
+
+One consequence of the synchronous server resolution: async guards cannot block on the server. A `Promise`-returning `before` proceeds immediately (only its rejection is logged) and `route().pending` stays `false` — keep server-gating guards synchronous, and do async data work in `ssr.async` children instead.

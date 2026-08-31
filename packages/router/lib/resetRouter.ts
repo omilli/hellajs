@@ -11,7 +11,7 @@ import {
 } from "./internal/state";
 import { route, activeFn } from "./route";
 import { resetListeners } from "./router";
-import { resetScrollStack } from "./internal/resolve";
+import { resetScrollStack, resetAsyncNavigation } from "./internal/resolve";
 import { setMatchedChain } from "./internal/matched";
 
 /**
@@ -33,6 +33,7 @@ export function resetRouter(): void {
     params: {},
     query: {},
     path: "/",
+    pending: false,
     meta: undefined,
     crumbs: Object.freeze([]),
     active: activeFn
@@ -40,4 +41,5 @@ export function resetRouter(): void {
   resetListeners();
   resetScrollStack();
   setMatchedChain(null);
+  resetAsyncNavigation();
 }

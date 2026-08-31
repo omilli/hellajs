@@ -49,17 +49,39 @@ describe("errors", () => {
         "/test": handler
       },
       hooks: {
-        before: async () => { throw new Error("Async global before error"); },
+        before: async () => { throw new Error("Async global before error"); }
+      }
+    });
+
+    navigate("/test");
+    expect(handler).not.toHaveBeenCalled();
+    expect(route().pending).toBe(true);
+
+    await delay(10);
+    expectLoggedError(sup, "[router] Global before:", "Async global before error");
+    expect(handler).not.toHaveBeenCalled();
+    expect(container.textContent).toBe("");
+  });
+
+  test("logs async global after rejections without affecting the committed route", async () => {
+    const handler = mock(() => render("test"));
+
+    router({
+      routes: {
+        "/test": handler
+      },
+      hooks: {
         after: async () => { throw new Error("Async global after error"); }
       }
     });
 
     navigate("/test");
     expect(handler).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toBe("test");
 
     await delay(10);
-    expectLoggedError(sup, "[router] Global before:");
-    expectLoggedError(sup, "[router] Global after:");
+    expectLoggedError(sup, "[router] Global after:", "Async global after error");
+    expect(container.textContent).toBe("test");
   });
 
   test("handles route hook errors", () => {
@@ -126,7 +148,7 @@ describe("errors", () => {
     router({
       routes: {
         "/test": {
-          before: async () => { throw new Error("Async error"); },
+          after: async () => { throw new Error("Async error"); },
           handler
         }
       }
@@ -134,6 +156,7 @@ describe("errors", () => {
 
     navigate("/test");
     expect(handler).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toBe("test");
 
     await delay(10);
     expectLoggedError(sup, "[router] hook:");

@@ -35,6 +35,13 @@ type SegmentParams<S extends string> =
  * `(params, query)` signature; runtime dispatch is by the handler's own
  * arity (params present → fn(params, query); else fn.length >= 2 →
  * fn(undefined, query); else fn(query)).
+ *
+ * When used as a guard (`before`/`leave`), a returned `Promise` **blocks on the
+ * client** — the navigation defers with `route().pending === true` until the Promise
+ * settles, and its resolution is interpreted as the verdict (`false` cancels, a
+ * non-empty string redirects via replace, anything else proceeds; a rejection cancels
+ * and logs). On the server (`router({ url })` mode) it cannot block — the navigation
+ * proceeds and only a rejection is logged.
  */
 export type Handler = (params: Params, query: Params) => unknown;
 
@@ -84,7 +91,9 @@ export interface RouteWithHooks {
    * cumulative params/query for this nesting level). Sync return contract: return `false` to
    * cancel (no URL/signal/handler change); return a non-empty `string` to redirect (replace) to
    * that path; any other return proceeds. Throwing cancels and logs `[router] hook:`. A returned
-   * `Promise` does NOT block — the navigation proceeds immediately and only a rejection is logged.
+   * `Promise` blocks on the client — the navigation defers with `route().pending === true` and
+   * the resolution is interpreted as the verdict (rejection cancels and logs). On the server it
+   * cannot block: the navigation proceeds and only a rejection is logged.
    */
   before?: Handler;
   /** Hook executed after the main handler */
@@ -93,8 +102,9 @@ export interface RouteWithHooks {
    * Guard executed when navigating away from this route. Same verdict contract as
    * `before`: sync return `false` cancels (no URL/signal/handler change), a non-empty
    * `string` redirects (replace) to that path, any other return proceeds. Throwing cancels
-   * and logs `[router] leave:`. A returned `Promise` does NOT block — the navigation
-   * proceeds immediately and only a rejection is logged. Receives the departed route's
+   * and logs `[router] leave:`. A returned `Promise` blocks on the client — the navigation
+   * defers with `route().pending === true` and the resolution is interpreted as the verdict
+   * (rejection cancels and logs); on the server it cannot block. Receives the departed route's
    * params/query (arity-dispatched). Leave hooks run child→parent after the global `leave`
    * hook on every navigation away from this route, including browser back/forward. Skipped
    * by `navigate(path, { force: true })` and on same-path navigation (query ignored).
@@ -146,8 +156,9 @@ export interface GlobalHooks {
    * pre-commit — the route being left). Same verdict contract as `before`: sync return `false`
    * to cancel (no URL/signal/handler change); return a non-empty `string` to redirect (replace)
    * to that path; any other return proceeds. Throwing cancels and logs `[router] Global leave:`.
-   * A returned `Promise` does NOT block — the navigation proceeds immediately and only a
-   * rejection is logged. Runs before route-level `leave` hooks (which then run child→parent);
+   * A returned `Promise` blocks on the client — the navigation defers with `route().pending ===
+   * true` and the resolution is interpreted as the verdict (rejection cancels and logs); on the
+   * server it cannot block. Runs before route-level `leave` hooks (which then run child→parent);
    * skipped by `navigate(path, { force: true })` and on same-path navigation (query ignored).
    */
   leave?: (to: string, from: string) => Promise<unknown> | unknown;
@@ -157,8 +168,10 @@ export interface GlobalHooks {
    * matching the route-level `before` rule that `route()` still holds the previous route). Sync
    * return contract: return `false` to cancel (no URL/signal/handler change); return a non-empty
    * `string` to redirect (replace) to that path; any other return proceeds. Throwing cancels and
-   * logs `[router] Global before:`. A returned `Promise` does NOT block — the navigation proceeds
-   * immediately and only a rejection is logged. Decide synchronously to block.
+   * logs `[router] Global before:`. A returned `Promise` blocks on the client — the navigation
+   * defers with `route().pending === true` and the resolution is interpreted as the verdict
+   * (rejection cancels and logs). On the server it cannot block: the navigation proceeds and only
+   * a rejection is logged.
    */
   before?: (to: string, from: string) => Promise<unknown> | unknown;
   /**
@@ -211,6 +224,8 @@ export interface RouteInfo {
   query: Params;
   /** Current URL path */
   path: string;
+  /** True while an async guard (a Promise-returning `before`/`leave`) defers a navigation commit; flips back to false on commit, cancel, redirect-chain terminal, or supersede by a newer navigation. Client-only — always false on the server, where async guards proceed without blocking. */
+  pending: boolean;
   /** Route-specific metadata from the matched route */
   meta?: Record<string, unknown>;
   /** Parent-to-leaf chain of matched route breadcrumbs */

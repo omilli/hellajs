@@ -26,6 +26,7 @@ export const route = signal<RouteInfo>({
   path: hasWindow()
     ? window.location.pathname + window.location.search
     : "/",
+  pending: false,
   meta: undefined,
   crumbs: Object.freeze([]),
   active: activeFn
