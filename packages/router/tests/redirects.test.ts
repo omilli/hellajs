@@ -126,6 +126,67 @@ describe("router", () => {
       expect(container.textContent).toBe("dashboard");
     });
 
+    test("captures params from a pattern source and substitutes them into the target", () => {
+      router({
+        routes: {
+          "/users/:id": () => render("user")
+        },
+        redirects: [{ from: ["/user/:id"], to: "/users/:id" }]
+      });
+
+      navigate("/user/7");
+      flush();
+      expect(route().path).toBe("/users/7");
+      expect(route().params.id).toBe("7");
+      expect(container.textContent).toBe("user");
+    });
+
+    test("captures a wildcard source into the target wildcard", () => {
+      router({
+        routes: {
+          "/archive/*": () => render("archive")
+        },
+        redirects: [{ from: ["/docs/*"], to: "/archive/*" }]
+      });
+
+      navigate("/docs/guide/setup");
+      flush();
+      expect(route().path).toBe("/archive/guide/setup");
+      expect(route().params["*"]).toBe("guide/setup");
+    });
+
+    test("resolves the first matching redirect in array order", () => {
+      router({
+        routes: {
+          "/v1": () => render("v1"),
+          "/v2": () => render("v2")
+        },
+        redirects: [
+          { from: ["/legacy"], to: "/v1" },
+          { from: ["/legacy"], to: "/v2" }
+        ]
+      });
+
+      navigate("/legacy");
+      flush();
+      expect(route().path).toBe("/v1");
+      expect(container.textContent).toBe("v1");
+    });
+
+    test("strips target tokens with no captured value", () => {
+      router({
+        routes: {
+          "/new": () => render("new")
+        },
+        redirects: [{ from: ["/old"], to: "/new/:id" }]
+      });
+
+      navigate("/old");
+      flush();
+      expect(route().path).toBe("/new/");
+      expect(container.textContent).toBe("new");
+    });
+
     test("handles not found routes", () => {
       const notFound = mock(() => render("404"));
       router({

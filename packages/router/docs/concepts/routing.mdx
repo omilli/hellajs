@@ -363,7 +363,7 @@ See [`router`](/reference/router/router) for all scroll configuration options.
 
 The router implements a **5-phase resolution algorithm** with early termination — once a match is found, processing stops without checking subsequent phases.
 
-1. **Global redirects** — `redirects[].from` matched by exact equality on the path (query ignored)
+1. **Global redirects** — `redirects[].from` matched as route patterns (`:param`/`*` capture) with captured params substituted into `to` (query ignored)
 2. **Route map redirects** — string values in the `routes` object (flat pattern match)
 3. **Nested routes** — `RouteWithHooks` entries with `children`, sorted by specificity
 4. **Flat routes** — function/leaf entries, matched in object entry order (not sorted)

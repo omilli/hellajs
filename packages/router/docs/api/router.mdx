@@ -23,7 +23,7 @@ function router(config: RouterConfig): RouteInfo
 ```
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
 - `hooks`: Optional global hooks — `before(to, from)` guards every navigation (`to` is the incoming path with its query string, `from` is the pre-commit path being left; can cancel or redirect), `after(to, from)` runs once the route commits.
-- `redirects`: Optional array of redirect objects with `from` and `to` properties.
+- `redirects`: Optional array of redirect objects. `from` entries match as route patterns — `:param` captures a segment, `*` captures the rest — with the query ignored; captured values substitute into `to` tokens (unmatched tokens stripped). First matching entry in array order wins.
 - `notFound`: Optional handler for unmatched routes — receives the attempted path (query included — same shape as `route().path`); or a string to replace-redirect to.
 - `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing — no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
 - `base`: Base path for apps deployed under a subpath (e.g. `'/app'` when served from `https://example.com/app/`). History mode only — stripped from the URL on every read and re-added on every history commit; hash mode ignores it. Must be a `'/'`-prefixed string (invalid values throw); trailing slashes are normalized (`'/app/'` → `'/app'`). Route patterns, `navigate()` targets, and `route().path` stay base-free. Default: unset.
@@ -330,15 +330,17 @@ On `false` or throw in a popstate/hashchange event, the router restores the prev
 
 ### Global Redirects
 
-Use the `redirects` array for complex redirect patterns with multiple source paths.
+Use the `redirects` array for complex redirect patterns with multiple source paths. `from` entries are route patterns: captured `:param` and `*` values substitute into matching tokens in `to`.
 
 ```typescript
 router({
   routes: {
-    '/dashboard': () => currentView('Dashboard')
+    '/dashboard': () => currentView('Dashboard'),
+    '/users/:id': () => currentView('User')
   },
   redirects: [
-    { from: ['/home', '/start', '/welcome'], to: '/dashboard' }
+    { from: ['/home', '/start', '/welcome'], to: '/dashboard' },
+    { from: ['/user/:id'], to: '/users/:id' }   // /user/7 → /users/7
   ]
 });
 ```
