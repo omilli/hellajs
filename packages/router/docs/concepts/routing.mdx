@@ -114,6 +114,32 @@ router({
 });
 ```
 
+### Optional Segments
+
+A `:param?` segment matches optionally — the route fires with or without it, and a skipped segment leaves no key in `params`. `?` in a pattern always marks an optional parameter; patterns never carry query strings.
+
+```jsx
+router({
+  routes: {
+    '/users/:id?': (params) => {
+      // /users → params.id is undefined (list view); /users/7 → params.id = '7'
+      currentView(params.id ? <UserDetail id={params.id} /> : <UsersList />);
+    }
+  }
+});
+```
+
+An absent optional token is also stripped from built URLs — together with its preceding slash:
+
+```jsx
+import { navigate } from '@hellajs/router';
+
+navigate('/users/:id?');                            // → /users
+navigate('/users/:id?', { params: { id: '7' } });  // → /users/7
+```
+
+Optional segments work anywhere in a pattern — `/posts/:id?/edit` matches both `/posts/edit` and `/posts/7/edit` — and combine with wildcards (`/files/:id?/*`). [`href`](/reference/router/href) applies the same substitution rules.
+
 All route parameters and query values are strings; cast to other types as needed.
 
 ## Nested Routes

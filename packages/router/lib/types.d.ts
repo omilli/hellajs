@@ -4,16 +4,30 @@
 export type Params = Record<string, string>;
 
 /**
- * Extracts route parameter names from a path pattern string.
+ * Extracts route parameter names from a path pattern string. A `:param?`
+ * token yields an optional key.
  * @template T The path pattern string (e.g., '/users/:id')
  */
-export type ExtractParams<T extends string> =
-  T extends `${string}:${infer Param}/${infer Rest}`
-    ? { [K in Param | keyof ExtractParams<Rest>]: string }
-    : T extends `${string}:${infer Param}`
+export type ExtractParams<T extends string> = PatternSegments<T>;
+
+/**
+ * Splits a pattern into `/`-separated segments and intersects their params.
+ */
+type PatternSegments<T extends string> =
+  T extends `${infer Head}/${infer Rest}`
+    ? SegmentParams<Head> & PatternSegments<Rest>
+    : SegmentParams<T>;
+
+/**
+ * Extracts params from one pattern segment: `:param`, `:param?`, or `*`.
+ */
+type SegmentParams<S extends string> =
+  S extends `:${infer Param}?`
+    ? { [K in Param]?: string }
+    : S extends `:${infer Param}`
       ? { [K in Param]: string }
-      : T extends `${string}*${infer Rest}`
-        ? { [K in "*" | keyof ExtractParams<Rest>]: string }
+      : S extends "*"
+        ? { "*": string }
         : {};
 
 /**
