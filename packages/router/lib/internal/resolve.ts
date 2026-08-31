@@ -3,6 +3,7 @@ import { routes, notFound, redirects, inheritMeta, mode, base } from "./state";
 import { route, activeFn } from "../route";
 import { matchRoute, matchNestedEntry } from "./match";
 import type { RouteMatch } from "./match";
+import { buildPath } from "./path";
 import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuardsFlat, runGuardsNested, type GuardVerdict } from "./matched";
 import { EMPTY_OBJECT, EMPTY_CRUMBS, hasChildren, sortRoutesBySpecificity } from "./utils";
 import type { RouteValue, Crumb, ScrollBehavior, Handler, Params, RouteInfo } from "../types";
@@ -179,7 +180,8 @@ function commitMatch(
 }
 
 /**
- * Attempts global and string redirects.
+ * Attempts global and string redirects. Global `from` entries match as route patterns —
+ * captured params substitute into `to` (query dropped); route-map strings redirect statically.
  * @param currentPath The current URL path.
  * @returns True if a redirect was issued.
  */
@@ -187,15 +189,20 @@ function tryRedirect(currentPath: string): boolean {
   const globalRedirects = redirects();
 
   if (globalRedirects) {
-    const pathWithoutQuery = currentPath.split("?")[0]!;
     let i = 0;
     const len = globalRedirects.length;
     while (i < len) {
       const redirect = globalRedirects[i]!;
       i++;
-      if (redirect.from.includes(pathWithoutQuery)) {
-        go(redirect.to, { replace: true });
-        return true;
+      let j = 0;
+      const fromLen = redirect.from.length;
+      while (j < fromLen) {
+        const match = matchRoute(redirect.from[j]!, currentPath);
+        j++;
+        if (match) {
+          go(buildPath(redirect.to, match.params, EMPTY_OBJECT), { replace: true });
+          return true;
+        }
       }
     }
   }

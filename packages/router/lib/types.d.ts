@@ -148,12 +148,14 @@ export interface NavigateOptions<T extends string = string> {
 }
 
 /**
- * Redirect configuration mapping source paths to target path.
+ * Redirect configuration mapping source path patterns to a target path.
+ * `from` entries match as route patterns — `:param` captures a segment, `*` captures the rest —
+ * with the query string ignored; the first matching entry (array order) wins.
  */
 export interface Redirect {
-  /** Array of source paths that trigger this redirect */
+  /** Array of source path patterns that trigger this redirect; `:param` and `*` capture values */
   readonly from: readonly string[];
-  /** Target path to redirect to */
+  /** Target path; `:param` and `*` tokens are replaced with captured values, unmatched tokens are stripped */
   readonly to: string;
 }
 

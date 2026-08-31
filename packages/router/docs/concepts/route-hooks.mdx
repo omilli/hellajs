@@ -214,6 +214,8 @@ The router supports two redirect mechanisms.
 ```jsx
 import { router } from '@hellajs/router';
 
+const Archive = () => <div>Archive</div>;
+
 // String redirects: simplest form
 router({
   routes: {
@@ -231,7 +233,21 @@ router({
     { from: ['/tasks', '/items', '/list'], to: '/todos' }
   ]
 });
+
+// Pattern redirects: captured params substitute into the target
+router({
+  routes: {
+    '/users/:id': () => currentView(<UserProfile />),
+    '/archive/*': () => currentView(<Archive />)
+  },
+  redirects: [
+    { from: ['/user/:id'], to: '/users/:id' },   // /user/7 → /users/7
+    { from: ['/docs/*'], to: '/archive/*' }       // /docs/a/b → /archive/a/b
+  ]
+});
 ```
+
+`from` entries match as route patterns — `:param` captures a single segment, `*` captures the rest — with the query string ignored. Captured values replace matching tokens in `to`; unmatched tokens are stripped. The first matching entry in array order wins.
 
 Redirect chains stop after 20 hops — a cyclic configuration logs `[router] redirect loop detected` and cancels the navigation (URL unchanged) instead of overflowing the stack.
 
