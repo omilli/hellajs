@@ -96,6 +96,8 @@ export interface ResourceOptions<T, K, TTransformed = T> {
   refetchOnWindowFocus?: boolean;
   /** Refetch when browser reconnects (default: false) */
   refetchOnReconnect?: boolean;
+  /** Defer fetches while the browser is offline — a deferred fetch resumes on reconnect with its original force flag, reflected by `isPaused()` (default: false). Mutations are not paused. */
+  pauseWhenOffline?: boolean;
 
   // Mutation-specific options
   /** Hook called before mutation for optimistic updates */
@@ -129,6 +131,8 @@ export interface Resource<TTransformed, T = TTransformed> {
   isFetching: () => boolean;
   /** Reactive signal indicating if resource has not been fetched yet */
   isIdle: () => boolean;
+  /** True while a fetch is deferred by `pauseWhenOffline` until the browser reconnects */
+  isPaused: () => boolean;
   /** Computed signal showing current resource status */
   status: () => ResourceStatus;
   /**

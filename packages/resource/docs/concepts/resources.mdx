@@ -272,6 +272,27 @@ const session = resource(
 
 Without `refetchOnKeyChange: true`, call `fetch()` manually first; the focus/reconnect listeners still work for subsequent refetches.
 
+### Offline Pausing
+
+By default an offline browser makes every fetch attempt fail into `error()`. Opt into deferring instead with `pauseWhenOffline: true` — while the browser is offline, fetches (including key-change refetches and polling ticks) defer instead of hitting the network: no fetcher call, no error state, and `isPaused()` reads `true`. On reconnect the deferred fetch replays with the force flag it was called with.
+
+```typescript
+window.dispatchEvent(new Event('offline')); // The connection drops
+
+const feed = resource(
+  () => fetch('/api/feed').then(r => r.json()),
+  { pauseWhenOffline: true, refetchOnKeyChange: true }
+);
+console.log(feed.isPaused()); // Logs: true — deferred, not erroring
+
+window.dispatchEvent(new Event('online')); // The connection returns
+console.log(feed.isPaused()); // Logs: false — the paused fetch runs
+```
+
+Deferral happens before the cache lookup — even a fresh cache entry defers while offline. In-flight requests are not paused: they fail into `error()` as usual. Mutations are never paused — they always attempt the network. Polling ticks while offline are absorbed (each tick defers); polling proceeds normally after reconnect.
+
+With both `pauseWhenOffline` and `refetchOnReconnect`, the reconnect event fires both listeners — the paused fetch's re-run and the reconnect refetch collapse into one network call via deduplication. The pause listener follows the focus/reconnect listener lifecycle: `abort()`, `reset()`, and `dispose()` clear it.
+
 ### Data Transformation
 
 Transform data before returning while caching the original. Multiple resources with different `transform` functions can share the same cache entry by using the same fetcher function.
