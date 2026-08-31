@@ -16,6 +16,7 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 | `lib/types/cache.d.ts` | `CacheEntry`, `CacheConfig`, `CacheUpdate`, `CacheMapView`, `ResourceCache`. |
 | `lib/internal/core.ts` | Thin re-export from `@hellajs/core`: `signal/computed/effect/untracked/isFunction/isPlainObject/hasDocument/hasNavigator/hasWindow`. |
 | `lib/internal/dedupe.ts` | `ongoingRequestsMap` (`WeakMap<object, Map<key, OngoingRequest>>`) + `getOngoing/setOngoing/deleteOngoing`. `OngoingRequest = { promise, abortController }`. |
+| `lib/internal/key.ts` | `stableKey(key)` — normalize-at-boundary helper: primitives unchanged; arrays/plain objects → `"\u0000"`-prefixed deterministic serialization (object keys sorted, array order kept, nested dates ISO, nested non-plain values abort hashing → reference fallback); every other top-level shape unchanged (reference identity). |
 | `lib/internal/retry.ts` | `resolveRetryConfig(retry, retryDelay)` → `{ maxRetries, shouldRetry, getDelay }`. Boolean→count, function→predicate. `fetchWithRetry(start, { signal, retryConfig })` — shared race-against-abort + retry loop (used by `run`, `mutate`, and `prefetch`). |
 | `lib/internal/abort.ts` | `wireRequestControls(controller, { timeout?, abortSignal? })` → release() clearing timer + external listener (shared by `run`/`mutate`/`prefetch`); `raceAbort(promise, signal)` — races live signals only (callers pre-check `aborted`). |
 | `lib/internal/polling.ts` | `createPolling` — recursive `setTimeout`, visibility-aware, dynamic interval via `untracked(data)`. |
@@ -33,13 +34,13 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 4. **Cache phase** (skipped when `force`) — only if `cacheTime > 0`: `cleanupExpiredCache()`, lookup entry; on TTL-valid hit → update `lastAccess`, push to `rawData`, `handleError()` (clears error/loading/fetching). Then **SWR**: if `staleTime !== undefined && isStale(entry) && revalidateOnStale` → `isFetching(true)` + un-awaited `run(true)` (force, re-enters dedup). Return.
 5. **Dedup phase** (skipped when `force`) — if `deduplicate`, `getOngoing(fetcherFn, cacheKey)`; on hit → adopt shared `abortController` (`cleanAbort`), `handleError(undefined, !hasData, true)`, `await promise` (unless already aborted) → success/abort handler. Return.
 6. **Request phase** — `currentAbortController = cleanAbort()`; `wireRequestControls` wires external `abortSignal` (immediate-abort if already aborted) and `timeout`, returning a `release()` cleared on every settle path; capture `currentSignal`; `handleError(undefined, !hasData, true)`. Build deferred `requestPromise`; if `deduplicate`, `setOngoing(...)` + attach `.catch(()=>{})` to swallow unhandled rejection.
-7. **Request loop** — delegated to `fetchWithRetry(fetcherFn(cacheKey), { signal, retryConfig })`: per-attempt pre-abort check; race against abort-reject; on success the caller applies optional `structuralShare`, `setCacheData(..., cacheTime, staleTime ?? Infinity)`, guarded `handleSuccess`, resolves promise via `settleRun`; on error: abort→handle+reject; else count++ (starts at 1), `shouldRetry` false→handle+reject; else abort-interruptible delay, top-of-loop abort check exits.
+7. **Request loop** — delegated to `fetchWithRetry(fetcherFn(rawKey), { signal, retryConfig })` (fetcher receives the **raw** resolved key; cache/dedup use the `stableKey`-normalized form): per-attempt pre-abort check; race against abort-reject; on success the caller applies optional `structuralShare`, `setCacheData(..., cacheTime, staleTime ?? Infinity)`, guarded `handleSuccess`, resolves promise via `settleRun`; on error: abort→handle+reject; else count++ (starts at 1), `shouldRetry` false→handle+reject; else abort-interruptible delay, top-of-loop abort check exits.
 
 Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loading/fetching and fires `onError` only for a truthy error; `handleSuccessError` clears loading/fetching for AbortError **without** setting error, else delegates to `handleError`; `handleSuccess` writes `rawData`, clears flags, fires `onSuccess`; `cleanAbort(controller?)` aborts the prior controller and returns `controller ?? new AbortController()`.
 
 ### Cache (`cacheMap`, cache.ts:12)
 
-- `cacheMap = new Map<unknown, Map<unknown, CacheEntry>>()` — **strong Map**, outer key = fetcher function reference, inner key = cache key. Fetchers are retained while their scope holds entries; `cleanupExpiredCache` reaps a scope once its last entry expires, and `getScope` recreates it on the next write (agent: avoid unbounded unique-fetcher patterns — live entries still pin their fetcher).
+- `cacheMap = new Map<unknown, Map<unknown, CacheEntry>>()` — **strong Map**, outer key = fetcher function reference, inner key = the `stableKey`-normalized cache key (structural equality for arrays/plain objects; reference for everything else). Fetchers are retained while their scope holds entries; `cleanupExpiredCache` reaps a scope once its last entry expires, and `getScope` recreates it on the next write (agent: avoid unbounded unique-fetcher patterns — live entries still pin their fetcher).
 - `PUBLIC_SCOPE = Symbol("public")` — target scope for `resourceCache.set()`.
 - `setCacheData(scope, key, data, cacheTime=0, staleTime=0)`: **no-op if `cacheTime` is 0**; else sets `{data, timestamp, cacheTime, staleTime, lastAccess}` and runs global LRU eviction if over `maxSize`.
 - `getCacheData`: TTL-valid check, deletes expired, refreshes `lastAccess` on hit.
@@ -49,7 +50,7 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 
 ### Deduplication (`ongoingRequestsMap`, dedupe.ts:17)
 
-- `WeakMap<object, Map<key, {promise, abortController}>>` — GCs with the fetcher. **No subscriber list**; joiners simply `await` the shared promise and share the shared `abortController`.
+- `WeakMap<object, Map<key, {promise, abortController}>>` — GCs with the fetcher. Inner keys are `stableKey`-normalized, so equal-shaped object keys join. **No subscriber list**; joiners simply `await` the shared promise and share the shared `abortController`.
 - `force` skips the *lookup* but `setOngoing` still registers the in-flight promise, so later non-force fetches join a force request while it runs.
 
 ### Abort / timeout / external signal
@@ -100,7 +101,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `abort` | `() => void` | Aborts, resets data to `initialData`, clears flags/listeners. |
 | `invalidate` | `() => void` | Deletes this fetcher's cache entry for the key, then `run(true)`. |
 | `setData` | `(T \| ((old) => T)) => void` | Updates `rawData`; caches only if `cacheTime > 0`. |
-| `cacheKey` | `() => unknown` | `untracked(resolveKey)`. |
+| `cacheKey` | `() => unknown` | `untracked(resolveKey)` — the raw key, not the normalized cache form. |
 | `mutate` | `<V>(vars) => Promise<T>` | Bypasses cache + dedup; result not cached; honors `retry`/`retryDelay`; concurrent calls run independently. |
 | `reset` | `() => void` | Clears timers/listeners + state; does not abort in-flight (unlike `abort`); reusable. |
 | `dispose` | `() => void` | One-way teardown of effects/timers/listeners; does **not** abort in-flight, does **not** clear cache. |
@@ -135,7 +136,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 | Option | Default | Note |
 |---|---|---|
-| `key` | `() => undefined` | `(() => K) \| K`. Function or static value. |
+| `key` | `() => undefined` | `(() => K) \| K`. Function or static value. Arrays/plain objects compare structurally (recursively, key order insensitive, nested dates ISO); other shapes reference-keyed. |
 | `enabled` | `true` | `boolean \| () => boolean`. Getter re-evaluated reactively in the key-change effect. |
 | `refetchOnKeyChange` | `false` | Gates auto-fetch and the reactive key-tracking effect. |
 | `keepPreviousData` | `true` | Keep the previous key's data during a key-change refetch. `false` clears `rawData` to `undefined` (never `initialData`) before the auto-fetch — a loading window. Only meaningful with `refetchOnKeyChange`. |
@@ -182,7 +183,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 ### `resourceCache` methods
 
-`set(key, data, cacheTime, staleTime=0)` → `key` (writes `PUBLIC_SCOPE`; `cacheTime` required — omission throws, explicit `0` is a documented no-op; validates non-negative numbers). `get<T>(key)` (searches all scopes, refreshes `lastAccess`, deletes expired). `update(key, updater)`/`updateMultiple(updates)` → `boolean`/void (first-scope hit wins; throws on `undefined` updater). `cleanup()`. `invalidate(key)`/`invalidateMultiple(keys)` (all scopes). `invalidateByPrefix(prefix)` / `invalidateByPattern(regex)` → count (**string keys only**). `invalidateAll()` → count. `invalidateResources([...])` (calls `.invalidate()` on each). `setConfig(partial)`. `prefetch<T,K>(opts) => Promise<T>` (fetches via `fetcher(key)`, caches under the fetcher's own scope without creating a resource; dedup/retry/abort like `resource()`). `isOnline()` / `onOnlineChange(cb) => unsub`.
+`set(key, data, cacheTime, staleTime=0)` → `key` (writes `PUBLIC_SCOPE`; `cacheTime` required — omission throws, explicit `0` is a documented no-op; validates non-negative numbers). `get<T>(key)` (searches all scopes, refreshes `lastAccess`, deletes expired). `update(key, updater)`/`updateMultiple(updates)` → `boolean`/void (first-scope hit wins; throws on `undefined` updater). `cleanup()`. `invalidate(key)`/`invalidateMultiple(keys)` (all scopes). All key-taking methods normalize via `stableKey` first (structural for arrays/plain objects). `invalidateByPrefix(prefix)` / `invalidateByPattern(regex)` → count (**string keys only** — hashed object/array keys are opaque to both). `invalidateAll()` → count. `invalidateResources([...])` (calls `.invalidate()` on each). `setConfig(partial)`. `prefetch<T,K>(opts) => Promise<T>` (fetches via `fetcher(key)` with the raw key, caches the normalized form under the fetcher's own scope without creating a resource; dedup/retry/abort like `resource()`). `isOnline()` / `onOnlineChange(cb) => unsub`.
 
 ## Non-obvious behaviors
 
@@ -193,6 +194,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - `setData` always updates `rawData`; cache write is gated on `cacheTime > 0`. With an expired cache entry, `setData`'s `getCacheData` deletes the stale entry and the updater still sees `rawData()` as the old value, then re-creates the entry. (resource.ts `setData`, resource-cache.test.ts)
 - `mutate` results are **not** cached and do not dedup; `handleSuccess` fires (and `onSuccess`) but `setCacheData` is never called. (resource.ts `mutate`)
 - Cache + dedup are keyed by **fetcher reference identity**. Each `resource("url")` call builds a fresh fetcher closure → two URL resources with the same URL get **separate** cache/dedup scopes. Share a named fetcher function to share scope (needed for transform-sharing). (resource.ts:50-58)
+- Within a fetcher scope, keys compare **structurally** for arrays/plain objects — `run`/`setData`/`invalidate` and every `resourceCache` key-taking method normalize through `stableKey` (`lib/internal/key.ts`), so `key: () => ({ ...filters() })` rebuilds hit the same entries. Primitives pass through byte-identical (the whole backward-compat story); top-level `Date`/`Map`/`Set`/class instances — and objects **containing** non-plain values (incl. symbol-keyed properties) — fall back to reference identity (a nested non-plain value aborts hashing for the whole key). The fetcher still receives the **raw** key; `cacheKey()` returns it too. Hashed keys are opaque strings — `invalidateByPrefix`/`invalidateByPattern` cannot meaningfully match them.
 - `resourceCache.set()` targets `PUBLIC_SCOPE`; a manual entry and a resource entry with the same key coexist as two entries. (cache.ts:229, collision.test.ts:167)
 - `resourceCache.map.get` does **not** refresh `lastAccess`; `resourceCache.get` does. They are different code paths. (cache.ts:183 vs 232)
 
