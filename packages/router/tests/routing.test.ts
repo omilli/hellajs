@@ -235,6 +235,21 @@ describe("router", () => {
       expect(notFound).toHaveBeenCalledTimes(1);
     });
 
+    test("passes the attempted path including query to the notFound handler", () => {
+      const notFound = mock((path: string) => render(path));
+      router({
+        routes: {
+          "/": () => render("home")
+        },
+        notFound
+      });
+
+      // Synchronous init may fire notFound for the unmatched initial path; isolate the navigate.
+      notFound.mockClear();
+      navigate("/missing/page?ref=menu");
+      expect(container.textContent).toBe("/missing/page?ref=menu");
+    });
+
     test("handles route value that is neither function nor plain object", () => {
       router({
         routes: {

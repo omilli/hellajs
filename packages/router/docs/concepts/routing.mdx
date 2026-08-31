@@ -19,7 +19,7 @@ import { signal } from '@hellajs/core';
 const HomePage = () => <div>Home</div>;
 const AboutPage = () => <div>About</div>;
 const TodoDetail = ({ id }: { id?: string }) => <div>Todo {id}</div>;
-const NotFound = () => <div>Not found</div>;
+const NotFound = ({ attempted }: { attempted?: string }) => <div>Not found: {attempted}</div>;
 const UserTodo = ({ userId, todoId }: { userId?: string; todoId?: string }) => (
   <div>Todo {todoId} of user {userId}</div>
 );
@@ -42,9 +42,11 @@ router({
     '/about': () => currentView(<AboutPage />),
     '/todos/:id': (params) => currentView(<TodoDetail id={params.id} />)
   },
-  notFound: () => currentView(<NotFound />)
+  notFound: (path) => currentView(<NotFound attempted={path} />)
 });
 ```
+
+The `notFound` handler receives the attempted path — query included, same shape as [`route().path`](/reference/router/route) — so the 404 view can show what the user tried to reach.
 
 `notFound` also accepts a string to redirect to another route:
 

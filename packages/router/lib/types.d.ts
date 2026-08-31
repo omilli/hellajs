@@ -91,8 +91,8 @@ export interface RouterConfig {
   routes: Routes;
   /** Global hooks that execute on every route change */
   hooks?: GlobalHooks;
-  /** Handler or redirect path for unmatched routes */
-  notFound?: string | (() => void);
+  /** Handler or redirect path for unmatched routes. The handler receives the attempted path (query included — same shape as `route().path`); a string replace-redirects to that path. */
+  notFound?: string | ((path: string) => void);
   /** Array of redirect rules mapping source paths to targets */
   redirects?: Redirect[];
   /** URL management mode: "history" for clean URLs, "hash" for `#/path` URLs, "memory" for location-less routing (no URL/history writes, no listeners — drive it with navigate()) */

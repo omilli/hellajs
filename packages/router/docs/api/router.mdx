@@ -12,7 +12,7 @@ function router(config: RouterConfig): RouteInfo
 //   routes: Record<string, RouteValue | string>,
 //   hooks?: GlobalHooks,
 //   redirects?: { from: readonly string[]; to: string }[],
-//   notFound?: string | (() => void),
+//   notFound?: string | ((path: string) => void),
 //   mode?: 'history' | 'hash' | 'memory',
 //   base?: string,
 //   scrollBehavior?: ScrollBehavior,
@@ -24,7 +24,7 @@ function router(config: RouterConfig): RouteInfo
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
 - `hooks`: Optional global hooks — `before(to, from)` guards every navigation (`to` is the incoming path with its query string, `from` is the pre-commit path being left; can cancel or redirect), `after(to, from)` runs once the route commits.
 - `redirects`: Optional array of redirect objects with `from` and `to` properties.
-- `notFound`: Optional handler for unmatched routes.
+- `notFound`: Optional handler for unmatched routes — receives the attempted path (query included — same shape as `route().path`); or a string to replace-redirect to.
 - `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing — no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
 - `base`: Base path for apps deployed under a subpath (e.g. `'/app'` when served from `https://example.com/app/`). History mode only — stripped from the URL on every read and re-added on every history commit; hash mode ignores it. Must be a `'/'`-prefixed string (invalid values throw); trailing slashes are normalized (`'/app/'` → `'/app'`). Route patterns, `navigate()` targets, and `route().path` stay base-free. Default: unset.
 - `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
@@ -53,7 +53,7 @@ router({
     "/files/*": (params) => currentView(`FileViewer: ${params["*"]}`),
     "/search": (params, query) => currentView(`Search: ${query.q}`)
   },
-  notFound: () => currentView("NotFound")
+  notFound: (path) => currentView(`NotFound: ${path}`)
 });
 ```
 
