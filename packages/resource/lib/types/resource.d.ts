@@ -54,7 +54,11 @@ export interface FetchOptions {
  * @template TTransformed - The transformed data type returned by transform
  */
 export interface ResourceOptions<T, K, TTransformed = T> {
-  /** Function or static value to generate cache key for caching and deduplication */
+  /**
+   * Function or static value to generate cache key for caching and deduplication.
+   * Plain objects and arrays compare structurally (recursively, key order insensitive,
+   * nested dates as ISO strings); any other object shape compares by reference.
+   */
   key?: (() => K) | K;
   /** Whether the resource is enabled, or a getter re-evaluated reactively for automatic fetches */
   enabled?: boolean | (() => boolean);
@@ -151,7 +155,7 @@ export interface Resource<TTransformed, T = TTransformed> {
    * @throws {Error} When updater is undefined.
    */
   setData: (updater: T | ((old: T | undefined) => T)) => void;
-  /** Gets the current cache key */
+  /** Gets the current raw cache key — the resolved `key` option value, not its normalized cache form */
   cacheKey: () => unknown;
   /**
    * Executes a mutation with given variables (returns raw type). Concurrent mutations run

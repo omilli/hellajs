@@ -4,6 +4,7 @@ import { hasNavigator, hasWindow } from "./internal/core";
 import { resolveRetryConfig, fetchWithRetry } from "./internal/retry";
 import { wireRequestControls } from "./internal/abort";
 import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
+import { stableKey } from "./internal/key";
 
 let cacheConfig: CacheConfig = {
   maxSize: 1000,
@@ -193,23 +194,25 @@ export function updateCacheData<T>(
 const flatView: CacheMapView = {
   get size() { return totalSize(); },
   get(key: unknown) {
+    const normalized = stableKey(key);
     const scopes = Array.from(cacheMap.values());
     let i = 0;
     const len = scopes.length;
     while (i < len) {
       const inner = scopes[i++]!;
-      const entry = inner.get(key) as CacheEntry<unknown> | undefined;
+      const entry = inner.get(normalized) as CacheEntry<unknown> | undefined;
       if (entry && Date.now() - entry.timestamp < entry.cacheTime) return entry;
     }
     return undefined;
   },
   has(key: unknown) {
+    const normalized = stableKey(key);
     const scopes = Array.from(cacheMap.values());
     let i = 0;
     const len = scopes.length;
     while (i < len) {
       const inner = scopes[i++]!;
-      const entry = inner.get(key);
+      const entry = inner.get(normalized);
       if (entry && Date.now() - entry.timestamp < entry.cacheTime) return true;
     }
     return false;
@@ -229,10 +232,11 @@ export function resetCacheState() {
 
 /** Removes every entry matching a key from all fetcher scopes. */
 const invalidateGlobal = (key: unknown): void => {
+  const normalized = stableKey(key);
   const scopes = Array.from(cacheMap.values());
   let i = 0;
   const len = scopes.length;
-  while (i < len) scopes[i++]!.delete(key);
+  while (i < len) scopes[i++]!.delete(normalized);
 };
 
 /** Global cache singleton with cross-scope set/get/update/invalidate operations. */
@@ -255,16 +259,17 @@ export const resourceCache: ResourceCache = {
       throw new Error("[resource] set: cacheTime must be a non-negative number, received " + cacheTime);
     if (staleTime != null && (typeof staleTime !== "number" || Number.isNaN(staleTime) || staleTime < 0))
       throw new Error("[resource] set: staleTime must be a non-negative number, received " + staleTime);
-    setCacheData(PUBLIC_SCOPE, key, data, cacheTime, staleTime);
+    setCacheData(PUBLIC_SCOPE, stableKey(key), data, cacheTime, staleTime);
     return key;
   },
   get: <T = unknown>(key: unknown): T | undefined => {
+    const normalized = stableKey(key);
     const scopeEntries = Array.from(cacheMap.entries());
     let i = 0;
     const len = scopeEntries.length;
     while (i < len) {
       const [, inner] = scopeEntries[i++]!;
-      const entry = inner.get(key) as CacheEntry<T> | undefined;
+      const entry = inner.get(normalized) as CacheEntry<T> | undefined;
       if (!entry) continue;
       if (Date.now() - entry.timestamp >= entry.cacheTime) {
         inner.delete(key);
@@ -277,12 +282,13 @@ export const resourceCache: ResourceCache = {
   },
   update: <T>(key: unknown, updater: T | ((old: T | undefined) => T)): boolean => {
     if (updater === undefined) throw new Error("[resource] update: updater is required, received undefined");
+    const normalized = stableKey(key);
     const scopeEntries = Array.from(cacheMap.entries());
     let i = 0;
     const len = scopeEntries.length;
     while (i < len) {
       const [scope] = scopeEntries[i++]!;
-      if (updateCacheData(scope, key, updater)) return true;
+      if (updateCacheData(scope, normalized, updater)) return true;
     }
     return false;
   },
@@ -298,12 +304,13 @@ export const resourceCache: ResourceCache = {
     const uLen = updates.length;
     while (ui < uLen) {
       const { key, updater } = updates[ui++]!;
+      const normalized = stableKey(key);
       const scopeEntries = Array.from(cacheMap.entries());
       let i = 0;
       const len = scopeEntries.length;
       while (i < len) {
         const [scope] = scopeEntries[i++]!;
-        if (updateCacheData(scope, key, updater)) break;
+        if (updateCacheData(scope, normalized, updater)) break;
       }
     }
   },
@@ -387,10 +394,13 @@ export const resourceCache: ResourceCache = {
       throw new Error("[resource] prefetch: fetcher must be a function, received " + typeof options.fetcher);
 
     const { fetcher, key, cacheTime = 0, staleTime, timeout, abortSignal, retry = 0, retryDelay = 1000, deduplicate = true } = options;
+    // Structural key: dedup and cache compare plain objects/arrays by shape,
+    // while the fetcher receives the raw key unchanged
+    const normalizedKey = stableKey(key);
 
     // Dedup: join an in-flight same-fetcher+key request
     if (deduplicate) {
-      const ongoing = getOngoing(fetcher, key);
+      const ongoing = getOngoing(fetcher, normalizedKey);
       if (ongoing) return ongoing.promise as Promise<T>;
     }
 
@@ -406,7 +416,7 @@ export const resourceCache: ResourceCache = {
     });
 
     if (deduplicate) {
-      setOngoing(fetcher, key, { promise: requestPromise, abortController });
+      setOngoing(fetcher, normalizedKey, { promise: requestPromise, abortController });
       requestPromise.catch(() => { });
     }
 
@@ -414,7 +424,7 @@ export const resourceCache: ResourceCache = {
 
     try {
       const result = await fetchWithRetry(() => fetcher(key), { signal, retryConfig });
-      setCacheData(fetcher, key, result, cacheTime, staleTime ?? Infinity);
+      setCacheData(fetcher, normalizedKey, result, cacheTime, staleTime ?? Infinity);
       resolvePromise!(result);
       return result;
     } catch (err) {
@@ -422,7 +432,7 @@ export const resourceCache: ResourceCache = {
       throw err;
     } finally {
       releaseControls();
-      if (deduplicate) deleteOngoing(fetcher, key);
+      if (deduplicate) deleteOngoing(fetcher, normalizedKey);
     }
   },
 };

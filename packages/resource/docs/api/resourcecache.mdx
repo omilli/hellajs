@@ -92,7 +92,7 @@ console.log(resourceCache.config); // { maxSize: 1000, enableLRU: true }
 
 ### `get`
 
-Retrieves data from the cache by key.
+Retrieves data from the cache by key. Plain objects and arrays compare **structurally** — an equal-shaped fresh object hits an entry stored with a different reference. Any other object shape (`Date`, `Map`, `Set`, class instances) compares by reference.
 
 ```typescript
 resourceCache.set('user:123', { name: 'John' }, 60000);
@@ -101,8 +101,9 @@ resourceCache.set('user:123', { name: 'John' }, 60000);
 const user = resourceCache.get<{ name: string }>('user:123');
 if (user) console.log('Cached user:', user.name);
 
-// Explicit type parameter for type safety
-const userData = resourceCache.get<{ name: string }>('user:123');
+// Object keys compare structurally — same shape hits
+resourceCache.set({ team: 1 }, [{ id: 1, name: 'Ada' }], 60000);
+const roster = resourceCache.get<{ id: number; name: string }[]>({ team: 1 });
 ```
 
 ### `isOnline`
@@ -241,7 +242,7 @@ resourceCache.invalidateMultiple(['user:1', 'posts:user:1']);
 
 ### `invalidateByPrefix`
 
-Removes all cache entries whose keys start with the given prefix. Returns the number of entries invalidated.
+Removes all cache entries whose keys start with the given prefix. Returns the number of entries invalidated. Matches string keys only — structurally-hashed object/array keys are opaque strings not designed for prefix matching.
 
 ```typescript
 // Set up some cached data
@@ -255,7 +256,7 @@ console.log(count); // 2 (user-profile, user-settings)
 
 ### `invalidateByPattern`
 
-Removes all cache entries whose keys match the given regular expression pattern. Returns the number of entries invalidated.
+Removes all cache entries whose keys match the given regular expression pattern. Returns the number of entries invalidated. Matches string keys only — structurally-hashed object/array keys are opaque strings not designed for pattern matching.
 
 ```typescript
 // Set up some cached data
@@ -329,6 +330,10 @@ Each [`resource`](/reference/resource/resource) has its cache automatically scop
 
 The `resourceCache` API provides a flattened view across all scopes: `get()`, `invalidate()`, and similar methods search across all resource scopes transparently. Manual cache entries created with `resourceCache.set()` live in a separate public scope.
 
+### Key Equality
+
+Within a scope, keys compare by value for primitives and **structurally** for plain objects and arrays: recursively, property order insensitive, array order significant, nested dates compared by their ISO representation. Two evaluations that build distinct-but-equal objects (`key: () => ({ ...filters() })`) hit the same cache and dedup entries. Every other object shape — a `Date`, `Map`, `Set`, or class instance used as or nested in a key — compares by reference. [`invalidateByPrefix`](#invalidatebyprefix) and [`invalidateByPattern`](#invalidatebypattern) match string keys only.
+
 ### TTL and Expiration
 
 Cache entries have a time-to-live (TTL) that determines when they expire; expired entries are cleaned up lazily during cache operations, throttled to avoid performance impact.
@@ -392,6 +397,7 @@ const getUserKey = (id: number): UserCacheKey => `user:${id}`;
 const getPostKey = (userId: number, postId: number): PostCacheKey =>
   `user:${userId}:posts:${postId}`;
 
+const userData = { name: 'John' };
 resourceCache.set(getUserKey(123), userData, 60000);
 const user = resourceCache.get(getUserKey(123));
 ```

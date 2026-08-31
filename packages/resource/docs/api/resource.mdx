@@ -45,7 +45,10 @@ interface ResourceError {
 }
 
 interface ResourceOptions<T, K, TTransformed = T> {
-  /** Function to generate cache key or static key value */
+  /**
+   * Function to generate cache key or static key value. Plain objects and arrays compare
+   * structurally (key order insensitive, nested dates as ISO strings); other object shapes by reference.
+   */
   key?: (() => K) | K;
   /** Whether the resource is enabled, or a getter re-evaluated reactively for automatic fetches (default: true) */
   enabled?: boolean | (() => boolean);
@@ -275,7 +278,7 @@ When `cacheTime` is `0` (the default), `setData` updates the reactive signal but
 
 ### `cacheKey`
 
-Returns the current cache key used for this resource.
+Returns the current raw cache key used for this resource — the resolved `key` option value, not its normalized cache form. Structurally-hashed object keys still come back as the original object.
 
 ```typescript
 import { signal } from '@hellajs/core';

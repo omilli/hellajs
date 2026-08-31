@@ -8,6 +8,7 @@ import { wireRequestControls } from "./internal/abort";
 import { createPolling } from "./internal/polling";
 import { createFocus, createReconnect } from "./internal/lifecycle";
 import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
+import { stableKey } from "./internal/key";
 import { structuralShare } from "./internal/structural";
 
 /**
@@ -193,7 +194,10 @@ export function resource<T, K = undefined, TTransformed = T>(
       paused(false);
     }
 
-    const cacheKey = untracked(resolveKey);
+    const rawKey = untracked(resolveKey);
+    // Structural key: cache and dedup compare plain objects/arrays by shape,
+    // while the fetcher receives the raw key unchanged
+    const cacheKey = stableKey(rawKey);
 
     // Cache check phase - skip if force refresh requested
     if (!force) {
@@ -278,7 +282,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 
     // Request loop shared with prefetch; post-processing order preserved.
     try {
-      const result = await fetchWithRetry(() => fetcherFn(cacheKey), { signal: currentSignal, retryConfig });
+      const result = await fetchWithRetry(() => fetcherFn(rawKey), { signal: currentSignal, retryConfig });
 
       const shared = structuralSharing ? structuralShare<T>(untracked(() => rawData()), result) : result;
       setCacheData(fetcherFn, cacheKey, shared, cacheTime, staleTime ?? Infinity);
@@ -318,7 +322,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Clears cache entry and triggers fresh request
    */
   function invalidate() {
-    cacheMap.get(fetcherFn)?.delete(untracked(resolveKey));
+    cacheMap.get(fetcherFn)?.delete(stableKey(untracked(resolveKey)));
     run(true);
   }
 
@@ -411,7 +415,7 @@ export function resource<T, K = undefined, TTransformed = T>(
    */
   const setData = (updater: T | ((old: T | undefined) => T)) => {
     if (updater === undefined) throw new Error("[resource] setData: updater is required, received undefined");
-    const key = cacheKey();
+    const key = stableKey(cacheKey());
 
     if (typeof updater === "function") {
       // Get old value from cache first, fallback to current rawData
