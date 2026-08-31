@@ -24,10 +24,10 @@ applyTo: "packages/router/**"
   | `route.ts` | The `route` signal (current `RouteInfo`) + the shared `activeFn` ancestor-match predicate. |
   | `navigate.ts` | `:key` → `encodeURIComponent`, `*` → raw insert, strip unmatched `:param`, query string, → `go()`. |
   | `match.ts` | `parseQuery`, `matchPattern` (segment/wildcard extraction), `matchNestedEntry` (single-entry chain resolver), `matchNestedRoute` (specificity-sorted loop over entries, params spread-merged), `matchRoute` (flat). |
-  | `hooks.ts` | `executeHook` (arity dispatch + try/catch + promise.catch), `executeGlobalHook` (no args). |
+  | `hooks.ts` | `executeHook` (arity dispatch + try/catch + promise.catch), `executeGlobalHook` (`(to, from)` paths). |
   | `utils.ts` | `EMPTY_OBJECT`/`EMPTY_CRUMBS`, `hasChildren`, `getHashPath`, `stripBase`, `sortRoutesBySpecificity`. Leaf module — no internal imports. |
   | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict` + hop counter (`updateRoute`), `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase` via shared `commitMatch` + `mergeRouteMeta`, `buildRouteInfo`, `go` (guard-aware history commit, `base`-prefixed in history mode; memory mode commits none). |
-  | `internal/matched.ts` | `handleScroll`, `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuardsNested`/`runGuardsFlat` (shared global-before prologue), `executeRouteWithHooks`. |
+  | `internal/matched.ts` | `handleScroll`, `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuardsNested`/`runGuardsFlat` (shared global-before prologue; the global hook receives `(toPath, route().path)`), `executeRouteWithHooks` (threads `(to, from)` into `global.after`). |
   | `internal/core.ts` | Re-exports `signal`, `isFunction`, `isString`, `isPlainObject`, `hasWindow` from `@hellajs/core`. |
 
   ## Resolution pipeline (`internal/resolve.ts` `updateRoute` → early-exit at first hit)
@@ -48,7 +48,7 @@ applyTo: "packages/router/**"
 
   `global.before → parent.before → child.before → handler → child.after → parent.after → global.after`
 
-  - `runGuardsNested`/`runGuardsFlat` run `before` hooks (global + nested top-down / flat) and short-circuit on the first non-pass verdict (`false`, throw, or redirect string); the shared commit step runs the handler + `after` hooks only on a pass.
+  - `runGuardsNested`/`runGuardsFlat` run `before` hooks (global + nested top-down / flat) and short-circuit on the first non-pass verdict (`false`, throw, or redirect string); the shared commit step runs the handler + `after` hooks only on a pass. Global `before`/`after` receive `(to, from)` paths — `to` = incoming path incl. query, `from` = `route().path` pre-commit (`matched.ts runGlobalBefore` reads it before the signal write; `executeRouteWithHooks` receives the pre-write `from` via `commitMatch`).
   - Each nested level's hook receives that level's **cumulative inherited params** + query; the handler receives leaf params/query.
   - **Sync** `before` return values can block: `false`/throw cancels, string redirects. **Async** `before` (`Promise`) cannot block — treated as proceed, rejection `.catch`-logged.
 
