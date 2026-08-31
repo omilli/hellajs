@@ -6,6 +6,25 @@ import type { Handler, Params, RouteWithHooks, ScrollBehavior } from "../types";
 import type { RouteMatch } from "./match";
 
 /**
+ * Root→leaf route values of the last committed match (flat commits record a
+ * single-element chain); null after a notFound commit or `resetRouter`. Leave
+ * guards read it before the route signal is written, so it always describes
+ * the route being left.
+ */
+let lastMatchedChain: unknown[] | null = null;
+
+/**
+ * Records the root→leaf matched route values leave guards run against — flat
+ * commits record a single-element chain — or clears the snapshot (notFound
+ * commit, `resetRouter`).
+ * @internal
+ * @param chain Root→leaf route values of the committed match, or null to clear.
+ */
+export function setMatchedChain(chain: unknown[] | null): void {
+  lastMatchedChain = chain;
+}
+
+/**
  * Handles scroll behavior after navigation.
  * @internal
  * @param toPath The path navigated to
@@ -122,16 +141,17 @@ export function extractScroll(routeValue: unknown): ScrollBehavior | false | und
 }
 
 /**
- * Extracts before and after hooks from a route value.
+ * Extracts before, after, and leave hooks from a route value.
  * @internal
  * @param routeValue The route value to extract hooks from.
- * @returns Object containing before and after hook functions.
+ * @returns Object containing before, after, and leave hook functions.
  */
-export function extractRouteHooks(routeValue: unknown): { before: Handler | null; after: Handler | null } {
+export function extractRouteHooks(routeValue: unknown): { before: Handler | null; after: Handler | null; leave: Handler | null } {
   const isObj = isPlainObject(routeValue);
   return {
     before: isObj ? (routeValue as RouteWithHooks).before || null : null,
-    after: isObj ? (routeValue as RouteWithHooks).after || null : null
+    after: isObj ? (routeValue as RouteWithHooks).after || null : null,
+    leave: isObj ? (routeValue as RouteWithHooks).leave || null : null
   };
 }
 
@@ -219,15 +239,79 @@ function runGlobalBefore(toPath: string): GuardVerdict {
 }
 
 /**
- * Runs the before-guard chain for a nested match (global before, then each nested route before
- * top-down) and returns the first non-pass verdict. Guards run BEFORE the route signal is written
+ * Runs leave guards for the route being departed: the global `leave` hook first
+ * (receiving `(to, from)` paths), then the last matched chain's `leave` hooks
+ * child→parent (teardown order, mirroring `after`) with the departed route's
+ * params/query. Shares the guard verdict contract — `false` cancels, a non-empty
+ * string redirects (replace), a throw cancels and logs, a `Promise` proceeds with
+ * only its rejection logged. No-op when `force` is set (`navigate({ force: true })`
+ * override), when no chain is recorded (init/SSR/notFound/reset), or when the
+ * target equals the current path (query ignored) — same-path navigation leaves
+ * nothing.
+ * @param toPath The path being navigated to (query included).
+ * @param force True to skip leave guards entirely.
+ * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
+ */
+function runLeaveGuards(toPath: string, force?: boolean): GuardVerdict {
+  const chain = lastMatchedChain;
+  if (force || chain === null) {
+    return "pass";
+  }
+
+  const fromRoute = route();
+  if (toPath.split("?")[0] === fromRoute.path.split("?")[0]) {
+    return "pass";
+  }
+
+  const { leave: globalLeave } = hooks();
+  if (isFunction(globalLeave)) {
+    let result: unknown;
+    try {
+      result = (globalLeave as (to: string, from: string) => unknown)(toPath, fromRoute.path);
+    } catch (error) {
+      console.error("[router] Global leave:", error);
+      return "cancel";
+    }
+    const globalVerdict = interpretGuardResult(result, "Global leave");
+    if (globalVerdict !== "pass") {
+      return globalVerdict;
+    }
+  }
+
+  const params = fromRoute.params;
+  const query = fromRoute.query;
+  let i = chain.length - 1;
+  while (i >= 0) {
+    const leave = extractRouteHooks(chain[i]!).leave;
+    i--;
+    if (isFunction(leave)) {
+      const verdict = invokeRouteGuard(leave, params, query, "leave");
+      if (verdict !== "pass") {
+        return verdict;
+      }
+    }
+  }
+
+  return "pass";
+}
+
+/**
+ * Runs the before-guard chain for a nested match (leave guards of the departed
+ * route, global before, then each nested route before top-down) and returns the
+ * first non-pass verdict. Guards run BEFORE the route signal is written
  * so a cancel/redirect never produces an observable route change.
  * @internal
  * @param nestedMatches The parent-to-leaf nested match chain.
  * @param toPath The path being navigated to (query included), passed to the global before hook.
+ * @param force True to skip leave guards (incoming before guards still run).
  * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
  */
-export function runGuardsNested(nestedMatches: RouteMatch[], toPath: string): GuardVerdict {
+export function runGuardsNested(nestedMatches: RouteMatch[], toPath: string, force?: boolean): GuardVerdict {
+  const leaveVerdict = runLeaveGuards(toPath, force);
+  if (leaveVerdict !== "pass") {
+    return leaveVerdict;
+  }
+
   const globalVerdict = runGlobalBefore(toPath);
   if (globalVerdict !== "pass") {
     return globalVerdict;
@@ -251,22 +335,30 @@ export function runGuardsNested(nestedMatches: RouteMatch[], toPath: string): Gu
 }
 
 /**
- * Runs the before-guard chain for a flat route (global before, then the route before) and returns
- * the first non-pass verdict. Guards run BEFORE the route signal is written so a cancel/redirect
+ * Runs the before-guard chain for a flat route (leave guards of the departed
+ * route, global before, then the route before) and returns the first non-pass
+ * verdict. Guards run BEFORE the route signal is written so a cancel/redirect
  * never produces an observable route change.
  * @internal
  * @param routeValue The flat route value.
  * @param params Leaf-level parameters.
  * @param query Leaf-level query.
  * @param toPath The path being navigated to (query included), passed to the global before hook.
+ * @param force True to skip leave guards (incoming before guards still run).
  * @returns The verdict: `"pass"`, `"cancel"`, or `{ redirect }`.
  */
 export function runGuardsFlat(
   routeValue: unknown,
   params: Params,
   query: Params,
-  toPath: string
+  toPath: string,
+  force?: boolean
 ): GuardVerdict {
+  const leaveVerdict = runLeaveGuards(toPath, force);
+  if (leaveVerdict !== "pass") {
+    return leaveVerdict;
+  }
+
   const globalVerdict = runGlobalBefore(toPath);
   if (globalVerdict !== "pass") {
     return globalVerdict;

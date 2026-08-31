@@ -5,6 +5,7 @@
 * **Creation**: Added concept [066](entries/066.md) (type: decision).
 * **Creation**: Added concept [067](entries/067.md) (type: decision) — template-literal `infer` slots cross `/` boundaries; pattern-grammar token typing recurses per segment.
 * **Creation**: Added concept [068](entries/068.md) (type: decision).
+* **Creation**: Added concept [069](entries/069.md) (type: decision).
 
 ## 2026-08-30
 * **Creation**: Added concept [057](entries/057.md) (type: decision).

@@ -22,7 +22,7 @@ function router(config: RouterConfig): RouteInfo
 // }
 ```
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
-- `hooks`: Optional global hooks — `before(to, from)` guards every navigation (`to` is the incoming path with its query string, `from` is the pre-commit path being left; can cancel or redirect), `after(to, from)` runs once the route commits.
+- `hooks`: Optional global hooks — `leave(to, from)` guards the route being left (same verdicts as `before`), `before(to, from)` guards every incoming navigation (`to` is the incoming path with its query string, `from` is the pre-commit path being left; can cancel or redirect), `after(to, from)` runs once the route commits.
 - `redirects`: Optional array of redirect objects. `from` entries match as route patterns — `:param` captures a segment, `*` captures the rest — with the query ignored; captured values substitute into `to` tokens (unmatched tokens stripped). First matching entry in array order wins.
 - `notFound`: Optional handler for unmatched routes — receives the attempted path (query included — same shape as `route().path`); or a string to replace-redirect to.
 - `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing — no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
@@ -111,7 +111,15 @@ Memory mode is useful for tests, Storybook, and non-DOM environments. It keeps n
 
 ### Hook System
 
-Global and per-route hooks with `before` and `after` execution points.
+Global and per-route hooks with `leave`, `before`, and `after` execution points.
+
+| Hook | Runs | Return contract |
+|---|---|---|
+| `hooks.leave(to, from)` | First — when leaving a matched route, before any `before` hook | Same verdicts as `before`: `false` cancels, a non-empty `string` redirects (replace) |
+| `hooks.before(to, from)` | Before the incoming route's guards | `false` cancels, a non-empty `string` redirects (replace) |
+| `hooks.after(to, from)` | After the route commits | Cannot block |
+
+Route-level `leave` hooks run child→parent after the global `leave`, receiving the departed route's params/query — the unsaved-form flow, with [`navigate(path, { force: true })`](/reference/router/navigate) as the override. See [Leave Guards](/learn/concepts/route-hooks#leave-guards) for the full contract.
 
 Routes can also carry `meta` for analytics, SEO, or feature flags; `inheritMeta` cascades parent meta down the nested match chain. See [route hooks](/learn/concepts/route-hooks#route-metadata) for the cascade, per-route boundaries, and inline `navigate()` precedence.
 
@@ -294,7 +302,7 @@ const searchHandler = (params, query) => {
 
 ### Hook Returns
 
-`before` hooks can block or redirect navigation by returning specific values:
+`before` and `leave` hooks can block or redirect navigation by returning specific values:
 
 | Return | Behavior |
 |---|---|

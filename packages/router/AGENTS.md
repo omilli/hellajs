@@ -9,7 +9,7 @@
   | `route` | `route.ts` | Reactive signal holding the current `RouteInfo` (`path`, `params`, `query`, `handler`, `meta`, `crumbs`, `active`). |
   | `navigate` | `navigate.ts` | Programmatic nav: `:param`/`:param?`/`*` substitution, query serialize, history push/replace. |
 | `href` | `href.ts` | Typed URL builder: same `:param`/`:param?`/`*`/query semantics as `navigate` via shared `buildPath`; returns the string, no history touched. |
-  | `resetRouter` | `resetRouter.ts` | Factory-reset: resets all config signals + `route()` to defaults, clears the saved scroll-position stack, detaches listeners. Does NOT mutate the URL. |
+  | `resetRouter` | `resetRouter.ts` | Factory-reset: resets all config signals + `route()` to defaults, clears the saved scroll-position stack and the leave-guard chain, detaches listeners. Does NOT mutate the URL. |
   | `type *` | `types.d.ts` | `RouterConfig`, `RouteInfo`, `RouteWithHooks`, `Handler` (full `(params: Params, query: Params) => unknown` signature; runtime dispatch is arity-based), `NavigateOptions`, `Redirect`, `ScrollBehavior`, `HistoryMode`, `Crumb`, `ExtractParams`. |
 
   ## File map
@@ -19,13 +19,13 @@
   | `router.ts` | Config → state signals (validates + normalizes `base`, throwing on non-`'/'`-prefixed values); initial-path detection (`url` override / hash vs history / memory → `/`; base stripped from every read); popstate/hashchange + click listeners with composed cleanup (none attached in memory mode; pop handlers pass `isPop` so pops pop the scroll stack); synchronous `updateRoute()` on return. |
   | `state.ts` | 9 config signals (`routes`, `hooks`, `redirects`, `notFound`, `mode`, `base`, `scrollBehavior`, `previousPath`, `inheritMeta`). |
   | `route.ts` | The `route` signal (current `RouteInfo`) + the shared `activeFn` ancestor-match predicate. |
-  | `navigate.ts` | Path validation + option unpack; delegates substitution to `internal/path.ts buildPath`, then `go()`. |
+  | `navigate.ts` | Path validation + option unpack (`force` skips leave guards — incoming guards still run); delegates substitution to `internal/path.ts buildPath`, then `go()`. |
 | `href.ts` | The `href` export: validation + `internal/path.ts buildPath`, returns the built URL string — no history, no resolution. |
   | `match.ts` | `parseQuery`, `matchPattern` (segment/optional/wildcard extraction), `matchSegments` (recursive aligner, `:name?` consume-first backtracking), `matchNestedEntry` (single-entry chain resolver), `matchNestedRoute` (specificity-sorted loop over entries, params spread-merged), `matchRoute` (flat). |
   | `hooks.ts` | `executeHook` (arity dispatch + try/catch + promise.catch), `executeGlobalHook` (`(to, from)` paths). |
   | `utils.ts` | `EMPTY_OBJECT`/`EMPTY_CRUMBS`, `hasChildren`, `getHashPath`, `stripBase`, `sortRoutesBySpecificity`. Leaf module — no internal imports. |
   | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict` + hop counter (`updateRoute`), `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase` via shared `commitMatch` + `mergeRouteMeta`, `buildRouteInfo`, `go` (guard-aware history commit, `base`-prefixed in history mode; memory mode commits none). Pop-aware scroll stack: `go` captures `window.scrollX/scrollY` before resolution and pushes on non-replace commits; pop commits (`isPop` threaded through `updateRoute` → `commitMatch` → `handleScroll`) pop it via `takeSavedScroll`; `resetScrollStack` backs `resetRouter`. |
-  | `internal/matched.ts` | `handleScroll` (custom fns receive `(to, from, savedPosition)` — `savedPosition` passed only on pops), `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuardsNested`/`runGuardsFlat` (shared global-before prologue; the global hook receives `(toPath, route().path)`), `executeRouteWithHooks` (threads `(to, from)` into `global.after`). |
+  | `internal/matched.ts` | `handleScroll` (custom fns receive `(to, from, savedPosition)` — `savedPosition` passed only on pops), `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks` (before/after/leave), the leave-guard chain snapshot (`setMatchedChain` — root→leaf values of the last committed match, cleared on notFound commits and `resetRouter`) + `runLeaveGuards` (global `hooks.leave(to, from)` first, then chain `leave` child→parent with the departed route's params/query), `runGuardsNested`/`runGuardsFlat` (leave phase, then shared global-before prologue; the global hook receives `(toPath, route().path)`), `executeRouteWithHooks` (threads `(to, from)` into `global.after`). |
 | `internal/path.ts` | `buildPath` — the single substitution truth (`:param` → `encodeURIComponent`, absent `:param?` strips token + preceding slash, `*` → raw insert, strip unmatched, query serialize); shared by `navigate` + `href`. |
   | `internal/core.ts` | Re-exports `signal`, `isFunction`, `isString`, `isPlainObject`, `hasWindow` from `@hellajs/core`. |
 
@@ -45,9 +45,10 @@
 
   ## Lifecycle hook order (`internal/matched.ts` `runGuards` → `executeRouteWithHooks`)
 
-  `global.before → parent.before → child.before → handler → child.after → parent.after → global.after`
+  `global.leave → child.leave → parent.leave → global.before → parent.before → child.before → handler → child.after → parent.after → global.after`
 
-  - `runGuardsNested`/`runGuardsFlat` run `before` hooks (global + nested top-down / flat) and short-circuit on the first non-pass verdict (`false`, throw, or redirect string); the shared commit step runs the handler + `after` hooks only on a pass. Global `before`/`after` receive `(to, from)` paths — `to` = incoming path incl. query, `from` = `route().path` pre-commit (`matched.ts runGlobalBefore` reads it before the signal write; `executeRouteWithHooks` receives the pre-write `from` via `commitMatch`).
+  - The leave phase runs only when departing a matched route — never on init/SSR (no chain until the first commit), on same-path navigation (query ignored), or when the target lands on `notFound` (no `runGuards*` phase runs).
+  - `runGuardsNested`/`runGuardsFlat` run the leave phase first, then `before` hooks (global + nested top-down / flat), and short-circuit on the first non-pass verdict (`false`, throw, or redirect string); the shared commit step runs the handler + `after` hooks only on a pass. Global `before`/`after` receive `(to, from)` paths — `to` = incoming path incl. query, `from` = `route().path` pre-commit (`matched.ts runGlobalBefore` reads it before the signal write; `executeRouteWithHooks` receives the pre-write `from` via `commitMatch`).
   - Each nested level's hook receives that level's **cumulative inherited params** + query; the handler receives leaf params/query.
   - **Sync** `before` return values can block: `false`/throw cancels, string redirects. **Async** `before` (`Promise`) cannot block — treated as proceed, rejection `.catch`-logged.
 
@@ -80,7 +81,7 @@
 
     **`crumbs` parent-to-leaf** — each crumb `{segment: pattern key, path: cumulative URL (query excluded), params: inherited through that level}`; `notFound` resolution → empty array (`resolve.ts` crumb build). Use `crumb.path` for hrefs, `crumb.segment` for label lookup.
 
-    **`resetRouter` resets everything** — all 10 signals (9 config + `route()`) reset to defaults, the saved scroll-position stack cleared, listeners detached. Does NOT mutate `window.location` or `history`. Re-init with `router()` after reset.
+    **`resetRouter` resets everything** — all 10 signals (9 config + `route()`) reset to defaults, the saved scroll-position stack and the leave-guard chain snapshot cleared, listeners detached. Does NOT mutate `window.location` or `history`. Re-init with `router()` after reset.
 
     **Sync/async `before` asymmetry** — sync `before` can block via `false`/throw/string return; async `before` (returning `Promise`) cannot block — treated as proceed, rejection `.catch`-logged. This is intentional: `navigate` stays `void`; async can't retroactively block a synchronous navigation.
 
@@ -88,7 +89,9 @@
 
     **`route()` is pre-commit in `before` hooks** — `runGuards` executes before the `route()` signal write (`internal/matched.ts`). A `before` hook reading `route()` sees the *previous* route's state, not the incoming one. Params/query are still passed as hook arguments. Use `after` hooks or inline `navigate({meta})` to react to the committed route.
 
-    **Guard return contract** — `before` hook return values: `void`/`true` → proceed, `false` → cancel (URL unchanged), string → redirect, `throw` → cancel + log, `Promise` → proceed (cannot block). No new types exported; contract documented via JSDoc only.
+    **Guard return contract** — `before`/`leave` hook return values: `void`/`true` → proceed, `false` → cancel (URL unchanged), string → redirect, `throw` → cancel + log, `Promise` → proceed (cannot block). No new types exported; contract documented via JSDoc only.
+
+    **Leave guards read a match snapshot, not `route()`** — `matched.ts` holds the root→leaf route values of the last committed match (`setMatchedChain`, recorded inside `commitMatch` on a pass; null after a notFound commit or `resetRouter`). `runLeaveGuards` compares `to` vs `route().path` *sans query* — equal paths skip leave entirely (this is what makes init/SSR leave-free: the seeded `previousPath` equals the first resolution's `to`). Route-level `leave` hooks receive the departed route's cumulative params/query via arity dispatch (a nested parent's leave sees the leaf-merged params). A leave redirect re-enters resolution and re-runs the same leave guards against the new target — a leave that unconditionally returns a string different from the current path loops into the 20-hop cap; condition the redirect on mutable state.
 
     **Malformed routes tolerated** — string children values, `children: null`, non-function/non-object route values, and `routes: null` all resolve to `handler: null` rather than throwing (`routing.test.ts`, `errors.test.ts`).
   </non-obvious>
@@ -105,5 +108,5 @@
 
   - Run `bun coverage router`. **NEVER run `bun test` directly** — it tests against stale bundles. Coverage instruments `dist/bundle.js`, not `lib/`.
   - Shared helpers in `tests/helpers.ts`: `setupRouterEnv` (resetTestState + setupContainer + `history.replaceState`), `expectLoggedError` (asserts `[router]` prefix against `suppressConsole` output).
-  - One behavior per file: `routing`, `hooks`, `redirects`, `specificity`, `history`, `hash-mode`, `navigate-options`, `href`, `intercept`, `errors`, `guards`, `inherit-meta`, `meta`, `crumbs`, `active`, `scroll`, `url-encoding`, `atomicity`, `base-path`, `memory-mode`, `reset-router`, `ssr`, `validation`. Follow `guides/tests.md` — `mock()` from `bun:test`, explicit imports from `@hellajs/core`/`@hellajs/router/bundle`/`@utils/test-helpers.js`, `flush()` is sync.
+  - One behavior per file: `routing`, `hooks`, `redirects`, `specificity`, `history`, `hash-mode`, `navigate-options`, `href`, `intercept`, `errors`, `guards`, `leave-guards`, `inherit-meta`, `meta`, `crumbs`, `active`, `scroll`, `url-encoding`, `atomicity`, `base-path`, `memory-mode`, `reset-router`, `ssr`, `validation`. Follow `guides/tests.md` — `mock()` from `bun:test`, explicit imports from `@hellajs/core`/`@hellajs/router/bundle`/`@utils/test-helpers.js`, `flush()` is sync.
 </router-package-instructions>
