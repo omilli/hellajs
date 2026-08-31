@@ -21,14 +21,15 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 
 ## Architecture
 
-### The fetch pipeline (`run(force, manual)`, resource.ts:161)
+### The fetch pipeline (`run(force, manual)`, resource.ts)
 
 1. **SSR guard** — `if (!hasWindow()) return;` (first line). On the server there is no fetch — resources embedded in a server-rendered tree never trigger network calls. Fetch server-side data directly and pass it as `initialData`.
 2. **Guard** — `if (!untracked(isEnabled) && !(manual && enabledIsFn)) return;`. Manual fetch bypasses `enabled` **only in getter form**; a static `enabled:false` blocks even manual fetch.
-3. **Cache phase** (skipped when `force`) — only if `cacheTime > 0`: `cleanupExpiredCache()`, lookup entry; on TTL-valid hit → update `lastAccess`, push to `rawData`, `handleError()` (clears error/loading/fetching). Then **SWR**: if `staleTime !== undefined && isStale(entry) && revalidateOnStale` → `isFetching(true)` + un-awaited `run(true)` (force, re-enters dedup). Return.
-4. **Dedup phase** (skipped when `force`) — if `deduplicate`, `getOngoing(fetcherFn, cacheKey)`; on hit → adopt shared `abortController` (`cleanAbort`), `handleError(undefined, !hasData, true)`, `await promise` (unless already aborted) → success/abort handler. Return.
-5. **Request phase** — `currentAbortController = cleanAbort()`; `wireRequestControls` wires external `abortSignal` (immediate-abort if already aborted) and `timeout`, returning a `release()` cleared on every settle path; capture `currentSignal`; `handleError(undefined, !hasData, true)`. Build deferred `requestPromise`; if `deduplicate`, `setOngoing(...)` + attach `.catch(()=>{})` to swallow unhandled rejection.
-6. **Request loop** — delegated to `fetchWithRetry(fetcherFn(cacheKey), { signal, retryConfig })`: per-attempt pre-abort check; race against abort-reject; on success the caller applies optional `structuralShare`, `setCacheData(..., cacheTime, staleTime ?? Infinity)`, guarded `handleSuccess`, resolves promise via `settleRun`; on error: abort→handle+reject; else count++ (starts at 1), `shouldRetry` false→handle+reject; else abort-interruptible delay, top-of-loop abort check exits.
+3. **Offline deferral** (only when `pauseWhenOffline`) — right after the guards, before the cache phase: offline → `paused(true)`, stash the `force` flag in a closure var, `return` (no fetcher call, no error state — even a cache hit defers). Online → `paused(false)` and proceed. The per-resource `onOnlineChange` listener replays `run(stashedForce)` on reconnect.
+4. **Cache phase** (skipped when `force`) — only if `cacheTime > 0`: `cleanupExpiredCache()`, lookup entry; on TTL-valid hit → update `lastAccess`, push to `rawData`, `handleError()` (clears error/loading/fetching). Then **SWR**: if `staleTime !== undefined && isStale(entry) && revalidateOnStale` → `isFetching(true)` + un-awaited `run(true)` (force, re-enters dedup). Return.
+5. **Dedup phase** (skipped when `force`) — if `deduplicate`, `getOngoing(fetcherFn, cacheKey)`; on hit → adopt shared `abortController` (`cleanAbort`), `handleError(undefined, !hasData, true)`, `await promise` (unless already aborted) → success/abort handler. Return.
+6. **Request phase** — `currentAbortController = cleanAbort()`; `wireRequestControls` wires external `abortSignal` (immediate-abort if already aborted) and `timeout`, returning a `release()` cleared on every settle path; capture `currentSignal`; `handleError(undefined, !hasData, true)`. Build deferred `requestPromise`; if `deduplicate`, `setOngoing(...)` + attach `.catch(()=>{})` to swallow unhandled rejection.
+7. **Request loop** — delegated to `fetchWithRetry(fetcherFn(cacheKey), { signal, retryConfig })`: per-attempt pre-abort check; race against abort-reject; on success the caller applies optional `structuralShare`, `setCacheData(..., cacheTime, staleTime ?? Infinity)`, guarded `handleSuccess`, resolves promise via `settleRun`; on error: abort→handle+reject; else count++ (starts at 1), `shouldRetry` false→handle+reject; else abort-interruptible delay, top-of-loop abort check exits.
 
 Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loading/fetching and fires `onError` only for a truthy error; `handleSuccessError` clears loading/fetching for AbortError **without** setting error, else delegates to `handleError`; `handleSuccess` writes `rawData`, clears flags, fires `onSuccess`; `cleanAbort(controller?)` aborts the prior controller and returns `controller ?? new AbortController()`.
 
@@ -63,7 +64,8 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 - `createPolling`: recursive `setTimeout`; skips tick when `document.visibilityState === "hidden"` unless `refetchIntervalInBackground`; dynamic interval re-evaluated via `untracked(data)` after each tick. `false`/`0`/`undefined` disable.
 - `createFocus`: `visibilitychange` → `run(false)` only when becoming visible; window `focus` → `run(false)` unconditionally (app-switch without tab hide). A tab return fires both — dedup absorbs the duplicate.
 - `createReconnect`: subscribes via `resourceCache.onOnlineChange` → `run(false)` on transition to online.
-- **Setup gates differ**: `polling.setup()` requires `isEnabled() && refetchInterval` — it works standalone, no auto-fetch opt-in — and arms **once**: at creation when enabled, otherwise on the first truthy enabled evaluation inside the effect (an `enabled` getter flipping false→true starts polling); key changes never reset the cadence. `focus.setup()` and `reconnect.setup()` require only their own boolean flags (work without auto-fetch). All three are cleared by `abort`/`reset`/`dispose`; `reset()` re-arms polling, `abort()` does not (recreate to resume).
+- **Offline pausing** (`pauseWhenOffline`): a per-resource `resourceCache.onOnlineChange` listener registered at creation (only when the flag is set). On `online` it fires **only for a live deferral** (`paused()` true): `paused(false)` + `run(stashedForce)` — an online event with nothing stashed never fetches (that is `refetchOnReconnect`'s job; with both set, cache/dedupe absorbs the overlap). The stashed force flag is last-write-wins — a polling tick's deferred `run(false)` overwrites a stashed `true`.
+- **Setup gates differ**: `polling.setup()` requires `isEnabled() && refetchInterval` — it works standalone, no auto-fetch opt-in — and arms **once**: at creation when enabled, otherwise on the first truthy enabled evaluation inside the effect (an `enabled` getter flipping false→true starts polling); key changes never reset the cadence. `focus.setup()` and `reconnect.setup()` require only their own boolean flags (work without auto-fetch). All three are cleared by `abort`/`reset`/`dispose`; `reset()` re-arms polling, `abort()` does not (recreate to resume). The offline-pause listener follows the same lifecycle (cleared by `abort`/`reset`/`dispose`, never re-armed; `reset()`/`abort()` also clear `paused`).
 
 ### LRU eviction (cache.ts:111)
 
@@ -88,6 +90,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `isLoading` | `() => boolean` | True only when no data at all (initial load). |
 | `isFetching` | `() => boolean` | True for any network activity (incl. background). |
 | `isIdle` | `() => boolean` | `status() === "idle"`. |
+| `isPaused` | `() => boolean` | True while a fetch is deferred by `pauseWhenOffline`. |
 | `status` | `() => ResourceStatus` | Reads `rawData()` (not `data()`); transform-invisible. |
 | `fetch` | `(opts?: { force? }) => Promise<T \| undefined>` | Manual; `force` bypasses cache + dedup lookup. Resolves data (raw type) on success/cache-hit/dedup-join, `undefined` on error/skip/abort — never rejects. |
 | `abort` | `() => void` | Aborts, resets data to `initialData`, clears flags/listeners. |
@@ -148,6 +151,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 | `refetchIntervalInBackground` | `false` | Keep polling when tab hidden. |
 | `refetchOnWindowFocus` | `false` | Refetch on tab visible or window focus. |
 | `refetchOnReconnect` | `false` | Refetch on network online. |
+| `pauseWhenOffline` | `false` | Defer fetches while offline; resume on reconnect with the stashed force flag (`isPaused()`). Mutations are not paused. Listener follows the focus/reconnect lifecycle. |
 | `onMutate` | `—` | `(variables) => context`; runs before mutation, enables optimistic updates. |
 | `onSettled` | `—` | `(data?, error?, variables?, context?) => ...`; **skipped on mutation abort**. |
 | `invalidates` | `—` | `Array<string \| RegExp>`; on mutate success, strings → `resourceCache.invalidateByPrefix`, RegExp → `invalidateByPattern`. Deletes cache entries only (no mounted-resource refetch); no invalidation on error/abort. |
@@ -180,8 +184,8 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 **Fetch & cache**
 - `fetch({force:true})` skips cache + dedup **lookup** but still calls `setOngoing`, so later non-force fetches join it while in flight. (resource.ts `run`)
-- SWR background call is `run(true)` (force): it skips the cache lookup but re-enters dedup. (resource.ts:179-184)
-- With `cacheTime=0` (default), every non-force `fetch()` falls through to dedup/network — no cache phase runs. (resource.ts:168)
+- SWR background call is `run(true)` (force): it skips the cache lookup but re-enters dedup. (resource.ts `run` cache phase)
+- With `cacheTime=0` (default), every non-force `fetch()` falls through to dedup/network — no cache phase runs. (resource.ts `run` cache phase)
 - `setData` always updates `rawData`; cache write is gated on `cacheTime > 0`. With an expired cache entry, `setData`'s `getCacheData` deletes the stale entry and the updater still sees `rawData()` as the old value, then re-creates the entry. (resource.ts `setData`, resource-cache.test.ts)
 - `mutate` results are **not** cached and do not dedup; `handleSuccess` fires (and `onSuccess`) but `setCacheData` is never called. (resource.ts `mutate`)
 - Cache + dedup are keyed by **fetcher reference identity**. Each `resource("url")` call builds a fresh fetcher closure → two URL resources with the same URL get **separate** cache/dedup scopes. Share a named fetcher function to share scope (needed for transform-sharing). (resource.ts:50-58)
@@ -192,20 +196,21 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - AbortError never sets `error()`; status falls back to data-derived (typically `idle`). Check `isIdle() && !isFetching()` rather than `error()` after abort/timeout. (resource.ts:119-126)
 - `onError` fires only when a truthy error reaches `handleError` — never on the state-clearing calls (fetch start, cache hit, dedup join, abort, reset).
 - `dispose()` does **not** abort in-flight requests and does **not** touch the cache; a resolving fetcher promise still updates `rawData` after dispose. It only clears polling/focus/reconnect + the key-change effect. One-way (resource is dead after). (resource.ts `dispose`, fetching.test.ts)
-- Dedup joiners adopt the shared `abortController`; aborting one joined resource aborts the shared controller and resets **all** joiners to their `initialData`. (resource.ts:200, deduplication.test.ts:110)
+- Dedup joiners adopt the shared `abortController`; aborting one joined resource aborts the shared controller and resets **all** joiners to their `initialData`. (resource.ts `run` dedup phase, deduplication.test.ts:110)
 - `onSettled` is skipped on mutation abort — even if `onMutate` already ran and produced a context for rollback. (resource.ts `mutate`, mutations.test.ts)
 - Concurrent `mutate()` calls are independent — per-call abort controller, per-call `onMutate` context threaded to that call's `onSettled` (no shared `mutationContext` closure); only `abort()`, `timeout`, or the external signal cancels a mutation. (resource.ts `mutate`)
-- External `abortSignal` already-aborted at call time → internal controller aborted synchronously before the fetcher runs. (resource.ts:218-221)
-- `timeout` and external `abortSignal` compose: both attach listeners to the same internal controller. (resource.ts:218-227)
+- External `abortSignal` already-aborted at call time → internal controller aborted synchronously before the fetcher runs. (resource.ts `run` request phase)
+- `timeout` and external `abortSignal` compose: both attach listeners to the same internal controller. (resource.ts `run` request phase)
 - Late fetcher resolution after `abort()` is ignored: success path checks `!currentSignal.aborted` before `handleSuccess`. (resource.ts `run`, errors.test.ts)
 
 **Lifecycle & reactivity**
 - `data` is **always** a `computed` (with or without transform); reading `data()` inside an effect tracks `rawData`. (resource.ts:66-71)
 - `status()` reads `rawData()` directly, so `transform` cannot change status. A fetch returning a value equal to `initialData` leaves status `idle`. (resource.ts `status`)
-- Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts:161-162, retry.test.ts:153)
+- Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts `run` guard, retry.test.ts:153)
 - Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts key-change effect, fetching.test.ts)
 - `keepPreviousData: false` clears `rawData(undefined)` when the tracked key changes, before the auto `run(false)` — the fetch window reads `data()` `undefined`, `isLoading()` true, `status()` `"loading"`. `initialData` is deliberately not re-applied (a key change is a refetch, not the never-fetched state). The effect's `prevKey`/`hasPrevKey` closure updates on every key evaluation: the first evaluation and enabled flips with an unchanged key never clear; a key passing through `null`/`undefined` still counts as changed on the next non-null value. (resource.ts key-change effect, keep-previous-data.test.ts)
 - `polling.setup()` is gated on `isEnabled() && refetchInterval` (standalone — no auto-fetch opt-in) and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the effect; not re-armed by key changes or after `abort`, re-armed by `reset()`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts setup gates, focus.test.ts)
+- `pauseWhenOffline` defers at `run()` entry only — in-flight requests are not paused (they fail into `error()` as usual), and the deferral check precedes the cache phase, so even TTL-fresh cache hits defer while offline. `isPaused()` self-heals: any `run()` that proceeds online, plus `abort()`/`reset()`/`dispose()`, clears it. (resource.ts `run` offline deferral, offline-pausing.test.ts)
 - `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained while their scope holds entries — reaped once empty); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (cache.ts:12, dedupe.ts:17)
 - Cache entries are module-level and survive `dispose()`/resource recreation. (cache.ts:12)
 
@@ -219,7 +224,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 ## Performance & memory
 
-- **Early cache return**: two-level `Map` lookup, no promise allocation on hit. (resource.ts:170)
+- **Early cache return**: two-level `Map` lookup, no promise allocation on hit. (resource.ts `run` cache phase)
 - **Dedup**: shared promise + shared controller eliminate thundering-herd fetches.
 - **Lazy LRU**: full sort only on `maxSize` overflow; acceptable for configured limits.
 - **Throttled cleanup**: 60s + 100-entry batch.

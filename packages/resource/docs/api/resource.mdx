@@ -87,6 +87,8 @@ interface ResourceOptions<T, K, TTransformed = T> {
   refetchOnWindowFocus?: boolean;
   /** Refetch when browser reconnects after going offline (default: false) */
   refetchOnReconnect?: boolean;
+  /** Defer fetches while the browser is offline — the deferred fetch resumes on reconnect with its original force flag, reflected by isPaused() (default: false). Mutations are not paused. */
+  pauseWhenOffline?: boolean;
   /** Hook for optimistic updates before mutation */
   onMutate?: (variables: unknown) => Promise<unknown> | unknown;
   /** Hook after mutation completion (success or error) */
@@ -163,6 +165,28 @@ console.log(userResource.isIdle()); // true - no fetch yet
 userResource.fetch();
 console.log(userResource.isIdle()); // false
 ```
+
+### `isPaused`
+
+Reactive signal indicating whether a fetch is deferred because the browser is offline. Requires the `pauseWhenOffline` option — without it, offline fetches attempt the network and fail into `error()` as usual.
+
+```typescript
+import { resource } from '@hellajs/resource';
+
+// The connection has dropped — dispatching simulates it for the example
+window.dispatchEvent(new Event('offline'));
+
+const feed = resource(
+  () => fetch('/api/feed').then(r => r.json()),
+  { pauseWhenOffline: true, refetchOnKeyChange: true }
+);
+console.log(feed.isPaused()); // Logs: true — the initial fetch defers, no request attempted
+
+window.dispatchEvent(new Event('online')); // The connection returns
+console.log(feed.isPaused()); // Logs: false — the deferred fetch runs
+```
+
+The deferred fetch replays on reconnect with the force flag it was called with — a paused `fetch({ force: true })` resumes as a force fetch. The pause listener follows the same lifecycle as the focus/reconnect listeners: `abort()`, `reset()`, and `dispose()` clear it, and `reset()` does not re-arm it. Mutations are never paused. See [Offline Pausing](/learn/concepts/resources#offline-pausing) for the pause/resume behavior and the `refetchOnReconnect` interplay.
 
 ### `status`
 

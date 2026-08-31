@@ -76,6 +76,7 @@ export function resource<T, K = undefined, TTransformed = T>(
   const error = signal<ResourceError | undefined>(undefined);
   const isLoading = signal(false);
   const isFetching = signal(false);
+  const paused = signal(false);
   const {
     enabled = true,
     refetchOnKeyChange = false,
@@ -93,6 +94,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     refetchIntervalInBackground = false,
     refetchOnWindowFocus = false,
     refetchOnReconnect = false,
+    pauseWhenOffline = false,
     invalidates,
     key = (() => undefined as unknown as K)
   } = options;
@@ -163,6 +165,8 @@ export function resource<T, K = undefined, TTransformed = T>(
   let currentAbortController: AbortController | undefined;
   /** Live mutation controllers — one per in-flight `mutate()`, self-removed on settle. */
   let mutationControllers: Set<AbortController> | undefined;
+  /** Force flag of the fetch deferred by offline pausing — replayed on reconnect. */
+  let stashedForce = false;
 
   const polling = createPolling<TTransformed>({ refetchInterval, refetchIntervalInBackground, data, run });
   const focus = createFocus(run);
@@ -172,11 +176,22 @@ export function resource<T, K = undefined, TTransformed = T>(
    * Core fetch logic with caching, deduplication, and abort handling.
    * @param force - When true, bypasses cache and deduplication
    * @param manual - When true, bypasses reactive enabled checks (manual fetch)
-   * @returns Promise resolving with the data on cache hit (including SWR-stale), dedup join, or network success; `undefined` on error, skip, SSR, or abort-supersede. Never rejects — errors surface via `error()`/`onError`.
+   * @returns Promise resolving with the data on cache hit (including SWR-stale), dedup join, or network success; `undefined` on error, skip, SSR, offline-defer (`pauseWhenOffline`), or abort-supersede. Never rejects — errors surface via `error()`/`onError`.
    */
   async function run(force = false, manual = false) {
     if (!hasWindow()) return;
     if (!untracked(isEnabled) && !(manual && enabledIsFn)) return;
+
+    // Offline deferral: stash the fetch intent for the reconnect listener — no
+    // fetcher call, no error state. Proceeding online clears the deferral flag.
+    if (pauseWhenOffline) {
+      if (!resourceCache.isOnline()) {
+        paused(true);
+        stashedForce = force;
+        return;
+      }
+      paused(false);
+    }
 
     const cacheKey = untracked(resolveKey);
 
@@ -288,6 +303,8 @@ export function resource<T, K = undefined, TTransformed = T>(
     polling.clear();
     focus.clear();
     reconnect.clear();
+    clearOfflinePause?.();
+    paused(false);
     if (currentAbortController) {
       currentAbortController.abort();
       currentAbortController = undefined;
@@ -358,6 +375,18 @@ export function resource<T, K = undefined, TTransformed = T>(
   if (refetchOnReconnect) {
     reconnect.setup();
   }
+
+  // Set up offline-pause listener synchronously during initialization.
+  // Fires only for a live deferral — an online event with nothing stashed never
+  // triggers a fetch (that is refetchOnReconnect's job).
+  const clearOfflinePause = pauseWhenOffline
+    ? resourceCache.onOnlineChange((online) => {
+      if (online && paused()) {
+        paused(false);
+        run(stashedForce);
+      }
+    })
+    : undefined;
 
   /**
    * Computed status based on current isLoading, error, and data states
@@ -472,6 +501,8 @@ export function resource<T, K = undefined, TTransformed = T>(
     polling.clear();
     focus.clear();
     reconnect.clear();
+    clearOfflinePause?.();
+    paused(false);
     pollingArmed = false;
     armPolling();
     rawData(options.initialData);
@@ -490,6 +521,8 @@ export function resource<T, K = undefined, TTransformed = T>(
     polling.clear();
     focus.clear();
     reconnect.clear();
+    clearOfflinePause?.();
+    paused(false);
     cleanupEffect?.();
   };
 
@@ -499,6 +532,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     isLoading: () => isLoading(),
     isFetching: () => isFetching(),
     isIdle,
+    isPaused: () => paused(),
     status,
     fetch: (options?: FetchOptions) => run(options?.force ?? false, true),
     abort,
