@@ -7,8 +7,8 @@
   |---|---|---|
   | `router` | `router.ts` | Init: registers routes/hooks/redirects/notFound/mode/base/scroll/inheritMeta/url, binds listeners, resolves the initial route synchronously and returns the matched `RouteInfo`. |
   | `route` | `route.ts` | Reactive signal holding the current `RouteInfo` (`path`, `params`, `query`, `handler`, `meta`, `crumbs`, `active`). |
-  | `navigate` | `navigate.ts` | Programmatic nav: `:param`/`*` substitution, query serialize, history push/replace. |
-| `href` | `href.ts` | Typed URL builder: same `:param`/`*`/query semantics as `navigate` via shared `buildPath`; returns the string, no history touched. |
+  | `navigate` | `navigate.ts` | Programmatic nav: `:param`/`:param?`/`*` substitution, query serialize, history push/replace. |
+| `href` | `href.ts` | Typed URL builder: same `:param`/`:param?`/`*`/query semantics as `navigate` via shared `buildPath`; returns the string, no history touched. |
   | `resetRouter` | `resetRouter.ts` | Factory-reset: resets all config signals + `route()` to defaults, detaches listeners. Does NOT mutate the URL. |
   | `type *` | `types.d.ts` | `RouterConfig`, `RouteInfo`, `RouteWithHooks`, `Handler` (full `(params: Params, query: Params) => unknown` signature; runtime dispatch is arity-based), `NavigateOptions`, `Redirect`, `ScrollBehavior`, `HistoryMode`, `Crumb`, `ExtractParams`. |
 
@@ -21,12 +21,12 @@
   | `route.ts` | The `route` signal (current `RouteInfo`) + the shared `activeFn` ancestor-match predicate. |
   | `navigate.ts` | Path validation + option unpack; delegates substitution to `internal/path.ts buildPath`, then `go()`. |
 | `href.ts` | The `href` export: validation + `internal/path.ts buildPath`, returns the built URL string — no history, no resolution. |
-  | `match.ts` | `parseQuery`, `matchPattern` (segment/wildcard extraction), `matchNestedEntry` (single-entry chain resolver), `matchNestedRoute` (specificity-sorted loop over entries, params spread-merged), `matchRoute` (flat). |
+  | `match.ts` | `parseQuery`, `matchPattern` (segment/optional/wildcard extraction), `matchSegments` (recursive aligner, `:name?` consume-first backtracking), `matchNestedEntry` (single-entry chain resolver), `matchNestedRoute` (specificity-sorted loop over entries, params spread-merged), `matchRoute` (flat). |
   | `hooks.ts` | `executeHook` (arity dispatch + try/catch + promise.catch), `executeGlobalHook` (`(to, from)` paths). |
   | `utils.ts` | `EMPTY_OBJECT`/`EMPTY_CRUMBS`, `hasChildren`, `getHashPath`, `stripBase`, `sortRoutesBySpecificity`. Leaf module — no internal imports. |
   | `internal/resolve.ts` | Resolution pipeline: `RouteVerdict` + hop counter (`updateRoute`), `tryRedirect`, `tryMatchRoute` → `matchNestedPhase`/`matchFlatPhase` via shared `commitMatch` + `mergeRouteMeta`, `buildRouteInfo`, `go` (guard-aware history commit, `base`-prefixed in history mode; memory mode commits none). |
   | `internal/matched.ts` | `handleScroll`, `extractHandler`/`Meta`/`InheritMeta`/`Scroll`/`RouteHooks`, `runGuardsNested`/`runGuardsFlat` (shared global-before prologue; the global hook receives `(toPath, route().path)`), `executeRouteWithHooks` (threads `(to, from)` into `global.after`). |
-| `internal/path.ts` | `buildPath` — the single substitution truth (`:param` → `encodeURIComponent`, `*` → raw insert, strip unmatched, query serialize); shared by `navigate` + `href`. |
+| `internal/path.ts` | `buildPath` — the single substitution truth (`:param` → `encodeURIComponent`, absent `:param?` strips token + preceding slash, `*` → raw insert, strip unmatched, query serialize); shared by `navigate` + `href`. |
   | `internal/core.ts` | Re-exports `signal`, `isFunction`, `isString`, `isPlainObject`, `hasWindow` from `@hellajs/core`. |
 
   ## Resolution pipeline (`internal/resolve.ts` `updateRoute` → early-exit at first hit)
@@ -60,9 +60,11 @@
 
     **Arity dispatch** — `executeHook`: params non-empty → `(params, query)`; params empty + `fn.length >= 2` → `(undefined, query)`; otherwise → `(query)` (`hooks.ts executeHook`). Declaring `(params, query)` is the only signature that reliably receives query on static routes.
 
+    **Optional `:name?` segments** — a `:name?` segment matches-or-skips (consume-first backtracking, `match.ts matchSegments`); a skipped optional leaves no params key, and `?` in a pattern always means optional — `matchPattern` never splits a pattern at `?` (`match.ts`). Optional segments count as ordinary segments in the specificity sort, and `ExtractParams` yields them as optional keys (`types.d.ts`).
+
     **Wildcard capture has no leading slash** — `/files/*` + `/files/docs/readme.md` → `params["*"] = "docs/readme.md"` (`match.ts matchPattern`). `navigate`/`href` insert `*` **raw** (not encoded), unlike `:param` values which ARE `encodeURIComponent`'d (`internal/path.ts buildPath`).
 
-    **Unmatched `:param` is stripped** — `navigate("/users/:id", {params:{wrongKey}})` → regex removes `:id` → `/users/` (`internal/path.ts buildPath`).
+    **Unmatched `:param` is stripped** — `navigate("/users/:id", {params:{wrongKey}})` → regex removes `:id` → `/users/` (`internal/path.ts buildPath`). An absent `:param?` instead strips together with its preceding slash (`"/users/:id?"` → `/users`) so optional tokens collapse cleanly.
 
     **Meta cascade is leaf-only by default** — `inheritMeta: false` (default) replaces meta at each nested level, final = leaf meta. `inheritMeta: true` merges parent→child (child wins on conflict). Per-route `inheritMeta` overrides global: `false` = boundary (drops ancestors above, its own meta still flows down), `true` = opt-in when global is false (`resolve.ts matchNestedPhase` — meta fold). Inline `navigate({meta})` merges over the resolved route meta and wins on conflict.
 
@@ -94,7 +96,7 @@
   ## Performance
 
   - **`EMPTY_OBJECT` / `EMPTY_CRUMBS` reuse** — frozen singletons returned for param-less/query-less routes and notFound crumbs (`utils.ts EMPTY_OBJECT`/`EMPTY_CRUMBS`).
-  - **`hasParams` flag** — defers params object allocation until a `:segment` or `*` actually matches (`match.ts matchPattern`).
+  - **`EMPTY_OBJECT` return** — static matches (no `:segment`, optional, or `*` captured) return the frozen singleton instead of the per-call params object (`match.ts matchPattern`).
   - **Single shared `activeFn`** — one closure attached to every `RouteInfo` via `buildRouteInfo`; reads path dynamically instead of rebuilding (`route.ts activeFn` + `resolve.ts buildRouteInfo`).
   - **Early exits** — redirect checks run before nested matching; first nested/flat hit returns immediately.
   - **Single `route` signal** — all routing state co-located; no per-route subscriptions.

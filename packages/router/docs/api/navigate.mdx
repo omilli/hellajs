@@ -57,6 +57,22 @@ navigate('/search/:term', {
 - Parameters are **URL-encoded automatically**
 - **Unused parameters are ignored** (no error thrown)
 - **Missing parameters are removed from URL** (`:param` patterns cleaned)
+- **A missing optional `:param?` is removed with its preceding slash** — `navigate('/users/:id?')` results in `/users`
+
+### Optional Param Substitution
+
+A `:param?` token substitutes when the param is provided and strips — together with its preceding slash — when it is not. A missing required `:param` keeps the slash-less strip above.
+
+```typescript
+// Id omitted — the token and its slash are stripped
+navigate('/users/:id?'); // Results in: /users
+
+// Id provided — substituted like a required param
+navigate('/users/:id?', { params: { id: '7' } }); // Results in: /users/7
+
+// Mid-pattern optionals collapse cleanly
+navigate('/posts/:id?/edit'); // Results in: /posts/edit
+```
 
 ### Wildcard Substitution
 

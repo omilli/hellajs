@@ -49,59 +49,108 @@ function parseQuery(queryString?: string): Params {
 }
 
 /**
- * Matches a route pattern against a path and extracts parameters.
+ * Checks whether a pattern segment is an optional parameter (`:name?`).
+ * @param segment Pattern segment to check.
+ */
+function isOptionalParam(segment: string): boolean {
+  return segment.startsWith(":") && segment.endsWith("?");
+}
+
+/**
+ * Aligns pattern segments against path segments, backtracking optional
+ * `:name?` segments — consume a path segment first, skip as the fallback.
+ * Captures are written on the way out, so a failed branch leaves no residue.
+ * @param patternParts Pattern segments (wildcard excluded).
+ * @param pathParts Path segments.
+ * @param params Params object successful captures are written into.
+ * @param pi Pattern segment index.
+ * @param si Path segment index.
+ * @returns Path segments consumed, or -1 when alignment fails.
+ */
+function matchSegments(
+  patternParts: string[],
+  pathParts: string[],
+  params: Record<string, string>,
+  pi: number,
+  si: number
+): number {
+  if (pi === patternParts.length) {
+    return si;
+  }
+
+  const patternPart = patternParts[pi]!;
+  const pathPart = pathParts[si];
+
+  if (isOptionalParam(patternPart)) {
+    if (pathPart !== undefined) {
+      const consumed = matchSegments(patternParts, pathParts, params, pi + 1, si + 1);
+      if (consumed !== -1) {
+        params[patternPart.slice(1, -1)] = decodeURIComponent(pathPart);
+        return consumed;
+      }
+    }
+    return matchSegments(patternParts, pathParts, params, pi + 1, si);
+  }
+
+  if (pathPart === undefined || (!patternPart.startsWith(":") && patternPart !== pathPart)) {
+    return -1;
+  }
+
+  const consumed = matchSegments(patternParts, pathParts, params, pi + 1, si + 1);
+  if (consumed !== -1 && patternPart.startsWith(":")) {
+    params[patternPart.slice(1)] = decodeURIComponent(pathPart);
+  }
+  return consumed;
+}
+
+/**
+ * Matches a route pattern against a path and extracts parameters. A `:name?`
+ * segment is optional — it matches one path segment or is skipped. `?` in a
+ * pattern always marks an optional parameter; patterns never carry query strings.
  * @internal
  * @param pattern The route pattern to match against.
- * @param path The path to match.
+ * @param path The query-stripped path to match.
  * @param isNested Whether this is a nested route match.
  * @returns Match result with parameters and remaining path, or null.
  */
 export function matchPattern(pattern: string, path: string, isNested = false): { params: Params; remainingPath: string } | null {
-  const patternPath = pattern.split("?")[0]!;
-  const patternParts = patternPath.split("/").filter(Boolean);
+  const patternParts = pattern.split("/").filter(Boolean);
   const pathParts = path.split("/").filter(Boolean);
 
   const hasWildcard = patternParts[patternParts.length - 1] === "*";
-  const baseLength = hasWildcard ? patternParts.length - 1 : patternParts.length;
+  const baseParts = hasWildcard ? patternParts.slice(0, -1) : patternParts;
 
-  if (!hasWildcard && patternParts.length > pathParts.length) {
+  let optionalCount = 0;
+  let i = 0;
+  const len = baseParts.length;
+  while (i < len) {
+    if (isOptionalParam(baseParts[i++]!)) {
+      optionalCount++;
+    }
+  }
+
+  if (pathParts.length < len - optionalCount) {
     return null;
   }
-  if (!isNested && !hasWildcard && pathParts.length > patternParts.length) {
-    return null;
-  }
-  if (hasWildcard && pathParts.length < baseLength) {
+  if (!isNested && !hasWildcard && pathParts.length > len) {
     return null;
   }
 
   const params: Record<string, string> = {};
-  let hasParams = false;
-
-  let i = 0;
-  const len = baseLength;
-  while (i < len) {
-    const patternPart = patternParts[i]!;
-    const pathPart = pathParts[i]!;
-    i++;
-
-    if (patternPart.startsWith(":")) {
-      hasParams = true;
-      params[patternPart.slice(1)] = decodeURIComponent(pathPart);
-    } else if (patternPart !== pathPart) {
-      return null;
-    }
+  const consumed = matchSegments(baseParts, pathParts, params, 0, 0);
+  if (consumed === -1 || (!hasWildcard && !isNested && consumed !== pathParts.length)) {
+    return null;
   }
 
   let remainingPath = "";
   if (hasWildcard) {
-    hasParams = true;
-    params["*"] = decodeURIComponent(pathParts.slice(baseLength).join("/"));
-  } else if (pathParts.length > baseLength) {
-    remainingPath = `/${pathParts.slice(baseLength).join("/")}`;
+    params["*"] = decodeURIComponent(pathParts.slice(consumed).join("/"));
+  } else if (pathParts.length > consumed) {
+    remainingPath = `/${pathParts.slice(consumed).join("/")}`;
   }
 
   return {
-    params: hasParams ? params : EMPTY_OBJECT,
+    params: Object.keys(params).length ? params : EMPTY_OBJECT,
     remainingPath
   };
 }

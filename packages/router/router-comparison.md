@@ -79,7 +79,7 @@ HellaJS and Solid Router are the only two here with zero runtime dependencies; H
 
 | Router | Matching strategy | Specificity | Wildcards | Custom matcher |
 |---|---|---|---|---|
-| HellaJS | `split("/")` segment walk per pattern; nested recursion | Sort: non-wildcard first, then deeper (`lib/internal/utils.ts`) | `*` captures rest, no leading slash | No |
+| HellaJS | `split("/")` segment walk per pattern; nested recursion | Sort: non-wildcard first, then deeper (`lib/internal/utils.ts`) | `*` captures rest, no leading slash; `:param?` optional | No |
 | TanStack | Generated route tree; ranked matches | Codegen-resolved | `*` splats, optional params | Param parsers at match time |
 | Vue Router | Path-to-regex; first match wins | Manual order | `:param(.*)`, `/*` | Custom regex per param |
 | Solid Router | Path rank by segments | Auto-ranked | `*`, `*name` | `matchFilters` (enum/regex/predicate) |
@@ -88,14 +88,14 @@ HellaJS and Solid Router are the only two here with zero runtime dependencies; H
 
 HellaJS's matcher is the simplest in this group — no regex engine, no codegen, one comparison function:
 
-- **Segment walk with deferred allocation.** `matchPattern()` splits pattern and path on `/`, compares segment by segment, extracts `:param` keys, and defers the params-object allocation behind a `hasParams` flag so static matches return the frozen `EMPTY_OBJECT` singleton (`lib/internal/match.ts`, `lib/internal/utils.ts`).
+- **Segment walk with deferred allocation.** `matchPattern()` splits pattern and path on `/`, compares segment by segment, extracts `:param` keys (a `:param?` segment matches-or-skips via backtracking), and returns the frozen `EMPTY_OBJECT` singleton for static matches so param-less routes share one object (`lib/internal/match.ts`, `lib/internal/utils.ts`).
 - **Specificity sort at every nesting level.** Nested candidates are sorted non-wildcard-before-wildcard, then by segment depth, before iteration (`lib/internal/utils.ts`, `lib/internal/match.ts`) — `/api/v1/users` beats `/api/*` regardless of declaration order. Flat routes are deliberately unsorted: first declaration wins, so specific patterns belong earlier in the object (`lib/internal/resolve.ts`).
 - **Nested param inheritance by spread.** Child params merge over parent params at each level (`{ ...match.params, ...childMatch.params }`), so parent keys flow to the leaf and child keys win on conflict (`lib/internal/match.ts`).
 - **Parent fallback.** A nested match whose remaining path matches no child falls back to the parent's handler when one exists, or fails the whole branch when not (`lib/internal/match.ts`).
 - **Wildcard captures without a leading slash** — `/files/*` at `/files/docs/readme.md` yields `params["*"] === "docs/readme.md"` (`lib/internal/match.ts`).
-- **No regex or type constraints.** Unlike Vue Router (`:id(\d+)`), Solid Router (`matchFilters`), and Angular (`UrlMatcher`), a `:param` matches any non-empty segment; validation belongs to the handler.
+- **No regex or type constraints.** Unlike Vue Router (`:id(\d+)`), Solid Router (`matchFilters`), and Angular (`UrlMatcher`), a `:param` matches any non-empty segment; validation belongs to the handler. Optional `:param?` segments are supported — `?` in a pattern always means optional, never a query separator.
 
-**Verdict:** HellaJS's matcher trades the power features (regex constraints, typed matchers, ranked codegen trees) for a small, allocation-conscious segment walk that covers static, dynamic, wildcard, and nested cases. The omission of regex matching is a real gap when you need route-level validation; the payoff is a matcher you can hold in your head.
+**Verdict:** HellaJS's matcher trades the power features (regex constraints, typed matchers, ranked codegen trees) for a small, allocation-conscious segment walk that covers static, dynamic, optional, wildcard, and nested cases. The omission of regex matching is a real gap when you need route-level validation; the payoff is a matcher you can hold in your head.
 
 ---
 
@@ -184,7 +184,7 @@ The competitors layer progressively more typing and data structure onto params a
 | Nested routes | Yes (`children`, param inheritance) | Yes (route tree) | Yes (`children` + `<RouterView>`) | Yes (`<Route>` + `props.children`) | Yes (`children` + `<router-outlet>`) | Yes (nested folders + layouts) |
 | Dynamic segments | `:id` | `:id` | `:id` (+ regex) | `:id` (+ `matchFilters`) | `:id` | `[id]` folder |
 | Wildcard / catch-all | `*` | `*` splat | `:param(.*)` | `*` / `*name` | `**` | `[...slug]` |
-| Optional params | No | Yes | Yes (`:id?`) | Yes (`:id?`) | No | Route groups |
+| Optional params | Yes (`:id?`) | Yes | Yes (`:id?`) | Yes (`:id?`) | No | Route groups |
 | Regex matchers | No | Param parsers | Yes | Yes (filters) | Yes (`UrlMatcher`) | No |
 | History modes | `history`, `hash`, `memory` | Custom history | web, hash, memory | web, hash, memory, static | Path, Hash | History (built-in) |
 | Base path | Yes (`base` config, history mode) | Yes (`basepath`) | Yes (`createWebHistory(base)`) | Yes (`base`) | Yes (`APP_BASE_HREF`) | Yes (`basePath`) |
@@ -276,4 +276,4 @@ What sets HellaJS apart — and no single competitor matches all of:
 6. **Atomic pre-commit guards with URL restoration** — guards run before the signal write and history commit; cancelled popstate/hashchange restores the address bar via `replaceState` (`lib/internal/matched.ts`, `lib/router.ts`).
 7. **Built-in match-chain ergonomics** — `crumbs` (linkable parent-to-leaf chain) and the shared `active()` ancestor predicate come off the route signal; competitors assemble these from `route.matched`/`useMatches`/`useCurrentMatches` by hand (`lib/internal/resolve.ts`, `lib/route.ts`).
 
-Its gaps: **no async-blocking guards** (a `Promise`-returning `before` proceeds; Vue/Angular/TanStack block on async), **no loaders, data cache, or prefetching** (pair `@hellajs/resource`; TanStack and Solid ship these), **no query-param schemas or regex matchers** (params and query stay string records; no optional params), **no route-level code-splitting primitives** (dom's `Lazy` is user-managed), a **single global router instance** — configuration is module-level singleton state, so concurrent streaming SSR relies on synchronous resolution rather than a router-per-request scope (documented in `docs/patterns/routing-ssr.mdx`) — and an **ecosystem** orders of magnitude behind Vue Router and Next.js. If you need async guards, typed search schemas, loaders, or link prefetching, TanStack Router or one of the framework routers is the better tool. If you want a tiny, framework-agnostic reactive router with default-on SPA links, sync guards, and SSR without a meta-framework, HellaJS is the leanest option here.
+Its gaps: **no async-blocking guards** (a `Promise`-returning `before` proceeds; Vue/Angular/TanStack block on async), **no loaders, data cache, or prefetching** (pair `@hellajs/resource`; TanStack and Solid ship these), **no query-param schemas or regex matchers** (params and query stay string records, and optional params stay untyped `string | undefined` at the handler), **no route-level code-splitting primitives** (dom's `Lazy` is user-managed), a **single global router instance** — configuration is module-level singleton state, so concurrent streaming SSR relies on synchronous resolution rather than a router-per-request scope (documented in `docs/patterns/routing-ssr.mdx`) — and an **ecosystem** orders of magnitude behind Vue Router and Next.js. If you need async guards, typed search schemas, loaders, or link prefetching, TanStack Router or one of the framework routers is the better tool. If you want a tiny, framework-agnostic reactive router with default-on SPA links, sync guards, and SSR without a meta-framework, HellaJS is the leanest option here.
