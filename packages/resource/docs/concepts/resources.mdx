@@ -97,6 +97,34 @@ const freshPosts = resource(
 userId(2);
 ```
 
+#### Structural Key Equality
+
+Object and array keys compare **structurally**, not by reference: two keys with the same shape hit the same cache and dedup entries, no matter where each evaluation built its object. Property order never matters; array order does. Nested plain objects and `Date` values (compared by their ISO representation) participate in the comparison.
+
+```typescript
+import { signal } from '@hellajs/core';
+import { resource, resourceCache } from '@hellajs/resource';
+
+const filters = signal({ page: 1, sort: 'asc' });
+
+const rows = resource(
+  query => fetch(`/api/rows?page=${query.page}&sort=${query.sort}`).then(r => r.json()),
+  { key: () => ({ ...filters() }), refetchOnKeyChange: true, cacheTime: 60_000 }
+);
+
+filters({ page: 1, sort: 'asc' });
+// New object, same shape — structurally equal key, cache hit, no network request
+
+const roster = [{ id: 1, name: 'Ada' }];
+resourceCache.set({ team: 1 }, roster, 60_000);
+resourceCache.get({ team: 1 });
+// Hits — { team: 1 } is structurally equal to the stored key
+```
+
+This mirrors how `key: () => ({ page, sort })` behaves in practice: each evaluation produces a fresh object, and only a genuine change in shape or values misses the cache.
+
+⚠️ Structural comparison covers arrays and plain objects. A `Date`, `Map`, `Set`, or class instance used as the key itself — or nested inside a key — falls back to reference equality: the same object reference hits, an equal-looking fresh one misses. Use primitives or plain objects for shareable keys, and remember `invalidateByPrefix`/`invalidateByPattern` match string keys only — structurally-hashed keys are opaque to them.
+
 For the full API surface including `initialData`, `enabled`, `timeout`, `deduplicate`, and all reactive getters, see [`resource`](/reference/resource/resource).
 
 ## Mutations

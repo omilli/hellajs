@@ -32,6 +32,7 @@ export interface CacheConfig {
  * @template T - The data type for the update
  */
 export interface CacheUpdate<T> {
+  /** Cache entry key — plain objects and arrays compare structurally; other objects by reference */
   key: unknown;
   updater: T | ((old: T | undefined) => T);
 }
@@ -44,9 +45,9 @@ export interface CacheUpdate<T> {
 export interface CacheMapView {
   /** Total cached entries across all fetcher scopes */
   readonly size: number;
-  /** Finds a cache entry by key across all scopes */
+  /** Finds a cache entry by key across all scopes — plain objects and arrays compare structurally; other objects by reference */
   get(key: unknown): CacheEntry<unknown> | undefined;
-  /** Checks if a key exists in any scope */
+  /** Checks if a key exists in any scope — plain objects and arrays compare structurally; other objects by reference */
   has(key: unknown): boolean;
   /** Clears all entries across all fetcher scopes */
   clear(): void;
@@ -60,7 +61,7 @@ export interface CacheMapView {
 export interface PrefetchOptions<T, K> {
   /** Async function that fetches the data; also defines the cache scope (keyed by reference identity, identical to resource()) */
   fetcher: (key: K) => Promise<T>;
-  /** Cache key passed to the fetcher and used for the cache entry */
+  /** Cache key passed to the fetcher and used for the cache entry — plain objects and arrays compare structurally; other objects by reference */
   key: K;
   /** TTL in ms; 0 (default) disables caching the prefetched entry */
   cacheTime?: number;
@@ -102,7 +103,7 @@ export interface ResourceCache {
    * Stores data in the cache with optional time-to-live and stale time.
    * @template K - The cache key type
    * @template T - The data type to cache
-   * @param key - Unique cache key for the data
+   * @param key - Unique cache key for the data — plain objects and arrays compare structurally; other objects by reference
    * @param data - Data to store in cache
    * @param cacheTime - Optional TTL in milliseconds (0 = no caching)
    * @param staleTime - Optional stale time in milliseconds (0 = always stale)
@@ -114,7 +115,7 @@ export interface ResourceCache {
   /**
    * Retrieves data from the cache by key.
    * @template T - The expected data type
-   * @param key Cache key to look up
+   * @param key Cache key to look up — plain objects and arrays compare structurally; other objects by reference
    * @returns Cached data or undefined if not found/expired
    */
   get<T = unknown>(key: unknown): T | undefined;
@@ -122,7 +123,7 @@ export interface ResourceCache {
   /**
    * Updates existing cached data using an updater function or direct value.
    * @template T - The data type
-   * @param key - Cache key to update
+   * @param key - Cache key to update — plain objects and arrays compare structurally; other objects by reference
    * @param updater - New value or function that receives old value and returns new value
    * @returns True if update succeeded, false if entry not found/expired
    * @throws {Error} When updater is undefined.
@@ -145,18 +146,19 @@ export interface ResourceCache {
 
   /**
    * Removes a single entry from the cache by key.
-   * @param key - Cache key to invalidate
+   * @param key - Cache key to invalidate — plain objects and arrays compare structurally; other objects by reference
    */
   invalidate(key: unknown): void;
 
   /**
    * Removes multiple entries from the cache by keys.
-   * @param keys - Array of cache keys to invalidate
+   * @param keys - Array of cache keys to invalidate — plain objects and arrays compare structurally; other objects by reference
    */
   invalidateMultiple(keys: unknown[]): void;
 
   /**
    * Invalidates all cache entries whose keys start with the given prefix.
+   * String keys only — structurally-hashed object/array keys are opaque strings not designed for prefix matching.
    * @param prefix - String prefix to match cache keys
    * @returns Number of entries invalidated
    */
@@ -164,6 +166,7 @@ export interface ResourceCache {
 
   /**
    * Invalidates all cache entries whose keys match the given pattern.
+   * String keys only — structurally-hashed object/array keys are opaque strings not designed for pattern matching.
    * @param pattern - RegExp pattern to match cache keys
    * @returns Number of entries invalidated
    */
