@@ -13,7 +13,7 @@ function router(config: RouterConfig): RouteInfo
 //   hooks?: GlobalHooks,
 //   redirects?: { from: readonly string[]; to: string }[],
 //   notFound?: string | (() => void),
-//   mode?: 'history' | 'hash',
+//   mode?: 'history' | 'hash' | 'memory',
 //   scrollBehavior?: ScrollBehavior,
 //   intercept?: boolean,
 //   inheritMeta?: boolean,
@@ -24,7 +24,7 @@ function router(config: RouterConfig): RouteInfo
 - `hooks`: Optional global hooks (`before`, `after`).
 - `redirects`: Optional array of redirect objects with `from` and `to` properties.
 - `notFound`: Optional handler for unmatched routes.
-- `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format.
+- `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing — no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
 - `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function.
 - `intercept`: Enable automatic same-origin `<a>` click interception. Default `true`.
 - `inheritMeta`: Parent-to-child meta inheritance through nested routes. Default `false` (leaf-only meta).
@@ -95,7 +95,17 @@ router({
   mode: 'hash',
   routes: { '/about': () => currentView('AboutPage') }
 });
+
+// Memory mode: no URL at all — route() is driven by navigate() alone
+router({
+  mode: 'memory',
+  routes: { '/about': () => currentView('AboutPage') }
+});
+
+navigate('/about'); // route() updates; window.location and history are untouched
 ```
+
+Memory mode is useful for tests, Storybook, and non-DOM environments. It keeps no history stack — there is no back/forward navigation.
 
 ### Hook System
 

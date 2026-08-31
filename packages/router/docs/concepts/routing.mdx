@@ -263,10 +263,10 @@ Set `inheritMeta: true` on the [`router()`](/reference/router/router) configurat
 
 ## Router Modes
 
-The router supports two URL modes.
+The router supports three URL modes.
 
 ```jsx
-import { router } from '@hellajs/router';
+import { router, navigate } from '@hellajs/router';
 
 // History API (default): clean URLs: example.com/about
 router({
@@ -278,7 +278,17 @@ router({
   mode: 'hash',
   routes: { '/about': () => currentView(<AboutPage />) }
 });
+
+// Memory mode, no URL at all: route() is driven by navigate() alone
+router({
+  mode: 'memory',
+  routes: { '/about': () => currentView(<AboutPage />) }
+});
+
+navigate('/about'); // route() updates; window.location and history are untouched
 ```
+
+Memory mode routes without a URL — the initial path comes from the `url` option or `/`, nothing is written to `window.location` or history, and no listeners are attached. It fits tests, Storybook, and non-DOM environments. There is no history stack in memory mode: browser back/forward do nothing, and back/forward navigation APIs do not exist — drive the route with `navigate()`.
 
 ## Scroll Behavior
 

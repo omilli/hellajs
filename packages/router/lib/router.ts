@@ -49,7 +49,9 @@ export function router(config: RouterConfig): RouteInfo {
     }
     initialPath = parsedInitial.pathname + parsedInitial.search;
   } else {
-    initialPath = hasWindow() ? (routerMode === "hash" ? getHashPath() : window.location.pathname + window.location.search) : "/";
+    initialPath = hasWindow() && routerMode !== "memory"
+      ? (routerMode === "hash" ? getHashPath() : window.location.pathname + window.location.search)
+      : "/";
   }
 
   // An explicit `url` (SSR) always re-resolves against it; the `!route().handler`
@@ -64,7 +66,9 @@ export function router(config: RouterConfig): RouteInfo {
 
   previousPath(initialPath);
 
-  if (hasWindow()) {
+  // Memory mode attaches no listeners: no popstate/hashchange and no click
+  // interception — the route is driven by navigate() alone.
+  if (hasWindow() && routerMode !== "memory") {
     if (cleanupListener && isFunction(window.removeEventListener)) cleanupListener();
 
     let eventType: string;
