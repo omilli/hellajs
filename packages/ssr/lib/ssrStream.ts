@@ -1,7 +1,9 @@
 import type { HellaNode } from "@hellajs/dom";
+import { escapeHtml } from "./internal/serialize";
 import { ssrNodeGen } from "./internal/walk";
 import type { PendingSwap } from "./internal/walk";
 import { assertNode } from "./internal/assert";
+import type { StreamOptions } from "./types";
 
 /**
  * The inline swap function emitted once at the start of a streamed `<Suspense>` flush (only when there are
@@ -54,11 +56,15 @@ const HS_SWAP_SCRIPT = `function $hs(id){
  * Returns a web `ReadableStream<string>`; pipe through `new TextEncoderStream()` for a `Response` body.
  * Bare Promises are awaited in-order; a rejected bare Promise errors the stream. Zero runtime imports.
  * @param node The HellaNode AST to serialize
+ * @param options Stream options — `nonce` threads a CSP `nonce="…"` attribute (escaped) onto the `$hs`
+ * bootstrap and every per-swap `<script>`, so a strict `Content-Security-Policy` (no `unsafe-inline`)
+ * still lets the progressive swaps run; omitted emits them unattributed (byte-identical output)
  * @returns A `ReadableStream<string>` of HTML chunks
  * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
  */
-export function ssrStream(node: HellaNode): ReadableStream<string> {
+export function ssrStream(node: HellaNode, options?: StreamOptions): ReadableStream<string> {
   assertNode(node, "ssr.stream");
+  const nonceAttr = options?.nonce !== undefined ? ` nonce="${escapeHtml(options.nonce)}"` : "";
   const pending: PendingSwap[] = [];
   const gen = ssrNodeGen(node, pending);
   let done = false;                         // shared by start/cancel: suppress late concurrent enqueues once the stream is done (cancel/error)
@@ -74,7 +80,7 @@ export function ssrStream(node: HellaNode): ReadableStream<string> {
         // drain carries its own catch — one rejecting region is skipped (fallback + sentinel stay) instead of
         // erroring the stream, so healthy siblings still flush; hydrate's stageMissing path re-suspends the
         // failed region client-side (its rejection bubbles to the nearest error boundary — React $RX parity).
-        if (pending.length && !done) controller.enqueue(`<script>${HS_SWAP_SCRIPT}</script>`);
+        if (pending.length && !done) controller.enqueue(`<script${nonceAttr}>${HS_SWAP_SCRIPT}</script>`);
         await Promise.all(pending.map(async (swap) => {
           let html = "";
           try {
@@ -83,7 +89,7 @@ export function ssrStream(node: HellaNode): ReadableStream<string> {
             console.warn(`[ssr] suspense region ${swap.id} failed - template skipped; hydrate will re-suspend it`, err);
             return;
           }
-          if (!done) controller.enqueue(`<template id="${swap.id}">${html}</template><script>$hs("${swap.id}")</script>`);
+          if (!done) controller.enqueue(`<template id="${swap.id}">${html}</template><script${nonceAttr}>$hs("${swap.id}")</script>`);
         }));
         if (!done) controller.close();       // guard mirrors doc.ts's start tail — a cancel between the last enqueue and close() would otherwise throw here
       } catch (err) {

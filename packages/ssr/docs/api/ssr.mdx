@@ -8,7 +8,7 @@ Serialize a HellaNode AST into an HTML string — a pure stringifier with zero r
 declare const ssr: {
   (node: HellaNode): string;
   async(node: HellaNode): Promise<string>;
-  stream(node: HellaNode): ReadableStream<string>;
+  stream(node: HellaNode, options?: StreamOptions): ReadableStream<string>;
 };
 ```
 
@@ -43,7 +43,12 @@ The streaming member — yields chunks as the walk proceeds, flushing the static
 
 ```typescript
 declare namespace ssr {
-  function stream(node: HellaNode): ReadableStream<string>;
+  function stream(node: HellaNode, options?: StreamOptions): ReadableStream<string>;
+}
+
+interface StreamOptions {
+  /** CSP nonce — `nonce="…"` on every inline script the stream emits */
+  nonce?: string;
 }
 ```
 
@@ -67,6 +72,33 @@ Bun.serve({
   }
 });
 ```
+
+Under a strict `Content-Security-Policy` (no `unsafe-inline`), the browser blocks the inline `<Suspense>` swap scripts. Pass a per-response `nonce` and mirror it in the response header — every script the stream emits (the [`$hs` bootstrap](#in-order-streaming) and each per-region swap script) then carries `nonce="…"`:
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr } from '@hellajs/ssr';
+
+const page = () => html`<div><h1>Hello</h1></div>`;
+
+Bun.serve({
+  port: 3000,
+  fetch: (req) => {
+    const nonce = crypto.randomUUID();   // fresh per response
+    return new Response(
+      ssr.stream(page(), { nonce }).pipeThrough(new TextEncoderStream()),
+      {
+        headers: {
+          'content-type': 'text/html',
+          'content-security-policy': `script-src 'self' 'nonce-${nonce}'`
+        }
+      }
+    );
+  }
+});
+```
+
+Without a `nonce` — or with no options at all — the scripts are emitted unattributed, byte-identical to a stream rendered before the option existed.
 
 ## Basic Usage
 
