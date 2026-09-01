@@ -1,18 +1,25 @@
 # ssr
 
-Serialize a HellaNode AST into an HTML string — a pure stringifier with zero runtime dependencies. A callable namespace: `ssr(node)` walks synchronously, `ssr.async(node)` awaits every Promise in the tree, `ssr.stream(node)` flushes progressively.
+Serialize a HellaNode AST into an HTML string — a pure stringifier with zero runtime dependencies. A callable namespace: `ssr(node)` walks synchronously, `ssr.async(node)` awaits every Promise in the tree, `ssr.stream(node)` flushes progressively, and `ssr.head()` creates a head collection bag every member accepts.
 
 ## API
 
 ```typescript
 declare const ssr: {
-  (node: HellaNode): string;
-  async(node: HellaNode): Promise<string>;
+  (node: HellaNode, options?: SsrOptions): string;
+  async(node: HellaNode, options?: SsrOptions): Promise<string>;
   stream(node: HellaNode, options?: StreamOptions): ReadableStream<string>;
+  head(): HeadOptions;
 };
+
+interface SsrOptions {
+  /** Head bag (from `ssr.head()`) — hoists <title>/<meta>/<link>/<style> from the tree */
+  head?: HeadOptions;
+}
 ```
 
 - `node`: A HellaNode AST (produced by [`html`](/reference/dom/html) or JSX) to serialize.
+- `options`: Walk options — `head` (a bag from [`ssr.head()`](#head)) collects the tree's head-eligible elements on every member.
 - **Returns**: The rendered HTML string.
 
 ### async
@@ -21,7 +28,7 @@ The async member — awaits any Promise a resolved value returns, then resolves 
 
 ```typescript
 declare namespace ssr {
-  function async(node: HellaNode): Promise<string>;
+  function async(node: HellaNode, options?: SsrOptions): Promise<string>;
 }
 ```
 
@@ -46,7 +53,7 @@ declare namespace ssr {
   function stream(node: HellaNode, options?: StreamOptions): ReadableStream<string>;
 }
 
-interface StreamOptions {
+interface StreamOptions extends SsrOptions {
   /** CSP nonce — `nonce="…"` on every inline script the stream emits */
   nonce?: string;
 }
@@ -99,6 +106,47 @@ Bun.serve({
 ```
 
 Without a `nonce` — or with no options at all — the scripts are emitted unattributed, byte-identical to a stream rendered before the option existed.
+
+The `head` option (inherited from `SsrOptions`) also works under `ssr.stream`, with one limit: the bag fills as the walk proceeds — staged [`<Suspense>`](/reference/dom/suspense) swaps keep filling it as they resolve — but a streamed document emits its `<head>` up front, so the collected entries are post-hoc. When streaming, pass head entries to [`doc`](/reference/ssr/doc) explicitly (see [`head`](#head)).
+
+### head
+
+Creates a fresh head collection bag — `{ meta: [], links: [], styles: [] }`, the same shape [`doc`](/reference/ssr/doc)'s `head` option consumes. Pass it to any member as `{ head }` and the walk hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` elements into the bag instead of emitting them — a route component owns its head entries, and the caller no longer assembles them by hand.
+
+```typescript
+declare namespace ssr {
+  function head(): HeadOptions;
+}
+```
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr, doc } from '@hellajs/ssr';
+
+const Page = () => html`
+  <div>
+    <title>Profile — Ada</title>
+    <meta name="description" content="Ada's profile" />
+    <link rel="canonical" href="/users/1" />
+    <style>.card { border: 1px solid #ccc }</style>
+    <h1>Ada</h1>
+  </div>
+`;
+
+const head = ssr.head();
+const body = await ssr.async(Page(), { head });    // the tree's <title>/<meta>/<link>/<style> hoist
+const page = doc({ body, head, mount: '#app' });
+// <head><title>Profile — Ada</title><meta name="description" content="Ada's profile">
+// <link rel="canonical" href="/users/1"><style>.card { border: 1px solid #ccc }</style></head>
+```
+
+Collection rules:
+
+- `<title>` — its children's resolved text, concatenated, lands in `head.title` (the last `<title>` wins). Getter children resolve at their current value; under [`ssr.async`](#async) a Promise child is awaited.
+- `<meta>` / `<link>` — attribute maps append to `head.meta` / `head.links` in order; getter attributes resolve, and falsy values drop (the same omission `doc`'s head builder applies).
+- `<style>` — its children's resolved text concatenates and appends to `head.styles` unescaped (CSS text, not HTML — a `>` selector survives).
+- Only text children hoist for `<title>`/`<style>`: a tag with any other child (an element) stays rendered in the body — nothing is silently dropped.
+- Non-head elements are untouched, and a walk with no `head` option renders head-eligible elements inline — byte-identical to before the option existed.
 
 ## Basic Usage
 

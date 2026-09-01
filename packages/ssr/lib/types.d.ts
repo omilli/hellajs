@@ -1,8 +1,27 @@
 /**
- * Options for `ssr.stream`. Omitting `nonce` emits the inline swap scripts unattributed — byte-identical
- * to calling `ssr.stream(node)` with no options at all.
+ * Options for the `ssr` and `ssr.async` walks. Head collection is opt-in: without a `head` bag every
+ * element renders inline, byte-identical to calling with no options at all.
  */
-export interface StreamOptions {
+export interface SsrOptions {
+  /**
+   * Head collection bag (from `ssr.head()`) — when present, the walk hoists `<title>`/`<meta>`/`<link>`/
+   * `<style>` elements it encounters into the bag instead of emitting them: `<title>` text children land
+   * concatenated in `title` (last wins), `<meta>`/`<link>` attribute maps append to `meta`/`links`
+   * (falsy values dropped, as `doc`'s head builder omits them), and `<style>` CSS text appends to
+   * `styles` unescaped (styles are CSS text, never HTML). Only text children hoist for
+   * `<title>`/`<style>` — an element child leaves the tag rendered in place. Pass the filled bag
+   * straight to `doc({ head })`.
+   */
+  head?: HeadOptions;
+}
+
+/**
+ * Options for `ssr.stream`. Omitting `nonce` emits the inline swap scripts unattributed — byte-identical
+ * to calling `ssr.stream(node)` with no options at all. `head` (from `SsrOptions`) fills during the
+ * walk — post-hoc inspection only: a streamed document emits its `<head>` up front, so streaming
+ * callers pass head entries to `doc` explicitly.
+ */
+export interface StreamOptions extends SsrOptions {
   /**
    * CSP nonce threaded onto every inline `<script>` the stream emits (the `$hs` bootstrap and each
    * per-region swap script) — text-escaped into a `nonce="…"` attribute, so a strict

@@ -58,7 +58,11 @@ const HS_SWAP_SCRIPT = `function $hs(id){
  * @param node The HellaNode AST to serialize
  * @param options Stream options — `nonce` threads a CSP `nonce="…"` attribute (escaped) onto the `$hs`
  * bootstrap and every per-swap `<script>`, so a strict `Content-Security-Policy` (no `unsafe-inline`)
- * still lets the progressive swaps run; omitted emits them unattributed (byte-identical output)
+ * still lets the progressive swaps run; omitted emits them unattributed (byte-identical output). `head`
+ * hoists head-eligible elements into the bag (from `ssr.head()`) like the other members — staged
+ * `<Suspense>` swaps keep filling it as they resolve — but the bag is post-hoc under streaming: a
+ * streamed document emits its `<head>` up front, so collected entries cannot join it; streaming
+ * callers pass head entries to `doc` explicitly.
  * @returns A `ReadableStream<string>` of HTML chunks
  * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
  */
@@ -66,7 +70,7 @@ export function ssrStream(node: HellaNode, options?: StreamOptions): ReadableStr
   assertNode(node, "ssr.stream");
   const nonceAttr = options?.nonce !== undefined ? ` nonce="${escapeHtml(options.nonce)}"` : "";
   const pending: PendingSwap[] = [];
-  const gen = ssrNodeGen(node, pending);
+  const gen = ssrNodeGen(node, pending, options?.head);
   let done = false;                         // shared by start/cancel: suppress late concurrent enqueues once the stream is done (cancel/error)
   return new ReadableStream<string>({
     async start(controller) {

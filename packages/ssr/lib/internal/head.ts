@@ -1,5 +1,7 @@
 import { serializeProp, escapeHtml } from "./serialize";
+import { resolveValue, resolveAsync } from "./resolve";
 import type { HeadOptions, MetaTag, LinkTag } from "../types";
+import type { HellaNode } from "@hellajs/dom";
 
 /**
  * Builds the HTML attribute string for a tag's attribute map. Each entry runs through
@@ -91,4 +93,109 @@ export function buildHead(head: HeadOptions | undefined): string {
     }
   }
   return headHtml;
+}
+
+/**
+ * @internal
+ * Hoist pass for the sync walk — attempts to collect a head-eligible element (`<title>`/`<meta>`/
+ * `<link>`/`<style>`) into the `{ head }` bag instead of emitting it. Props and children resolve via
+ * `resolveValue` (current value — a Promise stringifies, as everywhere under the sync walk). Only text
+ * children hoist for `<title>`/`<style>`; any other child (an element, raw HTML) leaves the tag
+ * rendered in place. Missing bag arrays are created on first push, so a hand-written bag works too.
+ * @param node The element the walk encountered.
+ * @param head The collection bag (from `ssr.head()`).
+ * @returns True when the node was hoisted (the walker omits it from the body); false when it stays in place.
+ */
+export function hoistHead(node: HellaNode, head: HeadOptions): boolean {
+  // Parity invariant: `hoistHead` (sync) and `hoistHeadAsync` (async) classify and collect identically —
+  // the pair mirrors `walkChild`/`walkChildGen`. Only the resolver differs (resolveValue vs awaited resolveAsync).
+  const tag = node.tag as string;
+  if (tag === "meta" || tag === "link") {
+    const attrs: Record<string, string> = {};
+    const props = node.props as Record<string, unknown> | undefined;
+    if (props !== undefined) {
+      const keys = Object.keys(props);
+      let i = 0;
+      const len = keys.length;
+      while (i < len) {
+        const key = keys[i]!;
+        i++;
+        const value = resolveValue(props[key]);
+        if (value !== false && value !== null && value !== undefined) attrs[key] = `${value}`;   // falsy dropped — buildHead's buildAttrs omits these
+      }
+    }
+    if (tag === "meta") (head.meta ??= []).push(attrs);
+    else (head.links ??= []).push(attrs);
+    return true;
+  }
+  if (tag !== "title" && tag !== "style") return false;
+  let text = "";
+  let isText = true;                     // every child resolves to text — otherwise the tag stays in place (only text hoists)
+  const children = node.children;
+  if (children !== undefined) {
+    let i = 0;
+    const len = children.length;
+    while (i < len) {
+      const resolved = resolveValue(children[i]!);
+      i++;
+      if (resolved === null || resolved === undefined || typeof resolved === "boolean") continue;
+      if (typeof resolved === "string" || typeof resolved === "number") { text += resolved; continue; }
+      isText = false;
+      break;
+    }
+  }
+  if (!isText) return false;
+  if (tag === "title") head.title = text;        // last title wins
+  else (head.styles ??= []).push(text);          // CSS text, raw — buildHead emits styles unescaped
+  return true;
+}
+
+/**
+ * @internal
+ * Hoist pass for the shared async walker — the awaited pair of `hoistHead`: props and children resolve
+ * via `resolveAsync` (a Promise value is awaited, then stringified). Collection rules are identical.
+ * @param node The element the walk encountered.
+ * @param head The collection bag (from `ssr.head()`).
+ * @returns A Promise resolving true when the node was hoisted (the walker omits it from the body); false when it stays in place.
+ */
+export async function hoistHeadAsync(node: HellaNode, head: HeadOptions): Promise<boolean> {
+  const tag = node.tag as string;
+  if (tag === "meta" || tag === "link") {
+    const attrs: Record<string, string> = {};
+    const props = node.props as Record<string, unknown> | undefined;
+    if (props !== undefined) {
+      const keys = Object.keys(props);
+      let i = 0;
+      const len = keys.length;
+      while (i < len) {
+        const key = keys[i]!;
+        i++;
+        const value = await resolveAsync(props[key]);
+        if (value !== false && value !== null && value !== undefined) attrs[key] = `${value}`;   // falsy dropped — buildHead's buildAttrs omits these
+      }
+    }
+    if (tag === "meta") (head.meta ??= []).push(attrs);
+    else (head.links ??= []).push(attrs);
+    return true;
+  }
+  if (tag !== "title" && tag !== "style") return false;
+  let text = "";
+  let isText = true;                     // every child resolves to text — otherwise the tag stays in place (only text hoists)
+  const children = node.children;
+  if (children !== undefined) {
+    let i = 0;
+    const len = children.length;
+    while (i < len) {
+      const resolved = await resolveAsync(children[i]!);
+      i++;
+      if (resolved === null || resolved === undefined || typeof resolved === "boolean") continue;
+      if (typeof resolved === "string" || typeof resolved === "number") { text += resolved; continue; }
+      isText = false;
+      break;
+    }
+  }
+  if (!isText) return false;
+  if (tag === "title") head.title = text;        // last title wins
+  else (head.styles ??= []).push(text);          // CSS text, raw — buildHead emits styles unescaped
+  return true;
 }

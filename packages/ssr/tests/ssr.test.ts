@@ -4,6 +4,7 @@ import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { suppressConsole } from "@utils/test-helpers.js";
+import { headParityCases } from "./helpers";
 
 describe("ssr", () => {
   test("renders static node to exact HTML", () => {
@@ -216,5 +217,28 @@ describe("ssr", () => {
 
   test("throws when the root is an object without a tag", () => {
     expect(() => ssr({} as HellaNode)).toThrow(/^\[ssr\] ssr: node must be a HellaNode/);
+  });
+
+  test("ssr.head() returns a fresh empty bag each call", () => {
+    const a = ssr.head();
+    const b = ssr.head();
+    expect(a).not.toBe(b);                       // fresh — two walks never share a bag
+    expect(a.meta).toEqual([]);
+    expect(a.links).toEqual([]);
+    expect(a.styles).toEqual([]);
+    expect(a.title).toBeUndefined();
+  });
+
+  test.each(headParityCases)("hoists $name into the bag and omits them from the body", ({ node, body, bag }) => {
+    const head = ssr.head();
+    expect(ssr(node, { head })).toBe(body);      // exact body — hoisted tags absent, sibling markers unchanged / non-text tags in place
+    expect(head).toEqual(bag);                   // exact bag — resolved attrs, resolved title text, unescaped CSS ('>' survives)
+  });
+
+  test("last title wins when two title elements hoist", () => {
+    const head = ssr.head();
+    const node = html`<div><title>First</title><section><title>Second</title></section></div>` as HellaNode;
+    expect(ssr(node, { head })).toBe("<div><section></section></div>");
+    expect(head.title).toBe("Second");
   });
 });
