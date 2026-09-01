@@ -4,6 +4,7 @@ import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { parityCases, attributeCases, unknownKindNode } from "./helpers";
+import { suppressConsole } from "@utils/test-helpers.js";
 
 describe("ssr.async", () => {
   test("resolves a static node to the same HTML as ssr", async () => {
@@ -26,6 +27,20 @@ describe("ssr.async", () => {
 
   test("awaits a Promise-returning function-ref prop value as an attribute", async () => {
     expect(await ssr.async(html`<input value=${() => Promise.resolve("x")} />` as HellaNode)).toBe('<input value="x">');
+  });
+
+  test("awaits the Promise nodes that warn under sync ssr with zero warns", async () => {
+    // Same child + prop shapes the sync tests assert warn on — the async walker awaits them (no warn, resolved output).
+    const suppressed = suppressConsole();
+    try {
+      expect(await ssr.async(html`<div>${() => Promise.resolve(5)}</div>` as HellaNode))
+        .toBe("<div><!--[-->5<!--]--></div>");
+      expect(await ssr.async(html`<input value=${() => Promise.resolve("x")} />` as HellaNode))
+        .toBe('<input value="x">');
+      expect(suppressed.warns).toHaveLength(0);
+    } finally {
+      suppressed.restore();
+    }
   });
 
   test("awaits a Promise-returning ForEach each and renders items in a marker region", async () => {

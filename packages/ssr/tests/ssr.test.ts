@@ -3,6 +3,7 @@ import { signal } from "@hellajs/core";
 import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
+import { suppressConsole } from "@utils/test-helpers.js";
 
 describe("ssr", () => {
   test("renders static node to exact HTML", () => {
@@ -145,6 +146,31 @@ describe("ssr", () => {
   test("stringifies a reactive child's non-HellaNode value inside a marker region", () => {
     const obj = signal({ notag: true } as unknown as HellaNode);
     expect(ssr(html`<div>${obj}</div>` as HellaNode)).toBe("<div><!--[-->[object Object]<!--]--></div>");
+  });
+
+  test("warns once and still stringifies a Promise child under sync ssr", () => {
+    // Sync cannot await — the warn names the fix; the emitted HTML is unchanged from pre-warn behavior.
+    const suppressed = suppressConsole();
+    try {
+      expect(ssr(html`<div>${() => Promise.resolve(5)}</div>` as HellaNode))
+        .toBe("<div><!--[-->[object Promise]<!--]--></div>");
+      expect(suppressed.warns).toHaveLength(1);
+      expect(suppressed.warns[0]).toEqual(["[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted"]);
+    } finally {
+      suppressed.restore();
+    }
+  });
+
+  test("warns once and still stringifies a Promise function-ref prop under sync ssr", () => {
+    const suppressed = suppressConsole();
+    try {
+      expect(ssr(html`<input value=${() => Promise.resolve("x")} />` as HellaNode))
+        .toBe('<input value="[object Promise]">');
+      expect(suppressed.warns).toHaveLength(1);
+      expect(suppressed.warns[0]).toEqual(["[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted"]);
+    } finally {
+      suppressed.restore();
+    }
   });
 
   test("renders nothing for a static boolean true child", () => {
