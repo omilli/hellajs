@@ -419,7 +419,7 @@ hydrate(<Dashboard />, '#app');
 
 <div role="alert" class="alert alert-warning text-base">
   <span>⚠️</span>
-  <span>A getter that returns a <em>rejected</em> <code>Promise</code> errors the stream. If the static shell has already flushed, the failure is partial — catch it at the stream consumer (the read loop in the middleware), and keep async subtrees inside a <code>&lt;Suspense&gt;</code> so a late failure scopes to one staged region instead of the whole document.</span>
+  <span>A bare getter that returns a <em>rejected</em> <code>Promise</code> errors the stream. If the static shell has already flushed, the failure is partial — catch it at the stream consumer (the read loop in the middleware). A getter inside a <code>&lt;Suspense&gt;</code> region that rejects is isolated instead: the region's <code>&lt;template&gt;</code> is skipped (its fallback stays), the stream completes with the healthy regions, and <code>hydrate</code> re-suspends the failed region on the client — where the rejection reaches the nearest error boundary.</span>
 </div>
 
 ## Run the App

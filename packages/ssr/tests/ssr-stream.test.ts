@@ -1,6 +1,6 @@
 import { describe, test, expect, mock } from "bun:test";
 import { signal } from "@hellajs/core";
-import { delay } from "@utils/test-helpers.js";
+import { delay, suppressConsole } from "@utils/test-helpers.js";
 import { html, ForEach, Transition, Portal, Lazy, Suspense } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
@@ -115,22 +115,23 @@ describe("ssr.stream", () => {
     expect(rest.indexOf("<b>FAST</b>")).toBeLessThan(rest.indexOf("<b>SLOW</b>"));  // FAST enqueued before SLOW
   });
 
-  test("concurrent swaps: a rejecting region errors the stream; a still-pending sibling's late enqueue is skipped (done guard)", async () => {
-    let resolveSibling!: () => void;
-    const sibling = new Promise<void>((r) => { resolveSibling = r; });
-    const node = html`<div><${Suspense} fallback=${html`<i>boom</i>`}>${() => Promise.reject(new Error("boom"))}</${Suspense}><${Suspense} fallback=${html`<i>ok</i>`}>${() => sibling.then(() => html`<b>OK</b>`)}</${Suspense}></div>` as HellaNode;
-    const reader = ssr.stream(node).getReader();
-    // drain the prefix (shell + fallbacks + sentinels + closing tags); start() then enters Promise.all,
-    // the rejecting region throws → done=true + controller.error. The sibling is still pending.
-    let err: unknown = undefined;
+  test("concurrent swaps: a rejecting region is skipped (fallback + sentinel remain) while the healthy sibling still streams", async () => {
+    const node = html`<div><${Suspense} fallback=${html`<i>boom</i>`}>${() => Promise.reject(new Error("boom"))}</${Suspense}><${Suspense} fallback=${html`<i>ok</i>`}>${() => Promise.resolve(html`<b>OK</b>`)}</${Suspense}></div>` as HellaNode;
+    const sup = suppressConsole();                             // the skip warn — the failed region no longer errors the stream
+    let out: string;
     try {
-      let chunk = await reader.read();
-      while (!chunk.done) { chunk = await reader.read(); }
-    } catch (e) { err = e; }
-    expect(err).toBeInstanceOf(Error);
-    expect((err as Error).message).toBe("boom");
-    resolveSibling();                           // sibling resolves AFTER the stream errored → its enqueue hits the `done` guard and is skipped (no throw)
-    await delay(0);                             // let the skipped-enqueue microtask run — proves no throw into the errored stream
+      out = await collect(ssr.stream(node));
+    } finally {
+      sup.restore();
+    }
+    const boomId = out.match(/<i>boom<\/i><!--(hs\d+)-->/)![1]!;   // ids come from a global counter — extract, never hardcode
+    const okId = out.match(/<i>ok<\/i><!--(hs\d+)-->/)![1]!;
+    expect(out).toContain("</div>");                               // main walk flushed — the stream completed (collect resolved)
+    expect(out).toContain(`<i>boom</i><!--${boomId}-->`);          // failed region's fallback + sentinel remain in the shell
+    expect(out).not.toContain(`<template id="${boomId}"`);        // its <template> is never emitted — hydrate re-suspends that region
+    expect(out.endsWith(`<template id="${okId}"><!--[--><b>OK</b><!--]--></template><script>$hs("${okId}")</script>`)).toBe(true);  // healthy sibling's exact staged shape closed the stream
+    expect(sup.warns).toHaveLength(1);
+    expect(sup.warns[0]![0]).toBe(`[ssr] suspense region ${boomId} failed - template skipped; hydrate will re-suspend it`);
   });
 
   test("ssr.stream emits the $hs bootstrap once before staged templates, and not at all without <Suspense>", async () => {
