@@ -3,7 +3,7 @@ import { signal } from "@hellajs/core";
 import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
-import { parityCases, attributeCases, unknownKindNode } from "./helpers";
+import { parityCases, attributeCases, unknownKindNode, headParityCases } from "./helpers";
 import { suppressConsole } from "@utils/test-helpers.js";
 
 describe("ssr.async", () => {
@@ -187,5 +187,21 @@ describe("ssr.async", () => {
 
   test.each(attributeCases)("parity: ssr.async matches ssr for attribute serialization ($name)", async ({ node }) => {
     expect(await ssr.async(node)).toBe(ssr(node));
+  });
+
+  test("awaits Promise props and children on hoisted head tags", async () => {
+    const head = ssr.head();
+    const node = html`<div><title>${() => Promise.resolve("Async Page")}</title><meta name="p" content=${() => Promise.resolve("q")} /><b>keep</b></div>` as HellaNode;
+    expect(await ssr.async(node, { head })).toBe("<div><b>keep</b></div>");
+    expect(head.title).toBe("Async Page");                 // awaited title text
+    expect(head.meta).toEqual([{ name: "p", content: "q" }]);   // awaited getter attr
+  });
+
+  test.each(headParityCases)("head parity: ssr.async matches ssr for $name", async ({ node }) => {
+    const syncBag = ssr.head();
+    const asyncBag = ssr.head();
+    const syncBody = ssr(node, { head: syncBag });
+    expect(await ssr.async(node, { head: asyncBag })).toBe(syncBody);   // identical body HTML…
+    expect(asyncBag).toEqual(syncBag);                                 // …and identical resulting bag
   });
 });

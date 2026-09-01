@@ -236,4 +236,11 @@ describe("doc", () => {
     expect(() => doc({ body: streamOf("X"), data: circular })).toThrow("[ssr] doc: data must be JSON-serializable");
     expect(() => doc({ body: "X", data: () => 1 })).toThrow("[ssr] doc: data must be JSON-serializable");
   });
+
+  test("emits a bag collected by ssr into <head> end-to-end (string mode)", () => {
+    const head = ssr.head();
+    const body = ssr(html`<div><title>Collected</title><meta name="description" content="d" /><style>a{color:red}</style><p>x</p></div>` as HellaNode, { head });
+    expect(doc({ body, head, mount: "#app" }))
+      .toBe("<!DOCTYPE html><html><head><title>Collected</title><meta name=\"description\" content=\"d\"><style>a{color:red}</style></head><body><div id=\"app\"><div><p>x</p></div></div></body></html>");
+  });
 });

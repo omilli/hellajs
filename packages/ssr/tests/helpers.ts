@@ -1,6 +1,7 @@
 import { signal } from "@hellajs/core";
 import { html, ForEach } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
+import type { HeadOptions } from "@hellajs/ssr";
 
 /** Collects all chunks from a ReadableStream<string> into a single string. */
 export async function collect(stream: ReadableStream<string>): Promise<string> {
@@ -38,6 +39,32 @@ export const attributeCases: { name: string; node: HellaNode }[] = [
   { name: "boolean attribute", node: html`<input disabled=${true} />` as HellaNode },
   { name: "array attribute", node: html`<div class=${["a", "b"]} />` as HellaNode },
   { name: "falsy attributes", node: html`<div class=${false} id=${undefined} />` as HellaNode },
+];
+
+/**
+ * Head-collection parity cases — trees every walker must hoist identically into an `ssr.head()` bag.
+ * `body`/`bag` pin the sync walk's exact output (the baseline the async and stream members are compared
+ * against live): getter attrs resolve, reactive title text resolves, marker wrapping of the reactive
+ * sibling is unchanged, and non-text children leave a `<title>`/`<style>` rendered in place.
+ */
+export const headParityCases: { name: string; node: HellaNode; body: string; bag: HeadOptions }[] = [
+  {
+    name: "head tags among body content",
+    node: html`<div><title>Page - ${signal("Home")}</title><meta charset="utf-8" /><meta name=${() => "viewport"} content=${() => "width=device-width"} /><link rel="icon" href="/f.ico" /><style>a > b { color: red }</style><p>count: ${signal(5)}</p></div>` as HellaNode,
+    body: "<div><p>count: <!--[-->5<!--]--></p></div>",
+    bag: {
+      title: "Page - Home",
+      meta: [{ charset: "utf-8" }, { name: "viewport", content: "width=device-width" }],
+      links: [{ rel: "icon", href: "/f.ico" }],
+      styles: ["a > b { color: red }"],
+    },
+  },
+  {
+    name: "non-text head children stay in place",
+    node: html`<div><title>${html`<b>T</b>`}</title><style>${html`<i>s</i>`}</style>keep</div>` as HellaNode,
+    body: "<div><title><b>T</b></title><style><i>s</i></style>keep</div>",
+    bag: { title: undefined, meta: [], links: [], styles: [] },
+  },
 ];
 
 /** Builds a HellaNode wrapping an isDynamic function with an unknown ssr kind (renders an empty region; the walk warns). */

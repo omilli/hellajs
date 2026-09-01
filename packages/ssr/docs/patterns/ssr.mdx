@@ -178,6 +178,39 @@ userResource.data();      // the server-fetched value
 userResource.isLoading(); // false — initialData counts as data
 ```
 
+### Per-route head entries
+
+Let each route component carry its own `<title>`/`<meta>` instead of assembling the head at the handler — [`ssr.head()`](/reference/ssr/ssr#head) creates the bag, the walk hoists the tree's head tags into it, and [`doc`](/reference/ssr/doc) emits them.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr, doc } from '@hellajs/ssr';
+
+const Profile = (user) => html`
+  <div>
+    <title>${user.name} — Profile</title>
+    <meta name="description" content=${user.tagline} />
+    <link rel="canonical" href=${`/users/${user.id}`} />
+    <h1>${user.name}</h1>
+  </div>
+`;
+
+Bun.serve({
+  port: 3000,
+  async fetch() {
+    const user = await fetch('/api/users/1').then(r => r.json());
+    const head = ssr.head();
+    const body = await ssr.async(Profile(user), { head });   // <title>/<meta>/<link> hoist out of the body
+    return new Response(
+      doc({ body, head, mount: '#app' }),
+      { headers: { 'content-type': 'text/html' } }
+    );
+  }
+});
+```
+
+With [SSR Routing](/learn/patterns/routing-ssr), each route view owns its entries the same way — the request URL picks the view, the view picks the head. Streaming note: under [`ssr.stream`](/reference/ssr/ssr#stream) the bag fills as the walk proceeds, but a streamed document emits its `<head>` up front — pass head entries to `doc` explicitly when streaming.
+
 ### Streaming responses
 
 Stream HTML to the client as it renders with [`ssr.stream`](/reference/ssr/ssr#stream) — the static shell flushes before async values resolve.

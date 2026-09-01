@@ -126,7 +126,7 @@ For the full wiring — seeding [`resource`](/reference/resource/resource) with 
 
 ### No automatic CSS or head collection
 
-`doc` takes an already-composed CSS string (`styles`) and explicit `title` / `meta` / `links` / `scripts`. It does not collect [`css()`](/reference/css/css) / [`cssVars()`](/reference/css/cssvars) calls or hoist `<head>` from the rendered tree — those are larger, separate concerns. Drain the stringifiers' output yourself and pass it in.
+`doc` takes an already-composed CSS string (`styles`) and explicit `title` / `meta` / `links` / `scripts`. It does not collect [`css()`](/reference/css/css) / [`cssVars()`](/reference/css/cssvars) calls — drain the stringifiers' output yourself and pass it in. Head entries *can* come from the tree, though: [`ssr.head()`](/reference/ssr/ssr#head) plus `ssr(node, { head })` hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` into a bag this `head` option consumes directly.
 
 ### `mount` accepts tag, `#id`, `.class` only
 

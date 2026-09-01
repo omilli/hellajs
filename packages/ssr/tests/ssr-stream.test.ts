@@ -4,7 +4,7 @@ import { delay, suppressConsole } from "@utils/test-helpers.js";
 import { html, ForEach, Transition, Portal, Lazy, Suspense } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
-import { collect, parityCases, attributeCases, unknownKindNode } from "./helpers";
+import { collect, parityCases, attributeCases, unknownKindNode, headParityCases } from "./helpers";
 
 /** Stream/async parity cases — collecting `ssr.stream` must equal `ssr.async` (a distinct comparison from the `ssr` parity matrix). */
 const streamAsyncParityCases: { name: string; node: HellaNode }[] = [
@@ -259,5 +259,24 @@ describe("ssr.stream", () => {
 
   test.each(attributeCases)("parity: collecting ssr.stream matches ssr for attribute serialization ($name)", async ({ node }) => {
     expect(await collect(ssr.stream(node))).toBe(ssr(node));
+  });
+
+  test("fills the head bag during the stream and omits hoisted tags from the chunks", async () => {
+    // Stream limitation: the bag fills as the walk proceeds, but a streamed document emits its <head>
+    // up front (doc's prefix) — collected entries are post-hoc; streaming callers pass head entries to
+    // `doc` explicitly. See the ssr reference's stream section.
+    const head = ssr.head();
+    const node = html`<div><title>Stream</title><meta charset="utf-8" /><p>body</p></div>` as HellaNode;
+    expect(await collect(ssr.stream(node, { head }))).toBe("<div><p>body</p></div>");   // hoisted tags absent from the stream
+    expect(head.title).toBe("Stream");
+    expect(head.meta).toEqual([{ charset: "utf-8" }]);
+  });
+
+  test.each(headParityCases)("head parity: collecting ssr.stream matches ssr for $name", async ({ node }) => {
+    const syncBag = ssr.head();
+    const streamBag = ssr.head();
+    const syncBody = ssr(node, { head: syncBag });
+    expect(await collect(ssr.stream(node, { head: streamBag }))).toBe(syncBody);   // identical body HTML…
+    expect(streamBag).toEqual(syncBag);                                           // …and identical resulting bag
   });
 });
