@@ -400,7 +400,8 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
 
 /**
  * Dispatches an isDynamic child against its marker-bounded region: consumes the region, then either
- * adopts the gathered nodes (ForEach/Transition) or drops them and re-runs (Portal/Lazy).
+ * adopts the gathered nodes (ForEach/Transition; Lazy keeps them until its loader re-run replaces
+ * them) or drops them and re-runs (Portal).
  */
 function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | null): Node | null {
   if (!current || !isMarkOpen(current)) {
@@ -422,8 +423,7 @@ function hydrateDynamic(parent: HellaElement, child: RenderFn, current: Node | n
       adoptRegion(parent, child, anchor, []);   // server rendered nothing in-place
       break;
     case "lazy":
-      clearRenderedNodes(existing, parent);     // drop the server loading node; re-run the loader
-      adoptRegion(parent, child, anchor, []);
+      adoptRegion(parent, child, anchor, existing);   // server content (loaded render, or loading UI from a sync render) stays until Lazy's fresh loader run replaces it — no flash
       break;
     case "suspense":
       // no-script fallback: staged <template> → resolved children (a browser's inline $hs already swapped on arrival);

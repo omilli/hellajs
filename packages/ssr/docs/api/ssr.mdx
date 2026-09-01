@@ -25,7 +25,7 @@ declare namespace ssr {
 }
 ```
 
-A component may embed server-side async data directly: a getter that returns a `Promise` is awaited, and its resolved value is placed inside a marker-bounded region identical to the sync call.
+A component may embed server-side async data directly: a getter that returns a `Promise` is awaited, and its resolved value is placed inside a marker-bounded region identical to the sync call. A [`Lazy`](/reference/dom/lazy) loader is awaited the same way — the loaded component renders server-side, and a rejected loader renders `fallback` (or rejects this call when none is provided).
 
 ```js
 import { html } from '@hellajs/dom';
@@ -47,7 +47,7 @@ declare namespace ssr {
 }
 ```
 
-The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)).
+The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)). [`Lazy`](/reference/dom/lazy) loaders are awaited like bare Promises — in-order outside [`<Suspense>`](/reference/dom/suspense), resolved within the staged `<template>` inside one.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -165,9 +165,9 @@ The shipped HTML is the source of truth on the client. Bind existing static node
 
 [`Portal`](/reference/dom/portal) teleports content to a DOM target — there is no document on the server, so portals render as empty. Render portal content inline in the template if it must appear in the HTML.
 
-### Lazy renders the loading fallback
+### Lazy awaits the loader under the async members; `ssr` emits `loading`
 
-[`Lazy`](/reference/dom/lazy) is async; the server render is synchronous, so `ssr` emits the `loading` fallback (or nothing if none was provided) and never awaits the loader.
+The base `ssr` call is synchronous, so a [`Lazy`](/reference/dom/lazy) region emits its `loading` fallback (or nothing if none was provided) and never calls the loader. [`ssr.async`](#async) and [`ssr.stream`](#stream) await it instead: the loaded component renders into the HTML, and `hydrate` keeps that server content in place until the client's fresh loader run replaces it — no loading flash. The loader must be server-executable (a dynamic `import()` needs a server-resolvable module); on rejection it renders `fallback`, or rejects/errors the render when none is provided.
 
 ### Full re-mount over server HTML wipes it
 
@@ -177,9 +177,9 @@ Calling [`mount`](/reference/dom/mount) over the server-rendered container repla
 
 The base `ssr(node)` call walks the tree once and returns. Reactive getters are read at their current value; there is no effect scheduling, no batching, and no async resolution — use `ssr.async`/`ssr.stream` when a subtree embeds Promises. Build the tree from already-resolved data.
 
-### Fetch Directly; Lazy and Resource Are Unchanged
+### Fetch Directly; Resource Is Unchanged
 
-`ssr.async` provides a generic await mechanism — return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) still renders its `loading` fallback (its loader is client-side), and [`resource`](/reference/resource/resource) still no-ops its fetch pipeline on the server. Fetch server-side data with direct `fetch()` and expose it through a Promise-returning getter.
+`ssr.async` provides a generic await mechanism — return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) loaders run server-side under the async members (see the Lazy note above), while [`resource`](/reference/resource/resource) still no-ops its fetch pipeline on the server. Fetch server-side data with direct `fetch()` and expose it through a Promise-returning getter.
 
 ### In-Order Streaming
 

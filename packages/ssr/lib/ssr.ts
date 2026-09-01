@@ -28,7 +28,7 @@ function renderDynamic(meta: SsrMeta): string {
     case "portal":
       return "";
     case "lazy":
-      return props.loading !== undefined ? walkChild(props.loading as HellaChild) : "";
+      return props.loading !== undefined ? walkChild(props.loading as HellaChild) : "";   // sync cannot await the loader — loading-only; the async pair (`walkChildGen` case "lazy") awaits it
     case "suspense":
       return props.children !== undefined ? walkChild(props.children as HellaChild) : "";   // sync — render children, fallback dropped (no async)
     default:
@@ -118,7 +118,9 @@ interface SsrFn {
   (node: HellaNode): string;
   /**
    * Async counterpart — awaits any Promise a resolved value returns (child, function-ref prop,
-   * `each`, `show`), then returns the concatenated HTML. `<Suspense>` renders its children directly
+   * `each`, `show`, `Lazy`'s loader), then returns the concatenated HTML. A `Lazy` region renders its
+   * loaded component server-side; a rejected loader renders `fallback` when present, otherwise rejects
+   * the returned Promise. `<Suspense>` renders its children directly
    * (fallback dropped — everything resolves before the string returns). Marker wrapping is
    * byte-identical to the sync call, so `hydrate` consumes the output unchanged. Walk failures
    * (including rejected Promises) propagate to the caller (no try/catch).
@@ -129,7 +131,8 @@ interface SsrFn {
   async(node: HellaNode): Promise<string>;
   /**
    * Streaming counterpart — yields chunks as the walk proceeds, flushing the static prefix before
-   * each awaited Promise (TTFB). A `<Suspense>` boundary opts a subtree into out-of-order streaming:
+   * each awaited Promise (TTFB). A `Lazy` loader is awaited like a bare Promise: in-order outside
+   * `<Suspense>`, resolved within the staged `<template>` inside it. A `<Suspense>` boundary opts a subtree into out-of-order streaming:
    * its `fallback` flushes inline, then each resolved region streams a `<template>` + an inline
    * `<script>$hs(id)</script>` that swaps it in the moment it arrives (progressive reveal, React/Solid
    * parity); `hydrate` later adopts the already-swapped nodes. Multiple regions stage concurrently —

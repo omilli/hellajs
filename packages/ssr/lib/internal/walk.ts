@@ -32,7 +32,7 @@ export interface PendingSwap {
 /** Monotonic counter for deferred `<Suspense>` swap ids — unique across `ssr.stream` calls in one process, so composed streamed outputs never collide on `hs0`. */
 let suspenseSeq = 0;
 
-/** Renders an isDynamic component's content from its `ssr` descriptor — async generator yielding HTML chunks; awaits Promise `each`/`show`/`loading`. `<Suspense>` defers a swap onto `pending` (streaming) or renders children directly (non-streaming). */
+/** Renders an isDynamic component's content from its `ssr` descriptor — async generator yielding HTML chunks; awaits Promise `each`/`show` and the `Lazy` loader. `<Suspense>` defers a swap onto `pending` (streaming) or renders children directly (non-streaming). */
 async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[]): AsyncGenerator<string> {
   const props = meta.props as Record<string, unknown>;
   switch (meta.kind) {
@@ -52,9 +52,25 @@ async function* renderDynamicGen(meta: SsrMeta, pending?: PendingSwap[]): AsyncG
       return;
     case "portal":
       return;
-    case "lazy":
-      if (props.loading !== undefined) yield* walkChildGen(props.loading as HellaChild, pending);
+    case "lazy": {
+      // Async pair only — the sync walker stays loading-only (it cannot await). Mirrors dom's `.then`:
+      // a function result is called with `props.props`; anything else walks as-is. `signal` is passed for
+      // call-shape fidelity with dom — it never aborts server-side. A rejection renders `fallback` when
+      // present (dom parity); with none it propagates, like a rejected bare Promise.
+      let resolved: HellaChild;
+      try {
+        const loaded = await (props.loader as (o: { signal: AbortSignal }) => unknown)({ signal: new AbortController().signal });
+        resolved = typeof loaded === "function" ? (loaded as (p: unknown) => HellaChild)(props.props) : loaded as HellaChild;
+      } catch (err) {
+        if (props.fallback !== undefined) {
+          yield* walkChildGen(props.fallback as HellaChild, pending);
+          return;
+        }
+        throw err;
+      }
+      yield* walkChildGen(resolved, pending);
       return;
+    }
     case "suspense":
       if (pending) {                                                  // streaming — defer: emit fallback now, stage resolved children for hydrate to swap in
         const id = `hs${suspenseSeq++}`;

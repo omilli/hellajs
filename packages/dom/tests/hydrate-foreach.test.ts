@@ -1,8 +1,24 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
-import { resetTestState, delay } from "@utils/test-helpers.js";
+import { resetTestState, delay, suppressConsole } from "@utils/test-helpers.js";
 import { hydrate, html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
-import { ssrContainer, suppressWarn } from "./helpers";
+import type { HellaNode } from "@hellajs/dom";
+import { ssrContainer, ssrAsyncContainer, suppressWarn } from "./helpers";
+
+/** Two-phase loader for hydrate tests: the first call (the server render) resolves `server`; later calls (the client re-run) stay pending until the test settles them. */
+const phasedLoader = (server: HellaNode) => {
+  let settleClient!: (v: HellaNode) => void;
+  let failClient!: (e: Error) => void;
+  const loader = mock((): Promise<HellaNode> =>
+    loader.mock.calls.length === 1
+      ? Promise.resolve(server)
+      : new Promise<HellaNode>((res, rej) => { settleClient = res; failClient = rej; }));
+  return {
+    loader,
+    resolveClient: (v: HellaNode) => settleClient(v),
+    rejectClient: (e: Error) => failClient(e),
+  };
+};
 
 beforeEach(() => {
   resetTestState();
@@ -141,17 +157,75 @@ describe("dom", () => {
       expect(target.querySelector("#ported")!.textContent).toBe("ported");
     });
 
-    test("re-runs a Lazy loader and drops the server loading node on hydrate", async () => {
-      const loader = mock(() => Promise.resolve(() => html`<span id="loaded">loaded</span>`));
+    test("re-runs a Lazy loader and replaces the server loading node on resolve", async () => {
+      let resolveLoader!: (v: () => HellaNode) => void;
+      const loader = mock(() => new Promise<() => HellaNode>((r) => { resolveLoader = r; }));
       const App = () => html`<div id="root"><${Lazy} loader=${loader} loading=${html`<span id="loading">loading</span>`} /></div>`;
       const container = ssrContainer(html`<${App} />`);
       expect(container.querySelector("#loading")).not.toBeNull();
 
       hydrate(html`<${App} />`, container);
-      await delay();
+      await delay();                                 // sync-rendered loading UI stays visible while the loader runs (not cleared at hydrate)
+      expect(container.querySelector("#loading")).not.toBeNull();
+      resolveLoader(() => html`<span id="loaded">loaded</span>` as HellaNode);
+      await delay(10);
       expect(loader).toHaveBeenCalledTimes(1);
       expect(container.querySelector("#loaded")!.textContent).toBe("loaded");
       expect(container.querySelector("#loading")).toBeNull();
+    });
+
+    test("keeps server-rendered Lazy content until the loader re-run replaces it", async () => {
+      const phased = phasedLoader(html`<b id="c">server</b>` as HellaNode);
+      const App = () => html`<div id="root"><${Lazy} loader=${phased.loader} loading=${html`<i>loading</i>`} /></div>`;
+      const container = await ssrAsyncContainer(html`<${App} />`);
+      const serverNode = container.querySelector("#c")!;
+      expect(container.textContent).toBe("server");                 // async render awaited the loader — loaded content shipped
+
+      hydrate(html`<${App} />`, container);
+      await delay();                                                // client loader pending — server content adopted, loading never inserted
+      expect(container.querySelector("#c")).toBe(serverNode);
+      expect(container.textContent).toBe("server");
+      expect(container.textContent).not.toContain("loading");
+
+      phased.resolveClient(html`<span id="fresh">fresh</span>` as HellaNode);
+      await delay(10);
+      expect(container.textContent).toBe("fresh");                 // fresh render replaced the server content
+      expect(container.querySelector("#c")).toBeNull();
+    });
+
+    test("replaces server-rendered Lazy content with the fallback when the loader rejects", async () => {
+      const phased = phasedLoader(html`<b id="c">server</b>` as HellaNode);
+      const App = () => html`<div id="root"><${Lazy} loader=${phased.loader} fallback=${html`<p id="fb">fb</p>`} /></div>`;
+      const container = await ssrAsyncContainer(html`<${App} />`);
+      expect(container.textContent).toBe("server");
+
+      hydrate(html`<${App} />`, container);
+      await delay();
+      phased.rejectClient(new Error("boom"));
+      await delay(10);
+      expect(container.textContent).toBe("fb");
+      expect(container.querySelector("#c")).toBeNull();
+    });
+
+    test("keeps server-rendered Lazy content and logs when the loader rejects without a fallback", async () => {
+      const phased = phasedLoader(html`<b id="c">server</b>` as HellaNode);
+      const App = () => html`<div id="root"><${Lazy} loader=${phased.loader} /></div>`;
+      const container = await ssrAsyncContainer(html`<${App} />`);
+      const serverNode = container.querySelector("#c")!;
+
+      const suppressed = suppressConsole();
+      try {
+        hydrate(html`<${App} />`, container);
+        await delay();
+        phased.rejectClient(new Error("boom"));
+        await delay(10);
+      } finally {
+        suppressed.restore();
+      }
+      expect(container.querySelector("#c")).toBe(serverNode);     // no fallback — server content stays (static degradation)
+      expect(container.textContent).toBe("server");
+      expect(suppressed.errors).toHaveLength(1);
+      expect(suppressed.errors[0]![0]).toBe("[dom] Lazy:");
     });
   });
 });

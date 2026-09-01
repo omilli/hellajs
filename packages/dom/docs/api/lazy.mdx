@@ -181,6 +181,22 @@ const faultyLoader = async () => {
 />
 ```
 
+### Server Rendering and Hydration
+
+Under [`ssr.async`](/reference/ssr/ssr#async) and [`ssr.stream`](/reference/ssr/ssr#stream), the loader runs on the server and the loaded component renders into the HTML — the loader must be server-executable (a dynamic `import()` needs a server-resolvable module). A rejected loader renders `fallback` there, or rejects the render when none is provided. The synchronous [`ssr`](/reference/ssr/ssr) call cannot await: it emits the `loading` fallback without calling the loader. On the client, [`hydrate`](/reference/dom/hydrate) always re-runs the loader (the chunk must load for interactivity) and keeps the server-rendered content in place until the fresh render replaces it — no loading flash.
+
+```js
+import { html, Lazy } from "@hellajs/dom";
+import { ssr } from "@hellajs/ssr";
+
+// server: the loader is awaited and the loaded component renders into the HTML
+const body = await ssr.async(html`
+  <main><${Lazy} loader=${() => import("./Chart")} loading=${html`<p>Loading…</p>`} /></main>
+`);
+// client: hydrate(tree, container) re-runs the loader — the server content stays
+// on screen until the client chunk's fresh render replaces it (no flash)
+```
+
 ### Component Resolution
 
 The loader can resolve to different component types:

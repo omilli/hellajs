@@ -43,6 +43,8 @@ const HS_SWAP_SCRIPT = `function $hs(id){
  * @internal
  * Serializes a HellaNode AST into a streaming HTML response — the `ssr.stream` namespace member.
  * yields chunks as the walk proceeds, flushing the static prefix before each awaited Promise (TTFB). A
+ * `Lazy` loader is awaited like a bare Promise: in-order outside `<Suspense>`, resolved within the
+ * staged `<template>` inside it (a rejection renders `fallback` or errors the swap). A
  * `<Suspense>` boundary opts a subtree into out-of-order streaming: its `fallback` flushes inline, then each
  * resolved region streams a `<template>` + an inline `<script>$hs(id)</script>` that swaps it in the moment it
  * arrives (progressive reveal, React/Solid parity); `hydrate` later adopts the already-swapped nodes. Multiple

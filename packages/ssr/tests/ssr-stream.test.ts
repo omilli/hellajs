@@ -12,7 +12,7 @@ const streamAsyncParityCases: { name: string; node: HellaNode }[] = [
   { name: "ForEach", node: html`<ul><${ForEach} each=${[1, 2, 3]} use=${(n: number) => html`<li>${n}</li>`} /></ul>` as HellaNode },
   { name: "Transition", node: html`<div><${Transition} show=${true}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode },
   { name: "Portal", node: html`<div><${Portal} to="#x">${html`<p>p</p>`}</${Portal}></div>` as HellaNode },
-  { name: "Lazy loading fallback", node: html`<div><${Lazy} loader=${async () => html`<div />` as HellaNode} loading=${html`<span>…</span>`} /></div>` as HellaNode },
+  { name: "Lazy loaded component (loader awaited)", node: html`<div><${Lazy} loader=${() => Promise.resolve(html`<b>L</b>` as HellaNode)} loading=${html`<span>…</span>`} /></div>` as HellaNode },
 ];
 
 describe("ssr.stream", () => {
@@ -159,6 +159,30 @@ describe("ssr.stream", () => {
     }
     expect(out).toContain("<b>A</b>");
     expect(out).toContain("<b>B</b>");
+  });
+
+  test("Lazy outside <Suspense> awaits in-order: the loader gates trailing markup", async () => {
+    let resolveLate!: () => void;
+    const loader = () => new Promise<void>((r) => { resolveLate = r; }).then(() => html`<b>L</b>` as HellaNode);
+    const reader = ssr.stream(html`<div>before<${Lazy} loader=${loader} />after</div>` as HellaNode).getReader();
+    let pre = "";
+    let chunk = await reader.read();
+    while (!chunk.done) { pre += chunk.value; if (pre.includes("<!--[-->")) break; chunk = await reader.read(); }  // drain until the lazy region opens — the walk suspends at the loader
+    expect(pre).toBe("<div>before<!--[-->");                  // exact flush point: prefix + region open, nothing past it
+    expect(pre).not.toContain("after");
+    resolveLate();
+    let all = pre;
+    chunk = await reader.read();
+    while (!chunk.done) { all += chunk.value; chunk = await reader.read(); }
+    expect(all).toBe("<div>before<!--[--><b>L</b><!--]-->after</div>");
+  });
+
+  test("Lazy inside <Suspense> resolves within the staged <template>", async () => {
+    const node = html`<div><${Suspense} fallback=${html`<i>wait</i>`}><${Lazy} loader=${() => Promise.resolve(html`<b>L</b>` as HellaNode)} loading=${html`<span>…</span>`} /></${Suspense}></div>` as HellaNode;
+    const out = await collect(ssr.stream(node));
+    const id = out.match(/<!--(hs\d+)-->/)![1]!;
+    expect(out).toContain("<i>wait</i>");                                        // fallback flushed in the shell
+    expect(out).toContain(`<template id="${id}"><!--[--><b>L</b><!--]--></template><script>$hs("${id}")</script>`);  // loader resolved inside the staged template
   });
 
   test("a rejected Promise errors the stream", async () => {
