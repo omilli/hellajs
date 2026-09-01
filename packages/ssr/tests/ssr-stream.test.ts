@@ -66,6 +66,19 @@ describe("ssr.stream", () => {
     expect(all).toBe(await ssr.async(html`<div>before${() => "late"}after</div>` as HellaNode));
   });
 
+  test("advances the walk only on pulls — the producer stays parked while the consumer idles (backpressure)", async () => {
+    const step = mock(() => Promise.resolve("x"));   // each call = the walk reached that child
+    const node = html`<div>${step}${step}${step}${step}${step}${step}</div>` as HellaNode;
+    const reader = ssr.stream(node).getReader();
+    const first = await reader.read();             // consume exactly one chunk, then idle with no read pending
+    expect(first.done).toBe(false);
+    await delay(25);                                // a start()-driven drain finishes all six getters inside this window
+    expect(step.mock.calls.length).toBeLessThanOrEqual(2);   // read-ahead bounded by the queue high-water mark, not the full walk
+    let chunk = await reader.read();                // resume consuming — the walk advances with the reads
+    while (!chunk.done) { chunk = await reader.read(); }
+    expect(step.mock.calls.length).toBe(6);         // every child walked once the stream is fully consumed
+  });
+
   test("cancel stops the generator (best-effort, no throw)", async () => {
     let resolveLate!: () => void;
     const delayed = new Promise<string>((r) => { resolveLate = () => r("late"); });
@@ -197,6 +210,7 @@ describe("ssr.stream", () => {
     while (!chunk.done) { pre += chunk.value; if (pre.includes("<!--[-->")) break; chunk = await reader.read(); }  // drain until the lazy region opens — the walk suspends at the loader
     expect(pre).toBe("<div>before<!--[-->");                  // exact flush point: prefix + region open, nothing past it
     expect(pre).not.toContain("after");
+    await delay(0);                       // pull-driven: the loader runs on the NEXT pull (after this read resolves) — yield a tick so it's invoked before release
     resolveLate();
     let all = pre;
     chunk = await reader.read();
