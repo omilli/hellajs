@@ -61,6 +61,13 @@ const body = ssr(html`<${App} />`);
 hydrate(html`<${App} />`, '#app');
 ```
 
+Server-fetched values ride along via [`doc`](/reference/ssr/doc)'s `data` option — the data ships as a JSON payload the client reads in one line, seeding a [`resource`](/reference/resource/resource) with `initialData`:
+
+```js
+// Client — recover the server's data
+const { user } = JSON.parse(document.getElementById('hella-data').textContent);
+```
+
 ⚠️ A full-tree [`mount`](/reference/dom/mount) over the server-rendered container wipes it — `mount` replaces the container's children and rebuilds. Use `hydrate`, the enhancement modes above, or reserve full re-mount for throwaway SEO-only content.
 
 ## Synchronous Render
