@@ -1,5 +1,5 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ElementMountFn, DirectListenerSpec } from "../types/nodes";
-import { isFunction, objectLoop } from "./core";
+import { isFunction, isObject, isNull, objectLoop } from "./core";
 import { renderProp, resolveValue, isHellaNode } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
@@ -54,7 +54,7 @@ export function resetHydrateState(): void {
 }
 
 /** Region-open Comment node discriminator (parser strips `<!--`/`-->`, leaving nodeValue `[`). The close is read inline by `gatherRegion`. */
-const isMarkOpen = (n: Node | null): boolean => n !== null && n.nodeType === Node.COMMENT_NODE && n.nodeValue === "[";
+const isMarkOpen = (n: Node | null): boolean => !isNull(n) && n.nodeType === Node.COMMENT_NODE && n.nodeValue === "[";
 
 /**
  * Gathers the nodes between an open marker and its matching close (depth-aware for nested regions).
@@ -178,7 +178,7 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
               };
             }
             const val = (target as unknown as Record<string, unknown>)[prop as string];
-            return typeof val === "function" ? (val as (...args: unknown[]) => unknown).bind(target) : val;
+            return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
           }
         });
         (resolved as RenderFn)(proxyParent as HellaElement);
@@ -331,7 +331,7 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
   while (i < len) {
     const child = children[i];
 
-    if (child !== null && typeof child === "object" && "raw" in child) {
+    if (isObject(child) && "raw" in child) {
       if (current && isMarkOpen(current)) {
         current = consumeRegion(parent, current).next;
       } else {

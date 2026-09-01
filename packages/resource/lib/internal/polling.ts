@@ -1,7 +1,7 @@
 /**
  * Interval polling controller for periodic resource refetch.
  */
-import { untracked, hasDocument } from "./core";
+import { untracked, hasDocument, isFunction } from "./core";
 
 /** Configuration for creating a polling controller. */
 interface PollingConfig<TTransformed> {
@@ -54,8 +54,8 @@ export function createPolling<TTransformed>(config: PollingConfig<TTransformed>)
       const timeoutId = setTimeout(() => {
         executePoll();
         // Get next interval (dynamic or fixed)
-        const nextInterval = typeof refetchInterval === "function"
-          ? refetchInterval(untracked(data))
+        const nextInterval = isFunction(refetchInterval)
+          ? (refetchInterval as (data: TTransformed | undefined) => number | false)(untracked(data))
           : (refetchInterval as number);
         if (nextInterval && nextInterval > 0) {
           scheduleNext(nextInterval);
@@ -72,8 +72,8 @@ export function createPolling<TTransformed>(config: PollingConfig<TTransformed>)
     };
 
     // Get initial interval
-    const initialInterval = typeof refetchInterval === "function"
-      ? refetchInterval(undefined)
+    const initialInterval = isFunction(refetchInterval)
+      ? (refetchInterval as (data: TTransformed | undefined) => number | false)(undefined)
       : (refetchInterval as number);
 
     if (initialInterval && initialInterval > 0) {

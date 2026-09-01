@@ -1,4 +1,4 @@
-import { flush, scope, signal } from "./internal/core";
+import { flush, scope, signal, isFunction, isString } from "./internal/core";
 import { mount } from "./mount";
 import type { ComponentProps, ComponentRenderFn, ComponentSlots, ElementOptions, HellaNode } from "./types/nodes";
 
@@ -100,10 +100,10 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
     }
   }
 
-  if (typeof tagName !== "string" || !tagName.includes("-")) {
-    throw new Error(`[dom] element: tagName must be a hyphenated string, received ${typeof tagName !== "string" ? typeof tagName : tagName}`);
+  if (!isString(tagName) || !tagName.includes("-")) {
+    throw new Error(`[dom] element: tagName must be a hyphenated string, received ${!isString(tagName) ? typeof tagName : tagName}`);
   }
-  if (typeof render !== "function") {
+  if (!isFunction(render)) {
     throw new Error(`[dom] element: render must be a function, received ${typeof render}`);
   }
 

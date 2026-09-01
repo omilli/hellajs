@@ -66,6 +66,22 @@ export default tseslint.config(
 		},
 	},
 	{
+		// Type discrimination in package libs goes through core's guards
+		// (guides/code.md § Type guards) — raw typeof comparisons are banned.
+		files: ["packages/*/lib/**/*.{ts,tsx}"],
+		ignores: [
+			"packages/core/lib/internal/utils.ts",
+			"packages/core/lib/internal/env.ts",
+			"packages/ssr/lib/**",
+		],
+		rules: {
+			"no-restricted-syntax": ["error", {
+				selector: "BinaryExpression[operator=/^[=!]==?$/] > UnaryExpression[operator='typeof']",
+				message: "Use the type-guard utils from @hellajs/core (isString/isNumber/isBoolean/isFunction/isObject/isPlainObject/isFalsy) via the package's lib/internal/core.ts shim — raw typeof comparisons are banned in package lib/ (guides/code.md § Type guards). For undefined use `x === undefined`; for undeclared-global probes use hasWindow/hasDocument/hasNavigator.",
+			}],
+		},
+	},
+	{
 		files: ["**/*.mjs", "**/*.js"],
 		rules: {
 			"@typescript-eslint/no-require-imports": "off",

@@ -1,5 +1,5 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn, DirectListenerSpec } from "../types/nodes";
-import { isFunction, objectLoop } from "./core";
+import { isFunction, isString, isNumber, isObject, objectLoop } from "./core";
 import { renderProp, toText, resolveValue } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
@@ -102,7 +102,7 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
     }
     return fragment;
   }
-  if (value !== null && typeof value === "object") {
+  if (isObject(value)) {
     // HellaNode first — the common object child; DOM Nodes expose tagName, never tag
     if ((value as HellaNode).tag !== undefined) return mountNode(value as HellaNode, undefined, ns);
     if ("raw" in value) return rawToFragment((value as { raw: string }).raw);
@@ -226,7 +226,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
 function appendToParent(parent: HellaElement, children?: HellaChild[], currentBoundary?: Element, ns?: string) {
   if (!children || children.length === 0) return;
 
-  if (children.length === 1 && typeof children[0] === "string") {
+  if (children.length === 1 && isString(children[0])) {
     parent.textContent = children[0];
     return;
   }
@@ -240,7 +240,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
     const child = children[index];
     index++;
 
-    if (typeof child === "string") {
+    if (isString(child)) {
       parent.appendChild(document.createTextNode(child));
       continue;
     }
@@ -275,7 +275,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
                   };
                 }
                 const val = (target as unknown as Record<string, unknown>)[prop as string];
-                return typeof val === "function" ? (val as (...args: unknown[]) => unknown).bind(target) : val;
+                return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
               }
             });
             (resolved as RenderFn)(proxyParent as HellaElement);
@@ -310,7 +310,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
       continue;
     }
 
-    if (child !== null && typeof child === "object") {
+    if (isObject(child)) {
       // HellaNode first — the common object child; raw sentinels and DOM Nodes never carry tag
       if ((child as HellaNode).tag !== undefined) {
         parent.appendChild(mountNode(child as HellaNode, currentBoundary, childNs));
@@ -322,7 +322,7 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
       continue;
     }
 
-    if (typeof child === "number") {
+    if (isNumber(child)) {
       parent.appendChild(document.createTextNode(String(child)));
     }
     // booleans, null, undefined render nothing

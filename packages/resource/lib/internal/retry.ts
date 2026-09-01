@@ -2,6 +2,7 @@
  * Retry configuration normalization and the shared retry loop for the resource fetch pipeline.
  */
 import type { ResourceError } from "../types/resource";
+import { isBoolean, isNumber, isFunction } from "./core";
 import { categorizeError, isAbortError } from "./errors";
 import { raceAbort } from "./abort";
 
@@ -23,17 +24,17 @@ export function resolveRetryConfig(
   retry: number | boolean | ((failureCount: number, error: ResourceError) => boolean),
   retryDelay: number | ((attempt: number, error: ResourceError) => number)
 ): RetryConfig {
-  const maxRetries = typeof retry === "boolean"
+  const maxRetries = isBoolean(retry)
     ? (retry ? 1 : 0)
-    : (typeof retry === "number" ? retry : 0);
+    : (isNumber(retry) ? retry : 0);
   return {
     maxRetries,
-    shouldRetry: typeof retry === "function"
-      ? retry
+    shouldRetry: isFunction(retry)
+      ? (retry as (failureCount: number, error: ResourceError) => boolean)
       : (count: number) => count <= maxRetries,
-    getDelay: typeof retryDelay === "function"
-      ? retryDelay
-      : () => retryDelay
+    getDelay: isFunction(retryDelay)
+      ? (retryDelay as (attempt: number, error: ResourceError) => number)
+      : () => retryDelay as number
   };
 }
 

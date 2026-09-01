@@ -1,4 +1,4 @@
-import { isFunction, hasWindow } from "./internal/core";
+import { isFunction, isString, isObject, isNull, hasWindow } from "./internal/core";
 import type { RouterConfig, RouteValue, RouteInfo, HistoryMode } from "./types";
 import { hooks, routes, redirects, notFound, mode, base, scrollBehavior, previousPath, inheritMeta } from "./internal/state";
 import { route } from "./route";
@@ -24,10 +24,10 @@ export function resetListeners() {
  * @throws {Error} When config is null, undefined, an array, or not an object.
  */
 export function router(config: RouterConfig): RouteInfo {
-  if (config === null || config === undefined || typeof config !== "object" || Array.isArray(config)) {
-    throw new Error(`[router] router: config must be an object, received ${config === null ? "null" : typeof config}`);
+  if (!isObject(config) || Array.isArray(config)) {
+    throw new Error(`[router] router: config must be an object, received ${isNull(config) ? "null" : typeof config}`);
   }
-  if (config.base !== undefined && (typeof config.base !== "string" || !config.base.startsWith("/"))) {
+  if (config.base !== undefined && (!isString(config.base) || !config.base.startsWith("/"))) {
     throw new Error(`[router] router: base must be a '/'-prefixed string, received ${JSON.stringify(config.base)}`);
   }
   routes(config.routes as Record<string, RouteValue | string>);
@@ -39,7 +39,7 @@ export function router(config: RouterConfig): RouteInfo {
 
   const routerMode: HistoryMode = config.mode || "history";
   mode(routerMode);
-  base(typeof config.base === "string" ? config.base.replace(/\/+$/, "") : "");
+  base(isString(config.base) ? config.base.replace(/\/+$/, "") : "");
 
   const intercept: boolean = config.intercept !== false;
 

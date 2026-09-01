@@ -18,7 +18,7 @@ function suspendChild(
   clearFallback: () => void
 ): void {
   const ns = childNamespaceOf(parent);
-  if (value && typeof (value as Promise<unknown>).then === "function") {
+  if (value && isFunction((value as Promise<unknown>).then)) {
     let cancelled = false;
     getState(parent).suspenseCleanup = () => { cancelled = true; };
     (value as Promise<HellaChild | HellaChild[]>)
@@ -80,7 +80,7 @@ export function Suspense(props: SuspenseProps): JSX.Element {
     const clearFallback = () => {
       if (fallbackNode?.parentNode) fallbackNode.parentNode.removeChild(fallbackNode);
     };
-    if (value && typeof (value as Promise<unknown>).then === "function" && props.fallback) {
+    if (value && isFunction((value as Promise<unknown>).then) && props.fallback) {
       fallbackNode = resolveNode(props.fallback, undefined, childNamespaceOf(parent));
       anchor.parentNode?.insertBefore(fallbackNode, anchor);
     }

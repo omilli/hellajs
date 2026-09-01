@@ -194,6 +194,42 @@ Use `Object.entries()` in place of `Object.keys()` only when both key and value 
 - Never use ternary for branches with side effects
 - Ternary for single-expression branches only
 
+### Type guards
+
+- In `packages/*/lib`, type discrimination uses core's guards — `isString`, `isNumber`, `isBoolean`, `isFunction`, `isObject`, `isPlainObject`, `isNull`, `isFalsy` — imported via the package's `lib/internal/core.ts` shim. No raw `typeof`-vs-literal comparisons. Shim grows only what the package uses.
+- Guard predicates narrow by assignability, not typeof-kind: on typed unions whose function arm has specific params (`T | ((old: T | undefined) => T)`), `isFunction` cannot filter the union — cast the narrowed arm to its specific signature (`(updater as (old: T | undefined) => T)(oldData)`). To discriminate a function-vs-spec-object union by shape, use `"handler" in x` — no core guard narrows it (`EventListener` is assignable to `object` and survives `isFunction`'s false branch).
+
+Guard choice by raw form:
+
+| Raw form | Guard form |
+|---|---|
+| `typeof x === "string"` / `!==` | `isString(x)` / `!isString(x)` |
+| `typeof x === "number"` | `isNumber(x)` |
+| `typeof x === "boolean"` | `isBoolean(x)` |
+| `typeof x === "function"` | `isFunction(x)` |
+| `x !== null && typeof x === "object"` (either order) | `isObject(x)` |
+| `typeof x !== "object" \|\| x === null` | `!isObject(x)` |
+| guard-shaped `x === null` / `!== null` on identifiers/members | `isNull(x)` / `!isNull(x)` |
+| `v === false \|\| v === null \|\| v === undefined` | `isFalsy(v)` (exactly `false\|null\|undefined` — only when the domain can't make `isFalsy`'s `false` arm differ) |
+| `x === null \|\| x === undefined \|\| typeof x !== "string"` | `!isString(x)` — null/undefined disjuncts absorbed by guard negation |
+
+Stays raw (each named with its reason):
+
+- `x === undefined` / `x !== undefined` — the preferred form; `isUndefined` is deliberately unexported
+- loose `== null` / `!= null` — null-or-undefined semantics; no guard equivalent
+- regex-exec loops (`while ((match = R.exec(s)) !== null)`) — idiom, not a guard
+- `typeof` in error-message interpolation (`received ${typeof x}`) — the message, not a guard
+- `switch (typeof x)` discriminants and factored discriminant locals (`const t = typeof x` then `t === "string"`) — one typeof read, many comparisons
+- type positions (`ReturnType<typeof setTimeout>`, `as typeof x.props`) — not runtime code
+
+Exemptions (architecturally forced, not style calls):
+
+- **ssr** — zero runtime imports by design (only `import type` from `@hellajs/dom`); its raw typeof sites stay
+- **build-time plugins** (`plugins/**`) and `scripts/` — no `@hellajs/core` dependency; typeof discriminates Babel AST nodes / build metrics
+- **core's own `lib/internal/utils.ts` + `lib/internal/env.ts`** — they are the guards/probes
+
+Enforcement: eslint `no-restricted-syntax` (eslint.config.mjs) bans the typeof forms in `packages/*/lib`; `isNull`/`isFalsy` conversions are prose-enforced (audited via the checklist).
+
 ### Error Handling
 
 - Public API functions validate inputs — they do not trust their callers. On invalid input, throw an `Error` with a `[package] fn: <constraint>, received <value>` message (e.g., `[dom] ForEach: each is required`); never silently coerce
@@ -356,7 +392,8 @@ Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `script
 - [ ] `interface` for object shapes; `type` for unions/mapped/conditional
 - [ ] No `any` (`unknown` only)
 - [ ] No `@internal` on a type inside a wholesale-exported `.d.ts` (decorative — move the type instead)
-- [ ] Named shape referenced by name at every signature, never re-inlined
+- [ ] Named shape referenced by name at every signature, never re-inline
+- [ ] Type checks use core's guards via the package shim — no raw `typeof`-literal comparisons in `lib/` (exempt: ssr, build-time plugins/scripts, core's own `utils.ts`/`env.ts`; `=== undefined`, loose `== null`, regex-exec loops stay raw)
 
 **Naming**
 - [ ] Public functions single-word; components PascalCase; `$`-ref APIs `$`-prefixed

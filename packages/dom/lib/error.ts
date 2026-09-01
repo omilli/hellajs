@@ -1,4 +1,5 @@
 import type { ErrorFn } from "./types/nodes";
+import { isNull } from "./internal/core";
 import { handlers } from "./internal/dispatch";
 
 const NOOP = () => {};
@@ -10,7 +11,7 @@ const NOOP = () => {};
  * @returns Remove function to unregister this handler
  */
 export function onError(fn: ErrorFn | null): () => void {
-  if (fn === null) {
+  if (isNull(fn)) {
     handlers.clear();
     return NOOP;
   }

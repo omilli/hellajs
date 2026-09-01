@@ -1,1 +1,1 @@
-export { effect, isFunction, isPlainObject, isObject, hasDocument } from "@hellajs/core";
+export { effect, isFunction, isPlainObject, isObject, hasDocument, isString, isNumber } from "@hellajs/core";

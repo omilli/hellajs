@@ -1,7 +1,7 @@
 /**
  * Reference-preserving deep comparison for structural sharing of fetch results.
  */
-import { isPlainObject } from "./core";
+import { isPlainObject, isObject, isNull } from "./core";
 
 /**
  * @internal
@@ -21,8 +21,8 @@ export function structuralShare<T>(prev: T | undefined, next: T): T {
   if (prev === undefined) return next;
   if (Object.is(prev, next)) return prev;
 
-  if (prev === null || next === null) return next;
-  if (typeof prev !== "object" || typeof next !== "object") return next;
+  if (isNull(prev) || isNull(next)) return next;
+  if (!isObject(prev) || !isObject(next)) return next;
 
   if (Array.isArray(prev)) {
     if (!Array.isArray(next) || prev.length !== next.length) return next;

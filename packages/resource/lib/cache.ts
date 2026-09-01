@@ -1,6 +1,6 @@
 import type { CacheEntry, CacheConfig, CacheUpdate, ResourceCache, CacheMapView, PrefetchOptions } from "./types/cache";
 import type { Resource } from "./types/resource";
-import { hasNavigator, hasWindow } from "./internal/core";
+import { hasNavigator, hasWindow, isFunction, isString, isNumber, isBoolean, isObject } from "./internal/core";
 import { resolveRetryConfig, fetchWithRetry } from "./internal/retry";
 import { wireRequestControls } from "./internal/abort";
 import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
@@ -182,9 +182,9 @@ export function updateCacheData<T>(
     return false;
   }
 
-  const newData = typeof updater === "function"
+  const newData = isFunction(updater)
     ? (updater as (old: T | undefined) => T)(entry.data)
-    : updater;
+    : (updater as T);
 
   entry.data = newData;
   entry.lastAccess = Date.now();
@@ -244,20 +244,20 @@ export const resourceCache: ResourceCache = {
   get map() { return flatView; },
   get config() { return cacheConfig; },
   setConfig: (config: Partial<CacheConfig>) => {
-    if (config == null || typeof config !== "object" || Array.isArray(config))
+    if (!isObject(config) || Array.isArray(config))
       throw new Error("[resource] setConfig: config must be an object, received " + config);
-    if (config.maxSize !== undefined && (typeof config.maxSize !== "number" || Number.isNaN(config.maxSize) || config.maxSize < 0))
+    if (config.maxSize !== undefined && (!isNumber(config.maxSize) || Number.isNaN(config.maxSize) || config.maxSize < 0))
       throw new Error("[resource] setConfig: maxSize must be a non-negative number, received " + config.maxSize);
-    if (config.enableLRU !== undefined && typeof config.enableLRU !== "boolean")
+    if (config.enableLRU !== undefined && !isBoolean(config.enableLRU))
       throw new Error("[resource] setConfig: enableLRU must be a boolean, received " + config.enableLRU);
     cacheConfig = { ...cacheConfig, ...config };
   },
   set: <K, T>(key: K, data: T, cacheTime: number, staleTime = 0) => {
     if (cacheTime === undefined)
       throw new Error("[resource] set: cacheTime is required, received undefined");
-    if (cacheTime != null && (typeof cacheTime !== "number" || Number.isNaN(cacheTime) || cacheTime < 0))
+    if (cacheTime != null && (!isNumber(cacheTime) || Number.isNaN(cacheTime) || cacheTime < 0))
       throw new Error("[resource] set: cacheTime must be a non-negative number, received " + cacheTime);
-    if (staleTime != null && (typeof staleTime !== "number" || Number.isNaN(staleTime) || staleTime < 0))
+    if (staleTime != null && (!isNumber(staleTime) || Number.isNaN(staleTime) || staleTime < 0))
       throw new Error("[resource] set: staleTime must be a non-negative number, received " + staleTime);
     setCacheData(PUBLIC_SCOPE, stableKey(key), data, cacheTime, staleTime);
     return key;
@@ -333,7 +333,7 @@ export const resourceCache: ResourceCache = {
       const len = keys.length;
       while (i < len) {
         const key = keys[i++]!;
-        if (typeof key === "string" && key.startsWith(prefix)) {
+        if (isString(key) && key.startsWith(prefix)) {
           keysToDelete.push(key);
         }
       }
@@ -359,7 +359,7 @@ export const resourceCache: ResourceCache = {
       const len = keys.length;
       while (i < len) {
         const key = keys[i++]!;
-        if (typeof key === "string" && pattern.test(key)) {
+        if (isString(key) && pattern.test(key)) {
           keysToDelete.push(key);
         }
       }
@@ -388,9 +388,9 @@ export const resourceCache: ResourceCache = {
     return () => onlineCallbacks.delete(callback);
   },
   prefetch: async <T, K>(options: PrefetchOptions<T, K>): Promise<T> => {
-    if (options == null || typeof options !== "object")
+    if (!isObject(options))
       throw new Error("[resource] prefetch: options must be an object, received " + typeof options);
-    if (typeof options.fetcher !== "function")
+    if (!isFunction(options.fetcher))
       throw new Error("[resource] prefetch: fetcher must be a function, received " + typeof options.fetcher);
 
     const { fetcher, key, cacheTime = 0, staleTime, timeout, abortSignal, retry = 0, retryDelay = 1000, deduplicate = true } = options;

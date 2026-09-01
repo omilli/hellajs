@@ -1,4 +1,4 @@
-import { signal, computed, effect, untracked, isFunction, hasWindow } from "./internal/core";
+import { signal, computed, effect, untracked, isFunction, isString, isObject, hasWindow } from "./internal/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types/resource";
 import type { CacheEntry } from "./types/cache";
 import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
@@ -46,12 +46,12 @@ export function resource<T, K = undefined, TTransformed = T>(
   fetcher: Fetcher<T, K> | string,
   options: ResourceOptions<T, K, TTransformed> = {}
 ): Resource<TTransformed, T> {
-  if (typeof fetcher !== "string" && typeof fetcher !== "function")
+  if (!isString(fetcher) && !isFunction(fetcher))
     throw new Error("[resource] resource: fetcher must be a string URL or function, received " + typeof fetcher);
-  if (options !== undefined && (options === null || typeof options !== "object" || Array.isArray(options)))
+  if (options !== undefined && (!isObject(options) || Array.isArray(options)))
     throw new Error("[resource] resource: options must be an object, received " + options);
 
-  if (typeof fetcher === "string")
+  if (isString(fetcher))
     return resource<T, string, TTransformed>(
       async (key: string) => {
         const { ok, status, statusText, json } = await fetch(key);
@@ -417,7 +417,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     if (updater === undefined) throw new Error("[resource] setData: updater is required, received undefined");
     const key = stableKey(cacheKey());
 
-    if (typeof updater === "function") {
+    if (isFunction(updater)) {
       // Get old value from cache first, fallback to current rawData
       const cachedOld = cacheTime ? getCacheData(fetcherFn, key) as T | undefined : undefined;
       const oldValue = cachedOld !== undefined ? cachedOld : rawData();
@@ -425,8 +425,9 @@ export function resource<T, K = undefined, TTransformed = T>(
       rawData(newData);
       cacheTime && setCacheData(fetcherFn, key, newData, cacheTime, staleTime ?? Infinity);
     } else {
-      rawData(updater);
-      cacheTime && setCacheData(fetcherFn, key, updater, cacheTime, staleTime ?? Infinity);
+      const next = updater as T;
+      rawData(next);
+      cacheTime && setCacheData(fetcherFn, key, next, cacheTime, staleTime ?? Infinity);
     }
   };
 
@@ -466,7 +467,7 @@ export function resource<T, K = undefined, TTransformed = T>(
           const len = invalidates.length;
           while (i < len) {
             const item = invalidates[i++]!;
-            if (typeof item === "string") {
+            if (isString(item)) {
               resourceCache.invalidateByPrefix(item);
             } else {
               resourceCache.invalidateByPattern(item);

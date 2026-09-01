@@ -15,7 +15,7 @@ import type { LazyProps, HellaNode } from "./types/nodes";
  * @throws {Error} When props.loader is not a function.
  */
 export function Lazy(props: LazyProps): JSX.Element {
-  if (typeof props.loader !== "function") throw new Error("[dom] Lazy: loader must be a function");
+  if (!isFunction(props.loader)) throw new Error("[dom] Lazy: loader must be a function");
   const fn = ((parent: Element) => {
     const hctx = peekHydrateContext();
     const anchor = hctx ? hctx.anchor : document.createTextNode("");

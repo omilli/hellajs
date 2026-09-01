@@ -1,4 +1,4 @@
-import { isFunction, isPlainObject } from "./core";
+import { isFunction, isPlainObject, isObject, isFalsy } from "./core";
 import type { HellaNode, HellaElement } from "../types/nodes";
 
 /**
@@ -12,7 +12,7 @@ import type { HellaNode, HellaElement } from "../types/nodes";
  * @returns True if the value is a HellaNode
  */
 export function isHellaNode(value: unknown): value is HellaNode {
-  return value !== null && typeof value === "object" && (value as HellaNode).tag !== undefined;
+  return isObject(value) && (value as HellaNode).tag !== undefined;
 }
 
 /**
@@ -25,7 +25,7 @@ export function isHellaNode(value: unknown): value is HellaNode {
  * @returns The normalized string value
  */
 export function toText(value: unknown): string {
-  return value === false || value === null || value === undefined ? "" : `${value}`;
+  return isFalsy(value) ? "" : `${value}`;
 }
 
 /**
@@ -52,7 +52,7 @@ export function resolveText(value: unknown): string {
  * @param value The value to set
  */
 export function renderProp(element: HellaElement, key: string, value: unknown) {
-  const isFalsyVal = value === false || value === null || value === undefined;
+  const isFalsyVal = isFalsy(value);
   if (key === "value" || key === "checked" || key === "selected" || key === "innerHTML") {
     (element as unknown as Record<string, unknown>)[key] = isFalsyVal ? "" : value;
     return;

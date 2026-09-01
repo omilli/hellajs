@@ -4,6 +4,8 @@
 * **Creation**: Added concept [071](entries/071.md) (type: decision).
 * **Creation**: Added concept [072](entries/072.md) (type: decision).
 * **Update**: Refreshed [021](entries/021.md) and [032](entries/032.md) for the pull-driven ssr.stream/doc conversion (plans/ssr/code/ssr-behavior-gaps/07) — 021 now records the one-chunk-per-pull timing (drain to a gating chunk + await delay(0) so the NEXT pull runs the gated step; confirmed by the Lazy resolveLate failure); 032 now records queue-appending collection (parked-pull wake, per-drain swap-error isolation) and drops the stale rejects-Promise.all error routing.
+* **Creation**: Added concept [073](entries/073.md) (type: decision).
+* **Creation**: Added concept [074](entries/074.md) (type: decision).
 
 ## 2026-08-31
 * **Creation**: Added concept [065](entries/065.md) (type: decision).

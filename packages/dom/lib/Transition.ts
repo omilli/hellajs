@@ -1,3 +1,4 @@
+import { isString } from "./internal/core";
 import { resolveValue, isHellaNode } from "./internal/utils";
 import { resolveNode, childNamespaceOf } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
@@ -51,7 +52,7 @@ export function Transition(props: TransitionProps): JSX.Element {
             }
           }
           if (appear) {
-            const appearClass = typeof appear === "string" ? appear : enter;
+            const appearClass = isString(appear) ? appear : enter;
             if (appearClass && current instanceof Element) {
               current.classList.add(appearClass);
             }
@@ -65,7 +66,7 @@ export function Transition(props: TransitionProps): JSX.Element {
         anchor.parentNode?.insertBefore(current, anchor);
 
         if (isFirst && appear) {
-          const appearClass = typeof appear === "string" ? appear : enter;
+          const appearClass = isString(appear) ? appear : enter;
           if (appearClass && current instanceof Element) {
             current.classList.add(appearClass);
           }

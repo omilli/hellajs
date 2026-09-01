@@ -1,4 +1,4 @@
-import { hasDocument, isPlainObject } from "./internal/core";
+import { hasDocument, isFunction, isNumber, isObject, isPlainObject, isString } from "./internal/core";
 import { hostQualifier, upsertRule } from "./internal/sheet";
 import { STYLE_ID, injectedMap } from "./internal/injection";
 import type { InjectedEntry } from "./internal/injection";
@@ -125,7 +125,7 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
     const value = obj[key];
     if (value == null) continue;
 
-    if (typeof value === "object" && !Array.isArray(value)) {
+    if (isObject(value) && !Array.isArray(value)) {
       if (key.startsWith("@")) {
         let isConditional = false;
         let ci = 0;
@@ -171,7 +171,7 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
         rules.push(process(value as CSSObject, nestedSelector, isGlobal));
       }
     } else {
-      if (typeof value === "function") {
+      if (isFunction(value)) {
         throw new Error(`[css] function values are not supported in css objects — use cssVars() for reactive values, key: ${key}`);
       }
       const isCustom = key.startsWith("--");
@@ -179,13 +179,13 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
       let cssValue: string;
       if (Array.isArray(value)) {
         cssValue = value.join(", ");
-      } else if (typeof value === "number" && !isCustom && !UNITLESS_PROPERTIES.has(key)) {
+      } else if (isNumber(value) && !isCustom && !UNITLESS_PROPERTIES.has(key)) {
         cssValue = `${value}px`;
       } else {
         cssValue = String(value);
       }
 
-      if (property === "content" && typeof value === "string" && !value.startsWith("\"") && !value.startsWith("'")) {
+      if (property === "content" && isString(value) && !value.startsWith("\"") && !value.startsWith("'")) {
         cssValue = `"${value}"`;
       }
 
