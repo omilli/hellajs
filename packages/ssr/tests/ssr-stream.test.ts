@@ -161,6 +161,33 @@ describe("ssr.stream", () => {
     expect(out).toContain("<b>B</b>");
   });
 
+  test("threads a CSP nonce onto the $hs bootstrap and every per-swap script", async () => {
+    const node = html`<div><${Suspense} fallback=${html`<i>a</i>`}>${() => Promise.resolve(html`<b>A</b>`)}</${Suspense}><${Suspense} fallback=${html`<i>b</i>`}>${() => Promise.resolve(html`<b>B</b>`)}</${Suspense}></div>` as HellaNode;
+    const out = await collect(ssr.stream(node, { nonce: "a1b2c3" }));
+    const attrs = [...out.matchAll(/<script([^>]*)>/g)].map((m) => m[1]!);
+    expect(attrs).toHaveLength(3);                                    // the bootstrap + one swap script per staged region
+    for (const attr of attrs) {
+      expect(attr).toBe(' nonce="a1b2c3"');   // every emitted script carries the nonce — and nothing else
+    }
+    const ids = [...out.matchAll(/<!--(hs\d+)-->/g)].map((m) => m[1]!);
+    for (const id of ids) {
+      expect(out).toContain(`</template><script nonce="a1b2c3">$hs("${id}")</script>`);   // each swap still well-formed
+    }
+    const last = ids[ids.length - 1]!;
+    expect(out.endsWith(`<template id="${last}"><!--[--><b>B</b><!--]--></template><script nonce="a1b2c3">$hs("${last}")</script>`)).toBe(true);  // nonce'd staged tail closes the stream
+  });
+
+  test("omits the nonce attribute entirely without a nonce option (staged output unchanged)", async () => {
+    const node = () => html`<div><${Suspense} fallback=${html`<i>wait</i>`}>${() => Promise.resolve(html`<b>x</b>`)}</${Suspense}></div>` as HellaNode;
+    const bare = await collect(ssr.stream(node()));
+    const emptyOpts = await collect(ssr.stream(node(), {}));
+    const id = bare.match(/<!--(hs\d+)-->/)![1]!;
+    expect(bare).not.toContain("nonce=");                             // unattributed — no nonce anywhere
+    expect(bare.indexOf("<script>function $hs")).toBeLessThan(bare.indexOf(`<template id="${id}">`));   // pre-change bootstrap shape, unattributed
+    expect(bare.endsWith(`<template id="${id}"><!--[--><b>x</b><!--]--></template><script>$hs("${id}")</script>`)).toBe(true);  // pre-change staged tail byte-for-byte
+    expect(emptyOpts.replace(/hs\d+/g, "hs")).toBe(bare.replace(/hs\d+/g, "hs"));   // {} ≡ no options (ids come from a global counter — normalized)
+  });
+
   test("Lazy outside <Suspense> awaits in-order: the loader gates trailing markup", async () => {
     let resolveLate!: () => void;
     const loader = () => new Promise<void>((r) => { resolveLate = r; }).then(() => html`<b>L</b>` as HellaNode);

@@ -6,6 +6,7 @@ import { MARK_OPEN, MARK_CLOSE } from "./internal/walk";
 import type { DynamicFn } from "./internal/walk";
 import { ssrAsync } from "./ssrAsync";
 import { ssrStream } from "./ssrStream";
+import type { StreamOptions } from "./types";
 
 /** Renders an isDynamic component's content from its `ssr` descriptor — shared by the direct-isDynamic-child and reactive-resolved-isDynamic dispatch paths. */
 function renderDynamic(meta: SsrMeta): string {
@@ -139,12 +140,15 @@ interface SsrFn {
    * each as its own region resolves (completion order, not document order). A rejecting staged region is
    * isolated: its `<template>` is skipped (fallback + sentinel remain) and `hydrate` re-suspends that region
    * client-side. Bare Promises are awaited in-order; a rejected bare Promise errors the stream. Pipe through
-   * `new TextEncoderStream()` for a `Response` body.
+   * `new TextEncoderStream()` for a `Response` body. Pass `{ nonce }` to thread a CSP `nonce="…"` attribute
+   * onto the `$hs` bootstrap and every per-swap `<script>` — required when the response ships a strict
+   * `Content-Security-Policy` (no `unsafe-inline`); omitted emits them unattributed.
    * @param node The HellaNode AST to serialize
+   * @param options Stream options — `nonce` for the inline swap scripts under a strict CSP
    * @returns A `ReadableStream<string>` of HTML chunks
    * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
    */
-  stream(node: HellaNode): ReadableStream<string>;
+  stream(node: HellaNode, options?: StreamOptions): ReadableStream<string>;
 }
 
 /**

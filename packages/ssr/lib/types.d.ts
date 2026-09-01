@@ -1,4 +1,18 @@
 /**
+ * Options for `ssr.stream`. Omitting `nonce` emits the inline swap scripts unattributed — byte-identical
+ * to calling `ssr.stream(node)` with no options at all.
+ */
+export interface StreamOptions {
+  /**
+   * CSP nonce threaded onto every inline `<script>` the stream emits (the `$hs` bootstrap and each
+   * per-region swap script) — text-escaped into a `nonce="…"` attribute, so a strict
+   * `Content-Security-Policy` (no `unsafe-inline`) still lets the progressive swaps run. Pair it with a
+   * response header carrying the same value, e.g. `script-src 'self' 'nonce-…'`.
+   */
+  nonce?: string;
+}
+
+/**
  * Attribute map for a `<meta>` tag — `{ charset }`, `{ name, content }`, or `{ property, content }`.
  */
 export interface MetaTag {
