@@ -2,7 +2,7 @@
  * Structural cache-key normalization — plain-object and array keys compare by
  * shape instead of reference identity at every cache and dedup boundary.
  */
-import { isPlainObject } from "./core";
+import { isPlainObject, isObject, isNull } from "./core";
 
 /** Sentinel prefix marking a structurally-hashed key; no realistic user string key starts with a NUL byte. */
 const HASH_PREFIX = "\u0000";
@@ -16,7 +16,7 @@ const HASH_PREFIX = "\u0000";
  * function) has no stable form — the caller then falls back to reference identity
  */
 function serialize(value: unknown): string | null {
-  if (value === null) return "null";
+  if (isNull(value)) return "null";
   switch (typeof value) {
     case "string": return JSON.stringify(value);
     case "number": return String(value);
@@ -32,7 +32,7 @@ function serialize(value: unknown): string | null {
     while (i < len) {
       if (i > 0) out += ",";
       const item = serialize(value[i]);
-      if (item === null) return null;
+      if (isNull(item)) return null;
       out += item;
       i++;
     }
@@ -47,7 +47,7 @@ function serialize(value: unknown): string | null {
     while (i < len) {
       if (i > 0) out += ",";
       const item = serialize(value[keys[i]!]);
-      if (item === null) return null;
+      if (isNull(item)) return null;
       out += JSON.stringify(keys[i]) + ":" + item;
       i++;
     }
@@ -67,8 +67,8 @@ function serialize(value: unknown): string | null {
  * @returns The key to hand to cache and dedup Maps
  */
 export function stableKey(key: unknown): unknown {
-  if (typeof key !== "object" || key === null) return key;
+  if (!isObject(key)) return key;
   if (!Array.isArray(key) && !isPlainObject(key)) return key;
   const serialized = serialize(key);
-  return serialized === null ? key : HASH_PREFIX + serialized;
+  return isNull(serialized) ? key : HASH_PREFIX + serialized;
 }

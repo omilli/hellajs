@@ -14,6 +14,9 @@ export {
   isFunction,
   isPlainObject,
   isString,
+  isNumber,
+  isBoolean,
+  isNull,
   isFalsy,
   isObject,
   objectLoop

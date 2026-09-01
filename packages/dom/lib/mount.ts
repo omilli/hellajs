@@ -1,4 +1,5 @@
 import type { HellaNode, HellaElement, MountHandle } from "./types/nodes";
+import { isFunction, isString, isObject } from "./internal/core";
 import { resolveValue } from "./internal/utils";
 import { setMountNode, dispatchError, toError } from "./internal/dispatch";
 import { mountNode } from "./internal/render";
@@ -20,7 +21,7 @@ export function mount(
   node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
   target: string | Element | ShadowRoot = "#app"
 ): MountHandle {
-  const container = typeof target === "string" ? document.querySelector(target) : target;
+  const container = isString(target) ? document.querySelector(target) : target;
   if (!container) throw new Error(`[dom] mount: target "${target}" not found in document`);
 
   let mountedNode: HellaElement | null = null;
@@ -69,9 +70,8 @@ export function mount(
   const resolved = resolveValue(node);
 
   if (
-    resolved !== null &&
-    typeof resolved === "object" &&
-    typeof (resolved as { then?: unknown }).then === "function") {
+    isObject(resolved) &&
+    isFunction((resolved as { then?: unknown }).then)) {
     (resolved as Promise<HellaNode | (() => HellaNode)>).then(attach, (err: unknown) => {
       dispatchError(toError(err), { phase: "mount" });
     });

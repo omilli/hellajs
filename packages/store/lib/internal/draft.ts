@@ -1,4 +1,4 @@
-import { isPlainObject } from "./core";
+import { isPlainObject, isObject } from "./core";
 
 /**
  * @internal
@@ -7,7 +7,7 @@ import { isPlainObject } from "./core";
  * their prototype.
  */
 export function deepClone<T>(obj: T): T {
-  if (obj === null || typeof obj !== "object") return obj;
+  if (!isObject(obj)) return obj;
   if (Array.isArray(obj)) return obj.map((item) => deepClone(item)) as T;
   if (obj instanceof Date) return new Date(obj.getTime()) as T;
   if (obj instanceof RegExp) return new RegExp(obj.source, obj.flags) as T;
@@ -54,7 +54,7 @@ export function deepClone<T>(obj: T): T {
  */
 export function structurallyEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
-  if (a === null || b === null || typeof a !== "object" || typeof b !== "object") return false;
+  if (!isObject(a) || !isObject(b)) return false;
 
   if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
   if (a instanceof RegExp && b instanceof RegExp) return a.source === b.source && a.flags === b.flags;

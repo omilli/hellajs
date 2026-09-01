@@ -6,6 +6,7 @@ import type {
   ComponentFn,
   RenderFn
 } from "../types/nodes";
+import { isFunction, isObject } from "./core";
 import { component } from "../component";
 
 /**
@@ -64,7 +65,7 @@ const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"
  * @returns Cloned node with values substituted
  */
 export function cloneWithValues(node: unknown, values: unknown[]): unknown {
-  if (typeof node !== "object" || node === null) return node;
+  if (!isObject(node)) return node;
 
   if (Object.hasOwn(node, "static")) return node;
 
@@ -85,7 +86,7 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
   if (Object.hasOwn(node, "dynamicComponent")) {
     const marker = node as HtmlDynamicComponent;
     const componentFn = values[marker.dynamicComponent];
-    if (typeof componentFn !== "function") return node;
+    if (!isFunction(componentFn)) return node;
 
     const resolvedProps: Record<string, unknown> = {};
     const propsKeys = Object.keys(marker.props);
@@ -321,7 +322,7 @@ function markStaticSubtrees(nodes: HtmlInternalNode[]): void {
  * dependencies — tagging it `static` when so. Drives `markStaticSubtrees`.
  */
 function markIfStatic(node: unknown): boolean {
-  if (typeof node !== "object" || node === null) return true;
+  if (!isObject(node)) return true;
 
   if (Object.hasOwn(node, "placeholder") || Object.hasOwn(node, "dynamicComponent"))
     return false;
@@ -335,13 +336,13 @@ function markIfStatic(node: unknown): boolean {
   const fLen = fields.length;
   while (fi < fLen) {
     const val = n[fields[fi]!];
-    if (val && typeof val === "object") {
+    if (isObject(val)) {
       const keys = Object.keys(val);
       let ki = 0;
       const kLen = keys.length;
       while (ki < kLen) {
         const v = (val as Record<string, unknown>)[keys[ki]!];
-        if (v && typeof v === "object" && Object.hasOwn(v, "placeholder")) return false;
+        if (isObject(v) && Object.hasOwn(v, "placeholder")) return false;
         ki++;
       }
     }

@@ -8,7 +8,7 @@ Reactive primitives over a doubly-linked dependency DAG. Signals are sources, co
 |---|---|---|
 | `signal`, `computed`, `effect`, `batch`, `untracked`, `scope` | Primitives | `lib/*.ts` |
 | `flush` | Scheduler drain (advanced/testing) | `lib/internal/scheduler.ts` |
-| `isFunction`, `isString`, `isPlainObject`, `isFalsy`, `isObject`, `objectLoop` | Utils | `lib/internal/utils.ts` |
+| `isFunction`, `isString`, `isPlainObject`, `isNumber`, `isBoolean`, `isNull`, `isFalsy`, `isObject`, `objectLoop` | Utils | `lib/internal/utils.ts` |
 | `hasWindow`, `hasDocument`, `hasNavigator` | Env probes | `lib/internal/env.ts` |
 | `Signal` | Type-only | `lib/types.d.ts` |
 

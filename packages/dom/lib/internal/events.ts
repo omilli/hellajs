@@ -85,7 +85,7 @@ export function setDirectHandler(
   const state = getState(element);
   const handlers = state.directHandlers ?? (state.directHandlers = new Map());
 
-  const isSpec = typeof handler === "object";
+  const isSpec = "handler" in handler;
   const listener = isSpec ? handler.handler : handler;
   const options = isSpec ? handler.options : undefined;
 

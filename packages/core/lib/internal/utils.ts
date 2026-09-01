@@ -28,6 +28,24 @@ export function isString(value: unknown): value is string {
 }
 
 /**
+ * Checks if a value is a number.
+ * @param value The value to check
+ * @returns True if the value is a number
+ */
+export function isNumber(value: unknown): value is number {
+  return typeof value === "number";
+}
+
+/**
+ * Checks if a value is a boolean.
+ * @param value The value to check
+ * @returns True if the value is a boolean
+ */
+export function isBoolean(value: unknown): value is boolean {
+  return typeof value === "boolean";
+}
+
+/**
  * Checks if a value is undefined.
  * @param value The value to check
  * @returns True if the value is undefined
@@ -55,6 +73,15 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
   if (!hasObjectPrototype) return false;
 
   return Object.prototype.toString.call(value) === "[object Object]";
+}
+
+/**
+ * Checks if a value is null.
+ * @param value The value to check
+ * @returns True if the value is null
+ */
+export function isNull(value: unknown): value is null {
+  return value === null;
 }
 
 /**

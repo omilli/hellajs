@@ -1,6 +1,6 @@
 import { describe, expect, test, mock } from "bun:test";
 import {
-  isFunction, isPlainObject, isString, isFalsy, isObject,
+  isFunction, isPlainObject, isString, isNumber, isBoolean, isNull, isFalsy, isObject,
   objectLoop
 } from "@hellajs/core";
 
@@ -40,6 +40,23 @@ describe("core", () => {
       expect(isString(new String("hello"))).toBe(false);
     });
 
+    test("isNumber returns true for numbers including NaN, false for lookalikes", () => {
+      expect(isNumber(42)).toBe(true);
+      expect(isNumber(3.14)).toBe(true);
+      expect(isNumber(NaN)).toBe(true);
+      expect(isNumber("1")).toBe(false);
+      expect(isNumber(null)).toBe(false);
+      expect(isNumber(undefined)).toBe(false);
+    });
+
+    test("isBoolean returns true for true and false, false for truthy lookalikes", () => {
+      expect(isBoolean(true)).toBe(true);
+      expect(isBoolean(false)).toBe(true);
+      expect(isBoolean(0)).toBe(false);
+      expect(isBoolean("true")).toBe(false);
+      expect(isBoolean(null)).toBe(false);
+    });
+
     test("isFalsy returns true for false, null, and undefined per narrow contract", () => {
       expect(isFalsy(false)).toBe(true);
       expect(isFalsy(null)).toBe(true);
@@ -52,6 +69,14 @@ describe("core", () => {
       expect(isFalsy(NaN)).toBe(false);
       expect(isFalsy(true)).toBe(false);
       expect(isFalsy({})).toBe(false);
+    });
+
+    test("isNull returns true for null only, false for other falsy values", () => {
+      expect(isNull(null)).toBe(true);
+      expect(isNull(undefined)).toBe(false);
+      expect(isNull(0)).toBe(false);
+      expect(isNull(false)).toBe(false);
+      expect(isNull("")).toBe(false);
     });
 
     test("isObject returns true for objects, arrays, and Date", () => {

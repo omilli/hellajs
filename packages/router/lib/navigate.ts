@@ -1,3 +1,4 @@
+import { isString, isNull } from "./internal/core";
 import { EMPTY_OBJECT } from "./internal/utils";
 import { go } from "./internal/resolve";
 import { buildPath } from "./internal/path";
@@ -16,8 +17,8 @@ export function navigate<T extends string>(
   path: T,
   options: NavigateOptions<T> = {}
 ): void {
-  if (path === null || path === undefined || typeof path !== "string") {
-    throw new Error(`[router] navigate: path must be a string, received ${path === null ? "null" : typeof path}`);
+  if (!isString(path)) {
+    throw new Error(`[router] navigate: path must be a string, received ${isNull(path) ? "null" : typeof path}`);
   }
   const { params = EMPTY_OBJECT, query = EMPTY_OBJECT, replace = false, scroll, meta, force } = options;
   go(buildPath(path, params as Params, query), { replace, scroll, meta, force });

@@ -1,4 +1,4 @@
-import { isFunction, isPlainObject, hasWindow } from "./core";
+import { isFunction, isString, isPlainObject, isNull, hasWindow } from "./core";
 import { hooks, previousPath, scrollBehavior } from "./state";
 import { executeHook, executeGlobalHook } from "./hooks";
 import { route } from "../route";
@@ -212,7 +212,7 @@ function interpretSyncResult(result: unknown): GuardResolution {
   if (result === false) {
     return "cancel";
   }
-  if (typeof result === "string" && result.length > 0) {
+  if (isString(result) && result.length > 0) {
     return { redirect: result };
   }
   return "pass";
@@ -289,7 +289,7 @@ function runGlobalBefore(toPath: string): GuardVerdict {
  */
 function runLeaveGuards(toPath: string, force?: boolean): GuardVerdict {
   const chain = lastMatchedChain;
-  if (force || chain === null) {
+  if (force || isNull(chain)) {
     return "pass";
   }
 
