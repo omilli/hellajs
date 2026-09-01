@@ -46,9 +46,11 @@ const HS_SWAP_SCRIPT = `function $hs(id){
  * `<Suspense>` boundary opts a subtree into out-of-order streaming: its `fallback` flushes inline, then each
  * resolved region streams a `<template>` + an inline `<script>$hs(id)</script>` that swaps it in the moment it
  * arrives (progressive reveal, React/Solid parity); `hydrate` later adopts the already-swapped nodes. Multiple
- * regions stage concurrently — each as its own region resolves (completion order, not document order).
+ * regions stage concurrently — each as its own region resolves (completion order, not document order). A
+ * rejecting staged region is isolated: its `<template>` is skipped (fallback + sentinel remain in the shell)
+ * and `hydrate` re-suspends that region client-side, where the rejection reaches the nearest error boundary.
  * Returns a web `ReadableStream<string>`; pipe through `new TextEncoderStream()` for a `Response` body.
- * Bare Promises are awaited in-order; a rejected Promise errors the stream. Zero runtime imports.
+ * Bare Promises are awaited in-order; a rejected bare Promise errors the stream. Zero runtime imports.
  * @param node The HellaNode AST to serialize
  * @returns A `ReadableStream<string>` of HTML chunks
  * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).
@@ -66,11 +68,19 @@ export function ssrStream(node: HellaNode): ReadableStream<string> {
         // its own async work completes (completion order, not document order). A one-time `$hs` bootstrap
         // precedes them (only when there are staged swaps); each template is followed by an inline swap
         // script so the browser swaps it on arrival (progressive). hydrate resolves staged templates by id
-        // (getElementById on the sentinel's nodeValue), so order-independent emission is safe.
+        // (getElementById on the sentinel's nodeValue), so order-independent emission is safe. Each swap's
+        // drain carries its own catch — one rejecting region is skipped (fallback + sentinel stay) instead of
+        // erroring the stream, so healthy siblings still flush; hydrate's stageMissing path re-suspends the
+        // failed region client-side (its rejection bubbles to the nearest error boundary — React $RX parity).
         if (pending.length && !done) controller.enqueue(`<script>${HS_SWAP_SCRIPT}</script>`);
         await Promise.all(pending.map(async (swap) => {
           let html = "";
-          for await (const chunk of swap.childGen) html += chunk;
+          try {
+            for await (const chunk of swap.childGen) html += chunk;
+          } catch (err) {
+            console.warn(`[ssr] suspense region ${swap.id} failed - template skipped; hydrate will re-suspend it`, err);
+            return;
+          }
           if (!done) controller.enqueue(`<template id="${swap.id}">${html}</template><script>$hs("${swap.id}")</script>`);
         }));
         if (!done) controller.close();       // guard mirrors doc.ts's start tail — a cancel between the last enqueue and close() would otherwise throw here

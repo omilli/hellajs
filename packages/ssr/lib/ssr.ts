@@ -133,9 +133,10 @@ interface SsrFn {
    * its `fallback` flushes inline, then each resolved region streams a `<template>` + an inline
    * `<script>$hs(id)</script>` that swaps it in the moment it arrives (progressive reveal, React/Solid
    * parity); `hydrate` later adopts the already-swapped nodes. Multiple regions stage concurrently —
-   * each as its own region resolves (completion order, not document order). Bare Promises are awaited
-   * in-order; a rejected Promise errors the stream. Pipe through `new TextEncoderStream()` for a
-   * `Response` body.
+   * each as its own region resolves (completion order, not document order). A rejecting staged region is
+   * isolated: its `<template>` is skipped (fallback + sentinel remain) and `hydrate` re-suspends that region
+   * client-side. Bare Promises are awaited in-order; a rejected bare Promise errors the stream. Pipe through
+   * `new TextEncoderStream()` for a `Response` body.
    * @param node The HellaNode AST to serialize
    * @returns A `ReadableStream<string>` of HTML chunks
    * @throws {Error} When `node` is null, undefined, or not a HellaNode (an object with a `tag`).

@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { signal, flush } from "@hellajs/core";
-import { resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { hydrate, html, ForEach, Suspense } from "@hellajs/dom/bundle";
+import { delay, suppressConsole, resetTestState, setupContainer } from "@utils/test-helpers.js";
+import { hydrate, html, onError, ForEach, Suspense } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { collect } from "./helpers";
@@ -86,5 +86,31 @@ describe("ssr to hydrate integration", () => {
     container.innerHTML = await collect(ssr.stream(tree()));   // scripts present but NOT executed
     hydrate(tree(), container);
     expect(container.querySelector("#root b")!.textContent).toBe("resolved");
+  });
+
+  test("a rejecting <Suspense> region re-suspends on the client while the healthy sibling's swap is adopted", async () => {
+    // the server skips the failed region's <template> (stream completes); on the client the sentinel has no
+    // template → stageMissing → <Suspense> re-runs the getter → the rejection bubbles to onError (React $RX parity)
+    const tree = () => html`<div id="root"><${Suspense} fallback=${html`<p>boom-fb</p>`}>${() => Promise.reject(new Error("boom"))}</${Suspense}><${Suspense} fallback=${html`<p>ok-fb</p>`}>${() => Promise.resolve(html`<b>OK</b>`)}</${Suspense}></div>` as HellaNode;
+    const container = setupContainer();
+    const handler = mock<(error: Error) => null>(() => null);
+    onError(handler);
+    const sup = suppressConsole();                             // [ssr] skip warn (render) + [dom] stage-missing warn (hydrate)
+    try {
+      container.innerHTML = await collect(ssr.stream(tree())); // HappyDOM never executes the inline $hs scripts
+      hydrate(tree(), container);
+      await delay(0);                                          // macrotask — the .then().catch() chain over the rejection settles
+    } finally {
+      sup.restore();
+      onError(null);
+    }
+    expect(handler).toHaveBeenCalledTimes(1);
+    const [err] = handler.mock.calls[0]!;                   // ErrorFn passes (error, context) — assert the error
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toBe("boom");
+    expect(container.textContent).toContain("OK");                    // healthy sibling's resolved content adopted
+    expect(container.textContent).not.toContain("ok-fb");             // its fallback swapped out
+    expect(container.textContent).not.toContain("boom-fb");           // failed region's fallback removed on rejection
+    expect(container.textContent).not.toContain("[object Promise]");  // no stringified Promise beside the matched nodes
   });
 });

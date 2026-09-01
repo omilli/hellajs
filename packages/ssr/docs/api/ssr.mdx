@@ -47,7 +47,7 @@ declare namespace ssr {
 }
 ```
 
-The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler.
+The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)).
 
 ```js
 import { html } from '@hellajs/dom';
@@ -183,11 +183,11 @@ The base `ssr(node)` call walks the tree once and returns. Reactive getters are 
 
 ### In-Order Streaming
 
-Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the fallback for the resolved content **the moment it arrives** — so the user sees each region fill in progressively (React/Solid parity), not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap precedes them. `hydrate` later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
+Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the fallback for the resolved content **the moment it arrives** — so the user sees each region fill in progressively (React/Solid parity), not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap precedes them. `hydrate` later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). A region whose Promise rejects is isolated instead of fatal: its `<template>` is skipped (the `fallback` and sentinel stay in the shell), the stream completes with its healthy siblings, and `hydrate` re-suspends that region on the client — the rejection surfaces at the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
 
 ### Errors Propagate
 
-None of the members has try/catch. The sync call throws, a rejected `Promise` rejects `ssr.async`'s returned `Promise`, and `ssr.stream` errors its `ReadableStream` (reading it throws). Wrap the render in your own error handling if a value may throw; handle stream errors at the consumer (your server handler). A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
+The sync call throws, a rejected `Promise` rejects `ssr.async`'s returned `Promise`, and a rejected bare `Promise` in the main walk errors `ssr.stream`'s `ReadableStream` (reading it throws). A rejecting `<Suspense>` region is the exception: the stream skips its `<template>` (the `fallback` and sentinel stay in the shell) and completes with its healthy siblings — `hydrate` re-suspends that region on the client, where the rejection reaches the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Wrap the render in your own error handling if a value may throw; handle stream errors at the consumer (your server handler). A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
 
 ### Throws on invalid input
 
