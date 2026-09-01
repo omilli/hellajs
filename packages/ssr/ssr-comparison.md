@@ -15,7 +15,7 @@ A ground-up comparison based on the actual source code of `@hellajs/ssr` v2. Eve
 | Out-of-order reveal | `<template>` + `$hs` script | `<template>` + `$df` script | Framework-level only | Hidden segments + `$RC`/`$RS` scripts | None at stringifier level |
 | Hydration markers | `<!--[-->`/`<!--]-->` comments | `data-hk` attributes + `<!--!$-->` | `<!--[-->`/`<!--]-->` + `<!---->` | `<!--$-->` pairs + `<!-- -->` | `<!--[-->`/`<!--]-->` + teleport anchors |
 | Event replay before hydrate | No | Yes (`_$HY`) | No | Yes (`hydrateRoot`) | No |
-| Server→client data serialization | None | seroval promises / resources | None (SvelteKit streams) | Flight payloads / bootstrap scripts | None (Nuxt payloads) |
+| Server→client data serialization | JSON payload — `doc({ data })` | seroval promises / resources | None (SvelteKit streams) | Flight payloads / bootstrap scripts | None (Nuxt payloads) |
 | Runtime deps | 0 | 3 | 16 | 1 (+ `react` peer) | 3 |
 | Host coupling | None (web streams only) | Node + web variants | None | Per-platform entry builds | Node + web variants |
 
@@ -110,7 +110,7 @@ One callable namespace covers three timing strategies with one output contract:
 
 ### Solid
 
-`renderToStringAsync` races `renderToStream` against a timeout (30 s default); `renderToStream` flushes the shell, registers deferred fragments, and streams their resolution as `<template>` + `$df` replacement scripts, with `onCompleteShell`/`onCompleteAll` callbacks and `block()` promises for shell-blocking awaits (solid-js 1.9.15, `web/dist/server.js`). The extra capability HellaJS does not attempt: seroval serializes live Promises and resources into the HTML so the client's `createResource` resumes with server-fetched data — state transfer, not just markup.
+`renderToStringAsync` races `renderToStream` against a timeout (30 s default); `renderToStream` flushes the shell, registers deferred fragments, and streams their resolution as `<template>` + `$df` replacement scripts, with `onCompleteShell`/`onCompleteAll` callbacks and `block()` promises for shell-blocking awaits (solid-js 1.9.15, `web/dist/server.js`). The capability HellaJS leaves manual: seroval serializes live Promises and resources into the HTML so the client's `createResource` resumes with server-fetched data — automatic state transfer, where HellaJS ships plain JSON via `doc({ data })` and the caller reads it back.
 
 ### Svelte 5
 
@@ -124,7 +124,7 @@ One callable namespace covers three timing strategies with one output contract:
 
 `renderToString` awaits `async setup()` and `serverPrefetch` through its buffer before returning; the stream variants (`renderToWebWritable`, `pipeToNodeWritable`) unroll the same buffer strictly in document order (@vue/server-renderer 3.5.42). There is no boundary-level fallback streaming, no inline swap script, and no out-of-order emission at the stringifier layer — a slow async component delays everything after it unless the host framework (Nuxt) layers its own protocol on top.
 
-**Verdict:** HellaJS and Solid and React all ship the staged-template-plus-inline-script progressive-reveal mechanism; HellaJS's `$hs` is the smallest of the three (a balance-walking DOM swap, `lib/ssrStream.ts`) and the only one available with zero framework runtime attached. HellaJS's concurrent completion-order flush matches React's segment behavior. The gap against React is real: no selective hydration, no event replay, no resumable prerender. The gap against Solid is data: no serialization of server-resolved state into the client.
+**Verdict:** HellaJS and Solid and React all ship the staged-template-plus-inline-script progressive-reveal mechanism; HellaJS's `$hs` is the smallest of the three (a balance-walking DOM swap, `lib/ssrStream.ts`) and the only one available with zero framework runtime attached. HellaJS's concurrent completion-order flush matches React's segment behavior. The gap against React is real: no selective hydration, no event replay, no resumable prerender. The remaining gap against Solid is automatic state transfer: `doc({ data })` ships plain JSON the caller reads explicitly, where seroval hands the client live server-resolved Promises and resources.
 
 ---
 
@@ -132,7 +132,7 @@ One callable namespace covers three timing strategies with one output contract:
 
 ### HellaJS
 
-`doc(options)` assembles the full document with zero server-runtime coupling — no Request/Response, no host API — in two modes discriminated by the `body` type: a string body returns a string document, a `ReadableStream<string>` body returns a streaming document that emits the shell first, pipes body chunks through, and holds the closing tags until the body closes (`lib/doc.ts`, `lib/types.d.ts`). The `mount` selector parses tag/`#id`/`.class` into the wrapper element `hydrate(node, selector)` will target on the client, throwing on anything a single wrapping element cannot express (`lib/doc.ts`). Head content renders through one shared builder for both modes — `title`, `meta`, `links`, `styles`, `scripts`, `raw` in declaration order, with the same escaping rules as the stringifier (`lib/internal/head.ts`). What it deliberately does not do: collect CSS or hoist `<head>` elements from the rendered tree — the caller drains `@hellajs/css` server output and passes it in.
+`doc(options)` assembles the full document with zero server-runtime coupling — no Request/Response, no host API — in two modes discriminated by the `body` type: a string body returns a string document, a `ReadableStream<string>` body returns a streaming document that emits the shell first, pipes body chunks through, and holds the closing tags until the body closes (`lib/doc.ts`, `lib/types.d.ts`). The `mount` selector parses tag/`#id`/`.class` into the wrapper element `hydrate(node, selector)` will target on the client, throwing on anything a single wrapping element cannot express (`lib/doc.ts`). Head content renders through one shared builder for both modes — `title`, `meta`, `links`, `styles`, `scripts`, `raw` in declaration order, with the same escaping rules as the stringifier (`lib/internal/head.ts`). A `data` option ships plain JSON to the client as a `hella-data` payload script — caller-driven state transfer, not reactive-state serialization. What it deliberately does not do: collect CSS or hoist `<head>` elements from the rendered tree — the caller drains `@hellajs/css` server output and passes it in.
 
 ### Solid
 
@@ -165,7 +165,7 @@ Vue's stringifier resolves teleports into `context.teleports` and leaves placeme
 | Completion-order flush | Concurrent staged swaps (`lib/ssrStream.ts`) | Fragment registry | n/a | Segment-based | n/a |
 | Stream cancellation | Returns generator + staged swaps (`lib/ssrStream.ts`) | Pipe abort | n/a | Pipe abort | n/a |
 | Document assembly | `doc` — string/stream, `mount`, head (`lib/doc.ts`) | Assets/head components + helpers | Built-in `<svelte:head>` | Bootstrap/preinit/precedence | Teleport buffers; head via ecosystem |
-| Server→client data serialization | — | seroval promises/resources | — (SvelteKit streams) | Flight / bootstrap payloads | — (Nuxt payloads) |
+| Server→client data serialization | JSON payload script — `doc({ data })` (`lib/doc.ts`) | seroval promises/resources | — (SvelteKit streams) | Flight / bootstrap payloads | — (Nuxt payloads) |
 | Event replay before hydrate | — | `_$HY` capture script | — | `hydrateRoot` selective hydration | — |
 | Resumable / partial prerender | — | — | — | `prerender` + `resume` | — |
 | Control flow on server | `ForEach`/`Transition`/`Portal`/`Lazy`/`Suspense` descriptors (`lib/internal/walk.ts`) | Compiled control flow | Compiled blocks | Tree-cutting boundaries | Compiled `ssrRender*` blocks |
@@ -202,7 +202,7 @@ doc({ mount: '#app', head: { title: 'Home' }, body: ssr.stream(page(1)) });
 // streaming document: shell first, closing tags after the last staged swap
 ```
 
-The callable-namespace shape (`ssr`, `ssr.async`, `ssr.stream`) keeps the timing decision at the call site with one import, versus Solid's three named functions and React's split across `renderToString`, `renderToPipeableStream`, and platform-specific entries. Data-loading is symmetric with the client: the same function-ref convention that makes a child reactive in dom makes it awaitable on the server — a getter returning a `Promise` is simply awaited by `ssr.async` (`lib/internal/resolve.ts`) — where Solid needs `createResource` + seroval and React needs the RSC or `use()` machinery. The cost of the minimalism is explicitness: nothing collects styles, nothing serializes state, nothing manages the head — the caller wires all three, and the docs say so plainly.
+The callable-namespace shape (`ssr`, `ssr.async`, `ssr.stream`) keeps the timing decision at the call site with one import, versus Solid's three named functions and React's split across `renderToString`, `renderToPipeableStream`, and platform-specific entries. Data-loading is symmetric with the client: the same function-ref convention that makes a child reactive in dom makes it awaitable on the server — a getter returning a `Promise` is simply awaited by `ssr.async` (`lib/internal/resolve.ts`) — where Solid needs `createResource` + seroval and React needs the RSC or `use()` machinery. The cost of the minimalism is explicitness: nothing collects styles, nothing manages the head, and server data ships as a plain JSON payload (`doc({ data })`) the caller reads back rather than as serialized reactive state — the caller wires each, and the docs say so plainly.
 
 ---
 
@@ -218,4 +218,4 @@ What sets HellaJS apart — and no single competitor matches all of:
 4. **Marker-minimal hydration payload** — two comments per dynamic region, nothing on static markup, position-matched elements (`lib/ssr.ts`).
 5. **Pure-function document assembly** — `doc` builds a full document from a string or a stream with no server-runtime coupling and a `mount` selector that mirrors hydrate's target (`lib/doc.ts`).
 
-Its gaps are the predictable ones: hydration is a single pass — content reveals progressively, but there is no selective hydration and no event replay before hydrate runs (React and Solid territory), and no marker-level pending/resolved protocol. There is no server→client data serialization — no seroval, no Flight — so client state must initialize to server values by construction. No head or CSS collection from the tree, `resource` no-ops on the server, and in-order bare-Promise awaits delay trailing content unless wrapped in `<Suspense>`. And it is a stringifier, not a framework: routing, serving, and error pages are the caller's job, with the ecosystem size and adoption maturity that implies.
+Its gaps are the predictable ones: hydration is a single pass — content reveals progressively, but there is no selective hydration and no event replay before hydrate runs (React and Solid territory), and no marker-level pending/resolved protocol. Server→client data is a plain JSON payload convention (`doc({ data })`), not seroval/Flight reactive-state transfer — the client reads it explicitly (e.g. seeding a resource's `initialData`) rather than resuming live server state. No head or CSS collection from the tree, `resource` no-ops on the server, and in-order bare-Promise awaits delay trailing content unless wrapped in `<Suspense>`. And it is a stringifier, not a framework: routing, serving, and error pages are the caller's job, with the ecosystem size and adoption maturity that implies.

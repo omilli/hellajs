@@ -52,6 +52,29 @@ function parseMount(mount: string): { open: string; close: string } {
 }
 
 /**
+ * Serializes `doc({ data })` into the payload script the client reads back — `JSON.stringify` with
+ * every `<` escaped to `\u003c` so `</script>` and `<!--` cannot break out of the element (the
+ * standard JSON-embedding defense). Computed at the call site in BOTH modes so an unserializable
+ * value throws before any document is returned or streamed.
+ * @param data The value to serialize. `undefined` (omitted `data`) emits nothing.
+ * @returns The `<script type="application/json" id="hella-data">` element, or `""`.
+ * @throws {Error} When `data` is not JSON-serializable (a circular structure throws; a lone
+ * function or symbol stringifies to `undefined`).
+ */
+function buildDataScript(data: unknown): string {
+  if (data === undefined) return "";
+  try {
+    const payload = JSON.stringify(data);
+    if (payload !== undefined) {
+      return `<script type="application/json" id="hella-data">${payload.replace(/</g, "\\u003c")}</script>`;
+    }
+  } catch {
+    // fall through to the wrapped throw — circular references and BigInt land here
+  }
+  throw new Error("[ssr] doc: data must be JSON-serializable");
+}
+
+/**
  * Assembles a rendered body and an optional head into a complete HTML document string.
  *
  * A pure string builder with zero server-runtime coupling — no Request/Response, no host API —
@@ -61,9 +84,10 @@ function parseMount(mount: string): { open: string; close: string } {
  * package: `title` text and attribute values run through the same `serializeProp`/`escapeHtml`
  * rules, while `body` and `head.raw` pass through unchanged (they are already HTML). `<meta>` and
  * `<link>` render void (no closing tag); `<title>`, `<style>`, and `<script>` carry closing tags.
+ * `data` serializes into a JSON payload script emitted after the mount wrapper, before `</body>`.
  * @param options The document options. `body` is required.
- * @returns The full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>[mount]…[mount]</body></html>`.
- * @throws {Error} When `options.body` is undefined or `options.mount` is not a tag/`#id`/`.class` selector.
+ * @returns The full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>[mount]…[mount][data]</body></html>`.
+ * @throws {Error} When `options.body` is undefined, `options.mount` is not a tag/`#id`/`.class` selector, or `options.data` is not JSON-serializable.
  */
 export function doc(options: DocOptions & { body: string }): string;
 /**
@@ -73,11 +97,11 @@ export function doc(options: DocOptions & { body: string }): string;
  * it arrives, then the closing tags — so progressive paint is preserved end-to-end: nothing waits
  * for the body to finish. The head renders identically to the string overload's (same builder), and
  * the suffix flushes only after the body closes — which for an `ssr.stream` body means after every
- * staged `<Suspense>` swap has streamed. A body-stream error errors the document stream; cancelling
- * the document stream cancels the body.
+ * staged `<Suspense>` swap has streamed. A `data` payload joins that suffix, so it flushes last.
+ * A body-stream error errors the document stream; cancelling the document stream cancels the body.
  * @param options The document options. `body` is required.
  * @returns A `ReadableStream<string>` of the full HTML document.
- * @throws {Error} When `options.body` is undefined or `options.mount` is not a tag/`#id`/`.class` selector.
+ * @throws {Error} When `options.body` is undefined, `options.mount` is not a tag/`#id`/`.class` selector, or `options.data` is not JSON-serializable.
  */
 export function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableStream<string>;
 export function doc(options: DocOptions): string | ReadableStream<string> {
@@ -85,11 +109,12 @@ export function doc(options: DocOptions): string | ReadableStream<string> {
     throw new Error(`[ssr] doc: body is required, received ${options.body}`);
   }
   const mount = options.mount !== undefined ? parseMount(options.mount) : undefined;
+  const data = buildDataScript(options.data);
   if (typeof options.body === "string") {
-    return `<!DOCTYPE html><html${serializeProp("lang", options.lang)}><head>${buildHead(options.head)}</head><body>${mount !== undefined ? mount.open : ""}${options.body}${mount !== undefined ? mount.close : ""}</body></html>`;
+    return `<!DOCTYPE html><html${serializeProp("lang", options.lang)}><head>${buildHead(options.head)}</head><body>${mount !== undefined ? mount.open : ""}${options.body}${mount !== undefined ? mount.close : ""}${data}</body></html>`;
   }
   const prefix = `<!DOCTYPE html><html${serializeProp("lang", options.lang)}><head>${buildHead(options.head)}</head><body>${mount !== undefined ? mount.open : ""}`;
-  const suffix = `${mount !== undefined ? mount.close : ""}</body></html>`;
+  const suffix = `${mount !== undefined ? mount.close : ""}${data}</body></html>`;
   let done = false;                         // shared by start/cancel: skip the suffix once the stream is done (cancel/error)
   const reader = options.body.getReader();  // acquired up front: cancel() must reach the body through this reader (the stream is locked to it)
   return new ReadableStream<string>({

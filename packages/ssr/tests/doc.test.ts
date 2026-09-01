@@ -29,6 +29,12 @@ async function collectChunks(stream: ReadableStream<string>): Promise<string[]> 
   return out;
 }
 
+/** Extracts the hella-data payload text — the content between the payload open tag and its closing `</script>`. */
+function payloadOf(page: string): string {
+  const open = "<script type=\"application/json\" id=\"hella-data\">";
+  return page.slice(page.indexOf(open) + open.length, page.indexOf("</script></body>"));
+}
+
 describe("doc", () => {
   test("emits a stable skeleton with an empty head for a minimal body", () => {
     expect(doc({ body: "X" })).toBe("<!DOCTYPE html><html><head></head><body>X</body></html>");
@@ -197,5 +203,37 @@ describe("doc", () => {
     const swapIndex = chunks.findIndex((chunk) => chunk.includes("<template id=\"hs"));
     expect(swapIndex).toBeGreaterThan(-1);
     expect(swapIndex).toBeLessThan(chunks.length - 1);
+  });
+
+  test("emits the data payload after the mount wrapper, before </body> (string mode)", () => {
+    expect(doc({ body: "X", mount: "#app", head: { title: "T" }, data: { user: "Ada" } }))
+      .toBe("<!DOCTYPE html><html><head><title>T</title></head><body><div id=\"app\">X</div><script type=\"application/json\" id=\"hella-data\">{\"user\":\"Ada\"}</script></body></html>");
+  });
+
+  test("emits nothing when data is omitted", () => {
+    expect(doc({ body: "X", mount: "#app" }))
+      .toBe("<!DOCTYPE html><html><head></head><body><div id=\"app\">X</div></body></html>");
+  });
+
+  test("joins the payload to the suffix in stream mode, before </body></html>", async () => {
+    const page = await collect(doc({ body: streamOf("X"), mount: "#app", data: { user: "Ada" } }));
+    expect(page)
+      .toBe("<!DOCTYPE html><html><head></head><body><div id=\"app\">X</div><script type=\"application/json\" id=\"hella-data\">{\"user\":\"Ada\"}</script></body></html>");
+    expect(JSON.parse(payloadOf(page))).toEqual({ user: "Ada" });
+  });
+
+  test("escapes < in the payload so </script> cannot break out", () => {
+    const hostile = "</script><script>alert(1)</script>";
+    const page = doc({ body: "X", data: { s: hostile } });
+    expect(payloadOf(page)).toBe("{\"s\":\"\\u003c/script>\\u003cscript>alert(1)\\u003c/script>\"}");
+    expect(JSON.parse(payloadOf(page))).toEqual({ s: hostile });
+  });
+
+  test("throws the wrapped error for data JSON.stringify cannot serialize", () => {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(() => doc({ body: "X", data: circular })).toThrow("[ssr] doc: data must be JSON-serializable");
+    expect(() => doc({ body: streamOf("X"), data: circular })).toThrow("[ssr] doc: data must be JSON-serializable");
+    expect(() => doc({ body: "X", data: () => 1 })).toThrow("[ssr] doc: data must be JSON-serializable");
   });
 });

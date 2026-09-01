@@ -151,6 +151,33 @@ const body = await ssr.async(App(1));
 // body: "<p><!--[-->Ada<!--]--></p>"
 ```
 
+### Ship server data to the client
+
+Fetch on the server, render it, and send the data with the markup — [`doc`](/reference/ssr/doc)'s `data` option serializes it into a JSON payload script. The client reads it back to seed [`resource`](/reference/resource/resource) with `initialData`, so the server's fetch is the fetch.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr, doc } from '@hellajs/ssr';
+
+// Server: one fetch feeds both the markup and the payload
+const user = await fetch('/api/users/1').then(r => r.json());
+const body = ssr(html`<h1>Hello ${user.name}</h1>`);
+
+const page = doc({ mount: '#app', data: { user }, body });
+// <body><div id="app">…</div><script type="application/json" id="hella-data">{"user":…}</script></body>
+```
+
+```js
+import { resource } from '@hellajs/resource';
+
+// Client: the payload seeds the resource — data() is the server value immediately
+const { user } = JSON.parse(document.getElementById('hella-data').textContent);
+const userResource = resource('/api/users/1', { initialData: user });
+
+userResource.data();      // the server-fetched value
+userResource.isLoading(); // false — initialData counts as data
+```
+
 ### Streaming responses
 
 Stream HTML to the client as it renders with [`ssr.stream`](/reference/ssr/ssr#stream) — the static shell flushes before async values resolve.

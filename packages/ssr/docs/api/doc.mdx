@@ -20,7 +20,8 @@ function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableSt
     - `scripts?` (`ScriptTag[]`): `<script>` tags — `{ src }` renders external, `{ content }` renders inline (not escaped); when both are set, `content` wins and `src` is dropped. `ScriptTag` also takes `type`, `async`, and `defer`.
     - `raw?` (`string`): Raw HTML appended verbatim to the head (escape hatch).
   - `lang?` (`string`): Value for `<html lang="…">`; the attribute is omitted when unset.
-- **Returns** (string body): A full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>[mount]…[mount]</body></html>`.
+  - `data?` (`unknown`): Server-side data serialized into the page — `JSON.stringify` output with every `<` escaped (`\u003c`), emitted as `<script type="application/json" id="hella-data">…</script>` after the mount wrapper, before `</body>`, in both modes. Omitted emits nothing.
+- **Returns** (string body): A full HTML document string: `<!DOCTYPE html><html[ lang="…"]><head>…</head><body>[mount]…[mount][data]</body></html>`.
 - **Returns** (stream body): A `ReadableStream<string>` of the full document — shell first, body chunks as they arrive, closing tags last.
 
 ## Basic Usage
@@ -85,6 +86,26 @@ Bun.serve({
 
 In the streaming mode the suffix (`</div></body></html>`) is emitted only after the body stream closes. For an `ssr.stream` body carrying [`<Suspense>`](/reference/dom/suspense) boundaries, that means after every staged `<template>` has streamed — progressive paint holds end-to-end, with nothing collected or re-ordered.
 
+### The `data` payload script
+
+`data` is the server→client data channel: the value is `JSON.stringify`-ed and shipped inside the document as `<script type="application/json" id="hella-data">…</script>` — after the mount wrapper, before `</body>`, in both modes (flushing with the suffix in the streaming mode, after every staged swap). Every `<` in the payload is escaped (`\u003c`), so no string can break out of the element — `JSON.parse` un-escapes it transparently.
+
+```js
+import { html } from '@hellajs/dom';
+import { ssr, doc } from '@hellajs/ssr';
+
+// Server: the fetched user ships with the markup
+const user = await fetch('/api/users/1').then(r => r.json());
+const page = doc({ mount: '#app', data: { user }, body: ssr(html`<h1>Hello ${user.name}</h1>`) });
+```
+
+```js
+// Client: recover the server's data in one line
+const { user } = JSON.parse(document.getElementById('hella-data').textContent);
+```
+
+For the full wiring — seeding [`resource`](/reference/resource/resource) with `initialData` so the client starts from the server's data — see [Ship server data to the client](/learn/patterns/ssr).
+
 ### Reuses the package's escaping rules
 
 `title` text and every attribute value run through the same `serializeProp` / `escapeHtml` rules the stringifiers apply to element attributes: falsy values are omitted, `true` renders bare, strings are quoted and escaped. `async: true` emits a bare `async`; `async: false` is omitted.
@@ -114,3 +135,7 @@ A mount point is a single wrapping element. Combinators, attribute selectors, ps
 ### `body` is required; stream failures surface on the stream
 
 `doc` throws `[ssr] doc: body is required, received undefined` when `body` is omitted. In the streaming mode, a body-stream error (a rejected bare `Promise` in the main walk — a rejecting `<Suspense>` region is isolated, per [Errors Propagate](/reference/ssr/ssr#errors-propagate)) errors the document stream; cancelling the document stream cancels the body — staged `<Suspense>` swaps stop with it.
+
+### `data` must be JSON-serializable
+
+`data` runs through `JSON.stringify` — a circular structure (or a lone function/symbol) throws `[ssr] doc: data must be JSON-serializable` in both modes, before anything is returned or streamed. This is a plain JSON channel, not reactive-state serialization: functions, Promises, and signals do not transfer — resolve them server-side and pass their values.

@@ -67,5 +67,14 @@ export interface DocOptions {
   head?: HeadOptions;
   /** Value for `<html lang="…">`; omitted from the tag when unset */
   lang?: string;
+  /**
+   * Server-side data serialized into the page — `JSON.stringify` output with every `<` escaped
+   * to `\u003c`, emitted as `<script type="application/json" id="hella-data">…</script>` after
+   * the mount wrapper, before `</body>`, in both modes (flushing with the suffix in stream mode).
+   * The client reads it back with `JSON.parse(document.getElementById("hella-data").textContent)`.
+   * Throws when the value is not JSON-serializable (circular); a lone function or symbol is not
+   * data. Omitted emits nothing.
+   */
+  data?: unknown;
 }
 
