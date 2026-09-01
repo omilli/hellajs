@@ -39,6 +39,18 @@ export const ssrContainer = (node: HellaNode | (() => HellaNode)): Element => {
 };
 
 /**
+ * Produces a fresh container whose innerHTML is the REAL `ssr.async()` output for `node` — server HTML
+ * with awaited regions resolved (Lazy loaders, Promise-returning getters). Use this for hydrate tests of
+ * async-rendered content (e.g. the Lazy no-flash contract).
+ */
+export const ssrAsyncContainer = async (node: HellaNode | (() => HellaNode)): Promise<Element> => {
+  const resolved = typeof node === "function" ? (node as () => HellaNode)() : node;
+  const container = setupContainer();
+  container.innerHTML = await ssr.async(resolved);
+  return container;
+};
+
+/**
  * Produces a fresh container whose innerHTML is the REAL `ssr.stream()` output for `node` — the streamed
  * HTML including `<Suspense>` fallbacks, sentinel comments, and staged `<template>`s that `hydrate`
  * swaps in. Use this for streaming/hydrate-swap tests (β).

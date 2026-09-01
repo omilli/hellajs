@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { signal, flush } from "@hellajs/core";
 import { delay, suppressConsole, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { hydrate, html, onError, ForEach, Suspense } from "@hellajs/dom/bundle";
+import { hydrate, html, onError, ForEach, Suspense, Lazy } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { collect } from "./helpers";
@@ -86,6 +86,31 @@ describe("ssr to hydrate integration", () => {
     container.innerHTML = await collect(ssr.stream(tree()));   // scripts present but NOT executed
     hydrate(tree(), container);
     expect(container.querySelector("#root b")!.textContent).toBe("resolved");
+  });
+
+  test("server-rendered Lazy content hydrates without a loading flash", async () => {
+    let resolveLoader!: (v: HellaNode) => void;
+    const loader = mock(() => new Promise<HellaNode>((r) => { resolveLoader = r; }));
+    const App = () => html`<div id="root">a<${Lazy} loader=${loader} loading=${html`<i>loading</i>`} />b</div>`;
+    const container = setupContainer();
+    const rendered = ssr.async(html`<${App} />` as HellaNode);
+    await delay(0);                                                // let the walk reach and call the server loader
+    resolveLoader(html`<b id="c">resolved</b>` as HellaNode);
+    container.innerHTML = await rendered;
+    expect(container.textContent).toBe("aresolvedb");              // server rendered the loaded component — the loading fallback never appears in the HTML
+    const serverNode = container.querySelector("#c")!;
+
+    hydrate(html`<${App} />`, container);
+    expect(loader).toHaveBeenCalledTimes(2);                       // the client always re-runs the loader (the chunk must load for interactivity)
+    await delay(0);                                                // client loader still pending — server content adopted, no flash
+    expect(container.querySelector("#c")).toBe(serverNode);
+    expect(container.textContent).toBe("aresolvedb");
+    expect(container.textContent).not.toContain("loading");
+
+    resolveLoader(html`<span id="fresh">fresh</span>` as HellaNode);
+    await delay(0);
+    expect(container.textContent).toBe("afreshb");                // the fresh render replaced the server content
+    expect(container.textContent).not.toContain("[object Promise]");
   });
 
   test("a rejecting <Suspense> region re-suspends on the client while the healthy sibling's swap is adopted", async () => {

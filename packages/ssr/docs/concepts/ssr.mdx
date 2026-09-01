@@ -25,7 +25,7 @@ Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
 
 ## Control Flow on the Server
 
-[`ForEach`](/reference/dom/foreach) renders each item in array order. [`Transition`](/reference/dom/transition) renders its child when `show` is truthy, nothing otherwise. [`Lazy`](/reference/dom/lazy) renders its `loading` fallback without awaiting the loader. [`Portal`](/reference/dom/portal) renders nothing — there is no document to teleport into. Each attaches a descriptor the stringifier reads, so `ssr` needs no DOM to interpret them.
+[`ForEach`](/reference/dom/foreach) renders each item in array order. [`Transition`](/reference/dom/transition) renders its child when `show` is truthy, nothing otherwise. [`Lazy`](/reference/dom/lazy) renders its `loading` fallback without calling the loader — the async members await it and render the loaded component. [`Portal`](/reference/dom/portal) renders nothing — there is no document to teleport into. Each attaches a descriptor the stringifier reads, so `ssr` needs no DOM to interpret them.
 
 ## Raw HTML Children
 

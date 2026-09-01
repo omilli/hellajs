@@ -119,11 +119,33 @@ describe("ssr.async", () => {
     expect(await ssr.async(node)).toBe("<div><!--[--><li>1</li><li>2</li><li>3</li><!--]--></div>");
   });
 
-  test("Lazy renders its loading fallback under ssr.async (loader NOT awaited)", async () => {
-    const loader = mock(async () => html`<div />` as HellaNode);
-    const node = html`<div><${Lazy} loader=${loader} loading=${html`<span>…</span>`} /></div>` as HellaNode;
-    expect(await ssr.async(node)).toBe("<div><!--[--><span>…</span><!--]--></div>");
-    expect(loader).not.toHaveBeenCalled();
+  test("Lazy awaits the loader and renders the loaded component (plain-node form)", async () => {
+    const loader = mock(() => Promise.resolve(html`<b id="loaded">loaded</b>` as HellaNode));
+    const node = html`<div>a<${Lazy} loader=${loader} loading=${html`<span>…</span>`} />b</div>` as HellaNode;
+    expect(await ssr.async(node)).toBe("<div>a<!--[--><b id=\"loaded\">loaded</b><!--]-->b</div>");
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
+
+  test("Lazy calls a function loader result with props and renders its return", async () => {
+    let receivedSignal: AbortSignal | undefined;
+    const Loaded = (p: { x: number }) => html`<b>${p.x}</b>` as HellaNode;
+    const loader = mock((o?: { signal?: AbortSignal }) => {
+      receivedSignal = o?.signal;
+      return Promise.resolve(Loaded);
+    });
+    const node = html`<div><${Lazy} loader=${loader} props=${{ x: 7 }} /></div>` as HellaNode;
+    expect(await ssr.async(node)).toBe("<div><!--[--><b>7</b><!--]--></div>");
+    expect(receivedSignal).toBeInstanceOf(AbortSignal);
+  });
+
+  test("Lazy renders its fallback when the loader rejects", async () => {
+    const node = html`<div><${Lazy} loader=${() => Promise.reject(new Error("chunk failed"))} fallback=${html`<p>fb</p>`} /></div>` as HellaNode;
+    expect(await ssr.async(node)).toBe("<div><!--[--><p>fb</p><!--]--></div>");
+  });
+
+  test("Lazy rejection without a fallback rejects ssr.async", async () => {
+    const node = html`<div><${Lazy} loader=${() => Promise.reject(new Error("boom"))} /></div>` as HellaNode;
+    await expect(ssr.async(node)).rejects.toThrow("boom");
   });
 
   test("rejects when node is null", async () => {
