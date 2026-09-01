@@ -205,6 +205,19 @@ describe("doc", () => {
     expect(swapIndex).toBeLessThan(chunks.length - 1);
   });
 
+  test("propagates backpressure — the body producer stays parked while the document consumer idles", async () => {
+    const step = mock(() => Promise.resolve("b"));    // each call = the body walk reached that child
+    const body = ssr.stream(html`<div>${step}${step}${step}${step}${step}${step}</div>` as HellaNode);
+    const reader = doc({ body }).getReader();
+    const first = await reader.read();              // the document shell — pulls the prefix only, not the body walk
+    expect(first.value).toContain("<!DOCTYPE html>");
+    await delay(25);                                 // a start()-drained body finishes all six getters inside this window
+    expect(step.mock.calls.length).toBeLessThanOrEqual(2);   // read-ahead bounded by the two queues' high-water marks
+    let chunk = await reader.read();                 // resume consuming — the document and body advance with the reads
+    while (!chunk.done) { chunk = await reader.read(); }
+    expect(step.mock.calls.length).toBe(6);          // draining the document drains (and completes) the body
+  });
+
   test("emits the data payload after the mount wrapper, before </body> (string mode)", () => {
     expect(doc({ body: "X", mount: "#app", head: { title: "T" }, data: { user: "Ada" } }))
       .toBe("<!DOCTYPE html><html><head><title>T</title></head><body><div id=\"app\">X</div><script type=\"application/json\" id=\"hella-data\">{\"user\":\"Ada\"}</script></body></html>");

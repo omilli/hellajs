@@ -94,7 +94,8 @@ export function doc(options: DocOptions & { body: string }): string;
  * Assembles a streamed body and an optional head into a full streaming HTML document — the
  * streaming overload, discriminated by passing a `ReadableStream` body. Emits the document shell
  * (`<!DOCTYPE html>`, `<head>`, the `mount` wrapper) first, then pipes every body chunk through as
- * it arrives, then the closing tags — so progressive paint is preserved end-to-end: nothing waits
+ * it arrives (one chunk per pull — backpressure on the document consumer propagates to the body
+ * stream), then the closing tags — so progressive paint is preserved end-to-end: nothing waits
  * for the body to finish. The head renders identically to the string overload's (same builder), and
  * the suffix flushes only after the body closes — which for an `ssr.stream` body means after every
  * staged `<Suspense>` swap has streamed. A `data` payload joins that suffix, so it flushes last.
@@ -115,19 +116,26 @@ export function doc(options: DocOptions): string | ReadableStream<string> {
   }
   const prefix = `<!DOCTYPE html><html${serializeProp("lang", options.lang)}><head>${buildHead(options.head)}</head><body>${mount !== undefined ? mount.open : ""}`;
   const suffix = `${mount !== undefined ? mount.close : ""}${data}</body></html>`;
-  let done = false;                         // shared by start/cancel: skip the suffix once the stream is done (cancel/error)
+  let done = false;                         // shared by pull/cancel: skip the suffix once the stream is done (cancel/error)
+  let prefixDone = false;                   // document shell delivered — body chunks follow
   const reader = options.body.getReader();  // acquired up front: cancel() must reach the body through this reader (the stream is locked to it)
   return new ReadableStream<string>({
-    async start(controller) {
+    // pull-driven pipe — one chunk per pull, so a slow document consumer exerts backpressure on the
+    // body stream (and its staged swaps) instead of buffering the whole document in the stream queue;
+    // the first pull delivers the shell immediately (TTFB preserved).
+    async pull(controller) {
+      if (done) return;
       try {
-        controller.enqueue(prefix);
-        let chunk = await reader.read();
-        while (!chunk.done) {
-          controller.enqueue(chunk.value);
-          chunk = await reader.read();
+        if (!prefixDone) {
+          prefixDone = true;
+          controller.enqueue(prefix);      // shell first
+          return;
         }
-        if (!done) controller.enqueue(suffix);
-        if (!done) controller.close();
+        const chunk = await reader.read();  // advance the body by at most one chunk
+        if (done) return;                   // cancelled while parked on the body read
+        if (!chunk.done) { controller.enqueue(chunk.value); return; }
+        controller.enqueue(suffix);          // body closed — flush the suffix and close in the same pull
+        controller.close();
       } catch (err) {
         done = true;                        // a body-stream error (or late enqueue on a cancelled stream) — surface it
         controller.error(err);
