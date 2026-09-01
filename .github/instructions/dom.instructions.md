@@ -41,7 +41,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 
 ## HellaNode (`lib/types/nodes.d.ts`)
 
-Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`. `isHellaNode` = `v !== null && typeof v === "object" && v.tag !== undefined` — the hot-path structural discriminator. Dom-local and deliberately skips the `isPlainObject` proto/`toString` cost; DOM Nodes expose `tagName` (not `tag`), so they fail the `tag` own-property check and are correctly rejected.
+Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`. `isHellaNode` = `isObject(v) && v.tag !== undefined` — the hot-path structural discriminator. Dom-local and deliberately skips the `isPlainObject` proto/`toString` cost; DOM Nodes expose `tagName` (not `tag`), so they fail the `tag` own-property check and are correctly rejected.
 
 | Field | Purpose |
 |---|---|
@@ -84,7 +84,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 
 ## `mount(node, target = "#app")` (`lib/mount.ts`)
 
-`resolveValue` calls `node` if it's a function. If the result is a thenable (`typeof resolved.then === "function"`), `attach` is deferred via `.then`; otherwise `attach` runs sync. `attach` = `mountNode` → `container.replaceChildren(...)` → `registerContainer(container)` (starts scoped observer) → `attached = true` → `flush()` (drains the mount queue: sets `isMounted = true` and fires `afterMount` for root + descendants; idempotent).
+`resolveValue` calls `node` if it's a function. If the result is a thenable (`isFunction(resolved.then)`), `attach` is deferred via `.then`; otherwise `attach` runs sync. `attach` = `mountNode` → `container.replaceChildren(...)` → `registerContainer(container)` (starts scoped observer) → `attached = true` → `flush()` (drains the mount queue: sets `isMounted = true` and fires `afterMount` for root + descendants; idempotent).
 
 - **Async mount rejections** route through `dispatchError(err, { phase: 'mount' })` — no element context, so no fallback rendering; surfaces via `onError` or `console.error('[dom]', err)`.
 - **`setMountNode` indirection.** `mount.ts` registers `mountNode` with `dispatch.ts` at module init to break the `render.ts` ↔ `dispatch.ts` circular import; `events.ts` reads `getMountNode()` lazily when rendering fallback UI.
@@ -248,7 +248,7 @@ Branch order: `value`/`checked`/`selected`/`innerHTML` → set the IDL property 
 - **`WeakMap`/`WeakSet`** for `elementMap`, `observedContainers`, `handlingBoundaries`, `processedNodes` — GC with the DOM nodes.
 - **Persistent text-node anchors** (`createTextNode("")`) for ForEach/Portal/Lazy/Transition/reactive children — never recreated; no comment nodes in the DOM.
 - **Bulk removal** in ForEach (collect before mutating); events cleanup iterates handlers once.
-- **Fast `isHellaNode`** — dom-local `typeof === "object" && v.tag !== undefined`, avoiding `isPlainObject`'s `getPrototypeOf` + `Object.prototype.toString.call` on every child resolution / ForEach item / dispatch step. `isPlainObject` is retained in core for cold input-validation paths (`$ref`/`$collection`).
+- **Fast `isHellaNode`** — dom-local `isObject(v) && v.tag !== undefined`, avoiding `isPlainObject`'s `getPrototypeOf` + `Object.prototype.toString.call` on every child resolution / ForEach item / dispatch step. `isPlainObject` is retained in core for cold input-validation paths (`$ref`/`$collection`).
 - **`toText` vs `resolveText`** — `toText(value)` assumes an already-resolved input and skips the `resolveValue` call; `resolveText` (which keeps the call) is used only where the input may still be a function/signal (`reactive.ts` bind path). Mount-side text rendering routes through `toText`.
 - **Lazy `ElementState` collections** — `handlers` / `effects` / `directHandlers` / `hooks` allocate on first use, not at `getState`. A reactive leaf pays only `{ isMounted }`.
 - **Single WeakMap lookup** on hot guards — `peekState(node)?.field` replaces the `hasState` + `getState` double-lookup in `appendToParent`'s boundary check and in `delegatedHandler`'s per-path-element walk.
