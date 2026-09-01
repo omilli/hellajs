@@ -1,12 +1,15 @@
 import type { HellaNode, HellaChild, SsrMeta } from "@hellajs/dom";
 import { serializeProp, escapeHtml, VOID } from "./internal/serialize";
-import { resolveValue } from "./internal/resolve";
+import { resolveValue, isPromise } from "./internal/resolve";
 import { assertNode } from "./internal/assert";
 import { MARK_OPEN, MARK_CLOSE } from "./internal/walk";
 import type { DynamicFn } from "./internal/walk";
 import { ssrAsync } from "./ssrAsync";
 import { ssrStream } from "./ssrStream";
 import type { StreamOptions } from "./types";
+
+/** The warn emitted when a thenable reaches the sync walk — it cannot await, so the value stringifies to `[object Promise]` into the HTML exactly as before; `ssr.async`/`ssr.stream` await it instead. */
+const SYNC_PROMISE_WARN = "[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted";
 
 /** Renders an isDynamic component's content from its `ssr` descriptor — shared by the direct-isDynamic-child and reactive-resolved-isDynamic dispatch paths. */
 function renderDynamic(meta: SsrMeta): string {
@@ -72,6 +75,7 @@ function walkChild(child: HellaChild): string {
       } else if (resolved !== null && typeof resolved === "object" && (resolved as HellaNode).tag !== undefined) {
         body = ssr(resolved as HellaNode);
       } else {
+        if (isPromise(resolved)) console.warn(SYNC_PROMISE_WARN);   // sync cannot await a resolved Promise — [object Promise] emitted as today
         body = escapeHtml(resolved === false || resolved === null || resolved === undefined ? "" : `${resolved}`);
       }
     }
@@ -170,7 +174,9 @@ function ssrImpl(node: HellaNode): string {
     const len = keys.length;
     while (i < len) {
       const key = keys[i]!;
-      open += serializeProp(key, resolveValue((node.props as Record<string, unknown>)[key]));
+      const value = resolveValue((node.props as Record<string, unknown>)[key]);
+      if (isPromise(value)) console.warn(SYNC_PROMISE_WARN);        // sync cannot await a function-ref prop's Promise — stringified as today
+      open += serializeProp(key, value);
       i++;
     }
   }

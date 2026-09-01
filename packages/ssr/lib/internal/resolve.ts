@@ -6,8 +6,12 @@ export function resolveValue(value: unknown): unknown {
   return typeof value === "function" ? (value as () => unknown)() : value;
 }
 
-/** True for thenables — a reactive getter may resolve to a Promise that the async walker awaits. */
-function isPromise(value: unknown): value is Promise<unknown> {
+/**
+ * @internal
+ * True for thenables — a reactive getter may resolve to a Promise that the async walker awaits;
+ * the sync walker warns on one (it cannot await) instead.
+ */
+export function isPromise(value: unknown): value is Promise<unknown> {
   return value !== null && typeof value === "object" && typeof (value as { then?: unknown }).then === "function";
 }
 

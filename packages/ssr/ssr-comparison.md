@@ -102,7 +102,7 @@ Vue wraps slot outlets and fragment vnodes in `<!--[-->`/`<!--]-->` and delimits
 
 One callable namespace covers three timing strategies with one output contract:
 
-- `ssr(node)` is the synchronous walk — getters are read at their current value, Promises are stringified, not awaited (`lib/ssr.ts`).
+- `ssr(node)` is the synchronous walk — getters are read at their current value, Promises are stringified, not awaited (`lib/ssr.ts`); sync `ssr` warns on each thenable child/prop before emitting the stringified value.
 - `ssr.async(node)` awaits any Promise a resolved value returns — child, function-ref prop, `each`, `show` — through the shared async generator, fully unwrapping nested thenables (`lib/ssrAsync.ts`, `lib/internal/walk.ts`, `lib/internal/resolve.ts`). Marker wrapping is byte-identical to the sync walk; the parity tests assert it branch-by-branch (`tests/helpers.ts`, `tests/ssr-async.test.ts`).
 - `ssr.stream(node)` yields chunks as the walk proceeds, flushing static markup before each await; bare Promises are awaited in tree order (`lib/ssrStream.ts`).
 - A `<Suspense>` boundary opts a subtree into out-of-order streaming: the `fallback` flushes inline, a sentinel comment marks the region, and the resolved children stream later as `<template id="hsN">` followed by an inline `<script>$hs("hsN")</script>` that swaps the region in the moment it arrives — a one-time `$hs` bootstrap precedes the templates, and the swap wraps the inserted content in a fresh marker pair so hydrate adopts it without re-evaluating the getter (`lib/ssrStream.ts`, `lib/internal/walk.ts`). Staged regions flush concurrently in completion order, not document order (`lib/ssrStream.ts`).
