@@ -42,7 +42,7 @@ applyTo: "**"
   |---|---|
   | core | Reactive primitives over a doubly-linked dependency DAG. Signals = sources, computed = transforms, effects = sinks. Glitch-free, topological propagation. |
   | dom | Surgical DOM updates (no VDOM). Scoped MutationObserver cleanup, global event delegation (capture phase), keyed list reconciliation (LIS), portals, lazy/async components, transitions, reactive refs, error boundaries, surgical hydration of server-rendered HTML via `hydrate()`. |
-  | css | Type-safe CSS-in-JS. Platform-dependent return (class name/proxy on client, CSS text on server), text-keyed reference counting, runtime style generation, reactive `cssVars()`. Global by default; `name` option scopes to a class. |
+  | css | Type-safe CSS-in-JS. Global `css()` + scoped `style()` returning a content-hashed class on both platforms, `cssText()` collector for SSR, text-keyed reference counting, runtime style generation, reactive `vars()`, `cva()` variant recipes (responsive per-recipe `media` + compounds, runtime-lazy), `cx()` class joiner. |
   | resource | Reactive async fetching. Fetcher-scoped cache (LRU + TTL), request deduplication, SWR, abort control, optimistic mutations, polling/retry. |
   | router | Reactive client-side routing. Nested routes, parameter inheritance, lifecycle hooks, History API. Resolution order: redirects → nested → flat → notFound. |
   | store | Deeply reactive state. Plain objects auto-convert to granular signals/stores with TS inference; `snapshot` / `update` / `cleanup` / `subscribe` (per-key, `(next, prev)`). |
