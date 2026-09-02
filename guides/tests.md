@@ -168,7 +168,8 @@ Any test that reassigns a global (`window.scrollTo = ...`, `global.window = {...
 - Use `await delay(0)` (setTimeout 0) to cross a macrotask boundary — drains the entire pending microtask queue. Use when a multi-hop promise chain (`.then().catch()`), an async generator yield (the generator resumes on a separate microtask from each `yield`), or GC setup needs a full queue flush. This is the sanctioned alternative to the banned double-`delay()`.
 - Use `await delay(N)` for a real-time wait of N ms (e.g. transition leave timer: `await delay(160); // duration(100) + safety buffer(50) + frame slack`).
 - Use `await delay(val, ms)` to resolve a value after ms (mocking async APIs).
-- Use a polling loop with `await delay(10)` for conditions where timing isn't contractually fixed: `for (let i = 0; i < 100; i++) { if (condition) break; await delay(10); }`.
+- Use a polling loop with `await delay(10)` for conditions where timing isn't contractually fixed: `for (let i = 0; i < 100; i++) { if (condition) break; await delay(10); }` — but see the observer-cleanup rule below before polling on DOM removals.
+- **Observer-driven cleanup waits (element `remove()` → MutationObserver → effect disposal): poll with microtask hops + a mirror assert — never macrotask waits between staged removals.** `for (let __i = 0; __i < 50; __i++) { if (peekState(el) === undefined) break; await delay(); }` then `expect(peekState(el)).toBeUndefined();`. HappyDOM holds the observer's report closure only via `WeakRef` — any macrotask idle BEFORE a removal lets GC kill it, and the next removal is then NEVER reported (not late: never), so cleanup silently never runs. Microtask hops never idle the loop, and delivery + cleanup are microtask-scheduled, so the loop settles within a few hops. Poll the state-carrying element (the component root) — `peekState` of a removed static wrapper is vacuously `undefined` at iteration 0.
 - Never double-delay — use `delay(0)` instead of `await delay(); await delay()`.
 
 ### Package-Exported Testing Utilities
@@ -275,6 +276,7 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] No `any` (`unknown` only)
 - [ ] No `it()` or `test.skip()`
 - [ ] No bare `await delay()` used as double-delay — use `delay(0)` (macrotask) for multi-hop chains
+- [ ] No macrotask waits (`delay(0)`/`delay(N)`/`delay(10)` polls) between staged DOM removals whose cleanup the test waits on — observer-driven cleanup waits use the microtask-hop `peekState` poll + mirror assert (HappyDOM WeakRef GC hazard)
 - [ ] No boolean-flag or pure-integer call counters — `mock()` (exception: counter with observable side effects)
 - [ ] No substring-only asserts on generated output whose structure is the contract — at least one exact-form `toBe` per generated shape
 - [ ] No helper duplicated across files — extracted to `tests/helpers.ts`
