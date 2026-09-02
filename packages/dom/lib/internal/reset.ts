@@ -6,7 +6,7 @@ import { clearStaticCache } from "./render";
 import { resetHydrateState } from "./hydrate";
 
 /**
- * Resets all DOM package mutable state — queues, scheduling flags, observers, selector registry, event listeners, delegated handler types, error handlers, and the hydration context stack.
+ * Resets all DOM package mutable state — queues, scheduling flags, observers, selector registry, event listeners, delegated handler types, error handlers, the hydration context stack, and the deferred selective-hydration regions (registry + watch).
  */
 export function resetDom() {
   resetQueueState();
