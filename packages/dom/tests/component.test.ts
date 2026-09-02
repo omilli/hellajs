@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { mount, html, component } from "@hellajs/dom/bundle";
+import { mount, html, component, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode, ComponentFn, HellaElement } from "@hellajs/dom";
 
 beforeEach(() => {
@@ -69,7 +69,7 @@ describe("dom", () => {
         return html`<div id="comp-b">B</div>` as HellaNode;
       };
 
-      const app = mount(html`
+      mount(html`
         <div>
           <div id="wrapper-a"><${CompA} /></div>
           <div id="wrapper-b"><${CompB} /></div>
@@ -79,10 +79,11 @@ describe("dom", () => {
       expect(aCalls).toHaveBeenCalledTimes(1);
       expect(bCalls).toHaveBeenCalledTimes(1);
 
+      const compA = document.getElementById("comp-a")!;
       const wrapperA = document.getElementById("wrapper-a")!;
       wrapperA.remove();
-      await delay();
-      app.flush();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(compA) === undefined) break; await delay(); }
+      expect(peekState(compA)).toBeUndefined();
 
       countA(1);
       countB(1);
@@ -129,7 +130,7 @@ describe("dom", () => {
         return html`<div id="outer"><${Inner} /></div>`;
       };
 
-      const app = mount(html`<${Outer} />`);
+      mount(html`<${Outer} />`);
       expect(effect1Runs).toHaveBeenCalledTimes(1);
       expect(effect2Runs).toHaveBeenCalledTimes(1);
 
@@ -140,8 +141,8 @@ describe("dom", () => {
 
       const inner = document.getElementById("inner") as HellaElement;
       inner.remove();
-      await delay();
-      app.flush();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(inner) === undefined) break; await delay(); }
+      expect(peekState(inner)).toBeUndefined();
 
       trigger1(2);
       trigger2(2);
@@ -150,8 +151,8 @@ describe("dom", () => {
 
       const outer = document.getElementById("outer") as HellaElement;
       outer.remove();
-      await delay();
-      app.flush();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(outer) === undefined) break; await delay(); }
+      expect(peekState(outer)).toBeUndefined();
 
       trigger1(3);
       expect(effect1Runs).toHaveBeenCalledTimes(3);
@@ -174,7 +175,8 @@ describe("dom", () => {
 
       const counter = document.getElementById("html-counter") as HellaElement;
       counter.remove();
-      await delay(0);
+      for (let __i = 0; __i < 50; __i++) { if (peekState(counter) === undefined) break; await delay(); }
+      expect(peekState(counter)).toBeUndefined();
 
       count(2);
       expect(effectRuns).toHaveBeenCalledTimes(2);
@@ -196,24 +198,24 @@ describe("dom", () => {
         return html`<div id="comp2">Component 2</div>`;
       };
 
-      const app = mount(html`<div><${Component1} /><${Component2} /></div>`);
+      mount(html`<div><${Component1} /><${Component2} /></div>`);
       expect(effect1Runs).toHaveBeenCalledTimes(1);
       expect(effect2Runs).toHaveBeenCalledTimes(1);
 
-      const comp1 = document.getElementById("comp1");
-      comp1!.remove();
-      await delay(0);
-      app.flush();
+      const comp1 = document.getElementById("comp1")!;
+      comp1.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(comp1) === undefined) break; await delay(); }
+      expect(peekState(comp1)).toBeUndefined();
 
       trigger1(1);
       trigger2(1);
       expect(effect1Runs).toHaveBeenCalledTimes(1);
       expect(effect2Runs).toHaveBeenCalledTimes(2);
 
-      const comp2 = document.getElementById("comp2");
-      comp2!.remove();
-      await delay(0);
-      app.flush();
+      const comp2 = document.getElementById("comp2")!;
+      comp2.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(comp2) === undefined) break; await delay(); }
+      expect(peekState(comp2)).toBeUndefined();
 
       trigger2(2);
       expect(effect2Runs).toHaveBeenCalledTimes(2);
