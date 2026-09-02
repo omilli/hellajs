@@ -55,6 +55,29 @@ const App = () => html`<ul><${ForEach} each=${items} use=${(i) => html`<li key=$
 hydrate(html`<${App} />`, "#app");
 ```
 
+## Selective Hydration
+
+[`hydrate`](/reference/dom/hydrate) normally runs once, after the stream has delivered everything. When the hydrate script executes **while the document is still streaming** (`document.readyState === "loading"` — an inline script parsed before the stream's staged templates arrive), a [`<Suspense>`](/reference/dom/suspense) region whose staged `<template>` hasn't arrived yet is **deferred** instead of degraded: the server's fallback stays mounted, the children are never re-run, and a watcher on the hydrate container adopts the region the moment its content lands — wiring props, handlers, and effects exactly like the synchronous path. Everything outside the deferred region is interactive immediately.
+
+```js
+// client — placed mid-stream, so the script runs before the staged templates arrive
+import { hydrate } from "@hellajs/dom";
+
+hydrate(page(), "#app");
+// Present regions adopt now; a region whose stage hasn't arrived defers —
+// its fallback stays on screen and it adopts when the content lands.
+```
+
+In a browser the inline `$hs` swap script (emitted by [`ssr.stream`](/@hellajs/ssr)) no-ops for a deferred region — hydrate has already consumed the region markers it balance-walks to — so the staged template stays in the DOM and hydrate's watcher swaps it in. One mechanism covers the scripted and no-script shapes.
+
+### Event Replay
+
+Discrete events (`click`, `mousedown`, `mouseup`, `keydown`, `change`) dispatched on a deferred region's fallback are buffered while it is pending and replayed once it adopts — a click on a loading placeholder reaches the handler on the resolved content, matching React 19's selective-hydration behavior. Replay is positional, not coordinate-exact: the event re-dispatches as a synthesized bubbling `Event` on the resolved node occupying the buffered target's slot within the region. Events elsewhere fire normally during deferral and are never buffered; if the stream dies before the region adopts, its buffered events are discarded.
+
+### Dead Streams
+
+If the document finishes loading (`readystatechange` → `complete`) while regions are still deferred, the stream is dead: each remaining region degrades to client-side re-suspension — the fallback stays mounted, the children re-run, and the resolved content swaps in when it settles. This matches the behavior `hydrate` applies when it runs after loading with a missing stage.
+
 <details>
 <summary>Internal Mechanics</summary>
 

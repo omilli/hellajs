@@ -3,7 +3,7 @@ import { isFunction, isString, isObject } from "./internal/core";
 import { resolveValue } from "./internal/utils";
 import { dispatchError, toError } from "./internal/dispatch";
 import { mountNode } from "./internal/render";
-import { hydrateNode, hydrateSequence } from "./internal/hydrate";
+import { hydrateNode, hydrateSequence, hasDeferredRegions, startDeferredRegionWatch } from "./internal/hydrate";
 import { registerContainer, processMountQueue, processCleanupQueue, mountQueue, beginMountPhase, endMountPhase } from "./internal/queue";
 import { cleanupSubtree } from "./internal/cleanup";
 
@@ -77,6 +77,7 @@ export function hydrate(
       registerContainer(container);
       attached = true;
       flush();   // fire afterMount + set isMounted (root + descendants) now — hydrate adds no nodes, so the observer never would
+      if (hasDeferredRegions()) startDeferredRegionWatch(container);   // selective hydration: watch for late <Suspense> stages + replay events
     } finally {
       endMountPhase();
     }
