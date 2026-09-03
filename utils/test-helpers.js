@@ -1,5 +1,5 @@
 import { resetDom } from "@hellajs/dom/bundle";
-import { resetCss, resetCssVars } from "@hellajs/css/bundle";
+import { resetCss, resetVars } from "@hellajs/css/bundle";
 import { resetResource } from "@hellajs/resource/bundle";
 import { resetRouter } from "@hellajs/router/bundle";
 
@@ -71,7 +71,7 @@ export function resetTestState(html = '<div id="app"></div>') {
   document.body.innerHTML = html;
   resetDom();
   resetCss();
-  resetCssVars();
+  resetVars();
   resetResource();
   resetRouter();
   const styles = document.querySelectorAll("style");

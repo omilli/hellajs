@@ -1,29 +1,27 @@
-import { cssVars, css } from '@hellajs/css';
+import { css, vars, cssText } from '@hellajs/css';
 
-// On the server (no DOM), cssVars() returns the custom-property declarations as
-// CSS text (":root{--color-primary:#2563eb;…}") and css() returns the generated
-// rule text — both stateless, neither touches a stylesheet. Collect the server
-// return values and pass them to doc({ head: { styles } }) to emit one <style>.
-// On the client the same calls return a var() proxy / class name instead; this
-// module is server-only, so only the server path runs here.
-export const tokens = cssVars({
+// vars() registers the custom-property declarations on both platforms and returns
+// the var() proxy everywhere; css() registers its rules the same way. cssText()
+// then collects both — the css-side rules in registration order, then the vars
+// buckets — as the text for one <style> tag via doc({ head: { styles } }).
+export const tokens = vars({
   color: { primary: '#2563eb', text: '#333' },
   space: { nav: '1rem' },
 });
 
-export const stylesheet = css({
+css({
   body: {
     fontFamily: 'sans-serif',
     margin: '0',
-    color: 'var(--color-text)',
+    color: tokens.color.text,
   },
   nav: {
     display: 'flex',
-    gap: 'var(--space-nav)',
-    padding: 'var(--space-nav)',
+    gap: tokens.space.nav,
+    padding: tokens.space.nav,
     borderBottom: '1px solid #e5e7eb',
     a: {
-      color: 'var(--color-primary)',
+      color: tokens.color.primary,
       textDecoration: 'none',
       '&.active': {
         fontWeight: '700',
@@ -32,6 +30,9 @@ export const stylesheet = css({
     },
   },
   main: {
-    padding: 'var(--space-nav)',
+    padding: tokens.space.nav,
   },
 });
+
+// The registered rule text (css rules + vars buckets), collected after the calls above.
+export const stylesheet = cssText();

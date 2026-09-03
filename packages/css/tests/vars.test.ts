@@ -1,26 +1,26 @@
 import { describe, expect, test, beforeEach, mock } from "bun:test";
 import { batch, computed, flush, signal } from "@hellajs/core";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { cssVars, resetCssVars, removeCssVars } from "@hellajs/css/bundle";
+import { vars, resetVars, removeVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
 });
 
-describe("cssVars", () => {
+describe("vars", () => {
   test("caching works", () => {
     const vars1 = { colors: { primary: "red" } };
     const vars2 = { colors: { primary: "red" } };
 
-    const result1 = cssVars(vars1);
-    const result2 = cssVars(vars2);
+    const result1 = vars(vars1);
+    const result2 = vars(vars2);
 
     expect(result1).toEqual(result2);
     expect(result1.colors.primary).toBe("var(--colors-primary)");
   });
 
   test("deep nesting", () => {
-    const result = cssVars({ theme: { colors: { primary: { light: "#ff6b6b" } } } });
+    const result = vars({ theme: { colors: { primary: { light: "#ff6b6b" } } } });
     const keys = "theme.colors.primary.light".split(".");
     let current: Record<string, unknown> = result as Record<string, unknown>;
     for (const key of keys) {
@@ -29,21 +29,21 @@ describe("cssVars", () => {
     expect(current as unknown).toBe("var(--theme-colors-primary-light)");
   });
 
-  test("resetCssVars clears CSS variables", () => {
-    const result1 = cssVars({ colors: { primary: "purple", secondary: "green" } });
+  test("resetVars clears CSS variables", () => {
+    const result1 = vars({ colors: { primary: "purple", secondary: "green" } });
     flush();
 
     let varsText = getStylesheet("hella-vars");
     expect(varsText).toContain("--colors-primary:purple");
     expect(varsText).toContain("--colors-secondary:green");
 
-    resetCssVars();
+    resetVars();
     flush();
 
     varsText = getStylesheet("hella-vars");
     expect(varsText).toBe("");
 
-    const result2 = cssVars({ colors: { primary: "purple", secondary: "green" } });
+    const result2 = vars({ colors: { primary: "purple", secondary: "green" } });
     flush();
     varsText = getStylesheet("hella-vars");
     expect(varsText).toContain("--colors-primary:purple");
@@ -51,22 +51,22 @@ describe("cssVars", () => {
   });
 
   test("static vars work without effects", () => {
-    const vars = cssVars({
+    const varsObj = vars({
       colors: { primary: "red", secondary: "blue" },
       spacing: { small: "4px", large: "16px" }
     });
 
-    expect(vars.colors.primary).toBe("var(--colors-primary)");
-    expect(vars.colors.secondary).toBe("var(--colors-secondary)");
-    expect(vars.spacing.small).toBe("var(--spacing-small)");
-    expect(vars.spacing.large).toBe("var(--spacing-large)");
+    expect(varsObj.colors.primary).toBe("var(--colors-primary)");
+    expect(varsObj.colors.secondary).toBe("var(--colors-secondary)");
+    expect(varsObj.spacing.small).toBe("var(--spacing-small)");
+    expect(varsObj.spacing.large).toBe("var(--spacing-large)");
   });
 
   test("reactive vars track signal dependencies", () => {
     const primaryColor = signal("red");
     const secondaryColor = signal("blue");
 
-    cssVars({
+    vars({
       colors: {
         primary: primaryColor,
         secondary: secondaryColor
@@ -90,21 +90,21 @@ describe("cssVars", () => {
   test("reactive vars return populated result immediately", () => {
     const color = signal("red");
 
-    const vars = cssVars({
+    const varsObj = vars({
       colors: {
         primary: color,
         secondary: () => "blue",
       }
     });
 
-    expect(vars.colors.primary).toBe("var(--colors-primary)");
-    expect(vars.colors.secondary).toBe("var(--colors-secondary)");
+    expect(varsObj.colors.primary).toBe("var(--colors-primary)");
+    expect(varsObj.colors.secondary).toBe("var(--colors-secondary)");
   });
 
   test("mixed static and reactive vars", () => {
     const dynamicColor = signal("purple");
 
-    cssVars({
+    vars({
       colors: {
         primary: dynamicColor,    // reactive
         secondary: "orange",      // static
@@ -134,7 +134,7 @@ describe("cssVars", () => {
     const getThemeColor = () => theme() === "dark" ? "#333" : "#fff";
     const getSize = () => size() === "large" ? "20px" : "14px";
 
-    cssVars({
+    vars({
       theme: {
         background: getThemeColor,
         text: () => theme() === "dark" ? "#fff" : "#000"
@@ -162,14 +162,14 @@ describe("cssVars", () => {
     expect(varsText).toContain("--typography-size:14px");
   });
 
-  test("resetCssVars clears reactive effects", () => {
+  test("resetVars clears reactive effects", () => {
     const color = signal("red");
-    cssVars({ primary: color });
+    vars({ primary: color });
 
     flush();
     expect(getStylesheet("hella-vars")).toContain("red");
 
-    resetCssVars();
+    resetVars();
 
     color("blue");
     flush();
@@ -188,7 +188,7 @@ describe("cssVars", () => {
       return `rgba(${r}, ${g}, ${b}, ${opacity()})`;
     });
 
-    cssVars({
+    vars({
       colors: {
         primary: rgba
       }
@@ -205,8 +205,8 @@ describe("cssVars", () => {
     expect(varsText).toBe(":root{--colors-primary:rgba(255,0,0,0.5)}");
   });
 
-  test("multiple cssVars calls accumulate instead of overwriting", () => {
-    const vars1 = cssVars({
+  test("multiple vars calls accumulate instead of overwriting", () => {
+    const vars1 = vars({
       theme: {
         primary: "#ff0000",
         secondary: "#00ff00"
@@ -218,7 +218,7 @@ describe("cssVars", () => {
     expect(varsText).toContain("--theme-primary:#ff0000");
     expect(varsText).toContain("--theme-secondary:#00ff00");
 
-    const vars2 = cssVars({
+    const vars2 = vars({
       spacing: {
         small: "8px",
         large: "16px"
@@ -237,15 +237,15 @@ describe("cssVars", () => {
     expect(vars2.spacing.small).toBe("var(--spacing-small)");
   });
 
-  test("multiple reactive cssVars update independently", () => {
+  test("multiple reactive vars update independently", () => {
     const color1 = signal("red");
     const color2 = signal("blue");
 
-    cssVars({
+    vars({
       theme: { primary: color1 }
     });
 
-    cssVars({
+    vars({
       theme: { secondary: color2 }
     });
 
@@ -283,7 +283,7 @@ describe("cssVars", () => {
     const color = signal("red");
     const tracker = mock(() => color());
 
-    cssVars({
+    vars({
       theme: {
         color: tracker
       }
@@ -295,7 +295,7 @@ describe("cssVars", () => {
     color("blue");
     flush();
     expect(tracker.mock.calls.length).toBeGreaterThan(initialCount);
-    resetCssVars();
+    resetVars();
     const countAfterReset = tracker.mock.calls.length;
     color("green");
     flush();
@@ -303,69 +303,69 @@ describe("cssVars", () => {
   });
 
   test("LRU eviction discards oldest entry at capacity", () => {
-    const first = cssVars({ key0: "value0" });
-    const last = cssVars({ key99: "value99" });
+    const first = vars({ key0: "value0" });
+    const last = vars({ key99: "value99" });
 
     for (let i = 1; i < 99; i++) {
-      cssVars({ [`key${i}`]: `value${i}` });
+      vars({ [`key${i}`]: `value${i}` });
     }
 
-    cssVars({ overflow: "evicted" });
+    vars({ overflow: "evicted" });
 
-    const stillCached = cssVars({ key99: "value99" });
+    const stillCached = vars({ key99: "value99" });
     expect(stillCached).toBe(last);
 
-    const recomputed = cssVars({ key0: "value0" });
+    const recomputed = vars({ key0: "value0" });
     expect(recomputed).not.toBe(first);
     expect(recomputed.key0).toBe("var(--key0)");
   });
 
   test("LRU promotes entry on access, protecting it from eviction", () => {
-    const first = cssVars({ key0: "value0" });
-    const second = cssVars({ key1: "value1" });
+    const first = vars({ key0: "value0" });
+    const second = vars({ key1: "value1" });
 
     for (let i = 2; i < 100; i++) {
-      cssVars({ [`key${i}`]: `value${i}` });
+      vars({ [`key${i}`]: `value${i}` });
     }
 
-    const promoted = cssVars({ key0: "value0" });
+    const promoted = vars({ key0: "value0" });
     expect(promoted).toBe(first);
 
-    cssVars({ overflow: "evicted" });
+    vars({ overflow: "evicted" });
 
-    const stillCached = cssVars({ key0: "value0" });
+    const stillCached = vars({ key0: "value0" });
     expect(stillCached).toBe(first);
 
-    const evicted = cssVars({ key1: "value1" });
+    const evicted = vars({ key1: "value1" });
     expect(evicted).not.toBe(second);
     expect(evicted.key1).toBe("var(--key1)");
   });
 
   test("LRU eviction followed by re-registration preserves the reference count", () => {
-    const vars = { color: "red" };
-    cssVars(vars);
-    cssVars(vars);
+    const varsObj = { color: "red" };
+    vars(varsObj);
+    vars(varsObj);
 
     for (let i = 1; i <= 100; i++) {
-      cssVars({ [`k${i}`]: `v${i}` });
+      vars({ [`k${i}`]: `v${i}` });
     }
 
     // Cache entry was evicted; the re-call must join the surviving refCount (2),
     // not reset it to 1.
-    cssVars(vars);
+    vars(varsObj);
     const varsText = getStylesheet("hella-vars");
     expect(varsText).toContain("--color:red");
 
-    removeCssVars(vars);
+    removeVars(varsObj);
     expect(getStylesheet("hella-vars")).toContain("--color:red");
 
-    removeCssVars(vars);
-    removeCssVars(vars);
+    removeVars(varsObj);
+    removeVars(varsObj);
     expect(getStylesheet("hella-vars")).not.toContain("--color:red");
   });
 
   test("empty object returns empty result", () => {
-    const result = cssVars({});
+    const result = vars({});
     expect(Object.keys(result)).toHaveLength(0);
     flush();
     const varsText = getStylesheet("hella-vars");
@@ -376,7 +376,7 @@ describe("cssVars", () => {
   describe("input validation", () => {
     test.each([null, undefined, "not-an-object"])("throws on non-object input", (invalid) => {
       // @ts-expect-error - testing invalid input
-      expect(() => cssVars(invalid)).toThrow("[css] cssVars:");
+      expect(() => vars(invalid)).toThrow("[css] vars:");
     });
   });
 });

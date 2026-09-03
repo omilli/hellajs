@@ -1,42 +1,188 @@
-
-
 # Styling
 
-HellaJS supports two styling approaches: traditional CSS classes with reactive bindings, and CSS-in-JS with global and scoped modes. Both integrate with [signals](/reference/core/signal) for dynamic styling.
+HellaJS styles components with CSS-in-JS: `style()` scopes declarations under a content-hashed class, `css()` writes explicit globals, `cva()` resolves typed variants, `vars()` drives reactive theming, and `keyframes()` hashes animation definitions. Every creator returns the same value on client and server — `cssText()` collects the registered text for server rendering.
 
-## Traditional CSS Classes
+## Scoped Styles
 
-Apply CSS classes using the `class` attribute. Static classes work with external stylesheets, while `class` enables reactive class names that respond to state changes.
-
-### Reactive Classes
-
-Arrow functions in `class` recalculate when signals change.
+[`style`](/reference/css/style) takes a declarations-first object and returns a content-hashed class — `h-{label}-{hash}` with a label, `h-{hash}` without. The hash covers the object alone, so the same object always derives the same class, on every render and both platforms.
 
 ```jsx
 import { signal } from '@hellajs/core';
+import { style } from '@hellajs/css';
 
 const Counter = () => {
   const count = signal(0);
 
+  const buttonStyle = style({
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    background: '#3b82f6',
+    color: 'white',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+
+    '&:hover': {
+      background: '#2563eb',
+      transform: 'translateY(-1px)'
+    }
+  }, { label: 'btn' });
+  // "h-btn-r4k2q" — identical on client and server
+
   return (
-    <div class="counter-container">
-      <h1 class={() => `counter-display ${count() % 2 === 0 ? 'even' : 'odd'}`}>
-        {count}
-      </h1>
-      <button
-        class={() => `btn ${count() > 5 ? 'btn-success' : 'btn-primary'}`}
-        on:click={() => count(count() + 1)}
-      >
-        {count() > 5 ? 'Great job!' : 'Increment'}
+    <div>
+      <h1>Count: {count}</h1>
+      <button class={buttonStyle} on:click={() => count(count() + 1)}>
+        Increment
       </button>
     </div>
   );
 };
 ```
 
-### Class Arrays
+Nested keys compose under the generated class: `&` refers to the class at every occurrence, plain keys become descendants (`h2` → `.{class} h2`), and conditional at-rules (`@media`, `@container`, `@supports`) inherit it. Value semantics carry over from `css()`: numbers append `px` (unitless properties excepted), `content` strings auto-quote, array values join with commas, and `--` custom properties pass through verbatim.
 
-Arrays provide a cleaner syntax for conditional classes. Falsy values are filtered out.
+### Composing Styles
+
+A second object argument composes. A class-string base prefixes the new class verbatim — each side keeps its own rule; an object base deep-merges with the override into a single class where the override wins.
+
+```jsx
+import { style } from '@hellajs/css';
+
+const card = style({ padding: '1rem', borderRadius: '0.5rem' }, { label: 'card' });
+const alert = style(card, { border: '1px solid red' });
+// "h-card-1z0q41 h-b9c8d" — the alert class carries only the added declarations
+
+const denseCard = style(
+  { padding: '1rem', borderRadius: '0.5rem' },
+  { padding: '0.5rem' }
+);
+// One merged class — "h-…" with the override's padding
+```
+
+## Global Styles
+
+[`css`](/reference/css/css) covers what belongs to no component: resets, element defaults, `@font-face`. Top-level keys are CSS selectors and at-rules; the call registers the rules and returns an empty string on both platforms.
+
+```jsx
+import { css } from '@hellajs/css';
+
+css({
+  body: { margin: 0, fontFamily: 'system-ui, sans-serif' },
+  '*': { boxSizing: 'border-box' }
+});
+```
+
+All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`). See the [css reference](/reference/css/css) for the nesting and at-rule scoping rules.
+
+## Variant Recipes
+
+[`cva`](/reference/css/cva) maps typed variant props to a composed class string — one class per selection, generated lazily on first resolution so unselected variants never produce CSS.
+
+```jsx
+import { cva } from '@hellajs/css';
+
+const MEDIA = { md: '(min-width: 768px)' };
+
+const button = cva({
+  base: { borderRadius: '0.5rem', cursor: 'pointer' },
+  media: MEDIA,
+  variants: {
+    size: { sm: { padding: '0.25rem 0.5rem' }, lg: { padding: '0.75rem 1.5rem' } },
+    tone: { primary: { background: '#3b82f6' }, danger: { background: '#dc2626' } }
+  },
+  defaultVariants: { size: 'sm' },
+  compoundVariants: [
+    { size: 'lg', tone: 'danger', css: { fontWeight: 700 } }
+  ]
+});
+
+<button class={button({ tone: 'danger', size: { initial: 'sm', md: 'lg' } })}>
+  Delete
+</button>
+```
+
+Responsive selections emit their class under the breakpoint's media condition — pure CSS, no listeners. Variant classes are static once resolved; reactivity rides the call site with `class={() => button({ size: size() })}`.
+
+## Reactive CSS Variables
+
+[`vars`](/reference/css/vars) (formerly `cssVars`) creates CSS custom properties from signals. It returns a same-shaped proxy of `var()` references; when signals change, the declarations update through effects — no re-render, no rule rebuild.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { style, vars } from '@hellajs/css';
+
+const theme = signal('light');
+
+const themeVars = vars({
+  button: {
+    background: () => theme() === 'dark' ? '#374151' : '#3b82f6',
+    color: '#ffffff'
+  }
+});
+
+const buttonStyle = style({
+  padding: '0.75rem 1.5rem',
+  border: 'none',
+  borderRadius: '0.5rem',
+  background: themeVars.button.background,
+  color: themeVars.button.color,
+  cursor: 'pointer'
+}, { label: 'theme-btn' });
+
+<button
+  class={buttonStyle}
+  on:click={() => theme(theme() === 'light' ? 'dark' : 'light')}
+>
+  Toggle Theme ({theme()})
+</button>
+```
+
+Property values in `style()` and `css()` objects are static — function values throw. Reactive values belong in `vars()`.
+
+## Keyframe Animations
+
+[`keyframes`](/reference/css/keyframes) registers a `@keyframes` rule and returns its content-hashed animation name — `h-kf-{hash}` — so hand-authored animation names cannot collide. Key order never matters: structurally equal definitions derive the same name.
+
+```jsx
+import { keyframes, style } from '@hellajs/css';
+
+const spin = keyframes({
+  from: { transform: 'rotate(0deg)' },
+  to: { transform: 'rotate(360deg)' }
+});
+
+const spinner = style({
+  width: '2rem',
+  height: '2rem',
+  border: '3px solid #e5e7eb',
+  borderTopColor: '#3b82f6',
+  borderRadius: '50%',
+  animation: `${spin} 0.8s linear infinite`
+}, { label: 'spinner' });
+```
+
+## Server Rendering
+
+Every creator registers its rules on both platforms and returns the same value everywhere — the class, the empty string, or the proxy. On the server there is no DOM to inject into; [`cssText`](/reference/css/csstext) collects the registered text (css, style, and keyframes rules in registration order, then the `vars` buckets) for the response's single `<style>` embed.
+
+```js
+import { css, cssText, style, vars } from '@hellajs/css';
+
+const tokens = vars({ bg: '#ffffff' });
+css({ body: { margin: 0, backgroundColor: tokens.bg } });
+const card = style({ padding: '1rem' }, { label: 'card' });
+
+// In the response handler — one embed per response
+const page = `<!DOCTYPE html><html><head><style>${cssText()}</style></head><body>…</body></html>`;
+```
+
+`cssText()` peeks, never drains — repeated calls return the same string. After hydration the client re-registers the same styles into its own sheets; the duplicated rules are identical and harmless.
+
+## Reactive Class Bindings
+
+The `class` attribute accepts a function or an array — both recalculate when signals change, and falsy entries drop out. This is how hashed classes compose at runtime, alongside [`cx`](/reference/css/cx) and variant recipes.
 
 ```jsx
 const TodoItem = ({ todo }: { todo: () => { done: boolean; text: string; priority: string; editing: boolean } }) => {
@@ -53,138 +199,35 @@ const TodoItem = ({ todo }: { todo: () => { done: boolean; text: string; priorit
 };
 ```
 
-## CSS-in-JS
+## Web Components and Shadow DOM
 
-The [`css`](/reference/css/css) function creates styles from JavaScript objects. Global by default. Use the `name` option to create a scoped class selector and get a return value for `class` attributes.
-
-### Global Styles
-
-```jsx
-import { css } from '@hellajs/css';
-css({
-  body: { margin: 0, fontFamily: 'system-ui, sans-serif' },
-  '*': { boxSizing: 'border-box' }
-});
-```
-
-### Scoped Styles
-
-```jsx
-import { signal } from '@hellajs/core';
-import { css } from '@hellajs/css';
-
-const Counter = () => {
-  const count = signal(0);
-
-  const buttonStyle = css({
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem',
-    background: '#3b82f6',
-    color: 'white',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-
-    '&:hover': {
-      background: '#2563eb',
-      transform: 'translateY(-1px)'
-    }
-  }, { name: 'btn' });
-
-  return (
-    <div>
-      <h1>Count: {count}</h1>
-      <button class={buttonStyle} on:click={() => count(count() + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-};
-```
-
-### Reactive CSS Variables
-
-[`cssVars`](/reference/css/cssvars) creates CSS custom properties from signals. When signals change, the variables update automatically.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { cssVars, css } from '@hellajs/css';
-
-const ThemeButton = () => {
-  const theme = signal('light');
-
-  const themeVars = cssVars({
-    button: {
-      background: () => theme() === 'dark' ? '#374151' : '#3b82f6',
-      color: '#ffffff'
-    }
-  });
-
-  const buttonStyle = css({
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '0.5rem',
-    background: themeVars.button.background,
-    color: themeVars.button.color,
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-
-    '&:hover': {
-      transform: 'translateY(-1px)',
-      opacity: '0.8'
-    }
-  }, { name: 'theme-btn' });
-
-  return (
-    <button
-      class={buttonStyle}
-      on:click={() => theme(theme() === 'light' ? 'dark' : 'light')}
-    >
-      Toggle Theme ({theme()})
-    </button>
-  );
-};
-```
-
-### How Scoping Works
-
-[`css`](/reference/css/css) has two modes:
-
-- **Global** (default): styles are injected without a class selector. Use CSS selector keys (`body`, `.card`, etc.) as top-level properties. Returns empty string.
-- **Scoped** (with `name`): creates a `.{name}` selector wrapping top-level properties. Returns the name for use in `class` attributes.
-
-All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`). See the [css reference](/reference/css/css) for details.
-
-### Web Components and Shadow DOM
-
-The `host` option on [`css`](/reference/css/css) and [`cssVars`](/reference/css/cssvars) redirects the generated `<style>` elements into any parent node — most commonly a shadow root. Each host gets its own sheets: the same styles injected into two hosts produce independent `<style>` elements with separate reference counting, so N web component instances never share or dedup into one sheet.
+The `host` option on [`style`](/reference/css/style), [`css`](/reference/css/css), and [`vars`](/reference/css/vars) redirects the generated `<style>` elements into any parent node — most commonly a shadow root. Each host gets its own sheets: the same styles injected into two hosts produce independent `<style>` elements with separate reference counting, so N web component instances never share or dedup into one sheet.
 
 ```typescript
-import { css, cssVars } from '@hellajs/css';
+import { css, style, vars } from '@hellajs/css';
 
 const hostElement = document.createElement('my-card');
 const root = hostElement.attachShadow({ mode: 'open' });
 
 // Shadow roots don't match :root — scope vars to the host element
-const theme = cssVars({ accent: '#3b82f6' }, { host: root, scoped: ':host' });
+const theme = vars({ accent: '#3b82f6' }, { host: root, scoped: ':host' });
 
-css({ color: theme.accent }, { name: 'card', host: root });
+const card = style({ color: theme.accent }, { label: 'card', host: root });
 // <style> created inside the shadow root, not document.head
 ```
 
-Styles injected with a host never reach `document.head`. [`removeCss`](/reference/css/removecss) and [`removeCssVars`](/reference/css/removecssvars) remove from the same host when passed the same option. See [Shadow DOM Hosts](/reference/css/css#shadow-dom-hosts) for the full web-components example.
+Styles injected with a host never reach `document.head`. [`removeStyle`](/reference/css/removestyle), [`removeCss`](/reference/css/removecss), and [`removeVars`](/reference/css/removevars) remove from the same host when passed the same option. See [Shadow DOM Hosts](/reference/css/css#shadow-dom-hosts) for the full web-components example.
 
 <details>
 <summary>Internal Mechanics</summary>
 
-HellaJS processes CSS objects into rules through deterministic key generation with built-in caching and memory management.
+HellaJS processes CSS objects into rules through deterministic identity generation with built-in caching and memory management.
 
-- **Memoization**: Identical CSS objects generate identical CSS text, and that text is the identity key for deduplication and reference counting
-- **Reference Counting**: Each `css()` call increments a counter; styles are removed from the DOM when the count reaches zero
-- **Synchronous Updates**: `css()` writes to the DOM stylesheet immediately; `cssVars()` updates reactively via effects when signals change
+- **Hash identity**: `style()` derives `h-{label}-{hash}` from the object alone — never the label or the emitted text — so identity is deterministic across platforms and renders. `keyframes()` canonicalizes step key order the same way, so structurally equal definitions share one name
+- **Unified registration**: every creator registers its rule text on both platforms; sheet mutation is the only DOM-gated step (a no-op without a document). `cssText()` reads that registration state — which is what makes server collection and client injection the same flow
+- **Reference counting**: each registration increments a per-text count. `removeStyle` and `removeKeyframes` decrement registration state on both platforms; `removeCss` and `removeVars` are client-only (no-ops without a DOM). Rules drop from the stylesheet at zero
+- **Lazy recipes**: `cva()` derives each selection's class on first resolution — only the CSS a render actually resolves is ever generated
 
-For manual cleanup, use [`removeCss`](/reference/css/removecss) to remove specific styles, [`removeCssVars`](/reference/css/removecssvars) to remove specific CSS variable declarations with reference counting, [`resetCss`](/reference/css/resetcss) to clear all CSS rules, or [`resetCssVars`](/reference/css/resetcssvars) to clear all CSS variables and reactive effects.
+For manual cleanup, use [`removeStyle`](/reference/css/removestyle) to remove specific styles, [`removeVars`](/reference/css/removevars) to remove specific CSS variable declarations, [`resetCss`](/reference/css/resetcss) to clear all CSS rules, or [`resetVars`](/reference/css/resetvars) to clear all CSS variables and reactive effects.
 
 </details>

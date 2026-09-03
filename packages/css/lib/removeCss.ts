@@ -13,17 +13,15 @@ import type { CSSObject, CSSOptions } from "./types";
  * @param obj CSS object to remove (structurally identical objects match, same reference not required)
  * @param options Optional configuration object (must match the options used in css())
  * @throws {Error} When obj is not a plain object, or when a property value is a function —
- * use `cssVars()` for reactive values.
+ * use `vars()` for reactive values.
  */
 export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
   if (!isPlainObject(obj)) throw new Error(`[css] removeCss: expected a CSS object, received ${String(obj)}`);
 
   if (!hasDocument()) return;
 
-  const selector = options.name ? `.${options.name}` : "";
-  const isGlobal = !options.name;
   const host = options.host;
-  const cssText = process(obj, selector, isGlobal);
+  const cssText = process(obj, "", true);
 
   const entry = injectedMap.get(`${hostQualifier(host)}${cssText}`);
   if (!entry) return;

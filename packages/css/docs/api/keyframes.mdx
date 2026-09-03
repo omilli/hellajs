@@ -1,0 +1,137 @@
+# keyframes
+
+Creates a `@keyframes` rule from a step-keyed object and returns its content-hashed animation name — the same string on client and server.
+
+## API
+
+```typescript
+function keyframes(obj: KeyframesObject): string
+```
+- `obj`: Keyframes object — step keys (`from`, `to`, percentage stops) mapped to declaration objects
+- **Returns**: The animation name (`h-kf-{hash}`) for `animation` / `animation-name` values
+
+### Types
+
+```typescript
+type KeyframesObject = Record<string, StyleObject>;
+```
+
+- **`KeyframesObject`**: Step keys mapped to style objects of declarations. Keys serialize as the step selectors: `from`, `to`, `50%`, or any percentage stop
+
+## Basic Usage
+
+```typescript
+import { keyframes, style } from '@hellajs/css';
+
+const spin = keyframes({
+  from: { transform: 'rotate(0deg)' },
+  to: { transform: 'rotate(360deg)' }
+});
+
+// spin === 'h-kf-x1f3' — compose it into any animation declaration
+const loader = style({ animation: `${spin} 1s linear infinite` });
+
+// Generated: @keyframes h-kf-x1f3{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+```
+
+## Key Concepts
+
+### Hashed Names Are Collision-Free
+
+The name is derived from the object's content (`h-kf-` + hash), never hand-authored — two different keyframes definitions can never collide on one name, and the same steps always derive the same name regardless of key order. A repeat call with a structurally equal object returns the same name and bumps the reference count instead of injecting a second rule.
+
+```typescript
+import { keyframes } from '@hellajs/css';
+
+const fadeIn = keyframes({
+  from: { opacity: '0' },
+  to: { opacity: '1' }
+});
+
+const fadeInAgain = keyframes({
+  to: { opacity: '1' },      // key order is irrelevant — content is the identity
+  from: { opacity: '0' }
+});
+
+// fadeInAgain === fadeIn — one rule in the stylesheet, refCount 2
+```
+
+### Identical on Both Platforms
+
+Registration runs without a DOM: on the client the rule is injected into the CSSOM; on the server it is state-only and [`cssText()`](/reference/css/csstext) carries the text for the server's `<style>` tag. The returned name is the same string everywhere — safe to use in isomorphic style modules.
+
+```typescript
+import { keyframes, cssText } from '@hellajs/css';
+
+const bounce = keyframes({
+  '0%': { translateY: '0' },
+  '50%': { translateY: '-10px' },
+  '100%': { translateY: '0' }
+});
+
+// Client: rule injected into the hella-css sheet
+// Server: cssText() === '@keyframes h-kf-…{0%{translateY:0}50%{translateY:-10px}100%{translateY:0}}'
+```
+
+### Composing with style() and css()
+
+The name is a plain string — interpolate it into `animation` shorthands or `animation-name` declarations in [`style`](/reference/css/style), [`css`](/reference/css/css), or [`cva`](/reference/css/cva) recipes:
+
+```typescript
+import { css, keyframes, style } from '@hellajs/css';
+
+const pulse = keyframes({
+  '50%': { scale: '1.05' }
+});
+
+const dot = style({
+  animation: `${pulse} 2s ease-in-out infinite`,
+  borderRadius: '50%'
+});
+
+css({
+  '.spinner': {
+    animationName: pulse,
+    animationDuration: '0.8s'
+  }
+});
+```
+
+### Percentage and from/to Steps
+
+Step keys serialize verbatim — use `from` / `to` or any percentage stop, and mix them freely:
+
+```typescript
+import { keyframes } from '@hellajs/css';
+
+const progress = keyframes({
+  from: { width: '0%' },
+  '50%': { width: '60%' },
+  to: { width: '100%' }
+});
+
+// Generated: @keyframes h-kf-…{from{width:0%}50%{width:60%}to{width:100%}}
+```
+
+## Important Considerations
+
+### Function Values Throw
+
+Value semantics match [`css`](/reference/css/css) exactly — a function passed as a declaration value throws on both platforms. Reactive values belong to [`vars`](/reference/css/vars); animate between stable keyframe states and drive timing through the `animation` shorthand instead:
+
+```typescript
+// ❌ Throws — keyframes evaluate values eagerly
+keyframes({ from: { opacity: () => baseOpacity() } });
+
+// ✅ Static steps, dynamic duration
+const fade = keyframes({ from: { opacity: '0' }, to: { opacity: '1' } });
+style({ animation: `${fade} ${duration()}s ease` });
+```
+
+### Keyframes Stay Global
+
+A `@keyframes` rule is a definitional at-rule — it never nests under a class scope, matching [`css`](/reference/css/css)'s treatment of `@keyframes` bodies. The hashed name makes hand-named global keyframes and their collision risk unnecessary.
+
+### Memory Management
+
+Each `keyframes()` call increments a reference count; [`removeKeyframes`](/reference/css/removekeyframes) decrements it and drops the rule at zero. [`resetCss`](/reference/css/resetcss) clears keyframes together with all other css-side registrations.

@@ -38,16 +38,16 @@ The babel/vite/rollup plugin must run on the **server** entry — it is a compil
 
 ### Styled output
 
-[`@hellajs/css`](/reference/css) returns CSS text on the server. Pass it to [`doc`](/reference/ssr/doc)'s `styles` to emit a `<style>` tag.
+[`@hellajs/css`](/reference/css) registers styles on both platforms; collect the generated text with [`cssText`](/reference/css/csstext) and pass it to [`doc`](/reference/ssr/doc)'s `styles` to emit a single `<style>` tag per response.
 
 ```js
 import { html } from '@hellajs/dom';
-import { css } from '@hellajs/css';
+import { style, cssText } from '@hellajs/css';
 import { ssr, doc } from '@hellajs/ssr';
 
-const card = css({ border: '1px solid #ccc' }, { name: 'card' });
-const body = ssr(html`<div class="card">Content</div>`);
-const page = doc({ head: { title: 'Card', styles: [card] }, body });
+const card = style({ border: '1px solid #ccc' }, { label: 'card' });
+const body = ssr(html`<div class=${card}>Content</div>`);
+const page = doc({ head: { title: 'Card', styles: [cssText()] }, body });
 ```
 
 ### Express handler

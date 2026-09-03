@@ -4,7 +4,8 @@ import { STYLE_ID, injectedMap } from "./internal/injection";
 
 /**
  * Clears all CSS rules and resets the CSS system to initial state.
- * Client-only effect; a no-op when no DOM is available (server stays stateless).
+ * Clears the registration state on both platforms; the sheet reset is
+ * DOM-only (a no-op without a document).
  */
 export function resetCss(): void {
   injectedMap.clear();

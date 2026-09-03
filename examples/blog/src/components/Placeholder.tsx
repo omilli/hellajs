@@ -1,14 +1,12 @@
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
 
-export const Placeholder = ({ message }: { message: string }) => (
-  <div class="placeholder">{message}</div>
-);
+const placeholder = style({
+  textAlign: "center",
+  color: theme.color.subtle,
+  padding: "2rem 0",
+}, { label: "placeholder" });
 
-css({
-  ".placeholder": {
-    textAlign: "center",
-    color: theme.color.subtle,
-    padding: "2rem 0",
-  }
-});
+export const Placeholder = ({ message }: { message: string }) => (
+  <div class={placeholder}>{message}</div>
+);

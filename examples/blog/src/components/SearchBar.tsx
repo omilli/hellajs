@@ -1,6 +1,28 @@
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
+
+const searchBar = style({
+  display: "flex",
+  gap: "0.5rem",
+  marginBottom: "1rem",
+  "input": {
+    flex: 1,
+    padding: "0.5rem 0.75rem",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    fontSize: "0.9rem",
+  },
+  "button": {
+    cursor: "pointer",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    backgroundColor: theme.color.surface,
+    color: theme.color.text,
+    padding: "0.5rem 1rem",
+    fontSize: "0.9rem",
+  },
+}, { label: "search-bar" });
 
 interface SearchBarProps {
   value: Signal<string>;
@@ -13,7 +35,7 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
   };
 
   return (
-    <div class="search-bar">
+    <div class={searchBar}>
       <input
         type="text"
         placeholder={"Search..."}
@@ -26,27 +48,3 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
     </div>
   );
 };
-
-css({
-  ".search-bar": {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "1rem",
-    "input": {
-      flex: 1,
-      padding: "0.5rem 0.75rem",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      fontSize: "0.9rem",
-    },
-    "button": {
-      cursor: "pointer",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      backgroundColor: theme.color.surface,
-      color: theme.color.text,
-      padding: "0.5rem 1rem",
-      fontSize: "0.9rem",
-    },
-  },
-});

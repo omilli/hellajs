@@ -1,16 +1,41 @@
-
 # Styling
 
 Short patterns for common tasks using [`@hellajs/css`](/reference/css).
 
-### Scoped Component Styles
+### Variant Recipes
 
-Use [`css`](/reference/css/css) with the `name` option to create isolated styles with nested selectors and pseudo-states.
+Use [`cva`](/reference/css/cva) to drive conditional classes from typed variant props — defaults, compounds, and one class per selection — and join extra fragments with [`cx`](/reference/css/cx).
 
 ```jsx
-import { css } from '@hellajs/css';
+import { cx, cva } from '@hellajs/css';
 
-const card = css({
+const MEDIA = { md: '(min-width: 768px)' };
+
+const button = cva({
+  base: { borderRadius: '0.5rem', cursor: 'pointer' },
+  media: MEDIA,
+  variants: {
+    size: { sm: { padding: '0.25rem 0.5rem' }, lg: { padding: '0.75rem 1.5rem' } },
+    tone: { primary: { background: 'blue' }, danger: { background: 'red' } }
+  },
+  defaultVariants: { size: 'sm' },
+  compoundVariants: [
+    { size: 'lg', tone: 'danger', css: { fontWeight: 700 } }
+  ]
+});
+
+// Responsive: sm below 768px, lg from md up — pure CSS, no listeners
+<button class={cx(button({ tone: 'danger', size: { initial: 'sm', md: 'lg' } }), 'w-full')}>Delete</button>
+```
+
+### Scoped Component Styles
+
+Use [`style`](/reference/css/style) to create isolated styles with nested selectors and pseudo-states. The returned class is content-hashed — pass it straight to `class`.
+
+```jsx
+import { style } from '@hellajs/css';
+
+const card = style({
   padding: '1rem',
   borderRadius: '0.5rem',
   backgroundColor: '#fff',
@@ -18,7 +43,7 @@ const card = css({
 
   'h2': { margin: '0 0 0.5rem 0' },
   '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }
-}, { name: 'card' });
+}, { label: 'card' });
 
 <div class={card}>
   <h2>Title</h2>
@@ -28,24 +53,24 @@ const card = css({
 
 ### Reactive CSS Variables
 
-Use [`cssVars`](/reference/css/cssvars) with signals for reactive theming.
+Use [`vars`](/reference/css/vars) with signals for reactive theming.
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { cssVars, css } from '@hellajs/css';
+import { style, vars } from '@hellajs/css';
 
 const theme = signal('light');
-const vars = cssVars({
+const tokens = vars({
   bg: () => theme() === 'dark' ? '#1a1a1a' : '#ffffff',
   text: () => theme() === 'dark' ? '#e0e0e0' : '#333333'
 });
 
-const box = css({
-  background: vars.bg,
-  color: vars.text,
+const box = style({
+  background: tokens.bg,
+  color: tokens.text,
   padding: '1rem',
   borderRadius: '0.5rem'
-}, { name: 'box' });
+}, { label: 'box' });
 
 <div class={box}>
   <button on:click={() => theme(theme() === 'dark' ? 'light' : 'dark')}>
@@ -54,49 +79,44 @@ const box = css({
 </div>
 ```
 
-### Theme Switching
+### Multi-Scope Theming
 
-A store-backed theme with [`cssVars`](/reference/css/cssvars) for full theme control.
+Register light and dark token sets under different scopes and let the cascade pick the winner — one attribute write re-themes every consumer, no per-token effects.
 
 ```jsx
-import { store } from '@hellajs/store';
-import { cssVars, css } from '@hellajs/css';
+import { effect, signal } from '@hellajs/core';
+import { vars } from '@hellajs/css';
 
-const theme = store({
-  primary: '#3b82f6',
-  radius: '0.5rem',
-  mode: 'light'
+const mode = signal('light');
+
+// Light values by default on :root
+vars({ bg: '#ffffff', text: '#111827' });
+
+// Dark values win under [data-theme="dark"]
+vars(
+  { bg: '#1a1a1a', text: '#e5e7eb' },
+  { scoped: '[data-theme="dark"]' }
+);
+
+// Flip the root attribute — every var() consumer follows
+effect(() => {
+  document.documentElement.setAttribute('data-theme', mode());
 });
-
-const vars = cssVars({
-  primary: () => theme.primary(),
-  radius: () => theme.radius(),
-  bg: () => theme.mode() === 'dark' ? '#1a1a1a' : '#ffffff'
-});
-
-const btn = css({
-  background: vars.primary,
-  borderRadius: vars.radius,
-  color: '#fff',
-  border: 'none',
-  padding: '0.5rem 1rem',
-  cursor: 'pointer'
-}, { name: 'btn' });
 ```
 
-For a theme that follows the OS setting instead of app state, pass `media` to [`cssVars`](/reference/css/cssvars) — the declarations live under `@media (prefers-color-scheme: dark)` with no signals, and the browser picks the winner:
+For a theme that follows the OS setting instead of app state, pass `media` to [`vars`](/reference/css/vars) — the declarations live under `@media (prefers-color-scheme: dark)` with no signals, and the browser picks the winner:
 
 ```jsx
-import { cssVars } from '@hellajs/css';
+import { vars } from '@hellajs/css';
 
 // Light values by default
-cssVars({
+vars({
   bg: '#ffffff',
   text: '#111827'
 });
 
 // Dark values when the OS prefers dark — pure CSS, no JS state
-cssVars(
+vars(
   { bg: '#1a1a1a', text: '#e5e7eb' },
   { media: '(prefers-color-scheme: dark)' }
 );
@@ -104,12 +124,12 @@ cssVars(
 
 ### Responsive Styles
 
-Use `@media` queries inside [`css`](/reference/css/css).
+Use `@media` queries inside [`style`](/reference/css/style) — the condition inherits the generated class.
 
 ```jsx
-import { css } from '@hellajs/css';
+import { style } from '@hellajs/css';
 
-const grid = css({
+const grid = style({
   display: 'grid',
   gridTemplateColumns: '1fr',
   gap: '1rem',
@@ -120,78 +140,94 @@ const grid = css({
   '@media (min-width: 1024px)': {
     gridTemplateColumns: '1fr 1fr 1fr'
   }
-}, { name: 'grid' });
+}, { label: 'grid' });
 ```
 
 ### Keyframe Animations
 
-Use global calls (no `name`) for `@keyframes` since no class name is needed for animation definitions.
+Use [`keyframes`](/reference/css/keyframes) for animation definitions — the returned name is content-hashed, so it cannot collide with another animation.
 
 ```jsx
-import { css } from '@hellajs/css';
+import { keyframes, style } from '@hellajs/css';
 
-css({
-  '@keyframes spin': {
-    from: { transform: 'rotate(0deg)' },
-    to: { transform: 'rotate(360deg)' }
-  }
+const spin = keyframes({
+  from: { transform: 'rotate(0deg)' },
+  to: { transform: 'rotate(360deg)' }
 });
 
-const spinner = css({
+const spinner = style({
   width: '2rem',
   height: '2rem',
   border: '3px solid #e5e7eb',
   borderTopColor: '#3b82f6',
   borderRadius: '50%',
-  animation: 'spin 0.8s linear infinite'
-}, { name: 'spinner' });
+  animation: `${spin} 0.8s linear infinite`
+}, { label: 'spinner' });
 ```
 
 ### Conditional Styles
 
-Use `undefined` to omit properties from the output. `css()` is static — resolve conditions before calling it.
+Use `undefined` to omit properties from the output. Style objects are static — resolve conditions before calling.
 
 ```jsx
-import { css } from '@hellajs/css';
+import { style } from '@hellajs/css';
 
 const isActive = true;
 
-const button = css({
+const button = style({
   padding: '0.5rem 1rem',
   background: '#3b82f6',
   color: 'white',
   border: isActive ? '2px solid #1d4ed8' : undefined
-}, { name: 'button' });
+}, { label: 'button' });
 ```
 
-For styles that must react to signal changes at runtime, use [`cssVars`](/reference/css/cssvars).
+For classes that change at runtime, resolve a [`cva`](/reference/css/cva) recipe per render (`class={() => button({ size: size() })}`), and for style values that react to signals, use [`vars`](/reference/css/vars).
 
 ### Style Cleanup
 
-Use [`removeCss`](/reference/css/removecss) to clean up styles when they are no longer needed. Pass the same CSS object and options used to create the style. `css()` rules are global and reference-counted — removing a DOM node that used the class does not decrement the count, so call `removeCss` for styles tied to a component's lifetime, and reserve `resetCss` for app-level teardown.
+Use [`removeStyle`](/reference/css/removestyle) to clean up styles when they are no longer needed. Pass the same object and options used to create the style. Rules are reference-counted — removing a DOM node that used the class does not decrement the count, so call `removeStyle` for styles tied to a component's lifetime, and reserve [`resetCss`](/reference/css/resetcss) for app-level teardown.
 
 ```jsx
-import { css, removeCss } from '@hellajs/css';
+import { removeStyle, style } from '@hellajs/css';
 
 const styles = { color: 'red' };
-const className = css(styles, { name: 'test' });
+const className = style(styles, { label: 'test' });
 
-removeCss(styles, { name: 'test' });
+removeStyle(styles, { label: 'test' });
 ```
 
 ### CSS Variable Cleanup
 
-Use [`removeCssVars`](/reference/css/removecssvars) to clean up reactive CSS variables when a component unmounts. Each [`cssVars`](/reference/css/cssvars) call increments a reference count; `removeCssVars` decrements it. Variables are removed from the stylesheet only when the count reaches zero.
+Use [`removeVars`](/reference/css/removevars) to clean up reactive CSS variables when a component unmounts. Each [`vars`](/reference/css/vars) call increments a reference count; `removeVars` decrements it. Variables are removed from the stylesheet only when the count reaches zero.
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { cssVars, removeCssVars } from '@hellajs/css';
+import { removeVars, vars } from '@hellajs/css';
 
 const color = signal('red');
-const vars = { primary: color };
+const tokens = { primary: color };
 
-cssVars(vars);  // refCount = 1
-removeCssVars(vars);  // refCount = 0, effect disposed, vars removed
+vars(tokens);  // refCount = 1
+removeVars(tokens);  // refCount = 0, effect disposed, vars removed
 
 color('blue');  // No longer tracked — no stylesheet update
 ```
+
+### SSR Critical CSS
+
+Every creator registers on both platforms; on the server, collect everything registered into a single `<style>` embed per response with [`cssText`](/reference/css/csstext).
+
+```js
+import { css, cssText, style, vars } from '@hellajs/css';
+
+// Module scope — registers on the server too
+const tokens = vars({ accent: '#3b82f6' });
+css({ body: { margin: 0 } });
+const card = style({ padding: '1rem', color: tokens.accent }, { label: 'card' });
+
+// Per response — one embed collects the css, style, and vars rules
+const page = `<!DOCTYPE html><html><head><style>${cssText()}</style></head><body>…</body></html>`;
+```
+
+`cssText()` peeks, never drains — repeated calls return the same string, and the client re-registers the same rules on hydration.

@@ -1,6 +1,6 @@
 ## CSS
 
-Type-safe CSS-in-JS with runtime style generation, reactive CSS variables, and automatic memory management. Scoped styles via the `name` option with reference-counted cleanup; global by default.
+Type-safe CSS-in-JS with runtime style generation and automatic memory management. `style()` returns a content-hashed class — the same string on client and server; `css()` registers explicit globals; `cva()` layers typed variant recipes over them and `cx()` joins class fragments; `vars()` drives reactive theming; `keyframes()` hashes animation names. Every creator pairs with a reference-counted remove call, and `cssText()` collects the registered text for server rendering.
 
 ### Installation
 
@@ -11,44 +11,67 @@ npm install @hellajs/core @hellajs/css
 ### Example
 
 ```jsx
-import { css } from '@hellajs/css';
+import { signal } from '@hellajs/core';
+import { css, cssText, cva, style, vars } from '@hellajs/css';
 
-// Define styles at module level — client: injects into CSSOM; server: returns CSS text
+// Globals: css() registers on both platforms and returns ""
 css({
+  body: { margin: 0, fontFamily: 'system-ui, sans-serif' }
+});
+
+// Reactive tokens: vars() returns a var() proxy — client and server alike
+const darkMode = signal(false);
+const tokens = vars({
+  accent: () => darkMode() ? '#93c5fd' : '#3b82f6'
+});
+
+// Scoped styles: style() returns a content-hashed class — nested selectors compose under it
+const card = style({
   padding: '1rem',
   borderRadius: '8px',
   backgroundColor: '#f8f9fa',
 
-  // Nested selectors and pseudo-states
   'h2': { marginTop: 0 },
-  '&:hover': {
-    backgroundColor: '#e9ecef',
-    transform: 'translateY(-2px)'
+  '&:hover': { backgroundColor: '#e9ecef' }
+}, { label: 'card' });
+
+// Variant recipes: cva() resolves typed props to a composed class string
+const button = cva({
+  base: { borderRadius: '0.5rem', cursor: 'pointer' },
+  variants: {
+    size: { sm: { padding: '0.25rem 0.5rem' }, lg: { padding: '0.75rem 1.5rem' } },
+    tone: { primary: { background: tokens.accent }, danger: { background: '#dc2626' } }
   },
+  defaultVariants: { size: 'sm' }
+});
 
-  // Responsive design
-  '@media (max-width: 768px)': {
-    padding: '0.5rem'
-  }
-}, { name: 'card' });
-
-// Components hardcode the class name (the `name` provided to css)
+// The class is the identity — use it directly in components
 const Card = ({ title, children }: { title: string; children?: unknown }) => (
-  <div class="card">
+  <div class={card}>
     <h2>{title}</h2>
     {children}
   </div>
 );
+
+// On the server, cssText() collects every registration for one <style> embed
+const head = `<style>${cssText()}</style>`;
 ```
 
 ### API
 
-- **[css](/reference/css/css)**: Create scoped styles with nested selectors and pseudo-states
-- **[cssVars](/reference/css/cssvars)**: Reactive CSS custom properties that update when signals change
+- **[css](/reference/css/css)**: Create global styles with nested selectors and pseudo-states
+- **[style](/reference/css/style)**: Scoped styles returning a content-hashed class name — identical on client and server
+- **[cva](/reference/css/cva)**: Variant recipes — typed props, responsive breakpoints, and compounds resolving to a composed class string
+- **[cx](/reference/css/cx)**: Clsx-compatible class-name joiner with no styling side effects
+- **[vars](/reference/css/vars)**: Reactive CSS custom properties that update when signals change (formerly `cssVars`)
+- **[keyframes](/reference/css/keyframes)**: Hashed, collision-free `@keyframes` definitions returning an animation name
+- **[cssText](/reference/css/csstext)**: Collect the registered CSS text — css, style, keyframes, and vars — the server-side `<style>` source
 - **[removeCss](/reference/css/removecss)**: Manually remove a generated stylesheet
+- **[removeStyle](/reference/css/removestyle)**: Manually remove a `style()` registration
+- **[removeVars](/reference/css/removevars)**: Remove specific CSS variable declarations with reference counting
+- **[removeKeyframes](/reference/css/removekeyframes)**: Manually remove a `keyframes()` registration
 - **[resetCss](/reference/css/resetcss)**: Remove all generated stylesheets
-- **[removeCssVars](/reference/css/removecssvars)**: Remove specific CSS variable declarations with reference counting
-- **[resetCssVars](/reference/css/resetcssvars)**: Remove all generated CSS variable stylesheets
+- **[resetVars](/reference/css/resetvars)**: Remove all generated CSS variable stylesheets
 
 ### Concepts
 

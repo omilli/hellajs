@@ -1,5 +1,5 @@
 import { hostQualifier, removeRule, upsertRule } from "./sheet";
-import type { CSSVars, CSSVarsOptions } from "../types";
+import type { CSSVars, VarsOptions } from "../types";
 /**
  * @internal
  */
@@ -8,7 +8,20 @@ export const VARS_ID = "hella-vars";
 /**
  * @internal
  */
-export const scopedVarsRulesMap = new Map<string, Map<string, string>>();
+export const scopedVarsRulesMap = new Map<string, VarsBucket>();
+
+/**
+ * One scope+media bucket under an optional host: the resolved placement
+ * (scope selector, media condition, host) plus the accumulated variable
+ * declarations. The placement travels with the bucket so `varsText()` can
+ * serialize default-host buckets without parsing the composite bucket key.
+ */
+interface VarsBucket {
+  scope: string;
+  media: string;
+  host?: ParentNode;
+  vars: Map<string, string>;
+}
 
 /**
  * @internal
@@ -26,7 +39,7 @@ export const CACHE_MAX = 100;
 export const DOT_REGEX = /\./g;
 
 /**
- * Registry entry tracking a single cssVars() call's flat keys, scope,
+ * Registry entry tracking a single vars() call's flat keys, scope,
  * resolved prefix (trailing hyphen included), resolved media condition,
  * style host, reference count, and optional effect cleanup.
  */
@@ -73,12 +86,12 @@ interface ResolvedVarsOptions {
 
 /**
  * @internal
- * Resolves CSSVarsOptions once: scope falls back to `:root`, the raw prefix
- * gains its trailing hyphen, media normalizes to `""`. Every cssVars path
+ * Resolves VarsOptions once: scope falls back to `:root`, the raw prefix
+ * gains its trailing hyphen, media normalizes to `""`. Every vars path
  * derives scope/prefix/media/host through this — the single definition (no
  * per-site duplication to drift).
  */
-export function resolveVarsOptions({ scoped, prefix: rawPrefix = "", media, host }: CSSVarsOptions): ResolvedVarsOptions {
+export function resolveVarsOptions({ scoped, prefix: rawPrefix = "", media, host }: VarsOptions): ResolvedVarsOptions {
   return {
     scope: scoped || ":root",
     fullPrefix: rawPrefix ? `${rawPrefix}-` : "",
@@ -116,18 +129,19 @@ export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, m
   const len = entries.length;
   const key = varsBucketKey(scope, media, host);
 
-  if (!scopedVarsRulesMap.has(key)) {
-    scopedVarsRulesMap.set(key, new Map());
+  let bucket = scopedVarsRulesMap.get(key);
+  if (!bucket) {
+    bucket = { scope, media, host, vars: new Map() };
+    scopedVarsRulesMap.set(key, bucket);
   }
 
-  const scopeMap = scopedVarsRulesMap.get(key)!;
   let i = 0;
   while (i < len) {
     const [k, v] = entries[i++] as [string, unknown];
-    scopeMap.set(`${fullPrefix}${k}`, String(v));
+    bucket.vars.set(`${fullPrefix}${k}`, String(v));
   }
 
-  upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(scopeMap)), host);
+  upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(bucket.vars)), host);
 }
 
 /**
@@ -139,20 +153,20 @@ export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, m
  */
 export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media, host }: ResolvedVarsOptions): void {
   const key = varsBucketKey(scope, media, host);
-  const scopeMap = scopedVarsRulesMap.get(key);
-  if (!scopeMap) return;
+  const bucket = scopedVarsRulesMap.get(key);
+  if (!bucket) return;
 
   let i = 0;
   const len = flatKeys.length;
   while (i < len) {
-    scopeMap.delete(`${fullPrefix}${flatKeys[i++]}`);
+    bucket.vars.delete(`${fullPrefix}${flatKeys[i++]}`);
   }
 
-  if (scopeMap.size === 0) {
+  if (bucket.vars.size === 0) {
     scopedVarsRulesMap.delete(key);
     removeRule(VARS_ID, key, host);
   } else {
-    upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(scopeMap)), host);
+    upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(bucket.vars)), host);
   }
 }
 
@@ -166,9 +180,25 @@ export function resetReactiveRegistries(): void {
 }
 
 /**
+ * @internal
+ * Serializes every default-host bucket's rule text in insertion order —
+ * the vars contribution `cssText()` appends after the css-side text.
+ * Hosted buckets are skipped: their rules live in host sheets, not
+ * `document.head`.
+ */
+export function varsText(): string {
+  let text = "";
+  scopedVarsRulesMap.forEach((bucket) => {
+    if (!bucket.host) text += varsRuleText(bucket.scope, bucket.media, serializeDecls(bucket.vars));
+  });
+  return text;
+}
+
+/**
  * @internal No-space CSSOM declaration form: `--k:v;--k2:v2`.
  * Keys arrive already prefixed (dots intact); dots fold to hyphens here.
- * Shared by applyRules (scope map) and the cssVars server text return.
+ * Shared by applyRules (scope map), the vars server registration, and
+ * varsText (cssText vars contribution).
  */
 export function serializeDecls(entries: Iterable<[string, unknown]>): string {
   const pairs = Array.from(entries);

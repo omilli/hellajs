@@ -1,6 +1,6 @@
 # css
 
-Creates CSS rules from JavaScript objects. Global by default. Returns a class name when `name` is provided (client), or the CSS text (server).
+Creates CSS rules from JavaScript objects. Global only — every rule is a raw CSS selector. Registers on both platforms and returns an empty string — collect the generated text with [`cssText`](/reference/css/csstext). For scoped/hashed styles, use [`style`](/reference/css/style).
 
 ## API
 
@@ -9,9 +9,8 @@ function css(obj: CSSObject, options?: CSSOptions): string
 ```
 - `obj`: CSS object containing style properties and nested selectors
 - `options`: Optional configuration object
-  - `name`: Class name to scope styles to. Creates a `.{name}` selector and returns the name for use in `class` attributes.
   - `host`: Parent node the `<style>` element is created in — e.g. a `ShadowRoot` for web components. Defaults to `document.head`.
-- **Returns**: On the client (DOM available), the provided `name` string (or empty string for global). On the server (no DOM), the generated CSS text.
+- **Returns**: Always returns empty string (`""`), on both platforms. On the client the rules are injected into the CSSOM; on the server the registration is state-only — collect the text with [`cssText`](/reference/css/csstext).
 
 ## Basic Usage
 
@@ -33,17 +32,20 @@ css({
 
 ### Scoped Styles
 
-```jsx
-import { css } from '@hellajs/css';
+For scoped styles with content-hashed class names, use [`style`](/reference/css/style):
 
-const buttonStyle = css({
+```jsx
+import { style } from '@hellajs/css';
+
+const buttonStyle = style({
   padding: '0.75rem 1.5rem',
   backgroundColor: '#3b82f6',
   color: 'white',
   border: 'none',
   borderRadius: '0.5rem',
   cursor: 'pointer'
-}, { name: 'btn' });
+}, { label: 'btn' });
+// "h-btn-1z0q41r" — the same class on client and server
 
 <button class={buttonStyle}>Click me</button>
 ```
@@ -53,7 +55,7 @@ const buttonStyle = css({
 ### Nested Selectors
 
 ```jsx
-const cardStyle = css({
+css({
   padding: '1rem',
   backgroundColor: 'white',
   borderRadius: '0.5rem',
@@ -73,61 +75,60 @@ const cardStyle = css({
   '@media (max-width: 768px)': {
     padding: '0.75rem'
   }
-}, { name: 'card' });
+});
 // Generated CSS:
-// .card{padding:1rem;...}.card:hover{...}.card h2{...}
-// @media (max-width:768px){.card{padding:0.75rem}}
+// padding:1rem;...&:hover{...} h2{...}
+// @media (max-width:768px){padding:0.75rem}
 ```
+
+> **Note:** `css()` is always global — it does not wrap selectors in a class. For scoped styles that compose under a generated class, use [`style`](/reference/css/style).
 
 ### Performance Features
 
 CSS automatically optimizes performance through:
 
-- **Automatic Memoization**: Identical CSS objects with the same `name` share a single rule
 - **Reference Counting**: [`removeCss`](/reference/css/removecss) decrements usage; styles are removed from the DOM when the count reaches zero
 - **Smart Caching**: Previously processed styles return instantly
 
-### Platform-Dependent Return
+### Platform-Independent Return
 
-`css()` returns different values depending on whether a DOM is available:
+`css()` returns the same value on both platforms — always `""`. What differs is the write target:
 
-- **Client** (`hasDocument()`): injects rules into the CSSOM and returns the `name` (or empty string for global) — the class name for `class` attributes.
-- **Server** (no DOM): returns the generated CSS text directly, with zero state mutation.
+- **Client** (`hasDocument()`): injects rules into the CSSOM.
+- **Server** (no DOM): registration is state-only — no DOM write. [`cssText`](/reference/css/csstext) collects the generated text (a peek, never a drain).
 
 ```typescript
-import { css } from '@hellajs/css';
+import { css, cssText } from '@hellajs/css';
 
-// Client: returns "btn", injects .btn{color:red} into the CSSOM
-const className = css({ color: 'red' }, { name: 'btn' });
+// Client AND server: returns ""
+css({ body: { margin: 0 } });
 
-// Server: returns ".btn{color:red}" — no DOM write, no state
-const cssText = css({ color: 'red' }, { name: 'btn' });
+// Server: "body{margin:0px}" — the text the client would have injected
+const text = cssText();
 ```
 
 ### Separated CSS Authoring
 
-Under platform-dependent return, CSS is defined in shared modules or at the entry/handler level — not inline in component templates. Components hardcode the class name (the `name` the user provided):
+Under the unified registration, CSS is defined in shared modules or at the entry/handler level — not inline in component templates. Components use the imported class name:
 
 ```typescript
 // styles.ts — shared module, works on both platforms
-import { css } from '@hellajs/css';
+import { style } from '@hellajs/css';
 
-// Client: returns "btn", injects into CSSOM
-// Server: returns ".btn{color:red}"
-export const btnCss = css({ color: 'red' }, { name: 'btn' });
+// Client AND server: returns "h-btn-1z0q41r"
+export const btnClass = style({ color: 'red' }, { label: 'btn' });
 ```
 
 ```jsx
-// Component.tsx — hardcodes the class name
-import { btnCss } from './styles';
+// Component.tsx — use the class name from the shared module
+import { btnClass } from './styles';
 
-// btnCss is evaluated at module load; the class name is always "btn"
-html`<button class="btn">Click</button>`
+html`<button class="${btnClass}">Click</button>`
 ```
 
 ### @-Rules
 
-All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. Use global calls (no `name`) for `@` rules that define top-level constructs. In a global call, a conditional at-rule body must contain selectors — direct declarations with no selector in scope throw:
+All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. A conditional at-rule body must contain selectors — direct declarations with no selector in scope throw:
 
 ```jsx
 css({
@@ -153,57 +154,44 @@ css({
 
 ### Conditional at-rules inherit scope
 
-Conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the active parent selector — the `.{name}` scope of a named call, or any selector they are nested under. Direct properties and nested selectors inside the at-rule are wrapped in that selector:
-
-```typescript
-css({
-  padding: '1rem',
-  '@media (max-width: 768px)': {
-    fontSize: '12px',
-    '.child': { color: 'blue' }
-  }
-}, { name: 'btn' });
-// .btn{padding:1rem}
-// @media (max-width:768px){.btn{font-size:12px}.btn .child{color:blue}}
-```
+Conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) inherit the active parent selector — any selector they are nested under:
 
 ```typescript
 // Nested under a plain selector — the at-rule inherits it:
 css({ 'div.card': { '@media (min-width: 1px)': { color: 'red' } } });
 // @media (min-width:1px){div.card{color:red}}
 
-// Throws: direct declarations with no selector in scope (global call):
+// Throws: direct declarations with no selector in scope:
 css({ '@media (min-width: 1px)': { color: 'red' } });
 // Error: [css] conditional at-rule "@media (min-width: 1px)" contains
-//        declarations with no selector — nest selectors under it or use the name option
+//        declarations with no selector — nest selectors under the at-rule
 ```
 
-Nest selectors under the at-rule (or use the `name` option) so every declaration has a selector to attach to. The same input throws in [`removeCss`](/reference/css/removecss) and on the server — the check runs in the shared CSS derivation before any platform branching. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) never inherit a scope; their direct declarations are their normal shape (`@font-face{font-family:…}`).
+Nest selectors under the at-rule so every declaration has a selector to attach to. The same input throws in [`removeCss`](/reference/css/removecss) and on the server — the check runs in the shared CSS derivation before any platform branching. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) never inherit a scope; their direct declarations are their normal shape (`@font-face{font-family:…}`).
 
 ### Shadow DOM Hosts
 
 Pass `host` to create the `<style>` element inside a shadow root instead of `document.head`. Each call site gets its own sheet per host — the same styles injected into two hosts produce two independent `<style>` elements with separate reference counting, and [`removeCss`](/reference/css/removecss) with the same `host` removes from that host's sheet:
 
 ```typescript
-import { css, cssVars } from '@hellajs/css';
+import { css, vars } from '@hellajs/css';
 
 class MyCard extends HTMLElement {
   connectedCallback() {
     const root = this.attachShadow({ mode: 'open' });
 
     // Shadow roots don't match :root — scope the vars to the host element
-    const theme = cssVars(
+    const theme = vars(
       { accent: '#3b82f6' },
       { host: root, scoped: ':host' }
     );
 
     css({
-      padding: '1rem',
-      color: theme.accent,
-      border: '1px solid #e5e7eb'
-    }, { name: 'card', host: root });
+      ':host': { padding: '1rem' },
+      ':host > .content': { border: '1px solid #e5e7eb' }
+    }, { host: root });
 
-    root.innerHTML = '<div class="card"><slot></slot></div>';
+    root.innerHTML = '<div class="content"><slot></slot></div>';
   }
 }
 customElements.define('my-card', MyCard);
@@ -213,18 +201,12 @@ Styles injected with `host` never reach `document.head`, and `resetCss()` clears
 
 ## Important Considerations
 
-### Server Return Is Text, Not a Name
+### The Return Is Never the Text
 
-On the server, [`css`](/reference/css/css) returns the CSS text — not the class name. Do not use the return value for `class` binding in isomorphic code without checking the platform. Define CSS in shared modules (where the text return is captured for SSR) and hardcode class names in components.
+On the server, [`css`](/reference/css/css) returns `""`, exactly like the client — never the CSS text. The text lives in [`cssText`](/reference/css/csstext); embed `<style>${cssText()}</style>` in server HTML.
 
 ```typescript
-// ❌ Isomorphic class binding — breaks on server (returns CSS text, not "btn")
-const className = css({ color: 'red' }, { name: 'btn' });
-html`<button class=${className}>Click</button>`;
-
-// ✅ Hardcode the class name; css() is called for its side effect (client) or text (server)
-css({ color: 'red' }, { name: 'btn' });
-html`<button class="btn">Click</button>`;
+const head = `<style>${cssText()}</style>`;
 ```
 
 ### Type Safety
@@ -237,23 +219,23 @@ Use [`removeCss`](/reference/css/removecss) to clean up styles when components a
 
 ### Function Values Throw
 
-`css()` evaluates values eagerly. A function passed as a property value throws at any nesting depth — under `&`, descendant selectors, or at-rule bodies — on both client and server. Reactive values travel through [`cssVars`](/reference/css/cssvars) instead:
+`css()` evaluates values eagerly. A function passed as a property value throws at any nesting depth — under `&`, descendant selectors, or at-rule bodies — on both client and server. Reactive values travel through [`vars`](/reference/css/vars) instead:
 
 ```typescript
 import { signal } from '@hellajs/core';
-import { css, cssVars } from '@hellajs/css';
+import { css, vars } from '@hellajs/css';
 
 const spacing = signal('1rem');
 
 // ❌ Throws — css() never calls property functions
 try {
-  css({ padding: () => spacing() }, { name: 'card' });
+  css({ padding: () => spacing() });
 } catch {}
 // Error: [css] function values are not supported in css objects —
-//        use cssVars() for reactive values, key: padding
+//        use vars() for reactive values, key: padding
 
-// ✅ Reactive values are cssVars leaves
-const theme = cssVars({ spacing: () => spacing() });
+// ✅ Reactive values are vars leaves
+const theme = vars({ spacing: () => spacing() });
 // theme.spacing === 'var(--spacing)'
 ```
 
@@ -267,7 +249,7 @@ Numbers append `px` on length properties (React/Emotion semantics); unitless pro
 css({
   fontFamily: ['Helvetica', 'Arial', 'sans-serif'],
   transition: ['color 0.2s', 'background 0.3s']
-}, { name: 'test' });
+});
 
 css({
   '&::before': {
@@ -276,20 +258,20 @@ css({
   '&::after': {
     content: '"already quoted"'
   }
-}, { name: 'icon' });
+});
 
 css({
   color: 'red',
   margin: undefined
-}, { name: 'test' });
+});
 
 // Numeric lengths append px
 
 css({
   width: 5,
   margin: 0
-}, { name: 'box' });
-// .box{width:5px;margin:0px}
+});
+// Generated: width:5px;margin:0px
 
 // Unitless properties and -- custom properties keep bare numbers
 
@@ -298,19 +280,19 @@ css({
   opacity: 0.5,
   lineHeight: 1.5,
   '--gap': 4
-}, { name: 'layer' });
-// .layer{z-index:10;opacity:0.5;line-height:1.5;--gap:4}
+});
+// Generated: z-index:10;opacity:0.5;line-height:1.5;--gap:4
 ```
 
 ### Definitional at-rules stay global
 
-`@keyframes`, `@font-face`, `@layer`, and `@import` define top-level constructs and never inherit a class scope — even when `name` is provided. The result is processed with an empty selector as if called globally:
+`@keyframes`, `@font-face`, `@layer`, and `@import` define top-level constructs and are always processed with an empty selector:
 
 ```typescript
 css({
   '@keyframes spin': { from: { transform: 'rotate(0deg)' } }
-}, { name: 'btn' });
-// @keyframes spin{from{transform:rotate(0deg)}} - no .btn wrapping
+});
+// @keyframes spin{from{transform:rotate(0deg)}}
 ```
 
 ### Platform-Rejected Rules Are Skipped With a Warning

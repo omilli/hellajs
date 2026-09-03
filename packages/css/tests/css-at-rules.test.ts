@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
 import { resetTestState, getStylesheet, suppressConsole } from "@utils/test-helpers.js";
-import { css, removeCss } from "@hellajs/css/bundle";
+import { css, cssText, removeCss } from "@hellajs/css/bundle";
 
 let sup: ReturnType<typeof suppressConsole>;
 
@@ -110,121 +110,13 @@ describe("css at-rules", () => {
 
     const savedDocument = globalThis.document;
     (globalThis as unknown as Record<string, unknown>).document = undefined;
-    const serverText = css(layer);
+    css(layer);
+    const serverText = cssText();
     (globalThis as unknown as Record<string, unknown>).document = savedDocument;
     expect(serverText).toBe("@layer base{h1{font-size:2rem}p{line-height:1.5}}");
   });
 
-  test("scoped @media wraps direct properties under class selector", () => {
-    css({
-      "@media (max-width: 768px)": { fontSize: "12px", color: "red" }
-    }, { name: "btn" });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@media (max-width:768px){.btn{");
-    expect(content).toContain("font-size:12px");
-    expect(content).toContain("color:red");
-    expect(content).not.toContain("{{");
-  });
 
-  test("scoped @media composes descendant selectors", () => {
-    css({
-      "@media (max-width: 768px)": {
-        ".child": { color: "blue" }
-      }
-    }, { name: "btn" });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@media (max-width:768px){");
-    expect(content).toContain(".btn .child{color:blue}");
-  });
-
-  test("scoped @media composes & selector", () => {
-    css({
-      "@media (max-width: 768px)": {
-        "&:hover": { color: "red" }
-      }
-    }, { name: "btn" });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@media (max-width:768px){");
-    expect(content).toContain(".btn:hover{color:red}");
-  });
-
-  test("scoped @container inherits scope", () => {
-    css({
-      "@container (min-width: 400px)": { fontSize: "12px" }
-    }, { name: "btn" });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@container (min-width:400px){");
-    expect(content).toContain(".btn{font-size:12px}");
-  });
-
-  test("scoped @supports inherits scope", () => {
-    css({
-      "@supports (display: grid)": { display: "grid" }
-    }, { name: "btn" });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@supports (display:grid){");
-    expect(content).toContain(".btn{display:grid}");
-  });
-
-  test("scoped @starting-style inherits scope", () => {
-    const startingStyle = { "@starting-style": { opacity: "1" } };
-    // happy-dom rejects @starting-style insertRule, so composition is asserted
-    // via the server text return (same process() derivation), captured before
-    // asserting so a failure cannot leak the patched global.
-    css(startingStyle, { name: "btn" });
-    expect(getStylesheet("hella-css")).toBe("");
-
-    const savedDocument = globalThis.document;
-    (globalThis as unknown as Record<string, unknown>).document = undefined;
-    const serverText = css(startingStyle, { name: "btn" });
-    (globalThis as unknown as Record<string, unknown>).document = savedDocument;
-    expect(serverText).toBe("@starting-style{.btn{opacity:1}}");
-  });
-
-  test("@keyframes stays global even with name option", () => {
-    css({
-      "@keyframes spin": {
-        from: { transform: "rotate(0deg)" },
-        to: { transform: "rotate(360deg)" },
-      },
-    }, { name: "btn" });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}");
-    expect(content).not.toContain(".btn{@keyframes");
-  });
-
-  test("@font-face stays global even with name option", () => {
-    css({
-      "@font-face": {
-        fontFamily: '"Custom"',
-        src: 'url("/fonts/custom.woff2") format("woff2")',
-      },
-    }, { name: "btn" });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@font-face{");
-    expect(content).toContain("font-family:Custom");
-    expect(content).not.toContain(".btn{@font-face");
-  });
-
-  test("@layer stays global even with name option", () => {
-    const layer = {
-      "@layer utilities": {
-        ".flex": { display: "flex" },
-      },
-    };
-    // happy-dom rejects @layer insertRule — assert no stray .btn wrap client-side
-    // and the composition via the server text return (captured before asserting).
-    css(layer, { name: "btn" });
-    const content = getStylesheet("hella-css");
-    expect(content).not.toContain("@layer");
-    expect(content).not.toContain(".btn{@layer");
-
-    const savedDocument = globalThis.document;
-    (globalThis as unknown as Record<string, unknown>).document = undefined;
-    const serverText = css(layer, { name: "btn" });
-    (globalThis as unknown as Record<string, unknown>).document = savedDocument;
-    expect(serverText).toBe("@layer utilities{.flex{display:flex}}");
-  });
 
   describe("failed insertRule", () => {
     function getCssSheet(): CSSStyleSheet {
@@ -278,7 +170,7 @@ describe("css at-rules", () => {
       "@starting-style",
     ])("%s with direct declarations throws in a global call", (atRule) => {
       expect(() => css({ [atRule]: { color: "red" } })).toThrow(
-        `[css] conditional at-rule "${atRule}" contains declarations with no selector — nest selectors under it or use the name option`
+        `[css] conditional at-rule "${atRule}" contains declarations with no selector — nest selectors under the at-rule`
       );
     });
 

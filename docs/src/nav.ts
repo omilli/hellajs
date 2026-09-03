@@ -27,6 +27,7 @@ export const navigation = {
         "Rendering",
         "Styling",
         "State",
+        "Persistence",
         "Routing",
         "Routing-SSR",
         "Resource",
@@ -71,8 +72,8 @@ export const navigation = {
         "registry",
       ]
     },
-    { css: ["css", "cssVars", "removeCss", "resetCss", "removeCssVars", "resetCssVars"] },
-    { store: ["store"] },
+    { css: ["css", "style", "cva", "cx", "vars", "keyframes", "cssText", "removeCss", "removeStyle", "removeVars", "removeKeyframes", "resetCss", "resetVars"] },
+    { store: ["store", "persist"] },
     { router: ["router", "route", "navigate", "href", "resetrouter"] },
     { resource: ["resource", "resourcecache", "resetresource"] },
     { ssr: ["ssr", "doc"] },

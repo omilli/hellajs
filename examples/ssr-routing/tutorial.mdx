@@ -1,6 +1,6 @@
 # Build an SSR Routing App
 
-Server-render a routed app end to end: [`router`](/reference/router/router) resolves the request URL on the server, [`ssr`](/reference/ssr/ssr) stringifies the tree, [`css`](/reference/css/css) emits styled text, and the client [`hydrate`](/reference/dom/hydrate)s the **same** tree against the existing DOM — adopting nodes, never rebuilding them. One isomorphic route map drives both sides.
+Server-render a routed app end to end: [`router`](/reference/router/router) resolves the request URL on the server, [`ssr`](/reference/ssr/ssr) stringifies the tree, [`cssText`](/reference/css/csstext) collects the styles, and the client [`hydrate`](/reference/dom/hydrate)s the **same** tree against the existing DOM — adopting nodes, never rebuilding them. One isomorphic route map drives both sides.
 
 Jump to the [Complete Code](#complete-code) for the finished application.
 
@@ -9,7 +9,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`signal`](/reference/core/signal)**: Hold the currently-rendered view in a reactive view signal
 - **[`router`](/reference/router/router)`({ url })`**: Resolve the request URL on the server (no `window`)
 - **[`ssr`](/reference/ssr/ssr)** + **[`doc`](/reference/ssr/doc)**: Serialize the tree to HTML and wrap it into a full document
-- **[`css`](/reference/css/css)** + **[`cssVars`](/reference/css/cssvars)**: Return CSS text on the server and emit it through `doc()`
+- **[`vars`](/reference/css/vars)** + **[`cssText`](/reference/css/csstext)**: vars registers custom properties and css registers rules — both platforms — and cssText collects them into one `<style>` through `doc()`
 - **[`hydrate`](/reference/dom/hydrate)**: Re-bind the server-rendered tree in place (no flash, no rebuild)
 
 This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders each request and `Bun.build` bundles the client at startup — one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
@@ -96,32 +96,32 @@ export const App = () => html`
 
 ## Styles
 
-On the server (no DOM), [`cssVars`](/reference/css/cssvars) returns the custom-property declarations as CSS text and [`css`](/reference/css/css) returns the generated rule text — both stateless, neither touches a stylesheet. Collect the server return values and pass them to `doc()`'s `styles` to emit a single `<style>` tag.
+[`vars`](/reference/css/vars) registers custom-property declarations and [`css`](/reference/css/css) registers its rules — on both platforms, the same way. [`cssText`](/reference/css/csstext) then collects both (the css-side rules in registration order, then the vars buckets) as the text for a single `<style>` tag through `doc()`'s `styles`.
 
 Create `src/theme.js`:
 
 ```js
 // src/theme.js
-import { cssVars, css } from '@hellajs/css';
+import { css, vars, cssText } from '@hellajs/css';
 
-export const tokens = cssVars({
+export const tokens = vars({
   color: { primary: '#2563eb', text: '#333' },
   space: { nav: '1rem' },
 });
 
-export const stylesheet = css({
+css({
   body: {
     fontFamily: 'sans-serif',
     margin: '0',
-    color: 'var(--color-text)',
+    color: tokens.color.text,
   },
   nav: {
     display: 'flex',
-    gap: 'var(--space-nav)',
-    padding: 'var(--space-nav)',
+    gap: tokens.space.nav,
+    padding: tokens.space.nav,
     borderBottom: '1px solid #e5e7eb',
     a: {
-      color: 'var(--color-primary)',
+      color: tokens.color.primary,
       textDecoration: 'none',
       '&.active': {
         fontWeight: '700',
@@ -130,16 +130,19 @@ export const stylesheet = css({
     },
   },
   main: {
-    padding: 'var(--space-nav)',
+    padding: tokens.space.nav,
   },
 });
+
+// The registered rule text (css rules + vars buckets), collected after the calls above.
+export const stylesheet = cssText();
 ```
 
 **Code Explanation**
 
-- **[`cssVars`](/reference/css/cssvars)**`({ color: { primary, text }, … })`: On the server returns `:root{--color-primary:#2563eb;--color-text:#333;…}`. Nested keys join into kebab-case names (`color.primary` → `--color-primary`)
-- **[`css`](/reference/css/css)**`({ … })`: On the server returns the rule text. The same call injects a stylesheet on the client — one API, platform-dependent return
-- **`export const tokens` / `stylesheet`**: The server imports both and lists them in `doc({ head: { styles } })`
+- **[`vars`](/reference/css/vars)**`({ color: { primary, text }, … })`: Registers `--color-primary`, `--color-text`, … on both platforms and returns the `var()` proxy — nested keys join into kebab-case names (`color.primary` → `--color-primary`), so `tokens.color.primary` reads back as `var(--color-primary)`
+- **[`css`](/reference/css/css)**`({ … })`: Registers the rules on both platforms; [`cssText`](/reference/css/csstext)`()` collects the generated text (rules + vars buckets). The same call injects a stylesheet on the client — one API, one collector
+- **`export const stylesheet`**: The server imports it and lists it in `doc({ head: { styles } })`
 
 ## Server Rendering
 
@@ -155,7 +158,7 @@ import { html } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 import { routes, App, notFound } from './app.js';
-import { tokens, stylesheet } from './theme.js';
+import { stylesheet } from './theme.js';
 
 const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
 if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
@@ -178,7 +181,7 @@ Bun.serve({
       lang: 'en',
       head: {
         title: 'SSR Routing',
-        styles: [tokens, stylesheet],
+        styles: [stylesheet],
         scripts: [{ src: '/client.js', type: 'module' }],
       },
       body,
@@ -194,7 +197,7 @@ Bun.serve({
 - **[`router`](/reference/router/router)`({ routes, url: pathname + search, notFound })`**: `url` overrides `window.location` for the initial resolution. An explicit `url` is re-honored on every call, so each request resolves its own URL
 - **`router()` → `ssr()` with no `await` between them**: One synchronous block. No second request can interleave and overwrite the router's signals mid-render — synchronous `ssr` is concurrency-safe, so you do not need a router instance per request
 - **`` `<div id="app">${ssr(…)}</div>` ``**: [`hydrate`](/reference/dom/hydrate)`('#app')` needs a container to adopt. `doc()` places `body` verbatim, so wrap the output in `<div id="app">`
-- **[`doc`](/reference/ssr/doc)`({ head, body })`**: `styles` joins `tokens` + `stylesheet` into one `<style>` tag; `scripts` emits the client tag
+- **[`doc`](/reference/ssr/doc)`({ head, body })`**: `styles` emits `stylesheet` as one `<style>` tag; `scripts` emits the client tag
 - **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory — no `dist/` to manage
 
 ## Client Hydration
@@ -288,32 +291,30 @@ export const App = () => html`
 ### `src/theme.js`
 
 ```js
-import { cssVars, css } from '@hellajs/css';
+import { css, vars, cssText } from '@hellajs/css';
 
-// On the server (no DOM), cssVars() returns the custom-property declarations as
-// CSS text (":root{--color-primary:#2563eb;…}") and css() returns the generated
-// rule text — both stateless, neither touches a stylesheet. Collect the server
-// return values and pass them to doc({ head: { styles } }) to emit one <style>.
-// On the client the same calls return a var() proxy / class name instead; this
-// module is server-only, so only the server path runs here.
-export const tokens = cssVars({
+// vars() registers the custom-property declarations on both platforms and returns
+// the var() proxy everywhere; css() registers its rules the same way. cssText()
+// then collects both — the css-side rules in registration order, then the vars
+// buckets — as the text for one <style> tag via doc({ head: { styles } }).
+export const tokens = vars({
   color: { primary: '#2563eb', text: '#333' },
   space: { nav: '1rem' },
 });
 
-export const stylesheet = css({
+css({
   body: {
     fontFamily: 'sans-serif',
     margin: '0',
-    color: 'var(--color-text)',
+    color: tokens.color.text,
   },
   nav: {
     display: 'flex',
-    gap: 'var(--space-nav)',
-    padding: 'var(--space-nav)',
+    gap: tokens.space.nav,
+    padding: tokens.space.nav,
     borderBottom: '1px solid #e5e7eb',
     a: {
-      color: 'var(--color-primary)',
+      color: tokens.color.primary,
       textDecoration: 'none',
       '&.active': {
         fontWeight: '700',
@@ -322,9 +323,12 @@ export const stylesheet = css({
     },
   },
   main: {
-    padding: 'var(--space-nav)',
+    padding: tokens.space.nav,
   },
 });
+
+// The registered rule text (css rules + vars buckets), collected after the calls above.
+export const stylesheet = cssText();
 ```
 ### `src/server.js`
 
@@ -333,7 +337,7 @@ import { html } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 import { routes, App, notFound } from './app.js';
-import { tokens, stylesheet } from './theme.js';
+import { stylesheet } from './theme.js';
 
 // Bundle the client once at startup. Bun's native bundler resolves the bare
 // `@hellajs/*` specifiers the browser can't — no separate build step, no dist/.
@@ -367,7 +371,7 @@ Bun.serve({
       lang: 'en',
       head: {
         title: 'SSR Routing',
-        styles: [tokens, stylesheet],
+        styles: [stylesheet],
         scripts: [{ src: '/client.js', type: 'module' }],
       },
       body,

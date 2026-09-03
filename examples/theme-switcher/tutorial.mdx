@@ -6,7 +6,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 
 ## What You'll Learn
 
-- **[CSS Variables](/reference/css/cssvars)**:  Reactive bridge between state and styles
+- **[CSS Variables](/reference/css/vars)**:  Reactive bridge between state and styles
 - **[Signals](/reference/core/signal)**:  Reactive state for theme mode
 - **[Computed](/reference/core/computed)**:  Deriving values from signals
 
@@ -92,15 +92,15 @@ mount(ThemeSwitcher, '#app');
 
 ## Reactive CSS Variables
 
-Now let's connect our theme state to CSS. [`cssVars`](/reference/css/cssvars) creates reactive CSS custom properties that update when signals change.
+Now let's connect our theme state to CSS. [`vars`](/reference/css/vars) creates reactive CSS custom properties that update when signals change.
 
 Add the CSS import and define reactive variables:
 
 ```tsx
 //... add after core import
-import { css, cssVars } from "@hellajs/css";
+import { css, vars } from "@hellajs/css";
 
-const vars = cssVars({
+const tokens = vars({
   bg: () => isDark() ? '#1a1a2e' : '#fff',
   surface: () => isDark() ? '#16213e' : '#f8fafc',
   text: () => isDark() ? '#e2e8f0' : '#1e293b',
@@ -115,46 +115,45 @@ const ThemeSwitcher = () => {
 
 **Code Explanation**
 
-- **[`cssVars`](/reference/css/cssvars)`({...})`**:  Creates reactive CSS custom properties (each value is a function that reads from signals)
-- **`vars.bg`, `vars.text`**:  Each property resolves to a CSS custom property string (e.g., `var(--hellajs-bg)`)
+- **[`vars`](/reference/css/vars)`({...})`**:  Creates reactive CSS custom properties (each value is a function that reads from signals)
+- **`tokens.bg`, `tokens.text`**:  Each property resolves to a CSS custom property string (e.g., `var(--hellajs-bg)`)
 - **Automatic reactivity**:  When `isDark()` changes, every variable that depends on it recalculates
-- **Static values**:  `vars.primary` returns a constant since the accent color doesn't change
+- **Static values**:  `tokens.primary` returns a constant since the accent color doesn't change
 
 ## Styles and Toggle
 
-Define styles using [`css`](/reference/css/css) with class selectors as keys. Shared button styles live in the `app` container as a descendant selector.
+Define styles using [`style`](/reference/css/style) — each call returns a hashed class name that reads the `tokens` proxy. Shared button styles live in the `app` class as a descendant selector.
 
 ```tsx
 //... after vars definition
 
-css({
-  '.page': {
-    minHeight: '100vh',
-    backgroundColor: vars.bg,
-    color: vars.text,
-    fontFamily: 'system-ui, sans-serif',
-    transition: 'background-color 0.2s, color 0.2s',
+const page = style({
+  minHeight: '100vh',
+  backgroundColor: tokens.bg,
+  color: tokens.text,
+  fontFamily: 'system-ui, sans-serif',
+  transition: 'background-color 0.2s, color 0.2s',
+}, { label: 'page' });
+
+const app = style({
+  maxWidth: '30rem',
+  margin: '0 auto',
+  padding: '1rem',
+  'h1': { margin: '0 0 0.75rem' },
+  'button': {
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: '0.25rem',
+    backgroundColor: tokens.primary,
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
   },
-  '.app': {
-    maxWidth: '30rem',
-    margin: '0 auto',
-    padding: '1rem',
-    'h1': { margin: '0 0 0.75rem' },
-    'button': {
-      padding: '0.5rem 1rem',
-      border: 'none',
-      borderRadius: '0.25rem',
-      backgroundColor: vars.primary,
-      color: '#fff',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-    },
-  },
-});
+}, { label: 'app' });
 
 const ThemeSwitcher = () => (
-  <div class="page">
-    <div class="app">
+  <div class={page}>
+    <div class={app}>
       <h1>Theme Switcher</h1>
       <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
         {isDark() ? '☀️ Light' : '🌙 Dark'}
@@ -175,8 +174,8 @@ Your app will be running at `http://localhost:5173`. Click the toggle and watch 
 
 **Code Explanation**
 
-- **`css({'.page': {...}, '.app': {...}})`**:  Creates class selectors for `.page` and `.app`
-- **`backgroundColor: vars.bg`**:  `vars.*` properties resolve to CSS custom property strings
+- **`style({ ... }, { label: 'page' })`**:  Scopes the styles under a generated class returned for `class={page}` — no hand-picked names to collide
+- **`backgroundColor: tokens.bg`**:  `tokens.*` properties resolve to CSS custom property strings
 - **`'button'`**:  Shared button styles as a descendant selector (buttons inside `app` inherit these defaults)
 - **`theme(isDark() ? 'light' : 'dark')`**:  Updates the signal reactively
 - **`{isDark() ? '☀️ Light' : '🌙 Dark'}`**:  Conditional text that updates reactively
@@ -196,12 +195,12 @@ The patterns you learned here (reactive CSS variables and computed derivations) 
 ```tsx
 import { signal, computed } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { css, cssVars } from "@hellajs/css";
+import { style, vars } from "@hellajs/css";
 
 const theme = signal('light');
 const isDark = computed(() => theme() === 'dark');
 
-const vars = cssVars({
+const tokens = vars({
   bg: () => isDark() ? '#1a1a2e' : '#fff',
   surface: () => isDark() ? '#16213e' : '#f8fafc',
   text: () => isDark() ? '#e2e8f0' : '#1e293b',
@@ -209,34 +208,33 @@ const vars = cssVars({
   border: () => isDark() ? '#334155' : '#e2e8f0',
 });
 
-css({
-  '.page': {
-    minHeight: '100vh',
-    backgroundColor: vars.bg,
-    color: vars.text,
-    fontFamily: 'system-ui, sans-serif',
-    transition: 'background-color 0.2s, color 0.2s',
+const page = style({
+  minHeight: '100vh',
+  backgroundColor: tokens.bg,
+  color: tokens.text,
+  fontFamily: 'system-ui, sans-serif',
+  transition: 'background-color 0.2s, color 0.2s',
+}, { label: 'page' });
+
+const app = style({
+  maxWidth: '30rem',
+  margin: '0 auto',
+  padding: '1rem',
+  'h1': { margin: '0 0 0.75rem' },
+  'button': {
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: '0.25rem',
+    backgroundColor: tokens.primary,
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
   },
-  '.app': {
-    maxWidth: '30rem',
-    margin: '0 auto',
-    padding: '1rem',
-    'h1': { margin: '0 0 0.75rem' },
-    'button': {
-      padding: '0.5rem 1rem',
-      border: 'none',
-      borderRadius: '0.25rem',
-      backgroundColor: vars.primary,
-      color: '#fff',
-      cursor: 'pointer',
-      fontSize: '0.875rem',
-    },
-  },
-});
+}, { label: 'app' });
 
 const ThemeSwitcher = () => (
-  <div class="page">
-    <div class="app">
+  <div class={page}>
+    <div class={app}>
       <h1>Theme Switcher</h1>
       <button on:click={() => theme(isDark() ? 'light' : 'dark')}>
         {isDark() ? '☀️ Light' : '🌙 Dark'}

@@ -11,7 +11,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[router](/reference/router/router)**: Client-side routing with params, query strings, and scroll behavior
 - **[signal](/reference/core/signal)**: Reactive values for view state and page titles
 - **[computed](/reference/core/computed)**: Derived pagination state from resource data
-- **[css](/reference/css/css) / [cssVars](/reference/css/cssvars)**: Design tokens and scoped styles
+- **[style](/reference/css/style) / [vars](/reference/css/vars)**: Design tokens and scoped hashed classes
 - **[ForEach](/reference/dom/foreach)**: Rendering lists with keyed reconciliation
 - **[navigate](/reference/router/navigate)**: Programmatic navigation with params and query strings
 
@@ -158,15 +158,15 @@ export const userPostsResource = resource<PostsResponse, string>(
 
 ## Shared Styles
 
-Define reusable design tokens with [`cssVars`](/reference/css/cssvars) and shared styles with [`css`](/reference/css/css). Each component file adds its own `css()` call for component-specific styles.
+Define reusable design tokens with [`vars`](/reference/css/vars) and shared styles with [`css`](/reference/css/css) + [`style`](/reference/css/style). Each component file adds its own `style()` call for component-specific styles.
 
 Create `src/theme.ts`:
 
 ```tsx
 // src/theme.ts
-import { css, cssVars } from "@hellajs/css";
+import { css, style, vars } from "@hellajs/css";
 
-export const theme = cssVars({
+export const theme = vars({
   color: {
     bg: "#f5f5f5",
     surface: "#fff",
@@ -191,34 +191,38 @@ css({
     backgroundColor: theme.color.bg,
     color: theme.color.text,
   },
-  ".card": {
-    backgroundColor: theme.color.surface,
-    borderRadius: theme.radius.md,
-    padding: "1rem",
-    marginBottom: "0.75rem",
-    border: `1px solid ${theme.color.border}`,
-  },
-  ".card-title": {
-    fontSize: "1.1rem",
-    fontWeight: 600,
-    margin: "0 0 0.5rem",
-  },
-  ".card-body": {
-    color: theme.color.muted,
-    fontSize: "0.9rem",
-    lineHeight: 1.5,
-  }
 });
+
+// Shared card styles — composed by PostCard via style(card, ...) and consumed
+// directly by UserProfile.
+export const card = style({
+  backgroundColor: theme.color.surface,
+  borderRadius: theme.radius.md,
+  padding: "1rem",
+  marginBottom: "0.75rem",
+  border: `1px solid ${theme.color.border}`,
+}, { label: "card" });
+
+export const cardTitle = style({
+  fontSize: "1.1rem",
+  fontWeight: 600,
+  margin: "0 0 0.5rem",
+}, { label: "card-title" });
+
+export const cardBody = style({
+  color: theme.color.muted,
+  fontSize: "0.9rem",
+  lineHeight: 1.5,
+}, { label: "card-body" });
 ```
 
 **Code Explanation**
 
-- **[`cssVars`](/reference/css/cssvars)`({ ... })`**: Creates CSS custom properties. Returns an object where each value is a `var()` reference
+- **[`vars`](/reference/css/vars)`({ ... })`**: Creates CSS custom properties. Returns an object where each value is a `var()` reference
 - **`theme.color.surface`**: Resolves to `var(--color-surface)`. Use it anywhere you'd use a CSS value
 - **Nested objects**: `color: { bg: "..." }` becomes `--color-bg`. Dots become hyphens in the variable name
-- **[`css`](/reference/css/css)`({ ... })`**: A single call with selector keys. By default, `css()` writes styles using the selectors as-is (global)
-- **Selector keys**: `".card"` generates `.card { ... }`. Use string class names in JSX: `class="card"`
-- **`body: { ... }`**: Without a dot prefix, this targets the HTML element directly
+- **[`css`](/reference/css/css)`({ body: { ... } })`**: Registers global element selectors
+- **[`style`](/reference/css/style)`({ ... }, { label })`**: Returns a content-hashed class for `class={card}` — `label` embeds a readable segment in the name. Export the classes shared across files (`card`, `cardTitle`, `cardBody`); PostCard composes onto `card` later
 
 ## Entry Point
 
@@ -229,7 +233,7 @@ Create `src/main.tsx`:
 ```tsx
 // src/main.tsx
 import { effect, signal } from "@hellajs/core";
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
 import { router } from "@hellajs/router";
 import { appStore } from "./state.ts";
@@ -267,21 +271,20 @@ router({
   notFound: () => view(PostList()),
 });
 
-const App = <div class="app-container">
-  <h1 class="app-title">{title}</h1>
-  {view}
-</div>
+const appContainer = style({
+  maxWidth: "48rem",
+  margin: "0 auto",
+  padding: "1rem",
+}, { label: "app-container" });
 
-css({
-  ".app-container": {
-    maxWidth: "48rem",
-    margin: "0 auto",
-    padding: "1rem",
-  },
-  ".app-title": {
-    fontSize: "1.5rem",
-  }
-});
+const appTitle = style({
+  fontSize: "1.5rem",
+}, { label: "app-title" });
+
+const App = <div class={appContainer}>
+  <h1 class={appTitle}>{title}</h1>
+  {view}
+</div>;
 
 mount(App, "#app");
 ```
@@ -319,27 +322,24 @@ Create `src/components/Placeholder.tsx`:
 
 ```tsx
 // src/components/Placeholder.tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
 
-export const Placeholder = ({ message }: { message: string }) => (
-  <div class="placeholder">{message}</div>
-);
+const placeholder = style({
+  textAlign: "center",
+  color: theme.color.subtle,
+  padding: "2rem 0",
+}, { label: "placeholder" });
 
-css({
-  ".placeholder": {
-    textAlign: "center",
-    color: theme.color.subtle,
-    padding: "2rem 0",
-  }
-});
+export const Placeholder = ({ message }: { message: string }) => (
+  <div class={placeholder}>{message}</div>
+);
 ```
 
 **Code Explanation**
 
 - **`({ message }: { message: string })`**: Component props defined inline with a TypeScript type
-- **[`css`](/reference/css/css)`({ ".placeholder": { ... } })`**: Uses a selector key to target the placeholder class. The `.placeholder` class name matches the element
-- **`class="placeholder"`**: String class name that the `css()` selector key targets
+- **[`style`](/reference/css/style)`({ ... }, { label: "placeholder" })`**: Returns the hashed class the markup consumes as `class={placeholder}` — no hand-picked class names to collide
 
 ### BackLink
 
@@ -349,32 +349,30 @@ Create `src/components/BackLink.tsx`:
 
 ```tsx
 // src/components/BackLink.tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { navigate } from "@hellajs/router";
-import { theme } from "../theme";
+import { theme } from "../theme.ts";
+
+const backLink = style({
+  display: "inline-block",
+  marginBottom: "1rem",
+  color: theme.color.link,
+  cursor: "pointer",
+  fontSize: "0.9rem",
+}, { label: "back-link" });
 
 export const BackLink = () => (
-  <a class="back-link" on:click={e => { e.preventDefault(); navigate("/posts"); }}>
+  <a class={backLink} on:click={e => { e.preventDefault(); navigate("/posts"); }}>
     &larr; Back to posts
   </a>
 );
-
-css({
-  ".back-link": {
-    display: "inline-block",
-    marginBottom: "1rem",
-    color: theme.color.link,
-    cursor: "pointer",
-    fontSize: "0.9rem",
-  }
-});
 ```
 
 **Code Explanation**
 
 - **[`navigate`](/reference/router/navigate)`("/posts")`**: Programmatic client-side navigation. Triggers the `/posts` route handler
 - **`on:click={e => { e.preventDefault(); navigate(...) }}`**: Delegated event listener. `preventDefault()` stops the browser from following the `<a>` href
-- **Selector keys**: The `.back-link` class is used across multiple pages, so it's defined with selector keys as a global style
+- **[`style`](/reference/css/style)`({ ... }, { label: "back-link" })`**: The back link is used across multiple pages, so its class lives with the component and imports the shared `theme` tokens
 
 ### Tags
 
@@ -385,36 +383,35 @@ Create `src/components/Tags.tsx`:
 ```tsx
 // src/components/Tags.tsx
 import { ForEach } from "@hellajs/dom";
-import { theme } from "../theme";
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
+import { theme } from "../theme.ts";
+
+const tagList = style({
+  display: "flex",
+  gap: "0.4rem",
+  flexWrap: "wrap",
+  marginTop: "0.5rem",
+}, { label: "tags" });
+
+const tag = style({
+  fontSize: "0.75rem",
+  padding: "0.15rem 0.5rem",
+  borderRadius: theme.radius.pill,
+  backgroundColor: theme.color.tag,
+  color: theme.color.muted,
+}, { label: "tag" });
 
 interface TagsProps {
   tags: string[];
 }
 
 export const Tags = ({ tags = [] }: TagsProps) => (
-  <div class="tags">
-    <ForEach each={tags} use={(tag: string) => (
-      <span class="tag">{tag}</span>
+  <div class={tagList}>
+    <ForEach each={tags} use={(t: string) => (
+      <span class={tag}>{t}</span>
     )} />
   </div>
 );
-
-css({
-  ".tags": {
-    display: "flex",
-    gap: "0.4rem",
-    flexWrap: "wrap",
-    marginTop: "0.5rem",
-  },
-  ".tag": {
-    fontSize: "0.75rem",
-    padding: "0.15rem 0.5rem",
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.color.tag,
-    color: theme.color.muted,
-  },
-});
 ```
 
 **Code Explanation**
@@ -431,8 +428,14 @@ Create `src/components/Reactions.tsx`:
 
 ```tsx
 // src/components/Reactions.tsx
-import { css } from "@hellajs/css";
-import { theme } from "../theme";
+import { style } from "@hellajs/css";
+import { theme } from "../theme.ts";
+
+const reactions = style({
+  fontSize: "0.8rem",
+  color: theme.color.subtle,
+  marginTop: "0.5rem",
+}, { label: "reactions" });
 
 interface ReactionsProps {
   likes: number;
@@ -440,18 +443,10 @@ interface ReactionsProps {
 }
 
 export const Reactions = ({ likes, views }: ReactionsProps) => (
-  <div class="reactions">
+  <div class={reactions}>
     {likes ?? 0} likes{views != null && <> · {views} views</>}
   </div>
 );
-
-css({
-  ".reactions": {
-    fontSize: "0.8rem",
-    color: theme.color.subtle,
-    marginTop: "0.5rem",
-  },
-});
 ```
 
 **Code Explanation**
@@ -472,9 +467,31 @@ Create `src/components/SearchBar.tsx`:
 
 ```tsx
 // src/components/SearchBar.tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
+
+const searchBar = style({
+  display: "flex",
+  gap: "0.5rem",
+  marginBottom: "1rem",
+  "input": {
+    flex: 1,
+    padding: "0.5rem 0.75rem",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    fontSize: "0.9rem",
+  },
+  "button": {
+    cursor: "pointer",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    backgroundColor: theme.color.surface,
+    color: theme.color.text,
+    padding: "0.5rem 1rem",
+    fontSize: "0.9rem",
+  },
+}, { label: "search-bar" });
 
 interface SearchBarProps {
   value: Signal<string>;
@@ -487,11 +504,12 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
   };
 
   return (
-    <div class="search-bar">
+    <div class={searchBar}>
       <input
         type="text"
         placeholder={"Search..."}
         value={value}
+
         on:input={e => value((e.target as HTMLInputElement).value)}
         on:keyup={handleKeyup}
       />
@@ -499,30 +517,6 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
     </div>
   );
 };
-
-css({
-  ".search-bar": {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "1rem",
-    "input": {
-      flex: 1,
-      padding: "0.5rem 0.75rem",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      fontSize: "0.9rem",
-    },
-    "button": {
-      cursor: "pointer",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      backgroundColor: theme.color.surface,
-      color: theme.color.text,
-      padding: "0.5rem 1rem",
-      fontSize: "0.9rem",
-    },
-  },
-});
 ```
 
 **Code Explanation**
@@ -531,7 +525,7 @@ css({
 - **`value``={value}`**: Two-way binding between the input and the signal. The input value stays in sync with `searchValue`
 - **`on:input={e => value(...)}`**: Delegated input event. Updates the signal on every keystroke
 - **`on:keyup={handleKeyup}`**: Triggers search on Enter or when the input is cleared
-- **Nested selectors**: `"input": { ... }` inside `.search-bar` generates `.search-bar input { ... }`
+- **Nested selectors**: `"input": { ... }` inside the `searchBar` object generates `.h-search-bar-… input { ... }` — descendants scope under the generated class
 
 ### PostCard
 
@@ -541,9 +535,9 @@ Create `src/components/PostCard.tsx`:
 
 ```tsx
 // src/components/PostCard.tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { navigate } from "@hellajs/router";
-import { theme } from "../theme.ts";
+import { card, cardTitle, cardBody, theme } from "../theme.ts";
 import { Tags } from "./Tags.tsx";
 import { Reactions } from "./Reactions.tsx";
 import type { Post } from "../state.ts";
@@ -553,51 +547,51 @@ interface PostCardProps {
   onClick?: () => void;
 }
 
+// Compose onto the shared card class — the returned class string carries both
+// ("h-card-… h-post-card-…"), each side keeping its own rule.
+const postCard = style(card, {
+  "&:hover": {
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+  },
+}, { label: "post-card" });
+
+const userLink = style({
+  color: theme.color.link,
+  display: "inline-block",
+  fontSize: "0.9rem",
+  marginTop: "0.5rem",
+  cursor: "pointer",
+  textDecoration: "none",
+  "&:hover": {
+    textDecoration: "underline"
+  },
+}, { label: "user-link" });
+
 const openUser = (id: number) => navigate(`/users/${id}`);
 
 export const PostCard = ({ post, onClick }: PostCardProps) => (
-  <div class="post-card card" style={onClick ? "cursor: pointer;" : ""}>
+  <div class={postCard} style={onClick ? "cursor: pointer;" : ""}>
     <div on:click={onClick}>
-      <h3 class="card-title">{post.title}</h3>
-      <p class="card-body">{post.body}</p>
+      <h3 class={cardTitle}>{post.title}</h3>
+      <p class={cardBody}>{post.body}</p>
       <Tags tags={post.tags} />
       <Reactions likes={post.reactions?.likes} views={post.views} />
     </div>
-    <a class="user-link" on:click={e => { e.stopPropagation(); openUser(post.userId); }}>
+    <a class={userLink} on:click={e => { e.stopPropagation(); openUser(post.userId); }}>
       User {post.userId}
     </a>
   </div>
 );
-
-css({
-  ".post-card": {
-    "&:hover": {
-      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-    },
-    ".user-link": {
-      color: theme.color.link,
-      display: "inline-block",
-      fontSize: "0.9rem",
-      marginTop: "0.5rem",
-      cursor: "pointer",
-      textDecoration: "none",
-      "&:hover": {
-        textDecoration: "underline"
-      },
-    },
-  },
-});
 ```
 
 **Code Explanation**
 
 - **`onClick?: () => void`**: Optional click handler. When provided, the card shows a pointer cursor and is clickable
-- **`class="post-card card"`**: Combines the shared `.card` style with the `.post-card` for card-specific hover and user link styles
+- **[`style`](/reference/css/style)`(card, { ... }, { label: "post-card" })`**: Composes onto the shared card class — the returned string carries both (`"h-card-… h-post-card-…"`), each side keeping its own rule
 - **[`navigate`](/reference/router/navigate)**: String interpolation builds URLs like `` `/users/${id}` `` directly. No param substitution needed
 - **`e.stopPropagation()`**: Prevents the user link click from bubbling up to the card's click handler
 - **`import type { Post }`**: Type-only import keeps the interface out of the runtime bundle
-- **`&:hover`**: The `&` refers to the parent selector. `.post-card:hover { ... }` adds a subtle shadow on hover
-- **Nested `.user-link`**: Selectors inside `.post-card` generate `.post-card .user-link { ... }` — scoped to cards only
+- **`&:hover`**: The `&` refers to the parent selector. `.h-post-card-…:hover { ... }` adds a subtle shadow on hover
 
 ### Pagination
 
@@ -607,9 +601,26 @@ Create `src/components/Pagination.tsx`:
 
 ```tsx
 // src/components/Pagination.tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
+
+const pagination = style({
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "0.5rem",
+  marginTop: "1rem",
+  "button": {
+    cursor: "pointer",
+  },
+}, { label: "pagination" });
+
+const pageInfo = style({
+  fontSize: "0.85rem",
+  color: theme.color.subtle,
+  padding: "0 0.5rem",
+}, { label: "page-info" });
 
 interface PaginationProps {
   page: Signal<number>;
@@ -618,14 +629,14 @@ interface PaginationProps {
 }
 
 export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => (
-  <div class="pagination">
+  <div class={pagination}>
     <button
       on:click={() => onPageChange(Math.max(1, page() - 1))}
       disabled={() => page() <= 1}
     >
       Prev
     </button>
-    <span class="page-info">
+    <span class={pageInfo}>
       Page {page()} of {totalPages()}
     </span>
     <button
@@ -636,24 +647,6 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
     </button>
   </div>
 );
-
-css({
-  ".pagination": {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "0.5rem",
-    marginTop: "1rem",
-    "button": {
-      cursor: "pointer",
-    },
-  },
-  ".page-info": {
-    fontSize: "0.85rem",
-    color: theme.color.subtle,
-    padding: "0 0.5rem",
-  },
-});
 ```
 
 **Code Explanation**
@@ -708,13 +701,13 @@ export const PostList = () => {
           <ForEach each={posts} use={(post) =>
             <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
           } /> :
-          <Placeholder message={`No posts found "${searchValue()}".`} />
+          <Placeholder message={`No posts found "${searchValue()}".`} />;
     }}
 
     {totalPages() > 1 &&
       <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
     }
-  </>
+  </>;
 };
 ```
 
@@ -761,9 +754,9 @@ export const PostDetail = () => {
             <PostCard post={post!} /> :
             <Placeholder message="Post not found" />
         }
-      </div>
+      </div>;
     }}
-  </>
+  </>;
 };
 ```
 
@@ -784,14 +777,34 @@ Create `src/pages/UserProfile.tsx`:
 
 ```tsx
 // src/pages/UserProfile.tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
 import { navigate } from "@hellajs/router";
 import { userResource, userPostsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { card, theme } from "../theme.ts";
 import { Placeholder } from "../components/Placeholder.tsx";
 import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
+
+const avatar = style({
+  width: "4rem",
+  height: "4rem",
+  borderRadius: "50%",
+  objectFit: "cover",
+}, { label: "avatar" });
+
+const userInfo = style({
+  display: "flex",
+  gap: "1rem",
+  alignItems: "center",
+  marginBottom: "1rem",
+}, { label: "user-info" });
+
+const userMeta = style({
+  fontSize: "0.85rem",
+  color: theme.color.subtle,
+  "& p": { margin: "0.15rem 0" },
+}, { label: "user-meta" });
 
 const {
   fetch: fetchUser,
@@ -820,20 +833,20 @@ export const UserProfile = () => {
 
       if (!user?.id) return <Placeholder message="User not found." />;
 
-      return <div class="card">
-        <div class="user-info">
-          <img class="avatar" src={image} alt={`${firstName} ${lastName}`} />
+      return <div class={card}>
+        <div class={userInfo}>
+          <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
           <div>
             <h2 class="title" style="margin-bottom: 0.25rem">
               {firstName} {lastName}
             </h2>
-            <div class="user-meta">
+            <div class={userMeta}>
               <p>{email}</p>
               <p>{company?.title} at {company?.name}</p>
             </div>
           </div>
         </div>
-      </div>
+      </div>;
     }}
 
     <h3>Recent Posts</h3>
@@ -847,44 +860,22 @@ export const UserProfile = () => {
           <ForEach each={posts} use={(post) =>
             <PostCard post={post} onClick={() => navigate(`/posts/${post.id}`)} />
           } /> :
-          <Placeholder message="No posts found." />
+          <Placeholder message="No posts found." />;
     }}
-  </div>
+  </div>;
 };
-
-css({
-  ".user-profile": {
-    ".avatar": {
-      width: "4rem",
-      height: "4rem",
-      borderRadius: "50%",
-      objectFit: "cover",
-    },
-    ".user-info": {
-      display: "flex",
-      gap: "1rem",
-      alignItems: "center",
-      marginBottom: "1rem",
-    },
-    ".user-meta": {
-      fontSize: "0.85rem",
-      color: theme.color.subtle,
-      "& p": { margin: "0.15rem 0" },
-    },
-  },
-});
 ```
 
 **Code Explanation**
 
 - **`fetchUser()` and `fetchPosts()`**: Two independent resources keyed by `appStore.userId()`. Both fetch in parallel when the component renders
-- **`<div class="user-profile">` as root**: The component root uses the scoped class directly instead of a fragment. Static elements (`BackLink`, heading) sit outside reactive blocks
+- **`<div class="user-profile">` as root**: A semantic wrapper class (no generated rule — the avatar/user-info/user-meta classes carry the styles). Static elements (`BackLink`, heading) sit outside reactive blocks
 - **`const { firstName, ... } = user || {}`**: Destructures with a fallback. The fields are undefined while loading, and the JSX handles that gracefully
 - **`user?.id`**: Checks if the user data is valid. The DummyJSON API returns `{ message: "..." }` for invalid IDs
 - **Separate reactive blocks for user and posts**: Each `{() => {}}` handles one concern independently. User info re-renders without touching the posts list and vice versa
-- **`"& p": { margin: "0.15rem 0" }`**: The `&` refers to the parent selector `.user-meta`, producing `.user-meta p { ... }`
+- **`"& p": { margin: "0.15rem 0" }`**: The `&` refers to the parent selector, producing `.h-user-meta-… p { ... }`
 - **`isFetchingPosts()` checked first**: Returns a loading placeholder while fetching. Only shows posts or "not found" when loading is done
-- **Nested selectors under `.user-profile`**: `.avatar`, `.user-info`, `.user-meta` are nested inside `.user-profile`, generating `.user-profile .avatar { ... }` etc. The styles are scoped to the user profile page without needing the `name` option
+- **`class={card}`**: The profile header reuses the shared card class imported from `theme.ts`; `avatar`, `userInfo`, and `userMeta` are their own hashed classes, so the styles are scoped to the user profile page
 
 ## Next Steps
 
@@ -976,9 +967,9 @@ export const userPostsResource = resource<PostsResponse, string>(
 ### `src/theme.ts`
 
 ```tsx
-import { css, cssVars } from "@hellajs/css";
+import { css, style, vars } from "@hellajs/css";
 
-export const theme = cssVars({
+export const theme = vars({
   color: {
     bg: "#f5f5f5",
     surface: "#fff",
@@ -1003,31 +994,36 @@ css({
     backgroundColor: theme.color.bg,
     color: theme.color.text,
   },
-  ".card": {
-    backgroundColor: theme.color.surface,
-    borderRadius: theme.radius.md,
-    padding: "1rem",
-    marginBottom: "0.75rem",
-    border: `1px solid ${theme.color.border}`,
-  },
-  ".card-title": {
-    fontSize: "1.1rem",
-    fontWeight: 600,
-    margin: "0 0 0.5rem",
-  },
-  ".card-body": {
-    color: theme.color.muted,
-    fontSize: "0.9rem",
-    lineHeight: 1.5,
-  }
 });
+
+// Shared card styles — composed by PostCard via style(card, ...) and consumed
+// directly by UserProfile.
+export const card = style({
+  backgroundColor: theme.color.surface,
+  borderRadius: theme.radius.md,
+  padding: "1rem",
+  marginBottom: "0.75rem",
+  border: `1px solid ${theme.color.border}`,
+}, { label: "card" });
+
+export const cardTitle = style({
+  fontSize: "1.1rem",
+  fontWeight: 600,
+  margin: "0 0 0.5rem",
+}, { label: "card-title" });
+
+export const cardBody = style({
+  color: theme.color.muted,
+  fontSize: "0.9rem",
+  lineHeight: 1.5,
+}, { label: "card-body" });
 ```
 
 ### `src/main.tsx`
 
 ```tsx
 import { effect, signal } from "@hellajs/core";
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
 import { router } from "@hellajs/router";
 import { appStore } from "./state.ts";
@@ -1065,108 +1061,108 @@ router({
   notFound: () => view(PostList()),
 });
 
-const App = <div class="app-container">
-  <h1 class="app-title">{title}</h1>
+const appContainer = style({
+  maxWidth: "48rem",
+  margin: "0 auto",
+  padding: "1rem",
+}, { label: "app-container" });
+
+const appTitle = style({
+  fontSize: "1.5rem",
+}, { label: "app-title" });
+
+const App = <div class={appContainer}>
+  <h1 class={appTitle}>{title}</h1>
   {view}
 </div>;
-
-css({
-  ".app-container": {
-    maxWidth: "48rem",
-    margin: "0 auto",
-    padding: "1rem",
-  },
-  ".app-title": {
-    fontSize: "1.5rem",
-  }
-});
 
 mount(App, "#app");
 ```
 ### `src/components/Placeholder.tsx`
 
 ```tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { theme } from "../theme.ts";
 
-export const Placeholder = ({ message }: { message: string }) => (
-  <div class="placeholder">{message}</div>
-);
+const placeholder = style({
+  textAlign: "center",
+  color: theme.color.subtle,
+  padding: "2rem 0",
+}, { label: "placeholder" });
 
-css({
-  ".placeholder": {
-    textAlign: "center",
-    color: theme.color.subtle,
-    padding: "2rem 0",
-  }
-});
+export const Placeholder = ({ message }: { message: string }) => (
+  <div class={placeholder}>{message}</div>
+);
 ```
 
 ### `src/components/BackLink.tsx`
 
 ```tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { navigate } from "@hellajs/router";
-import { theme } from "../theme";
+import { theme } from "../theme.ts";
+
+const backLink = style({
+  display: "inline-block",
+  marginBottom: "1rem",
+  color: theme.color.link,
+  cursor: "pointer",
+  fontSize: "0.9rem",
+}, { label: "back-link" });
 
 export const BackLink = () => (
-  <a class="back-link" on:click={e => { e.preventDefault(); navigate("/posts"); }}>
+  <a class={backLink} on:click={e => { e.preventDefault(); navigate("/posts"); }}>
     &larr; Back to posts
   </a>
 );
-
-css({
-  ".back-link": {
-    display: "inline-block",
-    marginBottom: "1rem",
-    color: theme.color.link,
-    cursor: "pointer",
-    fontSize: "0.9rem",
-  }
-});
 ```
 
 ### `src/components/Tags.tsx`
 
 ```tsx
 import { ForEach } from "@hellajs/dom";
-import { theme } from "../theme";
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
+import { theme } from "../theme.ts";
+
+const tagList = style({
+  display: "flex",
+  gap: "0.4rem",
+  flexWrap: "wrap",
+  marginTop: "0.5rem",
+}, { label: "tags" });
+
+const tag = style({
+  fontSize: "0.75rem",
+  padding: "0.15rem 0.5rem",
+  borderRadius: theme.radius.pill,
+  backgroundColor: theme.color.tag,
+  color: theme.color.muted,
+}, { label: "tag" });
 
 interface TagsProps {
   tags: string[];
 }
 
 export const Tags = ({ tags = [] }: TagsProps) => (
-  <div class="tags">
-    <ForEach each={tags} use={(tag: string) => (
-      <span class="tag">{tag}</span>
+  <div class={tagList}>
+    <ForEach each={tags} use={(t: string) => (
+      <span class={tag}>{t}</span>
     )} />
   </div>
 );
-
-css({
-  ".tags": {
-    display: "flex",
-    gap: "0.4rem",
-    flexWrap: "wrap",
-    marginTop: "0.5rem",
-  },
-  ".tag": {
-    fontSize: "0.75rem",
-    padding: "0.15rem 0.5rem",
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.color.tag,
-    color: theme.color.muted,
-  },
-});
 ```
 
 ### `src/components/Reactions.tsx`
 
 ```tsx
-import { css } from "@hellajs/css";
-import { theme } from "../theme";
+import { style } from "@hellajs/css";
+import { theme } from "../theme.ts";
+
+const reactions = style({
+  fontSize: "0.8rem",
+  color: theme.color.subtle,
+  marginTop: "0.5rem",
+}, { label: "reactions" });
 
 interface ReactionsProps {
   likes: number;
@@ -1174,26 +1170,40 @@ interface ReactionsProps {
 }
 
 export const Reactions = ({ likes, views }: ReactionsProps) => (
-  <div class="reactions">
+  <div class={reactions}>
     {likes ?? 0} likes{views != null && <> · {views} views</>}
   </div>
 );
-
-css({
-  ".reactions": {
-    fontSize: "0.8rem",
-    color: theme.color.subtle,
-    marginTop: "0.5rem",
-  },
-});
 ```
 
 ### `src/components/SearchBar.tsx`
 
 ```tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
+
+const searchBar = style({
+  display: "flex",
+  gap: "0.5rem",
+  marginBottom: "1rem",
+  "input": {
+    flex: 1,
+    padding: "0.5rem 0.75rem",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    fontSize: "0.9rem",
+  },
+  "button": {
+    cursor: "pointer",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
+    backgroundColor: theme.color.surface,
+    color: theme.color.text,
+    padding: "0.5rem 1rem",
+    fontSize: "0.9rem",
+  },
+}, { label: "search-bar" });
 
 interface SearchBarProps {
   value: Signal<string>;
@@ -1206,7 +1216,7 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
   };
 
   return (
-    <div class="search-bar">
+    <div class={searchBar}>
       <input
         type="text"
         placeholder={"Search..."}
@@ -1219,38 +1229,14 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
     </div>
   );
 };
-
-css({
-  ".search-bar": {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "1rem",
-    "input": {
-      flex: 1,
-      padding: "0.5rem 0.75rem",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      fontSize: "0.9rem",
-    },
-    "button": {
-      cursor: "pointer",
-      borderRadius: theme.radius.sm,
-      border: `1px solid ${theme.color.border}`,
-      backgroundColor: theme.color.surface,
-      color: theme.color.text,
-      padding: "0.5rem 1rem",
-      fontSize: "0.9rem",
-    },
-  },
-});
 ```
 
 ### `src/components/PostCard.tsx`
 
 ```tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { navigate } from "@hellajs/router";
-import { theme } from "../theme.ts";
+import { card, cardTitle, cardBody, theme } from "../theme.ts";
 import { Tags } from "./Tags.tsx";
 import { Reactions } from "./Reactions.tsx";
 import type { Post } from "../state.ts";
@@ -1260,48 +1246,66 @@ interface PostCardProps {
   onClick?: () => void;
 }
 
+// Compose onto the shared card class — the returned class string carries both
+// ("h-card-… h-post-card-…"), each side keeping its own rule.
+const postCard = style(card, {
+  "&:hover": {
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+  },
+}, { label: "post-card" });
+
+const userLink = style({
+  color: theme.color.link,
+  display: "inline-block",
+  fontSize: "0.9rem",
+  marginTop: "0.5rem",
+  cursor: "pointer",
+  textDecoration: "none",
+  "&:hover": {
+    textDecoration: "underline"
+  },
+}, { label: "user-link" });
+
 const openUser = (id: number) => navigate(`/users/${id}`);
 
 export const PostCard = ({ post, onClick }: PostCardProps) => (
-  <div class="post-card card" style={onClick ? "cursor: pointer;" : ""}>
+  <div class={postCard} style={onClick ? "cursor: pointer;" : ""}>
     <div on:click={onClick}>
-      <h3 class="card-title">{post.title}</h3>
-      <p class="card-body">{post.body}</p>
+      <h3 class={cardTitle}>{post.title}</h3>
+      <p class={cardBody}>{post.body}</p>
       <Tags tags={post.tags} />
       <Reactions likes={post.reactions?.likes} views={post.views} />
     </div>
-    <a class="user-link" on:click={e => { e.stopPropagation(); openUser(post.userId); }}>
+    <a class={userLink} on:click={e => { e.stopPropagation(); openUser(post.userId); }}>
       User {post.userId}
     </a>
   </div>
 );
-
-css({
-  ".post-card": {
-    "&:hover": {
-      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-    },
-    ".user-link": {
-      color: theme.color.link,
-      display: "inline-block",
-      fontSize: "0.9rem",
-      marginTop: "0.5rem",
-      cursor: "pointer",
-      textDecoration: "none",
-      "&:hover": {
-        textDecoration: "underline"
-      },
-    },
-  },
-});
 ```
 
 ### `src/components/Pagination.tsx`
 
 ```tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import type { Signal } from "@hellajs/core";
 import { theme } from "../theme.ts";
+
+const pagination = style({
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  gap: "0.5rem",
+  marginTop: "1rem",
+  "button": {
+    cursor: "pointer",
+  },
+}, { label: "pagination" });
+
+const pageInfo = style({
+  fontSize: "0.85rem",
+  color: theme.color.subtle,
+  padding: "0 0.5rem",
+}, { label: "page-info" });
 
 interface PaginationProps {
   page: Signal<number>;
@@ -1310,14 +1314,14 @@ interface PaginationProps {
 }
 
 export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => (
-  <div class="pagination">
+  <div class={pagination}>
     <button
       on:click={() => onPageChange(Math.max(1, page() - 1))}
       disabled={() => page() <= 1}
     >
       Prev
     </button>
-    <span class="page-info">
+    <span class={pageInfo}>
       Page {page()} of {totalPages()}
     </span>
     <button
@@ -1328,24 +1332,6 @@ export const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) 
     </button>
   </div>
 );
-
-css({
-  ".pagination": {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "0.5rem",
-    marginTop: "1rem",
-    "button": {
-      cursor: "pointer",
-    },
-  },
-  ".page-info": {
-    fontSize: "0.85rem",
-    color: theme.color.subtle,
-    padding: "0 0.5rem",
-  },
-});
 ```
 
 ### `src/pages/PostList.tsx`
@@ -1431,14 +1417,34 @@ export const PostDetail = () => {
 ### `src/pages/UserProfile.tsx`
 
 ```tsx
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
 import { navigate } from "@hellajs/router";
 import { userResource, userPostsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { card, theme } from "../theme.ts";
 import { Placeholder } from "../components/Placeholder.tsx";
 import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
+
+const avatar = style({
+  width: "4rem",
+  height: "4rem",
+  borderRadius: "50%",
+  objectFit: "cover",
+}, { label: "avatar" });
+
+const userInfo = style({
+  display: "flex",
+  gap: "1rem",
+  alignItems: "center",
+  marginBottom: "1rem",
+}, { label: "user-info" });
+
+const userMeta = style({
+  fontSize: "0.85rem",
+  color: theme.color.subtle,
+  "& p": { margin: "0.15rem 0" },
+}, { label: "user-meta" });
 
 const {
   fetch: fetchUser,
@@ -1467,14 +1473,14 @@ export const UserProfile = () => {
 
       if (!user?.id) return <Placeholder message="User not found." />;
 
-      return <div class="card">
-        <div class="user-info">
-          <img class="avatar" src={image} alt={`${firstName} ${lastName}`} />
+      return <div class={card}>
+        <div class={userInfo}>
+          <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
           <div>
             <h2 class="title" style="margin-bottom: 0.25rem">
               {firstName} {lastName}
             </h2>
-            <div class="user-meta">
+            <div class={userMeta}>
               <p>{email}</p>
               <p>{company?.title} at {company?.name}</p>
             </div>
@@ -1498,26 +1504,4 @@ export const UserProfile = () => {
     }}
   </div>;
 };
-
-css({
-  ".user-profile": {
-    ".avatar": {
-      width: "4rem",
-      height: "4rem",
-      borderRadius: "50%",
-      objectFit: "cover",
-    },
-    ".user-info": {
-      display: "flex",
-      gap: "1rem",
-      alignItems: "center",
-      marginBottom: "1rem",
-    },
-    ".user-meta": {
-      fontSize: "0.85rem",
-      color: theme.color.subtle,
-      "& p": { margin: "0.15rem 0" },
-    },
-  },
-});
 ```
