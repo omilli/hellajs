@@ -287,7 +287,7 @@ Full runnable code matching the example app.
 Arrange sections so each introduces exactly one or two new concepts. Typical order:
 
 1. **State** (signal or store) + mount
-2. **Styles** (css, cssVars)
+2. **Styles** (css, style, vars)
 3. **Derived values** (computed)
 4. **Controls / View** (event handlers, ForEach, bind directives)
 5. **Effects** (effect, localStorage, side effects) — optional, only when persistence/side effects are part of the app
@@ -559,7 +559,7 @@ try {
 ### Implementation Accuracy
 
 - Examples must accurately reflect actual behavior. Simplifications that omit error handling/edge cases must include a comment noting what is simplified.
-- **Static vs reactive**: `css()` evaluates values eagerly — never pass functions as property values (they are stringified into the output). For reactive styles, use `cssVars()` or resolve conditions before calling `css()`.
+- **Static vs reactive**: `css()` and `style()` throw on function values — reactive leaves belong to `vars()`. Resolve conditions before the call; for style values that track signals, author the tokens with `vars()` and consume its `var()` references.
 - **No silent no-ops**: Every example must do what its comments claim. If reading from a cache/store/resource, populate that source earlier in the same block (or in a clearly-marked prior setup block). Do not demonstrate `get`/`read`/`data()` against keys that were never written — the silent `undefined` return contradicts the prose and teaches the wrong contract. When demonstrating methods whose effect depends on prior state (cache TTL, ongoing requests, configuration), seed that state explicitly.
 - **Callback parameter types**: Examples must treat parameters as the type the implementation actually passes. If a hook is typed `(err: unknown) => void` and passes the raw error, examples must not access `.category` or `.code` without a type guard. If the implementation never invokes a callback for a given condition (e.g., error handler skipped for aborts), examples must not show that callback firing. Document categorized/wrapped variants separately from raw callbacks.
 

@@ -88,7 +88,7 @@ Performance beats DRY when extracting a helper adds hot-path overhead. Correctne
 ### Functions & Modules
 
 - Export functions in place — never define then export separately
-- Never re-export imports — each module exports only its own code. Exception: `internal/core.ts` barrel re-exports from `@hellajs/core` for dependency isolation and bundle optimization
+- Never re-export imports — each module exports only its own code. Exception: `internal/core.ts` barrel re-exports from `@hellajs/core` for dependency isolation and bundle optimization. No transitional deprecation aliases — a breaking rename breaks cleanly: delete the old name, never shim it with a re-export
 - Never create wrapper functions that only call through to another function. Exception: TypeScript overload implementations — when public overload signatures live on one function and the implementation forwards to an internal factory, the thin forwarding body is structural (required by overload semantics and the public-vs-internal split). The wrapper must add no logic beyond argument forwarding; real work belongs in the factory
 - Never add a parameter just to pass it through unchanged
 - Never extract a function called from exactly one callsite unless it exceeds 30 lines
@@ -314,7 +314,7 @@ Enforcement: eslint `no-restricted-syntax` (eslint.config.mjs) bans the typeof f
 ### Files
 
 - (Pascal|Camel)case, no hyphens: `signal.ts`, `removeCss.ts`, `ForEach.ts` — not `app-context.ts`
-- One public API function per file. The filename is the verbatim export name: `signal.ts` exports `signal`, `removeCss.ts` exports `removeCss`, `cssVars.ts` exports `cssVars`. No "related pair" or "multi-word noun shortcut" carve-outs — `css`/`removeCss`/`resetCss` are three files, and `cssVars`/`removeCssVars`/`resetCssVars` are three more. One export per file is what makes the public surface scannable and lets the audit be checked mechanically
+- One public API function per file. The filename is the verbatim export name: `signal.ts` exports `signal`, `removeCss.ts` exports `removeCss`, `vars.ts` exports `vars`. No "related pair" or "multi-word noun shortcut" carve-outs — `css`/`removeCss`/`resetCss` are three files, and `vars`/`removeVars`/`resetVars` are three more. One export per file is what makes the public surface scannable and lets the audit be checked mechanically
 - Files under `lib/internal/` are organized by cohesive concern rather than a single public API, so the one-export-per-file and filename-matches-export rules apply only to top-level `lib/*.ts`, not to `internal/`. Name an internal file after its concern as a single noun or gerund (`core`, `dedupe`, `errors`, `lifecycle`, `polling`, `retry`) — never a camelCase compound derived from the export it hosts. The concern is one word; if it seems to need two, the file is either two concerns (split it) or a single concept not yet named. A file exporting `structuralShare` is `structural.ts`, not `structuralShare.ts`
 - PascalCase for JSX/html component filenames that match their export: `ForEach.ts` exports `ForEach`, `Portal.ts` exports `Portal`. Required for JSX component resolution
 - `$`-prefixed names for special reference APIs: `$ref.ts` exports `$ref`, `$collection.ts` exports `$collection`. The `$` prefix signals a DOM reference utility

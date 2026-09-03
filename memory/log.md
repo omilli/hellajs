@@ -1,5 +1,17 @@
 # Memory Update Log
 
+## 2026-09-03
+* **Creation**: Added concept [080](entries/080.md) (type: decision).
+* **Creation**: Added concept [081](entries/081.md) (type: decision).
+
+## 2026-09-02
+* **Creation**: Added concept [076](entries/076.md) (type: correction).
+* **Creation**: Added concept [077](entries/077.md) (type: decision).
+* **Creation**: Added concept [078](entries/078.md) (type: decision).
+* **Creation**: Added concept [079](entries/079.md) (type: decision).
+* **Deprecation**: Archived [006](archive/006.md) → superseded by [079](entries/079.md).
+* **Update**: [079](entries/079.md) refreshed — cssVars-family aliases removed same-day by user correction (no deprecation re-exports in a breaking rename; rule codified in guides/code.md §Code Rules).
+
 ## 2026-09-01
 * **Creation**: Added concept [071](entries/071.md) (type: decision).
 * **Creation**: Added concept [072](entries/072.md) (type: decision).
