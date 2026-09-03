@@ -138,3 +138,45 @@ export type Store<
    */
   subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void;
 };
+
+/**
+ * Storage backend for `persistStore`. Async-first: every method may return a
+ * promise, so IndexedDB-backed adaptors implement the same interface as
+ * synchronous localStorage ones.
+ */
+export interface StoreAdaptor {
+  /** Reads the persisted raw value, or null when nothing was ever persisted */
+  read(): string | null | Promise<string | null>;
+  /** Persists the serialized projection of the store */
+  write(value: string): void | Promise<void>;
+  /** Removes the persisted value — called when stored state is corrupt or no longer matches the store shape */
+  clear(): void | Promise<void>;
+}
+
+/**
+ * Configuration options for persisting a store.
+ */
+export interface PersistOptions<T extends Record<string, unknown>> {
+  /** Serializes the partialized state; default `JSON.stringify` */
+  serialize?: (state: PartialDeep<T>) => string;
+  /** Parses stored raw into an update()-shaped partial; default `JSON.parse` */
+  deserialize?: (raw: string) => PartialDeep<T>;
+  /** Projects the snapshot down to the persistable subset; default identity. Persist only serializable keys — class instances silently corrupt through a JSON round-trip */
+  partialize?: (state: Snapshot<T>) => PartialDeep<T>;
+  /** Coalesces write-through bursts into one write per window (milliseconds) */
+  debounce?: number;
+  /** Fires when stored state is corrupt or shape-drifted (storage is then cleared) and on adaptor read/write/clear failure (storage untouched) */
+  onError?: (error: unknown) => void;
+}
+
+/**
+ * Handle returned by `persistStore`.
+ */
+export interface PersistHandle {
+  /** Signal-backed reactive flag — true once the read settles (state applied, storage empty, or fallback). Reads inside an effect re-run on the flip */
+  readonly hydrated: () => boolean;
+  /** Resolves when hydration settles; never rejects — `onError` is the error channel. Abandoned if `dispose` runs first */
+  readonly ready: Promise<void>;
+  /** Stops write-through and the persistence effect, cancels a pending debounced write, removes the pagehide flush; idempotent */
+  dispose(): void;
+}

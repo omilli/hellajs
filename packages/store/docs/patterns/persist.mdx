@@ -1,0 +1,142 @@
+# Persistence
+
+Copy-paste patterns for persisting store state with `persistStore`.
+
+### Persist to localStorage
+
+The quickstart: one call, synchronous rehydration, write-through on every change.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const settings = store({ theme: 'light', fontSize: 12 });
+const persist = persistStore(settings, localStorageAdaptor('settings'));
+
+settings.theme('dark'); // localStorage: {"theme":"dark","fontSize":12}
+```
+
+### Persist a subset with partialize
+
+Keep volatile or non-serializable keys out of storage — only the projected keys are written, and changes to excluded keys never trigger writes.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const editor = store({
+  document: { title: 'Untitled', body: '' },
+  cursor: 0,
+  autosaveDraft: null as string | null
+});
+const persist = persistStore(editor, localStorageAdaptor('editor'), {
+  partialize: (s) => ({ document: s.document })
+});
+
+editor.autosaveDraft('tmp'); // excluded key — no storage write
+editor.update({ document: { title: 'Draft', body: 'Hello' } }); // persisted
+```
+
+### Persist to IndexedDB
+
+Implement the three-method `StoreAdaptor` contract over IndexedDB — `read`, `write`, and `clear` may all be async; hydration flips `hydrated()` when the read resolves.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore } from '@hellajs/store';
+import type { StoreAdaptor } from '@hellajs/store';
+
+const idbAdaptor = (storeName: string): StoreAdaptor => {
+  const open = () => new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open('hellajs-persist', 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(storeName);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  const objectStore = async (mode: IDBTransactionMode) => {
+    const db = await open();
+    return db.transaction(storeName, mode).objectStore(storeName);
+  };
+
+  const request_ = <T>(request: IDBRequest<T>) => new Promise<T>((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  return {
+    read: async () => {
+      const os = await objectStore('readonly');
+      return (await request_(os.get('state')) as string | null) ?? null;
+    },
+    write: async (value: string) => {
+      const os = await objectStore('readwrite');
+      await request_(os.put(value, 'state'));
+    },
+    clear: async () => {
+      const os = await objectStore('readwrite');
+      await request_(os.clear());
+    }
+  };
+};
+
+const data = store({ large: [] as string[] });
+const persist = persistStore(data, idbAdaptor('data'), {
+  onError: (error) => console.error('persist failed', error)
+});
+```
+
+### Coalesce rapid writes with debounce
+
+Slider drags and keystrokes fire many writes per second — `debounce` persists once per window, flushed on `pagehide` so the last value is never lost.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, sessionStorageAdaptor } from '@hellajs/store';
+
+const filters = store({ query: '', page: 1 });
+const persist = persistStore(filters, sessionStorageAdaptor('filters'), {
+  debounce: 300
+});
+
+filters.query('he');   // pending
+filters.query('hell'); // pending — replaces the earlier value
+// one write lands 300ms after the last change: {"query":"hell","page":1}
+```
+
+### Sync tabs through the storage event
+
+Cross-tab sync is not built in — the browser's `storage` event plus `update()` covers it. The write-through dedupes the echo, so there is no feedback loop.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const counter = store({ count: 0 });
+const adaptor = localStorageAdaptor('shared-count');
+const persist = persistStore(counter, adaptor);
+
+window.addEventListener('storage', (event) => {
+  if (event.key !== 'shared-count' || event.newValue === null) return;
+  counter.update(JSON.parse(event.newValue));
+});
+```
+
+### Handle renamed keys in deserialize
+
+There is no `version`/`migrate` option yet — a custom `deserialize` can bridge old stored shapes to the current one, preventing the corrupt-state fallback from clearing storage.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const prefs = store({ theme: 'light' });
+const persist = persistStore(prefs, localStorageAdaptor('prefs'), {
+  deserialize: (raw) => {
+    const parsed = JSON.parse(raw) as { theme?: unknown; skin?: unknown };
+    return { theme: typeof parsed.skin === 'string' ? parsed.skin : parsed.theme as string };
+  }
+});
+```

@@ -165,7 +165,24 @@ const app = store({
 });
 ```
 
-Middleware runs *before* changes are stored — use it for validation, transformation, or normalization. Effects run *after* — see [reactivity](/learn/concepts/reactivity) for logging, persistence, and derived-state patterns.
+Middleware runs *before* changes are stored — use it for validation, transformation, or normalization. Effects run *after* — see [reactivity](/learn/concepts/reactivity) for logging and derived-state patterns. For persistence, use [persistStore](/reference/store/persist) — see [Persistence](#persistence).
+
+## Persistence
+
+`persistStore(store, adaptor)` connects a store to storage — rehydrating persisted state at creation and writing every change through. Synchronous backends like localStorage apply before `persistStore` returns; async backends such as IndexedDB resolve later, and the reactive `hydrated()` flag gates on it:
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const settings = store({ theme: 'light', fontSize: 12 });
+const persist = persistStore(settings, localStorageAdaptor('settings'));
+
+// Persisted values applied; every later change writes through
+settings.theme('dark');
+```
+
+Corrupt or outdated persisted state never bricks the app — storage is cleared, the initial state stays, and `onError` reports. See the [persistStore reference](/reference/store/persist) for the full hydration contract and [persistence patterns](/learn/patterns/persistence) for IndexedDB, partial persistence, and cross-tab recipes.
 
 ## Write Equality
 

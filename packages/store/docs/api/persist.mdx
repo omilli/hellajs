@@ -1,0 +1,168 @@
+# persistStore
+
+Persists a store through a pluggable storage adaptor — rehydrating persisted state at creation and writing every change through once hydration settles.
+
+## API
+
+```typescript
+import { persistStore } from '@hellajs/store';
+
+function persistStore<T extends Record<string, unknown>>(
+  store: Store<T, PropertyKey>,
+  adaptor: StoreAdaptor,
+  options?: PersistOptions<T>
+): PersistHandle
+```
+
+- `store` — the store to persist. Hydration applies through `update()`, so middleware, `equals`, and the settable-key registry all run on hydrated values.
+- `adaptor` — the storage backend. Ships [`localStorageAdaptor`](#localstorageadaptor) and [`sessionStorageAdaptor`](#sessionstorageadaptor); implement `StoreAdaptor` for IndexedDB or any custom backend.
+- `options` — optional serializer, projection, debounce window, and error channel:
+
+```typescript
+interface PersistOptions<T> {
+  serialize?: (state: PartialDeep<T>) => string;        // default JSON.stringify
+  deserialize?: (raw: string) => PartialDeep<T>;        // default JSON.parse
+  partialize?: (state: Snapshot<T>) => PartialDeep<T>;  // default: persist everything
+  debounce?: number;                                    // coalesce writes (ms)
+  onError?: (error: unknown) => void;                   // corruption + adaptor failures
+}
+```
+
+### localStorageAdaptor
+
+```typescript
+import { localStorageAdaptor } from '@hellajs/store';
+
+function localStorageAdaptor(key: string): StoreAdaptor
+```
+
+Backs the adaptor with `window.localStorage` under `key`. Storage is accessed lazily — the factory is safe to call anywhere, and `persistStore` never touches it on the server.
+
+### sessionStorageAdaptor
+
+```typescript
+import { sessionStorageAdaptor } from '@hellajs/store';
+
+function sessionStorageAdaptor(key: string): StoreAdaptor
+```
+
+Same contract as `localStorageAdaptor`, backed by `window.sessionStorage`.
+
+## Basic Usage
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const settings = store({ theme: 'light', fontSize: 12 });
+const persist = persistStore(settings, localStorageAdaptor('settings'));
+
+// localStorage reads are synchronous — persisted values are already applied
+// here. First run (nothing stored): the initial state is written instead.
+
+settings.theme('dark'); // localStorage: {"theme":"dark","fontSize":12}
+```
+
+## Key Concepts
+
+### Hydration Lifecycle
+
+The handle exposes a reactive `hydrated()` flag and a `ready` promise. Synchronous backends apply before `persistStore` returns — no flash of initial state. Async backends (IndexedDB, custom adaptors) resolve later; gate rendering on the flag:
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+import { persistStore } from '@hellajs/store';
+import type { StoreAdaptor } from '@hellajs/store';
+
+const asyncAdaptor: StoreAdaptor = {
+  read: () => Promise.resolve('{"user":"jane"}'),
+  write: () => {},
+  clear: () => {}
+};
+
+const session = store({ user: null as string | null });
+const persist = persistStore(session, asyncAdaptor);
+
+effect(() => {
+  if (persist.hydrated()) {
+    // persisted state applied — render real content
+  } else {
+    // still reading — render placeholder
+  }
+});
+```
+
+`ready` resolves when hydration settles and never rejects — `onError` is the error channel.
+
+### The Dirty-Skip Race
+
+The store stays live while an async read is pending. If a change to a persisted key lands before the read resolves, the in-memory state wins: the stale persisted value is discarded and the next write persists the newer state. Changes to keys excluded by `partialize` never trigger the skip.
+
+### Partial Persistence
+
+`partialize` projects the snapshot down to the keys that should persist — the same role as Zustand's option of that name:
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const app = store({ theme: 'light', apiToken: '', draft: null as string | null });
+const persist = persistStore(app, localStorageAdaptor('app'), {
+  partialize: (s) => ({ theme: s.theme })
+});
+
+app.draft('half-written'); // not persisted — projection unchanged, no write
+```
+
+### Corrupt State Self-Heals
+
+When `deserialize` throws or the stored shape no longer matches the store (`update()` throws on unknown keys), `persistStore` clears storage, keeps the initial state, fires `onError`, and flips `hydrated()` anyway. A bad stored value never bricks the app.
+
+### Write-Through and Debounce
+
+By default every change writes to storage immediately. `debounce` coalesces bursts into one write per window carrying the final state; a pending write is flushed on `pagehide` so the tail is not lost.
+
+### StoreAdaptor
+
+The whole backend contract — three methods, all may be async:
+
+```typescript
+interface StoreAdaptor {
+  read(): string | null | Promise<string | null>;
+  write(value: string): void | Promise<void>;
+  clear(): void | Promise<void>;
+}
+```
+
+See [persistence patterns](/learn/patterns/persistence) for a complete IndexedDB implementation.
+
+### PersistHandle
+
+```typescript
+interface PersistHandle {
+  readonly hydrated: () => boolean;  // signal-backed, reactive
+  readonly ready: Promise<void>;
+  dispose(): void;
+}
+```
+
+`dispose()` stops write-through, cancels a pending debounced write, and removes the `pagehide` flush. Calling it before an async read settles abandons hydration — `ready` never resolves.
+
+## Important Considerations
+
+### Function Properties Are Never Persisted
+
+Functions do not survive serialization — `JSON.stringify` drops them and `update()` throws on function keys. Persist data, not behavior.
+
+### Class Instances Corrupt Silently Through JSON
+
+A `Date` round-trips into a string, `Map`/`Set`/class instances into plain objects — applied to their signals without a throw. Exclude non-serializable keys with `partialize`, or provide `serialize`/`deserialize` that handles them.
+
+### Readonly Keys Fall Back to Initial State
+
+Hydrating a readonly store throws inside `update()` (the readonly guard), which routes into the corrupt-state fallback: storage cleared, initial state kept, `onError` fired. Don't persist readonly stores.
+
+### Schema Changes Lose Persisted Data
+
+Removing a key from the store makes old persisted state fail the `update()` contract — the fallback clears storage and the app restarts from initial state. There is no `version`/`migrate` in v1; handle renames in `deserialize` if persisted continuity matters.
