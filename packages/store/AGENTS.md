@@ -5,13 +5,14 @@ Deeply reactive state over `@hellajs/core`. `store(initial)` walks a plain objec
 
 | File | Role |
 |---|---|
-| `lib/index.ts` | Barrel — exports `store`, re-exports types |
+| `lib/index.ts` | Barrel — exports `store`, `persistStore`, `localStorageAdaptor`, `sessionStorageAdaptor`, re-exports types |
 | `lib/store.ts` | Public `store()` overloads; all delegate to `createStore` |
+| `lib/persist.ts` | `persistStore` wrapper + storage-adaptor factories — pure composition over `snapshot`/`update`, zero `createStore` coupling |
 | `lib/internal/create.ts` | `createStore` factory: snapshot computed, `update`, `cleanup`, `subscribe`, recursive init |
 | `lib/internal/draft.ts` | `deepClone` + `structurallyEqual` + `extractChanges` — used by the draft-mutator path and the `equals` `'structural'` leaf branch |
 | `lib/internal/utils.ts` | `reservedKeys` Set, `isStore`, `isObjectOrFunction`, `applyUpdate`, `wrapWithMiddleware`, `defineStoreProperty` |
-| `lib/types.d.ts` | `Store<T,R>`, `SettableKeyOf<T>` (non-exported, subscribe-only), `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys` |
-| `lib/internal/core.ts` | Re-exports `signal`/`computed`/`effect`/`untracked`/`isFunction`/`isPlainObject`/`isObject` + `Signal` type from core |
+| `lib/types.d.ts` | `Store<T,R>`, `SettableKeyOf<T>` (non-exported, subscribe-only), `PartialDeep`, `StoreMiddleware`, `StoreOptions`, `ReadonlyKeys`, `StoreAdaptor`, `PersistOptions`, `PersistHandle` |
+| `lib/internal/core.ts` | Re-exports `signal`/`computed`/`effect`/`batch`/`untracked`/`isFunction`/`isPlainObject`/`isObject`/`hasWindow` + `Signal` type from core |
 
 ## `store()` overloads (`lib/store.ts`)
 
@@ -102,9 +103,13 @@ Passing an existing store as a value inside another store's initial object: the 
 - **Data properties and methods are non-writable**: external reassignment (`store.count = 5`, `store.cleanup = fn`) throws TypeError in strict-mode ESM. Function-valued props are the exemption — including a composed store's adopted signal functions (`parent.user.name = fn` stays possible); the function-writability rule is the documented contract. `configurable: true` stays, so `Object.defineProperty` redefinition (test spies) works.
 - **No proxies, no diffing on the hot path** — direct property access; only the draft path diffs.
 
+## Persistence (`lib/persist.ts`)
+
+`persistStore(store, adaptor, options?)` — composition over the public surface; `createStore` untouched. One core `effect` over `serialize(partialize(store.snapshot()))` is simultaneously dirty-detector, write-through, and hydrate-echo suppressor: the immediate run captures the baseline serialization; pre-hydration runs mark `dirty` when the serialization drifts off baseline and never write; post-hydration runs dedupe against `lastWritten`. The `hydrated` flag is a plain `let` mirrored into the public signal at settle time — the flip itself never re-runs the effect. Hydration applies through `update()` inside `batch()` — the single effect flush lands in the pre-hydration branch, so no write-back; middleware/`equals`/settable-registry run on hydrated values. Sync (plain-value) reads settle before `persistStore` returns; thenable reads apply on resolve unless `dirty` (in-memory wins). Corrupt state (`deserialize` or `update` throw) → `adaptor.clear()` + `onError` + keep initial; read/write failures → `onError` only. `!hasWindow()` → inert handle (zero adaptor calls, `hydrated()` true, `ready` resolved). Adaptor factories (`localStorageAdaptor`/`sessionStorageAdaptor`, shared private `storageAdaptor` helper) access storage lazily inside methods — import-safe and factory-safe on the server. `dispose()` kills the effect, cancels a pending debounced write, removes the `pagehide` flush; disposing before an async read settles abandons `ready`.
+
 ## Testing
 
-Tests live in `tests/` (12 files: `data`, `equals`, `functions`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `subscribe`) and import `store` from `@hellajs/store/bundle`. Reactive primitives (`signal`/`effect`/`computed`/`batch`/`flush`) import from `@hellajs/core`. Test helpers import from `@utils/test-helpers.js`. See `guides/tests.md` for the full rules.
+Tests live in `tests/` (14 files: `data`, `equals`, `functions`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `subscribe`, `persist`, `persist-adaptors`) and import `store`/`persistStore`/adaptors from `@hellajs/store/bundle`. Reactive primitives (`signal`/`effect`/`computed`/`batch`/`flush`) import from `@hellajs/core`. Test helpers import from `@utils/test-helpers.js`. See `guides/tests.md` for the full rules.
 
 - Cover each `update` path (partial, draft, middleware) independently.
 - Snapshot reactivity tested flat and deeply nested.

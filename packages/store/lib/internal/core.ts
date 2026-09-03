@@ -1,2 +1,2 @@
-export { signal, computed, effect, untracked, isFunction, isPlainObject, isObject } from "@hellajs/core";
+export { signal, computed, effect, batch, untracked, isFunction, isPlainObject, isObject, hasWindow } from "@hellajs/core";
 export type { Signal } from "@hellajs/core";
