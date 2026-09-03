@@ -18,7 +18,7 @@ export function render(): ReadableStream<string> {
     head: {
       title: 'Dashboard',
       meta: [{ charset: 'UTF-8' }],
-      // css() returns the generated CSS text on the server — injected here, once.
+      // cssText() collected the registered CSS text — injected here, once.
       styles: [styles],
       // The client entry as a module script: module scripts defer, so head placement gives the
       // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).

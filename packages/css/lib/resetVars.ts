@@ -5,7 +5,7 @@ import { VARS_ID, scopedVarsRulesMap, cache, varsRegistryStatic, resetReactiveRe
 /**
  * Clears all CSS variables, caches, and reactive effects, resetting the CSS variables system to initial state.
  */
-export function resetCssVars() {
+export function resetVars() {
   cleanupVarsEffects();
   scopedVarsRulesMap.clear();
   resetSheet(VARS_ID);

@@ -1,14 +1,16 @@
 # @hellajs/css
 
-A type-safe CSS-in-JS package with a tiny runtime footprint. Provides a modern CSS workflow with automatic memory management and efficient caching.
+A type-safe CSS-in-JS package with a tiny runtime footprint. Content-hashed scoped styles, typed variant recipes, reactive CSS variables, and reference-counted cleanup — no build step, no configuration.
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/css?color=orange)](https://www.npmjs.com/package/@hellajs/css)
 ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/css)
 
-- Global CSS by default, scoped styles via `name` option
-- Reactive CSS custom properties via signals
-- Automatic memory management with reference counting
-- Full TypeScript support via `csstype`
+- Scoped styles via `style()` — content-hashed classes (`h-{label}-{hash}`), identical on client and server
+- Explicit globals via `css()`; typed variant recipes via `cva()`; class joining via `cx()`
+- Reactive CSS custom properties via `vars()` and signals
+- Collision-free `@keyframes` definitions via `keyframes()`
+- Automatic memory management — reference-counted `remove*` / `reset*` pairs
+- Server-side critical CSS — the `cssText()` collector reads everything registered
 
 ## Documentation
 
@@ -26,12 +28,14 @@ npm install @hellajs/core @hellajs/css
 ### Basic Usage
 
 ```tsx
-import { css, cssVars } from '@hellajs/css';
 import { signal } from '@hellajs/core';
+import { css, style, vars } from '@hellajs/css';
 
-const theme = cssVars({
+const darkMode = signal(false);
+
+const theme = vars({
   colors: {
-    primary: '#007bff',
+    primary: () => darkMode() ? '#93c5fd' : '#3b82f6',
     accent: '#ff6b6b'
   },
   spacing: '8px'
@@ -40,26 +44,27 @@ const theme = cssVars({
 css({
   body: {
     margin: 0,
-    fontFamily: 'system-ui, sans-serif'
-  },
-  '*': {
-    boxSizing: 'border-box'
+    fontFamily: 'system-ui, sans-serif',
+    backgroundColor: theme.colors.primary
   }
 });
 
-const buttonStyle = css({
+const buttonStyle = style({
   padding: theme.spacing,
   backgroundColor: theme.colors.primary,
   color: 'white',
   border: 'none',
   cursor: 'pointer',
   '&:hover': { opacity: 0.8 }
-}, { name: 'btn' });
+}, { label: 'btn' });
+// "h-btn-r4k2q" — the same class on client and server
 
 <button class={buttonStyle}>
   Styled Button
 </button>
 ```
+
+On the server, every call above registers the same rules and `cssText()` collects them for a single `<style>` embed per response.
 
 ## License
 

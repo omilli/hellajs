@@ -15,13 +15,13 @@ Reset shared state between tests so each test runs in a clean environment. Impor
 ```typescript
 import { beforeEach, afterEach } from "bun:test";
 import { resetDom } from "@hellajs/dom";
-import { resetCss, resetCssVars } from "@hellajs/css";
+import { resetCss, resetVars } from "@hellajs/css";
 import { resetResource } from "@hellajs/resource";
 import { resetRouter } from "@hellajs/router";
 
 beforeEach(() => {
   resetCss();
-  resetCssVars();
+  resetVars();
   resetDom();
   resetResource();
   resetRouter();
@@ -34,14 +34,14 @@ For convenience, bundle all the resets into a single helper in your test setup f
 
 ```typescript
 // test-setup.ts
-import { resetCss, resetCssVars } from "@hellajs/css";
+import { resetCss, resetVars } from "@hellajs/css";
 import { resetDom } from "@hellajs/dom";
 import { resetResource } from "@hellajs/resource";
 import { resetRouter } from "@hellajs/router";
 
 export function resetTestState() {
   resetCss();
-  resetCssVars();
+  resetVars();
   resetDom();
   resetResource();
   resetRouter();

@@ -2,7 +2,7 @@ import { html } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 import { routes, App, notFound } from './app.js';
-import { tokens, stylesheet } from './theme.js';
+import { stylesheet } from './theme.js';
 
 // Bundle the client once at startup. Bun's native bundler resolves the bare
 // `@hellajs/*` specifiers the browser can't — no separate build step, no dist/.
@@ -36,7 +36,7 @@ Bun.serve({
       lang: 'en',
       head: {
         title: 'SSR Routing',
-        styles: [tokens, stylesheet],
+        styles: [stylesheet],
         scripts: [{ src: '/client.js', type: 'module' }],
       },
       body,

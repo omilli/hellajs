@@ -10,7 +10,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`<Suspense>`](/reference/dom/suspense)**: Mark a subtree for out-of-order streaming — a `fallback` flushes first, then resolved children stream in (and swap) as they resolve
 - **Multiple independent regions**: several `<Suspense>` boundaries at different latencies make streaming's value visible — cards fill in one by one as their data resolves
 - **[`hydrate`](/reference/dom/hydrate)**: Adopt the streamed HTML on the client — each region's inline swap script already swapped it in on arrival; hydrate just binds the already-present nodes
-- **[`css`](/reference/css/css)**: Return CSS text on the server and inject it into the streamed shell
+- **[`css`](/reference/css/css) + [`style`](/reference/css/style)**: Register global and scoped styles on both platforms; [`cssText`](/reference/css/csstext) collects the text injected into the streamed shell
 
 This is the one SSR example that uses **JSX with the Vite plugin on both the server and the client**. The [`html`](/reference/dom/html) tag parses templates at runtime, so the [Islands](/learn/tutorials/ssr-islands) and [Routing](/learn/tutorials/ssr-routing) examples need no build plugin. JSX does — without the transform, `<Dashboard />` is not a `HellaNode`, so the server plugin is mandatory here.
 
@@ -168,6 +168,7 @@ Create `src/app.tsx`:
 
 ```tsx
 import { Suspense } from '@hellajs/dom';
+import { dashboard, grid, card, bone } from './theme';
 
 // Simulated async fetch — resolves with `data` after `ms`. Deterministic (no backend),
 // so the streamed shape is reproducible. Each card uses a distinct latency: the shell and
@@ -179,11 +180,11 @@ function after<T>(data: T, ms: number): Promise<T> {
 // A static placeholder — the <Suspense> fallback. It ships in the first flushed chunk, so
 // the layout is stable before the real card resolves.
 const Skeleton = ({ label }: { label: string }) => (
-  <section class="card skeleton">
+  <section class={card}>
     <h2>{label}</h2>
-    <span class="bone" />
-    <span class="bone" />
-    <span class="bone" />
+    <span class={bone} />
+    <span class={bone} />
+    <span class={bone} />
   </section>
 );
 
@@ -196,7 +197,7 @@ const StatsCard = () => (
   <Suspense fallback={<Skeleton label="Stats" />}>
     {() =>
       after({ revenue: '$48.2k', visitors: '12,904', churn: '2.1%' }, 120).then((d) => (
-        <section class="card">
+        <section class={card}>
           <h2>Stats</h2>
           <dl>
             <dt>Revenue</dt><dd>{d.revenue}</dd>
@@ -214,7 +215,7 @@ const ActivityCard = () => (
     {() =>
       after(['Ada upgraded to Pro', 'Build #281 deployed', 'Grace closed 3 tickets'], 600).then(
         (items) => (
-          <section class="card">
+          <section class={card}>
             <h2>Recent activity</h2>
             <ul>{items.map((t) => <li>{t}</li>)}</ul>
           </section>
@@ -228,7 +229,7 @@ const TopCard = () => (
   <Suspense fallback={<Skeleton label="Top items" />}>
     {() =>
       after(['Accounting', 'Design system', 'Mobile app'], 1200).then((items) => (
-        <section class="card">
+        <section class={card}>
           <h2>Top items</h2>
           <ol>{items.map((t) => <li>{t}</li>)}</ol>
         </section>
@@ -241,12 +242,12 @@ const TopCard = () => (
 // Three independent <Suspense> regions make streaming's value obvious: the page is useful
 // immediately, and each card streams in as its own data lands (no waiting on the slowest).
 export const Dashboard = () => (
-  <div class="dashboard">
+  <div class={dashboard}>
     <header>
       <h1>Dashboard</h1>
       <span class="user">Ada Lovelace</span>
     </header>
-    <main class="grid">
+    <main class={grid}>
       <StatsCard />
       <ActivityCard />
       <TopCard />
@@ -265,81 +266,93 @@ export const Dashboard = () => (
 
 ## The Streaming Server
 
-The server exports a `render()` that returns a web `ReadableStream` — a full streamed document. [`doc`](/reference/ssr/doc) wraps the body stream in the document shell: the `head` (with the CSS text [`css`](/reference/css/css) returned on the server — no DOM), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged [`<Suspense>`](/reference/dom/suspense) swap has streamed — nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
+The server exports a `render()` that returns a web `ReadableStream` — a full streamed document. [`doc`](/reference/ssr/doc) wraps the body stream in the document shell: the `head` (with the CSS text [`cssText`](/reference/css/csstext) collected from the registration), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged [`<Suspense>`](/reference/dom/suspense) swap has streamed — nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
 
-First the theme — deliberately minimal, since the CSS is incidental to the streaming story: layout and skeleton visibility, not visual polish. Create `src/theme.ts`:
+First the theme — deliberately minimal, since the CSS is incidental to the streaming story: layout and skeleton visibility, not visual polish. `css()` registers the global rules, `style()` one hashed class per styled element, and `cssText()` then collects the generated text for the server to inject. Create `src/theme.ts`:
 
 ```tsx
-import { css } from '@hellajs/css';
+import { css, style, cssText } from '@hellajs/css';
 
-// The dashboard's theme, one nested object mirroring the DOM — every selector composes
-// down from .dashboard. css() returns the generated CSS text on the server (no DOM); the
-// server injects it once into the streamed document's <head>. The shell is static, so no
-// client re-injection is needed. Deliberately minimal: layout and skeleton visibility only.
-export const styles = css({
+// The dashboard's theme, one hashed class per styled element. css() registers the global
+// rules and style() the scoped ones — on both platforms; cssText() then collects the
+// generated CSS text (a peek, never a drain) for the server to inject once into the
+// streamed document's <head>. The shell is static, so no client re-injection is needed.
+// Deliberately minimal: layout and skeleton visibility only.
+css({
   body: {
     fontFamily: 'system-ui, sans-serif',
     maxWidth: '42rem',
     margin: '2rem auto',
     padding: '0 1rem',
   },
-  '.dashboard': {
+});
+
+export const dashboard = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '1.5rem',
+  header: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem',
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      borderBottom: '1px solid #e5e7eb',
-      paddingBottom: '1rem',
-      h1: {
-        margin: '0',
-        fontSize: '1.5rem',
-      },
-    },
-    '.grid': {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
-      gap: '1rem',
-      '.card': {
-        border: '1px solid #e5e7eb',
-        padding: '1rem 1.25rem',
-        h2: {
-          margin: '0 0 0.75rem',
-          fontSize: '0.8rem',
-          color: '#6b7280',
-        },
-        dl: {
-          display: 'grid',
-          gridTemplateColumns: 'auto 1fr',
-          gap: '0.25rem 0.75rem',
-          margin: '0',
-        },
-        dd: {
-          margin: '0',
-          fontWeight: '600',
-        },
-        '& ul, & ol': {
-          margin: '0',
-          paddingLeft: '1.25rem',
-        },
-        '&.skeleton .bone': {
-          display: 'block',
-          height: '0.75rem',
-          marginBottom: '0.5rem',
-          background: '#e5e7eb',
-        },
-      },
+    justifyContent: 'space-between',
+    borderBottom: '1px solid #e5e7eb',
+    paddingBottom: '1rem',
+    h1: {
+      margin: '0',
+      fontSize: '1.5rem',
     },
   },
-});
+}, { label: 'dashboard' });
+
+export const grid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
+  gap: '1rem',
+}, { label: 'grid' });
+
+export const card = style({
+  border: '1px solid #e5e7eb',
+  padding: '1rem 1.25rem',
+  h2: {
+    margin: '0 0 0.75rem',
+    fontSize: '0.8rem',
+    color: '#6b7280',
+  },
+  dl: {
+    display: 'grid',
+    gridTemplateColumns: 'auto 1fr',
+    gap: '0.25rem 0.75rem',
+    margin: '0',
+  },
+  dd: {
+    margin: '0',
+    fontWeight: '600',
+  },
+  '& ul, & ol': {
+    margin: '0',
+    paddingLeft: '1.25rem',
+  },
+}, { label: 'card' });
+
+// The skeleton's loading bar — self-contained, so the skeleton card is just card + bones.
+export const bone = style({
+  display: 'block',
+  height: '0.75rem',
+  marginBottom: '0.5rem',
+  background: '#e5e7eb',
+}, { label: 'bone' });
+
+// Collected after the registration above — joins in first-registration order.
+export const styles = cssText();
 ```
 
 **Code Explanation**
 
-- **[`css`](/reference/css/css)`(obj)`**: global styles, defined once in a module any platform can import. The object nests to mirror the DOM — each nested key composes a descendant selector (`.dashboard header h1`)
-- **`'& ul, & ol'` / `'&.skeleton .bone'`**: every `&` expands to the parent selector, so both list types share one rule and the skeleton bones scope to the card element itself
-- **Platform-dependent return**: the server receives the CSS text for its `<style>` tag (the head below injects it); the shell is static, so the client never imports this module — nothing re-injects
+- **[`cssText`](/reference/css/csstext)`()`**: collects the registered rule text — a peek over the registration state, identical on both platforms; the server embeds it in the shell's `<style>`
+- **[`css`](/reference/css/css)`(obj)`**: global styles, defined once in a module any platform can import
+- **[`style`](/reference/css/style)`(obj, { label })`**: scoped styles — each call returns a hashed class the markup consumes as `class={card}`; nested keys compose descendant selectors (`header h1` under `dashboard`, `dl` under `card`), so only elements that carry a generated class need one
+- **`bone`**: a self-contained loading-bar class — the skeleton card is just `card` + three `bone` spans
+- **`'& ul, & ol'`**: every `&` expands to the parent selector, so both list types share one rule
+- **Platform-independent collection**: the server receives the CSS text for its `<style>` tag via `cssText()`; the shell is static, so the client never imports this module — nothing re-injects
 
 Then the server. Create `src/server.tsx`:
 
@@ -364,7 +377,7 @@ export function render(): ReadableStream<string> {
     head: {
       title: 'Dashboard',
       meta: [{ charset: 'UTF-8' }],
-      // css() returns the generated CSS text on the server — injected here, once.
+      // cssText() collected the registered CSS text — injected here, once.
       styles: [styles],
       // The client entry as a module script: module scripts defer, so head placement gives the
       // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).
@@ -387,10 +400,10 @@ The streamed HTML looks like this — the shell and all three fallbacks arrive b
 ```bash
 curl -sN localhost:5173/
 # <!DOCTYPE html>…<style>…</style><script type="module" src="/src/client.tsx"></script>…<div id="app">
-#   <div class="dashboard"><header>…<h1>Dashboard</h1>…</header><main class="grid">
-#     <!--[--><section class="card skeleton">…<h2>Stats</h2>…<!--hs0--><!--]-->        ← Stats skeleton (TTFB)
-#     <!--[--><section class="card skeleton">…<h2>Recent activity</h2>…<!--hs1-->…    ← Activity skeleton
-#     <!--[--><section class="card skeleton">…<h2>Top items</h2>…<!--hs2-->…          ← Top skeleton
+#   <div class="h-dashboard-…"><header>…<h1>Dashboard</h1>…</header><main class="h-grid-…">
+#     <!--[--><section class="h-card-…">…<h2>Stats</h2>…<span class="h-bone-…"></span>…<!--hs0--><!--]-->        ← Stats skeleton (TTFB)
+#     <!--[--><section class="h-card-…">…<h2>Recent activity</h2>…<!--hs1-->…    ← Activity skeleton
+#     <!--[--><section class="h-card-…">…<h2>Top items</h2>…<!--hs2-->…          ← Top skeleton
 #   </main></div>
 # <script>function $hs(id){…}</script>                                      ← one-time swap bootstrap (before the templates)
 # <template id="hs0">…<dd>$48.2k</dd>…</template><script>$hs("hs0")</script>  ← Stats resolves (~120ms) → swaps now
@@ -445,6 +458,7 @@ Open `http://localhost:5173/`. You see the header and three loading skeletons im
 
 ```tsx
 import { Suspense } from '@hellajs/dom';
+import { dashboard, grid, card, bone } from './theme';
 
 // Simulated async fetch — resolves with `data` after `ms`. Deterministic (no backend),
 // so the streamed shape is reproducible. Each card uses a distinct latency: the shell and
@@ -456,11 +470,11 @@ function after<T>(data: T, ms: number): Promise<T> {
 // A static placeholder — the <Suspense> fallback. It ships in the first flushed chunk, so
 // the layout is stable before the real card resolves.
 const Skeleton = ({ label }: { label: string }) => (
-  <section class="card skeleton">
+  <section class={card}>
     <h2>{label}</h2>
-    <span class="bone" />
-    <span class="bone" />
-    <span class="bone" />
+    <span class={bone} />
+    <span class={bone} />
+    <span class={bone} />
   </section>
 );
 
@@ -473,7 +487,7 @@ const StatsCard = () => (
   <Suspense fallback={<Skeleton label="Stats" />}>
     {() =>
       after({ revenue: '$48.2k', visitors: '12,904', churn: '2.1%' }, 120).then((d) => (
-        <section class="card">
+        <section class={card}>
           <h2>Stats</h2>
           <dl>
             <dt>Revenue</dt><dd>{d.revenue}</dd>
@@ -491,7 +505,7 @@ const ActivityCard = () => (
     {() =>
       after(['Ada upgraded to Pro', 'Build #281 deployed', 'Grace closed 3 tickets'], 600).then(
         (items) => (
-          <section class="card">
+          <section class={card}>
             <h2>Recent activity</h2>
             <ul>{items.map((t) => <li>{t}</li>)}</ul>
           </section>
@@ -505,7 +519,7 @@ const TopCard = () => (
   <Suspense fallback={<Skeleton label="Top items" />}>
     {() =>
       after(['Accounting', 'Design system', 'Mobile app'], 1200).then((items) => (
-        <section class="card">
+        <section class={card}>
           <h2>Top items</h2>
           <ol>{items.map((t) => <li>{t}</li>)}</ol>
         </section>
@@ -518,12 +532,12 @@ const TopCard = () => (
 // Three independent <Suspense> regions make streaming's value obvious: the page is useful
 // immediately, and each card streams in as its own data lands (no waiting on the slowest).
 export const Dashboard = () => (
-  <div class="dashboard">
+  <div class={dashboard}>
     <header>
       <h1>Dashboard</h1>
       <span class="user">Ada Lovelace</span>
     </header>
-    <main class="grid">
+    <main class={grid}>
       <StatsCard />
       <ActivityCard />
       <TopCard />
@@ -534,13 +548,14 @@ export const Dashboard = () => (
 ### `src/theme.ts`
 
 ```ts
-import { css } from '@hellajs/css';
+import { css, cssText } from '@hellajs/css';
 
 // The dashboard's theme, one nested object mirroring the DOM — every selector composes
-// down from .dashboard. css() returns the generated CSS text on the server (no DOM); the
-// server injects it once into the streamed document's <head>. The shell is static, so no
-// client re-injection is needed. Deliberately minimal: layout and skeleton visibility only.
-export const styles = css({
+// down from .dashboard. css() registers the rules on both platforms; cssText() then
+// collects the generated CSS text (a peek, never a drain) for the server to inject once
+// into the streamed document's <head>. The shell is static, so no client re-injection is
+// needed. Deliberately minimal: layout and skeleton visibility only.
+css({
   body: {
     fontFamily: 'system-ui, sans-serif',
     maxWidth: '42rem',
@@ -597,6 +612,9 @@ export const styles = css({
     },
   },
 });
+
+// Collected after the registration above — joins in first-registration order.
+export const styles = cssText();
 ```
 ### `src/server.tsx`
 
@@ -621,7 +639,7 @@ export function render(): ReadableStream<string> {
     head: {
       title: 'Dashboard',
       meta: [{ charset: 'UTF-8' }],
-      // css() returns the generated CSS text on the server — injected here, once.
+      // cssText() collected the registered CSS text — injected here, once.
       styles: [styles],
       // The client entry as a module script: module scripts defer, so head placement gives the
       // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).

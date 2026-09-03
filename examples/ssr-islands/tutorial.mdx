@@ -8,7 +8,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 
 - **[`ssr`](/reference/ssr/ssr)**: Serialize a template to an HTML string on the server
 - **[`doc`](/reference/ssr/doc)**: Wrap rendered HTML into a full document with a stylesheet and script tag
-- **[`css`](/reference/css/css)**: Define styles that return CSS text on the server (no DOM), exported for `doc()` to emit
+- **[`css`](/reference/css/css)**: Register styles on both platforms, collected by [`cssText`](/reference/css/csstext) for `doc()` to emit
 - **[`mount`](/reference/dom/mount)**: Mount a reactive island into an empty slot the server left open
 
 This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders the shell and `Bun.build` bundles the client at startup — one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
@@ -43,16 +43,18 @@ bun add @hellajs/core @hellajs/dom @hellajs/ssr @hellajs/css
 
 ## The App Template
 
-The shared module exports two things: the page's styles and a static shell template — a heading plus an empty slot for the island. Both are pure data, no DOM. The server renders the template with [`ssr`](/reference/ssr/ssr) and emits the styles via [`doc`](/reference/ssr/doc); the client mounts an island into the slot by selector.
+The shared module exports two things: the page's collected styles and a static shell template — a heading plus an empty slot for the island. Both are pure data, no DOM. The server renders the template with [`ssr`](/reference/ssr/ssr) and emits the styles via [`doc`](/reference/ssr/doc); the client mounts an island into the slot by selector.
 
 Create `src/app.js`:
 
 ```js
 // src/app.js
 import { html } from '@hellajs/dom';
-import { css } from '@hellajs/css';
+import { css, cssText } from '@hellajs/css';
 
-export const styles = css({
+// css() registers the rules on both platforms; cssText() collects the generated text
+// for the server. Pass it to `doc()`'s `styles` to emit one <style> tag.
+css({
   body: {
     fontFamily: 'sans-serif',
     margin: '2rem',
@@ -69,6 +71,9 @@ export const styles = css({
   },
 });
 
+// The registered rule text, collected after the css() call above.
+export const styles = cssText();
+
 export const App = () => html`
   <div>
     <h1>SSR Islands</h1>
@@ -80,12 +85,12 @@ export const App = () => html`
 **Code Explanation**
 
 - **[`html`](/reference/dom/html)**: A tagged template that parses to a HellaNode AST at runtime (no build step). Interpolations become reactive bindings
-- **[`css`](/reference/css/css)`({ ... })`**: On the server (no DOM), returns the generated CSS text instead of injecting a stylesheet. Exported as `styles` so the server can emit it through `doc()`
+- **[`css`](/reference/css/css)`({ ... })`**: Registers the rules on both platforms (state-only on the server). [`cssText`](/reference/css/csstext)`()` collects the generated text, exported as `styles` so the server can emit it through `doc()`
 - **`<div id="slot"></div>`**: An empty placeholder. The client mounts a reactive island here
 
 ## Server Rendering
 
-The server stringifies the template with [`ssr`](/reference/ssr/ssr) and wraps it into a full document with [`doc`](/reference/ssr/doc). It imports the server-generated `styles` from `app.js` and passes them to `doc()`'s `styles` to emit a single `<style>` tag. `Bun.build` bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
+The server stringifies the template with [`ssr`](/reference/ssr/ssr) and wraps it into a full document with [`doc`](/reference/ssr/doc). It imports the collected `styles` from `app.js` and passes them to `doc()`'s `styles` to emit a single `<style>` tag. `Bun.build` bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
 
 Create `src/server.js`:
 
@@ -125,7 +130,7 @@ Bun.serve({
 
 **Code Explanation**
 
-- **`import { App, styles } from './app.js'`**: Pulls the template and the server-generated CSS text from the shared module
+- **`import { App, styles } from './app.js'`**: Pulls the template and the collected CSS text from the shared module
 - **[`ssr`](/reference/ssr/ssr)`(App())`**: Walks the template AST to an HTML string. `App()` runs server-side; `html` parsing is DOM-free
 - **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory — no `dist/` to manage. Edit the client and restart to re-bundle
 - **[`doc`](/reference/ssr/doc)`({ head, body })`**: Assembles a full document. `styles` joins into one `<style>` tag; `scripts` emits each tag
@@ -206,11 +211,12 @@ The island-mount pattern — server HTML plus one reactive slot — is the basel
 
 ```js
 import { html } from '@hellajs/dom';
-import { css } from '@hellajs/css';
+import { css, cssText } from '@hellajs/css';
 
-// On the server (no DOM), `css()` returns the generated CSS text instead of
-// injecting a stylesheet. Pass it to `doc()`'s `styles` to emit one <style> tag.
-export const styles = css({
+// css() registers the rules on both platforms; cssText() collects the generated text
+// for the server (after the registration below). Pass it to `doc()`'s `styles` to emit
+// one <style> tag.
+css({
   body: {
     fontFamily: 'sans-serif',
     margin: '2rem',
@@ -226,6 +232,9 @@ export const styles = css({
     backgroundColor: '#fff',
   },
 });
+
+// The registered rule text, collected after the css() call above.
+export const styles = cssText();
 
 // Shared template: a static shell with a server-rendered count and an empty
 // island slot. Pure data — no DOM. `ssr()` stringifies it to HTML on the server.

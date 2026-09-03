@@ -1,6 +1,6 @@
 # resetCss
 
-Clears all CSS rules and resets the CSS system to initial state. Client-only effect; a no-op on the server (no DOM).
+Clears all CSS rules and resets the CSS system to initial state. Clears the registration state on both platforms; the sheet reset is DOM-only (a no-op without a document).
 
 ## API
 
@@ -43,8 +43,8 @@ import { css, resetCss } from '@hellajs/css';
 // Reset before each test suite for a predictable starting state
 resetCss();
 
-const buttonStyle = css({ background: 'red', color: 'white' }, { name: 'btn' });
-// buttonStyle === 'btn' — styles injected cleanly
+const buttonStyle = css({ body: { margin: 0 } });
+// buttonStyle === '' — styles injected cleanly
 ```
 
 ### Memory Management
@@ -75,9 +75,9 @@ Perfect for:
 - **Long-running applications** - Periodic cleanup to prevent memory leaks
 - **Dynamic theming** - Clear old theme before applying new one
 
-### Integration with resetCssVars
+### Integration with resetVars
 
-See [`resetCssVars`](/reference/css/resetcssvars) for clearing CSS variables. Use both together for a complete reset.
+See [`resetVars`](/reference/css/resetvars) for clearing CSS variables. Use both together for a complete reset.
 
 ### Safety
 

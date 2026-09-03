@@ -1,7 +1,5 @@
-import { hasDocument, isFunction, isNumber, isObject, isPlainObject, isString } from "./internal/core";
-import { hostQualifier, upsertRule } from "./internal/sheet";
-import { STYLE_ID, injectedMap } from "./internal/injection";
-import type { InjectedEntry } from "./internal/injection";
+import { isFunction, isNumber, isObject, isPlainObject, isString } from "./internal/core";
+import { registerText } from "./internal/injection";
 import type { CSSObject, CSSOptions } from "./types";
 
 const AMP_REGEX = /&/g;
@@ -24,90 +22,51 @@ const UNITLESS_PROPERTIES = new Set([
 
 /**
  * At-rule prefixes that wrap style declarations (as opposed to defining top-level constructs).
- * When a class scope is active (css() called with `name`), content inside these at-rules
- * inherits the parent selector instead of being processed with an empty selector. Unchanged
- * when called without `name` (global mode).
  */
 const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-style"] as const;
 
 /**
- * Creates CSS rules from JavaScript objects. Global by default.
+ * Creates CSS rules from JavaScript objects. Global only.
  *
- * On the client (DOM available): injects rules into the CSSOM and returns the provided
- * `name` (or empty string for global). On the server (no DOM): returns the generated CSS
- * text directly, with zero state mutation.
+ * Registers the generated rules on both platforms and returns an empty string.
+ * On the client (DOM available) rules are injected into the CSSOM; on the
+ * server the registration is state-only — collect the text with `cssText()`.
+ * For scoped/hashed styles, use `style()`.
  * @param obj CSS object containing style properties and nested selectors
- * @param options Optional configuration. Provide `name` to create a scoped `.{name}` selector and get a return value for `class` attributes. Provide `host` to create the `<style>` element in a shadow root or other parent node instead of `document.head`.
- * @returns The provided `name` string (or empty string for global) on the client; the CSS text on the server.
- * @throws {Error} When obj is not a plain object, when a property value is a function — use `cssVars()`
+ * @param options Optional configuration. Provide `host` to create the `<style>` element in a shadow root or other parent node instead of `document.head`.
+ * @returns Always returns empty string (for backward compatibility), on both platforms.
+ * @throws {Error} When obj is not a plain object, when a property value is a function — use `vars()`
  * for reactive values, or when a conditional at-rule body contains direct style declarations with no
- * selector in scope (global mode) — nest selectors under the at-rule or use the `name` option.
+ * selector in scope — nest selectors under the at-rule.
+ * @returns Always returns empty string (for backward compatibility), on both platforms.
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
 
-  const { name, host } = options;
-  const isGlobal = !name;
-  const selector = name ? `.${name}` : "";
-  const cssText = process(obj, selector, isGlobal);
+  const { host } = options;
+  const cssText = process(obj, "", true);
 
-  if (!hasDocument()) return cssText;
-
-  const existing = injectedMap.get(`${hostQualifier(host)}${cssText}`);
-  if (existing) {
-    existing.count++;
-    return name || "";
-  }
-
-  // Split into individual top-level rules at brace-depth boundaries.
-  const rules: string[] = [];
-  let depth = 0;
-  let start = 0;
-  let i = 0;
-  const len = cssText.length;
-  while (i < len) {
-    const ch = cssText[i++];
-    if (ch === "{") depth++;
-    else if (ch === "}") {
-      depth--;
-      if (depth === 0) {
-        rules.push(cssText.slice(start, i));
-        start = i;
-      }
-    }
-  }
-
-  let ri = 0;
-  const rlen = rules.length;
-  while (ri < rlen) {
-    upsertRule(STYLE_ID, `${cssText}:${ri}`, rules[ri]!, host);
-    ri++;
-  }
-
-  const entry: InjectedEntry = { count: 1, ruleCount: rules.length };
-  injectedMap.set(`${hostQualifier(host)}${cssText}`, entry);
-
-  return name || "";
+  registerText(cssText, host);
+  return "";
 }
 
 /**
  * @internal
  * Recursively traverses a CSS object and builds the final CSS string.
  * Conditional at-rules (@media, @container, @supports, @starting-style) inherit
- * the active parent selector (a `.{name}` scope or any nested selector); with no
- * selector in scope, a conditional at-rule body containing direct style declarations
- * throws. Definitional at-rules (@keyframes, @font-face, @layer, etc.) always
- * process content with an empty selector so they never nest under a class; their
- * direct declarations emit bare (e.g. `@font-face{font-family:…}`). The `&` token
- * in nested selectors is replaced with the parent selector. CamelCase property keys
- * convert to kebab-case.
+ * the active parent selector (any nested selector); with no selector in scope,
+ * a conditional at-rule body containing direct style declarations throws.
+ * Definitional at-rules (@keyframes, @font-face, @layer, etc.) always process
+ * content with an empty selector; their direct declarations emit bare (e.g.
+ * `@font-face{font-family:…}`). The `&` token in nested selectors is replaced
+ * with the parent selector. CamelCase property keys convert to kebab-case.
  * The `content` property auto-quotes unquoted strings. Array values join with
  * commas. Numeric values append `px` except on unitless properties and `--` custom
  * properties. Null and undefined values are skipped. Function values throw —
- * reactive values belong to `cssVars()`.
+ * reactive values belong to `vars()`.
  *
- * Exported so removeCss can re-derive the same text from (obj, options) —
- * deterministic: the same object always produces the same text.
+ * Exported so removeCss can re-derive the same text — deterministic: the same
+ * object always produces the same text.
  *
  * @param obj CSS object to process
  * @param selector Parent selector for nesting resolution
@@ -147,7 +106,7 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
           while (bi < bLen) {
             const bodyValue = body[bodyKeys[bi++] as string];
             if (bodyValue != null && !isPlainObject(bodyValue)) {
-              throw new Error(`[css] conditional at-rule "${key}" contains declarations with no selector — nest selectors under it or use the name option`);
+              throw new Error(`[css] conditional at-rule "${key}" contains declarations with no selector — nest selectors under the at-rule`);
             }
           }
         }
@@ -172,7 +131,7 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
       }
     } else {
       if (isFunction(value)) {
-        throw new Error(`[css] function values are not supported in css objects — use cssVars() for reactive values, key: ${key}`);
+        throw new Error(`[css] function values are not supported in css objects — use vars() for reactive values, key: ${key}`);
       }
       const isCustom = key.startsWith("--");
       const property = isCustom ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);

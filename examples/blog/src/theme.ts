@@ -1,6 +1,6 @@
-import { css, cssVars } from "@hellajs/css";
+import { css, style, vars } from "@hellajs/css";
 
-export const theme = cssVars({
+export const theme = vars({
   color: {
     bg: "#f5f5f5",
     surface: "#fff",
@@ -25,21 +25,26 @@ css({
     backgroundColor: theme.color.bg,
     color: theme.color.text,
   },
-  ".card": {
-    backgroundColor: theme.color.surface,
-    borderRadius: theme.radius.md,
-    padding: "1rem",
-    marginBottom: "0.75rem",
-    border: `1px solid ${theme.color.border}`,
-  },
-  ".card-title": {
-    fontSize: "1.1rem",
-    fontWeight: 600,
-    margin: "0 0 0.5rem",
-  },
-  ".card-body": {
-    color: theme.color.muted,
-    fontSize: "0.9rem",
-    lineHeight: 1.5,
-  }
 });
+
+// Shared card styles — composed by PostCard via style(card, ...) and consumed
+// directly by UserProfile.
+export const card = style({
+  backgroundColor: theme.color.surface,
+  borderRadius: theme.radius.md,
+  padding: "1rem",
+  marginBottom: "0.75rem",
+  border: `1px solid ${theme.color.border}`,
+}, { label: "card" });
+
+export const cardTitle = style({
+  fontSize: "1.1rem",
+  fontWeight: 600,
+  margin: "0 0 0.5rem",
+}, { label: "card-title" });
+
+export const cardBody = style({
+  color: theme.color.muted,
+  fontSize: "0.9rem",
+  lineHeight: 1.5,
+}, { label: "card-body" });

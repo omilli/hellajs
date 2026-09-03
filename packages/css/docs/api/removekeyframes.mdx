@@ -1,0 +1,60 @@
+# removeKeyframes
+
+Removes a `@keyframes` rule created by `keyframes()` and decrements its reference count for memory management.
+
+## API
+
+```typescript
+function removeKeyframes(obj: KeyframesObject): void
+```
+- `obj`: Keyframes object to remove (structurally identical objects match, same reference not required)
+- **Returns**: `void`
+
+## Basic Usage
+
+```typescript
+import { keyframes, removeKeyframes } from '@hellajs/css';
+
+const spin = keyframes({
+  from: { transform: 'rotate(0deg)' },
+  to: { transform: 'rotate(360deg)' }
+});
+
+// Later, remove when no longer needed
+removeKeyframes({
+  from: { transform: 'rotate(0deg)' },
+  to: { transform: 'rotate(360deg)' }
+});
+```
+
+## Key Concepts
+
+### Reference Counting
+
+`removeKeyframes` mirrors the reference counting model of [`removeStyle`](/reference/css/removestyle). Each [`keyframes`](/reference/css/keyframes) call increments the reference count. `removeKeyframes` decrements it. The rule persists until all references are removed:
+
+```typescript
+import { keyframes, removeKeyframes } from '@hellajs/css';
+
+const steps = { from: { opacity: '0' }, to: { opacity: '1' } };
+
+keyframes(steps);  // refCount = 1
+keyframes(steps);  // refCount = 2 — same name, one rule
+
+removeKeyframes(steps);  // refCount = 1, rule still present
+removeKeyframes(steps);  // refCount = 0, rule removed from stylesheet
+```
+
+### Deterministic Re-Derivation
+
+`removeKeyframes` re-derives the name and rule text from the same object — the deterministic transform `keyframes()` uses — so structurally identical objects always locate the injected entry, in any key order. No reference needs to be held.
+
+## Important Considerations
+
+### Unknown Input
+
+`removeKeyframes` is a no-op for inputs not previously registered by a `keyframes` call — no throw, no stylesheet change.
+
+### Both Platforms
+
+Registration state is decremented on client and server alike; the CSSOM rule drops at zero references (a no-op without a DOM).

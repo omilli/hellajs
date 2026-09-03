@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { mount } from "@hellajs/dom";
 import { router } from "@hellajs/router";
 import { appStore } from "./state.ts";
@@ -37,20 +37,19 @@ router({
   notFound: () => view(PostList()),
 });
 
-const App = <div class="app-container">
-  <h1 class="app-title">{title}</h1>
+const appContainer = style({
+  maxWidth: "48rem",
+  margin: "0 auto",
+  padding: "1rem",
+}, { label: "app-container" });
+
+const appTitle = style({
+  fontSize: "1.5rem",
+}, { label: "app-title" });
+
+const App = <div class={appContainer}>
+  <h1 class={appTitle}>{title}</h1>
   {view}
 </div>;
-
-css({
-  ".app-container": {
-    maxWidth: "48rem",
-    margin: "0 auto",
-    padding: "1rem",
-  },
-  ".app-title": {
-    fontSize: "1.5rem",
-  }
-});
 
 mount(App, "#app");

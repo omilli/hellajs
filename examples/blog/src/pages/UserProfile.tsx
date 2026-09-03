@@ -1,11 +1,31 @@
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 import { ForEach } from "@hellajs/dom";
 import { navigate } from "@hellajs/router";
 import { userResource, userPostsResource } from "../state.ts";
-import { theme } from "../theme.ts";
+import { card, theme } from "../theme.ts";
 import { Placeholder } from "../components/Placeholder.tsx";
 import { PostCard } from "../components/PostCard.tsx";
 import { BackLink } from "../components/BackLink.tsx";
+
+const avatar = style({
+  width: "4rem",
+  height: "4rem",
+  borderRadius: "50%",
+  objectFit: "cover",
+}, { label: "avatar" });
+
+const userInfo = style({
+  display: "flex",
+  gap: "1rem",
+  alignItems: "center",
+  marginBottom: "1rem",
+}, { label: "user-info" });
+
+const userMeta = style({
+  fontSize: "0.85rem",
+  color: theme.color.subtle,
+  "& p": { margin: "0.15rem 0" },
+}, { label: "user-meta" });
 
 const {
   fetch: fetchUser,
@@ -34,14 +54,14 @@ export const UserProfile = () => {
 
       if (!user?.id) return <Placeholder message="User not found." />;
 
-      return <div class="card">
-        <div class="user-info">
-          <img class="avatar" src={image} alt={`${firstName} ${lastName}`} />
+      return <div class={card}>
+        <div class={userInfo}>
+          <img class={avatar} src={image} alt={`${firstName} ${lastName}`} />
           <div>
             <h2 class="title" style="margin-bottom: 0.25rem">
               {firstName} {lastName}
             </h2>
-            <div class="user-meta">
+            <div class={userMeta}>
               <p>{email}</p>
               <p>{company?.title} at {company?.name}</p>
             </div>
@@ -66,24 +86,3 @@ export const UserProfile = () => {
   </div>;
 };
 
-css({
-  ".user-profile": {
-    ".avatar": {
-      width: "4rem",
-      height: "4rem",
-      borderRadius: "50%",
-      objectFit: "cover",
-    },
-    ".user-info": {
-      display: "flex",
-      gap: "1rem",
-      alignItems: "center",
-      marginBottom: "1rem",
-    },
-    ".user-meta": {
-      fontSize: "0.85rem",
-      color: theme.color.subtle,
-      "& p": { margin: "0.15rem 0" },
-    },
-  },
-});

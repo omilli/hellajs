@@ -1,34 +1,39 @@
-import type { CSSVarsOptions, CSSVars, CSSVarInputObject } from "./types";
+import type { CSSVars, CSSVarInputObject, VarsOptions } from "./types";
 import { hash, stringify } from "./internal/shared";
 import { createVarsEffect } from "./internal/reactive";
 import { hasDocument, isFunction, isPlainObject } from "./internal/core";
 import { hostQualifier } from "./internal/sheet";
-import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules, resolveVarsOptions, serializeDecls, varsRuleText } from "./internal/vars";
+import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules, resolveVarsOptions } from "./internal/vars";
 
 /**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
  *
- * On the client (DOM available): injects the custom properties into the CSSOM and returns a
- * same-shaped proxy of `var()` references. On the server (no DOM): returns the generated CSS
- * text directly (the custom-property declarations as a string), with zero state mutation and
- * no effects — the return type stays `CSSVars<T>` for client ergonomics; treat the server value
- * as `string` (narrow with `typeof` if reading it in isomorphic code).
+ * Returns a same-shaped proxy of `var()` references on BOTH platforms: on the
+ * client (DOM available) the declarations are injected into the CSSOM; on the
+ * server the registration is state-only (collect it with
+ * [`cssText`](/reference/css/csstext)) and no effects are created — function
+ * leaves resolve once to their initial values.
  * @template T
  * @param vars Object containing CSS variable definitions. Can include nested objects and reactive signals.
  * @param options Configuration options for scoping, prefixing, media conditions, and style host
- * @returns Proxy object with var() references on the client; CSS text on the server.
+ * @returns Proxy object with var() references, on both platforms.
  * @throws {Error} When vars is not a plain object.
  * @throws {Error} When the same reactive vars object is registered a second time with differing scoped/prefix/media/host options.
  */
-export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): CSSVars<T> {
-  if (!isPlainObject(vars)) throw new Error(`[css] cssVars: expected a plain object, received ${String(vars)}`);
+export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions = {}): CSSVars<T> {
+  if (!isPlainObject(vars)) throw new Error(`[css] vars: expected a plain object, received ${String(vars)}`);
 
   const { flat, hasFns } = flattenVars(vars);
   const { scope, fullPrefix, media, host } = resolveVarsOptions(options);
   const resolved = { scope, fullPrefix, media, host };
 
   if (!hasDocument()) {
-    return varsRuleText(scope, media, serializeDecls(Object.entries(flat).map(([k, v]) => [`${fullPrefix}${k}`, v] as [string, unknown]))) as unknown as CSSVars<T>;
+    // Server: register the initial-value rule text into the vars-side state
+    // (sheet ops no-op without a DOM) and return the proxy. buildResult reads
+    // only flat keys, so the result is deterministic; hasFns is irrelevant —
+    // no effects without a DOM.
+    applyRules(flat, resolved);
+    return buildResult<T>(flat, fullPrefix);
   }
 
   if (!hasFns) {
@@ -53,7 +58,7 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
     cache.set(inputHash, { flattened: flat, result });
     // An LRU eviction removes the cache entry but not the registry entry —
     // a re-registration must join the surviving refCount, not reset it to 1
-    // (otherwise one removeCssVars could drop vars with refs outstanding).
+    // (otherwise one removeVars could drop vars with refs outstanding).
     const prior = varsRegistryStatic.get(inputHash);
     if (prior) prior.refCount++;
     else {
@@ -72,7 +77,7 @@ export function cssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOp
   const existingEntry = varsRegistryReactive.get(vars);
   if (existingEntry) {
     if (scope !== existingEntry.scope || fullPrefix !== existingEntry.fullPrefix || media !== existingEntry.media || host !== existingEntry.host) {
-      throw new Error(`[css] cssVars: reactive vars object already registered with different options (scoped/prefix/media/host); use a separate object per scope, received ${String(vars)}`);
+      throw new Error(`[css] vars: reactive vars object already registered with different options (scoped/prefix/media/host); use a separate object per scope, received ${String(vars)}`);
     }
     existingEntry.refCount++;
     applyRules(flat, resolved);

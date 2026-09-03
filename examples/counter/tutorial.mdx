@@ -70,15 +70,13 @@ Replace the content of `main.jsx` with the component shell.
 import { signal } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
 
-//... styles from next section
-
 const Counter = () => {
   const count = signal(0);
 
   return (
-    <div class="container">
+    <div>
       <h1>Counter: {count}</h1>
-      <button on:click={() => count(count() + 1)} class="btn-inc">
+      <button on:click={() => count(count() + 1)}>
         +
       </button>
     </div>
@@ -98,51 +96,64 @@ mount(Counter, '#app');
 
 ## Styles
 
-Define styles using [`css`](/reference/css/css). Use nested selectors to scope descendant styles inside a parent selector.
+Define styles using [`style`](/reference/css/style). Each call returns a content-hashed class name — no hand-picked names to collide — and nested selectors scope descendants under the class.
 
 ```jsx
 //... add after dom import
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 
-css({
-  '.container': {
-    padding: '1rem',
-    textAlign: 'center',
-    'h1': {
-      fontSize: '1.5rem',
-      marginBottom: '1rem',
-    },
-    'p': {
-      marginBottom: '1rem',
-    },
-    'button': {
-      padding: '0.5rem 0.75rem',
-      color: 'white',
-      borderRadius: '0.25rem',
-      border: 'none',
-      cursor: 'pointer',
-    },
-    '.controls': {
-      display: 'flex',
-      gap: '0.5rem',
-      justifyContent: 'center',
-    },
-    '.btn-dec': { backgroundColor: '#ef4444' },
-    '.btn-inc': { backgroundColor: '#3b82f6' },
-    '.btn-reset': { backgroundColor: '#6b7280' },
+const container = style({
+  padding: '1rem',
+  textAlign: 'center',
+  'h1': {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
   },
-});
+  'p': {
+    marginBottom: '1rem',
+  },
+  'button': {
+    padding: '0.5rem 0.75rem',
+    color: 'white',
+    borderRadius: '0.25rem',
+    border: 'none',
+    cursor: 'pointer',
+  },
+}, { label: 'container' });
 
+const controls = style({
+  display: 'flex',
+  gap: '0.5rem',
+  justifyContent: 'center',
+}, { label: 'controls' });
+
+const btnDec = style({ backgroundColor: '#ef4444' }, { label: 'btn-dec' });
+const btnInc = style({ backgroundColor: '#3b82f6' }, { label: 'btn-inc' });
+const btnReset = style({ backgroundColor: '#6b7280' }, { label: 'btn-reset' });
+```
+
+Then consume the returned class names in the markup with `class={...}`:
+
+```jsx
 const Counter = () => {
-  //... rest of the code unchanged
-}
+  const count = signal(0);
+
+  return (
+    <div class={container}>
+      <h1>Counter: {count}</h1>
+      <button on:click={() => count(count() + 1)} class={btnInc}>
+        +
+      </button>
+    </div>
+  );
+};
 ```
 
 **Code Explanation**
 
-- **`css({ '.container': { ... } })`**:  Defines styles scoped to the `.container` selector
-- **`button`**:  Nested CSS selectors style all buttons inside the container
-- **Descendant selectors**:  Buttons inherit base styles (padding, color, border-radius) from the container's `button` key, individual classes only set the background color
+- **`style({ ... }, { label: 'container' })`**:  Scopes the styles under a generated class (`h-container-…`) and returns it for `class={container}`
+- **`button`**:  Nested selectors style all buttons inside the container — each button keeps the base styles (padding, color, border-radius), the `btnDec`/`btnInc`/`btnReset` classes only set the background color
+- **`label`**:  Embeds a readable segment in the hashed class name for debugging
 
 ## Derived State
 
@@ -165,7 +176,7 @@ const Counter = () => {
   const doubled = computed(() => count() * 2);
 
   return (
-    <div class="container">
+    <div class={container}>
       ...
     </div>
   );
@@ -193,15 +204,15 @@ const Counter = () => {
   //... derived values unchanged
 
   return (
-    <div class="container">
+    <div class={container}>
       <h1>Counter: {count}</h1>
 
       <p>Doubled: {doubled}</p>
 
-      <div class="controls">
+      <div class={controls}>
         <button
           on:click={() => count(count() - 1)}
-          class="btn-dec"
+          class={btnDec}
           disabled={() => count() === 0}
         >
           -
@@ -209,14 +220,14 @@ const Counter = () => {
 
         <button
           on:click={() => count(count() + 1)}
-          class="btn-inc"
+          class={btnInc}
         >
           +
         </button>
 
         <button
           on:click={() => count(0)}
-          class="btn-reset"
+          class={btnReset}
           disabled={() => count() === 0}
         >
           Reset
@@ -288,36 +299,36 @@ The patterns you learned here are the foundation for any HellaJS application. Yo
 ```jsx
 import { signal, computed, effect } from "@hellajs/core";
 import { mount } from "@hellajs/dom";
-import { css } from "@hellajs/css";
+import { style } from "@hellajs/css";
 
-css({
-  '.container': {
-    padding: '1rem',
-    textAlign: 'center',
-    'h1': {
-      fontSize: '1.5rem',
-      marginBottom: '1rem',
-    },
-    'p': {
-      marginBottom: '1rem',
-    },
-    'button': {
-      padding: '0.5rem 0.75rem',
-      color: 'white',
-      borderRadius: '0.25rem',
-      border: 'none',
-      cursor: 'pointer',
-    },
-    '.controls': {
-      display: 'flex',
-      gap: '0.5rem',
-      justifyContent: 'center',
-    },
-    '.btn-dec': { backgroundColor: '#ef4444' },
-    '.btn-inc': { backgroundColor: '#3b82f6' },
-    '.btn-reset': { backgroundColor: '#6b7280' },
+const container = style({
+  padding: '1rem',
+  textAlign: 'center',
+  'h1': {
+    fontSize: '1.5rem',
+    marginBottom: '1rem',
   },
-});
+  'p': {
+    marginBottom: '1rem',
+  },
+  'button': {
+    padding: '0.5rem 0.75rem',
+    color: 'white',
+    borderRadius: '0.25rem',
+    border: 'none',
+    cursor: 'pointer',
+  },
+}, { label: 'container' });
+
+const controls = style({
+  display: 'flex',
+  gap: '0.5rem',
+  justifyContent: 'center',
+}, { label: 'controls' });
+
+const btnDec = style({ backgroundColor: '#ef4444' }, { label: 'btn-dec' });
+const btnInc = style({ backgroundColor: '#3b82f6' }, { label: 'btn-inc' });
+const btnReset = style({ backgroundColor: '#6b7280' }, { label: 'btn-reset' });
 
 const Counter = () => {
   const count = signal(0);
@@ -329,14 +340,14 @@ const Counter = () => {
   const doubled = computed(() => count() * 2);
 
   return (
-    <div class="container">
+    <div class={container}>
       <h1>Counter: {count}</h1>
       <p>Doubled: {doubled}</p>
 
-      <div class="controls">
+      <div class={controls}>
         <button
           on:click={() => count(count() - 1)}
-          class="btn-dec"
+          class={btnDec}
           disabled={() => count() === 0}
         >
           -
@@ -344,14 +355,14 @@ const Counter = () => {
 
         <button
           on:click={() => count(count() + 1)}
-          class="btn-inc"
+          class={btnInc}
         >
           +
         </button>
 
         <button
           on:click={() => count(0)}
-          class="btn-reset"
+          class={btnReset}
           disabled={() => count() === 0}
         >
           Reset

@@ -1,4 +1,5 @@
 import { Suspense } from '@hellajs/dom';
+import { dashboard, grid, card, bone } from './theme';
 
 // Simulated async fetch — resolves with `data` after `ms`. Deterministic (no backend),
 // so the streamed shape is reproducible. Each card uses a distinct latency: the shell and
@@ -10,11 +11,11 @@ function after<T>(data: T, ms: number): Promise<T> {
 // A static placeholder — the <Suspense> fallback. It ships in the first flushed chunk, so
 // the layout is stable before the real card resolves.
 const Skeleton = ({ label }: { label: string }) => (
-  <section class="card skeleton">
+  <section class={card}>
     <h2>{label}</h2>
-    <span class="bone" />
-    <span class="bone" />
-    <span class="bone" />
+    <span class={bone} />
+    <span class={bone} />
+    <span class={bone} />
   </section>
 );
 
@@ -27,7 +28,7 @@ const StatsCard = () => (
   <Suspense fallback={<Skeleton label="Stats" />}>
     {() =>
       after({ revenue: '$48.2k', visitors: '12,904', churn: '2.1%' }, 120).then((d) => (
-        <section class="card">
+        <section class={card}>
           <h2>Stats</h2>
           <dl>
             <dt>Revenue</dt><dd>{d.revenue}</dd>
@@ -45,7 +46,7 @@ const ActivityCard = () => (
     {() =>
       after(['Ada upgraded to Pro', 'Build #281 deployed', 'Grace closed 3 tickets'], 600).then(
         (items) => (
-          <section class="card">
+          <section class={card}>
             <h2>Recent activity</h2>
             <ul>{items.map((t) => <li>{t}</li>)}</ul>
           </section>
@@ -59,7 +60,7 @@ const TopCard = () => (
   <Suspense fallback={<Skeleton label="Top items" />}>
     {() =>
       after(['Accounting', 'Design system', 'Mobile app'], 1200).then((items) => (
-        <section class="card">
+        <section class={card}>
           <h2>Top items</h2>
           <ol>{items.map((t) => <li>{t}</li>)}</ol>
         </section>
@@ -72,12 +73,12 @@ const TopCard = () => (
 // Three independent <Suspense> regions make streaming's value obvious: the page is useful
 // immediately, and each card streams in as its own data lands (no waiting on the slowest).
 export const Dashboard = () => (
-  <div class="dashboard">
+  <div class={dashboard}>
     <header>
       <h1>Dashboard</h1>
       <span class="user">Ada Lovelace</span>
     </header>
-    <main class="grid">
+    <main class={grid}>
       <StatsCard />
       <ActivityCard />
       <TopCard />

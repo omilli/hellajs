@@ -1,4 +1,4 @@
-import type { CSSVarInputObject, CSSVarsOptions } from "./types";
+import type { CSSVarInputObject, VarsOptions } from "./types";
 import { hash, stringify } from "./internal/shared";
 import { varsRegistryReactive, varsResultReactive, varsRegistryStatic, cache, removeFromScope } from "./internal/vars";
 import { hostQualifier } from "./internal/sheet";
@@ -9,12 +9,12 @@ import { hasDocument, isPlainObject } from "./internal/core";
  * The variables are removed from the stylesheet only when the reference count reaches zero.
  * Client-only: a no-op when no DOM is available.
  * @template T
- * @param vars Object containing CSS variable definitions. For reactive vars, must be the same reference passed to cssVars; for static vars, a structurally equal object matches by hash.
- * @param options Configuration options. Reactive entries are matched by vars reference and use the options recorded at the first cssVars call; `options` is consulted only to locate the static entry by hash.
+ * @param vars Object containing CSS variable definitions. For reactive vars, must be the same reference passed to vars; for static vars, a structurally equal object matches by hash.
+ * @param options Configuration options. Reactive entries are matched by vars reference and use the options recorded at the first vars call; `options` is consulted only to locate the static entry by hash.
  * @throws {Error} When vars is not a plain object.
  */
-export function removeCssVars<T extends CSSVarInputObject>(vars: T, options: CSSVarsOptions = {}): void {
-  if (!isPlainObject(vars)) throw new Error(`[css] removeCssVars: expected a plain object, received ${String(vars)}`);
+export function removeVars<T extends CSSVarInputObject>(vars: T, options: VarsOptions = {}): void {
+  if (!isPlainObject(vars)) throw new Error(`[css] removeVars: expected a plain object, received ${String(vars)}`);
 
   if (!hasDocument()) return;
 

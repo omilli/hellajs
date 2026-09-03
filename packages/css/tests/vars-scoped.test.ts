@@ -1,15 +1,15 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { batch, flush, signal } from "@hellajs/core";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { cssVars, resetCssVars } from "@hellajs/css/bundle";
+import { vars, resetVars } from "@hellajs/css/bundle";
 
 beforeEach(() => {
   resetTestState();
 });
 
-describe("cssVars scoped", () => {
-  test("scoped cssVars with class selector", () => {
-    const vars = cssVars({
+describe("vars scoped", () => {
+  test("scoped vars with class selector", () => {
+    const varsObj = vars({
       theme: {
         primary: "#ff0000",
         secondary: "#00ff00"
@@ -20,12 +20,12 @@ describe("cssVars scoped", () => {
     const varsText = getStylesheet("hella-vars");
     expect(varsText).toContain(".my-component{--theme-primary:#ff0000;--theme-secondary:#00ff00}");
 
-    expect(vars.theme.primary).toBe("var(--theme-primary)");
-    expect(vars.theme.secondary).toBe("var(--theme-secondary)");
+    expect(varsObj.theme.primary).toBe("var(--theme-primary)");
+    expect(varsObj.theme.secondary).toBe("var(--theme-secondary)");
   });
 
-  test("scoped cssVars with ID selector", () => {
-    const vars = cssVars({
+  test("scoped vars with ID selector", () => {
+    const varsObj = vars({
       layout: {
         padding: "20px",
         margin: "10px"
@@ -36,12 +36,12 @@ describe("cssVars scoped", () => {
     const varsText = getStylesheet("hella-vars");
     expect(varsText).toContain("#main-content{--layout-padding:20px;--layout-margin:10px}");
 
-    expect(vars.layout.padding).toBe("var(--layout-padding)");
-    expect(vars.layout.margin).toBe("var(--layout-margin)");
+    expect(varsObj.layout.padding).toBe("var(--layout-padding)");
+    expect(varsObj.layout.margin).toBe("var(--layout-margin)");
   });
 
-  test("prefixed cssVars", () => {
-    const vars = cssVars({
+  test("prefixed vars", () => {
+    const varsObj = vars({
       colors: {
         primary: "blue",
         accent: "orange"
@@ -52,12 +52,12 @@ describe("cssVars scoped", () => {
     const varsText = getStylesheet("hella-vars");
     expect(varsText).toContain(":root{--comp-colors-primary:blue;--comp-colors-accent:orange}");
 
-    expect(vars.colors.primary).toBe("var(--comp-colors-primary)");
-    expect(vars.colors.accent).toBe("var(--comp-colors-accent)");
+    expect(varsObj.colors.primary).toBe("var(--comp-colors-primary)");
+    expect(varsObj.colors.accent).toBe("var(--comp-colors-accent)");
   });
 
-  test("scoped and prefixed cssVars combined", () => {
-    const vars = cssVars({
+  test("scoped and prefixed vars combined", () => {
+    const varsObj = vars({
       typography: {
         size: "16px",
         weight: "bold"
@@ -68,20 +68,20 @@ describe("cssVars scoped", () => {
     const varsText = getStylesheet("hella-vars");
     expect(varsText).toContain(".card{--ui-typography-size:16px;--ui-typography-weight:bold}");
 
-    expect(vars.typography.size).toBe("var(--ui-typography-size)");
-    expect(vars.typography.weight).toBe("var(--ui-typography-weight)");
+    expect(varsObj.typography.size).toBe("var(--ui-typography-size)");
+    expect(varsObj.typography.weight).toBe("var(--ui-typography-weight)");
   });
 
-  test("multiple scoped cssVars accumulate", () => {
-    cssVars({
+  test("multiple scoped vars accumulate", () => {
+    vars({
       theme: { primary: "red" }
     }, { scoped: ".header" });
 
-    cssVars({
+    vars({
       theme: { secondary: "blue" }
     }, { scoped: ".footer" });
 
-    cssVars({
+    vars({
       layout: { padding: "10px" }
     }, { scoped: ".header" });
 
@@ -96,11 +96,11 @@ describe("cssVars scoped", () => {
     expect(content).toContain("--theme-secondary:blue");
   });
 
-  test("reactive scoped cssVars", () => {
+  test("reactive scoped vars", () => {
     const color = signal("green");
     const size = signal("18px");
 
-    cssVars({
+    vars({
       theme: { color: color },
       font: { size: size }
     }, { scoped: ".dynamic", prefix: "dyn" });
@@ -119,10 +119,10 @@ describe("cssVars scoped", () => {
     expect(varsText).toContain(".dynamic{--dyn-theme-color:purple;--dyn-font-size:22px}");
   });
 
-  test("resetCssVars clears all scoped variables", () => {
-    cssVars({ theme: { primary: "red" } }, { scoped: ".comp1" });
-    cssVars({ theme: { secondary: "blue" } }, { scoped: ".comp2" });
-    cssVars({ layout: { margin: "10px" } });
+  test("resetVars clears all scoped variables", () => {
+    vars({ theme: { primary: "red" } }, { scoped: ".comp1" });
+    vars({ theme: { secondary: "blue" } }, { scoped: ".comp2" });
+    vars({ layout: { margin: "10px" } });
 
     flush();
     let varsText = getStylesheet("hella-vars");
@@ -130,7 +130,7 @@ describe("cssVars scoped", () => {
     expect(varsText).toContain(".comp2");
     expect(varsText).toContain(":root");
 
-    resetCssVars();
+    resetVars();
     flush();
 
     varsText = getStylesheet("hella-vars");
@@ -141,9 +141,9 @@ describe("cssVars scoped", () => {
     const vars1 = { theme: { primary: "red" } };
     const options1 = { scoped: ".test", prefix: "ui" };
 
-    const result1 = cssVars(vars1, options1);
-    const result2 = cssVars(vars1, options1);
-    const result3 = cssVars(vars1, { scoped: ".test", prefix: "ui" });
+    const result1 = vars(vars1, options1);
+    const result2 = vars(vars1, options1);
+    const result3 = vars(vars1, { scoped: ".test", prefix: "ui" });
 
     expect(result1).toBe(result2);
     expect(result1).toBe(result3);
@@ -152,8 +152,8 @@ describe("cssVars scoped", () => {
 
   test("reactive same-ref repeat call with identical options returns the same result", () => {
     const v = { c: signal("red") };
-    const a = cssVars(v, { scoped: ".a" });
-    const b = cssVars(v, { scoped: ".a" });
+    const a = vars(v, { scoped: ".a" });
+    const b = vars(v, { scoped: ".a" });
     expect(a).toBe(b);
     flush();
     const varsText = getStylesheet("hella-vars");
@@ -162,8 +162,8 @@ describe("cssVars scoped", () => {
 
   test("reactive same-ref repeat call with differing scoped throws and writes no stray scope", () => {
     const v = { c: signal("red") };
-    cssVars(v);
-    expect(() => cssVars(v, { scoped: ".dark" })).toThrow("[css] cssVars:");
+    vars(v);
+    expect(() => vars(v, { scoped: ".dark" })).toThrow("[css] vars:");
     flush();
     const varsText = getStylesheet("hella-vars");
     expect(varsText).not.toContain(".dark");
@@ -172,8 +172,8 @@ describe("cssVars scoped", () => {
 
   test("reactive same-ref repeat call with differing prefix throws", () => {
     const v = { c: signal("red") };
-    cssVars(v);
-    expect(() => cssVars(v, { prefix: "p" })).toThrow("[css] cssVars:");
+    vars(v);
+    expect(() => vars(v, { prefix: "p" })).toThrow("[css] vars:");
     flush();
     const varsText = getStylesheet("hella-vars");
     expect(varsText).not.toContain("--p-");

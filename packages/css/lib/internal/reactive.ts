@@ -1,7 +1,7 @@
 import { effect } from "./core";
 
 /**
- * Effect cleanup functions for cssVars. Lazily allocated on first reactive use.
+ * Effect cleanup functions for vars. Lazily allocated on first reactive use.
  */
 let activeEffects: Set<() => void> | undefined;
 

@@ -1,9 +1,10 @@
 import { html } from '@hellajs/dom';
-import { css } from '@hellajs/css';
+import { css, cssText } from '@hellajs/css';
 
-// On the server (no DOM), `css()` returns the generated CSS text instead of
-// injecting a stylesheet. Pass it to `doc()`'s `styles` to emit one <style> tag.
-export const styles = css({
+// css() registers the rules on both platforms; cssText() collects the generated text
+// for the server (after the registration below). Pass it to `doc()`'s `styles` to emit
+// one <style> tag.
+css({
   body: {
     fontFamily: 'sans-serif',
     margin: '2rem',
@@ -19,6 +20,9 @@ export const styles = css({
     backgroundColor: '#fff',
   },
 });
+
+// The registered rule text, collected after the css() call above.
+export const styles = cssText();
 
 // Shared template: a static shell with a server-rendered count and an empty
 // island slot. Pure data — no DOM. `ssr()` stringifies it to HTML on the server.

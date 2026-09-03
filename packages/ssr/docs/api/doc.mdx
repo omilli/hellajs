@@ -26,15 +26,15 @@ function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableSt
 
 ## Basic Usage
 
-Render a template with [`ssr`](/reference/ssr/ssr), take CSS text from [`@hellajs/css`](/reference/css), and assemble both into a document. `mount` emits the wrapper `hydrate` targets.
+Render a template with [`ssr`](/reference/ssr/ssr), collect the CSS text from [`@hellajs/css`](/reference/css) via [`cssText`](/reference/css/csstext), and assemble both into a document. `mount` emits the wrapper `hydrate` targets.
 
 ```js
 import { html } from '@hellajs/dom';
-import { css } from '@hellajs/css';
+import { style, cssText } from '@hellajs/css';
 import { ssr, doc } from '@hellajs/ssr';
 
-const card = css({ border: '1px solid #ccc' }, { name: 'card' }); // CSS text on the server
-const body = ssr(html`<div class="card">Hi</div>`);
+const card = style({ border: '1px solid #ccc' }, { label: 'card' });
+const body = ssr(html`<div class=${card}>Hi</div>`);
 
 const page = doc({
   lang: 'en',
@@ -42,11 +42,11 @@ const page = doc({
   head: {
     title: 'Home',
     meta: [{ charset: 'utf-8' }, { name: 'viewport', content: 'width=device-width' }],
-    styles: [card],
+    styles: [cssText()],
   },
   body,
 });
-// <!DOCTYPE html><html lang="en"><head>…</head><body><div id="app"><div class="card">Hi</div></div></body></html>
+// <!DOCTYPE html><html lang="en"><head>…</head><body><div id="app"><div class="h-card-…">Hi</div></div></body></html>
 ```
 
 Pass an [`ssr.stream`](/reference/ssr/ssr#stream) body and the same options produce a streaming document — the client receives the shell immediately and each chunk as it renders, nothing collected.
@@ -126,7 +126,7 @@ For the full wiring — seeding [`resource`](/reference/resource/resource) with 
 
 ### No automatic CSS or head collection
 
-`doc` takes an already-composed CSS string (`styles`) and explicit `title` / `meta` / `links` / `scripts`. It does not collect [`css()`](/reference/css/css) / [`cssVars()`](/reference/css/cssvars) calls — drain the stringifiers' output yourself and pass it in. Head entries *can* come from the tree, though: [`ssr.head()`](/reference/ssr/ssr#head) plus `ssr(node, { head })` hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` into a bag this `head` option consumes directly.
+`doc` takes an already-composed CSS string (`styles`) and explicit `title` / `meta` / `links` / `scripts`. It does not track [`css()`](/reference/css/css) / [`vars()`](/reference/css/vars) calls — collect their output yourself with [`cssText()`](/reference/css/csstext) and pass it in. Head entries *can* come from the tree, though: [`ssr.head()`](/reference/ssr/ssr#head) plus `ssr(node, { head })` hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` into a bag this `head` option consumes directly.
 
 ### `mount` accepts tag, `#id`, `.class` only
 

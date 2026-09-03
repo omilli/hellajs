@@ -1,0 +1,63 @@
+# cx
+
+Joins class-name fragments into one space-separated string — clsx-compatible, with no styling side effects.
+
+## API
+
+```typescript
+function cx(...args: CXArg[]): string;
+```
+- `args`: Fragments to join — strings and numbers contribute themselves, falsy values drop, objects contribute the keys whose values are truthy, and arrays recurse
+- **Returns**: The joined class string — `""` when nothing survives
+
+## Basic Usage
+
+```jsx
+import { cx } from '@hellajs/css';
+
+const isHighlighted = true;
+const isDisabled = false;
+
+cx('card', isHighlighted && 'card-highlight', { 'card-disabled': isDisabled });
+// "card card-highlight"
+```
+
+## Key Concepts
+
+### What Joins
+
+- Strings join verbatim; numbers stringify (`cx('col', 4)` → `"col 4"`)
+- Falsy values drop — `false`, `null`, `undefined`, `0`, `""` never reach the output
+- Objects keep the keys whose values are truthy — value shapes are ignored, only key names join
+- Arrays recurse to any depth; falsy items and empty results contribute nothing
+
+```jsx
+import { cx } from '@hellajs/css';
+
+cx('menu', ['item', ['selected', null]], { hidden: false, active: true }, 0);
+// "menu item selected active"
+```
+
+### Composing Recipes and Styles
+
+[`cva`](/reference/css/cva) recipes and [`style`](/reference/css/style) classes are plain strings — `cx` is the join point when several sources feed one `class` attribute:
+
+```jsx
+import { cx, cva } from '@hellajs/css';
+
+const button = cva({
+  base: { cursor: 'pointer' },
+  variants: { size: { sm: { padding: '0.25rem' }, lg: { padding: '0.75rem' } } }
+});
+const isFullWidth = true;
+
+<div class={cx(button({ size: 'lg' }), isFullWidth && 'w-full')}>
+  Save
+</div>
+```
+
+## Important Considerations
+
+### No Styling Side Effects
+
+`cx` generates and registers nothing — it never touches the stylesheet. Every fragment it joins must already exist: a recipe class from [`cva`](/reference/css/cva), a hashed class from [`style`](/reference/css/style), or an external class.

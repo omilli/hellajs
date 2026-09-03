@@ -1,0 +1,88 @@
+# removeStyle
+
+Removes a style created by [`style`](/reference/css/style) and decrements its reference count for memory management. Registration state decrements on both platforms; the CSSOM rules drop at zero references.
+
+## API
+
+```typescript
+// Remove a single-object style
+function removeStyle(obj: StyleObject, options?: StyleOptions): void;
+
+// Remove a composed style (matching the style() overload)
+function removeStyle(base: string | StyleObject, override: StyleObject, options?: StyleOptions): void;
+```
+- `obj`: Style object to remove (structurally identical objects match)
+- `base`: Class string or style object used in the `style()` call
+- `override`: Style object used in the `style()` call
+- `options`: Optional configuration object (must match the options used in `style()`)
+  - `label`: Label used when creating the style
+  - `host`: Parent node the style was injected into — a removal without the same `host` targets a different entry
+- **Returns**: `void`
+
+## Basic Usage
+
+```jsx
+import { style, removeStyle } from '@hellajs/css';
+
+const buttonStyle = style({
+  background: 'blue',
+  color: 'white',
+  padding: '0.5rem 1rem'
+}, { label: 'btn' });
+
+// Use the style...
+<button class={buttonStyle}>Click me</button>
+
+// Later, remove it when no longer needed
+removeStyle({
+  background: 'blue',
+  color: 'white',
+  padding: '0.5rem 1rem'
+}, { label: 'btn' });
+```
+
+## Key Concepts
+
+### Reference Counting
+
+- **Reference Counting**: Each `style()` call with the same derived rule text increments the reference count
+- **Automatic Cleanup**: Removes the CSSOM rules when the reference count reaches zero
+- **Deterministic Matching**: The class and rule text are re-derived from the arguments — the same deterministic transform `style()` uses — so identical arguments always locate the registration
+
+```jsx
+import { style, removeStyle } from '@hellajs/css';
+
+const sharedStyle = { display: 'flex', alignItems: 'center' };
+
+const classA = style(sharedStyle); // refCount = 1
+const classB = style(sharedStyle); // refCount = 2, same class
+
+removeStyle(sharedStyle); // refCount = 1, rule stays
+removeStyle(sharedStyle); // refCount = 0, rule removed
+```
+
+### Server Behavior
+
+On the server (no DOM), `removeStyle` decrements the registration state and never throws — sheet operations are the only DOM-gated step. Collect the remaining text with [`cssText`](/reference/css/csstext).
+
+## Important Considerations
+
+### Exact Matching Required
+
+Structurally identical objects re-derive the same class and text — no cached reference needed:
+
+```jsx
+// ✅ Works — structurally identical objects match
+style({ color: 'red' }, { label: 'x' });
+removeStyle({ color: 'red' }, { label: 'x' });
+
+// ❌ Won't match — different content
+style({ color: 'red' });
+removeStyle({ color: 'blue' }); // no-op, never registered
+```
+
+### Function Values Throw
+
+`removeStyle()` re-derives the rule text through the same transform as [`style`](/reference/css/style), so an object containing a function property value throws here too. Build reactive values with [`vars`](/reference/css/vars) instead.
+
+For bulk cleanup of all styles at once, use [`resetCss`](/reference/css/resetcss).
