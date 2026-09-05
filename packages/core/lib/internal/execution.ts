@@ -1,8 +1,8 @@
 import type { SignalState } from "../signal";
 import type { ComputedState } from "../computed";
-import { WRITABLE } from "./flags";
+import { WRITABLE, COMPUTED, TRACKING } from "./flags";
 import { setCurrentSub } from "./context";
-import { startTracking, endTracking } from "./tracking";
+import { endTracking } from "./tracking";
 import { isEqual } from "./utils";
 
 /**
@@ -29,17 +29,19 @@ export function executeComputed<T = unknown>(computedValue: ComputedState<T>): b
   const prevSubValue = setCurrentSub(computedValue);
   const { cbc, cbf, ce } = computedValue;
 
-  startTracking(computedValue);
+  // Computeds carry no transient bits here (callers validated DIRTY/PENDING first), so the
+  // flag word is rebuilt from constants — cheaper than a read-modify-write
+  computedValue.rf = WRITABLE | COMPUTED | TRACKING;
+  computedValue.rpd = undefined; // Reset dependency traversal pointer for fresh tracking
 
   try {
-    const prevValue = cbc;
-    const newValue = cbf(prevValue);
+    const newValue = cbf(cbc);
     // Equality override: an equal result keeps the old reference and reports no change.
     // Skipped on the first evaluation (prev undefined) — comparators assume real values,
     // and the default check below already treats that case identically.
-    if (ce && prevValue !== undefined && ce(prevValue, newValue)) return false;
+    if (ce && cbc !== undefined && ce(cbc, newValue)) return false;
     computedValue.cbc = newValue;
-    return !isEqual(prevValue, newValue);
+    return !isEqual(cbc, newValue);
   } finally {
     setCurrentSub(prevSubValue);
     endTracking(computedValue);
@@ -47,14 +49,15 @@ export function executeComputed<T = unknown>(computedValue: ComputedState<T>): b
 }
 
 /**
- * @internal Updates the value of a signal or computed signal using polymorphic dispatch.
+ * @internal Updates the value of a signal or computed signal using type-bit dispatch.
  * @param value The reactive node to update.
  * @returns True if the value changed.
  */
 export function updateValue(value: SignalState | ComputedState): boolean {
-  // Polymorphic dispatch: computed has cbf (compute function), signal doesn't
-  if ((value as ComputedState).cbf) {
+  // Type-bit dispatch: computed carries COMPUTED alongside WRITABLE — no property probe
+  if (value.rf & COMPUTED) {
     return executeComputed(value as ComputedState);
   }
-  return executeSignal(value as SignalState, (value as SignalState).sbc);
+  const signalValue = value as SignalState;
+  return executeSignal(signalValue, signalValue.sbc);
 }

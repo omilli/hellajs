@@ -1,7 +1,7 @@
 import { currentValue, setCurrentSub, addScopeEffect } from "./internal/context";
 import { disposeEffect } from "./internal/scheduler";
 import { createLink } from "./internal/links";
-import { GUARDED } from "./internal/flags";
+import { GUARDED, EFFECT_DEP, SIGNAL_DEPS } from "./internal/flags";
 import { isFunction } from "./internal/utils";
 import type { Reactive } from "./internal/links";
 
@@ -32,13 +32,19 @@ export function effect(effectFn: () => unknown): () => void {
     rps: undefined,
     rd: undefined,
     rpd: undefined,
-    rf: GUARDED,
+    // SIGNAL_DEPS: assumes signals-only deps; a computed link clears it permanently
+    rf: GUARDED | SIGNAL_DEPS,
   };
 
   // Link to parent effect if nested: the link lands in parent.rd / child.rs so the
   // scheduler's post-run SCHEDULED walk executes scheduled child effects in dependency order.
   // Must happen before setCurrentSub so the link targets the parent, not this effect
-  currentValue && createLink(effectState, currentValue);
+  if (currentValue) {
+    createLink(effectState, currentValue);
+    // Mark effect parents once: their skip path must walk scheduled child effects.
+    // The bit is never cleared — a stale bit only costs a no-op walk.
+    currentValue.rf & GUARDED && (currentValue.rf |= EFFECT_DEP);
+  }
   // Set this effect as the current reactive context for dependency tracking
   const prevSub = setCurrentSub(effectState);
 

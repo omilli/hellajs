@@ -1,7 +1,6 @@
 import { currentValue } from "./internal/context";
 import { executeSignal } from "./internal/execution";
-import { propagate, propagateChange } from "./internal/propagation";
-import { flush } from "./internal/scheduler";
+import { propagate, propagateChange, flush } from "./internal/scheduler";
 import { createLink } from "./internal/links";
 import { isFunction, isEqual } from "./internal/utils";
 import { WRITABLE, DIRTY } from "./internal/flags";
@@ -84,6 +83,8 @@ export function signal<T>(initialValue?: T, options?: EqualsOptions<T>) {
     // Track dependency if we're inside a reactive context
     currentValue && createLink(signalState, currentValue);
 
-    return signalState.sbv;
+    // sbc is committed by this point (or was never dirty), so it equals sbv — avoid the
+    // property reload
+    return sbc;
   };
 }
