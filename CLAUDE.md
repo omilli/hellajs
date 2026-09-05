@@ -9,7 +9,7 @@
   - Explore the codebase with tools before proposing changes — treat it like a searchable database.
   - ALWAYS use `bun` for scripts — never `node` directly unless unavoidable.
   - Use existing tests, examples, and folders in the repo to execute code/tests. Do not wander outside the file system (e.g., to `/tmp/`) to test or build.
-  - Load the `brain-prime` skill before any substantive task.
+  - Load the `prime` skill before any substantive task.
   - After editing AGENTS.md files, stop. Do NOT run `bun sync` — the post-commit hook + CI handle regeneration.
   - **Never create a changeset.** Adding `.changeset/*.md` files or running `bun changeset` is a manual, user-only step — treat it exactly like a commit: only on an explicit request. This holds even for published-package behavior changes; note the need in your handoff summary and let the user create it. Do not list changeset creation in any plan's DoD.
   - A plan's DoD states each pass criterion as a runnable check, not a prediction of the result — never append an unverified characterization ("zero violations", "no false positives", "passes on the corpus") for an artifact not yet run; it biases the worker toward confirmation and forces an interrupt when wrong. If the characterization is load-bearing, make it its own DoD check the worker must falsify.
@@ -69,7 +69,7 @@
   | clean | `bun clean [package]` | Remove build artifacts. |
   | changeset | `bun changeset` | Add a changeset entry. |
   | release | `bun release` | Bundle, then publish via changesets. |
-  | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`, then sync the `brain-*` skills from `omilli/brain` (shallow clone) into `.agents/skills/` (leaving `comparison/` untouched). |
+  | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`. |
   | visibility | `bun visibility` | Guard: fail if a wholesale-exported `types*.d.ts` contains `@internal`-tagged types (would leak as public). |
   | dead-exports | `bun dead-exports` | Guard: fail if any exported symbol has zero value-position references across source, tests, and docs. |
   | jsdoc-params | `bun jsdoc-params` | Guard: fail if any `function` declaration's JSDoc has a `@param` tag whose name does not match a parameter. |
@@ -79,22 +79,22 @@
 
   ## Skills
 
-  The `brain-*` pack is the skill system: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills that maintain it. All ten `brain-*` skills are synced from `omilli/brain` — do not edit them directly; edits are overwritten on sync. All feedback-driven config edits must target `AGENTS.md` instead. There is no global-inherited layer and no graceful-degradation fallback. `brain-prime` loads first on any substantive task (see Core rules); the rest are discovered on demand.
+  The eleven skills are the skill system: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills that maintain it. They are first-party HellaJS files — edit them directly via `skill` (anatomy) and `author` (voice + cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. There is no global-inherited layer and no graceful-degradation fallback. `prime` loads first on any substantive task (see Core rules); the rest are discovered on demand.
 
-  The loop: `brain-idea` / `brain-audit` / `brain-feature` (entry) → `brain-plan` → `brain-worker` (back to `brain-plan` on a gap, `brain-idea` on a fork) → `brain-feedback` → `brain-memory`. When a skill hits a guide conflict it emits a guide-update proposal; the user accepts, rejects, or defers (see Non-negotiables). A codebase-fact drift — AGENTS.md prose describing current behavior (file maps, invariant one-liners such as "No try/catch") that the source has outgrown — is not a rule conflict: route it to `brain-plan` as a factual fix in the change's blast radius, not to `brain-feedback`. Each skill's `SKILL.md` carries the full workflow plus the two Non-negotiables with skill-specific enforcement. A Break-severity finding from any entry skill must carry an empirical repro (a command or test failing against current code) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `brain-plan` refuses to pin a DoD test to an unverified Break.
+  The loop: `idea` / `audit` / `feature` (entry) → `plan` → `worker` (back to `plan` on a gap, `idea` on a fork) → `feedback` → `memory`. When a skill hits a guide conflict it emits a guide-update proposal; the user accepts, rejects, or defers (see Non-negotiables). A codebase-fact drift — AGENTS.md prose describing current behavior (file maps, invariant one-liners such as "No try/catch") that the source has outgrown — is not a rule conflict: route it to `plan` as a factual fix in the change's blast radius, not to `feedback`. Each skill's `SKILL.md` carries the full workflow plus the two Non-negotiables with skill-specific enforcement. A Break-severity finding from any entry skill must carry an empirical repro (a command or test failing against current code) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `plan` refuses to pin a DoD test to an unverified Break.
 
   | Skill | Role |
   |---|---|
-  | `brain-prime` | Operating backbone — ethos, the loop, methodology, the Non-negotiables. Loaded first. |
-  | `brain-idea` | Stress-test an idea/plan before building; resolve load-bearing forks. Entry. |
-  | `brain-audit` | Review/grade files against the repo's own rules; grounded findings. Entry. |
-  | `brain-feature` | Surface grounded enhancement ideas; hand each to `brain-plan` as an evidence map. Entry. |
-  | `brain-plan` | Turn a goal or evidence map into a task-contract (Files, delta, DoD). |
-  | `brain-worker` | Execute a plan task-by-task; tick each DoD only with cited evidence. |
-  | `brain-feedback` | After a run with friction, conservatively propose config/skill edits. |
-  | `brain-memory` | Persist verified decisions/facts to `memory/`; refresh/supersede. |
-  | `brain-skill` | Author new skills or revise existing ones. Standalone. |
-  | `brain-author` | Author/revise `AGENTS.md`, agent prompts, rules files. Standalone. |
+  | `prime` | Operating backbone — the loop, the handoff gate, the layering contract, the memory protocol. Loaded first. |
+  | `idea` | Stress-test an idea/plan before building; resolve load-bearing forks. Entry. |
+  | `audit` | Review/grade files against the repo's own rules; grounded findings. Entry. |
+  | `feature` | Surface grounded enhancement ideas; hand each to `plan` as an evidence map. Entry. |
+  | `plan` | Turn a goal or evidence map into a task-contract (Files, delta, DoD). |
+  | `worker` | Execute a plan task-by-task; tick each DoD only with cited evidence. |
+  | `feedback` | After a run with friction, conservatively propose config/skill edits. |
+  | `memory` | Persist verified decisions/facts to `memory/`; refresh/supersede. |
+  | `skill` | Author new skills or revise existing ones. Standalone. |
+  | `author` | Author/revise `AGENTS.md`, agent prompts, rules files. Standalone. |
 
   One standalone project skill sits outside the pack (`.agents/skills/comparison/`):
 
@@ -108,17 +108,17 @@
 
   | Condition | Action |
   |---|---|
-  | Skill loop completed with friction | Offer `brain-feedback` |
-  | Non-obvious decision made (affects future runs, not already in a durable file) | Offer `brain-memory` handoff |
-  | Actionable change surfaced (bug, gap, needed edit) | Offer `brain-plan` to scope the fix |
+  | Skill loop completed with friction | Offer `feedback` |
+  | Non-obvious decision made (affects future runs, not already in a durable file) | Offer `memory` handoff |
+  | Actionable change surfaced (bug, gap, needed edit) | Offer `plan` to scope the fix |
   | Multiple | Offer each, each labeled and justified |
   | None (trivial, clean run, mid-loop) | Say "nothing to hand off" and finish |
 
-  Decide critically, not reflexively — a clean loop with zero friction skips feedback. `brain-feedback` self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop.
+  Decide critically, not reflexively — a clean loop with zero friction skips feedback. `feedback` self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop.
 
   ## Style guides
 
-  Read the matching guide before editing. Each lives in `guides/` and is structured as a decision procedure: decision trees + canonical paths + canonical examples at the top, the rules in the middle, and a verification checklist at the end. Read the relevant section, not the whole file. A rule edit syncs the checklist item that audits it in the same pass — `brain-audit` ticks the checklist, not the prose, so an unsynced checklist re-flags the old rule on the next audit.
+  Read the matching guide before editing. Each lives in `guides/` and is structured as a decision procedure: decision trees + canonical paths + canonical examples at the top, the rules in the middle, and a verification checklist at the end. Read the relevant section, not the whole file. A rule edit syncs the checklist item that audits it in the same pass — `audit` ticks the checklist, not the prose, so an unsynced checklist re-flags the old rule on the next audit.
 
   | Trigger | Guide |
   |---|---|
@@ -133,13 +133,13 @@
 
   ## Folder structure
 
-  - `.agents/skills/` — (the `brain-*` pack: 10 vendored skills) + `comparison/` (standalone). See §Skills.
+  - `.agents/skills/` — the eleven first-party skills (§Skills table) + `comparison/` (standalone).
   - `.changeset/` — changeset config
   - `.github/` — `workflows/` (CI + release), generated `instructions/` + `copilot-instructions.md`
   - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`). **A Docs task spans the full site surface, not just the API page**: `src/pages/learn/concepts/` + `learn/patterns/` + `learn/tutorials/` (wrapper pages importing `@{pkg}/{type}/{name}.mdx` from `packages/*/docs/`, and `@examples/{name}/tutorial.mdx` for tutorials), `src/pages/reference/{pkg}/` (API wrappers), `src/nav.ts` (sidebar registration), and the enumeration pages (`learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx`). A feature with user-facing behavior needs: a concept doc, a pattern doc when copy-paste recipes apply, `nav.ts` registration under Concepts/Patterns/reference, and an update to every enumeration listing it. Before scoping a Docs task: read `src/pages/learn/index.mdx` and grep the site for prose claims the change falsifies (e.g. an "X not supported" alert the feature now makes false).
   - `examples/` — `bench`, `blog`, `counter`, `theme-switcher`, `todo`, `ssr-islands`, `ssr-routing`, `ssr-streaming`. Every example except `bench` carries its tutorial as `tutorial.mdx` next to the code it documents (imported by the docs site's tutorial wrappers; `guides/docs.md` §Tutorial Docs governs it)
   - `guides/` — style guides (see above)
-  - `memory/` — progressive-disclosure knowledge base: `entries/*.md` are canonical (frontmatter + TL;DR + Why + Evidence), `index.md` is derived (regenerated by `memory.py` at `.agents/skills/brain-memory/memory.py`; never hand-edited), `archive/` holds retired entries. `brain-memory` is the single writer; all other skills read.
+  - `memory/` — progressive-disclosure knowledge base: `entries/*.md` are canonical (frontmatter + TL;DR + Why + Evidence), `index.md` is derived (regenerated by `memory.py` at `.agents/skills/memory/memory.py`; never hand-edited), `archive/` holds retired entries. `memory` is the single writer; all other skills read.
   - `packages/` — the six workspaces
   - `plans/` — agent-generated plan contracts: `plans/<package>/<category>/<topic>.md` (categories observed: `code`, `docs`, `misc`). A rename/removal plan's Files list derives from a repo-wide `rg '<old-name>'` (comparison docs, READMEs, learn/tutorial pages, nav — prose enumeration misses them); a behavior-contract change's Files list derives identically — repo-wide `rg` of the claim sentence it falsifies (JSDoc contract lines, sibling api docs, tutorials, comparisons). A comparison-doc delta adding competitor-behavior cells cites the competitor source per cell or routes the row through the `comparison` skill — workers without web access cannot fill them. In a multi-unit plan each unit's delta describes the state after that unit, never a later unit's end-state edit.
   - `plugins/` — `babel`, `rollup`, `vite`, `astro`
@@ -173,9 +173,9 @@
 
 **Scoped-run triage.** `bun coverage <package>` scopes tests and eslint to the target package; its `tsc` and guard stages stay repo-wide. A scoped run failing on a file OUTSIDE the target package (sibling package mid-edit, foreign scratch file) is foreign, not yours: confirm the package clean (`bunx eslint packages/<pkg>`), report the foreign failure, move on — CI's unscoped `bun coverage` owns the full-repo gate. A foreign failure in the bundle stage blocks the target's own tests before they run (`bundle.ts --quiet` builds ALL packages first, then the scoped tests): verify via `bun bundle <package>` followed by the scoped test command coverage runs internally (`bun test packages/<package>/tests --coverage`) — the explicit rebuild honors the no-stale-dist intent of the never-`bun test` rule; report the foreign failure, leave the full gate to CI. **Plugin exception:** `bun coverage <plugin>` fails — `isValidPackage` resolves under `packages/` only. For `plugins/babel`, use `bun test plugins/babel/tests` + `bun lint` (tests import from source, not `dist/`).
 
-  **`bun coverage` does not enforce `guides/code.md`'s structural rules** — it runs tsc + eslint + tests, but the thin-wrapper ban, `lib/internal/` placement criteria, single-callsite <30-line extraction, `for…of`/`for…in`, and `@internal` visibility have no lint counterpart and pass green when violated. For a new package or new file structure, run `brain-audit` against `guides/code.md` as part of verification; the audit is the cheapest place to catch guide-violating structure, not a post-hoc user request.
+  **`bun coverage` does not enforce `guides/code.md`'s structural rules** — it runs tsc + eslint + tests, but the thin-wrapper ban, `lib/internal/` placement criteria, single-callsite <30-line extraction, `for…of`/`for…in`, and `@internal` visibility have no lint counterpart and pass green when violated. For a new package or new file structure, run `audit` against `guides/code.md` as part of verification; the audit is the cheapest place to catch guide-violating structure, not a post-hoc user request.
 
-  **`bun coverage` does not enforce `guides/tests.md`'s anti-pattern rules** — duplicated helpers across files, patched-global save/restore without `try/finally`, boolean-flag/pure-integer call counters, substring-only asserts on generated output (structure masked by `toContain`), `await delay()` used as double-delay, `import type` inlined into a value import, and macrotask waits between staged DOM removals (HappyDOM's WeakRef-held observer closure can be idle-GC'd — cleanup then never runs) have no lint counterpart and pass green when violated (the hydrate test files shipped a duplicated `suppressWarn` + unsafe `console.warn` patch under a green run). For a new test file or a new shared helper, run `brain-audit` against `guides/tests.md` as part of verification.
+  **`bun coverage` does not enforce `guides/tests.md`'s anti-pattern rules** — duplicated helpers across files, patched-global save/restore without `try/finally`, boolean-flag/pure-integer call counters, substring-only asserts on generated output (structure masked by `toContain`), `await delay()` used as double-delay, `import type` inlined into a value import, and macrotask waits between staged DOM removals (HappyDOM's WeakRef-held observer closure can be idle-GC'd — cleanup then never runs) have no lint counterpart and pass green when violated (the hydrate test files shipped a duplicated `suppressWarn` + unsafe `console.warn` patch under a green run). For a new test file or a new shared helper, run `audit` against `guides/tests.md` as part of verification.
 
   **Gate failure attribution** — a check failing on files outside your diff → `git status -sb` and verify whether those files carry edits you didn't make (concurrent user changes) before debugging your own work; re-run the gate after the foreign change settles.
 
