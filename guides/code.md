@@ -133,7 +133,7 @@ import { value } from "./internal/module";
 
 ### Loops
 
-Cached `while` loops only. `for...of` and `for...in` create iterator objects per iteration, adding GC pressure.
+Cached `while` loops are the canonical form in `lib/` and `scripts/`. `for...of` and `for...in` are banned unconditionally — both allocate an iterator object per iteration, adding GC pressure. Classic index `for` loops allocate no iterator and are permitted in benchmarks and test harnesses.
 
 ```typescript
 let i = 0

@@ -46,7 +46,7 @@
 		"bench": "bun ./scripts/bench.ts",
 		"changeset": "changeset",
 		"release": "bun bundle --quiet && bun ./scripts/release.ts",
-		"sync": "bun ./scripts/sync.ts && bun ./scripts/sync-skills.ts",
+		"sync": "bun ./scripts/sync.ts",
 		"visibility": "bun ./scripts/type-visibility.ts",
 		"dead-exports": "bun ./scripts/dead-exports.ts",
 		"jsdoc-params": "bun ./scripts/jsdoc-params.ts",
