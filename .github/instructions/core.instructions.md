@@ -20,13 +20,13 @@ Reactive primitives over a doubly-linked dependency DAG. Signals are sources, co
 
 ## Node types & initialization
 
-Every node extends `Reactive` (`lib/types.d.ts`): `rd` (first dependency link), `rpd` (tracking bookmark — last dep accessed), `rs` (first subscriber link), `rps` (prev subscriber link), `rf` (bitmask).
+Every node extends `Reactive` (`lib/internal/links.ts`): `rd` (first dependency link), `rpd` (tracking bookmark — last dep accessed), `rs` (first subscriber link), `rps` (prev subscriber link), `rf` (bitmask).
 
 | Node | Created by | Initial `rf` | Extra fields |
 |---|---|---|---|
 | Signal | `signal()` | `WRITABLE` (1) | `sbv` (base/committed value), `sbc` (current, possibly uncommitted) |
-| Computed | `computed()` | `WRITABLE \| DIRTY` (17) | `cbc` (cached value), `cbf` (compute fn, receives prev) |
-| Effect | `effect()` | `GUARDED` (2) | `ef` (effect fn), `ec` (cleanup fn or undefined) |
+| Computed | `computed()` | `WRITABLE \| COMPUTED \| DIRTY` (81) | `cbc` (cached value), `cbf` (compute fn, receives prev), `ce` (optional equals comparator) |
+| Effect | `effect()` | `GUARDED \| SIGNAL_DEPS` (258) | `ef` (effect fn), `ec` (cleanup fn or undefined) |
 
 A `Link` (`lib/types.d.ts`) is the doubly-linked edge: `ls` (source), `lt` (target/subscriber), `lpd`/`lnd` (prev/next dep in target's list), `lps`/`lns` (prev/next sub in source's list). DFS algorithms allocate stack frames `{sv, sp}` (`Stack<T>`).
 
