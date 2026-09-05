@@ -1,5 +1,4 @@
-import type { ComputedState } from "../computed";
-import { TRACKING, WRITABLE, DIRTY } from "./flags";
+import { COMPUTED, SIGNAL_DEPS, TRACKING, WRITABLE, DIRTY } from "./flags";
 
 /**
  * Base interface for all reactive nodes (signals, computeds, effects).
@@ -61,6 +60,10 @@ export function createLink(source: Reactive, target: Reactive): void {
   }
 
   const prevSub = source.rps; // Previous subscriber in source's subscriber list
+  // A computed dependency forces flush-time validation (its value may come out equal) —
+  // drop the target's signals-only fast path. One-time: never re-armed, so a stale clear
+  // only costs the conservative path
+  source.rf & COMPUTED && target.rf & SIGNAL_DEPS && (target.rf &= ~SIGNAL_DEPS);
   // Create new bidirectional link connecting source and target
   const newLink = target.rpd = source.rps = {
     ls: source,      // Link source (what we depend on)
@@ -89,10 +92,10 @@ export function createLink(source: Reactive, target: Reactive): void {
 /**
  * @internal Removes a link from the reactive graph.
  * @param link The link to remove.
- * @param [target=link.lt] The target node to remove the link from.
+ * @param target The target node to remove the link from.
  * @returns The next dependency link.
  */
-export function removeLink(link: Link, target = link.lt): Link | undefined {
+export function removeLink(link: Link, target: Reactive): Link | undefined {
   const { ls, lnd, lpd, lns, lps } = link; // Destructure all link pointers
 
   // Remove link from target's dependency list (doubly-linked list surgery)
@@ -120,10 +123,10 @@ export function removeLink(link: Link, target = link.lt): Link | undefined {
 
   // Garbage collection: if source has no subscribers and no previous subscriber
   if (!lps && !(ls.rs = lns)) {
-    // Check if source is a computed value (has compute function)
-    if ((ls as ComputedState).cbf) {
+    // Type-bit dispatch: computeds carry COMPUTED — drop the property probe
+    if (ls.rf & COMPUTED) {
       // Mark computed as writable and dirty for lazy rebuild on next read
-      ls.rf = WRITABLE | DIRTY;
+      ls.rf = WRITABLE | COMPUTED | DIRTY;
       // Drain ALL outgoing dependencies; cascades into dep computeds that
       // lose their own last subscriber (mirrors disposeEffect's loop)
       let dep = ls.rd;

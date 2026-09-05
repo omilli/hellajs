@@ -68,7 +68,7 @@ Pattern-match against these rather than re-deriving from prose. The codebase is 
 | Cached `while` loop in a real module | `packages/core/lib/internal/utils.ts` (`objectLoop`) |
 | Short internal field names for hidden-class density | `packages/core/lib/signal.ts` (`sbc`, `sbv`, `rs`, `rf`) |
 | Public barrel shape (re-exports, `export type *`) | `packages/core/lib/index.ts` |
-| Internal modules named by single-noun concern | `packages/core/lib/internal/{propagation,tracking,scheduler,...}.ts` |
+| Internal modules named by single-noun concern | `packages/core/lib/internal/{tracking,scheduler,...}.ts` |
 | `WeakMap` for element-associated data | `packages/dom/lib/internal/*` |
 
 ## Decision Precedence

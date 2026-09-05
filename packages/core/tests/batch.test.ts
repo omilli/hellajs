@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from "bun:test";
-import { batch, effect, signal, untracked } from "@hellajs/core";
+import { batch, computed, effect, signal, untracked } from "@hellajs/core";
 
 describe("core", () => {
   describe("batch", () => {
@@ -23,6 +23,39 @@ describe("core", () => {
         b(20);
       });
       expect(runs).toHaveBeenCalledTimes(4);
+    });
+
+    test("batched writes that cancel out still run signal-only effects once", () => {
+      const a = signal(0);
+
+      const runs = mock(() => { a(); });
+      effect(runs);
+      runs.mockClear();
+
+      // Signal writes prove change at write time, so signal-only effects run without
+      // flush-time stale validation — a canceling batch costs one extra run
+      batch(() => {
+        a(1);
+        a(0);
+      });
+      expect(runs).toHaveBeenCalledTimes(1);
+      expect(a()).toBe(0);
+    });
+
+    test("batched writes that cancel out skip computed-mediated effects", () => {
+      const a = signal(0);
+      const value = computed(() => a() + 1);
+
+      const runs = mock(() => { value(); });
+      effect(runs);
+      runs.mockClear();
+
+      batch(() => {
+        a(1);
+        a(0);
+      });
+      expect(runs).not.toHaveBeenCalled();
+      expect(value()).toBe(1);
     });
 
     test("nested batch defers effects to outermost batch", () => {

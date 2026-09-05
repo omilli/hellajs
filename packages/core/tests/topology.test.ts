@@ -217,6 +217,45 @@ describe("core", () => {
       expect(d()).toBe("aa");
     });
 
+    test("unsubscribes from multiple inactive signals after branch loss", () => {
+      const a = signal(0);
+      const b = signal(0);
+      const c = signal(0);
+      const branch = signal(true);
+      const spy = mock(() => (branch() ? a() + b() + c() : a()));
+      effect(spy);
+
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      branch(false);
+      expect(spy).toHaveBeenCalledTimes(2);
+      spy.mockClear();
+
+      b(1);
+      c(2);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    test("unsubscribes computed from multiple inactive signals after branch loss", () => {
+      const a = signal(0);
+      const b = signal(0);
+      const c = signal(0);
+      const branch = signal(true);
+      const spy = mock(() => (branch() ? a() + b() + c() : a()));
+      const value = computed(spy);
+
+      expect(value()).toBe(0);
+
+      branch(false);
+      expect(value()).toBe(0);
+      spy.mockClear();
+
+      b(1);
+      c(2);
+      expect(value()).toBe(0);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
     test("updates dependent even if one dependency skips", () => {
       //     A
       //   /   \

@@ -1,9 +1,8 @@
 import { currentValue } from "./internal/context";
 import { executeComputed } from "./internal/execution";
-import { propagate } from "./internal/propagation";
-import { validateStale } from "./internal/validation";
+import { propagate, validateStale } from "./internal/scheduler";
 import { createLink } from "./internal/links";
-import { WRITABLE, DIRTY, PENDING } from "./internal/flags";
+import { WRITABLE, COMPUTED, DIRTY, PENDING } from "./internal/flags";
 import { isFunction } from "./internal/utils";
 import type { Reactive } from "./internal/links";
 import type { EqualsOptions } from "./types";
@@ -54,17 +53,21 @@ export function computed<T>(computedFn: (previousValue?: T) => T, options?: Equa
     rps: undefined,
     rd: undefined,
     rpd: undefined,
-    rf: WRITABLE | DIRTY,
+    rf: WRITABLE | COMPUTED | DIRTY,
     cbf: computedFn,
     ce,
   };
 
   return () => {
     const { rf, rd, rs } = computedState;
-    // Notify dependent computed/effects if dirty or pending with stale dependencies
-    (rf & DIRTY || (rf & PENDING && validateStale(rd!, computedState))) && executeComputed(computedState) && rs && propagate(rs);
-    // Clear pending flag if not stale
-    rf & PENDING && (computedState.rf = rf & ~PENDING);
+    // Notify dependent computed/effects if dirty or pending with stale dependencies.
+    // The PENDING clear is folded into the condition: when validation confirms staleness,
+    // executeComputed rebuilds the flag word (PENDING already gone); when it does not,
+    // the comma arm clears it from the snapshot — which never carries DIRTY here (the
+    // DIRTY arm short-circuits first), so a fresh-clean rf is never clobbered stale
+    (rf & DIRTY
+      || (rf & PENDING && (validateStale(rd!, computedState) || (computedState.rf = rf & ~PENDING, false)))
+    ) && executeComputed(computedState) && rs && propagate(rs);
     // Track this computed as a dependency if we're inside a reactive context
     currentValue && createLink(computedState, currentValue);
 

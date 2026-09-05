@@ -29,7 +29,7 @@ The package is a single reactive engine: three node kinds, one edge type, one st
 
 - Three node kinds share one `Reactive` base — `rd` (first dependency link), `rpd` (tracking bookmark), `rs` (first subscriber link), `rps` (prev subscriber pointer), `rf` (state bitmask) (`lib/internal/links.ts`). Edges are `Link` nodes carrying `ls`/`lt` (source/target) plus four list pointers, forming two parallel doubly-linked lists per node (`lib/internal/links.ts`).
 - A bitmask state machine drives every transition: `CLEAN`, `WRITABLE`, `GUARDED`, `TRACKING`, `DIRTY`, `PENDING`, `SCHEDULED` (`lib/internal/flags.ts`). All checks are inline bitwise tests with no method dispatch (`lib/signal.ts`).
-- Signals and computeds share the `WRITABLE` bit so propagation treats them identically; effects carry `GUARDED` and are scheduled rather than traversed (`lib/internal/propagation.ts`). `updateValue` dispatches between signal and computed execution by the presence of the compute function `cbf` (`lib/internal/execution.ts`).
+- Signals and computeds share the `WRITABLE` bit so propagation treats them identically; effects carry `GUARDED` and are scheduled rather than traversed (`lib/internal/scheduler.ts`). `updateValue` dispatches between signal and computed execution on the `COMPUTED` type bit (`lib/internal/execution.ts`).
 - The whole surface is six primitives — `signal`, `computed`, `effect`, `batch`, `untracked`, `scope` — plus a `flush` drain for advanced use (`lib/index.ts`). No owner tree, no context system, no scheduler modes.
 
 ### Solid
@@ -115,9 +115,9 @@ React's granularity stands apart: without signals there is nothing to subscribe 
 
 Three algorithms do HellaJS's work, all iterative with lightweight `{sv, sp}` stack frames — no recursion, no array allocation per propagation:
 
-- **`propagateChange`** — the setter's entry. DFS through subscribers, descending `WRITABLE` nodes depth-first, scheduling `GUARDED` effects, marking clean nodes `PENDING`. Nodes already active (`TRACKING | DIRTY | PENDING`) get a local clean flag so they are neither re-marked nor re-scheduled — this is the no-double-queue guarantee and the reason synchronous self-writes stabilize instead of looping (`lib/internal/propagation.ts`).
-- **`propagate`** — the confirmation pass. After a value change is committed, a linear walk upgrades `PENDING` subscribers to `DIRTY` and schedules effects (`lib/internal/propagation.ts`).
-- **`validateStale`** — the skip-update optimization. When a `PENDING` node is read, a stack-based DFS checks whether underlying values actually changed; if a dependency recomputed to the same reference, the `PENDING` flag clears without re-execution (`lib/internal/validation.ts`). This is why a computed returning an identical value stops propagation cold.
+- **`propagateChange`** — the setter's entry. DFS through subscribers, descending `WRITABLE` nodes depth-first, scheduling `GUARDED` effects, marking clean nodes `PENDING`. Nodes already active (`TRACKING | DIRTY | PENDING`) get a local clean flag so they are neither re-marked nor re-scheduled — this is the no-double-queue guarantee and the reason synchronous self-writes stabilize instead of looping (`lib/internal/scheduler.ts`).
+- **`propagate`** — the confirmation pass. After a value change is committed, a linear walk upgrades `PENDING` subscribers to `DIRTY` and schedules effects (`lib/internal/scheduler.ts`).
+- **`validateStale`** — the skip-update optimization. When a `PENDING` node is read, a stack-based DFS checks whether underlying values actually changed; if a dependency recomputed to the same reference, the `PENDING` flag clears without re-execution (`lib/internal/scheduler.ts`). This is why a computed returning an identical value stops propagation cold.
 
 | Framework | Graph structure | Staleness strategy | Skip-update? |
 |---|---|---|---|
@@ -140,7 +140,7 @@ HellaJS has three distinct memory behaviors:
 
 - **Link reuse during tracking.** A re-executing computation that reads the same signals in the same order advances its bookmark and reuses existing link objects — steady-state re-runs allocate nothing (`lib/internal/links.ts`).
 - **Computed auto-GC.** When a computed loses its last subscriber, `removeLink` drops all of its dependency links — cascading into dependency computeds that lose their own last subscriber — and marks it `WRITABLE | DIRTY` for lazy rebuild on next read (`lib/internal/links.ts`). The behavior is verified by WeakRef canary tests proving full release of multi-dependency and nested-computed graphs (`packages/core/tests/computed.test.ts`).
-- **Effect queue hygiene.** The flush queue is a single shared array; each processed slot is cleared to `undefined` so the effect can be collected, and indices reset per flush — the queue is never reallocated (`lib/internal/queue.ts`, `lib/internal/scheduler.ts`).
+- **Effect queue hygiene.** The flush queue is a single shared array; each processed slot is cleared to `undefined` so the effect can be collected, and indices reset per flush — the queue is never reallocated (`lib/internal/scheduler.ts`).
 
 | Framework | Edge structure | Auto-disposal |
 |---|---|---|
@@ -159,7 +159,7 @@ HellaJS, Vue, and Angular all converge on linked-list edges with some form of "u
 
 HellaJS's default is a **synchronous flush**. A signal write outside a batch propagates and runs effects before the setter returns (`lib/signal.ts` — `propagateChange(rs)` then `!batchDepth && flush()`); a write to a signal with no subscribers does no work at all (`lib/signal.ts`).
 
-`batch(fn)` is a depth counter — increments on entry, flushes when the count returns to zero, nested batches collapse into the outermost (`lib/batch.ts`). The `SCHEDULED` bitmask dedups queue entries when one propagation touches an effect through multiple paths (`lib/internal/queue.ts`). The flush itself is FIFO with per-effect staleness validation, then a dependency walk that runs scheduled child effects in dependency order (`lib/internal/scheduler.ts`). An uncaught effect error aborts the remaining queue; the next write starts a fresh flush with intact state (`packages/core/tests/effects.test.ts`).
+`batch(fn)` is a depth counter — increments on entry, flushes when the count returns to zero, nested batches collapse into the outermost (`lib/batch.ts`). The `SCHEDULED` bitmask dedups queue entries when one propagation touches an effect through multiple paths (`lib/internal/scheduler.ts`). The flush itself is FIFO with per-effect staleness validation, then a dependency walk that runs scheduled child effects in dependency order (`lib/internal/scheduler.ts`). An uncaught effect error aborts the remaining queue; the next write starts a fresh flush with intact state (`packages/core/tests/effects.test.ts`).
 
 | Framework | Default timing | Batching primitive | Notes |
 |---|---|---|---|
@@ -188,7 +188,7 @@ Only HellaJS and Solid run effects synchronously at the write. That is a real tr
 | Previous value to compute fn | Yes (`lib/computed.ts`) | Yes (`createMemo((v) => …)`) | No | No | No | No |
 | Custom equality | Optional `equals` on signal and computed; equal keeps the old reference (`lib/signal.ts`, `lib/computed.ts`) | Per-signal `equals` option | `.raw` variants | `Object.is` (fixed) | Per-ref via options | Per-signal `equal` option |
 | Deep reactivity | No | Separate `createStore` package | Yes (default) | No | Yes (default) | No |
-| Write inside computed | Permitted; self-writes stabilize (`lib/internal/propagation.ts`) | No guard in source read | Throws `state_unsafe_mutation` | n/a | Permitted | Throws `InvalidWriteToSignalError` |
+| Write inside computed | Permitted; self-writes stabilize (`lib/internal/scheduler.ts`) | No guard in source read | Throws `state_unsafe_mutation` | n/a | Permitted | Throws `InvalidWriteToSignalError` |
 | Async-aware tracking | No — sync effects only | `createResource` | `await` in `$derived`/async effects | `use(promise)`, actions | `asyncComputed` (3rd-party) | `resource` |
 | Devtools / interop | None | `enableExternalSource`, `observable` | Dev tooling via compiler | `useSyncExternalStore` bridge | Vue DevTools | Built-in devtools formatter |
 | Error containment | Flush aborts; next write recovers (`packages/core/tests/effects.test.ts`) | `onError` / owner-scoped handling | `<svelte:boundary>` | Error boundaries | `errorCaptured` | `ErrorHandler` |
@@ -197,10 +197,10 @@ Only HellaJS and Solid run effects synchronously at the write. That is a real tr
 
 - **Fused getter/setter callable** — one function, `arguments.length` discriminates read from write, and storing `undefined` is supported (`lib/signal.ts`)
 - **Previous-value compute fn** — `computed` receives the prior result for incremental computation (`lib/computed.ts`)
-- **Skip-update validation** — `validateStale` clears PENDING flags by comparing actual values, stopping propagation when a recomputed result is reference-identical (`lib/internal/validation.ts`)
+- **Skip-update validation** — `validateStale` clears PENDING flags by comparing actual values, stopping propagation when a recomputed result is reference-identical (`lib/internal/scheduler.ts`)
 - **Computed auto-GC with cascade** — losing the last subscriber detaches the whole dependency branch and re-marks for lazy rebuild (`lib/internal/links.ts`)
 - **Zero-allocation steady-state tracking** — same-order re-reads reuse link objects via the `rpd` bookmark (`lib/internal/links.ts`)
-- **Manual-stack iterative DFS everywhere** — `propagateChange` and `validateStale` allocate one lightweight stack frame per branch, never recurse (`lib/internal/propagation.ts`, `lib/internal/validation.ts`)
+- **Manual-stack iterative DFS everywhere** — `propagateChange` and `validateStale` allocate one lightweight stack frame per branch, never recurse (`lib/internal/scheduler.ts`)
 - **Synchronous flush with explicit batch** — no hidden microtask, ever (`lib/signal.ts`, `lib/batch.ts`)
 
 ---
