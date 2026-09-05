@@ -1,12 +1,12 @@
 ---
-name: brain-skill
+name: skill
 description: >
-  Author new skills or revise existing ones. Covers capturing intent, SKILL.md anatomy, progressive disclosure, writing style, and packaging. Use when creating or editing a skill, or when the user says "turn this into a skill".
+  Author new skills or revise existing ones. Covers capturing intent, SKILL.md anatomy, progressive disclosure, writing style, and first-party installation into .agents/skills/. Use when creating or editing a skill, or when the user says "turn this into a skill".
 ---
 
 # Skill creator
 
-Create skills from scratch, or edit/restructure existing ones. Invoked explicitly — no triggering logic.
+Create skills from scratch, or edit/restructure existing ones. Skills in this repo live at `.agents/skills/<name>/` and are discovered by the harness via the frontmatter description — first-party files with the same ownership as any other repo source. Invoked explicitly — no triggering logic.
 
 ## Capture intent first
 
@@ -25,7 +25,7 @@ Ask only what determines the skill's shape; don't start writing until settled:
 - **description** — effectively required; skills without one are filtered out and never surfaced. This is the trigger, not a summary. Front-load literal keywords the user will say; cover *what* AND *when*; gate with "Use ONLY when…" if it should stay quiet on adjacent topics.
 - **compatibility** — optional, rarely needed.
 
-Authoritative field list lives in your agent's skill-authoring docs (for opencode, the schema at https://opencode.ai/config.json) — check there if unsure.
+Authoritative field list lives in the harness's skill-authoring docs (pi: `docs/skills.md` under the pi installation) — check there if unsure.
 
 ## Anatomy
 
@@ -63,16 +63,14 @@ Rules:
 
 ## Improving an existing skill
 
-Read the current SKILL.md and critique against the principles above *before* editing. Common rot: dictates with no "why"; implicit output formats; body bloat belonging in `references/`; duplicated logic that should be a bundled script.
+Read the current SKILL.md and critique against the principles above *before* editing. Common rot: dictates with no "why"; implicit output formats; body bloat belonging in `references/`; duplicated logic that should be a bundled script. Cut anything not pulling its weight; preserve the directory name and the `name` field through content edits (renames are a cross-reference sweep — below).
 
-Cut anything not pulling its weight. Preserve the directory name and the `name` field. Install path read-only → copy to a writable location before editing.
+## Cross-reference sync (same pass)
 
-## Packaging
-
-Stage in `/tmp/` before copying to the output dir. Package the finished skill; return the path.
+A skill added/renamed/removed/materially changed → sync every reference in root AGENTS.md (§Skills) and sibling skills in the same pass — `author` Step 6 leads; whole-token match, never a bare substring. A dangling reference is an unfinished edit.
 
 ## Before you finish
 
-Re-check: frontmatter valid; `name` matches folder; `description` triggers correctly; body under ~500 lines; nothing stranded in the body that belongs in `references/`.
+Re-check: frontmatter valid; `name` matches folder; `description` fires on the intended cases and stays quiet on adjacent ones; body under ~500 lines; nothing stranded in the body that belongs in `references/`; cross-references synced.
 
-Run the brain-prime handoff gate; friction signals: anatomy/progressive-disclosure issue discovered mid-edit that the principles above didn't flag → `brain-feedback` (principles missed a case — sharpen this skill); trigger description that false-fires on an adjacent case → `brain-feedback` (narrow the description).
+Run the prime handoff gate; friction signals: anatomy/progressive-disclosure issue discovered mid-edit that the principles above didn't flag → `feedback` (principles missed a case — sharpen this skill); trigger description that false-fires on an adjacent case → `feedback` (narrow the description).

@@ -1,5 +1,5 @@
 ---
-name: brain-idea
+name: idea
 description: >
   Relentlessly stress-test a plan or idea with the user until every load-bearing decision is resolved into a concrete answer. Use when the user wants to get grilled on a plan, pressure-test an idea, or talk through a design before building.
 ---
@@ -10,14 +10,14 @@ Grill the user until the plan is concrete enough to build without surprise. Not 
 
 ## Method
 
-1. **Find the crux first.** Most of a plan is noise. Name the 1–3 decisions that determine success/failure, and why they are the crux.
+1. **Find the crux first.** Most of a plan is noise. Name the 1–3 decisions that determine success/failure, and why they are the crux. Crux classes this repo produces: **ownership/layering** (where rule text lives — AGENTS.md vs skill vs guide; one home, cited elsewhere), **rename/merge ripple** (names are load-bearing: §Skills tables, sibling handoff gates, generated mirrors, docs — same-pass sync or it's an unfinished edit), **automation hazards** (hook/CI executing a chain that can clobber or drift — map who runs what before editing the chain).
 2. **Depth-first.** Resolve one branch before opening another. A dangling "figure it out later" on a load-bearing fork is failure — park only reversible/low-stakes items.
 3. **One question, or a tight batch — never a wall.** Every question load-bearing. Answerable by reading the codebase → read it, don't ask.
 4. **Steelman, then attack.** Strongest version before probing where it breaks. No strawmen, no sycophancy.
 5. **Make assumptions explicit.** Name them; flag the risky ones.
-6. **Weight by reversibility.** Push hardest on irreversible/foundational decisions (schema, public API, architecture, migrations, data model). Let reversible choices slide toward action.
+6. **Weight by reversibility.** Push hardest on irreversible/foundational decisions (public API, package contracts, migrations, published docs). Let reversible choices slide toward action.
 7. **Cut to the smallest test.** For each risk: smallest version that de-risks it. Thin experiment over grand plan.
-8. **Write the converging design.** Living spec as decisions land — plan, each resolved decision + rationale, bounded open questions. Update the moment something firms up.
+8. **Write the converging design.** Living spec as decisions land — the handoff to `plan` lands contracts under `plans/<package>/<category>/<topic>/`.
 
 ## Done
 
@@ -26,7 +26,7 @@ Grill the user until the plan is concrete enough to build without surprise. Not 
 - Written spec captures the agreed plan.
 - Hand off. Not build mode — don't start implementing.
 
-Run the brain-prime handoff gate; friction signals: codebase assumption you stated that the user overturned → `brain-memory` (recallable fact about this codebase); load-bearing fork that took many rounds because the crux was mis-named → `brain-feedback` (the find-the-crux method slipped — sharpen the skill's framing).
+Run the prime handoff gate; friction signals: codebase assumption you stated that the user overturned → `memory` (recallable fact about this codebase); load-bearing fork that took many rounds because the crux was mis-named → `feedback` (the find-the-crux method slipped — sharpen the skill's framing).
 
 ## Anti-patterns
 

@@ -1,12 +1,12 @@
 ---
-name: brain-author
+name: author
 description: >
   Switch to agent-file authoring mode when creating or editing AGENTS.md, agent/skill/command prompts, or any instruction/rules file consumed by AI agents. Enforces AI-not-human voice, density, no redundancy with always-loaded context, correct trigger descriptions, and a verify gate. Use when writing, revising, or tightening these files. Use ONLY for agent-instruction files — not human documentation (READMEs, user docs, tutorials).
 ---
 
 # Author
 
-These files are consumed by agents, not humans. They load on every session or matching trigger, so every line is a permanent context tax — a redundant or human-targeted line earns nothing. brain-author owns the **voice/format/method layer** across agent-instruction files. For a SKILL.md, `brain-skill` leads anatomy/progressive disclosure — author informs voice. For AGENTS.md, agent prompts, command templates, project rules/style guides, author leads. Governed by brain-prime: an edit to an always-loaded file changes every future run.
+These files are consumed by agents, not humans. They load on every session or matching trigger, so every line is a permanent context tax — a redundant or human-targeted line earns nothing. author owns the **voice/format/method layer** across agent-instruction files. For a SKILL.md, `skill` leads anatomy/progressive disclosure — author informs voice. For AGENTS.md, agent prompts, command templates, project rules/style guides, author leads. Governed by prime: an edit to an always-loaded file changes every future run.
 
 ## Escape hatch
 
@@ -14,7 +14,7 @@ Typo or one-word fix → make it, stop. Author is for writing, revising, or tigh
 
 ## Step 1 — Read before write, and read for redundancy
 
-Read the target file in full + immediate neighbors (section above/below; for a skill, its frontmatter and siblings). Then read what is **always-loaded alongside**: the system prompt, the always-loaded AGENTS.md, other skills' descriptions. Prevents the most common failure — an instruction file duplicating something already injected on every run. Redundancy with always-loaded context is pure tax; this read catches it.
+Read the target file in full + immediate neighbors (section above/below; for a skill, its frontmatter and siblings). Then read what is **always loaded alongside it**: the harness system prompt, the user's global agent config, root AGENTS.md (§Skills, §Scripts, §Testing, §Non-negotiables), and sibling skills' descriptions. Prevents the most common failure — an instruction file duplicating something already injected on every run. Redundancy with always-loaded context is pure tax; this read catches it.
 
 AGENTS.md/rules guide describing a codebase → ground every claim in source read this session; don't carry drift from the old file on trust.
 
@@ -27,7 +27,7 @@ Two tests per block:
 
 Defaults: markdown headers for sections; tables for relational data; bold-label bullets for atomic facts; plain prose for overviews/verdicts. Drop single-child wrappers — the most common waste, always removable.
 
-**Rules/style guide specifically**: three layers — decision trees at top (traverse to a decision), prose rules in middle, verification checklist at end (the audit floor; `brain-audit` ticks it instead of reconstructing rules from prose). Open with a one-line **Decision Precedence** (ranked tradeoffs for that context) so conflicts resolve consistently.
+**Rules/style guide specifically**: three layers — decision trees at top (traverse to a decision), prose rules in middle, verification checklist at end (the audit floor; `audit` ticks it instead of reconstructing rules from prose). Open with a one-line **Decision Precedence** (ranked tradeoffs for that context) so conflicts resolve consistently. `guides/` is the live example of this shape — match it.
 
 Match the file's **existing** conventions exactly — one line-wrap style, one bullet style, one voice. Inconsistency = this method was skipped.
 
@@ -42,7 +42,7 @@ Match the file's **existing** conventions exactly — one line-wrap style, one b
 
 For every line: does this earn its permanent context cost? Cut/merge anything that:
 
-- Duplicates the system prompt or another always-loaded file.
+- Duplicates the always-loaded context (system prompt, global agent config, root AGENTS.md).
 - Duplicates another section in the same file.
 - States the obvious to a capable model.
 - Carries drift the source no longer supports.
@@ -57,10 +57,10 @@ A shorter file that says the same thing is strictly better.
 
 ## Step 6 — Sync cross-references
 
-After any edit that adds/renames/removes/materially changes a skill, search AGENTS.md and every sibling skill for references to it — its name, its role in the loop composition, any cross-handoff. Sync every stale reference in the same pass. A rename/removal with a dangling reference is an unfinished edit. Match the skill name as a whole token (or backtick-quoted), not a bare substring — short names like `brain-worker`/`brain-author` appear inside common words.
+After any edit that adds/renames/removes/materially changes a skill, search AGENTS.md and every sibling skill for references to it — its name, its role in the loop composition, any cross-handoff. Sync every stale reference in the same pass. A rename/removal with a dangling reference is an unfinished edit. Match the skill name as a whole token (or backtick-quoted), not a bare substring — short names appear inside common words. The generated mirrors (`CLAUDE.md`, `.github/instructions/*`) regenerate from AGENTS.md only via the post-commit hook / CI — never hand-edit them (§Source of truth & sync).
 
 ## Self-check
 
 Every claim grounded in source or real workflow — nothing from the old file on trust; density gate ran (every line earning its cost); skill description fires right with no false-fire; every cross-reference to the changed skill synced across AGENTS.md and siblings.
 
-Run the brain-prime handoff gate; friction signals: redundancy with always-loaded context found only at the density gate (Step 4 should have caught it at Step 1) → `brain-feedback` (Step 1 neighbor read didn't surface it — sharpen the read); stale cross-reference surfaced in Step 6 → `brain-feedback` (sync rule didn't catch it — strengthen); format choice that had to be re-done → `brain-feedback` (decision tree didn't resolve first pass).
+Run the prime handoff gate; friction signals: redundancy with always-loaded context found only at the density gate (Step 4 should have caught it at Step 1) → `feedback` (Step 1 neighbor read didn't surface it — sharpen the read); stale cross-reference surfaced in Step 6 → `feedback` (sync rule didn't catch it — strengthen); format choice that had to be re-done → `feedback` (decision tree didn't resolve first pass).
