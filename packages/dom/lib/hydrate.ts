@@ -2,7 +2,8 @@ import type { HellaNode, HellaElement, MountHandle } from "./types/nodes";
 import { isString } from "./internal/core";
 import { resolveValue } from "./internal/utils";
 import { mountNode } from "./internal/render";
-import { hydrateNode, hydrateSequence, hasDeferredRegions, startDeferredRegionWatch } from "./internal/hydrate";
+import { hydrateNode, hydrateSequence } from "./internal/hydrate";
+import { hasDeferredRegions, startDeferredRegionWatch } from "./internal/deferred";
 import { registerContainer } from "./internal/queue";
 import { createMountHandle } from "./internal/handle";
 

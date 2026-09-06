@@ -13,6 +13,7 @@
 * **Creation**: Added concept [092](entries/092.md) (type: decision).
 * **Creation**: Added concept [093](entries/093.md) (type: decision).
 * **Creation**: Added concept [094](entries/094.md) (type: decision).
+* **Creation**: Added concept [095](entries/095.md) (type: decision).
 
 ## 2026-09-05
 * **Creation**: Added concept [082](entries/082.md) (type: decision).

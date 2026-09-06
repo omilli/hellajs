@@ -212,8 +212,8 @@ HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary
 | Existing-DOM refs | `$ref` / `$collection` auto-watch (`lib/$ref.ts`) | `ref` | `bind:this` | ref callback | template ref | `ViewChild` |
 | Lifecycle hooks | 6 element-level `hook:` hooks (`lib/internal/render.ts`) | `onMount`/`onCleanup` | Lifecycle module | `useEffect` | Options/composition hooks | `ngOnInit` et al. |
 | Error boundaries | `onError` + `error:` (`lib/internal/dispatch.ts`) | `ErrorBoundary` | `<svelte:boundary>` | Class + root callbacks | `errorCaptured` | `ErrorHandler` |
-| SSR + hydration | `ssr` + marker-reader `hydrate` w/ selective hydration (`lib/internal/hydrate.ts`) | `renderToString` + `data-hk` hydrate | Compiled SSR + hydrate | Streaming + selective hydration | `renderToString` + hydrate | Hydration (non-destructive) |
-| Streaming SSR | `ssr.stream` + `$hs` progressive reveal + deferred-region adoption (`lib/internal/hydrate.ts`) | Streaming SSR | via SvelteKit | `renderToPipeableStream` | via meta-framework | - |
+| SSR + hydration | `ssr` + marker-reader `hydrate` w/ selective hydration (`lib/internal/hydrate.ts` + `internal/deferred.ts`) | `renderToString` + `data-hk` hydrate | Compiled SSR + hydrate | Streaming + selective hydration | `renderToString` + hydrate | Hydration (non-destructive) |
+| Streaming SSR | `ssr.stream` + `$hs` progressive reveal + deferred-region adoption (`lib/internal/deferred.ts`) | Streaming SSR | via SvelteKit | `renderToPipeableStream` | via meta-framework | - |
 | Keyed lists | `ForEach` LIS (`lib/ForEach.ts`) | `<For>` / `<Index>` | keyed `{#each}` | keys | `v-for :key` | `@for track` |
 | SVG / MathML | Namespaced (`createElementNS`, `foreignObject` resets) (`lib/internal/render.ts`) | Yes | Yes | Yes | Yes | Yes |
 | Context / DI | None: signals + props | `createContext` | `setContext`/`getContext` | Context | provide / inject | DI + inject |
@@ -223,7 +223,7 @@ HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary
 - `$ref` / `$collection` wrap existing DOM outside HellaJS's render tree, queueing operations until a match appears via an independent `MutationObserver` on `document.body`: `bind`/`on`/`hooks` apply to nodes HellaJS never created (`lib/$ref.ts`, `lib/$collection.ts`, `lib/internal/selectors.ts`).
 - `Lazy` cancellation is total: parent removal sets `isCancelled`, aborts an `AbortController`, and the loader receives `{ signal }` for network-level cancellation; both settle paths guard against a removed anchor (`lib/Lazy.ts`).
 - `Transition` rapid-toggle rescue: showing during a leave cancels the timer, strips the leave class, and keeps the node: no flicker or double nodes (`lib/Transition.ts`).
-- Hydrated `<Suspense>` regions degrade instead of breaking: a sentinel whose staged `<template>` never arrived (interrupted stream) flags the context and the boundary re-suspends client-side with fresh-mount semantics; and when hydrate runs mid-stream, such regions defer instead: each adopts the moment its stage lands, with buffered discrete events replayed positionally (selective hydration, React 19 parity) (`lib/internal/hydrate.ts`).
+- Hydrated `<Suspense>` regions degrade instead of breaking: a sentinel whose staged `<template>` never arrived (interrupted stream) flags the context and the boundary re-suspends client-side with fresh-mount semantics; and when hydrate runs mid-stream, such regions defer instead: each adopts the moment its stage lands, with buffered discrete events replayed positionally (selective hydration, React 19 parity) (`lib/internal/deferred.ts`).
 - `raw(html)` embeds foreign HTML as an opaque marker-bounded child that SSR emits verbatim and hydrate adopts without binding anything inside, the seam meta-framework renderers use for slot passthrough (`lib/raw.ts`, `lib/internal/hydrate.ts`).
 
 ---
