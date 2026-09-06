@@ -51,6 +51,12 @@ export function effect(effectFn: () => unknown): () => void {
   try {
     const result = effectState.ef(); // Execute and track dependencies
     effectState.ec = isFunction(result) ? result : undefined; // Capture cleanup return value
+  } catch (error) {
+    // The first run threw: the effect never started, so it must leave no subscribed
+    // state (no cleanup return exists and no disposer reaches the caller). Runs before
+    // the finally restores the previous context; disposeEffect reads no global context.
+    disposeEffect(effectState);
+    throw error;
   } finally {
     setCurrentSub(prevSub); // Restore previous context
   }

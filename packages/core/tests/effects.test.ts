@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from "bun:test";
-import { batch, effect, signal } from "@hellajs/core";
+import { batch, effect, scope, signal } from "@hellajs/core";
 import { delay } from "@utils/test-helpers.js";
 
 describe("core", () => {
@@ -242,6 +242,42 @@ describe("core", () => {
       cleanupBad();
       b(1);
       expect(effectBMock).toHaveBeenCalled();
+    });
+
+    test("disposes an effect whose first run throws", () => {
+      const count = signal(0);
+      const body = mock(() => {
+        count();
+        throw new Error("first run");
+      });
+
+      expect(() => effect(body)).toThrow("first run");
+
+      // Dep writes no longer re-throw or re-run: the effect was disposed before rethrowing
+      expect(() => count(1)).not.toThrow();
+      expect(body).toHaveBeenCalledTimes(1);
+    });
+
+    test("scoped effect whose first run throws leaves no trace", () => {
+      const count = signal(0);
+      const body = mock(() => {
+        count();
+        throw new Error("first run");
+      });
+
+      const dispose = scope(() => {
+        try {
+          effect(body);
+        } catch {
+          // Creation rethrew: the scope disposer was never registered
+        }
+      });
+
+      // Dep writes never throw, scope disposal is safe, no zombie re-runs
+      expect(() => count(1)).not.toThrow();
+      dispose();
+      expect(() => count(2)).not.toThrow();
+      expect(body).toHaveBeenCalledTimes(1);
     });
   });
 });

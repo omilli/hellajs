@@ -131,6 +131,26 @@ effect(() => {
 
 Errors thrown inside an effect propagate to the signal setter that triggered it and abort the current flush (remaining queued effects are skipped). Subsequent signal changes start a fresh flush and the reactive system continues normally.
 
+A throw on the ***first*** run is different: the effect never started, so it is disposed before the error propagates. No re-runs occur and no cleanup handle exists to call — subsequent writes to any dependency it read before throwing do nothing. Re-run throws keep the semantics below: abort the flush, then dispose to recover.
+
+```typescript
+import { signal, effect } from "@hellajs/core";
+
+const count = signal(0);
+
+// First run throws: the effect is disposed before the error reaches the caller
+try {
+  effect(() => {
+    count();
+    throw new Error("boom");
+  });
+} catch {
+  // Recovered here — the effect is already gone
+}
+
+count(1); // No throw, no re-run: the effect no longer exists
+```
+
 ```typescript
 import { signal, effect } from "@hellajs/core";
 
