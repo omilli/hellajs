@@ -18,6 +18,9 @@ import { logger, packagesDir, projectRoot } from "./utils/index.js";
  * - js-tagged blocks are emitted into a sibling `.js` module with
  *   `checkJs: false` — parsed for grammar, imports resolved, but not
  *   strict-TS-checked. JS examples are idiomatic-untyped by design.
+ * - Scratch isolation: each invocation emits into its own
+ *   `.doc-snippets/run-<pid>-<suffix>/` dir; dead-run dirs are pruned at
+ *   start, so concurrent runs can never wipe each other's corpus mid-flight.
  *
  * Skips (a skipped block is not checked — marking, not fixing):
  * - Blocks containing the ❌ mark (intentional bad-practice examples).
@@ -291,15 +294,16 @@ function terminateStatements(text: string): string {
  * breadcrumbs mapping diagnostics back to mdx line numbers.
  * @param doc Absolute doc path
  * @param tier "strict" or "tutorial" — namespaced into separate subdirs
+ * @param runDir This run's scratch dir; modules land under `runDir/<tier>/`
  * @returns The emitted module descriptors
  */
-function emitModules(doc: string, tier: "strict" | "tutorial"): EmittedModule[] {
+function emitModules(doc: string, tier: "strict" | "tutorial", runDir: string): EmittedModule[] {
   const blocks = extractBlocks(doc);
   const emitted: EmittedModule[] = [];
   if (blocks.length === 0) return emitted;
 
   const rel = path.relative(projectRoot, doc).replace(/[/\\]/g, "_").replace(/\./g, "_");
-  const base = path.join(OUT_DIR, tier, rel);
+  const base = path.join(runDir, tier, rel);
 
   for (const [family, langs] of [
     ["ts", LANGS_TS],
@@ -408,12 +412,17 @@ function parseDiagnostics(raw: string): Diagnostic[] {
  * report findings with AUDITSRC breadcrumbs.
  * @param tier "strict" or "tutorial"
  * @param docs The tier's docs
+ * @param runDir This run's scratch dir
  * @returns The tier's relevant (post-quarantine, post-exemption) diagnostics
  */
-function checkTier(tier: "strict" | "tutorial", docs: string[]): { modules: EmittedModule[]; relevant: Diagnostic[] } {
+function checkTier(
+  tier: "strict" | "tutorial",
+  docs: string[],
+  runDir: string,
+): { modules: EmittedModule[]; relevant: Diagnostic[] } {
   const modules: EmittedModule[] = [];
-  for (const doc of docs) modules.push(...emitModules(doc, tier));
-  const tierDir = path.join(OUT_DIR, tier);
+  for (const doc of docs) modules.push(...emitModules(doc, tier, runDir));
+  const tierDir = path.join(runDir, tier);
   if (modules.length === 0) return { modules, relevant: [] };
 
   let configPath = writeTierConfig(tierDir);
@@ -446,26 +455,69 @@ function checkTier(tier: "strict" | "tutorial", docs: string[]): { modules: Emit
   return { modules, relevant };
 }
 
+/** Whether a pid is alive — signal-0 probe; EPERM means alive but not signalable. */
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+/**
+ * Prunes `.doc-snippets/` down to live runs' scratch dirs: entries not owned
+ * by a live pid (dead runs' dirs, legacy `strict/`/`tutorial/` layouts,
+ * stray files) are removed; a live sibling run's dir is never touched.
+ * @param outDir The `.doc-snippets` root
+ */
+function pruneStaleRuns(outDir: string): void {
+  for (const entry of fs.readdirSync(outDir, { withFileTypes: true })) {
+    const owner = Number(entry.name.match(/^run-(\d+)-/)?.[1] ?? Number.NaN);
+    const liveSibling = entry.isDirectory() && Number.isInteger(owner) && owner !== process.pid && isPidAlive(owner);
+    if (liveSibling) continue;
+    fs.rmSync(path.join(outDir, entry.name), { recursive: true, force: true });
+  }
+}
+
+/**
+ * Resolves a tsc-reported file (tsc prints paths relative to its cwd) to an
+ * absolute path, plus a stable display path: this run's artifacts show their
+ * `.doc-snippets/<tier>/…` form with the run-scoped segment stripped (output
+ * stays byte-comparable across runs); foreign files show their repo-relative
+ * path.
+ * @param file The diagnostic's file as tsc printed it
+ * @param runDir This run's scratch dir
+ * @returns The absolute path and its display form
+ */
+function resolveDiagnosticFile(file: string, runDir: string): { abs: string; display: string } {
+  const abs = path.resolve(projectRoot, file);
+  const fromRun = path.relative(runDir, abs);
+  const display = fromRun.startsWith("..") ? path.relative(projectRoot, abs) : path.join(".doc-snippets", fromRun);
+  return { abs, display };
+}
+
 async function main(): Promise<void> {
   try {
-    fs.rmSync(OUT_DIR, { recursive: true, force: true });
     fs.mkdirSync(OUT_DIR, { recursive: true });
+    pruneStaleRuns(OUT_DIR);
+    const runDir = fs.mkdtempSync(path.join(OUT_DIR, `run-${process.pid}-`));
 
     const { strictDocs, tutorialDocs } = collectDocs();
-    const strict = checkTier("strict", strictDocs);
-    const tutorial = checkTier("tutorial", tutorialDocs);
+    const strict = checkTier("strict", strictDocs, runDir);
+    const tutorial = checkTier("tutorial", tutorialDocs, runDir);
 
     for (const d of strict.relevant) {
-      const relFile = path.relative(projectRoot, d.file);
-      const srcLine = fs.readFileSync(d.file, "utf-8").split("\n")[d.line - 1] ?? "";
+      const { abs, display } = resolveDiagnosticFile(d.file, runDir);
+      const srcLine = fs.readFileSync(abs, "utf-8").split("\n")[d.line - 1] ?? "";
       const breadcrumb = srcLine.match(/AUDITSRC (.+)$/)?.[1] ?? "";
-      logger.info(`${relFile}(${d.line},${d.col}) ${d.code}: ${d.message}${breadcrumb ? ` — ${breadcrumb}` : ""}`);
+      logger.info(`${display}(${d.line},${d.col}) ${d.code}: ${d.message}${breadcrumb ? ` — ${breadcrumb}` : ""}`);
     }
     for (const d of tutorial.relevant) {
-      const relFile = path.relative(projectRoot, d.file);
-      const srcLine = fs.readFileSync(d.file, "utf-8").split("\n")[d.line - 1] ?? "";
+      const { abs, display } = resolveDiagnosticFile(d.file, runDir);
+      const srcLine = fs.readFileSync(abs, "utf-8").split("\n")[d.line - 1] ?? "";
       const breadcrumb = srcLine.match(/AUDITSRC (.+)$/)?.[1] ?? "";
-      logger.info(`[tutorial] ${relFile}(${d.line},${d.col}) ${d.code}: ${d.message}${breadcrumb ? ` — ${breadcrumb}` : ""}`);
+      logger.info(`[tutorial] ${display}(${d.line},${d.col}) ${d.code}: ${d.message}${breadcrumb ? ` — ${breadcrumb}` : ""}`);
     }
 
     const docsChecked = new Set([...strict.modules, ...tutorial.modules].map((m) => m.doc)).size;
