@@ -1,6 +1,6 @@
 # removeCss
 
-Removes specific CSS rules and decrements their reference count for memory management. Client-only; a no-op on the server (no DOM).
+Removes specific CSS rules and decrements their reference count for memory management. Registration state is decremented on both platforms; the CSSOM rules drop at zero references (a no-op without a DOM).
 
 ## API
 

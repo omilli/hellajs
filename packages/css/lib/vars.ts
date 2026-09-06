@@ -27,15 +27,6 @@ export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions 
   const { scope, fullPrefix, media, host } = resolveVarsOptions(options);
   const resolved = { scope, fullPrefix, media, host };
 
-  if (!hasDocument()) {
-    // Server: register the initial-value rule text into the vars-side state
-    // (sheet ops no-op without a DOM) and return the proxy. buildResult reads
-    // only flat keys, so the result is deterministic; hasFns is irrelevant —
-    // no effects without a DOM.
-    applyRules(flat, resolved);
-    return buildResult<T>(flat, fullPrefix);
-  }
-
   if (!hasFns) {
     const inputHash = hash(stringify(vars) + stringify(options) + hostQualifier(host));
     const cached = cache.get(inputHash);
@@ -92,7 +83,9 @@ export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions 
     applyRules(flat, resolved);
   };
 
-  const cleanup = createVarsEffect(run);
+  // Effect creation is the only DOM-gated step — the server registers
+  // state-only (cssText() collects it) and cleanup stays undefined.
+  const cleanup = hasDocument() ? createVarsEffect(run) : undefined;
 
   varsRegistryReactive.set(vars, {
     flatKeys: Object.keys(flat),

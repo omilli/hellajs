@@ -2,12 +2,13 @@ import type { CSSVarInputObject, VarsOptions } from "./types";
 import { hash, stringify } from "./internal/shared";
 import { varsRegistryReactive, varsResultReactive, varsRegistryStatic, cache, removeFromScope } from "./internal/vars";
 import { hostQualifier } from "./internal/sheet";
-import { hasDocument, isPlainObject } from "./internal/core";
+import { isPlainObject } from "./internal/core";
 
 /**
  * Removes CSS custom properties by decrementing the reference count.
  * The variables are removed from the stylesheet only when the reference count reaches zero.
- * Client-only: a no-op when no DOM is available.
+ * Registration state is decremented on both platforms; the stylesheet drops
+ * at zero references (a no-op without a DOM).
  * @template T
  * @param vars Object containing CSS variable definitions. For reactive vars, must be the same reference passed to vars; for static vars, a structurally equal object matches by hash.
  * @param options Configuration options. Reactive entries are matched by vars reference and use the options recorded at the first vars call; `options` is consulted only to locate the static entry by hash.
@@ -15,8 +16,6 @@ import { hasDocument, isPlainObject } from "./internal/core";
  */
 export function removeVars<T extends CSSVarInputObject>(vars: T, options: VarsOptions = {}): void {
   if (!isPlainObject(vars)) throw new Error(`[css] removeVars: expected a plain object, received ${String(vars)}`);
-
-  if (!hasDocument()) return;
 
   const reactiveEntry = varsRegistryReactive.get(vars);
   if (reactiveEntry) {

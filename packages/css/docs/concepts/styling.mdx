@@ -225,7 +225,7 @@ HellaJS processes CSS objects into rules through deterministic identity generati
 
 - **Hash identity**: `style()` derives `h-{label}-{hash}` from the object alone — never the label or the emitted text — so identity is deterministic across platforms and renders. `keyframes()` canonicalizes step key order the same way, so structurally equal definitions share one name
 - **Unified registration**: every creator registers its rule text on both platforms; sheet mutation is the only DOM-gated step (a no-op without a document). `cssText()` reads that registration state — which is what makes server collection and client injection the same flow
-- **Reference counting**: each registration increments a per-text count. `removeStyle` and `removeKeyframes` decrement registration state on both platforms; `removeCss` and `removeVars` are client-only (no-ops without a DOM). Rules drop from the stylesheet at zero
+- **Reference counting**: each registration increments a per-text count. `removeCss`, `removeVars`, `removeStyle`, and `removeKeyframes` decrement registration state on both platforms. Rules drop from the stylesheet at zero
 - **Lazy recipes**: `cva()` derives each selection's class on first resolution — only the CSS a render actually resolves is ever generated
 
 For manual cleanup, use [`removeStyle`](/reference/css/removestyle) to remove specific styles, [`removeVars`](/reference/css/removevars) to remove specific CSS variable declarations, [`resetCss`](/reference/css/resetcss) to clear all CSS rules, or [`resetVars`](/reference/css/resetvars) to clear all CSS variables and reactive effects.

@@ -113,12 +113,45 @@ describe("platform-independent registration (no document)", () => {
     expect(cssText()).toBe(`@keyframes ${name}{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`);
   });
 
-  test("removeCss is a no-op", () => {
-    expect(() => removeCss({ color: "red" })).not.toThrow();
+  test("removeCss decrements the server registration", () => {
+    css({ body: { margin: 0 } });
+    expect(cssText()).toBe("body{margin:0px}");
+
+    removeCss({ body: { margin: 0 } });
+    expect(cssText()).toBe("");
   });
 
-  test("removeVars is a no-op", () => {
-    expect(() => removeVars({ theme: { color: "red" } })).not.toThrow();
+  test("removeVars decrements the server static registration", () => {
+    vars({ theme: { color: "red" } });
+    expect(cssText()).toBe(":root{--theme-color:red}");
+
+    removeVars({ theme: { color: "red" } });
+    expect(cssText()).toBe("");
+  });
+
+  test("removeVars decrements the server reactive registration", () => {
+    const color = signal("red");
+    const theme = { color };
+    vars(theme);
+    expect(cssText()).toBe(":root{--color:red}");
+
+    removeVars(theme);
+    expect(cssText()).toBe("");
+
+    // No effect existed on the server — a signal write must not re-add it.
+    color("blue");
+    expect(cssText()).toBe("");
+  });
+
+  test("reactive same-ref differing options throws on the server too", () => {
+    const color = signal("red");
+    const theme = { color };
+    vars(theme, { scoped: ".a" });
+
+    expect(() => vars(theme, { scoped: ".b" })).toThrow(
+      "[css] vars: reactive vars object already registered with different options"
+    );
+    expect(cssText()).toBe(".a{--color:red}");
   });
 
   test("removeStyle decrements the server registration without throwing", () => {
