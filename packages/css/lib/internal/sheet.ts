@@ -54,7 +54,10 @@ function sheetKey(id: string, host?: ParentNode): string {
  * Returns or creates the CSSStyleSheet for the given style element id.
  * With a host, skips the id lookup entirely (id collisions across hosts are
  * fine — the created <style> carries no id) and creates one <style> per id
- * inside the host, cached weakly by host.
+ * inside the host, cached weakly by host. On the default path, creation
+ * enforces the canonical document order (`hella-css` before `hella-vars`,
+ * regardless of first-write order) so the cascade matches cssText()'s
+ * css-side-then-vars emission.
  */
 function getSheet(id: string, host?: ParentNode): CSSStyleSheet | undefined {
   if (!hasDocument()) return undefined;
@@ -82,7 +85,11 @@ function getSheet(id: string, host?: ParentNode): CSSStyleSheet | undefined {
   if (!el) {
     el = document.createElement("style");
     el.id = id;
-    document.head.appendChild(el);
+    // hella-css slots before an existing hella-vars so cross-sheet cascade
+    // order is first-write-independent and matches cssText()'s emission;
+    // a null anchor (css registered first, or this is hella-vars) appends.
+    const anchor = id === "hella-css" ? document.getElementById("hella-vars") : null;
+    document.head.insertBefore(el, anchor ?? null);
   }
   s = el.sheet as CSSStyleSheet;
   sheets.set(id, s);

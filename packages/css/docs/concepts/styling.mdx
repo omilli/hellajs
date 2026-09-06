@@ -165,7 +165,7 @@ const spinner = style({
 
 ## Server Rendering
 
-Every creator registers its rules on both platforms and returns the same value everywhere — the class, the empty string, or the proxy. On the server there is no DOM to inject into; [`cssText`](/reference/css/csstext) collects the registered text (css, style, and keyframes rules in registration order, then the `vars` buckets) for the response's single `<style>` embed.
+Every creator registers its rules on both platforms and returns the same value everywhere — the class, the empty string, or the proxy. On the server there is no DOM to inject into; [`cssText`](/reference/css/csstext) collects the registered text (css, style, and keyframes rules in registration order, then the `vars` buckets) for the response's single `<style>` embed. The client mirrors this order — `hella-css` is always inserted before `hella-vars`, regardless of which creator ran first — so same-specificity cross-sheet rules resolve identically on both platforms.
 
 ```js
 import { css, cssText, style, vars } from '@hellajs/css';
