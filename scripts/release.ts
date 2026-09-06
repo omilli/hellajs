@@ -144,8 +144,12 @@ async function publish(): Promise<void> {
     const status = (await execCommand("git", ["status", "--porcelain"])).stdout.trim();
     if (status) {
       logger.info("Committing peer dependency updates...");
-      await execCommand("git", ["config", "--local", "user.email", "action@github.com"]);
-      await execCommand("git", ["config", "--local", "user.name", "GitHub Action"]);
+      // CI runners have no git identity; automation commits get the bot's.
+      // Local runs keep each invoker's own config (never override it).
+      if (process.env.CI) {
+        await execCommand("git", ["config", "--local", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"]);
+        await execCommand("git", ["config", "--local", "user.name", "github-actions[bot]"]);
+      }
       await execCommand("git", ["add", "./**/package.json"]);
 
       // Check if there are actually staged changes before committing
