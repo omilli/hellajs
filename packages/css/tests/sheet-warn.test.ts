@@ -1,6 +1,7 @@
 import { describe, expect, test, beforeEach, afterEach, mock } from "bun:test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
 import { css, removeCss } from "@hellajs/css/bundle";
+import { getCssSheet } from "./helpers";
 
 let originalWarn: typeof console.warn;
 let warn: ReturnType<typeof mock<(message: string) => void>>;
@@ -65,7 +66,3 @@ describe("css platform-rejected rules", () => {
     expect(sheet.cssRules[0]!.cssText).toContain("body");
   });
 });
-
-function getCssSheet(): CSSStyleSheet {
-  return (document.getElementById("hella-css") as HTMLStyleElement).sheet as CSSStyleSheet;
-}

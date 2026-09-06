@@ -1,6 +1,7 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { css, resetCss, removeCss } from "@hellajs/css/bundle";
+import { css, cssText, style, resetCss, removeCss } from "@hellajs/css/bundle";
+import { getCssSheet } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -70,6 +71,30 @@ describe("css", () => {
 
     sheetText = getStylesheet("hella-css");
     expect(sheetText).toBe("");
+  });
+
+  test("injects every rule when a quoted value contains a brace", () => {
+    css({ ".a": { content: "}" }, ".b": { color: "red" } });
+    expect(cssText()).toBe('.a{content:"}"}.b{color:red}');
+    expect(getCssSheet().cssRules.length).toBe(2);
+  });
+
+  test("emits exact rule text for a style with a quoted brace", () => {
+    const cls = style({ content: "}" });
+    expect(cssText()).toBe(`.${cls}{content:"}"}`);
+  });
+
+  test("treats a backslash-escaped quote as part of the string", () => {
+    css({ ".c": { content: 'quoted \\" and }' } });
+    expect(cssText()).toBe(`.c{content:"quoted \\" and }"}`);
+  });
+
+  test("removeCss removes every rule of a multi-rule brace-containing text", () => {
+    const styles = { ".a": { content: "}" }, ".b": { color: "red" } };
+    css(styles);
+    removeCss(styles);
+    expect(cssText()).toBe("");
+    expect(getCssSheet().cssRules.length).toBe(0);
   });
 
   describe("input validation", () => {

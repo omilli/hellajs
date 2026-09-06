@@ -284,6 +284,16 @@ css({
 // Generated: z-index:10;opacity:0.5;line-height:1.5;--gap:4
 ```
 
+Quoted values may contain braces and escaped quotes — the rule splitter tracks CSS string state, so a `}` inside a value never truncates the rule or the rules after it:
+
+```typescript
+css({
+  '.a': { content: '}' },
+  '.b': { color: 'red' }
+});
+// Generated: .a{content:"}"}.b{color:red}
+```
+
 ### Definitional at-rules stay global
 
 `@keyframes`, `@font-face`, `@layer`, and `@import` define top-level constructs and are always processed with an empty selector:
