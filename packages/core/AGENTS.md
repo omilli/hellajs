@@ -96,10 +96,13 @@ Module-level singletons that drive tracking and scope registration:
 
 Integration-style, public API only — never imports `lib/internal/*`. Uses `mock()` from `bun:test` for call counts.
 
-- `signals.test.ts` — primitive/reference types, default equality (incl. `NaN` self-equal), custom `equals`, no-arg signal (`undefined`).
+- `signals.test.ts` — primitive/reference types, default equality (incl. `NaN` self-equal), no-arg signal (`undefined`).
+- `signal-equality.test.ts` — `equals` option on `signal`: equal writes keep the old reference and skip propagation, `Object.is` NaN stabilization, freshest-value comparison, empty/undefined-`equals` options bag, non-function validation.
 - `computed.test.ts` — chaining, previous value, error recovery, auto-GC + rebuild, deep chains (6 levels), undefined/NaN-result no-op.
+- `computed-equality.test.ts` — `equals` option on `computed`: equal results keep the old cached reference and skip downstream effects, unequal propagate, non-function validation.
 - `effects.test.ts` — cleanup return value, nested effects, errors from setter, try/catch tracking, async via `.then`, no-double-queue, flush-abort, deep accumulation.
 - `batch.test.ts`, `scope.test.ts` — grouping, nesting, return values, cancel-out batches (signals-only runs once, computed-mediated skips), idempotent dispose, shared NOOP.
+- `untracked.test.ts` — no-tracking reads in effects, nested `untracked` (no link leak), `untracked` inside `computed` (no deps recorded — cached value stands).
 - `topology.test.ts` — diamond / jagged-diamond / lazy-branch / skip-update / unsubscribe-inactive patterns (ported from preact-signals), incl. multi-dep unsubscribe after branch loss (effect + computed).
 - `env.test.ts`, `utils.test.ts` — env probes and type guards (`isPlainObject` rejects arrays, Date, Map/Set, class instances; accepts `Object.create(null)`).
 

@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from "bun:test";
-import { batch, computed, effect, signal, untracked } from "@hellajs/core";
+import { batch, computed, effect, signal } from "@hellajs/core";
 
 describe("core", () => {
   describe("batch", () => {
@@ -89,23 +89,6 @@ describe("core", () => {
       });
 
       expect(sum).toBe(30);
-    });
-
-    test("untracked prevents dependency tracking in effects", () => {
-      const a = signal(0);
-      const untrackedSig = signal(0);
-
-      const runs = mock(() => {
-        a();
-        untracked(() => untrackedSig());
-      });
-      effect(runs);
-
-      expect(runs).toHaveBeenCalledTimes(1);
-      a(100);
-      expect(runs).toHaveBeenCalledTimes(2);
-      untrackedSig(999);
-      expect(runs).toHaveBeenCalledTimes(2); // No rerun
     });
   });
 });
