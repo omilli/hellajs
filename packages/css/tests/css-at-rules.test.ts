@@ -101,55 +101,24 @@ describe("css at-rules", () => {
         "p": { lineHeight: "1.5" },
       },
     };
-    // happy-dom rejects @layer insertRule (the premise of the failed-insertRule
-    // tests below), so composition is asserted via the server text return
-    // (same process() derivation), captured before asserting so a failure
-    // cannot leak the patched global.
+    // happy-dom rejects @layer insertRule (the premise of the phantom-index
+    // regression pair in sheet-warn.test.ts), so composition is asserted via
+    // the server text return (same process() derivation). The patched global
+    // is restored in finally and asserted after restore so a throwing
+    // css(layer) cannot leak document = undefined into sibling files.
     css(layer);
     expect(getStylesheet("hella-css")).toBe("");
 
     const savedDocument = globalThis.document;
+    let serverText: string;
     (globalThis as unknown as Record<string, unknown>).document = undefined;
-    css(layer);
-    const serverText = cssText();
-    (globalThis as unknown as Record<string, unknown>).document = savedDocument;
-    expect(serverText).toBe("@layer base{h1{font-size:2rem}p{line-height:1.5}}");
-  });
-
-
-
-  describe("failed insertRule", () => {
-    function getCssSheet(): CSSStyleSheet {
-      return (document.getElementById("hella-css") as HTMLStyleElement).sheet as CSSStyleSheet;
+    try {
+      css(layer);
+      serverText = cssText();
+    } finally {
+      (globalThis as unknown as Record<string, unknown>).document = savedDocument;
     }
-
-    test("phantom indexMap entry is not created when insertRule throws", () => {
-      // happy-dom rejects @layer, so insertRule will throw.
-      // The phantom entry bug would cause a subsequent supported rule to
-      // be injected at a stale index, corrupting the sheet.
-      css({ "@layer base": { h1: { fontSize: "2rem" } } });
-      css({ body: { margin: "0" } });
-      const sheet = getCssSheet();
-      expect(sheet.cssRules.length).toBe(1);
-      expect(sheet.cssRules[0]!.cssText).toContain("body");
-      // @layer is rejected by happy-dom, so it is absent from the CSSOM —
-      // the failed insert is the premise of this test.
-      const content = getStylesheet("hella-css");
-      expect(content).not.toContain("@layer");
-      expect(content).toContain("body");
-    });
-
-    test("re-injecting a failed rule key does not corrupt existing rules", () => {
-      // First injection fails (happy-dom rejects @layer).
-      css({ "@layer base": { h1: { fontSize: "2rem" } } });
-      // Supported rule lands fine.
-      css({ body: { margin: "0" } });
-      // Re-inject same @layer key with different text — exercises existing-key path.
-      css({ "@layer base": { h1: { color: "red" } } });
-      const sheet = getCssSheet();
-      expect(sheet.cssRules.length).toBe(1);
-      expect(sheet.cssRules[0]!.cssText).toContain("body");
-    });
+    expect(serverText).toBe("@layer base{h1{font-size:2rem}p{line-height:1.5}}");
   });
 
   test("global @media (no name) is unaffected", () => {
