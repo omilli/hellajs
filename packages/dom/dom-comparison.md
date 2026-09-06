@@ -91,6 +91,7 @@ A distinctive HellaJS ergonomic: at the runtime level, passing a bare signal ref
 - The complex case runs a binary-search LIS and moves only non-longest-increasing-subsequence nodes, walking keys backwards with a rolling move anchor (`lib/ForEach.ts`).
 - Key resolution: `key` prop → `item.id` → array index (`lib/ForEach.ts`).
 - Explicit keys reuse nodes by key identity regardless of item reference; index-fallback keys additionally require the same item reference, preventing accidental reuse on shuffled data (`lib/ForEach.ts`).
+- Fragment-rendered items (a `use` result with multiple roots) reconcile as blocks: a persistent per-item text anchor plus a captured node list, so stale removal, LIS moves, and index-keyed replacement cover every node of the item (`lib/ForEach.ts`).
 - Live collections (`keyToNode`, `keyToItem`, `currentKeys`) swap by reference with temp collections reused across renders: no per-update Map allocation (`lib/ForEach.ts`).
 
 | Framework | Algorithm |

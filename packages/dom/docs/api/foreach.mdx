@@ -93,6 +93,38 @@ Key resolution order:
 2. `id` property on the source item
 3. Array index (fallback)
 
+### Fragment Items
+
+A `use` renderer may return multiple root nodes - a `html` template with several roots, or `<>…</>`.
+
+```js
+import { signal } from "@hellajs/core";
+import { html, ForEach } from "@hellajs/dom";
+
+const rows = signal([
+  { id: 1, title: "Alpha", note: "first" },
+  { id: 2, title: "Beta", note: "second" }
+]);
+
+// Each item renders two roots (dt + dd) as one fragment item
+html`<dl>
+  <${ForEach}
+    each=${rows}
+    use=${(row) => html`<dt>${row.title}</dt><dd>${row.note}</dd>`}
+  />
+</dl>`
+```
+
+Fragment items are reconciled as a single block: an invisible empty text anchor marks the
+block start, and removal, reordering, and replacement always move or clean every node of the
+block together - including effects registered inside the item's nodes. Keys resolve like any
+other item (`id` property or array index; a fragment wrapper carries no `key` attribute).
+
+When hydrating server-rendered HTML, `ForEach` adopts existing nodes only when the region's
+server node count exactly matches the item count, so every item must render exactly one root
+node. Fragment-item lists take the mismatch path instead: the server nodes are cleared and the
+list is rebuilt fresh (a warning is logged).
+
 ## Important Considerations
 
 ### Array Immutability

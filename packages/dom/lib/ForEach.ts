@@ -7,6 +7,63 @@ import { peekHydrateContext } from "./internal/hydrate";
 import type { HellaNode, HellaChild, ForEachProps } from "./types/nodes";
 
 /**
+ * A fragment-rendered list item tracked across updates: a stable text anchor marking the item's
+ * start in the DOM plus the fragment's top-level child nodes, captured before any insertion
+ * moves them out of the emptied fragment husk. The `itemAnchor` brand discriminates it from a
+ * raw DOM node inside the tracking maps.
+ */
+interface FragmentItemRecord {
+  itemAnchor: true;
+  anchor: Text;
+  nodes: Node[];
+}
+
+/**
+ * One tracked list item: an element/text node directly, or a fragment item record.
+ */
+type TrackedItem = Node | FragmentItemRecord;
+
+/**
+ * Discriminates a fragment item record from a raw DOM node via the `itemAnchor` brand.
+ */
+const isFragmentItem = (item: TrackedItem): item is FragmentItemRecord =>
+  (item as FragmentItemRecord).itemAnchor === true;
+
+/**
+ * Builds the tracking record for a fragment-rendered item: a persistent empty text anchor plus
+ * the fragment's child nodes captured while still inside it (insertion empties the husk).
+ */
+function createFragmentItem(fragment: DocumentFragment): FragmentItemRecord {
+  return { itemAnchor: true, anchor: document.createTextNode(""), nodes: Array.from(fragment.childNodes) };
+}
+
+/**
+ * Removes one tracked item from the list parent with full cleanup: a fragment record via each
+ * captured node then its anchor, an element/text node directly. Nodes no longer under `parent`
+ * (e.g. portal-moved) are left in place.
+ */
+function removeTrackedItem(item: TrackedItem, parent: Element): void {
+  if (isFragmentItem(item)) {
+    let ni = 0;
+    const nLen = item.nodes.length;
+    while (ni < nLen) {
+      const node = item.nodes[ni++]!;
+      if (node.parentNode !== parent) continue;
+      cleanupSubtree(node);
+      parent.removeChild(node);
+    }
+    if (item.anchor.parentNode === parent) {
+      cleanupSubtree(item.anchor);
+      parent.removeChild(item.anchor);
+    }
+    return;
+  }
+  if (item.parentNode !== parent) return;
+  cleanupSubtree(item);
+  parent.removeChild(item);
+}
+
+/**
  * Resolves the reconciliation key for one list item: an explicit `key` prop on the rendered node,
  * else the item's `id` property, else the array index (implicit). The first two are explicit
  * identities (reuse by key); the index fallback is positional. The item's `id` is read only when
@@ -39,14 +96,14 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
   if (!isFunction(props.use)) throw new Error("[dom] ForEach: use must be a function");
   const { each, use } = props;
   const fn = ((parent: Element) => {
-    let keyToNode = new Map<unknown, Node>(),
+    let keyToNode = new Map<unknown, TrackedItem>(),
       keyToItem = new Map<unknown, T>(),
       currentKeys: unknown[] = [];
 
     let newKeys: unknown[] = [];
-    let newKeyToNode = new Map<unknown, Node>();
+    let newKeyToNode = new Map<unknown, TrackedItem>();
     let newKeyToItem = new Map<unknown, T>();
-    const nodesToRemove: Node[] = [];
+    const nodesToRemove: TrackedItem[] = [];
     const keyToOldIndex = new Map<unknown, number>();
     const toMove = new Set<number>();
 
@@ -104,8 +161,15 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             const element = use(item, index);
             const { key } = resolveItemKey(element, item, index);
             const node = resolveNode(element, undefined, itemNs);
-            fragment.appendChild(node);
-            keyToNode.set(key, node);
+            if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+              const record = createFragmentItem(node as DocumentFragment);
+              fragment.appendChild(record.anchor);
+              fragment.appendChild(node);
+              keyToNode.set(key, record);
+            } else {
+              fragment.appendChild(node);
+              keyToNode.set(key, node);
+            }
             keyToItem.set(key, item);
             currentKeys.push(key);
             index++;
@@ -131,7 +195,10 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           let node = keyToNode.get(key);
           const oldItem = keyToItem.get(key);
           if (!node || (!hasExplicitKey && oldItem !== item)) {
-            node = resolveNode(element, undefined, itemNs);
+            const resolved = resolveNode(element, undefined, itemNs);
+            node = resolved.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+              ? createFragmentItem(resolved as DocumentFragment)
+              : resolved;
           }
           newKeyToNode.set(key, node);
           newKeyToItem.set(key, item);
@@ -143,7 +210,8 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         const kLen = existingEntries.length;
         while (ki < kLen) {
           const [key, node] = existingEntries[ki++]!;
-          if (node.parentNode !== actualParent) continue;
+          const liveParent = isFragmentItem(node) ? node.anchor.parentNode : node.parentNode;
+          if (liveParent !== actualParent) continue;
           const newNode = newKeyToNode.get(key);
           (!newNode || newNode !== node) && nodesToRemove.push(node);
         }
@@ -151,9 +219,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         let ri = 0;
         const rLen = nodesToRemove.length;
         while (ri < rLen) {
-          const rNode = nodesToRemove[ri]!;
-          cleanupSubtree(rNode);
-          actualParent.removeChild(rNode);
+          removeTrackedItem(nodesToRemove[ri]!, actualParent);
           ri++;
         }
 
@@ -172,7 +238,17 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           let fi = 0;
           const fLen = newKeys.length;
           while (fi < fLen) {
-            fragment.appendChild(newKeyToNode.get(newKeys[fi]!)!);
+            const node = newKeyToNode.get(newKeys[fi]!)!;
+            if (isFragmentItem(node)) {
+              fragment.appendChild(node.anchor);
+              let ci = 0;
+              const cLen = node.nodes.length;
+              while (ci < cLen) {
+                fragment.appendChild(node.nodes[ci++]!);
+              }
+            } else {
+              fragment.appendChild(node);
+            }
             fi++;
           }
           actualParent.insertBefore(fragment, anchor);
@@ -256,8 +332,24 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
 
           while (i >= 0) {
             const node = newKeyToNode.get(newKeys[i])!;
-            toMove.has(i) && actualParent.insertBefore(node, moveAnchor);
-            moveAnchor = node;
+            if (isFragmentItem(node)) {
+              if (toMove.has(i)) {
+                actualParent.insertBefore(node.anchor, moveAnchor);
+                let ref: Node = node.anchor;
+                let ci = 0;
+                const cLen = node.nodes.length;
+                while (ci < cLen) {
+                  const child = node.nodes[ci++]!;
+                  actualParent.insertBefore(child, ref.nextSibling);
+                  ref = child;
+                }
+              }
+              // the next item inserts before this block's leading anchor
+              moveAnchor = node.anchor;
+            } else {
+              toMove.has(i) && actualParent.insertBefore(node, moveAnchor);
+              moveAnchor = node;
+            }
             i--;
           }
         }
@@ -278,10 +370,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         const eLen = entries.length;
         while (ei < eLen) {
           const [, node] = entries[ei++]!;
-          if (node.parentNode === actualParent) {
-            cleanupSubtree(node);
-            actualParent.removeChild(node);
-          }
+          removeTrackedItem(node, actualParent);
         }
 
         keyToNode.clear();

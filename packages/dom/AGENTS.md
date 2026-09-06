@@ -135,13 +135,14 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 Returns a function with `isDynamic: true` and `fn.ssr = { kind: "forEach", props }` (the SSR descriptor consumed type-only by `@hellajs/ssr`); `appendToParent` calls it with the parent. Creates a text anchor + one effect holding live collections (`keyToNode`, `keyToItem`, `currentKeys`) and reusable temp collections (`newKeys`, `newKeyToNode`, `newKeyToItem`, `nodesToRemove`, `keyToOldIndex`, `toMove`).
 
+- **Dual-mode item tracking.** `keyToNode` holds raw DOM `Node`s for element/text items (the hot path — zero extra allocation) and, for a `use` result resolving to a `DocumentFragment` (multi-root `html\`\`` / `<>…</>` renderer), a `FragmentItemRecord` `{ itemAnchor: true, anchor: Text, nodes: Node[] }` (module-local `createFragmentItem` / `isFragmentItem` / `removeTrackedItem`): a persistent empty text anchor inserted before the item's block, plus the fragment's top-level children captured before insertion empties the husk. Stale detection reads `record.anchor.parentNode`; removal (`removeTrackedItem`) runs `cleanupSubtree` on every `nodes` entry then the anchor; the no-overlap batch appends anchor + nodes in order; the LIS walk inserts the anchor before the move anchor, then each node after the previous, and advances `moveAnchor` to the block's leading anchor. Keyed reuse compares record identity — same record reference, same block. Hydrate adoption stays element-only: the count-strict `existingNodes.length === arr.length` guard makes any multi-node (fragment) item region fresh-build (warned), so records are never adopted.
 - **Key resolution.** `resolveItemKey(element, item, index)` (module-local): `element.props.key` → `item.id` → array index. The first two set `hasExplicitKey = true`; the index fallback does not. The item's `id` is read only when no explicit `key` prop is present.
-- **Reuse rule.** `!node || (!hasExplicitKey && oldItem !== item)` → `resolveNode` (fresh node). Explicit keys reuse by key identity regardless of item reference; index-fallback keys require the same item reference.
+- **Reuse rule.** `!node || (!hasExplicitKey && oldItem !== item)` → `resolveNode` (fresh node — a fragment result becomes a fresh record). Explicit keys reuse by key identity regardless of item reference; index-fallback keys require the same item reference.
 - **First render** (`currentKeys.length === 0`): build into a `DocumentFragment`, single `insertBefore(fragment, anchor)`.
-- **Stale removal** (every non-first render): existing nodes absent from `newKeyToNode` (or whose node identity changed) are collected, then `cleanupSubtree` + `removeChild`-ed in a batch. Nodes whose `parentNode !== actualParent` (e.g. portal-moved) are skipped.
+- **Stale removal** (every non-first render): existing items absent from `newKeyToNode` (or whose tracked identity changed) are collected, then removed in a batch via `removeTrackedItem`. Items whose live parent (the node itself, or a record's anchor) is not `actualParent` (e.g. portal-moved) are skipped.
 - **No-overlap fast path**: if no `newKey` exists in `keyToNode`, append all via one fragment.
 - **LIS path**: `mapped[i]` = old index if reused else `-1`; binary-search LIS (`O(n log n)`) removed from `toMove`. Walk `newKeys` **backwards**, `insertBefore(node, moveAnchor)` only for indices still in `toMove` — minimal DOM moves.
-- **Empty list**: `cleanupSubtree` + `removeChild` every node, clear maps.
+- **Empty list**: `removeTrackedItem` every tracked item, clear maps.
 - **Collection swap**: live and temp collections swap by reference; `clear()` the temps next round, never reallocate.
 
 ## `Portal` (`lib/Portal.ts`)
@@ -242,6 +243,7 @@ Branch order: `value`/`checked`/`selected`/`innerHTML` → set the IDL property 
 - **`while` + cached `length`** on every hot path — no `for…of`/`forEach`.
 - **`DocumentFragment`** for every multi-insert (ForEach first render / no-overlap / empty-recovery, Portal fragment).
 - **ForEach collection reuse** — temp Maps/arrays/Sets `clear()` + reference-swap, never reallocated.
+- **ForEach dual-mode tracking leaves the element-item hot path untouched** — only fragment-rendered items allocate a record + anchor; element/text items stay raw `Node`s in `keyToNode`.
 - **`static` sharing** — static subtrees returned by reference, no deep clone.
 - **`staticDom` prototype cache** — `static` subtrees return `cloneNode(true)` of a cached prototype, turning O(nodes) mount into O(1) for static branches.
 - **`composedPath()`** for delegation (pre-computed ancestor chain).
@@ -266,7 +268,7 @@ Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bu
 - `async-mount.test.ts` — async resolution + rejection routing through `onError`/`dispatchError`.
 - `reactive-dynamic-children.test.ts` — `appendToParent` Proxy forwarding for dynamic-component children.
 - `html.test.ts`, `template.test.ts` — caching, parsing edge cases, fragments, dynamic components, error-config materialization, deep nesting.
-- `foreach.test.ts` — keyed reconciliation, LIS moves, `item.id` fallback, index-keyed reference equality, key-only reuse preserving signal children, duplicate keys (last-wins), large-list clearing, no-change no-op, fragments, sibling preservation.
+- `foreach.test.ts` — keyed reconciliation, LIS moves, `item.id` fallback, index-keyed reference equality, key-only reuse preserving signal children, duplicate keys (last-wins), large-list clearing, no-change no-op, fragments, sibling preservation, fragment-item reconciliation (shrink, permutation, index-keyed replace, in-item effect disposal, element/fragment dual-mode).
 - `lazy.test.ts` — loading/fallback/success, props forwarding, `signal` forwarding, unmount-during-load guards for both paths.
 - `transition.test.ts` — enter/leave classes, rapid-toggle rescue, `appear` variants, timer cleanup on parent removal.
 - `portal.test.ts` — every insert type, cleanup on removal, missing-target throw.
