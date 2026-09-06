@@ -1,0 +1,30 @@
+---
+type: decision
+title: "<Suspense> resolves Promise-returning children on client fresh-mount (universal boundary) — one-shot, errors bubble, resource + reactive child for reactive"
+description: <Suspense> fresh-mount resolves thenable children one-shot (fallback then swap; errors bubble to boundaries; NOT reactive — resource is not Suspense-aware); test both html`` and JSX child shapes.
+tags: [arch, dom, suspense, streaming, contract]
+timestamp: 2026-08-21
+last_confirmed: 2026-08-21
+triggers: [suspense-client-async, suspense-fresh-mount, suspense-reactive-resuspend, suspense-error-bubble]
+---
+
+> **Naming superseded 2026-08-22 (entry 045):** `ssrAsync`→`ssr.async`, `ssrStream`→`ssr.stream`, `docStream`→`doc` (stream overload) — the old names below are the pre-v2 API, kept for history.
+
+# Why
+
+`examples/ssr-streaming`'s "User" link rendered `[object Promise]` on client-side navigation: `<Suspense>`'s fresh-mount branch called `resolveNode` on the function child, which stringified the Promise (and a sync node → `[object Object]`). The server (`ssrStream` stages a `<template>`) and `hydrate` (`swapSuspenseStage`) paths already handled async — only fresh-mount was broken. Two design forks resolved against React/Solid/Vue/Svelte:
+
+- **Re-suspension → ONE-SHOT, not reactive.** React/Solid re-suspend because their *data primitives are Suspense-aware* (throw-Promise / read-pending integrates with the boundary). HellaJS's `resource` is **not** Suspense-aware (verified: `packages/resource/lib/resource.ts` exposes `isLoading()`/`error()`/`data()` for an explicit reactive child branching on them — there is no `<Show>` component in any package, confirmed 2026-08-21 when audit finding #3 removed the stale `Show` recommendation from suspense.mdx/AGENTS.md), so HellaJS's reactive-async UI is already `resource` + a reactive child — which doesn't involve Suspense client-side at all. A reactive raw-Promise Suspense would be a SECOND, cache-less reactive-async path parallel to `resource` (cache/dedupe/SWR) — worse architecture. Vue's `<Suspense>` (async setup) is effectively one-shot for the common case. The example's child reads no signals (`id` is a closed-over route param; a fresh Suspense mounts per navigation) → one-shot is exactly right.
+- **Errors → BUBBLE, not local.** React/Solid/Vue all bubble Suspense errors to error boundaries (only Svelte `{#await}` does local `{:catch}`). HellaJS has a real boundary system (`error:fallback`/`error:boundary`, `onError`), so bubbling reuses existing machinery; the pending `fallback` is pending-only (removed on rejection — React semantics). This diverges from `Lazy` (local-only) — `Lazy`'s local-only is itself a pre-existing divergence, not changed here.
+
+This **extends** Suspense to client fresh-mount; it does **not** change the β streaming/hydrate model (memory 015 still holds — `ssrStream` staging + hydrate-once swap are unchanged). Complementary to 015, not superseding it.
+
+The hydrate path also gained a `stageMissing` degradation (2026-08-21): a seen sentinel whose staged `<template>` never arrived (interrupted stream) flags the context and `<Suspense>` re-suspends client-side with fresh-mount semantics.
+
+# Evidence
+
+- `packages/dom/lib/Suspense.ts` fresh-mount branch — **unwraps a length-1 JSX array first** (`const child = Array.isArray(props.children) && props.children.length === 1 ? props.children[0] : props.children;`) then `isFunction`-then-suspend, `.then` swap, `.catch` `dispatchError` with `resolveErrorConfig`. `internal/state.ts` `suspenseCleanup` slot; `internal/cleanup.ts` `clean()` chain.
+- `bun coverage dom`: 328 pass / 0 fail, 98.88% funcs / 98.04% lines; `bun lint` exit 0; blast-radius `bun coverage ssr` 134 pass / 0 fail.
+- Tests: `packages/dom/tests/hydrate-suspense.test.ts` (8 fresh-mount tests — incl. the JSX-array regression `component(Suspense, { children: [() => Promise.resolve(...)] })` matching the example's exact babel output; the other 7: fallback→swap, sync-node, no-fallback, reject→boundary, reject→no-boundary, cancel-resolve, cancel-reject).
+- `resource` non-Suspense-aware: `packages/resource/lib/resource.ts` (loading/error/data signals, no throw/suspend/boundary).
+- Plan: `plans/dom/code/suspense-client-async/suspense-client-async.md` (every DoD ticked).

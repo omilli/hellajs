@@ -1,0 +1,30 @@
+---
+type: decision
+title: "css v3: unified platform-independent registration — css/style/keyframes/vars register on BOTH platforms and return \"\"/class/name/proxy everywhere; cssText() is the collector"
+description: css v3 — every creator (css/style/keyframes/vars) registers state on both platforms (sheet ops DOM-gated) with identical returns everywhere; cssText() is the collector; cssVars aliases removed.
+tags: [arch, css, ssr, api]
+timestamp: 2026-09-06
+last_confirmed: 2026-09-06
+triggers: [css-return-type, platform-return, css-server, csstext-collector, keyframes-hash, vars-rename]
+supersedes: 006
+---
+# Why
+
+The v2 platform-dependent return (text on server, name/proxy on client) made every creator's return type a runtime platform question and forced isomorphic code to narrow with `typeof`. The v3 model replaces it with one contract: registration everywhere, sheet writes DOM-gated, identical returns everywhere. The server is no longer stateless-for-css — `cssText()` needs the registration state to serve the SSR `<style>` source — but sheet ops no-op through the `getSheet` gate, so server registration costs maps only.
+
+vars() is the last creator moved onto the model (unit 03). Originally it had a separate server branch (`applyRules` + `buildResult` before static/reactive routing); the 2026-09-06 remover-unify unit collapsed that branch — static and reactive routing now run identically on both platforms, and the ONLY DOM-gated step in `vars()` is effect creation: `const cleanup = hasDocument() ? createVarsEffect(run) : undefined`. Server reactive entries store `cleanup: undefined` (`removeVars` guards disposal on it existing), so fn leaves still resolve exactly once (single flatten pass) and signal writes never touch `cssText()` server-side. SSR accumulation semantics unchanged (same-scope calls merge; `resetVars()` clears); a same-ref reactive repeat call with differing scope/prefix/media/host now throws on the server exactly like the client (previously the server silently merged — leak-shaped).
+
+keyframes() rides the css-side identity (unit 03): `keyframesRule` canonicalizes the object (recursive key-sort) so the emitted text stays in bijection with the content hash — structurally equal definitions in ANY key order register ONE rule under ONE name (without canonicalization, `process` emits in insertion order and one name could carry two order-variant rules). Registered through the same `injectedMap` flow as css/style; `removeKeyframes` re-derives and decrements on both platforms (mirrors `removeStyle`; `removeCss`/`removeVars` joined the both-platform decrement on 2026-09-06 — their former full server no-op meant an SSR consumer composing `cssText()` after removal got stale text).
+
+cssText() composition: css-side `injectedMap` keys (default-host only) in insertion order, then the vars contribution — `varsText()` serializes default-host `VarsBucket`s in bucket insertion order, media-wrapped when set. Buckets carry `{ scope, media, host, vars }` because the composite bucket key (`media|qualifier+scope`) is unsafe to parse back (scopes may contain `|`), and hosted-ness is not key-prefix-detectable for media buckets.
+
+What breaks if ignored: an SSR consumer reading a creator's return as text gets the proxy/class/name — the collector is the only server-side text source. `examples/ssr-routing` still consumed the old cssVars server-text return at unit-03 landing (its `doc({ styles: [tokens, stylesheet] })`) — unit 04 migrates it to `styles: [cssText()]` semantics.
+
+**Correction 2026-09-02:** the deprecated-alias window described above was rejected by the user the same day — no deprecated re-exports during an already-breaking change (codified in `guides/code.md` §Code Rules: "No transitional deprecation aliases — a breaking rename breaks cleanly"). The three one-line shims, the barrel alias exports, `tests/vars-aliases.test.ts`, and all alias references (test-helpers import, throw-message wording, api-doc alias sections, gate-relevant link displays) were removed ahead of unit 06; the v3 rename is a clean break.
+
+# Evidence
+
+- Source: `packages/css/lib/vars.ts` (no server branch — shared static/reactive routing, `hasDocument() ? createVarsEffect(run) : undefined`); `packages/css/lib/removeCss.ts` / `lib/removeVars.ts` (no `!hasDocument()` gate — both-platform decrement); `packages/css/lib/keyframes.ts` (`keyframesRule` + `canonicalSteps`); `packages/css/lib/removeKeyframes.ts` (both-platform decrement); `packages/css/lib/cssText.ts` (css-side keys + `varsText()`); `packages/css/lib/internal/vars.ts` (`VarsBucket`, `varsText`); the `cssVars.ts`/`removeCssVars.ts`/`resetCssVars.ts` alias shims were deleted 2026-09-02.
+- Tests: `packages/css/tests/ssr.test.ts` (proxy with document unset, fn-leaves-exactly-once via mock, no effects — signal write leaves cssText unchanged, keyframes name + rule carry); `tests/keyframes.test.ts`; `tests/csstext.test.ts` (full composition + resetVars/hosted exclusion).
+- Gate: `bun coverage css` exit 0 (213 pass, 2026-09-06 — incl. ssr.test.ts removeCss/removeVars server-decrement + server differing-options throw), `bun lint:structure` green, `bun doc-links` green, `rg -l 'reference/css/cssvars'` empty.
+- Plan: `plans/css/code/api-v3/03-vars-keyframes.md` (+ 01-style-core for the css/style half); remover/server-branch unification: `plans/css/code/audit-repairs/remover-server-unify.md` (2026-09-06).

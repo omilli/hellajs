@@ -1,0 +1,20 @@
+---
+type: decision
+title: "HellaNode marker properties are bare words (raw/static/componentScope/placeholder/dynamicComponent); __SLOT_N__ and __fragment__ parser tokens are KEPT __ on purpose — do not 'fix' them"
+description: HellaNode marker properties are bare words (raw/static/componentScope/...); __SLOT_N__ and __fragment__ are parser STRING tokens whose __ is collision resistance — kept on purpose, do not 'fix' them.
+tags: [arch, dom, ssr, naming, contract]
+timestamp: 2026-07-17
+last_confirmed: 2026-07-28
+triggers: [underscore-marker, hella-node-fields, slot-token, fragment-token, componentscope, marker-rename]
+---
+# Why
+
+A future consistency pass that notices `__SLOT_N__`/`__fragment__` still carry `__` while the property markers no longer do would be tempted to "finish the job" — but those two are parser string tokens (text substituted into the HTML before tokenization: `__SLOT_N__` for interpolations, `<__fragment__>` for `<>`/`</>`), not object properties. Their `__` wrapping makes collision with arbitrary user HTML/text astronomically unlikely (a user could write `SLOT` or `fragment`). Renaming them gains nothing and forces a 3-package atomic change (babel writes both tokens; dom parses them). The guides/code.md note targets properties only.
+
+`__scope`→`componentScope` (not bare `scope`): `<th scope>` is a real HTML attribute, so bare `scope` on HellaNode would collide. `componentScope` mirrors the `ElementState.componentScope` field it is copied into at mount (`render.ts`: `getState(element).componentScope = node.componentScope`), so the same-name copy reads as intentional. `static` is a reserved word but valid as a property key / object-literal key / type field (`static?: true`); no destructure of it exists anywhere, so there is no reserved-word-as-binding-name issue.
+
+# Evidence
+
+- Rename executed 2026-07-17 across dom (`raw.ts`, `types/nodes.d.ts`, `component.ts`, `internal/{render,hydrate,template}.ts`, `html.ts`) + ssr (`lib/ssr.ts`, `lib/internal/walk.ts`) + tests (`raw.test.ts`, `component.test.ts`, `mount-edge-cases.test.ts`) + docs/agents.
+- `rg '__raw|__static|__scope|__placeholder|__dynamicComponent' packages/dom/lib packages/ssr/lib` → NONE. `__SLOT_`/`__fragment__` intact (`rg '__SLOT_|__fragment__' packages/dom/lib/internal/template.ts` → present).
+- `bun coverage dom` 317 pass / 0 fail; `bun coverage ssr` 132 pass / 0 fail; `bun lint` 0; `bun bundle dom && bun bundle ssr` ✔; `bun doc-links` 0.

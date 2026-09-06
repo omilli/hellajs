@@ -73,6 +73,7 @@
     }
   },
   "include": [
+    ".agents/skills/memory/memory.ts",
     "packages/*/lib/**/*.ts",
     "packages/*/tests/**/*.ts",
     "plugins/*/src/**/*.mjs",

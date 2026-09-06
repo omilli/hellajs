@@ -1,0 +1,32 @@
+---
+type: decision
+title: "ssr.stream is pull-driven — the producer advances one chunk per pull; a test acting at a gating chunk (the <!--hs sentinel, a Lazy region-open) must await delay(0) so the NEXT pull runs the gated work first"
+description: ssrStream enqueues only inside pull() — after reading a gating chunk (sentinel, Lazy region-open), await delay(0) so the NEXT pull runs the gated step, or cancel/release/assert races it.
+tags: [testing, ssr, streaming, bun-test, coverage]
+timestamp: 2026-09-01
+last_confirmed: 2026-09-01
+triggers: [ssrstream-cancel-test, suspense-staged-swap, pull-driven-timing, streaming-test-tick, coverage-uncovered-cancel]
+---
+
+> **Naming superseded 2026-08-22 (entry 045):** `ssrAsync`→`ssr.async`, `ssrStream`→`ssr.stream`, `docStream`→`doc` (stream overload) — the old names below are the pre-v2 API, kept for history.
+
+# Why
+
+Since 2026-09-01 `ssr.stream`'s `ReadableStream` is **pull-driven** (`pull()` is the only backpressure signal a ReadableStream offers — a slow consumer never buffers the whole response in the stream queue; read-ahead is bounded by the queue's high-water mark, default 1). Every enqueue happens inside `pull()`: the main walk advances exactly one chunk per `gen.next()`, staged-`<Suspense>` swaps append to an internal flush queue drained one chunk per pull, and `doc`'s stream overload pipes the body the same way. There is no background drain.
+
+The timing consequence for tests: the machinery fires the next `pull()` only once the queue has room — i.e. only AFTER the consumer's `read()` that consumed the previous chunk resolves. The test's `await read()` continuation and that next `pull()` are separate microtasks, and the test's continuation can win the race. So a test that drains to a gating chunk and immediately acts (cancel, release a resolver, assert on staged state) acts BEFORE the generator has run the gated step that follows that chunk:
+
+- `renderDynamicGen` `case "suspense"` (`lib/internal/walk.ts`): `yield <!--${id}-->` then `pending.push({ id, childGen })` as the very next statement — the push runs on the pull AFTER the sentinel chunk is read.
+- `case "lazy"`: the region-open `<!--[-->` chunk is followed by `await props.loader(...)` — the loader is invoked on the pull AFTER the region-open chunk is read. Confirmed 2026-09-01: the "Lazy outside <Suspense> awaits in-order" test called `resolveLate()` before any pull had run the loader → `TypeError: resolveLate is not a function`; the fix is `await delay(0)` between the drain loop and the release.
+
+General recipe: to act on "the producer has reached stage X", witness stage X's OUTPUT (drain the read loop until the gating chunk appears) AND yield a macrotask (`await delay(0)`) so the next pull advances the producer past its gated step. Reading the chunk alone is insufficient — the generator is suspended at that yield and only resumes when a pull calls `.next()`.
+
+Ignored → streaming/cancel/Suspense/Lazy tests silently fail to exercise the gated path; `bun coverage ssr` shows the `cancel()` swap-return loop (or the loader await) as uncovered lines with all assertions green — or the test throws on an undefined resolver.
+
+# Evidence
+
+- `packages/ssr/lib/ssrStream.ts` — `pull(controller)` advances `gen` one chunk per call and is the only enqueue site; `cancel()` returns `gen` and every staged swap generator.
+- `packages/ssr/lib/internal/walk.ts` — `renderDynamicGen`: `yield <!--${id}-->; pending.push(...)` (suspense); `await props.loader(...)` directly after the region-open yield (lazy).
+- `packages/ssr/tests/ssr-stream.test.ts` — "cancel terminates staged <Suspense> swap generators" (drains to `<!--hs`, `await delay(0)`, then cancels — covers the swap-return loop); "Lazy outside <Suspense> awaits in-order" (drains to `<!--[-->`, `await delay(0)`, then `resolveLate()`; its exact-flush-point asserts pass unchanged); the backpressure tests pin the one-chunk-per-pull contract (instrumented `mock()` getter count stays ≤2 while the consumer idles — old `start()`-driven code fails them 0/2).
+- Verified 2026-09-01: `bun coverage ssr` 196 pass / 0 fail, 100.00% funcs/lines, exit 0; without the `delay(0)` the Lazy test fails with `resolveLate is not a function`.
+- Historical (pre-2026-09-01, `start()`-driven): the same recipe held when `start()`'s `for await` drove the generator one microtask hop per yield — the drain-to-sentinel + `delay(0)` brought the package to 100% line+func coverage (verified 2026-07-17).
