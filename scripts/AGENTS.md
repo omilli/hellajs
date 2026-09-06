@@ -1,6 +1,6 @@
 <scripts-instructions>
 
-  Build tooling and CI automation. These scripts bundle, test, lint, sync, and release the six packages. They run under `bun` (never `node`) in dev and CI, are authored in TS (one concern per file, shared utils), and follow `guides/scripts.md`.
+  Build tooling and CI automation. These scripts bundle, test, lint, and release the six packages. They run under `bun` (never `node`) in dev and CI, are authored in TS (one concern per file, shared utils), and follow `guides/scripts.md`.
 
   ## Scripts (CLI entries under `scripts/`)
 
@@ -11,7 +11,6 @@
   | `bench.ts` | Thin entry: parse args (`--variant`, `--runs`, `--throttle`, `--label`, `--ops`, `--headed`) → build + stage → serve → drive → report. Playwright + system Chrome macro-benchmark over `examples/bench`; appends self-describing entries to `.bench/results.md`. |
   | `clean.ts` | Remove `dist/` + `.build-cache/` per package. `bun clean [package]` scopes to one workspace. |
   | `release.ts` | Update `@hellajs/core` peer deps + `babel-plugin-hellajs` deps across packages, commit (`--no-verify`), then `changeset publish`. Run via `bun release` (the npm script bundles first). |
-  | `sync.ts` | Regenerate `CLAUDE.md` + `.github/instructions/*` from every `AGENTS.md` under root + `packages/`/`plugins/`/`docs/`/`scripts/`. Root → `.github/copilot-instructions.md` (`applyTo: "**"`); folders → `{folder}.instructions.md`. |
   | `type-visibility.ts` | Guard (`bun visibility`): fail if any `lib/types*.d.ts` that is wholesale re-exported (`export type * from "./types[…]"`) contains `@internal`-tagged types — those would leak as public. No package scoping; scans every package. |
   | `dead-exports.ts` | Guard (`bun dead-exports`): fail if any exported `function`/`const`/`let`/`class` across packages and plugins has zero value-position references across all source, tests, and docs. No package scoping; type-only exports out of scope. |
   | `jsdoc-params.ts` | Guard (`bun jsdoc-params`): fail if any `function` declaration's JSDoc carries a `@param` tag whose name does not match an actual parameter (catches the `@param boundaryElement` vs `currentBoundary` drift that `tsc`/`eslint` miss). No package scoping; arrow-function `const`s, class methods, and destructuring params out of scope (conservative skip). |

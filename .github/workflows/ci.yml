@@ -35,16 +35,6 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install
-      - name: Sync LLM files
-        run: |
-          bun sync
-          if [ -n "$(git status --porcelain | grep -E '(CLAUDE|AGENTS)\.md|\.github/instructions|copilot-instructions')" ]; then
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add ':(glob)**/CLAUDE.md' ':(glob)**/AGENTS.md' .github/instructions/ .github/copilot-instructions.md 2>/dev/null || true
-            git commit -m "chore: llm sync" || true
-            git push || true
-          fi
       - name: Run tests with coverage
         run: |
           set -o pipefail

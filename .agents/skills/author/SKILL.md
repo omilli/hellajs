@@ -57,7 +57,7 @@ A shorter file that says the same thing is strictly better.
 
 ## Step 6 — Sync cross-references
 
-After any edit that adds/renames/removes/materially changes a skill, search AGENTS.md and every sibling skill for references to it — its name, its role in the loop composition, any cross-handoff. Sync every stale reference in the same pass. A rename/removal with a dangling reference is an unfinished edit. Match the skill name as a whole token (or backtick-quoted), not a bare substring — short names appear inside common words. The generated mirrors (`CLAUDE.md`, `.github/instructions/*`) regenerate from AGENTS.md only via the post-commit hook / CI — never hand-edit them (§Source of truth & sync).
+After any edit that adds/renames/removes/materially changes a skill, search AGENTS.md and every sibling skill for references to it — its name, its role in the loop composition, any cross-handoff. Sync every stale reference in the same pass. A rename/removal with a dangling reference is an unfinished edit. Match the skill name as a whole token (or backtick-quoted), not a bare substring — short names appear inside common words.
 
 ## Self-check
 

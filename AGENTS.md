@@ -10,7 +10,7 @@
   - ALWAYS use `bun` for scripts — never `node` directly unless unavoidable.
   - Use existing tests, examples, and folders in the repo to execute code/tests. Do not wander outside the file system (e.g., to `/tmp/`) to test or build.
   - Load the `prime` skill before any substantive task.
-  - After editing AGENTS.md files, stop. Do NOT run `bun sync` — the post-commit hook + CI handle regeneration.
+  - **commit-msg hook** (installed at `.git/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
   - **Never create a changeset.** Adding `.changeset/*.md` files or running `bun changeset` is a manual, user-only step — treat it exactly like a commit: only on an explicit request. This holds even for published-package behavior changes; note the need in your handoff summary and let the user create it. Do not list changeset creation in any plan's DoD.
   - A plan's DoD states each pass criterion as a runnable check, not a prediction of the result — never append an unverified characterization ("zero violations", "no false positives", "passes on the corpus") for an artifact not yet run; it biases the worker toward confirmation and forces an interrupt when wrong. If the characterization is load-bearing, make it its own DoD check the worker must falsify.
 
@@ -20,15 +20,6 @@
 
   - **Guides are inviolable.** Every source, test, and doc follows the matching guide (`guides/code.md`, `guides/tests.md`, `guides/docs.md`). A conflict between the work and a guide is never silently worked around — it surfaces as a **guide-update proposal** (guide + rule quoted + conflict + proposed edit with reasoning) for case-by-case resolution. The user accepts, rejects, or defers. Silent deviation is how uniformity dies.
   - **Every change carries its full blast radius.** Before finishing any change, account for every downstream effect: sibling tests asserting the old behavior, sibling docs describing the old shape, each touched package's `AGENTS.md` (its file map cites `file.ts symbol` anchors, never line numbers — line citations rot on the next refactor), and that package's `{pkg}-comparison.md` whenever a `lib/` change alters any behavior the comparison describes (`*-comparison.md` files are point-in-time snapshots that drift silently — re-verify every internals/behavior claim against the code; fix drift before finishing), sibling typed surfaces consuming a widened value contract — a package's loose AST types and typed JSX attribute maps (`packages/dom`'s `lib/types/nodes.d.ts` + `lib/types/attributes.d.ts`) mirror one contract with no import edge between them, so a call-site grep won't surface the mirror; widen both or neither — plus cross-package consumers of a changed signature, and backward compatibility. A change that passes its own checks but breaks a caller, a test, or a doc elsewhere is not done.
-
-  ## Source of truth & sync
-
-  `AGENTS.md` is the single source of truth for agent instructions. **Never edit `CLAUDE.md` or `.github/instructions/*.instructions.md` directly** — they are generated.
-
-  - **`bun sync`** reads every `AGENTS.md` and regenerates: a `CLAUDE.md` mirror in the same directory, one `.github/instructions/{folder}.instructions.md` (with `applyTo:` frontmatter) per folder under `packages/`/`plugins/`/`docs/`/`scripts/`, and the root `.github/copilot-instructions.md` (`applyTo: "**"`).
-  - **post-commit hook** (installed at `.git/hooks/post-commit`) auto-runs `bun sync` when an `AGENTS.md` changes, then auto-commits the generated files with `--no-verify`. Its `Auto-committed…` echo is unconditional — on any git error in hook output, verify actual state (`git status` / `git log -1`) and commit the already-generated mirrors directly (`chore: sync CLAUDE.md and instruction files from AGENTS.md`); a failed nested commit can tear the index (recovery: `memory/entries/062.md`). CI also runs `bun sync` and commits any drift.
-  - **commit-msg hook** (installed at `.git/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
-  - **Do not run `bun sync` manually.** The post-commit hook regenerates all mirrors automatically when an `AGENTS.md` change is committed; CI catches any drift. Editing `AGENTS.md` is enough — never touch `CLAUDE.md` or `.github/instructions/*` by hand.
 
   ## Packages
 
@@ -69,7 +60,6 @@
   | clean | `bun clean [package]` | Remove build artifacts. |
   | changeset | `bun changeset` | Add a changeset entry. |
   | release | `bun release` | Bundle, then publish via changesets. |
-  | sync | `bun sync` | Regenerate `CLAUDE.md` + `.github/instructions/*` from `AGENTS.md`. |
   | visibility | `bun visibility` | Guard: fail if a wholesale-exported `types*.d.ts` contains `@internal`-tagged types (would leak as public). |
   | dead-exports | `bun dead-exports` | Guard: fail if any exported symbol has zero value-position references across source, tests, and docs. |
   | jsdoc-params | `bun jsdoc-params` | Guard: fail if any `function` declaration's JSDoc has a `@param` tag whose name does not match a parameter. |
@@ -136,7 +126,7 @@
 
   - `.agents/skills/` — the eleven first-party skills (§Skills table) + `comparison/` (standalone).
   - `.changeset/` — changeset config
-  - `.github/` — `workflows/` (CI + release), generated `instructions/` + `copilot-instructions.md`
+  - `.github/` — `workflows/` (CI + release)
   - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`). **A Docs task spans the full site surface, not just the API page**: `src/pages/learn/concepts/` + `learn/patterns/` + `learn/tutorials/` (wrapper pages importing `@{pkg}/{type}/{name}.mdx` from `packages/*/docs/`, and `@examples/{name}/tutorial.mdx` for tutorials), `src/pages/reference/{pkg}/` (API wrappers), `src/nav.ts` (sidebar registration), and the enumeration pages (`learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx`). A feature with user-facing behavior needs: a concept doc, a pattern doc when copy-paste recipes apply, `nav.ts` registration under Concepts/Patterns/reference, and an update to every enumeration listing it. Before scoping a Docs task: read `src/pages/learn/index.mdx` and grep the site for prose claims the change falsifies (e.g. an "X not supported" alert the feature now makes false).
   - `examples/` — `bench`, `blog`, `counter`, `theme-switcher`, `todo`, `ssr-islands`, `ssr-routing`, `ssr-streaming`. Every example except `bench` carries its tutorial as `tutorial.mdx` next to the code it documents (imported by the docs site's tutorial wrappers; `guides/docs.md` §Tutorial Docs governs it)
   - `guides/` — style guides (see above)
@@ -144,9 +134,9 @@
   - `packages/` — the six workspaces
   - `plans/` — agent-generated plan contracts: `plans/<package>/<category>/<topic>.md` (categories observed: `code`, `docs`, `misc`). A rename/removal plan's Files list derives from a repo-wide `rg '<old-name>'` (comparison docs, READMEs, learn/tutorial pages, nav — prose enumeration misses them); a behavior-contract change's Files list derives identically — repo-wide `rg` of the claim sentence it falsifies (JSDoc contract lines, sibling api docs, tutorials, comparisons). A comparison-doc delta adding competitor-behavior cells cites the competitor source per cell or routes the row through the `comparison` skill — workers without web access cannot fill them. In a multi-unit plan each unit's delta describes the state after that unit, never a later unit's end-state edit.
   - `plugins/` — `babel`, `rollup`, `vite`, `astro`
-  - `scripts/` — build/CI automation (`bundle`, `clean`, `coverage`, `release`, `sync`, `visibility`) + `utils/` + `bundle/` pipeline; see `scripts/AGENTS.md` and `guides/scripts.md`
+  - `scripts/` — build/CI automation (`bundle`, `clean`, `coverage`, `release`, `visibility`) + `utils/` + `bundle/` pipeline; see `scripts/AGENTS.md` and `guides/scripts.md`
   - `utils/` — `happydom.js`, the test preload
-  - `AGENTS.md` — source of truth (this file); `CLAUDE.md` is its generated mirror
+  - `AGENTS.md` — source of truth (this file)
 
   ### Package layout
 

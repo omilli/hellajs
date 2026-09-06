@@ -46,7 +46,7 @@ Verification commands are fixed by AGENTS.md §Scripts + §Testing — never bar
 | **Code/Tests** (`packages/*`) | `bun coverage <pkg>` | DoD green; guides' structural rules hold on changed files (rules coverage can't see → `audit`, §Testing); new/changed exports documented; backward compatible or a migration note exists |
 | **Code/Tests** (`plugins/*`) | `bun test plugins/<p>/tests` + `bun lint` (coverage cannot scope plugins — §Testing) | DoD green; same floor |
 | **Docs** | cross-check examples against current source | examples resolve against current source; `bun lint:structure` when mdx was touched; no claim contradicts the implementation |
-| **Config / agent files** | the runnable checks the plan names (`bun sync`, `bun lint`, guards as applicable) | checks pass; referenced scripts still resolve |
+| **Config / agent files** | the runnable checks the plan names (`bun lint`, guards as applicable) | checks pass; referenced scripts still resolve |
 
 Docs-only changes skip typecheck/lint/coverage — those verify code, not prose; running them adds noise. A scoped run failing on files outside the target package is foreign, not yours — §Testing scoped-run triage.
 
