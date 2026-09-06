@@ -170,12 +170,13 @@ describe("doc", () => {
     expect(await collect(doc({ body: streamOf("X"), mount: "main#app" }))).toContain("<body><main id=\"app\">X</main></body>");
   });
 
-  test("throws the mount error on unsupported selectors in BOTH modes", () => {
-    for (const mount of ["a > b", "[x]", ":hover", "", "#a#b", "#a[x]", ".a[x]"]) {
+  test.each([{ mount: "a > b" }, { mount: "[x]" }, { mount: ":hover" }, { mount: "" }, { mount: "#a#b" }, { mount: "#a[x]" }, { mount: ".a[x]" }])(
+    "throws the mount error for unsupported selector \"$mount\" in both modes",
+    ({ mount }) => {
       expect(() => doc({ body: "X", mount })).toThrow(`[ssr] doc: mount supports tag/#id/.class only, received "${mount}"`);
       expect(() => doc({ body: streamOf("X"), mount })).toThrow(`[ssr] doc: mount supports tag/#id/.class only, received "${mount}"`);
-    }
-  });
+    },
+  );
 
   test("throws when a streamed call omits body", () => {
     expect(() => doc({} as unknown as { body: ReadableStream<string> })).toThrow("[ssr] doc: body is required, received undefined");

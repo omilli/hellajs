@@ -1,5 +1,5 @@
 import { serializeProp, escapeHtml } from "./serialize";
-import { resolveValue, resolveAsync } from "./resolve";
+import { resolveValue, resolveAsync, isPromise, SYNC_PROMISE_WARN } from "./resolve";
 import type { HeadOptions, MetaTag, LinkTag } from "../types";
 import type { HellaNode } from "@hellajs/dom";
 
@@ -121,6 +121,7 @@ export function hoistHead(node: HellaNode, head: HeadOptions): boolean {
         const key = keys[i]!;
         i++;
         const value = resolveValue(props[key]);
+        if (isPromise(value)) console.warn(SYNC_PROMISE_WARN);   // sync hoist cannot await — parity with ssrImpl's props loop
         if (value !== false && value !== null && value !== undefined) attrs[key] = `${value}`;   // falsy dropped — buildHead's buildAttrs omits these
       }
     }

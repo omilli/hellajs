@@ -1,10 +1,10 @@
 import { describe, test, expect, mock } from "bun:test";
 import { signal } from "@hellajs/core";
+import { suppressConsole } from "@utils/test-helpers.js";
 import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { parityCases, attributeCases, unknownKindNode, headParityCases } from "./helpers";
-import { suppressConsole } from "@utils/test-helpers.js";
 
 describe("ssr.async", () => {
   test("resolves a static node to the same HTML as ssr", async () => {
@@ -113,18 +113,13 @@ describe("ssr.async", () => {
   });
 
   test("renders an empty marker region and warns for an unknown ssr kind", async () => {
-    const fn = (() => { throw new Error("fn should not be called"); }) as unknown as { isDynamic?: true; ssr?: { kind: "unknown"; props: object } };
-    fn.isDynamic = true;
-    fn.ssr = { kind: "unknown", props: {} };
-    const original = console.warn;
-    const warn = mock(() => {});
-    console.warn = warn as unknown as typeof console.warn;
+    const sup = suppressConsole();
     try {
-      expect(await ssr.async(html`<div>${fn}</div>` as HellaNode)).toBe("<div><!--[--><!--]--></div>");
-      expect(warn).toHaveBeenCalledTimes(1);
-      expect(warn).toHaveBeenCalledWith("[ssr] unknown isDynamic kind: unknown");
+      expect(await ssr.async(unknownKindNode())).toBe("<div><!--[--><!--]--></div>");
+      expect(sup.warns).toHaveLength(1);
+      expect(sup.warns[0]).toEqual(["[ssr] unknown isDynamic kind: unknown"]);
     } finally {
-      console.warn = original;
+      sup.restore();
     }
   });
 
@@ -176,12 +171,11 @@ describe("ssr.async", () => {
   });
 
   test("parity: ssr.async matches ssr for an isDynamic function with an unknown kind", async () => {
-    const original = console.warn;
-    console.warn = mock(() => {}) as unknown as typeof console.warn;
+    const sup = suppressConsole();
     try {
       expect(await ssr.async(unknownKindNode())).toBe(ssr(unknownKindNode()));
     } finally {
-      console.warn = original;
+      sup.restore();
     }
   });
 

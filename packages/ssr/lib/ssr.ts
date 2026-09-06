@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, SsrMeta } from "@hellajs/dom";
 import { serializeProp, escapeHtml, VOID } from "./internal/serialize";
-import { resolveValue, isPromise } from "./internal/resolve";
+import { resolveValue, isPromise, SYNC_PROMISE_WARN } from "./internal/resolve";
 import { assertNode } from "./internal/assert";
 import { hoistHead } from "./internal/head";
 import { MARK_OPEN, MARK_CLOSE } from "./internal/walk";
@@ -9,9 +9,6 @@ import { ssrAsync } from "./ssrAsync";
 import { ssrStream } from "./ssrStream";
 import { ssrHead } from "./ssrHead";
 import type { StreamOptions, SsrOptions, HeadOptions } from "./types";
-
-/** The warn emitted when a thenable reaches the sync walk — it cannot await, so the value stringifies to `[object Promise]` into the HTML exactly as before; `ssr.async`/`ssr.stream` await it instead. */
-const SYNC_PROMISE_WARN = "[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted";
 
 /** Renders an isDynamic component's content from its `ssr` descriptor — shared by the direct-isDynamic-child and reactive-resolved-isDynamic dispatch paths. */
 function renderDynamic(meta: SsrMeta, options?: SsrOptions): string {

@@ -262,12 +262,11 @@ describe("ssr.stream", () => {
   });
 
   test("parity: collecting ssr.stream matches ssr for an isDynamic function with an unknown kind", async () => {
-    const original = console.warn;
-    console.warn = mock(() => {}) as unknown as typeof console.warn;
+    const sup = suppressConsole();
     try {
       expect(await collect(ssr.stream(unknownKindNode()))).toBe(ssr(unknownKindNode()));
     } finally {
-      console.warn = original;
+      sup.restore();
     }
   });
 

@@ -17,6 +17,12 @@ export function isPromise(value: unknown): value is Promise<unknown> {
 
 /**
  * @internal
+ * The warn emitted when a thenable reaches the sync walk — it cannot await, so the value stringifies to `[object Promise]` into the HTML exactly as before; `ssr.async`/`ssr.stream` await it instead.
+ */
+export const SYNC_PROMISE_WARN = "[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted";
+
+/**
+ * @internal
  * Resolves a value by calling it if it is a function, then awaiting it if it is a Promise. Async counterpart to `resolveValue`; one `await` fully unwraps nested thenables.
  */
 export async function resolveAsync(value: unknown): Promise<unknown> {

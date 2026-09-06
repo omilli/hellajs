@@ -1,10 +1,10 @@
 import { describe, test, expect, mock } from "bun:test";
 import { signal } from "@hellajs/core";
+import { suppressConsole } from "@utils/test-helpers.js";
 import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
-import { suppressConsole } from "@utils/test-helpers.js";
-import { headParityCases } from "./helpers";
+import { headParityCases, unknownKindNode } from "./helpers";
 
 describe("ssr", () => {
   test("renders static node to exact HTML", () => {
@@ -124,18 +124,13 @@ describe("ssr", () => {
   });
 
   test("renders an empty marker region and warns for an unknown ssr kind", () => {
-    const fn = (() => { throw new Error("fn should not be called"); }) as unknown as { isDynamic?: true; ssr?: { kind: "unknown"; props: object } };
-    fn.isDynamic = true;
-    fn.ssr = { kind: "unknown", props: {} };
-    const original = console.warn;
-    const warn = mock(() => {});
-    console.warn = warn as unknown as typeof console.warn;
+    const sup = suppressConsole();
     try {
-      expect(ssr(html`<div>${fn}</div>` as HellaNode)).toBe("<div><!--[--><!--]--></div>");
-      expect(warn).toHaveBeenCalledTimes(1);
-      expect(warn).toHaveBeenCalledWith("[ssr] unknown isDynamic kind: unknown");
+      expect(ssr(unknownKindNode())).toBe("<div><!--[--><!--]--></div>");
+      expect(sup.warns).toHaveLength(1);
+      expect(sup.warns[0]).toEqual(["[ssr] unknown isDynamic kind: unknown"]);
     } finally {
-      console.warn = original;
+      sup.restore();
     }
   });
 
@@ -169,6 +164,23 @@ describe("ssr", () => {
         .toBe('<input value="[object Promise]">');
       expect(suppressed.warns).toHaveLength(1);
       expect(suppressed.warns[0]).toEqual(["[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted"]);
+    } finally {
+      suppressed.restore();
+    }
+  });
+
+  test("warns once per occurrence and still stringifies a Promise-resolving hoisted meta/link attr under sync ssr", () => {
+    // The head-hoist path warns like the inline one — each Promise-resolving getter, the bag still receives the stringified attr.
+    const suppressed = suppressConsole();
+    try {
+      const head = ssr.head();
+      const node = html`<div><meta name="m" content=${() => Promise.resolve("y")} /><link rel="icon" href=${() => Promise.resolve("/f")} /><b>keep</b></div>` as HellaNode;
+      expect(ssr(node, { head })).toBe("<div><b>keep</b></div>");
+      expect(head.meta).toEqual([{ name: "m", content: "[object Promise]" }]);
+      expect(head.links).toEqual([{ rel: "icon", href: "[object Promise]" }]);
+      expect(suppressed.warns).toHaveLength(2);
+      expect(suppressed.warns[0]).toEqual(["[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted"]);
+      expect(suppressed.warns[1]).toEqual(["[ssr] Promise value under sync ssr - use ssr.async or ssr.stream, got [object Promise] emitted"]);
     } finally {
       suppressed.restore();
     }
