@@ -151,6 +151,7 @@ describe("cva", () => {
 
   test("returns the same classes on the server and cssText carries the called styles", () => {
     const doc = globalThis.document;
+    (globalThis as unknown as Record<string, unknown>).document = undefined;
     let serverClasses: string;
     let serverText: string;
     try {
