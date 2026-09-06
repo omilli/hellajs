@@ -82,6 +82,43 @@ describe("core", () => {
       expect(badComputed()).toBe(10);
     });
 
+    test("rethrows on every read until a dependency changes", () => {
+      const data = signal(10);
+      const shouldThrow = signal(true);
+
+      const badComputed = computed(() => {
+        if (shouldThrow()) throw new Error("fail");
+        return data() * 2;
+      });
+
+      // First read throws
+      expect(() => badComputed()).toThrow("fail");
+
+      // Unchanged deps: the read retries the computation and throws again — never undefined
+      expect(() => badComputed()).toThrow("fail");
+
+      // A dependency change allows success: the read returns the fresh value
+      shouldThrow(false);
+      expect(badComputed()).toBe(20);
+    });
+
+    test("a previously successful computed that starts throwing rethrows instead of returning its stale cache", () => {
+      const data = signal(10);
+      const shouldThrow = signal(false);
+
+      const flakyComputed = computed(() => {
+        if (shouldThrow()) throw new Error("flaky");
+        return data() * 2;
+      });
+
+      expect(flakyComputed()).toBe(20);
+
+      // A dep change turns the fn throwing: the stale 20 is never served
+      shouldThrow(true);
+      expect(() => flakyComputed()).toThrow("flaky");
+      expect(() => flakyComputed()).toThrow("flaky");
+    });
+
     test("try/catch in computed preserves dependency tracking", () => {
       const data = signal(10);
       const shouldThrow = signal(true);

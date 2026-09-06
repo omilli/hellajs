@@ -241,7 +241,7 @@ console.log(doubled()); // 20 (graph rebuilt, recomputed)
 
 ### Error Recovery
 
-Errors thrown during computation prevent dependency tracking on that execution. On the next successful read, tracking rebuilds correctly.
+Errors thrown during computation prevent dependency tracking on that execution. Every read of a throwing computed re-attempts the computation and rethrows — no silent `undefined`, no stale cached value — until a dependency change allows success. On the next successful read, tracking rebuilds correctly.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';
@@ -257,6 +257,11 @@ const badComputed = computed(() => {
 // First read throws - no dependencies tracked
 try {
   badComputed(); // Throws: Error 'fail'
+} catch {}
+
+// Unchanged deps: the read retries the computation and rethrows
+try {
+  badComputed(); // Throws again: Error 'fail'
 } catch {}
 
 shouldThrow(false);

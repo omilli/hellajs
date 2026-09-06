@@ -1,6 +1,6 @@
 import type { SignalState } from "../signal";
 import type { ComputedState } from "../computed";
-import { WRITABLE, COMPUTED, TRACKING } from "./flags";
+import { WRITABLE, COMPUTED, DIRTY, TRACKING } from "./flags";
 import { setCurrentSub } from "./context";
 import { endTracking } from "./tracking";
 import { isEqual } from "./utils";
@@ -42,6 +42,11 @@ export function executeComputed<T = unknown>(computedValue: ComputedState<T>): b
     if (ce && cbc !== undefined && ce(cbc, newValue)) return false;
     computedValue.cbc = newValue;
     return !isEqual(cbc, newValue);
+  } catch (error) {
+    // The flag rebuild above dropped DIRTY — without re-marking it, later reads skip
+    // re-execution and serve the stale cache (undefined after a first-read throw)
+    computedValue.rf = WRITABLE | COMPUTED | DIRTY;
+    throw error;
   } finally {
     setCurrentSub(prevSubValue);
     endTracking(computedValue);
