@@ -46,15 +46,15 @@ group("Computed Evaluation", () => {
     }
   });
 
-  const diamond_a = signal(0);
-  const diamond_b = computed(() => diamond_a() + 1);
-  const diamond_c = computed(() => diamond_a() + 2);
-  const diamond_d = computed(() => diamond_b() + diamond_c());
-  effect(() => diamond_d());
+  const diamondA = signal(0);
+  const diamondB = computed(() => diamondA() + 1);
+  const diamondC = computed(() => diamondA() + 2);
+  const diamondD = computed(() => diamondB() + diamondC());
+  effect(() => diamondD());
   bench("diamond computed", () => {
     for (let i = 0; i < ITERATIONS; i++) {
-      diamond_a(i);
-      diamond_d();
+      diamondA(i);
+      diamondD();
     }
   });
 });
