@@ -6,7 +6,7 @@ import type {
   ComponentFn,
   RenderFn
 } from "../types/nodes";
-import { isFunction, isObject } from "./core";
+import { isFunction, isObject, isString } from "./core";
 import { component } from "../component";
 
 /**
@@ -59,7 +59,9 @@ const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"
 /**
  * @internal
  * Deep clones HellaNode AST and substitutes placeholder markers with actual values.
- * Handles special markers: placeholder, dynamicComponent.
+ * Handles special markers: placeholder, dynamicComponent. Mixed-attribute parts
+ * arrays in `props` concatenate into a single string (mirrors the babel plugin's
+ * `+` concatenation of the same template).
  * @param node The AST node to clone
  * @param values Array of interpolated values from the template
  * @returns Cloned node with values substituted
@@ -119,7 +121,12 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
     const len = keys.length;
     while (i < len) {
       const key = keys[i++]!;
-      props[key] = cloneWithValues(hellaNode.props[key], values) as typeof hellaNode.props[string];
+      const raw = hellaNode.props[key];
+      // A cached array prop is always a mixed-attribute parts array: concatenate
+      // the cloned parts so the value matches the compiled template's output.
+      props[key] = (Array.isArray(raw)
+        ? concatParts(cloneWithValues(raw, values) as unknown[])
+        : cloneWithValues(raw, values)) as typeof hellaNode.props[string];
     }
     cloned.props = props;
   }
@@ -173,31 +180,43 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
   }
 
   if (hellaNode.children) {
-    const children = cloneWithValues(hellaNode.children, values);
-    if (Array.isArray(children)) {
-      let needsFlat = false;
-      let fi = 0;
-      const fLen = children.length;
-      while (fi < fLen) {
-        if (Array.isArray(children[fi])) { needsFlat = true; break; }
-        fi++;
-      }
-      cloned.children = needsFlat ? children.flat() : children;
-    } else {
-      cloned.children = [children as HellaChild];
+    const children = cloneWithValues(hellaNode.children, values) as HellaChild[];
+    let needsFlat = false;
+    let fi = 0;
+    const fLen = children.length;
+    while (fi < fLen) {
+      if (Array.isArray(children[fi])) { needsFlat = true; break; }
+      fi++;
     }
+    cloned.children = needsFlat ? children.flat() : children;
   }
 
   return cloned as HellaNode;
 }
 
 /**
- * @internal
+ * Joins a cloned mixed-attribute parts array into a single string with no
+ * separator, mirroring the babel plugin's binary `+` concatenation of the same
+ * template. `String()` coercion matches `+` semantics exactly.
+ * @param parts Cloned parts (strings and resolved interpolation values)
+ * @returns The concatenated attribute value
+ */
+function concatParts(parts: unknown[]): string {
+  let result = "";
+  let i = 0;
+  const len = parts.length;
+  while (i < len) {
+    result += String(parts[i++]!);
+  }
+  return result;
+}
+
+/**
  * Appends a child to a parsed node, initializing the children array if needed.
  * @param node The parent node to append to
  * @param child The child value to append
  */
-export function appendChild(node: HtmlParsedNode, child: unknown): void {
+function appendChild(node: HtmlParsedNode, child: unknown): void {
   (node.children ||= []).push(child as HellaChild);
 }
 
@@ -205,6 +224,8 @@ export function appendChild(node: HtmlParsedNode, child: unknown): void {
  * @internal
  * Parses HTML string into HellaNode AST using regex-based tokenization.
  * Handles tags, attributes, text content, and placeholder substitution.
+ * Unclosed tags auto-close at end of template: children were appended to their
+ * open parent at open time, so only the outermost unclosed node becomes a root.
  * @param html The HTML string to parse
  * @param placeholders Array of placeholder markers for value substitution
  * @returns Array of parsed AST nodes
@@ -296,8 +317,7 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
     }
   }
 
-  while (stack.length > 0)
-    result.push(stack.pop()!);
+  if (stack.length > 0) result.push(stack[0]!);
 
   markStaticSubtrees(result as HtmlInternalNode[]);
 
@@ -342,7 +362,12 @@ function markIfStatic(node: unknown): boolean {
       const kLen = keys.length;
       while (ki < kLen) {
         const v = (val as Record<string, unknown>)[keys[ki]!];
-        if (isObject(v) && Object.hasOwn(v, "placeholder")) return false;
+        if (Array.isArray(v)) {
+          // mixed-attribute parts arrays: any marker element is a placeholder dep
+          if (v.some((el) => isObject(el) && Object.hasOwn(el, "placeholder"))) return false;
+        } else if (isObject(v) && Object.hasOwn(v, "placeholder")) {
+          return false;
+        }
         ki++;
       }
     }
@@ -362,13 +387,12 @@ function markIfStatic(node: unknown): boolean {
 }
 
 /**
- * @internal
  * Parses text content and extracts placeholders for value substitution.
  * @param text The text content to parse
  * @param placeholders Array of placeholder markers
  * @returns Array of text fragments and placeholder markers
  */
-export function parseTextContent(text: string, placeholders: HtmlPlaceholder[]): unknown[] {
+function parseTextContent(text: string, placeholders: HtmlPlaceholder[]): unknown[] {
   if (!text) return [];
   if (!text.includes("__SLOT_")) return [text];
 
@@ -389,14 +413,29 @@ export function parseTextContent(text: string, placeholders: HtmlPlaceholder[]):
 }
 
 /**
- * @internal
+ * Resolves a raw attribute value against placeholders. An exact single slot keeps
+ * the bare marker fast path; mixed content splits into a parts array (strings +
+ * markers), mirroring the babel parser's shape; anything else is the literal string.
+ * @param text The raw attribute value text
+ * @param placeholders Array of placeholder markers
+ * @returns Marker object, parts array, or the literal string
+ */
+function parseAttrValue(text: string, placeholders: HtmlPlaceholder[]): unknown {
+  const slotMatch = text.match(/^__SLOT_(\d+)__$/);
+  if (slotMatch) return placeholders[parseInt(slotMatch[1]!)];
+  if (!text.includes("__SLOT_")) return text;
+  const parts = parseTextContent(text, placeholders);
+  return parts.length === 1 && isString(parts[0]) ? parts[0] : parts;
+}
+
+/**
  * Parses attribute string and categorizes into props, hooks, on, e, and error objects.
  * Recognizes prefixes: error:, on:, hook:, e:.
  * @param attrsStr The attributes string from the HTML tag
  * @param placeholders Array of placeholder markers
  * @returns Object with categorized attributes
  */
-export function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): HtmlParsedAttrs {
+function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): HtmlParsedAttrs {
   const result: HtmlParsedAttrs = { props: {} };
   const trimmed = attrsStr?.trim();
   if (!trimmed) return result;
@@ -415,14 +454,11 @@ export function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[
     if (placeholder) {
       value = placeholders[parseInt(placeholder.slice(7, -2))];
     } else if (doubleQuoted !== undefined) {
-      const slotMatch = doubleQuoted.match(/^__SLOT_(\d+)__$/);
-      value = slotMatch ? placeholders[parseInt(slotMatch[1]!)] : doubleQuoted;
+      value = parseAttrValue(doubleQuoted, placeholders);
     } else if (singleQuoted !== undefined) {
-      const slotMatch = singleQuoted.match(/^__SLOT_(\d+)__$/);
-      value = slotMatch ? placeholders[parseInt(slotMatch[1]!)] : singleQuoted;
+      value = parseAttrValue(singleQuoted, placeholders);
     } else if (unquoted !== undefined) {
-      const slotMatch = unquoted.match(/^__SLOT_(\d+)__$/);
-      value = slotMatch ? placeholders[parseInt(slotMatch[1]!)] : unquoted;
+      value = parseAttrValue(unquoted, placeholders);
     } else {
       value = true;
     }

@@ -347,5 +347,41 @@ describe("dom", () => {
       const mainB = nodeB.children![1] as HellaNode;
       expect(mainA).not.toBe(mainB);
     });
+
+    test("mixed attribute interpolation substitutes all parts in order", () => {
+      mount(html`<div id="mixed-title" title="n-${1}-of-${3}">x</div>`);
+      expect(document.getElementById("mixed-title")?.getAttribute("title")).toBe("n-1-of-3");
+    });
+
+    test("mixed class interpolation renders the concatenated value", () => {
+      mount(html`<div id="mixed-class" class="btn ${"active"}">x</div>`);
+      expect(document.getElementById("mixed-class")?.getAttribute("class")).toBe("btn active");
+    });
+
+    test("repeated invocation of the same mixed-attr literal substitutes fresh values", () => {
+      const make = (cls: string) => html`<div id="mixed-repeat" class="btn ${cls}">x</div>`;
+
+      mount(make("a"));
+      expect(document.getElementById("mixed-repeat")?.getAttribute("class")).toBe("btn a");
+
+      resetTestState();
+      mount(make("b"));
+      expect(document.getElementById("mixed-repeat")?.getAttribute("class")).toBe("btn b");
+    });
+
+    test("nested unclosed tags render once, nested", () => {
+      mount(html`<div><span>hi`);
+      expect(document.getElementById("app")?.innerHTML).toBe("<div><span>hi</span></div>");
+    });
+
+    test("single unclosed root still flushes", () => {
+      mount(html`<div>hi`);
+      expect(document.getElementById("app")?.innerHTML).toBe("<div>hi</div>");
+    });
+
+    test("partially-closed siblings flush correctly", () => {
+      mount(html`<div>a<span>b</span><section>c`);
+      expect(document.getElementById("app")?.innerHTML).toBe("<div>a<span>b</span><section>c</section></div>");
+    });
   });
 });

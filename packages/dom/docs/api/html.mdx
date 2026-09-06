@@ -63,6 +63,20 @@ html`<button
 >Click</button>`
 ```
 
+### Attribute Interpolation
+
+Whole-value interpolation makes an attribute reactive when the value is a function or signal. Mixed-content interpolation (`class="btn ${x}"`) substitutes statically: the static text and the interpolated values concatenate into one string, identical to what the compiled template produces. For a reactive attribute value, interpolate the whole value, not part of it.
+
+```js
+// Static mix: substituted once, not reactive
+mount(html`<div class="btn ${"active"}">x</div>`);
+// Renders: <div class="btn active">x</div>
+
+// Reactive: interpolate the whole value from a signal or function
+const variant = signal("active");
+mount(html`<div class=${() => "btn " + variant()}>x</div>`);
+```
+
 ### Attribute Prefixes
 
 Special prefixes categorize attributes by purpose.
@@ -229,6 +243,15 @@ Both formats work for void elements.
 html`<input />`
 html`<input/>`
 html`<br />`
+```
+
+### Unclosed Tags
+
+Unclosed tags are auto-closed at the end of the template; nested unclosed children bind to their open parent. No error is thrown.
+
+```js
+html`<div><span>hi`
+// Parses as: <div><span>hi</span></div>
 ```
 
 ### Whitespace Handling
