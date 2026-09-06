@@ -33,7 +33,7 @@ interface MountHandle {
 
 - `container`: The DOM element or shadow root the tree was mounted into.
 - `flush()`: Optional escape hatch that drains the mount/cleanup queues synchronously. `afterMount` already fires during `mount()`, so this is only needed to force synchronous processing (e.g. `afterDestroy` in tests, or dynamically-added nodes).
-- `unmount()`: Clean up and remove the mounted tree.
+- `unmount()`: Clean up and remove the mounted tree. For a multi-root (fragment) mount, removes and disposes every root, not just one.
 
 ## Basic Usage
 
@@ -87,6 +87,19 @@ import { mount } from "@hellajs/dom";
 
 const Greeting = ({ name }: { name: string }) => <h1>Hello, {name}!</h1>;
 mount(<Greeting name="World" />);
+```
+
+### Fragment Roots
+
+A template with multiple root elements mounts every root into the container. `unmount()` removes them all, disposing effects and hooks in each root.
+
+```js
+import { mount, html } from "@hellajs/dom";
+
+const app = mount(html`<span>a</span><span>b</span>`);
+
+// Both roots removed, their effects disposed
+app.unmount();
 ```
 
 ## Important Considerations

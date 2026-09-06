@@ -1,4 +1,4 @@
-import type { HellaNode, HellaElement, MountHandle } from "../types/nodes";
+import type { HellaNode, MountHandle } from "../types/nodes";
 import { isFunction, isObject } from "./core";
 import { resolveValue } from "./utils";
 import { dispatchError, toError } from "./dispatch";
@@ -7,25 +7,25 @@ import { cleanupSubtree } from "./cleanup";
 
 /**
  * @internal
- * Builds the `mount`/`hydrate` handle — owns the attached/cancelled/root closure state,
+ * Builds the `mount`/`hydrate` handle — owns the attached/cancelled/roots closure state,
  * the `flush`/`unmount` closures, and the resolve/thenable dispatch. A thenable node
  * defers `attachImpl` via `.then` (rejections route through `dispatchError` with phase
  * "mount"); anything else attaches synchronously. `attachImpl` renders the resolved node
- * into the container inside the mount phase and returns the root element — or null when
- * no single root exists to unmount (hydrate's fragment-root adoption).
+ * into the container inside the mount phase and returns the root nodes to unmount —
+ * the container's root set, so a fragment root's every spread child unmounts.
  * @param container The resolved mount target.
  * @param node The HellaNode or component function passed to `mount`/`hydrate`.
- * @param attachImpl Renders the resolved node into the container; runs inside the mount phase, before the first `flush()`.
+ * @param attachImpl Renders the resolved node into the container; runs inside the mount phase, before the first `flush()`. Returns the root nodes for `unmount()`.
  * @param afterFlush Runs after the first `flush()`, still inside the mount phase — hydrate's deferred-region watch.
  * @returns The MountHandle for the mounted tree.
  */
 export function createMountHandle(
   container: Element | ShadowRoot,
   node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
-  attachImpl: (resolvedNode: HellaNode | (() => HellaNode)) => HellaElement | null,
+  attachImpl: (resolvedNode: HellaNode | (() => HellaNode)) => Node[],
   afterFlush?: () => void
 ): MountHandle {
-  let rootEl: HellaElement | null = null;
+  let mountedNodes: Node[] = [];
   let attached = false;
   let cancelled = false;
 
@@ -47,9 +47,13 @@ export function createMountHandle(
       cancelled = true;
       return;
     }
-    if (rootEl) {
-      cleanupSubtree(rootEl);
-      if (rootEl.parentNode) rootEl.remove();
+    let i = 0;
+    const len = mountedNodes.length;
+    while (i < len) {
+      const n = mountedNodes[i]!;
+      cleanupSubtree(n);
+      n.parentNode?.removeChild(n);
+      i++;
     }
   };
 
@@ -57,7 +61,7 @@ export function createMountHandle(
     if (cancelled) return;
     beginMountPhase();
     try {
-      rootEl = attachImpl(resolvedNode);
+      mountedNodes = attachImpl(resolvedNode);
       attached = true;
       flush();   // fire afterMount + set isMounted (root + descendants) now — the scoped observer misses the initial attach (hydrate adds no nodes, so it never would)
       afterFlush?.();

@@ -12,7 +12,7 @@ function hydrate(
 ```
 - `hellaNode`: The same node or component function passed to [`ssr`](/reference/ssr/ssr) on the server.
 - `target`: A CSS selector string or DOM Element whose existing children are the server output. Defaults to `"#app"`.
-- **Returns**: A [`MountHandle`](/reference/dom/mount#mounthandle) with `flush()` and `unmount()` methods.
+- **Returns**: A [`MountHandle`](/reference/dom/mount#mounthandle) with `flush()` and `unmount()` methods. `unmount()` removes every adopted root, including all children of a fragment root.
 
 ## Basic Usage
 

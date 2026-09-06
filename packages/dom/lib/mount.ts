@@ -29,6 +29,7 @@ export function mount(
     const el = mountNode(n) as HellaElement;
     container.replaceChildren(el);
     registerContainer(container);
-    return el;
+    // replaceChildren has already spread a fragment root's children — the container's live child set is the root set
+    return Array.from(container.childNodes);
   });
 }

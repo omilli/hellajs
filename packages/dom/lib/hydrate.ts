@@ -35,23 +35,26 @@ export function hydrate(
     node,
     (resolvedNode) => {
       const n = resolveValue(resolvedNode) as HellaNode;
-      let rootEl: HellaElement | null = null;
+      let roots: Node[];
       if (!container.hasChildNodes()) {
-        // nothing to hydrate — mount fresh
-        rootEl = mountNode(n) as HellaElement;
-        container.replaceChildren(rootEl);
+        // nothing to hydrate — mount fresh (a fragment root spreads its children on insert)
+        const el = mountNode(n) as HellaElement;
+        container.replaceChildren(el);
+        roots = Array.from(container.childNodes);
       } else if (n.tag === "$") {
         // fragment root: hydrate each top-level child against the container's children.
         // ssr emits no root-level markers, so the scope rides the first surviving server
         // node (empty container never reaches this branch — fresh-mount path wires it).
         if (n.componentScope) wireFragmentScope(container.firstChild, null, n.componentScope);
         hydrateSequence(container as unknown as HellaElement, n.children, container.firstChild, undefined);
+        roots = Array.from(container.childNodes);
       } else {
-        rootEl = container.firstChild as HellaElement;
+        const rootEl = container.firstChild as HellaElement;
         hydrateNode(n, rootEl);
+        roots = [rootEl];
       }
       registerContainer(container);
-      return rootEl;
+      return roots;
     },
     () => {
       if (hasDeferredRegions()) startDeferredRegionWatch(container);   // selective hydration: watch for late <Suspense> stages + replay events
