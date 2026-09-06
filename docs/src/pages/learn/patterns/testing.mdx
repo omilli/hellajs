@@ -1,12 +1,12 @@
 ---
 layout: ../../../layouts/MainLayout.astro
 title: Testing Patterns
-description: Test patterns for HellaJS applications — cleanup, lifecycle control, async timing, and error handling.
+description: Test patterns for HellaJS applications covering cleanup, lifecycle control, async timing, and error handling.
 ---
 
 # Testing Patterns
 
-Common test patterns for applications built with HellaJS. Every pattern works with any test framework — `bun:test`, `vitest`, `jest` — using only public package imports.
+Common test patterns for applications built with HellaJS. Every pattern works with any test framework (`bun:test`, `vitest`, `jest`) using only public package imports.
 
 ### Isolate Tests with Reset Functions
 
@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 ```
 
-Each reset clears only its package's registries — DOM state, CSS rules, cache entries, router config. `store` needs no global reset because each store is instance-scoped and garbage-collected.
+Each reset clears only its package's registries: DOM state, CSS rules, cache entries, router config. `store` needs no global reset because each store is instance-scoped and garbage-collected.
 
 For convenience, bundle all the resets into a single helper in your test setup file:
 
@@ -83,7 +83,7 @@ const render = () => {
   return typeof node === "function" ? node() : node;
 };
 const app = mount(render);
-// afterMount already fired during mount() — no flush() needed
+// afterMount already fired during mount(); no flush() needed
 console.log(document.body.textContent); // "Visible"
 
 visible(false);
@@ -95,7 +95,7 @@ app.unmount(); // Clean up the entire tree
 
 ### Assert Synchronously with `flush`
 
-After updating signals, use `flush()` from `@hellajs/core` to propagate changes and assert on computed state — no microtask needed:
+After updating signals, use `flush()` from `@hellajs/core` to propagate changes and assert on computed state (no microtask needed):
 
 ```typescript
 import { signal, computed, flush, batch } from "@hellajs/core";
@@ -108,7 +108,7 @@ batch(() => {
   count(5); // Only the final value triggers propagation
 });
 
-flush(); // Synchronously propagate — no await needed
+flush(); // Synchronously propagate; no await needed
 console.log(doubled()); // 10
 ```
 

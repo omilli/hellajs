@@ -30,7 +30,7 @@ form.name('John');  // stored as 'John'
 
 ### Partial Deep Updates
 
-Update nested properties without replacing the entire object using `update()` with a partial. The update only applies changes for properties that exist in the initial object — unknown keys throw.
+Update nested properties without replacing the entire object using `update()` with a partial. The update only applies changes for properties that exist in the initial object; unknown keys throw.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -49,7 +49,7 @@ app.user.name(); // 'Bob'
 app.user.role(); // 'viewer' (unchanged - not included in update)
 app.theme();     // 'dark'
 // Note: Trying to add new properties like app.update({ newProp: 'value' }) throws
-// [store] update: unknown key "newProp" — the store's shape is fixed at creation
+// [store] update: unknown key "newProp"; the store's shape is fixed at creation
 ```
 
 ### Mutable Draft Updates
@@ -76,12 +76,12 @@ todos.update(draft => {
 
 todos.items(); // [{ id: 2, ... }, { id: 3, ... }]
 todos.count(); // 2
-// The draft function runs synchronously and all changes are applied as individual writes — wrap the call in [`batch`](/reference/core/batch)`()` to fire effects once
+// The draft function runs synchronously and all changes are applied as individual writes; wrap the call in [`batch`](/reference/core/batch)`()` to fire effects once
 ```
 
 ### Structural Array Equality
 
-Silence content-equal array replacements with the `'structural'` write-equality preset — useful when a big array leaf is rewritten wholesale on every save and the content usually hasn't changed.
+Silence content-equal array replacements with the `'structural'` write-equality preset, useful when a big array leaf is rewritten wholesale on every save and the content usually hasn't changed.
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -97,13 +97,13 @@ effect(() => {
   console.log(board.columns().join(',')); // Logs: todo,doing,done
 });
 
-board.columns(['todo', 'doing', 'done']); // same content — write skipped, effect stays asleep
-board.columns(['todo', 'blocked', 'done']); // changed — effect re-runs
+board.columns(['todo', 'doing', 'done']); // same content; write skipped, effect stays asleep
+board.columns(['todo', 'blocked', 'done']); // changed; effect re-runs
 ```
 
 ### Readonly Properties
 
-Lock specific keys to read-only access using the `readonly` option. Object keys lock their whole subtree — every nested level below a listed key is readonly too.
+Lock specific keys to read-only access using the `readonly` option. Object keys lock their whole subtree: every nested level below a listed key is readonly too.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -117,8 +117,8 @@ const config = store({
 });
 
 config.theme('dark');       // Updates normally
-// ❌ config.apiUrl('localhost'); — throws: [store] readonly key "apiUrl"
-// ❌ config.limits.maxItems(50); — throws: object keys lock their whole subtree
+// ❌ config.apiUrl('localhost'); throws: [store] readonly key "apiUrl"
+// ❌ config.limits.maxItems(50); throws: object keys lock their whole subtree
 config.limits.maxItems();   // 100
 config.apiUrl();            // 'https://api.example.com'
 ```
@@ -165,12 +165,12 @@ const cart = store({
 
 const trackDiscount = cart.subscribe('discount', (next, prev) => {
   console.log(`discount: ${prev} → ${next}`);
-  // analytics: report(prev, next) — reads here stay untracked
+  // analytics: report(prev, next); reads here stay untracked
 });
 
 cart.discount(0.2); // Logs: discount: 0.1 → 0.2
 trackDiscount();
-cart.discount(0.3); // silent — unsubscribed
+cart.discount(0.3); // silent; unsubscribed
 ```
 
 ### Store Snapshot

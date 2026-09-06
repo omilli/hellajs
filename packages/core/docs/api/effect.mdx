@@ -131,7 +131,7 @@ effect(() => {
 
 Errors thrown inside an effect propagate to the signal setter that triggered it and abort the current flush (remaining queued effects are skipped). Subsequent signal changes start a fresh flush and the reactive system continues normally.
 
-A throw on the ***first*** run is different: the effect never started, so it is disposed before the error propagates. No re-runs occur and no cleanup handle exists to call — subsequent writes to any dependency it read before throwing do nothing. Re-run throws keep the semantics below: abort the flush, then dispose to recover.
+A throw on the ***first*** run is different: the effect never started, so it is disposed before the error propagates. No re-runs occur and no cleanup handle exists to call; subsequent writes to any dependency it read before throwing do nothing. Re-run throws keep the semantics below: abort the flush, then dispose to recover.
 
 ```typescript
 import { signal, effect } from "@hellajs/core";
@@ -145,7 +145,7 @@ try {
     throw new Error("boom");
   });
 } catch {
-  // Recovered here — the effect is already gone
+  // Recovered here; the effect is already gone
 }
 
 count(1); // No throw, no re-run: the effect no longer exists
@@ -174,7 +174,7 @@ cleanup();
 
 ### Returned Functions Become Cleanup
 
-A run's return value is checked with a function test: returning a function installs it as the cleanup for that run — even when returning it was accidental. Any other return value is ignored. Return nothing unless cleanup is intended.
+A run's return value is checked with a function test: returning a function installs it as the cleanup for that run, even when returning it was accidental. Any other return value is ignored. Return nothing unless cleanup is intended.
 
 ```typescript
 import { signal, effect } from "@hellajs/core";
@@ -182,7 +182,7 @@ import { signal, effect } from "@hellajs/core";
 const save = () => console.log("saved");
 const onSave = signal(save);
 
-// ❌ Returns the resolved function — it is captured as cleanup and invoked on re-run/dispose
+// ❌ Returns the resolved function; it is captured as cleanup and invoked on re-run/dispose
 effect(() => onSave());
 
 // ✅ Consume the function inside the run; return nothing

@@ -1,13 +1,13 @@
 # @hellajs/ssr
 
-A pure HTML stringifier for HellaJS. Walks a HellaNode AST to an HTML string with zero runtime dependencies — runs in any server runtime (Bun, Node, Deno, workers).
+A pure HTML stringifier for HellaJS. Walks a HellaNode AST to an HTML string with zero runtime dependencies; runs in any server runtime (Bun, Node, Deno, workers).
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/ssr?color=orange)](https://www.npmjs.com/package/@hellajs/ssr)
 ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/ssr)
 
 ## Documentation
 
-- **[API Reference](https://hellajs.com/reference/ssr/ssr)** — `ssr(node)` (sync string) · `ssr.async(node)` (await Promises) · `ssr.stream(node)` (streaming) · **[doc](https://hellajs.com/reference/ssr/doc)** (document assembly — string or streamed body)
+- **[API Reference](https://hellajs.com/reference/ssr/ssr)**: `ssr(node)` (sync string) · `ssr.async(node)` (await Promises) · `ssr.stream(node)` (streaming) · **[doc](https://hellajs.com/reference/ssr/doc)** (document assembly, string or streamed body)
 - **[Server-Side Rendering Concepts](https://hellajs.com/learn/concepts/ssr)**
 
 ## Quick Start

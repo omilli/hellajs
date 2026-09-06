@@ -34,7 +34,7 @@ mount(App, "#app");
 | Hook | When it fires |
 |------|---------------|
 | `hook:beforeMount` | Synchronously before element is inserted into DOM |
-| `hook:afterMount` | After element is in DOM — synchronously by the time `mount()`/`hydrate()` returns; dynamically added nodes on the next microtask |
+| `hook:afterMount` | After element is in DOM (synchronously by the time `mount()`/`hydrate()` returns); dynamically added nodes on the next microtask |
 | `hook:beforeUpdate` | Before reactive updates (not during initial render) |
 | `hook:afterUpdate` | After reactive updates (not during initial render) |
 | `hook:beforeDestroy` | Before element removal from DOM |
@@ -42,7 +42,7 @@ mount(App, "#app");
 
 ### Access to Element
 
-Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument. The element arrives as `Element | undefined` — narrow before using HTMLElement-specific APIs.
+Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument. The element arrives as `Element | undefined`; narrow before using HTMLElement-specific APIs.
 
 ```jsx
 <div
@@ -61,7 +61,7 @@ Most lifecycle hooks receive the element as the first argument. Exceptions: `bef
 
 ### Common Patterns
 
-Store per-element state in a `WeakMap` keyed by the element — typed, garbage-collectable, and no property stashing on DOM nodes.
+Store per-element state in a `WeakMap` keyed by the element: typed, garbage-collectable, and no property stashing on DOM nodes.
 
 ```jsx
 interface Instance {

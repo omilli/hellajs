@@ -108,7 +108,7 @@ items([2, 4, 6]);  // Logs: "Effect: [4, 8, 12]" again (new array reference)
 
 ### Custom Equality
 
-The `equals` option replaces the default equality check on the recomputed result (`===`, with `NaN` equal to itself). When it returns `true`, the old reference is kept and downstream subscribers are not notified — the recomputation itself still runs.
+The `equals` option replaces the default equality check on the recomputed result (`===`, with `NaN` equal to itself). When it returns `true`, the old reference is kept and downstream subscribers are not notified; the recomputation itself still runs.
 
 ```typescript
 import { signal, computed, effect } from '@hellajs/core';
@@ -124,7 +124,7 @@ items([1, 2, 3]); // Recomputes to equal content: no effect triggered
 items([4]);       // Different content: effect logs "Effect: [8]"
 ```
 
-The comparator is skipped on the first evaluation, when the previous value is still `undefined` — the default check applies there.
+The comparator is skipped on the first evaluation, when the previous value is still `undefined`; the default check applies there.
 
 ### Lazy Evaluation
 
@@ -241,7 +241,7 @@ console.log(doubled()); // 20 (graph rebuilt, recomputed)
 
 ### Error Recovery
 
-Errors thrown during computation prevent dependency tracking on that execution. Every read of a throwing computed re-attempts the computation and rethrows — no silent `undefined`, no stale cached value — until a dependency change allows success. On the next successful read, tracking rebuilds correctly.
+Errors thrown during computation prevent dependency tracking on that execution. Every read of a throwing computed re-attempts the computation and rethrows (no silent `undefined`, no stale cached value) until a dependency change allows success. On the next successful read, tracking rebuilds correctly.
 
 ```typescript
 import { signal, computed } from '@hellajs/core';

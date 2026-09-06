@@ -1,6 +1,6 @@
 # ssr
 
-Serialize a HellaNode AST into an HTML string — a pure stringifier with zero runtime dependencies. A callable namespace: `ssr(node)` walks synchronously, `ssr.async(node)` awaits every Promise in the tree, `ssr.stream(node)` flushes progressively, and `ssr.head()` creates a head collection bag every member accepts.
+Serialize a HellaNode AST into an HTML string: a pure stringifier with zero runtime dependencies. A callable namespace: `ssr(node)` walks synchronously, `ssr.async(node)` awaits every Promise in the tree, `ssr.stream(node)` flushes progressively, and `ssr.head()` creates a head collection bag every member accepts.
 
 ## API
 
@@ -13,18 +13,18 @@ declare const ssr: {
 };
 
 interface SsrOptions {
-  /** Head bag (from `ssr.head()`) — hoists <title>/<meta>/<link>/<style> from the tree */
+  /** Head bag (from `ssr.head()`); hoists <title>/<meta>/<link>/<style> from the tree */
   head?: HeadOptions;
 }
 ```
 
 - `node`: A HellaNode AST (produced by [`html`](/reference/dom/html) or JSX) to serialize.
-- `options`: Walk options — `head` (a bag from [`ssr.head()`](#head)) collects the tree's head-eligible elements on every member.
+- `options`: Walk options: `head` (a bag from [`ssr.head()`](#head)) collects the tree's head-eligible elements on every member.
 - **Returns**: The rendered HTML string.
 
 ### async
 
-The async member — awaits any Promise a resolved value returns, then resolves to the concatenated HTML.
+The async member: awaits any Promise a resolved value returns, then resolves to the concatenated HTML.
 
 ```typescript
 declare namespace ssr {
@@ -32,7 +32,7 @@ declare namespace ssr {
 }
 ```
 
-A component may embed server-side async data directly: a getter that returns a `Promise` is awaited, and its resolved value is placed inside a marker-bounded region identical to the sync call. A [`Lazy`](/reference/dom/lazy) loader is awaited the same way — the loaded component renders server-side, and a rejected loader renders `fallback` (or rejects this call when none is provided).
+A component may embed server-side async data directly: a getter that returns a `Promise` is awaited, and its resolved value is placed inside a marker-bounded region identical to the sync call. A [`Lazy`](/reference/dom/lazy) loader is awaited the same way: the loaded component renders server-side, and a rejected loader renders `fallback` (or rejects this call when none is provided).
 
 ```js
 import { html } from '@hellajs/dom';
@@ -46,7 +46,7 @@ const body = await ssr.async(html`<p>Hello ${() => user(1)}</p>`);
 
 ### stream
 
-The streaming member — yields chunks as the walk proceeds, flushing the static prefix before each awaited Promise.
+The streaming member: yields chunks as the walk proceeds, flushing the static prefix before each awaited Promise.
 
 ```typescript
 declare namespace ssr {
@@ -54,12 +54,12 @@ declare namespace ssr {
 }
 
 interface StreamOptions extends SsrOptions {
-  /** CSP nonce — `nonce="…"` on every inline script the stream emits */
+  /** CSP nonce; `nonce="…"` on every inline script the stream emits */
   nonce?: string;
 }
 ```
 
-The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)). [`Lazy`](/reference/dom/lazy) loaders are awaited like bare Promises — in-order outside [`<Suspense>`](/reference/dom/suspense), resolved within the staged `<template>` inside one.
+The client receives the static shell before any async value settles. Pipe it into a `Response` for a streaming server handler. Bare Promises are awaited in tree order; a rejected bare Promise errors the stream, while a rejected `<Suspense>` region is isolated (see [Errors Propagate](#errors-propagate)). [`Lazy`](/reference/dom/lazy) loaders are awaited like bare Promises: in-order outside [`<Suspense>`](/reference/dom/suspense), resolved within the staged `<template>` inside one.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -80,7 +80,7 @@ Bun.serve({
 });
 ```
 
-Under a strict `Content-Security-Policy` (no `unsafe-inline`), the browser blocks the inline `<Suspense>` swap scripts. Pass a per-response `nonce` and mirror it in the response header — every script the stream emits (the [`$hs` bootstrap](#in-order-streaming) and each per-region swap script) then carries `nonce="…"`:
+Under a strict `Content-Security-Policy` (no `unsafe-inline`), the browser blocks the inline `<Suspense>` swap scripts. Pass a per-response `nonce` and mirror it in the response header; every script the stream emits (the [`$hs` bootstrap](#in-order-streaming) and each per-region swap script) then carries `nonce="…"`:
 
 ```js
 import { html } from '@hellajs/dom';
@@ -105,13 +105,13 @@ Bun.serve({
 });
 ```
 
-Without a `nonce` — or with no options at all — the scripts are emitted unattributed, byte-identical to a stream rendered before the option existed.
+Without a `nonce` (or with no options at all) the scripts are emitted unattributed, byte-identical to a stream rendered before the option existed.
 
-The `head` option (inherited from `SsrOptions`) also works under `ssr.stream`, with one limit: the bag fills as the walk proceeds — staged [`<Suspense>`](/reference/dom/suspense) swaps keep filling it as they resolve — but a streamed document emits its `<head>` up front, so the collected entries are post-hoc. When streaming, pass head entries to [`doc`](/reference/ssr/doc) explicitly (see [`head`](#head)).
+The `head` option (inherited from `SsrOptions`) also works under `ssr.stream`, with one limit: the bag fills as the walk proceeds (staged [`<Suspense>`](/reference/dom/suspense) swaps keep filling it as they resolve), but a streamed document emits its `<head>` up front, so the collected entries are post-hoc. When streaming, pass head entries to [`doc`](/reference/ssr/doc) explicitly (see [`head`](#head)).
 
 ### head
 
-Creates a fresh head collection bag — `{ meta: [], links: [], styles: [] }`, the same shape [`doc`](/reference/ssr/doc)'s `head` option consumes. Pass it to any member as `{ head }` and the walk hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` elements into the bag instead of emitting them — a route component owns its head entries, and the caller no longer assembles them by hand.
+Creates a fresh head collection bag: `{ meta: [], links: [], styles: [] }`, the same shape [`doc`](/reference/ssr/doc)'s `head` option consumes. Pass it to any member as `{ head }` and the walk hoists the tree's `<title>`/`<meta>`/`<link>`/`<style>` elements into the bag instead of emitting them; a route component owns its head entries, and the caller no longer assembles them by hand.
 
 ```typescript
 declare namespace ssr {
@@ -125,7 +125,7 @@ import { ssr, doc } from '@hellajs/ssr';
 
 const Page = () => html`
   <div>
-    <title>Profile — Ada</title>
+    <title>Profile - Ada</title>
     <meta name="description" content="Ada's profile" />
     <link rel="canonical" href="/users/1" />
     <style>.card { border: 1px solid #ccc }</style>
@@ -136,17 +136,17 @@ const Page = () => html`
 const head = ssr.head();
 const body = await ssr.async(Page(), { head });    // the tree's <title>/<meta>/<link>/<style> hoist
 const page = doc({ body, head, mount: '#app' });
-// <head><title>Profile — Ada</title><meta name="description" content="Ada's profile">
+// <head><title>Profile - Ada</title><meta name="description" content="Ada's profile">
 // <link rel="canonical" href="/users/1"><style>.card { border: 1px solid #ccc }</style></head>
 ```
 
 Collection rules:
 
-- `<title>` — its children's resolved text, concatenated, lands in `head.title` (the last `<title>` wins). Getter children resolve at their current value; under [`ssr.async`](#async) a Promise child is awaited.
-- `<meta>` / `<link>` — attribute maps append to `head.meta` / `head.links` in order; getter attributes resolve, and falsy values drop (the same omission `doc`'s head builder applies).
-- `<style>` — its children's resolved text concatenates and appends to `head.styles` unescaped (CSS text, not HTML — a `>` selector survives).
-- Only text children hoist for `<title>`/`<style>`: a tag with any other child (an element) stays rendered in the body — nothing is silently dropped.
-- Non-head elements are untouched, and a walk with no `head` option renders head-eligible elements inline — byte-identical to before the option existed.
+- `<title>`: its children's resolved text, concatenated, lands in `head.title` (the last `<title>` wins). Getter children resolve at their current value; under [`ssr.async`](#async) a Promise child is awaited.
+- `<meta>` / `<link>`: attribute maps append to `head.meta` / `head.links` in order; getter attributes resolve, and falsy values drop (the same omission `doc`'s head builder applies).
+- `<style>`: its children's resolved text concatenates and appends to `head.styles` unescaped (CSS text, not HTML; a `>` selector survives).
+- Only text children hoist for `<title>`/`<style>`: a tag with any other child (an element) stays rendered in the body; nothing is silently dropped.
+- Non-head elements are untouched, and a walk with no `head` option renders head-eligible elements inline; byte-identical to before the option existed.
 
 ## Basic Usage
 
@@ -169,7 +169,7 @@ const body = ssr(page('Hello'));
 
 ### Styled output
 
-[`@hellajs/css`](/reference/css) registers styles on both platforms — [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` proxy on the server too. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag. `ssr` never imports `@hellajs/css` — the caller assembles both.
+[`@hellajs/css`](/reference/css) registers styles on both platforms: [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` proxy on the server too. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag. `ssr` never imports `@hellajs/css`; the caller assembles both.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -177,8 +177,8 @@ import { style, cssText } from '@hellajs/css';
 import { ssr } from '@hellajs/ssr';
 
 const btn = style({ color: 'red' }, { label: 'btn' });
-// btn === "h-btn-…" — the class, never text, on the server too
-// `cssText()` holds ".h-btn-…{color:red}" — on client and server alike
+// btn === "h-btn-…"; the class, never text, on the server too
+// `cssText()` holds ".h-btn-…{color:red}"; on client and server alike
 
 const body = ssr(html`<button class=${btn}>Click</button>`);
 const page = `<style>${cssText()}</style><div id="app">${body}</div>`;
@@ -188,7 +188,7 @@ const page = `<style>${cssText()}</style><div id="app">${body}</div>`;
 
 ### Works with `html` or JSX
 
-`ssr` consumes any `HellaNode` — produced by the `html` tag or JSX — identically, whichever member renders it. The babel/vite/rollup plugin compiles JSX to the same AST, so a JSX component renders the same HTML as the equivalent `html` template.
+`ssr` consumes any `HellaNode` (produced by the `html` tag or JSX) identically, whichever member renders it. The babel/vite/rollup plugin compiles JSX to the same AST, so a JSX component renders the same HTML as the equivalent `html` template.
 
 ```jsx
 import { ssr } from '@hellajs/ssr';
@@ -198,15 +198,15 @@ const App = ({ name }: { name: string }) => <div><h1>Hello {name}</h1></div>;
 const body = ssr(<App name="World" />);
 ```
 
-The plugin must run on the **server** entry — it is a compile-time transform, so without it JSX is not a `HellaNode`. See [Render from JSX](/learn/patterns/ssr) for a full recipe.
+The plugin must run on the **server** entry; it is a compile-time transform, so without it JSX is not a `HellaNode`. See [Render from JSX](/learn/patterns/ssr) for a full recipe.
 
 ### Zero Runtime Dependencies
 
-`ssr` has zero runtime imports from any `@hellajs/*` package — only a type-only [`HellaNode`](/reference/dom) import, erased at compile time. It works whether or not the other packages are installed and adds no runtime weight to the server bundle.
+`ssr` has zero runtime imports from any `@hellajs/*` package: only a type-only [`HellaNode`](/reference/dom) import, erased at compile time. It works whether or not the other packages are installed and adds no runtime weight to the server bundle.
 
 ### Hydration markers
 
-`ssr()` wraps every dynamic region — a reactive child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy) / [`Suspense`](/reference/dom/suspense), or a nested fragment — in `<!--[-->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
+`ssr()` wraps every dynamic region (a reactive child, a [`ForEach`](/reference/dom/foreach) / [`Transition`](/reference/dom/transition) / [`Portal`](/reference/dom/portal) / [`Lazy`](/reference/dom/lazy) / [`Suspense`](/reference/dom/suspense), or a nested fragment) in `<!--[-->…<!--]-->` comment markers. The browser parses these to `Comment` nodes that [`hydrate`](/reference/dom/hydrate) (`@hellajs/dom`) locates to bind each region in place, without structural inference and without rebuilding coalesced text. Static elements and text are emitted unwrapped (matched by position), so the marker payload stays minimal.
 
 ```js
 import { signal } from '@hellajs/core';
@@ -222,11 +222,11 @@ This is a **breaking** part of the output contract: if you parse or snapshot `ss
 
 ### Awaits Promises In Place
 
-Where the sync call reads each getter once and cannot await, `ssr.async` awaits any resolved value that is a `Promise` — a child, a function-ref prop attribute, a [`ForEach`](/reference/dom/foreach) `each`, or a [`Transition`](/reference/dom/transition) `show`. Nested thenables unwrap fully. Use `ssr.async` when a subtree needs server-fetched data; use the sync call when every value is already resolved (zero Promise overhead).
+Where the sync call reads each getter once and cannot await, `ssr.async` awaits any resolved value that is a `Promise`: a child, a function-ref prop attribute, a [`ForEach`](/reference/dom/foreach) `each`, or a [`Transition`](/reference/dom/transition) `show`. Nested thenables unwrap fully. Use `ssr.async` when a subtree needs server-fetched data; use the sync call when every value is already resolved (zero Promise overhead).
 
 ### Progressive Flush
 
-`ssr.stream` yields chunks as the tree resolves. Static markup ahead of an awaited value streams immediately — the client paints the shell while async data resolves. Bare Promises are awaited in-order, consistent with [`ssr.async`](#async).
+`ssr.stream` yields chunks as the tree resolves. Static markup ahead of an awaited value streams immediately; the client paints the shell while async data resolves. Bare Promises are awaited in-order, consistent with [`ssr.async`](#async).
 
 ### Identical Output Contract
 
@@ -244,11 +244,11 @@ The shipped HTML is the source of truth on the client. Bind existing static node
 
 ### Portal renders nothing
 
-[`Portal`](/reference/dom/portal) teleports content to a DOM target — there is no document on the server, so portals render as empty. Render portal content inline in the template if it must appear in the HTML.
+[`Portal`](/reference/dom/portal) teleports content to a DOM target: there is no document on the server, so portals render as empty. Render portal content inline in the template if it must appear in the HTML.
 
 ### Lazy awaits the loader under the async members; `ssr` emits `loading`
 
-The base `ssr` call is synchronous, so a [`Lazy`](/reference/dom/lazy) region emits its `loading` fallback (or nothing if none was provided) and never calls the loader. [`ssr.async`](#async) and [`ssr.stream`](#stream) await it instead: the loaded component renders into the HTML, and `hydrate` keeps that server content in place until the client's fresh loader run replaces it — no loading flash. The loader must be server-executable (a dynamic `import()` needs a server-resolvable module); on rejection it renders `fallback`, or rejects/errors the render when none is provided.
+The base `ssr` call is synchronous, so a [`Lazy`](/reference/dom/lazy) region emits its `loading` fallback (or nothing if none was provided) and never calls the loader. [`ssr.async`](#async) and [`ssr.stream`](#stream) await it instead: the loaded component renders into the HTML, and `hydrate` keeps that server content in place until the client's fresh loader run replaces it, with no loading flash. The loader must be server-executable (a dynamic `import()` needs a server-resolvable module); on rejection it renders `fallback`, or rejects/errors the render when none is provided.
 
 ### Full re-mount over server HTML wipes it
 
@@ -256,22 +256,22 @@ Calling [`mount`](/reference/dom/mount) over the server-rendered container repla
 
 ### Synchronous render required
 
-The base `ssr(node)` call walks the tree once and returns. Reactive getters are read at their current value; there is no effect scheduling, no batching, and no async resolution — use `ssr.async`/`ssr.stream` when a subtree embeds Promises. Build the tree from already-resolved data.
+The base `ssr(node)` call walks the tree once and returns. Reactive getters are read at their current value; there is no effect scheduling, no batching, and no async resolution; use `ssr.async`/`ssr.stream` when a subtree embeds Promises. Build the tree from already-resolved data.
 
 ### Fetch Directly; Resource Is Unchanged
 
-`ssr.async` provides a generic await mechanism — return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) loaders run server-side under the async members (see the Lazy note above), while [`resource`](/reference/resource/resource) still no-ops its fetch pipeline on the server. Fetch server-side data with direct `fetch()` and expose it through a Promise-returning getter.
+`ssr.async` provides a generic await mechanism: return a `Promise` from a getter. [`Lazy`](/reference/dom/lazy) loaders run server-side under the async members (see the Lazy note above), while [`resource`](/reference/resource/resource) still no-ops its fetch pipeline on the server. Fetch server-side data with direct `fetch()` and expose it through a Promise-returning getter.
 
 ### In-Order Streaming
 
-Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the fallback for the resolved content **the moment it arrives** — so the user sees each region fill in progressively (React/Solid parity), not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap precedes them. `hydrate` later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). A region whose Promise rejects is isolated instead of fatal: its `<template>` is skipped (the `fallback` and sentinel stay in the shell), the stream completes with its healthy siblings, and `hydrate` re-suspends that region on the client — the rejection surfaces at the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
+Bare Promises (no [`<Suspense>`](/reference/dom/suspense)) are awaited in tree order under `ssr.stream`, so a slow Promise delays everything after it. A `<Suspense>` boundary opts out: its `fallback` flushes inline immediately, then each region's resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps the fallback for the resolved content **the moment it arrives**; so the user sees each region fill in progressively (React/Solid parity), not all at once at hydrate. Multiple regions swap concurrently (completion order, not document order); a one-time `$hs` bootstrap precedes them. `hydrate` later adopts the already-swapped nodes (its `swapSuspenseStage` is the no-script/HappyDOM fallback). A region whose Promise rejects is isolated instead of fatal: its `<template>` is skipped (the `fallback` and sentinel stay in the shell), the stream completes with its healthy siblings, and `hydrate` re-suspends that region on the client; the rejection surfaces at the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Prefer `ssr.stream` when you want progressive paint; prefer the sync call or `ssr.async` when streaming isn't needed (no Promise overhead).
 
 ### Errors Propagate
 
-A `hydrate` script that executes mid-stream (parsed while `document.readyState` is still `loading`) composes with this: a region whose staged `<template>` hasn't arrived defers — the fallback stays mounted, the children never re-run — and [`hydrate`](/reference/dom/hydrate) adopts the region when its stage lands. The inline-script contract is unchanged: an inline `$hs` that runs after hydrate consumed the region markers no-ops (its balance walk finds no open marker), leaving the template in place for hydrate's watcher to swap in.
+A `hydrate` script that executes mid-stream (parsed while `document.readyState` is still `loading`) composes with this: a region whose staged `<template>` hasn't arrived defers (the fallback stays mounted, the children never re-run), and [`hydrate`](/reference/dom/hydrate) adopts the region when its stage lands. The inline-script contract is unchanged: an inline `$hs` that runs after hydrate consumed the region markers no-ops (its balance walk finds no open marker), leaving the template in place for hydrate's watcher to swap in.
 
-The sync call throws, a rejected `Promise` rejects `ssr.async`'s returned `Promise`, and a rejected bare `Promise` in the main walk errors `ssr.stream`'s `ReadableStream` (reading it throws). A rejecting `<Suspense>` region is the exception: the stream skips its `<template>` (the `fallback` and sentinel stay in the shell) and completes with its healthy siblings — `hydrate` re-suspends that region on the client, where the rejection reaches the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Wrap the render in your own error handling if a value may throw; handle stream errors at the consumer (your server handler). A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
+The sync call throws, a rejected `Promise` rejects `ssr.async`'s returned `Promise`, and a rejected bare `Promise` in the main walk errors `ssr.stream`'s `ReadableStream` (reading it throws). A rejecting `<Suspense>` region is the exception: the stream skips its `<template>` (the `fallback` and sentinel stay in the shell) and completes with its healthy siblings; `hydrate` re-suspends that region on the client, where the rejection reaches the nearest [`onError`](/reference/dom/onerror) / `error:fallback` boundary. Wrap the render in your own error handling if a value may throw; handle stream errors at the consumer (your server handler). A throwing *component* does not propagate: `component()` catches render errors and emits an empty fragment. See [Error handling](/learn/patterns/ssr#error-handling) for a try/catch-fallback recipe.
 
 ### Throws on invalid input
 
-Every member throws the same shape when `node` is `null` or `undefined`: `[ssr] ssr: node is required, received <value>` for the sync call (`ssr.async` rejects its Promise with the `ssr.async` prefix, `ssr.stream` throws with the `ssr.stream` prefix). A root that is not a HellaNode — any non-object, or an object without a `tag` — throws `[ssr] <member>: node must be a HellaNode (object with a tag), received <typeof>` instead of silently serializing garbage HTML: passing an uninvoked component (`ssr(App)`) throws, `ssr(App())` renders.
+Every member throws the same shape when `node` is `null` or `undefined`: `[ssr] ssr: node is required, received <value>` for the sync call (`ssr.async` rejects its Promise with the `ssr.async` prefix, `ssr.stream` throws with the `ssr.stream` prefix). A root that is not a HellaNode (any non-object, or an object without a `tag`) throws `[ssr] <member>: node must be a HellaNode (object with a tag), received <typeof>` instead of silently serializing garbage HTML: passing an uninvoked component (`ssr(App)`) throws, `ssr(App())` renders.

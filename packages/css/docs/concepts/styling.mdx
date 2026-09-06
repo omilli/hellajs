@@ -1,10 +1,10 @@
 # Styling
 
-HellaJS styles components with CSS-in-JS: `style()` scopes declarations under a content-hashed class, `css()` writes explicit globals, `cva()` resolves typed variants, `vars()` drives reactive theming, and `keyframes()` hashes animation definitions. Every creator returns the same value on client and server — `cssText()` collects the registered text for server rendering.
+HellaJS styles components with CSS-in-JS: `style()` scopes declarations under a content-hashed class, `css()` writes explicit globals, `cva()` resolves typed variants, `vars()` drives reactive theming, and `keyframes()` hashes animation definitions. Every creator returns the same value on client and server; `cssText()` collects the registered text for server rendering.
 
 ## Scoped Styles
 
-[`style`](/reference/css/style) takes a declarations-first object and returns a content-hashed class — `h-{label}-{hash}` with a label, `h-{hash}` without. The hash covers the object alone, so the same object always derives the same class, on every render and both platforms.
+[`style`](/reference/css/style) takes a declarations-first object and returns a content-hashed class: `h-{label}-{hash}` with a label, `h-{hash}` without. The hash covers the object alone, so the same object always derives the same class, on every render and both platforms.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -28,7 +28,7 @@ const Counter = () => {
       transform: 'translateY(-1px)'
     }
   }, { label: 'btn' });
-  // "h-btn-r4k2q" — identical on client and server
+  // "h-btn-r4k2q"; identical on client and server
 
   return (
     <div>
@@ -45,20 +45,20 @@ Nested keys compose under the generated class: `&` refers to the class at every 
 
 ### Composing Styles
 
-A second object argument composes. A class-string base prefixes the new class verbatim — each side keeps its own rule; an object base deep-merges with the override into a single class where the override wins.
+A second object argument composes. A class-string base prefixes the new class verbatim; each side keeps its own rule; an object base deep-merges with the override into a single class where the override wins.
 
 ```jsx
 import { style } from '@hellajs/css';
 
 const card = style({ padding: '1rem', borderRadius: '0.5rem' }, { label: 'card' });
 const alert = style(card, { border: '1px solid red' });
-// "h-card-1z0q41 h-b9c8d" — the alert class carries only the added declarations
+// "h-card-1z0q41 h-b9c8d"; the alert class carries only the added declarations
 
 const denseCard = style(
   { padding: '1rem', borderRadius: '0.5rem' },
   { padding: '0.5rem' }
 );
-// One merged class — "h-…" with the override's padding
+// One merged class; "h-…" with the override's padding
 ```
 
 ## Global Styles
@@ -78,7 +78,7 @@ All CSS `@` rules are supported (`@media`, `@keyframes`, `@font-face`, `@contain
 
 ## Variant Recipes
 
-[`cva`](/reference/css/cva) maps typed variant props to a composed class string — one class per selection, generated lazily on first resolution so unselected variants never produce CSS.
+[`cva`](/reference/css/cva) maps typed variant props to a composed class string: one class per selection, generated lazily on first resolution so unselected variants never produce CSS.
 
 ```jsx
 import { cva } from '@hellajs/css';
@@ -103,11 +103,11 @@ const button = cva({
 </button>
 ```
 
-Responsive selections emit their class under the breakpoint's media condition — pure CSS, no listeners. Variant classes are static once resolved; reactivity rides the call site with `class={() => button({ size: size() })}`.
+Responsive selections emit their class under the breakpoint's media condition, pure CSS, no listeners. Variant classes are static once resolved; reactivity rides the call site with `class={() => button({ size: size() })}`.
 
 ## Reactive CSS Variables
 
-[`vars`](/reference/css/vars) (formerly `cssVars`) creates CSS custom properties from signals. It returns a same-shaped proxy of `var()` references; when signals change, the declarations update through effects — no re-render, no rule rebuild.
+[`vars`](/reference/css/vars) (formerly `cssVars`) creates CSS custom properties from signals. It returns a same-shaped proxy of `var()` references; when signals change, the declarations update through effects; no re-render, no rule rebuild.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -139,11 +139,11 @@ const buttonStyle = style({
 </button>
 ```
 
-Property values in `style()` and `css()` objects are static — function values throw. Reactive values belong in `vars()`.
+Property values in `style()` and `css()` objects are static; function values throw. Reactive values belong in `vars()`.
 
 ## Keyframe Animations
 
-[`keyframes`](/reference/css/keyframes) registers a `@keyframes` rule and returns its content-hashed animation name — `h-kf-{hash}` — so hand-authored animation names cannot collide. Key order never matters: structurally equal definitions derive the same name.
+[`keyframes`](/reference/css/keyframes) registers a `@keyframes` rule and returns its content-hashed animation name (`h-kf-{hash}`), so hand-authored animation names cannot collide. Key order never matters: structurally equal definitions derive the same name.
 
 ```jsx
 import { keyframes, style } from '@hellajs/css';
@@ -165,7 +165,7 @@ const spinner = style({
 
 ## Server Rendering
 
-Every creator registers its rules on both platforms and returns the same value everywhere — the class, the empty string, or the proxy. On the server there is no DOM to inject into; [`cssText`](/reference/css/csstext) collects the registered text (css, style, and keyframes rules in registration order, then the `vars` buckets) for the response's single `<style>` embed. The client mirrors this order — `hella-css` is always inserted before `hella-vars`, regardless of which creator ran first — so same-specificity cross-sheet rules resolve identically on both platforms.
+Every creator registers its rules on both platforms and returns the same value everywhere: the class, the empty string, or the proxy. On the server there is no DOM to inject into; [`cssText`](/reference/css/csstext) collects the registered text (css, style, and keyframes rules in registration order, then the `vars` buckets) for the response's single `<style>` embed. The client mirrors this order: `hella-css` is always inserted before `hella-vars`, regardless of which creator ran first, so same-specificity cross-sheet rules resolve identically on both platforms.
 
 ```js
 import { css, cssText, style, vars } from '@hellajs/css';
@@ -174,15 +174,15 @@ const tokens = vars({ bg: '#ffffff' });
 css({ body: { margin: 0, backgroundColor: tokens.bg } });
 const card = style({ padding: '1rem' }, { label: 'card' });
 
-// In the response handler — one embed per response
+// In the response handler; one embed per response
 const page = `<!DOCTYPE html><html><head><style>${cssText()}</style></head><body>…</body></html>`;
 ```
 
-`cssText()` peeks, never drains — repeated calls return the same string. After hydration the client re-registers the same styles into its own sheets; the duplicated rules are identical and harmless.
+`cssText()` peeks, never drains; repeated calls return the same string. After hydration the client re-registers the same styles into its own sheets; the duplicated rules are identical and harmless.
 
 ## Reactive Class Bindings
 
-The `class` attribute accepts a function or an array — both recalculate when signals change, and falsy entries drop out. This is how hashed classes compose at runtime, alongside [`cx`](/reference/css/cx) and variant recipes.
+The `class` attribute accepts a function or an array: both recalculate when signals change, and falsy entries drop out. This is how hashed classes compose at runtime, alongside [`cx`](/reference/css/cx) and variant recipes.
 
 ```jsx
 const TodoItem = ({ todo }: { todo: () => { done: boolean; text: string; priority: string; editing: boolean } }) => {
@@ -201,7 +201,7 @@ const TodoItem = ({ todo }: { todo: () => { done: boolean; text: string; priorit
 
 ## Web Components and Shadow DOM
 
-The `host` option on [`style`](/reference/css/style), [`css`](/reference/css/css), and [`vars`](/reference/css/vars) redirects the generated `<style>` elements into any parent node — most commonly a shadow root. Each host gets its own sheets: the same styles injected into two hosts produce independent `<style>` elements with separate reference counting, so N web component instances never share or dedup into one sheet.
+The `host` option on [`style`](/reference/css/style), [`css`](/reference/css/css), and [`vars`](/reference/css/vars) redirects the generated `<style>` elements into any parent node, most commonly a shadow root. Each host gets its own sheets: the same styles injected into two hosts produce independent `<style>` elements with separate reference counting, so N web component instances never share or dedup into one sheet.
 
 ```typescript
 import { css, style, vars } from '@hellajs/css';
@@ -209,7 +209,7 @@ import { css, style, vars } from '@hellajs/css';
 const hostElement = document.createElement('my-card');
 const root = hostElement.attachShadow({ mode: 'open' });
 
-// Shadow roots don't match :root — scope vars to the host element
+// Shadow roots don't match :root; scope vars to the host element
 const theme = vars({ accent: '#3b82f6' }, { host: root, scoped: ':host' });
 
 const card = style({ color: theme.accent }, { label: 'card', host: root });
@@ -223,10 +223,10 @@ Styles injected with a host never reach `document.head`. [`removeStyle`](/refere
 
 HellaJS processes CSS objects into rules through deterministic identity generation with built-in caching and memory management.
 
-- **Hash identity**: `style()` derives `h-{label}-{hash}` from the object alone — never the label or the emitted text — so identity is deterministic across platforms and renders. `keyframes()` canonicalizes step key order the same way, so structurally equal definitions share one name
-- **Unified registration**: every creator registers its rule text on both platforms; sheet mutation is the only DOM-gated step (a no-op without a document). `cssText()` reads that registration state — which is what makes server collection and client injection the same flow
+- **Hash identity**: `style()` derives `h-{label}-{hash}` from the object alone (never the label or the emitted text), so identity is deterministic across platforms and renders. `keyframes()` canonicalizes step key order the same way, so structurally equal definitions share one name
+- **Unified registration**: every creator registers its rule text on both platforms; sheet mutation is the only DOM-gated step (a no-op without a document). `cssText()` reads that registration state, which is what makes server collection and client injection the same flow
 - **Reference counting**: each registration increments a per-text count. `removeCss`, `removeVars`, `removeStyle`, and `removeKeyframes` decrement registration state on both platforms. Rules drop from the stylesheet at zero
-- **Lazy recipes**: `cva()` derives each selection's class on first resolution — only the CSS a render actually resolves is ever generated
+- **Lazy recipes**: `cva()` derives each selection's class on first resolution; only the CSS a render actually resolves is ever generated
 
 For manual cleanup, use [`removeStyle`](/reference/css/removestyle) to remove specific styles, [`removeVars`](/reference/css/removevars) to remove specific CSS variable declarations, [`resetCss`](/reference/css/resetcss) to clear all CSS rules, or [`resetVars`](/reference/css/resetvars) to clear all CSS variables and reactive effects.
 

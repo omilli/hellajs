@@ -43,7 +43,7 @@ console.log(result()); // 60 (NOT recomputed because `multiplier` is untracked)
 
 ### In templates
 
-In compiled dom templates (JSX and the build-time `html\`\`` step), expressions that read signals are reactive by default. Use `untracked` to read a signal **once** without subscribing — a one-time snapshot in a template.
+In compiled dom templates (JSX and the build-time `html\`\`` step), expressions that read signals are reactive by default. Use `untracked` to read a signal **once** without subscribing: a one-time snapshot in a template.
 
 ```jsx
 import { signal, untracked } from '@hellajs/core';

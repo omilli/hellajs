@@ -1,6 +1,6 @@
 # SSR
 
-Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr). For URL→view routing on the server — a request URL driving the rendered view, with shared client [`hydrate`](/reference/dom/hydrate) — see [SSR Routing](/learn/patterns/routing-ssr).
+Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr). For URL→view routing on the server (a request URL driving the rendered view, with shared client [`hydrate`](/reference/dom/hydrate)), see [SSR Routing](/learn/patterns/routing-ssr).
 
 ### Plain HTML with Bun.serve
 
@@ -23,7 +23,7 @@ Bun.serve({
 
 ### Render from JSX
 
-`ssr` consumes any [`HellaNode`](/reference/dom) — the [`html`](/reference/dom/html) tag and JSX compile to the same AST. Render a JSX component exactly like an `html` template.
+`ssr` consumes any [`HellaNode`](/reference/dom), the [`html`](/reference/dom/html) tag and JSX compile to the same AST. Render a JSX component exactly like an `html` template.
 
 ```jsx
 import { ssr } from '@hellajs/ssr';
@@ -34,7 +34,7 @@ const body = ssr(<App name="World" />);
 // body: "<div><h1>Hello World</h1></div>"
 ```
 
-The babel/vite/rollup plugin must run on the **server** entry — it is a compile-time transform, so without it JSX is not a `HellaNode`. See [Build Tools Plugins](/plugins).
+The babel/vite/rollup plugin must run on the **server** entry; it is a compile-time transform, so without it JSX is not a `HellaNode`. See [Build Tools Plugins](/plugins).
 
 ### Styled output
 
@@ -137,7 +137,7 @@ hydrate(html`<${App} />`, '#app');
 
 ### Async data fetching
 
-Fetch server-side data directly in the tree with [`ssr.async`](/reference/ssr/ssr#async) — a getter that returns a Promise is awaited.
+Fetch server-side data directly in the tree with [`ssr.async`](/reference/ssr/ssr#async): a getter that returns a Promise is awaited.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -153,7 +153,7 @@ const body = await ssr.async(App(1));
 
 ### Ship server data to the client
 
-Fetch on the server, render it, and send the data with the markup — [`doc`](/reference/ssr/doc)'s `data` option serializes it into a JSON payload script. The client reads it back to seed [`resource`](/reference/resource/resource) with `initialData`, so the server's fetch is the fetch.
+Fetch on the server, render it, and send the data with the markup: [`doc`](/reference/ssr/doc)'s `data` option serializes it into a JSON payload script. The client reads it back to seed [`resource`](/reference/resource/resource) with `initialData`, so the server's fetch is the fetch.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -170,17 +170,17 @@ const page = doc({ mount: '#app', data: { user }, body });
 ```js
 import { resource } from '@hellajs/resource';
 
-// Client: the payload seeds the resource — data() is the server value immediately
+// Client: the payload seeds the resource; data() is the server value immediately
 const { user } = JSON.parse(document.getElementById('hella-data').textContent);
 const userResource = resource('/api/users/1', { initialData: user });
 
 userResource.data();      // the server-fetched value
-userResource.isLoading(); // false — initialData counts as data
+userResource.isLoading(); // false; initialData counts as data
 ```
 
 ### Per-route head entries
 
-Let each route component carry its own `<title>`/`<meta>` instead of assembling the head at the handler — [`ssr.head()`](/reference/ssr/ssr#head) creates the bag, the walk hoists the tree's head tags into it, and [`doc`](/reference/ssr/doc) emits them.
+Let each route component carry its own `<title>`/`<meta>` instead of assembling the head at the handler: [`ssr.head()`](/reference/ssr/ssr#head) creates the bag, the walk hoists the tree's head tags into it, and [`doc`](/reference/ssr/doc) emits them.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -188,7 +188,7 @@ import { ssr, doc } from '@hellajs/ssr';
 
 const Profile = (user) => html`
   <div>
-    <title>${user.name} — Profile</title>
+    <title>${user.name} - Profile</title>
     <meta name="description" content=${user.tagline} />
     <link rel="canonical" href=${`/users/${user.id}`} />
     <h1>${user.name}</h1>
@@ -209,11 +209,11 @@ Bun.serve({
 });
 ```
 
-With [SSR Routing](/learn/patterns/routing-ssr), each route view owns its entries the same way — the request URL picks the view, the view picks the head. Streaming note: under [`ssr.stream`](/reference/ssr/ssr#stream) the bag fills as the walk proceeds, but a streamed document emits its `<head>` up front — pass head entries to `doc` explicitly when streaming.
+With [SSR Routing](/learn/patterns/routing-ssr), each route view owns its entries the same way: the request URL picks the view, the view picks the head. Streaming note: under [`ssr.stream`](/reference/ssr/ssr#stream) the bag fills as the walk proceeds, but a streamed document emits its `<head>` up front; pass head entries to `doc` explicitly when streaming.
 
 ### Streaming responses
 
-Stream HTML to the client as it renders with [`ssr.stream`](/reference/ssr/ssr#stream) — the static shell flushes before async values resolve.
+Stream HTML to the client as it renders with [`ssr.stream`](/reference/ssr/ssr#stream): the static shell flushes before async values resolve.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -234,7 +234,7 @@ Bun.serve({
 });
 ```
 
-Wrap the stream in a full document with [`doc`](/reference/ssr/doc) — the shell (head, `lang`, the `mount` wrapper) flushes first and the closing tags land only after the body closes, so nothing is collected:
+Wrap the stream in a full document with [`doc`](/reference/ssr/doc): the shell (head, `lang`, the `mount` wrapper) flushes first and the closing tags land only after the body closes, so nothing is collected:
 
 ```js
 import { html } from '@hellajs/dom';
@@ -261,7 +261,7 @@ Bun.serve({
 
 ### Out-of-order streaming with Suspense
 
-Wrap async data in [`<Suspense>`](/reference/dom/suspense) so the shell and a `fallback` flush immediately while the children resolve — a slow fetch no longer blocks the rest of the page.
+Wrap async data in [`<Suspense>`](/reference/dom/suspense) so the shell and a `fallback` flush immediately while the children resolve; a slow fetch no longer blocks the rest of the page.
 
 ```js
 import { html, Suspense } from '@hellajs/dom';
@@ -285,15 +285,15 @@ const stream = ssr.stream(html`<${App} />`);
 
 ### Error handling
 
-`ssr`, [`ssr.async`](/reference/ssr/ssr#async), and [`ssr.stream`](/reference/ssr/ssr#stream) propagate render failures instead of swallowing them — a throwing child, function-ref prop getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Handle the failure at the server handler: render a fallback page for the sync/async renderers, or catch at the stream consumer for `ssr.stream`.
+`ssr`, [`ssr.async`](/reference/ssr/ssr#async), and [`ssr.stream`](/reference/ssr/ssr#stream) propagate render failures instead of swallowing them: a throwing child, function-ref prop getter, or `use` callback surfaces to the caller (see [Errors Propagate](/reference/ssr/ssr#errors-propagate)). Handle the failure at the server handler: render a fallback page for the sync/async renderers, or catch at the stream consumer for `ssr.stream`.
 
-Sync/async — wrap the render; on throw, render a fallback page:
+Sync/async: wrap the render; on throw, render a fallback page:
 
 ```js
 import { html } from '@hellajs/dom';
 import { ssr } from '@hellajs/ssr';
 
-// A throwing child getter propagates — ssr has no try/catch, so it surfaces to the caller.
+// A throwing child getter propagates; ssr has no try/catch, so it surfaces to the caller.
 const Profile = (user) => html`<h1>${() => user.name.toUpperCase()}</h1>`;
 
 const ErrorPage = (msg) => html`<div class="error">Render failed: ${msg}</div>`;
@@ -310,9 +310,9 @@ render({ name: 'Ada' });   // "<h1><!--[-->ADA<!--]--></h1>"
 render({});                 // "<div class=\"error\">Render failed: ...</div>"
 ```
 
-The same shape works with [`ssr.async`](/reference/ssr/ssr#async) — `await` the render inside the `try`.
+The same shape works with [`ssr.async`](/reference/ssr/ssr#async); `await` the render inside the `try`.
 
-Stream — a rejected Promise errors the `ReadableStream`, so the consumer's read loop must catch:
+Stream: a rejected Promise errors the `ReadableStream`, so the consumer's read loop must catch:
 
 ```js
 import { html } from '@hellajs/dom';
@@ -330,9 +330,9 @@ async function respond() {
     }
   } catch (err) {
     // The rejected Promise surfaced as a stream error. The static shell may
-    // already have flushed — emit any fallback here.
+    // already have flushed; emit any fallback here.
   }
 }
 ```
 
-Once the static shell has flushed, a late rejection means partial HTML already reached the client — a [`<Suspense>`](/reference/dom/suspense) boundary keeps the failure scoped to one staged region instead of the whole document (see [Out-of-order streaming with Suspense](#out-of-order-streaming-with-suspense)).
+Once the static shell has flushed, a late rejection means partial HTML already reached the client; a [`<Suspense>`](/reference/dom/suspense) boundary keeps the failure scoped to one staged region instead of the whole document (see [Out-of-order streaming with Suspense](#out-of-order-streaming-with-suspense)).

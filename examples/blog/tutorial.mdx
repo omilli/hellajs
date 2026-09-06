@@ -193,7 +193,7 @@ css({
   },
 });
 
-// Shared card styles — composed by PostCard via style(card, ...) and consumed
+// Shared card styles; composed by PostCard via style(card, ...) and consumed
 // directly by UserProfile.
 export const card = style({
   backgroundColor: theme.color.surface,
@@ -222,7 +222,7 @@ export const cardBody = style({
 - **`theme.color.surface`**: Resolves to `var(--color-surface)`. Use it anywhere you'd use a CSS value
 - **Nested objects**: `color: { bg: "..." }` becomes `--color-bg`. Dots become hyphens in the variable name
 - **[`css`](/reference/css/css)`({ body: { ... } })`**: Registers global element selectors
-- **[`style`](/reference/css/style)`({ ... }, { label })`**: Returns a content-hashed class for `class={card}` — `label` embeds a readable segment in the name. Export the classes shared across files (`card`, `cardTitle`, `cardBody`); PostCard composes onto `card` later
+- **[`style`](/reference/css/style)`({ ... }, { label })`**: Returns a content-hashed class for `class={card}`: `label` embeds a readable segment in the name. Export the classes shared across files (`card`, `cardTitle`, `cardBody`); PostCard composes onto `card` later
 
 ## Entry Point
 
@@ -339,7 +339,7 @@ export const Placeholder = ({ message }: { message: string }) => (
 **Code Explanation**
 
 - **`({ message }: { message: string })`**: Component props defined inline with a TypeScript type
-- **[`style`](/reference/css/style)`({ ... }, { label: "placeholder" })`**: Returns the hashed class the markup consumes as `class={placeholder}` — no hand-picked class names to collide
+- **[`style`](/reference/css/style)`({ ... }, { label: "placeholder" })`**: Returns the hashed class the markup consumes as `class={placeholder}`: no hand-picked class names to collide
 
 ### BackLink
 
@@ -525,7 +525,7 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
 - **`value``={value}`**: Two-way binding between the input and the signal. The input value stays in sync with `searchValue`
 - **`on:input={e => value(...)}`**: Delegated input event. Updates the signal on every keystroke
 - **`on:keyup={handleKeyup}`**: Triggers search on Enter or when the input is cleared
-- **Nested selectors**: `"input": { ... }` inside the `searchBar` object generates `.h-search-bar-… input { ... }` — descendants scope under the generated class
+- **Nested selectors**: `"input": { ... }` inside the `searchBar` object generates `.h-search-bar-… input { ... }`: descendants scope under the generated class
 
 ### PostCard
 
@@ -547,7 +547,7 @@ interface PostCardProps {
   onClick?: () => void;
 }
 
-// Compose onto the shared card class — the returned class string carries both
+// Compose onto the shared card class; the returned class string carries both
 // ("h-card-… h-post-card-…"), each side keeping its own rule.
 const postCard = style(card, {
   "&:hover": {
@@ -587,7 +587,7 @@ export const PostCard = ({ post, onClick }: PostCardProps) => (
 **Code Explanation**
 
 - **`onClick?: () => void`**: Optional click handler. When provided, the card shows a pointer cursor and is clickable
-- **[`style`](/reference/css/style)`(card, { ... }, { label: "post-card" })`**: Composes onto the shared card class — the returned string carries both (`"h-card-… h-post-card-…"`), each side keeping its own rule
+- **[`style`](/reference/css/style)`(card, { ... }, { label: "post-card" })`**: Composes onto the shared card class: the returned string carries both (`"h-card-… h-post-card-…"`), each side keeping its own rule
 - **[`navigate`](/reference/router/navigate)**: String interpolation builds URLs like `` `/users/${id}` `` directly. No param substitution needed
 - **`e.stopPropagation()`**: Prevents the user link click from bubbling up to the card's click handler
 - **`import type { Post }`**: Type-only import keeps the interface out of the runtime bundle
@@ -869,7 +869,7 @@ export const UserProfile = () => {
 **Code Explanation**
 
 - **`fetchUser()` and `fetchPosts()`**: Two independent resources keyed by `appStore.userId()`. Both fetch in parallel when the component renders
-- **`<div class="user-profile">` as root**: A semantic wrapper class (no generated rule — the avatar/user-info/user-meta classes carry the styles). Static elements (`BackLink`, heading) sit outside reactive blocks
+- **`<div class="user-profile">` as root**: A semantic wrapper class (no generated rule: the avatar/user-info/user-meta classes carry the styles). Static elements (`BackLink`, heading) sit outside reactive blocks
 - **`const { firstName, ... } = user || {}`**: Destructures with a fallback. The fields are undefined while loading, and the JSX handles that gracefully
 - **`user?.id`**: Checks if the user data is valid. The DummyJSON API returns `{ message: "..." }` for invalid IDs
 - **Separate reactive blocks for user and posts**: Each `{() => {}}` handles one concern independently. User info re-renders without touching the posts list and vice versa
@@ -996,7 +996,7 @@ css({
   },
 });
 
-// Shared card styles — composed by PostCard via style(card, ...) and consumed
+// Shared card styles; composed by PostCard via style(card, ...) and consumed
 // directly by UserProfile.
 export const card = style({
   backgroundColor: theme.color.surface,
@@ -1246,7 +1246,7 @@ interface PostCardProps {
   onClick?: () => void;
 }
 
-// Compose onto the shared card class — the returned class string carries both
+// Compose onto the shared card class; the returned class string carries both
 // ("h-card-… h-post-card-…"), each side keeping its own rule.
 const postCard = style(card, {
   "&:hover": {

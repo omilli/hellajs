@@ -9,7 +9,7 @@ function vars<T extends CSSVarInputObject>(vars: T, options?: VarsOptions): CSSV
 ```
 - `vars`: Object containing CSS variable definitions. Can include nested objects and reactive signals.
 - `options`: Optional configuration for scoping, prefixing, and media conditions
-- **Returns**: A same-shaped proxy of `var()` references, on BOTH platforms — on the client the declarations are injected into the CSSOM; on the server the registration is state-only (collect it with [`cssText`](/reference/css/csstext)).
+- **Returns**: A same-shaped proxy of `var()` references, on BOTH platforms: on the client the declarations are injected into the CSSOM; on the server the registration is state-only (collect it with [`cssText`](/reference/css/csstext)).
 
 ### Options
 
@@ -24,8 +24,8 @@ interface VarsOptions {
 
 - **`scoped`**: CSS selector to limit variable scope (e.g., `.theme-container`, `#app`, `[data-theme]`)
 - **`prefix`**: Prefix added to all CSS variable names for namespace organization
-- **`media`**: Media condition wrapping the declarations, e.g. `(prefers-color-scheme: dark)` — interpolated verbatim into `@media (…)`
-- **`host`**: Parent node the `<style>` element is created in — e.g. a `ShadowRoot`. Defaults to `document.head`. Shadow roots don't match `:root`, so pair `host` with `scoped: ':host'` to apply variables to the host element
+- **`media`**: Media condition wrapping the declarations, e.g. `(prefers-color-scheme: dark)`, interpolated verbatim into `@media (…)`
+- **`host`**: Parent node the `<style>` element is created in; e.g. a `ShadowRoot`. Defaults to `document.head`. Shadow roots don't match `:root`, so pair `host` with `scoped: ':host'` to apply variables to the host element
 
 ### Types
 
@@ -41,8 +41,8 @@ type CSSVars<T> = {
 };
 ```
 
-- **`CSSVarLeaf`**: Accepted leaf value types — `string`, `number`, or a function returning `string | number` (signals, computed, plain getters)
-- **`CSSVarInputObject`**: Plain object whose values are `CSSVarLeaf` or nested `CSSVarInputObject` — used as the input constraint
+- **`CSSVarLeaf`**: Accepted leaf value types: `string`, `number`, or a function returning `string | number` (signals, computed, plain getters)
+- **`CSSVarInputObject`**: Plain object whose values are `CSSVarLeaf` or nested `CSSVarInputObject`, used as the input constraint
 - **`CSSVars<T>`**: Mapped type transforming an input object into a proxy with `var()` reference strings at every leaf
 
 ## Basic Usage
@@ -92,7 +92,7 @@ const buttonStyle = style({
 
 ### Reactive CSS Variables
 
-CSS variables automatically update when signals change. Multiple signal updates inside `batch()` flush together — the sheet updates once when the batch completes:
+CSS variables automatically update when signals change. Multiple signal updates inside `batch()` flush together; the sheet updates once when the batch completes:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -170,7 +170,7 @@ CSS variables automatically optimize performance through:
 
 ### Identical on Both Platforms
 
-On the client, [`vars`](/reference/css/vars) injects custom properties into the CSSOM and returns the `var()` proxy. On the server (no DOM), it returns the **same** proxy and registers the declarations state-only — function leaves resolve once to their initial values, no effects are created, and [`cssText()`](/reference/css/csstext) carries the rule text for the server's `<style>` tag:
+On the client, [`vars`](/reference/css/vars) injects custom properties into the CSSOM and returns the `var()` proxy. On the server (no DOM), it returns the **same** proxy and registers the declarations state-only: function leaves resolve once to their initial values, no effects are created, and [`cssText()`](/reference/css/csstext) carries the rule text for the server's `<style>` tag:
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -198,7 +198,7 @@ vars({
   }
 });
 
-// Second call adds spacing — colors are preserved
+// Second call adds spacing; colors are preserved
 vars({
   spacing: {
     small: '0.5rem',
@@ -211,7 +211,7 @@ vars({
 
 ### Reactive Vars Are Keyed by Reference
 
-A **reactive** vars object (one with any function leaf) is registered by object **reference**, not by value. A second `vars()` call passing the *same* reference returns the same result proxy and bumps its reference count. Passing the same reference a second time with *different* `scoped`/`prefix`/`media` options throws — use a distinct object per scope so each gets its own reactive effect:
+A **reactive** vars object (one with any function leaf) is registered by object **reference**, not by value. A second `vars()` call passing the *same* reference returns the same result proxy and bumps its reference count. Passing the same reference a second time with *different* `scoped`/`prefix`/`media` options throws; use a distinct object per scope so each gets its own reactive effect:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -220,10 +220,10 @@ import { vars } from '@hellajs/css';
 const isDark = signal(false);
 const theme = { bg: () => (isDark() ? '#000' : '#fff') };
 
-vars(theme);                             // ok — :root, reactive
-vars(theme);                             // ok — same options, refCount++
-vars(theme, { scoped: '.dark' });        // throws — same ref, different scope
-vars({ ...theme }, { scoped: '.dark' }); // ok — separate reference, own effect
+vars(theme);                             // ok; :root, reactive
+vars(theme);                             // ok; same options, refCount++
+vars(theme, { scoped: '.dark' });        // throws; same ref, different scope
+vars({ ...theme }, { scoped: '.dark' }); // ok; separate reference, own effect
 ```
 
 Static vars (no function leaves) are instead keyed by a hash of the object and its options, so structurally equal static objects collide regardless of reference identity.
@@ -235,7 +235,7 @@ Control where CSS variables are applied and how they're named:
 ```jsx
 import { vars } from '@hellajs/css';
 
-// Scoped to a specific selector — variables only apply within .theme-container
+// Scoped to a specific selector; variables only apply within .theme-container
 const themeVars = vars({
   primary: '#3b82f6',
   secondary: '#64748b'
@@ -270,7 +270,7 @@ const themed = vars({
 
 ### Shadow DOM Hosts
 
-`host` redirects the variables into a shadow root. The default `:root` scope doesn't match inside one — `scoped: ':host'` targets the host element itself:
+`host` redirects the variables into a shadow root. The default `:root` scope doesn't match inside one; `scoped: ':host'` targets the host element itself:
 
 ```typescript
 import { vars } from '@hellajs/css';
@@ -290,7 +290,7 @@ Sheets are per host: the same vars injected into two hosts create independent ru
 
 ### Media-Scoped Variables
 
-The `media` option places the declarations under a `@media` at-rule — variables that follow the environment instead of JavaScript state. The canonical case is system-driven dark mode with [`prefers-color-scheme`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme): declare light values unscoped, dark values under the media condition, and the OS setting picks the winner with zero reactivity:
+The `media` option places the declarations under a `@media` at-rule: variables that follow the environment instead of JavaScript state. The canonical case is system-driven dark mode with [`prefers-color-scheme`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme): declare light values unscoped, dark values under the media condition, and the OS setting picks the winner with zero reactivity:
 
 ```jsx
 import { vars } from '@hellajs/css';
@@ -303,7 +303,7 @@ vars({
   }
 });
 
-// Dark values — applied only when the OS prefers dark
+// Dark values; applied only when the OS prefers dark
 vars(
   { colors: { background: '#1a1a1a', text: '#e5e7eb' } },
   { media: '(prefers-color-scheme: dark)' }
@@ -314,7 +314,7 @@ vars(
 // @media (prefers-color-scheme: dark){:root{--colors-background:#1a1a1a;--colors-text:#e5e7eb}}
 ```
 
-`media` composes with `scoped` and `prefix`, and the same scope under different conditions coexists as separate rules — each `(scope, media)` pair is its own bucket. It interpolates verbatim (no validation), matching `scoped`'s permissive contract. For JS-driven theming (a toggle signal instead of the OS), see [Reactive CSS Variables](#reactive-css-variables) — the two modes combine freely.
+`media` composes with `scoped` and `prefix`, and the same scope under different conditions coexists as separate rules: each `(scope, media)` pair is its own bucket. It interpolates verbatim (no validation), matching `scoped`'s permissive contract. For JS-driven theming (a toggle signal instead of the OS), see [Reactive CSS Variables](#reactive-css-variables); the two modes combine freely.
 
 ### Accepted Value Types
 
@@ -327,7 +327,7 @@ type CSSVarLeaf = string | number | ((...args: never[]) => string | number);
 Accepted leaf values:
 - **`string`**: Static text values like `'#ff0000'` or `'1rem'`
 - **`number`**: Numeric values like `16` or `0.5`
-- **`(...args: never[]) => string | number`**: Functions returning `string | number` — includes signals (`Signal<string>`), computed values, and plain getter functions
+- **`(...args: never[]) => string | number`**: Functions returning `string | number`: includes signals (`Signal<string>`), computed values, and plain getter functions
 
 ❌ **Rejected at compile time:**
 - **`boolean`**: `vars({ flag: true })` is rejected
@@ -338,7 +338,7 @@ Accepted leaf values:
 ```typescript
 const isActive = signal(true);
 
-// ❌ Rejected — function returning boolean
+// ❌ Rejected; function returning boolean
 vars({ flag: isActive });
 
 // ✅ Explicit conversion
@@ -372,7 +372,7 @@ const theme = vars({
 
 **Breaking type-level change from v1.x:** The `vars` parameter type was tightened from `Record<string, unknown>` to `CSSVarInputObject`. Callers passing `boolean`, `Date`, class instances, or functions returning `boolean`/`object` will now get compile-time errors where they compiled before.
 
-- Runtime behavior is unchanged — `vars` calls `String()` on values, so `true` became `"true"` at runtime
+- Runtime behavior is unchanged; `vars` calls `String()` on values, so `true` became `"true"` at runtime
 - Fix: Convert booleans explicitly with `() => flag() ? '1' : '0'`
 - Fix: Replace class instances with plain values before passing to `vars`
 

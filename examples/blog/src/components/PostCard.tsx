@@ -10,7 +10,7 @@ interface PostCardProps {
   onClick?: () => void;
 }
 
-// Compose onto the shared card class — the returned class string carries both
+// Compose onto the shared card class; the returned class string carries both
 // ("h-card-… h-post-card-…"), each side keeping its own rule.
 const postCard = style(card, {
   "&:hover": {

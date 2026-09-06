@@ -3,7 +3,7 @@ import { App, styles } from './app.js';
 
 
 // Bundle the client once at startup. Bun's native bundler resolves the bare
-// `@hellajs/*` specifiers the browser can't — no separate build step, no dist/.
+// `@hellajs/*` specifiers the browser can't; no separate build step, no dist/.
 const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
 if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
 const client = await build.outputs[0].text();

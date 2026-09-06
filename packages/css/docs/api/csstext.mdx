@@ -29,22 +29,22 @@ const head = `<style>${cssText()}</style>`;
 
 ### A Peek, Never a Drain
 
-`cssText()` reads the registration state without consuming it — repeated calls return the same string until [`resetCss`](/reference/css/resetcss) / [`resetVars`](/reference/css/resetvars) clear it or [`removeStyle`](/reference/css/removestyle) / [`removeCss`](/reference/css/removecss) / [`removeKeyframes`](/reference/css/removekeyframes) / [`removeVars`](/reference/css/removevars) drop a registration to zero.
+`cssText()` reads the registration state without consuming it; repeated calls return the same string until [`resetCss`](/reference/css/resetcss) / [`resetVars`](/reference/css/resetvars) clear it or [`removeStyle`](/reference/css/removestyle) / [`removeCss`](/reference/css/removecss) / [`removeKeyframes`](/reference/css/removekeyframes) / [`removeVars`](/reference/css/removevars) drop a registration to zero.
 
 ### Identical on Both Platforms
 
-Registration runs without a DOM, so the collector works the same on client and server. On the server it is the only way to obtain the generated CSS — [`css`](/reference/css/css), [`style`](/reference/css/style), and [`keyframes`](/reference/css/keyframes) return `""` / the class name / the animation name on both platforms, and [`vars`](/reference/css/vars) returns its `var()` proxy everywhere.
+Registration runs without a DOM, so the collector works the same on client and server. On the server it is the only way to obtain the generated CSS: [`css`](/reference/css/css), [`style`](/reference/css/style), and [`keyframes`](/reference/css/keyframes) return `""` / the class name / the animation name on both platforms, and [`vars`](/reference/css/vars) returns its `var()` proxy everywhere.
 
 ### Vars Append After the CSS-Side Text
 
-Two style elements exist on the client — `hella-css` for rules, `hella-vars` for custom properties — and the collector mirrors that split: css-side registrations (`css`, `style`, `keyframes`) join in call order, then the vars contribution appends (each scope+media bucket's rule, in registration order, media-wrapped when the `media` option was set).
+Two style elements exist on the client (`hella-css` for rules, `hella-vars` for custom properties), and the collector mirrors that split: css-side registrations (`css`, `style`, `keyframes`) join in call order, then the vars contribution appends (each scope+media bucket's rule, in registration order, media-wrapped when the `media` option was set).
 
 ### Host-Qualified Entries Are Excluded
 
-Styles registered with a `host` (e.g. a shadow root) live in that host's own `<style>` elements, not `document.head` — `cssText()` never includes them, css side and vars side alike. The default SSR flow has no hosts, so the collector covers everything it needs.
+Styles registered with a `host` (e.g. a shadow root) live in that host's own `<style>` elements, not `document.head`; `cssText()` never includes them, css side and vars side alike. The default SSR flow has no hosts, so the collector covers everything it needs.
 
 ## Important Considerations
 
 ### Client Hydration Re-Injects
 
-Embedding `cssText()` in server HTML and letting the client register the same styles on hydration produces duplicate rules in the DOM — accepted behavior. The class names agree (content-hashed), so styling is correct; the duplication is cosmetic and bounded by the number of styles.
+Embedding `cssText()` in server HTML and letting the client register the same styles on hydration produces duplicate rules in the DOM: accepted behavior. The class names agree (content-hashed), so styling is correct; the duplication is cosmetic and bounded by the number of styles.

@@ -1,10 +1,10 @@
 # Server-Side Rendering
 
-Render HellaNode templates to HTML strings on the server, then enhance them on the client. `@hellajs/ssr` is a pure stringifier — see [`ssr`](/reference/ssr/ssr).
+Render HellaNode templates to HTML strings on the server, then enhance them on the client. `@hellajs/ssr` is a pure stringifier; see [`ssr`](/reference/ssr/ssr).
 
 ## The String-Renderer Model
 
-`ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region — a reactive child, a control-flow component, or a nested fragment — is wrapped in `<!--[-->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
+`ssr` walks a [`HellaNode`](/reference/dom) AST and emits an HTML string. It mirrors the attribute rules of dom's internal `renderProp` (falsy attributes omitted, boolean attributes bare, arrays space-joined) and escapes interpolated text and attribute values. Static template text is emitted raw; resolved interpolation values are escaped. Every dynamic region (a reactive child, a control-flow component, or a nested fragment) is wrapped in `<!--[-->…<!--]-->` markers that [`hydrate`](/reference/dom/hydrate) reads; static elements and text are unwrapped (matched by position), keeping the payload minimal.
 
 ```js
 import { signal } from '@hellajs/core';
@@ -21,15 +21,15 @@ Because no DOM is involved, `ssr` runs in Bun, Node, Deno, and workers alike.
 
 ## Zero Runtime Dependencies
 
-`ssr` imports nothing at runtime from any `@hellajs/*` package — the [`HellaNode`](/reference/dom) import is type-only and erased. This keeps the server bundle minimal and lets `ssr` operate whether or not the other packages are installed.
+`ssr` imports nothing at runtime from any `@hellajs/*` package; the [`HellaNode`](/reference/dom) import is type-only and erased. This keeps the server bundle minimal and lets `ssr` operate whether or not the other packages are installed.
 
 ## Control Flow on the Server
 
-[`ForEach`](/reference/dom/foreach) renders each item in array order. [`Transition`](/reference/dom/transition) renders its child when `show` is truthy, nothing otherwise. [`Lazy`](/reference/dom/lazy) renders its `loading` fallback without calling the loader — the async members await it and render the loaded component. [`Portal`](/reference/dom/portal) renders nothing — there is no document to teleport into. Each attaches a descriptor the stringifier reads, so `ssr` needs no DOM to interpret them.
+[`ForEach`](/reference/dom/foreach) renders each item in array order. [`Transition`](/reference/dom/transition) renders its child when `show` is truthy, nothing otherwise. [`Lazy`](/reference/dom/lazy) renders its `loading` fallback without calling the loader; the async members await it and render the loaded component. [`Portal`](/reference/dom/portal) renders nothing: there is no document to teleport into. Each attaches a descriptor the stringifier reads, so `ssr` needs no DOM to interpret them.
 
 ## Raw HTML Children
 
-[`raw`](/reference/dom/raw) wraps an HTML string as an opaque child — `ssr` emits it verbatim (unescaped), marker-wrapped, and `hydrate` adopts the region without binding anything inside. Use it to embed pre-rendered HTML (e.g. a meta-framework's slot output); never pass unsanitized user input (XSS).
+[`raw`](/reference/dom/raw) wraps an HTML string as an opaque child: `ssr` emits it verbatim (unescaped), marker-wrapped, and `hydrate` adopts the region without binding anything inside. Use it to embed pre-rendered HTML (e.g. a meta-framework's slot output); never pass unsanitized user input (XSS).
 
 ```js
 import { html, raw } from '@hellajs/dom';
@@ -61,19 +61,19 @@ const body = ssr(html`<${App} />`);
 hydrate(html`<${App} />`, '#app');
 ```
 
-Server-fetched values ride along via [`doc`](/reference/ssr/doc)'s `data` option — the data ships as a JSON payload the client reads in one line, seeding a [`resource`](/reference/resource/resource) with `initialData`:
+Server-fetched values ride along via [`doc`](/reference/ssr/doc)'s `data` option: the data ships as a JSON payload the client reads in one line, seeding a [`resource`](/reference/resource/resource) with `initialData`:
 
 ```js
-// Client — recover the server's data
+// Client; recover the server's data
 const { user } = JSON.parse(document.getElementById('hella-data').textContent);
 ```
 
-⚠️ A full-tree [`mount`](/reference/dom/mount) over the server-rendered container wipes it — `mount` replaces the container's children and rebuilds. Use `hydrate`, the enhancement modes above, or reserve full re-mount for throwaway SEO-only content.
+⚠️ A full-tree [`mount`](/reference/dom/mount) over the server-rendered container wipes it; `mount` replaces the container's children and rebuilds. Use `hydrate`, the enhancement modes above, or reserve full re-mount for throwaway SEO-only content.
 
 ## Synchronous Render
 
 `ssr` walks the tree once. Reactive values are read at their current value with no effect scheduling or batching. Resolve server-side data before building the tree.
 
-For data that must be fetched during render, [`ssr.async`](/reference/ssr/ssr#async) is the async counterpart — it awaits any Promise a resolved value returns, so a getter can fetch directly. Output and markers are identical to `ssr`; [`hydrate`](/reference/dom/hydrate) consumes either unchanged.
+For data that must be fetched during render, [`ssr.async`](/reference/ssr/ssr#async) is the async counterpart: it awaits any Promise a resolved value returns, so a getter can fetch directly. Output and markers are identical to `ssr`; [`hydrate`](/reference/dom/hydrate) consumes either unchanged.
 
-[`ssr.stream`](/reference/ssr/ssr#stream) streams the same walk as `ReadableStream` chunks, flushing the static prefix before each awaited Promise (progressive paint), and [`doc`](/reference/ssr/doc) wraps that stream in a full document — head, `lang`, and a mount-point wrapper — without collecting it.
+[`ssr.stream`](/reference/ssr/ssr#stream) streams the same walk as `ReadableStream` chunks, flushing the static prefix before each awaited Promise (progressive paint), and [`doc`](/reference/ssr/doc) wraps that stream in a full document (head, `lang`, and a mount-point wrapper) without collecting it.

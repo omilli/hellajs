@@ -95,7 +95,7 @@ router({
 });
 ```
 
-The login handler reads the encoded target from `query.next` and navigates back after sign-in. Zero-argument global hooks keep working — the paths are additional arguments, ignored by hooks that don't declare them.
+The login handler reads the encoded target from `query.next` and navigates back after sign-in. Zero-argument global hooks keep working: the paths are additional arguments, ignored by hooks that don't declare them.
 
 See the [`router`](/reference/router/router) reference for all hook configuration options.
 
@@ -105,11 +105,11 @@ See the [`router`](/reference/router/router) reference for all hook configuratio
 
 | Return value | Behavior |
 |---|---|
-| `void` / `true` / `undefined` | Proceed — navigation continues normally |
-| `false` | Cancel — navigation is blocked, URL stays unchanged |
-| `string` | Redirect — navigates to the returned path |
-| `throw` | Cancel — navigation is blocked, error logged |
-| `Promise` | Blocks on the client — navigation defers until resolution, which is interpreted as the verdict; proceeds + logs on the server |
+| `void` / `true` / `undefined` | Proceed: navigation continues normally |
+| `false` | Cancel: navigation is blocked, URL stays unchanged |
+| `string` | Redirect: navigates to the returned path |
+| `throw` | Cancel: navigation is blocked, error logged |
+| `Promise` | Blocks on the client: navigation defers until resolution, which is interpreted as the verdict; proceeds + logs on the server |
 
 Basic guard that blocks unauthenticated access:
 
@@ -155,7 +155,7 @@ router({
 });
 ```
 
-Async `before` hooks block. A `Promise`-returning guard defers the commit — [`route`](/reference/router/route)`().pending` is `true` while the previous match stays current, and the resolution is interpreted as the verdict (`false` cancels, a non-empty string redirects, anything else proceeds; a rejection cancels and logs). Async auth is just an async guard:
+Async `before` hooks block. A `Promise`-returning guard defers the commit: [`route`](/reference/router/route)`().pending` is `true` while the previous match stays current, and the resolution is interpreted as the verdict (`false` cancels, a non-empty string redirects, anything else proceeds; a rejection cancels and logs). Async auth is just an async guard:
 
 ```jsx
 const checkAuth = async () => {
@@ -174,7 +174,7 @@ router({
 });
 ```
 
-No handler-side revalidation is needed — the handler runs only after the guard passes. On the server (`url` mode) an async guard cannot block the synchronous render: navigation proceeds and only a rejection is logged.
+No handler-side revalidation is needed: the handler runs only after the guard passes. On the server (`url` mode) an async guard cannot block the synchronous render: navigation proceeds and only a rejection is logged.
 
 On popstate/hashchange (browser back/forward), a cancelled guard restores the previous URL via `replaceState`, keeping the address bar consistent.
 
@@ -209,7 +209,7 @@ If `requireAuth` returns `false`, the child's `before` never runs. If it passes 
 
 ## Leave Guards
 
-`leave` hooks guard the route being *departed* — the unsaved-form flow every app needs. They run on every navigation away from a matched route (browser back/forward included), before any incoming `before` hook: the global `hooks.leave(to, from)` first, then the route chain's `leave` hooks child→parent. Verdicts share the `before` contract from the table above — `false` cancels, a non-empty string redirects, a throw cancels and logs, and a `Promise` blocks on the client (deferring the commit until its resolution; proceeds + logs on the server).
+`leave` hooks guard the route being *departed*, the unsaved-form flow every app needs. They run on every navigation away from a matched route (browser back/forward included), before any incoming `before` hook: the global `hooks.leave(to, from)` first, then the route chain's `leave` hooks child→parent. Verdicts share the `before` contract from the table above: `false` cancels, a non-empty string redirects, a throw cancels and logs, and a `Promise` blocks on the client (deferring the commit until its resolution; proceeds + logs on the server).
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
@@ -233,11 +233,11 @@ router({
 navigate('/editor');
 dirty(true);
 
-navigate('/dashboard'); // cancelled — unsaved changes, URL and route unchanged
-navigate('/dashboard', { force: true }); // override — leave guards skipped
+navigate('/dashboard'); // cancelled; unsaved changes, URL and route unchanged
+navigate('/dashboard', { force: true }); // override; leave guards skipped
 ```
 
-[`navigate()`](/reference/router/navigate) accepts `{ force: true }` to skip leave guards — the override for a "discard changes?" confirmation. Force skips only leave guards; incoming `before` guards on the target still run, so target auth checks are never bypassable.
+[`navigate()`](/reference/router/navigate) accepts `{ force: true }` to skip leave guards, the override for a "discard changes?" confirmation. Force skips only leave guards; incoming `before` guards on the target still run, so target auth checks are never bypassable.
 
 Leave guards never fire on same-path navigation (a query-only change stays on the route), on the initial resolution, or when the current position came from a `notFound` landing. A cancelled back/forward restores the previous URL via `replaceState`, same as a cancelled `before`.
 
@@ -281,9 +281,9 @@ router({
 });
 ```
 
-`from` entries match as route patterns — `:param` captures a single segment, `*` captures the rest — with the query string ignored. Captured values replace matching tokens in `to`; unmatched tokens are stripped. The first matching entry in array order wins.
+`from` entries match as route patterns (`:param` captures a single segment, `*` captures the rest), with the query string ignored. Captured values replace matching tokens in `to`; unmatched tokens are stripped. The first matching entry in array order wins.
 
-Redirect chains stop after 20 hops — a cyclic configuration logs `[router] redirect loop detected` and cancels the navigation (URL unchanged) instead of overflowing the stack.
+Redirect chains stop after 20 hops: a cyclic configuration logs `[router] redirect loop detected` and cancels the navigation (URL unchanged) instead of overflowing the stack.
 
 See [`router`](/reference/router/router) for the redirect configuration options, and [routing](/learn/concepts/routing) for the core routing model, parameter inheritance, and nested routes.
 
@@ -345,7 +345,7 @@ console.log(route().meta); // { section: 'admin', title: 'Users' }
 
 Without `inheritMeta`, only the leaf route's meta is exposed. See [routing concepts](/learn/concepts/routing#route-signal) for more on meta inheritance.
 
-Each route can override the global flag with its own `inheritMeta` field. A route's flag controls whether *it* inherits from its parent — `false` makes the route a boundary that ignores ancestors above, starting the cascade fresh from itself. The boundary route's own meta still flows down to descendants.
+Each route can override the global flag with its own `inheritMeta` field. A route's flag controls whether *it* inherits from its parent: `false` makes the route a boundary that ignores ancestors above, starting the cascade fresh from itself. The boundary route's own meta still flows down to descendants.
 
 ```typescript
 import { router, route, navigate } from '@hellajs/router';
@@ -372,7 +372,7 @@ router({
 });
 
 navigate('/admin/section/page');
-console.log(route().meta); // { section: 'a', title: 'Page' } — root omitted, section flows down
+console.log(route().meta); // { section: 'a', title: 'Page' }; root omitted, section flows down
 ```
 
 Set `inheritMeta: true` on a route to opt it into inheritance when the global flag is `false`.

@@ -9,7 +9,7 @@ function removeCss(obj: CSSObject, options?: CSSOptions): void
 ```
 - `obj`: CSS object to remove (structurally identical objects match)
 - `options`: Optional configuration object (must match the options used in `css()`)
-  - `host`: Parent node the style was injected into — a removal without the same `host` targets a different entry
+  - `host`: Parent node the style was injected into; a removal without the same `host` targets a different entry
 - **Returns**: `void`
 
 ## Basic Usage
@@ -135,7 +135,7 @@ applyTheme({ background: '#000', text: '#fff' });
 
 ### Exact Matching Required
 
-`removeCss()` re-derives the CSS text from `(obj, options)` using the same deterministic transform as [`css`](/reference/css/css) — no hash key or cached reference needed. Structurally identical objects produce the same text and match:
+`removeCss()` re-derives the CSS text from `(obj, options)` using the same deterministic transform as [`css`](/reference/css/css); no hash key or cached reference needed. Structurally identical objects produce the same text and match:
 
 ```jsx
 // ✅ Works - structurally identical objects match
@@ -154,15 +154,15 @@ removeCss({ body: { margin: '1rem' } }); // Different CSS text
 
 ### Function Values Throw
 
-`removeCss()` re-derives the CSS text through the same transform as [`css`](/reference/css/css), so an object containing a function property value throws here too — the same error both entry points report. Build reactive values with [`vars`](/reference/css/vars) instead:
+`removeCss()` re-derives the CSS text through the same transform as [`css`](/reference/css/css), so an object containing a function property value throws here too, the same error both entry points report. Build reactive values with [`vars`](/reference/css/vars) instead:
 
 ```jsx
-// ❌ Throws — functions are not CSS values in css() or removeCss()
+// ❌ Throws; functions are not CSS values in css() or removeCss()
 try {
   removeCss({ padding: () => '1rem' });
 } catch {}
-// Error: [css] function values are not supported in css objects —
-//        use vars() for reactive values, key: padding
+// Error: [css] function values are not supported in css objects
+//        (message continues: use vars() for reactive values, key: padding)
 ```
 
 ### Use Cases

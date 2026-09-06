@@ -4,7 +4,7 @@ Short patterns for common tasks using [`@hellajs/css`](/reference/css).
 
 ### Variant Recipes
 
-Use [`cva`](/reference/css/cva) to drive conditional classes from typed variant props — defaults, compounds, and one class per selection — and join extra fragments with [`cx`](/reference/css/cx).
+Use [`cva`](/reference/css/cva) to drive conditional classes from typed variant props (defaults, compounds, and one class per selection), and join extra fragments with [`cx`](/reference/css/cx).
 
 ```jsx
 import { cx, cva } from '@hellajs/css';
@@ -24,13 +24,13 @@ const button = cva({
   ]
 });
 
-// Responsive: sm below 768px, lg from md up — pure CSS, no listeners
+// Responsive: sm below 768px, lg from md up; pure CSS, no listeners
 <button class={cx(button({ tone: 'danger', size: { initial: 'sm', md: 'lg' } }), 'w-full')}>Delete</button>
 ```
 
 ### Scoped Component Styles
 
-Use [`style`](/reference/css/style) to create isolated styles with nested selectors and pseudo-states. The returned class is content-hashed — pass it straight to `class`.
+Use [`style`](/reference/css/style) to create isolated styles with nested selectors and pseudo-states. The returned class is content-hashed, pass it straight to `class`.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -81,7 +81,7 @@ const box = style({
 
 ### Multi-Scope Theming
 
-Register light and dark token sets under different scopes and let the cascade pick the winner — one attribute write re-themes every consumer, no per-token effects.
+Register light and dark token sets under different scopes and let the cascade pick the winner: one attribute write re-themes every consumer, no per-token effects.
 
 ```jsx
 import { effect, signal } from '@hellajs/core';
@@ -98,13 +98,13 @@ vars(
   { scoped: '[data-theme="dark"]' }
 );
 
-// Flip the root attribute — every var() consumer follows
+// Flip the root attribute; every var() consumer follows
 effect(() => {
   document.documentElement.setAttribute('data-theme', mode());
 });
 ```
 
-For a theme that follows the OS setting instead of app state, pass `media` to [`vars`](/reference/css/vars) — the declarations live under `@media (prefers-color-scheme: dark)` with no signals, and the browser picks the winner:
+For a theme that follows the OS setting instead of app state, pass `media` to [`vars`](/reference/css/vars): the declarations live under `@media (prefers-color-scheme: dark)` with no signals, and the browser picks the winner:
 
 ```jsx
 import { vars } from '@hellajs/css';
@@ -115,7 +115,7 @@ vars({
   text: '#111827'
 });
 
-// Dark values when the OS prefers dark — pure CSS, no JS state
+// Dark values when the OS prefers dark; pure CSS, no JS state
 vars(
   { bg: '#1a1a1a', text: '#e5e7eb' },
   { media: '(prefers-color-scheme: dark)' }
@@ -124,7 +124,7 @@ vars(
 
 ### Responsive Styles
 
-Use `@media` queries inside [`style`](/reference/css/style) — the condition inherits the generated class.
+Use `@media` queries inside [`style`](/reference/css/style); the condition inherits the generated class.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -145,7 +145,7 @@ const grid = style({
 
 ### Keyframe Animations
 
-Use [`keyframes`](/reference/css/keyframes) for animation definitions — the returned name is content-hashed, so it cannot collide with another animation.
+Use [`keyframes`](/reference/css/keyframes) for animation definitions; the returned name is content-hashed, so it cannot collide with another animation.
 
 ```jsx
 import { keyframes, style } from '@hellajs/css';
@@ -167,7 +167,7 @@ const spinner = style({
 
 ### Conditional Styles
 
-Use `undefined` to omit properties from the output. Style objects are static — resolve conditions before calling.
+Use `undefined` to omit properties from the output. Style objects are static; resolve conditions before calling.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -186,7 +186,7 @@ For classes that change at runtime, resolve a [`cva`](/reference/css/cva) recipe
 
 ### Style Cleanup
 
-Use [`removeStyle`](/reference/css/removestyle) to clean up styles when they are no longer needed. Pass the same object and options used to create the style. Rules are reference-counted — removing a DOM node that used the class does not decrement the count, so call `removeStyle` for styles tied to a component's lifetime, and reserve [`resetCss`](/reference/css/resetcss) for app-level teardown.
+Use [`removeStyle`](/reference/css/removestyle) to clean up styles when they are no longer needed. Pass the same object and options used to create the style. Rules are reference-counted; removing a DOM node that used the class does not decrement the count, so call `removeStyle` for styles tied to a component's lifetime, and reserve [`resetCss`](/reference/css/resetcss) for app-level teardown.
 
 ```jsx
 import { removeStyle, style } from '@hellajs/css';
@@ -211,7 +211,7 @@ const tokens = { primary: color };
 vars(tokens);  // refCount = 1
 removeVars(tokens);  // refCount = 0, effect disposed, vars removed
 
-color('blue');  // No longer tracked — no stylesheet update
+color('blue');  // No longer tracked; no stylesheet update
 ```
 
 ### SSR Critical CSS
@@ -221,13 +221,13 @@ Every creator registers on both platforms; on the server, collect everything reg
 ```js
 import { css, cssText, style, vars } from '@hellajs/css';
 
-// Module scope — registers on the server too
+// Module scope; registers on the server too
 const tokens = vars({ accent: '#3b82f6' });
 css({ body: { margin: 0 } });
 const card = style({ padding: '1rem', color: tokens.accent }, { label: 'card' });
 
-// Per response — one embed collects the css, style, and vars rules
+// Per response; one embed collects the css, style, and vars rules
 const page = `<!DOCTYPE html><html><head><style>${cssText()}</style></head><body>…</body></html>`;
 ```
 
-`cssText()` peeks, never drains — repeated calls return the same string, and the client re-registers the same rules on hydration.
+`cssText()` peeks, never drains; repeated calls return the same string, and the client re-registers the same rules on hydration.

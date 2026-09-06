@@ -192,7 +192,7 @@ console.log(display()); // "Count: 1"
 
 ### Custom Equality
 
-Both [`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) accept an optional `{ equals }` comparator that replaces the default reference check. An equal value skips the update entirely — the old reference is kept and nothing propagates.
+Both [`signal`](/reference/core/signal) and [`computed`](/reference/core/computed) accept an optional `{ equals }` comparator that replaces the default reference check. An equal value skips the update entirely; the old reference is kept and nothing propagates.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
@@ -206,7 +206,7 @@ effect(() => console.log('Todos changed:', todos()));
 todos([{ id: 1 }]); // Content-equal by id: effect does not re-run
 ```
 
-The default equality already treats `NaN` as equal to itself, so repeated `NaN` writes never re-run effects — reach for `equals` when comparing content, or `Object.is` to also distinguish `+0` from `-0`.
+The default equality already treats `NaN` as equal to itself, so repeated `NaN` writes never re-run effects; reach for `equals` when comparing content, or `Object.is` to also distinguish `+0` from `-0`.
 
 ### Untracked Reads
 
@@ -230,7 +230,7 @@ multiplier(20);
 
 ### Error Handling
 
-Errors thrown inside an effect propagate to the signal setter that triggered them and abort the current flush — remaining queued effects are skipped, and the next signal change starts a fresh flush with no corrupted state. Catching errors with `try/catch` inside the effect preserves dependency tracking. See [error propagation](/reference/core/effect#error-propagation) for the effect rules and [error recovery](/reference/core/computed#error-recovery) for computed behavior.
+Errors thrown inside an effect propagate to the signal setter that triggered them and abort the current flush; remaining queued effects are skipped, and the next signal change starts a fresh flush with no corrupted state. Catching errors with `try/catch` inside the effect preserves dependency tracking. See [error propagation](/reference/core/effect#error-propagation) for the effect rules and [error recovery](/reference/core/computed#error-recovery) for computed behavior.
 
 ### Previous Computed Value
 
@@ -238,7 +238,7 @@ A [`computed`](/reference/core/computed) function receives the previously comput
 
 ### Lifecycle Management
 
-Use [`scope`](/reference/core/scope) to group multiple effects and clean them up together — one `cleanup()` stops every effect created inside the scope. See the [`scope`](/reference/core/scope) reference for nested scopes, lazy scopes, and cleanup edge cases.
+Use [`scope`](/reference/core/scope) to group multiple effects and clean them up together: one `cleanup()` stops every effect created inside the scope. See the [`scope`](/reference/core/scope) reference for nested scopes, lazy scopes, and cleanup edge cases.
 
 <details>
 <summary>Internal Mechanics</summary>

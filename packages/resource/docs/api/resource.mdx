@@ -54,7 +54,7 @@ interface ResourceOptions<T, K, TTransformed = T> {
   enabled?: boolean | (() => boolean);
   /** Auto-refetch when key dependencies change (default: false). Skips fetch while key resolves to null or undefined. */
   refetchOnKeyChange?: boolean;
-  /** Keep the previous key's data visible while a key-change refetch is in flight (default: true). When false, a key change clears data — isLoading() true, data() undefined, status() 'loading' — until the new key's fetch settles; initialData is not re-applied. */
+  /** Keep the previous key's data visible while a key-change refetch is in flight (default: true). When false, a key change clears data (isLoading() true, data() undefined, status() 'loading') until the new key's fetch settles; initialData is not re-applied. */
   keepPreviousData?: boolean;
   /** Initial data before first request completes */
   initialData?: T;
@@ -82,21 +82,21 @@ interface ResourceOptions<T, K, TTransformed = T> {
   onSuccess?: (data: T) => void;
   /** Callback when request fails */
   onError?: (err: unknown) => void;
-  /** Refetch interval in ms, false to disable, or function returning interval based on data — works standalone (arms when enabled first evaluates true, including a later flip from false; key changes never reset the cadence; reset() re-arms, abort() does not) */
+  /** Refetch interval in ms, false to disable, or function returning interval based on data; works standalone (arms when enabled first evaluates true, including a later flip from false; key changes never reset the cadence; reset() re-arms, abort() does not) */
   refetchInterval?: number | false | ((data: TTransformed | undefined) => number | false);
   /** Continue polling when tab is hidden (default: false) */
   refetchIntervalInBackground?: boolean;
-  /** Refetch on tab return or window focus — both visibilitychange and focus events (default: false) */
+  /** Refetch on tab return or window focus; both visibilitychange and focus events (default: false) */
   refetchOnWindowFocus?: boolean;
   /** Refetch when browser reconnects after going offline (default: false) */
   refetchOnReconnect?: boolean;
-  /** Defer fetches while the browser is offline — the deferred fetch resumes on reconnect with its original force flag, reflected by isPaused() (default: false). Mutations are not paused. */
+  /** Defer fetches while the browser is offline; the deferred fetch resumes on reconnect with its original force flag, reflected by isPaused() (default: false). Mutations are not paused. */
   pauseWhenOffline?: boolean;
   /** Hook for optimistic updates before mutation */
   onMutate?: (variables: unknown) => Promise<unknown> | unknown;
   /** Hook after mutation completion (success or error) */
   onSettled?: (data?: T, error?: unknown, variables?: unknown, context?: unknown) => Promise<void> | void;
-  /** After a successful mutation, invalidate matching cache entries: strings dispatch to `invalidateByPrefix`, RegExp to `invalidateByPattern`. Deletes cache entries only — mounted resources do not auto-refetch. No invalidation on error or abort. */
+  /** After a successful mutation, invalidate matching cache entries: strings dispatch to `invalidateByPrefix`, RegExp to `invalidateByPattern`. Deletes cache entries only; mounted resources do not auto-refetch. No invalidation on error or abort. */
   invalidates?: Array<string | RegExp>;
 }
 ```
@@ -171,25 +171,25 @@ console.log(userResource.isIdle()); // false
 
 ### `isPaused`
 
-Reactive signal indicating whether a fetch is deferred because the browser is offline. Requires the `pauseWhenOffline` option — without it, offline fetches attempt the network and fail into `error()` as usual.
+Reactive signal indicating whether a fetch is deferred because the browser is offline. Requires the `pauseWhenOffline` option; without it, offline fetches attempt the network and fail into `error()` as usual.
 
 ```typescript
 import { resource } from '@hellajs/resource';
 
-// The connection has dropped — dispatching simulates it for the example
+// The connection has dropped; dispatching simulates it for the example
 window.dispatchEvent(new Event('offline'));
 
 const feed = resource(
   () => fetch('/api/feed').then(r => r.json()),
   { pauseWhenOffline: true, refetchOnKeyChange: true }
 );
-console.log(feed.isPaused()); // Logs: true — the initial fetch defers, no request attempted
+console.log(feed.isPaused()); // Logs: true; the initial fetch defers, no request attempted
 
 window.dispatchEvent(new Event('online')); // The connection returns
-console.log(feed.isPaused()); // Logs: false — the deferred fetch runs
+console.log(feed.isPaused()); // Logs: false; the deferred fetch runs
 ```
 
-The deferred fetch replays on reconnect with the force flag it was called with — a paused `fetch({ force: true })` resumes as a force fetch. The pause listener follows the same lifecycle as the focus/reconnect listeners: `abort()`, `reset()`, and `dispose()` clear it, and `reset()` does not re-arm it. Mutations are never paused. See [Offline Pausing](/learn/concepts/resources#offline-pausing) for the pause/resume behavior and the `refetchOnReconnect` interplay.
+The deferred fetch replays on reconnect with the force flag it was called with: a paused `fetch({ force: true })` resumes as a force fetch. The pause listener follows the same lifecycle as the focus/reconnect listeners: `abort()`, `reset()`, and `dispose()` clear it, and `reset()` does not re-arm it. Mutations are never paused. See [Offline Pausing](/learn/concepts/resources#offline-pausing) for the pause/resume behavior and the `refetchOnReconnect` interplay.
 
 ### `status`
 
@@ -207,7 +207,7 @@ console.log(userResource.status()); // 'loading', then 'success' or 'error'
 
 Fetches data using a cache-first strategy by default. Pass `{ force: true }` to bypass the cache lookup and skip joining in-flight requests for the same key. A force fetch still registers itself in the dedup map, so subsequent non-force fetches can join it while it is in flight.
 
-`fetch()` is awaitable: it resolves with the fetched data (raw type, before `transform`) on success or cache hit, and `undefined` on error, skip, or abort — it never rejects. Errors surface through `error()` and `onError` as usual, so fire-and-forget callers stay source-compatible.
+`fetch()` is awaitable: it resolves with the fetched data (raw type, before `transform`) on success or cache hit, and `undefined` on error, skip, or abort; it never rejects. Errors surface through `error()` and `onError` as usual, so fire-and-forget callers stay source-compatible.
 
 ```typescript
 const userResource = resource(
@@ -227,11 +227,11 @@ await user.fetch(); // network → User
 const cached = await user.fetch(); // cache hit → same User, no network
 
 const bad = resource(() => fetch('/api/broken').then(r => r.json()));
-await bad.fetch(); // resolves undefined — the failure surfaces in bad.error()
+await bad.fetch(); // resolves undefined; the failure surfaces in bad.error()
 console.log(cached, bad.error()?.category);
 ```
 
-On key-change refetches (`refetchOnKeyChange`), the previous key's data stays visible while the new fetch is in flight. Pass `keepPreviousData: false` for a loading-state transition instead — see [Keep Previous Data](#keep-previous-data).
+On key-change refetches (`refetchOnKeyChange`), the previous key's data stays visible while the new fetch is in flight. Pass `keepPreviousData: false` for a loading-state transition instead; see [Keep Previous Data](#keep-previous-data).
 
 ### `abort`
 
@@ -278,7 +278,7 @@ When `cacheTime` is `0` (the default), `setData` updates the reactive signal but
 
 ### `cacheKey`
 
-Returns the current raw cache key used for this resource — the resolved `key` option value, not its normalized cache form. Structurally-hashed object keys still come back as the original object.
+Returns the current raw cache key used for this resource: the resolved `key` option value, not its normalized cache form. Structurally-hashed object keys still come back as the original object.
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -309,11 +309,11 @@ await saveUser.mutate({ name: 'John Doe' });
 
 When a mutation succeeds, `onSuccess` fires with the result data, just like a regular fetch. If a mutation is aborted (via `abort()`, `timeout`, or external signal), `onSettled` is **not** called, even if `onMutate` already ran.
 
-Concurrent mutations run independently: each `mutate()` call owns its abort controller and its `onMutate` context, so a second call never aborts the first — both fetchers run and both settle individually with their own `(variables, context)` pair. Mutations honor `retry`/`retryDelay` just like reads. Reads and mutations never abort each other; `abort()` is the cancel-all — it aborts the active read and every in-flight mutation. For operations that must not overlap, guard the trigger with `isFetching()` (see [Resources](/learn/concepts/resources#concurrent-mutations)).
+Concurrent mutations run independently: each `mutate()` call owns its abort controller and its `onMutate` context, so a second call never aborts the first; both fetchers run and both settle individually with their own `(variables, context)` pair. Mutations honor `retry`/`retryDelay` just like reads. Reads and mutations never abort each other; `abort()` is the cancel-all: it aborts the active read and every in-flight mutation. For operations that must not overlap, guard the trigger with `isFetching()` (see [Resources](/learn/concepts/resources#concurrent-mutations)).
 
 ### `reset`
 
-Resets resource state to initial values, clearing data and errors. Polling restarts at its interval — unlike `abort()`, which stops polling permanently (recreate the resource to resume).
+Resets resource state to initial values, clearing data and errors. Polling restarts at its interval; unlike `abort()`, which stops polling permanently (recreate the resource to resume).
 
 ```typescript
 const userResource = resource(
@@ -359,7 +359,7 @@ Control data freshness with `staleTime`. When data is stale but cached, `.fetch(
 
 ### Keep Previous Data
 
-On a key-change refetch (`refetchOnKeyChange`), the previous key's data stays visible by default: `data()` keeps returning the old value, `isLoading()` stays false, and `isFetching()` flips true for the in-flight fetch. Set `keepPreviousData: false` to clear data on key change instead — during the fetch window `data()` is `undefined`, `isLoading()` is `true`, and `status()` is `'loading'`, the transition pagination and search UIs need. `initialData` is not re-applied on a key change: a key change is a refetch with new parameters, not a return to the never-fetched state.
+On a key-change refetch (`refetchOnKeyChange`), the previous key's data stays visible by default: `data()` keeps returning the old value, `isLoading()` stays false, and `isFetching()` flips true for the in-flight fetch. Set `keepPreviousData: false` to clear data on key change instead: during the fetch window `data()` is `undefined`, `isLoading()` is `true`, and `status()` is `'loading'`, the transition pagination and search UIs need. `initialData` is not re-applied on a key change: a key change is a refetch with new parameters, not a return to the never-fetched state.
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -376,7 +376,7 @@ userId(2); // data() undefined + isLoading() true until User 2 lands
 
 ### Automatic Retry
 
-Configure retry behavior with count, conditional logic, and custom delays. The `retry` predicate receives the failure count starting at `1` on the first failure. Applies to both reads and mutations — `mutate()` runs through the same retry loop. See [Resources](/learn/concepts/resources#automatic-retry) for conditional retry and delay configuration.
+Configure retry behavior with count, conditional logic, and custom delays. The `retry` predicate receives the failure count starting at `1` on the first failure. Applies to both reads and mutations; `mutate()` runs through the same retry loop. See [Resources](/learn/concepts/resources#automatic-retry) for conditional retry and delay configuration.
 
 ### Polling / Interval Refetch
 
@@ -404,7 +404,7 @@ Request timeout and external abort signals for coordinated cancellation. See [Re
 
 ### Mutation invalidation
 
-Declare cache entries to invalidate after a successful mutation with `invalidates` — string prefixes dispatch to [`invalidateByPrefix`](/reference/resource/resourcecache#invalidatebyprefix), `RegExp` patterns to [`invalidateByPattern`](/reference/resource/resourcecache#invalidatebypattern). Invalidation runs only on the success path — on error or abort nothing is invalidated. See [Resources](/learn/concepts/resources#batch-invalidation) for the seed example and the mounted-resources caveat.
+Declare cache entries to invalidate after a successful mutation with `invalidates`: string prefixes dispatch to [`invalidateByPrefix`](/reference/resource/resourcecache#invalidatebyprefix), `RegExp` patterns to [`invalidateByPattern`](/reference/resource/resourcecache#invalidatebypattern). Invalidation runs only on the success path: on error or abort nothing is invalidated. See [Resources](/learn/concepts/resources#batch-invalidation) for the seed example and the mounted-resources caveat.
 
 ## Important Considerations
 
@@ -426,7 +426,7 @@ if (r.isIdle() && !r.isFetching()) {
 
 ### Manual vs Key-Change Fetching
 
-By default, resources don't auto-fetch on creation. Call `.fetch()` explicitly, or set `refetchOnKeyChange: true` for automatic fetching when key dependencies change. With an explicit `key`, fetching is skipped while the key resolves to `null` or `undefined` — see [Reactive Keys](/learn/concepts/resources#reactive-keys).
+By default, resources don't auto-fetch on creation. Call `.fetch()` explicitly, or set `refetchOnKeyChange: true` for automatic fetching when key dependencies change. With an explicit `key`, fetching is skipped while the key resolves to `null` or `undefined`; see [Reactive Keys](/learn/concepts/resources#reactive-keys).
 
 ```typescript
 // Manual: must call fetch() explicitly
@@ -439,7 +439,7 @@ const auto = resource(() => fetch('/api/user'), { refetchOnKeyChange: true });
 
 ### enabled: Static vs Reactive
 
-A static `boolean` is captured once at creation and cannot be toggled — a static `enabled: false` blocks even manual `fetch()`. A getter `() => boolean` is re-evaluated reactively inside the `refetchOnKeyChange` effect: transitions from `false` to `true` trigger a fetch automatically, and manual `fetch()` bypasses the getter. For the toggling pattern, see [Conditional Fetching](/learn/patterns/resource#conditional-fetching).
+A static `boolean` is captured once at creation and cannot be toggled: a static `enabled: false` blocks even manual `fetch()`. A getter `() => boolean` is re-evaluated reactively inside the `refetchOnKeyChange` effect: transitions from `false` to `true` trigger a fetch automatically, and manual `fetch()` bypasses the getter. For the toggling pattern, see [Conditional Fetching](/learn/patterns/resource#conditional-fetching).
 
 ```typescript
 import { signal } from '@hellajs/core';
@@ -458,9 +458,9 @@ r.fetch();   // manual fetch bypasses the getter, executes regardless
 
 ### Memory Management
 
-Each unique key creates a separate cache entry within the resource's fetcher scope — favor stable, meaningful keys for large datasets. See [`resourceCache`](/reference/resource/resourcecache) for key-design patterns.
+Each unique key creates a separate cache entry within the resource's fetcher scope; favor stable, meaningful keys for large datasets. See [`resourceCache`](/reference/resource/resourcecache) for key-design patterns.
 
 ### Server-Side Rendering
 
-On the server (no `window`), `run()` exits before fetching — resources embedded in a server-rendered tree never trigger network calls. Fetch server-side data with direct `fetch()` and pass it in as `initialData`; do not rely on resources for server-side data loading.
+On the server (no `window`), `run()` exits before fetching; resources embedded in a server-rendered tree never trigger network calls. Fetch server-side data with direct `fetch()` and pass it in as `initialData`; do not rely on resources for server-side data loading.
 

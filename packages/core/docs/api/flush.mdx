@@ -46,11 +46,11 @@ console.log(events); // Logs: ["first: 0", "third effect ran", "first: 1", "thir
 
 ### Automatic Draining
 
-The queue drains without an explicit call: a [`signal`](/reference/core/signal) write outside [`batch`](/reference/core/batch) flushes before the setter returns, and the outermost `batch` flushes on exit. At rest the queue is empty, so an explicit `flush()` is a no-op — it earns its keep in tests and integration code that catch effect errors and need the leftover queue drained deterministically.
+The queue drains without an explicit call: a [`signal`](/reference/core/signal) write outside [`batch`](/reference/core/batch) flushes before the setter returns, and the outermost `batch` flushes on exit. At rest the queue is empty, so an explicit `flush()` is a no-op; it earns its keep in tests and integration code that catch effect errors and need the leftover queue drained deterministically.
 
 ### Same-Pass Scheduling
 
-Effects scheduled while a drain is running are appended to the queue and run in the same pass — no second flush needed.
+Effects scheduled while a drain is running are appended to the queue and run in the same pass; no second flush needed.
 
 ```typescript
 import { signal, effect } from '@hellajs/core';
@@ -68,4 +68,4 @@ console.log(events); // Logs: ["trigger is 0", "trigger is 1"]
 
 ### Error Recovery
 
-A throw inside an effect unwinds out of the write or `flush()` call that triggered it, keeping the remaining queue entries intact. The next flush — an explicit `flush()` or the next un-batched write — picks up where the drain stopped; reactive state is never corrupted. See [error propagation](/reference/core/effect#error-propagation) for the full effect error rules.
+A throw inside an effect unwinds out of the write or `flush()` call that triggered it, keeping the remaining queue entries intact. The next flush (an explicit `flush()` or the next un-batched write) picks up where the drain stopped; reactive state is never corrupted. See [error propagation](/reference/core/effect#error-propagation) for the full effect error rules.

@@ -1,7 +1,7 @@
 import { css, style, cssText } from '@hellajs/css';
 
 // The dashboard's theme, one hashed class per styled element. css() registers the global
-// rules and style() the scoped ones — on both platforms; cssText() then collects the
+// rules and style() the scoped ones, on both platforms; cssText() then collects the
 // generated CSS text (a peek, never a drain) for the server to inject once into the
 // streamed document's <head>. The shell is static, so no client re-injection is needed.
 // Deliberately minimal: layout and skeleton visibility only.
@@ -60,7 +60,7 @@ export const card = style({
   },
 }, { label: 'card' });
 
-// The skeleton's loading bar — self-contained, so the skeleton card is just card + bones.
+// The skeleton's loading bar; self-contained, so the skeleton card is just card + bones.
 export const bone = style({
   display: 'block',
   height: '0.75rem',
@@ -68,5 +68,5 @@ export const bone = style({
   background: '#e5e7eb',
 }, { label: 'bone' });
 
-// Collected after the registration above — joins in first-registration order.
+// Collected after the registration above; joins in first-registration order.
 export const styles = cssText();

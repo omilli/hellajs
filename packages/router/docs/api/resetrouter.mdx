@@ -10,7 +10,7 @@ function resetRouter(): void
 
 ## Basic Usage
 
-Use `resetRouter` to tear down routing state for session reset, HMR, or return-to-initial-state scenarios. The URL is left untouched — call `navigate` explicitly if a new path is needed.
+Use `resetRouter` to tear down routing state for session reset, HMR, or return-to-initial-state scenarios. The URL is left untouched; call `navigate` explicitly if a new path is needed.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -30,7 +30,7 @@ resetRouter();
 
 ### What gets reset
 
-`resetRouter` resets all ten singleton signals to their defaults — the nine config signals plus the `route` signal:
+`resetRouter` resets all ten singleton signals to their defaults: the nine config signals plus the `route` signal:
 
 - `routes` → `{}`
 - `hooks` → `{}`
@@ -47,7 +47,7 @@ Reading `route()` immediately after `resetRouter()` returns these defaults, not 
 
 ### What is NOT affected
 
-- **`window.location` and `history`** — the URL and browser history are external state; `resetRouter` does not mutate them.
+- **`window.location` and `history`**: the URL and browser history are external state; `resetRouter` does not mutate them.
 
 ### Listener cleanup
 

@@ -24,7 +24,7 @@ onError((error, context) => {
   if (context.config?.fallback) {
     return context.config.fallback(error);
   }
-  // Default fallback — html`` types as HellaNode | (() => HellaNode); a static
+  // Default fallback: html`` types as HellaNode | (() => HellaNode); a static
   // template is always the node form
   const fallback = html`<div class="error">${error.message}</div>`;
   return typeof fallback === "function" ? fallback() : fallback;
@@ -71,7 +71,7 @@ onError((error, context) => {
     return typeof modal === "function" ? modal() : modal;
   }
 
-  // Default handling — narrow the html`` union to the node form
+  // Default handling; narrow the html`` union to the node form
   const fallback = html`<div>Something went wrong</div>`;
   return typeof fallback === "function" ? fallback() : fallback;
 });

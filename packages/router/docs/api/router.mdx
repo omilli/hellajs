@@ -22,16 +22,16 @@ function router(config: RouterConfig): RouteInfo
 // }
 ```
 - `routes`: URL patterns mapped to handlers, handler objects with hooks, nested route objects with children, or redirect strings.
-- `hooks`: Optional global hooks — `leave(to, from)` guards the route being left (same verdicts as `before`), `before(to, from)` guards every incoming navigation (`to` is the incoming path with its query string, `from` is the pre-commit path being left; can cancel or redirect), `after(to, from)` runs once the route commits.
-- `redirects`: Optional array of redirect objects. `from` entries match as route patterns — `:param` captures a segment, `*` captures the rest — with the query ignored; captured values substitute into `to` tokens (unmatched tokens stripped). First matching entry in array order wins.
-- `notFound`: Optional handler for unmatched routes — receives the attempted path (query included — same shape as `route().path`); or a string to replace-redirect to.
-- `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing — no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
-- `base`: Base path for apps deployed under a subpath (e.g. `'/app'` when served from `https://example.com/app/`). History mode only — stripped from the URL on every read and re-added on every history commit; hash mode ignores it. Must be a `'/'`-prefixed string (invalid values throw); trailing slashes are normalized (`'/app/'` → `'/app'`). Route patterns, `navigate()` targets, and `route().path` stay base-free. Default: unset.
+- `hooks`: Optional global hooks: `leave(to, from)` guards the route being left (same verdicts as `before`), `before(to, from)` guards every incoming navigation (`to` is the incoming path with its query string, `from` is the pre-commit path being left; can cancel or redirect), `after(to, from)` runs once the route commits.
+- `redirects`: Optional array of redirect objects. `from` entries match as route patterns (`:param` captures a segment, `*` captures the rest), with the query ignored; captured values substitute into `to` tokens (unmatched tokens stripped). First matching entry in array order wins.
+- `notFound`: Optional handler for unmatched routes: receives the attempted path (query included, same shape as `route().path`); or a string to replace-redirect to.
+- `mode`: URL mode. `'history'` (default) for clean URLs, `'hash'` for `#/path` format, `'memory'` for location-less routing: no URL/history writes and no listeners; drive `route()` with `navigate()`. Browser back/forward are no-ops in memory mode.
+- `base`: Base path for apps deployed under a subpath (e.g. `'/app'` when served from `https://example.com/app/`). History mode only; stripped from the URL on every read and re-added on every history commit; hash mode ignores it. Must be a `'/'`-prefixed string (invalid values throw); trailing slashes are normalized (`'/app/'` → `'/app'`). Route patterns, `navigate()` targets, and `route().path` stay base-free. Default: unset.
 - `scrollBehavior`: Scroll position after navigation. `'auto'` (default), `'top'`, `'preserve'`, or a custom function `(to, from, savedPosition)`.
 - `intercept`: Enable automatic same-origin `<a>` click interception. Default `true`.
 - `inheritMeta`: Parent-to-child meta inheritance through nested routes. Default `false` (leaf-only meta).
-- `url`: Resolve against this URL instead of `window.location`. Accepts a full request URL (e.g. `req.url` in Bun.serve, like `https://host/users/7?q=1`) or a path (`/users/7?q=1`) — the origin and hash fragment are ignored. Invalid URLs throw. Used for SSR, where there is no window. Resolution is synchronous either way.
-- **Returns**: The resolved initial [`RouteInfo`](/reference/router/route) — the route is matched synchronously during the call.
+- `url`: Resolve against this URL instead of `window.location`. Accepts a full request URL (e.g. `req.url` in Bun.serve, like `https://host/users/7?q=1`) or a path (`/users/7?q=1`); the origin and hash fragment are ignored. Invalid URLs throw. Used for SSR, where there is no window. Resolution is synchronous either way.
+- **Returns**: The resolved initial [`RouteInfo`](/reference/router/route): the route is matched synchronously during the call.
 
 ## Basic Usage
 
@@ -98,7 +98,7 @@ router({
   routes: { '/about': () => currentView('AboutPage') }
 });
 
-// Memory mode: no URL at all — route() is driven by navigate() alone
+// Memory mode: no URL at all; route() is driven by navigate() alone
 router({
   mode: 'memory',
   routes: { '/about': () => currentView('AboutPage') }
@@ -107,7 +107,7 @@ router({
 navigate('/about'); // route() updates; window.location and history are untouched
 ```
 
-Memory mode is useful for tests, Storybook, and non-DOM environments. It keeps no history stack — there is no back/forward navigation.
+Memory mode is useful for tests, Storybook, and non-DOM environments. It keeps no history stack: there is no back/forward navigation.
 
 ### Hook System
 
@@ -115,11 +115,11 @@ Global and per-route hooks with `leave`, `before`, and `after` execution points.
 
 | Hook | Runs | Return contract |
 |---|---|---|
-| `hooks.leave(to, from)` | First — when leaving a matched route, before any `before` hook | Same verdicts as `before`: `false` cancels, a non-empty `string` redirects (replace), a `Promise` blocks on the client |
+| `hooks.leave(to, from)` | First: when leaving a matched route, before any `before` hook | Same verdicts as `before`: `false` cancels, a non-empty `string` redirects (replace), a `Promise` blocks on the client |
 | `hooks.before(to, from)` | Before the incoming route's guards | `false` cancels, a non-empty `string` redirects (replace), a `Promise` blocks on the client |
 | `hooks.after(to, from)` | After the route commits | Cannot block |
 
-Route-level `leave` hooks run child→parent after the global `leave`, receiving the departed route's params/query — the unsaved-form flow, with [`navigate(path, { force: true })`](/reference/router/navigate) as the override. See [Leave Guards](/learn/concepts/route-hooks#leave-guards) for the full contract.
+Route-level `leave` hooks run child→parent after the global `leave`, receiving the departed route's params/query, the unsaved-form flow, with [`navigate(path, { force: true })`](/reference/router/navigate) as the override. See [Leave Guards](/learn/concepts/route-hooks#leave-guards) for the full contract.
 
 Routes can also carry `meta` for analytics, SEO, or feature flags; `inheritMeta` cascades parent meta down the nested match chain. See [route hooks](/learn/concepts/route-hooks#route-metadata) for the cascade, per-route boundaries, and inline `navigate()` precedence.
 
@@ -139,7 +139,7 @@ router({
 });
 ```
 
-Global hooks receive `(to, from)` paths — `to` is the incoming path with its query string, `from` is the path being left before the commit. The login-redirect pattern uses `to` to preserve the attempted destination:
+Global hooks receive `(to, from)` paths: `to` is the incoming path with its query string, `from` is the path being left before the commit. The login-redirect pattern uses `to` to preserve the attempted destination:
 
 ```typescript
 const user = signal<string | null>(null);
@@ -158,13 +158,13 @@ router({
 });
 ```
 
-Zero-argument global hooks keep working — the paths are additional arguments, ignored by hooks that don't declare them.
+Zero-argument global hooks keep working: the paths are additional arguments, ignored by hooks that don't declare them.
 
 ### Scroll Behavior
 
 Control scroll position after navigation at three levels: global `scrollBehavior`, route-level `scroll`, and inline `navigate({ scroll })`. Priority: inline > route-level > global. Custom scroll functions receive `(to, from, savedPosition)` and return `{ top, left? }` or `null` to skip.
 
-`savedPosition` is the scroll position captured when the returned-to page was last left — non-null only on browser back/forward navigations, `null` on pushes and replaces. Restoring it enables the top-on-push / restore-on-back policy (Vue Router's default):
+`savedPosition` is the scroll position captured when the returned-to page was last left, non-null only on browser back/forward navigations, `null` on pushes and replaces. Restoring it enables the top-on-push / restore-on-back policy (Vue Router's default):
 
 ```typescript
 router({
@@ -186,17 +186,17 @@ See [routing concepts](/learn/concepts/routing) for scroll priority and per-rout
 The router automatically intercepts same-origin `<a href>` clicks and routes them through `navigate()` for client-side navigation. Enabled by default. Plain `<a>` tags work without any special handling.
 
 ```typescript
-// ✅ Intercepted automatically — no special handling needed
+// ✅ Intercepted automatically; no special handling needed
 // <a href="/about">About</a>
 ```
 
-**Modifier keys** (`metaKey`, `ctrlKey`, `shiftKey`, `altKey`) bypass interception — they preserve the browser default (open in new tab/window).
+**Modifier keys** (`metaKey`, `ctrlKey`, `shiftKey`, `altKey`) bypass interception; they preserve the browser default (open in new tab/window).
 
 **Non-http links** (`mailto:`, `tel:`, etc.), **cross-origin** links, `target="_blank"`, `target="_parent"`, and `download` links are never intercepted.
 
 **Hash mode**: `<a href="#/path">` clicks are intercepted and routed through `navigate("/path")`. Hash changes that don't start with `#/` (plain in-page anchors) are ignored by the router.
 
-**History mode**: links that differ from the current URL only by their hash fragment (e.g. in-page anchors like `#faq`) are left to the browser — the native anchor jump happens and the router state is untouched.
+**History mode**: links that differ from the current URL only by their hash fragment (e.g. in-page anchors like `#faq`) are left to the browser: the native anchor jump happens and the router state is untouched.
 
 To disable interception, pass `intercept: false`:
 
@@ -217,7 +217,7 @@ router({
 // ❌ Throws
 router(null); // [router] router: config must be an object, received null
 
-// ✅ Valid — routes may be empty
+// ✅ Valid; routes may be empty
 router({ routes: {} });
 ```
 
@@ -242,7 +242,7 @@ Within nested routes, specific patterns take precedence over wildcards.
 ```typescript
 import { effect } from "@hellajs/core";
 
-// ✅ The return value is the resolved route — read it directly
+// ✅ The return value is the resolved route; read it directly
 const showUser = (params: Record<string, string>) => console.log(params);
 const { handler, params } = router({ routes: { '/users/:id': (params) => showUser(params) } });
 console.log(handler); // the matched handler function
@@ -273,7 +273,7 @@ All route parameters and query values are strings. Cast to other types as needed
 router({
   routes: {
     '/users/:id': ({ id }) => {
-      const userId = parseInt(id ?? "0"); // params are strings — cast as needed
+      const userId = parseInt(id ?? "0"); // params are strings; cast as needed
     }
   }
 });
@@ -284,7 +284,7 @@ router({
 Handlers and hooks are typed `(params: Params, query: Params) => unknown`. On dynamic routes (which have path parameters) both arguments are always passed. For static routes (no path parameters), the router uses function parameter arity (`fn.length`) to determine arguments:
 
 - If a function declares 2 or more parameters (e.g. `(params, query) => ...`), the first argument (`params`) will be `undefined`, and the second argument will be the parsed `query` object.
-- If a function declares 0 or 1 parameter (e.g. `(query) => ...`), the first argument will be the parsed `query` object — even though the type labels that parameter `params`.
+- If a function declares 0 or 1 parameter (e.g. `(query) => ...`), the first argument will be the parsed `query` object, even though the type labels that parameter `params`.
 
 To ensure consistency and prevent errors, always declare handlers and hooks using the full `(params, query)` signature when you need to access query parameters:
 
@@ -306,11 +306,11 @@ const searchHandler = (params, query) => {
 
 | Return | Behavior |
 |---|---|
-| `void` / `true` / `undefined` | Proceed — handler executes normally |
-| `false` | Cancel — navigation is blocked, URL unchanged |
-| `string` | Redirect — navigates to the returned path |
-| `throw` | Cancel — navigation is blocked, error logged |
-| `Promise` | Blocks on the client — the navigation defers until resolution, which is interpreted as the verdict (rejection cancels + logs). On the server it proceeds with only the rejection logged |
+| `void` / `true` / `undefined` | Proceed: handler executes normally |
+| `false` | Cancel: navigation is blocked, URL unchanged |
+| `string` | Redirect: navigates to the returned path |
+| `throw` | Cancel: navigation is blocked, error logged |
+| `Promise` | Blocks on the client: the navigation defers until resolution, which is interpreted as the verdict (rejection cancels + logs). On the server it proceeds with only the rejection logged |
 
 ```typescript
 const authState = signal({ authenticated: false });
@@ -331,7 +331,7 @@ router({
 });
 ```
 
-Async guards block. A `Promise`-returning `before`/`leave` defers the commit — the route signal keeps the previous match with `route().pending === true` until the Promise settles, and its resolution is interpreted as the verdict. The URL, handler, and `after` hooks are untouched until then:
+Async guards block. A `Promise`-returning `before`/`leave` defers the commit: the route signal keeps the previous match with `route().pending === true` until the Promise settles, and its resolution is interpreted as the verdict. The URL, handler, and `after` hooks are untouched until then:
 
 ```typescript
 router({
@@ -348,15 +348,15 @@ router({
 });
 
 navigate('/protected');
-// route().pending === true — nothing committed yet
+// route().pending === true; nothing committed yet
 // …resolution `true` commits; `'/login'` replaces to the login page instead
 ```
 
-Render a loading state off `route().pending` while a deferred navigation is in flight. A second navigation during the wait supersedes the deferred one — the newer navigation owns the URL, and the abandoned continuation never commits.
+Render a loading state off `route().pending` while a deferred navigation is in flight. A second navigation during the wait supersedes the deferred one; the newer navigation owns the URL, and the abandoned continuation never commits.
 
 On the server (`url` mode) there is no deferral: an async guard cannot block a synchronous render, so navigation proceeds and only a rejection is logged.
 
-On `false` or throw in a popstate/hashchange event, the router restores the previous URL via `replaceState` — synchronously for sync guards, or from the continuation once an async guard's awaited verdict cancels.
+On `false` or throw in a popstate/hashchange event, the router restores the previous URL via `replaceState`, synchronously for sync guards, or from the continuation once an async guard's awaited verdict cancels.
 
 ### Global Redirects
 
@@ -375,11 +375,11 @@ router({
 });
 ```
 
-Redirect chains stop after 20 hops — a cyclic configuration (including mutually redirecting guards) logs `[router] redirect loop detected` and cancels the navigation with the URL unchanged, instead of overflowing the stack.
+Redirect chains stop after 20 hops: a cyclic configuration (including mutually redirecting guards) logs `[router] redirect loop detected` and cancels the navigation with the URL unchanged, instead of overflowing the stack.
 
 ### Error Handling
 
-Sync errors thrown in `before` hooks cancel navigation — the handler does not execute and the URL remains unchanged. The error is logged with a `[router]` prefix and does not propagate to user code.
+Sync errors thrown in `before` hooks cancel navigation: the handler does not execute and the URL remains unchanged. The error is logged with a `[router]` prefix and does not propagate to user code.
 
 ```typescript
 router({

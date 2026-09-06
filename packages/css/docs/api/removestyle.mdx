@@ -16,7 +16,7 @@ function removeStyle(base: string | StyleObject, override: StyleObject, options?
 - `override`: Style object used in the `style()` call
 - `options`: Optional configuration object (must match the options used in `style()`)
   - `label`: Label used when creating the style
-  - `host`: Parent node the style was injected into — a removal without the same `host` targets a different entry
+  - `host`: Parent node the style was injected into; a removal without the same `host` targets a different entry
 - **Returns**: `void`
 
 ## Basic Usage
@@ -47,7 +47,7 @@ removeStyle({
 
 - **Reference Counting**: Each `style()` call with the same derived rule text increments the reference count
 - **Automatic Cleanup**: Removes the CSSOM rules when the reference count reaches zero
-- **Deterministic Matching**: The class and rule text are re-derived from the arguments — the same deterministic transform `style()` uses — so identical arguments always locate the registration
+- **Deterministic Matching**: The class and rule text are re-derived from the arguments (the same deterministic transform `style()` uses), so identical arguments always locate the registration
 
 ```jsx
 import { style, removeStyle } from '@hellajs/css';
@@ -63,20 +63,20 @@ removeStyle(sharedStyle); // refCount = 0, rule removed
 
 ### Server Behavior
 
-On the server (no DOM), `removeStyle` decrements the registration state and never throws — sheet operations are the only DOM-gated step. Collect the remaining text with [`cssText`](/reference/css/csstext).
+On the server (no DOM), `removeStyle` decrements the registration state and never throws; sheet operations are the only DOM-gated step. Collect the remaining text with [`cssText`](/reference/css/csstext).
 
 ## Important Considerations
 
 ### Exact Matching Required
 
-Structurally identical objects re-derive the same class and text — no cached reference needed:
+Structurally identical objects re-derive the same class and text; no cached reference needed:
 
 ```jsx
-// ✅ Works — structurally identical objects match
+// ✅ Works; structurally identical objects match
 style({ color: 'red' }, { label: 'x' });
 removeStyle({ color: 'red' }, { label: 'x' });
 
-// ❌ Won't match — different content
+// ❌ Won't match; different content
 style({ color: 'red' });
 removeStyle({ color: 'blue' }); // no-op, never registered
 ```

@@ -113,7 +113,7 @@ todos([{ id: 1, done: true }]); // Different content: effect triggered
 
 An equal write keeps the old reference, so consumers comparing by identity never see a rejected value.
 
-`NaN` needs no comparator — the default already treats it as self-equal. Use `Object.is` as `equals` only to also distinguish `+0` from `-0`; under the default they compare equal.
+`NaN` needs no comparator; the default already treats it as self-equal. Use `Object.is` as `equals` only to also distinguish `+0` from `-0`; under the default they compare equal.
 
 The comparator receives the freshest stored value, and `{ equals: undefined }` behaves as no options.
 

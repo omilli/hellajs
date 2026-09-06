@@ -48,7 +48,7 @@ html`<ul>
 
 ### Key-Based Optimization
 
-Use the `key` attribute for optimal reconciliation. Explicit keys use key-only comparison — same key always reuses the DOM node, even if the item reference changes.
+Use the `key` attribute for optimal reconciliation. Explicit keys use key-only comparison: same key always reuses the DOM node, even if the item reference changes.
 
 ```jsx
 import { signal } from "@hellajs/core";
@@ -111,12 +111,12 @@ todos().push(newItem);
 Use stable, unique keys (like database IDs) rather than array indices. Index-keyed items fall back to reference equality, so new item references always re-create DOM nodes.
 
 ```jsx
-// ✅ Stable keys — same key reuses DOM node regardless of reference
+// ✅ Stable keys: same key reuses DOM node regardless of reference
 <ForEach
   each={items}
   use={(item) => <li key={item.id}>{item.name}</li>}
 />
-// ❌ Index keys — new references always re-create nodes
+// ❌ Index keys: new references always re-create nodes
 <ForEach
   each={items}
   use={(item, index) => <li key={index}>{item.name}</li>}
@@ -137,7 +137,7 @@ const items = signal([
   { id: 2, name: signal("Bob") }
 ]);
 
-// ✅ Signal children — DOM nodes reused when items reference changes
+// ✅ Signal children: DOM nodes reused when items reference changes
 <ForEach
   each={items}
   use={(item: { id: number; name: Signal<string> }) => <li key={item.id}>{item.name}</li>}

@@ -27,7 +27,7 @@ css({
   },
 });
 
-// Shared card styles — composed by PostCard via style(card, ...) and consumed
+// Shared card styles; composed by PostCard via style(card, ...) and consumed
 // directly by UserProfile.
 export const card = style({
   backgroundColor: theme.color.surface,

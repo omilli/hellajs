@@ -87,7 +87,7 @@ type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 ```
 
 - `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, arrays become signals.
-- `options.readonly`: `true` for all properties readonly, or an array of keys to lock. Propagates deep — `true` locks every plain-object level; a listed object key locks its entire subtree. Composed stores keep their own readonly config.
+- `options.readonly`: `true` for all properties readonly, or an array of keys to lock. Propagates deep: `true` locks every plain-object level; a listed object key locks its entire subtree. Composed stores keep their own readonly config.
 - `options.middleware`: Per-key transform functions applied on every set.
 - **Returns**: A reactive store with `snapshot`, `update`, `cleanup`, and `subscribe` methods.
 
@@ -95,7 +95,7 @@ type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 
 A reactive snapshot of the entire store state as a plain JavaScript object. The snapshot function is reactive and will re-compute when any store property changes.
 
-> ⚠️ **Performance**: snapshot accesses every signal in the store. When composed stores are nested, the dependency footprint covers the full composed tree — any leaf signal change triggers re-computation. Use individual property access for targeted reactivity in wide or deeply composed stores. Writes that compare equal under the [`equals` option](#write-equality) never trigger re-computation.
+> ⚠️ **Performance**: snapshot accesses every signal in the store. When composed stores are nested, the dependency footprint covers the full composed tree; any leaf signal change triggers re-computation. Use individual property access for targeted reactivity in wide or deeply composed stores. Writes that compare equal under the [`equals` option](#write-equality) never trigger re-computation.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -119,7 +119,7 @@ effect(() => {
   console.log(appStore.snapshot()); // { user: { name: 'Alice' } }
 });
 
-userStore.name('Bob'); // triggers the effect — snapshot is reactive across composed stores
+userStore.name('Bob'); // triggers the effect; snapshot is reactive across composed stores
 ```
 
 ### `update`
@@ -145,18 +145,18 @@ console.log(appStore.step());        // 2
 console.log(appStore.user.name());   // Bob
 ```
 
-> ⚠️ `update()` writes only signal-backed properties and throws on everything else — nothing is silently dropped:
-> - **Unknown key**: `update({ newProp: 1 })` throws `[store] update: unknown key "newProp"` — the store's shape is fixed at creation.
-> - **Function property**: `update({ onSave: fn })` throws `[store] update: "onSave" is a function property, not state — assign it directly`. Swap functions by assigning directly: `appStore.onSave = newHandler`.
+> ⚠️ `update()` writes only signal-backed properties and throws on everything else; nothing is silently dropped:
+> - **Unknown key**: `update({ newProp: 1 })` throws `[store] update: unknown key "newProp"`; the store's shape is fixed at creation.
+> - **Function property**: `update({ onSave: fn })` throws `[store] update: "onSave" is a function property, not state` ("assign it directly" in the full message). Swap functions by assigning directly: `appStore.onSave = newHandler`.
 > - **Reserved key**: `update({ snapshot: 1 })` throws `[store] update: reserved key "snapshot"`.
 > - **Store key with a non-object value**: `update({ user: 'x' })` where `user` is a nested store throws `[store] update: store key "user" requires an object value`.
-> - **Readonly key**: writing a readonly property throws `[store] readonly key "<key>"` — the same error its setter call throws.
+> - **Readonly key**: writing a readonly property throws `[store] readonly key "<key>"`; the same error its setter call throws.
 >
-> The draft path applies the same rules. `update()` throws at the first offending key, in partial-key order — keys processed before it are already applied.
+> The draft path applies the same rules. `update()` throws at the first offending key, in partial-key order; keys processed before it are already applied.
 
 ### `cleanup`
 
-Recursively invokes `cleanup` on each nested store. Individual signals are not disposed — they remain functional after cleanup, and the store object stays intact. Effects that read individual signals continue to fire.
+Recursively invokes `cleanup` on each nested store. Individual signals are not disposed; they remain functional after cleanup, and the store object stays intact. Effects that read individual signals continue to fire.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -170,7 +170,7 @@ console.log(appStore.count()); // 10
 
 ### `subscribe`
 
-Observes changes to a single signal-backed property. The callback receives `(next, prev)`; the initial subscribe does not fire it — only subsequent changes do. Returns an unsubscribe function.
+Observes changes to a single signal-backed property. The callback receives `(next, prev)`; the initial subscribe does not fire it; only subsequent changes do. Returns an unsubscribe function.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -183,16 +183,16 @@ const unsub = appStore.subscribe('count', (next, prev) => {
 
 appStore.count(5); // Logs: 0 → 5
 unsub();
-appStore.count(6); // silent — unsubscribed
+appStore.count(6); // silent; unsubscribed
 ```
 
 - `key`: Name of a settable (signal-backed) property. Nested-store keys, function properties, reserved keys, and unknown keys throw.
-- `callback`: Receives the next and previous values. Runs untracked — reading signals inside it never widens the subscription. Skipped when a write compares equal to the current value.
+- `callback`: Receives the next and previous values. Runs untracked; reading signals inside it never widens the subscription. Skipped when a write compares equal to the current value.
 - **Returns**: An unsubscribe function; calling it more than once is safe.
 
-Unlike an [`effect`](/reference/core/effect) reading [`snapshot()`](#snapshot), `subscribe` tracks one property only — no whole-store dependency — and hands you the previous value, which effects never see. Writes inside [`batch`](/reference/core/batch)`()` fire the callback once per subscribed key when the batch ends.
+Unlike an [`effect`](/reference/core/effect) reading [`snapshot()`](#snapshot), `subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Writes inside [`batch`](/reference/core/batch)`()` fire the callback once per subscribed key when the batch ends.
 
-Subscriptions belong to the store that owns the key: a composed parent exposes only its own signal-backed keys, so `appStore.subscribe('user', cb)` throws — subscribe on the nested store itself:
+Subscriptions belong to the store that owns the key: a composed parent exposes only its own signal-backed keys, so `appStore.subscribe('user', cb)` throws; subscribe on the nested store itself:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -201,7 +201,7 @@ const userStore = store({ name: 'Alice' });
 const appStore = store({ user: userStore });
 
 userStore.subscribe('name', (next) => console.log(next));
-appStore.user.name('Bob'); // Logs: Bob — shared signals fire the subscription
+appStore.user.name('Bob'); // Logs: Bob; shared signals fire the subscription
 ```
 
 ## Basic Usage
@@ -225,7 +225,7 @@ console.log(appStore.user.name());   // Bob
 
 ### Deep Reactivity
 
-All nested objects become stores, arrays become signals, and functions stay as-is — a fully reactive state tree. Middleware transforms or validates values on every set; `readonly` restricts which properties can be modified. See [State](/learn/concepts/state) for the deep walk, effect examples, [middleware](/learn/concepts/state#middleware), and [readonly](/learn/concepts/state#readonly) configuration.
+All nested objects become stores, arrays become signals, and functions stay as-is, a fully reactive state tree. Middleware transforms or validates values on every set; `readonly` restricts which properties can be modified. See [State](/learn/concepts/state) for the deep walk, effect examples, [middleware](/learn/concepts/state#middleware), and [readonly](/learn/concepts/state#readonly) configuration.
 
 ### Nested Stores
 
@@ -250,12 +250,12 @@ const appStore = store({
 });
 
 appStore.user.name('Jane');
-userStore.name(); // 'Jane' — same signal reference
+userStore.name(); // 'Jane'; same signal reference
 ```
 
 ### Partial Updates
 
-Pass a partial object to `update()` for deep merging nested properties — keys outside the initial object throw. See [State](/learn/concepts/state) for the pattern.
+Pass a partial object to `update()` for deep merging nested properties; keys outside the initial object throw. See [State](/learn/concepts/state) for the pattern.
 
 ### Mutable Updates
 
@@ -263,7 +263,7 @@ Pass a function to `update()` for ergonomic mutations on a mutable draft of the 
 
 ### Write Equality
 
-By default every write is reference-compared — `store.items(newArrayWithSameContent)` wakes every subscriber. The `equals` option replaces that per key with a comparator function or the `'structural'` preset, which compares by content using the same comparator as the draft path:
+By default every write is reference-compared; `store.items(newArrayWithSameContent)` wakes every subscriber. The `equals` option replaces that per key with a comparator function or the `'structural'` preset, which compares by content using the same comparator as the draft path:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -275,24 +275,24 @@ const appStore = store({ items: [1, 2], user: { name: 'a' } }, {
   },
 });
 
-appStore.items([1, 2]); // same content, new reference — write skipped, no subscriber wakes
+appStore.items([1, 2]); // same content, new reference; write skipped, no subscriber wakes
 ```
 
 - A comparator receives `(previous, next)` and returns `true` to skip the write. `'structural'` compares arrays, `Date`, `Map`, `Set`, `RegExp`, and class instances by content.
-- Nested maps reach nested stores, like `middleware`. Every write path inherits the comparator — direct calls, `update(partial)`, and the draft path.
-- Invalid values throw at create time: a leaf must be a comparator function or `'structural'` (`[store] store: equals for "<key>" must be a function or "structural", received …`), and an object key's entry must be a nested equals map (`[store] store: equals for "<key>" must be a nested equals map, received …`) — `'structural'` on an object key is rejected.
+- Nested maps reach nested stores, like `middleware`. Every write path inherits the comparator: direct calls, `update(partial)`, and the draft path.
+- Invalid values throw at create time: a leaf must be a comparator function or `'structural'` (`[store] store: equals for "<key>" must be a function or "structural", received …`), and an object key's entry must be a nested equals map (`[store] store: equals for "<key>" must be a nested equals map, received …`); `'structural'` on an object key is rejected.
 - Equality runs after middleware, inside the signal: the comparator sees the transformed value.
-- ⚠️ `'structural'` costs O(n) per write — opt in per key, exactly where large array or object leaves live.
+- ⚠️ `'structural'` costs O(n) per write; opt in per key, exactly where large array or object leaves live.
 
 See [write equality](/learn/concepts/state#write-equality) for when to reach for it.
 
 ### Function Preservation
 
-Functions in the initial object are preserved as-is — not wrapped in signals, functional in snapshots. See [State](/learn/concepts/state) for `computed`-in-store examples.
+Functions in the initial object are preserved as-is, not wrapped in signals, functional in snapshots. See [State](/learn/concepts/state) for `computed`-in-store examples.
 
 ### `PartialDeep<T>`
 
-Recursive optional mapping used by [`update()`](#update). Arrays and functions are preserved as leaf values — a partial update to `{ items: [...] }` is a full replacement, not a deep merge.
+Recursive optional mapping used by [`update()`](#update). Arrays and functions are preserved as leaf values: a partial update to `{ items: [...] }` is a full replacement, not a deep merge.
 
 ```typescript
 type PartialDeep<T> = {
@@ -321,7 +321,7 @@ type Config = {
 type PartialConfig = PartialDeep<Config>;
 ```
 
-> ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. Calling `update({ items: [...] })` replaces the entire array — it does not merge individual elements.
+> ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. Calling `update({ items: [...] })` replaces the entire array; it does not merge individual elements.
 
 ### `ReadonlyKeys<T, O>`
 
@@ -348,7 +348,7 @@ type R1 = ReadonlyKeys<Config, { readonly: ['apiUrl'] }>;
 // R1: 'apiUrl'
 
 type R2 = ReadonlyKeys<Config, { readonly: true }>;
-// R2: keyof Config — 'apiUrl' | 'theme' | 'debug'
+// R2: keyof Config: 'apiUrl' | 'theme' | 'debug'
 
 type R3 = ReadonlyKeys<Config, undefined>;
 // R3: never
@@ -358,7 +358,7 @@ type R3 = ReadonlyKeys<Config, undefined>;
 
 ### Draft Updates Compare Structurally
 
-The `update(fn)` draft path diffs by content, not reference. Untouched `Date`, `Map`, `Set`, `RegExp`, and array values are not rewritten — their signals keep the same value and subscribers do not fire. Mutated class instances keep their prototype:
+The `update(fn)` draft path diffs by content, not reference. Untouched `Date`, `Map`, `Set`, `RegExp`, and array values are not rewritten; their signals keep the same value and subscribers do not fire. Mutated class instances keep their prototype:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -371,7 +371,7 @@ class Point {
 const data = store({ point: new Point(1), count: 0 });
 
 data.update(draft => {
-  draft.count = 1; // point is untouched — no write, no subscriber wakeups
+  draft.count = 1; // point is untouched; no write, no subscriber wakeups
 });
 
 data.update(draft => {
@@ -410,12 +410,12 @@ userStore.cleanup();
 
 ### Store Properties Are Non-Writable
 
-Signal-backed properties, nested stores, and the built-in methods are defined non-writable — external reassignment (`appStore.count = 5`) throws a `TypeError` in strict-mode ESM instead of silently dropping reactivity. Write through the signal (`appStore.count(5)`), or `update()`. Function-valued properties are the exemption: they stay writable so handlers can be swapped (`appStore.onSave = newHandler`), including the adopted signal functions of composed-store leaves.
+Signal-backed properties, nested stores, and the built-in methods are defined non-writable; external reassignment (`appStore.count = 5`) throws a `TypeError` in strict-mode ESM instead of silently dropping reactivity. Write through the signal (`appStore.count(5)`), or `update()`. Function-valued properties are the exemption: they stay writable so handlers can be swapped (`appStore.onSave = newHandler`), including the adopted signal functions of composed-store leaves.
 
 ### Effects vs Middleware
 
-- **Effects** run after changes — use for logging, persistence, derived state.
-- **Middleware** runs before changes — use for validation, transformation.
+- **Effects** run after changes: use for logging, persistence, derived state.
+- **Middleware** runs before changes: use for validation, transformation.
 
 ```typescript
 import { effect } from '@hellajs/core';

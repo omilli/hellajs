@@ -1,6 +1,6 @@
 # Build an SSR Islands App
 
-Render a static HTML shell on the server with [`ssr`](/reference/ssr/ssr), then make it interactive on the client without a full re-render: mount a reactive island into an empty slot the server left open. No router, no full-tree [`hydrate`](/reference/dom/hydrate) — the lightest server-rendered mode.
+Render a static HTML shell on the server with [`ssr`](/reference/ssr/ssr), then make it interactive on the client without a full re-render: mount a reactive island into an empty slot the server left open. No router, no full-tree [`hydrate`](/reference/dom/hydrate) (the lightest server-rendered mode).
 
 Jump to the [Complete Code](#complete-code) for the finished application.
 
@@ -11,7 +11,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`css`](/reference/css/css)**: Register styles on both platforms, collected by [`cssText`](/reference/css/csstext) for `doc()` to emit
 - **[`mount`](/reference/dom/mount)**: Mount a reactive island into an empty slot the server left open
 
-This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders the shell and `Bun.build` bundles the client at startup — one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
+This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders the shell and `Bun.build` bundles the client at startup: one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
 
 ## Project Setup
 
@@ -43,7 +43,7 @@ bun add @hellajs/core @hellajs/dom @hellajs/ssr @hellajs/css
 
 ## The App Template
 
-The shared module exports two things: the page's collected styles and a static shell template — a heading plus an empty slot for the island. Both are pure data, no DOM. The server renders the template with [`ssr`](/reference/ssr/ssr) and emits the styles via [`doc`](/reference/ssr/doc); the client mounts an island into the slot by selector.
+The shared module exports two things: the page's collected styles and a static shell template (a heading plus an empty slot for the island). Both are pure data, no DOM. The server renders the template with [`ssr`](/reference/ssr/ssr) and emits the styles via [`doc`](/reference/ssr/doc); the client mounts an island into the slot by selector.
 
 Create `src/app.js`:
 
@@ -132,12 +132,12 @@ Bun.serve({
 
 - **`import { App, styles } from './app.js'`**: Pulls the template and the collected CSS text from the shared module
 - **[`ssr`](/reference/ssr/ssr)`(App())`**: Walks the template AST to an HTML string. `App()` runs server-side; `html` parsing is DOM-free
-- **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory — no `dist/` to manage. Edit the client and restart to re-bundle
+- **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory; no `dist/` to manage. Edit the client and restart to re-bundle
 - **[`doc`](/reference/ssr/doc)`({ head, body })`**: Assembles a full document. `styles` joins into one `<style>` tag; `scripts` emits each tag
 
 ## Client Enhancement
 
-The client mounts a reactive `Counter` island into the empty `#slot` the server left open. The island owns the count — a `<p>` bound to the signal plus an Increment button — so the server shell needs no full re-render.
+The client mounts a reactive `Counter` island into the empty `#slot` the server left open. The island owns the count (a `<p>` bound to the signal plus an Increment button), so the server shell needs no full re-render.
 
 Create `src/client.js`:
 
@@ -167,7 +167,7 @@ mount(Counter, '#slot');
 
 <div role="alert" class="alert alert-error text-base">
   <span>⚠️</span>
-  <span>mount calls replaceChildren on its target — pointing it at any element the server already populated wipes that HTML. Always mount into an empty slot.</span>
+  <span>mount calls replaceChildren on its target: pointing it at any element the server already populated wipes that HTML. Always mount into an empty slot.</span>
 </div>
 
 **Good:** Target the empty server slot
@@ -175,7 +175,7 @@ mount(Counter, '#slot');
 mount(Counter, '#slot');
 ```
 
-**Bad:** Target a populated container — wipes its contents
+**Bad:** Target a populated container (wipes its contents)
 ```js
 mount(Counter, 'body'); // replaceChildren destroys the server HTML
 ```
@@ -195,7 +195,7 @@ curl -s localhost:3000
 # <!DOCTYPE html>...<h1>SSR Islands</h1>...<div id="slot"></div>...
 ```
 
-After the client script loads, the `Counter` island mounts into `#slot`. Clicking Increment updates the count reactively — without replacing the server-rendered shell.
+After the client script loads, the `Counter` island mounts into `#slot`. Clicking Increment updates the count reactively, without replacing the server-rendered shell.
 
 ## Next Steps
 
@@ -203,7 +203,7 @@ After the client script loads, the `Counter` island mounts into `#slot`. Clickin
 - **[Reactive Refs](/learn/concepts/reactive-refs)**: `$ref` and `$collection` for binding existing DOM nodes
 - **[Server-Side Rendering](/learn/concepts/ssr)**: The SSR concept and the stringifier contract
 
-The island-mount pattern — server HTML plus one reactive slot — is the baseline. The routing tutorial adds full-tree hydration for apps that need the whole page interactive.
+The island-mount pattern (server HTML plus one reactive slot) is the baseline. The routing tutorial adds full-tree hydration for apps that need the whole page interactive.
 
 ## Complete Code
 
@@ -237,7 +237,7 @@ css({
 export const styles = cssText();
 
 // Shared template: a static shell with a server-rendered count and an empty
-// island slot. Pure data — no DOM. `ssr()` stringifies it to HTML on the server.
+// island slot. Pure data; no DOM. `ssr()` stringifies it to HTML on the server.
 export const App = () => html`
   <div>
     <h1>SSR Islands</h1>
@@ -253,7 +253,7 @@ import { App, styles } from './app.js';
 
 
 // Bundle the client once at startup. Bun's native bundler resolves the bare
-// `@hellajs/*` specifiers the browser can't — no separate build step, no dist/.
+// `@hellajs/*` specifiers the browser can't; no separate build step, no dist/.
 const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
 if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
 const client = await build.outputs[0].text();
@@ -294,7 +294,7 @@ import { html, mount } from '@hellajs/dom';
 const count = signal(0);
 
 // Mount a reactive island into the empty <div id="slot"> the server left open.
-// `mount` calls `replaceChildren`, so target the empty slot — pointing it at the
+// `mount` calls `replaceChildren`, so target the empty slot; pointing it at the
 // populated shell would wipe the server-rendered HTML.
 const Counter = () => html`
   <p>Count: ${count}</p>

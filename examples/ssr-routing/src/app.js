@@ -3,10 +3,10 @@ import { html } from '@hellajs/dom';
 import { route } from '@hellajs/router';
 
 // The view signal holds the currently-rendered view node. Route handlers are
-// pure setters — they update this signal and nothing else. The same handlers
+// pure setters; they update this signal and nothing else. The same handlers
 // fire on the server (driven by router({ url })) and on the client (driven by
 // router({ routes }) + hydrate), so the rendered view matches. The
-// () => mount(...) style is client-only — mount needs a document and throws on
+// () => mount(...) style is client-only; mount needs a document and throws on
 // the server.
 export const currentView = signal(html`<h1>Loading…</h1>`);
 

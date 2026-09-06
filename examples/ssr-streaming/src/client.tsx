@@ -1,8 +1,8 @@
 import { hydrate } from '@hellajs/dom';
 import { Dashboard } from './app';
 
-// No router init — this is a single streaming page. hydrate adopts the server-rendered
+// No router init; this is a single streaming page. hydrate adopts the server-rendered
 // nodes instead of rebuilding them. Streamed <Suspense> regions stage resolved children in
 // <template>s; hydrate swaps each staged template in automatically (β: hydrate-swap).
-// afterMount fires automatically during hydrate — no flush() needed.
+// afterMount fires automatically during hydrate; no flush() needed.
 hydrate(<Dashboard />, '#app');

@@ -22,7 +22,7 @@ const checkAuth = () => true;
 
 mount(<>Loading...</>);
 
-// router() resolves synchronously — the matched handler's mount() replaces Loading before paint
+// router() resolves synchronously; the matched handler's mount() replaces Loading before paint
 router({
   routes: {
     '/': () => mount(<HomePage />),

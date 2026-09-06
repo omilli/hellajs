@@ -39,7 +39,7 @@ import { keyframes, removeKeyframes } from '@hellajs/css';
 const steps = { from: { opacity: '0' }, to: { opacity: '1' } };
 
 keyframes(steps);  // refCount = 1
-keyframes(steps);  // refCount = 2 — same name, one rule
+keyframes(steps);  // refCount = 2; same name, one rule
 
 removeKeyframes(steps);  // refCount = 1, rule still present
 removeKeyframes(steps);  // refCount = 0, rule removed from stylesheet
@@ -47,13 +47,13 @@ removeKeyframes(steps);  // refCount = 0, rule removed from stylesheet
 
 ### Deterministic Re-Derivation
 
-`removeKeyframes` re-derives the name and rule text from the same object — the deterministic transform `keyframes()` uses — so structurally identical objects always locate the injected entry, in any key order. No reference needs to be held.
+`removeKeyframes` re-derives the name and rule text from the same object (the deterministic transform `keyframes()` uses), so structurally identical objects always locate the injected entry, in any key order. No reference needs to be held.
 
 ## Important Considerations
 
 ### Unknown Input
 
-`removeKeyframes` is a no-op for inputs not previously registered by a `keyframes` call — no throw, no stylesheet change.
+`removeKeyframes` is a no-op for inputs not previously registered by a `keyframes` call: no throw, no stylesheet change.
 
 ### Both Platforms
 

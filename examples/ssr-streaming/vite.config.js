@@ -3,7 +3,7 @@ import viteHellaJS from 'vite-plugin-hellajs';
 
 // The vite-plugin-hellajs transform runs in BOTH the client pipeline and the
 // SSR pipeline (enforce: "pre"), so server.ssrLoadModule('/src/server.tsx')
-// turns the server-side JSX into HellaNode objects — JSX is not a HellaNode
+// turns the server-side JSX into HellaNode objects; JSX is not a HellaNode
 // without it. The dev middleware below streams SSR HTML for every app route and
 // hands module/asset requests (the client entry, HMR, deps) back to Vite.
 export default defineConfig({

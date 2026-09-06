@@ -1,6 +1,6 @@
 # Build an SSR Routing App
 
-Server-render a routed app end to end: [`router`](/reference/router/router) resolves the request URL on the server, [`ssr`](/reference/ssr/ssr) stringifies the tree, [`cssText`](/reference/css/csstext) collects the styles, and the client [`hydrate`](/reference/dom/hydrate)s the **same** tree against the existing DOM — adopting nodes, never rebuilding them. One isomorphic route map drives both sides.
+Server-render a routed app end to end: [`router`](/reference/router/router) resolves the request URL on the server, [`ssr`](/reference/ssr/ssr) stringifies the tree, [`cssText`](/reference/css/csstext) collects the styles, and the client [`hydrate`](/reference/dom/hydrate)s the **same** tree against the existing DOM, adopting nodes, never rebuilding them. One isomorphic route map drives both sides.
 
 Jump to the [Complete Code](#complete-code) for the finished application.
 
@@ -9,10 +9,10 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`signal`](/reference/core/signal)**: Hold the currently-rendered view in a reactive view signal
 - **[`router`](/reference/router/router)`({ url })`**: Resolve the request URL on the server (no `window`)
 - **[`ssr`](/reference/ssr/ssr)** + **[`doc`](/reference/ssr/doc)**: Serialize the tree to HTML and wrap it into a full document
-- **[`vars`](/reference/css/vars)** + **[`cssText`](/reference/css/csstext)**: vars registers custom properties and css registers rules — both platforms — and cssText collects them into one `<style>` through `doc()`
+- **[`vars`](/reference/css/vars)** + **[`cssText`](/reference/css/csstext)**: vars registers custom properties and css registers rules (both platforms), and cssText collects them into one `<style>` through `doc()`
 - **[`hydrate`](/reference/dom/hydrate)**: Re-bind the server-rendered tree in place (no flash, no rebuild)
 
-This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders each request and `Bun.build` bundles the client at startup — one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
+This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders each request and `Bun.build` bundles the client at startup: one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
 
 ## Project Setup
 
@@ -28,7 +28,7 @@ bun add @hellajs/core @hellajs/dom @hellajs/router @hellajs/ssr @hellajs/css
 
 ### Configuration
 
-`package.json` marks the project as an ES module and adds a single `start` script. `Bun.build` handles the client bundle at server startup, so there is no `build` script and no second tool. The source is plain JavaScript — no `tsconfig.json` is needed.
+`package.json` marks the project as an ES module and adds a single `start` script. `Bun.build` handles the client bundle at server startup, so there is no `build` script and no second tool. The source is plain JavaScript; no `tsconfig.json` is needed.
 
 ```json
 {
@@ -47,9 +47,9 @@ bun add @hellajs/core @hellajs/dom @hellajs/router @hellajs/ssr @hellajs/css
 
 ## The Shared App
 
-One isomorphic module defines the view signal, the route map, and the shell. The same module is imported by the server and the client — there is no server/client fork of the routes.
+One isomorphic module defines the view signal, the route map, and the shell. The same module is imported by the server and the client; there is no server/client fork of the routes.
 
-The key pattern is the **view signal**: each route handler is a *pure state-setter* that updates `currentView` and does nothing else. The shell reads `currentView`, so changing the signal changes the rendered view. This shape is what makes routing isomorphic — the same handlers fire on the server (driven by `router({ url })`) and on the client (driven by `router({ routes })` + `hydrate`).
+The key pattern is the **view signal**: each route handler is a *pure state-setter* that updates `currentView` and does nothing else. The shell reads `currentView`, so changing the signal changes the rendered view. This shape is what makes routing isomorphic: the same handlers fire on the server (driven by `router({ url })`) and on the client (driven by `router({ routes })` + `hydrate`).
 
 Create `src/app.js`:
 
@@ -87,7 +87,7 @@ export const App = () => html`
 
 - **`currentView` signal**: Holds the node for the currently-rendered view. Route handlers set it; the shell reads it
 - **Pure-setter handlers** `() => currentView(View())`: They only update the signal. The matched handler fires once during `router()` on both sides, so a pure setter is idempotent and side-effect-free
-- **Reactive active class**: `class` wraps the getter in a reactive effect, so [`route`](/reference/router/route)`().active(href)` re-runs on every navigation. Use `class`, not plain `class` — a plain attribute is set once at mount and never updates
+- **Reactive active class**: `class` wraps the getter in a reactive effect, so [`route`](/reference/router/route)`().active(href)` re-runs on every navigation. Use `class`, not plain `class`: a plain attribute is set once at mount and never updates
 
 <div role="alert" class="alert alert-error text-base">
   <span>⚠️</span>
@@ -96,7 +96,7 @@ export const App = () => html`
 
 ## Styles
 
-[`vars`](/reference/css/vars) registers custom-property declarations and [`css`](/reference/css/css) registers its rules — on both platforms, the same way. [`cssText`](/reference/css/csstext) then collects both (the css-side rules in registration order, then the vars buckets) as the text for a single `<style>` tag through `doc()`'s `styles`.
+[`vars`](/reference/css/vars) registers custom-property declarations and [`css`](/reference/css/css) registers its rules (on both platforms, the same way). [`cssText`](/reference/css/csstext) then collects both (the css-side rules in registration order, then the vars buckets) as the text for a single `<style>` tag through `doc()`'s `styles`.
 
 Create `src/theme.js`:
 
@@ -140,13 +140,13 @@ export const stylesheet = cssText();
 
 **Code Explanation**
 
-- **[`vars`](/reference/css/vars)**`({ color: { primary, text }, … })`: Registers `--color-primary`, `--color-text`, … on both platforms and returns the `var()` proxy — nested keys join into kebab-case names (`color.primary` → `--color-primary`), so `tokens.color.primary` reads back as `var(--color-primary)`
-- **[`css`](/reference/css/css)**`({ … })`: Registers the rules on both platforms; [`cssText`](/reference/css/csstext)`()` collects the generated text (rules + vars buckets). The same call injects a stylesheet on the client — one API, one collector
+- **[`vars`](/reference/css/vars)**`({ color: { primary, text }, … })`: Registers `--color-primary`, `--color-text`, … on both platforms and returns the `var()` proxy: nested keys join into kebab-case names (`color.primary` → `--color-primary`), so `tokens.color.primary` reads back as `var(--color-primary)`
+- **[`css`](/reference/css/css)**`({ … })`: Registers the rules on both platforms; [`cssText`](/reference/css/csstext)`()` collects the generated text (rules + vars buckets). The same call injects a stylesheet on the client: one API, one collector
 - **`export const stylesheet`**: The server imports it and lists it in `doc({ head: { styles } })`
 
 ## Server Rendering
 
-The server resolves the request URL with [`router`](/reference/router/router)`({ url })`, stringifies the tree with [`ssr`](/reference/ssr/ssr), and wraps it into a full document with [`doc`](/reference/ssr/doc). Pass the request URL via the `url` option — there is no `window` on the server. Resolution is synchronous, so `currentView` already holds the matched view when `ssr` walks the tree.
+The server resolves the request URL with [`router`](/reference/router/router)`({ url })`, stringifies the tree with [`ssr`](/reference/ssr/ssr), and wraps it into a full document with [`doc`](/reference/ssr/doc). Pass the request URL via the `url` option; there is no `window` on the server. Resolution is synchronous, so `currentView` already holds the matched view when `ssr` walks the tree.
 
 `Bun.build` bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
 
@@ -195,14 +195,14 @@ Bun.serve({
 **Code Explanation**
 
 - **[`router`](/reference/router/router)`({ routes, url: pathname + search, notFound })`**: `url` overrides `window.location` for the initial resolution. An explicit `url` is re-honored on every call, so each request resolves its own URL
-- **`router()` → `ssr()` with no `await` between them**: One synchronous block. No second request can interleave and overwrite the router's signals mid-render — synchronous `ssr` is concurrency-safe, so you do not need a router instance per request
+- **`router()` → `ssr()` with no `await` between them**: One synchronous block. No second request can interleave and overwrite the router's signals mid-render: synchronous `ssr` is concurrency-safe, so you do not need a router instance per request
 - **`` `<div id="app">${ssr(…)}</div>` ``**: [`hydrate`](/reference/dom/hydrate)`('#app')` needs a container to adopt. `doc()` places `body` verbatim, so wrap the output in `<div id="app">`
 - **[`doc`](/reference/ssr/doc)`({ head, body })`**: `styles` emits `stylesheet` as one `<style>` tag; `scripts` emits the client tag
-- **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory — no `dist/` to manage
+- **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory; no `dist/` to manage
 
 ## Client Hydration
 
-The client omits `url`: it reads `window.location` and resolves synchronously — the same URL the server resolved — so `currentView` matches the server-rendered view and [`hydrate`](/reference/dom/hydrate) adopts the existing nodes rather than rebuilding them.
+The client omits `url`: it reads `window.location` and resolves synchronously (the same URL the server resolved), so `currentView` matches the server-rendered view and [`hydrate`](/reference/dom/hydrate) adopts the existing nodes rather than rebuilding them.
 
 Create `src/client.js`:
 
@@ -214,13 +214,13 @@ import { routes, App, notFound } from './app.js';
 
 router({ routes, notFound });
 
-// afterMount fires automatically during hydrate — no flush() needed
+// afterMount fires automatically during hydrate; no flush() needed
 hydrate(html`<${App} />`, '#app');
 ```
 
 **Code Explanation**
 
-- **[`router`](/reference/router/router)`({ routes, notFound })` — no `url`**: `url` is server-only. The client reads `window.location` and resolves the same URL, so the view matches the server output
+- **[`router`](/reference/router/router)`({ routes, notFound })` (no `url`)**: `url` is server-only. The client reads `window.location` and resolves the same URL, so the view matches the server output
 - **[`hydrate`](/reference/dom/hydrate)**: Re-executes the component tree against the existing DOM (the same node passed to `ssr`), attaching effects/handlers/state without replacing nodes. `afterMount` hooks fire automatically during hydrate.
 
 ## Run the App
@@ -231,7 +231,7 @@ Start the server. It bundles the client at startup and serves both the rendered 
 bun src/server.js
 ```
 
-Visit `http://localhost:3000`. The server renders the matched route for each request — view-source shows the full HTML:
+Visit `http://localhost:3000`. The server renders the matched route for each request; view-source shows the full HTML:
 
 ```bash
 curl -s localhost:3000/users/1
@@ -241,7 +241,7 @@ curl -s localhost:3000/
 # …<h1>Home</h1>…
 ```
 
-After the client script loads, clicking a nav link updates the view and the active class without a full reload — `hydrate` adopted the server nodes, so there is no flash and no rebuild.
+After the client script loads, clicking a nav link updates the view and the active class without a full reload: `hydrate` adopted the server nodes, so there is no flash and no rebuild.
 
 ## Next Steps
 
@@ -260,10 +260,10 @@ import { html } from '@hellajs/dom';
 import { route } from '@hellajs/router';
 
 // The view signal holds the currently-rendered view node. Route handlers are
-// pure setters — they update this signal and nothing else. The same handlers
+// pure setters; they update this signal and nothing else. The same handlers
 // fire on the server (driven by router({ url })) and on the client (driven by
 // router({ routes }) + hydrate), so the rendered view matches. The
-// () => mount(...) style is client-only — mount needs a document and throws on
+// () => mount(...) style is client-only; mount needs a document and throws on
 // the server.
 export const currentView = signal(html`<h1>Loading…</h1>`);
 
@@ -295,8 +295,8 @@ import { css, vars, cssText } from '@hellajs/css';
 
 // vars() registers the custom-property declarations on both platforms and returns
 // the var() proxy everywhere; css() registers its rules the same way. cssText()
-// then collects both — the css-side rules in registration order, then the vars
-// buckets — as the text for one <style> tag via doc({ head: { styles } }).
+// then collects both (the css-side rules in registration order, then the vars
+// buckets) as the text for one <style> tag via doc({ head: { styles } }).
 export const tokens = vars({
   color: { primary: '#2563eb', text: '#333' },
   space: { nav: '1rem' },
@@ -340,7 +340,7 @@ import { routes, App, notFound } from './app.js';
 import { stylesheet } from './theme.js';
 
 // Bundle the client once at startup. Bun's native bundler resolves the bare
-// `@hellajs/*` specifiers the browser can't — no separate build step, no dist/.
+// `@hellajs/*` specifiers the browser can't; no separate build step, no dist/.
 const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
 if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
 const client = await build.outputs[0].text();
@@ -358,12 +358,12 @@ Bun.serve({
 
     // url overrides window.location (there is none on the server); router init
     // is synchronous, so currentView holds the matched view before ssr walks the
-    // tree. The whole block is synchronous — no await between router and ssr —
-    // so no second request can interleave and overwrite the router's module-level
+    // tree. The whole block is synchronous (no await between router and ssr), so
+    // no second request can interleave and overwrite the router's module-level
     // signals mid-render.
     router({ routes, url: pathname + search, notFound });
 
-    // Wrap the output so the client has an #app container to hydrate into —
+    // Wrap the output so the client has an #app container to hydrate into:
     // hydrate('#app') adopts the existing nodes instead of rebuilding them.
     const body = `<div id="app">${ssr(html`<${App} />`)}</div>`;
 
@@ -388,11 +388,11 @@ import { html, hydrate } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { routes, App, notFound } from './app.js';
 
-// Omit `url`: the client reads window.location and resolves synchronously — the
-// same URL the server resolved — so currentView matches the server-rendered view
+// Omit `url`: the client reads window.location and resolves synchronously (the
+// same URL the server resolved), so currentView matches the server-rendered view
 // and hydrate adopts the existing nodes rather than rebuilding them.
 router({ routes, notFound });
 
-// afterMount fires automatically during hydrate — no flush() needed.
+// afterMount fires automatically during hydrate; no flush() needed.
 hydrate(html`<${App} />`, '#app');
 ```

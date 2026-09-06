@@ -1,6 +1,6 @@
 # Control Flow
 
-Conditionals and dynamic expressions in templates are reactive by default — the compiler auto-wraps any expression that reads a signal, so no manual wrapper is required (an explicit `() => …` is still accepted and behaves identically).
+Conditionals and dynamic expressions in templates are reactive by default: the compiler auto-wraps any expression that reads a signal, so no manual wrapper is required (an explicit `() => …` is still accepted and behaves identically).
 
 ## Conditional Rendering
 
@@ -68,13 +68,13 @@ const TodoList = () => {
 mount(TodoList, "#app");
 ```
 
-A bare `{todos().map(...)}` is reactive (it reads the signal). For a one-time static snapshot, hoist the read (`const items = todos()`) or wrap it in [`untracked`](/reference/core/untracked) — or, for lists that change, prefer [`ForEach`](/reference/dom/foreach).
+A bare `{todos().map(...)}` is reactive (it reads the signal). For a one-time static snapshot, hoist the read (`const items = todos()`) or wrap it in [`untracked`](/reference/core/untracked); or, for lists that change, prefer [`ForEach`](/reference/dom/foreach).
 
 See [`ForEach`](/reference/dom/foreach) for keyed reconciliation details.
 
 ## Portals
 
-Render content to a different DOM location while maintaining reactivity — useful for modals, tooltips, and overlays that need to escape their parent's DOM tree.
+Render content to a different DOM location while maintaining reactivity, useful for modals, tooltips, and overlays that need to escape their parent's DOM tree.
 
 ```jsx
 import { mount, Portal } from "@hellajs/dom";
@@ -101,7 +101,7 @@ const Modal = () => {
 mount(Modal, "#app");
 ```
 
-**Portal types:** `append` (default), `prepend`, `replace`, `before`, `after` — controlling how content is inserted relative to the target:
+**Portal types:** `append` (default), `prepend`, `replace`, `before`, `after`, controlling how content is inserted relative to the target:
 
 ```jsx
 // Append as last child (default)
@@ -115,7 +115,7 @@ mount(Modal, "#app");
 </Portal>
 ```
 
-Portal content remains reactive — signal updates propagate to the portaled location — and is cleaned up automatically when the portal's parent element is removed. The target element must exist in the DOM when the portal renders; the target is queried by CSS selector at render time.
+Portal content remains reactive (signal updates propagate to the portaled location) and is cleaned up automatically when the portal's parent element is removed. The target element must exist in the DOM when the portal renders; the target is queried by CSS selector at render time.
 
 See [`Portal`](/reference/dom/portal) for full details.
 
@@ -143,7 +143,7 @@ const Dashboard = () => {
 - `loading`: Shown during async load (optional; without it the space stays empty)
 - `fallback`: Shown on loader error only (optional)
 
-The `loader` returns a Promise resolving to a component function or HellaNode. Loader errors are caught inside `Lazy` and trigger the `fallback` directly — they do not bubble to the global [`onError`](/reference/dom/onerror) handler.
+The `loader` returns a Promise resolving to a component function or HellaNode. Loader errors are caught inside `Lazy` and trigger the `fallback` directly; they do not bubble to the global [`onError`](/reference/dom/onerror) handler.
 
 When the parent element is removed during loading, the loader is automatically cancelled. Loaders performing network requests can accept an options object with an `AbortSignal`:
 
@@ -159,7 +159,7 @@ When the parent element is removed during loading, the loader is automatically c
 />
 ```
 
-Plain `() => Promise` loaders work unchanged — the options argument is silently ignored. Pass props to the loaded component through the `props` attribute:
+Plain `() => Promise` loaders work unchanged; the options argument is silently ignored. Pass props to the loaded component through the `props` attribute:
 
 ```jsx
 <Lazy
@@ -192,6 +192,6 @@ const App = () => (
 mount(App, "#app");
 ```
 
-When `show` turns `false` and a `leave` class is set, the class is added and the node is removed after `duration + 50` ms so the animation finishes; without a `leave` class, hiding removes the node synchronously. The `enter` class is suppressed on first render unless `appear` is set (`true` reuses `enter`, a string names a dedicated class). Toggling `show` back to `true` during a leave cancels the removal timer — repeated toggling is safe.
+When `show` turns `false` and a `leave` class is set, the class is added and the node is removed after `duration + 50` ms so the animation finishes; without a `leave` class, hiding removes the node synchronously. The `enter` class is suppressed on first render unless `appear` is set (`true` reuses `enter`, a string names a dedicated class). Toggling `show` back to `true` during a leave cancels the removal timer; repeated toggling is safe.
 
 See [`Transition`](/reference/dom/transition) for full details.

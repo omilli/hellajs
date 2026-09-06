@@ -122,7 +122,7 @@ const ThemeSwitcher = () => {
 
 ## Styles and Toggle
 
-Define styles using [`style`](/reference/css/style) — each call returns a hashed class name that reads the `tokens` proxy. Shared button styles live in the `app` class as a descendant selector.
+Define styles using [`style`](/reference/css/style): each call returns a hashed class name that reads the `tokens` proxy. Shared button styles live in the `app` class as a descendant selector.
 
 ```tsx
 //... after vars definition
@@ -174,7 +174,7 @@ Your app will be running at `http://localhost:5173`. Click the toggle and watch 
 
 **Code Explanation**
 
-- **`style({ ... }, { label: 'page' })`**:  Scopes the styles under a generated class returned for `class={page}` — no hand-picked names to collide
+- **`style({ ... }, { label: 'page' })`**:  Scopes the styles under a generated class returned for `class={page}`: no hand-picked names to collide
 - **`backgroundColor: tokens.bg`**:  `tokens.*` properties resolve to CSS custom property strings
 - **`'button'`**:  Shared button styles as a descendant selector (buttons inside `app` inherit these defaults)
 - **`theme(isDark() ? 'light' : 'dark')`**:  Updates the signal reactively

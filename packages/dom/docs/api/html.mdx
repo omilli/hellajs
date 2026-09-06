@@ -253,6 +253,6 @@ A template consisting of exactly one interpolation returns the value itself, unw
 const inner = html`<span />`;
 html`${inner}` === inner;        // true
 
-// A primitive is returned the same way — do not pass it straight to mount
+// A primitive is returned the same way; do not pass it straight to mount
 html`${"text"}` === "text";      // true
 ```

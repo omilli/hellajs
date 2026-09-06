@@ -46,7 +46,7 @@ router({
 });
 ```
 
-The `notFound` handler receives the attempted path — query included, same shape as [`route().path`](/reference/router/route) — so the 404 view can show what the user tried to reach.
+The `notFound` handler receives the attempted path (query included, same shape as [`route().path`](/reference/router/route)), so the 404 view can show what the user tried to reach.
 
 `notFound` also accepts a string to redirect to another route:
 
@@ -116,7 +116,7 @@ router({
 
 ### Optional Segments
 
-A `:param?` segment matches optionally — the route fires with or without it, and a skipped segment leaves no key in `params`. `?` in a pattern always marks an optional parameter; patterns never carry query strings.
+A `:param?` segment matches optionally: the route fires with or without it, and a skipped segment leaves no key in `params`. `?` in a pattern always marks an optional parameter; patterns never carry query strings.
 
 ```jsx
 router({
@@ -129,7 +129,7 @@ router({
 });
 ```
 
-An absent optional token is also stripped from built URLs — together with its preceding slash:
+An absent optional token is also stripped from built URLs, together with its preceding slash:
 
 ```jsx
 import { navigate } from '@hellajs/router';
@@ -138,7 +138,7 @@ navigate('/users/:id?');                            // → /users
 navigate('/users/:id?', { params: { id: '7' } });  // → /users/7
 ```
 
-Optional segments work anywhere in a pattern — `/posts/:id?/edit` matches both `/posts/edit` and `/posts/7/edit` — and combine with wildcards (`/files/:id?/*`). [`href`](/reference/router/href) applies the same substitution rules.
+Optional segments work anywhere in a pattern (`/posts/:id?/edit` matches both `/posts/edit` and `/posts/7/edit`) and combine with wildcards (`/files/:id?/*`). [`href`](/reference/router/href) applies the same substitution rules.
 
 All route parameters and query values are strings; cast to other types as needed.
 
@@ -186,7 +186,7 @@ For lifecycle hooks (`before`/`after`), route guards, and redirects, see [route 
 
 ## Navigation
 
-The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is synchronous — `route()` is updated before `navigate()` returns.
+The [`navigate`](/reference/router/navigate) function provides programmatic routing with parameter substitution, query strings, and scroll control. Navigation is synchronous: `route()` is updated before `navigate()` returns.
 
 Same-origin `<a href>` clicks are automatically intercepted and routed through `navigate()` by default. Pass `intercept: false` to `router()` to disable and restore full page reload behavior.
 
@@ -287,7 +287,7 @@ router({
 
 See [`route`](/reference/router/route) for the complete `RouteInfo` structure.
 
-Set `inheritMeta: true` on the [`router()`](/reference/router/router) configuration to inherit parent meta through the nested route chain — the same [parent-to-leaf merge order](/learn/concepts/routing#nested-routes) as parameter inheritance. Each route can override the global flag with its own `inheritMeta` field to opt in or out individually.
+Set `inheritMeta: true` on the [`router()`](/reference/router/router) configuration to inherit parent meta through the nested route chain, the same [parent-to-leaf merge order](/learn/concepts/routing#nested-routes) as parameter inheritance. Each route can override the global flag with its own `inheritMeta` field to opt in or out individually.
 
 ## Router Modes
 
@@ -316,11 +316,11 @@ router({
 navigate('/about'); // route() updates; window.location and history are untouched
 ```
 
-Memory mode routes without a URL — the initial path comes from the `url` option or `/`, nothing is written to `window.location` or history, and no listeners are attached. It fits tests, Storybook, and non-DOM environments. There is no history stack in memory mode: browser back/forward do nothing, and back/forward navigation APIs do not exist — drive the route with `navigate()`.
+Memory mode routes without a URL: the initial path comes from the `url` option or `/`, nothing is written to `window.location` or history, and no listeners are attached. It fits tests, Storybook, and non-DOM environments. There is no history stack in memory mode: browser back/forward do nothing, and back/forward navigation APIs do not exist; drive the route with `navigate()`.
 
 ## Base Path
 
-Apps deployed under a subpath — GitHub Pages project sites, `/~user/` directories, shared hosts — set `base` so the router owns the URL prefix once, instead of hand-prefixing every route pattern, `navigate()` target, and `<a href>`.
+Apps deployed under a subpath (GitHub Pages project sites, `/~user/` directories, shared hosts) set `base` so the router owns the URL prefix once, instead of hand-prefixing every route pattern, `navigate()` target, and `<a href>`.
 
 ```jsx
 import { router, navigate } from '@hellajs/router';
@@ -335,16 +335,16 @@ router({
 
 navigate('/users/:id', { params: { id: '7' } });
 // URL: /app/users/7
-// route().path: '/users/7' — logical, base-free
+// route().path: '/users/7'; logical, base-free
 ```
 
-Everything inside the router stays **logical**: route patterns, `navigate()` targets, `route().path`, `active()`, and `crumbs` never see the base. The router strips it from the URL on every read — initial load, `popstate`, intercepted link clicks — and re-adds it on every history commit. Links carry the full deployed URL:
+Everything inside the router stays **logical**: route patterns, `navigate()` targets, `route().path`, `active()`, and `crumbs` never see the base. The router strips it from the URL on every read (initial load, `popstate`, intercepted link clicks) and re-adds it on every history commit. Links carry the full deployed URL:
 
 ```typescript
-// <a href="/app/users/8"> routes logically to /users/8 — the base is stripped on click
+// <a href="/app/users/8"> routes logically to /users/8; the base is stripped on click
 ```
 
-`base` applies to history mode only — hash mode never touches the pathname, so the base is ignored there (documented, not an error). A trailing slash is normalized away (`'/app/'` behaves as `'/app'`), and the value must start with `'/'` or `router()` throws.
+`base` applies to history mode only; hash mode never touches the pathname, so the base is ignored there (documented, not an error). A trailing slash is normalized away (`'/app/'` behaves as `'/app'`), and the value must start with `'/'` or `router()` throws.
 
 ## Scroll Behavior
 
@@ -378,7 +378,7 @@ router({
 navigate('/long-page', { scroll: 'top' });
 ```
 
-Custom scroll functions receive `(to, from, savedPosition)` and return `{ top, left? }` or `null` to skip. `savedPosition` is the scroll position captured when the returned-to page was last left — non-null only on browser back/forward, `null` on pushes and replaces.
+Custom scroll functions receive `(to, from, savedPosition)` and return `{ top, left? }` or `null` to skip. `savedPosition` is the scroll position captured when the returned-to page was last left, non-null only on browser back/forward, `null` on pushes and replaces.
 
 ```typescript
 // Top on push, restore on back/forward (the Vue Router default policy)
@@ -395,20 +395,20 @@ See [`router`](/reference/router/router) for all scroll configuration options.
 <details>
 <summary>Internal Mechanics</summary>
 
-The router implements a **5-phase resolution algorithm** with early termination — once a match is found, processing stops without checking subsequent phases.
+The router implements a **5-phase resolution algorithm** with early termination: once a match is found, processing stops without checking subsequent phases.
 
-1. **Global redirects** — `redirects[].from` matched as route patterns (`:param`/`*` capture) with captured params substituted into `to` (query ignored)
-2. **Route map redirects** — string values in the `routes` object (flat pattern match)
-3. **Nested routes** — `RouteWithHooks` entries with `children`, sorted by specificity
-4. **Flat routes** — function/leaf entries, matched in object entry order (not sorted)
-5. **Not found** — the `notFound` handler or redirect path
+1. **Global redirects**: `redirects[].from` matched as route patterns (`:param`/`*` capture) with captured params substituted into `to` (query ignored)
+2. **Route map redirects**: string values in the `routes` object (flat pattern match)
+3. **Nested routes**: `RouteWithHooks` entries with `children`, sorted by specificity
+4. **Flat routes**: function/leaf entries, matched in object entry order (not sorted)
+5. **Not found**: the `notFound` handler or redirect path
 
 **Specificity rules** (applied at every nesting level):
 
 - Non-wildcard segments before wildcard (`*`)
 - Deeper segment count before shallow
 - Nested routes are processed before flat routes
-- Flat routes match in object entry order — list specific patterns first
+- Flat routes match in object entry order; list specific patterns first
 
 Each nested level receives its **cumulative inherited parameters** plus the query; the handler receives leaf params/query. A cancelled guard on popstate/hashchange restores the previous URL via `replaceState`.
 

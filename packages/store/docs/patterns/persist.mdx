@@ -18,7 +18,7 @@ settings.theme('dark'); // localStorage: {"theme":"dark","fontSize":12}
 
 ### Persist a subset with partialize
 
-Keep volatile or non-serializable keys out of storage — only the projected keys are written, and changes to excluded keys never trigger writes.
+Keep volatile or non-serializable keys out of storage: only the projected keys are written, and changes to excluded keys never trigger writes.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -33,13 +33,13 @@ const persist = persistStore(editor, localStorageAdaptor('editor'), {
   partialize: (s) => ({ document: s.document })
 });
 
-editor.autosaveDraft('tmp'); // excluded key — no storage write
+editor.autosaveDraft('tmp'); // excluded key; no storage write
 editor.update({ document: { title: 'Draft', body: 'Hello' } }); // persisted
 ```
 
 ### Persist to IndexedDB
 
-Implement the three-method `StoreAdaptor` contract over IndexedDB — `read`, `write`, and `clear` may all be async; hydration flips `hydrated()` when the read resolves.
+Implement the three-method `StoreAdaptor` contract over IndexedDB: `read`, `write`, and `clear` may all be async; hydration flips `hydrated()` when the read resolves.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -90,7 +90,7 @@ const persist = persistStore(data, idbAdaptor('data'), {
 
 ### Coalesce rapid writes with debounce
 
-Slider drags and keystrokes fire many writes per second — `debounce` persists once per window, flushed on `pagehide` so the last value is never lost.
+Slider drags and keystrokes fire many writes per second; `debounce` persists once per window, flushed on `pagehide` so the last value is never lost.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -102,13 +102,13 @@ const persist = persistStore(filters, sessionStorageAdaptor('filters'), {
 });
 
 filters.query('he');   // pending
-filters.query('hell'); // pending — replaces the earlier value
+filters.query('hell'); // pending; replaces the earlier value
 // one write lands 300ms after the last change: {"query":"hell","page":1}
 ```
 
 ### Sync tabs through the storage event
 
-Cross-tab sync is not built in — the browser's `storage` event plus `update()` covers it. The write-through dedupes the echo, so there is no feedback loop.
+Cross-tab sync is not built in; the browser's `storage` event plus `update()` covers it. The write-through dedupes the echo, so there is no feedback loop.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -126,7 +126,7 @@ window.addEventListener('storage', (event) => {
 
 ### Handle renamed keys in deserialize
 
-There is no `version`/`migrate` option yet — a custom `deserialize` can bridge old stored shapes to the current one, preventing the corrupt-state fallback from clearing storage.
+There is no `version`/`migrate` option yet; a custom `deserialize` can bridge old stored shapes to the current one, preventing the corrupt-state fallback from clearing storage.
 
 ```typescript
 import { store } from '@hellajs/store';

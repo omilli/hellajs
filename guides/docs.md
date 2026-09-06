@@ -23,12 +23,13 @@ Decision index — jump to the section for the decision you are making. This gui
 | Cross-reference link format? | §Cross-References |
 | Frontmatter rules? | §File Locations & Naming → Frontmatter |
 | Length limits per doc type? | §Length Targets |
+| Em/en dash usage? | §Typography |
 | Section heading naming (banned generics)? | §Section Headings |
 | Tutorial progressive-build? | §Tutorial Docs |
 | Website wrapper page? | §Website Wrapper Pages |
 | Site-only / cross-package page? | §Website Wrapper Pages → Site-Authored Content Pages |
 
-Sections in order: File Locations & Naming · Decision Precedence · Template Selection · Function & Prefix Docs · Concept Docs · Pattern Docs · Index Docs · Tutorial Docs · Website Wrapper Pages · **Extending Existing Content** · Content Scope · API Section · Code Examples · Dual Syntax · Cross-References · Tables · Alert Boxes · `<details>` Sections · Content Tone · Section Headings · Length Targets · Verification Checklist.
+Sections in order: File Locations & Naming · Decision Precedence · Template Selection · Function & Prefix Docs · Concept Docs · Pattern Docs · Index Docs · Tutorial Docs · Website Wrapper Pages · **Extending Existing Content** · Content Scope · API Section · Code Examples · Dual Syntax · Cross-References · Tables · Alert Boxes · `<details>` Sections · Content Tone · Typography · Section Headings · Length Targets · Verification Checklist.
 
 ## File Locations & Naming
 
@@ -699,6 +700,21 @@ All doc types: present tense, no hedging ("Prevents propagation" not "Helps prev
 - **Pattern Docs**: Terse. Minimal prose, let the code speak. One sentence intro per pattern, then the code block.
 - **Tutorial Docs**: Conversational ("Let's build...", "Now add...", "Try clicking..."). Present tense for descriptions, imperative for instructions. Code Explanation bullets use factual tone (not conversational).
 
+## Typography
+
+Em dashes (`—`, `&mdash;`, `&#8212;`, `&#x2014;`, `&#8213;`) and en dashes (`–`, `&ndash;`, `&#x2013;`) are **banned** in every user-facing file: root and site READMEs, `packages/{pkg}/docs/**/*.mdx`, package `README.md` / `CHANGELOG.md` / `{pkg}-comparison.md`, `plugins/{p}/README.md`, `examples/*/tutorial.mdx`, `docs/src/pages/**/*.mdx`, and `.changeset/*.md`. The ban covers prose, tables, frontmatter descriptions, and comments inside code blocks (fences are no exemption: tutorial code comments are user-visible). ASCII `-` stays legal everywhere (`--` CSS custom properties, `---` rules, hyphenated names).
+
+Rewrite per occurrence, never a mechanical `" - "`:
+
+- Definitional appositive (`X — Y` where Y defines X): colon, `X: Y`.
+- Linked clauses: semicolon, or two sentences where emphasis deserves it.
+- Aside or supplement: parentheses, or a comma when light. Paired dashes (`X — Y — Z`): parentheses or commas.
+- Table cell (`Yes — detail`): `Yes: detail`.
+- Code comment (`… — detail`): `…; detail` or `. detail` (fits §Code Examples → Comment Style & No Test Assertions).
+- Numeric range: ASCII hyphen (`5-30`), never an en dash.
+
+Rewrites must not change meaning, link targets, identifiers, or fenced code semantics. Where a sentence reads worse after rewrite, restructure the sentence instead of forcing a colon. Enforcement: `bun em-dash`, composed into `bun lint:guards` (CI). Agent-facing files (AGENTS.md, guides, memory, plans) are exempt.
+
 ## Section Headings
 
 Headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are **banned**. Source-code dumps belong in a `<details>` block with the summary `Internal Mechanics` (see `<details>` Sections), not under a generic `### Implementation` heading.
@@ -761,6 +777,9 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] Full path format `/reference/{package}/{export}`; link on first mention only
 - [ ] No `## Related` section; cross-references inline
 - [ ] Present tense, no hedging; tone matches doc type (API = factual, Concept = educational, Pattern = terse)
+
+**Typography**
+- [ ] No em/en dashes or their HTML entities in any user-facing file (prose, tables, frontmatter descriptions, code-block comments); numeric ranges use ASCII hyphens; enforced by `bun em-dash` (composed into `bun lint:guards`)
 
 **Length**
 - [ ] Within target per §Length Targets; action taken if exceeded

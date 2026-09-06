@@ -1,6 +1,6 @@
 # State
 
-Signals are the foundation for all reactive state in HellaJS. Use them directly for local component state or module-level shared state — and when state grows into a nested object shared across components, reach for a [`store`](/reference/store/store). See [Reactivity](/learn/concepts/reactivity) for the signal model itself.
+Signals are the foundation for all reactive state in HellaJS. Use them directly for local component state or module-level shared state, and when state grows into a nested object shared across components, reach for a [`store`](/reference/store/store). See [Reactivity](/learn/concepts/reactivity) for the signal model itself.
 
 ## Creating Stores
 
@@ -34,10 +34,10 @@ Beyond basic get/set, stores offer several capabilities, each documented in deta
 
 - **Readonly**: Restrict specific properties or the entire store to read-only access, enforced at the type level.
 - **Snapshots**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
-- **Subscriptions**: Observe a single property with `subscribe(key, cb)` — the callback receives `(next, prev)` and the call returns an unsubscribe function.
+- **Subscriptions**: Observe a single property with `subscribe(key, cb)`: the callback receives `(next, prev)` and the call returns an unsubscribe function.
 - **Updates**: Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
 - **Middleware**: Validate and transform values before they're stored. Runs synchronously on every set operation.
-- **Write equality**: Skip writes whose content matches the stored value — per-key comparators or the `'structural'` content-equality preset.
+- **Write equality**: Skip writes whose content matches the stored value: per-key comparators or the `'structural'` content-equality preset.
 - **Nested stores**: Compose stores hierarchically. Nested stores share signal references bidirectionally.
 - **Batching**: Wrap multiple store updates in [`batch`](/reference/core/batch) to defer computation until all changes are applied.
 - **Cleanup**: Recursively propagate teardown to nested stores when the store is no longer needed.
@@ -165,11 +165,11 @@ const app = store({
 });
 ```
 
-Middleware runs *before* changes are stored — use it for validation, transformation, or normalization. Effects run *after* — see [reactivity](/learn/concepts/reactivity) for logging and derived-state patterns. For persistence, use [persistStore](/reference/store/persist) — see [Persistence](#persistence).
+Middleware runs *before* changes are stored; use it for validation, transformation, or normalization. Effects run *after*; see [reactivity](/learn/concepts/reactivity) for logging and derived-state patterns. For persistence, use [persistStore](/reference/store/persist); see [Persistence](#persistence).
 
 ## Persistence
 
-`persistStore(store, adaptor)` connects a store to storage — rehydrating persisted state at creation and writing every change through. Synchronous backends like localStorage apply before `persistStore` returns; async backends such as IndexedDB resolve later, and the reactive `hydrated()` flag gates on it:
+`persistStore(store, adaptor)` connects a store to storage, rehydrating persisted state at creation and writing every change through. Synchronous backends like localStorage apply before `persistStore` returns; async backends such as IndexedDB resolve later, and the reactive `hydrated()` flag gates on it:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -182,11 +182,11 @@ const persist = persistStore(settings, localStorageAdaptor('settings'));
 settings.theme('dark');
 ```
 
-Corrupt or outdated persisted state never bricks the app — storage is cleared, the initial state stays, and `onError` reports. See the [persistStore reference](/reference/store/persist) for the full hydration contract and [persistence patterns](/learn/patterns/persistence) for IndexedDB, partial persistence, and cross-tab recipes.
+Corrupt or outdated persisted state never bricks the app: storage is cleared, the initial state stays, and `onError` reports. See the [persistStore reference](/reference/store/persist) for the full hydration contract and [persistence patterns](/learn/patterns/persistence) for IndexedDB, partial persistence, and cross-tab recipes.
 
 ## Write Equality
 
-Direct writes are reference-compared by default: writing a new array with identical content wakes every subscriber of that leaf. The `equals` option opts a key into content equality — reach for it when a store holds object, array, `Date`, `Map`, or class-instance leaves that are replaced wholesale on every save:
+Direct writes are reference-compared by default: writing a new array with identical content wakes every subscriber of that leaf. The `equals` option opts a key into content equality: reach for it when a store holds object, array, `Date`, `Map`, or class-instance leaves that are replaced wholesale on every save:
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -203,12 +203,12 @@ effect(() => {
   console.log(appStore.items()); // Logs: [1, 2]
 });
 
-appStore.items([1, 2]); // same content — write skipped, effect stays asleep
+appStore.items([1, 2]); // same content; write skipped, effect stays asleep
 ```
 
-A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it — direct calls, `update(partial)`, and `update(draft => …)` — and equality runs after middleware, so the comparator sees the transformed value. Invalid values throw at create time: a leaf accepts a comparator function or `'structural'`; an object key accepts a nested map only, so `'structural'` on an object key throws.
+A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it (direct calls, `update(partial)`, and `update(draft => …)`), and equality runs after middleware, so the comparator sees the transformed value. Invalid values throw at create time: a leaf accepts a comparator function or `'structural'`; an object key accepts a nested map only, so `'structural'` on an object key throws.
 
-Prefer the draft path for fine-grained array edits and reserve `'structural'` for large leaves that are replaced wholesale — it costs O(n) per write. See [write equality](/reference/store/store#write-equality) for the full option shape.
+Prefer the draft path for fine-grained array edits and reserve `'structural'` for large leaves that are replaced wholesale; it costs O(n) per write. See [write equality](/reference/store/store#write-equality) for the full option shape.
 
 ## Readonly
 
@@ -223,10 +223,10 @@ const configStore = store(
 );
 
 configStore.theme('dark');           // Updates normally
-// ❌ configStore.apiUrl('new-url'); — throws: readonly key
+// ❌ configStore.apiUrl('new-url'); throws: readonly key
 ```
 
-Readonly propagates deep. `readonly: true` locks every plain-object level of the tree, and a listed object key locks the entire subtree below it — `readonly: ['user']` makes `user` and everything inside it readonly. Each nested level derives its own full readonly key set, so intermediate objects stay locked too:
+Readonly propagates deep. `readonly: true` locks every plain-object level of the tree, and a listed object key locks the entire subtree below it: `readonly: ['user']` makes `user` and everything inside it readonly. Each nested level derives its own full readonly key set, so intermediate objects stay locked too:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -236,20 +236,20 @@ const app = store(
   { readonly: true }
 );
 
-// ❌ app.user.name('Bob'); — throws: readonly propagates into nested objects
-// ❌ app.user.prefs.theme('light'); — throws: every plain-object level is locked
-app.user.prefs.theme(); // 'dark' — reading works everywhere
+// ❌ app.user.name("Bob"); throws: readonly propagates into nested objects
+// ❌ app.user.prefs.theme("light"); throws: every plain-object level is locked
+app.user.prefs.theme(); // 'dark'; reading works everywhere
 
 const partial = store(
   { user: { name: 'Alice' }, theme: 'light' },
   { readonly: ['user'] as const }
 );
 
-// ❌ partial.user.name('Bob'); — throws: the whole user subtree is readonly
-partial.theme('dark');  // Updates normally — only listed keys lock
+// ❌ partial.user.name("Bob"); throws: the whole user subtree is readonly
+partial.theme('dark');  // Updates normally; only listed keys lock
 ```
 
-Composed stores keep their own readonly configuration. A pre-configured readonly store stays readonly when composed into a writable parent, and a writable store composed into a `readonly: true` parent stays writable — composition adopts the inner store's signals as-is:
+Composed stores keep their own readonly configuration. A pre-configured readonly store stays readonly when composed into a writable parent, and a writable store composed into a `readonly: true` parent stays writable; composition adopts the inner store's signals as-is:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -257,7 +257,7 @@ import { store } from '@hellajs/store';
 const user = store({ name: 'Alice' }, { readonly: true });
 const app = store({ user });
 
-// ❌ app.user.name('Bob'); — throws: user retains its readonly state
+// ❌ app.user.name("Bob"); throws: user retains its readonly state
 app.user.name();      // 'Alice'
 ```
 
@@ -276,20 +276,20 @@ const unsub = appStore.subscribe('count', (next, prev) => {
 
 appStore.count(5); // Logs: 0 → 5
 unsub();
-appStore.count(6); // silent — unsubscribed
+appStore.count(6); // silent; unsubscribed
 ```
 
 The callback runs untracked: reading other signals inside it never widens the subscription. Writes that compare equal to the current value skip the callback entirely, and multiple writes inside [`batch`](/reference/core/batch)`()` fire it once, with the final value, when the batch ends.
 
-Only signal-backed properties are subscribable — nested stores, preserved functions, reserved keys, and unknown keys throw. A composed parent exposes only its own signal-backed keys: subscribe on the store that owns the key (the nested store itself), and writes through either reference fire it because composed stores share signals.
+Only signal-backed properties are subscribable: nested stores, preserved functions, reserved keys, and unknown keys throw. A composed parent exposes only its own signal-backed keys: subscribe on the store that owns the key (the nested store itself), and writes through either reference fire it because composed stores share signals.
 
-Use `subscribe` where an [`effect`](/reference/core/effect) falls short: effects see no previous value, fire on setup, and reading `snapshot()` inside one subscribes to the entire tree. `subscribe` is per-property, silent on setup, and carries `(next, prev)` — the shape logging, analytics, and undo stacks want.
+Use `subscribe` where an [`effect`](/reference/core/effect) falls short: effects see no previous value, fire on setup, and reading `snapshot()` inside one subscribes to the entire tree. `subscribe` is per-property, silent on setup, and carries `(next, prev)`, the shape logging, analytics, and undo stacks want.
 
 ## Important Store Behaviors
 
 ### Update Errors
 
-The `update()` method only applies changes for properties that exist in the initial object and are backed by signals. Writes outside that contract throw an `Error` naming the offending key — nothing is silently dropped:
+The `update()` method only applies changes for properties that exist in the initial object and are backed by signals. Writes outside that contract throw an `Error` naming the offending key; nothing is silently dropped:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -300,16 +300,16 @@ const app = store({
   onSave: () => {}
 });
 
-app.update({ count: 5 });              // ✅ works — count is in the initial object
-app.update({ user: { name: 'Bob' } }); // ✅ works — nested stores accept object partials
+app.update({ count: 5 });              // ✅ works; count is in the initial object
+app.update({ user: { name: 'Bob' } }); // ✅ works; nested stores accept object partials
 
 // ❌ app.update({ newProp: 'value' }); // throws: [store] update: unknown key "newProp"
-// ❌ app.update({ onSave: () => {} }); // throws: [store] update: "onSave" is a function property, not state — assign it directly
+// ❌ app.update({ onSave: () => {} }); // throws: [store] update: "onSave" is a function property, not state
 // ❌ app.update({ snapshot: 1 });      // throws: [store] update: reserved key "snapshot"
 // ❌ app.update({ user: 'x' });        // throws: [store] update: store key "user" requires an object value
 ```
 
-Readonly keys throw on every write path — `update()`, the direct setter call, and the draft path:
+Readonly keys throw on every write path: `update()`, the direct setter call, and the draft path:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -322,7 +322,7 @@ const locked = store({ apiKey: 'a', count: 0 }, { readonly: ['apiKey'] as const 
 
 The draft path applies the same rules: assigning a function property or an unknown key inside `update(draft => ...)` throws when the changes are extracted and applied.
 
-`update()` throws at the first offending key, in partial-key order — keys processed before the offending one are already applied. Validate input before calling `update()` if you need all-or-nothing semantics.
+`update()` throws at the first offending key, in partial-key order; keys processed before the offending one are already applied. Validate input before calling `update()` if you need all-or-nothing semantics.
 
 ### Non-Writable Properties
 
@@ -333,11 +333,11 @@ import { store } from '@hellajs/store';
 
 const app = store({ count: 0 });
 
-// ❌ app.count = 5; — TypeError: signal-backed properties are non-writable
+// ❌ app.count = 5; TypeError: signal-backed properties are non-writable
 app.count(5); // ✅ write through the signal
 ```
 
-Function-valued properties are the exemption — they stay writable so handlers can be swapped (`app.onSave = newHandler`). This includes the adopted signal functions of a composed store's leaves, whose replacement remains possible for the same reason.
+Function-valued properties are the exemption: they stay writable so handlers can be swapped (`app.onSave = newHandler`). This includes the adopted signal functions of a composed store's leaves, whose replacement remains possible for the same reason.
 
 ### Function Preservation
 
@@ -414,7 +414,7 @@ When a store is created, the system transforms each property based on its type a
 - **Arrays** become signals containing the array value
 - **Functions** remain unchanged, preserving their original behavior
 
-Signal-backed properties, nested stores, and the built-in methods are defined with `writable: false` — external reassignment throws a `TypeError` instead of silently dropping reactivity. Function-valued properties keep `writable: true` so handlers stay swappable.
+Signal-backed properties, nested stores, and the built-in methods are defined with `writable: false`; external reassignment throws a `TypeError` instead of silently dropping reactivity. Function-valued properties keep `writable: true` so handlers stay swappable.
 
 ### Update Propagation
 

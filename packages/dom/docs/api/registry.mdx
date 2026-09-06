@@ -61,7 +61,7 @@ registry.addHook(element, "beforeDestroy", (node) => {
 | Hook | Timing | Receives Element |
 |------|--------|------------------|
 | `beforeMount` | Before element added to DOM | No |
-| `afterMount` | After element added to DOM — at mount time, or immediately when registered on an already-mounted element | Yes |
+| `afterMount` | After element added to DOM: at mount time, or immediately when registered on an already-mounted element | Yes |
 | `beforeUpdate` | Before reactive effect runs | Yes |
 | `afterUpdate` | After reactive effect runs | Yes |
 | `beforeDestroy` | Before cleanup begins | Yes |
@@ -96,9 +96,9 @@ count(1); // button now has data-count="1"
 
 HellaJS uses a dual cleanup strategy:
 
-**Synchronous cleanup** — When reactive children are replaced or removed (via `ForEach`, conditional rendering, etc.), `cleanupSubtree()` runs immediately, disposing effects, handlers, and hooks before the DOM node is removed.
+**Synchronous cleanup**: When reactive children are replaced or removed (via `ForEach`, conditional rendering, etc.), `cleanupSubtree()` runs immediately, disposing effects, handlers, and hooks before the DOM node is removed.
 
-**Safety net** — A scoped `MutationObserver` watches only mount target containers (registered via `mount()`). When nodes are externally removed from these containers, cleanup is deferred:
+**Safety net**: A scoped `MutationObserver` watches only mount target containers (registered via `mount()`). When nodes are externally removed from these containers, cleanup is deferred:
 
 ```
 Node removed from mount target

@@ -1,6 +1,6 @@
 # style
 
-Creates a scoped style from a declarations-first object and returns a content-hashed class name — the same string on client and server.
+Creates a scoped style from a declarations-first object and returns a content-hashed class name, the same string on client and server.
 
 ## API
 
@@ -16,7 +16,7 @@ function style(base: string | StyleObject, override: StyleObject, options?: Styl
 - `override`: Style object contributing the new declarations
 - `options`: Optional configuration
   - `label`: Readable segment embedded in the class name (`h-{label}-{hash}`), sanitized to `[a-zA-Z0-9-]`; a label empty after sanitization is treated as absent
-  - `host`: Node the `<style>` element is created in — e.g. a `ShadowRoot` for web components. Defaults to `document.head`
+  - `host`: Node the `<style>` element is created in; e.g. a `ShadowRoot` for web components. Defaults to `document.head`
 - **Returns**: The class name (`h-{label}-{hash}` / `h-{hash}`) for `class` attributes; the composed form prefixes a string base verbatim
 
 ## Basic Usage
@@ -36,7 +36,7 @@ const card = style({
   // Responsive design inherits the class
   '@media (max-width: 768px)': { padding: '0.5rem' }
 }, { label: 'card' });
-// "h-card-1z0q41r" — client AND server
+// "h-card-1z0q41r"; client AND server
 
 const Card = ({ title }: { title: string }) => (
   <div class={card}>
@@ -49,21 +49,21 @@ const Card = ({ title }: { title: string }) => (
 
 ### Content-Hashed Identity
 
-The class name is derived from the object's content — the same object always produces the same class, on every platform and every render. No user-chosen names to collide, no coordination between server and client: both derive `h-card-1z0q41r` independently and agree.
+The class name is derived from the object's content: the same object always produces the same class, on every platform and every render. No user-chosen names to collide, no coordination between server and client: both derive `h-card-1z0q41r` independently and agree.
 
 ```jsx
 import { style } from '@hellajs/css';
 
 const card = style({ color: 'red' }, { label: 'card' });
 const again = style({ color: 'red' }, { label: 'card' });
-// card === again — identical content, identical class
+// card === again; identical content, identical class
 ```
 
 Key-order independence comes free: `stringify` sorts keys before hashing, so `{ color: 'red', padding: 0 }` and `{ padding: 0, color: 'red' }` hash identically.
 
 ### Identical on Both Platforms
 
-On the client the rules are injected into the CSSOM. On the server the registration is state-only — the return value is still the class string, never CSS text. Collect the generated CSS with [`cssText`](/reference/css/csstext):
+On the client the rules are injected into the CSSOM. On the server the registration is state-only; the return value is still the class string, never CSS text. Collect the generated CSS with [`cssText`](/reference/css/csstext):
 
 ```jsx
 import { style, cssText } from '@hellajs/css';
@@ -87,7 +87,7 @@ const card = style({ padding: '1rem' }, { label: 'card' });
 const alert = style(card, { color: 'red' });
 // "h-card-… h-…"
 
-// Object base: deep-merge into ONE class — override wins,
+// Object base: deep-merge into ONE class; override wins,
 // nested objects merge, arrays replace
 const compact = style({ padding: '1rem', margin: '1rem' }, { padding: '0.5rem' });
 // one class, { padding: '0.5rem', margin: '1rem' }
@@ -101,22 +101,22 @@ Nested objects compose against the class exactly as they do under [`css`](/refer
 
 ### Same Object, Different Labels
 
-The hash covers the object only, never the label: the same object with different labels produces distinct classes whose rule bodies are identical. Each label registers its own rule — this is documented behavior, not a dedup miss.
+The hash covers the object only, never the label: the same object with different labels produces distinct classes whose rule bodies are identical. Each label registers its own rule; this is documented behavior, not a dedup miss.
 
 ```jsx
 import { style } from '@hellajs/css';
 
 const primary = style({ color: 'blue' }, { label: 'primary' });
 const info = style({ color: 'blue' }, { label: 'info' });
-// Two classes, two identical rules — use one label per distinct style
+// Two classes, two identical rules; use one label per distinct style
 ```
 
 ### Function Values Throw
 
-Value semantics match [`css`](/reference/css/css) exactly — including the throw on function leaves. Reactive values belong to [`vars`](/reference/css/vars); for state-dependent classes, resolve the condition before calling:
+Value semantics match [`css`](/reference/css/css) exactly, including the throw on function leaves. Reactive values belong to [`vars`](/reference/css/vars); for state-dependent classes, resolve the condition before calling:
 
 ```jsx
-// ❌ Throws — functions are not CSS values
+// ❌ Throws; functions are not CSS values
 try {
   style({ padding: () => '1rem' });
 } catch {}

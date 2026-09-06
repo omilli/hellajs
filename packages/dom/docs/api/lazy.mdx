@@ -91,7 +91,7 @@ When the parent element is removed during loading, the loader is automatically c
 />
 ```
 
-Existing `() => Promise` loaders continue to work — the options argument is ignored by functions that don't use it. The signal is useful for aborting network requests when the component is no longer needed.
+Existing `() => Promise` loaders continue to work; the options argument is ignored by functions that don't use it. The signal is useful for aborting network requests when the component is no longer needed.
 
 ### Fallback Content
 
@@ -168,7 +168,7 @@ During loading, Lazy components either show the `loading` prop content or remain
 
 ### Error Handling
 
-Loader errors are caught locally. When `fallback` is provided, the fallback renders in place of the content. When no `fallback` is provided, the error is logged to `console.error` and nothing renders. Loader errors do **not** bubble to [`onError`](/reference/dom/onerror) — `Lazy` handles them entirely locally.
+Loader errors are caught locally. When `fallback` is provided, the fallback renders in place of the content. When no `fallback` is provided, the error is logged to `console.error` and nothing renders. Loader errors do **not** bubble to [`onError`](/reference/dom/onerror); `Lazy` handles them entirely locally.
 
 ```jsx
 const faultyLoader = async () => {
@@ -183,7 +183,7 @@ const faultyLoader = async () => {
 
 ### Server Rendering and Hydration
 
-Under [`ssr.async`](/reference/ssr/ssr#async) and [`ssr.stream`](/reference/ssr/ssr#stream), the loader runs on the server and the loaded component renders into the HTML — the loader must be server-executable (a dynamic `import()` needs a server-resolvable module). A rejected loader renders `fallback` there, or rejects the render when none is provided. The synchronous [`ssr`](/reference/ssr/ssr) call cannot await: it emits the `loading` fallback without calling the loader. On the client, [`hydrate`](/reference/dom/hydrate) always re-runs the loader (the chunk must load for interactivity) and keeps the server-rendered content in place until the fresh render replaces it — no loading flash.
+Under [`ssr.async`](/reference/ssr/ssr#async) and [`ssr.stream`](/reference/ssr/ssr#stream), the loader runs on the server and the loaded component renders into the HTML; the loader must be server-executable (a dynamic `import()` needs a server-resolvable module). A rejected loader renders `fallback` there, or rejects the render when none is provided. The synchronous [`ssr`](/reference/ssr/ssr) call cannot await: it emits the `loading` fallback without calling the loader. On the client, [`hydrate`](/reference/dom/hydrate) always re-runs the loader (the chunk must load for interactivity) and keeps the server-rendered content in place until the fresh render replaces it, with no loading flash.
 
 ```js
 import { html, Lazy } from "@hellajs/dom";
@@ -193,7 +193,7 @@ import { ssr } from "@hellajs/ssr";
 const body = await ssr.async(html`
   <main><${Lazy} loader=${() => import("./Chart")} loading=${html`<p>Loading…</p>`} /></main>
 `);
-// client: hydrate(tree, container) re-runs the loader — the server content stays
+// client: hydrate(tree, container) re-runs the loader; the server content stays
 // on screen until the client chunk's fresh render replaces it (no flash)
 ```
 

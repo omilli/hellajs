@@ -111,7 +111,7 @@ router({
 });
 ```
 
-Async guards block — return the verdict from the guard itself:
+Async guards block; return the verdict from the guard itself:
 
 ```jsx
 router({
@@ -131,7 +131,7 @@ router({
 });
 ```
 
-While the guard is in flight, [`route`](/reference/router/route)`().pending` is `true` and the current match stays committed — use it to render a loading state. No handler-side revalidation is needed: the handler runs only after the guard settles.
+While the guard is in flight, [`route`](/reference/router/route)`().pending` is `true` and the current match stays committed; use it to render a loading state. No handler-side revalidation is needed: the handler runs only after the guard settles.
 
 ### Nested Routes
 
@@ -238,7 +238,7 @@ navigate('/long-page', { scroll: 'top' });
 
 ### SPA Link Interception
 
-Same-origin `<a href>` clicks are intercepted by default and routed through `navigate()` — no special handling needed.
+Same-origin `<a href>` clicks are intercepted by default and routed through `navigate()`; no special handling needed.
 
 ```jsx
 import { router } from '@hellajs/router';
@@ -266,7 +266,7 @@ router({
 
 ### Active Links
 
-Use [`route`](/reference/router/route)`().active()` to highlight the current section in a nav bar. The predicate uses ancestor semantics — a parent link stays lit while a child route is active.
+Use [`route`](/reference/router/route)`().active()` to highlight the current section in a nav bar. The predicate uses ancestor semantics: a parent link stays lit while a child route is active.
 
 ```jsx
 import { router, route, navigate } from '@hellajs/router';

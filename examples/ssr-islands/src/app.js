@@ -25,7 +25,7 @@ css({
 export const styles = cssText();
 
 // Shared template: a static shell with a server-rendered count and an empty
-// island slot. Pure data — no DOM. `ssr()` stringifies it to HTML on the server.
+// island slot. Pure data; no DOM. `ssr()` stringifies it to HTML on the server.
 export const App = () => html`
   <div>
     <h1>SSR Islands</h1>

@@ -82,7 +82,7 @@ const nested = route();
 
 ### Pending State
 
-`pending` is `true` while an async guard (a `Promise`-returning `before`/`leave`) defers a navigation commit. During the wait the signal keeps the previous match — `path`, `params`, `handler` all still describe the current route — and flips back to `false` when the navigation commits, cancels, or is superseded by a newer one. Always `false` on the server, where async guards proceed without blocking.
+`pending` is `true` while an async guard (a `Promise`-returning `before`/`leave`) defers a navigation commit. During the wait the signal keeps the previous match (`path`, `params`, `handler` all still describe the current route) and flips back to `false` when the navigation commits, cancels, or is superseded by a newer one. Always `false` on the server, where async guards proceed without blocking.
 
 ```typescript
 import { router, route, navigate } from '@hellajs/router';
@@ -98,7 +98,7 @@ router({
 });
 
 navigate('/dashboard');
-route().pending;  // true — the previous match is still current
+route().pending;  // true; the previous match is still current
 route().path;    // the path being left, until the guard settles
 ```
 
@@ -146,7 +146,7 @@ effect(() => {
 
 ### Active Link Matching
 
-The `active` predicate tests whether a pattern matches the current route path using ancestor semantics. Pass an href-like path prefix; parent routes stay active when navigating to deeper children. Segment boundaries prevent false matches — `/admin` does not light up at `/administrators`. The root `/` is the one exception: it matches exactly, so a home link lights up only at `/` (under ancestor matching the zero-segment root would otherwise be a prefix of every path).
+The `active` predicate tests whether a pattern matches the current route path using ancestor semantics. Pass an href-like path prefix; parent routes stay active when navigating to deeper children. Segment boundaries prevent false matches: `/admin` does not light up at `/administrators`. The root `/` is the one exception: it matches exactly, so a home link lights up only at `/` (under ancestor matching the zero-segment root would otherwise be a prefix of every path).
 
 ```typescript
 import { router, route, navigate } from '@hellajs/router';
@@ -198,8 +198,8 @@ route().crumbs;
 //   { segment: '/users/:id', path: '/admin/users/123', params: { id: '123' } }
 // ]
 
-route().crumbs[0]?.path;   // '/admin' — linkable href for the parent
-route().crumbs[1]?.params; // { id: '123' } — params at the leaf
+route().crumbs[0]?.path;   // '/admin'; linkable href for the parent
+route().crumbs[1]?.params; // { id: '123' }; params at the leaf
 ```
 
 Use `path` for breadcrumb links (valid hrefs including dynamic segments) and `segment` for label lookup against a metadata dictionary.
@@ -254,7 +254,7 @@ effect(() => {
 
 ### Atomic Updates
 
-Every navigation — programmatic ([`navigate`](/reference/router/navigate)), browser back/forward (`popstate`), or hash change (`hashchange`) — writes the full resolved route into the [`route`](/reference/router/route) signal in a single update. `path`, `params`, `query`, `handler`, `meta`, and `crumbs` always describe the same matched route.
+Every navigation, programmatic ([`navigate`](/reference/router/navigate)), browser back/forward (`popstate`), or hash change (`hashchange`), writes the full resolved route into the [`route`](/reference/router/route) signal in a single update. `path`, `params`, `query`, `handler`, `meta`, and `crumbs` always describe the same matched route.
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -269,7 +269,7 @@ router({
 
 effect(() => {
   const { path, params } = route();
-  // Runs once per navigation — never sees path='/users/456' with stale params={}
+  // Runs once per navigation; never sees path='/users/456' with stale params={}
   console.log(path, params.id);
 });
 
@@ -277,4 +277,4 @@ navigate('/users/456');
 // Logs: "/users/456" "456"
 ```
 
-Init is synchronous — `route()` is fully resolved (`handler`/`params`/`query`/`path` set) the moment `router()` returns. There is no not-yet-resolved window.
+Init is synchronous: `route()` is fully resolved (`handler`/`params`/`query`/`path` set) the moment `router()` returns. There is no not-yet-resolved window.

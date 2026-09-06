@@ -24,7 +24,7 @@ See [`on:`](/reference/dom/on) for full details.
 
 ### `e:` - Direct Events
 
-Non-delegated event handlers attached directly to elements in the bubble phase. Use when a handler must be a real listener on the element — non-bubbling events (`focus`, `blur`) or third-party libraries that expect direct listeners.
+Non-delegated event handlers attached directly to elements in the bubble phase. Use when a handler must be a real listener on the element: non-bubbling events (`focus`, `blur`) or third-party libraries that expect direct listeners.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -45,7 +45,7 @@ The value may also be a `{ handler, options }` spec forwarding native listener o
 
 ## Reactive Attributes
 
-A function-ref prop is reactive: any element attribute whose value is a function reference — a bare signal (`class={mySignal}`) or an explicit wrapper (`class={() => active() ? "on" : "off"}`) — updates the DOM when its dependencies change, with no prefix. A *called* expression like `class={active()}` is evaluated once and stays static; pass the signal directly or wrap the expression to track changes.
+A function-ref prop is reactive: any element attribute whose value is a function reference, a bare signal (`class={mySignal}`) or an explicit wrapper (`class={() => active() ? "on" : "off"}`), updates the DOM when its dependencies change, with no prefix. A *called* expression like `class={active()}` is evaluated once and stays static; pass the signal directly or wrap the expression to track changes.
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -64,7 +64,7 @@ mount(App, "#app");
 
 ### Style Objects
 
-The `style` attribute accepts an object of CSS declarations alongside plain strings. camelCase keys serialize to kebab-case, falsy declarations are skipped, and numbers carry no automatic units — write `"12px"`, not `12`.
+The `style` attribute accepts an object of CSS declarations alongside plain strings. camelCase keys serialize to kebab-case, falsy declarations are skipped, and numbers carry no automatic units: write `"12px"`, not `12`.
 
 ```js
 import { mount, html } from "@hellajs/dom";
@@ -77,7 +77,7 @@ mount(html`<div style=${() => ({ color: theme() === "dark" ? "#fff" : "#000", fo
 
 A function-ref style object re-serializes the whole declaration list when its dependencies change; a static object serializes once. String style values pass through unchanged.
 
-In JSX/TSX the static form is a plain object expression (typed via the exported `StyleObject` — camelCase keys, explicit units):
+In JSX/TSX the static form is a plain object expression (typed via the exported `StyleObject`, camelCase keys, explicit units):
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -112,7 +112,7 @@ mount(App, "#app");
 
 **Available hooks:**
 - `hook:beforeMount`: Synchronously before element is inserted into DOM (no element argument)
-- `hook:afterMount`: After element is in DOM — synchronously by the time `mount()`/`hydrate()` returns; nodes added dynamically after the initial mount fire on the next microtask
+- `hook:afterMount`: After element is in DOM (synchronously by the time `mount()`/`hydrate()` returns); nodes added dynamically after the initial mount fire on the next microtask
 - `hook:beforeUpdate`: Before reactive updates (errors caught, no fallback UI)
 - `hook:afterUpdate`: After reactive updates (errors caught, no fallback UI)
 - `hook:beforeDestroy`: Before removal

@@ -163,13 +163,13 @@ Disable fetching with a static `boolean` for branches that should never fetch, o
 import { signal } from '@hellajs/core';
 import { resource } from '@hellajs/resource';
 
-// Static — permanently disabled, no network request will ever be made
+// Static; permanently disabled, no network request will ever be made
 const dormant = resource(
   () => fetch('/api/data').then(r => r.json()),
   { enabled: false }
 );
 
-// Reactive — auto-fetches only when the gate signal is true
+// Reactive; auto-fetches only when the gate signal is true
 const gate = signal(false);
 const conditional = resource(
   () => fetch('/api/data').then(r => r.json()),
@@ -198,6 +198,6 @@ const firstProfile = userResource.data()?.profile;
 
 userResource.fetch({ force: true });
 // ...after the second fetch resolves, an unchanged profile subtree
-// keeps its reference — dependent computeds skip re-evaluation
+// keeps its reference; dependent computeds skip re-evaluation
 console.log(userResource.data()?.profile === firstProfile); // true
 ```

@@ -1,18 +1,18 @@
 # Build an SSR Streaming App
 
-Stream HTML to the browser as it renders: [`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell and each [`<Suspense>`](/reference/dom/suspense) `fallback` immediately, then streams each region's resolved children as a `<template>` plus a tiny inline swap script that swaps it in **the moment it arrives** — so each card fills in progressively as its data lands. A page with several independent async regions is where streaming earns its keep: the shell paints at TTFB and the cards pop in one-by-one, instead of the whole page blocking on the slowest fetch.
+Stream HTML to the browser as it renders: [`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell and each [`<Suspense>`](/reference/dom/suspense) `fallback` immediately, then streams each region's resolved children as a `<template>` plus a tiny inline swap script that swaps it in **the moment it arrives**, so each card fills in progressively as its data lands. A page with several independent async regions is where streaming earns its keep: the shell paints at TTFB and the cards pop in one-by-one, instead of the whole page blocking on the slowest fetch.
 
 Jump to the [Complete Code](#complete-code) for the finished application.
 
 ## What You'll Learn
 
 - **[`ssr.stream`](/reference/ssr/ssr#stream)**: Serialize a template into a streaming `ReadableStream`, flushing the shell before async values resolve
-- **[`<Suspense>`](/reference/dom/suspense)**: Mark a subtree for out-of-order streaming — a `fallback` flushes first, then resolved children stream in (and swap) as they resolve
-- **Multiple independent regions**: several `<Suspense>` boundaries at different latencies make streaming's value visible — cards fill in one by one as their data resolves
-- **[`hydrate`](/reference/dom/hydrate)**: Adopt the streamed HTML on the client — each region's inline swap script already swapped it in on arrival; hydrate just binds the already-present nodes
+- **[`<Suspense>`](/reference/dom/suspense)**: Mark a subtree for out-of-order streaming: a `fallback` flushes first, then resolved children stream in (and swap) as they resolve
+- **Multiple independent regions**: several `<Suspense>` boundaries at different latencies make streaming's value visible: cards fill in one by one as their data resolves
+- **[`hydrate`](/reference/dom/hydrate)**: Adopt the streamed HTML on the client; each region's inline swap script already swapped it in on arrival, and hydrate just binds the already-present nodes
 - **[`css`](/reference/css/css) + [`style`](/reference/css/style)**: Register global and scoped styles on both platforms; [`cssText`](/reference/css/csstext) collects the text injected into the streamed shell
 
-This is the one SSR example that uses **JSX with the Vite plugin on both the server and the client**. The [`html`](/reference/dom/html) tag parses templates at runtime, so the [Islands](/learn/tutorials/ssr-islands) and [Routing](/learn/tutorials/ssr-routing) examples need no build plugin. JSX does — without the transform, `<Dashboard />` is not a `HellaNode`, so the server plugin is mandatory here.
+This is the one SSR example that uses **JSX with the Vite plugin on both the server and the client**. The [`html`](/reference/dom/html) tag parses templates at runtime, so the [Islands](/learn/tutorials/ssr-islands) and [Routing](/learn/tutorials/ssr-routing) examples need no build plugin. JSX does: without the transform, `<Dashboard />` is not a `HellaNode`, so the server plugin is mandatory here.
 
 ## Project Setup
 
@@ -28,7 +28,7 @@ npm install -D vite vite-plugin-hellajs typescript
 
 ### Configuration
 
-`package.json` marks the project as an ES module. `dev` runs the Vite dev server (which also serves the SSR stream — see [The Streaming Server](#the-streaming-server)); `build` builds the client, `build:ssr` builds the server bundle.
+`package.json` marks the project as an ES module. `dev` runs the Vite dev server (which also serves the SSR stream; see [The Streaming Server](#the-streaming-server)); `build` builds the client, `build:ssr` builds the server bundle.
 
 ```json
 {
@@ -48,7 +48,7 @@ npm install -D vite vite-plugin-hellajs typescript
   }
 }
 ```
-A `tsconfig.json` gives editors the [`@hellajs/dom`](/reference/dom) types and tells TypeScript to leave the JSX alone (`jsx: "preserve"`) — the Vite plugin does the transform.
+A `tsconfig.json` gives editors the [`@hellajs/dom`](/reference/dom) types and tells TypeScript to leave the JSX alone (`jsx: "preserve"`); the Vite plugin does the transform.
 
 ```json
 {
@@ -95,7 +95,7 @@ import viteHellaJS from 'vite-plugin-hellajs';
 
 // The vite-plugin-hellajs transform runs in BOTH the client pipeline and the
 // SSR pipeline (enforce: "pre"), so server.ssrLoadModule('/src/server.tsx')
-// turns the server-side JSX into HellaNode objects — JSX is not a HellaNode
+// turns the server-side JSX into HellaNode objects; JSX is not a HellaNode
 // without it. The dev middleware below streams SSR HTML for every app route and
 // hands module/asset requests (the client entry, HMR, deps) back to Vite.
 export default defineConfig({
@@ -134,14 +134,14 @@ export default defineConfig({
   server: { port: 5173 },
 });
 ```
-Note the middleware passes `req.url` to `render()` — a single page, so the URL is irrelevant and `render` ignores it.
+Note the middleware passes `req.url` to `render()`: a single page, so the URL is irrelevant and `render` ignores it.
 
 <div role="alert" class="alert alert-error text-base">
   <span>⚠️</span>
-  <span>JSX is not a <code>HellaNode</code> until a build plugin transforms it. Running a JSX server entry through a runtime that supplies its own JSX (a React runtime) compiles to <code>createElement</code> calls and emits <code>[object Object]</code> or a React error — wrong output, not a loud one. Routing the server through Vite (as here) applies <code>vite-plugin-hellajs</code> to the server entry, so the trap never opens.</span>
+  <span>JSX is not a <code>HellaNode</code> until a build plugin transforms it. Running a JSX server entry through a runtime that supplies its own JSX (a React runtime) compiles to <code>createElement</code> calls and emits <code>[object Object]</code> or a React error: wrong output, not a loud one. Routing the server through Vite (as here) applies <code>vite-plugin-hellajs</code> to the server entry, so the trap never opens.</span>
 </div>
 
-`index.html` is Vite's client entry — the dev middleware streams the full document itself, so this file only matters for the client build:
+`index.html` is Vite's client entry; the dev middleware streams the full document itself, so this file only matters for the client build:
 
 ```html
 <!DOCTYPE html>
@@ -160,7 +160,7 @@ Note the middleware passes `req.url` to `render()` — a single page, so the URL
 
 ## The Dashboard
 
-The app is a single page: a static shell (`<header>`) plus three independent cards, each fetching its own data behind a [`<Suspense>`](/reference/dom/suspense) boundary. Each card uses a different latency so streaming's value is obvious — the shell and all three skeletons paint at TTFB, then the cards fill in as their data resolves (fast → slow).
+The app is a single page: a static shell (`<header>`) plus three independent cards, each fetching its own data behind a [`<Suspense>`](/reference/dom/suspense) boundary. Each card uses a different latency so streaming's value is obvious: the shell and all three skeletons paint at TTFB, then the cards fill in as their data resolves (fast → slow).
 
 A `<Suspense>` child that is a function returning a `Promise` is what opts the subtree into streaming: the `fallback` flushes inline immediately, then the resolved children stream as a `<template>` followed by an inline `<script>$hs(id)</script>` that swaps them in the moment they arrive (progressive, like React/Solid). [`hydrate`](/reference/dom/hydrate) later binds the already-present nodes.
 
@@ -170,14 +170,14 @@ Create `src/app.tsx`:
 import { Suspense } from '@hellajs/dom';
 import { dashboard, grid, card, bone } from './theme';
 
-// Simulated async fetch — resolves with `data` after `ms`. Deterministic (no backend),
+// Simulated async fetch; resolves with `data` after `ms`. Deterministic (no backend),
 // so the streamed shape is reproducible. Each card uses a distinct latency: the shell and
 // every skeleton paints at TTFB, then the cards fill in as their data resolves (fast → slow).
 function after<T>(data: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms));
 }
 
-// A static placeholder — the <Suspense> fallback. It ships in the first flushed chunk, so
+// A static placeholder: the <Suspense> fallback. It ships in the first flushed chunk, so
 // the layout is stable before the real card resolves.
 const Skeleton = ({ label }: { label: string }) => (
   <section class={card}>
@@ -238,7 +238,7 @@ const TopCard = () => (
   </Suspense>
 );
 
-// The static shell renders synchronously, so it paints at TTFB — before any card resolves.
+// The static shell renders synchronously, so it paints at TTFB; before any card resolves.
 // Three independent <Suspense> regions make streaming's value obvious: the page is useful
 // immediately, and each card streams in as its own data lands (no waiting on the slowest).
 export const Dashboard = () => (
@@ -258,7 +258,7 @@ export const Dashboard = () => (
 
 **Code Explanation**
 
-- **`after(data, ms)`**: a simulated async fetch — resolves with `data` after `ms`. Deterministic (no backend), so the streamed shape is reproducible
+- **`after(data, ms)`**: a simulated async fetch; resolves with `data` after `ms`. Deterministic (no backend), so the streamed shape is reproducible
 - **[`<Suspense>`](/reference/dom/suspense)**` fallback={<Skeleton …/>}`: a streaming boundary. The `fallback` (skeleton) flushes inline; the resolved card streams in (and swaps) as it resolves
 - **`() => after(...).then(d => <section/>)`**: a getter child returning a `Promise`. [`ssr.stream`](/reference/ssr/ssr#stream) defers it inside the `<Suspense>` region and streams the result as a `<template>` + swap script
 - **Fast → slow ordering**: the three regions resolve top-to-bottom, so the page fills in naturally as you watch
@@ -266,15 +266,15 @@ export const Dashboard = () => (
 
 ## The Streaming Server
 
-The server exports a `render()` that returns a web `ReadableStream` — a full streamed document. [`doc`](/reference/ssr/doc) wraps the body stream in the document shell: the `head` (with the CSS text [`cssText`](/reference/css/csstext) collected from the registration), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged [`<Suspense>`](/reference/dom/suspense) swap has streamed — nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
+The server exports a `render()` that returns a web `ReadableStream`: a full streamed document. [`doc`](/reference/ssr/doc) wraps the body stream in the document shell: the `head` (with the CSS text [`cssText`](/reference/css/csstext) collected from the registration), `lang`, and the `mount` wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after every staged [`<Suspense>`](/reference/dom/suspense) swap has streamed; nothing is collected, so progressive paint holds end-to-end. This is a single page, so `render()` takes no argument.
 
-First the theme — deliberately minimal, since the CSS is incidental to the streaming story: layout and skeleton visibility, not visual polish. `css()` registers the global rules, `style()` one hashed class per styled element, and `cssText()` then collects the generated text for the server to inject. Create `src/theme.ts`:
+First the theme, deliberately minimal, since the CSS is incidental to the streaming story: layout and skeleton visibility, not visual polish. `css()` registers the global rules, `style()` one hashed class per styled element, and `cssText()` then collects the generated text for the server to inject. Create `src/theme.ts`:
 
 ```tsx
 import { css, style, cssText } from '@hellajs/css';
 
 // The dashboard's theme, one hashed class per styled element. css() registers the global
-// rules and style() the scoped ones — on both platforms; cssText() then collects the
+// rules and style() the scoped ones, on both platforms; cssText() then collects the
 // generated CSS text (a peek, never a drain) for the server to inject once into the
 // streamed document's <head>. The shell is static, so no client re-injection is needed.
 // Deliberately minimal: layout and skeleton visibility only.
@@ -333,7 +333,7 @@ export const card = style({
   },
 }, { label: 'card' });
 
-// The skeleton's loading bar — self-contained, so the skeleton card is just card + bones.
+// The skeleton's loading bar; self-contained, so the skeleton card is just card + bones.
 export const bone = style({
   display: 'block',
   height: '0.75rem',
@@ -341,18 +341,18 @@ export const bone = style({
   background: '#e5e7eb',
 }, { label: 'bone' });
 
-// Collected after the registration above — joins in first-registration order.
+// Collected after the registration above; joins in first-registration order.
 export const styles = cssText();
 ```
 
 **Code Explanation**
 
-- **[`cssText`](/reference/css/csstext)`()`**: collects the registered rule text — a peek over the registration state, identical on both platforms; the server embeds it in the shell's `<style>`
+- **[`cssText`](/reference/css/csstext)`()`**: collects the registered rule text: a peek over the registration state, identical on both platforms; the server embeds it in the shell's `<style>`
 - **[`css`](/reference/css/css)`(obj)`**: global styles, defined once in a module any platform can import
-- **[`style`](/reference/css/style)`(obj, { label })`**: scoped styles — each call returns a hashed class the markup consumes as `class={card}`; nested keys compose descendant selectors (`header h1` under `dashboard`, `dl` under `card`), so only elements that carry a generated class need one
-- **`bone`**: a self-contained loading-bar class — the skeleton card is just `card` + three `bone` spans
+- **[`style`](/reference/css/style)`(obj, { label })`**: scoped styles; each call returns a hashed class the markup consumes as `class={card}`. nested keys compose descendant selectors (`header h1` under `dashboard`, `dl` under `card`), so only elements that carry a generated class need one
+- **`bone`**: a self-contained loading-bar class; the skeleton card is just `card` + three `bone` spans
 - **`'& ul, & ol'`**: every `&` expands to the parent selector, so both list types share one rule
-- **Platform-independent collection**: the server receives the CSS text for its `<style>` tag via `cssText()`; the shell is static, so the client never imports this module — nothing re-injects
+- **Platform-independent collection**: the server receives the CSS text for its `<style>` tag via `cssText()`; the shell is static, so the client never imports this module; nothing re-injects
 
 Then the server. Create `src/server.tsx`:
 
@@ -361,23 +361,23 @@ import { ssr, doc } from '@hellajs/ssr';
 import { Dashboard } from './app';
 import { styles } from './theme';
 
-// Single page — the URL is irrelevant, so render() takes no argument. The dev middleware
+// Single page; the URL is irrelevant, so render() takes no argument. The dev middleware
 // (vite.config.js) passes req.url, but render ignores it. The vite-plugin-hellajs transform
 // ran on this module (and ./app) via ssrLoadModule, so <Dashboard /> is already a HellaNode.
 export function render(): ReadableStream<string> {
-  // doc assembles the full streamed document (stream overload — the body type selects it): the shell (head, lang, the mount wrapper)
+  // doc assembles the full streamed document (stream overload: the body type selects it): the shell (head, lang, the mount wrapper)
   // flushes first, each body chunk pipes through as it renders, and the closing tags land only
-  // after the body closes — for ssr.stream that means after every staged <Suspense> swap, so
+  // after the body closes; for ssr.stream that means after every staged <Suspense> swap, so
   // progressive paint holds end-to-end (nothing is collected).
   return doc({
     lang: 'en',
-    // Emits <div id="app">…</div> around the streamed body — the same selector the client's
+    // Emits <div id="app">…</div> around the streamed body; the same selector the client's
     // hydrate(<Dashboard />, '#app') targets, so server and client share one string.
     mount: '#app',
     head: {
       title: 'Dashboard',
       meta: [{ charset: 'UTF-8' }],
-      // cssText() collected the registered CSS text — injected here, once.
+      // cssText() collected the registered CSS text; injected here, once.
       styles: [styles],
       // The client entry as a module script: module scripts defer, so head placement gives the
       // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).
@@ -390,12 +390,12 @@ export function render(): ReadableStream<string> {
 
 **Code Explanation**
 
-- **[`router`](/reference/router/router)** — *not used here*: this is a single page. For URL → view routing on the server, see [SSR Routing](/learn/tutorials/ssr-routing)
+- **[`router`](/reference/router/router)** (*not used here*): this is a single page. For URL → view routing on the server, see [SSR Routing](/learn/tutorials/ssr-routing)
 - **[`ssr.stream`](/reference/ssr/ssr#stream)`(<Dashboard />)`**: returns a `ReadableStream<string>`. The shell and each `<Suspense>` `fallback` flush first; each resolved region then streams as `<template id="hsN">…</template><script>$hs("hsN")</script>` (a one-time `$hs` bootstrap precedes them) so the browser swaps it in the moment it arrives
-- **`mount: '#app'`**: emits `<div id="app">…</div>` around the streamed body — the same selector the client's `hydrate(<Dashboard />, '#app')` targets, so server and client share one string
-- **[`doc`](/reference/ssr/doc)`({...})`**: assembles the full streamed document — shell first, every body chunk as it arrives, closing tags only after the body closes (so after all staged swaps); the consumer (the dev middleware, or a production server) writes the chunks in order
+- **`mount: '#app'`**: emits `<div id="app">…</div>` around the streamed body; the same selector the client's `hydrate(<Dashboard />, '#app')` targets, so server and client share one string
+- **[`doc`](/reference/ssr/doc)`({...})`**: assembles the full streamed document: shell first, every body chunk as it arrives, closing tags only after the body closes (so after all staged swaps); the consumer (the dev middleware, or a production server) writes the chunks in order
 
-The streamed HTML looks like this — the shell and all three fallbacks arrive before any fetch resolves, then each card's resolved content streams as a `<template>` + an inline swap script that swaps it in the moment it arrives:
+The streamed HTML looks like this: the shell and all three fallbacks arrive before any fetch resolves, then each card's resolved content streams as a `<template>` + an inline swap script that swaps it in the moment it arrives:
 
 ```bash
 curl -sN localhost:5173/
@@ -412,11 +412,11 @@ curl -sN localhost:5173/
 # …</div></body></html>
 ```
 
-Each region's `<template>` streams the moment its own async work completes, immediately followed by its `$hs` swap script — so the browser swaps each card in as it arrives (progressive, React/Solid parity). Contrast this with [`ssr`](/reference/ssr/ssr) / [`ssr.async`](/reference/ssr/ssr#async): without streaming, nothing paints until the slowest (1200ms) fetch resolves.
+Each region's `<template>` streams the moment its own async work completes, immediately followed by its `$hs` swap script, so the browser swaps each card in as it arrives (progressive, React/Solid parity). Contrast this with [`ssr`](/reference/ssr/ssr) / [`ssr.async`](/reference/ssr/ssr#async): without streaming, nothing paints until the slowest (1200ms) fetch resolves.
 
 ## The Client
 
-No router init — this is a single streaming page. By the time [`hydrate`](/reference/dom/hydrate) runs, each region's inline `$hs` script has already swapped its resolved card in on arrival; hydrate just binds the already-present nodes (its `swapSuspenseStage` is the no-script fallback, used in test environments that don't execute inline scripts).
+No router init; this is a single streaming page. By the time [`hydrate`](/reference/dom/hydrate) runs, each region's inline `$hs` script has already swapped its resolved card in on arrival; hydrate just binds the already-present nodes (its `swapSuspenseStage` is the no-script fallback, used in test environments that don't execute inline scripts).
 
 Create `src/client.tsx`:
 
@@ -424,7 +424,7 @@ Create `src/client.tsx`:
 import { hydrate } from '@hellajs/dom';
 import { Dashboard } from './app';
 
-// No router init — this is a single streaming page. By the time hydrate runs, each region's
+// No router init; this is a single streaming page. By the time hydrate runs, each region's
 // inline $hs swap script has already swapped its card in on arrival; hydrate just binds the
 // already-present nodes. afterMount fires automatically during hydrate.
 hydrate(<Dashboard />, '#app');
@@ -432,7 +432,7 @@ hydrate(<Dashboard />, '#app');
 
 <div role="alert" class="alert alert-warning text-base">
   <span>⚠️</span>
-  <span>A bare getter that returns a <em>rejected</em> <code>Promise</code> errors the stream. If the static shell has already flushed, the failure is partial — catch it at the stream consumer (the read loop in the middleware). A getter inside a <code>&lt;Suspense&gt;</code> region that rejects is isolated instead: the region's <code>&lt;template&gt;</code> is skipped (its fallback stays), the stream completes with the healthy regions, and <code>hydrate</code> re-suspends the failed region on the client — where the rejection reaches the nearest error boundary.</span>
+  <span>A bare getter that returns a <em>rejected</em> <code>Promise</code> errors the stream. If the static shell has already flushed, the failure is partial; catch it at the stream consumer (the read loop in the middleware). A getter inside a <code>&lt;Suspense&gt;</code> region that rejects is isolated instead: the region's <code>&lt;template&gt;</code> is skipped (its fallback stays), the stream completes with the healthy regions, and <code>hydrate</code> re-suspends the failed region on the client, where the rejection reaches the nearest error boundary.</span>
 </div>
 
 ## Run the App
@@ -443,12 +443,12 @@ Start the dev server. Vite serves the SSR stream and the client module on demand
 npm run dev
 ```
 
-Open `http://localhost:5173/`. You see the header and three loading skeletons immediately; the Stats card fills in first (~120ms), then Recent activity (~600ms), then Top items (~1200ms) — each swapped in by its inline `$hs` script the moment its data arrives. Throttle the network in devtools to see the progressive paint clearly. View-source confirms the streaming shape: the `<!--hsN-->` sentinels inside each card region, and the `<template id="hsN">…</template><script>$hs("hsN")</script>` pairs (preceded by a one-time `$hs` bootstrap) appended at the end.
+Open `http://localhost:5173/`. You see the header and three loading skeletons immediately; the Stats card fills in first (~120ms), then Recent activity (~600ms), then Top items (~1200ms), each swapped in by its inline `$hs` script the moment its data arrives. Throttle the network in devtools to see the progressive paint clearly. View-source confirms the streaming shape: the `<!--hsN-->` sentinels inside each card region, and the `<template id="hsN">…</template><script>$hs("hsN")</script>` pairs (preceded by a one-time `$hs` bootstrap) appended at the end.
 
 ## Next Steps
 
 - **[SSR patterns](/learn/patterns/ssr)**: Streaming, styled output, and the stringifier contract
-- **[SSR Routing](/learn/tutorials/ssr-routing)**: URL → view routing on the server — this example is a single page; routing has its own tutorial
+- **[SSR Routing](/learn/tutorials/ssr-routing)**: URL → view routing on the server; this example is a single page, and routing has its own tutorial
 - **[ssr.stream reference](/reference/ssr/ssr#stream)**: The streaming renderer API
 - **[Suspense reference](/reference/dom/suspense)**: The out-of-order streaming boundary
 
@@ -460,14 +460,14 @@ Open `http://localhost:5173/`. You see the header and three loading skeletons im
 import { Suspense } from '@hellajs/dom';
 import { dashboard, grid, card, bone } from './theme';
 
-// Simulated async fetch — resolves with `data` after `ms`. Deterministic (no backend),
+// Simulated async fetch; resolves with `data` after `ms`. Deterministic (no backend),
 // so the streamed shape is reproducible. Each card uses a distinct latency: the shell and
 // every skeleton paints at TTFB, then the cards fill in as their data resolves (fast → slow).
 function after<T>(data: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms));
 }
 
-// A static placeholder — the <Suspense> fallback. It ships in the first flushed chunk, so
+// A static placeholder: the <Suspense> fallback. It ships in the first flushed chunk, so
 // the layout is stable before the real card resolves.
 const Skeleton = ({ label }: { label: string }) => (
   <section class={card}>
@@ -528,7 +528,7 @@ const TopCard = () => (
   </Suspense>
 );
 
-// The static shell renders synchronously, so it paints at TTFB — before any card resolves.
+// The static shell renders synchronously, so it paints at TTFB; before any card resolves.
 // Three independent <Suspense> regions make streaming's value obvious: the page is useful
 // immediately, and each card streams in as its own data lands (no waiting on the slowest).
 export const Dashboard = () => (
@@ -548,13 +548,13 @@ export const Dashboard = () => (
 ### `src/theme.ts`
 
 ```ts
-import { css, cssText } from '@hellajs/css';
+import { css, style, cssText } from '@hellajs/css';
 
-// The dashboard's theme, one nested object mirroring the DOM — every selector composes
-// down from .dashboard. css() registers the rules on both platforms; cssText() then
-// collects the generated CSS text (a peek, never a drain) for the server to inject once
-// into the streamed document's <head>. The shell is static, so no client re-injection is
-// needed. Deliberately minimal: layout and skeleton visibility only.
+// The dashboard's theme, one hashed class per styled element. css() registers the global
+// rules and style() the scoped ones, on both platforms; cssText() then collects the
+// generated CSS text (a peek, never a drain) for the server to inject once into the
+// streamed document's <head>. The shell is static, so no client re-injection is needed.
+// Deliberately minimal: layout and skeleton visibility only.
 css({
   body: {
     fontFamily: 'system-ui, sans-serif',
@@ -562,58 +562,63 @@ css({
     margin: '2rem auto',
     padding: '0 1rem',
   },
-  '.dashboard': {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem',
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      borderBottom: '1px solid #e5e7eb',
-      paddingBottom: '1rem',
-      h1: {
-        margin: '0',
-        fontSize: '1.5rem',
-      },
-    },
-    '.grid': {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
-      gap: '1rem',
-      '.card': {
-        border: '1px solid #e5e7eb',
-        padding: '1rem 1.25rem',
-        h2: {
-          margin: '0 0 0.75rem',
-          fontSize: '0.8rem',
-          color: '#6b7280',
-        },
-        dl: {
-          display: 'grid',
-          gridTemplateColumns: 'auto 1fr',
-          gap: '0.25rem 0.75rem',
-          margin: '0',
-        },
-        dd: {
-          margin: '0',
-          fontWeight: '600',
-        },
-        '& ul, & ol': {
-          margin: '0',
-          paddingLeft: '1.25rem',
-        },
-        '&.skeleton .bone': {
-          display: 'block',
-          height: '0.75rem',
-          marginBottom: '0.5rem',
-          background: '#e5e7eb',
-        },
-      },
-    },
-  },
 });
 
-// Collected after the registration above — joins in first-registration order.
+export const dashboard = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '1.5rem',
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    borderBottom: '1px solid #e5e7eb',
+    paddingBottom: '1rem',
+    h1: {
+      margin: '0',
+      fontSize: '1.5rem',
+    },
+  },
+}, { label: 'dashboard' });
+
+export const grid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))',
+  gap: '1rem',
+}, { label: 'grid' });
+
+export const card = style({
+  border: '1px solid #e5e7eb',
+  padding: '1rem 1.25rem',
+  h2: {
+    margin: '0 0 0.75rem',
+    fontSize: '0.8rem',
+    color: '#6b7280',
+  },
+  dl: {
+    display: 'grid',
+    gridTemplateColumns: 'auto 1fr',
+    gap: '0.25rem 0.75rem',
+    margin: '0',
+  },
+  dd: {
+    margin: '0',
+    fontWeight: '600',
+  },
+  '& ul, & ol': {
+    margin: '0',
+    paddingLeft: '1.25rem',
+  },
+}, { label: 'card' });
+
+// The skeleton's loading bar; self-contained, so the skeleton card is just card + bones.
+export const bone = style({
+  display: 'block',
+  height: '0.75rem',
+  marginBottom: '0.5rem',
+  background: '#e5e7eb',
+}, { label: 'bone' });
+
+// Collected after the registration above; joins in first-registration order.
 export const styles = cssText();
 ```
 ### `src/server.tsx`
@@ -623,23 +628,23 @@ import { ssr, doc } from '@hellajs/ssr';
 import { Dashboard } from './app';
 import { styles } from './theme';
 
-// Single page — the URL is irrelevant, so render() takes no argument. The dev middleware
+// Single page; the URL is irrelevant, so render() takes no argument. The dev middleware
 // (vite.config.js) passes req.url, but render ignores it. The vite-plugin-hellajs transform
 // ran on this module (and ./app) via ssrLoadModule, so <Dashboard /> is already a HellaNode.
 export function render(): ReadableStream<string> {
-  // doc assembles the full streamed document (stream overload — the body type selects it): the shell (head, lang, the mount wrapper)
+  // doc assembles the full streamed document (stream overload: the body type selects it): the shell (head, lang, the mount wrapper)
   // flushes first, each body chunk pipes through as it renders, and the closing tags land only
-  // after the body closes — for ssr.stream that means after every staged <Suspense> swap, so
+  // after the body closes; for ssr.stream that means after every staged <Suspense> swap, so
   // progressive paint holds end-to-end (nothing is collected).
   return doc({
     lang: 'en',
-    // Emits <div id="app">…</div> around the streamed body — the same selector the client's
+    // Emits <div id="app">…</div> around the streamed body; the same selector the client's
     // hydrate(<Dashboard />, '#app') targets, so server and client share one string.
     mount: '#app',
     head: {
       title: 'Dashboard',
       meta: [{ charset: 'UTF-8' }],
-      // cssText() collected the registered CSS text — injected here, once.
+      // cssText() collected the registered CSS text; injected here, once.
       styles: [styles],
       // The client entry as a module script: module scripts defer, so head placement gives the
       // same timing as an end-of-body script (the ssr-islands/ssr-routing convention).
@@ -655,9 +660,9 @@ export function render(): ReadableStream<string> {
 import { hydrate } from '@hellajs/dom';
 import { Dashboard } from './app';
 
-// No router init — this is a single streaming page. hydrate adopts the server-rendered
+// No router init; this is a single streaming page. hydrate adopts the server-rendered
 // nodes instead of rebuilding them. Streamed <Suspense> regions stage resolved children in
 // <template>s; hydrate swaps each staged template in automatically (β: hydrate-swap).
-// afterMount fires automatically during hydrate — no flush() needed.
+// afterMount fires automatically during hydrate; no flush() needed.
 hydrate(<Dashboard />, '#app');
 ```

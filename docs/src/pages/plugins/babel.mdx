@@ -82,7 +82,7 @@ module.exports = {
 
 ## Static hoisting
 
-Fully-static subtrees — lowercase tags, literal-only attributes, no `on:` / `e:` / `hook:` / `error:` prefixes, no expressions, no components — are hoisted to module-level constants tagged `static: true`:
+Fully-static subtrees (lowercase tags, literal-only attributes, no `on:` / `e:` / `hook:` / `error:` prefixes, no expressions, no components) are hoisted to module-level constants tagged `static: true`:
 
 ```js
 // input
@@ -98,6 +98,6 @@ const _hellaStatic = {
 const Row = () => _hellaStatic;
 ```
 
-The runtime keeps a prototype DOM subtree per static node, so every mount of the constant is a single native `cloneNode(true)` instead of re-walking construction — and repeated renders of the same site (list rows, re-mounted panels) share one object instead of allocating per call. Static children of a dynamic parent hoist individually.
+The runtime keeps a prototype DOM subtree per static node, so every mount of the constant is a single native `cloneNode(true)` instead of re-walking construction. Repeated renders of the same site (list rows, re-mounted panels) share one object instead of allocating per call. Static children of a dynamic parent hoist individually.
 
-Because these constants are shared, mutating a returned node is unsafe — the same caveat the runtime `html`` ` template cache has always carried.
+Because these constants are shared, mutating a returned node is unsafe: the same caveat the runtime `html`` ` template cache has always carried.

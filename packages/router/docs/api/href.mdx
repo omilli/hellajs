@@ -1,6 +1,6 @@
 # href
 
-Builds a typed, URL-encoded URL string from a route pattern — the same substitution and query serialization as `navigate`, without touching history.
+Builds a typed, URL-encoded URL string from a route pattern, the same substitution and query serialization as `navigate`, without touching history.
 
 ## API
 
@@ -15,13 +15,13 @@ function href<T extends string>(
 ```
 
 - `path`: The route pattern to build a URL from.
-- `options.params`: Parameters substituted into `:param` tokens. Type-checked against the pattern — a wrong key is a compile error.
+- `options.params`: Parameters substituted into `:param` tokens. Type-checked against the pattern; a wrong key is a compile error.
 - `options.query`: Query parameters appended to the URL.
 - **Returns**: The built URL string.
 
 ## Basic Usage
 
-Same-origin `<a>` clicks are intercepted and routed through [`navigate`](/reference/router/navigate) by default, so `href()` paired with a plain anchor is the primary navigation path — no click handler, no hand-written template strings.
+Same-origin `<a>` clicks are intercepted and routed through [`navigate`](/reference/router/navigate) by default, so `href()` paired with a plain anchor is the primary navigation path: no click handler, no hand-written template strings.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -47,10 +47,10 @@ href('/search', { query: { q: 'hello world' } });
 
 ### Typed Params
 
-Param names are inferred from the pattern via `ExtractParams<T>` — the same typing as [`navigate`](/reference/router/navigate). A wrong key fails at compile time; no codegen, no route-tree build step.
+Param names are inferred from the pattern via `ExtractParams<T>`, the same typing as [`navigate`](/reference/router/navigate). A wrong key fails at compile time; no codegen, no route-tree build step.
 
 ```typescript
-// ❌ Compile error — the pattern declares `id`, not `userId`
+// ❌ Compile error; the pattern declares `id`, not `userId`
 href('/users/:id', { params: { userId: '123' } });
 
 // ✅ Param names must match the pattern
@@ -59,10 +59,10 @@ href('/users/:id', { params: { id: '123' } });
 
 ### Substitution Semantics
 
-Identical to [`navigate`](/reference/router/navigate) — both call the same builder:
+Identical to [`navigate`](/reference/router/navigate); both call the same builder:
 
 - `:param` values are **URL-encoded automatically** (`'hello world'` → `hello%20world`)
-- `"*"` wildcard values are inserted **raw** — they may contain `/`
+- `"*"` wildcard values are inserted **raw**; they may contain `/`
 - Unmatched `:param` tokens are **stripped** from the result
 - Query keys and values are **encoded**, with `?` only appearing when the query is non-empty
 
@@ -80,7 +80,7 @@ href('/users/:id'); // '/users/'
 
 ### Base Path
 
-`href()` returns **logical** paths — the same targets [`navigate`](/reference/router/navigate) accepts. In history mode with a `base` configured, a physical anchor `href` carries the base prefix (middle-click and hard reload hit the server):
+`href()` returns **logical** paths, the same targets [`navigate`](/reference/router/navigate) accepts. In history mode with a `base` configured, a physical anchor `href` carries the base prefix (middle-click and hard reload hit the server):
 
 ```typescript
 // router({ base: '/app', ... })

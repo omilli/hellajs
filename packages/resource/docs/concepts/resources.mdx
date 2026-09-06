@@ -79,16 +79,16 @@ userId(2); // Automatically fetches posts for user 2
 
 When the key resolves to `null` or `undefined`, the fetch is skipped. This prevents premature requests when key dependencies haven't loaded yet.
 
-The previous key's data stays visible for the whole key-change fetch window — `data()` keeps returning User 1's posts while User 2's fetch is in flight, with `isLoading()` false and `isFetching()` true. Nothing signals that the data belongs to the old key. Set `keepPreviousData: false` to clear data on key change instead: `data()` becomes `undefined`, `isLoading()` turns true, and `status()` reports `'loading'` until the new key's fetch settles — the transition pagination and search UIs need. `initialData` is not re-applied on a key change; a key change is a refetch with new parameters, not a return to the never-fetched state.
+The previous key's data stays visible for the whole key-change fetch window: `data()` keeps returning User 1's posts while User 2's fetch is in flight, with `isLoading()` false and `isFetching()` true. Nothing signals that the data belongs to the old key. Set `keepPreviousData: false` to clear data on key change instead: `data()` becomes `undefined`, `isLoading()` turns true, and `status()` reports `'loading'` until the new key's fetch settles, the transition pagination and search UIs need. `initialData` is not re-applied on a key change; a key change is a refetch with new parameters, not a return to the never-fetched state.
 
 ```typescript
-// Default: User 1 stays visible while User 2 loads — isLoading() false
+// Default: User 1 stays visible while User 2 loads; isLoading() false
 const keptPosts = resource(
   id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
   { key: () => userId(), refetchOnKeyChange: true }
 );
 
-// keepPreviousData: false — data clears, status() 'loading' until User 2 lands
+// keepPreviousData: false; data clears, status() 'loading' until User 2 lands
 const freshPosts = resource(
   id => fetch(`/api/users/${id}/posts`).then(r => r.json()),
   { key: () => userId(), refetchOnKeyChange: true, keepPreviousData: false }
@@ -113,17 +113,17 @@ const rows = resource(
 );
 
 filters({ page: 1, sort: 'asc' });
-// New object, same shape — structurally equal key, cache hit, no network request
+// New object, same shape; structurally equal key, cache hit, no network request
 
 const roster = [{ id: 1, name: 'Ada' }];
 resourceCache.set({ team: 1 }, roster, 60_000);
 resourceCache.get({ team: 1 });
-// Hits — { team: 1 } is structurally equal to the stored key
+// Hits: { team: 1 } is structurally equal to the stored key
 ```
 
 This mirrors how `key: () => ({ page, sort })` behaves in practice: each evaluation produces a fresh object, and only a genuine change in shape or values misses the cache.
 
-⚠️ Structural comparison covers arrays and plain objects. A `Date`, `Map`, `Set`, or class instance used as the key itself — or nested inside a key — falls back to reference equality: the same object reference hits, an equal-looking fresh one misses. Use primitives or plain objects for shareable keys, and remember `invalidateByPrefix`/`invalidateByPattern` match string keys only — structurally-hashed keys are opaque to them.
+⚠️ Structural comparison covers arrays and plain objects. A `Date`, `Map`, `Set`, or class instance used as the key itself (or nested inside a key) falls back to reference equality: the same object reference hits, an equal-looking fresh one misses. Use primitives or plain objects for shareable keys, and remember `invalidateByPrefix`/`invalidateByPattern` match string keys only; structurally-hashed keys are opaque to them.
 
 For the full API surface including `initialData`, `enabled`, `timeout`, `deduplicate`, and all reactive getters, see [`resource`](/reference/resource/resource).
 
@@ -176,7 +176,7 @@ The mutation lifecycle (`onMutate`, `onSettled`) provides the hooks needed for o
 
 ### Concurrent Mutations
 
-Each `mutate()` call runs independently — a second call never aborts the first. Both fetchers run, both settle with their own `variables` and `onMutate` context, and `retry`/`retryDelay` apply to mutations just like reads. Reads and mutations never abort each other either; `abort()` is the cancel-all — it aborts the active read and every in-flight mutation, resetting the resource to its `initialData`.
+Each `mutate()` call runs independently; a second call never aborts the first. Both fetchers run, both settle with their own `variables` and `onMutate` context, and `retry`/`retryDelay` apply to mutations just like reads. Reads and mutations never abort each other either; `abort()` is the cancel-all: it aborts the active read and every in-flight mutation, resetting the resource to its `initialData`.
 
 Double-clicks fire two mutations. For operations that must not overlap (payments, duplicate row creation), guard the trigger while a mutation is in flight:
 
@@ -253,7 +253,7 @@ setTimeout(() => r.abort(), 2000); // Cancel during retry delay
 
 ### Polling / Interval Refetch
 
-Periodically refresh data for real-time updates. `refetchInterval` works standalone — no `refetchOnKeyChange` needed. Polling arms when `enabled` first evaluates `true` — including a later flip from `false` — and key changes never reset the cadence. `reset()` restarts polling at its interval; `abort()` stops it permanently (recreate the resource to resume).
+Periodically refresh data for real-time updates. `refetchInterval` works standalone; no `refetchOnKeyChange` needed. Polling arms when `enabled` first evaluates `true` (including a later flip from `false`), and key changes never reset the cadence. `reset()` restarts polling at its interval; `abort()` stops it permanently (recreate the resource to resume).
 
 ```typescript
 // Fixed interval: every 5 seconds
@@ -296,13 +296,13 @@ const session = resource(
 );
 ```
 
-`refetchOnWindowFocus` fires on both `visibilitychange` (the tab becomes visible) and the window `focus` event, so switching between OS windows without hiding the tab also refetches. The browser fires `focus` once at page load — expect one extra fetch on load. When a tab return fires both events back-to-back, request deduplication collapses them into a single network call.
+`refetchOnWindowFocus` fires on both `visibilitychange` (the tab becomes visible) and the window `focus` event, so switching between OS windows without hiding the tab also refetches. The browser fires `focus` once at page load; expect one extra fetch on load. When a tab return fires both events back-to-back, request deduplication collapses them into a single network call.
 
 Without `refetchOnKeyChange: true`, call `fetch()` manually first; the focus/reconnect listeners still work for subsequent refetches.
 
 ### Offline Pausing
 
-By default an offline browser makes every fetch attempt fail into `error()`. Opt into deferring instead with `pauseWhenOffline: true` — while the browser is offline, fetches (including key-change refetches and polling ticks) defer instead of hitting the network: no fetcher call, no error state, and `isPaused()` reads `true`. On reconnect the deferred fetch replays with the force flag it was called with.
+By default an offline browser makes every fetch attempt fail into `error()`. Opt into deferring instead with `pauseWhenOffline: true`: while the browser is offline, fetches (including key-change refetches and polling ticks) defer instead of hitting the network: no fetcher call, no error state, and `isPaused()` reads `true`. On reconnect the deferred fetch replays with the force flag it was called with.
 
 ```typescript
 window.dispatchEvent(new Event('offline')); // The connection drops
@@ -311,15 +311,15 @@ const feed = resource(
   () => fetch('/api/feed').then(r => r.json()),
   { pauseWhenOffline: true, refetchOnKeyChange: true }
 );
-console.log(feed.isPaused()); // Logs: true — deferred, not erroring
+console.log(feed.isPaused()); // Logs: true; deferred, not erroring
 
 window.dispatchEvent(new Event('online')); // The connection returns
-console.log(feed.isPaused()); // Logs: false — the paused fetch runs
+console.log(feed.isPaused()); // Logs: false; the paused fetch runs
 ```
 
-Deferral happens before the cache lookup — even a fresh cache entry defers while offline. In-flight requests are not paused: they fail into `error()` as usual. Mutations are never paused — they always attempt the network. Polling ticks while offline are absorbed (each tick defers); polling proceeds normally after reconnect.
+Deferral happens before the cache lookup: even a fresh cache entry defers while offline. In-flight requests are not paused: they fail into `error()` as usual. Mutations are never paused; they always attempt the network. Polling ticks while offline are absorbed (each tick defers); polling proceeds normally after reconnect.
 
-With both `pauseWhenOffline` and `refetchOnReconnect`, the reconnect event fires both listeners — the paused fetch's re-run and the reconnect refetch collapse into one network call via deduplication. The pause listener follows the focus/reconnect listener lifecycle: `abort()`, `reset()`, and `dispose()` clear it.
+With both `pauseWhenOffline` and `refetchOnReconnect`, the reconnect event fires both listeners: the paused fetch's re-run and the reconnect refetch collapse into one network call via deduplication. The pause listener follows the focus/reconnect listener lifecycle: `abort()`, `reset()`, and `dispose()` clear it.
 
 ### Data Transformation
 
@@ -345,7 +345,7 @@ Resources are automatically cache-isolated by their fetcher identity, so sharing
 
 Preserve object/array references for structurally unchanged subtrees so dependent computeds and effects that shallow-compare references skip redundant re-evaluation. Opt in per resource with `structuralSharing: true`.
 
-Plain objects and arrays are compared element/key-wise; primitives use `Object.is`; `Map`, `Set`, `Date`, and class instances use reference equality and are never merged. A changed subtree builds a new container along the changed path while sibling subtrees keep their previous references. Applies to the fetch-success path only — `setData` and `mutate` are unaffected. See [Structural Sharing](/learn/patterns/resource#structural-sharing) for a runnable reference-stability recipe.
+Plain objects and arrays are compared element/key-wise; primitives use `Object.is`; `Map`, `Set`, `Date`, and class instances use reference equality and are never merged. A changed subtree builds a new container along the changed path while sibling subtrees keep their previous references. Applies to the fetch-success path only; `setData` and `mutate` are unaffected. See [Structural Sharing](/learn/patterns/resource#structural-sharing) for a runnable reference-stability recipe.
 
 ### Request Deduplication
 
@@ -394,7 +394,7 @@ controller.abort();
 
 ### Batch Invalidation
 
-Pattern-based cache clearing for logout and bulk resets — see [`resourceCache`](/reference/resource/resourcecache) for the invalidate methods. The `invalidates` option wires them to a successful mutation:
+Pattern-based cache clearing for logout and bulk resets; see [`resourceCache`](/reference/resource/resourcecache) for the invalidate methods. The `invalidates` option wires them to a successful mutation:
 
 ```typescript
 import { resource, resourceCache } from '@hellajs/resource';
@@ -409,7 +409,7 @@ await saveUser.mutate({ action: 'save' });
 // on success: invalidateByPrefix('user:') + invalidateByPattern(/^posts:\d+$/)
 ```
 
-`invalidates` deletes cache entries only — a resource currently displaying a matched key keeps its data; only the next fetch for that key hits the network. Call `invalidate()` or `fetch()` on any resource that must refresh immediately.
+`invalidates` deletes cache entries only: a resource currently displaying a matched key keeps its data; only the next fetch for that key hits the network. Call `invalidate()` or `fetch()` on any resource that must refresh immediately.
 
 <details>
 <summary>Internal Mechanics</summary>

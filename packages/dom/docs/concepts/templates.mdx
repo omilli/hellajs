@@ -48,9 +48,9 @@ mount(App, "#app");
 
 ## Element Syntax
 
-Pass a signal **reference** for a reactive value — `{count}` works identically in JSX and `html\`\`` (runtime or compiled). For a **compound** expression (`{count() * 2}`, `{items().map(…)}`) the call is required, and compiled code auto-wraps it; runtime `html\`\`` needs an explicit `() => …` wrapper. For a one-time static read, hoist the value out of the template or wrap the read in [`untracked`](/reference/core/untracked).
+Pass a signal **reference** for a reactive value: `{count}` works identically in JSX and `html\`\`` (runtime or compiled). For a **compound** expression (`{count() * 2}`, `{items().map(…)}`) the call is required, and compiled code auto-wraps it; runtime `html\`\`` needs an explicit `() => …` wrapper. For a one-time static read, hoist the value out of the template or wrap the read in [`untracked`](/reference/core/untracked).
 
-> **Runtime `html\`\``** (no compiler) requires explicit `() => …` wrappers for reactive **compound** expressions — simple signal references (`${count}`) work as-is. See [`html`](/reference/dom/html).
+> **Runtime `html\`\``** (no compiler) requires explicit `() => …` wrappers for reactive **compound** expressions; simple signal references (`${count}`) work as-is. See [`html`](/reference/dom/html).
 
 ### Reactive Bindings
 
@@ -60,14 +60,14 @@ A signal **reference** is the simplest reactive binding. A **compound** expressi
 // Signal reference: updates when count changes
 <h1>{count}</h1>
 
-// Arithmetic: re-runs when count changes (auto-wrapped — no manual wrapper)
+// Arithmetic: re-runs when count changes (auto-wrapped; no manual wrapper)
 <h2>{count() * 2}</h2>
 
 // Reactive conditional: re-evaluates when count changes
 {count() > 5 && <p>Great job!</p>}
 ```
 
-An explicit `() => …` wrapper is still accepted and behaves identically — required for compound expressions in runtime `html\`\``.
+An explicit `() => …` wrapper is still accepted and behaves identically, required for compound expressions in runtime `html\`\``.
 
 ### Static Values
 
@@ -97,19 +97,19 @@ const total = count();
 
 ### Array Attributes
 
-Array values for attributes are joined with spaces, filtering falsy values. A call inside the array makes the whole attribute reactive in compiled code — no manual wrapper needed (runtime `html\`\`` still requires `() => …`).
+Array values for attributes are joined with spaces, filtering falsy values. A call inside the array makes the whole attribute reactive in compiled code; no manual wrapper needed (runtime `html\`\`` still requires `() => …`).
 
 ```jsx
 const isActive = signal(true);
 
 <div class={["base", isActive() && "active", "always"]}>
-  {/* Compiled: isActive() auto-wraps — class="base active always"; → "base always" once false */}
+  {/* Compiled: isActive() auto-wraps, class="base active always"; → "base always" once false */}
 </div>
 ```
 
 ## SVG and MathML
 
-SVG and MathML mount in their correct namespaces automatically — an `<svg>` root creates in the SVG namespace, descendants inherit it, and a `<math>` root creates in the MathML namespace. Both JSX and `html\`\`` behave identically; no wrappers or namespace configuration are needed.
+SVG and MathML mount in their correct namespaces automatically: an `<svg>` root creates in the SVG namespace, descendants inherit it, and a `<math>` root creates in the MathML namespace. Both JSX and `html\`\`` behave identically; no wrappers or namespace configuration are needed.
 
 ```js
 import { mount, html } from "@hellajs/dom";
@@ -119,15 +119,15 @@ mount(html`<svg width="24" height="24">
 </svg>`, "#app");
 ```
 
-Dynamic content works the same way — [`ForEach`](/reference/dom/foreach), [`Lazy`](/reference/dom/lazy), and reactive children under an SVG parent all create their elements in the inherited namespace.
+Dynamic content works the same way: [`ForEach`](/reference/dom/foreach), [`Lazy`](/reference/dom/lazy), and reactive children under an SVG parent all create their elements in the inherited namespace.
 
 ### CamelCase Tags
 
-Multi-word SVG and MathML tags are authored camelCase — `clipPath`, `linearGradient`, `feGaussianBlur` — exactly as in hand-written SVG. Both template forms preserve tag case, and cased attributes like `viewBox` and `patternUnits` pass through unchanged.
+Multi-word SVG and MathML tags are authored camelCase (`clipPath`, `linearGradient`, `feGaussianBlur`), exactly as in hand-written SVG. Both template forms preserve tag case, and cased attributes like `viewBox` and `patternUnits` pass through unchanged.
 
 ### foreignObject Resets to HTML
 
-Inside `<foreignObject>` the namespace resets to HTML — its children are regular HTML elements. To re-enter SVG, open a new `<svg>` element inside.
+Inside `<foreignObject>` the namespace resets to HTML: its children are regular HTML elements. To re-enter SVG, open a new `<svg>` element inside.
 
 ```jsx
 <svg>
@@ -137,4 +137,4 @@ Inside `<foreignObject>` the namespace resets to HTML — its children are regul
 </svg>
 ```
 
-One edge: error fallback UI (from [`error:fallback`](/reference/dom/error)) always renders as HTML, even when the failing boundary sits inside an SVG subtree — keep fallback markup HTML-only.
+One edge: error fallback UI (from [`error:fallback`](/reference/dom/error)) always renders as HTML, even when the failing boundary sits inside an SVG subtree; keep fallback markup HTML-only.
