@@ -18,7 +18,9 @@ import { logger, packagesDir, projectRoot } from "./utils/index.js";
  * 2. Tutorial Complete-Code parity — for each `examples/<name>/tutorial.mdx` with
  *    a `## Complete Code` section: every `### \`src/...\`` block must byte-match
  *    the real file (trailing-newline-insensitive), and every real `src/` file must
- *    be documented (ambient shims like `vite-env.d.ts` are exempt).
+ *    be documented (ambient shims like `vite-env.d.ts` are exempt). Single-file
+ *    apps — no `### \`src/...\`` headings and exactly one src file — fall back to
+ *    the section's lone fence, which must byte-match that file.
  *
  * 3. Anchor resolution — every internal site link with a `#` fragment
  *    (`](/path#anchor)` or `href="/path#anchor"`) must resolve against the target
@@ -55,11 +57,12 @@ const examplesDir = path.join(projectRoot, "examples");
 const navFile = path.join(projectRoot, "docs", "src", "nav.ts");
 
 const FENCE_RE = /^```/;
-const COMPLETE_CODE_RE = /^## Complete Code/;
+const COMPLETE_CODE_RE = /^## Complete Code/m;
 const SRC_HEADING_RE = /^### `src\/(.+)`$/;
 const SITE_LINK_RE = /\]\((\/[^)\s]+#([^)\s]+))\)/g;
 const SITE_HREF_RE = /href="(\/[^"\s]+#([^"\s]+))"/g;
 const HEADING_RE = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
+const SECTION_END_RE = /^## /;
 const IMPORT_RE = /^import\s.+/;
 const TAG_RE = /^<[A-Za-z][\w.]*\s*(?:\/>|>.*<\/[A-Za-z][\w.]*>)$/;
 const DIVIDER_DIV_RE = /^<div class="[^"]*border-t[^"]*".*<\/div>$/;
@@ -172,6 +175,45 @@ function fenceBody(lines: string[], openIdx: number): string[] | null {
 }
 
 /**
+ * Slices a tutorial's `## Complete Code` section — from the heading line down to
+ * the next `## ` heading (or EOF).
+ * @param lines The mdx lines
+ * @returns The section's lines, heading excluded
+ */
+function completeCodeSection(lines: string[]): string[] {
+  const start = lines.findIndex((l) => COMPLETE_CODE_RE.test(l));
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (SECTION_END_RE.test(lines[i]!)) {
+      end = i;
+      break;
+    }
+  }
+  return lines.slice(start + 1, end);
+}
+
+/**
+ * Strips a Complete-Code block's optional leading `// src/...` breadcrumb line.
+ * @param body The block's content lines
+ * @returns The lines without the breadcrumb
+ */
+function stripBreadcrumb(body: string[]): string[] {
+  return body.length > 0 && body[0]!.startsWith("// src/") ? body.slice(1) : body;
+}
+
+/**
+ * Rstrip-compares a Complete-Code block against the real file (trailing
+ * whitespace and the file's final newline are insignificant).
+ * @param block The block's content lines (breadcrumb already stripped)
+ * @param file Absolute path to the real source file
+ * @returns True when the block byte-matches the file
+ */
+function blockMatchesFile(block: string[], file: string): boolean {
+  const real = readFileOrNull(file)!.replace(/\n$/, "").split("\n").map((l) => l.replace(/\s+$/, ""));
+  return JSON.stringify(block.map((l) => l.replace(/\s+$/, ""))) === JSON.stringify(real);
+}
+
+/**
  * Check 1 — fence parity: every mdx has an even top-level fence count.
  * @param corpus Every mdx file in scope
  * @returns Findings (one per file with an odd count)
@@ -192,7 +234,8 @@ function checkFenceParity(corpus: string[]): Finding[] {
 /**
  * Check 2 — tutorial Complete-Code parity: each `### \`src/...\`` block byte-matches
  * the real file (rstrip compare; an optional leading `// src/...` breadcrumb is
- * stripped), and every real src file is documented.
+ * stripped), and every real src file is documented. Single-file apps (no src
+ * headings, one src file) fall back to the section's lone fence.
  * @returns Findings
  */
 function checkTutorialParity(): Finding[] {
@@ -215,20 +258,44 @@ function checkTutorialParity(): Finding[] {
         findings.push({ file: tutorialPath, message: `### src/${m[1]} — fence never closes` });
         continue;
       }
-      const stripped = body.length > 0 && body[0]!.startsWith("// src/") ? body.slice(1) : body;
-      documented.set(m[1]!, stripped);
+      documented.set(m[1]!, stripBreadcrumb(body));
       i = j + body.length + 1;
     }
 
     const srcRoot = path.join(examplesDir, example.name, "src");
-    for (const real of collectFiles(srcRoot, [".ts", ".tsx", ".js", ".jsx", ".css", ".json"])) {
+    const srcFiles = collectFiles(srcRoot, [".ts", ".tsx", ".js", ".jsx", ".css", ".json"]).filter(
+      (real) => path.relative(srcRoot, real) !== "vite-env.d.ts",
+    );
+
+    // Single-file fallback (guides/docs.md §Tutorial Docs): a tutorial with no src
+    // headings and exactly one src file documents it as the section's lone fence.
+    if (documented.size === 0 && srcFiles.length === 1) {
+      const rel = path.relative(srcRoot, srcFiles[0]!);
+      const section = completeCodeSection(lines);
+      const fenceLines: number[] = [];
+      for (let i = 0; i < section.length; i++) {
+        if (FENCE_RE.test(section[i]!)) fenceLines.push(i);
+      }
+      if (fenceLines.length !== 2) {
+        findings.push({
+          file: tutorialPath,
+          message: `single-file Complete Code section must hold exactly one fenced block (${fenceLines.length} fence lines found)`,
+        });
+      } else {
+        const body = stripBreadcrumb(section.slice(fenceLines[0]! + 1, fenceLines[1]!));
+        if (!blockMatchesFile(body, srcFiles[0]!)) {
+          findings.push({ file: tutorialPath, message: `src/${rel} Complete Code block drifts from the real file` });
+        }
+      }
+      continue;
+    }
+
+    for (const real of srcFiles) {
       const rel = path.relative(srcRoot, real);
-      if (rel === "vite-env.d.ts") continue;
-      const realLines = readFileOrNull(real)!.replace(/\n$/, "").split("\n").map((l) => l.replace(/\s+$/, ""));
       const block = documented.get(rel);
       if (block === undefined) {
         findings.push({ file: tutorialPath, message: `src/${rel} exists but has no Complete Code block` });
-      } else if (JSON.stringify(block.map((l) => l.replace(/\s+$/, ""))) !== JSON.stringify(realLines)) {
+      } else if (!blockMatchesFile(block, real)) {
         findings.push({ file: tutorialPath, message: `src/${rel} Complete Code block drifts from the real file` });
       }
     }
