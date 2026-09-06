@@ -133,7 +133,7 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 Returns a function with `isDynamic: true` and `fn.ssr = { kind: "forEach", props }` (the SSR descriptor consumed type-only by `@hellajs/ssr`); `appendToParent` calls it with the parent. Creates a text anchor + one effect holding live collections (`keyToNode`, `keyToItem`, `currentKeys`) and reusable temp collections (`newKeys`, `newKeyToNode`, `newKeyToItem`, `nodesToRemove`, `keyToOldIndex`, `toMove`).
 
-- **Key resolution.** `element.props.key` → `item.id` → array index. The first two set `hasExplicitKey = true`; the index fallback does not.
+- **Key resolution.** `resolveItemKey(element, item, index)` (module-local): `element.props.key` → `item.id` → array index. The first two set `hasExplicitKey = true`; the index fallback does not. The item's `id` is read only when no explicit `key` prop is present.
 - **Reuse rule.** `!node || (!hasExplicitKey && oldItem !== item)` → `resolveNode` (fresh node). Explicit keys reuse by key identity regardless of item reference; index-fallback keys require the same item reference.
 - **First render** (`currentKeys.length === 0`): build into a `DocumentFragment`, single `insertBefore(fragment, anchor)`.
 - **Stale removal** (every non-first render): existing nodes absent from `newKeyToNode` (or whose node identity changed) are collected, then `cleanupSubtree` + `removeChild`-ed in a batch. Nodes whose `parentNode !== actualParent` (e.g. portal-moved) are skipped.

@@ -4,7 +4,27 @@ import { registry } from "./registry";
 import { resolveNode, childNamespaceOf } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
 import { peekHydrateContext } from "./internal/hydrate";
-import type { HellaNode, ForEachProps } from "./types/nodes";
+import type { HellaNode, HellaChild, ForEachProps } from "./types/nodes";
+
+/**
+ * Resolves the reconciliation key for one list item: an explicit `key` prop on the rendered node,
+ * else the item's `id` property, else the array index (implicit). The first two are explicit
+ * identities (reuse by key); the index fallback is positional. The item's `id` is read only when
+ * no explicit `key` prop is present, so keyed items never touch it.
+ */
+function resolveItemKey<T>(
+  element: HellaChild,
+  item: T,
+  index: number
+): { key: unknown; hasExplicitKey: boolean } {
+  if (element && isHellaNode(element)) {
+    const explicitKey = element.props?.key;
+    if (explicitKey !== undefined) return { key: explicitKey, hasExplicitKey: true };
+  }
+  const id = (item as { id?: unknown })?.id;
+  if (id !== undefined) return { key: id, hasExplicitKey: true };
+  return { key: index, hasExplicitKey: false };
+}
 
 /**
  * Renders and updates a list of items using keyed reconciliation.
@@ -50,9 +70,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
             while (index < arrLen) {
               const item = arr[index]!;
               const element = use(item, index);
-              const key = element && isHellaNode(element)
-                ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
-                : (item as { id?: unknown })?.id ?? index;
+              const { key } = resolveItemKey(element, item, index);
               const existing = hctx.existingNodes[index]!;
               if (element && isHellaNode(element) && (element as HellaNode).tag !== "$") {
                 hctx.hydrateNode(element as HellaNode, existing);
@@ -84,9 +102,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
           while (index < arrLen) {
             const item = arr[index]!;
             const element = use(item, index);
-            const key = element && isHellaNode(element)
-              ? element.props?.key ?? (item as { id?: unknown })?.id ?? index
-              : (item as { id?: unknown })?.id ?? index;
+            const { key } = resolveItemKey(element, item, index);
             const node = resolveNode(element, undefined, itemNs);
             fragment.appendChild(node);
             keyToNode.set(key, node);
@@ -108,25 +124,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         while (index < arrLen) {
           const item = arr[index]!;
           const element = use(item, index);
-
-          let key: unknown;
-          let hasExplicitKey = false;
-          if (element && isHellaNode(element)) {
-            if (element.props?.key !== undefined) {
-              key = element.props.key;
-              hasExplicitKey = true;
-            } else if ((item as { id?: unknown })?.id !== undefined) {
-              key = (item as { id?: unknown }).id;
-              hasExplicitKey = true;
-            } else {
-              key = index;
-            }
-          } else if ((item as { id?: unknown })?.id !== undefined) {
-            key = (item as { id?: unknown }).id;
-            hasExplicitKey = true;
-          } else {
-            key = index;
-          }
+          const { key, hasExplicitKey } = resolveItemKey(element, item, index);
 
           newKeys.push(key);
 
