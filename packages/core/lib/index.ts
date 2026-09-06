@@ -8,7 +8,7 @@ export { untracked } from "./untracked";
 export { scope } from "./scope";
 export type * from "./types";
 
-/* Internal exports for testing and advanced use cases */
+/* flush: scheduler drain. Utils + env probes: shared kernel for sibling packages. */
 export { flush } from "./internal/scheduler";
 export {
   isFunction,

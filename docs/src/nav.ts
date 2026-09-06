@@ -48,7 +48,7 @@ export const navigation = {
     }
   ],
   reference: [
-    { core: ["signal", "computed", "effect", "batch", "scope", "untracked"] },
+    { core: ["signal", "computed", "effect", "batch", "scope", "untracked", "flush"] },
     {
       dom: [
         { label: "on:", slug: "on" },
