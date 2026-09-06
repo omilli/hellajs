@@ -1,10 +1,10 @@
 import type { HellaNode, HellaElement, MountHandle } from "./types/nodes";
-import { isFunction, isString, isObject } from "./internal/core";
+import { isString } from "./internal/core";
 import { resolveValue } from "./internal/utils";
-import { setMountNode, dispatchError, toError } from "./internal/dispatch";
+import { setMountNode } from "./internal/dispatch";
 import { mountNode } from "./internal/render";
-import { registerContainer, processMountQueue, processCleanupQueue, mountQueue, beginMountPhase, endMountPhase } from "./internal/queue";
-import { cleanupSubtree } from "./internal/cleanup";
+import { registerContainer } from "./internal/queue";
+import { createMountHandle } from "./internal/handle";
 
 // Wrapper breaks circular import: dispatch.ts needs mountNode from render.ts, render.ts imports from dispatch.ts
 setMountNode((node: HellaNode) => mountNode(node) as Node);
@@ -24,60 +24,11 @@ export function mount(
   const container = isString(target) ? document.querySelector(target) : target;
   if (!container) throw new Error(`[dom] mount: target "${target}" not found in document`);
 
-  let mountedNode: HellaElement | null = null;
-  let attached = false;
-  let cancelled = false;
-
-  const flush = () => {
-    if (!attached) return;
-    if (container.hasChildNodes()) {
-      const children = container.childNodes;
-      let i = 0;
-      const len = children.length;
-      while (i < len)
-        mountQueue.add(children[i++]!);
-    }
-    processMountQueue();
-    processCleanupQueue();
-  };
-
-  const unmount = () => {
-    if (!attached) {
-      cancelled = true;
-      return;
-    }
-    if (mountedNode) {
-      cleanupSubtree(mountedNode);
-      if (mountedNode.parentNode) mountedNode.remove();
-    }
-  };
-
-  const attach = (resolvedNode: HellaNode | (() => HellaNode)) => {
-    if (cancelled) return;
-    beginMountPhase();
-    try {
-      const node = resolveValue(resolvedNode) as HellaNode;
-      mountedNode = mountNode(node) as HellaElement;
-      container.replaceChildren(mountedNode);
-      registerContainer(container);
-      attached = true;
-      flush();   // fire afterMount + set isMounted (root + descendants) now — the scoped observer misses the initial attach
-    } finally {
-      endMountPhase();
-    }
-  };
-
-  const resolved = resolveValue(node);
-
-  if (
-    isObject(resolved) &&
-    isFunction((resolved as { then?: unknown }).then)) {
-    (resolved as Promise<HellaNode | (() => HellaNode)>).then(attach, (err: unknown) => {
-      dispatchError(toError(err), { phase: "mount" });
-    });
-    return { container, flush, unmount };
-  }
-
-  attach(resolved as HellaNode | (() => HellaNode));
-  return { container, flush, unmount };
+  return createMountHandle(container, node, (resolvedNode) => {
+    const n = resolveValue(resolvedNode) as HellaNode;
+    const el = mountNode(n) as HellaElement;
+    container.replaceChildren(el);
+    registerContainer(container);
+    return el;
+  });
 }

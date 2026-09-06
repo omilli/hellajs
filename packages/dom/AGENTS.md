@@ -80,6 +80,8 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 
 ## `mount(node, target = "#app")` (`lib/mount.ts`)
 
+The handle scaffolding (`flush`/`unmount` closures, `attached`/`cancelled` state, thenable dispatch, `beginMountPhase`/`endMountPhase` bracket) is shared with `hydrate` via `createMountHandle` (`lib/internal/handle.ts`); only `attachImpl` differs, and `hydrate`'s optional `afterFlush` arg starts the deferred-region watch after the first `flush()`.
+
 `resolveValue` calls `node` if it's a function. If the result is a thenable (`isFunction(resolved.then)`), `attach` is deferred via `.then`; otherwise `attach` runs sync. `attach` = `mountNode` → `container.replaceChildren(...)` → `registerContainer(container)` (starts scoped observer) → `attached = true` → `flush()` (drains the mount queue: sets `isMounted = true` and fires `afterMount` for root + descendants; idempotent).
 
 - **Async mount rejections** route through `dispatchError(err, { phase: 'mount' })` — no element context, so no fallback rendering; surfaces via `onError` or `console.error('[dom]', err)`.

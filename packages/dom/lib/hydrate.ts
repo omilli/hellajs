@@ -1,11 +1,10 @@
 import type { HellaNode, HellaElement, MountHandle } from "./types/nodes";
-import { isFunction, isString, isObject } from "./internal/core";
+import { isString } from "./internal/core";
 import { resolveValue } from "./internal/utils";
-import { dispatchError, toError } from "./internal/dispatch";
 import { mountNode } from "./internal/render";
 import { hydrateNode, hydrateSequence, hasDeferredRegions, startDeferredRegionWatch } from "./internal/hydrate";
-import { registerContainer, processMountQueue, processCleanupQueue, mountQueue, beginMountPhase, endMountPhase } from "./internal/queue";
-import { cleanupSubtree } from "./internal/cleanup";
+import { registerContainer } from "./internal/queue";
+import { createMountHandle } from "./internal/handle";
 
 /**
  * Hydrates server-rendered HTML in place — re-executes the component tree and
@@ -21,7 +20,7 @@ import { cleanupSubtree } from "./internal/cleanup";
  * @param node A HellaNode or component function — the same tree passed to `ssr()`.
  * @param target CSS selector string or Element whose existing children are the server output. Defaults to `"#app"`.
  * @returns A [`MountHandle`](#mounthandle) with `flush()` and `unmount()` methods.
- * @throws {Error} When `target` is a selector string that matches no element in the document.
+ * @throws {Error} When target is a selector string that matches no element in the document.
  */
 export function hydrate(
   node: HellaNode | (() => HellaNode) | (() => Promise<HellaNode | (() => HellaNode)>),
@@ -30,39 +29,12 @@ export function hydrate(
   const container = isString(target) ? document.querySelector(target) : target;
   if (!container) throw new Error(`[dom] hydrate: target "${target}" not found in document`);
 
-  let rootEl: HellaElement | null = null;
-  let attached = false;
-  let cancelled = false;
-
-  const flush = () => {
-    if (!attached) return;
-    if (container.hasChildNodes()) {
-      const children = container.childNodes;
-      let i = 0;
-      const len = children.length;
-      while (i < len)
-        mountQueue.add(children[i++]!);
-    }
-    processMountQueue();
-    processCleanupQueue();
-  };
-
-  const unmount = () => {
-    if (!attached) {
-      cancelled = true;
-      return;
-    }
-    if (rootEl) {
-      cleanupSubtree(rootEl);
-      if (rootEl.parentNode) rootEl.remove();
-    }
-  };
-
-  const attach = (resolvedNode: HellaNode | (() => HellaNode)) => {
-    if (cancelled) return;
-    beginMountPhase();
-    try {
+  return createMountHandle(
+    container,
+    node,
+    (resolvedNode) => {
       const n = resolveValue(resolvedNode) as HellaNode;
+      let rootEl: HellaElement | null = null;
       if (!container.hasChildNodes()) {
         // nothing to hydrate — mount fresh
         rootEl = mountNode(n) as HellaElement;
@@ -75,26 +47,10 @@ export function hydrate(
         hydrateNode(n, rootEl);
       }
       registerContainer(container);
-      attached = true;
-      flush();   // fire afterMount + set isMounted (root + descendants) now — hydrate adds no nodes, so the observer never would
+      return rootEl;
+    },
+    () => {
       if (hasDeferredRegions()) startDeferredRegionWatch(container);   // selective hydration: watch for late <Suspense> stages + replay events
-    } finally {
-      endMountPhase();
     }
-  };
-
-  const resolved = resolveValue(node);
-
-  if (
-    isObject(resolved) &&
-    isFunction((resolved as { then?: unknown }).then)
-  ) {
-    (resolved as Promise<HellaNode | (() => HellaNode)>).then(attach, (err: unknown) => {
-      dispatchError(toError(err), { phase: "mount" });
-    });
-    return { container, flush, unmount };
-  }
-
-  attach(resolved as HellaNode | (() => HellaNode));
-  return { container, flush, unmount };
+  );
 }
