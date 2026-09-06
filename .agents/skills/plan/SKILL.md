@@ -54,6 +54,7 @@ Derive each artifact by applying the project's own rules (guides, lint, config c
 
 - **Files** — each file to touch, with a content anchor (function/type/heading + relative position), not a line number.
 - **Change / delta** — for Surface: yes, the exact signature/shape change + one runnable usage example (if you can't write the call, the design is wrong; the example seeds the Docs task).
+- **State-wiring deltas** — when a delta attaches state (scope, dispose fn, handler, cleanup) to a DOM node, the contract names the carrier's two properties, verified against the code that owns them: cleanup eligibility (the removal walk actually discovers state on that node kind — a walk that skips text nodes makes a text carrier dead state) and lifetime (the carrier outlives the code being written — a node the same branch or a sibling path later removes or replaces disposes the state early or never). Both properties live outside the delta's own lines; a green typecheck says nothing about them.
 - **Behavioral scenarios** (if tests in scope) — one behavior per scenario, phrased as one test, so `worker` transcribes without re-deciding structure.
 - **Doc updates** (if docs in scope) — which file/section owns this, what content extends it.
 - **Definitions of Done** — binary items, each tied to a contract artifact: every Files entry → DoD item; every scenario → DoD item; every doc update → DoD item; every delta line → DoD item. DoD is an exhaustive mirror of the contract — nothing goes unchecked. Every item states a runnable check, never a predicted result (§Core rules).
@@ -75,7 +76,7 @@ Before finalizing:
 - Test scenarios follow `guides/tests.md` (scenario → `test()` derivation, anti-patterns, naming) — name files after the surface it prescribes.
 - Surface inventories synced: adding/renaming/removing a public symbol updates the per-package `AGENTS.md` file map (anchors are `file.ts symbol`, never line numbers) and README API lists — add a Files entry, or it goes stale.
 - A `lib/` change that alters behavior a `{pkg}-comparison.md` cell describes re-verifies that comparison doc inside the same unit — snapshots drift silently (§Non-negotiables).
-- Coverage DoD reachable from Tests scope: a multi-branch Code delta needs enough tests to hit stated coverage. Can't reach DoD → widen Tests or relax DoD explicitly; an unsatisfiable contract is a defect.
+- Coverage DoD reachable from Tests scope: a multi-branch Code delta needs enough tests to hit stated coverage — enumerate each new branch of each delta and name the scenario that exercises it (a branch with no owning scenario is either untestable by design — say so in Strategy — or a missing scenario). Can't reach DoD → widen Tests or relax DoD explicitly; an unsatisfiable contract is a defect.
 
 Mismatches → back to Phase 3.
 

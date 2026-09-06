@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, isObject, isNull, objectLoop } from "./core";
-import { renderProp, resolveValue, isHellaNode } from "./utils";
+import { renderProp, resolveValue, isHellaNode, chainScopes, wireFragmentScope } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
@@ -262,7 +262,10 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
     }
     // An adopted static element still owns its component's effects — wire the scope
     // so cleanup disposes it (mirrors the non-static path's componentScope copy).
-    if (node.componentScope) getState(existing).componentScope = node.componentScope;
+    if (node.componentScope) {
+      const adoptState = getState(existing);
+      adoptState.componentScope = chainScopes(adoptState.componentScope, node.componentScope);
+    }
     return existing as Node;
   }
 
@@ -280,7 +283,8 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
   }
 
   if (componentScope) {
-    getState(element).componentScope = componentScope;
+    const state = getState(element);
+    state.componentScope = chainScopes(state.componentScope, componentScope);
   }
   if (error) {
     const state = getState(element);
@@ -372,15 +376,18 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
     if (isHellaNode(child)) {
       const node = child as HellaNode;
       if (node.tag === "$") {
-        // fragment child — bounded by markers; gather, remove both markers, recurse children inline
+        // fragment child — bounded by markers; gather, remove both markers, recurse children inline.
+        // The scope rides the region's first surviving node (empty region → dispose).
         if (current && isMarkOpen(current)) {
           const { close } = gatherRegion(current);
           const firstChild = current.nextSibling;
           parent.removeChild(current);
           if (close !== current) parent.removeChild(close);
+          if (node.componentScope) wireFragmentScope(firstChild, close, node.componentScope);
           current = hydrateSequence(parent, node.children, firstChild, boundaryElement);
         } else {
           console.warn("[dom] hydrate: expected fragment marker, not found");
+          if (node.componentScope) wireFragmentScope(current, null, node.componentScope);
           current = hydrateSequence(parent, node.children, current, boundaryElement);
         }
       } else {

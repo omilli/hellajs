@@ -1,4 +1,5 @@
 import { isFunction, isPlainObject, isObject, isFalsy } from "./core";
+import { getState } from "./state";
 import type { HellaNode, HellaElement } from "../types/nodes";
 
 /**
@@ -93,6 +94,48 @@ export function renderProp(element: HellaElement, key: string, value: unknown) {
     return;
   }
   element.setAttribute(key, value as string);
+}
+
+/**
+ * @internal
+ * Chains two component-scope dispose functions into one. Two components can
+ * legitimately own a single node (a component returning another component's
+ * result; a fragment root's scope riding its first child), and `clean()` calls
+ * one `componentScope` per state, so the chain must live inside it.
+ * @param prev The scope already on the node, or undefined
+ * @param next The scope to append
+ * @returns The combined dispose function
+ */
+export function chainScopes(prev: (() => void) | undefined, next: () => void): () => void {
+  return prev ? () => { prev(); next(); } : next;
+}
+
+/**
+ * @internal
+ * Wires a fragment's `componentScope` onto its first child that survives marker
+ * consumption, chaining onto any scope the node already carries; no such node
+ * → dispose (nothing mounted owns the scope — an empty fragment has no DOM
+ * lifetime). Leading `[`/`]` region-marker comments are skipped up to `bound`
+ * (hydrate's region close marker; null on the mount side, where fresh fragments
+ * carry no markers, and for a hydrate fragment root, whose container has no
+ * root-level markers — a fragment whose first child is a nested fragment region
+ * starts at that child's open marker, which the walk itself removes later).
+ * @param start The fragment's first node
+ * @param bound The node that ends the region (exclusive), or null for no bound
+ * @param scope The fragment's componentScope dispose
+ */
+export function wireFragmentScope(start: Node | null, bound: Node | null, scope: () => void): void {
+  let node = start;
+  while (node && node !== bound && node.nodeType === Node.COMMENT_NODE &&
+    (node.nodeValue === "[" || node.nodeValue === "]")) {
+    node = node.nextSibling;
+  }
+  if (node && node !== bound) {
+    const state = getState(node);
+    state.componentScope = chainScopes(state.componentScope, scope);
+  } else {
+    scope();
+  }
 }
 
 /**

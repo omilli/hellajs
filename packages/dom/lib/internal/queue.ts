@@ -77,11 +77,13 @@ export function scheduleCleanup() {
  * @internal
  * Collects a removed node into the cleanup queue, descending through stateless
  * element children. Returns whether any state-carrying node was queued.
+ * A state-carrying text node queues (a fragment root's scope can ride a text child,
+ * e.g. `html`<>a b</>``); stateless text — the common case — keeps the cheap skip.
  * @param node The removed node to collect
  * @returns Whether any state-carrying node was queued
  */
 export function collectRemovedNode(node: Node): boolean {
-  if (node.nodeType === Node.TEXT_NODE) return false;
+  if (node.nodeType === Node.TEXT_NODE && !hasState(node)) return false;
   if (hasState(node)) {
     cleanupQueue.add(node);
     return true;   // cleanupSubtree traverses this node's descendants — walking them here too doubles the removal cost

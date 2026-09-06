@@ -1,5 +1,6 @@
 import { scope } from "./internal/core";
 import { dispatchError, toError } from "./internal/dispatch";
+import { chainScopes } from "./internal/utils";
 import type { HellaNode, ComponentReturn } from "./types/nodes";
 
 /**
@@ -18,7 +19,9 @@ export function component<P extends Record<string, unknown>>(fn: (props: P) => C
     // (cloneWithValues returns it as-is) — wrap it so each instance carries its own
     // componentScope instead of mutating the shared node (last call would win).
     if (result.static) result = { ...result };
-    result.componentScope = dispose;
+    // The spread (static root) or a direct return of another component's wrapper can
+    // carry an inner component's scope — chain onto it, never overwrite.
+    result.componentScope = chainScopes(result.componentScope, dispose);
   } catch (e) {
     dispatchError(toError(e), { phase: "render" });
     return { tag: "$", children: [] };

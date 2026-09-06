@@ -1,6 +1,6 @@
 import type { HellaNode, HellaElement, MountHandle } from "./types/nodes";
 import { isString } from "./internal/core";
-import { resolveValue } from "./internal/utils";
+import { resolveValue, wireFragmentScope } from "./internal/utils";
 import { mountNode } from "./internal/render";
 import { hydrateNode, hydrateSequence } from "./internal/hydrate";
 import { hasDeferredRegions, startDeferredRegionWatch } from "./internal/deferred";
@@ -41,7 +41,10 @@ export function hydrate(
         rootEl = mountNode(n) as HellaElement;
         container.replaceChildren(rootEl);
       } else if (n.tag === "$") {
-        // fragment root: hydrate each top-level child against the container's children
+        // fragment root: hydrate each top-level child against the container's children.
+        // ssr emits no root-level markers, so the scope rides the first surviving server
+        // node (empty container never reaches this branch — fresh-mount path wires it).
+        if (n.componentScope) wireFragmentScope(container.firstChild, null, n.componentScope);
         hydrateSequence(container as unknown as HellaElement, n.children, container.firstChild, undefined);
       } else {
         rootEl = container.firstChild as HellaElement;

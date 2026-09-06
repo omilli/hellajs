@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, isString, isNumber, isObject, objectLoop } from "./core";
-import { renderProp, toText, resolveValue } from "./utils";
+import { renderProp, toText, resolveValue, chainScopes, wireFragmentScope } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
@@ -133,8 +133,19 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
     if (cached) {
       const clone = cached.cloneNode(true) as HellaElement | DocumentFragment;
       // The clone carries no ElementState — re-wire the scope for re-mounts of the
-      // same node object (e.g. reset() re-mounting state.originalNode).
-      if (node.componentScope) getState(clone).componentScope = node.componentScope;
+      // same node object (e.g. reset() re-mounting state.originalNode). A fragment
+      // clone's children move out on insert, so the scope rides its first child
+      // (chain: the child can carry an inner component's scope); an empty fragment
+      // clone has no DOM lifetime — dispose now.
+      if (node.componentScope) {
+        const target = clone.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? clone.firstChild : clone;
+        if (target) {
+          const cloneState = getState(target);
+          cloneState.componentScope = chainScopes(cloneState.componentScope, node.componentScope);
+        } else {
+          node.componentScope();
+        }
+      }
       return clone;
     }
   }
@@ -144,6 +155,11 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
   if (tag === "$") {
     const fragment = document.createDocumentFragment();
     appendToParent(fragment as unknown as HellaElement, children, boundaryElement, ns);
+    // The fragment is ephemeral — insertBefore/appendChild move its children out
+    // and discard it — so the scope rides its first child (chained: the child can
+    // already carry an inner component's scope, e.g. html`<${B} /> tail`). An empty
+    // fragment mounts nothing that owns the scope — wireFragmentScope disposes it.
+    if (componentScope) wireFragmentScope(fragment.firstChild, null, componentScope);
     if (node.static) staticDom.set(node, fragment);
     return fragment;
   }
@@ -159,7 +175,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
 
   if (componentScope || error) {
     const state = getState(element);
-    if (componentScope) state.componentScope = componentScope;
+    if (componentScope) state.componentScope = chainScopes(state.componentScope, componentScope);
     if (error) {
       state.errorConfig = error;
       state.originalNode = node;

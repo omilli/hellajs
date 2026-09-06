@@ -305,5 +305,184 @@ describe("dom", () => {
       flush();
       expect(effectRuns).toHaveBeenCalledTimes(1);
     });
+
+    test("disposes a static-fragment-root component's scope on subtree removal", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const FragRoot = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<>a b</>` as HellaNode;
+      };
+
+      mount(html`<div id="frag-root-wrapper"><${FragRoot} /></div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+
+      const wrapper = document.getElementById("frag-root-wrapper")!;
+      const text = wrapper.firstChild!;
+      wrapper.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(text) === undefined) break; await delay(); }
+      expect(peekState(text)).toBeUndefined();
+
+      count(2);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+    });
+
+    test("disposes a multi-root fragment component's scope on subtree removal", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const MultiRoot = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<><b id="frag-first">A</b><i id="frag-second">B</i></>` as HellaNode;
+      };
+
+      mount(html`<div id="multi-root-wrapper"><${MultiRoot} /></div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+
+      const first = document.getElementById("frag-first")!;
+      document.getElementById("multi-root-wrapper")!.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(first) === undefined) break; await delay(); }
+      expect(peekState(first)).toBeUndefined();
+
+      count(2);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+    });
+
+    test("chains scopes when a component returns another component's result directly", async () => {
+      const outerRuns = mock(() => { });
+      const innerRuns = mock(() => { });
+      const outerCount = signal(0);
+      const innerCount = signal(0);
+
+      const Inner = () => {
+        effect(() => { innerRuns(); innerCount(); });
+        return html`<span id="direct-inner">Inner</span>` as HellaNode;
+      };
+      const Outer = () => {
+        effect(() => { outerRuns(); outerCount(); });
+        return component(Inner, {});
+      };
+
+      mount(html`<div id="direct-wrapper"><${Outer} /></div>`);
+      expect(outerRuns).toHaveBeenCalledTimes(1);
+      expect(innerRuns).toHaveBeenCalledTimes(1);
+
+      outerCount(1);
+      innerCount(1);
+      flush();
+      expect(outerRuns).toHaveBeenCalledTimes(2);
+      expect(innerRuns).toHaveBeenCalledTimes(2);
+
+      const inner = document.getElementById("direct-inner")!;
+      document.getElementById("direct-wrapper")!.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(inner) === undefined) break; await delay(); }
+      expect(peekState(inner)).toBeUndefined();
+
+      outerCount(2);
+      innerCount(2);
+      flush();
+      expect(outerRuns).toHaveBeenCalledTimes(2);
+      expect(innerRuns).toHaveBeenCalledTimes(2);
+    });
+
+    test("chains scopes when a fragment root's first child is an inner component", async () => {
+      const outerRuns = mock(() => { });
+      const innerRuns = mock(() => { });
+      const outerCount = signal(0);
+      const innerCount = signal(0);
+
+      const Inner = () => {
+        effect(() => { innerRuns(); innerCount(); });
+        return html`<span id="frag-child-inner">Inner</span>` as HellaNode;
+      };
+      const Outer = () => {
+        effect(() => { outerRuns(); outerCount(); });
+        return html`<${Inner} /> tail`;
+      };
+
+      mount(html`<div id="frag-child-wrapper"><${Outer} /></div>`);
+      expect(outerRuns).toHaveBeenCalledTimes(1);
+      expect(innerRuns).toHaveBeenCalledTimes(1);
+
+      outerCount(1);
+      innerCount(1);
+      flush();
+      expect(outerRuns).toHaveBeenCalledTimes(2);
+      expect(innerRuns).toHaveBeenCalledTimes(2);
+
+      const inner = document.getElementById("frag-child-inner")!;
+      document.getElementById("frag-child-wrapper")!.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(inner) === undefined) break; await delay(); }
+      expect(peekState(inner)).toBeUndefined();
+
+      outerCount(2);
+      innerCount(2);
+      flush();
+      expect(outerRuns).toHaveBeenCalledTimes(2);
+      expect(innerRuns).toHaveBeenCalledTimes(2);
+    });
+
+    test("disposes an empty-fragment-root component immediately", () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const EmptyRoot = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<></>` as HellaNode;
+      };
+
+      // One instance mounted twice: the first mount serves the `$` branch, the second
+      // the staticDom clone — nothing is rendered either way, so both mounts dispose.
+      const node = component(EmptyRoot, {});
+      mount(html`<div id="empty-root-wrapper">${node}${node}</div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      count(2);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+    });
+
+    test("wires the scope when hydrate adopts a fragment root", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      // The fragment root's first child is itself a fragment component — its region
+      // markers lead the container, so the root scope must wire past them onto the
+      // first surviving node.
+      const Inner = () => html`<>b</>` as HellaNode;
+      const FragRoot = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<><${Inner} /> tail</>`;
+      };
+
+      // One component() instance drives both ssr() and hydrate() (memory 092):
+      // a second call would leak a server-realm instance's effect into the counts.
+      const view = component(FragRoot, {});
+      const container = ssrContainer(view);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      hydrate(view, container);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      const first = container.firstChild!;
+      first.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(first) === undefined) break; await delay(); }
+      expect(peekState(first)).toBeUndefined();
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+    });
   });
 });
