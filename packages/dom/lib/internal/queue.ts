@@ -74,26 +74,33 @@ export function scheduleCleanup() {
 }
 
 /**
+ * @internal
+ * Collects a removed node into the cleanup queue, descending through stateless
+ * element children. Returns whether any state-carrying node was queued.
+ * @param node The removed node to collect
+ * @returns Whether any state-carrying node was queued
+ */
+export function collectRemovedNode(node: Node): boolean {
+  if (node.nodeType === Node.TEXT_NODE) return false;
+  if (hasState(node)) {
+    cleanupQueue.add(node);
+    return true;   // cleanupSubtree traverses this node's descendants — walking them here too doubles the removal cost
+  }
+  if (node.nodeType !== Node.ELEMENT_NODE) return false;
+  const children = (node as Element).childNodes;
+  let queued = false;
+  let i = 0;
+  const len = children.length;
+  while (i < len) queued = collectRemovedNode(children[i++]!) || queued;
+  return queued;
+}
+
+/**
  * Creates the scoped MutationObserver on mount targets for cleanup/mount tracking.
  */
 function ensureContainerObserver() {
   if (containerObserver || !hasDocument()) return;
   let hasRemovals = false;
-
-  function registerNode(node: Node) {
-    if (node.nodeType === Node.TEXT_NODE) return;
-    if (hasState(node)) {
-      cleanupQueue.add(node);
-      hasRemovals = true;
-      return;   // cleanupSubtree traverses this node's descendants — walking them here too doubles the removal cost
-    }
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const children = (node as Element).childNodes;
-      let i = 0;
-      const len = children.length;
-      while (i < len) registerNode(children[i++]!);
-    }
-  }
 
   containerObserver = new MutationObserver((mutationsList) => {
     let hasAdditions = false;
@@ -107,7 +114,9 @@ function ensureContainerObserver() {
 
       let ri = 0;
       const rLen = removedNodes.length;
-      while (ri < rLen) registerNode(removedNodes[ri++]!);
+      while (ri < rLen) {
+        if (collectRemovedNode(removedNodes[ri++]!)) hasRemovals = true;
+      }
 
       let ai = 0;
       const aLen = addedNodes.length;

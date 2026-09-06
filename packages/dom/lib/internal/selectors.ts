@@ -1,6 +1,5 @@
 import { hasDocument } from "./core";
-import { hasState } from "./state";
-import { cleanupQueue, scheduleCleanup } from "./queue";
+import { collectRemovedNode, scheduleCleanup } from "./queue";
 
 /**
  * @internal
@@ -51,11 +50,7 @@ export function ensureRefObserver() {
       let ri = 0;
       const rLen = removedNodes.length;
       while (ri < rLen) {
-        const node = removedNodes[ri++]!;
-        if (node.nodeType === Node.ELEMENT_NODE && hasState(node)) {
-          cleanupQueue.add(node);
-          hasRemovals = true;
-        }
+        if (collectRemovedNode(removedNodes[ri++]!)) hasRemovals = true;
       }
     }
     if (hasRemovals) scheduleCleanup();

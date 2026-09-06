@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { $ref, checkMultiSelectors, mount, html, getState, peekState } from "@hellajs/dom/bundle";
+import { $ref, checkMultiSelectors, mount, html, getState, peekState, multiSelectors } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState(`
@@ -250,6 +250,50 @@ describe("dom", () => {
       el.remove();
       for (let __i = 0; __i < 50; __i++) { if ((peekState(el) === undefined)) break; await delay(10); }
 
+      expect(peekState(el)).toBeUndefined();
+    });
+
+    test("stops watching after the ref resolves", async () => {
+      $ref(".late-element").bind({ "data-test": "value" });
+      expect(multiSelectors.size).toBe(1);
+
+      const first = document.createElement("div");
+      first.className = "late-element";
+      document.body.appendChild(first);
+
+      checkMultiSelectors();
+      await delay();
+
+      expect(first.getAttribute("data-test")).toBe("value");
+      expect(multiSelectors.size).toBe(0);
+
+      const second = document.createElement("div");
+      second.className = "late-element";
+      document.body.appendChild(second);
+
+      checkMultiSelectors();
+      await delay();
+
+      expect(second.getAttribute("data-test")).toBeNull();
+    });
+
+    test("refObserver cleans a bound element removed inside a stateless wrapper", async () => {
+      const clickHandler = mock(() => { });
+      $ref(".wrapped-clean").on("click", clickHandler);
+
+      const wrapper = document.createElement("div");
+      const el = document.createElement("div");
+      el.className = "wrapped-clean";
+      wrapper.appendChild(el);
+      document.body.appendChild(wrapper);
+
+      checkMultiSelectors();
+      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) !== undefined)) break; await delay(); }
+      expect(peekState(el)).toBeDefined();
+      expect(peekState(wrapper)).toBeUndefined();
+
+      wrapper.remove();
+      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) === undefined)) break; await delay(); }
       expect(peekState(el)).toBeUndefined();
     });
   });
