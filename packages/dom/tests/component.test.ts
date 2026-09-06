@@ -1,8 +1,9 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { mount, html, component, peekState } from "@hellajs/dom/bundle";
+import { mount, hydrate, html, component, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode, ComponentFn, HellaElement } from "@hellajs/dom";
+import { ssrContainer } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -219,6 +220,90 @@ describe("dom", () => {
 
       trigger2(2);
       expect(effect2Runs).toHaveBeenCalledTimes(2);
+    });
+
+    test("disposes both instances' scopes for a static-root component", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const Static = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<div class="static-root">Static</div>` as HellaNode;
+      };
+
+      const app = mount(html`<div>${component(Static, {})}${component(Static, {})}</div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+
+      app.unmount();
+      await delay();
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+    });
+
+    test("does not mutate the shared static template node", () => {
+      const count = signal(0);
+      const shared = html`<div class="shared-root">x</div>` as HellaNode & { componentScope?: () => void };
+      const Static = () => {
+        effect(() => { count(); });
+        return shared;
+      };
+
+      const first = component(Static, {}) as HellaNode & { componentScope?: () => void };
+      const second = component(Static, {}) as HellaNode & { componentScope?: () => void };
+
+      expect(first).not.toBe(shared);
+      expect(second).not.toBe(shared);
+      expect(shared.componentScope).toBeUndefined();
+      expect(first.componentScope).not.toBe(second.componentScope);
+    });
+
+    test("wires the scope on the staticDom clone path", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const Static = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<div class="clone-root">Clone</div>` as HellaNode;
+      };
+
+      // One component() call, its result mounted twice: the second mount serves
+      // the staticDom cache clone — both elements need the scope wired.
+      const node = component(Static, {});
+      const app = mount(html`<div>${node}${node}</div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      app.unmount();
+      await delay();
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+    });
+
+    test("wires the scope when hydrate adopts a static root", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const Static = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<div id="static-hydrated">Hydrated</div>` as HellaNode;
+      };
+
+      // One view instance drives both ssr() and hydrate() — the documented
+      // contract. A second template call would create a second component whose
+      // scope belongs to a discarded server-side node.
+      const view = html`<div><${Static} /></div>`;
+      const container = ssrContainer(view);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      const app = hydrate(view, container);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      app.unmount();
+      await delay();
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -130,7 +130,13 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
 export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: string): HellaElement | DocumentFragment {
   if (node.static) {
     const cached = staticDom.get(node);
-    if (cached) return cached.cloneNode(true) as HellaElement | DocumentFragment;
+    if (cached) {
+      const clone = cached.cloneNode(true) as HellaElement | DocumentFragment;
+      // The clone carries no ElementState — re-wire the scope for re-mounts of the
+      // same node object (e.g. reset() re-mounting state.originalNode).
+      if (node.componentScope) getState(clone).componentScope = node.componentScope;
+      return clone;
+    }
   }
 
   const { tag, props, on, e, hooks, children, componentScope, error } = node;

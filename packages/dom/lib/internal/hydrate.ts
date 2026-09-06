@@ -455,6 +455,9 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
       console.warn(`[dom] hydrate mismatch: expected <${staticTag}>, found <${(existing as Element).tagName.toLowerCase()}>`);
       return replaceMismatch(node, existing, boundaryElement);
     }
+    // An adopted static element still owns its component's effects — wire the scope
+    // so cleanup disposes it (mirrors the non-static path's componentScope copy).
+    if (node.componentScope) getState(existing).componentScope = node.componentScope;
     return existing as Node;
   }
 

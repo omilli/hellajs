@@ -10,6 +10,7 @@
 * **Deprecation**: Archived [087](archive/087.md) → superseded by [089](entries/089.md).
 * **Creation**: Added concept [090](entries/090.md) (type: decision).
 * **Creation**: Added concept [091](entries/091.md) (type: decision).
+* **Creation**: Added concept [092](entries/092.md) (type: decision).
 
 ## 2026-09-05
 * **Creation**: Added concept [082](entries/082.md) (type: decision).

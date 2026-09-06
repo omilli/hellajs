@@ -140,6 +140,7 @@ function component(componentFn, props) {
   let result;
   try {
     const dispose = scope(() => result = componentFn(props));
+    if (result.static) result = { ...result };
     result.componentScope = dispose;
   } catch (e) {
     dispatchError(e, { phase: "render" }); // Dispatches through error handling system
@@ -150,6 +151,7 @@ function component(componentFn, props) {
 ```
 
 - Calls the component function inside a `scope()`
+- Wraps a fully-static root in a fresh node (static roots are shared by reference across invocations; mutating the shared node would let the last `component()` call win)
 - Attaches the disposer to the returned node as `componentScope`
 - When the node is removed from DOM, cleanup system calls `componentScope()`
 
