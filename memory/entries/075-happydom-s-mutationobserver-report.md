@@ -3,8 +3,8 @@ type: correction
 title: "HappyDOM's MutationObserver report closure is WeakRef-held — macrotask idle before a DOM removal GC-kills delivery (removals then NEVER reported); wait on observer-driven cleanup with microtask-hop polling over peekState"
 description: Idle GC kills HappyDOM's WeakRef-held observer closure — never macrotask-wait between staged removals whose cleanup you await (later removals NEVER delivered); poll peekState(root) with delay() hops.
 tags: [testing, dom, flaky]
-timestamp: 2026-09-01
-last_confirmed: 2026-09-01
+timestamp: 2026-09-06
+last_confirmed: 2026-09-06
 triggers: [mutation-observer-delivery, happydom-gc-flake, cleanup-wait, staged-removals]
 ---
 # Why
@@ -20,3 +20,4 @@ Distinct from memory 008 (full-suite uncaught `render failed` mode, different si
 - Scratch probes (transient test, deleted after): forced `Bun.gc(true)` between removals → 2nd removal delivered 0/1; 500ms `delay(10)` idle → 0/1; microtask hops (`await delay()`) → 1/1.
 - `packages/dom/tests/component.test.ts` converted to microtask-hop polling (6 sites, `peekState` + mirror asserts): 20/20 consecutive standalone runs green (`bun bundle dom && for i in $(seq 1 20); do bun test packages/dom/tests/component.test.ts > /dev/null 2>&1 || exit 1; done`) vs 2/10 failures pre-change; `bun coverage dom` 402/402, coverage at baseline.
 - Idiom sanctioned in `guides/tests.md` §Async Tests (added same day, checklist synced).
+- Re-confirmed 2026-09-06 on the `e:` direct-handler surface (minor-contracts unit, `direct-events.test.ts` "re-registering e:click on the same element replaces the listener"): a single bare `await delay()` after `btn.remove()` false-fails exactly as the two-hop chain predicts (MO callback microtask + `scheduleCleanup`'s `queueMicrotask`; the wrapped listener still fired post-wait); polling `peekState(btn) === undefined` over `await delay()` hops landed cleanup and the post-removal dispatch fired nothing — poll target was the `directHandlers`-carrying element itself (state-carrying per the Why). `bun coverage dom` exit 0.

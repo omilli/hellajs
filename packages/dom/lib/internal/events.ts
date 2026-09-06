@@ -99,6 +99,9 @@ export function setDirectHandler(
     }
   };
 
+  const prev = handlers.get(type);
+  if (prev) element.removeEventListener(type, prev.handler, prev.options);
+
   element.addEventListener(type, wrappedHandler, options);
   handlers.set(type, { handler: wrappedHandler, options });
 }

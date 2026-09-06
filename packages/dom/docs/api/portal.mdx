@@ -16,6 +16,8 @@ interface PortalProps {
 type PortalInsertType = "append" | "prepend" | "replace" | "before" | "after";
 ```
 
+`type` is validated at construction: any other value throws `[dom] Portal: type must be one of "append" | "prepend" | "replace" | "before" | "after", received "apend"`. The `to` selector is validated later, at the first effect run.
+
 ## Basic Usage
 
 Use `Portal` to render content outside the component tree, like modals or tooltips.

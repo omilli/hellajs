@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
-import {resetTestState} from "@utils/test-helpers.js";
-import { mount, html } from "@hellajs/dom/bundle";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { mount, html, hydrate, peekState } from "@hellajs/dom/bundle";
+import { ssrContainer } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -87,6 +88,29 @@ describe("dom", () => {
       el = document.getElementById("test")!;
       el.click();
       expect(firstHandler).toHaveBeenCalledTimes(1);
+      expect(secondHandler).toHaveBeenCalledTimes(1);
+    });
+
+    test("re-registering e:click on the same element replaces the listener", async () => {
+      const firstHandler = mock(() => {});
+      const secondHandler = mock(() => {});
+      const first = () => html`<button id="btn" e:click=${firstHandler}>Go</button>`;
+      const second = () => html`<button id="btn" e:click=${secondHandler}>Go</button>`;
+
+      const container = ssrContainer(first());
+      hydrate(first(), container);
+      const btn = document.getElementById("btn")!;
+
+      hydrate(second(), container);
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+      expect(firstHandler).not.toHaveBeenCalled();
+      expect(secondHandler).toHaveBeenCalledTimes(1);
+
+      btn.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(btn) === undefined) break; await delay(); }
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
       expect(secondHandler).toHaveBeenCalledTimes(1);
     });
 

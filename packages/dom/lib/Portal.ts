@@ -17,10 +17,15 @@ const INSERT_METHODS: Record<string, keyof Element> = {
  * Uses boundary markers for cleanup tracking, similar to ForEach.
  * @param props Portal props with target selector, insert type, and children
  * @returns Function that mounts portal content
- * @throws {Error} When the target selector matches no element in the document (checked at first effect run, not at construction).
+ * @throws {Error} When `type` is not a valid insertion method (at construction), or when the
+ * target selector matches no element in the document (checked at first effect run, not at construction).
  */
 export function Portal(props: PortalProps): JSX.Element {
   const { to, type = "append", children = [] } = props;
+
+  if (!Object.hasOwn(INSERT_METHODS, type)) {
+    throw new Error('[dom] Portal: type must be one of "append" | "prepend" | "replace" | "before" | "after", received ' + JSON.stringify(type));
+  }
   const childNodes = Array.isArray(children) ? children : [children];
 
   const fn = ((parent: Element) => {
@@ -47,7 +52,7 @@ export function Portal(props: PortalProps): JSX.Element {
         fragment.appendChild(node);
       }
 
-      (target[INSERT_METHODS[type] || "appendChild"] as (content: DocumentFragment) => void)(fragment);
+      (target[INSERT_METHODS[type]!] as (content: DocumentFragment) => void)(fragment);
     });
 
     getState(anchor).portalCleanup = () => {

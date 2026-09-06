@@ -156,6 +156,10 @@ describe("dom", () => {
       flush();
     });
 
+    test("throws on an invalid insert type", () => {
+      expect(() => Portal({ to: "#app", type: "apend" as never, children: [] })).toThrow("[dom] Portal: type must be one of");
+    });
+
     test("throws when target does not exist", () => {
       resetTestState('<div id="app"></div>');
 

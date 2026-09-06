@@ -53,6 +53,36 @@ describe("dom", () => {
       expect(renderFn).toHaveBeenCalledTimes(2);
     });
 
+    test("reconnects do not stack attribute version bumps", async () => {
+      const readTitle = mock(() => "");
+      element("test-rewrap", (props: { title: () => string | null }) => {
+        const title = props.title;
+        return html`<span>${() => { readTitle(); return title(); }}</span>`;
+      });
+
+      resetTestState('<test-rewrap title="first"></test-rewrap>');
+      await delay();
+      const el = document.querySelector("test-rewrap") as HellaElement;
+      expect(el.querySelector("span")?.textContent).toBe("first");
+
+      el.remove();
+      document.body.appendChild(el);
+      await delay();
+      el.remove();
+      document.body.appendChild(el);
+      await delay();
+
+      const readsAfterMount = readTitle.mock.calls.length;
+
+      el.setAttribute("title", "second");
+      expect(readTitle.mock.calls.length).toBe(readsAfterMount + 1);
+      expect(el.querySelector("span")?.textContent).toBe("second");
+
+      el.setAttribute("title", "third");
+      expect(readTitle.mock.calls.length).toBe(readsAfterMount + 2);
+      expect(el.querySelector("span")?.textContent).toBe("third");
+    });
+
     test("reactive props handle attribute removal", async () => {
       element("test-attr-remove", (props: { value: () => string | null }) =>
         html`<span>${() => props.value?.() ?? "fallback"}</span>`

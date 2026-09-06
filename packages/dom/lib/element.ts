@@ -19,6 +19,8 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
   class HellaCustomElement extends HTMLElement {
     private _dispose?: () => void;
     private _isInitialized = false;
+    private _origSetAttribute?: (name: string, value: string) => void;
+    private _origRemoveAttribute?: (name: string) => void;
     private _shadowRoot?: ShadowRoot;
     private _version = signal(0);
 
@@ -59,19 +61,23 @@ export function element<T extends object = ComponentProps & Partial<ComponentSlo
         }
       });
 
-      // Override attribute methods for synchronous reactivity
-      const origSetAttribute = this.setAttribute.bind(this);
-      const origRemoveAttribute = this.removeAttribute.bind(this);
+      // Override attribute methods for synchronous reactivity. Natives are captured once:
+      // a reconnect must not re-wrap the already-overridden methods (each re-wrap would stack
+      // another version bump + flush per attribute set).
+      if (!this._origSetAttribute) {
+        this._origSetAttribute = this.setAttribute.bind(this);
+        this._origRemoveAttribute = this.removeAttribute.bind(this);
 
-      this.setAttribute = (name: string, value: string) => {
-        origSetAttribute(name, value);
-        this._bumpVersion();
-      };
+        this.setAttribute = (name: string, value: string) => {
+          this._origSetAttribute!(name, value);
+          this._bumpVersion();
+        };
 
-      this.removeAttribute = (name: string) => {
-        origRemoveAttribute(name);
-        this._bumpVersion();
-      };
+        this.removeAttribute = (name: string) => {
+          this._origRemoveAttribute!(name);
+          this._bumpVersion();
+        };
+      }
 
       // attachShadow throws on a host that already carries a shadow root (reconnects), and
       // this.shadowRoot reads null for closed roots — so the reference lives on the instance.
