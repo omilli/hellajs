@@ -18,12 +18,14 @@ export function createReactive<T extends HellaElement>(element: T): DomWrapper<T
       if (isPlainObject(value)) {
         objectLoop(value as HellaProps, (key, val) => {
           const set = () => renderProp(element, key, resolveValue(val));
-          isFunction(val) ? registry.addEffect(element, set) : set();
+          if (isFunction(val)) registry.addEffect(element, set);
+          else set();
         });
       } else {
         const prop = FORM_ELEMENTS.has(element.tagName) ? "value" : "textContent";
         const set = () => element[prop] = resolveText(value);
-        isFunction(value) ? registry.addEffect(element, set) : set();
+        if (isFunction(value)) registry.addEffect(element, set);
+        else set();
       }
       return wrapper;
     },

@@ -22,10 +22,9 @@ export function resetErrorState() {
 }
 
 /**
- * @internal
  * Tracks elements currently handling errors to prevent infinite loops.
  */
-export const handlingBoundaries = new WeakSet<Element>();
+const handlingBoundaries = new WeakSet<Element>();
 
 /**
  * @internal
