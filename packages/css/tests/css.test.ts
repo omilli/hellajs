@@ -21,6 +21,7 @@ describe("css", () => {
     const content = getStylesheet("hella-css");
     expect(content).toContain(".card{padding:1rem}");
     expect(content).toContain(".card-title{font-size:1.25rem}");
+    expect(content).toBe(".card{padding:1rem}.card-title{font-size:1.25rem}");
   });
 
   test("global nesting composes descendant selectors", () => {
@@ -37,6 +38,7 @@ describe("css", () => {
     expect(content).toContain("nav{display:flex}");
     expect(content).toContain("nav a{color:blue}");
     expect(content).toContain("nav a:hover{color:red}");
+    expect(content).toBe("nav{display:flex}nav a{color:blue}nav a:hover{color:red}");
   });
 
   test("multiple global styles accumulate", () => {
