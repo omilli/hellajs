@@ -172,7 +172,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 
 | Export | Kind | Note |
 |---|---|---|
-| `resource` | function | `resource(url, options?)` or `resource(fetcher, options?)`. URL overload wraps a fresh `async (key) => fetch(key)` closure and uses the URL as `key`. |
+| `resource` | function | `resource(url, options?)` or `resource(fetcher, options?)`. URL overload wraps a fresh `async (key) => fetch(key)` closure and uses the URL as `key`. Validates `cacheTime`/`staleTime` as non-negative numbers (throws, mirrors `resourceCache.set`). |
 | `resourceCache` | object | Global cache singleton (see `CacheMapView` + methods below). |
 | `resetResource` | function | Factory-reset: clears `cacheMap`, `ongoingRequestsMap`, `onlineCallbacks`, and resets `lastCleanupTime` to `0`. Unlike `invalidateAll`, which only clears the cache map. |
 | `types` | type-only | `Resource`, `ResourceOptions`, `ResourceError`, `ResourceErrorCategory`, `Fetcher`, `FetchOptions`, `ResourceStatus`; `CacheEntry`, `CacheConfig`, `CacheUpdate`, `CacheMapView`, `ResourceCache`, `PrefetchOptions`. |
@@ -189,13 +189,14 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - With `cacheTime=0` (default), every non-force `fetch()` falls through to dedup/network — no cache phase runs. (resource.ts `run` cache phase)
 - `setData` always updates `rawData`; cache write is gated on `cacheTime > 0`. With an expired cache entry, `setData`'s `getCacheData` deletes the stale entry and the updater still sees `rawData()` as the old value, then re-creates the entry. (resource.ts `setData`, resource-cache.test.ts)
 - `mutate` results are **not** cached and do not dedup; `handleSuccess` fires (and `onSuccess`) but `setCacheData` is never called. (resource.ts `mutate`)
-- Cache + dedup are keyed by **fetcher reference identity**. Each `resource("url")` call builds a fresh fetcher closure → two URL resources with the same URL get **separate** cache/dedup scopes. Share a named fetcher function to share scope (needed for transform-sharing). (resource.ts:50-58)
+- Cache + dedup are keyed by **fetcher reference identity**. Each `resource("url")` call builds a fresh fetcher closure → two URL resources with the same URL get **separate** cache/dedup scopes. Share a named fetcher function to share scope (needed for transform-sharing). (resource.ts URL-overload closure)
 - Within a fetcher scope, keys compare **structurally** for arrays/plain objects — `run`/`setData`/`invalidate` and every `resourceCache` key-taking method normalize through `stableKey` (`lib/internal/key.ts`), so `key: () => ({ ...filters() })` rebuilds hit the same entries. Primitives pass through byte-identical (the whole backward-compat story); top-level `Date`/`Map`/`Set`/class instances — and objects **containing** non-plain values (incl. symbol-keyed properties) — fall back to reference identity (a nested non-plain value aborts hashing for the whole key). The fetcher still receives the **raw** key; `cacheKey()` returns it too. Hashed keys are opaque strings — `invalidateByPrefix`/`invalidateByPattern` cannot meaningfully match them.
 - `resourceCache.set()` targets `PUBLIC_SCOPE`; a manual entry and a resource entry with the same key coexist as two entries. (cache.ts:229, collision.test.ts:167)
 - `resourceCache.map.get` does **not** refresh `lastAccess`; `resourceCache.get` does. They are different code paths. (cache.ts:183 vs 232)
 
 **Abort & error**
-- AbortError never sets `error()`; status falls back to data-derived (typically `idle`). Check `isIdle() && !isFetching()` rather than `error()` after abort/timeout. (resource.ts:119-126)
+- AbortError never sets `error()`; status falls back to data-derived (typically `idle`). Check `isIdle() && !isFetching()` rather than `error()` after abort/timeout. (resource.ts `handleSuccessError`)
+- A success-path `onSettled` throw rejects `mutate` with the callback's own error and fires `onSettled` exactly once: settlement lives outside the error-mapping catch, so `error()`/`isLoading`/`isFetching` stay untouched (resource stays `success`, committed data stands) and `invalidates` is skipped. (resource.ts `mutate`)
 - `onError` fires only when a truthy error reaches `handleError` — never on the state-clearing calls (fetch start, cache hit, dedup join, abort, reset).
 - `dispose()` does **not** abort in-flight requests and does **not** touch the cache; a resolving fetcher promise still updates `rawData` after dispose. It only clears polling/focus/reconnect + the key-change effect. One-way (resource is dead after). (resource.ts `dispose`, fetching.test.ts)
 - Dedup joiners adopt the shared `abortController`; aborting one joined resource aborts the shared controller and resets **all** joiners to their `initialData`. (resource.ts `run` dedup phase, deduplication.test.ts:110)
@@ -206,7 +207,7 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - Late fetcher resolution after `abort()` is ignored: success path checks `!currentSignal.aborted` before `handleSuccess`. (resource.ts `run`, errors.test.ts)
 
 **Lifecycle & reactivity**
-- `data` is **always** a `computed` (with or without transform); reading `data()` inside an effect tracks `rawData`. (resource.ts:66-71)
+- `data` is **always** a `computed` (with or without transform); reading `data()` inside an effect tracks `rawData`. (resource.ts `data` computed)
 - `status()` reads `rawData()` directly, so `transform` cannot change status. A fetch returning a value equal to `initialData` leaves status `idle`. (resource.ts `status`)
 - Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts `run` guard, retry.test.ts:153)
 - Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts key-change effect, fetching.test.ts)

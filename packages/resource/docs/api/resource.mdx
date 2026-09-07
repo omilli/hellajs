@@ -6,7 +6,7 @@ Reactive async data fetching with caching, abort, and mutation.
 
 ```typescript
 // Overload for simple URL fetching
-function resource<T, TTransformed = T>(url: string, options?: ResourceOptions<T, string, TTransformed>): Resource<TTransformed, T>;
+function resource<T = unknown, TTransformed = T>(url: string, options?: ResourceOptions<T, string, TTransformed>): Resource<TTransformed, T>;
 
 // Overload for custom fetcher functions
 function resource<T, K = undefined, TTransformed = T>(fetcher: (key: K) => Promise<T>, options?: ResourceOptions<T, K, TTransformed>): Resource<TTransformed, T>;
@@ -18,6 +18,7 @@ interface Resource<TTransformed, T = TTransformed> {
   isLoading: () => boolean;
   isFetching: () => boolean;
   isIdle: () => boolean;
+  isPaused: () => boolean;
   status: () => ResourceStatus;
   fetch(options?: FetchOptions): Promise<T | undefined>;
   abort(): void;
@@ -31,7 +32,7 @@ interface Resource<TTransformed, T = TTransformed> {
 
 type ResourceStatus = "idle" | "loading" | "success" | "error";
 
-type ResourceErrorCategory = 'not_found' | 'server' | 'client' | 'abort' | 'unknown';
+type ResourceErrorCategory = 'not_found' | 'server' | 'client' | 'unknown';
 
 interface ResourceError {
   /** Human-readable error message */
@@ -108,10 +109,7 @@ Reactive signal containing the fetched data or undefined if not yet loaded.
 ```typescript
 import { resource } from '@hellajs/resource';
 import { effect } from '@hellajs/core';
-
-const userResource = resource(() =>
-  fetch('/api/user').then(r => r.json())
-);
+const userResource = resource(() => fetch('/api/user').then(r => r.json()));
 effect(() => {
   if (userResource.data()) console.log('Name:', userResource.data().name);
 });
@@ -123,9 +121,7 @@ userResource.fetch();
 Reactive signal containing error information if the request failed.
 
 ```typescript
-const userResource = resource(() =>
-  fetch('/api/user').then(r => r.json())
-);
+const userResource = resource(() => fetch('/api/user').then(r => r.json()));
 userResource.fetch();
 const error = userResource.error();
 if (error) console.log('Category:', error.category);
@@ -136,9 +132,7 @@ if (error) console.log('Category:', error.category);
 Reactive signal indicating if an **initial** request is in progress. Only true when there's no data at all (not even `initialData`).
 
 ```typescript
-const userResource = resource(() =>
-  fetch('/api/user').then(r => r.json())
-);
+const userResource = resource(() => fetch('/api/user').then(r => r.json()));
 userResource.fetch();
 console.log(userResource.isLoading()); // true during first load only
 ```
@@ -148,9 +142,7 @@ console.log(userResource.isLoading()); // true during first load only
 Reactive signal indicating if **any** network request is in progress, including background refetches.
 
 ```typescript
-const userResource = resource(() =>
-  fetch('/api/user').then(r => r.json())
-);
+const userResource = resource(() => fetch('/api/user').then(r => r.json()));
 userResource.fetch();
 console.log(userResource.isFetching()); // true
 userResource.invalidate(); // background refetch
@@ -161,9 +153,7 @@ userResource.invalidate(); // background refetch
 Reactive signal indicating if no fetch has occurred yet.
 
 ```typescript
-const userResource = resource(() =>
-  fetch('/api/user').then(r => r.json())
-);
+const userResource = resource(() => fetch('/api/user').then(r => r.json()));
 console.log(userResource.isIdle()); // true - no fetch yet
 userResource.fetch();
 console.log(userResource.isIdle()); // false
@@ -174,61 +164,42 @@ console.log(userResource.isIdle()); // false
 Reactive signal indicating whether a fetch is deferred because the browser is offline. Requires the `pauseWhenOffline` option; without it, offline fetches attempt the network and fail into `error()` as usual.
 
 ```typescript
-import { resource } from '@hellajs/resource';
+window.dispatchEvent(new Event('offline')); // The connection has dropped
 
-// The connection has dropped; dispatching simulates it for the example
-window.dispatchEvent(new Event('offline'));
-
-const feed = resource(
-  () => fetch('/api/feed').then(r => r.json()),
-  { pauseWhenOffline: true, refetchOnKeyChange: true }
-);
+const feed = resource(() => fetch('/api/feed').then(r => r.json()),
+  { pauseWhenOffline: true, refetchOnKeyChange: true });
 console.log(feed.isPaused()); // Logs: true; the initial fetch defers, no request attempted
-
 window.dispatchEvent(new Event('online')); // The connection returns
 console.log(feed.isPaused()); // Logs: false; the deferred fetch runs
 ```
 
-The deferred fetch replays on reconnect with the force flag it was called with: a paused `fetch({ force: true })` resumes as a force fetch. The pause listener follows the same lifecycle as the focus/reconnect listeners: `abort()`, `reset()`, and `dispose()` clear it, and `reset()` does not re-arm it. Mutations are never paused. See [Offline Pausing](/learn/concepts/resources#offline-pausing) for the pause/resume behavior and the `refetchOnReconnect` interplay.
+The deferred fetch replays on reconnect with the force flag it was called with: a paused `fetch({ force: true })` resumes as a force fetch. The pause listener follows the focus/reconnect listener lifecycle: `abort()`, `reset()`, and `dispose()` clear it; `reset()` does not re-arm it. Mutations are never paused. See [Offline Pausing](/learn/concepts/resources#offline-pausing) for the pause/resume behavior and the `refetchOnReconnect` interplay.
 
 ### `status`
 
 Computed signal showing the current resource status: `'idle'`, `'loading'`, `'success'`, or `'error'`.
 
 ```typescript
-const userResource = resource(() =>
-  fetch('/api/user').then(r => r.json())
-);
+const userResource = resource(() => fetch('/api/user').then(r => r.json()));
 userResource.fetch();
 console.log(userResource.status()); // 'loading', then 'success' or 'error'
 ```
 
 ### `fetch`
 
-Fetches data using a cache-first strategy by default. Pass `{ force: true }` to bypass the cache lookup and skip joining in-flight requests for the same key. A force fetch still registers itself in the dedup map, so subsequent non-force fetches can join it while it is in flight.
+Fetches data using a cache-first strategy by default. Pass `{ force: true }` to bypass the cache lookup and skip joining in-flight requests; a force fetch still registers itself in the dedup map, so later non-force fetches can join it while it runs.
 
 `fetch()` is awaitable: it resolves with the fetched data (raw type, before `transform`) on success or cache hit, and `undefined` on error, skip, or abort; it never rejects. Errors surface through `error()` and `onError` as usual, so fire-and-forget callers stay source-compatible.
 
 ```typescript
-const userResource = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  { cacheTime: 300000 } // 5 minutes
-);
-userResource.fetch(); // Cache-first - uses cached data if valid
-userResource.fetch({ force: true }); // Bypasses cache lookup and dedup check
-```
-
-```typescript
-const user = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  { cacheTime: 60000 }
-);
-await user.fetch(); // network → User
-const cached = await user.fetch(); // cache hit → same User, no network
+const user = resource(() => fetch('/api/user').then(r => r.json()), { cacheTime: 60000 });
+user.fetch(); // Cache-first - uses cached data if valid
+await user.fetch(); // cache hit → same User, no network
+user.fetch({ force: true }); // Bypasses cache lookup and dedup check
 
 const bad = resource(() => fetch('/api/broken').then(r => r.json()));
 await bad.fetch(); // resolves undefined; the failure surfaces in bad.error()
-console.log(cached, bad.error()?.category);
+console.log(bad.error()?.category);
 ```
 
 On key-change refetches (`refetchOnKeyChange`), the previous key's data stays visible while the new fetch is in flight. Pass `keepPreviousData: false` for a loading-state transition instead; see [Keep Previous Data](#keep-previous-data).
@@ -238,10 +209,7 @@ On key-change refetches (`refetchOnKeyChange`), the previous key's data stays vi
 Cancels the ongoing request and resets resource to initial state.
 
 ```typescript
-const userResource = resource(
-  () => fetch('/api/slow-endpoint').then(r => r.json()),
-  { initialData: null }
-);
+const userResource = resource(() => fetch('/api/slow-endpoint').then(r => r.json()), { initialData: null });
 userResource.fetch();
 userResource.abort();
 console.log(userResource.data()); // null - back to initialData
@@ -252,10 +220,7 @@ console.log(userResource.data()); // null - back to initialData
 Clears the cache entry and triggers a fresh request.
 
 ```typescript
-const userResource = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  { cacheTime: 300000 }
-);
+const userResource = resource(() => fetch('/api/user').then(r => r.json()), { cacheTime: 300000 });
 userResource.invalidate(); // Cache cleared - next fetch goes to the network
 ```
 
@@ -265,11 +230,7 @@ Updates the resource data with a new value or updater function. When `cacheTime`
 
 ```typescript
 type User = { id: number; name: string; lastSeen?: number };
-
-const userResource = resource<User>(
-  () => fetch('/api/user').then(r => r.json()),
-  { cacheTime: 300000 }
-);
+const userResource = resource<User>(() => fetch('/api/user').then(r => r.json()), { cacheTime: 300000 });
 userResource.setData({ id: 1, name: 'Updated Name' });
 userResource.setData(old => ({ ...old, lastSeen: Date.now() }) as User);
 ```
@@ -284,10 +245,7 @@ Returns the current raw cache key used for this resource: the resolved `key` opt
 import { signal } from '@hellajs/core';
 
 const userId = signal(1);
-const keyed = resource(
-  (key) => fetch(`/api/users/${key}`).then(r => r.json()),
-  { key: () => userId() }
-);
+const keyed = resource((key) => fetch(`/api/users/${key}`).then(r => r.json()), { key: () => userId() });
 console.log(keyed.cacheKey()); // 1
 userId(2);
 console.log(keyed.cacheKey()); // 2
@@ -298,28 +256,24 @@ console.log(keyed.cacheKey()); // 2
 Executes a mutation with given variables, supporting optimistic updates via the `onMutate`/`onSettled` hooks. See [Resources](/learn/concepts/resources#mutations) for the optimistic-update lifecycle and rollback pattern.
 
 ```typescript
-const saveUser = resource(
-  async (data) => fetch('/api/user', {
-    method: 'PUT', body: JSON.stringify(data)
-  }).then(r => r.json())
-);
+const saveUser = resource((data) =>
+  fetch('/api/user', { method: 'PUT', body: JSON.stringify(data) }).then(r => r.json()));
 
 await saveUser.mutate({ name: 'John Doe' });
 ```
 
 When a mutation succeeds, `onSuccess` fires with the result data, just like a regular fetch. If a mutation is aborted (via `abort()`, `timeout`, or external signal), `onSettled` is **not** called, even if `onMutate` already ran.
 
-Concurrent mutations run independently: each `mutate()` call owns its abort controller and its `onMutate` context, so a second call never aborts the first; both fetchers run and both settle individually with their own `(variables, context)` pair. Mutations honor `retry`/`retryDelay` just like reads. Reads and mutations never abort each other; `abort()` is the cancel-all: it aborts the active read and every in-flight mutation. For operations that must not overlap, guard the trigger with `isFetching()` (see [Resources](/learn/concepts/resources#concurrent-mutations)).
+`mutate()` rejects where `fetch()` never does: with the mutation error on failure, with a `DOMException` (AbortError) on abort, or with the callback's own error when `onSettled` throws. A success-path `onSettled` throw keeps the committed data and `success` status: `onSettled` is not re-invoked, and `invalidates` is skipped on incomplete settlement. Fire-and-forget callers need `.catch` on the returned promise; without it the rejection goes unhandled.
+
+Concurrent mutations run independently: each `mutate()` call owns its abort controller and `onMutate` context, so a second call never aborts the first; both settle individually with their own `(variables, context)` pair. Mutations honor `retry`/`retryDelay` just like reads, and reads never abort mutations; `abort()` is the cancel-all: it aborts the active read and every in-flight mutation. For operations that must not overlap, guard the trigger with `isFetching()` (see [Resources](/learn/concepts/resources#concurrent-mutations)).
 
 ### `reset`
 
 Resets resource state to initial values, clearing data and errors. Polling restarts at its interval; unlike `abort()`, which stops polling permanently (recreate the resource to resume).
 
 ```typescript
-const userResource = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  { initialData: null }
-);
+const userResource = resource(() => fetch('/api/user').then(r => r.json()), { initialData: null });
 userResource.fetch();
 userResource.reset();
 console.log(userResource.status()); // 'idle'
@@ -331,10 +285,8 @@ console.log(userResource.data()); // null (initialData)
 Cleans up all resource effects, polling timers, and subscriptions. Call this when the resource is no longer needed to prevent memory leaks.
 
 ```typescript
-const pollResource = resource(
-  () => fetch('/api/user').then(r => r.json()),
-  { refetchOnKeyChange: true, refetchInterval: 5000 }
-);
+const pollResource = resource(() => fetch('/api/user').then(r => r.json()),
+  { refetchOnKeyChange: true, refetchInterval: 5000 });
 pollResource.dispose(); // Stops polling, cleans up timers and effects
 ```
 
@@ -343,10 +295,7 @@ pollResource.dispose(); // Stops polling, cleans up timers and effects
 ```typescript
 import { resource } from '@hellajs/resource';
 
-const userResource = resource(
-  () => fetch('/api/user').then(r => r.json())
-);
-
+const userResource = resource(() => fetch('/api/user').then(r => r.json()));
 userResource.fetch();
 console.log(userResource.status()); // 'loading', then 'success' or 'error'
 ```
@@ -355,28 +304,21 @@ console.log(userResource.status()); // 'loading', then 'success' or 'error'
 
 ### Stale-While-Revalidate (SWR)
 
-Control data freshness with `staleTime`. When data is stale but cached, `.fetch()` returns it immediately while fetching fresh data in the background. See [Resources](/learn/concepts/resources#stale-while-revalidate-swr) for `staleTime` options and refresh indicator patterns.
+Control data freshness with `staleTime`: stale-but-cached data returns immediately while a background fetch refreshes it. See [Resources](/learn/concepts/resources#stale-while-revalidate-swr) for options and refresh indicator patterns.
 
 ### Keep Previous Data
 
-On a key-change refetch (`refetchOnKeyChange`), the previous key's data stays visible by default: `data()` keeps returning the old value, `isLoading()` stays false, and `isFetching()` flips true for the in-flight fetch. Set `keepPreviousData: false` to clear data on key change instead: during the fetch window `data()` is `undefined`, `isLoading()` is `true`, and `status()` is `'loading'`, the transition pagination and search UIs need. `initialData` is not re-applied on a key change: a key change is a refetch with new parameters, not a return to the never-fetched state.
+On a key-change refetch, the previous key's data stays visible by default: `data()` returns the old value, `isLoading()` stays false, `isFetching()` flips true. With `keepPreviousData: false`, `data()` is `undefined`, `isLoading()` is `true`, and `status()` is `'loading'` until the new key's fetch settles, the transition pagination and search UIs need. `initialData` is not re-applied: a key change is a refetch, not a return to the never-fetched state.
 
 ```typescript
-import { signal } from '@hellajs/core';
-import { resource } from '@hellajs/resource';
-
-const userId = signal(1);
-const user = resource(
-  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
-  { key: () => userId(), refetchOnKeyChange: true, keepPreviousData: false }
-);
-
+const user = resource((id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => userId(), refetchOnKeyChange: true, keepPreviousData: false });
 userId(2); // data() undefined + isLoading() true until User 2 lands
 ```
 
 ### Automatic Retry
 
-Configure retry behavior with count, conditional logic, and custom delays. The `retry` predicate receives the failure count starting at `1` on the first failure. Applies to both reads and mutations; `mutate()` runs through the same retry loop. See [Resources](/learn/concepts/resources#automatic-retry) for conditional retry and delay configuration.
+Configure retry with count, conditional logic, and custom delays; the `retry` predicate receives the failure count starting at `1`. Applies to reads and mutations alike. See [Resources](/learn/concepts/resources#automatic-retry) for configuration.
 
 ### Polling / Interval Refetch
 
@@ -392,11 +334,11 @@ Transform data before returning while caching the original. See [Resources](/lea
 
 ### Structural Sharing
 
-Preserve object/array references for structurally unchanged subtrees so dependent computeds and effects that shallow-compare references skip redundant re-evaluation. Opt in per resource with `structuralSharing: true`. See [Resources](/learn/concepts/resources#structural-sharing) for the merge semantics and the [Resource patterns](/learn/patterns/resource#structural-sharing) for a runnable example.
+Preserve object/array references for structurally unchanged subtrees so dependent computeds and effects that shallow-compare references skip redundant re-evaluation; opt in with `structuralSharing: true`. See [Resources](/learn/concepts/resources#structural-sharing) for merge semantics and [Resource patterns](/learn/patterns/resource#structural-sharing) for a runnable example.
 
 ### Request Deduplication
 
-Identical concurrent requests share a single network call by default. Disable with `deduplicate: false`. See [Resources](/learn/concepts/resources#request-deduplication) for deduplication rules.
+Identical concurrent requests share a single network call by default; disable with `deduplicate: false`. See [Resources](/learn/concepts/resources#request-deduplication) for the rules.
 
 ### Timeout and Abort Control
 
@@ -404,7 +346,7 @@ Request timeout and external abort signals for coordinated cancellation. See [Re
 
 ### Mutation invalidation
 
-Declare cache entries to invalidate after a successful mutation with `invalidates`: string prefixes dispatch to [`invalidateByPrefix`](/reference/resource/resourcecache#invalidatebyprefix), `RegExp` patterns to [`invalidateByPattern`](/reference/resource/resourcecache#invalidatebypattern). Invalidation runs only on the success path: on error or abort nothing is invalidated. See [Resources](/learn/concepts/resources#batch-invalidation) for the seed example and the mounted-resources caveat.
+Declare cache entries to invalidate after a successful mutation with `invalidates`: string prefixes dispatch to [`invalidateByPrefix`](/reference/resource/resourcecache#invalidatebyprefix), `RegExp` patterns to [`invalidateByPattern`](/reference/resource/resourcecache#invalidatebypattern). Runs only on the success path: on error or abort nothing is invalidated. See [Resources](/learn/concepts/resources#batch-invalidation) for the seed example and the mounted-resources caveat.
 
 ## Important Considerations
 
@@ -413,13 +355,12 @@ Declare cache entries to invalidate after a successful mutation with `invalidate
 When a request is aborted (via `.abort()`, `timeout`, or an external `abortSignal`), the error state is **not** set. The resource returns to `idle` status with the original `initialData`, not `error` status.
 
 ```typescript
-// ❌ Don't rely on error() being set after abort
-const r = resource(fetchData, { timeout: 5000 });
-r.fetch();
-// ...timeout fires... error() is NOT set
+// ❌ After abort, error() is NOT set
+const aborted = resource(fetchData, { timeout: 5000 });
+aborted.fetch(); // ...timeout fires...
 
 // ✅ Check status instead
-if (r.isIdle() && !r.isFetching()) {
+if (aborted.isIdle() && !aborted.isFetching()) {
   console.log('Request was aborted or never started');
 }
 ```
@@ -432,28 +373,21 @@ By default, resources don't auto-fetch on creation. Call `.fetch()` explicitly, 
 // Manual: must call fetch() explicitly
 const manual = resource(() => fetch('/api/user'));
 manual.fetch();
-
 // Auto: refetch when key dependencies change
 const auto = resource(() => fetch('/api/user'), { refetchOnKeyChange: true });
 ```
 
 ### enabled: Static vs Reactive
 
-A static `boolean` is captured once at creation and cannot be toggled: a static `enabled: false` blocks even manual `fetch()`. A getter `() => boolean` is re-evaluated reactively inside the `refetchOnKeyChange` effect: transitions from `false` to `true` trigger a fetch automatically, and manual `fetch()` bypasses the getter. For the toggling pattern, see [Conditional Fetching](/learn/patterns/resource#conditional-fetching).
+A static `boolean` is captured once at creation and cannot be toggled; a static `enabled: false` blocks even manual `fetch()`. A getter `() => boolean` re-evaluates reactively inside the `refetchOnKeyChange` effect: `false`-to-`true` transitions trigger a fetch automatically, and manual `fetch()` bypasses the getter. For the toggling pattern, see [Conditional Fetching](/learn/patterns/resource#conditional-fetching).
 
 ```typescript
-import { signal } from '@hellajs/core';
-import { resource } from '@hellajs/resource';
-
 const userId = signal<string | null>(null);
-
-const r = resource(
-  (id) => fetch(`/api/users/${id}`).then(r => r.json()),
-  { key: () => userId(), enabled: () => userId() !== null, refetchOnKeyChange: true }
-);
+const conditional = resource((id) => fetch(`/api/users/${id}`).then(r => r.json()),
+  { key: () => userId(), enabled: () => userId() !== null, refetchOnKeyChange: true });
 
 userId("7"); // getter re-evaluates to true -> fetch triggers automatically
-r.fetch();   // manual fetch bypasses the getter, executes regardless
+conditional.fetch(); // manual fetch bypasses the getter, executes regardless
 ```
 
 ### Memory Management
@@ -462,5 +396,5 @@ Each unique key creates a separate cache entry within the resource's fetcher sco
 
 ### Server-Side Rendering
 
-On the server (no `window`), `run()` exits before fetching; resources embedded in a server-rendered tree never trigger network calls. Fetch server-side data with direct `fetch()` and pass it in as `initialData`; do not rely on resources for server-side data loading.
+On the server (no `window`), `run()` exits before fetching; resources in a server-rendered tree never trigger network calls. Fetch server-side data with direct `fetch()` and pass it as `initialData`.
 

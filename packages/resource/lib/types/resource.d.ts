@@ -22,7 +22,6 @@ export type ResourceErrorCategory =
   | "not_found"    // Resource not found (404)
   | "server"       // Server errors (5xx)
   | "client"       // Client errors (4xx)
-  | "abort"        // Request was aborted
   | "unknown";     // Unclassified errors
 
 /**
@@ -113,7 +112,8 @@ export interface ResourceOptions<T, K, TTransformed = T> {
    * (string) or pattern (RegExp). Strings dispatch to `invalidateByPrefix`;
    * RegExp to `invalidateByPattern`. Deletes cache entries only — mounted
    * resources do NOT auto-refetch (the next fetch for a matched key goes to
-   * the network). No invalidation runs on error or abort.
+   * the network). No invalidation runs on error, abort, or a throwing
+   * success-path `onSettled` (settlement did not complete).
    */
   invalidates?: Array<string | RegExp>;
 }
@@ -161,6 +161,11 @@ export interface Resource<TTransformed, T = TTransformed> {
    * Executes a mutation with given variables (returns raw type). Concurrent mutations run
    * independently: each owns its abort controller and `onMutate` context, honors `retry`/`retryDelay`,
    * and settles individually. `abort()` cancels all in-flight mutations.
+   *
+   * Rejects with the mutation error on failure, with `DOMException` (AbortError) on abort,
+   * or with the callback's own error when `onSettled` throws. A success-path `onSettled`
+   * throw never flips the resource to `error`: the committed data and `success` status
+   * stand, `onSettled` is not re-invoked, and `invalidates` is skipped.
    */
   mutate: <TVariables = unknown>(variables: TVariables) => Promise<T>;
   /** Resets resource state to initial values */

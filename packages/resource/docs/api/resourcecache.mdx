@@ -157,17 +157,11 @@ Note: `staleTime` defaults to `0` here (always stale), which differs from [`reso
 Updates existing cached data using an updater function or direct value.
 
 ```typescript
-// Seed the cache entry first
-resourceCache.set('user:123', { name: 'John' }, 60000);
-
-const updated = resourceCache.update<{ name: string; lastSeen?: number }>('user:123', old => ({
-  ...old,
-  lastSeen: Date.now()
-}));
-console.log(updated); // true
-
-// Update with direct value
-resourceCache.update('user:123', { name: 'Johnny' });
+resourceCache.set('user:123', { name: 'John' }, 60000); // seed the entry
+const updated = resourceCache.update<{ name: string; lastSeen?: number }>('user:123',
+  old => ({ ...old, lastSeen: Date.now() }));
+console.log(updated); // Logs: true
+resourceCache.update('user:123', { name: 'Johnny' }); // direct value works too
 ```
 
 ### `updateMultiple`
@@ -217,15 +211,9 @@ console.log(user); // cached under fetchUser's scope
 Removes a single entry from the cache by key.
 
 ```typescript
-import { resourceCache } from '@hellajs/resource';
-
 resourceCache.set('user:123', { name: 'John' }, 60000);
-
-// Remove specific cache entry
-resourceCache.invalidate('user:123');
-
-// Entry is now gone
-console.log(resourceCache.get('user:123')); // undefined
+resourceCache.invalidate('user:123'); // remove the entry
+console.log(resourceCache.get('user:123')); // Logs: undefined; the entry is gone
 ```
 
 ### `invalidateMultiple`

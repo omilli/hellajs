@@ -79,5 +79,18 @@ describe("resourceCache", () => {
       expect(result).toBeUndefined();
       expect(resourceCache.map.has("expiring-key")).toBe(false);
     });
+
+    test("get removes expired entries stored under structured keys", () => {
+      mockTime = 1000;
+      Date.now = () => mockTime;
+
+      resourceCache.set({ team: 1 }, "roster", 10);
+      expect(resourceCache.map.size).toBe(1);
+      mockTime += 20;
+
+      const result = resourceCache.get<string>({ team: 1 });
+      expect(result).toBeUndefined();
+      expect(resourceCache.map.size).toBe(0);
+    });
   });
 });

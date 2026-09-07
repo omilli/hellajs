@@ -21,6 +21,26 @@ describe("resource", () => {
       expect(() => resource(async () => mockUser, null)).toThrow("[resource] resource: options must be an object");
     });
 
+    test("throws when cacheTime is negative", () => {
+      expect(() => resource(async () => mockUser, { cacheTime: -100 })).toThrow(
+        "[resource] resource: cacheTime must be a non-negative number, received -100"
+      );
+    });
+
+    test("throws when staleTime is negative", () => {
+      expect(() => resource(async () => mockUser, { staleTime: -1 })).toThrow(
+        "[resource] resource: staleTime must be a non-negative number, received -1"
+      );
+    });
+
+    test("accepts staleTime Infinity", async () => {
+      const r = resource(() => delay(mockUser), { staleTime: Infinity });
+      r.fetch({ force: true });
+      await delay(20);
+      expect(r.data()).toEqual(mockUser);
+      expect(r.status()).toBe("success");
+    });
+
     test("fetches data successfully", async () => {
       const r = resource(() => delay(mockUser));
       r.fetch({ force: true });

@@ -1,4 +1,4 @@
-import { signal, computed, effect, untracked, isFunction, isString, isObject, hasWindow } from "./internal/core";
+import { signal, computed, effect, untracked, isFunction, isString, isNumber, isObject, hasWindow } from "./internal/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types/resource";
 import type { CacheEntry } from "./types/cache";
 import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
@@ -19,7 +19,7 @@ import { structuralShare } from "./internal/structural";
  * @param url - The URL endpoint to fetch from
  * @param options - Configuration options for the resource
  * @returns A resource object with reactive state and control methods
- * @throws {Error} When fetcher is not a string URL or function, or options is not an object.
+ * @throws {Error} When fetcher is not a string URL or function, options is not an object, or cacheTime/staleTime is not a non-negative number.
  */
 export function resource<T = unknown, TTransformed = T>(
   url: string,
@@ -35,7 +35,7 @@ export function resource<T = unknown, TTransformed = T>(
  * @param fetcher - Custom async function that performs the data fetching
  * @param options - Configuration options for the resource
  * @returns A resource object with reactive state and control methods
- * @throws {Error} When fetcher is not a string URL or function, or options is not an object.
+ * @throws {Error} When fetcher is not a string URL or function, options is not an object, or cacheTime/staleTime is not a non-negative number.
  */
 export function resource<T, K = undefined, TTransformed = T>(
   fetcher: Fetcher<T, K>,
@@ -50,6 +50,10 @@ export function resource<T, K = undefined, TTransformed = T>(
     throw new Error("[resource] resource: fetcher must be a string URL or function, received " + typeof fetcher);
   if (options !== undefined && (!isObject(options) || Array.isArray(options)))
     throw new Error("[resource] resource: options must be an object, received " + options);
+  if (options.cacheTime !== undefined && (!isNumber(options.cacheTime) || Number.isNaN(options.cacheTime) || options.cacheTime < 0))
+    throw new Error("[resource] resource: cacheTime must be a non-negative number, received " + options.cacheTime);
+  if (options.staleTime !== undefined && (!isNumber(options.staleTime) || Number.isNaN(options.staleTime) || options.staleTime < 0))
+    throw new Error("[resource] resource: staleTime must be a non-negative number, received " + options.staleTime);
 
   if (isString(fetcher))
     return resource<T, string, TTransformed>(
@@ -161,7 +165,6 @@ export function resource<T, K = undefined, TTransformed = T>(
     deduplicate && deleteOngoing(fetcherFn, cacheKey);
   };
 
-  // eslint-disable-next-line prefer-const
   let cleanupEffect: (() => void) | undefined;
   let currentAbortController: AbortController | undefined;
   /** Live mutation controllers — one per in-flight `mutate()`, self-removed on settle. */
@@ -348,7 +351,7 @@ export function resource<T, K = undefined, TTransformed = T>(
     }
   };
 
-  cleanupEffect?.();
+  // eslint-disable-next-line prefer-const
   cleanupEffect = effect(() => {
     if (isEnabled()) {
       armPolling();
@@ -438,6 +441,9 @@ export function resource<T, K = undefined, TTransformed = T>(
    * onMutate context; only `abort()` (or per-call timeout/abortSignal) cancels it.
    * @param variables - Argument passed to the fetcher for the mutation
    * @returns The raw fetcher result on success
+   * @throws {Error} Rejects with the mutation error on failure, with a `DOMException` (AbortError)
+   * when aborted, or with a throwing callback's own error — a success-path `onSettled` throw
+   * never flips the resource to `error`, and `invalidates` is skipped.
    */
   const mutate = async <TVariables = unknown>(variables: TVariables): Promise<T> => {
     const controller = new AbortController();
@@ -452,39 +458,42 @@ export function resource<T, K = undefined, TTransformed = T>(
       const hasData = untracked(rawData) !== undefined;
       handleError(undefined, !hasData, true);
 
-      ctx = options.onMutate ? await options.onMutate(variables) : undefined;
+      // Fetch-only region: failures here map to resource error state and the
+      // error-flavor onSettled. The settlement below must never route back in —
+      // a success-path onSettled throw rejects without a second settlement.
+      let result: T;
+      try {
+        ctx = options.onMutate ? await options.onMutate(variables) : undefined;
+        result = await fetchWithRetry(
+          () => (fetcherFn as unknown as (vars: TVariables) => Promise<T>)(variables),
+          { signal, retryConfig }
+        );
+      } catch (err) {
+        if (!signal.aborted) {
+          handleSuccessError(err);
+          await options.onSettled?.(undefined, err, variables, ctx);
+        }
 
-      const result = await fetchWithRetry(
-        () => (fetcherFn as unknown as (vars: TVariables) => Promise<T>)(variables),
-        { signal, retryConfig }
-      );
+        throw err;
+      }
 
-      if (!signal.aborted) {
-        handleSuccess(result);
-        await options.onSettled?.(result, undefined, variables, ctx);
-        if (invalidates) {
-          let i = 0;
-          const len = invalidates.length;
-          while (i < len) {
-            const item = invalidates[i++]!;
-            if (isString(item)) {
-              resourceCache.invalidateByPrefix(item);
-            } else {
-              resourceCache.invalidateByPattern(item);
-            }
+      if (signal.aborted) throw new DOMException("Mutation was aborted", "AbortError");
+
+      handleSuccess(result);
+      await options.onSettled?.(result, undefined, variables, ctx);
+      if (invalidates) {
+        let i = 0;
+        const len = invalidates.length;
+        while (i < len) {
+          const item = invalidates[i++]!;
+          if (isString(item)) {
+            resourceCache.invalidateByPrefix(item);
+          } else {
+            resourceCache.invalidateByPattern(item);
           }
         }
-        return result;
       }
-
-      throw new DOMException("Mutation was aborted", "AbortError");
-    } catch (err) {
-      if (!signal.aborted) {
-        handleSuccessError(err);
-        await options.onSettled?.(undefined, err, variables, ctx);
-      }
-
-      throw err;
+      return result;
     } finally {
       // Abort path never reaches handleSuccessError (the catch guards on !signal.aborted),
       // so clear both activity flags here; error stays unset for AbortError.

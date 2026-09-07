@@ -272,7 +272,7 @@ export const resourceCache: ResourceCache = {
       const entry = inner.get(normalized) as CacheEntry<T> | undefined;
       if (!entry) continue;
       if (Date.now() - entry.timestamp >= entry.cacheTime) {
-        inner.delete(key);
+        inner.delete(normalized);
         continue;
       }
       entry.lastAccess = Date.now();

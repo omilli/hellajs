@@ -1,8 +1,12 @@
-import { describe, test, expect, mock } from "bun:test";
-import {delay} from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { delay, resetTestState } from "@utils/test-helpers.js";
+import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
+  beforeEach(() => {
+    resetTestState();
+  });
+
   test("performs successful mutation", async () => {
     const mutationFn = async (vars: { name: string }) => {
       await delay(10);
@@ -63,13 +67,13 @@ describe("resource", () => {
   });
 
   test("calls onSuccess and onSettled hooks", async () => {
-    let successCalled = false;
+    const onSuccess = mock(() => { });
     const settledResult: { result?: string, error?: unknown, vars?: unknown } = {};
 
     const r = resource(
       async (vars: string) => delay(`result-${vars}`, 10),
       {
-        onSuccess: () => { successCalled = true; },
+        onSuccess,
         onSettled: async (result, error, vars) => {
           settledResult.result = result;
           settledResult.error = error;
@@ -80,7 +84,7 @@ describe("resource", () => {
 
     await r.mutate("test");
 
-    expect(successCalled).toBe(true);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(settledResult.result).toBe("result-test");
     expect(settledResult.error).toBeUndefined();
     expect(settledResult.vars).toBe("test");
@@ -110,6 +114,41 @@ describe("resource", () => {
       expect(settledError).toBeInstanceOf(Error);
       expect((settledError as Error).message).toBe("Mutation failed");
     }
+  });
+
+  test("settles once when success-path onSettled throws", async () => {
+    const onSettled = mock<(data?: unknown, error?: unknown, variables?: unknown, context?: unknown) => void>(() => {
+      throw new Error("settled-boom");
+    });
+
+    const r = resource(async (vars: string) => delay(`saved-${vars}`, 10), { onSettled });
+
+    try {
+      await r.mutate("v");
+      expect(true).toBe(false);
+    } catch (err) {
+      expect((err as Error).message).toBe("settled-boom");
+    }
+
+    expect(onSettled).toHaveBeenCalledTimes(1);
+    expect(onSettled).toHaveBeenCalledWith("saved-v", undefined, "v", undefined);
+    expect(r.status()).toBe("success");
+    expect(r.data()).toBe("saved-v");
+    expect(r.error()).toBeUndefined();
+    expect(r.isFetching()).toBe(false);
+  });
+
+  test("skips invalidation when success-path onSettled throws", async () => {
+    resourceCache.set("user:1", { id: 1 }, 60000);
+
+    const r = resource(async () => delay("saved", 10), {
+      onSettled: () => { throw new Error("settled-boom"); },
+      invalidates: ["user:"],
+    });
+
+    await r.mutate("v").catch(() => { });
+
+    expect(resourceCache.map.has("user:1")).toBe(true);
   });
 
   test("handles abort during execution", async () => {

@@ -27,9 +27,7 @@ export function categorizeError(error: unknown): ResourceError {
   const statusCode = statusMatch ? parseInt(statusMatch[1]!, 10) : undefined;
 
   let category: ResourceError["category"] = "unknown";
-  if (isAbortError(error)) {
-    category = "abort";
-  } else if (statusCode === 404) {
+  if (statusCode === 404) {
     category = "not_found";
   } else if (statusCode && statusCode >= 500) {
     category = "server";
