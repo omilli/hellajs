@@ -1,6 +1,6 @@
-import { isFunction, isString } from "./core";
+import { isFunction } from "./core";
 import type { RouteValue, Params, RouteWithHooks } from "../types";
-import { sortRoutesBySpecificity, hasChildren, EMPTY_OBJECT } from "./utils";
+import { hasChildren, EMPTY_OBJECT, getCachedRouteEntries } from "./utils";
 
 /**
  * Internal route matching result with extracted parameters.
@@ -24,6 +24,21 @@ export type RouteMatch = {
 };
 
 /**
+ * Decodes a percent-encoded URL component, keeping the raw value when the
+ * encoding is malformed.
+ * @param value Encoded path or query component.
+ * @returns Decoded value, or the raw input on malformed percent-encoding.
+ */
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    // Malformed percent-encoding — keep the raw value; a bad URL must not crash resolution.
+    return value;
+  }
+}
+
+/**
  * Parses URL query string into parameters object.
  * @param queryString Optional query string to parse.
  * @returns Object containing parsed query parameters.
@@ -43,7 +58,7 @@ function parseQuery(queryString?: string): Params {
       continue;
     }
     const [k, v = ""] = part.split("=");
-    params[decodeURIComponent(k!)] = decodeURIComponent(v);
+    params[safeDecode(k!)] = safeDecode(v);
   }
   return params;
 }
@@ -85,7 +100,7 @@ function matchSegments(
     if (pathPart !== undefined) {
       const consumed = matchSegments(patternParts, pathParts, params, pi + 1, si + 1);
       if (consumed !== -1) {
-        params[patternPart.slice(1, -1)] = decodeURIComponent(pathPart);
+        params[patternPart.slice(1, -1)] = safeDecode(pathPart);
         return consumed;
       }
     }
@@ -98,7 +113,7 @@ function matchSegments(
 
   const consumed = matchSegments(patternParts, pathParts, params, pi + 1, si + 1);
   if (consumed !== -1 && patternPart.startsWith(":")) {
-    params[patternPart.slice(1)] = decodeURIComponent(pathPart);
+    params[patternPart.slice(1)] = safeDecode(pathPart);
   }
   return consumed;
 }
@@ -144,7 +159,7 @@ export function matchPattern(pattern: string, path: string, isNested = false): {
 
   let remainingPath = "";
   if (hasWildcard) {
-    params["*"] = decodeURIComponent(pathParts.slice(consumed).join("/"));
+    params["*"] = safeDecode(pathParts.slice(consumed).join("/"));
   } else if (pathParts.length > consumed) {
     remainingPath = `/${pathParts.slice(consumed).join("/")}`;
   }
@@ -217,9 +232,7 @@ export function matchNestedRoute(
   routeMap: Record<string, RouteValue | string>,
   path: string
 ): RouteMatch[] | null {
-  const routeEntries = Object.entries(routeMap)
-    .filter(([, value]) => !isString(value))
-    .sort(sortRoutesBySpecificity);
+  const routeEntries = getCachedRouteEntries(routeMap).child;
 
   let i = 0;
   const len = routeEntries.length;

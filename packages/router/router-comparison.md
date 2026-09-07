@@ -214,7 +214,7 @@ The competitors layer progressively more typing and data structure onto params a
 - **Sync init + server `url` mode**: `router()` returns the resolved `RouteInfo`, and `router({ url })` re-resolves per call for request-scoped SSR with no `window` (`lib/router.ts`).
 - **`resetRouter()` teardown**: factory-resets all ten signals and detaches listeners without touching the URL, for HMR and session resets (`lib/resetRouter.ts`).
 - **Three-tier scroll behavior**: inline `navigate({ scroll })` > route-level `scroll` > global `scrollBehavior`, with custom `(to, from, savedPosition) => { top, left? } | null` functions (`savedPosition` restores the captured position on back/forward; the stack mirrors pushState entries: replaces never push), `false` to disable at any tier, and an auto-skip when `to === from` (`lib/internal/matched.ts`, `lib/internal/resolve.ts`).
-- **Frozen singletons on the hot path**: param-less matches and childless crumbs reuse `EMPTY_OBJECT`/`EMPTY_CRUMBS`; params allocation defers behind `hasParams` (`lib/internal/utils.ts`, `lib/internal/match.ts`).
+- **Frozen singletons on the hot path**: param-less matches return the frozen `EMPTY_OBJECT` singleton (`matchPattern`: `Object.keys(params).length ? params : EMPTY_OBJECT` allocates params only when the pattern captured any), and crumb-less states (init, `notFound`, `resetRouter`) reuse `EMPTY_CRUMBS` (`lib/internal/utils.ts`, `lib/internal/match.ts`).
 - **Reactive reconfiguration**: re-calling `router()` swaps the whole route map, hooks, redirects, and listeners atomically (`lib/router.ts`).
 
 ---

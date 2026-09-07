@@ -1,5 +1,5 @@
 import { isFunction, isString, isPlainObject, isNull, hasWindow } from "./core";
-import { hooks, previousPath, scrollBehavior } from "./state";
+import { hooks } from "./state";
 import { executeHook, executeGlobalHook } from "./hooks";
 import { route } from "../route";
 import type { Handler, Params, RouteWithHooks, ScrollBehavior } from "../types";
@@ -22,65 +22,6 @@ let lastMatchedChain: unknown[] | null = null;
  */
 export function setMatchedChain(chain: unknown[] | null): void {
   lastMatchedChain = chain;
-}
-
-/**
- * Handles scroll behavior after navigation.
- * @internal
- * @param toPath The path navigated to
- * @param inlineScroll Optional inline scroll behavior (highest priority)
- * @param routeScroll Optional route-level scroll behavior
- * @param isPop True when the navigation came from browser back/forward (popstate/hashchange)
- * @param savedPosition Scroll position captured when the returned-to page was last left;
- * null on pushes and replaces. Passed to custom fns only when `isPop` is true.
- */
-export function handleScroll(
-  toPath: string,
-  inlineScroll?: ScrollBehavior | false,
-  routeScroll?: ScrollBehavior | false,
-  isPop?: boolean,
-  savedPosition?: { top: number; left: number } | null
-): void {
-  const fromPath = previousPath();
-
-  if (fromPath === toPath) {
-    return;
-  }
-
-  if (inlineScroll === false) {
-    previousPath(toPath);
-    return;
-  }
-
-  if (inlineScroll === undefined && routeScroll === false) {
-    previousPath(toPath);
-    return;
-  }
-
-  const behavior = inlineScroll ?? routeScroll ?? scrollBehavior();
-  if (!behavior || behavior === "auto") {
-    previousPath(toPath);
-    return;
-  }
-
-  if (behavior === "preserve") {
-    previousPath(toPath);
-    return;
-  }
-
-  let scrollPos: { top: number; left?: number } | null = null;
-
-  if (behavior === "top") {
-    scrollPos = { top: 0, left: 0 };
-  } else if (isFunction(behavior)) {
-    scrollPos = behavior(toPath, fromPath, isPop ? savedPosition ?? null : null);
-  }
-
-  if (scrollPos && hasWindow()) {
-    window.scrollTo(scrollPos);
-  }
-
-  previousPath(toPath);
 }
 
 /**

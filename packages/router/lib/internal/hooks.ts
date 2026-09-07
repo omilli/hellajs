@@ -23,7 +23,7 @@ export function executeHook(
     let hookResult: unknown;
     if (Object.keys(params).length > 0) {
       hookResult = fn(params, query);
-    } else if (isFunction(handler) && handler.length >= 2) {
+    } else if (handler.length >= 2) {
       hookResult = fn(undefined, query);
     } else {
       hookResult = fn(query);

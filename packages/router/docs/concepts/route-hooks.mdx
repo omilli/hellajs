@@ -289,7 +289,7 @@ See [`router`](/reference/router/router) for the redirect configuration options,
 
 ## Route Metadata
 
-Attach metadata to routes for analytics, SEO, or feature flags. Access via [`route()`](/reference/router/route).meta.
+Attach metadata to routes for analytics, SEO, or feature flags. Access via [`route()`](/reference/router/route).meta, and read it reactively inside an [`effect`](/reference/core/effect).
 
 ```typescript
 import { router, route } from '@hellajs/router';
@@ -312,7 +312,7 @@ router({
   }
 });
 
-// Access in effects via [`effect`](/reference/core/effect)
+// Access in effects via effect()
 effect(() => {
   const { meta } = route();
   document.title = typeof meta?.title === "string" ? meta.title : 'My App';

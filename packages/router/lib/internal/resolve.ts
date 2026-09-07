@@ -4,8 +4,9 @@ import { route, activeFn } from "../route";
 import { matchRoute, matchNestedEntry } from "./match";
 import type { RouteMatch } from "./match";
 import { buildPath } from "./path";
-import { handleScroll, extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuardsFlat, runGuardsNested, setMatchedChain, type GuardVerdict } from "./matched";
-import { EMPTY_OBJECT, EMPTY_CRUMBS, hasChildren, sortRoutesBySpecificity } from "./utils";
+import { extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuardsFlat, runGuardsNested, setMatchedChain, type GuardVerdict } from "./matched";
+import { handleScroll, takeSavedScroll, scrollStack } from "./scroll";
+import { EMPTY_OBJECT, EMPTY_CRUMBS, getCachedRouteEntries, hasChildren } from "./utils";
 import type { RouteValue, Crumb, ScrollBehavior, Handler, Params, RouteInfo } from "../types";
 
 /**
@@ -37,30 +38,6 @@ let asyncHops = 0;
  * Popstate/hashchange entries never set it — the browser already committed.
  */
 let pendingHistoryCommit: (() => void) | null = null;
-
-/**
- * Scroll positions saved at each committed push navigation (`go` pushState), popped on
- * popstate/hashchange restores — one entry per history push; replaces and init never push.
- */
-const scrollStack: { top: number; left: number }[] = [];
-
-/**
- * Pops the saved scroll position for a pop navigation; null on pushes/replaces
- * (their commit pushes onto the stack in `go`) and when the stack is empty.
- * @param isPop Whether the navigation came from browser back/forward.
- */
-function takeSavedScroll(isPop: boolean | undefined): { top: number; left: number } | null {
-  return isPop ? scrollStack.pop() ?? null : null;
-}
-
-/**
- * Clears the saved scroll-position stack so a fresh session (or test isolation)
- * starts clean. Called by `resetRouter()`.
- * @internal
- */
-export function resetScrollStack(): void {
-  scrollStack.length = 0;
-}
 
 /**
  * Kills in-flight deferred navigations (the epoch bump abandons their continuations) and
@@ -373,7 +350,7 @@ function tryRedirect(currentPath: string): boolean {
   }
 
   {
-    const entries = Object.entries(routeMap);
+    const entries = getCachedRouteEntries(routeMap).raw;
     let i = 0;
     const len = entries.length;
     while (i < len) {
@@ -410,9 +387,7 @@ function matchNestedPhase(
 ): "none" | RouteVerdict {
   const pathWithoutQuery = currentPath.split("?")[0]!;
 
-  const routeEntries = Object.entries(routeMap)
-    .filter(([, value]) => !isString(value) && hasChildren(value))
-    .sort(sortRoutesBySpecificity);
+  const routeEntries = getCachedRouteEntries(routeMap).nested;
 
   let i = 0;
   const len = routeEntries.length;
@@ -506,8 +481,8 @@ function matchFlatPhase(
   while (i < len) {
     const pattern = keys[i]!;
     i++;
-    const routeValue = routeMap[pattern];
-    if (isString(routeValue)) {
+    const routeValue = routeMap[pattern]!;
+    if (isString(routeValue) || hasChildren(routeValue)) {
       continue;
     }
     const match = matchRoute(pattern, currentPath);

@@ -11,14 +11,13 @@ import type { Params } from "../types";
 export function buildPath(path: string, params: Params, query: Params): string {
   let result = path;
 
-  const keys = Object.keys(params);
-  let i = 0;
-  const len = keys.length;
-  while (i < len) {
-    const key = keys[i++]!;
-    result = result.replace(`:${key}?`, encodeURIComponent(params[key]!));
-    result = result.replace(`:${key}`, encodeURIComponent(params[key]!));
-  }
+  // Whole-token substitution only: a per-key `replace(`:${key}`)` splices the
+  // value into any longer token with the key as a prefix (`:id` inside `:idx`).
+  // Tokens without a matching param are left for the strip phases below.
+  result = result.replace(/:([^/]+)/g, (token, name: string) => {
+    const key = name.endsWith("?") ? name.slice(0, -1) : name;
+    return Object.hasOwn(params, key) ? encodeURIComponent(params[key]!) : token;
+  });
 
   // Replace wildcard * pattern: not encoded since wildcards contain raw path segments with /
   // Replacer function form — a string replacement would interpret $&, $$, etc. in the value.

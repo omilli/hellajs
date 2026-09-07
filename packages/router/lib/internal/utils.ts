@@ -1,5 +1,5 @@
-import { isPlainObject } from "./core";
-import type { Crumb, Params, RouteValue, RouteWithHooks } from "../types";
+import { isPlainObject, isString } from "./core";
+import type { Crumb, Params, RouteValue, RouteWithHooks, Routes } from "../types";
 
 /**
  * Frozen empty parameters object for memory efficiency.
@@ -67,4 +67,44 @@ export function sortRoutesBySpecificity([patternA]: [string, unknown], [patternB
   const aSpecificity = patternA.split("/").filter(Boolean).length;
   const bSpecificity = patternB.split("/").filter(Boolean).length;
   return bSpecificity - aSpecificity;
+}
+
+/**
+ * Cached route-entry lists for one route map: `nested` — sorted entries that
+ * have children (nested phase); `child` — sorted non-string entries (nested
+ * child levels, where childless handler objects are legitimate candidates);
+ * `raw` — unsorted entries in insertion order (string-redirect scan).
+ */
+type RouteEntryCache = {
+  nested: [string, RouteValue | string][];
+  child: [string, RouteValue | string][];
+  raw: [string, RouteValue | string][];
+};
+
+/**
+ * Route-entry lists keyed weakly by the route-map object itself — a `router()`
+ * re-init passes a fresh map (fresh cache entry), abandoned maps GC.
+ */
+const entryCache = new WeakMap<Routes, RouteEntryCache>();
+
+/**
+ * Returns a route map's cached entry lists, building every variant on first
+ * sight of the map. In-place mutation of a registered map is not visible —
+ * reconfigure `router()` with a new routes object.
+ * @internal
+ * @param routeMap The route map to read entries for.
+ * @returns The map's cached entry lists.
+ */
+export function getCachedRouteEntries(routeMap: Routes): RouteEntryCache {
+  let cache = entryCache.get(routeMap);
+  if (!cache) {
+    const raw = Object.entries(routeMap);
+    cache = {
+      nested: raw.filter(([, value]) => !isString(value) && hasChildren(value)).sort(sortRoutesBySpecificity),
+      child: raw.filter(([, value]) => !isString(value)).sort(sortRoutesBySpecificity),
+      raw
+    };
+    entryCache.set(routeMap, cache);
+  }
+  return cache;
 }

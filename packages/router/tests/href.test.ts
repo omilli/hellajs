@@ -21,6 +21,21 @@ describe("href", () => {
     expect(href("/users/:id")).toBe("/users/");
   });
 
+  test("ignores prefix-colliding param keys and strips the token", () => {
+    // @ts-expect-error - intentionally mismatched: key is a prefix of the token
+    expect(href("/users/:idx", { params: { id: "7" } })).toBe("/users/");
+  });
+
+  test("ignores param keys longer than the token", () => {
+    // @ts-expect-error - intentionally mismatched: key outlives the token
+    expect(href("/users/:id", { params: { idx: "7" } })).toBe("/users/");
+  });
+
+  test("substitutes multiple params across segments", () => {
+    expect(href("/users/:id/posts/:postId", { params: { id: "1", postId: "2" } }))
+      .toBe("/users/1/posts/2");
+  });
+
   test("serializes query encoded and omits the ? for empty query", () => {
     expect(href("/search", { query: { q: "hello world", "a&b": "c=d" } }))
       .toBe("/search?q=hello%20world&a%26b=c%3Dd");

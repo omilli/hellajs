@@ -47,6 +47,8 @@ The `notFound` handler runs when no route matches. Accepts a function or a redir
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
+const HomePage = () => <div>Home</div>;
+const NotFound = () => <div>Not found</div>;
 const currentView = signal(<div>Loading…</div>);
 
 // Function handler
@@ -97,6 +99,13 @@ router({
 To redirect to login instead:
 
 ```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const user = signal<{ name: string } | null>(null);
+const currentView = signal(<div>Loading</div>);
+const Dashboard = ({ user }: { user?: unknown }) => <div>Dashboard</div>;
+
 router({
   routes: {
     '/dashboard': {
@@ -114,6 +123,13 @@ router({
 Async guards block; return the verdict from the guard itself:
 
 ```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const user = signal<{ name: string } | null>(null);
+const currentView = signal(<div>Loading</div>);
+const Dashboard = ({ user }: { user?: unknown }) => <div>Dashboard</div>;
+
 router({
   routes: {
     '/dashboard': {
@@ -141,6 +157,9 @@ Organize routes hierarchically with `children`. Child routes inherit all parent 
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
+const DashboardLayout = () => <div>Dashboard</div>;
+const Overview = () => <div>Overview</div>;
+const UserDetail = ({ id }: { id?: string }) => <div>User {id}</div>;
 const currentView = signal(<div>Loading…</div>);
 
 router({
@@ -167,6 +186,7 @@ Query parameters are parsed automatically and passed as the second argument. Pas
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
+const SearchResults = ({ term, sort }: { term?: string; sort?: string }) => <div>Results for {term} (sorted by {sort})</div>;
 const currentView = signal(<div>Loading…</div>);
 
 router({
@@ -189,6 +209,8 @@ String values in the routes object act as redirects. Use the `redirects` array t
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
+const HomePage = () => <div>Home</div>;
+const AboutPage = () => <div>About</div>;
 const currentView = signal(<div>Loading…</div>);
 
 router({
@@ -212,6 +234,9 @@ Control scroll position at three levels: global default, route-level override, a
 import { router, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
+const Feed = () => <div>Feed</div>;
+const Chat = () => <div>Chat</div>;
+const Docs = ({ path }: { path?: string }) => <div>Docs {path}</div>;
 const currentView = signal(<div>Loading…</div>);
 
 router({
@@ -244,6 +269,8 @@ Same-origin `<a href>` clicks are intercepted by default and routed through `nav
 import { router } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
+const HomePage = () => <div>Home</div>;
+const AboutPage = () => <div>About</div>;
 const currentView = signal(<div>Loading…</div>);
 
 // Plain <a> tags work out of the box
@@ -258,6 +285,12 @@ router({
 For hybrid SPA + MPA apps, disable interception:
 
 ```jsx
+import { router } from '@hellajs/router';
+import { signal } from '@hellajs/core';
+
+const HomePage = () => <div>Home</div>;
+const currentView = signal(<div>Loading…</div>);
+
 router({
   routes: { '/': () => currentView(<HomePage />) },
   intercept: false
@@ -266,12 +299,15 @@ router({
 
 ### Active Links
 
-Use [`route`](/reference/router/route)`().active()` to highlight the current section in a nav bar. The predicate uses ancestor semantics: a parent link stays lit while a child route is active.
+Use [`route`](/reference/router/route)`().active()` to highlight the current section in a nav bar. The predicate reads route().path reactively and uses ancestor semantics: a parent link stays lit while a child route is active.
 
 ```jsx
-import { router, route, navigate } from '@hellajs/router';
+import { router, route } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
+const Dashboard = () => <div>Dashboard</div>;
+const Users = () => <div>Users</div>;
+const Settings = () => <div>Settings</div>;
 const currentView = signal(<div>Loading…</div>);
 
 router({
@@ -288,13 +324,9 @@ const navItems = [
   { path: '/dashboard/settings', label: 'Settings' }
 ];
 
-// active() reads route().path reactively
 <nav>
   {navItems.map(item => (
-    <a
-      href={item.path}
-      class={route().active(item.path) ? 'active' : ''}
-    >
+    <a href={item.path} class={route().active(item.path) ? 'active' : ''}>
       {item.label}
     </a>
   ))}
@@ -309,24 +341,16 @@ Render a breadcrumb trail from [`route`](/reference/router/route)`().crumbs`. Ea
 import { router, route, navigate } from '@hellajs/router';
 import { signal } from '@hellajs/core';
 
+const Profile = ({ id }: { id?: string }) => <div>Profile {id}</div>;
 const currentView = signal(<div>Loading…</div>);
-
 const labels: Record<string, string> = {
-  '/admin': 'Admin',
-  '/admin/users': 'Users',
-  '/admin/users/:id': 'Profile'
+  '/admin': 'Admin', '/admin/users': 'Users', '/admin/users/:id': 'Profile'
 };
 
 router({
   routes: {
     '/admin': {
-      children: {
-        '/users': {
-          children: {
-            '/:id': ({ id }) => currentView(<Profile id={id} />)
-          }
-        }
-      }
+      children: { '/users': { children: { '/:id': ({ id }) => currentView(<Profile id={id} />) } } }
     }
   }
 });
@@ -335,10 +359,7 @@ router({
 <ol class="breadcrumbs">
   {route().crumbs.map(crumb => (
     <li>
-      <a href={crumb.path} on:click={(e) => {
-        e.preventDefault();
-        navigate(crumb.path);
-      }}>
+      <a href={crumb.path} on:click={(e) => { e.preventDefault(); navigate(crumb.path); }}>
         {labels[crumb.segment] || crumb.segment}
       </a>
     </li>

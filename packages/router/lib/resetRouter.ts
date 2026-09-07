@@ -11,8 +11,10 @@ import {
 } from "./internal/state";
 import { route, activeFn } from "./route";
 import { resetListeners } from "./router";
-import { resetScrollStack, resetAsyncNavigation } from "./internal/resolve";
+import { resetAsyncNavigation } from "./internal/resolve";
+import { resetScrollStack } from "./internal/scroll";
 import { setMatchedChain } from "./internal/matched";
+import { EMPTY_OBJECT, EMPTY_CRUMBS } from "./internal/utils";
 
 /**
  * Factory-resets the router singleton to defaults and detaches all listeners.
@@ -30,12 +32,12 @@ export function resetRouter(): void {
   inheritMeta(false);
   route({
     handler: null,
-    params: {},
-    query: {},
+    params: EMPTY_OBJECT,
+    query: EMPTY_OBJECT,
     path: "/",
     pending: false,
     meta: undefined,
-    crumbs: Object.freeze([]),
+    crumbs: EMPTY_CRUMBS,
     active: activeFn
   });
   resetListeners();

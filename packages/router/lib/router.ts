@@ -70,6 +70,20 @@ export function router(config: RouterConfig): RouteInfo {
 
   previousPath(initialPath);
 
+  attachListeners(routerMode, intercept);
+
+  updateRoute();
+
+  return route();
+}
+
+/**
+ * Attaches the popstate/hashchange listener for the active mode and, unless disabled,
+ * the same-origin click interceptor — each removal composed into `cleanupListener`.
+ * @param routerMode Active history mode (memory attaches nothing).
+ * @param intercept Whether same-origin `<a>` clicks route through `navigate()`.
+ */
+function attachListeners(routerMode: HistoryMode, intercept: boolean): void {
   // Memory mode attaches no listeners: no popstate/hashchange and no click
   // interception — the route is driven by navigate() alone.
   if (hasWindow() && routerMode !== "memory") {
@@ -153,8 +167,4 @@ export function router(config: RouterConfig): RouteInfo {
       };
     }
   }
-
-  updateRoute();
-
-  return route();
 }

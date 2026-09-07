@@ -63,5 +63,52 @@ describe("router", () => {
       navigate("/files/*", { params: { "*": "a$$b/$`c" } });
       expect(route().path).toBe("/files/a$$b/$`c");
     });
+
+    test("resolves a malformed query value to its raw form", () => {
+      router({
+        routes: {
+          "/search": () => render("search")
+        },
+        url: "/search?q=100%"
+      });
+
+      expect(container.textContent).toBe("search");
+      expect(route().query["q"]).toBe("100%");
+    });
+
+    test("resolves a malformed query key to its raw form", () => {
+      router({
+        routes: {
+          "/": () => render("home")
+        },
+        url: "/?%zz=1"
+      });
+
+      expect(route().query["%zz"]).toBe("1");
+    });
+
+    test("resolves a malformed dynamic segment to its raw form", () => {
+      router({
+        routes: {
+          "/users/:id": ({ id }) => render(`user-${id}`)
+        }
+      });
+
+      navigate("/users/%zz");
+      expect(container.textContent).toBe("user-%zz");
+      expect(route().params["id"]).toBe("%zz");
+    });
+
+    test("resolves a malformed wildcard capture to its raw form", () => {
+      router({
+        routes: {
+          "/files/*": () => render("files")
+        }
+      });
+
+      navigate("/files/do%cs/readme.md");
+      expect(container.textContent).toBe("files");
+      expect(route().params["*"]).toBe("do%cs/readme.md");
+    });
   });
 });
