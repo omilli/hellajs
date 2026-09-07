@@ -3,6 +3,8 @@
 ## 2026-09-07
 * **Creation**: Added concept [096](entries/096.md) (type: correction).
 * **Update**: Extended [069](entries/069-bun-s-coverage-table-renders.md) with the fresh-lcov declaration-line artifact (replaceMismatch, dom bundle) + baseline-compare triage; merged from the fragment-scope-carrier run.
+* **Creation**: Added concept [097](entries/097.md) (type: decision).
+* **Creation**: Added concept [098](entries/098.md) (type: decision).
 
 ## 2026-09-06
 * **Creation**: Added concept [084](entries/084.md) (type: decision).

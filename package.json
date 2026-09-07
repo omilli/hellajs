@@ -45,6 +45,7 @@
 		"coverage": "bun ./scripts/coverage.ts",
 		"bench": "bun ./scripts/bench.ts",
 		"changeset": "changeset",
+		"plans": "bun ./scripts/plans.ts",
 		"release": "bun bundle --quiet && bun ./scripts/release.ts",
 		"visibility": "bun ./scripts/type-visibility.ts",
 		"dead-exports": "bun ./scripts/dead-exports.ts",

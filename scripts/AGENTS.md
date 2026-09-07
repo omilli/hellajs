@@ -9,6 +9,7 @@
   | `bundle.ts` | Thin entry (55 lines): parse args → call `bundle/orchestrate.ts` → report. Flags: `[package]`, `--size-mode` (minified bundle variant only), `--clean` (purge dist + cache first). Callers pass `--quiet` but bundle does not read it. |
   | `coverage.ts` | bundle → `bun test --coverage` → lint. With `[package]`: tests + eslint scope to it (tsc + guards stay repo-wide — foreign failures are triaged per root AGENTS.md §Testing), and the coverage table filters to its rows with the `All files` average recalculated (Bun has no scope flag; the test preload forces `@hellajs/dom` into the instrumented set). CI runs this unscoped. |
   | `bench.ts` | Thin entry: parse args (`--variant`, `--runs`, `--throttle`, `--label`, `--ops`, `--headed`) → build + stage → serve → drive → report. Playwright + system Chrome macro-benchmark over `examples/bench`; appends self-describing entries to `.bench/results.md`. |
+  | `plans.ts` | Thin entry: parse args (`<set-folder>`, `--probe`, `--model=<provider/id[:thinking]>`) → validate set + venue → run pipeline → report → exit. Fresh `pi --mode rpc` instance per unticked plan unit (worker skill executes it); dialogs + steering relayed to the terminal; unflipped markers auto-continue on tick progress, else ask-retry-skip-halt gate. Fails fast if `.agents/skills/worker/scripts/worktree.mjs` exists (skill-automation 02 upgrades it to component mode). |
   | `clean.ts` | Remove `dist/` + `.build-cache/` per package. `bun clean [package]` scopes to one workspace. |
   | `release.ts` | Update `@hellajs/core` peer deps + `babel-plugin-hellajs` deps across packages, commit (`--no-verify`), then `changeset publish`. Run via `bun release` (the npm script bundles first). |
   | `type-visibility.ts` | Guard (`bun visibility`): fail if any `lib/types*.d.ts` that is wholesale re-exported (`export type * from "./types[…]"`) contains `@internal`-tagged types — those would leak as public. No package scoping; scans every package. |
@@ -86,6 +87,19 @@
   | `bench/ops.ts` | The 8 op definitions: setup clicks, pre-click capture, measured click, in-page end-state predicate |
   | `bench/driver.ts` | Playwright driver: capture-phase click listener (t0), rAF predicate poll (t1), 30s watchdog, CDP throttle, warmup + measured runs |
   | `bench/report.ts` | Env header + per-op median/mean table to stdout; append-only self-describing entry to `.bench/results.md` (only after every op verified) |
+
+  ## Plans runner pipeline (`scripts/plans/`, one concern per file)
+
+  Entry `plans.ts` → `set.ts` (list `NN-*.md` units in filename order, read top markers — read-only; the worker skill owns every tick) → `rpc.ts` (one `pi --mode rpc` child per unit: LF-only JSONL framing, id-correlated command responses, `agent_settled` tracking, dialog registry, child-exit detection as rejections) → `relay.ts` (terminal view: renders `extension_ui_request` dialogs and answers with exact option strings; one shared stdin line-reader also routes free-typed lines to steering and `.stop` to abort) → `stream.ts` (terminal stream view: text deltas verbatim, tool one-liners with args, partial tool output printed live as it accumulates, result summary at end) → `run.ts` (per-unit orchestration: `/skill:worker` prompt, settle → `get_last_assistant_text` report → top-marker check, auto-continue on tick progress / ask-retry-skip-halt gate when stalled, SIGINT abort-and-exit-1, final summary with session names). The runner never writes plan files and never starts the next unit after SIGINT or halt. Venue fail-fast: refuses to run when `.agents/skills/worker/scripts/worktree.mjs` exists (skill-automation 02 adapts the runner to component mode in the same unit that lands the worktree protocol).
+
+  | File | Concern |
+  |---|---|
+  | `plans.ts` | Thin entry: args → validate set + venue → run → report → exit |
+  | `plans/set.ts` | Plan-set listing (`NN-*.md`, filename order) + top-marker reads; read-only |
+  | `plans/rpc.ts` | pi RPC client: spawn, strict JSONL, command/event dispatch, dialog registry, `waitForSettled`, dispose |
+  | `plans/relay.ts` | Terminal dialog rendering + answering, steer routing (`.stop` = abort), orchestrator prompts |
+  | `plans/stream.ts` | Terminal stream view: text deltas verbatim, tool one-liners with args, live partial output diffing |
+  | `plans/run.ts` | Per-unit orchestration: fresh instance, marker gate, summary, SIGINT |
 
   ## Testing
 
