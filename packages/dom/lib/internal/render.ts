@@ -134,11 +134,12 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
       const clone = cached.cloneNode(true) as HellaElement | DocumentFragment;
       // The clone carries no ElementState — re-wire the scope for re-mounts of the
       // same node object (e.g. reset() re-mounting state.originalNode). A fragment
-      // clone's children move out on insert, so the scope rides its first child
-      // (chain: the child can carry an inner component's scope); an empty fragment
-      // clone has no DOM lifetime — dispose now.
+      // clone's children move out on insert, so the scope rides its last child
+      // (chain: the child can carry an inner component's scope — same last-child
+      // carrier as the `$` branch; a static fragment's children never swap); an
+      // empty fragment clone has no DOM lifetime — dispose now.
       if (node.componentScope) {
-        const target = clone.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? clone.firstChild : clone;
+        const target = clone.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? clone.lastChild : clone;
         if (target) {
           const cloneState = getState(target);
           cloneState.componentScope = chainScopes(cloneState.componentScope, node.componentScope);
@@ -156,10 +157,13 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
     const fragment = document.createDocumentFragment();
     appendToParent(fragment as unknown as HellaElement, children, boundaryElement, ns);
     // The fragment is ephemeral — insertBefore/appendChild move its children out
-    // and discard it — so the scope rides its first child (chained: the child can
-    // already carry an inner component's scope, e.g. html`<${B} /> tail`). An empty
+    // and discard it — so the scope rides its LAST child (chained: the child can
+    // already carry an inner component's scope, e.g. html`<${B} /> tail`). Mount-side
+    // anchors trail their content (every reactive/dynamic child appends its persistent
+    // anchor before inserting rendered nodes ahead of it), so the last node survives
+    // every child swap; a static tail persists until subtree removal. An empty
     // fragment mounts nothing that owns the scope — wireFragmentScope disposes it.
-    if (componentScope) wireFragmentScope(fragment.firstChild, null, componentScope);
+    if (componentScope) wireFragmentScope(fragment.lastChild, null, componentScope);
     if (node.static) staticDom.set(node, fragment);
     return fragment;
   }

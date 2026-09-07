@@ -100,7 +100,7 @@ export function renderProp(element: HellaElement, key: string, value: unknown) {
  * @internal
  * Chains two component-scope dispose functions into one. Two components can
  * legitimately own a single node (a component returning another component's
- * result; a fragment root's scope riding its first child), and `clean()` calls
+ * result; a fragment root's scope riding one of its children), and `clean()` calls
  * one `componentScope` per state, so the chain must live inside it.
  * @param prev The scope already on the node, or undefined
  * @param next The scope to append
@@ -112,15 +112,15 @@ export function chainScopes(prev: (() => void) | undefined, next: () => void): (
 
 /**
  * @internal
- * Wires a fragment's `componentScope` onto its first child that survives marker
- * consumption, chaining onto any scope the node already carries; no such node
- * → dispose (nothing mounted owns the scope — an empty fragment has no DOM
- * lifetime). Leading `[`/`]` region-marker comments are skipped up to `bound`
- * (hydrate's region close marker; null on the mount side, where fresh fragments
- * carry no markers, and for a hydrate fragment root, whose container has no
- * root-level markers — a fragment whose first child is a nested fragment region
- * starts at that child's open marker, which the walk itself removes later).
- * @param start The fragment's first node
+ * Wires a fragment's `componentScope` onto the carrier node the caller designates,
+ * skipping forward past leading `[`/`]` region-marker comments up to `bound`, and
+ * chaining onto any scope the node already carries; no such node → dispose
+ * (nothing mounted owns the scope — an empty fragment has no DOM lifetime).
+ * The stable carrier is site-specific: mount-side anchors trail their content, so
+ * the mount paths pass the fragment's last child; hydrate-side anchors lead their
+ * region (inserted at the open marker), so the hydrate paths pass the re-derived
+ * first region node after their recursion has consumed the inner markers.
+ * @param start The designated carrier node (mount: the fragment's last child; hydrate: the first region node)
  * @param bound The node that ends the region (exclusive), or null for no bound
  * @param scope The fragment's componentScope dispose
  */

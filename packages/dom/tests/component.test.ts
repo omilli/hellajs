@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { effect, flush, signal } from "@hellajs/core";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { mount, hydrate, html, component, peekState } from "@hellajs/dom/bundle";
+import { mount, hydrate, html, component, ForEach, peekState } from "@hellajs/dom/bundle";
 import type { HellaNode, ComponentFn, HellaElement } from "@hellajs/dom";
 import { ssrContainer } from "./helpers";
 
@@ -347,10 +347,10 @@ describe("dom", () => {
       flush();
       expect(effectRuns).toHaveBeenCalledTimes(2);
 
-      const first = document.getElementById("frag-first")!;
+      const carrier = document.getElementById("frag-second")!;
       document.getElementById("multi-root-wrapper")!.remove();
-      for (let __i = 0; __i < 50; __i++) { if (peekState(first) === undefined) break; await delay(); }
-      expect(peekState(first)).toBeUndefined();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      expect(peekState(carrier)).toBeUndefined();
 
       count(2);
       flush();
@@ -458,8 +458,8 @@ describe("dom", () => {
       const count = signal(0);
       const effectRuns = mock(() => { });
       // The fragment root's first child is itself a fragment component — its region
-      // markers lead the container, so the root scope must wire past them onto the
-      // first surviving node.
+      // markers lead the container, and the walk removes them while recursing, so
+      // the root scope wires (post-recursion) onto the first surviving node.
       const Inner = () => html`<>b</>` as HellaNode;
       const FragRoot = () => {
         effect(() => { effectRuns(); count(); });
@@ -483,6 +483,182 @@ describe("dom", () => {
       count(1);
       flush();
       expect(effectRuns).toHaveBeenCalledTimes(1);
+    });
+
+    test("keeps a reactive-first fragment-root component's scope across child swaps", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const ReactiveFirst = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<>${count} tail</>` as HellaNode;
+      };
+
+      mount(html`<div id="reactive-first-wrapper"><${ReactiveFirst} /></div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      // The leading child swaps its rendered node — the scope must ride past it.
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+      expect(document.getElementById("reactive-first-wrapper")!.textContent).toBe("1 tail");
+
+      // A second write proves the scope survived the first swap (a scope that died
+      // with the swapped-out node would freeze the mock at 2).
+      count(2);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+      expect(document.getElementById("reactive-first-wrapper")!.textContent).toBe("2 tail");
+
+      // The carrier is the static tail (the fragment's last child).
+      const carrier = document.getElementById("reactive-first-wrapper")!.lastChild!;
+      document.getElementById("reactive-first-wrapper")!.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      expect(peekState(carrier)).toBeUndefined();
+
+      count(3);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+    });
+
+    test("keeps a ForEach-first fragment-root component's scope across list reconciliation", async () => {
+      const list = signal(["a", "b"]);
+      const effectRuns = mock(() => { });
+      const ForEachFirst = () => {
+        effect(() => { effectRuns(); list(); });
+        return html`<>${ForEach({ each: list, use: (item: string) => html`<b>${item}</b>` })} tail</>` as HellaNode;
+      };
+
+      mount(html`<div id="foreach-first-wrapper"><${ForEachFirst} /></div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      // Full positional reconciliation rebuilds every item — the scope must ride past it.
+      list(["b", "c"]);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+      expect(document.getElementById("foreach-first-wrapper")!.textContent).toBe("bc tail");
+
+      // A second reconciliation proves the scope survived the first rebuild.
+      list(["d"]);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+      expect(document.getElementById("foreach-first-wrapper")!.textContent).toBe("d tail");
+
+      // The carrier is the static tail (the fragment's last child — the ForEach anchor precedes it).
+      const carrier = document.getElementById("foreach-first-wrapper")!.lastChild!;
+      document.getElementById("foreach-first-wrapper")!.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      expect(peekState(carrier)).toBeUndefined();
+
+      list(["e"]);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+    });
+
+    test("keeps a single-reactive-child fragment-root component's scope across swaps", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const SingleReactive = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<>${count}</>` as HellaNode;
+      };
+
+      mount(html`<div id="single-reactive-wrapper"><${SingleReactive} /></div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+      expect(document.getElementById("single-reactive-wrapper")!.textContent).toBe("1");
+
+      // A second write proves the scope survived the swap of its only child's node.
+      count(2);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+      expect(document.getElementById("single-reactive-wrapper")!.textContent).toBe("2");
+
+      // The carrier is the reactive branch's persistent anchor (the last child).
+      const carrier = document.getElementById("single-reactive-wrapper")!.lastChild!;
+      document.getElementById("single-reactive-wrapper")!.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      expect(peekState(carrier)).toBeUndefined();
+
+      count(3);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+    });
+
+    test("disposes a static-first reactive-tail fragment-root component only on removal", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const StaticFirst = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<>head ${count} tail</>` as HellaNode;
+      };
+
+      mount(html`<div id="static-first-wrapper"><${StaticFirst} /></div>`);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+      expect(document.getElementById("static-first-wrapper")!.textContent).toBe("head 1 tail");
+
+      count(2);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+
+      // The carrier is the static tail — this shape's old carrier was the leading
+      // static text, so the test guards the carrier switch end-to-end.
+      const carrier = document.getElementById("static-first-wrapper")!.lastChild!;
+      document.getElementById("static-first-wrapper")!.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      expect(peekState(carrier)).toBeUndefined();
+
+      count(3);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+    });
+
+    test("keeps a reactive-first fragment-root component's scope across a post-hydrate swap", async () => {
+      const count = signal(0);
+      const effectRuns = mock(() => { });
+      const ReactiveFirst = () => {
+        effect(() => { effectRuns(); count(); });
+        return html`<>${count} tail</>` as HellaNode;
+      };
+
+      // One component() instance drives both ssr() and hydrate() (memory 092):
+      // a second call would leak a server-realm instance's effect into the counts.
+      const view = component(ReactiveFirst, {});
+      const container = ssrContainer(view);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      hydrate(view, container);
+      expect(effectRuns).toHaveBeenCalledTimes(1);
+
+      // The carrier is the reactive region's anchor — hydrate inserts it AT the open
+      // marker, so it leads the container at hydrate time and survives every swap
+      // (post-swap rendered nodes insert BEFORE it, so capture it now).
+      const carrier = container.firstChild!;
+
+      count(1);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(2);
+      expect(container.textContent).toBe("1 tail");
+
+      // A second write proves the scope survived the post-hydrate swap.
+      count(2);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
+      expect(container.textContent).toBe("2 tail");
+
+      carrier.remove();
+      for (let __i = 0; __i < 50; __i++) { if (peekState(carrier) === undefined) break; await delay(); }
+      expect(peekState(carrier)).toBeUndefined();
+
+      count(3);
+      flush();
+      expect(effectRuns).toHaveBeenCalledTimes(3);
     });
   });
 });

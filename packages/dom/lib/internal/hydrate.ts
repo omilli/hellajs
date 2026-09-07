@@ -377,18 +377,28 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
       const node = child as HellaNode;
       if (node.tag === "$") {
         // fragment child — bounded by markers; gather, remove both markers, recurse children inline.
-        // The scope rides the region's first surviving node (empty region → dispose).
+        // Hydrate anchors lead their region (consumeRegion inserts the anchor AT the open
+        // marker), so the stable carrier is the region's FIRST node — but it exists only
+        // after the recursion consumes the inner regions (the pre-recursion first node
+        // can be an inner open marker the walk itself removes), so re-derive the region
+        // head from the node before it and wire after recursing. An empty region → dispose.
         if (current && isMarkOpen(current)) {
           const { close } = gatherRegion(current);
           const firstChild = current.nextSibling;
+          const regionPrev = current.previousSibling;   // capture before removing the markers
           parent.removeChild(current);
           if (close !== current) parent.removeChild(close);
-          if (node.componentScope) wireFragmentScope(firstChild, close, node.componentScope);
+          const empty = firstChild === close;
+          if (node.componentScope && empty) node.componentScope();
           current = hydrateSequence(parent, node.children, firstChild, boundaryElement);
+          if (node.componentScope && !empty) {
+            wireFragmentScope(regionPrev ? regionPrev.nextSibling : parent.firstChild, null, node.componentScope);
+          }
         } else {
           console.warn("[dom] hydrate: expected fragment marker, not found");
-          if (node.componentScope) wireFragmentScope(current, null, node.componentScope);
+          const preRecursion = current;   // degenerate warn path — the carrier identity is best-effort
           current = hydrateSequence(parent, node.children, current, boundaryElement);
+          if (node.componentScope) wireFragmentScope(preRecursion, null, node.componentScope);
         }
       } else {
         const result = hydrateNode(node, current, boundaryElement);

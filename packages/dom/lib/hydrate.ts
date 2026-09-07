@@ -43,10 +43,13 @@ export function hydrate(
         roots = Array.from(container.childNodes);
       } else if (n.tag === "$") {
         // fragment root: hydrate each top-level child against the container's children.
-        // ssr emits no root-level markers, so the scope rides the first surviving server
-        // node (empty container never reaches this branch — fresh-mount path wires it).
-        if (n.componentScope) wireFragmentScope(container.firstChild, null, n.componentScope);
+        // ssr emits no root-level markers; hydrate anchors lead their region, so the
+        // stable carrier is the first surviving node AFTER the walk (a leading inner
+        // anchor or the leading adopted static node) — wiring before it exists would
+        // land on a node the walk replaces (empty container never reaches this branch
+        // — the fresh-mount path above wires it).
         hydrateSequence(container as unknown as HellaElement, n.children, container.firstChild, undefined);
+        if (n.componentScope) wireFragmentScope(container.firstChild, null, n.componentScope);
         roots = Array.from(container.childNodes);
       } else {
         const rootEl = container.firstChild as HellaElement;
