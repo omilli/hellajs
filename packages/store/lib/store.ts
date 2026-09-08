@@ -8,6 +8,7 @@ import { createStore } from "./internal/create";
  * @param initial Initial object to transform into a reactive store
  * @param options Object with readonly array of property keys to make readonly
  * @throws {Error} When initial contains a reserved key (snapshot, update, cleanup, or subscribe) and is not itself a store.
+ * @throws {Error} When an equals entry is invalid — leaf keys accept a comparator function or "structural"; object keys accept a nested equals map.
  */
 export function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
@@ -20,6 +21,7 @@ export function store<T extends Record<string, unknown>, R extends readonly (key
  * @param initial Initial object to transform into a reactive store
  * @param options Object with readonly: true to make all properties readonly
  * @throws {Error} When initial contains a reserved key (snapshot, update, cleanup, or subscribe) and is not itself a store.
+ * @throws {Error} When an equals entry is invalid — leaf keys accept a comparator function or "structural"; object keys accept a nested equals map.
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
@@ -32,6 +34,7 @@ export function store<T extends Record<string, unknown>>(
  * @param initial Initial object to transform into a reactive store
  * @param options Object with middleware functions for property transformations
  * @throws {Error} When initial contains a reserved key (snapshot, update, cleanup, or subscribe) and is not itself a store.
+ * @throws {Error} When an equals entry is invalid — leaf keys accept a comparator function or "structural"; object keys accept a nested equals map.
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,
@@ -45,6 +48,7 @@ export function store<T extends Record<string, unknown>>(
  * @param initial Initial object to transform into a reactive store
  * @param options Object with readonly array and middleware functions
  * @throws {Error} When initial contains a reserved key (snapshot, update, cleanup, or subscribe) and is not itself a store.
+ * @throws {Error} When an equals entry is invalid — leaf keys accept a comparator function or "structural"; object keys accept a nested equals map.
  */
 export function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
@@ -57,6 +61,7 @@ export function store<T extends Record<string, unknown>, R extends readonly (key
  * @param initial Initial object to transform into a reactive store
  * @param options Optional configuration object
  * @throws {Error} When initial contains a reserved key (snapshot, update, cleanup, or subscribe) and is not itself a store.
+ * @throws {Error} When an equals entry is invalid — leaf keys accept a comparator function or "structural"; object keys accept a nested equals map.
  */
 export function store<T extends Record<string, unknown>>(
   initial: T,

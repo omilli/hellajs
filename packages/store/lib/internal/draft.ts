@@ -74,12 +74,12 @@ export function structurallyEqual(a: unknown, b: unknown): boolean {
   if (a instanceof Set && b instanceof Set) {
     if (a.size !== b.size) return false;
     const members = Array.from(a);
+    const remaining = Array.from(b);
     let si = 0;
     while (si < members.length) {
       const member = members[si]!;
       if (b.has(member)) { si++; continue; }
       let matched = false;
-      const remaining = Array.from(b);
       let ri = 0;
       while (ri < remaining.length) {
         if (structurallyEqual(member, remaining[ri]!)) { matched = true; break; }
@@ -108,7 +108,7 @@ export function structurallyEqual(a: unknown, b: unknown): boolean {
   let ki = 0;
   while (ki < aKeys.length) {
     const key = aKeys[ki]!;
-    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    if (!Object.hasOwn(b, key)) return false;
     if (!structurallyEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) return false;
     ki++;
   }
