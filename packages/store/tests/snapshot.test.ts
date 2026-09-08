@@ -195,7 +195,7 @@ describe("snapshot", () => {
   test("throws on update targeting the reserved subscribe key", () => {
     const data = store({ count: 0 });
 
-    // @ts-expect-error subscribe is reserved — update() rejects reserved keys
+    // no type error: reserved names flow into P, so the runtime throw is the contract
     expect(() => data.update({ subscribe: 1 })).toThrow('[store] update: reserved key "subscribe"');
 
     expect(data.snapshot()).toEqual({ count: 0 });

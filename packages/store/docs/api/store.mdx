@@ -126,7 +126,7 @@ userStore.name('Bob'); // triggers the effect; snapshot is reactive across compo
 
 Partial deep updates to the store state. Accepts either a partial object or a function that receives the current state.
 
-For single property updates, set the property directly. For multiple properties or nested merges, use `update()`.
+For single property updates, set the property directly. For multiple properties or nested merges, use `update()`. The call returns the store itself, typed with any keys the partial added (see [Growing Stores](#growing-stores)).
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -145,15 +145,38 @@ console.log(appStore.step());        // 2
 console.log(appStore.user.name());   // Bob
 ```
 
-> ⚠️ `update()` writes only signal-backed properties and throws on everything else; nothing is silently dropped:
-> - **Unknown key**: `update({ newProp: 1 })` throws `[store] update: unknown key "newProp"`; the store's shape is fixed at creation.
-> - **Function property**: `update({ onSave: fn })` throws `[store] update: "onSave" is a function property, not state` ("assign it directly" in the full message). Swap functions by assigning directly: `appStore.onSave = newHandler`.
+> ⚠️ `update()` writes signal-backed properties, materializes unknown keys, and throws on everything else; nothing is silently dropped:
+> - **Unknown key**: `update({ newProp: 1 })` materializes `newProp` (a signal for leaves, a nested store for plain objects) and returns the store typed with it; see [Growing Stores](#growing-stores). The throw survives only for externally-replaced properties (redefined or deleted from outside the store), which stay `[store] update: unknown key "newProp"`.
+> - **Function property**: `update({ onSave: fn })` throws `[store] update: "onSave" is a function property, not state` ("assign it directly" in the full message). Swap functions by assigning directly: `appStore.onSave = newHandler`. A function value on a NEW key throws too: `[store] update: key "onSave" cannot hold a function`.
 > - **Reserved key**: `update({ snapshot: 1 })` throws `[store] update: reserved key "snapshot"`.
 > - **Store key with a non-object value**: `update({ user: 'x' })` where `user` is a nested store throws `[store] update: store key "user" requires an object value`.
-> - **Readonly key**: writing a readonly property throws `[store] readonly key "<key>"`; the same error its setter call throws.
+> - **Readonly key**: writing a readonly property throws `[store] readonly key "<key>"`; the same error its setter call throws. Adding a new key to a readonly store throws the same error and nothing materializes.
 > - **Replaced signal**: `update()` through a settable key whose property was externally replaced (e.g. `outer.inner.value = 42` on a composed store) throws `[store] update: settable key "value" must hold a signal, received number`; the received kind reflects `typeof` the replaced value.
 >
-> The draft path applies the same rules. `update()` throws at the first offending key, in partial-key order; keys processed before it are already applied.
+> The draft path applies the same rules at runtime; its mutator is typed against the current shape, so draft additions materialize untyped. `update()` throws at the first offending key, in partial-key order; keys processed before it are already applied.
+
+### Growing Stores
+
+Unknown keys materialize on their first `update()` write, and the call returns the same store typed with the added keys: leaves become signals, plain objects become nested stores, and reads, later updates, `snapshot()`, and `subscribe` all type the added key immediately. Capture the return to see the widening; the original reference keeps its narrower type (the `Object.assign` seam) while its runtime behavior, `snapshot()` included, sees the added key right away.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0 });
+
+const withTags = appStore.update({ tags: ['a'] });
+withTags.tags();          // ['a'], a Signal<string[]>
+withTags.snapshot();      // { count: 0, tags: ['a'] }
+
+const withUser = withTags.update({ user: { name: 'Bob' } });
+withUser.user.name();     // 'Bob', a Store<{ name: string }>
+
+// ❌ appStore.update({ count: 'x' });      // type error: existing keys stay validated
+// ❌ appStore.update({ snapshot: 1 });      // throws: [store] update: reserved key "snapshot"
+// ❌ appStore.update({ onSave: () => {} }); // throws: [store] update: key "onSave" cannot hold a function
+```
+
+Added keys get no middleware or [write equality](/learn/concepts/store-control#write-equality): both are keyed by the creation shape, so declare a key in the initial object when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
 
 ### `cleanup`
 
@@ -187,7 +210,7 @@ unsub();
 appStore.count(6); // silent; unsubscribed
 ```
 
-- `key`: Name of a settable (signal-backed) property. Nested-store keys, function properties, reserved keys, and unknown keys throw.
+- `key`: Name of a settable (signal-backed) property. Nested-store keys, function properties, reserved keys, and keys that were never added throw.
 - `callback`: Receives the next and previous values. Runs untracked; reading signals inside it never widens the subscription. Skipped when a write compares equal to the current value.
 - **Returns**: An unsubscribe function; calling it more than once is safe.
 
@@ -234,7 +257,7 @@ Existing stores compose as values: `store({ user: userStore })` nests the store 
 
 ### Partial Updates
 
-Pass a partial object to `update()` for deep merging nested properties; keys outside the initial object throw. See [State](/learn/concepts/state) for the pattern.
+Pass a partial object to `update()` for deep merging nested properties; unknown keys materialize and widen the returned store. See [State](/learn/concepts/state) for the pattern.
 
 ### Mutable Updates
 

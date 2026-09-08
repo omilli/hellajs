@@ -30,7 +30,7 @@ const settableRegistry = Symbol("hellajs.store.settableKeys");
  * @template T
  * @param initial Initial object to transform
  * @param options Configuration for readonly properties and middleware
- * @returns Reactive store with snapshot, update, cleanup, and subscribe methods
+ * @returns Reactive store with snapshot, update, cleanup, and subscribe methods; update() returns the store itself
  */
 export function createStore<T extends Record<string, unknown>>(
   initial: T,
@@ -43,14 +43,18 @@ export function createStore<T extends Record<string, unknown>>(
 
   const result = {} as Store<T, never>;
   const settableKeys = new Set<string>();
-  let resultKeys: string[] = [];
+  // Own data keys feeding the snapshot computed. The add-branch appends by
+  // writing a new array (reference-inequality always notifies), so every
+  // materialized key invalidates the snapshot exactly once.
+  const keysSignal = signal<string[]>([]);
 
   const snapshotComputed = computed((): Snapshot<T> => {
     const snapshotObj = {} as Record<string, unknown>;
+    const keys = keysSignal();
     let i = 0;
-    const len = resultKeys.length;
+    const len = keys.length;
     while (i < len) {
-      const key = resultKeys[i]!;
+      const key = keys[i]!;
       if (reservedKeys.has(key)) { i++; continue; }
       const value = result[key as keyof T];
       const originalValue = initial[key as keyof T];
@@ -71,10 +75,91 @@ export function createStore<T extends Record<string, unknown>>(
 
   defineStoreProperty(result, "snapshot", snapshotComputed, { writable: false });
 
+  const initialIsStore = isStore(initial);
+  const sourceSettable = initialIsStore
+    ? ((initial as Record<symbol, Set<string> | undefined>)[settableRegistry])
+    : undefined;
+
+  /**
+   * Materializes one key onto the store — the shared per-key transformation of
+   * the init pass and update()'s add-branch: functions are preserved as-is
+   * (settable only when the source store backed them), plain objects recurse
+   * into nested stores with threaded options, everything else becomes a signal
+   * with per-key equals and optional middleware wiring. The init pass stores
+   * the raw value (initial values bypass middleware); the add-branch is a set,
+   * so it transforms. Callers append the key to the snapshot keys signal after
+   * this returns, so a synchronous snapshot re-run always finds the property
+   * defined.
+   */
+  const materializeKey = (key: string, value: unknown, applyMiddleware: boolean) => {
+    if (isFunction(value)) {
+      defineStoreProperty(result, key, value);
+      if (sourceSettable?.has(key)) { settableKeys.add(key); }
+      return;
+    }
+
+    if (isPlainObject(value)) {
+      const nestedMiddleware = middlewares?.[key as keyof T];
+      const nestedEquals = equalsOptions?.[key as keyof T] as StoreEquals<typeof value> | undefined;
+      if (nestedEquals !== undefined && !isPlainObject(nestedEquals)) {
+        throw new Error(`[store] store: equals for "${key}" must be a nested equals map, received ${typeof nestedEquals}`);
+      }
+      const nestedReadonly = readonlyAll || readonlyKeys.includes(key as PropertyKey);
+      const nestedOptions: StoreOptions<typeof value> | undefined =
+        nestedReadonly || nestedMiddleware || nestedEquals
+          ? {
+              ...(nestedReadonly && { readonly: true }),
+              ...(nestedMiddleware && { middleware: nestedMiddleware as StoreMiddleware<typeof value> }),
+              ...(nestedEquals && { equals: nestedEquals })
+            }
+          : undefined;
+      defineStoreProperty(result, key, createStore(value, nestedOptions), { writable: false });
+      return;
+    }
+
+    const equalsOpt = equalsOptions?.[key as keyof T];
+    if (equalsOpt !== undefined && equalsOpt !== "structural" && !isFunction(equalsOpt)) {
+      throw new Error(`[store] store: equals for "${key}" must be a function or "structural", received ${typeof equalsOpt}`);
+    }
+    // Equality runs inside the signal, after middleware: wrapWithMiddleware writes sig(mw(value)).
+    const equalsFn = equalsOpt === "structural"
+      ? structurallyEqual
+      : equalsOpt as ((previous: typeof value, next: typeof value) => boolean) | undefined;
+    const middleware = middlewares?.[key as keyof T];
+    const processed = applyMiddleware && middleware
+      ? (middleware as (val: unknown) => unknown)(value)
+      : value;
+    const sig = equalsFn === undefined
+      ? signal(processed)
+      : signal(processed, { equals: equalsFn });
+    const wrapped = middleware
+      ? wrapWithMiddleware(sig, middleware as (val: unknown) => unknown)
+      : sig;
+
+    if (readonlyAll || readonlyKeys.includes(key as PropertyKey)) {
+      const ro = computed(() => wrapped());
+      defineStoreProperty(
+        result,
+        key,
+        (...args: unknown[]) => {
+          if (args.length > 0) {
+            throw new Error(`[store] readonly key "${key}"`);
+          }
+          return ro();
+        },
+        { writable: false }
+      );
+    } else {
+      defineStoreProperty(result, key, wrapped, { writable: false });
+    }
+    settableKeys.add(key);
+  };
+
   /**
    * Resolves a partial or draft-mutator into a per-key partial, then walks it:
    * plain-object values recurse into nested stores, registry keys write through
-   * applyUpdate (middleware-aware), everything else throws.
+   * applyUpdate (middleware-aware), unknown absent keys materialize (the call
+   * returns this same store), everything else throws.
    */
   defineStoreProperty(
     result,
@@ -98,7 +183,7 @@ export function createStore<T extends Record<string, unknown>>(
         const [key, value] = entries[i]!;
         const current = this[key as keyof T];
         if (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "update")) {
-          (current as unknown as Store<Record<string, unknown>>).update(value as object);
+          (current as unknown as Store<Record<string, unknown>>).update(value as Record<string, unknown>);
         } else if (settableKeys.has(key)) {
           applyUpdate(current, value, middlewares, key as string);
         } else if (reservedKeys.has(key)) {
@@ -107,11 +192,25 @@ export function createStore<T extends Record<string, unknown>>(
           throw new Error(`[store] update: "${key}" is a function property, not state — assign it directly`);
         } else if (isObject(current) && Object.hasOwn(current, "update")) {
           throw new Error(`[store] update: store key "${key}" requires an object value`);
+        } else if (current === undefined) {
+          // Add-branch: an absent key materializes. Earlier branches (recursion,
+          // settable) own every materialized case, so this fires exactly once
+          // per key; readonly and function values throw before any mutation.
+          if (readonlyAll || readonlyKeys.includes(key as PropertyKey)) {
+            throw new Error(`[store] readonly key "${key}"`);
+          }
+          if (isFunction(value)) {
+            throw new Error(`[store] update: key "${key}" cannot hold a function`);
+          }
+          materializeKey(key, value, true);
+          keysSignal([...keysSignal(), key]);
         } else {
           throw new Error(`[store] update: unknown key "${key}"`);
         }
         i++;
       }
+
+      return this;
     },
     { writable: false }
   );
@@ -179,11 +278,6 @@ export function createStore<T extends Record<string, unknown>>(
     { writable: false }
   );
 
-  const initialIsStore = isStore(initial);
-  const sourceSettable = initialIsStore
-    ? ((initial as Record<symbol, Set<string> | undefined>)[settableRegistry])
-    : undefined;
-
   const initialEntries = Array.from(Object.entries(initial));
   let i = 0;
   const len = initialEntries.length;
@@ -194,72 +288,13 @@ export function createStore<T extends Record<string, unknown>>(
       throw new Error(`[store] store: reserved key collision, received "${key}"`);
     }
 
-    if (isFunction(value)) {
-      defineStoreProperty(result, key, value);
-      if (sourceSettable?.has(key)) { settableKeys.add(key); }
-      i++;
-      continue;
-    }
-
-    if (isPlainObject(value)) {
-      const nestedMiddleware = middlewares?.[key as keyof T];
-      const nestedEquals = equalsOptions?.[key as keyof T] as StoreEquals<typeof value> | undefined;
-      if (nestedEquals !== undefined && !isPlainObject(nestedEquals)) {
-        throw new Error(`[store] store: equals for "${key}" must be a nested equals map, received ${typeof nestedEquals}`);
-      }
-      const nestedReadonly = readonlyAll || readonlyKeys.includes(key as PropertyKey);
-      const nestedOptions: StoreOptions<typeof value> | undefined =
-        nestedReadonly || nestedMiddleware || nestedEquals
-          ? {
-              ...(nestedReadonly && { readonly: true }),
-              ...(nestedMiddleware && { middleware: nestedMiddleware as StoreMiddleware<typeof value> }),
-              ...(nestedEquals && { equals: nestedEquals })
-            }
-          : undefined;
-      defineStoreProperty(result, key, createStore(value, nestedOptions), { writable: false });
-      i++;
-      continue;
-    }
-
-    const equalsOpt = equalsOptions?.[key as keyof T];
-    if (equalsOpt !== undefined && equalsOpt !== "structural" && !isFunction(equalsOpt)) {
-      throw new Error(`[store] store: equals for "${key}" must be a function or "structural", received ${typeof equalsOpt}`);
-    }
-    // Equality runs inside the signal, after middleware: wrapWithMiddleware writes sig(mw(value)).
-    const equalsFn = equalsOpt === "structural"
-      ? structurallyEqual
-      : equalsOpt as ((previous: typeof value, next: typeof value) => boolean) | undefined;
-    const sig = equalsFn === undefined
-      ? signal(value)
-      : signal(value, { equals: equalsFn });
-    const middleware = middlewares?.[key as keyof T];
-    const wrapped = middleware
-      ? wrapWithMiddleware(sig, middleware as (val: unknown) => unknown)
-      : sig;
-
-    if (readonlyAll || readonlyKeys.includes(key as PropertyKey)) {
-      const ro = computed(() => wrapped());
-      defineStoreProperty(
-        result,
-        key,
-        (...args: unknown[]) => {
-          if (args.length > 0) {
-            throw new Error(`[store] readonly key "${key}"`);
-          }
-          return ro();
-        },
-        { writable: false }
-      );
-    } else {
-      defineStoreProperty(result, key, wrapped, { writable: false });
-    }
-    settableKeys.add(key);
+    materializeKey(key, value, false);
     i++;
   }
 
   Object.defineProperty(result, settableRegistry, { value: settableKeys });
 
-  resultKeys = Object.keys(result);
+  keysSignal(Object.keys(result));
 
   return result;
 }

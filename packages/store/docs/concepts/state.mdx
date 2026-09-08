@@ -113,7 +113,7 @@ console.log(todos.items()[0]?.done); // true
 
 ### Update Errors
 
-The `update()` method only applies changes for properties that exist in the initial object and are backed by signals. Writes outside that contract throw an `Error` naming the offending key; nothing is silently dropped:
+The `update()` method applies changes for properties that exist in the initial object and are backed by signals, and materializes unknown keys (see [Growing Shapes](#growing-shapes)). Writes outside that contract throw an `Error` naming the offending key; nothing is silently dropped:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -126,11 +126,13 @@ const app = store({
 
 app.update({ count: 5 });              // ✅ works; count is in the initial object
 app.update({ user: { name: 'Bob' } }); // ✅ works; nested stores accept object partials
+const grown = app.update({ tags: [] as string[] }); // ✅ works; unknown keys materialize, typed on the return
+grown.tags();                           // ✅ [], a Signal<string[]>
 
-// ❌ app.update({ newProp: 'value' }); // throws: [store] update: unknown key "newProp"
 // ❌ app.update({ onSave: () => {} }); // throws: [store] update: "onSave" is a function property, not state
 // ❌ app.update({ snapshot: 1 });      // throws: [store] update: reserved key "snapshot"
 // ❌ app.update({ user: 'x' });        // throws: [store] update: store key "user" requires an object value
+// ❌ app.update({ onSave2: () => {} }); // throws: [store] update: key "onSave2" cannot hold a function
 ```
 
 Readonly keys throw on every write path: `update()`, the direct setter call, and the draft path:
@@ -144,9 +146,25 @@ const locked = store({ apiKey: 'a', count: 0 }, { readonly: ['apiKey'] as const 
 // ❌ locked.apiKey('b');             // throws: [store] readonly key "apiKey"
 ```
 
-The draft path applies the same rules: assigning a function property or an unknown key inside `update(draft => ...)` throws when the changes are extracted and applied.
+The draft path applies the same rules: assigning a function property inside `update(draft => ...)` throws when the changes are extracted and applied, and assigning an unknown key materializes it at runtime (the draft mutator is typed against the current shape, so the addition stays untyped).
 
 `update()` throws at the first offending key, in partial-key order; keys processed before the offending one are already applied. Validate input before calling `update()` if you need all-or-nothing semantics.
+
+### Growing Shapes
+
+Stores grow by writing: an unknown key materializes on its first `update()` write and the call returns the same store typed with the added key. Capture the return to read it; the original reference keeps its narrower type while its runtime `snapshot()` includes the key immediately.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const app = store({ count: 0 });
+
+const withTags = app.update({ tags: ['a'] });
+withTags.tags();     // ['a'], a Signal<string[]>
+app.snapshot();      // { count: 0, tags: ['a'] }; runtime sees the key, app's TYPE stays narrow
+```
+
+Plain-object values become nested stores, middleware and [write equality](/learn/concepts/store-control#write-equality) are keyed by the creation shape (declare a key in the initial object when it needs either), and [`persistStore`](/reference/store/persiststore) materializes persisted keys beyond the initial shape on hydration. See [Growing Stores](/reference/store/store#growing-stores) for the full contract.
 
 ### Non-Writable Properties
 

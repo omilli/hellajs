@@ -21,17 +21,16 @@ describe("store", () => {
       expect(user.settings.notifications()).toBe(true);
     });
 
-    test("throws on keys absent from initial object", () => {
+    test("adds keys absent from the initial object and returns a typed store", () => {
       const data = store({ a: 1, b: 2 });
 
-      expect(() => {
-        // @ts-expect-error c is absent from initial — update() rejects unknown keys
-        data.update({ c: 99, a: 10 });
-      }).toThrow('[store] update: unknown key "c"');
+      const widened = data.update({ c: 99, a: 10 });
 
-      expect(data.a()).toBe(1);
+      expect(data.a()).toBe(10);
       expect(data.b()).toBe(2);
-      expect("c" in data).toBe(false);
+      expect(widened.c()).toBe(99);
+      expect("c" in data).toBe(true);
+      expect(widened.snapshot()).toEqual({ a: 10, b: 2, c: 99 });
     });
 
     test("throws on function-valued properties without invoking them", () => {
@@ -69,7 +68,7 @@ describe("store", () => {
       const data = store({ user: { name: "Alice" } });
 
       expect(() => {
-        // @ts-expect-error user is a nested store — update() requires an object value for store keys
+        // no type error: the partial's keys flow into P, so the runtime throw is the contract
         data.update({ user: "x" });
       }).toThrow('[store] update: store key "user" requires an object value');
 

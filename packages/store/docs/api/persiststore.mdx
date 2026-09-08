@@ -97,7 +97,7 @@ app.draft('half-written'); // not persisted; projection unchanged, no write
 
 ### Corrupt State Self-Heals
 
-When `deserialize` throws or the stored shape no longer matches the store (`update()` throws on unknown keys), `persistStore` clears storage, keeps the initial state, fires `onError`, and flips `hydrated()` anyway. A bad stored value never bricks the app.
+When `deserialize` throws (corrupt stored values), `persistStore` clears storage, keeps the initial state, fires `onError`, and flips `hydrated()` anyway. A bad stored value never bricks the app. Stored keys beyond the store's initial shape are not an error: they materialize through `update()` like any addition.
 
 ### Write-Through and Debounce
 

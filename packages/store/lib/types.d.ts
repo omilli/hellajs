@@ -94,6 +94,12 @@ type SettableKeyOf<T> = {
 }[keyof T];
 
 /**
+ * Flattens an intersection into a single mapped shape so widened stores
+ * display and key cleanly.
+ */
+type Simplify<T> = { [K in keyof T]: T[K] };
+
+/**
  * Reactive store type that transforms an object's properties.
  *
  * Property transformations:
@@ -106,7 +112,7 @@ type SettableKeyOf<T> = {
  *
  * Built-in methods:
  * - snapshot(): Returns plain object representation of current state
- * - update(partial): Deep merge partial updates into store
+ * - update(partial): Deep merge partial updates into store; unknown keys materialize and the call returns the store typed with them
  * - cleanup(): Dispose all reactive subscriptions
  * - subscribe(key, callback): Observe changes to a single settable property
  */
@@ -120,18 +126,30 @@ export type Store<
   T[K] extends Record<string, unknown> ? (K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>) :
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {
-  /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types. Preserves the original initial function references: a handler swapped in later (appStore.onSave = newHandler) is not what snapshot() returns */
+  /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types */
   snapshot: () => Snapshot<T>;
   /**
    * Deep merge partial updates or apply mutations via draft function.
-   * @throws {Error} When `partial` touches an unknown key, a reserved key, a function property, a store key with a non-object value, a settable key whose property was externally replaced (no longer holds a signal), or a readonly key.
+   *
+   * Unknown keys materialize: the direct path adds them (a signal for leaves,
+   * a nested store for plain objects) and returns the same store typed with
+   * the added keys. Capture the return to read them; the original reference's
+   * type stays stale (the Object.assign seam). The draft path materializes
+   * runtime adds too, but its mutator is typed against the current shape, so
+   * draft adds stay untyped. Middleware and equals are keyed by the creation
+   * shape, so added keys get neither.
+   * @returns The store itself, widened by the partial's new keys; the mutator path returns the current shape.
+   * @throws {Error} When `partial` touches a reserved key, a function property, a store key with a non-object value, a readonly key, a function value on a new key, or an externally-replaced property (unknown key).
    */
-  update: (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) => void;
+  update: {
+    <P extends Record<string, unknown>>(partial: PartialDeep<T> & P): Store<Simplify<T & Omit<P, keyof T>>, R>;
+    (mutator: (draft: Snapshot<T>) => void): Store<T, R>;
+  };
   /** Recursively invokes cleanup on nested stores; individual signals are not disposed — they remain functional */
   cleanup: () => void;
   /**
    * Subscribes to changes of a single signal-backed (settable) property.
-   * @param key Name of a settable property — nested-store keys, preserved functions, reserved keys, and unknown keys throw
+   * @param key Name of a settable property — nested-store keys, preserved functions, reserved keys, and keys that were never added throw
    * @param callback Receives the next and previous values; runs untracked, so signal reads inside it never widen the subscription. Not called for the initial value
    * @returns Unsubscribe function; safe to call more than once
    * @throws {Error} When key is not a settable key of the store.

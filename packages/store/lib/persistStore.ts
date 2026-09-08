@@ -8,9 +8,9 @@ import type { Store, Snapshot, PartialDeep, StoreAdaptor, PersistOptions, Persis
  * Hydration contract: a plain-value read applies before `persistStore` returns
  * (no flash of initial state); a promise read applies when it resolves, unless
  * a projected key changed first — then the in-memory state wins (dirty-skip).
- * Corrupt or shape-drifted persisted state clears storage, keeps the initial
- * state, and reports through `onError` — the store never bricks on a bad
- * stored value. On the server (no `window`) the handle is inert: no adaptor
+ * Corrupt persisted state clears storage, keeps the initial state, and
+ * reports through `onError` — the store never bricks on a bad stored value
+ * (shape-drifted state materializes through `update()` instead). On the server (no `window`) the handle is inert: no adaptor
  * calls, no effects, `hydrated()` is true immediately.
  *
  * @template T

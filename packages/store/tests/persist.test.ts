@@ -162,15 +162,18 @@ describe("persist", () => {
     expect(handle.hydrated()).toBe(true);
   });
 
-  test("clears storage and keeps initial state when persisted state contains unknown keys", () => {
+  test("materializes stored keys beyond the initial shape on hydration", () => {
     const adaptor = createAdaptor('{"gone":true,"theme":"dark"}');
     const onError = mock((error: unknown) => error);
     const data = store({ theme: "light" });
     const handle = persistStore(data, adaptor, { onError });
 
-    expect(data.theme()).toBe("light");
-    expect(adaptor.clear).toHaveBeenCalledTimes(1);
-    expect(onError).toHaveBeenCalledTimes(1);
+    expect(data.theme()).toBe("dark");
+    // gone materialized through update(); its type is not on data's shape
+    expect(data.snapshot() as Record<string, unknown>).toEqual({ theme: "dark", gone: true });
+    expect(adaptor.clear).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+    expect(adaptor.write).not.toHaveBeenCalled();
     expect(handle.hydrated()).toBe(true);
   });
 
@@ -207,7 +210,7 @@ describe("persist", () => {
   });
 
   test("reports a clear rejection via onError during corrupt-state fallback", async () => {
-    const read = mock(() => '{"gone":true}');
+    const read = mock(() => '{corrupt');
     const write = mock(() => {});
     const clear = mock(() => Promise.reject(new Error("clear failed")));
     const onError = mock((error: unknown) => error);
