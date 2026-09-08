@@ -29,6 +29,16 @@ function dim(text: string): string {
   return isTty ? `\x1b[2m${text}\x1b[0m` : text;
 }
 
+/** Bold bright-yellow ANSI wrapper for questions awaiting operator input. */
+function question(text: string): string {
+  return isTty ? `\x1b[1;93m${text}\x1b[0m` : text;
+}
+
+/** Yellow answer arrow matching the question styling. */
+function arrow(): string {
+  return isTty ? `\x1b[1;93m→\x1b[0m ` : "→ ";
+}
+
 /**
  * Start the one shared stdin line-reader.
  *
@@ -120,8 +130,8 @@ export class TerminalRelay {
    * @returns The next input line, verbatim.
    */
   public askOrchestrator(prompt: string): Promise<string> {
-    console.log(`? ${prompt}`);
-    process.stdout.write("→ ");
+    console.log(question(`? ${prompt}`));
+    process.stdout.write(arrow());
     return new Promise<string>((resolve: (line: string) => void): void => {
       dialog = {
         onLine: (line: string): void => {
@@ -157,38 +167,38 @@ export class TerminalRelay {
   /** Render a dialog by method. */
   private renderDialog(request: UiRequest): void {
     if (request.method === "select") {
-      console.log(`? ${request.title ?? ""}`);
+      console.log(question(`? ${request.title ?? ""}`));
       for (const option of request.options ?? []) {
         console.log(`  ${option}`);
       }
       console.log(dim("  answer: option number or exact option text · c = cancel"));
-      process.stdout.write("→ ");
+      process.stdout.write(arrow());
       return;
     }
     if (request.method === "confirm") {
-      console.log(`? ${request.title ?? ""}`);
+      console.log(question(`? ${request.title ?? ""}`));
       if (request.message !== undefined) {
         console.log(`  ${request.message}`);
       }
       console.log(dim("  answer: y / n · c = cancel"));
-      process.stdout.write("→ ");
+      process.stdout.write(arrow());
       return;
     }
     if (request.method === "editor") {
-      console.log(`? ${request.title ?? ""} ${dim("(single-line edit)")}`);
+      console.log(question(`? ${request.title ?? ""} ${dim("(single-line edit)")}`));
       if (request.prefill !== undefined) {
         console.log(dim(`  prefill: ${request.prefill.replace(/\n/g, " ⏎ ")}`));
       }
       console.log(dim("  answer: one line · .cancel = cancel"));
-      process.stdout.write("→ ");
+      process.stdout.write(arrow());
       return;
     }
-    console.log(`? ${request.title ?? ""}`);
+    console.log(question(`? ${request.title ?? ""}`));
     if (request.placeholder !== undefined && request.placeholder.length > 0) {
       console.log(dim(`  placeholder: ${request.placeholder}`));
     }
     console.log(dim("  answer: text (empty line = deliberate empty answer) · .cancel = cancel"));
-    process.stdout.write("→ ");
+    process.stdout.write(arrow());
   }
 
   /** Validate one answer line against the open dialog; re-prompt on mismatch. */
