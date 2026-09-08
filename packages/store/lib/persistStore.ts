@@ -189,36 +189,3 @@ export function persistStore<T extends Record<string, unknown>>(
     }
   };
 }
-
-/**
- * Shared storage-adaptor factory. Storage is touched only inside the returned
- * methods — never at factory time — so module import and factory calls stay
- * safe on the server.
- */
-const storageAdaptor = (getStorage: () => Storage, key: string): StoreAdaptor => ({
-  read: () => getStorage().getItem(key),
-  write: (value: string) => {
-    getStorage().setItem(key, value);
-  },
-  clear: () => {
-    getStorage().removeItem(key);
-  }
-});
-
-/**
- * Creates a `StoreAdaptor` backed by `window.localStorage`. Storage access is
- * deferred to call time — `persistStore` never calls it on the server.
- * @param key Storage key to read, write, and clear under
- */
-export function localStorageAdaptor(key: string): StoreAdaptor {
-  return storageAdaptor(() => window.localStorage, key);
-}
-
-/**
- * Creates a `StoreAdaptor` backed by `window.sessionStorage`. Storage access is
- * deferred to call time — `persistStore` never calls it on the server.
- * @param key Storage key to read, write, and clear under
- */
-export function sessionStorageAdaptor(key: string): StoreAdaptor {
-  return storageAdaptor(() => window.sessionStorage, key);
-}

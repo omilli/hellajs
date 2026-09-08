@@ -62,8 +62,8 @@ Atoms are the unit of state. Each atom is an independent node in a dependency gr
 | Peer deps | `@hellajs/core` | react, immer (both optional) | react, react-redux (optional) | react | react | none |
 
 - `@hellajs/store` declares zero runtime dependencies and a single peer: the reactivity core (`package.json`). MobX is the only competitor that matches the zero-dependency core; Zustand and Jotai also weigh in at zero runtime deps, while RTK's six reflect its batteries-included scope and Valtio's `proxy-compare` is load-bearing for its snapshot model.
-- The package ships a pre-bundled `@hellajs/store/bundle` entry plus per-module subpath exports (`package.json`), so `store` and its internals are importable individually, though the public surface is small enough (`store` plus types) that the split matters less than in `@hellajs/dom`.
-- HellaJS is a composable package rather than a framework: the store depends on nothing but signals, persistence ships first-class via `persistStore` (`lib/persist.ts`), async stays delegated to `@hellajs/resource`, and the hook-based competitors (Zustand, Jotai, Valtio, react-redux) assume a component tree on the other end while MobX stays framework-agnostic alongside it.
+- The package ships a pre-bundled `@hellajs/store/bundle` entry plus per-module subpath exports (`package.json`), so `store` and its internals are importable individually, though the public surface is four functions (`store`, `persistStore`, `localStorageAdaptor`, `sessionStorageAdaptor`, plus types), making the split matter less than in `@hellajs/dom`.
+- HellaJS is a composable package rather than a framework: the store depends on nothing but signals, persistence ships first-class via `persistStore` (`lib/persistStore.ts`), async stays delegated to `@hellajs/resource`, and the hook-based competitors (Zustand, Jotai, Valtio, react-redux) assume a component tree on the other end while MobX stays framework-agnostic alongside it.
 
 ---
 
@@ -183,7 +183,7 @@ HellaJS's recursive cleanup is the most explicit of the group: one call on the r
 | Subscription API | Per-key `subscribe(key, cb)` with `(next, prev)` | Whole-store `subscribe(listener)` | `store.subscribe()` per store | `sub()` per atom | `subscribe(proxy, cb)` per object | `observe`/`intercept` per observable |
 | Async actions | Via `resource` package | Yes (async `set`) | `createAsyncThunk` | Async atoms + Suspense | Suspense-compatible | `flow` |
 | DevTools integration | None | Redux DevTools | Redux DevTools (best-in-class) | Separate `jotai-devtools` package | Redux DevTools | mobx-devtools extension |
-| Persistence | `persistStore` wrapper: pluggable adaptors (localStorage/sessionStorage shipped, IndexedDB via user adaptor), `partialize`, reactive `hydrated()` flag (`lib/persist.ts`) | `persist` middleware | Via middleware | `atomWithStorage` | Manual via `subscribe` | Manual |
+| Persistence | `persistStore` wrapper: pluggable adaptors (localStorage/sessionStorage shipped, IndexedDB via user adaptor), `partialize`, reactive `hydrated()` flag (`lib/persistStore.ts`) | `persist` middleware | Via middleware | `atomWithStorage` | Manual via `subscribe` | Manual |
 | SSR safety | Lazy storage access; `persistStore` inert on the server (no `window` → no adaptor calls, no effects, `hydrated()` true) | Yes | Yes | Yes | Yes | Yes |
 | Store composition | By reference, shared signals (`lib/internal/create.ts`) | Slices pattern | Slices in one store | Atom composition | `proxy` nesting | Observable nesting |
 
@@ -196,7 +196,7 @@ HellaJS's recursive cleanup is the most explicit of the group: one call on the r
 - **Settable-key registry guards every write path**: `update()` writes only signal-backed keys tracked in a non-enumerable registry threaded through composition; reserved keys cannot be hijacked, preserved functions are never invoked, and every out-of-contract write throws a `[store]` error naming the key (`lib/internal/create.ts`).
 - **Recursive cleanup with signal survival**: one call tears down the store tree while leaving leaf signals functional for shared or composed state (`lib/internal/create.ts`).
 - **Store composition by reference**: nested stores share signal references bidirectionally; writes from either side propagate (`lib/internal/create.ts`, verified by `tests/nested.test.ts`).
-- **Reactive hydration with dirty-skip and self-healing fallback**: `persistStore` exposes a signal-backed `hydrated()` flag that flips when the read settles, skips applying persisted state when a projected key changed first (in-memory wins), and on corrupt or shape-drifted stored state clears storage, keeps the initial state, and reports through `onError` (`lib/persist.ts`, verified by `tests/persist.test.ts`).
+- **Reactive hydration with dirty-skip and self-healing fallback**: `persistStore` exposes a signal-backed `hydrated()` flag that flips when the read settles, skips applying persisted state when a projected key changed first (in-memory wins), and on corrupt or shape-drifted stored state clears storage, keeps the initial state, and reports through `onError` (`lib/persistStore.ts`, verified by `tests/persist.test.ts`).
 
 ---
 
