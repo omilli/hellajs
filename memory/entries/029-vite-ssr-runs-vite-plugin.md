@@ -13,13 +13,13 @@ triggers: [vite-ssr, jsx-server-entry, ssrloadmodule, vite-plugin-server, config
 # Why
 
 The documented SSR precedent (`packages/router/docs/patterns/routing-ssr.mdx`, renamed from `ssr.mdx` 2026-08-27, + its wrapper) uses
-`html\`\`` + `Bun.serve` — the `html\`\` parser is DOM-free and runs at runtime, so the server entry
+`html` + `Bun.serve` — the `html\`\` parser is DOM-free and runs at runtime, so the server entry
 needs NO build plugin. But a JSX server entry (`<App />`) is NOT a HellaNode until a build plugin
 transforms it; running it through a runtime that supplies its own JSX (Bun's React runtime) silently
 compiles to `createElement` and emits `[object Object]` or a React error — wrong output, not a loud
 one (the React-runtime silent-failure trap). The clean path is Vite SSR: route the server entry
 through Vite so `vite-plugin-hellajs`'s `transform` hook (which does NOT gate on the `ssr` flag) runs
-server-side too. This is the novel path (units 01/02 use `html\`\``; the streaming example uses JSX on
+server-side too. This is the novel path (units 01/02 use `html`; the streaming example uses JSX on
 both entries to showcase the plugin/SSR-build path), and it's the foundation any future
 JSX-server-entry or meta-framework SSR would build on.
 

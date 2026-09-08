@@ -83,7 +83,7 @@ function rawToFragment(html: string): DocumentFragment {
 
 /**
  * @internal
- * Resolves a HellaChild to a DOM Node with reactive support. A `HellaChild[]` (JSX and `html\`\``
+ * Resolves a HellaChild to a DOM Node with reactive support. A `HellaChild[]` (JSX and `html`
  * compile component children to an array) mounts each child into a `DocumentFragment`, mirroring the
  * ssr `walkChildren` array branch.
  * @param value The value to resolve (HellaChild, array of children, function, or primitive)

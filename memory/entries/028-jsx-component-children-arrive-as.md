@@ -19,13 +19,13 @@ single-child walker. `walkChild`/`walkChildGen` classify `string | number | func
 | object-with-tag` and fall through everything else (incl. arrays) to "nothing". The catch: the two
 authors of a component's children produce DIFFERENT shapes —
 
-- `html\`\`` parser: `<${Suspense}>${getter}</${Suspense}>` → `props.children = getter` (single).
+- `html` parser: `<${Suspense}>${getter}</${Suspense}>` → `props.children = getter` (single).
 - `babel-plugin-hellajs`: `<Suspense>{getter}</Suspense>` → `component(Suspense, { children: [getter] })` (ARRAY).
 
-All ssr Suspense tests use the `html\`\`` single-child shape, so the JSX array case was untested and
+All ssr Suspense tests use the `html` single-child shape, so the JSX array case was untested and
 silently produced empty staged templates. The fix is in the walkers (the root), not the Suspense case,
 so it also covers Transition/Lazy/any isDynamic prop that can be an array — and `[fn]` (one element)
-iterates to the same `MARK_OPEN…MARK_CLOSE` wrapping as a single `fn`, so `html\`\`` output is
+iterates to the same `MARK_OPEN…MARK_CLOSE` wrapping as a single `fn`, so `html` output is
 unchanged (the parity tests stay green).
 
 Recall this before editing the ssr walkers or adding an isDynamic `SsrMeta.kind`: component children
@@ -39,9 +39,9 @@ claim "JSX and html compile to the same AST" — true for the tree, but componen
   pending); return;` immediately after the falsy guard.
 - `packages/ssr/tests/ssr-suspense.test.ts` — two new cases use `component(Suspense, { children: [...] })`
   (the exact babel-emitted shape): "ssr (sync) renders array children directly" and "ssrStream stages
-  resolved array children" — both assert the same output as the single-child `html\`\`` cases (parity).
+  resolved array children" — both assert the same output as the single-child `html` cases (parity).
 - `bun coverage ssr` → 134 pass (was 132), 100% lines; `bun coverage dom` → 317 pass (blast radius:
   hydrate consumes ssr output); lint green.
-- Empirical: `html\`\`` Suspense → `props.children` is a function (`isArray: false`); JSX
+- Empirical: `html` Suspense → `props.children` is a function (`isArray: false`); JSX
   `component(Suspense, …)` → `props.children` is `[fn]` (`isArray: true`) — confirmed by dumping the node.
 - Related: memory 013 (ssr markers), 024 (HellaNode field names) — neither covers children shape.

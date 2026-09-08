@@ -51,7 +51,7 @@ React renders through Fizz, a segment-based renderer: the component tree is cut 
 
 Vue's server renderer walks a vnode tree produced by SSR-compiled render functions (`@vue/compiler-ssr` emits `ssrRender*` code, distinct from the client's DOM codegen). Output is pushed into nested buffers whose `hasAsync` flag controls whether unrolling awaits: `renderToString` always returns a Promise, awaiting `async setup()` and `serverPrefetch`, then resolving teleport buffers into `context.teleports` (@vue/server-renderer 3.5.42, `dist/server-renderer.esm-bundler.js`). Streaming variants (`renderToWebWritable`, `pipeToNodeWritable`) unroll the same buffer in document order. Vue sits between Svelte and React: compiled render code, like Svelte, but running through a vnode layer and runtime component machinery closer to React's model.
 
-**Verdict:** Two camps. Svelte and HellaJS stringify a static artifact (compiled blocks or a plain AST) with no runtime reactivity on the server; Solid, React, and Vue execute live component machinery to produce HTML. HellaJS is alone in the second camp's absence *and* the first camp's flexibility: like Solid's templates it accepts runtime-authored `html\`\`` trees with no compiler, yet like Svelte's server build it drags zero framework runtime into the process.
+**Verdict:** Two camps. Svelte and HellaJS stringify a static artifact (compiled blocks or a plain AST) with no runtime reactivity on the server; Solid, React, and Vue execute live component machinery to produce HTML. HellaJS is alone in the second camp's absence *and* the first camp's flexibility: like Solid's templates it accepts runtime-authored `html` trees with no compiler, yet like Svelte's server build it drags zero framework runtime into the process.
 
 ---
 

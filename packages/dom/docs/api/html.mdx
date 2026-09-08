@@ -163,7 +163,7 @@ html`<div>A</div><div>B</div>`
 
 ### Conditional Rendering
 
-Conditional content reads a signal, so under the compiler it is reactive without a wrapper. The runtime `html\`\`` API (no compiler) needs an explicit `() => …` wrapper for reactivity.
+Conditional content reads a signal, so under the compiler it is reactive without a wrapper. The runtime `html` API (no compiler) needs an explicit `() => …` wrapper for reactivity.
 
 ```js
 const show = signal(true);

@@ -2,7 +2,7 @@ import viteHellaJS from "vite-plugin-hellajs";
 import { fileURLToPath, URL } from "node:url";
 
 /**
- * Astro integration for HellaJS. Wires the HellaJS Vite plugin (JSX + `html\`\`` → HellaNode) and
+ * Astro integration for HellaJS. Wires the HellaJS Vite plugin (JSX + `html` → HellaNode) and
  * registers a framework renderer so `.jsx`/`.tsx` components render server-side via `@hellajs/ssr`
  * and hydrate on the client behind `client:*` directives.
  *

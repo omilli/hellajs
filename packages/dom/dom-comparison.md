@@ -11,9 +11,9 @@ A ground-up comparison based on the actual source code of `@hellajs/dom` v2. Eve
 | Reactive model | Fine-grained signals (`@hellajs/core`) | Fine-grained signals | Runes (signals) | VDOM + hooks | Proxies (`ref`/`reactive`) | Signals, zoneless change detection |
 | Rendering | Direct DOM, surgical | Direct DOM, surgical | Compiled direct DOM | VDOM diff & reconcile | VDOM diff & reconcile | Change detection + template instructions |
 | Virtual DOM | None | None | None | Yes | Yes | Yes (view tree) |
-| Compile step | Optional (Babel plugin; runtime `html\`\`` parses on first call) | Mandatory for JSX | Mandatory (SFC → JS) | JSX → JS | SFC/template → render fn | Decorators + HTML templates |
+| Compile step | Optional (Babel plugin; runtime `html` parses on first call) | Mandatory for JSX | Mandatory (SFC → JS) | JSX → JS | SFC/template → render fn | Decorators + HTML templates |
 | Runtime deps | 0 (+ core peer) | 3 | 16 | 0 | 5 | 1 |
-| Templating | JSX and `html\`\`` | JSX / tagged templates | Svelte SFC | JSX | `<template>` / JSX | HTML templates + TS |
+| Templating | JSX and `html` | JSX / tagged templates | Svelte SFC | JSX | `<template>` / JSX | HTML templates + TS |
 | Error boundaries | Global `onError` + per-element `error:` config | `ErrorBoundary` component | `<svelte:boundary>` | Class boundaries + root callbacks | `errorCaptured` hook | `ErrorHandler` + zone-less capture |
 | Language | TS, framework-agnostic packages | TS | SFC compiler | JS/TS | SFC compiler | TS-first, decorators |
 
@@ -27,15 +27,15 @@ HellaJS sits closest to Solid philosophically (signal-driven, no VDOM, surgical 
 
 Rendering is a one-way function from a plain-object AST to the live DOM, with reactivity attached per binding: there is no render loop, no reconciliation pass, and no tree to diff. The mechanism:
 
-- No virtual DOM. JSX or `html\`\`` produce a plain-object HellaNode AST; `mountNode()` turns it into real DOM nodes directly, with no intermediate tree and no diffing (`lib/internal/render.ts`, driven by `lib/mount.ts`). Element creation is namespace-aware: `svg`/`math` roots and their descendants create via `createElementNS`, with `foreignObject` resetting children to HTML (`lib/internal/render.ts`).
+- No virtual DOM. JSX or `html` produce a plain-object HellaNode AST; `mountNode()` turns it into real DOM nodes directly, with no intermediate tree and no diffing (`lib/internal/render.ts`, driven by `lib/mount.ts`). Element creation is namespace-aware: `svg`/`math` roots and their descendants create via `createElementNS`, with `foreignObject` resetting children to HTML (`lib/internal/render.ts`).
 - Surgical updates: each reactive binding registers its own effect. A function-valued prop gets one effect wrapping `renderProp` (`lib/internal/render.ts`); a reactive child gets a persistent empty text-node anchor plus a `renderedNodes` array and one effect that clears and re-inserts exactly the nodes it owns (`lib/internal/render.ts`). When a signal changes, only those bindings re-run: no tree walk, no sibling reconciliation.
-- `html\`\`` caches the parsed AST by `TemplateStringsArray` identity in a `WeakMap` (`lib/html.ts`). On first parse, `markIfStatic` tags every subtree with zero placeholder dependencies as `static` (`lib/internal/template.ts`); `cloneWithValues` then returns static subtrees by reference on every later invocation (`lib/internal/template.ts`), and `mountNode` keeps a prototype DOM subtree in a `staticDom` WeakMap so re-mounting a static branch is one `cloneNode(true)` instead of O(nodes) construction (`lib/internal/render.ts`). This is compile-time-style hoisting performed at runtime, with no build step; and the Babel plugin performs the same hoist at compile time for JSX and compiled `html\`\`` (fully-static subtrees become module constants tagged `static: true`).
+- `html` caches the parsed AST by `TemplateStringsArray` identity in a `WeakMap` (`lib/html.ts`). On first parse, `markIfStatic` tags every subtree with zero placeholder dependencies as `static` (`lib/internal/template.ts`); `cloneWithValues` then returns static subtrees by reference on every later invocation (`lib/internal/template.ts`), and `mountNode` keeps a prototype DOM subtree in a `staticDom` WeakMap so re-mounting a static branch is one `cloneNode(true)` instead of O(nodes) construction (`lib/internal/render.ts`). This is compile-time-style hoisting performed at runtime, with no build step; and the Babel plugin performs the same hoist at compile time for JSX and compiled `html` (fully-static subtrees become module constants tagged `static: true`).
 - The client DOM carries no comment markers: list, portal, lazy, transition, suspense, and reactive-child regions all anchor on invisible empty text nodes (`lib/ForEach.ts`, `lib/Portal.ts`, `lib/Lazy.ts`, `lib/Transition.ts`, `lib/internal/render.ts`).
 - Hydration is a marker-reader over server HTML: `@hellajs/ssr` bounds each dynamic region in `<!--[-->…<!--]-->` comment markers, and `hydrate()` walks the AST and the existing DOM in parallel, adopting each region in place: `replaceChildren` is never called (`lib/hydrate.ts`, `lib/internal/hydrate.ts`). Tag mismatches warn and subtree-replace just that node (`lib/internal/hydrate.ts`); a streamed `<Suspense>` region arrives as a staged `<template>` that an inline `$hs` script swaps in as it lands, with `swapSuspenseStage` as the no-script fallback and an interrupted stream degrading to client-side re-suspension (`lib/internal/hydrate.ts`).
 
 ### Solid
 
-Solid compiles JSX to real DOM node constructors wrapped in fine-grained reactive computations, the closest architectural sibling. Components run once to set up the view; updates flow through per-binding computations that touch the DOM directly (per the Solid README and published 1.9.15 bundle). Both libraries treat the DOM as the source of truth and bind signals straight to nodes. The difference is the compiler's role: Solid's JSX transform is the required path, whereas HellaJS's `html\`\`` produces the same HellaNode AST at runtime with zero tooling (verified in `lib/html.ts`), with the Babel plugin as an optional accelerator that also auto-wraps call expressions into reactive thunks.
+Solid compiles JSX to real DOM node constructors wrapped in fine-grained reactive computations, the closest architectural sibling. Components run once to set up the view; updates flow through per-binding computations that touch the DOM directly (per the Solid README and published 1.9.15 bundle). Both libraries treat the DOM as the source of truth and bind signals straight to nodes. The difference is the compiler's role: Solid's JSX transform is the required path, whereas HellaJS's `html` produces the same HellaNode AST at runtime with zero tooling (verified in `lib/html.ts`), with the Babel plugin as an optional accelerator that also auto-wraps call expressions into reactive thunks.
 
 ### Svelte 5
 
@@ -49,7 +49,7 @@ React and Vue both diff a virtual tree and patch the DOM. React 19 layers Action
 
 Angular runs hierarchical change detection over a component tree and updates bindings through compiled template instructions. Since v21 zoneless change detection is the default: signal updates, template listeners, and `markForCheck` schedule checks on the affected views, with Zone.js available as an opt-in peer for legacy apps (per Angular's zoneless guide, researched at v22). It is the most platform-shaped of the group (DI, router, forms, and SSR are first-party modules) and the heaviest conceptual surface.
 
-**Verdict:** HellaJS, Solid, and Svelte form the no-VDOM, surgical camp; React and Vue reconcile virtual trees; Angular schedules per-view change detection. HellaJS is the only one in the surgical camp that requires no compiler to get its full model (runtime `html\`\`` with static-subtree analysis) and it ships in-place hydration and streaming-Suspense adoption in the same package rather than as framework infrastructure.
+**Verdict:** HellaJS, Solid, and Svelte form the no-VDOM, surgical camp; React and Vue reconcile virtual trees; Angular schedules per-view change detection. HellaJS is the only one in the surgical camp that requires no compiler to get its full model (runtime `html` with static-subtree analysis) and it ships in-place hydration and streaming-Suspense adoption in the same package rather than as framework infrastructure.
 
 ---
 
@@ -79,7 +79,7 @@ Reactivity comes from `@hellajs/core`: signals as sources, computeds as transfor
 | Vue | Component + `ref` | Mostly | `markRaw`, `shallowRef` |
 | Angular | Component / signal view | Yes (signals) | `equal` comparator / zone opt-in legacy |
 
-A distinctive HellaJS ergonomic: at the runtime level, passing a bare signal reference creates a live binding while calling it (`count()`) produces a one-time static value, because the single discriminator is `isFunction` on the child/prop value (`lib/internal/render.ts`, `lib/internal/utils.ts`). A signal *is* a function, so it binds; a primitive never does. Under the Babel plugin, call-containing expressions are auto-wrapped into thunks, so compiled `{count() * 2}` is reactive without a manual wrapper (per the package's control-flow docs); the bare-ref-vs-called distinction only matters in uncompiled `html\`\``. This is a zero-API way to opt in and out of tracking that no competitor matches so directly.
+A distinctive HellaJS ergonomic: at the runtime level, passing a bare signal reference creates a live binding while calling it (`count()`) produces a one-time static value, because the single discriminator is `isFunction` on the child/prop value (`lib/internal/render.ts`, `lib/internal/utils.ts`). A signal *is* a function, so it binds; a primitive never does. Under the Babel plugin, call-containing expressions are auto-wrapped into thunks, so compiled `{count() * 2}` is reactive without a manual wrapper (per the package's control-flow docs); the bare-ref-vs-called distinction only matters in uncompiled `html`. This is a zero-API way to opt in and out of tracking that no competitor matches so directly.
 
 ---
 
@@ -231,7 +231,7 @@ HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary
 
 ## 11. Ergonomics & Syntax
 
-Attribute prefixes are explicit and uniform across JSX and `html\`\``:
+Attribute prefixes are explicit and uniform across JSX and `html`:
 
 ```html
 <div
@@ -249,7 +249,7 @@ Attribute prefixes are explicit and uniform across JSX and `html\`\``:
 
 The `on:`/`e:`/`hook:`/`error:` convention (`lib/internal/template.ts`) is closer to Svelte's directive style than React's `onClick` or Vue's `@click`, and it makes the delegated-vs-direct listener choice a prefix rather than a different API. Function-ref props separate reactive from static attributes syntactically, a clarity win over libraries where every attribute behaves the same way until you learn which ones track.
 
-The dual JSX + `html\`\`` story is a genuine differentiator: both produce the same HellaNode AST (`lib/html.ts`, `lib/internal/template.ts`), so a codebase can use JSX where types and build tooling matter and `html\`\`` where zero-dependency runtime authoring matters: the same components, the same reconciler. Solid's tagged-template entry is secondary to its JSX path; Svelte has no non-SFC option; React, Vue, and Angular are single-syntax.
+The dual JSX + `html` story is a genuine differentiator: both produce the same HellaNode AST (`lib/html.ts`, `lib/internal/template.ts`), so a codebase can use JSX where types and build tooling matter and `html` where zero-dependency runtime authoring matters: the same components, the same reconciler. Solid's tagged-template entry is secondary to its JSX path; Svelte has no non-SFC option; React, Vue, and Angular are single-syntax.
 
 ---
 
@@ -261,7 +261,7 @@ What sets HellaJS apart (and no single competitor matches all of):
 
 1. **Composable package boundaries**: adopt dom + core, add router/store/css/resource as needed. A library, not a framework.
 2. **Runtime static analysis**: `markIfStatic` shares zero-dependency subtrees by reference and `staticDom` clones them in O(1); compile-time-style optimization with no build step (`lib/internal/template.ts`, `lib/internal/render.ts`).
-3. **Dual JSX + `html\`\`` syntax**: the same HellaNode AST from both, per file (`lib/html.ts`).
+3. **Dual JSX + `html` syntax**: the same HellaNode AST from both, per file (`lib/html.ts`).
 4. **Marker-based adopt-in-place hydration**: reads `<!--[-->…<!--]-->` regions, adopts server DOM per region, subtree-replaces only mismatches, and degrades gracefully on interrupted streams (`lib/internal/hydrate.ts`).
 5. **Web-Components-first `element()`**: custom elements with Proxy reactive props, synchronous attribute propagation, and opt-in shadow DOM (`lib/element.ts`).
 6. **Reactive external-DOM refs**: `$ref`/`$collection` auto-watch nodes outside the render tree, queueing ops until they exist (`lib/$ref.ts`, `lib/internal/selectors.ts`).

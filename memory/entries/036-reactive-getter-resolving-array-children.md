@@ -21,7 +21,7 @@ The SSR walkers have TWO array-classification paths that must each handle arrays
    returns a HellaNode[] the resolved-value classification must walk each, not stringify.
 
 The `.map()` idiom (`<ul>{items.map(t => <li>{t}</li>)}</ul>`) compiles to `children: [() => items.map(...)]`
-— a getter returning a HellaNode[] (babel and the `html\`\`` parser emit the same shape for an element
+— a getter returning a HellaNode[] (babel and the `html` parser emit the same shape for an element
 child). Before the fix, the resolved-value classification only recursed when `resolved.tag !== undefined`;
 an array has no `.tag`, so it hit the escape branch → `` `${[node, node, node]}` `` →
 `[object Object],[object Object],...`. The DOM client rendered the identical node correctly because

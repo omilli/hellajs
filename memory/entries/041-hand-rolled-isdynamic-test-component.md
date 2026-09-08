@@ -10,7 +10,7 @@ triggers: [isdynamic-test-component, html-dynamic-component-factory, appendchild
 
 # Why
 
-`<${Comp}>` in an `html\`\`` template compiles to `{ dynamicComponent: N, props, children }`; at instantiation `cloneWithValues` calls `Comp(mergedProps)` (packages/dom/lib/internal/template.ts, dynamicComponent branch) and uses the RESULT as the child fn. The babel path and `appendToParent` later invoke that result with the DOM parent. A test component that conflates the two layers (authoring the parent-fn as the component itself) gets `props` where it expects `parent` and dies inside `cloneWithValues` — the error signature (`TypeError: parent.appendChild is not a function` at cloneWithValues in the stack) is the recognizer. A bare parent-fn only works as a reactive child's value (`${() => toggle()}` resolving to the fn), never via `<${Dyn}>`.
+`<${Comp}>` in an `html` template compiles to `{ dynamicComponent: N, props, children }`; at instantiation `cloneWithValues` calls `Comp(mergedProps)` (packages/dom/lib/internal/template.ts, dynamicComponent branch) and uses the RESULT as the child fn. The babel path and `appendToParent` later invoke that result with the DOM parent. A test component that conflates the two layers (authoring the parent-fn as the component itself) gets `props` where it expects `parent` and dies inside `cloneWithValues` — the error signature (`TypeError: parent.appendChild is not a function` at cloneWithValues in the stack) is the recognizer. A bare parent-fn only works as a reactive child's value (`${() => toggle()}` resolving to the fn), never via `<${Dyn}>`.
 
 # Evidence
 

@@ -1,5 +1,5 @@
 <dom-package-instructions>
-Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive dependencies update, never whole trees. The DOM is mutated directly from `HellaNode` AST objects produced by the babel plugin or the `html\`\`` tagged template. Per-node state lives in a `WeakMap<Node, ElementState>`, never on DOM nodes. Code/test/docs style rules live in `guides/code.md`, `guides/tests.md`, `guides/docs.md` — not duplicated here.
+Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive dependencies update, never whole trees. The DOM is mutated directly from `HellaNode` AST objects produced by the babel plugin or the `html` tagged template. Per-node state lives in a `WeakMap<Node, ElementState>`, never on DOM nodes. Code/test/docs style rules live in `guides/code.md`, `guides/tests.md`, `guides/docs.md` — not duplicated here.
 
 ## Public exports (`lib/index.ts`)
 
@@ -37,7 +37,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 
 ## HellaNode (`lib/types/nodes.d.ts`)
 
-Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`. `isHellaNode` = `isObject(v) && v.tag !== undefined` — the hot-path structural discriminator. Dom-local and deliberately skips the `isPlainObject` proto/`toString` cost; DOM Nodes expose `tagName` (not `tag`), so they fail the `tag` own-property check and are correctly rejected.
+Plain object produced by the babel plugin or `html`; consumed by `mountNode`. `isHellaNode` = `isObject(v) && v.tag !== undefined` — the hot-path structural discriminator. Dom-local and deliberately skips the `isPlainObject` proto/`toString` cost; DOM Nodes expose `tagName` (not `tag`), so they fail the `tag` own-property check and are correctly rejected.
 
 | Field | Purpose |
 |---|---|
@@ -49,7 +49,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 | `error` | `error:fallback` / `error:category` / `error:boundary` (`error:` prefix). |
 | `children` | Always flat (`.flat()` runs during template substitution). |
 | `componentScope` | Attached by `component()` (a static root is spread into a fresh node first — the shared template node is never mutated) and **chained, never overwritten**, when the node already carries an inner component's scope (a component returning another component's result). Wired to `state.componentScope` at mount — element root onto the element; fragment root onto its last child (chained; an empty fragment disposes immediately, nothing mounted owns it) — on `staticDom` clone (same last-child rule for fragment clones), and on hydrate adopt (first region node — see §hydrate). |
-| `static` | Template-cache marker — subtree has zero placeholder deps (runtime `html\`\``) or was hoisted by the babel plugin as a fully-static module constant (JSX / compiled `html\`\``); shared by reference across invocations and cloned via `staticDom` on re-mount, never cloned structurally. |
+| `static` | Template-cache marker — subtree has zero placeholder deps (runtime `html`) or was hoisted by the babel plugin as a fully-static module constant (JSX / compiled `html`); shared by reference across invocations and cloned via `staticDom` on re-mount, never cloned structurally. |
 
 ### `RenderFn` / `SsrMeta` (isDynamic components)
 
@@ -65,7 +65,7 @@ Plain object produced by the babel plugin or `html\`\``; consumed by `mountNode`
 | `error:` | `node.error` | Config: `error:fallback` (fn) / `error:category` (string) / `error:boundary` (boolean). |
 | (none) | `node.props` | Attribute; a function-ref value (signal / `() => …`) is reactive (effect-wrapped), else applied once. |
 
-## `html\`\`` parsing & caching (`lib/html.ts`, `lib/internal/template.ts`)
+## `html` parsing & caching (`lib/html.ts`, `lib/internal/template.ts`)
 
 `templateCache: WeakMap<TemplateStringsArray, HtmlInternalNode>` keys the AST by template-strings identity. First call builds the AST; later calls skip parsing and only run `cloneWithValues`.
 
@@ -135,7 +135,7 @@ Two cooperating mechanisms share one `MutationObserver` per mount target:
 
 Returns a function with `isDynamic: true` and `fn.ssr = { kind: "forEach", props }` (the SSR descriptor consumed type-only by `@hellajs/ssr`); `appendToParent` calls it with the parent. Creates a text anchor + one effect holding live collections (`keyToNode`, `keyToItem`, `currentKeys`) and reusable temp collections (`newKeys`, `newKeyToNode`, `newKeyToItem`, `nodesToRemove`, `keyToOldIndex`, `toMove`).
 
-- **Dual-mode item tracking.** `keyToNode` holds raw DOM `Node`s for element/text items (the hot path — zero extra allocation) and, for a `use` result resolving to a `DocumentFragment` (multi-root `html\`\`` / `<>…</>` renderer), a `FragmentItemRecord` `{ itemAnchor: true, anchor: Text, nodes: Node[] }` (module-local `createFragmentItem` / `isFragmentItem` / `removeTrackedItem`): a persistent empty text anchor inserted before the item's block, plus the fragment's top-level children captured before insertion empties the husk. Stale detection reads `record.anchor.parentNode`; removal (`removeTrackedItem`) runs `cleanupSubtree` on every `nodes` entry then the anchor; the no-overlap batch appends anchor + nodes in order; the LIS walk inserts the anchor before the move anchor, then each node after the previous, and advances `moveAnchor` to the block's leading anchor. Keyed reuse compares record identity — same record reference, same block. Hydrate adoption stays element-only: the count-strict `existingNodes.length === arr.length` guard makes any multi-node (fragment) item region fresh-build (warned), so records are never adopted.
+- **Dual-mode item tracking.** `keyToNode` holds raw DOM `Node`s for element/text items (the hot path — zero extra allocation) and, for a `use` result resolving to a `DocumentFragment` (multi-root `html` / `<>…</>` renderer), a `FragmentItemRecord` `{ itemAnchor: true, anchor: Text, nodes: Node[] }` (module-local `createFragmentItem` / `isFragmentItem` / `removeTrackedItem`): a persistent empty text anchor inserted before the item's block, plus the fragment's top-level children captured before insertion empties the husk. Stale detection reads `record.anchor.parentNode`; removal (`removeTrackedItem`) runs `cleanupSubtree` on every `nodes` entry then the anchor; the no-overlap batch appends anchor + nodes in order; the LIS walk inserts the anchor before the move anchor, then each node after the previous, and advances `moveAnchor` to the block's leading anchor. Keyed reuse compares record identity — same record reference, same block. Hydrate adoption stays element-only: the count-strict `existingNodes.length === arr.length` guard makes any multi-node (fragment) item region fresh-build (warned), so records are never adopted.
 - **Key resolution.** `resolveItemKey(element, item, index)` (module-local): `element.props.key` → `item.id` → array index. The first two set `hasExplicitKey = true`; the index fallback does not. The item's `id` is read only when no explicit `key` prop is present.
 - **Reuse rule.** `!node || (!hasExplicitKey && oldItem !== item)` → `resolveNode` (fresh node — a fragment result becomes a fresh record). Explicit keys reuse by key identity regardless of item reference; index-fallback keys require the same item reference.
 - **First render** (`currentKeys.length === 0`): build into a `DocumentFragment`, single `insertBefore(fragment, anchor)`.
@@ -225,9 +225,9 @@ Branch order: `value`/`checked`/`selected`/`innerHTML` → set the IDL property 
 
 ## Non-obvious behaviors (gotchas)
 
-- **Treat returned HellaNodes as immutable.** Static subtrees are shared by reference across invocations of the same `html\`\`` literal.
+- **Treat returned HellaNodes as immutable.** Static subtrees are shared by reference across invocations of the same `html` literal.
 - **`html\`${value}\`` returns `value` directly**, unwrapped.
-- **`<>...</>` and multiple roots** are supported inside `html\`\`` at any nesting; multiple roots auto-wrap in a fragment.
+- **`<>...</>` and multiple roots** are supported inside `html` at any nesting; multiple roots auto-wrap in a fragment.
 - **`HellaNode.children` is always flat** — nested arrays are impossible after substitution.
 - **`raw(html)` is an opaque child.** `ssr` wraps it in `<!--[-->…<!--]-->` markers and emits the HTML verbatim (never escaped); `hydrate` consumes the markers and adopts the existing DOM in place, binding nothing inside — no reactive scope crosses the boundary. Meta-framework renderers inject slot HTML as `props.children = [raw(slotHtml)]` (array-wrapped, so the babel `<X>{props.children}</X>` spread yields the sentinel). Bypasses escaping — sanitize untrusted input (XSS).
 - **Passthrough components bypass `component()`** — `ForEach`/`Portal`/`Lazy`/`Transition` set `isDynamic: true` and `fn.ssr = { kind, props }`, and are called directly by `appendToParent` with the parent. `<${Comp}>` in templates wraps in `component()` only if `Comp.isDynamic` is false. The `ssr` descriptor (see `RenderFn`/`SsrMeta`) lets `@hellajs/ssr` render these without DOM access; it's write-only at mount.

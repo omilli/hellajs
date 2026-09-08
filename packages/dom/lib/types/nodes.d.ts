@@ -369,6 +369,6 @@ export interface LazyProps {
 export interface SuspenseProps {
   /** Content rendered while children are unresolved (shown during ssr.stream streaming + on a client fresh mount while a Promise child is pending; dropped under `ssr`/`ssr.async`). */
   fallback?: HellaChild;
-  /** The boundary's content. Accepts a single child (`html\`\``) or an array — JSX and `html\`\`` compile component children to an array. A Promise-returning child suspends (client + server); sync children render directly. For reactive re-fetching, pair `resource` with a reactive child that branches on its getters. */
+  /** The boundary's content. Accepts a single child (`html`) or an array — JSX and `html` compile component children to an array. A Promise-returning child suspends (client + server); sync children render directly. For reactive re-fetching, pair `resource` with a reactive child that branches on its getters. */
   children?: HellaChild | HellaChild[];
 }

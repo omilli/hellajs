@@ -1,6 +1,6 @@
 <astro-plugin>
 
-Astro 7 framework-renderer integration (`astro-plugin-hellajs`). Wires `vite-plugin-hellajs` (JSX + `html\`\`` → HellaNode) and registers a renderer so `.jsx`/`.tsx` components render server-side via `@hellajs/ssr` and hydrate client-side behind `client:*`. Entry point: `index.mjs` — `hellajs()` returns an `AstroIntegration` whose `astro:config:setup` hook calls `updateConfig({ vite: { plugins } })` + `addRenderer({ name, clientEntrypoint, serverEntrypoint })`. **No config options**; signature takes no parameters.
+Astro 7 framework-renderer integration (`astro-plugin-hellajs`). Wires `vite-plugin-hellajs` (JSX + `html` → HellaNode) and registers a renderer so `.jsx`/`.tsx` components render server-side via `@hellajs/ssr` and hydrate client-side behind `client:*`. Entry point: `index.mjs` — `hellajs()` returns an `AstroIntegration` whose `astro:config:setup` hook calls `updateConfig({ vite: { plugins } })` + `addRenderer({ name, clientEntrypoint, serverEntrypoint })`. **No config options**; signature takes no parameters.
 
 ## Mental model
 
