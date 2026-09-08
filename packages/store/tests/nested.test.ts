@@ -82,7 +82,7 @@ describe("store", () => {
         settings: settingsStore
       });
 
-      const snap = appStore.snapshot();
+      const snap = appStore.$snapshot();
 
       expect(snap.user.name).toBe("Alice");
       expect(snap.settings.theme).toBe("dark");
@@ -93,7 +93,7 @@ describe("store", () => {
       const appStore = store({ user: userStore });
 
       // @ts-expect-error composed-store partial: PartialDeep recurses and types name as Signal<string>, but the draft path accepts the plain value
-      appStore.update({ user: { name: "Bob" } });
+      appStore.$update({ user: { name: "Bob" } });
 
       expect(appStore.user.name()).toBe("Bob");
       expect(appStore.user.age()).toBe(30);
@@ -105,7 +105,7 @@ describe("store", () => {
       const userStore = store({ name: "Alice" });
       const appStore = store({ user: userStore });
 
-      appStore.update(draft => {
+      appStore.$update(draft => {
         draft.user.name = "Bob";
       });
 
@@ -118,9 +118,9 @@ describe("store", () => {
       const outer = store({ inner });
 
       const nestedCleaned = mock(() => {});
-      const origCleanup = outer.inner.nested.cleanup;
+      const origCleanup = outer.inner.nested.$cleanup;
       // Store methods are non-writable — redefine via defineProperty to spy (configurable stays true)
-      Object.defineProperty(outer.inner.nested, "cleanup", {
+      Object.defineProperty(outer.inner.nested, "$cleanup", {
         value: function () {
           nestedCleaned();
           origCleanup.call(this);
@@ -130,7 +130,7 @@ describe("store", () => {
         configurable: true
       });
 
-      outer.cleanup();
+      outer.$cleanup();
 
       expect(nestedCleaned).toHaveBeenCalledTimes(1);
     });
@@ -140,8 +140,8 @@ describe("store", () => {
       const outer = store({ inner });
 
       expect(() => {
-        outer.cleanup();
-        outer.cleanup();
+        outer.$cleanup();
+        outer.$cleanup();
       }).not.toThrow();
     });
 
@@ -171,7 +171,7 @@ describe("store", () => {
       const tracker = mock(() => {});
 
       effect(() => {
-        appStore.snapshot();
+        appStore.$snapshot();
         tracker();
       });
 

@@ -32,7 +32,7 @@
   | css | Type-safe CSS-in-JS. Global `css()` + scoped `style()` returning a content-hashed class on both platforms, `cssText()` collector for SSR, text-keyed reference counting, runtime style generation, reactive `vars()`, `cva()` variant recipes (responsive per-recipe `media` + compounds, runtime-lazy), `cx()` class joiner. |
   | resource | Reactive async fetching. Fetcher-scoped cache (LRU + TTL), request deduplication, SWR, abort control, optimistic mutations, polling/retry. |
   | router | Reactive client-side routing. Nested routes, parameter inheritance, lifecycle hooks, History API. Resolution order: redirects → nested → flat → notFound. |
-  | store | Deeply reactive state. Plain objects auto-convert to granular signals/stores with TS inference; `snapshot` / `update` / `cleanup` / `subscribe` (per-key, `(next, prev)`). |
+  | store | Deeply reactive state. Plain objects auto-convert to granular signals/stores with TS inference; `$snapshot` / `$update` / `$cleanup` / `$subscribe` (per-key, `(next, prev)`). |
   | ssr | Pure HTML stringifier. Walks a HellaNode AST to an HTML string with zero runtime imports (mirrors dom's `renderProp` rules). `resource` no-ops on the server. |
 
   ## Plugins

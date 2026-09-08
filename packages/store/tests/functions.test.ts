@@ -44,7 +44,7 @@ describe("store", () => {
         double: computed(() => data.count() * 2)
       });
 
-      const snap = data.snapshot();
+      const snap = data.$snapshot();
       expect(snap.double()).toBe(0);
 
       data.count(7);
@@ -69,7 +69,7 @@ describe("store", () => {
         logCount: () => `Count is ${data.count()}`
       });
 
-      const snap = data.snapshot();
+      const snap = data.$snapshot();
       expect(snap.logCount()).toBe("Count is 0");
 
       data.count(5);

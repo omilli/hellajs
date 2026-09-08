@@ -72,7 +72,7 @@ export type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
 
 /**
  * Recursively unwraps composed store types so Snapshot matches the plain
- * values snapshot() actually returns: nested Store members resolve to their
+ * values $snapshot() actually returns: nested Store members resolve to their
  * data types, everything else is preserved.
  */
 export type Snapshot<T> = {
@@ -111,10 +111,10 @@ type Simplify<T> = { [K in keyof T]: T[K] };
  * - Composed stores keep their own config — adoption preserves their signals as-is
  *
  * Built-in methods:
- * - snapshot(): Returns plain object representation of current state
- * - update(partial): Deep merge partial updates into store; unknown keys materialize and the call returns the store typed with them
- * - cleanup(): Dispose all reactive subscriptions
- * - subscribe(key, callback): Observe changes to a single settable property
+ * - $snapshot(): Returns plain object representation of current state
+ * - $update(partial): Deep merge partial updates into store; unknown keys materialize and the call returns the store typed with them
+ * - $cleanup(): Dispose all reactive subscriptions
+ * - $subscribe(key, callback): Observe changes to a single settable property
  */
 export type Store<
   T extends Record<string, unknown> = Record<string, never>,
@@ -127,7 +127,7 @@ export type Store<
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {
   /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types */
-  snapshot: () => Snapshot<T>;
+  $snapshot: () => Snapshot<T>;
   /**
    * Deep merge partial updates or apply mutations via draft function.
    *
@@ -141,12 +141,12 @@ export type Store<
    * @returns The store itself, widened by the partial's new keys; the mutator path returns the current shape.
    * @throws {Error} When `partial` touches a reserved key, a function property, a store key with a non-object value, a readonly key, a function value on a new key, or an externally-replaced property (unknown key).
    */
-  update: {
+  $update: {
     <P extends Record<string, unknown>>(partial: PartialDeep<T> & P): Store<Simplify<T & Omit<P, keyof T>>, R>;
     (mutator: (draft: Snapshot<T>) => void): Store<T, R>;
   };
   /** Recursively invokes cleanup on nested stores; individual signals are not disposed — they remain functional */
-  cleanup: () => void;
+  $cleanup: () => void;
   /**
    * Subscribes to changes of a single signal-backed (settable) property.
    * @param key Name of a settable property — nested-store keys, preserved functions, reserved keys, and keys that were never added throw
@@ -154,7 +154,7 @@ export type Store<
    * @returns Unsubscribe function; safe to call more than once
    * @throws {Error} When key is not a settable key of the store.
    */
-  subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void;
+  $subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void;
 };
 
 /**
@@ -177,9 +177,9 @@ export interface StoreAdaptor {
 export interface PersistOptions<T extends Record<string, unknown>> {
   /** Serializes the partialized state; default `JSON.stringify` */
   serialize?: (state: PartialDeep<T>) => string;
-  /** Parses stored raw into an update()-shaped partial; default `JSON.parse` */
+  /** Parses stored raw into an $update()-shaped partial; default `JSON.parse` */
   deserialize?: (raw: string) => PartialDeep<T>;
-  /** Projects the snapshot down to the persistable subset; default identity. Persist only serializable keys — class instances silently corrupt through a JSON round-trip */
+  /** Projects the $snapshot() result down to the persistable subset; default identity. Persist only serializable keys — class instances silently corrupt through a JSON round-trip */
   partialize?: (state: Snapshot<T>) => PartialDeep<T>;
   /** Coalesces write-through bursts into one write per window (milliseconds) */
   debounce?: number;

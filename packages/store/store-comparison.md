@@ -12,7 +12,7 @@ A ground-up comparison based on the actual source code of `@hellajs/store` v2. E
 | State shape | Plain object → signal tree | One immutable object per store | One immutable tree per store | Flat atom graph (composable) | Proxy of original object | Observable classes/objects |
 | Mutability model | Direct signal-set (`s(v)`) | Immutable `set(partial)` | Immutable `dispatch` + Immer | `setAtom(v)` | Direct mutation of proxy | Normal JS assignment |
 | Granularity | Per-property signals | Whole-state selectors | Whole-state selectors | Per-atom | Per-property (proxy traps) | Per-property (auto-tracked) |
-| Update API | `s(v)`, `update(partial)`, `update(draft => …)` | `set(partial)`, `set(s => …)` | `dispatch(action)` | `setAtom(v)`, writable atoms | `state.x = v` | `state.x = v` |
+| Update API | `s(v)`, `$update(partial)`, `$update(draft => …)` | `set(partial)`, `set(s => …)` | `dispatch(action)` | `setAtom(v)`, writable atoms | `state.x = v` | `state.x = v` |
 | Snapshot | Reactive `computed` plain object | `useStore(selector)` | `useSelector(selector)` | Read derived atom | `useSnapshot(state)` | Direct read (already reactive) |
 | TypeScript | Conditional `Store<T, R>` readonly inference | Manual `create<T>()` | Manual `createSlice<T>` | Inferred from atom init | Inferred; `useSnapshot` readonly is "too strict" per docs | Inferred from `makeAutoObservable` |
 | External deps | 0 (+ core peer) | 0 | 6 (immer, redux, reselect, redux-thunk, standard-schema ×2) | 0 | 1 (proxy-compare) | 0 |
@@ -28,7 +28,7 @@ HellaJS store sits in the same architectural camp as Valtio and MobX: deeply rea
 
 A store is built by `createStore()`, exposed through five `store()` overloads (`lib/store.ts`), walking `Object.entries(initial)` exactly once and emitting a per-property reactive primitive (`lib/internal/create.ts`). The output is a plain object whose properties are *real signal functions* attached via `Object.defineProperty`: non-writable for signal-backed leaves, nested stores, and the built-in methods, writable for preserved functions (`lib/internal/utils.ts`); there is no Proxy on the hot path and nothing intercepts reads after construction. Branching is type-based: function values are preserved as-is, plain objects recurse into nested stores, and everything else (primitives, arrays, `Date`, `Map`, `Set`, `RegExp`, class instances) becomes a single `signal(value)` leaf (`lib/internal/create.ts`).
 
-There is no global registry, no Provider, and no atom configuration. A store is an object you read by calling `store.foo()` and write by calling `store.foo(v)`; updates propagate through `@hellajs/core`'s dependency graph (the sole peer dependency, `package.json`), so only effects that actually read the changed property re-run. The reserved keys `snapshot`, `update`, `cleanup`, and `subscribe` throw on collision at create time unless the initial value is itself a store (`lib/internal/create.ts`, `lib/internal/utils.ts`). Initial state must be a tree: there is no cycle detection, and self-referential objects recurse until the stack overflows (`lib/internal/create.ts`). Composition is by reference: a pre-existing store passed as a property value is detected by `isStore()` and adopted verbatim, so the outer and inner stores share signal references and writes propagate bidirectionally (`lib/internal/create.ts`, verified by `tests/nested.test.ts`).
+There is no global registry, no Provider, and no atom configuration. A store is an object you read by calling `store.foo()` and write by calling `store.foo(v)`; updates propagate through `@hellajs/core`'s dependency graph (the sole peer dependency, `package.json`), so only effects that actually read the changed property re-run. The reserved keys `$snapshot`, `$update`, `$cleanup`, and `$subscribe` throw on collision at create time unless the initial value is itself a store (`lib/internal/create.ts`, `lib/internal/utils.ts`). Initial state must be a tree: there is no cycle detection, and self-referential objects recurse until the stack overflows (`lib/internal/create.ts`). Composition is by reference: a pre-existing store passed as a property value is detected by `isStore()` and adopted verbatim, so the outer and inner stores share signal references and writes propagate bidirectionally (`lib/internal/create.ts`, verified by `tests/nested.test.ts`).
 
 ### Zustand
 
@@ -72,14 +72,14 @@ Atoms are the unit of state. Each atom is an independent node in a dependency gr
 HellaJS supports three update paths:
 
 1. **Direct signal call**: `store.user.name('Jane')` writes one property through the signal function (`lib/internal/create.ts`). The signal's equality check means a write that does not change the value is silent.
-2. **Partial deep merge**: `store.update({ user: { name: 'Jane' } })` walks the partial, recursing into nested stores that carry their own `update` method and writing signal-backed leaves through `applyUpdate()` (`lib/internal/create.ts`, `lib/internal/utils.ts`). Writes go to each store's settable-key registry, a non-enumerable set of signal-backed keys built at creation and threaded through composition (`lib/internal/create.ts`); unknown keys materialize (a signal for leaves, a nested store for plain objects, typed on the returned reference; see row 4), while reserved keys, function properties, and store keys handed non-object values throw `[store] update: ...` errors, `update({ onSave: fn })` throws a function-property error without invoking the function, and `update({ locked: 'x' })` on a readonly key throws `[store] readonly key "locked"` (`lib/internal/create.ts`).
-3. **Draft mutator**: `store.update(draft => { draft.items.push(x); draft.count++ })` materializes the snapshot, deep-clones it with class prototypes preserved, lets the mutator run freely, then diffs original against draft to emit only the changed signals (`lib/internal/create.ts`, `lib/internal/draft.ts`). Comparison is structural: arrays compare element-by-element, `Date`/`Map`/`Set`/`RegExp` and class instances compare by content, nested plain objects recurse, and only genuine deltas produce writes; effects subscribed to untouched properties do not fire (`lib/internal/draft.ts`, verified by `tests/draft.test.ts`).
+2. **Partial deep merge**: `store.$update({ user: { name: 'Jane' } })` walks the partial, recursing into nested stores that carry their own `$update` method and writing signal-backed leaves through `applyUpdate()` (`lib/internal/create.ts`, `lib/internal/utils.ts`). Writes go to each store's settable-key registry, a non-enumerable set of signal-backed keys built at creation and threaded through composition (`lib/internal/create.ts`); unknown keys materialize (a signal for leaves, a nested store for plain objects, typed on the returned reference; see row 4), while reserved keys, function properties, and store keys handed non-object values throw `[store] $update: ...` errors, `$update({ onSave: fn })` throws a function-property error without invoking the function, and `$update({ locked: 'x' })` on a readonly key throws `[store] readonly key "locked"` (`lib/internal/create.ts`).
+3. **Draft mutator**: `store.$update(draft => { draft.items.push(x); draft.count++ })` materializes the snapshot, deep-clones it with class prototypes preserved, lets the mutator run freely, then diffs original against draft to emit only the changed signals (`lib/internal/create.ts`, `lib/internal/draft.ts`). Comparison is structural: arrays compare element-by-element, `Date`/`Map`/`Set`/`RegExp` and class instances compare by content, nested plain objects recurse, and only genuine deltas produce writes; effects subscribed to untouched properties do not fire (`lib/internal/draft.ts`, verified by `tests/draft.test.ts`).
 
 Middleware hooks into all three paths: `applyUpdate()` runs the per-key transform before the signal setter fires (`lib/internal/utils.ts`), and the draft path inherits it because extracted changes route through the same loop (`tests/middleware.test.ts`).
 
 | Library | Update style | Ergonomics |
 |---|---|---|
-| HellaJS | Signal call, `update(partial)`, or `update(draft => …)` | Three explicit paths; middleware on every write |
+| HellaJS | Signal call, `$update(partial)`, or `$update(draft => …)` | Three explicit paths; middleware on every write |
 | Zustand | `set({ k: v })` shallow-merge, or `set(state => ({...}))` | Immer middleware available for nested mutation |
 | Redux Toolkit | `dispatch(slice.actions.x(payload))` | Immer-wrapped reducers: `state.x += 1` inside a reducer |
 | Jotai | `setAtom(v)` or writable derived atoms | Update logic encoded in the atom's write function |
@@ -92,11 +92,11 @@ Valtio and MobX win on raw mutation ergonomics: you write normal JavaScript. RTK
 
 ## 5. Snapshot & Derivation
 
-HellaJS `snapshot` is a `computed()` that iterates the store's cached key list, skips reserved keys, and produces a plain-object view (`lib/internal/create.ts`). The branch order per key: preserved user functions pass through as the original reference (discriminated by the settable-key registry, not by value shape), store values delegate to their own `snapshot()` computed, signal functions are called, and anything else mirrors as-is. Nested snapshot computeds chain, so the parent subscribes through them to the full tree; mutating any leaf signal in a composed tree re-runs the outermost snapshot, and composed leaves unwrap to plain values (`lib/internal/create.ts`, verified by `tests/snapshot.test.ts`). The `Snapshot<T>` type mirrors this at the type level, recursively unwrapping composed `Store` members to their data types (`lib/types.d.ts`).
+HellaJS `$snapshot` is a `computed()` that iterates the store's cached key list, skips reserved keys, and produces a plain-object view (`lib/internal/create.ts`). The branch order per key: preserved user functions pass through as the original reference (discriminated by the settable-key registry, not by value shape), store values delegate to their own `$snapshot()` computed, signal functions are called, and anything else mirrors as-is. Nested snapshot computeds chain, so the parent subscribes through them to the full tree; mutating any leaf signal in a composed tree re-runs the outermost snapshot, and composed leaves unwrap to plain values (`lib/internal/create.ts`, verified by `tests/snapshot.test.ts`). The `Snapshot<T>` type mirrors this at the type level, recursively unwrapping composed `Store` members to their data types (`lib/types.d.ts`).
 
 | Library | Snapshot pattern | Reactivity |
 |---|---|---|
-| HellaJS | `store.snapshot()`: reactive computed | Reactive across the full composed tree |
+| HellaJS | `store.$snapshot()`: reactive computed | Reactive across the full composed tree |
 | Zustand | `useStore(selector)` | Selector determines scope |
 | Redux Toolkit | `useSelector(selector)` + `createSelector` memoization | Selector determines scope |
 | Jotai | Derived atoms: `atom((get) => …)` | Reactive by construction |
@@ -122,7 +122,7 @@ Readonly enforcement wraps the underlying signal in a `computed()` behind an ari
 | Valtio | Per-property (proxy traps) | Yes, recursive | `deepClone`/`unstable_deepProxy` utils for depth control |
 | MobX | Per-property (auto-tracked) | Yes, recursive | `observableRef` / `observableShallow` opt-outs |
 
-HellaJS, Valtio, and MobX all provide automatic deep reactivity. Valtio and MobX do it by intercepting every access; HellaJS does it by constructing the signal tree up-front and never intercepting again. Shape growth is write-driven and typed: `update()` on a key absent from the initial object materializes it (a signal for leaves, a nested store for plain objects) and returns the same store typed with the added key (`lib/internal/create.ts`), whereas Valtio and MobX observe new keys the moment they are assigned, untyped until read. HellaJS additions carry no middleware or write equality (both are keyed by the creation shape), the original reference keeps its narrower type, and the draft mutator stays typed against the current shape; the growth is explicit-write-driven rather than assignment-driven. Replacing a signal from the outside is equally blocked: data properties and the built-in methods are defined non-writable, so `store.count = 5` throws a `TypeError` in strict-mode ESM instead of silently dropping reactivity; only function-valued properties (handler swaps, composed-store adopted signals) stay writable (`lib/internal/utils.ts`).
+HellaJS, Valtio, and MobX all provide automatic deep reactivity. Valtio and MobX do it by intercepting every access; HellaJS does it by constructing the signal tree up-front and never intercepting again. Shape growth is write-driven and typed: `$update()` on a key absent from the initial object materializes it (a signal for leaves, a nested store for plain objects) and returns the same store typed with the added key (`lib/internal/create.ts`), whereas Valtio and MobX observe new keys the moment they are assigned, untyped until read. HellaJS additions carry no middleware or write equality (both are keyed by the creation shape), the original reference keeps its narrower type, and the draft mutator stays typed against the current shape; the growth is explicit-write-driven rather than assignment-driven. Replacing a signal from the outside is equally blocked: data properties and the built-in methods are defined non-writable, so `store.count = 5` throws a `TypeError` in strict-mode ESM instead of silently dropping reactivity; only function-valued properties (handler swaps, composed-store adopted signals) stay writable (`lib/internal/utils.ts`).
 
 ---
 
@@ -135,7 +135,7 @@ HellaJS's `Store<T, R>` mapped type encodes the entire transformation in the typ
 - Plain objects recurse as `K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>`: readonly object keys propagate deep, each nested level deriving its own full key set; composed stores keep their own config because their function-typed members land in the function-preservation row regardless of `R` (`lib/types.d.ts`).
 - Primitives become `Signal<T>` when writable, `() => T` when readonly.
 
-`ReadonlyKeys<T, O>` extracts the readonly key set from the options object conditionally (`lib/types.d.ts`), so `store(initial, { readonly: ['apiUrl'] })` produces a type where `apiUrl` is a `() => string` and the rest are signals. `PartialDeep<T>` types the `update()` argument, preserving arrays and functions as leaves so a partial update to `{ items: [...] }` is a full replacement, not a deep merge (`lib/types.d.ts`). `StoreMiddleware<T>` mirrors the same shape for nested middleware.
+`ReadonlyKeys<T, O>` extracts the readonly key set from the options object conditionally (`lib/types.d.ts`), so `store(initial, { readonly: ['apiUrl'] })` produces a type where `apiUrl` is a `() => string` and the rest are signals. `PartialDeep<T>` types the `$update()` argument, preserving arrays and functions as leaves so a partial update to `{ items: [...] }` is a full replacement, not a deep merge (`lib/types.d.ts`). `StoreMiddleware<T>` mirrors the same shape for nested middleware.
 
 | Library | Inference | Readonly typing |
 |---|---|---|
@@ -152,18 +152,18 @@ HellaJS's readonly is the strongest of the group at the type level: a single dec
 
 ## 8. Memory Management
 
-HellaJS `cleanup()` recursively walks the store tree, skips reserved keys, and calls `cleanup()` on each nested store (`lib/internal/create.ts`). Individual signals are *not* disposed; they remain functional after cleanup, and the store object stays intact with its properties in place (`lib/internal/create.ts`, verified by `tests/cleanup.test.ts`). The reasoning: signals owned by other contexts (composed stores, external effects) should not be torn down because the wrapping store is. Cleanup is idempotent: calling it twice is a no-op (`tests/cleanup.test.ts`).
+HellaJS `$cleanup()` recursively walks the store tree, skips reserved keys, and calls `$cleanup()` on each nested store (`lib/internal/create.ts`). Individual signals are *not* disposed; they remain functional after cleanup, and the store object stays intact with its properties in place (`lib/internal/create.ts`, verified by `tests/cleanup.test.ts`). The reasoning: signals owned by other contexts (composed stores, external effects) should not be torn down because the wrapping store is. Cleanup is idempotent: calling it twice is a no-op (`tests/cleanup.test.ts`).
 
 | Library | Cleanup model | What's disposed |
 |---|---|---|
-| HellaJS | Explicit `store.cleanup()` + per-key `subscribe` disposers | Nested store structure; leaf signals intentionally survive; subscribe effects are user-managed |
+| HellaJS | Explicit `store.$cleanup()` + per-key `$subscribe` disposers | Nested store structure; leaf signals intentionally survive; subscribe effects are user-managed |
 | Zustand | Manual subscriber unsubscribe | Whatever the caller unsubscribes |
 | Redux Toolkit | Store lives for the app lifetime | Entire store on teardown |
 | Jotai | Atom values per Provider/store | Atom cache when the store is dropped |
 | Valtio | `unsubscribe()` per subscribe | Listeners; proxy retained while referenced |
 | MobX | `reaction()`/`autorun()` disposers | Reactions; observables GC'd by reachability |
 
-HellaJS's recursive cleanup is the most explicit of the group: one call on the root tears down the tree. MobX's reachability-based GC is the most automatic (observables vanish when nothing references them). Valtio requires per-subscription `unsubscribe()` calls and ships no whole-store teardown. The HellaJS signal-survival design is deliberate but unusual: compose a user store inside an app store and call `appStore.cleanup()`, and the user store's structure tears down while its signals keep working, a sharp edge if you expected cleanup to release everything.
+HellaJS's recursive cleanup is the most explicit of the group: one call on the root tears down the tree. MobX's reachability-based GC is the most automatic (observables vanish when nothing references them). Valtio requires per-subscription `unsubscribe()` calls and ships no whole-store teardown. The HellaJS signal-survival design is deliberate but unusual: compose a user store inside an app store and call `appStore.$cleanup()`, and the user store's structure tears down while its signals keep working, a sharp edge if you expected cleanup to release everything.
 
 ---
 
@@ -176,11 +176,11 @@ HellaJS's recursive cleanup is the most explicit of the group: one call on the r
 | Draft mutator | Yes (`lib/internal/draft.ts`) | Via immer middleware | Yes (Immer in reducers) | Via writable atom | N/A (mutate directly) | N/A (mutate directly) |
 | Partial deep merge | Yes (`lib/internal/create.ts`) | Shallow only | Per-reducer | N/A | N/A | N/A |
 | Unknown-key update | Adds key, typed on the returned reference (`lib/internal/create.ts`) | Adds key | Adds via reducer | New atom needed | Adds key | Adds key |
-| Reactive snapshot | Yes (`snapshot()`) | Selector | Selector | Derived atom | `useSnapshot` | Auto-track |
+| Reactive snapshot | Yes (`$snapshot()`) | Selector | Selector | Derived atom | `useSnapshot` | Auto-track |
 | Compile-time readonly | Yes, deep (`lib/types.d.ts`) | No | No | No (manual) | Over-strict | No |
 | Per-key middleware | Yes, nested (`lib/internal/utils.ts`) | Via middleware | Via middleware | Via atom write fn | No | Yes (`intercept`, `observe`) |
 | Custom write equality | Yes, per key (`equals`: comparator or `'structural'`, `lib/internal/create.ts`) | On selectors (`useStoreWithEqualityFn`, `subscribeWithSelector`) | No | No | No | Yes (`comparer.structural` on computed) |
-| Subscription API | Per-key `subscribe(key, cb)` with `(next, prev)` | Whole-store `subscribe(listener)` | `store.subscribe()` per store | `sub()` per atom | `subscribe(proxy, cb)` per object | `observe`/`intercept` per observable |
+| Subscription API | Per-key `$subscribe(key, cb)` with `(next, prev)` | Whole-store `subscribe(listener)` | `store.subscribe()` per store | `sub()` per atom | `subscribe(proxy, cb)` per object | `observe`/`intercept` per observable |
 | Async actions | Via `resource` package | Yes (async `set`) | `createAsyncThunk` | Async atoms + Suspense | Suspense-compatible | `flow` |
 | DevTools integration | None | Redux DevTools | Redux DevTools (best-in-class) | Separate `jotai-devtools` package | Redux DevTools | mobx-devtools extension |
 | Persistence | `persistStore` wrapper: pluggable adaptors (localStorage/sessionStorage shipped, IndexedDB via user adaptor), `partialize`, reactive `hydrated()` flag (`lib/persistStore.ts`) | `persist` middleware | Via middleware | `atomWithStorage` | Manual via `subscribe` | Manual |
@@ -190,10 +190,10 @@ HellaJS's recursive cleanup is the most explicit of the group: one call on the r
 ### Notable HellaJS differentiators
 
 - **Compile-time readonly inference from a single option**: `{ readonly: ['apiUrl'] }` or `{ readonly: true }` produces a store type where the disallowed setters are absent, not merely runtime no-ops, and the lock is deep: listed object keys and `readonly: true` lock every nested plain-object level (`lib/internal/create.ts`, `lib/types.d.ts`).
-- **Three explicit update paths in one API**: direct signal call, `update(partial)` deep merge, and `update(draft => …)` mutation diff, with no external Immer dependency (`lib/internal/create.ts`, `lib/internal/draft.ts`).
+- **Three explicit update paths in one API**: direct signal call, `$update(partial)` deep merge, and `$update(draft => …)` mutation diff, with no external Immer dependency (`lib/internal/create.ts`, `lib/internal/draft.ts`).
 - **Per-key middleware with deep nesting**: middleware recurses into nested store keys automatically through the store factory (`lib/internal/create.ts`, `lib/internal/utils.ts`).
 - **Properties are real signals, not Proxy traps**: `Object.defineProperty` (non-writable for data properties and methods, writable for functions) makes each property a callable signal function; nothing intercepts reads or writes after construction (`lib/internal/utils.ts`).
-- **Settable-key registry guards every write path**: `update()` writes only signal-backed keys tracked in a non-enumerable registry threaded through composition; reserved keys cannot be hijacked, preserved functions are never invoked, and every out-of-contract write throws a `[store]` error naming the key (`lib/internal/create.ts`).
+- **Settable-key registry guards every write path**: `$update()` writes only signal-backed keys tracked in a non-enumerable registry threaded through composition; reserved keys cannot be hijacked, preserved functions are never invoked, and every out-of-contract write throws a `[store]` error naming the key (`lib/internal/create.ts`).
 - **Recursive cleanup with signal survival**: one call tears down the store tree while leaving leaf signals functional for shared or composed state (`lib/internal/create.ts`).
 - **Store composition by reference**: nested stores share signal references bidirectionally; writes from either side propagate (`lib/internal/create.ts`, verified by `tests/nested.test.ts`).
 - **Reactive hydration with dirty-skip and self-healing fallback**: `persistStore` exposes a signal-backed `hydrated()` flag that flips when the read settles, skips applying persisted state when a projected key changed first (in-memory wins), and on corrupt or shape-drifted stored state clears storage, keeps the initial state, and reports through `onError` (`lib/persistStore.ts`, verified by `tests/persist.test.ts`).
@@ -221,10 +221,10 @@ app.count(1);
 app.user.preferences.theme('light');
 
 // Partial deep merge
-app.update({ user: { name: 'Bob' } });
+app.$update({ user: { name: 'Bob' } });
 
 // Draft mutator (Immer-style, no Immer dependency)
-app.update(draft => {
+app.$update(draft => {
   draft.items.push(4);
   draft.count = draft.items.length;
 });
@@ -245,10 +245,10 @@ What sets HellaJS apart (and no single competitor matches all of):
 
 1. **Deep compile-time readonly from a single declaration**: one option locks the whole subtree at the type level and at runtime, nested levels included; Valtio and MobX have no static readonly, and Zustand and RTK leave it to user discipline (`lib/types.d.ts`, `lib/internal/create.ts`).
 2. **Properties as real signal functions, not Proxy traps**: Valtio and MobX intercept on every access; HellaJS converts once at creation and never intercepts again, and data properties are non-writable so external reassignment throws instead of silently dropping reactivity (`lib/internal/utils.ts`).
-3. **Three first-class update paths without an Immer dependency**: direct call, `update(partial)`, and `update(draft => …)` over a hand-written structural diff (`lib/internal/draft.ts`).
+3. **Three first-class update paths without an Immer dependency**: direct call, `$update(partial)`, and `$update(draft => …)` over a hand-written structural diff (`lib/internal/draft.ts`).
 4. **Framework-agnostic with no Provider and no hook requirement**: Zustand, Jotai, and Valtio are React-first with vanilla escape hatches; RTK reaches React through react-redux; HellaJS works anywhere `@hellajs/core` works (`package.json`).
 5. **Per-key middleware wired into the construction loop**: nested middleware distributes into nested stores at creation, and every write path (direct, partial, and draft) passes through it (`lib/internal/create.ts`, `lib/internal/utils.ts`).
-6. **Per-key subscription with previous-value callbacks**: `subscribe(key, cb)` hands side effects `(next, prev)` for a single property with no whole-tree read and no Proxy interception; Zustand and RTK subscribe to whole state, Jotai per atom, Valtio per proxy object, MobX per observable (`lib/internal/create.ts`, verified by `tests/subscribe.test.ts`).
+6. **Per-key subscription with previous-value callbacks**: `$subscribe(key, cb)` hands side effects `(next, prev)` for a single property with no whole-tree read and no Proxy interception; Zustand and RTK subscribe to whole state, Jotai per atom, Valtio per proxy object, MobX per observable (`lib/internal/create.ts`, verified by `tests/subscribe.test.ts`).
 7. **Recursive cleanup that preserves shared leaf signals**: composed stores tear down without killing signals that other contexts own (`lib/internal/create.ts`).
 
 Its gaps are the predictable ones: ecosystem size (no devtools bridge, no Redux DevTools story), no per-element array reactivity (arrays are single signals; the draft path is the escape hatch, and per-key `'structural'` write equality silences content-equal array rewrites), additions typed only through returned references (the original reference and draft mutators keep their narrower types; middleware and write equality are creation-keyed, while Valtio and MobX observe new properties on assignment without any declaration), no async or suspense primitives in the package itself (delegated to `@hellajs/resource`), and a whole-tree re-computation cost on `snapshot()` that makes wide stores read better through individual signals. For applications living in the HellaJS ecosystem that want deeply reactive state with the strongest readonly typing at the smallest dependency cost, it is the leanest option here. For applications that need devtools, time travel, async flows, or assignment-driven growth, Valtio and MobX remain the safer bets.

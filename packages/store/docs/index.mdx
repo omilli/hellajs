@@ -29,7 +29,7 @@ userStore.profile.name('Jane Doe');
 userStore.settings.theme('light');
 
 // Partial deep updates
-userStore.update({
+userStore.$update({
   settings: { theme: 'auto' } // Only updates theme, keeps notifications
 });
 ```

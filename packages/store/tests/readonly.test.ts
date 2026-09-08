@@ -30,7 +30,7 @@ describe("store", () => {
     test("readonly properties throw via update()", () => {
       const data = store({ locked: "original", writable: "a" }, { readonly: ["locked"] });
 
-      expect(() => data.update({ locked: "new", writable: "b" })).toThrow('[store] readonly key "locked"');
+      expect(() => data.$update({ locked: "new", writable: "b" })).toThrow('[store] readonly key "locked"');
 
       expect(data.locked()).toBe("original");
       expect(data.writable()).toBe("a");
@@ -108,12 +108,12 @@ describe("store", () => {
 
       const tracker = mock(() => {});
       effect(() => {
-        data.snapshot();
+        data.$snapshot();
         tracker();
       });
 
       expect(tracker).toHaveBeenCalledTimes(1);
-      expect(data.snapshot().config.theme).toBe("dark");
+      expect(data.$snapshot().config.theme).toBe("dark");
 
       data.counter(1);
 
@@ -176,7 +176,7 @@ describe("store", () => {
         name: "app"
       }, { readonly: ["config"] });
 
-      expect(() => data.update({ config: { theme: "light" }, name: "changed" })).toThrow('[store] readonly key "theme"');
+      expect(() => data.$update({ config: { theme: "light" }, name: "changed" })).toThrow('[store] readonly key "theme"');
 
       expect(data.config.theme()).toBe("dark");
       expect(data.name()).toBe("app");

@@ -11,7 +11,7 @@ describe("snapshot", () => {
       helper: () => "computed helper"
     });
 
-    const snapshot = cart.snapshot();
+    const snapshot = cart.$snapshot();
 
     expect(snapshot.items).toEqual([{ id: 1 }]);
     expect(snapshot.total).toBe(1.50);
@@ -25,7 +25,7 @@ describe("snapshot", () => {
     let lastSnapshot: { name: string; age: number } | null = null;
 
     const runs = mock(() => {
-      lastSnapshot = data.snapshot() as { name: string; age: number };
+      lastSnapshot = data.$snapshot() as { name: string; age: number };
     });
     effect(runs);
 
@@ -52,7 +52,7 @@ describe("snapshot", () => {
     let lastSnap: Record<string, unknown> = {};
 
     effect(() => {
-      lastSnap = data.snapshot() as Record<string, unknown>;
+      lastSnap = data.$snapshot() as Record<string, unknown>;
       tracker();
     });
 
@@ -72,7 +72,7 @@ describe("snapshot", () => {
     const tracker = mock(() => {});
 
     effect(() => {
-      outerStore.snapshot();
+      outerStore.$snapshot();
       tracker();
     });
 
@@ -89,7 +89,7 @@ describe("snapshot", () => {
     const tracker = mock(() => {});
 
     effect(() => {
-      containerStore.snapshot();
+      containerStore.$snapshot();
       tracker();
     });
 
@@ -106,7 +106,7 @@ describe("snapshot", () => {
     const tracker = mock(() => {});
 
     effect(() => {
-      appStore.snapshot();
+      appStore.$snapshot();
       tracker();
     });
 
@@ -121,7 +121,7 @@ describe("snapshot", () => {
     const userStore = store({ name: "Alice" });
     const appStore = store({ user: userStore });
 
-    const snap = appStore.snapshot();
+    const snap = appStore.$snapshot();
 
     expect(snap.user.name).toBe("Alice");
     expect(typeof snap.user.name).not.toBe("function");
@@ -131,7 +131,7 @@ describe("snapshot", () => {
     const dataStore = store({ items: [1, 2, 3] });
     const containerStore = store({ data: dataStore });
 
-    const snap = containerStore.snapshot();
+    const snap = containerStore.$snapshot();
 
     expect(snap.data.items).toEqual([1, 2, 3]);
   });
@@ -141,7 +141,7 @@ describe("snapshot", () => {
     const midStore = store({ inner: innerStore });
     const outerStore = store({ mid: midStore });
 
-    const snap = outerStore.snapshot();
+    const snap = outerStore.$snapshot();
 
     expect(snap.mid.inner.value).toBe("a");
   });
@@ -150,7 +150,7 @@ describe("snapshot", () => {
     const helperStore = store({ count: 0, double: () => 4 });
     const appStore = store({ helper: helperStore });
 
-    const snap = appStore.snapshot();
+    const snap = appStore.$snapshot();
 
     expect(typeof snap.helper.double).toBe("function");
     expect(snap.helper.double()).toBe(4);
@@ -164,9 +164,9 @@ describe("snapshot", () => {
       data.value = 42;
     }).toThrow(TypeError);
 
-    expect(data.snapshot()).toEqual({ value: "a" });
+    expect(data.$snapshot()).toEqual({ value: "a" });
     data.value("b");
-    expect(data.snapshot()).toEqual({ value: "b" });
+    expect(data.$snapshot()).toEqual({ value: "b" });
   });
 
   test("snapshot includes externally replaced composed leaves as plain values", () => {
@@ -177,29 +177,29 @@ describe("snapshot", () => {
     // @ts-expect-error external reassignment replaces the adopted signal (function props are writable)
     containerStore.inner.value = 42;
 
-    const snap = containerStore.snapshot();
+    const snap = containerStore.$snapshot();
     // Runtime holds the plain replaced value; the store type still claims Signal<string>
     expect(snap.inner.value as unknown as number).toBe(42);
   });
 
   test("empty store snapshot", () => {
     const data = store({});
-    expect(data.snapshot()).toEqual({});
+    expect(data.$snapshot()).toEqual({});
   });
 
-  test("excludes the reserved subscribe method from snapshot", () => {
+  test("excludes the reserved $subscribe method from snapshot", () => {
     const data = store({ count: 0 });
-    expect("subscribe" in data.snapshot()).toBe(false);
+    expect("$subscribe" in data.$snapshot()).toBe(false);
   });
 
-  test("throws on update targeting the reserved subscribe key", () => {
+  test("throws on update targeting the reserved $subscribe key", () => {
     const data = store({ count: 0 });
 
     // no type error: reserved names flow into P, so the runtime throw is the contract
-    expect(() => data.update({ subscribe: 1 })).toThrow('[store] update: reserved key "subscribe"');
+    expect(() => data.$update({ $subscribe: 1 })).toThrow('[store] $update: reserved key "$subscribe"');
 
-    expect(data.snapshot()).toEqual({ count: 0 });
-    expect(typeof data.subscribe).toBe("function");
+    expect(data.$snapshot()).toEqual({ count: 0 });
+    expect(typeof data.$subscribe).toBe("function");
   });
 });
 });

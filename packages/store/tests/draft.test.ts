@@ -8,7 +8,7 @@ describe("store", () => {
       const data = store({ timestamp: new Date("2024-01-15T12:00:00Z") });
       const original = data.timestamp();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.timestamp.setHours(0, 0, 0, 0);
       });
 
@@ -22,7 +22,7 @@ describe("store", () => {
       const data = store({ lookup: new Map([["a", 1], ["b", 2]]) });
       const original = data.lookup();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.lookup.set("c", 3);
       });
 
@@ -36,7 +36,7 @@ describe("store", () => {
       const data = store({ tags: new Set(["a", "b"]) });
       const original = data.tags();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.tags.add("c");
       });
 
@@ -50,7 +50,7 @@ describe("store", () => {
       const data = store({ pattern: /old/ });
       const original = data.pattern();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.pattern = new RegExp("new", "g");
       });
 
@@ -65,7 +65,7 @@ describe("store", () => {
         lookup: new Map<string, { name: string }>([["k", { name: "Alice" }]])
       });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.lookup.get("k")!.name = "Bob";
       });
 
@@ -77,7 +77,7 @@ describe("store", () => {
       const data = store({ timestamp: new Date("2024-01-15T12:00:00Z"), count: 0 });
       const original = data.timestamp();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.count = 1;
       });
 
@@ -88,7 +88,7 @@ describe("store", () => {
       const data = store({ items: [{ id: 1 }, { id: 2 }], count: 0 });
       const original = data.items();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.count = 1;
       });
 
@@ -104,7 +104,7 @@ describe("store", () => {
       const originalMap = data.lookup();
       const originalSet = data.tags();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.count = 1;
       });
 
@@ -116,7 +116,7 @@ describe("store", () => {
       const data = store({ members: new Set([{ id: 1 }, { id: 2 }]), count: 0 });
       const original = data.members();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.count = 1;
       });
 
@@ -126,7 +126,7 @@ describe("store", () => {
     test("rewrites a Set when an object member is mutated", () => {
       const data = store({ members: new Set([{ id: 1 }, { id: 2 }]) });
 
-      data.update(draft => {
+      data.$update(draft => {
         for (const member of draft.members) {
           if (member.id === 1) { member.id = 99; }
         }
@@ -143,7 +143,7 @@ describe("store", () => {
       }
       const data = store({ point: new Point(1), count: 0 });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.point.x = 5;
       });
 
@@ -161,7 +161,7 @@ describe("store", () => {
       });
       flush();
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.count = 1;
       });
       flush();

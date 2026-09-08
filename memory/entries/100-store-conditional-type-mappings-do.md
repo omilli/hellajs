@@ -11,7 +11,7 @@ triggers: [future-keys, partialdeep-optional-members, store-type-mappings, optio
 
 `T & Partial<F>` (the abandoned declared-`future` design, plans/store/code/store-audit/07-future-keys.md) made every future member `X | undefined`. Because the mappings in `packages/store/lib/types.d.ts` are non-distributive conditionals on the member type, a union with `undefined` fails the `extends unknown[]` / `extends Record<string, unknown>` guards and falls to the leaf branch — nested future keys could not get typed direct reads without shared-type surgery that would mistype initial stores (`store({ user: undefined as User | undefined })` is genuinely a signal at runtime).
 
-Resolution (2026-09-08, operator decision): the auto-add design sidesteps the union entirely — `update()` materializes unknown keys and returns `Store<Simplify<T & Omit<P, keyof T>>, R>`; added keys are NON-OPTIONAL members, so every mapping (`Store`, `Snapshot`, `PartialDeep`, `SettableKeyOf`) flows through them normally. The mapping limitation remains true and load-bearing: any future design that makes store members optional-with-object-type hits it again.
+Resolution (2026-09-08, operator decision): the auto-add design sidesteps the union entirely — `$update()` materializes unknown keys (store methods are $-prefixed since the 2026-09-08 rename) and returns `Store<Simplify<T & Omit<P, keyof T>>, R>`; added keys are NON-OPTIONAL members, so every mapping (`Store`, `Snapshot`, `PartialDeep`, `SettableKeyOf`) flows through them normally. The mapping limitation remains true and load-bearing: any future design that makes store members optional-with-object-type hits it again.
 
 # Evidence
 

@@ -8,7 +8,7 @@ describe("subscribe", () => {
     const data = store({ count: 0 });
     const seen = mock<(next: number, prev: number) => void>(() => {});
 
-    data.subscribe("count", seen);
+    data.$subscribe("count", seen);
     expect(seen).not.toHaveBeenCalled();
 
     data.count(5);
@@ -21,7 +21,7 @@ describe("subscribe", () => {
     const data = store({ count: 0 });
     const seen = mock<(next: number, prev: number) => void>(() => {});
 
-    const unsub = data.subscribe("count", seen);
+    const unsub = data.$subscribe("count", seen);
     unsub();
     unsub();
 
@@ -35,7 +35,7 @@ describe("subscribe", () => {
     const data = store({ count: 0 });
     const seen = mock<(next: number, prev: number) => void>(() => { other(); });
 
-    data.subscribe("count", seen);
+    data.$subscribe("count", seen);
     other(99);
     expect(seen).not.toHaveBeenCalled();
 
@@ -47,7 +47,7 @@ describe("subscribe", () => {
     const data = store({ count: 0 });
     const seen = mock<(next: number, prev: number) => void>(() => {});
 
-    data.subscribe("count", seen);
+    data.$subscribe("count", seen);
     data.count(0);
 
     expect(seen).not.toHaveBeenCalled();
@@ -58,8 +58,8 @@ describe("subscribe", () => {
     const countSeen = mock<(next: number, prev: number) => void>(() => {});
     const nameSeen = mock<(next: string, prev: string) => void>(() => {});
 
-    data.subscribe("count", countSeen);
-    data.subscribe("name", nameSeen);
+    data.$subscribe("count", countSeen);
+    data.$subscribe("name", nameSeen);
 
     batch(() => {
       data.count(1);
@@ -78,26 +78,26 @@ describe("subscribe", () => {
 
     expect(() => {
       // @ts-expect-error nested stores are not settable keys — subscribe on the owning store
-      data.subscribe("nested", () => {});
-    }).toThrow('[store] subscribe: "nested" is not a settable key');
+      data.$subscribe("nested", () => {});
+    }).toThrow('[store] $subscribe: "nested" is not a settable key');
 
     expect(() => {
       // @ts-expect-error preserved functions are not settable keys
-      data.subscribe("onSave", () => {});
-    }).toThrow('[store] subscribe: "onSave" is not a settable key');
+      data.$subscribe("onSave", () => {});
+    }).toThrow('[store] $subscribe: "onSave" is not a settable key');
 
     expect(() => {
       // @ts-expect-error unknown keys are not settable keys
-      data.subscribe("missing", () => {});
-    }).toThrow('[store] subscribe: "missing" is not a settable key');
+      data.$subscribe("missing", () => {});
+    }).toThrow('[store] $subscribe: "missing" is not a settable key');
   });
 
   test("subscribing to a readonly key never fires the callback", () => {
     const data = store({ count: 0 }, { readonly: ["count"] as const });
     const seen = mock<(next: number, prev: number) => void>(() => {});
 
-    data.subscribe("count", seen);
-    expect(() => data.update({ count: 99 })).toThrow('[store] readonly key "count"');
+    data.$subscribe("count", seen);
+    expect(() => data.$update({ count: 99 })).toThrow('[store] readonly key "count"');
     // @ts-expect-error readonly keys are typed without a setter; the runtime call throws
     expect(() => data.count(99)).toThrow('[store] readonly key "count"');
 
@@ -110,7 +110,7 @@ describe("subscribe", () => {
     const appStore = store({ user: userStore });
     const seen = mock<(next: string, prev: string) => void>(() => {});
 
-    userStore.subscribe("name", seen);
+    userStore.$subscribe("name", seen);
     appStore.user.name("Bob");
 
     expect(seen).toHaveBeenCalledTimes(1);
@@ -118,8 +118,8 @@ describe("subscribe", () => {
 
     expect(() => {
       // @ts-expect-error nested stores are not settable keys — subscribe on the owning store
-      appStore.subscribe("user", () => {});
-    }).toThrow('[store] subscribe: "user" is not a settable key');
+      appStore.$subscribe("user", () => {});
+    }).toThrow('[store] $subscribe: "user" is not a settable key');
   });
 });
 });

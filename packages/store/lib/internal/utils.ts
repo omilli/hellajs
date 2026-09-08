@@ -5,23 +5,23 @@ import type { Signal } from "./core";
  * @internal
  * Property names reserved by the store implementation
  */
-export const reservedKeys = new Set(["snapshot", "update", "cleanup", "subscribe"]);
+export const reservedKeys = new Set(["$snapshot", "$update", "$cleanup", "$subscribe"]);
 
 /**
  * @internal
- * Detects store-shaped values: objects with snapshot/update/cleanup methods.
+ * Detects store-shaped values: objects with $snapshot/$update/$cleanup methods.
  * Used to allow store composition without triggering reserved key collision.
  * @param value The value to check.
  * @returns True if value looks like a store.
  */
 export function isStore(value: unknown): boolean {
   return isObject(value)
-    && Object.hasOwn(value, "snapshot")
-    && Object.hasOwn(value, "update")
-    && Object.hasOwn(value, "cleanup")
-    && isFunction((value as { snapshot: unknown }).snapshot)
-    && isFunction((value as { update: unknown }).update)
-    && isFunction((value as { cleanup: unknown }).cleanup);
+    && Object.hasOwn(value, "$snapshot")
+    && Object.hasOwn(value, "$update")
+    && Object.hasOwn(value, "$cleanup")
+    && isFunction((value as { $snapshot: unknown }).$snapshot)
+    && isFunction((value as { $update: unknown }).$update)
+    && isFunction((value as { $cleanup: unknown }).$cleanup);
 }
 
 /**
@@ -46,7 +46,7 @@ export function applyUpdate(
   key: string
 ) {
   if (!isFunction(target)) {
-    throw new Error(`[store] update: settable key "${key}" must hold a signal, received ${typeof target}`);
+    throw new Error(`[store] $update: settable key "${key}" must hold a signal, received ${typeof target}`);
   }
   const middleware = middlewares?.[key];
   const processedValue = middleware

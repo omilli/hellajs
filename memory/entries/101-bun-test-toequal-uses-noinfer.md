@@ -9,14 +9,14 @@ triggers: [toequal-noinfer, stale-ref-assertions, auto-add-widening, ts-expect-e
 ---
 # Why
 
-bun:test's `toEqual`/`toBe` declare `expected: T` and `expected: NoInfer<T>` overloads over the received value's static type. When the runtime shape is wider than the static type, the exact-shape argument fails both overloads (TS2769) — the assertion is correct at runtime but unrepresentable without help. Hit concretely in the store auto-add run: `expect(s.snapshot()).toEqual({ count: 0, tags: ["a"] })` where `s`'s type predates the add.
+bun:test's `toEqual`/`toBe` declare `expected: T` and `expected: NoInfer<T>` overloads over the received value's static type. When the runtime shape is wider than the static type, the exact-shape argument fails both overloads (TS2769) — the assertion is correct at runtime but unrepresentable without help. Hit concretely in the store auto-add run: `expect(s.$snapshot()).toEqual({ count: 0, tags: ["a"] })` where `s`'s type predates the add.
 
 Fixes, in preference order:
-1. Assert through a WIDENED reference (`s1.snapshot()` where `s1 = s.update({ tags })` — same object, wider type).
-2. Cast the received value when only a stale ref exists: `expect(s.snapshot() as Record<string, unknown>).toEqual(…)`.
+1. Assert through a WIDENED reference (`s1.$snapshot()` where `s1 = s.$update({ tags })` — same object, wider type).
+2. Cast the received value when only a stale ref exists: `expect(s.$snapshot() as Record<string, unknown>).toEqual(…)`.
 3. `expect(widened as unknown as typeof narrow).toBe(narrow)` for identity asserts across the widening.
 
-Related rot in the same run: `@ts-expect-error` directives on update calls with reserved names or nested-store keys went UNUSED (TS2578) once `P` began capturing those keys — v2 directives asserting the old closed-partial type errors must be removed (the runtime throw stays the contract, matching the readonly-guard idiom).
+Related rot in the same run: `@ts-expect-error` directives on $update calls with reserved names or nested-store keys went UNUSED (TS2578) once `P` began capturing those keys — v2 directives asserting the old closed-partial type errors must be removed (the runtime throw stays the contract, matching the readonly-guard idiom).
 
 # Evidence
 

@@ -169,8 +169,8 @@ describe("persist", () => {
     const handle = persistStore(data, adaptor, { onError });
 
     expect(data.theme()).toBe("dark");
-    // gone materialized through update(); its type is not on data's shape
-    expect(data.snapshot() as Record<string, unknown>).toEqual({ theme: "dark", gone: true });
+    // gone materialized through $update(); its type is not on data's shape
+    expect(data.$snapshot() as Record<string, unknown>).toEqual({ theme: "dark", gone: true });
     expect(adaptor.clear).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
     expect(adaptor.write).not.toHaveBeenCalled();
@@ -267,7 +267,8 @@ describe("persist", () => {
   });
 
   test("reports a synchronously throwing clear via onError during corrupt-state fallback", () => {
-    const read = mock(() => '{"gone":true}');
+    // post auto-add, shape-drifted state materializes; only deserialize-throwing raw is corrupt
+    const read = mock(() => "not json");
     const write = mock(() => {});
     const clear = mock(() => {
       throw new Error("clear failed");

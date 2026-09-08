@@ -54,7 +54,7 @@ describe("middleware", () => {
       }
     });
 
-    data.update({
+    data.$update({
       name: "  Jane  ",
       email: "JANE@EXAMPLE.COM",
       age: 30
@@ -112,7 +112,7 @@ describe("middleware", () => {
       }
     });
 
-    data.update(draft => {
+    data.$update(draft => {
       draft.name = "  Jane  ";
       draft.score = -10;
     });
@@ -138,7 +138,7 @@ describe("middleware", () => {
       }
     });
 
-    data.update(draft => {
+    data.$update(draft => {
       draft.user.name = "  Jane  ";
       draft.user.email = "JANE@EXAMPLE.COM";
       draft.count = -5;

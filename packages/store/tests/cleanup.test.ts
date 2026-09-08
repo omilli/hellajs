@@ -12,11 +12,11 @@ describe("cleanup", () => {
     const level1Cleaned = mock(() => {});
     const level2Cleaned = mock(() => {});
 
-    const originalLevel1Cleanup = data.level1.cleanup;
-    const originalLevel2Cleanup = data.level1.level2.cleanup;
+    const originalLevel1Cleanup = data.level1.$cleanup;
+    const originalLevel2Cleanup = data.level1.level2.$cleanup;
 
     // Store methods are non-writable — redefine via defineProperty to spy (configurable stays true)
-    Object.defineProperty(data.level1, "cleanup", {
+    Object.defineProperty(data.level1, "$cleanup", {
       value: function () {
         level1Cleaned();
         originalLevel1Cleanup.call(this);
@@ -26,7 +26,7 @@ describe("cleanup", () => {
       configurable: true
     });
 
-    Object.defineProperty(data.level1.level2, "cleanup", {
+    Object.defineProperty(data.level1.level2, "$cleanup", {
       value: function () {
         level2Cleaned();
         originalLevel2Cleanup.call(this);
@@ -36,7 +36,7 @@ describe("cleanup", () => {
       configurable: true
     });
 
-    data.cleanup();
+    data.$cleanup();
 
     expect(level1Cleaned).toHaveBeenCalledTimes(1);
     expect(level2Cleaned).toHaveBeenCalledTimes(1);
@@ -45,7 +45,7 @@ describe("cleanup", () => {
   test("signals remain usable after cleanup", () => {
     const data = store({ count: 0, nested: { value: "a" } });
 
-    data.cleanup();
+    data.$cleanup();
 
     data.count(99);
     expect(data.count()).toBe(99);
@@ -66,7 +66,7 @@ describe("cleanup", () => {
     expect(tracker).toHaveBeenCalledTimes(2);
 
     // Cleanup only disposes nested store references, not individual signals
-    data.cleanup();
+    data.$cleanup();
 
     data.nested.count(2);
     // Signal still works: effect still fires
@@ -77,15 +77,15 @@ describe("cleanup", () => {
     const data = store({ nested: { value: "a" } });
 
     expect(() => {
-      data.cleanup();
-      data.cleanup();
-      data.cleanup();
+      data.$cleanup();
+      data.$cleanup();
+      data.$cleanup();
     }).not.toThrow();
   });
 
   test("cleanup on flat (non-nested) store", () => {
     const data = store({ x: 1, y: 2 });
-    expect(() => data.cleanup()).not.toThrow();
+    expect(() => data.$cleanup()).not.toThrow();
     expect(data.x()).toBe(1);
   });
 
@@ -105,13 +105,13 @@ describe("cleanup", () => {
     const data = store({ nested: { count: 0 } });
 
     Object.defineProperty(data, "nested", {
-      value: { group: { cleanup: innerCleaned } },
+      value: { group: { $cleanup: innerCleaned } },
       writable: false,
       enumerable: true,
       configurable: true
     });
 
-    data.cleanup();
+    data.$cleanup();
 
     expect(innerCleaned).toHaveBeenCalledTimes(1);
   });

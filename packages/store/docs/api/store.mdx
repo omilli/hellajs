@@ -53,7 +53,7 @@ type SettableKeyOf<T> = {
 }[keyof T];
 
 // Recursively unwraps composed store types so Snapshot matches the plain
-// values snapshot() actually returns
+// values $snapshot() actually returns
 
 type Snapshot<T> = {
   [K in keyof T]:
@@ -91,7 +91,7 @@ type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 - `options.middleware`: Per-key transform functions applied on every set.
 - **Returns**: A reactive store with `snapshot`, `update`, `cleanup`, and `subscribe` methods.
 
-### `snapshot`
+### `$snapshot`
 
 A reactive snapshot of the entire store state as a plain JavaScript object. The snapshot function is reactive and will re-compute when any store property changes.
 
@@ -102,7 +102,7 @@ import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0, user: { name: 'Alice' } });
 
-const snapshot = appStore.snapshot();
+const snapshot = appStore.$snapshot();
 console.log(snapshot); // { count: 0, user: { name: 'Alice' } }
 ```
 
@@ -116,17 +116,17 @@ const userStore = store({ name: 'Alice' });
 const appStore = store({ user: userStore });
 
 effect(() => {
-  console.log(appStore.snapshot()); // { user: { name: 'Alice' } }
+  console.log(appStore.$snapshot()); // { user: { name: 'Alice' } }
 });
 
 userStore.name('Bob'); // triggers the effect; snapshot is reactive across composed stores
 ```
 
-### `update`
+### `$update`
 
 Partial deep updates to the store state. Accepts either a partial object or a function that receives the current state.
 
-For single property updates, set the property directly. For multiple properties or nested merges, use `update()`. The call returns the store itself, typed with any keys the partial added (see [Growing Stores](#growing-stores)).
+For single property updates, set the property directly. For multiple properties or nested merges, use `$update()`. The call returns the store itself, typed with any keys the partial added (see [Growing Stores](#growing-stores)).
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -135,7 +135,7 @@ const appStore = store({ count: 0, step: 1, user: { name: 'Alice' } });
 
 appStore.count(5);
 
-appStore.update({
+appStore.$update({
   step: 2,
   user: { name: 'Bob' },
 });
@@ -145,40 +145,40 @@ console.log(appStore.step());        // 2
 console.log(appStore.user.name());   // Bob
 ```
 
-> ⚠️ `update()` writes signal-backed properties, materializes unknown keys, and throws on everything else; nothing is silently dropped:
-> - **Unknown key**: `update({ newProp: 1 })` materializes `newProp` (a signal for leaves, a nested store for plain objects) and returns the store typed with it; see [Growing Stores](#growing-stores). The throw survives only for externally-replaced properties (redefined or deleted from outside the store), which stay `[store] update: unknown key "newProp"`.
-> - **Function property**: `update({ onSave: fn })` throws `[store] update: "onSave" is a function property, not state` ("assign it directly" in the full message). Swap functions by assigning directly: `appStore.onSave = newHandler`. A function value on a NEW key throws too: `[store] update: key "onSave" cannot hold a function`.
-> - **Reserved key**: `update({ snapshot: 1 })` throws `[store] update: reserved key "snapshot"`.
-> - **Store key with a non-object value**: `update({ user: 'x' })` where `user` is a nested store throws `[store] update: store key "user" requires an object value`.
+> ⚠️ `$update()` writes signal-backed properties, materializes unknown keys, and throws on everything else; nothing is silently dropped:
+> - **Unknown key**: `$update({ newProp: 1 })` materializes `newProp` (a signal for leaves, a nested store for plain objects) and returns the store typed with it; see [Growing Stores](#growing-stores). The throw survives only for externally-replaced properties (redefined or deleted from outside the store), which stay `[store] $update: unknown key "newProp"`.
+> - **Function property**: `$update({ onSave: fn })` throws `[store] $update: "onSave" is a function property, not state` ("assign it directly" in the full message). Swap functions by assigning directly: `appStore.onSave = newHandler`. A function value on a NEW key throws too: `[store] $update: key "onSave" cannot hold a function`.
+> - **Reserved key**: `$update({ $snapshot: 1 })` throws `[store] $update: reserved key "snapshot"`.
+> - **Store key with a non-object value**: `$update({ user: 'x' })` where `user` is a nested store throws `[store] $update: store key "user" requires an object value`.
 > - **Readonly key**: writing a readonly property throws `[store] readonly key "<key>"`; the same error its setter call throws. Adding a new key to a readonly store throws the same error and nothing materializes.
-> - **Replaced signal**: `update()` through a settable key whose property was externally replaced (e.g. `outer.inner.value = 42` on a composed store) throws `[store] update: settable key "value" must hold a signal, received number`; the received kind reflects `typeof` the replaced value.
+> - **Replaced signal**: `$update()` through a settable key whose property was externally replaced (e.g. `outer.inner.value = 42` on a composed store) throws `[store] $update: settable key "value" must hold a signal, received number`; the received kind reflects `typeof` the replaced value.
 >
-> The draft path applies the same rules at runtime; its mutator is typed against the current shape, so draft additions materialize untyped. `update()` throws at the first offending key, in partial-key order; keys processed before it are already applied.
+> The draft path applies the same rules at runtime; its mutator is typed against the current shape, so draft additions materialize untyped. `$update()` throws at the first offending key, in partial-key order; keys processed before it are already applied.
 
 ### Growing Stores
 
-Unknown keys materialize on their first `update()` write, and the call returns the same store typed with the added keys: leaves become signals, plain objects become nested stores, and reads, later updates, `snapshot()`, and `subscribe` all type the added key immediately. Capture the return to see the widening; the original reference keeps its narrower type (the `Object.assign` seam) while its runtime behavior, `snapshot()` included, sees the added key right away.
+Unknown keys materialize on their first `$update()` write, and the call returns the same store typed with the added keys: leaves become signals, plain objects become nested stores, and reads, later updates, `$snapshot()`, and `subscribe` all type the added key immediately. Capture the return to see the widening; the original reference keeps its narrower type (the `Object.assign` seam) while its runtime behavior, `$snapshot()` included, sees the added key right away.
 
 ```typescript
 import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0 });
 
-const withTags = appStore.update({ tags: ['a'] });
+const withTags = appStore.$update({ tags: ['a'] });
 withTags.tags();          // ['a'], a Signal<string[]>
-withTags.snapshot();      // { count: 0, tags: ['a'] }
+withTags.$snapshot();      // { count: 0, tags: ['a'] }
 
-const withUser = withTags.update({ user: { name: 'Bob' } });
+const withUser = withTags.$update({ user: { name: 'Bob' } });
 withUser.user.name();     // 'Bob', a Store<{ name: string }>
 
-// ❌ appStore.update({ count: 'x' });      // type error: existing keys stay validated
-// ❌ appStore.update({ snapshot: 1 });      // throws: [store] update: reserved key "snapshot"
-// ❌ appStore.update({ onSave: () => {} }); // throws: [store] update: key "onSave" cannot hold a function
+// ❌ appStore.$update({ count: 'x' });      // type error: existing keys stay validated
+// ❌ appStore.$update({ $snapshot: 1 });      // throws: [store] $update: reserved key "snapshot"
+// ❌ appStore.$update({ onSave: () => {} }); // throws: [store] $update: key "onSave" cannot hold a function
 ```
 
-Added keys get no middleware or [write equality](/learn/concepts/store-control#write-equality): both are keyed by the creation shape, so declare a key in the initial object when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
+Added keys get no middleware or [write equality](/learn/concepts/store-control#write-equality): both are keyed by the creation shape, so declare a key in the initial object when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `$update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.$update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
 
-### `cleanup`
+### `$cleanup`
 
 Recursively invokes `cleanup` on each nested store. Individual signals are not disposed; they remain functional after cleanup, and the store object stays intact. Effects that read individual signals continue to fire.
 
@@ -186,13 +186,13 @@ Recursively invokes `cleanup` on each nested store. Individual signals are not d
 import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0, user: { name: 'Alice' } });
-appStore.cleanup();
+appStore.$cleanup();
 
 appStore.count(10);
 console.log(appStore.count()); // 10
 ```
 
-### `subscribe`
+### `$subscribe`
 
 Observes changes to a single signal-backed property. The callback receives `(next, prev)`; the initial subscribe does not fire it; only subsequent changes do. Returns an unsubscribe function.
 
@@ -201,7 +201,7 @@ import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0 });
 
-const unsub = appStore.subscribe('count', (next, prev) => {
+const unsub = appStore.$subscribe('count', (next, prev) => {
   console.log(prev, '→', next);
 });
 
@@ -214,9 +214,9 @@ appStore.count(6); // silent; unsubscribed
 - `callback`: Receives the next and previous values. Runs untracked; reading signals inside it never widens the subscription. Skipped when a write compares equal to the current value.
 - **Returns**: An unsubscribe function; calling it more than once is safe.
 
-Unlike an [`effect`](/reference/core/effect) reading [`snapshot()`](#snapshot), `subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Writes inside [`batch`](/reference/core/batch)`()` fire the callback once per subscribed key when the batch ends.
+Unlike an [`effect`](/reference/core/effect) reading [`$snapshot()`](#snapshot), `subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Writes inside [`batch`](/reference/core/batch)`()` fire the callback once per subscribed key when the batch ends.
 
-Subscriptions belong to the store that owns the key: a composed parent exposes only its own signal-backed keys, so `appStore.subscribe('user', cb)` throws; subscribe on the nested store itself:
+Subscriptions belong to the store that owns the key: a composed parent exposes only its own signal-backed keys, so `appStore.$subscribe('user', cb)` throws; subscribe on the nested store itself:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -224,7 +224,7 @@ import { store } from '@hellajs/store';
 const userStore = store({ name: 'Alice' });
 const appStore = store({ user: userStore });
 
-userStore.subscribe('name', (next) => console.log(next));
+userStore.$subscribe('name', (next) => console.log(next));
 appStore.user.name('Bob'); // Logs: Bob; shared signals fire the subscription
 ```
 
@@ -257,11 +257,11 @@ Existing stores compose as values: `store({ user: userStore })` nests the store 
 
 ### Partial Updates
 
-Pass a partial object to `update()` for deep merging nested properties; unknown keys materialize and widen the returned store. See [State](/learn/concepts/state) for the pattern.
+Pass a partial object to `$update()` for deep merging nested properties; unknown keys materialize and widen the returned store. See [State](/learn/concepts/state) for the pattern.
 
 ### Mutable Updates
 
-Pass a function to `update()` for ergonomic mutations on a mutable draft of the state. See [State](/learn/concepts/state) for array-operation examples.
+Pass a function to `$update()` for ergonomic mutations on a mutable draft of the state. See [State](/learn/concepts/state) for array-operation examples.
 
 ### Write Equality
 
@@ -269,11 +269,11 @@ By default every write is reference-compared; the `equals` option replaces that 
 
 ### Function Preservation
 
-Functions in the initial object are preserved as-is, not wrapped in signals, functional in snapshots. Snapshots preserve the **original** initial function references; a handler swapped in later (`appStore.onSave = newHandler`) is not what `snapshot()` returns. See [State](/learn/concepts/state) for `computed`-in-store examples.
+Functions in the initial object are preserved as-is, not wrapped in signals, functional in snapshots. Snapshots preserve the **original** initial function references; a handler swapped in later (`appStore.onSave = newHandler`) is not what `$snapshot()` returns. See [State](/learn/concepts/state) for `computed`-in-store examples.
 
 ### `PartialDeep<T>`
 
-Recursive optional mapping used by [`update()`](#update).
+Recursive optional mapping used by [`$update()`](#update).
 
 ```typescript
 type PartialDeep<T> = {
@@ -289,7 +289,7 @@ type PartialDeep<T> = {
 
 - **`T`**: The object type to make partially optional.
 
-> ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. Calling `update({ items: [...] })` replaces the entire array; it does not merge individual elements.
+> ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. Calling `$update({ items: [...] })` replaces the entire array; it does not merge individual elements.
 
 ### `ReadonlyKeys<T, O>`
 
@@ -325,11 +325,11 @@ class Point {
 
 const data = store({ point: new Point(1), count: 0 });
 
-data.update(draft => {
+data.$update(draft => {
   draft.count = 1; // point is untouched; no write, no subscriber wakeups
 });
 
-data.update(draft => {
+data.$update(draft => {
   draft.point.x = 5; // written back as a Point, not a plain object
 });
 ```
@@ -341,18 +341,18 @@ The keys `snapshot`, `update`, `cleanup`, and `subscribe` are reserved by the st
 ```typescript
 import { store } from '@hellajs/store';
 
-store({ snapshot: 1 }); // Throws: Error '[store] store: reserved key collision, received "snapshot"'
+store({ $snapshot: 1 }); // Throws: Error '[store] store: reserved key collision, received "snapshot"'
 ```
 
 ### Memory Management
 
-`cleanup()` propagates teardown through the store tree, invoking each nested store's `cleanup`. Assign a custom `cleanup` method to release external resources (timers, listeners, subscriptions); the call recurses through the whole tree.
+`$cleanup()` propagates teardown through the store tree, invoking each nested store's `cleanup`. Assign a custom `cleanup` method to release external resources (timers, listeners, subscriptions); the call recurses through the whole tree.
 
 ```typescript
 import { store } from '@hellajs/store';
 
 const userStore = store({ name: 'John' });
-userStore.cleanup();
+userStore.$cleanup();
 ```
 
 ### Readonly Propagates Deep
@@ -361,11 +361,11 @@ userStore.cleanup();
 
 ### Signals Survive Cleanup
 
-`cleanup()` recursively invokes `cleanup` on nested stores but does not dispose individual signals or null the store object. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
+`$cleanup()` recursively invokes `cleanup` on nested stores but does not dispose individual signals or null the store object. This is intentional: signals owned by other contexts (composed stores, external effects) keep working.
 
 ### Store Properties Are Non-Writable
 
-Signal-backed properties, nested stores, and the built-in methods are defined non-writable; external reassignment (`appStore.count = 5`) throws a `TypeError` in strict-mode ESM instead of silently dropping reactivity. Write through the signal (`appStore.count(5)`), or `update()`. Function-valued properties are the exemption: they stay writable so handlers can be swapped (`appStore.onSave = newHandler`), including the adopted signal functions of composed-store leaves.
+Signal-backed properties, nested stores, and the built-in methods are defined non-writable; external reassignment (`appStore.count = 5`) throws a `TypeError` in strict-mode ESM instead of silently dropping reactivity. Write through the signal (`appStore.count(5)`), or `$update()`. Function-valued properties are the exemption: they stay writable so handlers can be swapped (`appStore.onSave = newHandler`), including the adopted signal functions of composed-store leaves.
 
 ### Effects vs Middleware
 

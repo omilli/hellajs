@@ -10,7 +10,7 @@ describe("store", () => {
         settings: { theme: "light", notifications: true }
       });
 
-      user.update({
+      user.$update({
         profile: { email: "alice.doe@example.com" },
         settings: { theme: "dark" }
       });
@@ -24,13 +24,13 @@ describe("store", () => {
     test("adds keys absent from the initial object and returns a typed store", () => {
       const data = store({ a: 1, b: 2 });
 
-      const widened = data.update({ c: 99, a: 10 });
+      const widened = data.$update({ c: 99, a: 10 });
 
       expect(data.a()).toBe(10);
       expect(data.b()).toBe(2);
       expect(widened.c()).toBe(99);
       expect("c" in data).toBe(true);
-      expect(widened.snapshot()).toEqual({ a: 10, b: 2, c: 99 });
+      expect(widened.$snapshot()).toEqual({ a: 10, b: 2, c: 99 });
     });
 
     test("throws on function-valued properties without invoking them", () => {
@@ -39,8 +39,8 @@ describe("store", () => {
 
       expect(() => {
         // @ts-expect-error onSave is function-typed; update() rejects function properties
-        data.update({ onSave: () => "new", count: 5 });
-      }).toThrow('[store] update: "onSave" is a function property, not state');
+        data.$update({ onSave: () => "new", count: 5 });
+      }).toThrow('[store] $update: "onSave" is a function property, not state');
 
       expect(onSave).not.toHaveBeenCalled();
       expect(data.count()).toBe(0);
@@ -52,7 +52,7 @@ describe("store", () => {
       const data = store({ onSave, count: 0 });
 
       expect(() => {
-        data.update(draft => {
+        data.$update(draft => {
           // @ts-expect-error initial infers onSave as Mock<() => string>; the draft path accepts any function value
           draft.onSave = () => "new";
           draft.count = 1;
@@ -69,8 +69,8 @@ describe("store", () => {
 
       expect(() => {
         // no type error: the partial's keys flow into P, so the runtime throw is the contract
-        data.update({ user: "x" });
-      }).toThrow('[store] update: store key "user" requires an object value');
+        data.$update({ user: "x" });
+      }).toThrow('[store] $update: store key "user" requires an object value');
 
       expect(data.user.name()).toBe("Alice");
     });
@@ -78,7 +78,7 @@ describe("store", () => {
     test("empty array update", () => {
       const data = store({ items: [1, 2, 3] });
 
-      data.update({ items: [] });
+      data.$update({ items: [] });
 
       expect(data.items()).toEqual([]);
     });
@@ -90,7 +90,7 @@ describe("store", () => {
         settings: { theme: "light" }
       });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.name = "Jane";
         draft.age = 25;
       });
@@ -106,7 +106,7 @@ describe("store", () => {
         count: 0
       });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.items.push(4, 5);
         draft.count = draft.items.length;
       });
@@ -125,7 +125,7 @@ describe("store", () => {
         }
       });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.user.profile.name = "Jane";
         draft.user.profile.email = "jane@example.com";
       });
@@ -139,7 +139,7 @@ describe("store", () => {
         items: [1, 2, 3, 4, 5]
       });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.items.splice(1, 2);
         draft.items.pop();
       });
@@ -156,7 +156,7 @@ describe("store", () => {
         other: 123
       });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.payload = { nested: true, value: "changed" };
       });
 
@@ -167,7 +167,7 @@ describe("store", () => {
     test("detects changed array elements in draft", () => {
       const data = store({ items: [1, 2, 3] });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.items[1] = 99;
       });
 
@@ -194,7 +194,7 @@ describe("store", () => {
         bTracker();
       });
 
-      data.update(draft => {
+      data.$update(draft => {
         draft.a = 1;
         draft.b = 20;
       });
@@ -225,7 +225,7 @@ describe("store", () => {
         countTracker();
       });
 
-      data.update(draft => {
+      data.$update(draft => {
         // Access items without mutating — count change is the only write
         draft.count = 10;
       });
@@ -238,14 +238,14 @@ describe("store", () => {
 
     test("empty partial is a no-op", () => {
       const data = store({ a: 1, b: 2 });
-      data.update({});
+      data.$update({});
       expect(data.a()).toBe(1);
       expect(data.b()).toBe(2);
     });
 
     test("empty draft function is a no-op", () => {
       const data = store({ a: 1, b: 2 });
-      data.update(() => { });
+      data.$update(() => { });
       expect(data.a()).toBe(1);
       expect(data.b()).toBe(2);
     });
@@ -285,7 +285,7 @@ describe("store", () => {
       expect(tracker).toHaveBeenCalledTimes(1);
 
       batch(() => {
-        data.update(draft => {
+        data.$update(draft => {
           draft.x = 1;
           draft.y = 2;
         });
@@ -303,9 +303,9 @@ describe("store", () => {
       outer.inner.value = 42;
 
       // Composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
-      // @ts-expect-error update through the composed wrapper carries the function-typed store surface
-      expect(() => outer.inner.update({ value: 5 })).toThrow(
-        '[store] update: settable key "value" must hold a signal, received number'
+      // composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
+      expect(() => outer.inner.$update({ value: 5 })).toThrow(
+        '[store] $update: settable key "value" must hold a signal, received number'
       );
     });
 
@@ -315,12 +315,12 @@ describe("store", () => {
 
       // @ts-expect-error external reassignment replaces the adopted signal
       outer.inner.value = 42;
-      // @ts-expect-error update through the composed wrapper carries the function-typed store surface
-      expect(() => outer.inner.update({ value: 5 })).toThrow(
-        '[store] update: settable key "value" must hold a signal, received number'
+      // composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
+      expect(() => outer.inner.$update({ value: 5 })).toThrow(
+        '[store] $update: settable key "value" must hold a signal, received number'
       );
 
-      inner.update({ value: 5 });
+      inner.$update({ value: 5 });
       expect(inner.value()).toBe(5);
     });
 
@@ -331,9 +331,9 @@ describe("store", () => {
       // @ts-expect-error external reassignment replaces the adopted signal
       outer.inner.value = undefined;
 
-      // @ts-expect-error update through the composed wrapper carries the function-typed store surface
-      expect(() => outer.inner.update({ value: 5 })).toThrow(
-        '[store] update: settable key "value" must hold a signal, received undefined'
+      // composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
+      expect(() => outer.inner.$update({ value: 5 })).toThrow(
+        '[store] $update: settable key "value" must hold a signal, received undefined'
       );
     });
   });

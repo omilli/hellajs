@@ -14,7 +14,7 @@ import type { Store, Snapshot, PartialDeep, StoreAdaptor, PersistOptions, Persis
  * calls, no effects, `hydrated()` is true immediately.
  *
  * @template T
- * @param store Store to persist; hydration applies through `update()`, so middleware, `equals`, and the settable-key registry all run on hydrated values
+ * @param store Store to persist; hydration applies through $update(), so middleware, `equals`, and the settable-key registry all run on hydrated values
  * @param adaptor Storage backend; shipped: `localStorageAdaptor`, `sessionStorageAdaptor`
  * @param options Serializer, projection, debounce, and error-channel configuration
  * @returns Handle exposing the reactive `hydrated()` flag, the `ready` promise, and `dispose()`
@@ -93,7 +93,7 @@ export function persistStore<T extends Record<string, unknown>>(
   // flag is a plain read (not a reactive one) so the hydration flip itself
   // never triggers a write.
   const disposeEffect = effect(() => {
-    const s = serialize(partialize(store.snapshot()));
+    const s = serialize(partialize(store.$snapshot()));
     if (!started) {
       started = true;
       initialSerialization = s;
@@ -137,9 +137,9 @@ export function persistStore<T extends Record<string, unknown>>(
       // batch flushes the effect once, while `hydrated` is still false — the
       // pre-hydration branch suppresses any hydrate write-back.
       batch(() => {
-        store.update(deserialize(raw));
+        store.$update(deserialize(raw));
       });
-      lastWritten = serialize(partialize(store.snapshot()));
+      lastWritten = serialize(partialize(store.$snapshot()));
     } catch (error) {
       // Corrupt or shape-drifted: self-heal storage, keep the initial state.
       try {

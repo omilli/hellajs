@@ -34,7 +34,7 @@ const persist = persistStore(editor, localStorageAdaptor('editor'), {
 });
 
 editor.autosaveDraft('tmp'); // excluded key; no storage write
-editor.update({ document: { title: 'Draft', body: 'Hello' } }); // persisted
+editor.$update({ document: { title: 'Draft', body: 'Hello' } }); // persisted
 ```
 
 ### Persist to IndexedDB
@@ -108,7 +108,7 @@ filters.query('hell'); // pending; replaces the earlier value
 
 ### Sync tabs through the storage event
 
-Cross-tab sync is not built in; the browser's `storage` event plus `update()` covers it. The write-through dedupes the echo, so there is no feedback loop.
+Cross-tab sync is not built in; the browser's `storage` event plus `$update()` covers it. The write-through dedupes the echo, so there is no feedback loop.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -120,7 +120,7 @@ const persist = persistStore(counter, adaptor);
 
 window.addEventListener('storage', (event) => {
   if (event.key !== 'shared-count' || event.newValue === null) return;
-  counter.update(JSON.parse(event.newValue));
+  counter.$update(JSON.parse(event.newValue));
 });
 ```
 

@@ -13,7 +13,7 @@ import {
 /**
  * @internal
  * Non-enumerable registry of signal-backed (settable) keys, attached to every
- * store. update() writes only these keys — reserved methods and preserved user
+ * store. $update() writes only these keys — reserved methods and preserved user
  * functions are never settable. Composition threads the source store's registry.
  */
 const settableRegistry = Symbol("hellajs.store.settableKeys");
@@ -30,7 +30,7 @@ const settableRegistry = Symbol("hellajs.store.settableKeys");
  * @template T
  * @param initial Initial object to transform
  * @param options Configuration for readonly properties and middleware
- * @returns Reactive store with snapshot, update, cleanup, and subscribe methods; update() returns the store itself
+ * @returns Reactive store with $snapshot, $update, $cleanup, and $subscribe methods; $update() returns the store itself
  */
 export function createStore<T extends Record<string, unknown>>(
   initial: T,
@@ -62,7 +62,7 @@ export function createStore<T extends Record<string, unknown>>(
       if (isFunction(originalValue) && !settableKeys.has(key)) {
         snapshotObj[key] = originalValue;
       } else if (isStore(value)) {
-        snapshotObj[key] = (value as { snapshot: () => unknown }).snapshot();
+        snapshotObj[key] = (value as { $snapshot: () => unknown }).$snapshot();
       } else if (isFunction(value)) {
         snapshotObj[key] = (value as () => unknown)();
       } else {
@@ -73,7 +73,7 @@ export function createStore<T extends Record<string, unknown>>(
     return snapshotObj as Snapshot<T>;
   });
 
-  defineStoreProperty(result, "snapshot", snapshotComputed, { writable: false });
+  defineStoreProperty(result, "$snapshot", snapshotComputed, { writable: false });
 
   const initialIsStore = isStore(initial);
   const sourceSettable = initialIsStore
@@ -82,7 +82,7 @@ export function createStore<T extends Record<string, unknown>>(
 
   /**
    * Materializes one key onto the store — the shared per-key transformation of
-   * the init pass and update()'s add-branch: functions are preserved as-is
+   * the init pass and $update()'s add-branch: functions are preserved as-is
    * (settable only when the source store backed them), plain objects recurse
    * into nested stores with threaded options, everything else becomes a signal
    * with per-key equals and optional middleware wiring. The init pass stores
@@ -163,12 +163,12 @@ export function createStore<T extends Record<string, unknown>>(
    */
   defineStoreProperty(
     result,
-    "update",
+    "$update",
     function (this: Store<T, never>, partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) {
       let resolvedPartial: PartialDeep<T>;
 
       if (isFunction(partial)) {
-        const snapshot = this.snapshot() as unknown as T;
+        const snapshot = this.$snapshot() as unknown as T;
         const draft = deepClone(snapshot);
         (partial as (draft: T) => void)(draft);
         resolvedPartial = extractChanges(snapshot, draft) as PartialDeep<T>;
@@ -182,16 +182,16 @@ export function createStore<T extends Record<string, unknown>>(
       while (i < len) {
         const [key, value] = entries[i]!;
         const current = this[key as keyof T];
-        if (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "update")) {
-          (current as unknown as Store<Record<string, unknown>>).update(value as Record<string, unknown>);
+        if (isPlainObject(value) && current && isObject(current) && Object.hasOwn(current, "$update")) {
+          (current as unknown as Store<Record<string, unknown>>).$update(value as Record<string, unknown>);
         } else if (settableKeys.has(key)) {
           applyUpdate(current, value, middlewares, key as string);
         } else if (reservedKeys.has(key)) {
-          throw new Error(`[store] update: reserved key "${key}"`);
+          throw new Error(`[store] $update: reserved key "${key}"`);
         } else if (Object.hasOwn(initial, key) && isFunction(initial[key as keyof T])) {
-          throw new Error(`[store] update: "${key}" is a function property, not state — assign it directly`);
-        } else if (isObject(current) && Object.hasOwn(current, "update")) {
-          throw new Error(`[store] update: store key "${key}" requires an object value`);
+          throw new Error(`[store] $update: "${key}" is a function property, not state — assign it directly`);
+        } else if (isObject(current) && Object.hasOwn(current, "$update")) {
+          throw new Error(`[store] $update: store key "${key}" requires an object value`);
         } else if (current === undefined) {
           // Add-branch: an absent key materializes. Earlier branches (recursion,
           // settable) own every materialized case, so this fires exactly once
@@ -200,12 +200,12 @@ export function createStore<T extends Record<string, unknown>>(
             throw new Error(`[store] readonly key "${key}"`);
           }
           if (isFunction(value)) {
-            throw new Error(`[store] update: key "${key}" cannot hold a function`);
+            throw new Error(`[store] $update: key "${key}" cannot hold a function`);
           }
           materializeKey(key, value, true);
           keysSignal([...keysSignal(), key]);
         } else {
-          throw new Error(`[store] update: unknown key "${key}"`);
+          throw new Error(`[store] $update: unknown key "${key}"`);
         }
         i++;
       }
@@ -221,7 +221,7 @@ export function createStore<T extends Record<string, unknown>>(
    */
   defineStoreProperty(
     result,
-    "cleanup",
+    "$cleanup",
     function (this: Store<T, never>) {
       const deepCleanup = (obj: unknown) => {
         if (!obj || !isObjectOrFunction(obj)) return;
@@ -233,8 +233,8 @@ export function createStore<T extends Record<string, unknown>>(
           if (reservedKeys.has(key)) { i++; continue; }
           const value = (obj as Record<string, unknown>)[key];
           if (value && isObject(value)) {
-            if (Object.hasOwn(value, "cleanup") && isFunction((value as Record<"cleanup", unknown>).cleanup)) {
-              (value as Record<"cleanup", () => void>).cleanup();
+            if (Object.hasOwn(value, "$cleanup") && isFunction((value as Record<"$cleanup", unknown>).$cleanup)) {
+              (value as Record<"$cleanup", () => void>).$cleanup();
             } else {
               deepCleanup(value);
             }
@@ -255,11 +255,11 @@ export function createStore<T extends Record<string, unknown>>(
    */
   defineStoreProperty(
     result,
-    "subscribe",
+    "$subscribe",
     <K extends keyof T>(key: K, callback: (next: T[K], prev: T[K]) => void): (() => void) => {
       const keyName = key as string;
       if (!settableKeys.has(keyName)) {
-        throw new Error(`[store] subscribe: "${keyName}" is not a settable key`);
+        throw new Error(`[store] $subscribe: "${keyName}" is not a settable key`);
       }
       const target = result[key] as () => unknown;
       let prev: unknown;

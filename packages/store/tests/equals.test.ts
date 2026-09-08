@@ -78,7 +78,7 @@ describe("equals", () => {
     const tracker = mock(() => {});
     effect(() => { data.items(); tracker(); });
 
-    data.update({ items: [1, 2] });
+    data.$update({ items: [1, 2] });
 
     expect(tracker).toHaveBeenCalledTimes(1);
     expect(data.items()).toBe(original);
@@ -90,7 +90,7 @@ describe("equals", () => {
     const tracker = mock(() => {});
     effect(() => { data.items(); tracker(); });
 
-    data.update(draft => { draft.items = [1, 2]; });
+    data.$update(draft => { draft.items = [1, 2]; });
 
     expect(tracker).toHaveBeenCalledTimes(1);
     expect(data.items()).toBe(original);
