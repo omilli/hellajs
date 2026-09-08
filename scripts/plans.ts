@@ -1,18 +1,16 @@
 import { statSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
-import { fileExists, logger, projectRoot } from "./utils/index.js";
+import { isAbsolute, resolve } from "node:path";
+import { logger } from "./utils/index.js";
 import { listPlanUnits } from "./plans/set.js";
-import { runProbe, runSet } from "./plans/run.js";
+import { type WorktreeMode, runProbe, runSet } from "./plans/run.js";
 
 /** Parsed CLI configuration. */
 interface PlansArgs {
   probe: boolean;
   model?: string;
+  mode: WorktreeMode;
   setFolder?: string;
 }
-
-/** The worktree-protocol seam: its presence means this runner is outdated. */
-const WORKTREE_SCRIPT = join(".agents", "skills", "worker", "scripts", "worktree.mjs");
 
 /**
  * Parse and validate CLI args.
@@ -21,7 +19,7 @@ const WORKTREE_SCRIPT = join(".agents", "skills", "worker", "scripts", "worktree
  * @returns The parsed configuration.
  */
 function parseArgs(argv: string[]): PlansArgs {
-  const args: PlansArgs = { probe: false };
+  const args: PlansArgs = { probe: false, mode: "single" };
   for (const arg of argv) {
     if (arg === "--probe") {
       args.probe = true;
@@ -42,6 +40,11 @@ function parseArgs(argv: string[]): PlansArgs {
         throw new Error("invalid --model (expected provider/id[:thinking])");
       }
       args.model = value;
+    } else if (key === "--wt") {
+      if (value !== "single" && value !== "split") {
+        throw new Error("invalid --wt (expected single|split)");
+      }
+      args.mode = value;
     } else {
       throw new Error(`unknown flag "${key}"`);
     }
@@ -51,7 +54,7 @@ function parseArgs(argv: string[]): PlansArgs {
 
 /** Print the usage line. */
 function printUsage(): void {
-  logger.error("usage: bun plans <set-folder> [--model=<provider/id[:thinking]>]");
+  logger.error("usage: bun plans <set-folder> [--wt=single|split] [--model=<provider/id[:thinking]>]");
   logger.error("       bun plans --probe [--model=<provider/id[:thinking]>]");
 }
 
@@ -79,26 +82,11 @@ function validateSetFolder(folder: string): string {
   return setDir;
 }
 
-/**
- * Refuse to run under the worktree protocol: this runner is main-tree mode
- * by design, and post-protocol marker reads would mis-gate every run.
- */
-async function assertMainTreeVenue(): Promise<void> {
-  if (await fileExists(join(projectRoot, WORKTREE_SCRIPT))) {
-    logger.error(`worktree protocol detected: ${WORKTREE_SCRIPT} exists.`);
-    logger.error(
-      "this runner is main-tree mode; plans/root/config/skill-automation/02 (plan-runner adaptation) upgrades it to component mode — land that first.",
-    );
-    process.exit(1);
-  }
-}
-
 /** Entry point: parse args, validate, and dispatch to probe or run. */
 async function main(): Promise<void> {
   try {
     const args = parseArgs(process.argv.slice(2));
     if (args.probe) {
-      await assertMainTreeVenue();
       process.exit(await runProbe(args.model));
     }
     if (args.setFolder === undefined) {
@@ -106,8 +94,7 @@ async function main(): Promise<void> {
       process.exit(1);
     }
     const setDir = validateSetFolder(args.setFolder);
-    await assertMainTreeVenue();
-    process.exit(await runSet({ setDir, model: args.model }));
+    process.exit(await runSet({ setDir, model: args.model, mode: args.mode }));
   } catch (error) {
     logger.error(`plans failed: ${(error as Error).message}`);
     process.exit(1);

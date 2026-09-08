@@ -1,5 +1,9 @@
 # Memory Update Log
 
+## 2026-09-08
+* **Creation**: Added concept [099](entries/099.md) (type: decision).
+* **Deprecation**: Archived [061](archive/061-new-worktree-cut-mid-unit.md) → superseded by [099](entries/099.md).
+
 ## 2026-09-07
 * **Creation**: Added concept [096](entries/096.md) (type: correction).
 * **Update**: Extended [069](entries/069-bun-s-coverage-table-renders.md) with the fresh-lcov declaration-line artifact (replaceMismatch, dom bundle) + baseline-compare triage; merged from the fragment-scope-carrier run.

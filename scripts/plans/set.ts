@@ -53,3 +53,66 @@ export function isTicked(unitPath: string): boolean {
 export function countTicks(unitPath: string): number {
   return (readFileSync(unitPath, "utf8").match(/\[x\]/g) ?? []).length;
 }
+
+/**
+ * Parse a unit's frontmatter `depends_on` list (sibling stems or filenames).
+ *
+ * @param unitPath Absolute path to a unit file.
+ * @returns Dependency names, normalized to stems (no `.md`).
+ */
+export function readDependsOn(unitPath: string): string[] {
+  const text = readFileSync(unitPath, "utf8");
+  const match = text.match(/^depends_on:\s*\[([^\]]*)\]\s*$/m);
+  if (match === null) {
+    return [];
+  }
+  return (match[1] ?? "")
+    .split(",")
+    .map((entry: string): string => entry.trim().replace(/\.md$/, "").replace(/^['"]|['"]$/g, ""))
+    .filter((entry: string): boolean => entry !== "");
+}
+
+/**
+ * Partition units into dependency-connected components.
+ *
+ * A component is the transitive closure over `depends_on` edges: units that
+ * (transitively) depend on each other share one worktree; independent groups
+ * are separate components. Components and their internal unit order stay in
+ * filename order (the numbering convention encodes execution order).
+ *
+ * @param units Unit files in filename order.
+ * @returns Components in ascending-first-unit order.
+ */
+export function partitionComponents(units: PlanUnit[]): PlanUnit[][] {
+  const stems = new Map<string, number>();
+  units.forEach((unit: PlanUnit, index: number): void => {
+    stems.set(unit.name.replace(/\.md$/, ""), index);
+  });
+  const parent = units.map((_: PlanUnit, index: number): number => index);
+  const find = (index: number): number => {
+    const parentAt = parent[index] ?? index;
+    if (parentAt !== index) {
+      parent[index] = find(parentAt);
+    }
+    return parent[index] ?? index;
+  };
+  const union = (a: number, b: number): void => {
+    parent[find(a)] = find(b);
+  };
+  units.forEach((unit: PlanUnit, index: number): void => {
+    for (const dep of readDependsOn(unit.path)) {
+      const target = stems.get(dep);
+      if (target !== undefined) {
+        union(index, target);
+      }
+    }
+  });
+  const groups = new Map<number, PlanUnit[]>();
+  units.forEach((unit: PlanUnit, index: number): void => {
+    const root = find(index);
+    const group = groups.get(root) ?? [];
+    group.push(unit);
+    groups.set(root, group);
+  });
+  return [...groups.values()];
+}

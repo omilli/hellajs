@@ -1,7 +1,7 @@
 ---
 name: audit
 description: >
-  Check or grade files against THIS repo's rules (guides/code|tests|docs|scripts.md decision procedures + verification checklists, eslint/tsconfig/bunfig config, the five lint:guards, per-package AGENTS.md file maps) and report grounded findings — each finding a runnable check or a quoted rule, never taste. The enforcement point for structural rules `bun coverage` cannot see (new files, new test helpers). Assess the rules themselves for drift, and offer to hand fixes to `plan`. Use ONLY for rule-grounded review — not for judgment-based critique (→ `critic`), implementing features, or fixing a known bug.
+  Check or grade files against THIS repo's rules (guides/code|tests|docs|scripts.md decision procedures + verification checklists, eslint/tsconfig/bunfig config, the five lint:guards, per-package AGENTS.md file maps) and report grounded findings — each finding a runnable check or a quoted rule, never taste. The enforcement point for structural rules `bun coverage` cannot see (new files, new test helpers). Assess the rules themselves for drift, and route in-contract findings to the worker's redo pass, scope-expanding findings to `plan`. Use ONLY for rule-grounded review — not for judgment-based critique (→ `critic`), implementing features, or fixing a known bug.
 ---
 
 # Audit
@@ -36,7 +36,7 @@ A rule contradicting current code/config is itself a finding — **rule drift**.
 
 ## Step 5 — Report
 
-Findings grouped by file, severity-sorted (blockers first): rule/check, violation, severity + blast radius. Offer to hand actionable findings to `plan` (it derives contracts; audit does not). Nothing actionable → say so, stop; a clean audit is valid.
+Findings grouped by file, severity-sorted (blockers first): rule/check, violation, severity + blast radius. Route actionable findings (BLOCKER/SHOULD-FIX): in-contract — files and behavior inside the executing plan's delta — hand to the worker's redo pass (one pass); findings expanding scope hand to `plan` (it derives contracts; audit does not). Nothing actionable → say so, stop; a clean audit is valid.
 
 ## Worked example
 
@@ -65,6 +65,6 @@ Drift mechanism (true story, not synthetic):
   That loop is Step 4's product.
 ```
 
-Hand actionable findings (BLOCKER + SHOULD-FIX) to `plan`; the drift proposal routes to `feedback` (it changes a rule, not a codebase fact).
+Route actionable findings (BLOCKER + SHOULD-FIX): in-contract → the worker's redo pass; scope-expanding → `plan`. The drift proposal routes to `feedback` (it changes a rule, not a codebase fact).
 
 Run the prime handoff gate; friction signals: needed rule set absent → `memory` (recallable fact about this repo's config state); rule self-contradiction → `feedback` (rule-update proposal).

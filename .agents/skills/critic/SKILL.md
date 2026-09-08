@@ -62,7 +62,7 @@ Before reporting:
 
 ## Step 5 — Report
 
-Findings grouped by file, severity-sorted (Critical first): lens, the single named cost, file + anchor, one-line evidence, severity + blast radius, suggested direction (one sentence — not the fix contract). Offer to hand actionable findings to `plan` (it scopes fixes; critic does not write the contract). Nothing clears the cost gate → say so, stop; a clean critique is valid.
+Findings grouped by file, severity-sorted (Critical first): lens, the single named cost, file + anchor, one-line evidence, severity + blast radius, suggested direction (one sentence — not the fix contract). Hand actionable findings to `plan` (it scopes fixes; critic does not write the contract). Nothing clears the cost gate → say so, stop; a clean critique is valid.
 
 ## Worked example
 

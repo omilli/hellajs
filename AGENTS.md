@@ -54,7 +54,7 @@
   |---|---|---|
   | coverage | `bun coverage [package]` | bundle + `test --coverage` + lint; with `[package]`, tests and eslint scope to that package while tsc + guards stay repo-wide (foreign failures → §Testing triage), and the coverage table filters to its rows. CI runs this unscoped. |
 | bench | `bun bench [--variant=html\|jsx\|ts] [--runs=<n>] [--throttle=<x>] [--label=<text>] [--ops=<list>] [--headed]` | Playwright + system Chrome macro-benchmark over `examples/bench`: 4× CPU throttle, in-page click→verified-frame timing for all 8 krausest ops (median + mean), appends self-describing entries (label, HEAD sha, dirty flag, env) to `.bench/results.md`. A/B is manual: `git checkout <ref>` → run → checkout feature → run → read the log. Rebuilds all packages first (examples bundle against `dist/`). Requires local Google Chrome. |
-| plans | `bun plans <set-folder> [--model=<provider/id[:thinking]>]` | Fresh `pi --mode rpc` instance per plan unit: the worker skill executes each unticked unit of a plan set (`plans/<pkg>/<category>/<topic>/`), relaying `ask_user_question` dialogs and free-text steering (`.stop` aborts) to the terminal; an unflipped top marker auto-continues with a fresh instance while ticks progress, else reaches an ask-retry-skip-halt gate; summary + session names for audit. `--probe` self-tests the interactive chain. Fails fast if the worktree protocol (skill-automation 02) is present. |
+| plans | `bun plans <set-folder> [--wt=single\|split] [--model=<provider/id[:thinking]>]` | Fresh `pi --mode rpc` instance per plan unit, executing each unticked unit inside a component worktree (`../hellajs-wt/<slug>/`, worker-owned provisioning): `--wt=single` (default) runs the whole set in one worktree with one merge checkpoint at set completion; `--wt=split` runs one worktree per dependency-connected component, sequentially, with a merge checkpoint after each (merge-now spawns a `/skill:merge` instance; split also offers continue-to-next). Ticks are read from worktree copies — main-tree copies stay `[ ]` until merge (success, not failure); main-tree markers remain the merged-state input for unit selection. An unflipped top marker auto-continues with a fresh instance while ticks progress, else reaches a retry / deliver-incomplete / abandon / halt gate (no per-unit skip inside a venue). Dialogs + steering (`.stop` aborts) relay to the terminal; summary + session names for audit; `--probe` self-tests the interactive chain. |
   | bundle | `bun bundle [package]` | Build `dist/` bundles. |
   | lint | `bun lint` | `tsc -p tsconfig.lint.json --noEmit` + `eslint .` + `bun lint:guards` (the six repo-wide guards). |
   | lint:guards | `bun lint:guards` | The six guards composed: `visibility` + `dead-exports` + `jsdoc-params` + `doc-links` + `lint:structure` + `em-dash`. Composed into `lint`; run standalone to skip tsc/eslint. |
@@ -71,19 +71,21 @@
 
   ## Skills
 
-  The eleven skills are the skill system: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills that maintain it. They are first-party HellaJS files — edit them directly via `skill` (anatomy) and `author` (voice + cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. There is no global-inherited layer and no graceful-degradation fallback. `prime` loads first on any substantive task (see Core rules); the rest are discovered on demand.
+  The twelve skills are the skill system: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills that maintain it. They are first-party HellaJS files — edit them directly via `skill` (anatomy) and `author` (voice + cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. There is no global-inherited layer and no graceful-degradation fallback. `prime` loads first on any substantive task (see Core rules); the rest are discovered on demand.
 
-  The loop: `idea` / `audit` / `feature` (entry) → `plan` → `worker` (back to `plan` on a gap, `idea` on a fork) → `feedback` → `memory`. When a skill hits a guide conflict it emits a guide-update proposal; the user accepts, rejects, or defers (see Non-negotiables). A codebase-fact drift — AGENTS.md prose describing current behavior (file maps, invariant one-liners such as "No try/catch") that the source has outgrown — is not a rule conflict: route it to `plan` as a factual fix in the change's blast radius, not to `feedback`. Each skill's `SKILL.md` carries the full workflow plus the two Non-negotiables with skill-specific enforcement. A Break-severity finding from any entry skill must carry an empirical repro (a command or test failing against current code) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `plan` refuses to pin a DoD test to an unverified Break.
+  The loop: `idea` / `audit` / `critic` / `feature` (entry) → `plan` → `worker` (back to `plan` on a gap, `idea` on a fork) → `feedback` → `memory`. When a skill hits a guide conflict it emits a guide-update proposal; the user accepts, rejects, or defers (see Non-negotiables). A codebase-fact drift — AGENTS.md prose describing current behavior (file maps, invariant one-liners such as "No try/catch") that the source has outgrown — is not a rule conflict: route it to `plan` as a factual fix in the change's blast radius, not to `feedback`. Each skill's `SKILL.md` carries the full workflow plus the two Non-negotiables with skill-specific enforcement. A Break-severity finding from any entry skill must carry an empirical repro (a command or test failing against current code) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `plan` refuses to pin a DoD test to an unverified Break.
 
   | Skill | Role |
   |---|---|
   | `prime` | Operating backbone — the loop, the handoff gate, the layering contract, the memory protocol. Loaded first. |
   | `idea` | Stress-test an idea/plan before building; resolve load-bearing forks. Entry. |
-  | `audit` | Review/grade files against the repo's own rules; grounded findings. Entry. |
+  | `audit` | Review/grade files against the repo's own rules; grounded findings; in-contract findings route to worker redo, scope-expanding to `plan`. Entry. |
+  | `critic` | Judgment-based critique — smells, API design, cost-gated findings. Entry. |
   | `feature` | Surface grounded enhancement ideas; hand each to `plan` as an evidence map. Entry. |
   | `plan` | Turn a goal or evidence map into a task-contract (Files, delta, DoD). |
-  | `worker` | Execute a plan task-by-task; tick each DoD only with cited evidence. |
-  | `feedback` | After a run with friction, conservatively propose config/skill edits. |
+  | `worker` | Execute a plan task-by-task; tick each DoD only with cited evidence; plan-file runs execute in a component worktree and end delivered for merge; on completion runs the tiered audit/critic pipeline with a one-pass in-contract redo. |
+  | `merge` | Merge a plan set's outstanding component worktrees to the main tree; agent-resolved conflicts land uncommitted for review; the single human checkpoint. |
+  | `feedback` | After a run with friction, conservatively apply config/skill edits, left uncommitted. |
   | `memory` | Persist verified decisions/facts to `memory/`; refresh/supersede. |
   | `skill` | Author new skills or revise existing ones. Standalone. |
   | `author` | Author/revise `AGENTS.md`, agent prompts, rules files. Standalone. |
@@ -100,10 +102,11 @@
 
   | Condition | Action |
   |---|---|
-  | Skill loop completed with friction | Offer `feedback` |
-  | Non-obvious decision made (affects future runs, not already in a durable file) | Offer `memory` handoff |
-  | Actionable change surfaced (bug, gap, needed edit) | Offer `plan` to scope the fix |
-  | Multiple | Offer each, each labeled and justified |
+  | worker completes a plan unit (Code/Tests) | Completion pipeline fires: `audit` changed files → worker redo pass (in-contract, one) → `critic` if Surface:yes → `feedback` → `memory` on events |
+  | Skill loop completed with friction | Run `feedback` — it applies via `author`/`skill`; the edit lands uncommitted |
+  | Non-obvious decision made (affects future runs, not already in a durable file) | Run `memory` |
+  | Actionable change surfaced (bug, gap, needed edit) | Hand to `plan` |
+  | Multiple | Run each, each labeled and justified |
   | None (trivial, clean run, mid-loop) | Say "nothing to hand off" and finish |
 
   Decide critically, not reflexively — a clean loop with zero friction skips feedback. `feedback` self-calibrates this trigger each run (was the timing right?), feeding adjustments back through the normal proposal loop.
@@ -125,7 +128,8 @@
 
   ## Folder structure
 
-  - `.agents/skills/` — the eleven first-party skills (§Skills table) + `comparison/` (standalone).
+  - `.agents/skills/` — the twelve first-party skills (§Skills table) + `comparison/` (standalone).
+  - `../hellajs-wt/` — sibling dir holding per-component worktrees (`wt/<slug>` branches): seeded by the worker skill's bundled `worktree.mjs` (clean `v2` cut + carried plan set + uncommitted `memory/` delta, post-seed baseline recorded); protocol-owned — created and cleaned only by the script, merged back only by the `merge` skill.
   - `.changeset/` — changeset config
   - `.github/` — `workflows/` (CI + release)
   - `docs/` — Astro documentation website (imports package docs from `packages/*/docs/`). **A Docs task spans the full site surface, not just the API page**: `src/pages/learn/concepts/` + `learn/patterns/` + `learn/tutorials/` (wrapper pages importing `@{pkg}/{type}/{name}.mdx` from `packages/*/docs/`, and `@examples/{name}/tutorial.mdx` for tutorials), `src/pages/reference/{pkg}/` (API wrappers), `src/nav.ts` (sidebar registration), and the enumeration pages (`learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx`). A feature with user-facing behavior needs: a concept doc, a pattern doc when copy-paste recipes apply, `nav.ts` registration under Concepts/Patterns/reference, and an update to every enumeration listing it. Before scoping a Docs task: read `src/pages/learn/index.mdx` and grep the site for prose claims the change falsifies (e.g. an "X not supported" alert the feature now makes false).
@@ -160,6 +164,8 @@
   ## Testing
 
   Tests run under HappyDOM via a preload (`utils/happydom.js`, configured in `bunfig.toml`). Reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `@utils/test-helpers.js`. Track call counts with `mock()` from `bun:test`.
+
+  **Plan-file worker runs execute in a component worktree** (`../hellajs-wt/<slug>/` — clean `v2` cut + carried plan set + uncommitted `memory/` delta, seeded by the worker skill's `worktree.mjs`): bundle/coverage run inside the worktree, and the merge-back lands via the `merge` skill. Inline plans and foreign-failure triage are unchanged.
 
   **NEVER run `bun test` directly.** All `packages/` tests import from `dist/` bundles. `bun test` does NOT rebuild `dist/` — it silently tests against stale code. Always run `bun coverage <package>` (bundle + coverage + lint). CI runs `bun coverage`. `bun coverage` is the single verification gate — never list standalone `bun lint` or `bun test` in a plan's DoD when it is present. Iterate mid-flight with `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.ts]` (explicit rebuild, scoped tests — the triage form below); reserve `bun coverage <package>` for the green baseline and the final verification gate — every run re-bundles and re-runs repo-wide `tsc`, eslint, and all six guards.
 

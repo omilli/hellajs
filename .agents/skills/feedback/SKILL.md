@@ -1,7 +1,7 @@
 ---
 name: feedback
 description: >
-  Review a just-completed non-trivial run for friction and conservatively propose edits to AGENTS.md, the guides, or a skill so the next run is better. Use after a task that hit errors, rework, a wrong assumption, a rule or tool that didn't hold, or a user correction — or when explicitly asked how a run went. A clean run proposes nothing; that is the common and correct outcome. Use ONLY for improving the config/skills, not for doing the work itself.
+  Review a just-completed non-trivial run for friction and conservatively apply edits to AGENTS.md, the guides, or a skill (left uncommitted for diff review) so the next run is better. Use after a task that hit errors, rework, a wrong assumption, a rule or tool that didn't hold, or a user correction — or when explicitly asked how a run went. A clean run proposes nothing; that is the common and correct outcome. Use ONLY for improving the config/skills, not for doing the work itself.
 ---
 
 # Feedback
@@ -48,10 +48,10 @@ Two axes:
 
 Test: *would this fix apply in any project, or only this one?* Don't bury a universal lesson in one project; don't pollute a project's config with generic rules.
 
-## Step 4 — Propose, don't write
+## Step 4 — Apply, uncommitted
 
-Feedback proposes; it does not edit. A config change affects every future run → user approves first. On approval, hand to `author` to apply + sync cross-references (for a SKILL.md, `skill` leads anatomy). Rejected proposal → dropped; don't re-propose unless new evidence recurs.
+Feedback applies each proposal immediately — no approval round-trip. `author` applies AGENTS.md/guides edits (voice + cross-reference sync in the same pass); `skill` applies SKILL.md anatomy edits. Report each applied edit: file + section + evidence + reasoning. The edit lands **uncommitted** — the never-commit rule is the checkpoint: main-tree edits are reviewed as `git diff` before the user commits; worktree edits ride the merge review. Rejection = revert the diff. A proposal rejected on the merits → dropped; don't re-propose unless new evidence recurs.
 
 ## Self-check
 
-Every proposal cites a specific moment in THIS run (no hypothetical); both scopes scanned, not anchored on the first finding; clean run → said so and proposed nothing; proposed, not wrote; approved → handed to `author` (or `skill` for skill anatomy) to apply + sync.
+Every proposal cites a specific moment in THIS run (no hypothetical); both scopes scanned, not anchored on the first finding; clean run → said so and proposed nothing; each applied via `author`/`skill`, uncommitted, evidence cited.

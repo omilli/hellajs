@@ -19,9 +19,10 @@ Skills carry workflow logic — loop steps, gates, evidence rules — and name H
         -> worker    (execute it, ticking each Definition of Done with evidence)
             on a plan-gap -> back to plan
             on a design fork -> back to idea
+            on completion (Code/Tests) -> audit -> redo (in-contract) -> critic (Surface:yes) -> feedback -> memory
 
     Self-improvement (cross-cutting — fires from ANY skill at completion, not a tail):
-        friction -> feedback  (propose config/skill edits)
+        friction -> feedback  (apply config/skill edits)
         durable fact/decision -> memory  (curate into the repo knowledge base)
 
 **Transition table** (lookup; the prose above is the why):
@@ -32,11 +33,14 @@ Skills carry workflow logic — loop steps, gates, evidence rules — and name H
 | `plan` | contract approved | `worker` |
 | `worker` | plan-gap (contract incomplete) | `plan` |
 | `worker` | design fork (contract wrong at a deeper layer) | `idea` |
+| `worker` | plan unit ticked (Code/Tests) | `audit` (and `critic` when Surface:yes), invoked mechanically |
+| `worker` | in-contract audit finding | redo pass (self, one) |
+| `worker` | worktree run delivered for merge (user-invoked) | `merge` |
 | any skill | friction that should change always-on text | `feedback` |
 | any skill | recallable verified fact/decision | `memory` |
 | any skill | clean run | nothing |
 
-**Handoff gate** — after any substantive work, scan both tracks and invoke the matching skill yourself; do not wait for the user. Clean run → skip self-improvement; trivial change → skip everything.
+**Handoff gate** — after any substantive work, scan both tracks and invoke the matching skill yourself; do not wait for the user. Worker completions fire the Completion pipeline (audit → redo → critic → feedback → memory) without offering; every other handoff invokes the target skill rather than offering it. Clean run → skip self-improvement; trivial change → skip everything.
 
 - **Downstream** — next skill if work continues (entry → `plan`; `plan` → `worker`; `worker` → `plan` on a plan-gap or `idea` on a design fork). One sentence + justification, or "nothing downstream."
 - **Self-improvement** — friction from THIS run (rework, wrong assumption, rule/tool that didn't hold, user correction) → `feedback`; recallable verified fact/decision → `memory`. Each skill names its own friction signals.

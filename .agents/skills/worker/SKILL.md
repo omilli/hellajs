@@ -1,7 +1,7 @@
 ---
 name: worker
 description: >
-  Execute a plan task-by-task, faithfully. Respect inter-file dependencies (refuse to start a file whose deps are unfinished), verify each task is needed, enforce the surface fork gate, establish a green baseline, make the change, run type-appropriate verification, and tick each Definition of Done only with cited evidence — no note, no tick. Use when working through a plan or contract produced by the `plan` skill, or any explicit task-contract with binary checks. Use ONLY when such a contract exists.
+  Execute a plan task-by-task, faithfully. Respect inter-file dependencies (refuse to start a file whose deps are unfinished), verify each task is needed, enforce the surface fork gate, establish a green baseline, make the change, run type-appropriate verification, and tick each Definition of Done only with cited evidence — no note, no tick; on completion, runs the tiered audit/critic pipeline with a one-pass in-contract redo. Plan-file runs execute inside a per-component worktree seeded by `worktree.mjs` (provision or re-enter the named slug; inline plans run in-tree) and end delivered for merge. Use when working through a plan or contract produced by the `plan` skill, or any explicit task-contract with binary checks. Use ONLY when such a contract exists.
 ---
 
 # Worker
@@ -13,6 +13,8 @@ Execute a plan task-by-task. The plan is the contract: shared scope block + type
 Frontmatter `depends_on: [sibling, ...]` → resolve each to a sibling file in the same folder and read its top marker. Any dep's top marker still `[ ]` → this file is **blocked**: don't start it. Report "blocked on <dep>"; pick an unblocked file from the set or hand back to the orchestrator. A dep flipping to `[x]` unblocks. Never execute a blocked file; never tick around a missing dep.
 
 Then slice vertically: in a multi-file set, finish the current unit — every task ticked, top marker `[x]` — before starting a sibling. Horizontal (type-)batching across units defeats the unit boundary. Only a hard `depends_on` block justifies setting a unit down mid-flight.
+
+**Component partition (multi-file sets).** After the dependency gate, partition the set into dependency-connected components — the transitive `depends_on` closure over unit frontmatter. One component worktree per component (Provision step below); units run sequentially inside it in `depends_on` order — the vertical-slicing rule, relocated. Components may run in parallel iff no cross-component `depends_on` edge exists AND their plan Files lists are disjoint beyond the carry-set (the plan-set folder and `memory/` are protocol-owned shared state, excluded from the check). Never edit the set's `index.md` inside a worktree — every carried copy is a stale shared copy; the set aggregate is recomputed at merge.
 
 Inline plan (not a file), no frontmatter, or no deps → skip this gate (single-unit plan).
 
@@ -34,6 +36,18 @@ Three outcomes:
 - **Already correct** — desired state exists. No change; confirm checks pass; tick every DoD `[x]` with a comment citing evidence.
 - **Valid, work needed** → Step 2.
 - **Invalid** — premise wrong or Strategy conflicts with project rules. Leave every box `[ ]`, note exactly why. Don't silently skip.
+
+## Step 1½ — Provision the component worktree (plan-file runs)
+
+A plan-file run executes in an isolated worktree, not the main tree: the main tree routinely holds unrelated in-flight units that must never leak into execution or baseline, and rollback of a whole component is then just `clean`. Inline plans (no plan file) skip this step entirely and run in-tree.
+
+**Slug.** Orchestrated runs receive the target worktree slug in the prompt — the runner owns mode selection. Standalone whole-set sessions derive it from the Step 0 partition: set slug (set folder path, `-`-joined) plus the component's first unit stem.
+
+**Re-enter before provisioning.** Check `bun .agents/skills/worker/scripts/worktree.mjs list` and `status <slug>`: an existing worktree with that slug, a recorded baseline, and this set's plan folder carried → re-enter it and continue — ticks already in its unit copies are durable progress, never redone. Key on the slug, not the plan folder: under split mode several component worktrees each carry the full set folder. Never provision a duplicate — `new` refuses on branch/worktree collision by design.
+
+**Provision.** `bun .agents/skills/worker/scripts/worktree.mjs new <slug> --plans <set-folder>` (base `v2` by default). The script cuts clean from the base, carries exactly two things — the full plan-set folder (plans are never committed, so a cut has none) and the uncommitted `memory/` delta — then records the post-seed baseline; `diff` and `apply` are baseline-relative, so unchanged carries are invisible.
+
+**Inside the worktree** (`../hellajs-wt/<slug>/`): every remaining step executes there — file paths, edits, and verification commands all address the worktree (e.g. `cd ../hellajs-wt/<slug> && bun coverage <pkg>`), and ticks land on the worktree copy of the unit file. Never commit inside the worktree (staging is permitted — `diff` needs it); never edit the set's `index.md` (Step 0). The baseline-red stop rule applies unchanged.
 
 ## Step 2 — Establish a green baseline, then execute per type
 
@@ -68,12 +82,22 @@ For each verified DoD item: tick `[x]` + append a short note citing evidence —
 
 Task header `## [ ] Task` → `## [x] Task` only when every DoD is `[x]` and the consistency gate passed. Even one item unmet/unverifiable → header stays `[ ]`. No third marker. After ticking, recompute the aggregate: zero `[ ]` task headers → top marker flips to `[x]`; else stays `[ ]`.
 
-**Set aggregate (multi-file set):** same folder has an `index.md` → read it to find siblings. After completing this file, scan every sibling's top marker; all `[x]` → flip `index.md`'s top marker `[ ]` → `[x]`.
+**Set aggregate (multi-file set):** same folder has an `index.md` → read it to find siblings. After completing this file, scan every sibling's top marker; all `[x]` → flip `index.md`'s top marker `[ ]` → `[x]`. Worktree runs never do this — every carried `index.md` is a stale shared copy; the set aggregate is recomputed at merge (Step 0).
 
-## Step 4 — Blast-radius check and report
+## Step 4 — Blast-radius check
 
 Before declaring done: nothing outside touched files regressed — run checks in every module whose code imports a changed symbol (not just the task's); coverage not below baseline; no doc now contradicts code; no sibling test now asserts dead behavior.
 
-Run the prime handoff gate; highest-friction skill in the loop — signals fire often: verification failure + the fix that worked → `memory` (retry-after-failure); wrong plan assumption you deviated from → `memory` (confirmed-against-source); rework from a symptom-patch instead of root-cause → `feedback` (root-cause discipline slipped); verification command hard to find → `memory` (record it); a repeated failure pattern across runs → `feedback`.
+## Step 5 — Completion pipeline and report
 
-Report brief per-task status — done, already-correct, rejected (reason), or structurally-invalid (returned to plan). Plan was a file → it now carries every tick + evidence; inline → include the ticked plan. Then confirm: blast radius checked; multi-file set → set aggregate updated and each unit finished before starting a sibling; every tick backed by inline-cited evidence; type-appropriate verification actually ran, not assumed. Any gap → task not done.
+Fires mechanically once the unit's tasks are ticked — no offering (prime §The loop). Pipeline order is fixed: audit → redo → critic → feedback → memory.
+
+- **(a) audit** — run `audit` on the changed files of every Code/Tests task (§Testing's enforcement point for structural rules `bun coverage` cannot see).
+- **(b) Redo pass, ONE.** Findings in-contract — changed files, behavior inside the planned delta — fix, re-run the gate. Findings expanding scope or contradicting the contract → return to `plan`. Critic taste findings → `plan` with evidence, never self-redone. A needed second pass → stop and report.
+- **(c) critic** — when the plan is Surface:yes, run `critic` on the changed surface after the redo pass so it sees fixed state; its findings hand to `plan`.
+- **(d) feedback** — invoke it; a clean run no-ops.
+- **(e) memory** — memory events as they fire.
+- **(f) Report** — brief per-task status: done, already-correct, rejected (reason), or structurally-invalid (returned to plan). Plan was a file → it now carries every tick + evidence; inline → include the ticked plan. Then confirm: blast radius checked; multi-file set → set aggregate updated and each unit finished before starting a sibling; every tick backed by inline-cited evidence; type-appropriate verification actually ran, not assumed. Any gap → task not done.
+- **(g) Delivery (worktree runs)** — a worktree run does not land in the main tree: the report names the component's worktree slug and hands the merge to the user — `merge` owns `apply` (the single human checkpoint). The blast-radius check (Step 4) ran inside the worktree; the main-tree blast radius is merge's. In-tree runs end as today.
+
+Run the prime handoff gate; highest-friction skill in the loop — signals fire often: verification failure + the fix that worked → `memory` (retry-after-failure); wrong plan assumption you deviated from → `memory` (confirmed-against-source); rework from a symptom-patch instead of root-cause → `feedback` (root-cause discipline slipped); verification command hard to find → `memory` (record it); a repeated failure pattern across runs → `feedback`.
