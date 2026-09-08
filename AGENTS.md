@@ -12,7 +12,7 @@
   - Load the `prime` skill before any substantive task.
   - **commit-msg hook** (installed at `.git/hooks/commit-msg`) enforces conventional commits via commitlint (`feat:`, `fix:`, `docs:`, `chore:`, …). Changesets drive versioning.
   - **Never create a changeset.** Adding `.changeset/*.md` files or running `bun changeset` is a manual, user-only step — treat it exactly like a commit: only on an explicit request. This holds even for published-package behavior changes; note the need in your handoff summary and let the user create it. Do not list changeset creation in any plan's DoD.
-  - A plan's DoD states each pass criterion as a runnable check, not a prediction of the result — never append an unverified characterization ("zero violations", "no false positives", "passes on the corpus") for an artifact not yet run; it biases the worker toward confirmation and forces an interrupt when wrong. If the characterization is load-bearing, make it its own DoD check the worker must falsify.
+  - A plan's DoD states each pass criterion as a runnable check, not a prediction of the result — never append an unverified characterization ("zero violations", "no false positives", "passes on the corpus") for an artifact not yet run; it biases the worker toward confirmation and forces an interrupt when wrong. If the characterization is load-bearing, make it its own DoD check the worker must falsify. A repo-wide sweep DoD (`rg <pattern>`) scopes its sweep to the artifact class it polices and excludes `plans/**` — the contract quotes the strings it retargets, so the bare pattern matches the plan's own text and the check as written can never pass.
 
   ## Non-negotiables
 
