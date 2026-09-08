@@ -294,5 +294,48 @@ describe("store", () => {
 
       expect(tracker).toHaveBeenCalledTimes(2);
     });
+
+    test("throws on update through a composed wrapper whose leaf was externally replaced", () => {
+      const inner = store({ value: 1, count: 0 });
+      const outer = store({ inner });
+
+      // Function-valued properties stay swappable — external reassignment replaces the adopted signal
+      // @ts-expect-error external reassignment replaces the adopted signal
+      outer.inner.value = 42;
+
+      // Composed leaf members type as Signal<number>; the runtime write-through is the scenario under test
+      // @ts-expect-error update through the composed wrapper carries the function-typed store surface
+      expect(() => outer.inner.update({ value: 5 })).toThrow(
+        '[store] update: settable key "value" must hold a signal, received number'
+      );
+    });
+
+    test("the original store's signal stays writable after its wrapper leaf is replaced", () => {
+      const inner = store({ value: 1, count: 0 });
+      const outer = store({ inner });
+
+      // @ts-expect-error external reassignment replaces the adopted signal
+      outer.inner.value = 42;
+      // @ts-expect-error update through the composed wrapper carries the function-typed store surface
+      expect(() => outer.inner.update({ value: 5 })).toThrow(
+        '[store] update: settable key "value" must hold a signal, received number'
+      );
+
+      inner.update({ value: 5 });
+      expect(inner.value()).toBe(5);
+    });
+
+    test("throws on update through a wrapper whose leaf was replaced with undefined", () => {
+      const inner = store({ value: 1, count: 0 });
+      const outer = store({ inner });
+
+      // @ts-expect-error external reassignment replaces the adopted signal
+      outer.inner.value = undefined;
+
+      // @ts-expect-error update through the composed wrapper carries the function-typed store surface
+      expect(() => outer.inner.update({ value: 5 })).toThrow(
+        '[store] update: settable key "value" must hold a signal, received undefined'
+      );
+    });
   });
 });

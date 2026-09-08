@@ -124,7 +124,7 @@ export type Store<
   snapshot: () => Snapshot<T>;
   /**
    * Deep merge partial updates or apply mutations via draft function.
-   * @throws {Error} When `partial` touches an unknown key, a reserved key, a function property, a store key with a non-object value, or a readonly key.
+   * @throws {Error} When `partial` touches an unknown key, a reserved key, a function property, a store key with a non-object value, a settable key whose property was externally replaced (no longer holds a signal), or a readonly key.
    */
   update: (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) => void;
   /** Recursively invokes cleanup on nested stores; individual signals are not disposed — they remain functional */

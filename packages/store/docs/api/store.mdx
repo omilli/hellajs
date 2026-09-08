@@ -151,6 +151,7 @@ console.log(appStore.user.name());   // Bob
 > - **Reserved key**: `update({ snapshot: 1 })` throws `[store] update: reserved key "snapshot"`.
 > - **Store key with a non-object value**: `update({ user: 'x' })` where `user` is a nested store throws `[store] update: store key "user" requires an object value`.
 > - **Readonly key**: writing a readonly property throws `[store] readonly key "<key>"`; the same error its setter call throws.
+> - **Replaced signal**: `update()` through a settable key whose property was externally replaced (e.g. `outer.inner.value = 42` on a composed store) throws `[store] update: settable key "value" must hold a signal, received number`; the received kind reflects `typeof` the replaced value.
 >
 > The draft path applies the same rules. `update()` throws at the first offending key, in partial-key order; keys processed before it are already applied.
 

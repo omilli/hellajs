@@ -37,6 +37,7 @@ export function isObjectOrFunction(value: unknown): boolean {
 /**
  * @internal
  * Applies an update to a target signal, optionally through middleware.
+ * Throws when the settable key's property no longer holds a callable signal.
  */
 export function applyUpdate(
   target: unknown,
@@ -44,15 +45,15 @@ export function applyUpdate(
   middlewares: Record<string, unknown> | undefined,
   key: string
 ) {
-  if (!target) return;
+  if (!isFunction(target)) {
+    throw new Error(`[store] update: settable key "${key}" must hold a signal, received ${typeof target}`);
+  }
   const middleware = middlewares?.[key];
   const processedValue = middleware
     ? (middleware as (v: unknown) => unknown)(value)
     : value;
 
-  if (isFunction(target)) {
-    target(processedValue);
-  }
+  target(processedValue);
 }
 
 /**

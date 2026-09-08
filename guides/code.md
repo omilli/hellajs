@@ -236,6 +236,7 @@ Enforcement: eslint `no-restricted-syntax` (eslint.config.mjs) bans the typeof f
 - Document every thrown error with a `@throws {Error} When <condition>.` JSDoc tag. The condition is the useful part; the message shape stays governed by the bullet above (do not duplicate the full message in the tag). Place the tag on the signature the consumer calls: the function declaration for non-overloaded functions, each public overload signature for overloaded functions, or the interface method for object-typed singletons (e.g. `resourceCache`'s `ResourceCache` methods, `Resource.setData`)
 - Internal functions do not guard — they trust their callers. Guards on internal functions are dead branches
 - Exception: functions invoked by the platform (MutationObserver callbacks, event listeners, Promise `.then`/`.catch` continuations, `setTimeout` callbacks) receive untrusted inputs and may guard. The runtime — not a trusted internal caller — invokes them with whatever the DOM or Promise machinery provides
+- Exception: state an external actor can mutate out-of-band (a store's function-writable property slots) reaches internal functions unvalidated — a guard over it is a live branch, not a dead one. Throw when it surfaces a public contract (`applyUpdate`'s `[store] update: settable key … must hold a signal`, the readonly guard's `[store] readonly key`) and document it on the public API's `@throws`
 - Platform APIs that throw recoverably on known-benign conditions (e.g., an invalidated CSSOM rule) may catch narrowly. The catch block must:
   - Name the specific condition in a comment
   - Never catch broadly with an untyped `catch {}` that hides unrelated failures
@@ -415,7 +416,7 @@ Run this when holding a Code file (`.ts` / `.tsx` / `.mjs` under `lib/`, `script
 
 **Errors**
 - [ ] Public functions validate inputs with `[package] fn: <constraint>, received <value>` messages
-- [ ] Internal functions do not guard
+- [ ] Internal functions do not guard (exceptions: platform-invoked callbacks; out-of-band mutable state surfacing a public contract)
 - [ ] No broad `catch {}` swallowing unknown errors
 
 **Toolchain**
