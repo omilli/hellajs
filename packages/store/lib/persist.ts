@@ -54,9 +54,13 @@ export function persistStore<T extends Record<string, unknown>>(
   let disposed = false;
 
   const writeNow = (value: string) => {
-    Promise.resolve(adaptor.write(value)).catch((error: unknown) => {
+    try {
+      Promise.resolve(adaptor.write(value)).catch((error: unknown) => {
+        onError?.(error);
+      });
+    } catch (error) {
       onError?.(error);
-    });
+    }
   };
 
   const flushPending = () => {
@@ -138,27 +142,38 @@ export function persistStore<T extends Record<string, unknown>>(
       lastWritten = serialize(partialize(store.snapshot()));
     } catch (error) {
       // Corrupt or shape-drifted: self-heal storage, keep the initial state.
-      Promise.resolve(adaptor.clear()).catch((e: unknown) => {
+      try {
+        Promise.resolve(adaptor.clear()).catch((e: unknown) => {
+          onError?.(e);
+        });
+      } catch (e) {
         onError?.(e);
-      });
+      }
       onError?.(error);
     }
     finish();
   };
 
-  const raw = adaptor.read();
-  if (isObject(raw) && isFunction(raw.then)) {
-    raw.then(
-      (value) => {
-        if (!disposed) settle(value ?? null);
-      },
-      (error: unknown) => {
-        onError?.(error);
-        finish();
-      }
-    );
-  } else {
-    settle(raw as string | null);
+  try {
+    const raw = adaptor.read();
+    if (isObject(raw) && isFunction(raw.then)) {
+      raw.then(
+        (value) => {
+          if (!disposed) settle(value ?? null);
+        },
+        (error: unknown) => {
+          onError?.(error);
+          finish();
+        }
+      );
+    } else {
+      settle(raw as string | null);
+    }
+  } catch (error) {
+    // A synchronously failing read mirrors a rejected promise read: report,
+    // settle hydration, keep the initial state.
+    onError?.(error);
+    finish();
   }
 
   return {

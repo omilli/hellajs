@@ -24,7 +24,7 @@ Inline plan (not a file), no frontmatter, or no deps → skip this gate (single-
 
 Parse the plan's scope block.
 
-- **Surface: yes** → verify Code + Tests + Docs tasks all exist. Any missing → structurally invalid: leave every box `[ ]`, note *"Surface: yes but missing [Tests|Docs] task — invalid plan, return to `plan`"*, stop.
+- **Surface: yes** → verify Code + Tests + Docs tasks all exist. One exception: a Docs view concluding "no change needed" that cites the doc files already stating the target contract — verify those citations against the named files (they must carry the contract the delta implements; verified citations satisfy the gate because the coverage it exists for is already present). Missing task without that exception, or citations that do not verify → structurally invalid: leave every box `[ ]`, note *"Surface: yes but missing [Tests|Docs] task — invalid plan, return to `plan`"*, stop.
 - **Surface: no** → verify **Tests-view** and **Docs-view** carry cited reasoning. Either absent → same rejection.
 
 Fork violation → back to `plan`, never forward to execution.

@@ -43,7 +43,7 @@ Does the work change a package's public surface (any exported symbol, any field 
 - Plugin entries `plugins/<p>/index.mjs`.
 - Documented behavior is surface even when types don't move — docs and `{pkg}-comparison.md` describe the contract callers learn.
 
-- `yes` → three views landing together: **Code** + **Tests** + **Docs**. Scope all three.
+- `yes` → three views landing together: **Code** + **Tests** + **Docs**. Scope all three. A `yes` Docs view may land as a cited no-change conclusion: when the unit is a bug fix making code match docs that already state the target contract, a doc task would be empty ceremony — the view instead cites the doc files whose prose already carries the contract (types + docs pages), so `worker` verifies the citations against the files rather than trusting the claim.
 - `no` → one task of the matching type. Tests-view and Docs-view still appear, justifying absence with a cited reason ("internal helper, not exported; existing tests cover the public surface").
 
 No public-surface notion (scripts, agent config, tooling) → Surface `no` by definition; skip the export read.
@@ -53,7 +53,7 @@ No public-surface notion (scripts, agent config, tooling) → Surface `no` by de
 Derive each artifact by applying the project's own rules (guides, lint, config conventions), not authorial intuition:
 
 - **Files** — each file to touch, with a content anchor (function/type/heading + relative position), not a line number.
-- **Change / delta** — for Surface: yes, the exact signature/shape change + one runnable usage example (if you can't write the call, the design is wrong; the example seeds the Docs task).
+- **Change / delta** — for Surface: yes, the exact signature/shape change + one runnable usage example (if you can't write the call, the design is wrong; the example seeds the Docs task). A delta clause citing repo style or convention carries the measurement that produced it (the `rg` over the package), not recall — an unmeasured style claim inverts silently and surfaces as a letter-vs-intent deviation during execution.
 - **State-wiring deltas** — when a delta attaches state (scope, dispose fn, handler, cleanup) to a DOM node, the contract names the carrier's two properties, verified against the code that owns them: cleanup eligibility (the removal walk actually discovers state on that node kind — a walk that skips text nodes makes a text carrier dead state) and lifetime (the carrier outlives the code being written — a node the same branch or a sibling path later removes or replaces disposes the state early or never). Both properties live outside the delta's own lines; a green typecheck says nothing about them.
 - **Behavioral scenarios** (if tests in scope) — one behavior per scenario, phrased as one test, so `worker` transcribes without re-deciding structure.
 - **Doc updates** (if docs in scope) — which file/section owns this, what content extends it.

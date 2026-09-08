@@ -219,6 +219,64 @@ describe("persist", () => {
     expect(handle.hydrated()).toBe(true);
   });
 
+  test("reports a synchronously throwing read via onError without throwing", async () => {
+    const read = mock(() => {
+      throw new Error("storage down");
+    });
+    const write = mock(() => {});
+    const clear = mock(() => {});
+    const onError = mock((error: unknown) => error);
+    const data = store({ theme: "light" });
+    const handle = persistStore(data, { read, write, clear }, { onError });
+    await handle.ready;
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(handle.hydrated()).toBe(true);
+  });
+
+  test("reports a synchronously throwing initial write via onError", () => {
+    const read = mock(() => null);
+    const write = mock(() => {
+      throw new Error("quota exceeded");
+    });
+    const clear = mock(() => {});
+    const onError = mock((error: unknown) => error);
+    const data = store({ theme: "light" });
+    const handle = persistStore(data, { read, write, clear }, { onError });
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(handle.hydrated()).toBe(true);
+  });
+
+  test("routes a synchronously throwing post-hydration write to onError, not the store write", () => {
+    const read = mock(() => '{"theme":"dark"}');
+    const write = mock(() => {
+      throw new Error("quota exceeded");
+    });
+    const clear = mock(() => {});
+    const onError = mock((error: unknown) => error);
+    const data = store({ theme: "light" });
+    persistStore(data, { read, write, clear }, { onError });
+
+    data.theme("red");
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(data.theme()).toBe("red");
+  });
+
+  test("reports a synchronously throwing clear via onError during corrupt-state fallback", () => {
+    const read = mock(() => '{"gone":true}');
+    const write = mock(() => {});
+    const clear = mock(() => {
+      throw new Error("clear failed");
+    });
+    const onError = mock((error: unknown) => error);
+    const data = store({ theme: "light" });
+    const handle = persistStore(data, { read, write, clear }, { onError });
+
+    expect(onError).toHaveBeenCalledTimes(2);
+    expect(handle.hydrated()).toBe(true);
+  });
+
   test("coalesces rapid writes into one storage write under debounce", async () => {
     const adaptor = createAdaptor('{"count":0}');
     const data = store({ count: 0 });

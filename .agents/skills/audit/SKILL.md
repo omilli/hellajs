@@ -1,7 +1,7 @@
 ---
 name: audit
 description: >
-  Check or grade files against THIS repo's rules (guides/code|tests|docs|scripts.md decision procedures + verification checklists, eslint/tsconfig/bunfig config, the five lint:guards, per-package AGENTS.md file maps) and report grounded findings — each finding a runnable check or a quoted rule, never taste. The enforcement point for structural rules `bun coverage` cannot see (new files, new test helpers). Assess the rules themselves for drift, and route in-contract findings to the worker's redo pass, scope-expanding findings to `plan`. Use ONLY for rule-grounded review — not for judgment-based critique (→ `critic`), implementing features, or fixing a known bug.
+  Check or grade files against THIS repo's rules (guides/code|tests|docs|scripts.md decision procedures + verification checklists, eslint/tsconfig/bunfig config, the six lint:guards, per-package AGENTS.md file maps) and report grounded findings — each finding a runnable check or a quoted rule, never taste. The enforcement point for structural rules `bun coverage` cannot see (new files, new test helpers). Assess the rules themselves for drift, and route in-contract findings to the worker's redo pass, scope-expanding findings to `plan`. Use ONLY for rule-grounded review — not for judgment-based critique (→ `critic`), implementing features, or fixing a known bug.
 ---
 
 # Audit
@@ -13,7 +13,7 @@ Review files against this repo's rules; report grounded findings. Rules are the 
 - Root AGENTS.md (§Style guides, §Testing, §Non-negotiables) + the target package's `AGENTS.md` file map.
 - `guides/code.md` / `guides/tests.md` / `guides/docs.md` / `guides/scripts.md` — decision procedures with verification checklists at the end; tick the checklist, don't reconstruct rules from prose.
 - Toolchain config: `eslint.config.*`, `tsconfig*`, `bunfig.toml` (HappyDOM preload).
-- The five guards: `bun lint:guards` (visibility, dead-exports, jsdoc-params, doc-links, doc-structure).
+- The six guards: `bun lint:guards` (visibility, dead-exports, jsdoc-params, doc-links, lint:structure, em-dash).
 
 §Testing names what `bun coverage` cannot see — this skill is the enforcement point for exactly those: thin wrappers, `lib/internal/` placement criteria, single-callsite extractions, `for…of`/`for…in`, `@internal` visibility, test anti-patterns. Audit is mandatory for new packages, new file structures, and new test helpers (§Testing). Rule absent for the case at hand → note the gap, don't substitute taste.
 
