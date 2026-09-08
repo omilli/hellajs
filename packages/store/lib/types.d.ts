@@ -120,7 +120,7 @@ export type Store<
   T[K] extends Record<string, unknown> ? (K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>) :
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {
-  /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types */
+  /** Returns a reactive plain-object snapshot of the entire store state; composed nested stores unwrap to their plain data types. Preserves the original initial function references: a handler swapped in later (appStore.onSave = newHandler) is not what snapshot() returns */
   snapshot: () => Snapshot<T>;
   /**
    * Deep merge partial updates or apply mutations via draft function.

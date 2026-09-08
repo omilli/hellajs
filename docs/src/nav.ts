@@ -11,6 +11,7 @@ export const navigation = {
         "ForEach",
         "Styling",
         "State",
+        "Store-Control",
         "Routing",
         "Route-Hooks",
         "Resources",

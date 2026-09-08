@@ -226,33 +226,11 @@ console.log(appStore.user.name());   // Bob
 
 ### Deep Reactivity
 
-All nested objects become stores, arrays become signals, and functions stay as-is, a fully reactive state tree. Middleware transforms or validates values on every set; `readonly` restricts which properties can be modified. See [State](/learn/concepts/state) for the deep walk, effect examples, [middleware](/learn/concepts/state#middleware), and [readonly](/learn/concepts/state#readonly) configuration.
+All nested objects become stores, arrays become signals, and functions stay as-is, a fully reactive state tree. See [State](/learn/concepts/state) for the deep walk and effect examples, and [Store Control](/learn/concepts/store-control) for [middleware](/learn/concepts/store-control#middleware) and [readonly](/learn/concepts/store-control#readonly) configuration.
 
 ### Nested Stores
 
-Existing stores can be passed as values to create hierarchical state with shared signal references.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const userStore = store({
-  name: 'John Doe',
-  preferences: { theme: 'dark' }
-});
-
-const uiStore = store({
-  sidebarOpen: false,
-  activeTab: 'dashboard'
-});
-
-const appStore = store({
-  user: userStore,
-  ui: uiStore
-});
-
-appStore.user.name('Jane');
-userStore.name(); // 'Jane'; same signal reference
-```
+Existing stores compose as values: `store({ user: userStore })` nests the store with shared signal references, so writing through either reference updates the same signals. See [State](/learn/concepts/state) for what composed stores provide and [`snapshot`](#snapshot) for reactive composed snapshots.
 
 ### Partial Updates
 
@@ -264,36 +242,15 @@ Pass a function to `update()` for ergonomic mutations on a mutable draft of the 
 
 ### Write Equality
 
-By default every write is reference-compared; `store.items(newArrayWithSameContent)` wakes every subscriber. The `equals` option replaces that per key with a comparator function or the `'structural'` preset, which compares by content using the same comparator as the draft path:
-
-```typescript
-import { store } from '@hellajs/store';
-
-const appStore = store({ items: [1, 2], user: { name: 'a' } }, {
-  equals: {
-    items: 'structural',
-    user: { name: (prev, next) => prev === next },
-  },
-});
-
-appStore.items([1, 2]); // same content, new reference; write skipped, no subscriber wakes
-```
-
-- A comparator receives `(previous, next)` and returns `true` to skip the write. `'structural'` compares arrays, `Date`, `Map`, `Set`, `RegExp`, and class instances by content.
-- Nested maps reach nested stores, like `middleware`. Every write path inherits the comparator: direct calls, `update(partial)`, and the draft path.
-- Invalid values throw at create time: a leaf must be a comparator function or `'structural'` (`[store] store: equals for "<key>" must be a function or "structural", received …`), and an object key's entry must be a nested equals map (`[store] store: equals for "<key>" must be a nested equals map, received …`); `'structural'` on an object key is rejected.
-- Equality runs after middleware, inside the signal: the comparator sees the transformed value.
-- ⚠️ `'structural'` costs O(n) per write; opt in per key, exactly where large array or object leaves live.
-
-See [write equality](/learn/concepts/state#write-equality) for when to reach for it.
+By default every write is reference-compared; the `equals` option replaces that per key with a comparator function or the `'structural'` content-equality preset, inherited by every write path (direct calls, `update(partial)`, and the draft path). See [write equality](/learn/concepts/store-control#write-equality) for the option shape, invalid-value errors, and the O(n) cost note.
 
 ### Function Preservation
 
-Functions in the initial object are preserved as-is, not wrapped in signals, functional in snapshots. See [State](/learn/concepts/state) for `computed`-in-store examples.
+Functions in the initial object are preserved as-is, not wrapped in signals, functional in snapshots. Snapshots preserve the **original** initial function references; a handler swapped in later (`appStore.onSave = newHandler`) is not what `snapshot()` returns. See [State](/learn/concepts/state) for `computed`-in-store examples.
 
 ### `PartialDeep<T>`
 
-Recursive optional mapping used by [`update()`](#update). Arrays and functions are preserved as leaf values: a partial update to `{ items: [...] }` is a full replacement, not a deep merge.
+Recursive optional mapping used by [`update()`](#update).
 
 ```typescript
 type PartialDeep<T> = {
@@ -309,24 +266,11 @@ type PartialDeep<T> = {
 
 - **`T`**: The object type to make partially optional.
 
-```typescript
-import type { PartialDeep } from '@hellajs/store';
-
-type Config = {
-  apiUrl: string;
-  features: { darkMode: boolean; beta: boolean };
-  items: number[];
-  log: () => void;
-};
-
-type PartialConfig = PartialDeep<Config>;
-```
-
 > ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. Calling `update({ items: [...] })` replaces the entire array; it does not merge individual elements.
 
 ### `ReadonlyKeys<T, O>`
 
-Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [readonly](/learn/concepts/state#readonly) for usage.
+Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [readonly](/learn/concepts/store-control#readonly) for usage.
 
 ```typescript
 type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
@@ -340,20 +284,7 @@ type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
 - **`T`**: The store's value type.
 - **`O`**: The `StoreOptions<T>` or `undefined`.
 
-```typescript
-import type { ReadonlyKeys } from '@hellajs/store';
-
-type Config = { apiUrl: string; theme: string; debug: boolean };
-
-type R1 = ReadonlyKeys<Config, { readonly: ['apiUrl'] }>;
-// R1: 'apiUrl'
-
-type R2 = ReadonlyKeys<Config, { readonly: true }>;
-// R2: keyof Config: 'apiUrl' | 'theme' | 'debug'
-
-type R3 = ReadonlyKeys<Config, undefined>;
-// R3: never
-```
+Applied: `{ readonly: ['apiUrl'] }` resolves to `'apiUrl'`, `{ readonly: true }` to `keyof T`, and `undefined` to `never`.
 
 ## Important Considerations
 
@@ -403,7 +334,7 @@ userStore.cleanup();
 
 ### Readonly Propagates Deep
 
-`readonly: true` locks every plain-object level of the store tree, and a listed object key locks its entire subtree. Composed stores are the exception: adoption preserves their signals, so a composed store keeps its own readonly configuration regardless of the parent's. See [readonly](/learn/concepts/state#readonly) for the full explanation and examples.
+`readonly: true` locks every plain-object level of the store tree, and a listed object key locks its entire subtree. Composed stores are the exception: adoption preserves their signals, so a composed store keeps its own readonly configuration regardless of the parent's. See [readonly](/learn/concepts/store-control#readonly) for the full explanation and examples.
 
 ### Signals Survive Cleanup
 
