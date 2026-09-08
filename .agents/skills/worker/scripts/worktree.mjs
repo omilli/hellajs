@@ -10,13 +10,15 @@
  * invisible and a stale sibling copy can never revert a merged tick.
  *
  * The hash lives under the worktree's gitdir (never in the working tree, where
- * it would pollute every diff). Staging is permitted; committing never is —
- * the worker accumulates working-tree state, `merge` applies it.
+ * it would pollute every diff). Staging is permitted; the worker never commits
+ * — it accumulates working-tree state. `merge` then commits that delta on the
+ * wt branch (carried plan folder excluded — plans are never committed) and
+ * cherry-picks it into the base branch as one commit per task.
  *
  * Usage: bun .agents/skills/worker/scripts/worktree.mjs <command> [args]
  *   new <slug> --plans <set-folder> [--base <ref>]   seed + carry + baseline + bun install
  *   diff <slug>                                      baseline-relative patch (stdout)
- *   apply <slug> [--target <path>]                   3-way apply at target (default: main repo)
+ *   commit <slug> -m <message>                       commit the delta on the wt branch (plans excluded)
  *   status <slug>                                    baseline + dirty summary
  *   list                                             every protocol worktree
  *   clean <slug>                                     remove worktree + branch, prune
@@ -260,60 +262,48 @@ function commandDiff(args) {
 }
 
 /**
- * Extract the file paths a patch touches (`b/` side of each `diff --git`).
+ * Commit a component's delta on its wt branch, carried plan folder excluded.
  *
- * @param {string} patch Unified patch.
- * @returns {string[]} Repo-relative paths.
+ * Merge-time mechanics: reset the branch to the post-seed baseline (the seed
+ * tree already holds the plan-set and memory carries), stage everything except
+ * the carried plan folder (plans are never committed), and commit. The commit's
+ * diff vs its baseline parent is exactly the worker delta, so `git cherry-pick
+ * <sha>` in the main repo lands it as one per-task commit through git's native
+ * rename-aware 3-way merge — with real conflict stages, never a patch fallback.
+ *
+ * @param {string[]} args Raw args after `commit`.
  */
-function patchPaths(patch) {
-  const paths = [];
-  for (const line of patch.split("\n")) {
-    if (line.startsWith("diff --git ")) {
-      const match = line.match(/^diff --git a\/(.*) b\/(.*)$/);
-      if (match !== null) {
-        paths.push(match[2]);
-      }
-    }
+function commandCommit(args) {
+  const slug = requireSlug(args, "commit");
+  const options = parseFlagValues(args.slice(1), ["-m"]);
+  if (options.has("-m") === false || options.get("-m") === "") {
+    fail("commit requires -m <message> (the merge skill supplies the conventional-commit subject)");
   }
-  return paths;
-}
-
-/**
- * Apply a component worktree's delta at a target via 3-way apply.
- *
- * Conflicts are reported (git's stderr) and the exit is non-zero — never
- * auto-resolved, never silently partial. Resolution authority is the merge
- * skill's, agent-side, per both plan contracts.
- *
- * @param {string[]} args Raw args after `apply`.
- */
-function commandApply(args) {
-  const slug = requireSlug(args, "apply");
-  const options = parseFlagValues(args.slice(1), ["--target"]);
-  const target = options.has("--target") ? resolve(MAIN_ROOT, options.get("--target")) : MAIN_ROOT;
-  const patch = baselineDiff(slug);
-  if (patch === "") {
-    console.log(`apply ${slug}: nothing to apply (no changes since baseline)`);
-    return;
+  const baseline = readBaseline(slug);
+  if (baseline === null) {
+    fail(`no baseline recorded for "${slug}" — was it seeded by \`new\`?`);
   }
-  // 3-way apply needs each preimage in the target's index; carried files can
-  // exist on disk yet be untracked there (plans/ are never committed) — and
-  // the plan folder can be gitignored at the target (runner fixtures under
-  // .plans-runner/ are), which plain `add` refuses. Force-stage exactly those
-  // — the working-tree content is the "ours" side git merges.
-  for (const path of patchPaths(patch)) {
-    if (existsSync(join(target, path)) && git(["-C", target, "ls-files", "--", path]) === "") {
-      git(["-C", target, "add", "-f", "--", path]);
-    }
+  const plans = readPlans(slug);
+  const path = wtPath(slug);
+  // Branch -> baseline: the carries live in the seed tree (the commit's parent),
+  // so they never enter the commit's diff.
+  git(["-C", path, "reset", "--soft", baseline]);
+  // Stage the whole delta, then drop the plan folder back to the seed versions:
+  // `add -A` with an exclude pathspec still processes worktree deletions for
+  // excluded paths, so the exclusion cannot ride the add itself.
+  git(["-C", path, "add", "-A"]);
+  if (plans !== null) {
+    git(["-C", path, "reset", "-q", "--", plans]);
   }
-  const applied = run("git", ["-C", target, "apply", "--3way", "-"], { input: patch });
-  if (applied.stderr !== "") {
-    process.stderr.write(applied.stderr);
+  const staged = run("git", ["-C", path, "diff", "--cached", "--quiet"]);
+  if (staged.status === 0) {
+    fail(`nothing to commit for "${slug}" (delta empty beyond the plan carry)`);
   }
-  if (applied.status !== 0) {
-    fail(`apply of "${slug}" at ${target} exited ${applied.status} — conflicts reported above; resolve agent-side, nothing silently applied`);
+  const committed = run("git", ["-C", path, "commit", "-m", options.get("-m")], { inherit: true });
+  if (committed.status !== 0) {
+    fail(`commit in "${slug}" exited ${committed.status} — index left at the staged delta, working tree untouched`);
   }
-  console.log(`applied ${slug} -> ${target}`);
+  console.log(`committed ${slug}: ${git(["-C", path, "rev-parse", "HEAD"])}`);
 }
 
 /**
@@ -404,7 +394,7 @@ function usage() {
     "usage: bun .agents/skills/worker/scripts/worktree.mjs <command> [args]",
     "  new <slug> --plans <set-folder> [--base <ref>]   seed + carry + baseline + bun install",
     "  diff <slug>                                      baseline-relative patch (stdout)",
-    "  apply <slug> [--target <path>]                   3-way apply at target (default: main repo)",
+    "  commit <slug> -m <message>                       commit the delta on the wt branch (plans excluded)",
     "  status <slug>                                    baseline + dirty summary",
     "  list                                             every protocol worktree",
     "  clean <slug>                                     remove worktree + branch, prune",
@@ -418,8 +408,8 @@ if (command === "new") {
   commandNew(rest);
 } else if (command === "diff") {
   commandDiff(rest);
-} else if (command === "apply") {
-  commandApply(rest);
+} else if (command === "commit") {
+  commandCommit(rest);
 } else if (command === "status") {
   commandStatus(rest);
 } else if (command === "list") {

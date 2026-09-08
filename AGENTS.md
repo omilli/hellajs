@@ -84,7 +84,7 @@
   | `feature` | Surface grounded enhancement ideas; hand each to `plan` as an evidence map. Entry. |
   | `plan` | Turn a goal or evidence map into a task-contract (Files, delta, DoD). |
   | `worker` | Execute a plan task-by-task; tick each DoD only with cited evidence; plan-file runs execute in a component worktree and end delivered for merge; on completion runs the tiered audit/critic pipeline with a one-pass in-contract redo. |
-  | `merge` | Merge a plan set's outstanding component worktrees to the main tree; agent-resolved conflicts land uncommitted for review; the single human checkpoint. |
+  | `merge` | Merge a plan set's outstanding component worktrees to the main tree, one conventional commit per task (plan files never committed — ticks updated agent-side, unstaged); agent-resolved conflicts; the single human checkpoint. |
   | `feedback` | After a run with friction, conservatively apply config/skill edits, left uncommitted. |
   | `memory` | Persist verified decisions/facts to `memory/`; refresh/supersede. |
   | `skill` | Author new skills or revise existing ones. Standalone. |
