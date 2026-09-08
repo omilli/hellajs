@@ -89,7 +89,7 @@ type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 - `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, arrays become signals.
 - `options.readonly`: `true` for all properties readonly, or an array of keys to lock. Propagates deep: `true` locks every plain-object level; a listed object key locks its entire subtree. Composed stores keep their own readonly config.
 - `options.middleware`: Per-key transform functions applied on every set.
-- **Returns**: A reactive store with `snapshot`, `update`, `cleanup`, and `subscribe` methods.
+- **Returns**: A reactive store with `$snapshot`, `$update`, `$cleanup`, and `$subscribe` methods.
 
 ### `$snapshot`
 
@@ -204,7 +204,7 @@ Keys absent from the creation declaration get no middleware or [write equality](
 
 ### `$cleanup`
 
-Recursively invokes `cleanup` on each nested store. Individual signals are not disposed; they remain functional after cleanup, and the store object stays intact. Effects that read individual signals continue to fire.
+Recursively invokes `$cleanup` on each nested store. Individual signals are not disposed; they remain functional after cleanup, and the store object stays intact. Effects that read individual signals continue to fire.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -238,7 +238,7 @@ appStore.count(6); // silent; unsubscribed
 - `callback`: Receives the next and previous values. Runs untracked; reading signals inside it never widens the subscription. Skipped when a write compares equal to the current value.
 - **Returns**: An unsubscribe function; calling it more than once is safe.
 
-Unlike an [`effect`](/reference/core/effect) reading [`$snapshot()`](#snapshot), `subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Writes inside [`batch`](/reference/core/batch)`()` fire the callback once per subscribed key when the batch ends.
+Unlike an [`effect`](/reference/core/effect) reading [`$snapshot()`](#snapshot), `$subscribe` tracks one property only (no whole-store dependency) and hands you the previous value, which effects never see. Writes inside [`batch`](/reference/core/batch)`()` fire the callback once per subscribed key when the batch ends.
 
 Subscriptions belong to the store that owns the key: a composed parent exposes only its own signal-backed keys, so `appStore.$subscribe('user', cb)` throws; subscribe on the nested store itself:
 
@@ -277,7 +277,7 @@ All nested objects become stores, arrays become signals, and functions stay as-i
 
 ### Nested Stores
 
-Existing stores compose as values: `store({ user: userStore })` nests the store with shared signal references, so writing through either reference updates the same signals. See [State](/learn/concepts/state) for what composed stores provide and [`snapshot`](#snapshot) for reactive composed snapshots.
+Existing stores compose as values: `store({ user: userStore })` nests the store with shared signal references, so writing through either reference updates the same signals. See [State](/learn/concepts/state) for what composed stores provide and [`$snapshot`](#snapshot) for reactive composed snapshots.
 
 ### Partial Updates
 
@@ -289,7 +289,7 @@ Pass a function to `$update()` for ergonomic mutations on a mutable draft of the
 
 ### Write Equality
 
-By default every write is reference-compared; the `equals` option replaces that per key with a comparator function or the `'structural'` content-equality preset, inherited by every write path (direct calls, `update(partial)`, and the draft path). See [write equality](/learn/concepts/store-control#write-equality) for the option shape, invalid-value errors, and the O(n) cost note.
+By default every write is reference-compared; the `equals` option replaces that per key with a comparator function or the `'structural'` content-equality preset, inherited by every write path (direct calls, `$update(partial)`, and the draft path). See [write equality](/learn/concepts/store-control#write-equality) for the option shape, invalid-value errors, and the O(n) cost note.
 
 ### Function Preservation
 
@@ -337,7 +337,7 @@ Applied: `{ readonly: ['apiUrl'] }` resolves to `'apiUrl'`, `{ readonly: true }`
 
 ### Draft Updates Compare Structurally
 
-The `update(fn)` draft path diffs by content, not reference. Untouched `Date`, `Map`, `Set`, `RegExp`, and array values are not rewritten; their signals keep the same value and subscribers do not fire. Mutated class instances keep their prototype:
+The `$update(fn)` draft path diffs by content, not reference. Untouched `Date`, `Map`, `Set`, `RegExp`, and array values are not rewritten; their signals keep the same value and subscribers do not fire. Mutated class instances keep their prototype:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -360,12 +360,12 @@ data.$update(draft => {
 
 ### Reserved Keys
 
-The keys `snapshot`, `update`, `cleanup`, and `subscribe` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
+The keys `$snapshot`, `$update`, `$cleanup`, and `$subscribe` are reserved by the store implementation. Passing them as properties in the initial object throws an error.
 
 ```typescript
 import { store } from '@hellajs/store';
 
-store({ $snapshot: 1 }); // Throws: Error '[store] store: reserved key collision, received "snapshot"'
+store({ $snapshot: 1 }); // Throws: Error '[store] store: reserved key collision, received "$snapshot"'
 ```
 
 ### Memory Management

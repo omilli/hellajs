@@ -65,7 +65,7 @@ effect(() => {
 
 ### Partial Updates
 
-Pass a partial object to `update` for deep merging nested properties.
+Pass a partial object to `$update` for deep merging nested properties.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -85,7 +85,7 @@ console.log(user.settings.theme()); // light (unchanged)
 
 ### Mutable Updates
 
-Pass a function to `update` for ergonomic mutations on arrays and complex nested transforms. The function receives a mutable draft.
+Pass a function to `$update` for ergonomic mutations on arrays and complex nested transforms. The function receives a mutable draft.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -170,7 +170,7 @@ Plain-object values become nested stores, middleware and [write equality](/learn
 
 ### Non-Writable Properties
 
-Signal-backed properties, nested stores, and the built-in methods (`snapshot`, `update`, `cleanup`, `subscribe`) are defined non-writable. External reassignment would replace the signal with a plain value and silently drop reactivity, so in strict-mode ESM it throws instead:
+Signal-backed properties, nested stores, and the built-in methods (`$snapshot`, `$update`, `$cleanup`, `$subscribe`) are defined non-writable. External reassignment would replace the signal with a plain value and silently drop reactivity, so in strict-mode ESM it throws instead:
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -214,17 +214,17 @@ snap.logCount(); // Count is 1
 
 ### Reserved Keys
 
-The property names `snapshot`, `update`, `cleanup`, and `subscribe` are reserved by the store implementation. Using them as property names in the initial object will throw an error.
+The property names `$snapshot`, `$update`, `$cleanup`, and `$subscribe` are reserved by the store implementation. Using them as property names in the initial object will throw an error.
 
 ```typescript
-// Throws: Error '[store] store: reserved key collision, received "snapshot"'
-store({ snapshot: 1, name: 'test' });
+// Throws: Error '[store] store: reserved key collision, received "$snapshot"'
+store({ $snapshot: 1, name: 'test' });
 
-// Throws: Error '[store] store: reserved key collision, received "subscribe"'
-store({ subscribe: () => {}, value: 42 });
+// Throws: Error '[store] store: reserved key collision, received "$subscribe"'
+store({ $subscribe: () => {}, value: 42 });
 
-// Throws: Error '[store] store: reserved key collision, received "update"'
-store({ update: () => {}, value: 42 });
+// Throws: Error '[store] store: reserved key collision, received "$update"'
+store({ $update: () => {}, value: 42 });
 
 // Valid property names
 store({ data: 123, info: 'hello' }); // works fine

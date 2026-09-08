@@ -29,11 +29,11 @@ user.email('john@example.com'); // stored as 'john@example.com'
 user.age(-5);                   // throws Error
 ```
 
-Middleware also applies through `update()`:
+Middleware also applies through `$update()`:
 
 ```typescript
-user.update({ name: 'Jane', age: 30 });
-user.update(draft => { draft.email = 'jane@example.com'; });
+user.$update({ name: 'Jane', age: 30 });
+user.$update(draft => { draft.email = 'jane@example.com'; });
 ```
 
 Middleware works with nested stores too. Middleware for nested objects must be a nested object mapping individual property keys to their middleware functions:
@@ -99,7 +99,7 @@ effect(() => {
 appStore.items([1, 2]); // same content; write skipped, effect stays asleep
 ```
 
-A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it (direct calls, `update(partial)`, and `update(draft => …)`), and equality runs after middleware, so the comparator sees the transformed value. Invalid values throw at create time: a leaf accepts a comparator function or `'structural'`; an object key accepts a nested map only, so `'structural'` on an object key throws.
+A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it (direct calls, `$update(partial)`, and `$update(draft => …)`), and equality runs after middleware, so the comparator sees the transformed value. Invalid values throw at create time: a leaf accepts a comparator function or `'structural'`; an object key accepts a nested map only, so `'structural'` on an object key throws.
 
 Prefer the draft path for fine-grained array edits and reserve `'structural'` for large leaves that are replaced wholesale; it costs O(n) per write. See [write equality](/reference/store/store#write-equality) for the full option shape.
 
@@ -156,14 +156,14 @@ app.user.name();      // 'Alice'
 
 ## Subscriptions
 
-`subscribe` observes one signal-backed property without reading the rest of the store. The callback receives the next and previous values; the initial subscribe does not fire it.
+`$subscribe` observes one signal-backed property without reading the rest of the store. The callback receives the next and previous values; the initial subscribe does not fire it.
 
 ```typescript
 import { store } from '@hellajs/store';
 
 const appStore = store({ count: 0, user: { name: 'Alice' } });
 
-const unsub = appStore.subscribe('count', (next, prev) => {
+const unsub = appStore.$subscribe('count', (next, prev) => {
   console.log(prev, '→', next);
 });
 
@@ -176,4 +176,4 @@ The callback runs untracked: reading other signals inside it never widens the su
 
 Only signal-backed properties are subscribable: nested stores, preserved functions, reserved keys, and unknown keys throw. A composed parent exposes only its own signal-backed keys: subscribe on the store that owns the key (the nested store itself), and writes through either reference fire it because composed stores share signals.
 
-Use `subscribe` where an [`effect`](/reference/core/effect) falls short: effects see no previous value, fire on setup, and reading `snapshot()` inside one subscribes to the entire tree. `subscribe` is per-property, silent on setup, and carries `(next, prev)`, the shape logging, analytics, and undo stacks want.
+Use `$subscribe` where an [`effect`](/reference/core/effect) falls short: effects see no previous value, fire on setup, and reading `$snapshot()` inside one subscribes to the entire tree. `$subscribe` is per-property, silent on setup, and carries `(next, prev)`, the shape logging, analytics, and undo stacks want.
