@@ -14,7 +14,10 @@ import { maybeReactive } from "../utils/reactive.mjs";
 export function filterEmptyChildren(t, children, isComponent) {
   const result = [];
 
-  for (const child of children) {
+  let i = 0;
+  const len = children.length;
+  while (i < len) {
+    const child = children[i++];
     if (t.isJSXText(child)) {
       if (typeof child.value === "string" && child.value.trim()) {
         // Normalize whitespace but preserve meaningful spaces

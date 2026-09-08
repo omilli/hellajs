@@ -34,6 +34,7 @@
     "@babel/types": "^7.28.6"
   },
   "devDependencies": {
+    "@hellajs/dom": "*",
     "@types/babel__core": "^7.20.5",
     "@types/babel__traverse": "^7.20.7"
   },

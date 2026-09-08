@@ -245,13 +245,26 @@ html`<input/>`
 html`<br />`
 ```
 
+Void elements (`br`, `img`, `input`, `hr`, ...) may also be written without a slash. They never take children: any content after a void element becomes its sibling.
+
+```js
+html`<div><br>text</div>`
+// Parses as: <div><br />text</div>, with "text" a sibling of <br>
+```
+
 ### Unclosed Tags
 
-Unclosed tags are auto-closed at the end of the template; nested unclosed children bind to their open parent. No error is thrown.
+A closing tag closes the nearest matching open ancestor, implicitly closing anything still open inside it. Stray closers with no matching open element are ignored. Unclosed tags are auto-closed at the end of the template; nested unclosed children bind to their open parent. No error is thrown.
 
 ```js
 html`<div><span>hi`
 // Parses as: <div><span>hi</span></div>
+
+html`<div><span>a</div>`
+// Parses as: <div><span>a</span></div>, the </div> closes the span too
+
+html`<div>a</span>b</div>`
+// Parses as: <div>ab</div>, the stray </span> is ignored
 ```
 
 ### Whitespace Handling

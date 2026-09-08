@@ -7,7 +7,7 @@ import { maybeReactive } from "../utils/reactive.mjs";
  * Convert intermediate component AST node to Babel AST.
  * @param {typeof import("@babel/core").types} t
  * @param {import("../parsers/html.mjs").HtmlNode} node
- * @param {any[]} expressions
+ * @param {import("@babel/core").Expression[]} expressions
  * @returns {import("@babel/core").Expression}
  */
 export function componentNodeToBabel(t, node, expressions) {
@@ -36,8 +36,11 @@ export function componentNodeToBabel(t, node, expressions) {
 
     // Build concatenation expression
     let result = parts[0];
-    for (let i = 1; i < parts.length; i++) {
+    let i = 1;
+    const len = parts.length;
+    while (i < len) {
       result = t.binaryExpression("+", result, parts[i]);
+      i++;
     }
     return result;
   }
@@ -65,9 +68,13 @@ export function componentNodeToBabel(t, node, expressions) {
     }
 
     // Process children recursively
+    const children = node.children || [];
     const processedChildren = [];
-    for (const child of node.children || []) {
-      processedChildren.push(componentNodeToBabel(t, child, expressions));
+    let i = 0;
+    const len = children.length;
+    while (i < len) {
+      processedChildren.push(componentNodeToBabel(t, children[i], expressions));
+      i++;
     }
 
     return buildComponentCall(t, tagCallee, allProps, processedChildren);
@@ -78,13 +85,18 @@ export function componentNodeToBabel(t, node, expressions) {
     // auto-wrapped: a bare slot expression that is reactive-looking (contains a
     // call) becomes an arrow thunk so dom tracks it. String/element/component
     // children pass through unchanged (no call, or already a synthesized node).
+    const children = node.children || [];
     const processedChildren = [];
-    for (const child of node.children || []) {
+    let i = 0;
+    const len = children.length;
+    while (i < len) {
+      const child = children[i];
       if (child && typeof child === "object" && child.__slot !== undefined) {
         processedChildren.push(maybeReactive(t, expressions[child.__slot]));
       } else {
         processedChildren.push(componentNodeToBabel(t, child, expressions));
       }
+      i++;
     }
 
     return buildHellaNode(

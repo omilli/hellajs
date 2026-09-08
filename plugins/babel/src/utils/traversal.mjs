@@ -2,7 +2,8 @@ import { PASSTHROUGH_NAMES } from "../constants.mjs";
 
 /**
  * Find all passthrough component names (ForEach, Portal, Lazy) in the intermediate AST.
- * @param {any} node
+ * Accepts any input; non-object values (null/undefined/primitives) are ignored.
+ * @param {unknown} node
  * @param {Set<string>} [found]
  * @returns {Set<string>}
  */
@@ -14,8 +15,12 @@ export function findPassthroughComponents(node, found = new Set()) {
   }
 
   if (Array.isArray(node.children)) {
-    for (const child of node.children) {
-      findPassthroughComponents(child, found);
+    const children = node.children;
+    let i = 0;
+    const len = children.length;
+    while (i < len) {
+      findPassthroughComponents(children[i], found);
+      i++;
     }
   }
 
@@ -24,7 +29,8 @@ export function findPassthroughComponents(node, found = new Set()) {
 
 /**
  * Check if the intermediate AST contains any component tags.
- * @param {any} node
+ * Accepts any input; non-object values (null/undefined/primitives) are ignored.
+ * @param {unknown} node
  * @param {Set<string>} [excludeNames]
  * @returns {boolean}
  */
@@ -37,8 +43,12 @@ export function containsComponent(node, excludeNames = new Set()) {
     if (excludeNames.has(node.tag)) {
       // Still need to check children for other components
       if (Array.isArray(node.children)) {
-        for (const child of node.children) {
-          if (containsComponent(child, excludeNames)) return true;
+        const children = node.children;
+        let i = 0;
+        const len = children.length;
+        while (i < len) {
+          if (containsComponent(children[i], excludeNames)) return true;
+          i++;
         }
       }
       return false;
@@ -51,8 +61,12 @@ export function containsComponent(node, excludeNames = new Set()) {
 
   // Check children array
   if (Array.isArray(node.children)) {
-    for (const child of node.children) {
-      if (containsComponent(child, excludeNames)) return true;
+    const children = node.children;
+    let i = 0;
+    const len = children.length;
+    while (i < len) {
+      if (containsComponent(children[i], excludeNames)) return true;
+      i++;
     }
   }
 

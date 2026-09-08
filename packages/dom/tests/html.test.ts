@@ -221,6 +221,36 @@ describe("dom", () => {
       expect(result.children).toEqual(["hello"]);
     });
 
+    test("text after an unclosed void element becomes its sibling", () => {
+      const node = html`<div><br>text</div>` as HellaNode;
+      expect(node.tag).toBe("div");
+      expect(node.children).toEqual([
+        { tag: "br", props: {}, children: [], static: true },
+        "text"
+      ]);
+    });
+
+    test("closing an ancestor implicitly closes nested open elements", () => {
+      const node = html`<div><span>a</div>` as HellaNode;
+      expect(node.tag).toBe("div");
+      expect(node.children).toEqual([
+        { tag: "span", props: {}, children: ["a"], static: true }
+      ]);
+    });
+
+    test("stray closing tag without matching open is ignored", () => {
+      const node = html`<div>a</span>b</div>` as HellaNode;
+      expect(node.tag).toBe("div");
+      expect(node.children).toEqual(["a", "b"]);
+    });
+
+    test("unclosed elements auto-close at EOF without duplication", () => {
+      const node = html`<div><span>x` as HellaNode;
+      expect(node.children).toEqual([
+        { tag: "span", props: {}, children: ["x"], static: true }
+      ]);
+    });
+
     test("root-level signal returns signal directly", () => {
       const s = signal(42);
       const result = html`${s}`;

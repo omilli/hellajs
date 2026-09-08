@@ -2,8 +2,7 @@
 
 /**
  * @param {string | null | undefined} text
- * @returns {any[]}
- */
+ * @returns {Array<string | { __slot: number }>} */
 export function parseTextContent(text) {
   if (!text) return [];
 

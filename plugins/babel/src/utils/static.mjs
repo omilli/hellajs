@@ -26,7 +26,7 @@ const STATE_BEARING_KEYS = new Set(["on", "e", "hooks", "error"]);
  * static vnode: strings, numbers, booleans. Everything else (identifiers,
  * calls, arrows, template literals, …) is dynamic.
  * @param {typeof import("@babel/core").types} t
- * @param {any} value
+ * @param {import("@babel/core").Expression} value
  * @returns {boolean}
  */
 function isLiteralValue(t, value) {
@@ -61,7 +61,10 @@ export function tryBuildStaticJSX(t, node) {
   if (on.length > 0 || hooks.length > 0 || e.length > 0 || error.length > 0) return null;
 
   // Props must be plain literal values — no spreads, no expressions
-  for (const prop of props) {
+  let i = 0;
+  const len = props.length;
+  while (i < len) {
+    const prop = props[i++];
     if (!t.isObjectProperty(prop)) return null;
     if (!t.isIdentifier(prop.key) && !t.isStringLiteral(prop.key)) return null;
     if (!isLiteralValue(t, prop.value)) return null;
@@ -69,7 +72,10 @@ export function tryBuildStaticJSX(t, node) {
 
   const filtered = filterEmptyChildren(t, node.children, false);
   const children = [];
-  for (const child of filtered) {
+  let ci = 0;
+  const cLen = filtered.length;
+  while (ci < cLen) {
+    const child = filtered[ci++];
     if (t.isStringLiteral(child)) {
       children.push(child);
       continue;
@@ -96,14 +102,18 @@ export function tryBuildStaticJSX(t, node) {
  * components have already been substituted with arbitrary expressions by the
  * time this runs, so they fail the literal checks naturally.
  * @param {typeof import("@babel/core").types} t
- * @param {any} node
+ * @param {import("@babel/core").Node} node
  * @returns {boolean}
  */
 function isStaticVNodeExpr(t, node) {
   if (!t.isObjectExpression(node)) return false;
 
   let hasTag = false;
-  for (const prop of node.properties) {
+  const properties = node.properties;
+  let i = 0;
+  const len = properties.length;
+  while (i < len) {
+    const prop = properties[i++];
     if (!t.isObjectProperty(prop)) return false;
 
     const key = t.isIdentifier(prop.key) ? prop.key.name : t.isStringLiteral(prop.key) ? prop.key.value : null;
@@ -120,7 +130,11 @@ function isStaticVNodeExpr(t, node) {
 
     if (key === "children") {
       if (!t.isArrayExpression(prop.value)) return false;
-      for (const element of prop.value.elements) {
+      const elements = prop.value.elements;
+      let ei = 0;
+      const eLen = elements.length;
+      while (ei < eLen) {
+        const element = elements[ei++];
         if (element === null) return false;
         if (t.isStringLiteral(element)) continue;
         if (isStaticVNodeExpr(t, element)) continue;
@@ -131,7 +145,11 @@ function isStaticVNodeExpr(t, node) {
 
     // props (and any unknown bucket) — literal values only
     if (t.isObjectExpression(prop.value)) {
-      for (const inner of prop.value.properties) {
+      const innerProps = prop.value.properties;
+      let pi = 0;
+      const pLen = innerProps.length;
+      while (pi < pLen) {
+        const inner = innerProps[pi++];
         if (!t.isObjectProperty(inner)) return false;
         if (!isLiteralValue(t, inner.value)) return false;
       }
@@ -163,8 +181,8 @@ function hoistVNode(t, program, vnode) {
  * (recursively). Returns the (possibly rewritten) expression.
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").NodePath} program
- * @param {any} node
- * @returns {any}
+ * @param {import("@babel/core").Expression} node
+ * @returns {import("@babel/core").Expression}
  */
 export function hoistStaticSubtrees(t, program, node) {
   if (!t.isObjectExpression(node)) return node;
@@ -175,21 +193,28 @@ export function hoistStaticSubtrees(t, program, node) {
     return hoistVNode(t, program, withFlag);
   }
 
-  for (const prop of node.properties) {
+  const properties = node.properties;
+  let i = 0;
+  const len = properties.length;
+  while (i < len) {
+    const prop = properties[i++];
     if (!t.isObjectProperty(prop) || !t.isArrayExpression(prop.value)) continue;
     const key = t.isIdentifier(prop.key) ? prop.key.name : null;
     if (key !== "children") continue;
 
     const elements = prop.value.elements;
-    for (let i = 0; i < elements.length; i++) {
-      const element = elements[i];
+    let ei = 0;
+    const eLen = elements.length;
+    while (ei < eLen) {
+      const element = elements[ei];
       if (element && t.isObjectExpression(element) && isStaticVNodeExpr(t, element)) {
         const withFlag = t.cloneNode(element);
         withFlag.properties.push(t.objectProperty(t.identifier("static"), t.booleanLiteral(true)));
-        elements[i] = hoistVNode(t, program, withFlag);
+        elements[ei] = hoistVNode(t, program, withFlag);
       } else if (element && t.isObjectExpression(element)) {
         hoistStaticSubtrees(t, program, element);
       }
+      ei++;
     }
   }
 

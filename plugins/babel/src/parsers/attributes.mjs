@@ -3,8 +3,8 @@ import { parseTextContent } from "./text.mjs";
 
 /**
  * @param {string | null | undefined} attrsStr
- * @param {any[]} expressions
- * @returns {Record<string, any>}
+ * @param {import("@babel/core").Expression[]} expressions
+ * @returns {Record<string, boolean | string | { __slot: number } | Array<string | { __slot: number }>>}
  */
 export function parseAttributes(attrsStr, expressions) {
   if (!attrsStr?.trim()) return {};

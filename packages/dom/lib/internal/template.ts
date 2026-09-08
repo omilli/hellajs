@@ -52,6 +52,13 @@ export interface HtmlParsedAttrs {
 }
 
 const TOKEN_REGEX = /<(\/)?([\w-]+)([^>]*?)(\s*\/)?>|([^<]+)/g;
+// HTML void elements: parsed as leaf nodes, never pushed to the nesting stack
+// (mirrors VOID_TAGS in plugins/babel/src/constants.mjs — the plugin has no
+// runtime deps, so the parity corpus guards the drift)
+const VOID_TAGS = new Set([
+  "area", "base", "br", "col", "embed", "hr", "img", "input",
+  "link", "meta", "param", "source", "track", "wbr"
+]);
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
 const SKIP_REGEX = /<!--[\s\S]*?-->|<!DOCTYPE[^>]*>|<!\[CDATA\[[\s\S]*?\]\]>/gi;
 const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)|([^\s>]+)))?/g;
@@ -224,8 +231,11 @@ function appendChild(node: HtmlParsedNode, child: unknown): void {
  * @internal
  * Parses HTML string into HellaNode AST using regex-based tokenization.
  * Handles tags, attributes, text content, and placeholder substitution.
- * Unclosed tags auto-close at end of template: children were appended to their
- * open parent at open time, so only the outermost unclosed node becomes a root.
+ * Void elements parse as leaf nodes; a closing tag closes its nearest matching
+ * open ancestor (implicitly closing anything above it); stray closers with no
+ * matching ancestor are dropped. Unclosed elements auto-close at end of
+ * template: children were appended to their open parent at open time, so only
+ * the outermost unclosed node becomes a root.
  * @param html The HTML string to parse
  * @param placeholders Array of placeholder markers for value substitution
  * @returns Array of parsed AST nodes
@@ -274,13 +284,28 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
         }
       }
     } else if (isClosing) {
-      if (stack.length > 0) {
-        const completed = stack.pop()!;
-        if (stack.length === 0) {
+      // Close the nearest open ancestor with a matching tag (implicitly closing
+      // everything above it); a closer with no matching open element is stray
+      // and dropped. Dynamic-component closers (</__SLOT_N__>) match the
+      // nearest open dynamic component: the open and close markers are distinct
+      // expressions, so their indices never agree.
+      const isSlotCloser = /^__SLOT_\d+__$/.test(tagName ?? "");
+      let k = stack.length - 1;
+      while (k >= 0) {
+        const open = stack[k]!;
+        const isDynamic = "dynamicComponent" in open;
+        if (isSlotCloser ? isDynamic : !isDynamic && open.tag === tagName) break;
+        k--;
+      }
+
+      if (k >= 0) {
+        const completed = stack[k]!;
+        stack.length = k;
+        if (k === 0) {
           result.push(completed);
           current = null;
         } else {
-          current = stack[stack.length - 1] ?? null;
+          current = stack[k - 1] ?? null;
         }
       }
     } else {
@@ -303,7 +328,9 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
           ...(attrs.error && { error: attrs.error })
         } as HellaNode & { children: HellaChild[] };
 
-      if (isSelfClosing) {
+      // Void elements never push to the stack: they are leaf nodes whose
+      // following content is a sibling, not a child.
+      if (isSelfClosing || VOID_TAGS.has(tagName!)) {
         if (current) {
           appendChild(current, node);
         } else {

@@ -2,8 +2,8 @@
 //
 // Wrap a call-containing expression in an arrow thunk so dom's effect machinery
 // tracks it (mirrors SolidJS's compiled reactivity). Applies to element children
-// only — never to component children (which may treat the value as a plain value,
-// not a function).
+// AND element attribute values — never to component children/props (which may
+// treat the value as a plain value, not a function).
 
 /**
  * Wrap `expr` in `() => expr` iff it is "reactive-looking": its subtree contains
@@ -15,8 +15,8 @@
  * `resolveNode`/`appendToParent` would stringify the inner arrow (render its source
  * text) instead of calling it.
  * @param {typeof import("@babel/core").types} t
- * @param {any} expr
- * @returns {any}
+ * @param {import("@babel/core").Expression} expr
+ * @returns {import("@babel/core").Expression}
  */
 export function maybeReactive(t, expr) {
   if (t.isArrowFunctionExpression(expr) || t.isFunctionExpression(expr)) return expr;
@@ -30,7 +30,7 @@ export function maybeReactive(t, expr) {
  * `() => …`; recursion into deeper nodes is safe and intended (a ternary or member
  * chain containing a call is still reactive-looking).
  * @param {typeof import("@babel/core").types} t
- * @param {any} node
+ * @param {import("@babel/core").Node} node
  * @returns {boolean}
  */
 function containsCall(t, node) {

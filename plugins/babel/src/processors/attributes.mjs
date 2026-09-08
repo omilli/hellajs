@@ -1,16 +1,15 @@
-import { processAttributeValue } from "./values.mjs";
 import { maybeReactive } from "../utils/reactive.mjs";
 
 // Forward declaration - will be injected by builder/ast.mjs to avoid circular dependency
 let componentNodeToBabel = null;
 
-/** @param {(t: any, node: any, expressions: any[]) => any} fn */
+/** @param {(t: typeof import("@babel/core").types, node: import("../parsers/html.mjs").HtmlNode, expressions: import("@babel/core").Expression[]) => import("@babel/core").Expression} fn */
 export function setComponentNodeToBabel(fn) {
   componentNodeToBabel = fn;
 }
 
 /**
- * Categorize JSX attributes into six typed arrays.
+ * Categorize JSX attributes into five typed arrays.
  * @param {typeof import("@babel/core").types} t
  * @param {import("@babel/core").JSXAttribute[]} attributes
  * @param {boolean} isComponent
@@ -37,8 +36,6 @@ export function processAttributes(t, attributes, isComponent) {
 
       if (value === null) {
         value = t.booleanLiteral(true);
-      } else {
-        value = processAttributeValue(value, isComponent, key);
       }
 
       if (key.startsWith("error:")) {
@@ -88,15 +85,24 @@ export function processAttributes(t, attributes, isComponent) {
 
 
 /**
- * Categorize html`` component attributes into six typed arrays.
- * @param {object} t
- * @param {Record<string, any>} props
- * @param {any[]} expressions
+ * Categorize html`` component attributes into five typed arrays.
+ * @param {typeof import("@babel/core").types} t
+ * @param {Record<string, boolean | string | { __slot: number } | Array<string | { __slot: number }>>} props
+ * @param {import("@babel/core").Expression[]} expressions
+ * @param {boolean} isComponent When false (element), call-containing values are
+ *   auto-wrapped into arrow thunks for reactivity; when true (component), values
+ *   pass through unwrapped (components may treat a prop as a plain value, not a
+ *   function).
+ * @returns {{ props: import("@babel/core").ObjectProperty[], on: import("@babel/core").ObjectProperty[], hooks: import("@babel/core").ObjectProperty[], e: import("@babel/core").ObjectProperty[], error: import("@babel/core").ObjectProperty[] }}
  */
 export function processComponentAttributes(t, props, expressions, isComponent) {
   const propsArray = [], onArray = [], hooksArray = [], eArray = [], errorArray = [];
 
-  for (const key in props) {
+  const keys = Object.keys(props);
+  let i = 0;
+  const len = keys.length;
+  while (i < len) {
+    const key = keys[i++];
     const value = props[key];
     let processedValue;
 

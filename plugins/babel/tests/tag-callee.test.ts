@@ -24,7 +24,7 @@ describe("babel", () => {
         plugins: ["@babel/plugin-syntax-jsx"]
       });
       const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
-      const callee = getTagCallee(types, openingElement.name);
+      const callee = getTagCallee(babel.types, openingElement.name);
       expect(types.isIdentifier(callee)).toBe(true);
       expect(callee.name).toBe("div");
     });
@@ -34,7 +34,7 @@ describe("babel", () => {
         plugins: ["@babel/plugin-syntax-jsx"]
       });
       const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
-      const callee = getTagCallee(types, openingElement.name);
+      const callee = getTagCallee(babel.types, openingElement.name);
       expect(types.isMemberExpression(callee)).toBe(true);
       expect(types.isIdentifier(callee.object)).toBe(true);
       expect((callee.object as BabelNodeWithName).name).toBe("UI");
@@ -47,7 +47,7 @@ describe("babel", () => {
         plugins: ["@babel/plugin-syntax-jsx"]
       });
       const openingElement = (ast as BabelParseResult).program.body[0]!.expression.openingElement;
-      const callee = getTagCallee(types, openingElement.name);
+      const callee = getTagCallee(babel.types, openingElement.name);
       expect(types.isMemberExpression(callee)).toBe(true);
     });
 
@@ -57,7 +57,7 @@ describe("babel", () => {
         namespace: { name: "xml" },
         name: { name: "lang" }
       };
-      expect(() => getTagCallee(types, invalidNode as unknown as Parameters<typeof getTagCallee>[1])).toThrow("Unsupported JSX tag type");
+      expect(() => getTagCallee(babel.types, invalidNode as unknown as Parameters<typeof getTagCallee>[1])).toThrow("[babel-plugin-hellajs] getTagCallee: unsupported JSX tag name, received JSXNamespacedName");
     });
   });
 });

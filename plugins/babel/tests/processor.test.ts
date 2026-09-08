@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import types from "@babel/types";
+import babel from "@babel/core";
 import { processComponentAttributes } from "../src/processors/attributes.mjs";
 import { transformJSX } from "./helpers";
 
@@ -153,73 +153,6 @@ describe("babel", () => {
     });
   });
 
-  describe("processAttributeValue", () => {
-    test("extracts expression from container", () => {
-      const output = transformJSX("<div class={dynamicClass} />");
-      expect(output).toContain("class: dynamicClass");
-    });
-
-    test("handles string literals", () => {
-      const output = transformJSX('<div class="static" />');
-      expect(output).toContain('class: "static"');
-    });
-
-    test("handles boolean literals", () => {
-      const output = transformJSX("<input disabled={true} />");
-      expect(output).toContain("disabled: true");
-    });
-
-    test("handles numbers", () => {
-      const output = transformJSX("<div data-count={42} />");
-      expect(output).toContain('"data-count": 42');
-    });
-
-    test("handles null", () => {
-      const output = transformJSX("<div data-value={null} />");
-      expect(output).toContain('"data-value": null');
-    });
-
-    test("handles member expressions", () => {
-      const output = transformJSX("<div value={obj.prop} />");
-      expect(output).toContain("value: obj.prop");
-    });
-
-    test("handles function calls", () => {
-      const output = transformJSX("<div onClick={handleClick()} />");
-      expect(output).toContain("onClick: () => handleClick()");
-    });
-
-    test("handles object expressions", () => {
-      const output = transformJSX("<div data={obj} />");
-      expect(output).toContain("data: obj");
-    });
-
-    test("handles array expressions", () => {
-      const output = transformJSX("<div items={list} />");
-      expect(output).toContain("items: list");
-    });
-
-    test("handles binary expressions", () => {
-      const output = transformJSX("<div value={a + b} />");
-      expect(output).toContain("value: a + b");
-    });
-
-    test("handles logical expressions", () => {
-      const output = transformJSX("<div value={a && b} />");
-      expect(output).toContain("value: a && b");
-    });
-
-    test("handles arrow functions", () => {
-      const output = transformJSX("<div onClick={() => {}} />");
-      expect(output).toContain("onClick: () => {}");
-    });
-
-    test("handles template literals", () => {
-      const output = transformJSX("<div class={`base ${extra}`} />");
-      expect(output).toContain("class: `base ${extra}`");
-    });
-  });
-
   describe("html`` attribute processing", () => {
     test("on: in template", () => {
       const output = transformJSX('const node = html`<div on:click="${handler}"></div>`;');
@@ -279,14 +212,14 @@ describe("babel", () => {
       // This happens when a component attribute has mixed content (text + slot markers)
       const props = {
         id: "test",
-        class: ["prefix-", { __slot: 0 }, "-suffix"] as unknown
+        class: ["prefix-", { __slot: 0 }, "-suffix"]
       };
-      const expressions = [types.identifier("dynamicValue")];
+      const expressions = [babel.types.identifier("dynamicValue")];
 
       // Mixed-content array (text + slot markers) builds a binary `+` concat.
       // isComponent=false exercises the new element path (maybeReactive is a no-op
       // here: dynamicValue is an identifier, not a call).
-      const result = processComponentAttributes(types, props, expressions, false);
+      const result = processComponentAttributes(babel.types, props, expressions, false);
       // The mixed content should be processed
       expect(result.props).toHaveLength(2); // id and class
       expect(result.props[0]?.key?.name).toBe("id");

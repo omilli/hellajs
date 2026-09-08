@@ -108,7 +108,8 @@ describe("babel", () => {
       const result = parseHTML("<div><br /></div>", []);
       const parent = result[0];
       expect(typeof parent === "object" && parent?.tag).toBe("div");
-      expect(typeof parent === "object" && parent?.children?.[0]?.tag).toBe("br");
+      const child = typeof parent === "object" ? parent.children?.[0] : undefined;
+      expect(typeof child === "object" && child?.tag).toBe("br");
     });
 
     test("fragment syntax", () => {
@@ -172,6 +173,57 @@ describe("babel", () => {
     test("root-level text content", () => {
       const result = parseHTML("root text", []);
       expect(result[0]).toBe("root text");
+    });
+
+    test("unclosed void element takes following text as sibling", () => {
+      const result = parseHTML("<div><br>text</div>", []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: {},
+          children: [{ tag: "br", props: {}, children: [] }, "text"]
+        }
+      ]);
+    });
+
+    test("bare void element at root parses without closing tag", () => {
+      const result = parseHTML("<br>", []);
+      expect(result).toEqual([{ tag: "br", props: {}, children: [] }]);
+    });
+
+    test("unclosed void element with attributes keeps text sibling", () => {
+      const result = parseHTML('<input value="x">t', []);
+      expect(result).toEqual([
+        { tag: "input", props: { value: "x" }, children: [] },
+        "t"
+      ]);
+    });
+
+    test("closing an ancestor implicitly closes nested open elements", () => {
+      const result = parseHTML("<div><span>a</div>", []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: {},
+          children: [{ tag: "span", props: {}, children: ["a"] }]
+        }
+      ]);
+    });
+
+    test("stray closing tag without matching open is ignored", () => {
+      const result = parseHTML("<div>a</span>b</div>", []);
+      expect(result).toEqual([{ tag: "div", props: {}, children: ["a", "b"] }]);
+    });
+
+    test("unclosed elements flush once at EOF", () => {
+      const result = parseHTML("<div><span>x", []);
+      expect(result).toEqual([
+        {
+          tag: "div",
+          props: {},
+          children: [{ tag: "span", props: {}, children: ["x"] }]
+        }
+      ]);
     });
   });
 

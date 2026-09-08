@@ -23,8 +23,12 @@ export function componentTransformer(t) {
       const program = path.findParent(p => t.isProgram(p));
 
       const passthroughNames = findPassthroughComponents(ast);
-      for (const name of passthroughNames) {
-        PASSTHROUGH_INJECTORS[name](t, program);
+      const names = Array.from(passthroughNames);
+      let i = 0;
+      const len = names.length;
+      while (i < len) {
+        PASSTHROUGH_INJECTORS[names[i]](t, program);
+        i++;
       }
 
       if (containsComponent(ast, passthroughNames)) {

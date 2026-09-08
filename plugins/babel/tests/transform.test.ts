@@ -138,6 +138,11 @@ describe("babel", () => {
       expect(normalize(output)).toBe('const _hellaStatic = { tag: "input", props: { type: "text" }, static: true }; const node = _hellaStatic;');
     });
 
+    test("unclosed void element compiles following text as sibling", () => {
+      const output = transformJSX("const node = html`<div><br>text</div>`;");
+      expect(normalize(output)).toBe('const _hellaStatic = { tag: "div", children: [{ tag: "br" }, "text"], static: true }; const node = _hellaStatic;');
+    });
+
     test("component in template", () => {
       const output = transformJSX("const node = html`<Button>text</Button>`;");
       expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; const node = component(Button, { children: ["text"] });');
@@ -231,6 +236,36 @@ describe("babel", () => {
       const output = transformJSX(code);
       const matches = output.match(/import\s*{\s*component\s*}/g);
       expect(matches?.length).toBe(1);
+    });
+
+    test("aliased component import gains a fresh component specifier", () => {
+      const code = `
+        import { component as c } from '@hellajs/dom';
+        const n = <Button />;
+      `;
+      expect(getNamedImports(code, "@hellajs/dom")).toEqual(["component as c", "component"]);
+      const output = transformJSX(code);
+      expect(normalize(output)).toBe("import { component as c, component } from '@hellajs/dom'; const n = component(Button, {});");
+    });
+
+    test("aliased ForEach import gains a fresh ForEach specifier", () => {
+      const code = `
+        import { ForEach as FE } from '@hellajs/dom';
+        const el = <ForEach each={items} use={item => item} />;
+      `;
+      expect(getNamedImports(code, "@hellajs/dom")).toEqual(["ForEach as FE", "ForEach"]);
+      const output = transformJSX(code);
+      expect(normalize(output)).toBe("import { ForEach as FE, ForEach } from '@hellajs/dom'; const el = ForEach({ each: items, use: item => item });");
+    });
+
+    test("alias into the required local name suppresses injection", () => {
+      const code = `
+        import { x as component } from '@hellajs/dom';
+        const n = <Button />;
+      `;
+      expect(getNamedImports(code, "@hellajs/dom")).toEqual(["x as component"]);
+      const output = transformJSX(code);
+      expect(normalize(output)).toBe("import { x as component } from '@hellajs/dom'; const n = component(Button, {});");
     });
   });
 
