@@ -236,10 +236,11 @@ export async function runProbe(model?: string): Promise<number> {
  * input for unit selection) are skipped. An unflipped worktree marker
  * auto-continues with a fresh instance while ticks keep progressing; an
  * attempt with no new ticks reaches the failure gate: retry / deliver-
- * incomplete / abandon / halt. A completed component reaches the merge
- * checkpoint: merge now (spawns a `/skill:merge` instance) / continue (split
- * mode, next component) / halt. Exit code is 0 only when every unit ended
- * done or was pre-ticked.
+ * incomplete / abandon / halt. Completed components are left standing on
+ * their worktrees — the user reviews and invokes the merge skill per set in
+ * a fresh context (the single human checkpoint); the runner never merges and
+ * never asks about merging. Exit code is 0 only when every unit ended done
+ * or was pre-ticked.
  *
  * @param options Set folder (absolute), optional model pattern, worktree mode.
  * @returns Process exit code.
@@ -288,20 +289,21 @@ export async function runSet(options: RunSetOptions): Promise<number> {
       break;
     }
     if (outcome.failedCount > 0) {
-      logger.warn(`component ${venue.slug} incomplete — its merge checkpoint is skipped (merge would refuse it)`);
+      logger.warn(`component ${venue.slug} incomplete — standing for plan rework (merge would refuse it)`);
       continue;
     }
-    const isLastVenue = venue === venues[venues.length - 1];
-    const choice = await askCheckpoint(relay, venue, options.mode, isLastVenue);
-    if (choice === "halt") {
-      halted = true;
-      break;
-    }
-    if (choice === "merge") {
-      await runMergeInstance(options.setDir, setName, relay, options.model);
-    }
+    logger.success(`component ${venue.slug} complete — standing for review (merge is user-invoked)`);
   }
   printSummary(records, halted);
+  const relSetDir = relative(projectRoot, options.setDir);
+  const standing = ((await worktreeScript(["list"])) ?? "")
+    .split("\n")
+    .filter((line: string): boolean => line.includes(`plans=${relSetDir}`));
+  if (standing.length > 0) {
+    logger.info(
+      `outstanding worktrees of this set — review, then invoke the merge skill on ${relSetDir} in a fresh context:\n${standing.join("\n")}`,
+    );
+  }
   const complete = !halted && records.every((record: UnitRecord): boolean => record.status !== "failed");
   return complete ? 0 : 1;
 }
@@ -486,81 +488,6 @@ async function askGate(relay: TerminalRelay, unitName: string): Promise<"retry" 
       "  (r=retry, fresh instance re-entering the worktree · d=deliver incomplete for plan rework · a=abandon: clean the worktree · h=halt the run)",
     );
   }
-}
-
-/**
- * The merge checkpoint after a completed component: the single human decision
- * on landing the work. Single mode fires once at set completion (merge now /
- * halt); split mode fires after each component (merge now / continue to the
- * next component / halt; `continue` is not offered on the last component —
- * there is nothing to continue to).
- *
- * @param relay The shared terminal relay.
- * @param venue The completed venue.
- * @param mode Worktree mode.
- * @param isLastVenue True when no component follows.
- * @returns The chosen operator action.
- */
-async function askCheckpoint(
-  relay: TerminalRelay,
-  venue: Venue,
-  mode: WorktreeMode,
-  isLastVenue: boolean,
-): Promise<"merge" | "continue" | "halt"> {
-  const status = await worktreeScript(["status", venue.slug]);
-  if (status !== null) {
-    console.log(status.trimEnd());
-  }
-  const offerContinue = mode === "split" && !isLastVenue;
-  const prompt = offerContinue
-    ? `component ${venue.slug} complete — merge now / continue to next component / halt?`
-    : `component ${venue.slug} complete — merge now / halt?`;
-  for (;;) {
-    const line = (await relay.askOrchestrator(prompt)).trim().toLowerCase();
-    if (line === "m" || line === "merge") {
-      return "merge";
-    }
-    if (offerContinue && (line === "c" || line === "continue")) {
-      return "continue";
-    }
-    if (line === "h" || line === "halt") {
-      return "halt";
-    }
-    console.log(
-      offerContinue
-        ? "  (m=merge now: spawns the merge instance · c=continue to the next component, worktree stays outstanding · h=halt the run)"
-        : "  (m=merge now: spawns the merge instance · h=halt the run)",
-    );
-  }
-}
-
-/**
- * Spawn the `/skill:merge` instance for a completed set component.
- *
- * The merge skill owns apply and cleanup; this runner only relays its dialogs
- * — never `diff`/`apply` (the single human checkpoint stays human).
- *
- * @param setDir Absolute path to the plan-set folder (main tree).
- * @param setName Set folder basename, for the session name.
- * @param relay The shared terminal relay.
- * @param model Optional model pattern passed to `pi -m`.
- * @returns The merge instance's final report.
- */
-async function runMergeInstance(
-  setDir: string,
-  setName: string,
-  relay: TerminalRelay,
-  model?: string,
-): Promise<string> {
-  const sessionName = `plans: merge ${setName}`;
-  const prompt = [
-    `/skill:merge Merge the outstanding component worktrees of the plan set at ${setDir} (main repo: ${projectRoot}).`,
-    "ask_user_question dialogs are relayed to a human operator at the terminal; everything lands uncommitted for review.",
-  ].join("\n");
-  logger.info(`\n── merge · session ${sessionName} ──\n`);
-  const report = await driveAgent({ sessionName, prompt, model, relay, onUiRequest: dialogHook(relay) });
-  console.log(`\n── merge report (${setName}) ──\n${report}\n`);
-  return report;
 }
 
 /** Print the per-unit summary with session names for audit. */
