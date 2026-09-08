@@ -165,7 +165,7 @@ const app = store({
 });
 ```
 
-Middleware runs *before* changes are stored; use it for validation, transformation, or normalization. Effects run *after*; see [reactivity](/learn/concepts/reactivity) for logging and derived-state patterns. For persistence, use [persistStore](/reference/store/persist); see [Persistence](#persistence).
+Middleware runs *before* changes are stored; use it for validation, transformation, or normalization. Effects run *after*; see [reactivity](/learn/concepts/reactivity) for logging and derived-state patterns. For persistence, use [persistStore](/reference/store/persiststore); see [Persistence](#persistence).
 
 ## Persistence
 
@@ -182,7 +182,7 @@ const persist = persistStore(settings, localStorageAdaptor('settings'));
 settings.theme('dark');
 ```
 
-Corrupt or outdated persisted state never bricks the app: storage is cleared, the initial state stays, and `onError` reports. See the [persistStore reference](/reference/store/persist) for the full hydration contract and [persistence patterns](/learn/patterns/persistence) for IndexedDB, partial persistence, and cross-tab recipes.
+Corrupt or outdated persisted state never bricks the app: storage is cleared, the initial state stays, and `onError` reports. See the [persistStore reference](/reference/store/persiststore) for the full hydration contract and [persistence patterns](/learn/patterns/persistence) for IndexedDB, partial persistence, and cross-tab recipes.
 
 ## Write Equality
 

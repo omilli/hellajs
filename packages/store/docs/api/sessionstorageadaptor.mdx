@@ -1,0 +1,34 @@
+# sessionStorageAdaptor
+
+Backs a store's persistence with `window.sessionStorage` under a key: same contract as [`localStorageAdaptor`](/reference/store/localstorageadaptor), scoped to the current tab session.
+
+## API
+
+```typescript
+import { sessionStorageAdaptor } from '@hellajs/store';
+
+function sessionStorageAdaptor(key: string): StoreAdaptor
+```
+
+- `key`: the sessionStorage slot the persisted snapshot occupies
+- **Returns**: a `StoreAdaptor` reading and writing that slot
+
+## Basic Usage
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, sessionStorageAdaptor } from '@hellajs/store';
+
+const wizard = store({ step: 1, choice: '' });
+const persist = persistStore(wizard, sessionStorageAdaptor('wizard-draft'));
+
+// Synchronous storage: persisted values are applied before this line runs.
+
+wizard.step(2); // sessionStorage "wizard-draft": {"step":2,"choice":""}
+```
+
+## Key Concepts
+
+### Tab-Scoped Persistence
+
+The stored snapshot dies with the tab, which suits multi-step drafts and other ephemeral workflows that should not resurface in a fresh session. See [`persistStore`](/reference/store/persiststore) for the full hydration contract: synchronous reads apply before `persistStore` returns, and corrupt stored state self-heals.

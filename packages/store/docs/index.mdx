@@ -37,7 +37,9 @@ userStore.update({
 ### API
 
 - **[store](/reference/store/store)**: Create a deeply reactive store from a plain object with granular property reactivity, draft-based updates, and readonly controls
-- **[persistStore](/reference/store/persist)**: Persist a store to localStorage, sessionStorage, or a custom adaptor with reactive hydration, partial persistence, and debounced writes
+- **[persistStore](/reference/store/persiststore)**: Persist a store to localStorage, sessionStorage, or a custom adaptor with reactive hydration, partial persistence, and debounced writes
+- **[localStorageAdaptor](/reference/store/localstorageadaptor)**: Back a persisted store with `window.localStorage` under a key, accessed lazily so the factory is safe to call anywhere
+- **[sessionStorageAdaptor](/reference/store/sessionstorageadaptor)**: Back a persisted store with `window.sessionStorage` under a key, scoped to the current tab session
 
 ### Concepts
 

@@ -15,7 +15,7 @@ function persistStore<T extends Record<string, unknown>>(
 ```
 
 - `store`: the store to persist. Hydration applies through `update()`, so middleware, `equals`, and the settable-key registry all run on hydrated values.
-- `adaptor`: the storage backend. Ships [`localStorageAdaptor`](#localstorageadaptor) and [`sessionStorageAdaptor`](#sessionstorageadaptor); implement `StoreAdaptor` for IndexedDB or any custom backend.
+- `adaptor`: the storage backend. Ships [`localStorageAdaptor`](/reference/store/localstorageadaptor) and [`sessionStorageAdaptor`](/reference/store/sessionstorageadaptor); implement `StoreAdaptor` for IndexedDB or any custom backend.
 - `options`: optional serializer, projection, debounce window, and error channel:
 
 ```typescript
@@ -27,26 +27,6 @@ interface PersistOptions<T> {
   onError?: (error: unknown) => void;                   // corruption + adaptor failures
 }
 ```
-
-### localStorageAdaptor
-
-```typescript
-import { localStorageAdaptor } from '@hellajs/store';
-
-function localStorageAdaptor(key: string): StoreAdaptor
-```
-
-Backs the adaptor with `window.localStorage` under `key`. Storage is accessed lazily; the factory is safe to call anywhere, and `persistStore` never touches it on the server.
-
-### sessionStorageAdaptor
-
-```typescript
-import { sessionStorageAdaptor } from '@hellajs/store';
-
-function sessionStorageAdaptor(key: string): StoreAdaptor
-```
-
-Same contract as `localStorageAdaptor`, backed by `window.sessionStorage`.
 
 ## Basic Usage
 
