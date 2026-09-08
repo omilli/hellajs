@@ -12,8 +12,10 @@ export interface GateOptions {
  * Derive the union-gate commands from the set folder path.
  *
  * `plans/<pkg>/...` gates through the package coverage run;
- * `plans/plugins/<p>/...` hits the plugin exception (§Testing): scoped tests
- * plus the repo-wide lint.
+ * `plans/plugins/<p>/...` hits the plugin exception (§Testing): a dom bundle
+ * refresh first (`tests/parity.test.ts` imports the `@hellajs/dom` dist
+ * bundle, which a merge's cherry-pick does not rebuild), then scoped tests
+ * and the repo-wide lint.
  *
  * @param relSetDir Repo-relative set-folder path.
  * @returns Commands to run, in order; the first failure is the verdict.
@@ -30,6 +32,9 @@ function gateCommands(relSetDir: string): string[][] {
       throw new Error(`cannot derive a plugin union gate for ${relSetDir} (expected plans/plugins/<p>/...)`);
     }
     return [
+      // Stale-dist guard: the merge's cherry-pick lands dom lib changes without
+      // rebuilding the gitignored dist that parity.test.ts imports (§Testing)
+      ["bun", "bundle", "dom", "--quiet"],
       ["bun", "test", `plugins/${plugin}/tests`],
       ["bun", "lint"],
     ];
