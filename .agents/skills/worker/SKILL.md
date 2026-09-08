@@ -14,7 +14,7 @@ Frontmatter `depends_on: [sibling, ...]` → resolve each to a sibling file in t
 
 Then slice vertically: in a multi-file set, finish the current unit — every task ticked, top marker `[x]` — before starting a sibling. Horizontal (type-)batching across units defeats the unit boundary. Only a hard `depends_on` block justifies setting a unit down mid-flight.
 
-**Component partition (multi-file sets).** After the dependency gate, partition the set into dependency-connected components — the transitive `depends_on` closure over unit frontmatter. One component worktree per component (Provision step below); units run sequentially inside it in `depends_on` order — the vertical-slicing rule, relocated. Components may run in parallel iff no cross-component `depends_on` edge exists AND their plan Files lists are disjoint beyond the carry-set (the plan-set folder and `memory/` are protocol-owned shared state, excluded from the check). Never edit the set's `index.md` inside a worktree — every carried copy is a stale shared copy; the set aggregate is recomputed at merge.
+**Component partition (multi-file sets).** After the dependency gate, partition the set into dependency-connected components — the transitive `depends_on` closure over unit frontmatter. One component worktree per component (Provision step below); units run sequentially inside it in `depends_on` order — the vertical-slicing rule, relocated. Components may run in parallel iff no cross-component `depends_on` edge exists AND their plan Files lists are disjoint beyond the carry-set (the plan-set folder and `memory/` are protocol-owned shared state, excluded from the check). Never edit the set's `index.md` inside a worktree — every carried copy is a stale shared copy; the set aggregate is recomputed by the `bun merge` runner.
 
 Inline plan (not a file), no frontmatter, or no deps → skip this gate (single-unit plan).
 
@@ -82,7 +82,7 @@ For each verified DoD item: tick `[x]` + append a short note citing evidence —
 
 Task header `## [ ] Task` → `## [x] Task` only when every DoD is `[x]` and the consistency gate passed. Even one item unmet/unverifiable → header stays `[ ]`. No third marker. After ticking, recompute the aggregate: zero `[ ]` task headers → top marker flips to `[x]`; else stays `[ ]`.
 
-**Set aggregate (multi-file set):** same folder has an `index.md` → read it to find siblings. After completing this file, scan every sibling's top marker; all `[x]` → flip `index.md`'s top marker `[ ]` → `[x]`. Worktree runs never do this — every carried `index.md` is a stale shared copy; the set aggregate is recomputed at merge (Step 0).
+**Set aggregate (multi-file set):** same folder has an `index.md` → read it to find siblings. After completing this file, scan every sibling's top marker; all `[x]` → flip `index.md`'s top marker `[ ]` → `[x]`. Worktree runs never do this — every carried `index.md` is a stale shared copy; the `bun merge` runner recomputes the aggregate.
 
 ## Step 4 — Blast-radius check
 
@@ -98,6 +98,6 @@ Fires mechanically once the unit's tasks are ticked — no offering (prime §The
 - **(d) feedback** — invoke it; a clean run no-ops.
 - **(e) memory** — memory events as they fire.
 - **(f) Report** — brief per-task status: done, already-correct, rejected (reason), or structurally-invalid (returned to plan). Plan was a file → it now carries every tick + evidence; inline → include the ticked plan. Then confirm: blast radius checked; multi-file set → set aggregate updated and each unit finished before starting a sibling; every tick backed by inline-cited evidence; type-appropriate verification actually ran, not assumed. Any gap → task not done.
-- **(g) Delivery (worktree runs)** — a worktree run does not land in the main tree: the report names the component's worktree slug and hands the merge to the user — `merge` owns the per-task commit + cherry-pick (the single human checkpoint). The blast-radius check (Step 4) ran inside the worktree; the main-tree blast radius is merge's. In-tree runs end as today.
+- **(g) Delivery (worktree runs)** — a worktree run does not land in the main tree: the report names the component's worktree slug and hands off to `bun merge <set-folder>` — the merge runner owns the per-component commit + cherry-pick (the single human checkpoint). The blast-radius check (Step 4) ran inside the worktree; the main-tree blast radius is the merge runner's. In-tree runs end as today.
 
 Run the prime handoff gate; highest-friction skill in the loop — signals fire often: verification failure + the fix that worked → `memory` (retry-after-failure); wrong plan assumption you deviated from → `memory` (confirmed-against-source); rework from a symptom-patch instead of root-cause → `feedback` (root-cause discipline slipped); verification command hard to find → `memory` (record it); a repeated failure pattern across runs → `feedback`.

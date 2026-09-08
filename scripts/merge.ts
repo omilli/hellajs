@@ -1,12 +1,11 @@
 import { logger } from "./utils/index.js";
 import { resolveSetFolder } from "./plans/set.js";
-import { type WorktreeMode, runProbe, runSet } from "./plans/run.js";
+import { runMerge } from "./merge/run.js";
 
 /** Parsed CLI configuration. */
-interface PlansArgs {
-  probe: boolean;
+interface MergeArgs {
+  dryRun: boolean;
   model?: string;
-  mode: WorktreeMode;
   setFolder?: string;
 }
 
@@ -16,11 +15,11 @@ interface PlansArgs {
  * @param argv Raw argv after the script path.
  * @returns The parsed configuration.
  */
-function parseArgs(argv: string[]): PlansArgs {
-  const args: PlansArgs = { probe: false, mode: "single" };
+function parseArgs(argv: string[]): MergeArgs {
+  const args: MergeArgs = { dryRun: false };
   for (const arg of argv) {
-    if (arg === "--probe") {
-      args.probe = true;
+    if (arg === "--dry-run") {
+      args.dryRun = true;
       continue;
     }
     const equals = arg.indexOf("=");
@@ -29,7 +28,7 @@ function parseArgs(argv: string[]): PlansArgs {
         args.setFolder = arg;
         continue;
       }
-      throw new Error(`unexpected argument "${arg}" (expected a set folder or --flag=value)`);
+      throw new Error(`unexpected argument "${arg}" (expected a set folder or --flag[=value])`);
     }
     const key = arg.slice(0, equals);
     const value = arg.slice(equals + 1);
@@ -38,11 +37,6 @@ function parseArgs(argv: string[]): PlansArgs {
         throw new Error("invalid --model (expected provider/id[:thinking])");
       }
       args.model = value;
-    } else if (key === "--wt") {
-      if (value !== "single" && value !== "split") {
-        throw new Error("invalid --wt (expected single|split)");
-      }
-      args.mode = value;
     } else {
       throw new Error(`unknown flag "${key}"`);
     }
@@ -52,25 +46,22 @@ function parseArgs(argv: string[]): PlansArgs {
 
 /** Print the usage line. */
 function printUsage(): void {
-  logger.error("usage: bun plans <set-folder> [--wt=single|split] [--model=<provider/id[:thinking]>]");
-  logger.error("       bun plans --probe [--model=<provider/id[:thinking]>]");
+  logger.error("usage: bun merge <set-folder> [--model=<provider/id[:thinking]>] [--dry-run]");
+  logger.error("       --dry-run prints the derived queue and completeness, then exits before any spawn");
 }
 
-/** Entry point: parse args, validate, and dispatch to probe or run. */
+/** Entry point: parse args, validate, and run the merge. */
 async function main(): Promise<void> {
   try {
     const args = parseArgs(process.argv.slice(2));
-    if (args.probe) {
-      process.exit(await runProbe(args.model));
-    }
     if (args.setFolder === undefined) {
       printUsage();
       process.exit(1);
     }
     const setDir = resolveSetFolder(args.setFolder);
-    process.exit(await runSet({ setDir, model: args.model, mode: args.mode }));
+    process.exit(await runMerge({ setDir, model: args.model, dryRun: args.dryRun }));
   } catch (error) {
-    logger.error(`plans failed: ${(error as Error).message}`);
+    logger.error(`merge failed: ${(error as Error).message}`);
     process.exit(1);
   }
 }

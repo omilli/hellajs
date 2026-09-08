@@ -1,10 +1,10 @@
 import { existsSync } from "node:fs";
-import { basename, join, relative, resolve } from "node:path";
-import { execCommand, logger, projectRoot } from "../utils/index.js";
-import { PiRpc, type RpcFrame, type UiRequest, type UiResponsePayload } from "./rpc.js";
-import { TerminalRelay } from "./relay.js";
-import { streamEvent } from "./stream.js";
-import { countTicks, isTicked, listPlanUnits, partitionComponents, type PlanUnit } from "./set.js";
+import { basename, join, relative } from "node:path";
+import { logger, projectRoot } from "../utils/index.js";
+import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
+import type { TerminalRelay } from "../agent/relay.js";
+import { worktreeScript, WT_ROOT } from "../agent/worktree.js";
+import { countTicks, isTicked, listPlanUnits, partitionComponents, setSlug, type PlanUnit } from "./set.js";
 
 /** Execution mode over the worktree venue (spec D9). */
 export type WorktreeMode = "single" | "split";
@@ -31,37 +31,6 @@ interface UnitRecord {
 interface Venue {
   slug: string;
   units: PlanUnit[];
-}
-
-/** Options for driving one fresh pi instance. */
-interface DriveOptions {
-  sessionName: string;
-  prompt: string;
-  model?: string;
-  relay: TerminalRelay;
-  onUiRequest: (request: UiRequest) => void;
-}
-
-/** The bundled worktree protocol script. Invoked read-only (list/status) plus `clean` on explicit abandon. */
-const WORKTREE_SCRIPT = join(".agents", "skills", "worker", "scripts", "worktree.mjs");
-
-/** Protocol worktrees live in a sibling dir (worktree.mjs owns the layout). */
-const WT_ROOT = resolve(projectRoot, "..", "hellajs-wt");
-
-/** The instance currently driven (steer/abort target, SIGINT victim). */
-let current: PiRpc | null = null;
-
-/**
- * Derive the set slug from the set folder path (stable, filesystem-safe).
- *
- * @param setDir Absolute path to the plan-set folder.
- * @returns Kebab-case slug unique to the set.
- */
-function setSlug(setDir: string): string {
-  return relative(projectRoot, setDir)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 /**
@@ -102,55 +71,6 @@ const PROBE_PROMPT = [
 ].join("\n");
 
 /**
- * Spawn one fresh pi instance, deliver the prompt, relay its dialogs, and
- * return its final assistant text.
- *
- * @param options Session name, prompt, model, relay, and dialog hook.
- * @returns The last assistant message text.
- */
-async function driveAgent(options: DriveOptions): Promise<string> {
-  const rpc = new PiRpc({
-    sessionName: options.sessionName,
-    model: options.model,
-    handlers: {
-      onEvent: (event: RpcFrame): void => {
-        streamEvent(event);
-      },
-      onUiRequest: options.onUiRequest,
-      onUiNotify: (request: UiRequest): void => {
-        options.relay.notify(request);
-      },
-    },
-  });
-  current = rpc;
-  try {
-    await rpc.prompt(options.prompt);
-    await rpc.waitForSettled();
-    return await rpc.getLastAssistantText();
-  } finally {
-    current = null;
-    await rpc.dispose();
-  }
-}
-
-/** Dialog hook: answers relay dialogs through the live instance. */
-interface DialogHook {
-  (request: UiRequest): void;
-}
-
-/** Build the dialog hook that answers via the live instance's respondUi. */
-function dialogHook(relay: TerminalRelay, onAsk?: () => void): DialogHook {
-  return (request: UiRequest): void => {
-    if (onAsk !== undefined) {
-      onAsk();
-    }
-    void relay.ask(request).then((response: UiResponsePayload): void => {
-      current?.respondUi(request.id, response);
-    });
-  };
-}
-
-/**
  * Read a tick count from a worktree copy that provisioning may not have
  * created yet.
  *
@@ -173,22 +93,6 @@ function worktreeTicked(unitPath: string): boolean {
 }
 
 /**
- * Run the bundled worktree script and print its output (orchestrator status).
- *
- * @param args Script arguments (read-only `list`/`status`, or `clean` on abandon).
- * @returns Captured stdout, or null when the script itself failed (reported).
- */
-async function worktreeScript(args: string[]): Promise<string | null> {
-  try {
-    const result = await execCommand("bun", [WORKTREE_SCRIPT, ...args]);
-    return result.stdout;
-  } catch (error) {
-    logger.warn(`worktree.mjs ${args.join(" ")} failed: ${(error as Error).message.split("\n")[0]}`);
-    return null;
-  }
-}
-
-/**
  * Interactive-chains self-test: spawn → dialog relay → response → settle →
  * report → clean exit.
  *
@@ -196,17 +100,7 @@ async function worktreeScript(args: string[]): Promise<string | null> {
  * @returns Process exit code.
  */
 export async function runProbe(model?: string): Promise<number> {
-  const relay = new TerminalRelay({
-    isActive: (): boolean => current !== null,
-    onSteer: (message: string): void => {
-      current?.steer(message).catch((error: unknown): void => {
-        logger.warn(`steer failed: ${(error as Error).message}`);
-      });
-    },
-    onAbort: (): void => {
-      current?.abort().catch((): void => {});
-    },
-  });
+  const relay = makeRelay();
   relay.start();
   installSigint();
   let dialogs = 0;
@@ -237,8 +131,8 @@ export async function runProbe(model?: string): Promise<number> {
  * auto-continues with a fresh instance while ticks keep progressing; an
  * attempt with no new ticks reaches the failure gate: retry / deliver-
  * incomplete / abandon / halt. Completed components are left standing on
- * their worktrees — the user reviews and invokes the merge skill per set in
- * a fresh context (the single human checkpoint); the runner never merges and
+ * their worktrees — the user reviews and runs `bun merge <set-folder>` (the
+ * single human checkpoint); the runner never merges and
  * never asks about merging. Exit code is 0 only when every unit ended done
  * or was pre-ticked.
  *
@@ -248,17 +142,7 @@ export async function runProbe(model?: string): Promise<number> {
 export async function runSet(options: RunSetOptions): Promise<number> {
   const units = listPlanUnits(options.setDir);
   const setName = basename(options.setDir);
-  const relay = new TerminalRelay({
-    isActive: (): boolean => current !== null,
-    onSteer: (message: string): void => {
-      current?.steer(message).catch((error: unknown): void => {
-        logger.warn(`steer failed: ${(error as Error).message}`);
-      });
-    },
-    onAbort: (): void => {
-      current?.abort().catch((): void => {});
-    },
-  });
+  const relay = makeRelay();
   relay.start();
   installSigint();
   const inventory = await worktreeScript(["list"]);
@@ -301,7 +185,7 @@ export async function runSet(options: RunSetOptions): Promise<number> {
     .filter((line: string): boolean => line.includes(`plans=${relSetDir}`));
   if (standing.length > 0) {
     logger.info(
-      `outstanding worktrees of this set — review, then invoke the merge skill on ${relSetDir} in a fresh context:\n${standing.join("\n")}`,
+      `outstanding worktrees of this set — review, then run \`bun merge ${relSetDir}\`:\n${standing.join("\n")}`,
     );
   }
   const complete = !halted && records.every((record: UnitRecord): boolean => record.status !== "failed");
@@ -500,28 +384,4 @@ function printSummary(records: UnitRecord[], halted: boolean): void {
   if (halted) {
     logger.warn("run halted by operator; remaining units not started");
   }
-}
-
-/**
- * SIGINT: abort and reap the current child, then exit 1 without starting
- * the next unit.
- */
-function installSigint(): void {
-  process.on("SIGINT", (): void => {
-    const rpc = current;
-    logger.warn("SIGINT — aborting the current instance…");
-    const hardExit = setTimeout((): void => {
-      process.exit(1);
-    }, 3000);
-    if (rpc === null) {
-      process.exit(1);
-    }
-    void rpc
-      .dispose()
-      .catch((): void => {})
-      .finally((): void => {
-        clearTimeout(hardExit);
-        process.exit(1);
-      });
-  });
 }

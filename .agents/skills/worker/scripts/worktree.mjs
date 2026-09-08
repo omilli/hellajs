@@ -28,8 +28,20 @@ import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** Repo root (scripts/ -> worker/ -> skills/ -> .agents/ -> root). */
-const MAIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+/**
+ * Repo root — the MAIN tree, even when this copy runs from inside a linked
+ * worktree (a protocol worktree carries its own copy, whose location-based
+ * resolve would point ../hellajs-wt at a nested nonexistent dir). Derived
+ * from git's common dir; falls back to the script location when outside a repo.
+ */
+const MAIN_ROOT = (() => {
+  const common = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { encoding: "utf8" });
+  const printed = (common.stdout ?? "").trim();
+  if (common.status === 0 && printed !== "") {
+    return printed.endsWith(".git") ? dirname(printed) : printed;
+  }
+  return resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+})();
 /** Protocol worktrees live in a sibling dir, namespace-separated from manual ones. */
 const WT_ROOT = resolve(MAIN_ROOT, "..", "hellajs-wt");
 /** Base branch for new worktrees (parameterized; "for now" per spec D2). */

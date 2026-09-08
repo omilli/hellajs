@@ -46,6 +46,7 @@
 		"bench": "bun ./scripts/bench.ts",
 		"changeset": "changeset",
 		"plans": "bun ./scripts/plans.ts",
+		"merge": "bun ./scripts/merge.ts",
 		"release": "bun bundle --quiet && bun ./scripts/release.ts",
 		"visibility": "bun ./scripts/type-visibility.ts",
 		"dead-exports": "bun ./scripts/dead-exports.ts",

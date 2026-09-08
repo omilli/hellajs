@@ -1,5 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { isAbsolute, join, relative, resolve } from "node:path";
+import { projectRoot } from "../utils/index.js";
 
 /** One plan-set unit file: its filename and absolute path. */
 export interface PlanUnit {
@@ -70,6 +71,46 @@ export function readDependsOn(unitPath: string): string[] {
     .split(",")
     .map((entry: string): string => entry.trim().replace(/\.md$/, "").replace(/^['"]|['"]$/g, ""))
     .filter((entry: string): boolean => entry !== "");
+}
+
+/**
+ * Derive the set slug from the set folder path (stable, filesystem-safe).
+ *
+ * Shared by both runners: the plans runner names its venue worktrees with it,
+ * the merge runner matches protocol worktree slugs back to components with it.
+ *
+ * @param setDir Absolute path to the plan-set folder.
+ * @returns Kebab-case slug unique to the set.
+ */
+export function setSlug(setDir: string): string {
+  return relative(projectRoot, setDir)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Resolve and validate a set-folder argument: it must be an existing directory
+ * with at least one `NN-*.md` unit file.
+ *
+ * @param folder The folder argument from the CLI.
+ * @returns The absolute set-folder path.
+ */
+export function resolveSetFolder(folder: string): string {
+  const setDir = isAbsolute(folder) ? folder : resolve(folder);
+  let isDirectory = false;
+  try {
+    isDirectory = statSync(setDir).isDirectory();
+  } catch {
+    // missing or unreadable folder — stays false
+  }
+  if (!isDirectory) {
+    throw new Error(`set folder not found: ${setDir}`);
+  }
+  if (listPlanUnits(setDir).length === 0) {
+    throw new Error(`no plan units (NN-*.md) in ${setDir}`);
+  }
+  return setDir;
 }
 
 /**

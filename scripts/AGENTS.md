@@ -9,7 +9,8 @@
   | `bundle.ts` | Thin entry (55 lines): parse args → call `bundle/orchestrate.ts` → report. Flags: `[package]`, `--size-mode` (minified bundle variant only), `--clean` (purge dist + cache first). Callers pass `--quiet` but bundle does not read it. |
   | `coverage.ts` | bundle → `bun test --coverage` → lint. With `[package]`: tests + eslint scope to it (tsc + guards stay repo-wide — foreign failures are triaged per root AGENTS.md §Testing), and the coverage table filters to its rows with the `All files` average recalculated (Bun has no scope flag; the test preload forces `@hellajs/dom` into the instrumented set). CI runs this unscoped. |
   | `bench.ts` | Thin entry: parse args (`--variant`, `--runs`, `--throttle`, `--label`, `--ops`, `--headed`) → build + stage → serve → drive → report. Playwright + system Chrome macro-benchmark over `examples/bench`; appends self-describing entries to `.bench/results.md`. |
-  | `plans.ts` | Thin entry: parse args (`<set-folder>`, `--wt=single|split`, `--probe`, `--model=<provider/id[:thinking]>`) → validate set → run pipeline → report → exit. Fresh `pi --mode rpc` instance per unticked plan unit, executed inside a component worktree by the worker skill (`single`: one venue for the whole set; `split`: one per dependency-connected component, sequential); dialogs + steering relayed to the terminal; worktree-copy markers gate progress (auto-continue on tick progress, else retry / deliver-incomplete / abandon / halt — no per-unit skip inside a venue); the runner never merges — completed components stand and the run lists the set's outstanding slugs for user-invoked `merge` (fresh context, the single human checkpoint); the runner invokes `worktree.mjs` read-only (`list`/`status`) plus `clean` on explicit abandon — never `new` (worker-owned), never `diff`/`apply` (merge-owned). |
+  | `plans.ts` | Thin entry: parse args (`<set-folder>`, `--wt=single|split`, `--probe`, `--model=<provider/id[:thinking]>`) → validate set → run pipeline → report → exit. Fresh `pi --mode rpc` instance per unticked plan unit, executed inside a component worktree by the worker skill (`single`: one venue for the whole set; `split`: one per dependency-connected component, sequential); dialogs + steering relayed to the terminal; worktree-copy markers gate progress (auto-continue on tick progress, else retry / deliver-incomplete / abandon / halt — no per-unit skip inside a venue); the runner never merges — completed components stand and the run lists the set's outstanding slugs for the user-run `bun merge` (the single human checkpoint); the runner invokes `worktree.mjs` read-only (`list`/`status`) plus `clean` on explicit abandon — never `new` (worker-owned), never `diff`/`apply` (merge-owned). |
+  | `merge.ts` | Thin entry: parse args (`<set-folder>`, `--model=<provider/id[:thinking]>`, `--dry-run`) → validate set → run merge → report → exit. Fresh `pi --mode rpc` instance per outstanding component worktree of the set (the `/skill:merge` per-component contract); queue derivation + completeness pre-check are mechanical; per-component progress gate on main-tree plan ticks + worktree cleanup; orchestrator-owned set index flip + union gate with one fix instance per red round; `--dry-run` previews the derived queue without spawning. |
   | `clean.ts` | Remove `dist/` + `.build-cache/` per package. `bun clean [package]` scopes to one workspace. |
   | `release.ts` | Update `@hellajs/core` peer deps + `babel-plugin-hellajs` deps across packages, commit (`--no-verify`), then `changeset publish`. Run via `bun release` (the npm script bundles first). |
   | `type-visibility.ts` | Guard (`bun visibility`): fail if any `lib/types*.d.ts` that is wholesale re-exported (`export type * from "./types[…]"`) contains `@internal`-tagged types — those would leak as public. No package scoping; scans every package. |
@@ -88,18 +89,38 @@
   | `bench/driver.ts` | Playwright driver: capture-phase click listener (t0), rAF predicate poll (t1), 30s watchdog, CDP throttle, warmup + measured runs |
   | `bench/report.ts` | Env header + per-op median/mean table to stdout; append-only self-describing entry to `.bench/results.md` (only after every op verified) |
 
+  ## Shared agent-driving concern (`scripts/agent/`, one concern per file)
+
+  The pi-instance driving machinery shared by the plans and merge runners — a shared cross-pipeline concern (`guides/scripts.md` §Canonical paths): no CLI entry, consumed via direct imports.
+
+  | File | Concern |
+  |---|---|
+  | `agent/rpc.ts` | pi RPC client: spawn, strict JSONL, command/event dispatch, dialog registry, `waitForSettled`, dispose |
+  | `agent/relay.ts` | Terminal dialog rendering + answering, steer routing (`.stop` = abort), orchestrator prompts |
+  | `agent/stream.ts` | Terminal stream view: text deltas verbatim, tool one-liners with args, live partial output diffing |
+  | `agent/driver.ts` | One-instance driving: `driveAgent` (spawn → prompt → settle → report), `dialogHook`, `makeRelay` (shared steer/abort wiring), idempotent `installSigint`, active-instance probe |
+  | `agent/worktree.ts` | `worktree.mjs` invocation (`worktreeScript`) + `WT_ROOT` — the protocol entry both runners share |
+
   ## Plans runner pipeline (`scripts/plans/`, one concern per file)
 
-  Entry `plans.ts` → `set.ts` (list `NN-*.md` units in filename order, read top markers, parse `depends_on` frontmatter, partition into dependency-connected components — read-only; the worker skill owns every tick) → `rpc.ts` (one `pi --mode rpc` child per unit: LF-only JSONL framing, id-correlated command responses, `agent_settled` tracking, dialog registry, child-exit detection as rejections) → `relay.ts` (terminal view: renders `extension_ui_request` dialogs and answers with exact option strings; one shared stdin line-reader also routes free-typed lines to steering and `.stop` to abort) → `stream.ts` (terminal stream view: text deltas verbatim, tool one-liners with args, partial tool output printed live as it accumulates, result summary at end) → `run.ts` (per-unit orchestration over worktree venues: `/skill:worker` prompt naming the target slug, settle → `get_last_assistant_text` report → worktree-copy marker check, auto-continue on tick progress / retry-deliver-abandon-halt gate when stalled, end-of-run outstanding-worktree listing (user-invoked merge), SIGINT abort-and-exit-1, final summary with session names). The runner never writes plan files and never starts the next unit after SIGINT or halt. Instances keep `cwd` = main tree (skills and AGENTS.md must resolve from the working tree); all worktree paths are named absolutely in the prompts. `worktree.mjs` invocations stay read-only (`list`/`status`) plus `clean` on explicit abandon.
+  Entry `plans.ts` → `set.ts` (list `NN-*.md` units in filename order, read top markers, parse `depends_on` frontmatter, partition into dependency-connected components, `setSlug` + `resolveSetFolder` — read-only; the worker skill owns every tick) → `run.ts` (per-unit orchestration over worktree venues, driving instances through the shared `../agent/` concern: `/skill:worker` prompt naming the target slug, settle → `get_last_assistant_text` report → worktree-copy marker check, auto-continue on tick progress / retry-deliver-abandon-halt gate when stalled, end-of-run outstanding-worktree listing (user-run `bun merge`), SIGINT abort-and-exit-1, final summary with session names). The runner never writes plan files and never starts the next unit after SIGINT or halt. Instances keep `cwd` = main tree (skills and AGENTS.md must resolve from the working tree); all worktree paths are named absolutely in the prompts. `worktree.mjs` invocations stay read-only (`list`/`status`) plus `clean` on explicit abandon.
 
   | File | Concern |
   |---|---|
   | `plans.ts` | Thin entry: args → validate set → run → report → exit |
-  | `plans/set.ts` | Plan-set listing (`NN-*.md`, filename order), top-marker reads, `depends_on` parsing + component partition; read-only |
-  | `plans/rpc.ts` | pi RPC client: spawn, strict JSONL, command/event dispatch, dialog registry, `waitForSettled`, dispose |
-  | `plans/relay.ts` | Terminal dialog rendering + answering, steer routing (`.stop` = abort), orchestrator prompts |
-  | `plans/stream.ts` | Terminal stream view: text deltas verbatim, tool one-liners with args, live partial output diffing |
-  | `plans/run.ts` | Per-unit orchestration over worktree venues: fresh instance, worktree-copy marker gate, failure gate, end-of-run outstanding listing, summary, SIGINT |
+  | `plans/set.ts` | Plan-set listing (`NN-*.md`, filename order), top-marker reads, `depends_on` parsing + component partition, `setSlug` + `resolveSetFolder`; read-only |
+  | `plans/run.ts` | Per-unit orchestration over worktree venues: fresh instance (shared driver), worktree-copy marker gate, failure gate, end-of-run outstanding listing, summary |
+
+  ## Merge runner pipeline (`scripts/merge/`, one concern per file)
+
+  Entry `merge.ts` → `queue.ts` (mechanical queue derivation: parse `worktree.mjs list`, match protocol slugs back to plan components — `<setSlug>` = whole set, `<setSlug>-<first-unit-stem>` = one dependency-connected component — skip main-tree-merged components, ascending-first-unit order, completeness pre-check against worktree copies) → `run.ts` (per-component orchestration via the shared `../agent/` concern: `/skill:merge` prompt naming the component; success = worktree cleaned AND main-tree ticks; auto-continue on partial progress / retry-skip-halt gate when stalled; set `index.md` top-marker flip after the last merge; union gate run directly (`bun coverage <pkg>`; plugin exception) with one fix instance per red round; summary + exit code). The runner commits nothing itself — the instances do, via `worktree.mjs commit` + `git cherry-pick` under the merge skill's contract; refused (incomplete) components keep their worktrees standing.
+
+  | File | Concern |
+  |---|---|
+  | `merge.ts` | Thin entry: args → validate set → run merge → report → exit |
+  | `merge/queue.ts` | Worktree-inventory parsing + queue derivation (slug → component matching, merged-state skip, ordering) + completeness/tick reads |
+  | `merge/gate.ts` | Union gate: command derivation (coverage vs plugin exception), terminal-passthrough run, fix instance + operator gate on red |
+  | `merge/run.ts` | Per-component instance loop, operator gates, set-aggregate flip, summary |
 
   ## Testing
 
