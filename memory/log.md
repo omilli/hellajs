@@ -3,6 +3,7 @@
 ## 2026-09-08
 * **Creation**: Added concept [099](entries/099.md) (type: decision).
 * **Deprecation**: Archived [061](archive/061-new-worktree-cut-mid-unit.md) → superseded by [099](entries/099.md).
+* **Creation**: Added concept [100](entries/100.md) (type: decision).
 
 ## 2026-09-07
 * **Creation**: Added concept [096](entries/096.md) (type: correction).
