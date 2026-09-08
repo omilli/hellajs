@@ -52,6 +52,28 @@ app.theme();     // 'dark'
 // materializes newProp and types it on the returned store
 ```
 
+### Declaring Future Keys
+
+Grow a store on the same binding by declaring keys that arrive later as optional in the type parameter; the first `$update()` write materializes them.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const app = store<{ count: number; tags?: string[] }>({ count: 0 });
+
+effect(() => {
+  // Snapshot reads see the add; direct app.tags?.() reads track nothing
+  // until the key exists, so snapshot is the cross-materialization seam
+  console.log('tags:', app.$snapshot().tags);
+});
+
+app.$update({ tags: ['a'] }); // materializes tags
+// Logs: "tags: undefined", then "tags: [ 'a' ]"
+
+app.tags?.(); // [ 'a' ] - optional-chained, typed string[] | undefined
+```
+
 ### Mutable Draft Updates
 
 Pass a function to `$update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are extracted via diff and applied as individual signal writes. This is particularly useful for array operations.

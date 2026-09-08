@@ -164,7 +164,9 @@ withTags.tags();     // ['a'], a Signal<string[]>
 app.$snapshot();      // { count: 0, tags: ['a'] }; runtime sees the key, app's TYPE stays narrow
 ```
 
-Plain-object values become nested stores, middleware and [write equality](/learn/concepts/store-control#write-equality) are keyed by the creation shape (declare a key in the initial object when it needs either), and [`persistStore`](/reference/store/persiststore) materializes persisted keys beyond the initial shape on hydration. See [Growing Stores](/reference/store/store#growing-stores) for the full contract.
+When the future keys are known at creation, declare them optional in the type parameter instead: `store<{ count: number; tags?: string[] }>({ count: 0 })` grows on the same binding, reads stay `string[] | undefined` and use optional chaining (`appStore.tags?.()` is `undefined` until the first write materializes the property), and draft additions of declared keys type-check. Optional declaration works for leaf and array values; nested future objects need placeholder values (`store({ user: { name: '' } })`) or the returned reference, because an optional plain-object member types as a leaf signal instead of a nested store.
+
+Plain-object values become nested stores, middleware and [write equality](/learn/concepts/store-control#write-equality) are keyed by the declared shape (declare a key in the initial object or type parameter when it needs either), and [`persistStore`](/reference/store/persiststore) materializes persisted keys beyond the initial shape on hydration. See [Growing Stores](/reference/store/store#growing-stores) for the full contract.
 
 ### Non-Writable Properties
 

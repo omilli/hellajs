@@ -176,7 +176,31 @@ withUser.user.name();     // 'Bob', a Store<{ name: string }>
 // ❌ appStore.$update({ onSave: () => {} }); // throws: [store] $update: key "onSave" cannot hold a function
 ```
 
-Added keys get no middleware or [write equality](/learn/concepts/store-control#write-equality): both are keyed by the creation shape, so declare a key in the initial object when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `$update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.$update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
+When future keys are known at creation, declare them optional in the type parameter instead: the store grows on the same binding with no captured reference, and reads are optional-chained because the property is absent until the first write materializes it.
+
+```typescript
+import { store } from '@hellajs/store';
+
+// Declare the future key optional; the first write materializes it
+const appStore = store<{ count: number; tags?: string[] }>({ count: 0 });
+
+appStore.$update({ tags: ['a'] });
+appStore.tags?.(); // ['a'], typed string[] | undefined
+
+// Before the first write the property is absent: optional chaining reads
+// undefined, and a direct appStore.tags() call is a type error
+const fresh = store<{ count: number; tags?: string[] }>({ count: 0 });
+fresh.tags?.(); // undefined
+
+// Declared keys type draft additions too, unlike undeclared draft adds
+appStore.$update(draft => { draft.tags = ['b']; });
+```
+
+Declared-optional keys subscribe once materialized (`$subscribe` throws for keys that were never written, like any absent key), and declared `middleware` and `equals` entries apply to them: options are keyed by the declared shape, so the entry runs at materialization and on every later write.
+
+> ⚠️ **Nested future keys must not be declared optional.** An optional plain-object member types as a leaf signal rather than a nested store: the only compiling call form (`appStore.user?.()`) throws at runtime once the key materializes, while the runtime-correct `appStore.user.name()` stays a type error. Declare placeholder values for nested shapes instead: `store({ user: { name: '' } })` types every level up front with no future-key ceremony. Keep the returned-reference pattern above for nested shapes discovered at runtime.
+
+Keys absent from the creation declaration get no middleware or [write equality](/learn/concepts/store-control#write-equality): both are keyed by the declared shape, so declare a key in the initial object or type parameter when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `$update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.$update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
 
 ### `$cleanup`
 
