@@ -8,6 +8,7 @@
 * **merge**: Component 02 created concept 100-composed-store-leaves-type-as (composed store leaves type as Store<Store<...>>, method calls through wrapper TS2769); renumbered 100 -> 104 on merge (100 taken by store-conditional-type-mappings)
 * **merge**: Component 06 created concept 100-build-all-packages-once-fresh (build all packages once in a fresh worktree before scoped bundle/dist-dependent checks); renumbered 100 -> 105 on merge (100 taken, 102-103 reserved for component 08)
 * **merge**: Component 08 landed memory 102 (store function values parameters) and 103 ($-prefixed headings anchor to the $-stripped slug); no renumber needed — 102/103 were free after 02->104 and 06->105
+* **Creation**: Added concept [106](entries/106.md) (type: decision).
 
 ## 2026-09-07
 * **Creation**: Added concept [096](entries/096.md) (type: correction).
