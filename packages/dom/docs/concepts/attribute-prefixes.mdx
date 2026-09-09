@@ -45,7 +45,11 @@ The value may also be a `{ handler, options }` spec forwarding native listener o
 
 ## Reactive Attributes
 
-A function-ref prop is reactive: any element attribute whose value is a function reference, a bare signal (`class={mySignal}`) or an explicit wrapper (`class={() => active() ? "on" : "off"}`), updates the DOM when its dependencies change, with no prefix. A *called* expression like `class={active()}` is evaluated once and stays static; pass the signal directly or wrap the expression to track changes.
+A function-ref is reactive: any attribute whose value is a function reference, a bare signal (`class={mySignal}`) or an expression (`class={active() ? "on" : "off"}`), updates the DOM when its dependencies change, with no prefix.
+
+<div role="error" class="alert alert-error text-base">
+  <span>Runtime `html` requires an explicit wrappers: (`class={() => active() ? "on" : "off"}`).</span>
+</div> 
 
 ```jsx
 import { mount } from "@hellajs/dom";
@@ -54,7 +58,7 @@ import { signal } from "@hellajs/core";
 const isActive = signal(false);
 
 const App = () => (
-  <div class={() => (isActive() ? "active" : "inactive")}>
+  <div class={isActive() ? "active" : "inactive"}>
     <button on:click={() => isActive(!isActive())}>Toggle</button>
   </div>
 );
