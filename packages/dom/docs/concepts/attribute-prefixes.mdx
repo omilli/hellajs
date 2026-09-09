@@ -4,7 +4,7 @@ HellaJS uses a prefix system to categorize element attributes. Each prefix maps 
 
 ## Events
 
-### `on:` - Delegated Events
+### Delegated Events
 
 Delegated event handlers attached globally to `document.body` in the capture phase. Recommended for most cases: (1,000 buttons = 1 click listener).
 
@@ -22,7 +22,7 @@ See [`on:`](/reference/dom/on) for full details.
 
 **Passive by default:** browsers treat body-level `touchstart`/`touchmove`/`wheel` listeners as passive by default, so `event.preventDefault()` inside delegated handlers for these events silently fails. Use [`e:`](/reference/dom/e) with `{ passive: false }` for cancelable gestures.
 
-### `e:` - Direct Events
+### Direct Events
 
 Non-delegated event handlers attached directly to elements in the bubble phase. Use when a handler must be a real listener on the element: non-bubbling events (`focus`, `blur`) or third-party libraries that expect direct listeners.
 
@@ -91,7 +91,7 @@ mount(App, "#app");
 
 ## Lifecycle Hooks
 
-### `hook:` - Element Lifecycle Hooks
+### Element Lifecycle Hooks
 
 Element-level lifecycle hooks that fire at specific points in an element's existence. Unlike other frameworks, lifecycle hooks are tied directly to elements, not component scope. Multiple hooks of the same type on the same element all execute in registration order.
 
@@ -122,7 +122,7 @@ See [`hook:`](/reference/dom/hook) for timing details and usage patterns.
 
 ## Error Configuration
 
-### `error:` - Element Error Handling
+### Element Error Handling
 
 Element-level error configuration for fine-grained error boundaries.
 

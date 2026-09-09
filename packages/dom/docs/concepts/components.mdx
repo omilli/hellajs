@@ -7,8 +7,9 @@ Components are simple functions that return elements. They compose naturally thr
 Components use uppercase names in JSX. For html template literals, use `<${Component}>` syntax.
 
 ```jsx
-const MyComponent = ({ title, children }: { title: string; children?: unknown }) =>
-  <div>{title} - {children}</div>;
+const MyComponent = ({ title, children }: { title: string; children?: unknown }) => {
+ return  <div>{title} - {children}</div>;
+}
 
 // JSX
 <MyComponent title="Hi">Content</MyComponent>

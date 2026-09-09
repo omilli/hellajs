@@ -2,7 +2,7 @@
 
 Work with existing DOM elements reactively using [`$ref`](/reference/dom/$ref) for single elements and [`$collection`](/reference/dom/$collection) for multiple elements.
 
-## `$ref` - Single Element
+## Single Element
 
 Select an element and chain methods for reactive bindings.
 
@@ -43,7 +43,7 @@ const theme = signal("light");
 $ref(".hero").bind({ style: () => ({ color: theme() === "dark" ? "#fff" : "#000" }) });
 ```
 
-## `$collection` - Multiple Elements
+## Multiple Elements
 
 Select multiple elements and apply operations to all of them:
 
