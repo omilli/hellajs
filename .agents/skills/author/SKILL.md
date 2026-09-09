@@ -25,7 +25,7 @@ An AGENTS.md/rules guide describing a codebase → ground every claim in source 
 
 Defaults: headers for sections; tables for relational data; bold-label bullets for atomic facts; plain prose for overviews/verdicts.
 
-**Rules/style guide specifically**: three layers — decision trees at top (traverse to a decision), prose rules in middle, verification checklist at end (the audit floor; `audit` ticks it instead of reconstructing rules from prose). Open with a one-line **Decision Precedence** (ranked tradeoffs) so conflicts resolve consistently. `guides/` is the live example of this shape — match it.
+**Rules/style guide specifically**: three layers — decision trees at top (traverse to a decision), prose rules in middle, verification checklist at end (the audit floor; the matching `audit-*` skill ticks it instead of reconstructing rules from prose). Open with a one-line **Decision Precedence** (ranked tradeoffs) so conflicts resolve consistently. `guides/` is the live example of this shape — match it.
 
 Match the file's **existing** conventions exactly — one line-wrap style, one bullet style, one voice. Inconsistency = this method was skipped.
 

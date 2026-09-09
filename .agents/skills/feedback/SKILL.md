@@ -34,7 +34,9 @@ One proposal per fired trigger:
 > **Gap**: what the config didn't cover or got wrong
 > **Proposal**: the specific edit, with reasoning
 
-No bundling unrelated issues; no hypothetical improvements without run evidence. A proposal touching a guide syncs the checklist item that audits the rule in the same pass — `audit` ticks the checklist, not the prose.
+No bundling unrelated issues; no hypothetical improvements without run evidence. A proposal touching a guide syncs the checklist item that audits the rule in the same pass — the matching `audit-*` skill ticks the checklist, not the prose.
+
+**Root agent-file drift routes here.** Divergence in root-level agent files — root `AGENTS.md`, `guides/`, `.agents/skills/` (dangling skill tokens, stale `§` citations, prose the source has outgrown) — is feedback territory, not a code change: surface it as a Step 2 proposal targeting the drifted file. Package AGENTS.md drift belongs to `audit-docs`, `scripts/AGENTS.md` drift to `audit-scripts`.
 
 ## Step 3 — Route each proposal
 

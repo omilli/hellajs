@@ -79,7 +79,7 @@ Mismatches → back to Phase 3.
 
 ## Phase 6 — Propose, then hand to worker
 
-Write one file per unit to `plans/<package>/<category>/<topic>/<unit>.md` (categories observed: `code`, `docs`, `misc`, `config`), frontmatter `depends_on:` if hard deps exist. For N>1 also write `index.md`: `# [ ] Plan set: <topic>` aggregate, shared scope, sibling links with one-line descriptions + hard deps; state the dep graph. On approval, hand to `worker` — don't execute yourself unless it was escape-hatch small.
+Write one file per unit to `plans/<package>/<category>/<topic>/<unit>.md` (categories observed: `code`, `docs`, `misc`, `config`; audit-category sets live under `plans/<pkg>/audit/`, written by `bun audits`), frontmatter `depends_on:` if hard deps exist. For N>1 also write `index.md`: `# [ ] Plan set: <topic>` aggregate, shared scope, sibling links with one-line descriptions + hard deps; state the dep graph. On approval, hand to `worker` — don't execute yourself unless it was escape-hatch small.
 
 ## Worked example
 

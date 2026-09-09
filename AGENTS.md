@@ -61,21 +61,25 @@
   | jsdoc-params | `bun jsdoc-params` | Guard: fail if a `function` declaration's JSDoc `@param` name matches no parameter. |
   | lint:structure | `bun lint:structure` | Guard (`scripts/doc-structure.ts`), five docs-structure checks: fence parity, tutorial Complete-Code parity, site anchor resolution, wrapper validity, nav/index registration. |
   | merge | `bun merge <set-folder> [--model=…] [--dry-run]` | Fresh instance per outstanding component worktree, executing the `merge` skill contract: mechanical queue derivation, completeness pre-check, per-component progress gate, orchestrator-owned index flip + union gate (`bun coverage <pkg>`; plugin exception), one fix instance per red round. `--dry-run` prints the queue. The single human checkpoint. |
+  | audits | `bun audits <package> [--section=code\|tests\|docs] [--model=…] [--dry-run]` | Fresh instance per package section (fixed code → tests → docs order), each running the matching `audit-*` skill then authoring its own findings plan set under `plans/<pkg>/audit/<stamp>-<section>/` (three separate sets, executable via `bun plans`). Findings set present → next section; neither a set nor a clean statement → operator gate (retry / accept-clean / skip / halt). Accepts `core` or `packages/core`. `--dry-run` prints derived sections + set dirs without spawning. |
   | doc-snippets | `bun doc-snippets` | Audit tool (NOT a guard, `scripts/doc-snippets.ts`): typechecks every package-doc code block; strict tier gates the exit code, tutorials report informationally. Emits into gitignored `.doc-snippets/`. |
   | doc-links | `bun doc-links` | Guard: fail if a doc link's display name is not a barrel export of its target package (rename drift), or an internal site URL matches no `.mdx` under `docs/src/pages/` (link rot). |
   | em-dash | `bun em-dash` | Guard (`scripts/em-dash.ts`): fail if a user-facing file contains an em/en dash or HTML entity, fences included. Allowlist-include scan (READMEs, package docs, comparisons, tutorials, docs-site pages, changesets); agent-only files exempt. Rewrites: `guides/docs.md` §Typography. |
 
   ## Skills
 
-  Twelve first-party skills: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills maintaining it. Edit them directly via `skill` (anatomy) and `author` (voice + cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. No global-inherited layer, no graceful-degradation fallback. `prime` loads first on any substantive task; the rest are discovered on demand.
+  Fifteen first-party skills: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills maintaining it. Edit them directly via `skill` (anatomy) and `author` (voice + cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. No global-inherited layer, no graceful-degradation fallback. `prime` loads first on any substantive task; the rest are discovered on demand.
 
-  The loop: `idea` / `audit` / `critic` / `feature` (entry) → `plan` → `worker` (back to `plan` on a gap, `idea` on a fork) → `feedback` → `memory`. A guide conflict emits a guide-update proposal (§Non-negotiables). A codebase-fact drift — AGENTS.md prose describing behavior the source has outgrown (file maps, invariant one-liners) — is not a rule conflict: route it to `plan` as a factual fix in the change's blast radius. A Break-severity finding from any entry skill carries an empirical repro (a failing command/test) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `plan` refuses to pin a DoD test to an unverified Break.
+  The loop: `idea` / `audit-*` / `critic` / `feature` (entry) → `plan` → `worker` (back to `plan` on a gap, `idea` on a fork) → `feedback` → `memory`. A guide conflict emits a guide-update proposal (§Non-negotiables). A codebase-fact drift — AGENTS.md prose describing behavior the source has outgrown (file maps, invariant one-liners) — is not a rule conflict: route it to `plan` as a factual fix in the change's blast radius. A Break-severity finding from any entry skill carries an empirical repro (a failing command/test) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `plan` refuses to pin a DoD test to an unverified Break.
 
   | Skill | Role |
   |---|---|
   | `prime` | Operating backbone: the loop, handoff gate, layering contract, memory protocol. Loaded first. |
   | `idea` | Stress-test an idea/plan; resolve load-bearing forks. Entry. |
-  | `audit` | Grade files against the repo's own rules; in-contract findings → worker redo, scope-expanding → `plan`. Entry. |
+  | `audit-code` | Grade `lib/` source + config against `guides/code.md`; in-contract findings → worker redo, scope-expanding → `plan`. Entry. |
+  | `audit-tests` | Grade `*.test.ts` against `guides/tests.md` (structure, anti-patterns, gate semantics); same routing. Entry. |
+  | `audit-docs` | Grade package md/mdx against `guides/docs.md` + package AGENTS.md file-map drift; same routing. Entry. |
+  | `audit-scripts` | Grade `scripts/**`/`utils/**` against `guides/scripts.md` + scripts/AGENTS.md drift; separate from package audit runs. Entry. |
   | `critic` | Judgment-based critique: smells, API design, cost-gated findings. Entry. |
   | `feature` | Surface grounded enhancement ideas; hand to `plan` as evidence maps. Entry. |
   | `plan` | Turn a goal or evidence map into a task-contract (Files, delta, DoD). |
@@ -94,7 +98,7 @@
 
   | Condition | Action |
   |---|---|
-  | Worker completes a plan unit (Code/Tests) | Completion pipeline fires: `audit` → redo (in-contract, one) → `critic` if Surface:yes → `feedback` → `memory` on events |
+  | Worker completes a plan unit | Completion pipeline fires the matching `audit-*` skill (Code → `audit-code`, Tests → `audit-tests`, Docs → `audit-docs`, scripts/config → `audit-scripts`) → redo (in-contract, one) → `critic` if Surface:yes → `feedback` → `memory` on events |
   | Loop completed with friction | `feedback` (applies via `author`/`skill`, uncommitted) |
   | Non-obvious decision, not already durable | `memory` |
   | Actionable change surfaced (bug, gap, needed edit) | `plan` |
@@ -103,7 +107,7 @@
 
   ## Style guides
 
-  Read the matching guide before editing — each is a decision procedure (trees + canonical paths/examples at top, rules in the middle, verification checklist at the end); read the relevant section, not the whole file. A rule edit syncs the checklist item that audits it in the same pass — `audit` ticks the checklist, not the prose.
+  Read the matching guide before editing — each is a decision procedure (trees + canonical paths/examples at top, rules in the middle, verification checklist at the end); read the relevant section, not the whole file. A rule edit syncs the checklist item that audits it in the same pass — the matching `audit-*` skill ticks the checklist, not the prose.
 
   | Trigger | Guide |
   |---|---|
@@ -151,7 +155,7 @@
 
   Tests run under HappyDOM via preload (`utils/happydom.js`, in `bunfig.toml`); conventions (framework, imports, structure, anti-patterns, the checklist): `guides/tests.md`. Gate semantics and triage protocol (scoped runs, foreign failures, plugin exception, blind spots, measurement target): `guides/tests.md` §Triage & Gate Semantics.
 
-  **NEVER verify with bare `bun test`** — `packages/` tests import `dist/` bundles and `bun test` never rebuilds them (silently stale). The single verification gate is `bun coverage <package>`. Mid-flight iteration only: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.ts]`. Never list standalone `bun lint` or `bun test` in a plan's DoD when `bun coverage` is present. `bun coverage` enforces neither the guides' structural rules nor their anti-patterns — a new file, file structure, or shared test helper gets an `audit` against the matching guide as part of verification.
+  **NEVER verify with bare `bun test`** — `packages/` tests import `dist/` bundles and `bun test` never rebuilds them (silently stale). The single verification gate is `bun coverage <package>`. Mid-flight iteration only: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.ts]`. Never list standalone `bun lint` or `bun test` in a plan's DoD when `bun coverage` is present. `bun coverage` enforces neither the guides' structural rules nor their anti-patterns — a new file, file structure, or shared test helper gets the matching `audit-*` skill run as part of verification.
 
   Plan-file worker runs execute in a component worktree (`../hellajs-wt/<slug>/`, seeded by `worker`'s `worktree.mjs`): bundle/coverage run inside the worktree; merge-back lands via `bun merge`. Inline plans and foreign-failure triage are unchanged.
 </hellajs-agent>

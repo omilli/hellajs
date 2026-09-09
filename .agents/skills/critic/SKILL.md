@@ -1,12 +1,12 @@
 ---
 name: critic
 description: >
-  Judge code for over-engineering, unnecessary complexity and abstraction, tight coupling, dead or duplicate code, misleading naming or file layout, API/interface design (parameter names, order, types, return shapes, and the contract callers learn), and correctness smells — the judgment-based review with no lint rule behind it (`audit` owns rule-grounded review; this owns taste). Every finding passes a cost gate: it names a concrete cost (it breaks, hampers, misleads, or bloats) and cites source read this session. Use when asked to critique, review for code smells, flag over-engineering/complexity, or assess API/interface design. Use ONLY for judgment-based critique — route any finding backed by a runnable check or quoted project rule to `audit` instead.
+  Judge code for over-engineering, unnecessary complexity and abstraction, tight coupling, dead or duplicate code, misleading naming or file layout, API/interface design (parameter names, order, types, return shapes, and the contract callers learn), and correctness smells — the judgment-based review with no lint rule behind it (the `audit-*` skills own rule-grounded review; this owns taste). Every finding passes a cost gate: it names a concrete cost (it breaks, hampers, misleads, or bloats) and cites source read this session. Use when asked to critique, review for code smells, flag over-engineering/complexity, or assess API/interface design. Use ONLY for judgment-based critique — route any finding backed by a runnable check or quoted project rule to the matching `audit-*` skill instead.
 ---
 
 # Critic
 
-One skill, one target at a time. Diagnose code for over-engineering, complexity/coupling, dead/duplicate code, naming/layout, API/interface design, correctness smells — the judgment review `audit` excludes. Every finding passes the **cost gate**: names one concrete cost — *breaks*, *hampers*, *misleads*, or *bloats* — and cites source read this session. No real cost → nitpick, drop. Silence is valid; manufacturing findings to seem thorough is the failure mode. critic owns **diagnosis**; `plan` owns the fix contract. Governed by prime.
+One skill, one target at a time. Diagnose code for over-engineering, complexity/coupling, dead/duplicate code, naming/layout, API/interface design, correctness smells — the judgment review the `audit-*` skills exclude. Every finding passes the **cost gate**: names one concrete cost — *breaks*, *hampers*, *misleads*, or *bloats* — and cites source read this session. No real cost → nitpick, drop. Silence is valid; manufacturing findings to seem thorough is the failure mode. critic owns **diagnosis**; `plan` owns the fix contract. Governed by prime.
 
 ## The cost gate (fairness rule)
 
@@ -15,7 +15,7 @@ One skill, one target at a time. Diagnose code for over-engineering, complexity/
 - **Misleads** — name/type/path that makes a reader guess wrong about behavior or location. Onboarding tax.
 - **Bloats** — unreachable code, unused exports, near-duplicate blocks, surface with no caller. Carrying cost.
 
-"I'd write it differently" → not a finding. One cost per finding. Smell fits a runnable check or quoted rule → hand to `audit`.
+"I'd write it differently" → not a finding. One cost per finding. Smell fits a runnable check or quoted rule → hand to the matching `audit-*` skill.
 
 ## Step 1 — Pick one target
 
@@ -29,7 +29,7 @@ A smell is rarely visible in isolation. Read in parallel:
 - Imports and immediate neighbors — both directions.
 - Callers — repo-wide `rg` for every importer of the target's symbols (prose enumeration misses greppable references; a guess is fabrication). Dead-code/coupling findings stand or fall on this.
 - Surface arbiters: `packages/<pkg>/lib/index.ts` barrel; dom's typed-surface mirror (`lib/types/nodes.d.ts` + `lib/types/attributes.d.ts`, §Non-negotiables). A Surface finding's blast radius includes every importer.
-- Stated intent: the package's `AGENTS.md` + `guides/` — separates intentional design from smell, routes rule-grounded issues to `audit`.
+- Stated intent: the package's `AGENTS.md` + `guides/` — separates intentional design from smell, routes rule-grounded issues to the matching `audit-*` skill.
 - `memory/entries/` (grep `memory/index.md` for the target's symbols) — prior verified decisions; a contradicting finding needs new evidence. `{pkg}-comparison.md` is a published behavior contract.
 
 ## Step 3 — Apply the six lenses
@@ -39,7 +39,7 @@ Each lens carries the test separating a real finding from noise:
 - **Over-engineering** — abstraction with no second caller *today*; config/flags/indirection "for the future"; generic solver where one concrete case exists. Test: paying for itself right now? Speculative generality = Hamper.
 - **Complexity & coupling** — deep nesting, god-objects, leaky abstractions, circular deps, change-one-break-many. Test: can a reasonable change land in one place without design-forced ripple? Forced ripple = Hamper.
 - **Dead & duplicate code** — unreachable branches, unused exports, empty/swallowed handlers, near-identical blocks with drift risk. Test: does `rg` find a caller (dead) or 2+ drifting copies (duplicate)? Unverifiable → dropped. (`bun dead-exports` guards exports — this lens owns the unexported interior.)
-- **Naming & file layout** — names that lie about behavior; types/paths contradicting the role. Test: would a new contributor guess wrong from name/path? Yes = Mislead. `guides/code.md` §Canonical paths is the arbiter; pure convention breaks → `audit`.
+- **Naming & file layout** — names that lie about behavior; types/paths contradicting the role. Test: would a new contributor guess wrong from name/path? Yes = Mislead. `guides/code.md` §Canonical paths is the arbiter; pure convention breaks → `audit-code`.
 - **API & interface design** — param names, order, types, optionality, return shape, arity, and the contract a caller must learn. Test: could a caller use it correctly from the signature alone? Hides a requirement, contradicts the name, demands out-of-band knowledge, or forces an awkward call shape = Mislead or Hamper.
 - **Correctness smells** — unchecked errors, races, off-by-one, missing edge cases, unsafe defaults, swallowed exceptions. Test: can you name the concrete input/state producing wrong behavior? Cannot construct the failure = anxiety, not a finding. This = Break.
 
@@ -47,7 +47,7 @@ Each lens carries the test separating a real finding from noise:
 
 - Cost gate: every finding names one Break/Hamper/Mislead/Bloat + one-clause justification.
 - De-duplicate: collapse shared roots into one root-cause finding, not five symptoms.
-- Route: anything with a runnable check or quoted rule → `audit`; keep only judgment.
+- Route: anything with a runnable check or quoted rule → the matching `audit-*` skill; keep only judgment.
 - Verify citations: file + anchor from this session's read; no memory, no generalizing one example into a blanket claim.
 - Severity + blast radius: Critical/Major/Minor, justified by cost magnitude × callers/tests/docs touched.
 

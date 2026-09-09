@@ -50,7 +50,7 @@ Verification commands are fixed by AGENTS.md §Scripts + §Testing — never bar
 
 | Type | Baseline | Verification floor after |
 |---|---|---|
-| **Code/Tests** (`packages/*`) | `bun coverage <pkg>` | DoD green; guides' structural rules hold on changed files (rules coverage can't see → `audit`); new/changed exports documented; backward compatible or a migration note exists |
+| **Code/Tests** (`packages/*`) | `bun coverage <pkg>` | DoD green; guides' structural rules hold on changed files (rules coverage can't see → the matching `audit-*` skill); new/changed exports documented; backward compatible or a migration note exists |
 | **Code/Tests** (`plugins/*`) | `bun test plugins/<p>/tests` + `bun lint` (coverage cannot scope plugins — `guides/tests.md` §Triage & Gate Semantics) | DoD green; same floor |
 | **Docs** | cross-check examples against current source | examples resolve; `bun lint:structure` when mdx touched; no claim contradicts the implementation |
 | **Config / agent files** | the runnable checks the plan names (`bun lint`, guards as applicable) | checks pass; referenced scripts still resolve |
@@ -83,9 +83,9 @@ Before declaring done: nothing outside touched files regressed — run checks in
 
 ## Step 5 — Completion pipeline and report
 
-Fires mechanically once the unit's tasks are ticked — no offering. Order fixed: audit → redo → critic → feedback → memory.
+Fires mechanically once the unit's tasks are ticked — no offering. Order fixed: the matching `audit-*` skill → redo → critic → feedback → memory.
 
-- **(a) audit** — on the changed files of every Code/Tests task (enforcement point for structural rules `bun coverage` cannot see).
+- **(a) audit** — run the matching `audit-*` skill on the changed files of every task (Code → `audit-code`, Tests → `audit-tests`, Docs → `audit-docs`, scripts/config → `audit-scripts`; enforcement point for structural rules `bun coverage` cannot see).
 - **(b) Redo pass, ONE.** In-contract findings (changed files, behavior inside the planned delta) → fix, re-run the gate. Scope-expanding or contract-contradicting → return to `plan`. Critic taste findings → `plan` with evidence, never self-redone. A needed second pass → stop and report.
 - **(c) critic** — when Surface:yes, on the changed surface after the redo pass (it sees fixed state); findings hand to `plan`.
 - **(d) feedback** — invoke; a clean run no-ops.

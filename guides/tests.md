@@ -249,12 +249,12 @@ How test gates are run and triaged. `bun coverage` (§Scripts) is the single ver
 - **Bundle-stage foreign block.** `bundle.ts --quiet` builds ALL packages before scoped tests run, so a foreign bundle failure blocks the target's own tests. Verify via `bun bundle <package>` (explicit rebuild — honors no-stale-dist) followed by the scoped test command coverage runs internally (`bun test packages/<package>/tests --coverage`); report the foreign failure.
 - **Gate-failure attribution.** A check failing on files outside your diff → `git status -sb` first; verify the files carry no edits of yours (concurrent user changes) before debugging your own work. Re-run the gate after the foreign change settles.
 - **Plugin exception.** `bun coverage <plugin>` fails — `isValidPackage` resolves under `packages/` only. For plugins, use `bun test plugins/<p>/tests` + `bun lint`. Plugin tests import source, not `dist/` — except `plugins/babel/tests/parity.test.ts`, whose runtime side imports the `@hellajs/dom` dist bundle: `bun bundle dom --quiet` first when dom's template parsing changes.
-- **Coverage blind spots.** `bun coverage` runs tsc + eslint + tests but enforces NEITHER the guides' structural rules (`guides/code.md`: thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `for…of`/`for…in`, `@internal` visibility) NOR this guide's anti-patterns (§Anti-Patterns) — no lint counterpart exists. A new file, file structure, or shared test helper → run `audit` against the matching guide as part of verification.
+- **Coverage blind spots.** `bun coverage` runs tsc + eslint + tests but enforces NEITHER the guides' structural rules (`guides/code.md`: thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `for…of`/`for…in`, `@internal` visibility) NOR this guide's anti-patterns (§Anti-Patterns) — no lint counterpart exists. A new file, file structure, or shared test helper → run `audit-tests` as part of verification.
 - **Measurement target.** Coverage instruments built bundles (`dist/`), not `lib/` — `lib/` is truth, the bundle is the measurement. A reading is point-in-time: re-run `bun coverage` immediately before reporting coverage findings.
 
 ## Verification Checklist
 
-Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a yes/no or a command. This is the audit floor stated where the rules live; the audit skill reads it instead of reconstructing it from prose.
+Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a yes/no or a command. This is the audit floor stated where the rules live; `audit-tests` reads it instead of reconstructing it from prose.
 
 **Framework & imports**
 - [ ] `bun:test` only; double quotes, semicolons always
@@ -297,4 +297,4 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] No bare `bun test` used for verification — mid-flight iteration used the triage form; final gate was `bun coverage <package>`
 - [ ] Foreign failure triaged per protocol (own package verified clean, failure reported), not debugged as own work
 - [ ] Plugins verified via the plugin exception path, not `bun coverage`
-- [ ] New file/structure/helper → `audit` run against the matching guide (coverage's blind spots)
+- [ ] New file/structure/helper → `audit-tests` run (coverage's blind spots)

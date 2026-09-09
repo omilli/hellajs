@@ -47,6 +47,7 @@
 		"changeset": "changeset",
 		"plans": "bun ./scripts/plans.ts",
 		"merge": "bun ./scripts/merge.ts",
+		"audits": "bun ./scripts/audits.ts",
 		"release": "bun bundle --quiet && bun ./scripts/release.ts",
 		"visibility": "bun ./scripts/type-visibility.ts",
 		"dead-exports": "bun ./scripts/dead-exports.ts",
