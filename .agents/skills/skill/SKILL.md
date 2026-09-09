@@ -15,7 +15,7 @@ Mine the current conversation before asking — the workflow is usually already 
 ## Frontmatter (hard rules)
 
 - **name** — required, lowercase-hyphen, ≤64 chars, must match the folder name.
-- **description** — effectively required; skills without one are filtered out and never surfaced. This is the trigger, not a summary: front-load literal keywords the user will say; cover *what* AND *when*; gate with "Use ONLY when…" to stay quiet on adjacent topics.
+- **description** — effectively required; skills without one are filtered out and never surfaced. Hard cap 1024 chars (pi `docs/skills.md`); longer descriptions surface as skill conflicts — trim before finishing. This is the trigger, not a summary: front-load literal keywords the user will say; cover *what* AND *when*; gate with "Use ONLY when…" to stay quiet on adjacent topics.
 - **compatibility** — optional, rarely needed.
 
 Authoritative field list: the harness's skill-authoring docs (pi: `docs/skills.md` under the pi installation) — check there if unsure.
