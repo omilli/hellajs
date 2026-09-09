@@ -144,7 +144,10 @@ describe("store", () => {
       }, { readonly: true });
 
       expect(data.items()).toEqual([1, 2, 3]);
-      expect(data.items.length).toBe(0);
+      // Contract change (deep collections): readonly collection keys forward the
+      // container's reader methods for JS callers (the typed surface is the plain
+      // getter), so `length` reads granularly — not the old bare-getter's arity
+      expect((data.items as unknown as { length(): number }).length()).toBe(3);
     });
 
     test("readonly array setter throws at runtime", () => {

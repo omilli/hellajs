@@ -70,7 +70,9 @@ describe("store", () => {
       });
 
       expect(data.lookup()).toBeInstanceOf(Map);
-      expect(data.lookup().get("k")!.name).toBe("Bob");
+      // Contract change (deep collections): Map values are element stores, so the
+      // granular read goes through the container's per-key store
+      expect(data.lookup.get("k")!.name()).toBe("Bob");
     });
 
     test("leaves untouched Date signal unwritten", () => {
@@ -92,7 +94,11 @@ describe("store", () => {
         draft.count = 1;
       });
 
-      expect(data.items()).toBe(original);
+      // Contract change (deep collections): the whole-callable returns a fresh
+      // plain array per read, so the no-write proof is element-store identity —
+      // what keyed list rendering relies on — not array-reference identity
+      expect(data.items()[0]).toBe(original[0]);
+      expect(data.items()[1]).toBe(original[1]);
     });
 
     test("leaves untouched Map and Set signals unwritten", () => {
@@ -108,19 +114,25 @@ describe("store", () => {
         draft.count = 1;
       });
 
-      expect(data.lookup()).toBe(originalMap);
-      expect(data.tags()).toBe(originalSet);
+      // Contract change (deep collections): whole-callable reads return fresh
+      // containers, so the no-write proof is member identity, not container identity
+      expect(data.lookup().get("a")).toBe(originalMap.get("a"));
+      expect(data.tags().has("x")).toBe(originalSet.has("x"));
     });
 
     test("leaves untouched Set of objects unwritten", () => {
       const data = store({ members: new Set([{ id: 1 }, { id: 2 }]), count: 0 });
-      const original = data.members();
+      const original = Array.from(data.members());
 
       data.$update(draft => {
         draft.count = 1;
       });
 
-      expect(data.members()).toBe(original);
+      // Contract change (deep collections): whole-callable reads return a fresh
+      // Set per call, so the no-write proof is element-store identity
+      const after = Array.from(data.members());
+      expect(after[0]).toBe(original[0]);
+      expect(after[1]).toBe(original[1]);
     });
 
     test("rewrites a Set when an object member is mutated", () => {
@@ -133,7 +145,9 @@ describe("store", () => {
       });
 
       expect(data.members()).toBeInstanceOf(Set);
-      expect(Array.from(data.members()).some(member => member.id === 99)).toBe(true);
+      // Contract change (deep collections): object members are element stores;
+      // a whole-Set reconcile installs fresh stores for every member
+      expect(Array.from(data.members()).some(member => member.id() === 99)).toBe(true);
     });
 
     test("preserves class instance prototype when the draft mutates it", () => {

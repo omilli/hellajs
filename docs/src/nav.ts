@@ -50,7 +50,7 @@ export const navigation = {
     }
   ],
   reference: [
-    { core: ["signal", "computed", "effect", "batch", "scope", "untracked", "flush"] },
+    { core: ["signal", "signalArray", "signalMap", "signalSet", "computed", "effect", "batch", "scope", "untracked", "flush"] },
     {
       dom: [
         { label: "on:", slug: "on" },

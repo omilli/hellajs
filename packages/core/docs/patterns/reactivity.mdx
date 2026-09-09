@@ -212,3 +212,77 @@ console.log(doubled()); // 20 (graph rebuilt, recomputed)
 
 cleanup2();
 ```
+
+### Granular Element Effects
+
+Run an effect for one element of a collection without waking on writes to the others.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+const temperatures = signalArray([21, 19, 25]);
+
+effect(() => {
+  const reading = temperatures.get(0);
+  console.log(`Sensor 0: ${reading}°C`);
+});
+// Structural ops (push, splice) rerun positional readers; set(0, v) is the only value write that reruns this effect
+
+temperatures.set(0, 22); // Sensor effect reruns
+temperatures.set(2, 30); // Sensor effect stays asleep
+```
+
+### Reconciling Collections Without False Wakes
+
+Assign through the callable setter: equal elements write nothing, so effects rerun only for real changes.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+const items = signalArray(['a', 'b', 'c']);
+effect(() => console.log(items.map((value) => value.toUpperCase()))); // Logs: ['A', 'B', 'C']
+
+items(['a', 'b', 'changed']); // Effect reruns once; equal positions wrote nothing
+items(['a', 'b', 'changed']); // No rerun anywhere: content-equal reconcile
+```
+
+### Stable Identity Handles
+
+Hold onto an element across reorders with `nodeAt`, or a key across deletes with `entry`; the handle tracks the element, not the position.
+
+```typescript
+import { signalMap, effect } from '@hellajs/core';
+
+const scores = signalMap([['alice', 1]]);
+const aliceScore = scores.entry('alice');
+
+effect(() => console.log('Alice:', aliceScore())); // Logs: "Alice: 1"
+
+scores.set('bob', 2);   // No rerun: bob's membership does not change alice's value
+scores.set('alice', 5); // Logs: "Alice: 5"
+scores.delete('alice'); // Logs: "Alice: undefined"
+```
+
+### Layering Deep Reactivity via wrap and merge
+
+The collection primitives store raw elements. Host packages convert elements on entry with `wrap` and patch writes in place with `merge`; `@hellajs/store` builds its deep collection reactivity on exactly these hooks.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+type Todo = { id: number; text: string; done: boolean };
+
+// Sketches of the conversions a host package supplies
+const toDeep = (element: Todo): Todo => element; // convert a plain draft into a deeply reactive store
+const patch = (prev: Todo, next: Todo): boolean => {
+  prev.done = next.done; // field-precise patch instead of a child write
+  return true;
+};
+
+const todos = signalArray<Todo>([{ id: 1, text: 'Ship', done: false }], {
+  wrap: (element) => toDeep(element),
+  merge: (prev, next) => patch(prev, next),
+});
+
+todos.set(0, { id: 1, text: 'Ship', done: true }); // Patched in place; the container never woke
+```

@@ -9,10 +9,10 @@ A ground-up comparison based on the actual source code of `@hellajs/core` v2. Ev
 | Dimension | HellaJS core | Solid | Svelte 5 | React 19 | Vue 3 | Angular |
 |---|---|---|---|---|---|---|
 | Reactive model | Signals over a doubly-linked dependency DAG | Signals + owner tree | Runes: compiled to a signal runtime | Snapshot state + VDOM re-render | Proxies (`ref`/`reactive`) over a linked dep graph | Signals + producer/consumer graph |
-| Granularity | Per-binding, dynamic per-execution | Per-binding, dynamic per-execution | Per-binding, compiler-analyzed | Component subtree | Per-ref / per-property | Per-signal / per-template |
+| Granularity | Per-binding, dynamic per-execution; per-element via `signalArray`/`signalMap`/`signalSet` | Per-binding, dynamic per-execution | Per-binding, compiler-analyzed | Component subtree | Per-ref / per-property | Per-signal / per-template |
 | Glitch-free | Yes: DFS propagation, each node runs once per cycle | Yes: topological `runTop` re-execution | Yes: version counters + batch traversal | No: render then commit | Yes: id-sorted job queue | Yes: pull-based version polling |
 | Default flush | Synchronous (effects run at the write) | Synchronous (memos first, then effects) | Microtask batch (`flushSync` to force) | Concurrent scheduler (lanes) | Microtask (`nextTick`, `flush: 'sync'` opt-in) | Change-detection cycle (async) |
-| Deep reactivity | No: reference equality only | No in core (`createStore` is a separate package) | Yes: `$state` proxies deeply | No: immutable updates | Yes: `reactive()` proxies deeply | No |
+| Deep reactivity | No: elements stay raw; the collection signals add per-element granularity without depth | No in core (`createStore` is a separate package) | Yes: `$state` proxies deeply | No: immutable updates | Yes: `reactive()` proxies deeply | No |
 | Equality | Reference `===` with `NaN` self-equal, optional `equals` comparator | Optional `equals` comparator per signal | `===` / proxy-aware `safe_equals` | `Object.is` bailouts | `Object.is` + custom via options | `Object.is` + optional `equal` per signal |
 | Compile step | None | JSX → reactive code (required) | SFC → JS (required) | JSX → JS (compiler optional for memoization) | Templates compiled (required for SFC) | Decorators/templates compiled (required) |
 | Standalone reactivity | Yes: the package is only reactivity | Partially: coupled to `solid-js` runtime | No: runes only exist through the compiler | No: hooks need a renderer | Yes: `@vue/reactivity` published separately | No: coupled to `@angular/core` DI |
@@ -30,7 +30,7 @@ The package is a single reactive engine: three node kinds, one edge type, one st
 - Three node kinds share one `Reactive` base: `rd` (first dependency link), `rpd` (tracking bookmark), `rs` (first subscriber link), `rps` (prev subscriber pointer), `rf` (state bitmask) (`lib/internal/links.ts`). Edges are `Link` nodes carrying `ls`/`lt` (source/target) plus four list pointers, forming two parallel doubly-linked lists per node (`lib/internal/links.ts`).
 - A bitmask state machine drives every transition: `CLEAN`, `WRITABLE`, `GUARDED`, `TRACKING`, `DIRTY`, `PENDING`, `SCHEDULED` (`lib/internal/flags.ts`). All checks are inline bitwise tests with no method dispatch (`lib/signal.ts`).
 - Signals and computeds share the `WRITABLE` bit so propagation treats them identically; effects carry `GUARDED` and are scheduled rather than traversed (`lib/internal/scheduler.ts`). `updateValue` dispatches between signal and computed execution on the `COMPUTED` type bit (`lib/internal/execution.ts`).
-- The whole surface is six primitives (`signal`, `computed`, `effect`, `batch`, `untracked`, `scope`) plus a `flush` drain for advanced use (`lib/index.ts`). No owner tree, no context system, no scheduler modes.
+- The whole surface is nine primitives (`signal`, `computed`, `effect`, `batch`, `untracked`, `scope`, and the collection factories `signalArray`, `signalMap`, `signalSet`) plus a `flush` drain for advanced use (`lib/index.ts`). No owner tree, no context system, no scheduler modes. The collection signals are pure composition over `signal`/`computed` (`lib/internal/collections.ts`): no new node kinds, no scheduler or flag changes.
 
 ### Solid
 
@@ -106,6 +106,8 @@ Two consequences of HellaJS's model worth stating plainly:
 
 - Conditional re-tracking is total. `endTracking` prunes everything after `rpd` (`lib/internal/tracking.ts`), so `computed(() => view() === 'a' ? a() : b())` subscribes to exactly two signals at any moment, and switching branches swaps the set atomically within that execution.
 - `untracked` is a context swap, not an object flag. It nulls the current subscriber for the duration of the callback and restores it in `finally` (`lib/untracked.ts`); structurally identical to Solid's and Angular's equivalents, and lighter than Vue's `markRaw`, which permanently brands the object.
+
+Collection state extends the same granularity model (`signalArray`/`signalMap`/`signalSet`, `lib/signalArray.ts` + `lib/internal/collections.ts`): one child signal per element plus a container version signal, so value writes wake a single element's readers and in-place structural operations replace immutable spreads. The honest position against the proxy frameworks: per-element value granularity, keyed identity handles, and in-place ops are at parity; deep element proxies are absent (elements stay raw; depth belongs to the store package layered on the `wrap`/`merge` hooks); structural granularity is container-level (any structural change wakes every positional reader), weaker than Vue's per-key tracking.
 
 React's granularity stands apart: without signals there is nothing to subscribe to, so the unit of change is the component. Memoization shrinks the recomputed subtree but the subscription model remains render-scoped (per the `useMemo`/`memo` opt-in design in `react@19.2.8`).
 
@@ -187,6 +189,7 @@ Only HellaJS and Solid run effects synchronously at the write. That is a real tr
 | Batch disposal | `scope(fn)` (`lib/scope.ts`) | `createRoot` | Component scope | (manual) | `effectScope` | `DestroyRef` |
 | Previous value to compute fn | Yes (`lib/computed.ts`) | Yes (`createMemo((v) => …)`) | No | No | No | No |
 | Custom equality | Optional `equals` on signal and computed; equal keeps the old reference (`lib/signal.ts`, `lib/computed.ts`) | Per-signal `equals` option | `.raw` variants | `Object.is` (fixed) | Per-ref via options | Per-signal `equal` option |
+| Granular collections | `signalArray`/`signalMap`/`signalSet`: per-element child signals, in-place ops, keyed handles (`lib/signalArray.ts`, `lib/signalMap.ts`, `lib/signalSet.ts`) | Yes: `createStore` observables (separate package) | Yes: deep `$state` proxies | No: immutable updates | Yes: deep `reactive()` proxies | No |
 | Deep reactivity | No | Separate `createStore` package | Yes (default) | No | Yes (default) | No |
 | Write inside computed | Permitted; self-writes stabilize (`lib/internal/scheduler.ts`) | No guard in source read | Throws `state_unsafe_mutation` | n/a | Permitted | Throws `InvalidWriteToSignalError` |
 | Async-aware tracking | No: sync effects only | `createResource` | `await` in `$derived`/async effects | `use(promise)`, actions | `asyncComputed` (3rd-party) | `resource` |
@@ -201,6 +204,7 @@ Only HellaJS and Solid run effects synchronously at the write. That is a real tr
 - **Computed auto-GC with cascade**: losing the last subscriber detaches the whole dependency branch and re-marks for lazy rebuild (`lib/internal/links.ts`)
 - **Zero-allocation steady-state tracking**: same-order re-reads reuse link objects via the `rpd` bookmark (`lib/internal/links.ts`)
 - **Manual-stack iterative DFS everywhere**: `propagateChange` and `validateStale` allocate one lightweight stack frame per branch, never recurse (`lib/internal/scheduler.ts`)
+- **Keyed identity handles**: `nodeAt(i)`/`entry(k)` hand out the per-element signal itself, surviving reorders and deletes (`lib/signalArray.ts`, `lib/signalMap.ts`)
 - **Synchronous flush with explicit batch**: no hidden microtask, ever (`lib/signal.ts`, `lib/batch.ts`)
 
 ---

@@ -84,6 +84,31 @@ todos([
 ]);  // Triggers update: new array reference
 ```
 
+## Granular Collection Signals
+
+`signalArray`, `signalMap`, and `signalSet` replace immutable spreads for collection state. Each element or key lives in its own child signal plus one structural version per container: a value write wakes only that element's readers, and an in-place structural operation (`push`, `splice`, `set.add`) wakes positional readers without cloning anything.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+const items = signalArray([1, 2, 3]);
+
+effect(() => console.log('First:', items.get(0))); // Logs: "First: 1"
+
+items.push(4);   // Logs: "First: 1" - in-place structural op, positional readers wake
+items.set(0, 9); // Logs: "First: 9" - only index-0 readers wake
+items([9, 2, 3, 4]); // Reconcile: equal elements write nothing, nothing wakes
+```
+
+Each container is still a [`signal`](/reference/core/signal): calling it reads a fresh plain snapshot that tracks everything, and calling it with a collection reconciles element-wise. The tracking model has two layers:
+
+- **Value operations** (`set` on an existing element or key) write one child signal. Only readers of that element rerun.
+- **Structural operations** (add, remove, reorder, length change) bump the version with zero child writes. Every positional reader reruns and re-reads its position. Structural granularity is container-level: any structural change wakes every positional reader, unlike per-key tracking in proxy-based systems.
+
+Elements stay raw: the containers do not proxy objects. Two element-lifecycle hooks (`wrap` and `merge`) exist so the store package can convert plain elements into deeply reactive stores on top of the same primitives, with field-precise writes.
+
+See the `signalArray`, `signalMap`, and `signalSet` reference pages for the full method surface and wake tables.
+
 ## Advanced Patterns
 
 ### Conditional Dependencies

@@ -23,7 +23,7 @@ npm install @hellajs/core
 ### Basic Usage
 
 ```typescript
-import { signal, computed, effect, batch, untracked, scope } from '@hellajs/core';
+import { signal, signalArray, computed, effect, batch, untracked, scope } from '@hellajs/core';
 
 // Create signals (writable state)
 const count = signal(0);
@@ -61,6 +61,13 @@ const scopeCleanup = scope(() => {
 
 // Stop all effects in scope at once
 scopeCleanup();
+
+// Granular collection signals: one child signal per element
+const items = signalArray([1, 2, 3]);
+effect(() => console.log(`First: ${items.get(0)}`)); // Logs: "First: 1"
+items.set(0, 9); // Only index-0 readers rerun
+items.push(4);   // In-place structural op; no immutable spread needed
+items([9, 2, 3, 4]); // Reconcile: equal elements write nothing
 ```
 
 ## License

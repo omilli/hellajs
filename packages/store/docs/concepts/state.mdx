@@ -44,7 +44,7 @@ Beyond basic get/set, stores offer several capabilities, each documented in deta
 
 ## Deep Reactivity
 
-All nested objects are automatically converted to reactive stores, arrays become signals, and functions remain unchanged, creating a fully reactive state tree.
+All nested objects are automatically converted to reactive stores, Array/Map/Set values become granular collection containers, and functions remain unchanged, creating a fully reactive state tree.
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -105,9 +105,54 @@ todos.$update(draft => {
   draft.count = draft.items.length;
 });
 
-console.log(todos.items().length); // 3
-console.log(todos.items()[0]?.done); // true
+console.log(todos.items.length()); // 3
+console.log(todos.items.get(0)!.done()); // true - element reads go through the element store
 ```
+
+## Deep Collection Keys
+
+Array, `Map`, and `Set` values install granular collection containers from `@hellajs/core` (`signalArray`, `signalMap`, `signalSet`). Plain-object elements convert to element stores at construction: every field of every element is its own signal, so field writes wake exactly the field's readers. Collections nested inside collections recurse the same way.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const todos = store({
+  todos: [{ id: 1, text: 'write plans', completed: false }]
+});
+
+effect(() => todos.todos.get(0)!.completed()); // Reads ONE field
+todos.todos.get(0)!.completed(true);           // Wakes only completed readers
+todos.todos.set(0, { completed: true });        // Patch: text kept, completed-readers only
+todos.$update(draft => { draft.todos[0]!.completed = true; }); // Same granularity via draft
+console.log(todos.$snapshot().todos[0]);        // Deep-plain: { id: 1, text: 'write plans', completed: true }
+```
+
+### Granularity Matrix
+
+Which read wakes on which write:
+
+| Write \ Reader | field read (`get(0)!.text()`) | element read (`get(0)`) | positional/structure read (`length()`, `get(i)` out of view, whole call) |
+|---|---|---|---|
+| Field write (`get(0)!.text('x')`) | that field's readers only | no wake | no wake |
+| Element write (`set(0, partial)`) | changed fields' readers only | no wake (same store ref) | no wake |
+| Structural op (`push`, `pop`, `splice`, `insert`, length change) | no wake (element signals untouched) | positional readers wake | all wake |
+| Whole-callable write (`todos([...])`) | per-field patches + structural wake as needed | per position | as the reconcile dictates |
+
+Structural granularity is container-level: any structural operation wakes every positional reader, which is coarser than per-key tracking but never rewrites element fields.
+
+### Snapshot and Subscription Behavior
+
+`$snapshot()` returns a deep-plain structure: element stores flatten to plain objects, nested containers to plain arrays, `Map`s, and `Set`s. `$subscribe('todos', cb)` is container-level: structural operations and whole-collection writes fire it, element field writes never do. Element references are stable across reads (`todos.todos()[0] === todos.todos()[0]`), which keyed list rendering relies on.
+
+### Set Object Identity
+
+Object elements convert on entry, so a `Set` key stores the converted element store: `add(rawObject)` stores the store, `has(convertedElement)` is `true`, and `has(rawObject)` is `false`. Primitive sets match by value. A `Set` has no keyed positions, so writing a whole new `Set` installs fresh element stores rather than patching.
+
+### Interface-Typed Elements
+
+The `Reactive<T>` mapping routes plain-object elements (type-literal shapes) to element stores. Elements typed as `interface`s miss the mapping's object gate and type as raw values while the runtime still converts them; use type aliases for element shapes, the same pre-existing limitation as the object branch of `Store<T>`.
+
 
 ## Important Store Behaviors
 
@@ -255,7 +300,8 @@ When a store is created, the system transforms each property based on its type a
 
 - **Primitive values** (strings, numbers, booleans) become individual signals
 - **Objects** become nested stores with recursive property transformation
-- **Arrays** become signals containing the array value
+- **Array/Map/Set values** become granular collection containers whose plain-object elements convert to element stores
+- **Everything else** (`Date`, `RegExp`, class instances) becomes a signal holding the value
 - **Functions** remain unchanged, preserving their original behavior
 
 Signal-backed properties, nested stores, and the built-in methods are defined with `writable: false`; external reassignment throws a `TypeError` instead of silently dropping reactivity. Function-valued properties keep `writable: true` so handlers stay swappable.

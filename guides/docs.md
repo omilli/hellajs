@@ -391,6 +391,7 @@ Followed by a bullet list of parameters:
 - **Returns**: uses bold + colon as a separate bullet.
 - Generic parameters shown in the signature (`<T>`); list separately only if they have constraints.
 - Complex types (interfaces, unions) may be inline or in separate blocks below the signature.
+- **Interface blocks stay comment-free on member lines**: `bun doc-snippets` skips signature-only blocks, but its detector reads trailing comments as executable code, so a commented interface block gets typechecked while the `import type` lines that would satisfy it (living in a skipped signature block) are discarded. Keep interface-member lines bare; put behavior in prose or tables.
 - **Type accuracy**: interface/type signatures match the actual exported types from `index.ts`, including wrapper/view types. If the runtime type is a wrapper interface (a read-only view over an internal collection), document the wrapper by name — never substitute a familiar built-in (`Map`) implying capabilities it lacks. Code examples only call methods the documented interface exposes.
 
 ### Overloaded Functions
@@ -737,6 +738,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] `## API` present (Function docs only); `## Basic Usage` (functions) / `## Usage` (prefixes)
 - [ ] Multi-method exports use `###` sub-headings under `## API`; no usage interleaved between methods
 - [ ] Callable-namespace members shown as valid TypeScript — typed namespace-object block or call site, never pseudo-syntax (§API Section → Callable Namespaces)
+- [ ] Interface blocks carry no trailing member comments (doc-snippets signature-only detector; type imports from skipped signature blocks are discarded)
 
 **Code examples**
 - [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags

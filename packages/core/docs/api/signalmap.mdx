@@ -1,0 +1,140 @@
+# signalMap
+
+Holds a `Map` with one signal per key, so value writes wake only that key's readers while membership changes wake collection-wide readers.
+
+## API
+
+```typescript
+import { signalMap } from '@hellajs/core';
+import type { Signal, SignalMap, CollectionOptions } from '@hellajs/core';
+
+function signalMap<K, V>(initial?: Iterable<readonly [K, V]>, options?: CollectionOptions<V>): SignalMap<K, V>;
+```
+- `initial`: Initial entries as `[key, value]` pairs (an array of tuples or a `Map`); each value passes through `wrap`.
+- `options`: Optional `CollectionOptions` bag: per-value `equals`, plus element-lifecycle `wrap`/`merge` hooks.
+- **Returns**: A `SignalMap<K, V>`: a callable signal carrying granular map methods.
+
+```typescript
+// The granular surface; W is the write-side value type (defaults to V)
+interface SignalMap<K, V, W = V> {
+  (): Map<K, V>;                  // fresh plain Map, tracks everything
+  (value: Map<K, W>): void;       // reconcile key-wise
+  get(k: K): V | undefined;
+  set(k: K, value: W): void;
+  has(k: K): boolean;
+  delete(k: K): boolean;
+  size(): number;
+  forEach(fn: (value: V, key: K) => void): void;
+  keys(): K[];
+  values(): V[];
+  entry(k: K): Signal<V | undefined>;
+}
+```
+
+The write-side parameter exists for host packages converting values on entry (`@hellajs/store` deep collection keys instantiate it so writes accept raw objects while reads return element stores); standalone usage never sees it, because `W` defaults to `V`.
+
+## Basic Usage
+
+Create granular maps and read single keys without waking unrelated readers.
+
+```typescript
+import { signalMap, effect } from '@hellajs/core';
+
+const scores = signalMap([['alice', 1], ['bob', 2]]);
+
+effect(() => console.log('Alice:', scores.get('alice'))); // Logs: "Alice: 1"
+
+scores.set('bob', 20);  // No rerun: bob is not tracked
+scores.set('alice', 5); // Logs: "Alice: 5" - only alice readers wake
+
+console.log(scores()); // Map { 'alice' => 5, 'bob' => 20 } - fresh plain Map
+```
+
+## Key Concepts
+
+### Value Writes Wake One Key
+
+Each key's value lives in its own signal. `set` on an existing key writes that signal only: no version bump, no wake for `has`, `keys`, or `size` readers. An equal write (default `===` with `NaN` self-equal, or the per-element `options.equals`) skips the child write entirely.
+
+### Membership Changes Are Structural
+
+`set` on a new key and `delete` of a present key change membership: they bump the structural version with zero child writes, waking `get`, `has`, `keys`, `values`, `size`, iteration, and whole-callable readers. This is container-level granularity: every structural change wakes every membership reader, coarser than per-key tracking elsewhere.
+
+| Operation | `get(k)` readers | `entry(k)` readers | `has` / `keys` / `size` / iteration |
+|---|---|---|---|
+| `set(k, v)` existing key, changed | only `get(k)` | `entry(k)` | no wake |
+| `set(k, v)` existing key, equal | no wake | no wake | no wake |
+| `set(k, v)` new key / `delete(k)` | all | that key | all |
+
+`keys()` readers wake on membership changes but never on value writes; `values()` and `forEach` additionally track every value read during iteration.
+
+### The Reconcile Setter
+
+Calling the container with a `Map` reconciles key-wise: present keys go through the value pipeline (equal values write nothing), new keys are added, and keys missing from the input are removed. One structural wake covers all membership changes.
+
+```typescript
+import { signalMap, effect } from '@hellajs/core';
+
+const scores = signalMap([['alice', 1], ['bob', 2]]);
+effect(() => console.log('Keys:', scores.keys().join(','))); // Logs: "Keys: alice,bob"
+
+scores(new Map([['alice', 1], ['carol', 3]])); // Logs: "Keys: alice,carol"
+// alice kept its equal value without a child write; bob dropped; carol added
+```
+
+### Identity Handles with entry
+
+`entry(k)` returns a stable signal reading the current value of `k`, `undefined` when the key is absent. Its readers wake only on that key's value or membership changes: unrelated structural operations re-evaluate the handle, find the same value, and stop at the equality gate.
+
+```typescript
+import { signalMap, effect } from '@hellajs/core';
+
+const scores = signalMap<string, number>();
+const aliceScore = scores.entry('alice');
+
+effect(() => console.log('Alice:', aliceScore())); // Logs: "Alice: undefined"
+
+scores.set('alice', 5);  // Logs: "Alice: 5"
+scores.set('bob', 2);    // No rerun: bob's membership does not change alice's handle value
+scores.delete('alice');  // Logs: "Alice: undefined"
+console.log(scores.entry('alice') === aliceScore); // true - one handle per key, forever
+```
+
+Passing handles to [`effect`](/reference/core/effect) or [`computed`](/reference/core/computed) builds key-precise dependencies.
+
+### Element Lifecycle Hooks (wrap and merge)
+
+`CollectionOptions` carries the per-element `equals` plus two element-lifecycle hooks that let a host package layer deep semantics on top. The write pipeline for an existing key runs in a fixed order:
+
+1. `merge(prev, next)`: returning `true` marks the write handled. No child write, no version bump; the mutation is visible through the key's signal.
+2. `wrap(next)`: transforms the raw incoming value.
+3. Child write: the per-element `equals` decides whether propagation happens.
+
+Merge-before-wrap is load-bearing: `merge` sees the raw incoming value against the stored (already wrapped) element, which is what a host package needs to match raw input against its own converted nodes. Keys are never wrapped, only values. New keys (initial entries and additions) skip `merge` and go straight through `wrap`. The `@hellajs/store` package builds its deep collection reactivity on these two hooks.
+
+```typescript
+import { signalMap, effect } from '@hellajs/core';
+
+type Row = { id: number; label: string };
+const rows: Array<readonly [string, Row]> = [['first', { id: 1, label: 'one' }]];
+const toStore = (element: Row): Row => ({ ...element, stored: true }) as Row;
+
+const table = signalMap<string, Row>(rows, { wrap: (element) => toStore(element) });
+table.set('second', { id: 2, label: 'two' }); // wrap applies to the new key's value
+
+console.log(table.get('second')); // { id: 2, label: 'two', stored: true }
+```
+
+## Important Considerations
+
+### Values Stay Raw
+
+`signalMap` stores values as-is (after `wrap`). It does not proxy them: mutating `scores.get('alice').label` changes the object but wakes nothing. Write through `set`, the reconcile setter, or supply `wrap`/`merge` from a host package such as `@hellajs/store`.
+
+### Whole-Value Reads Track Everything
+
+Calling `scores()` returns a fresh plain `Map` and subscribes the caller to the version and every value: any write reruns the reader. Prefer `get` or `entry` inside hot effects. Because the snapshot is fresh, mutating it never touches the container.
+
+### Iteration Order Follows Insertion
+
+`keys`, `values`, `forEach`, and the snapshot iterate in insertion order of live keys, matching native `Map` semantics. Re-adding a deleted key moves it to the end.

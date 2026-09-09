@@ -76,7 +76,7 @@ app.tags?.(); // [ 'a' ] - optional-chained, typed string[] | undefined
 
 ### Mutable Draft Updates
 
-Pass a function to `$update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are extracted via diff and applied as individual signal writes. This is particularly useful for array operations.
+Pass a function to `$update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are extracted via diff and applied per key: collection values reconcile through their containers, so changed positions patch their element stores and untouched positions write nothing. This is particularly useful for array operations.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -103,7 +103,7 @@ todos.count(); // 2
 
 ### Structural Array Equality
 
-Silence content-equal array replacements with the `'structural'` write-equality preset, useful when a big array leaf is rewritten wholesale on every save and the content usually hasn't changed.
+Silence content-equal writes with the `'structural'` write-equality preset, useful when a big collection key is rewritten wholesale on every save and the content usually hasn't changed. For collection keys the comparator applies per element: equal elements write nothing and wake no one.
 
 ```typescript
 import { effect } from '@hellajs/core';
@@ -119,8 +119,85 @@ effect(() => {
   console.log(board.columns().join(',')); // Logs: todo,doing,done
 });
 
-board.columns(['todo', 'doing', 'done']); // same content; write skipped, effect stays asleep
+board.columns(['todo', 'doing', 'done']); // same content; no element write, effect stays asleep
 board.columns(['todo', 'blocked', 'done']); // changed; effect re-runs
+```
+
+### Deep Todo Lists
+
+Collection keys give the todo shape field-precise updates without the draft indirection: object elements are element stores, so a write to one field of one todo wakes only that field's readers.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const todos = store({
+  todos: [{ id: 1, text: 'write plans', completed: false }]
+});
+
+effect(() => todos.todos.get(0)!.completed());  // Subscribes to ONE field
+todos.todos.get(0)!.completed(true);            // Wakes only that effect
+todos.todos.set(0, { completed: true });        // Patch: text kept, completed-readers only
+todos.todos.push({ id: 2, text: 'ship', completed: false }); // Structural: positional readers wake
+console.log(todos.$snapshot().todos.length);     // 2, deep-plain
+```
+### Collections in ForEach
+
+Pass the container callable to `ForEach` and close over the element stores for field-precise bindings: each row reads its own element store's fields, so a field write re-renders nothing but the bound text.
+
+```typescript
+import { ForEach, html } from '@hellajs/dom';
+import { store } from '@hellajs/store';
+import type { Store } from '@hellajs/store';
+
+type Todo = { id: number; text: string; completed: boolean };
+
+const todos = store({
+  todos: [{ id: 1, text: 'write plans', completed: false }] as Todo[]
+});
+
+html`
+  <ul>
+    <${ForEach} each=${() => todos.todos()}>
+      ${(todo: Store<Todo>) => html`<li class=${() => (todo.completed() ? 'done' : '')}>${() => todo.text()}</li>`}
+    <//>
+  </ul>
+`;
+```
+
+Element references are stable across calls (`todos.todos()[0] === todos.todos()[0]`), which is what the keyed reconciliation relies on.
+
+### Patch Semantics vs Whole-Array Reconcile
+
+`set(i, partial)` patches the element store in place: untouched fields keep their values and their readers stay asleep. Writing the whole array through the callable reconciles position-wise with the same patch semantics, and equal positions write nothing. Only structural differences (length, Map membership, Set membership) wake positional readers.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const todos = store({
+  todos: [{ id: 1, text: 'write plans', completed: false }]
+});
+
+effect(() => todos.todos.get(0)!.text());      // The text reader
+todos.todos.set(0, { completed: true });       // never re-runs: patch keeps text
+todos.todos([{ id: 1, text: 'write plans', completed: true }]); // Same: position 0 patches, no structural wake
+console.log(todos.todos.get(0)!.text());        // write plans, untouched
+```
+
+### Nested Grids
+
+Collections inside collections recurse: each inner collection is its own container, fully granular.
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const grid = store({ grid: [[1, 2], [3, 4]] });
+
+effect(() => grid.grid.get(0)!.get(0)); // Tracks one inner cell
+grid.grid.get(0)!.set(0, 9);            // Wakes only inner-index-0 readers
+console.log(grid.$snapshot().grid);      // [[9, 2], [3, 4]], deep-plain
 ```
 
 ### Readonly Properties

@@ -1,6 +1,6 @@
 # store
 
-Converts a plain object into a deeply reactive store where primitives become signals, nested objects recurse into stores, arrays become signals, and functions are preserved.
+Converts a plain object into a deeply reactive store where primitives become signals, nested objects recurse into stores, Array/Map/Set values become granular collection containers whose object elements convert to element stores, and functions are preserved.
 
 ## API
 
@@ -86,7 +86,7 @@ type StoreEquals<T> = {
 type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 ```
 
-- `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, arrays become signals.
+- `initial`: Plain object to transform. Functions stay as-is, primitives become signals, plain objects recurse into nested stores, Array/Map/Set values become granular collection containers (`SignalArray`/`SignalMap`/`SignalSet` from `@hellajs/core`) with object elements converted to element stores.
 - `options.readonly`: `true` for all properties readonly, or an array of keys to lock. Propagates deep: `true` locks every plain-object level; a listed object key locks its entire subtree. Composed stores keep their own readonly config.
 - `options.middleware`: Per-key transform functions applied on every set.
 - **Returns**: A reactive store with `$snapshot`, `$update`, `$cleanup`, and `$subscribe` methods.
@@ -218,7 +218,7 @@ console.log(appStore.count()); // 10
 
 ### `$subscribe`
 
-Observes changes to a single signal-backed property. The callback receives `(next, prev)`; the initial subscribe does not fire it; only subsequent changes do. Returns an unsubscribe function.
+Observes changes to a single signal-backed property. The callback receives `(next, prev)`; the initial subscribe does not fire it; only subsequent changes do. For collection keys the subscription is container-level: structural operations and whole-collection writes fire it with fresh plain containers, while element field writes never touch the container and never fire it. Returns an unsubscribe function.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -273,7 +273,7 @@ console.log(appStore.user.name());   // Bob
 
 ### Deep Reactivity
 
-All nested objects become stores, arrays become signals, and functions stay as-is, a fully reactive state tree. See [State](/learn/concepts/state) for the deep walk and effect examples, and [Store Control](/learn/concepts/store-control) for [middleware](/learn/concepts/store-control#middleware) and [readonly](/learn/concepts/store-control#readonly) configuration.
+All nested objects become stores, Array/Map/Set values become granular collection containers with element stores, and functions stay as-is, a fully reactive state tree. See [State](/learn/concepts/state) for the deep walk and effect examples, the [deep collection keys](/learn/concepts/state#deep-collection-keys) section for the granularity matrix, and [Store Control](/learn/concepts/store-control) for [middleware](/learn/concepts/store-control#middleware) and [readonly](/learn/concepts/store-control#readonly) configuration.
 
 ### Nested Stores
 
@@ -289,7 +289,7 @@ Pass a function to `$update()` for ergonomic mutations on a mutable draft of the
 
 ### Write Equality
 
-By default every write is reference-compared; the `equals` option replaces that per key with a comparator function or the `'structural'` content-equality preset, inherited by every write path (direct calls, `$update(partial)`, and the draft path). See [write equality](/learn/concepts/store-control#write-equality) for the option shape, invalid-value errors, and the O(n) cost note.
+By default every write is reference-compared; the `equals` option replaces that per key with a comparator function or the `'structural'` content-equality preset, inherited by every write path (direct calls, `$update(partial)`, and the draft path). For collection keys the comparator applies per element: it receives two elements (two values for a Map), never two whole collections. See [write equality](/learn/concepts/store-control#write-equality) for the option shape, invalid-value errors, and the O(n) cost note.
 
 ### Function Preservation
 
@@ -313,7 +313,7 @@ type PartialDeep<T> = {
 
 - **`T`**: The object type to make partially optional.
 
-> ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. Calling `$update({ items: [...] })` replaces the entire array; it does not merge individual elements.
+> ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. A partial update to `{ items: [...] }` writes the whole array through the container's reconcile: object elements at existing positions patch in place, equal positions write nothing, and length differences restructure.
 
 ### `ReadonlyKeys<T, O>`
 

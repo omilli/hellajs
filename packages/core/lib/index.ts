@@ -1,6 +1,9 @@
 // Based on the excellent https://github.com/stackblitz/alien-signals
 
 export { signal } from "./signal";
+export { signalArray } from "./signalArray";
+export { signalMap } from "./signalMap";
+export { signalSet } from "./signalSet";
 export { computed } from "./computed";
 export { effect } from "./effect";
 export { batch } from "./batch";

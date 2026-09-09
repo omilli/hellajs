@@ -5,17 +5,18 @@ import type { StoreEquals } from "@hellajs/store";
 
 describe("store", () => {
 describe("equals", () => {
-  test("skips equal-content array writes and keeps the old reference", () => {
+  test("skips equal-content array writes without waking readers", () => {
     const data = store({ items: [1, 2] }, { equals: { items: "structural" } });
-    const original = data.items();
     const tracker = mock(() => {});
     effect(() => { data.items(); tracker(); });
 
     expect(tracker).toHaveBeenCalledTimes(1);
     data.items([1, 2]);
 
+    // Contract change (deep collections): whole-callable reads return a fresh
+    // plain array per call; equal-content writes still wake nothing
     expect(tracker).toHaveBeenCalledTimes(1);
-    expect(data.items()).toBe(original);
+    expect(data.items()).toEqual([1, 2]);
   });
 
   test("compares Date leaves by time with 'structural'", () => {
@@ -74,26 +75,27 @@ describe("equals", () => {
 
   test("update(partial) inherits the leaf comparator", () => {
     const data = store({ items: [1, 2] }, { equals: { items: "structural" } });
-    const original = data.items();
     const tracker = mock(() => {});
     effect(() => { data.items(); tracker(); });
 
     data.$update({ items: [1, 2] });
 
+    // Contract change (deep collections): fresh array per read; the comparator
+    // applies per element, so an equal-content array writes nothing
     expect(tracker).toHaveBeenCalledTimes(1);
-    expect(data.items()).toBe(original);
+    expect(data.items()).toEqual([1, 2]);
   });
 
   test("update(draft) with an equal-content array writes nothing to the signal", () => {
     const data = store({ items: [1, 2] }, { equals: { items: "structural" } });
-    const original = data.items();
     const tracker = mock(() => {});
     effect(() => { data.items(); tracker(); });
 
     data.$update(draft => { draft.items = [1, 2]; });
 
+    // Contract change (deep collections): fresh array per read; no element write
     expect(tracker).toHaveBeenCalledTimes(1);
-    expect(data.items()).toBe(original);
+    expect(data.items()).toEqual([1, 2]);
   });
 
   test("throws at create time for an invalid equals value", () => {

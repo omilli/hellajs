@@ -1,4 +1,4 @@
-import type { Signal } from "@hellajs/core";
+import type { Signal, SignalArray, SignalMap, SignalSet } from "@hellajs/core";
 
 /**
  * Recursively makes all nested properties optional for partial updates.
@@ -33,7 +33,9 @@ export type StoreMiddleware<T> = {
  * Per-key write-equality comparators, nested for object values like StoreMiddleware.
  * A comparator returns true to skip the write entirely; "structural" compares by
  * content, reusing the draft path's comparator. Function properties are never
- * settable, so they accept no comparator.
+ * settable, so they accept no comparator. For collection keys (Array/Map/Set) the
+ * comparator applies per element: it receives two elements (two values for a Map),
+ * not two whole collections.
  */
 export type StoreEquals<T> = {
   [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown ? never
@@ -100,11 +102,44 @@ type SettableKeyOf<T> = {
 type Simplify<T> = { [K in keyof T]: T[K] };
 
 /**
+ * Write-side element form for collection containers: plain objects accept
+ * partial patches (a write over an element store routes through `$update`
+ * semantics; a full object is assignable too), everything else keeps its type.
+ * @template U Element type to widen for writes.
+ */
+type WriteForm<U> =
+  U extends readonly (infer I)[] ? WriteForm<I>[] :
+  U extends Map<infer K, infer V> ? Map<K, WriteForm<V>> :
+  U extends Set<infer S> ? Set<WriteForm<S>> :
+  U extends (...args: never[]) => unknown ? U :
+  U extends Record<string, unknown> ? PartialDeep<U> :
+  U;
+
+/**
+ * Recursive reactive mapping for collection element positions: arrays become
+ * `SignalArray`, `Map`/`Set` become `SignalMap`/`SignalSet`, plain-object
+ * elements become nested `Store` (so `Todo[]` maps to `SignalArray<Store<Todo>, PartialDeep<Todo>>`
+ * — reads give element stores, writes take raw elements and partial patches —
+ * and `number[][]` to `SignalArray<SignalArray<number>>`), functions and primitives
+ * keep their type. Interface-typed elements miss the `Record<string, unknown>` gate
+ * and fall to the raw branch — the same pre-existing behavior as the object branch
+ * of `Store`.
+ * @template E Element or value type to map.
+ */
+export type Reactive<E> =
+  E extends readonly (infer U)[] ? SignalArray<Reactive<U>, WriteForm<U>> :
+  E extends Map<infer K, infer V> ? SignalMap<K, Reactive<V>, WriteForm<V>> :
+  E extends Set<infer S> ? SignalSet<Reactive<S>, WriteForm<S>> :
+  E extends (...args: never[]) => unknown ? E :
+  E extends Record<string, unknown> ? Store<E> :
+  E;
+
+/**
  * Reactive store type that transforms an object's properties.
  *
  * Property transformations:
  * - Functions: preserved as-is
- * - Arrays: become Signal<Array>
+ * - Array/Map/Set keys: become granular collection containers via `Reactive` (object elements convert to element stores at construction; readonly keys pass a plain getter whose mutators throw)
  * - Objects: recursively become nested Store; readonly object keys propagate deep (`Store<T[K], keyof T[K]>`)
  * - Primitives: become Signal<T>
  * - Readonly properties: wrapped in getter functions that throw on write attempts
@@ -122,7 +157,7 @@ export type Store<
 > = {
   [K in keyof T]:
   T[K] extends (...args: unknown[]) => unknown ? T[K] :
-  T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
+  T[K] extends unknown[] | Map<unknown, unknown> | Set<unknown> ? (K extends R ? () => T[K] : Reactive<T[K]>) :
   T[K] extends Record<string, unknown> ? (K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>) :
   K extends R ? () => T[K] : Signal<T[K]>;
 } & {

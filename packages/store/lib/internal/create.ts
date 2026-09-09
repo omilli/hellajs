@@ -1,6 +1,7 @@
 import { signal, computed, effect, untracked, isFunction, isPlainObject, isObject } from "./core";
 import type { Store, Snapshot, PartialDeep, StoreOptions, StoreMiddleware, StoreEquals } from "../types";
 import { deepClone, extractChanges, structurallyEqual } from "./draft";
+import { installCollection, plainify, cleanupMembers } from "./deep";
 import {
   reservedKeys,
   isObjectOrFunction,
@@ -64,7 +65,10 @@ export function createStore<T extends Record<string, unknown>>(
       } else if (isStore(value)) {
         snapshotObj[key] = (value as { $snapshot: () => unknown }).$snapshot();
       } else if (isFunction(value)) {
-        snapshotObj[key] = (value as () => unknown)();
+        // Settable function members are signals and collection containers; a
+        // container's result is deep-plainified (element stores -> snapshots,
+        // nested containers recurse)
+        snapshotObj[key] = plainify((value as () => unknown)());
       } else {
         snapshotObj[key] = value;
       }
@@ -114,6 +118,30 @@ export function createStore<T extends Record<string, unknown>>(
             }
           : undefined;
       defineStoreProperty(result, key, createStore(value, nestedOptions), { writable: false });
+      return;
+    }
+
+    if (Array.isArray(value) || value instanceof Map || value instanceof Set) {
+      const equalsOpt = equalsOptions?.[key as keyof T];
+      if (equalsOpt !== undefined && equalsOpt !== "structural" && !isFunction(equalsOpt)) {
+        throw new Error(`[store] store: equals for "${key}" must be a function or "structural", received ${typeof equalsOpt}`);
+      }
+      // For collection keys the comparator applies per element (each child signal)
+      const elementEquals = equalsOpt === "structural"
+        ? structurallyEqual
+        : equalsOpt as ((previous: unknown, next: unknown) => boolean) | undefined;
+      defineStoreProperty(
+        result,
+        key,
+        installCollection(value, {
+          key,
+          readonly: readonlyAll || readonlyKeys.includes(key as PropertyKey),
+          ...(elementEquals && { equals: elementEquals }),
+          middleware: middlewares?.[key as keyof T] as ((value: unknown) => unknown) | undefined
+        }),
+        { writable: false }
+      );
+      settableKeys.add(key);
       return;
     }
 
@@ -232,7 +260,14 @@ export function createStore<T extends Record<string, unknown>>(
           const key = objKeys[i]!;
           if (reservedKeys.has(key)) { i++; continue; }
           const value = (obj as Record<string, unknown>)[key];
-          if (value && isObject(value)) {
+          if (isFunction(value)) {
+            // Settable function members are signals (no members to clean) and
+            // collection containers (element stores + nested containers);
+            // preserved user functions never register and stay untouched
+            if (settableKeys.has(key)) {
+              cleanupMembers(value as () => unknown);
+            }
+          } else if (value && isObject(value)) {
             if (Object.hasOwn(value, "$cleanup") && isFunction((value as Record<"$cleanup", unknown>).$cleanup)) {
               (value as Record<"$cleanup", () => void>).$cleanup();
             } else {

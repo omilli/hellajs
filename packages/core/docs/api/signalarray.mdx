@@ -1,0 +1,173 @@
+# signalArray
+
+Holds an array with one signal per element, so value writes wake only the readers of that element and in-place structural operations replace immutable spreads.
+
+## API
+
+```typescript
+import { signalArray } from '@hellajs/core';
+import type { Signal, SignalArray, CollectionOptions } from '@hellajs/core';
+
+function signalArray<T>(initial?: T[], options?: CollectionOptions<T>): SignalArray<T>;
+```
+- `initial`: Initial elements; each passes through `wrap` before entering its node.
+- `options`: Optional `CollectionOptions` bag: per-element `equals`, plus element-lifecycle `wrap`/`merge` hooks.
+- **Returns**: A `SignalArray<T>`: a callable signal carrying granular collection methods.
+
+```typescript
+// The granular surface; W is the write-side element type (defaults to T)
+interface SignalArray<T, W = T> {
+  (): T[];                        // fresh plain snapshot, tracks everything
+  (value: W[]): void;             // reconcile position-wise
+  get(i: number): T | undefined;
+  set(i: number, value: W): void;
+  push(...values: W[]): number;
+  pop(): T | undefined;
+  splice(start: number, deleteCount?: number, ...insert: W[]): T[];
+  insert(i: number, ...values: W[]): void;
+  length(): number;
+  map<U>(fn: (value: T, index: number) => U): U[];
+  forEach(fn: (value: T, index: number) => void): void;
+  nodeAt(i: number): Signal<T> | undefined;
+}
+```
+
+The write-side parameter exists for host packages converting elements on entry (`@hellajs/store` deep collection keys instantiate it so writes accept raw objects while reads return element stores); standalone usage never sees it, because `W` defaults to `T`.
+
+## Basic Usage
+
+Create granular arrays and read single elements without waking unrelated readers.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+const items = signalArray([1, 2, 3]);
+
+effect(() => console.log('First:', items.get(0))); // Logs: "First: 1"
+
+items.set(0, 9);   // Logs: "First: 9" - only index-0 readers wake
+items.set(1, 20);  // No log: index-0 readers stay asleep
+items.push(4);     // Logs: "First: 9" - structural ops wake positional readers
+
+console.log(items()); // [9, 2, 4] - fresh plain array, tracks everything
+```
+
+## Key Concepts
+
+### Value Writes Wake One Element
+
+Each element lives in its own child signal. `set(i, v)` writes exactly one child, so an effect reading `get(i)` reruns only when that element changes.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+const items = signalArray(['a', 'b', 'c']);
+
+effect(() => console.log(items.get(0))); // Logs: "a"
+items.set(2, 'z');                       // No rerun: index 2 is not tracked
+items.set(0, 'x');                       // Logs: "x"
+```
+
+An equal write (by `===` with `NaN` self-equal, or by the per-element `options.equals`) skips the child write entirely: no wake, the old element reference stays.
+
+### Structural Operations Wake Positional Readers
+
+`push`, `pop`, `insert`, `splice`, and length-changing setter calls reorder the internal node array and bump a structural version signal with zero child writes. Every positional reader wakes and re-reads its index; node-handle readers never do, because moves write nothing.
+
+| Operation | Index readers (`get`) | Node readers (`nodeAt`) | Iteration and length readers |
+|---|---|---|---|
+| `set(i, v)`, changed | only `get(i)` | only `nodeAt(i)` | yes |
+| `set(i, v)`, equal | no wake | no wake | no wake |
+| `push` / `pop` / `insert` / `splice` | all | no wake | yes |
+| `items(next)` | position diff | written positions only | on length change |
+
+Out-of-bounds `get(i)` returns `undefined` while still tracking the version, so the reader wakes when growth reaches that index.
+
+### The Reconcile Setter
+
+Calling the container with an array reconciles position-wise through the same pipeline as `set`: equal positions write nothing, changed positions write their child, and length changes restructure. A content-equal array with the same length wakes nothing.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+const items = signalArray([1, 2, 3]);
+effect(() => console.log('First:', items.get(0))); // Logs: "First: 1"
+
+items([1, 2, 30]); // No rerun for index 0: same length, the value is equal
+items([7, 2, 30]); // Logs: "First: 7"
+items([7]);        // Logs: "First: 7" again - the length change wakes positional readers; reads past the end now return undefined
+```
+
+### Identity Handles with nodeAt
+
+`nodeAt(i)` returns the child signal of the element currently at `i`. The handle is stable across moves: reading it never wakes on structural operations, only on writes to that element.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+const items = signalArray([1, 2, 3]);
+
+effect(() => console.log(items.nodeAt(2)?.())); // Logs: 3
+
+items.splice(0, 1);  // The element moved to index 1; no rerun: the handle tracks the element, not the position
+items.set(1, 30);    // Logs: 30 - a write to the element the handle follows
+```
+
+Passing a handle to [`effect`](/reference/core/effect) or [`computed`](/reference/core/computed) builds element-precise dependencies that ignore all structural churn.
+
+### Element Lifecycle Hooks (wrap and merge)
+
+`CollectionOptions` carries two element-lifecycle hooks plus the per-element `equals`. They let a host package layer deep semantics on top without core knowing about it.
+
+```typescript
+interface CollectionOptions<T> extends EqualsOptions<T> {
+  equals?: (oldValue: T, newValue: T) => boolean; // per element, gates each child write
+  wrap?: (element: T) => T;   // transforms every value entering a node
+  merge?: (prev: T, next: T) => boolean; // in-place update attempt
+}
+```
+
+The write pipeline for an existing element runs in a fixed order:
+
+1. `merge(prev, next)`: returning `true` marks the write handled. No child write, no version bump; the mutation is visible through the node value.
+2. `wrap(next)`: transforms the raw incoming value.
+3. Child write: the per-element `equals` decides whether propagation happens.
+
+The merge-before-wrap order is load-bearing: `merge` sees the raw incoming value against the stored (already wrapped) element, which is exactly what a host package needs to match raw input against its own converted nodes.
+
+```typescript
+import { signalArray, effect } from '@hellajs/core';
+
+type Todo = { id: number; text: string; done: boolean };
+
+const drafts: Todo[] = [{ id: 1, text: 'Write docs', done: false }];
+const toStore = (element: Todo): Todo => ({ ...element, stored: true }) as Todo;
+const patchInPlace = (prev: Todo, next: Todo): boolean => {
+  prev.text = next.text; // patch fields in place
+  return true;
+};
+
+const todos = signalArray<Todo>(drafts, {
+  wrap: (element) => toStore(element),          // every element entering a node
+  merge: (prev, next) => patchInPlace(prev, next), // writes to existing nodes
+});
+
+todos.set(0, { id: 1, text: 'Ship it', done: false });
+console.log(todos.get(0)?.text); // "Ship it" - patched in place, readers never woke
+```
+
+New elements (initial values, `push`, `insert`, `splice` inserts, reconcile additions) skip `merge` and go straight through `wrap`. The `@hellajs/store` package builds its deep collection reactivity on these two hooks.
+
+## Important Considerations
+
+### Elements Stay Raw
+
+`signalArray` stores elements as-is (after `wrap`). It does not proxy objects or arrays: a mutation like `items.get(0).text = 'x'` changes the object but wakes nothing. Write through `set`, the reconcile setter, or supply `wrap`/`merge` from a host package such as `@hellajs/store`.
+
+### Whole-Value Reads Track Everything
+
+Calling `items()` returns a fresh plain array and subscribes the caller to the version and every element: any write reruns the reader. Prefer `get`, `map`, or `nodeAt` inside hot effects. Because the snapshot is fresh, mutating it never touches the container.
+
+### Index Past the End Extends the Array
+
+`set(i, v)` with `i >= length` grows the array like native indexed assignment, filling gaps with `undefined` elements; negative indices never address an element and do nothing. `splice` and `insert` clamp their positions exactly like the native `Array` methods.

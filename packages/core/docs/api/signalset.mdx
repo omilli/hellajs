@@ -1,0 +1,113 @@
+# signalSet
+
+Holds a `Set` with one membership signal per value, so `has` readers wake only on `add` and `delete` of their own value.
+
+## API
+
+```typescript
+import { signalSet } from '@hellajs/core';
+import type { Signal, SignalSet } from '@hellajs/core';
+
+function signalSet<T>(initial?: Iterable<T>, options?: CollectionOptions<T>): SignalSet<T>;
+```
+- `initial`: Initial values (an array or a `Set`), each passed through `wrap`.
+- `options`: Element-lifecycle hooks (see [Element Lifecycle Hooks](#element-lifecycle-hooks)); only `wrap` has effect for sets.
+- **Returns**: A `SignalSet<T>`: a callable signal carrying granular set methods.
+
+```typescript
+// The granular surface; W is the write-side value type (defaults to T)
+interface SignalSet<T, W = T> {
+  (): Set<T>;                     // fresh plain Set, tracks everything
+  (value: Set<W>): void;          // reconcile value-wise
+  add(value: W): this;
+  has(value: T | W): boolean;
+  delete(value: T | W): boolean;
+  size(): number;
+  forEach(fn: (value: T) => void): void;
+}
+```
+
+The write-side parameter exists for host packages converting values on entry (`@hellajs/store` deep collection keys instantiate it so `add` accepts raw objects while membership keys on the converted stores); standalone usage never sees it, because `W` defaults to `T`. `has` and `delete` accept either form, so identity probes against a raw input stay legal.
+
+## Basic Usage
+
+Create granular sets and watch single values without waking unrelated readers.
+
+```typescript
+import { signalSet, effect } from '@hellajs/core';
+
+const tags = signalSet(['urgent']);
+
+effect(() => console.log('Urgent:', tags.has('urgent'))); // Logs: "Urgent: true"
+
+tags.add('draft');      // No rerun: draft is not watched
+tags.delete('urgent');  // Logs: "Urgent: false" - only urgent readers wake
+tags.add('urgent');     // Logs: "Urgent: true"
+
+console.log(tags()); // Set { 'draft', 'urgent' } - fresh plain Set
+```
+
+## Key Concepts
+
+### has Readers Wake on Their Value Alone
+
+Each value that `has` reads gets a membership signal. `add` and `delete` of that value write it; `add` and `delete` of any other value do not. Adding a value that is already present is a no-op that wakes nothing, exactly like the native `Set`.
+
+```typescript
+import { signalSet, effect } from '@hellajs/core';
+
+const tags = signalSet(['a']);
+
+effect(() => console.log('Has b:', tags.has('b'))); // Logs: "Has b: false"
+tags.add('a');    // No rerun anywhere: present value, no-op
+tags.add('b');    // Logs: "Has b: true" - the membership signal flipped
+```
+
+Membership checks against a never-seen value lazily create its membership signal, so a reader established before the first `add` still wakes when the value arrives.
+
+### Structural Readers
+
+`size`, `forEach`, and the whole-callable read the structural version: any membership change wakes them, and value-level no-ops (`add` of a present value, `delete` of an absent value) wake nothing.
+
+| Operation | `has(v)` readers | `size` / `forEach` / callable readers |
+|---|---|---|
+| `add(v)`, absent | only `has(v)` | all |
+| `add(v)`, present | no wake | no wake |
+| `delete(v)`, present | only `has(v)` | all |
+| `delete(v)`, absent | no wake | no wake |
+
+### The Reconcile Setter
+
+Calling the container with a `Set` reconciles value-wise: missing values are added, values absent from the input are removed, and matching membership changes nothing.
+
+```typescript
+import { signalSet, effect } from '@hellajs/core';
+
+const tags = signalSet(['a', 'b']);
+effect(() => console.log('Size:', tags.size())); // Logs: "Size: 2"
+
+tags(new Set(['b', 'c'])); // Logs: "Size: 2" again - membership changed, so the version woke the reader
+tags(new Set(['b', 'c'])); // No rerun: membership unchanged
+```
+
+## Important Considerations
+
+### Element Lifecycle Hooks
+
+`options.wrap` transforms every value entering membership: initial values, `add`, and the reconcile setter all pass through it before the membership signal is keyed. A set has no keyed positions and no value writes, so the sibling containers' `equals` and `merge` hooks have nothing to act on here: they are accepted for `CollectionOptions` shape parity (and validated) but never fire.
+
+```typescript
+import { signalSet } from '@hellajs/core';
+
+// A host package converts values on entry; membership keys on the converted value
+const upper = signalSet<string>(['a'], { wrap: (v) => v.toUpperCase() });
+upper.add('b');
+console.log(upper.has('A')); // true
+console.log(upper.has('a')); // false - raw values never enter membership
+```
+
+Because `wrap` changes value identity, raw inputs and wrapped members do not match: `has(raw)` is `false` after `add(raw)`. Deep semantics for stored objects belong to `@hellajs/store`, which layers element conversion on top of this hook.
+
+### Whole-Value Reads Track Everything
+
+Calling `tags()` returns a fresh plain `Set` and subscribes the caller to the structural version: any membership change reruns the reader. Mutating the snapshot never touches the container.
