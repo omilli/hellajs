@@ -27,6 +27,7 @@ An incomplete component would strand the checkpoint; an out-of-order overlap is 
 
 - **Completeness** — every unit of the component reads `[x]` in the WORKTREE copy of its plan file (the orchestrator pre-checks; re-verify only when something looks off). Incomplete → refuse to merge, report for plan rework, leave the worktree standing (its partial state is the rework input; do not clean it).
 - **Overlap vs already-merged siblings** — intersect the component's plan Files lists with merged siblings' (plan-set folder and `memory/` are protocol-owned, excluded). Overlap in ascending-first-unit order is expected: proceed, the conflict path owns resolution. Overlap whose merged sibling has the GREATER first unit is an ordering violation — stop and report rather than guess.
+- **Surplus delta** — worktree-diff files beyond your component's units' Files lists (sibling-unit work landed in a mis-partitioned venue; a `depends_on` form `readDependsOn` can't parse is the usual root) → operator fork: absorb as one commit / split into per-unit commits / stop and fix the derivation input. Never silently absorb or clean it away.
 
 ## Step 2 — Commit, cherry-pick, resolve
 

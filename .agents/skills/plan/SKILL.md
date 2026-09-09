@@ -68,7 +68,7 @@ Before finalizing:
 - Every code change has matching scenarios; every public delta reflected in doc updates.
 - Deps ordered (Code before Tests before Docs; Config wherever its tooling demands).
 - Each unit is a vertical slice — resist horizontal (type-)batching across siblings; `worker` finishes one slice before the next.
-- **Hard deps only** in `depends_on` — the repo must be red/incoherent without it; soft ordering stays in Strategy prose. Basenames resolve within the topic folder.
+- **Hard deps only** in `depends_on` — the repo must be red/incoherent without it; soft ordering stays in Strategy prose. Basenames resolve within the topic folder. Inline array form only (`depends_on: [01-foo, 02-bar]`) — `scripts/plans/set.ts::readDependsOn` parses nothing else; a YAML block list reads as no deps and silently mis-partitions dependency-connected components.
 - Cross-module callers: for every public delta, `rg` importers repo-wide; a broken caller adds a task in that module, or the delta is backward-compatible by construction. A call-site grep is the floor — §Folder structure names the grep-blind surfaces (dom's type mirror).
 - Test scenarios follow `guides/tests.md`; name files after the surface it prescribes.
 - Surface inventories synced: adding/renaming/removing a public symbol updates the package `AGENTS.md` file map (`file.ts symbol` anchors) and README API lists — add a Files entry or it goes stale.
@@ -79,7 +79,7 @@ Mismatches → back to Phase 3.
 
 ## Phase 6 — Propose, then hand to worker
 
-Write one file per unit to `plans/<package>/<category>/<topic>/<unit>.md` (categories observed: `code`, `docs`, `misc`, `config`; audit-category sets live under `plans/<pkg>/audit/`, written by `bun audits`), frontmatter `depends_on:` if hard deps exist. For N>1 also write `index.md`: `# [ ] Plan set: <topic>` aggregate, shared scope, sibling links with one-line descriptions + hard deps; state the dep graph. On approval, hand to `worker` — don't execute yourself unless it was escape-hatch small.
+Write one file per unit to `plans/<package>/<category>/<topic>/<unit>.md` (categories observed: `code`, `docs`, `misc`, `config`; audit-category sets live under `plans/<pkg>/audit/`, written by `bun audits`), frontmatter `depends_on: [stems]` (inline array — block lists are unparseable) if hard deps exist. For N>1 also write `index.md`: `# [ ] Plan set: <topic>` aggregate, shared scope, sibling links with one-line descriptions + hard deps; state the dep graph. On approval, hand to `worker` — don't execute yourself unless it was escape-hatch small.
 
 ## Worked example
 
