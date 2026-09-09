@@ -48,7 +48,7 @@ A rule contradicting current code/config is itself a finding — **rule drift**.
 
 ## Step 5 — Report
 
-Findings grouped by file, severity-sorted (blockers first), one scale for all kinds — blocker / should-fix / nit: the kind (check / rule / judgment) + its rule or named cost, the violation or evidence, severity + one clause of blast radius (which callers/tests/docs it risks); judgment findings add a one-sentence suggested direction — not the fix contract. Every citation is file + anchor from this session's read. Route actionable findings (BLOCKER/SHOULD-FIX): in-contract — files and behavior inside the executing plan's delta, judgment findings included — hand to the worker's redo pass (one pass); scope-expanding findings hand to `plan`. Nothing actionable → say so, stop; a clean audit is valid.
+Findings grouped by file, severity-sorted (blockers first), one scale for all kinds — blocker / should-fix / nit: the kind (check / rule / judgment) + its rule or named cost, the violation or evidence, severity + one clause of blast radius (which callers/tests/docs it risks); judgment findings add a one-sentence suggested direction — not the fix contract. Every citation is file + anchor from this session's read. Route every finding — severity orders the report and drives batching, never filters routing (a grounded nit is a verified violation, and a class of verified violations nobody fixes is unowned debt): in-contract — files and behavior inside the executing plan's delta, judgment findings included — hand to the worker's redo pass (one pass); scope-expanding findings hand to `plan`, nits batched into one sweep unit rather than one unit each. Zero findings → say so, stop; a clean audit is valid.
 
 ## Worked example
 
@@ -85,6 +85,6 @@ Drift mechanism (true story): memory/entries/070 recorded that
   guide fixed. That loop is Step 4's product.
 ```
 
-Route actionable findings: in-contract → the worker's redo pass; scope-expanding → `plan`. The rule-drift proposal routes to `feedback` (it changes a rule, not a codebase fact).
+Route every finding: in-contract → the worker's redo pass; scope-expanding → `plan` (nits batch into one sweep unit). The rule-drift proposal routes to `feedback` (it changes a rule, not a codebase fact).
 
 Run the prime handoff gate; evaluate the `feedback` trigger table literally — needed rule set absent → `memory` (recallable fact about this repo's config state); rule self-contradiction → `feedback` (rule-update proposal); rule/skill boundary unclear enough to need careful routing → `feedback` (boundary deserves a clarifying edit); callers hard to locate (grep missed importers) → `memory` (recallable technique for this codebase's import shape).

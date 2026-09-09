@@ -23,6 +23,7 @@ Plain goal or evidence map(s). An evidence map carries: **Gap** (one sentence, p
 - Cluster by shared blast radius: same files, or one incorrect without the other = ONE unit. Independent radii = SEPARATE units.
 - A Surface:yes change's Code+Tests+Docs (Phase 2) are one atomic unit — never split.
 - Don't over-split (units that must land atomically = one) or under-split (many tasks glued in one file = distinct units — split so each tracks/reviews/reverts independently).
+- Nit batches are the under-split exception: audit findings handed over as a nit batch (each grounded but individually trivial) form ONE sweep unit across their files — per-nit units cost more worktree/merge ceremony than the fixes, and the sweep ships/reverts as a single polish pass. Mark the unit's origin (source audit + section) in its frontmatter prose so the sweep's DoD can cite it.
 - Trivia → escape hatch, not a file.
 
 Outcome: 1..N units. N=1 → Phases 2–5 once. N>1 → Phases 2–4 per unit, sibling files in one `plans/<package>/<category>/<topic>/` folder; Phase 5 stitches with deps; Phase 6 writes the set `index.md`.

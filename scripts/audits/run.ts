@@ -123,9 +123,10 @@ function hasFindings(setDir: string): boolean {
  * Build the per-section audit prompt.
  *
  * The `/skill:audit-<section>` prefix expands to the full SKILL.md inline, so
- * the spawned instance audits by construction and hands actionable findings
- * to the plan skill, writing into the named set dir. Clean sections write
- * nothing — the operator gate is the runner's backstop for a silent stall.
+ * the spawned instance audits by construction and hands every finding (nits
+ * batched into one sweep unit) to the plan skill, writing into the named set
+ * dir. Clean sections write nothing — the operator gate is the runner's
+ * backstop for a silent stall.
  *
  * @param plan The section plan.
  * @param packageName Bare workspace name.
@@ -135,9 +136,9 @@ function hasFindings(setDir: string): boolean {
 function buildSectionPrompt(plan: SectionPlan, packageName: string, setDir: string): string {
   return [
     `/skill:${plan.skill} Audit the ${plan.key} surface of packages/${packageName}: ${plan.targets.join(", ")}.`,
-    "Report findings per the skill. Then, for actionable findings ONLY, apply the plan skill and write the plan set into",
+    "Report findings per the skill. Then apply the plan skill to every finding (nits batched into one sweep unit) and write the plan set into",
     `${setDir} (create the folder; NN-*.md units + index.md per its Phase 6).`,
-    "A clean section (no actionable findings) writes no files — state clean and stop.",
+    "A clean section (no findings) writes no files — state clean and stop.",
     "Do not fix anything: audit + plan authoring only.",
     "ask_user_question dialogs are relayed to a human operator at the terminal: use the tool for any load-bearing fork.",
     "If you would hand back to plan or are blocked, stop and report exactly that.",

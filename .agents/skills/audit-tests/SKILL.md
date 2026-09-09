@@ -31,7 +31,7 @@ A rule contradicting current test reality is itself a finding — **rule drift**
 
 ## Step 4 — Report
 
-Findings grouped by file, severity-sorted (blockers first): rule/check, violation, severity + blast radius. Route actionable findings (BLOCKER/SHOULD-FIX): in-contract — files and behavior inside the executing plan's delta — hand to the worker's redo pass (one pass); scope-expanding findings hand to `plan`. Nothing actionable → say so, stop; a clean audit is valid.
+Findings grouped by file, severity-sorted (blockers first): rule/check, violation, severity + blast radius. Route every finding — severity orders the report, never filters routing: in-contract — files and behavior inside the executing plan's delta — hand to the worker's redo pass (one pass); scope-expanding findings hand to `plan`, nits batched into one sweep unit rather than one unit each. Zero findings → say so, stop; a clean audit is valid.
 
 Each finding grounds in a check or a rule, never taste — that is the audit discriminator; see `audit-code`'s worked example for the shape.
 
