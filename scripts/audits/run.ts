@@ -72,28 +72,17 @@ function deriveSections(packageName: string): SectionPlan[] {
 }
 
 /**
- * Format a yyyymmdd-HHMM local timestamp for set-dir naming.
- *
- * @returns The zero-padded stamp.
- */
-function timestamp(): string {
-  const now = new Date();
-  const pad = (value: number): string => String(value).padStart(2, "0");
-  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
-}
-
-/**
  * Compute the findings set dir for one section, colliding-suffixed.
  *
- * `plans/<pkg>/audit/<stamp>-<section>/`, with `-2`, `-3`, … appended when the
- * stamped dir already exists (re-runs inside the same minute never overwrite).
+ * `plans/<pkg>/audit/<section>/`, with `-2`, `-3`, … appended when the dir
+ * already exists (a re-run never overwrites a previous section's set).
  *
  * @param packageName Bare workspace name.
  * @param key Section key.
  * @returns Absolute, non-existent set dir path.
  */
 function computeSetDir(packageName: string, key: AuditSection): string {
-  const base = join(projectRoot, "plans", packageName, "audit", `${timestamp()}-${key}`);
+  const base = join(projectRoot, "plans", packageName, "audit", key);
   if (!existsSync(base)) {
     return base;
   }
