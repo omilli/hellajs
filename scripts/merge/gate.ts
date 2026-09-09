@@ -1,11 +1,48 @@
-import { sep } from "node:path";
-import { execCommandInherited, logger } from "../utils/index.js";
+import { readFileSync } from "node:fs";
+import { join, sep } from "node:path";
+import { execCommandInherited, isValidPackage, logger, projectRoot } from "../utils/index.js";
+import { listPlanUnits } from "../plans/set.js";
 import { dialogHook, driveAgent } from "../agent/driver.js";
 import type { TerminalRelay } from "../agent/relay.js";
 
 /** Options for the union gate: the fix instance's model pattern. */
 export interface GateOptions {
   model?: string;
+}
+
+/**
+ * Runtime-delta package path in plan-unit text: `packages/<x>/lib/…`,
+ * `packages/<x>/tests/…`, or `packages/<x>/package.json`. Docs-only mentions
+ * (`packages/<x>/docs/…`, README, comparison) are deliberately excluded —
+ * doc structure is gated repo-wide by the guards inside every coverage and
+ * lint run, so only a package whose runtime surface the set deltas earns its
+ * own coverage gate.
+ */
+const RUNTIME_DELTA_PACKAGE = /packages\/([a-z0-9-]+)\/(?:(?:lib|tests)\/|package\.json)/g;
+
+/**
+ * Packages whose runtime surface the set's unit files delta, in unit order.
+ *
+ * Over-gates rather than under-gates: a prose mention of a `lib` path gates
+ * that package too (an extra coverage run), while the alternative — trusting
+ * the folder name — gates nothing when the name is not a `packages/`
+ * workspace at all.
+ *
+ * @param setDir Absolute path to the plan-set folder.
+ * @returns Valid package names mentioned with a runtime-delta path.
+ */
+function derivedPackageScopes(setDir: string): string[] {
+  const scopes = new Set<string>();
+  for (const unit of listPlanUnits(setDir)) {
+    const text = readFileSync(unit.path, "utf8");
+    for (const match of text.matchAll(RUNTIME_DELTA_PACKAGE)) {
+      const name = match[1] ?? "";
+      if (isValidPackage(name)) {
+        scopes.add(name);
+      }
+    }
+  }
+  return [...scopes];
 }
 
 /**
@@ -17,10 +54,19 @@ export interface GateOptions {
  * bundle, which a merge's cherry-pick does not rebuild), then scoped tests
  * and the repo-wide lint.
  *
+ * A scope naming no `packages/` workspace (`plans/docs/...`, `plans/scripts/...`
+ * — cross-cutting sets filed by area, not by package) falls back to the
+ * packages the set's unit files delta at runtime; a set touching no package
+ * gates repo-wide through `bun lint`. The plan contracts, not the folder
+ * name, are the authority on what the union must verify.
+ *
+ * Exported for probes and dry inspection: the gate itself only executes
+ * mid-merge, so the derivation is otherwise unobservable until it runs.
+ *
  * @param relSetDir Repo-relative set-folder path.
  * @returns Commands to run, in order; the first failure is the verdict.
  */
-function gateCommands(relSetDir: string): string[][] {
+export function gateCommands(relSetDir: string): string[][] {
   const segments = relSetDir.split(sep);
   const scope = segments[1] ?? "";
   if (scope === "") {
@@ -39,7 +85,13 @@ function gateCommands(relSetDir: string): string[][] {
       ["bun", "lint"],
     ];
   }
-  return [["bun", "coverage", scope]];
+  if (isValidPackage(scope)) {
+    return [["bun", "coverage", scope]];
+  }
+  const coverage = derivedPackageScopes(join(projectRoot, relSetDir)).map(
+    (packageName: string): string[] => ["bun", "coverage", packageName],
+  );
+  return coverage.length > 0 ? coverage : [["bun", "lint"]];
 }
 
 /**

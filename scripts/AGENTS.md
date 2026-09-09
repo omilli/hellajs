@@ -114,13 +114,13 @@
 
   ## Merge runner pipeline (`scripts/merge/`, one concern per file)
 
-  Entry `merge.ts` → `queue.ts` (mechanical queue derivation: parse `worktree.mjs list`, match protocol slugs back to plan components — `<setSlug>` = whole set, `<setSlug>-<first-unit-stem>` = one dependency-connected component — skip main-tree-merged components, ascending-first-unit order, completeness pre-check against worktree copies) → `run.ts` (per-component orchestration via the shared `../agent/` concern: `/skill:merge` prompt naming the component; success = worktree cleaned AND main-tree ticks; auto-continue on partial progress / retry-skip-halt gate when stalled; set `index.md` top-marker flip after the last merge; union gate run directly (`bun coverage <pkg>`; plugin exception) with one fix instance per red round; summary + exit code). The runner commits nothing itself — the instances do, via `worktree.mjs commit` + `git cherry-pick` under the merge skill's contract; refused (incomplete) components keep their worktrees standing.
+  Entry `merge.ts` → `queue.ts` (mechanical queue derivation: parse `worktree.mjs list`, match protocol slugs back to plan components — `<setSlug>` = whole set, `<setSlug>-<first-unit-stem>` = one dependency-connected component — skip main-tree-merged components, ascending-first-unit order, completeness pre-check against worktree copies) → `run.ts` (per-component orchestration via the shared `../agent/` concern: `/skill:merge` prompt naming the component; success = worktree cleaned AND main-tree ticks; auto-continue on partial progress / retry-skip-halt gate when stalled; set `index.md` top-marker flip after the last merge; union gate run directly (`bun coverage <pkg>` from the set's scope or its runtime-delta packages, `bun lint` fallback; plugin exception) with one fix instance per red round; summary + exit code). The runner commits nothing itself — the instances do, via `worktree.mjs commit` + `git cherry-pick` under the merge skill's contract; refused (incomplete) components keep their worktrees standing.
 
   | File | Concern |
   |---|---|
   | `merge.ts` | Thin entry: args → validate set → run merge → report → exit |
   | `merge/queue.ts` | Worktree-inventory parsing + queue derivation (slug → component matching, merged-state skip, ordering) + completeness/tick reads |
-  | `merge/gate.ts` | Union gate: command derivation (coverage vs plugin exception), terminal-passthrough run, fix instance + operator gate on red |
+  | `merge/gate.ts` | Union gate: command derivation (package scope → coverage; non-package scope → runtime-delta packages parsed from unit Files, `bun lint` when none; plugin exception), terminal-passthrough run, fix instance + operator gate on red |
   | `merge/run.ts` | Per-component instance loop, operator gates, set-aggregate flip, summary |
 
   ## Audits runner pipeline (`scripts/audits/`, one concern per file)
