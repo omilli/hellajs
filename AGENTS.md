@@ -68,19 +68,18 @@
 
   ## Skills
 
-  Fifteen first-party skills: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills maintaining it. Edit them directly via `skill` (anatomy) and `author` (voice + cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. No global-inherited layer, no graceful-degradation fallback. `prime` loads first on any substantive task; the rest are discovered on demand.
+  Fourteen first-party skills: a behavioural backbone, a discovery→plan→worker→feedback→memory loop, and the meta skills maintaining it. Edit them directly via `skill` (anatomy) and `author` (voice + cross-reference sync); `feedback` proposals may target skills as well as `AGENTS.md`. No global-inherited layer, no graceful-degradation fallback. `prime` loads first on any substantive task; the rest are discovered on demand.
 
-  The loop: `idea` / `audit-*` / `critic` / `feature` (entry) → `plan` → `worker` (back to `plan` on a gap, `idea` on a fork) → `feedback` → `memory`. A guide conflict emits a guide-update proposal (§Non-negotiables). A codebase-fact drift — AGENTS.md prose describing behavior the source has outgrown (file maps, invariant one-liners) — is not a rule conflict: route it to `plan` as a factual fix in the change's blast radius. A Break-severity finding from any entry skill carries an empirical repro (a failing command/test) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `plan` refuses to pin a DoD test to an unverified Break.
+  The loop: `idea` / `audit-*` / `feature` (entry) → `plan` → `worker` (back to `plan` on a gap, `idea` on a fork) → `feedback` → `memory`. A guide conflict emits a guide-update proposal (§Non-negotiables). A codebase-fact drift — AGENTS.md prose describing behavior the source has outgrown (file maps, invariant one-liners) — is not a rule conflict: route it to `plan` as a factual fix in the change's blast radius. A Break-severity finding from any entry skill carries an empirical repro (a failing command/test) or a source-read enumeration of every path realizing it — a narrated scenario is not evidence; `plan` refuses to pin a DoD test to an unverified Break.
 
   | Skill | Role |
   |---|---|
   | `prime` | Operating backbone: the loop, handoff gate, layering contract, memory protocol. Loaded first. |
   | `idea` | Stress-test an idea/plan; resolve load-bearing forks. Entry. |
-  | `audit-code` | Grade `lib/` source + config against `guides/code.md`; in-contract findings → worker redo, scope-expanding → `plan`. Entry. |
+  | `audit-code` | Grade `lib/` source + config against `guides/code.md` plus cost-gated judgment critique (smells, API design); in-contract findings → worker redo, scope-expanding → `plan`. Entry. |
   | `audit-tests` | Grade `*.test.ts` against `guides/tests.md` (structure, anti-patterns, gate semantics); same routing. Entry. |
   | `audit-docs` | Grade package md/mdx against `guides/docs.md` + package AGENTS.md file-map drift; same routing. Entry. |
   | `audit-scripts` | Grade `scripts/**`/`utils/**` against `guides/scripts.md` + scripts/AGENTS.md drift; separate from package audit runs. Entry. |
-  | `critic` | Judgment-based critique: smells, API design, cost-gated findings. Entry. |
   | `feature` | Surface grounded enhancement ideas; hand to `plan` as evidence maps. Entry. |
   | `plan` | Turn a goal or evidence map into a task-contract (Files, delta, DoD). |
   | `worker` | Execute a plan task-by-task, ticking each DoD with cited evidence; plan-file runs execute in worktrees and end delivered for merge. |
@@ -98,7 +97,7 @@
 
   | Condition | Action |
   |---|---|
-  | Worker completes a plan unit | Completion pipeline fires the matching `audit-*` skill (Code → `audit-code`, Tests → `audit-tests`, Docs → `audit-docs`, scripts/config → `audit-scripts`) → redo (in-contract, one) → `critic` if Surface:yes → `feedback` → `memory` on events |
+  | Worker completes a plan unit | Completion pipeline fires the matching `audit-*` skill (Code → `audit-code` — judgment lenses included when the unit changed a public surface, Tests → `audit-tests`, Docs → `audit-docs`, scripts/config → `audit-scripts`) → redo (in-contract, one) → `feedback` → `memory` on events |
   | Loop completed with friction | `feedback` (applies via `author`/`skill`, uncommitted) |
   | Non-obvious decision, not already durable | `memory` |
   | Actionable change surfaced (bug, gap, needed edit) | `plan` |

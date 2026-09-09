@@ -1,7 +1,7 @@
 ---
 name: audit-tests
 description: >
-  Check or grade test files (*.test.ts) against `guides/tests.md` — framework, imports, structure, assertion patterns, §Anti-Patterns, §Triage & Gate Semantics — and report grounded findings: each a runnable check or a quoted rule, never taste. The enforcement point for test anti-patterns `bun coverage` cannot see (new files, shared test helpers, DOM-access and naming rules). Use ONLY for rule-grounded review of test files — source → `audit-code`, md/mdx and package AGENTS.md → `audit-docs`, scripts/** and utils/** → `audit-scripts`, judgment critique with no rule behind it → `critic`.
+  Check or grade test files (*.test.ts) against `guides/tests.md` — framework, imports, structure, assertion patterns, §Anti-Patterns, §Triage & Gate Semantics — and report grounded findings: each a runnable check or a quoted rule, never taste. The enforcement point for test anti-patterns `bun coverage` cannot see (new files, shared test helpers, DOM-access and naming rules). Use ONLY for rule-grounded review of test files — source → `audit-code`, md/mdx and package AGENTS.md → `audit-docs`, scripts/** and utils/** → `audit-scripts`, judgment critique → `audit-code` (its cost-gated lenses).
 ---
 
 # Audit-tests

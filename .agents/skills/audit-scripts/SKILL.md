@@ -1,7 +1,7 @@
 ---
 name: audit-scripts
 description: >
-  Check or grade build tooling and CI automation (scripts/**, utils/**) against `guides/scripts.md` — thin CLI entries, one concern per file, shared utils, arg conventions, dependency graphs — and audit scripts/AGENTS.md file maps for drift (anchors resolve, table rows match real files). Findings are grounded: each a runnable check or a quoted rule, never taste. Separate from package audit runs — package sections never invoke this skill. Use ONLY for rule-grounded review of scripts — source → `audit-code`, test files → `audit-tests`, md/mdx → `audit-docs`, judgment critique → `critic`.
+  Check or grade build tooling and CI automation (scripts/**, utils/**) against `guides/scripts.md` — thin CLI entries, one concern per file, shared utils, arg conventions, dependency graphs — and audit scripts/AGENTS.md file maps for drift (anchors resolve, table rows match real files). Findings are grounded: each a runnable check or a quoted rule, never taste. Separate from package audit runs — package sections never invoke this skill. Use ONLY for rule-grounded review of scripts — source → `audit-code`, test files → `audit-tests`, md/mdx → `audit-docs`, judgment critique → `audit-code` (its cost-gated lenses).
 ---
 
 # Audit-scripts

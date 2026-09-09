@@ -1,7 +1,7 @@
 ---
 name: audit-docs
 description: >
-  Check or grade package documentation (.md/.mdx: docs/ pages, README.md, comparison docs, examples' tutorial.mdx) against `guides/docs.md` — structure, typography, snippets, section conventions — and audit package AGENTS.md file maps for drift (anchors resolve, citations resolve, invariant one-liners match source). Findings are grounded: each a runnable check or a quoted rule, never taste. Use ONLY for rule-grounded review of package docs and package agent files — source → `audit-code`, test files → `audit-tests`, scripts/** → `audit-scripts`, root-level agent files (guides/, skills/, root AGENTS.md) drift → `feedback`, judgment critique → `critic`.
+  Check or grade package documentation (.md/.mdx: docs/ pages, README.md, comparison docs, examples' tutorial.mdx) against `guides/docs.md` — structure, typography, snippets, section conventions — and audit package AGENTS.md file maps for drift (anchors resolve, citations resolve, invariant one-liners match source). Findings are grounded: each a runnable check or a quoted rule, never taste. Use ONLY for rule-grounded review of package docs and package agent files — source → `audit-code`, test files → `audit-tests`, scripts/** → `audit-scripts`, root-level agent files (guides/, skills/, root AGENTS.md) drift → `feedback`, judgment critique → `audit-code` (its cost-gated lenses).
 ---
 
 # Audit-docs

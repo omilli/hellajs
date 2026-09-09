@@ -1,7 +1,7 @@
 ---
 name: worker
 description: >
-  Execute a plan task-by-task, faithfully. Respect inter-file dependencies (refuse to start a file whose deps are unfinished), verify each task is needed, enforce the surface fork gate, establish a green baseline, make the change, run type-appropriate verification, and tick each Definition of Done only with cited evidence — no note, no tick; on completion, runs the tiered audit/critic pipeline with a one-pass in-contract redo. Plan-file runs execute inside a per-component worktree seeded by `worktree.mjs` (provision or re-enter the named slug; inline plans run in-tree) and end delivered for merge. Use when working through a plan or contract produced by the `plan` skill, or any explicit task-contract with binary checks. Use ONLY when such a contract exists.
+  Execute a plan task-by-task, faithfully. Respect inter-file dependencies (refuse to start a file whose deps are unfinished), verify each task is needed, enforce the surface fork gate, establish a green baseline, make the change, run type-appropriate verification, and tick each Definition of Done only with cited evidence — no note, no tick; on completion, runs the tiered audit pipeline with a one-pass in-contract redo. Plan-file runs execute inside a per-component worktree seeded by `worktree.mjs` (provision or re-enter the named slug; inline plans run in-tree) and end delivered for merge. Use when working through a plan or contract produced by the `plan` skill, or any explicit task-contract with binary checks. Use ONLY when such a contract exists.
 ---
 
 # Worker
@@ -83,14 +83,13 @@ Before declaring done: nothing outside touched files regressed — run checks in
 
 ## Step 5 — Completion pipeline and report
 
-Fires mechanically once the unit's tasks are ticked — no offering. Order fixed: the matching `audit-*` skill → redo → critic → feedback → memory.
+Fires mechanically once the unit's tasks are ticked — no offering. Order fixed: the matching `audit-*` skill → redo → feedback → memory.
 
-- **(a) audit** — run the matching `audit-*` skill on the changed files of every task (Code → `audit-code`, Tests → `audit-tests`, Docs → `audit-docs`, scripts/config → `audit-scripts`; enforcement point for structural rules `bun coverage` cannot see).
-- **(b) Redo pass, ONE.** In-contract findings (changed files, behavior inside the planned delta) → fix, re-run the gate. Scope-expanding or contract-contradicting → return to `plan`. Critic taste findings → `plan` with evidence, never self-redone. A needed second pass → stop and report.
-- **(c) critic** — when Surface:yes, on the changed surface after the redo pass (it sees fixed state); findings hand to `plan`.
-- **(d) feedback** — invoke; a clean run no-ops.
-- **(e) memory** — events as they fire.
-- **(f) Report** — per-task status: done, already-correct, rejected (reason), or structurally-invalid. Plan file → carries every tick + evidence. Confirm: blast radius checked; set aggregate updated; every tick evidence-backed; type-appropriate verification actually ran. Any gap → not done.
-- **(g) Delivery (worktree runs)** — the report names the component's slug and hands off to `bun merge <set-folder>` (the single human checkpoint; the merge runner owns the commit). Blast radius ran inside the worktree; main-tree blast radius is the merge runner's.
+- **(a) audit** — run the matching `audit-*` skill on the changed files of every task (Code → `audit-code` — judgment lenses included when Surface:yes — Tests → `audit-tests`, Docs → `audit-docs`, scripts/config → `audit-scripts`; enforcement point for structural rules `bun coverage` cannot see).
+- **(b) Redo pass, ONE.** In-contract findings (changed files, behavior inside the planned delta — rule or judgment) → fix, re-run the gate. Scope-expanding or contract-contradicting → return to `plan`. A needed second pass → stop and report.
+- **(c) feedback** — invoke; a clean run no-ops.
+- **(d) memory** — events as they fire.
+- **(e) Report** — per-task status: done, already-correct, rejected (reason), or structurally-invalid. Plan file → carries every tick + evidence. Confirm: blast radius checked; set aggregate updated; every tick evidence-backed; type-appropriate verification actually ran. Any gap → not done.
+- **(f) Delivery (worktree runs)** — the report names the component's slug and hands off to `bun merge <set-folder>` (the single human checkpoint; the merge runner owns the commit). Blast radius ran inside the worktree; main-tree blast radius is the merge runner's.
 
 Run the prime handoff gate; highest-friction skill in the loop — evaluate the `feedback` trigger table literally: verification failure + the fix that worked → `memory`; wrong plan assumption deviated from → `memory`; rework from a symptom-patch → `feedback`; verification command hard to find → `memory`; repeated failure pattern across runs → `feedback`.

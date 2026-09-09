@@ -1,7 +1,7 @@
 ---
 name: prime
 description: >
-  The operating backbone — load FIRST on any non-trivial task, before doing the work. Carries the skill loop (idea/audit-*/critic/feature -> plan -> worker, with feedback/memory firing cross-cutting), the handoff gate, the repo memory protocol, and the layering contract that keeps skills free of duplicated rule text. Load before any substantive work; skip for trivial lookups.
+  The operating backbone — load FIRST on any non-trivial task, before doing the work. Carries the skill loop (idea/audit-*/feature -> plan -> worker, with feedback/memory firing cross-cutting), the handoff gate, the repo memory protocol, and the layering contract that keeps skills free of duplicated rule text. Load before any substantive work; skip for trivial lookups.
 ---
 
 # Prime
@@ -14,12 +14,12 @@ Skills carry workflow logic — loop steps, gates, evidence rules — and name H
 
 ## The loop
 
-    idea / audit-* / critic / feature  (entry: decide WHAT)
+    idea / audit-* / feature  (entry: decide WHAT)
         -> plan      (structure HOW: a task-contract)
         -> worker    (execute it, ticking each DoD with evidence)
             on a plan-gap -> back to plan
             on a design fork -> back to idea
-            on completion (Code/Tests) -> the matching audit-* skill -> redo (in-contract) -> critic (Surface:yes) -> feedback -> memory
+            on completion (Code/Tests) -> the matching audit-* skill -> redo (in-contract) -> feedback -> memory
 
     Cross-cutting, firing from ANY skill at completion:
         friction -> feedback  (apply config/skill edits)
@@ -29,11 +29,11 @@ Skills carry workflow logic — loop steps, gates, evidence rules — and name H
 
 | From | Trigger | To |
 |---|---|---|
-| entry (idea / audit-* / critic / feature) | findings to act on | `plan` |
+| entry (idea / audit-* / feature) | findings to act on | `plan` |
 | `plan` | contract approved | `worker` |
 | `worker` | plan-gap (contract incomplete) | `plan` |
 | `worker` | design fork (contract wrong deeper down) | `idea` |
-| `worker` | plan unit ticked | the matching `audit-*` skill by unit type (and `critic` when Surface:yes), mechanically |
+| `worker` | plan unit ticked | the matching `audit-*` skill by unit type, mechanically |
 | `worker` | in-contract audit finding | redo pass (self, one) |
 | `worker` | worktree run delivered for merge (user-invoked) | `merge` |
 | any skill | friction that should change always-on text | `feedback` |
@@ -47,7 +47,7 @@ After any substantive work (skill used, files edited, commands run, decision mad
 - **Downstream** — the next skill if work continues (entry → `plan`; `plan` → `worker`; `worker` → `plan` on a gap, `idea` on a fork). One sentence + justification, or "nothing downstream."
 - **Self-improvement** — evaluate the `feedback` trigger table (that skill's Step 1): any trigger fired → `feedback`. A recallable verified fact/decision → `memory`.
 
-Worker completions fire the completion pipeline (matching audit-* skill → redo → critic → feedback → memory) without offering; every other handoff invokes the target skill rather than offering it. Clean run → skip self-improvement; trivial change → skip everything. Mandatory — silently skipping the gate equals skipping a verification step.
+Worker completions fire the completion pipeline (matching audit-* skill → redo → feedback → memory) without offering; every other handoff invokes the target skill rather than offering it. Clean run → skip self-improvement; trivial change → skip everything. Mandatory — silently skipping the gate equals skipping a verification step.
 
 **Where the loop lands here:** plan contracts are files under `plans/<package>/<category>/<topic>/`; a DoD gate is a §Scripts command (`bun coverage <pkg>`; plugin exception — `guides/tests.md` §Triage & Gate Semantics); evidence cites file + symbol anchors, never line numbers; a Break-severity finding needs an empirical repro (§Skills).
 
