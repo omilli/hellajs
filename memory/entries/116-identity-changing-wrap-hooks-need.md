@@ -1,7 +1,7 @@
 ---
 type: decision
 title: Identity-changing wrap hooks need pre-wrapped reconcile diffs and const-captured pre-wrap containers
-description: "Collection wrap hooks that change element identity require both reconcile passes to compare wrapped forms, and store-side container wrappers must capture the pre-wrap container reference (const), never the reassigned binding."
+description: "Identity-changing wrap hooks need both reconcile passes keying on pre-wrapped forms, and container wrappers must capture the pre-wrap reference (const), never the reassigned binding."
 tags: [arch, core, store, collections]
 timestamp: 2026-09-22
 last_confirmed: 2026-09-22
