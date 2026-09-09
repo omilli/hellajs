@@ -270,30 +270,18 @@ Full runnable code matching the example app.
 
 ### Rules
 
-- **Frontmatter**: None — the wrapper page owns `title`, `description`, `layout`.
-- **Language tag**: `tsx` for TypeScript tutorials, `jsx` for JavaScript tutorials.
-- **Progressive build**: Each section adds code on top of the previous. Never removes or rewrites earlier code.
-- **Context markers**: Use `//...` comments to show placement (`//... add after X`, `//... rest of the code unchanged`). **Never show full file repeats** — only new/changed code with surrounding context. The reader builds up from previous sections.
-- **Exercise blanks**: `/**/` marks a blank the reader fills in (`const filter = /**/;`). Legal alongside `//...` context markers (counter uses markers, todo uses blanks). `bun doc-snippets` skips any block containing `/**/` — answers vary — so a blanked block is exempt from self-containment typechecking; every non-blank line must still be valid for the block's language tag, and the filled-in answer must appear in a later section or Complete Code.
-- **Code Explanation**: Always present after every code block. Bullet list with bold backtick-wrapped API names linking to reference docs on first mention. Factual tone (not conversational).
-- **Alert boxes**: Use `<div role="alert" class="alert alert-error">` with a `<span>⚠️</span>` for critical warnings (mutation pitfalls, reactivity gotchas). Follow with Good/Bad code examples. No component imports — content docs live outside `docs/`.
-- **Dev server callout**: In the section where the app first becomes reachable, include the actual run command and the URL it serves, matching the app's tooling — Vite apps: `npm run dev` + `http://localhost:5173`; Bun-served SSR apps: the serve command (`bun src/server.js`, `bun run dev`) + its URL (`http://localhost:3000`).
-- **What You'll Learn**: Bold concept labels with brief descriptions. Link to reference docs on first mention using `[Concept](/reference/path)`.
-- **Project Setup**: Always includes `### Installation` (npm commands) and `### Configuration` (vite config, tsconfig).
-- **Next Steps**: 3 links to relevant tutorials/guides/concepts + one-line closing sentence.
-- **Complete Code**: Every source file under `examples/{name}/src/` appears identically (ambient shims like `vite-env.d.ts` may be omitted); single-file apps as one block, multi-file apps as one `### `src/...`` heading + block per file. Configs (`vite.config.js`, `tsconfig.json`, `package.json`) appear in Project Setup.
+- **Frontmatter**: none — the wrapper page owns `title`, `description`, `layout`. **Language tag**: `tsx` (TS tutorials) / `jsx` (JS).
+- **Progressive build**: each section adds code on top of the previous; never removes or rewrites earlier code. **Context markers** (`//... add after X`, `//... rest unchanged`) show placement — never full file repeats; the reader builds up from previous sections.
+- **Exercise blanks**: `/**/` marks a reader-filled blank (`const filter = /**/;`), legal alongside `//...` markers. `bun doc-snippets` skips blocks containing `/**/` (answers vary); every non-blank line must still be valid for the language tag, and the answer must appear in a later section or Complete Code.
+- **Code Explanation**: always after every code block — bullet list, bold backtick-wrapped API names linking to reference docs on first mention, factual tone.
+- **Alert boxes**: `<div role="alert" class="alert alert-error">` + `<span>⚠️</span>` for critical warnings (mutation pitfalls, reactivity gotchas), followed by Good/Bad examples. No component imports — content docs live outside `docs/`.
+- **Dev server callout**: in the section where the app first becomes reachable, the actual run command + URL — Vite: `npm run dev` + `http://localhost:5173`; Bun-served SSR: the serve command (`bun src/server.js`) + its URL.
+- **What You'll Learn**: bold concept labels + brief descriptions, linked to reference docs on first mention. **Project Setup**: always `### Installation` (npm commands) + `### Configuration` (vite config, tsconfig).
+- **Next Steps**: 3 links + one-line closing sentence. **Complete Code**: every source file under `examples/{name}/src/` appears identically (ambient shims like `vite-env.d.ts` may be omitted); single-file apps one block, multi-file one `### `src/...`` heading + block per file; configs appear in Project Setup.
 
 ### Concept Section Order
 
-Arrange sections so each introduces exactly one or two new concepts. Typical order:
-
-1. **State** (signal or store) + mount
-2. **Styles** (css, style, vars)
-3. **Derived values** (computed)
-4. **Controls / View** (event handlers, ForEach, bind directives)
-5. **Effects** (effect, localStorage, side effects) — optional, only when persistence/side effects are part of the app
-
-Adjust to match the app's build-up. State always comes first. Effects are optional and come last when used. Styles and controls may be combined into a single section for simpler apps.
+Arrange sections so each introduces one or two new concepts. Typical order: 1. **State** (signal/store) + mount → 2. **Styles** (css, style, vars) → 3. **Derived values** (computed) → 4. **Controls/View** (event handlers, ForEach, bind directives) → 5. **Effects** (effect, localStorage) — optional, last, only when persistence/side effects are part of the app. Adjust to the app's build-up; State always first; Styles and controls may merge for simple apps.
 
 ## Website Wrapper Pages
 
@@ -328,16 +316,13 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 
 ### Rules
 
-- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): Imports `@{package}/api/{name}.mdx`.
-- **Concept wrapper** (`docs/src/pages/learn/concepts/{name}.mdx`): Imports `@{package}/concepts/{name}.mdx`.
-- **Pattern wrapper** (`docs/src/pages/learn/patterns/{name}.mdx`): Imports `@{package}/patterns/{name}.mdx`.
-- **Component name**: PascalCase derived from the file name (`signal.mdx` → `SignalContent`).
-- **No content** between the import and the component tag.
-- A wrapper MAY import and render more than one package doc, separated by `<div class="...border-t..."></div>`, when the website joins related concepts from different packages under a single URL. Each import must still follow the alias and PascalCase-component-name rules, and the wrapper must still contain zero prose.
+- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`.
+- **Component name**: PascalCase from the file name (`signal.mdx` → `SignalContent`). **No content** between the import and the component tag.
+- A wrapper MAY import and render multiple package docs, separated by `<div class="...border-t..."></div>`, when the site joins related concepts from different packages under one URL — each import still follows the alias + PascalCase rules, and the wrapper still carries zero prose.
 
 ### Site-Authored Content Pages
 
-Content that spans packages or is site-only (quick-start, testing patterns) may live as a **site-authored content page** under `docs/src/pages/`: full body content, complete frontmatter (`title`, `description`, `layout`), no package-doc import. The zero-content rule applies only to import-rendering wrappers. Registration duties are unchanged — the page must appear in `docs/src/nav.ts` and its enumeration index. `bun lint:structure` check 4 detects the kind by the absence of a package-doc import and exempts it from the zero-content rule, never from the frontmatter rule.
+Content spanning packages or site-only (quick-start, testing patterns) may live as a **site-authored content page** under `docs/src/pages/`: full body content, complete frontmatter, no package-doc import. The zero-content rule applies only to import-rendering wrappers. Registration duties unchanged — `nav.ts` + enumeration index. `bun lint:structure` check 4 detects the kind by the absent package-doc import and exempts it from the zero-content rule, never from the frontmatter rule.
 
 ## Extending Existing Content
 
@@ -406,7 +391,7 @@ Followed by a bullet list of parameters:
 - **Returns**: uses bold + colon as a separate bullet.
 - Generic parameters shown in the signature (`<T>`); list separately only if they have constraints.
 - Complex types (interfaces, unions) may be inline or in separate blocks below the signature.
-- **Type accuracy**: Interface/type signatures must match the actual exported types from `index.ts`, including wrapper/view types. If the runtime type is a wrapper interface (e.g., a read-only view over an internal collection), document the wrapper by name — never substitute a familiar built-in (e.g., `Map`) that implies capabilities the wrapper does not provide. Code examples must only call methods the documented interface exposes.
+- **Type accuracy**: interface/type signatures match the actual exported types from `index.ts`, including wrapper/view types. If the runtime type is a wrapper interface (a read-only view over an internal collection), document the wrapper by name — never substitute a familiar built-in (`Map`) implying capabilities it lacks. Code examples only call methods the documented interface exposes.
 
 ### Overloaded Functions
 
@@ -559,10 +544,10 @@ try {
 
 ### Implementation Accuracy
 
-- Examples must accurately reflect actual behavior. Simplifications that omit error handling/edge cases must include a comment noting what is simplified.
-- **Static vs reactive**: `css()` and `style()` throw on function values — reactive leaves belong to `vars()`. Resolve conditions before the call; for style values that track signals, author the tokens with `vars()` and consume its `var()` references.
-- **No silent no-ops**: Every example must do what its comments claim. If reading from a cache/store/resource, populate that source earlier in the same block (or in a clearly-marked prior setup block). Do not demonstrate `get`/`read`/`data()` against keys that were never written — the silent `undefined` return contradicts the prose and teaches the wrong contract. When demonstrating methods whose effect depends on prior state (cache TTL, ongoing requests, configuration), seed that state explicitly.
-- **Callback parameter types**: Examples must treat parameters as the type the implementation actually passes. If a hook is typed `(err: unknown) => void` and passes the raw error, examples must not access `.category` or `.code` without a type guard. If the implementation never invokes a callback for a given condition (e.g., error handler skipped for aborts), examples must not show that callback firing. Document categorized/wrapped variants separately from raw callbacks.
+- Examples must reflect actual behavior; simplifications that omit error handling/edge cases carry a comment noting what is simplified.
+- **Static vs reactive**: `css()` and `style()` throw on function values — reactive leaves belong to `vars()`. Resolve conditions before the call; for style values that track signals, author tokens with `vars()` and consume its `var()` references.
+- **No silent no-ops**: every example does what its comments claim. Demos of `get`/`read`/`data()` read keys written earlier in the same block (or a clearly-marked setup block) — a silent `undefined` return contradicts the prose and teaches the wrong contract. Methods whose effect depends on prior state (cache TTL, ongoing requests, configuration) seed that state explicitly.
+- **Callback parameter types**: examples treat parameters as the type the implementation passes. A hook typed `(err: unknown) => void` passing the raw error → examples must not access `.category`/`.code` without a type guard; a callback the implementation never invokes for a condition (error handler skipped for aborts) → examples must not show it firing. Document categorized/wrapped variants separately from raw callbacks.
 
 ### Code Block Length
 

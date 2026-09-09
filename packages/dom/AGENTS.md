@@ -259,9 +259,9 @@ Branch order: `value`/`checked`/`selected`/`innerHTML` → set the IDL property 
 
 ## Testing approach (`tests/`)
 
-Integration-style, public API only. Runtime imports come from **`@hellajs/dom/bundle`** (the instrumented bundle — see root `bunfig.toml`); type-only imports from `@hellajs/dom`. Reactive primitives import from `@hellajs/core`. `onError` imports from `@hellajs/dom/bundle`. Test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) import from `@utils/test-helpers.js`. The publicly-exported introspection helpers used directly: `peekState`, `getState`, `multiSelectors`, `checkMultiSelectors`. Track call counts with `mock()` from `bun:test` — never boolean flags or counters.
+Integration-style, public API only. Runtime imports from **`@hellajs/dom/bundle`** (the instrumented bundle); type-only from `@hellajs/dom`. Generic conventions (import sources/order, `mock()` tracking, `resetTestState`) are owned by `guides/tests.md` — package-specific facts: the publicly-exported introspection helpers used directly are `peekState`, `getState`, `multiSelectors`, `checkMultiSelectors`.
 
-`tests/helpers.ts` exports `fallbackHandler(defaultFallback)` — registers an `onError` handler that delegates to `context.config?.fallback?.(error)` else returns the default; the standard pattern for exercising element-level fallback through the global handler.
+`tests/helpers.ts` exports `fallbackHandler(defaultFallback)` — registers an `onError` handler delegating to `context.config?.fallback?.(error)` else returning the default; the standard pattern for exercising element-level fallback through the global handler.
 
 - `mount.test.ts` — sync/async component fns, signal `0` renders `"0"`, async-mount error routing, target-miss throw.
 - `mount-targets.test.ts`, `mount-binding.test.ts`, `mount-edge-cases.test.ts` — selector-vs-Element targets, direct-prop falsy fallback, raw-`Node` passthrough, `componentScope`/`errorConfig` transfer to state.

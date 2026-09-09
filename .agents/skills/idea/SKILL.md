@@ -10,23 +10,21 @@ Grill the user until the plan is concrete enough to build without surprise. Not 
 
 ## Method
 
-1. **Find the crux first.** Most of a plan is noise. Name the 1–3 decisions that determine success/failure, and why they are the crux. Crux classes this repo produces: **ownership/layering** (where rule text lives — AGENTS.md vs skill vs guide; one home, cited elsewhere), **rename/merge ripple** (names are load-bearing: §Skills tables, sibling handoff gates, generated mirrors, docs — same-pass sync or it's an unfinished edit), **automation hazards** (hook/CI executing a chain that can clobber or drift — map who runs what before editing the chain).
+1. **Find the crux first.** Most of a plan is noise. Name the 1–3 decisions that determine success/failure, and why. Crux classes this repo produces: **ownership/layering** (where rule text lives — AGENTS.md vs skill vs guide; one home, cited elsewhere), **rename/merge ripple** (names are load-bearing: §Skills tables, sibling handoff gates, generated mirrors, docs — same-pass sync or it's an unfinished edit), **automation hazards** (hook/CI executing a chain that can clobber or drift — map who runs what before editing the chain).
 2. **Depth-first.** Resolve one branch before opening another. A dangling "figure it out later" on a load-bearing fork is failure — park only reversible/low-stakes items.
-3. **One question, or a tight batch — never a wall.** Every question load-bearing. Framed as end-user consequences — the code users write, what wakes up, what bites — never architecture vocabulary; the decider cannot choose what they cannot picture as behavior. Answerable by reading the codebase → read it, don't ask.
+3. **One question, or a tight batch — never a wall.** Every question load-bearing, framed as end-user consequences (the code users write, what wakes up, what bites) — the decider cannot choose what they cannot picture as behavior. Answerable by reading the codebase → read it, don't ask.
 4. **Steelman, then attack.** Strongest version before probing where it breaks. No strawmen, no sycophancy.
 5. **Make assumptions explicit.** Name them; flag the risky ones.
 6. **Weight by reversibility.** Push hardest on irreversible/foundational decisions (public API, package contracts, migrations, published docs). Let reversible choices slide toward action.
-7. **Cut to the smallest test.** For each risk: smallest version that de-risks it. Thin experiment over grand plan.
+7. **Cut to the smallest test.** For each risk: the smallest version that de-risks it. Thin experiment over grand plan.
 8. **Write the converging design.** Living spec as decisions land — the handoff to `plan` lands contracts under `plans/<package>/<category>/<topic>/`.
 
 ## Done
 
-- Every load-bearing decision has a concrete answer.
-- Remaining unknowns bounded and non-blocking.
-- Written spec captures the agreed plan.
-- Hand off. Not build mode — don't start implementing.
+- Every load-bearing decision has a concrete answer; remaining unknowns bounded and non-blocking.
+- Written spec captures the agreed plan. Hand off — not build mode; don't start implementing.
 
-Run the prime handoff gate; friction signals: codebase assumption you stated that the user overturned → `memory` (recallable fact about this codebase); load-bearing fork that took many rounds because the crux was mis-named → `feedback` (the find-the-crux method slipped — sharpen the skill's framing).
+Run the prime handoff gate; evaluate the `feedback` trigger table literally: codebase assumption you stated that the user overturned → `memory` (recallable fact); a load-bearing fork that took many rounds because the crux was mis-named → `feedback` (sharpen the find-the-crux framing).
 
 ## Anti-patterns
 

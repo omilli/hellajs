@@ -12,7 +12,7 @@ Reactive primitives over a doubly-linked dependency DAG. Signals are sources, co
 | `hasWindow`, `hasDocument`, `hasNavigator` | Env probes | `lib/internal/env.ts` |
 | `Signal` | Type-only | `lib/types.d.ts` |
 
-`computed`, `effect`, `batch`, `untracked`, and `scope` each throw `new Error("[core] <name>: <argName> must be a function, received <typeof>")` when their callback is not a function (arg names: `computedFn`, `effectFn`, `batchFn`, `untrackedFn`, `fn`). `signal` takes a value, not a function, and validates only its optional `options.equals` (throwing `[core] signal: equals must be a function, received <typeof>` when present and non-function); `computed(fn, options)` validates the same way. An equal `equals` result skips the update entirely — old value/reference kept, no propagation; on `computed`, the comparator is skipped on the first evaluation (prev is `undefined`).
+`computed`, `effect`, `batch`, `untracked`, and `scope` throw `[core] <name>: <argName> must be a function, received <typeof>` on a non-function callback (arg names: `computedFn`, `effectFn`, `batchFn`, `untrackedFn`, `fn`). `signal` takes a value, not a function, and validates only its optional `options.equals` (`[core] signal: equals must be a function, received <typeof>`); `computed(fn, options)` validates the same way. An equal `equals` result skips the update entirely — old value/reference kept, no propagation; on `computed`, the comparator is skipped on the first evaluation (prev is `undefined`).
 
 ## Node types & initialization
 
@@ -94,18 +94,6 @@ Module-level singletons that drive tracking and scope registration:
 
 ## Testing approach (`tests/`)
 
-Integration-style, public API only — never imports `lib/internal/*`. Uses `mock()` from `bun:test` for call counts.
-
-- `signals.test.ts` — primitive/reference types, default equality (incl. `NaN` self-equal), no-arg signal (`undefined`).
-- `signal-equality.test.ts` — `equals` option on `signal`: equal writes keep the old reference and skip propagation, `Object.is` NaN stabilization, freshest-value comparison, empty/undefined-`equals` options bag, non-function validation.
-- `computed.test.ts` — chaining, previous value, error recovery, auto-GC + rebuild, deep chains (6 levels), undefined/NaN-result no-op.
-- `computed-equality.test.ts` — `equals` option on `computed`: equal results keep the old cached reference and skip downstream effects, unequal propagate, non-function validation.
-- `effects.test.ts` — cleanup return value, nested effects, errors from setter, try/catch tracking, async via `.then`, no-double-queue, flush-abort, deep accumulation.
-- `batch.test.ts`, `scope.test.ts` — grouping, nesting, return values, cancel-out batches (signals-only runs once, computed-mediated skips), idempotent dispose, shared NOOP.
-- `untracked.test.ts` — no-tracking reads in effects, nested `untracked` (no link leak), `untracked` inside `computed` (no deps recorded — cached value stands).
-- `topology.test.ts` — diamond / jagged-diamond / lazy-branch / skip-update / unsubscribe-inactive patterns (ported from preact-signals), incl. multi-dep unsubscribe after branch loss (effect + computed).
-- `env.test.ts`, `utils.test.ts` — env probes and type guards (`isPlainObject` rejects arrays, Date, Map/Set, class instances; accepts `Object.create(null)`).
-
-Run with `bun coverage core`.
+Integration-style, public API only — never imports `lib/internal/*`. Uses `mock()` from `bun:test` for call counts. Per-file coverage: `signals.test.ts` (primitive/reference types, default equality incl. `NaN` self-equal, no-arg signal); `signal-equality.test.ts` (`equals` option: equal writes keep the old reference and skip propagation, `Object.is` NaN stabilization, freshest-value comparison, options-bag edge cases, validation); `computed.test.ts` (chaining, previous value, error recovery, auto-GC + rebuild, deep chains, undefined/NaN-result no-op); `computed-equality.test.ts` (`equals` on computed); `effects.test.ts` (cleanup return, nesting, setter errors, try/catch tracking, async via `.then`, no-double-queue, flush-abort, deep accumulation); `batch.test.ts` + `scope.test.ts` (grouping, nesting, return values, cancel-out batches — signals-only runs once, computed-mediated skips — idempotent dispose, shared NOOP); `untracked.test.ts` (no-tracking reads, nesting, inside `computed`); `topology.test.ts` (diamond / jagged-diamond / lazy-branch / skip-update / unsubscribe-inactive patterns, ported from preact-signals); `env.test.ts` + `utils.test.ts` (env probes; `isPlainObject` rejects arrays, Date, Map/Set, class instances, accepts `Object.create(null)`). Run with `bun coverage core`.
 
 </core-package-instructions>

@@ -13,7 +13,7 @@
 
   | Path | Responsibility |
   |---|---|
-  | `astro.config.mjs` | Integrations (`astro-icon`, `@astrojs/mdx`, `astro-pagefind`) + the six `@<pkg>` Vite aliases. |
+  | `astro.config.mjs` | Integrations (`astro-icon`, `@astrojs/mdx`, `astro-pagefind`) + the seven `@<pkg>` Vite aliases + `@examples`. |
   | `tsconfig.json` | `astro/tsconfigs/strict` + `compilerOptions.paths` mirroring the Vite aliases. |
   | `package.json` | `dev` / `build` / `preview` / `astro` scripts. |
   | `src/nav.ts` | Sidebar tree (the nav contract); entry forms below. |

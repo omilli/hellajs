@@ -1,8 +1,8 @@
 # Scripts Style Guide
 
-Build tooling and CI automation under `scripts/`. These are NOT the shipped runtime — they run under `bun` in development and CI to bundle, test, lint, sync, and release the packages. Different priorities apply than `code.md` (no hot-path performance concern), but the same typographic discipline (double quotes, semicolons, 2-space indent, JSDoc, no `any`) keeps the whole repo feeling uniform.
+Build tooling and CI automation under `scripts/` — NOT the shipped runtime; runs under `bun` in dev and CI to bundle, test, lint, sync, release. Different priorities than `code.md` (no hot-path concern), same typographic discipline (double quotes, semicolons, 2-space indent, JSDoc, no `any`).
 
-This guide governs `scripts/**/*.ts` and `utils/**/*.ts` (the test preload). Config files (`tsconfig*`, `eslint.config.*`, `package.json`, `bunfig.toml`) follow `code.md` plus the Config checklist at the end of `code.md`.
+Governs `scripts/**/*.ts` and `utils/**/*.ts` (the test preload). Config files (`tsconfig*`, `eslint.config.*`, `package.json`, `bunfig.toml`) follow `code.md` plus its Config checklist.
 
 ## Decision Precedence
 
@@ -49,7 +49,7 @@ New script or helper?
     └─ Split on a concern seam; build pipelines are several concerns stitched, not one module
 ```
 
-The canonical case for splitting is `bundle.mjs` (875 lines today): caching, esbuild bundling, terser optimization, minified-import fixing, declaration generation, artifact validation, size metrics, and parallel dependency-ordered orchestration are eight concerns. The target is `scripts/bundle/` with one file per concern and a thin `scripts/bundle.ts` entry that calls them in order. See `scripts/AGENTS.md` for the full target layout.
+Canonical split case: `bundle.mjs` (875 lines) — caching, esbuild bundling, terser optimization, minified-import fixing, declaration generation, artifact validation, size metrics, and parallel dependency-ordered orchestration are eight concerns. Target: `scripts/bundle/` with one file per concern and a thin `scripts/bundle.ts` entry calling them in order (see `scripts/AGENTS.md`).
 
 ## Rules
 

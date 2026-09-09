@@ -3,8 +3,8 @@ type: decision
 title: doc-snippets TS tutorials carry structural duplicate-export findings
 description: Guide-conformant TS tutorials always emit TS2323/TS2393 informational findings (introduction + Complete-Code parity); scope tutorial DoDs to the strict tier or the probed finding class.
 tags: [docs, guards]
-timestamp: 2026-02-06
-last_confirmed: 2026-02-06
+timestamp: 2026-09-09
+last_confirmed: 2026-09-09
 triggers: [doc-snippets-dod, tutorial-findings, complete-code-parity]
 ---
 

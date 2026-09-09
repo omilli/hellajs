@@ -1,8 +1,8 @@
 # Comparison Targets
 
-The libraries each HellaJS package is compared against in its `[package]-comparison.md`. To change a target, edit this file — the skill reads from here. Do not substitute targets mid-generation without user confirmation.
+The libraries each HellaJS package is compared against in its `[package]-comparison.md`. To change a target, edit this file — the skill reads from here; never substitute targets mid-generation without user confirmation.
 
-The principle: pick libraries that are either (a) the dominant market leader in the category, (b) the closest architectural sibling to the HellaJS package, or (c) a notable minimal-alternative. Every target should teach the reader something the others don't.
+Principle: each target is (a) the dominant market leader, (b) the closest architectural sibling, or (c) a notable minimal-alternative — every target teaches the reader something the others don't.
 
 ---
 

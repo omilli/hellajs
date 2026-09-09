@@ -6,50 +6,54 @@ description: >
 
 # Prime
 
-Method, scope discipline, discovery, and tool economy live in the always-loaded agent config; the HellaJS rules (guides, gates, blast radius) live in root AGENTS.md. This skill carries only what is specific to the skill system — the loop, the handoff gate, the memory protocol, and the contract every other skill is written under.
+Method, scope discipline, discovery, and tool economy live in the always-loaded agent config; the HellaJS rules (guides, gates, blast radius) live in root AGENTS.md. This skill carries only the skill system: the loop, the handoff gate, the memory protocol, and the contract every other skill is written under.
 
 ## Layering contract
 
-Skills carry workflow logic — loop steps, gates, evidence rules — and name HellaJS artifacts by pointer: `bun coverage <pkg>` (AGENTS.md §Scripts), `guides/tests.md`, `memory/`, `plans/<package>/<category>/<topic>/`. They never restate an always-loaded rule. A section duplicating always-loaded context is deleted, not maintained; if a rule is genuinely absent everywhere, route the addition through `feedback` instead of growing the skill.
+Skills carry workflow logic — loop steps, gates, evidence rules — and name HellaJS artifacts by pointer: `bun coverage <pkg>` (AGENTS.md §Scripts), `guides/tests.md`, `memory/`, `plans/…`. They never restate an always-loaded rule. A section duplicating always-loaded context is deleted, not maintained; a rule genuinely absent everywhere routes through `feedback`, not into the skill.
 
 ## The loop
 
     idea / audit / critic / feature  (entry: decide WHAT)
         -> plan      (structure HOW: a task-contract)
-        -> worker    (execute it, ticking each Definition of Done with evidence)
+        -> worker    (execute it, ticking each DoD with evidence)
             on a plan-gap -> back to plan
             on a design fork -> back to idea
             on completion (Code/Tests) -> audit -> redo (in-contract) -> critic (Surface:yes) -> feedback -> memory
 
-    Self-improvement (cross-cutting — fires from ANY skill at completion, not a tail):
+    Cross-cutting, firing from ANY skill at completion:
         friction -> feedback  (apply config/skill edits)
-        durable fact/decision -> memory  (curate into the repo knowledge base)
+        durable fact/decision -> memory
 
-**Transition table** (lookup; the prose above is the why):
+**Transition table** (lookup; prose above is the why):
 
 | From | Trigger | To |
 |---|---|---|
 | entry (idea / audit / critic / feature) | findings to act on | `plan` |
 | `plan` | contract approved | `worker` |
 | `worker` | plan-gap (contract incomplete) | `plan` |
-| `worker` | design fork (contract wrong at a deeper layer) | `idea` |
-| `worker` | plan unit ticked (Code/Tests) | `audit` (and `critic` when Surface:yes), invoked mechanically |
+| `worker` | design fork (contract wrong deeper down) | `idea` |
+| `worker` | plan unit ticked (Code/Tests) | `audit` (and `critic` when Surface:yes), mechanically |
 | `worker` | in-contract audit finding | redo pass (self, one) |
 | `worker` | worktree run delivered for merge (user-invoked) | `merge` |
 | any skill | friction that should change always-on text | `feedback` |
 | any skill | recallable verified fact/decision | `memory` |
 | any skill | clean run | nothing |
 
-**Handoff gate** — after any substantive work, scan both tracks and invoke the matching skill yourself; do not wait for the user. Worker completions fire the Completion pipeline (audit → redo → critic → feedback → memory) without offering; every other handoff invokes the target skill rather than offering it. Clean run → skip self-improvement; trivial change → skip everything.
+## Handoff gate
 
-- **Downstream** — next skill if work continues (entry → `plan`; `plan` → `worker`; `worker` → `plan` on a plan-gap or `idea` on a design fork). One sentence + justification, or "nothing downstream."
-- **Self-improvement** — friction from THIS run (rework, wrong assumption, rule/tool that didn't hold, user correction) → `feedback`; recallable verified fact/decision → `memory`. Each skill names its own friction signals.
+After any substantive work (skill used, files edited, commands run, decision made), scan both tracks and invoke the matching skill yourself — do not wait for the user. Root AGENTS.md §Response protocol carries the summary table; this section is the authoritative protocol.
 
-**Where the loop lands in this repo:** plan contracts are files under `plans/<package>/<category>/<topic>/`; a DoD gate is a §Scripts command (`bun coverage <pkg>` for packages, the plugin exception for plugins — §Testing); evidence notes cite file + symbol anchors, never line numbers; a Break-severity finding needs an empirical repro (§Skills).
+- **Downstream** — the next skill if work continues (entry → `plan`; `plan` → `worker`; `worker` → `plan` on a gap, `idea` on a fork). One sentence + justification, or "nothing downstream."
+- **Self-improvement** — evaluate the `feedback` trigger table (that skill's Step 1): any trigger fired → `feedback`. A recallable verified fact/decision → `memory`.
 
-## Memory (self-improving)
+Worker completions fire the completion pipeline (audit → redo → critic → feedback → memory) without offering; every other handoff invokes the target skill rather than offering it. Clean run → skip self-improvement; trivial change → skip everything. Mandatory — silently skipping the gate equals skipping a verification step.
 
-`memory/` records verified decisions and confirmed facts so prior learning is recallable instead of re-derived. `entries/*.md` canonical; `index.md` derived — regenerated by `bun .agents/skills/memory/memory.ts rebuild`, never hand-edited; `archive/` holds retired concepts.
+**Where the loop lands here:** plan contracts are files under `plans/<package>/<category>/<topic>/`; a DoD gate is a §Scripts command (`bun coverage <pkg>`; plugin exception — `guides/tests.md` §Triage & Gate Semantics); evidence cites file + symbol anchors, never line numbers; a Break-severity finding needs an empirical repro (§Skills).
 
-- **Read the KB first on every task.** Before opening any source/test/doc for a target, grep `memory/index.md` for the target's module name and exposed symbols, with `fd <keyword> memory/entries` as the zero-cost filename pre-pass (slugs make entry filenames keyword-greppable); read every matched concept before acting. Run `bun .agents/skills/memory/memory.ts stale` and re-verify anything listed before trusting it.
-- **Write on a memory event:** retry after failure, non-obvious fact confirmed from source/docs, justified deviation from a stated rule, or user correction → hand to `memory`, which applies the write gate (verified + load-bearing + non-duplicate). Boundary vs `feedback`: feedback changes a rule (always-on text); memory records a recallable decision/fact that does not change a rule.
+## Memory
+
+`memory/` records verified decisions and confirmed facts so prior learning is recallable instead of re-derived. `entries/*.md` canonical; `index.md` derived — regenerated by `bun .agents/skills/memory/memory.ts rebuild`, never hand-edited; `archive/` retired.
+
+- **Read the KB first on every task.** Before opening any target source/test/doc: `fd <keyword> memory/entries` (slug filenames are keyword-greppable), then grep `memory/index.md` for the target's module names and exposed symbols; read every matched concept before acting. Run `memory.ts stale`; re-verify anything listed before trusting it.
+- **Write on a memory event** — the `memory` skill's Step 1 list. Boundary vs `feedback`: feedback changes a rule (always-on text); memory records a recallable fact/decision that changes no rule.

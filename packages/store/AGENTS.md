@@ -114,7 +114,7 @@ Passing an existing store as a value inside another store's initial object: the 
 
 ## Testing
 
-Tests live in `tests/` (15 files: `data`, `equals`, `functions`, `future`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `subscribe`, `persist`, `persist-adaptors`) and import `store`/`persistStore`/adaptors from `@hellajs/store/bundle`. Reactive primitives (`signal`/`effect`/`computed`/`batch`/`flush`) import from `@hellajs/core`. Test helpers import from `@utils/test-helpers.js`. See `guides/tests.md` for the full rules.
+Tests live in `tests/` (15 files: `data`, `equals`, `functions`, `future`, `update`, `snapshot`, `nested`, `cleanup`, `readonly`, `middleware`, `draft`, `reserved`, `subscribe`, `persist`, `persist-adaptors`) and import `store`/`persistStore`/adaptors from `@hellajs/store/bundle`. Generic conventions live in `guides/tests.md`.
 
 - Cover each `update` path (partial, draft, middleware) independently.
 - Snapshot reactivity tested flat and deeply nested.

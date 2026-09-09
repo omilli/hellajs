@@ -2,33 +2,31 @@
 
 ## Core Philosophy
 
-Tests are documentation. A reader should understand every behavior from tests alone. DRY above all — every repeated setup, assertion, or helper across files is a violation.
+Tests are documentation — a reader understands every behavior from tests alone. DRY above all: every repeated setup, assertion, or helper across files is a violation.
 
 ## Decision Precedence
 
-1. **DRY** — shared helpers are mandatory. Two tests with the same setup means extract.
-2. **Readability** — clear beats clever. Names describe behavior, not implementation.
+1. **DRY** — shared helpers mandatory; two tests with the same setup → extract.
+2. **Readability** — clear beats clever; names describe behavior, not implementation.
 3. **Coverage** — every public API path: happy, error, edge.
 4. **Brevity** — short, never at DRY or clarity's expense.
 
 ## Scenario → test() derivation
 
-When deriving tests from a plan's Behavioral scenarios (plan skill Phase 2), each scenario line becomes exactly one `test()`. This rule consolidates §Test Structure and §Naming so you do not synthesize across sections per scenario:
+Each of a plan's Behavioral scenarios becomes exactly one `test()`. This rule consolidates §Test Structure and §Naming so you do not synthesize across sections per scenario:
 
-- One scenario line → one `test()`. Never two behaviors in one test (exception: sequential lifecycle tests — see §Test Structure).
-- Name in present tense, describing the asserted behavior. No "should", no "test N", no "works correctly".
+- One scenario line → one `test()`. Never two behaviors in one test (exception: sequential lifecycle tests, §Test Structure).
+- Present-tense name describing the asserted behavior. No "should", no "test N", no "works correctly".
 - Setup → action → assertion flows naturally (no AAA pattern).
 
 Worked example:
 
-- Scenario: `invalidates: ["user:"] + mutation success → invalidateByPrefix called with "user:"`
-- `test("calls invalidateByPrefix on mutation success", () => { ... })`
-- Scenario: `mutation aborts → no invalidation calls`
-- `test("does not invalidate on mutation abort", () => { ... })`
+- Scenario: `invalidates: ["user:"] + mutation success → invalidateByPrefix called with "user:"` → `test("calls invalidateByPrefix on mutation success", ...)`
+- Scenario: `mutation aborts → no invalidation calls` → `test("does not invalidate on mutation abort", ...)`
 
 ## File-naming for tests
 
-`{surface}.test.ts` — named after the specific API surface or behavior area, never a categorical prefix. When the surface is ambiguous, use the table:
+`{surface}.test.ts` — named after the specific API surface or behavior area, never a categorical prefix:
 
 | Change | File name | Reason |
 |---|---|---|
@@ -41,23 +39,19 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 
 ## Anti-Patterns
 
-- Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`. Import `onError` from `@hellajs/dom/bundle`. Import test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) from `@utils/test-helpers.js`. Never import a symbol whose module isn't listed — if you need a reactive primitive you didn't import, add it to the existing `@hellajs/core` import rather than creating a duplicate.
-- Never use `jest.fn()` / `jest.spyOn()` / `vi.fn()` — use `mock()` from `bun:test`.
-- Never use `any` — `unknown` only.
-- Never use `it()` or `test.skip()` — always `test()`.
-- Never test two behaviors in one test (exception: sequential lifecycle tests — see Test Structure).
-- Never use AAA pattern — tests flow naturally.
-- Never leave placeholder tests.
-- Never mock reactive primitives — use real ones.
+- Import reactive primitives (`signal`, `effect`, `computed`, `batch`, `untracked`, `flush`, `scope`) from `@hellajs/core`; `onError` from `@hellajs/dom/bundle`; test helpers (`delay`, `suppressConsole`, `setupContainer`, `resetTestState`) from `@utils/test-helpers.js`. Never import a symbol whose module isn't listed — a needed primitive joins the existing `@hellajs/core` import, never a duplicate.
+- Never `jest.fn()` / `jest.spyOn()` / `vi.fn()` — `mock()` from `bun:test`.
+- Never `any` — `unknown` only. Never `it()` or `test.skip()` — always `test()`.
+- Never two behaviors in one test (exception: sequential lifecycle tests, §Test Structure). Never AAA pattern. Never placeholder tests. Never mock reactive primitives — use real ones.
 - Never repeat a helper across files — extract.
-- Never `await flush()` — synchronous, returns `void`. Use bare `flush()`.
-- Never use the double-delay (`await delay(); await delay()`). Use `await delay(0)` (macrotask) instead.
-- Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — use `mock()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. The only exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — use `mock()`.
+- Never `await flush()` — synchronous, returns `void`; bare `flush()`.
+- Never the double-delay (`await delay(); await delay()`) — `await delay(0)` (macrotask) instead.
+- Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — `mock()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. Sole exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — `mock()`.
 - Never assert generated output (CSS text, HTML strings, serialized forms) by substring alone when the artifact's **structure** is the contract — `toContain` passes inside structurally invalid output (`@font-face{{font-family:…}}` satisfied substring asserts while browsers parsed it to an empty rule). Every generated shape gets at least one exact-form `toBe` assert.
 
 ### Replace pattern
 
-Wrap the side effect in `mock()` — it tracks the call and runs the effect in one step:
+Wrap the side effect in `mock()` — tracks the call and runs the effect in one step:
 
 ```typescript
 // Before
@@ -75,7 +69,7 @@ expect(callback).toHaveBeenCalledTimes(1);
 ## Test Framework
 
 - `bun:test` only. Double quotes, semicolons always.
-- Import order: `bun:test` → `@hellajs/core` (reactive primitives, if needed) → `@utils/test-helpers.js` → package under test (`@hellajs/dom/bundle`) → `import type` (bare path, last) → local helpers (e.g. `./helpers`), if present.
+- Import order: `bun:test` → `@hellajs/core` (reactive primitives, if needed) → `@utils/test-helpers.js` → package under test (`@hellajs/dom/bundle`) → `import type` (bare path, last) → local helpers (`./helpers`), if present.
 - Separate `import type` statement — never inline.
 
 ```typescript
@@ -86,18 +80,19 @@ import { mount, html, onError } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { fallbackHandler } from "./helpers";
 ```
+
 - The §Verification Checklist must reflect the conventions in this section — keep both in sync.
 
 ## Files
 
-- `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `bun coverage`. **Never run `bun test` directly — always use `bun coverage <package>`.**
-- File names identify the **specific** API surface or behavior area under test (e.g. `scroll`, `active`, `crumbs`, `hash-mode`, `navigate-options`). Categorical prefixes like `features-` add no information — every test file covers a feature. A file named with only a category, or with no surface at all, is a signal that it mixes concerns and should be split.
+- `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `bun coverage`. **Never run `bun test` directly — always `bun coverage <package>`** (§Triage & Gate Semantics).
+- Names identify the **specific** API surface or behavior area (`scroll`, `active`, `crumbs`, `hash-mode`, `navigate-options`); categorical prefixes add no information. Category-only or surface-less naming signals mixed concerns — split.
 - Group by feature area, not internal module.
-- 100–300 lines target. Soft cap 400 (trim duplication or split on a sub-feature seam). Minimum 2 tests per file.
+- 100–300 lines target; soft cap 400 (trim duplication or split on a sub-feature seam); minimum 2 tests per file.
 
 ## Test Structure
 
-Max depth: two `describe` levels — outer (feature/package) + inner (sub-area). At most **one** inner `describe` per file — a second sibling inner `describe` must move to its own file. The file name is the grouping mechanism; co-locating sibling inner describes hides how many concerns a single file covers and lets files grow past the soft cap before a split is due. Deeper nesting disallowed.
+Max depth: two `describe` levels — outer (feature/package) + inner (sub-area). At most **one** inner `describe` per file — a second sibling inner `describe` moves to its own file. The file name is the grouping mechanism; co-locating sibling inner describes hides how many concerns a file covers and lets it grow past the soft cap before a split is due.
 
 ```typescript
 describe("feature", () => {
@@ -120,7 +115,7 @@ Present tense, no "should", one behavior per test, name reflects what is asserte
 
 ### Sequential Lifecycle Tests
 
-A single scenario verified through sequential steps (render → update → reorder) is one test — each step depends on the prior step's DOM state. Independent behaviors must be separate tests.
+A single scenario verified through sequential steps (render → update → reorder) is one test — each step depends on the prior step's DOM state. Independent behaviors are separate tests.
 
 ## Shared State and Cleanup
 
@@ -136,17 +131,15 @@ beforeEach(() => {
 });
 ```
 
-Skip it for files with zero shared mutable state (pure logic, no DOM/cache/error handlers).
+Skip it for files with zero shared mutable state (pure logic, no DOM/cache/error handlers). A test creating its own `signal`/`store`/`effect` inside the body does **not** touch shared state — subscriptions are local. Reset is required only when a test reads/writes module-level reactive singletons (internal state maps, global error handlers, DOM observer registries). For packages whose only shared state is module-level signals the public API reinitializes on each call (`router(config)` overwriting routes/hooks/redirects), per-test invocation satisfies the requirement; a signal that persists across such a call (LRU cache, observer registry, connection pool) needs an explicit reset path.
 
-A test that creates its own `signal`/`store`/`effect` inside the body does **not** touch shared state — its subscriptions are local. Reset is required only when a test reads/writes module-level reactive singletons (internal state maps, global error handlers, DOM observer registries). For packages whose only shared state is module-level signals that the public API reinitializes on each call (e.g. `router(config)` overwriting routes/hooks/redirects), per-test invocation satisfies the requirement. If a signal can persist across such a call (LRU cache, observer registry, connection pool), it needs an explicit reset path.
-
-`resetTestState(html?)` may be called mid-test when a sequential lifecycle test needs a fresh DOM between sub-scenarios (e.g. multiple Portal insert types) — preferable to splitting tests when sub-scenarios share conceptual context.
+`resetTestState(html?)` may be called mid-test when a sequential lifecycle test needs a fresh DOM between sub-scenarios (multiple Portal insert types) — preferable to splitting tests when sub-scenarios share conceptual context.
 
 Fresh containers per test? Create in `beforeEach` after `resetTestState()`, remove in `afterEach`.
 
 ### `afterEach`
 
-Use only when `resetTestState()` doesn't cover all shared mutable state. `resetTestState()` clears DOM body, CSS styles, DOM package state (queues, mount/cleanup scheduling, MutationObserver registrations, selector registry, event listeners, delegated handler counts), error handlers. `afterEach` is for state **not** in that list.
+Only when `resetTestState()` doesn't cover all shared mutable state. `resetTestState()` clears DOM body, CSS styles, DOM package state (queues, mount/cleanup scheduling, MutationObserver registrations, selector registry, event listeners, delegated handler counts), error handlers. `afterEach` is for state **not** in that list:
 
 ```typescript
 afterEach(() => {
@@ -154,43 +147,42 @@ afterEach(() => {
 });
 ```
 
-Prefer extending `resetTestState()` over adding `afterEach` to individual files. Use `afterEach` only for cleanup specific to a subset of tests.
+Prefer extending `resetTestState()` over per-file `afterEach`; use `afterEach` only for cleanup specific to a subset of tests.
 
 ### Patched browser globals
 
-Any test that reassigns a global (`window.scrollTo = ...`, `global.window = {...}`, `console.error = ...`) must capture the original in `beforeEach` and restore in `afterEach`, or wrap the body in `try { ... } finally { restore(); }`. A trailing restoration assignment is unacceptable — a failing assertion before it leaks the mock into later files.
+Any test reassigning a global (`window.scrollTo = ...`, `global.window = {...}`, `console.error = ...`) captures the original in `beforeEach` and restores in `afterEach`, or wraps the body in `try { ... } finally { restore(); }`. A trailing restoration assignment is unacceptable — a failing assertion before it leaks the mock into later files.
 
 ### Async Tests
 
-- Mark `async` only when it `await`s.
-- Structure: **act → await → assert**.
-- Use `delay()` (no args) to drain one microtask hop — equivalent to `await Promise.resolve()`. This is sufficient when exactly one microtask-bound continuation needs to settle (e.g. `signal.set(x)` → one effect callback). It is **NOT** sufficient for multi-hop chains (see below).
-- Use `await delay(0)` (setTimeout 0) to cross a macrotask boundary — drains the entire pending microtask queue. Use when a multi-hop promise chain (`.then().catch()`), an async generator yield (the generator resumes on a separate microtask from each `yield`), or GC setup needs a full queue flush. This is the sanctioned alternative to the banned double-`delay()`.
-- Use `await delay(N)` for a real-time wait of N ms (e.g. transition leave timer: `await delay(160); // duration(100) + safety buffer(50) + frame slack`).
-- Use `await delay(val, ms)` to resolve a value after ms (mocking async APIs).
-- Use a polling loop with `await delay(10)` for conditions where timing isn't contractually fixed: `for (let i = 0; i < 100; i++) { if (condition) break; await delay(10); }` — but see the observer-cleanup rule below before polling on DOM removals.
-- **Observer-driven cleanup waits (element `remove()` → MutationObserver → effect disposal): poll with microtask hops + a mirror assert — never macrotask waits between staged removals.** `for (let __i = 0; __i < 50; __i++) { if (peekState(el) === undefined) break; await delay(); }` then `expect(peekState(el)).toBeUndefined();`. HappyDOM holds the observer's report closure only via `WeakRef` — any macrotask idle BEFORE a removal lets GC kill it, and the next removal is then NEVER reported (not late: never), so cleanup silently never runs. Microtask hops never idle the loop, and delivery + cleanup are microtask-scheduled, so the loop settles within a few hops. Poll the state-carrying element (the component root) — `peekState` of a removed static wrapper is vacuously `undefined` at iteration 0.
-- Never double-delay — use `delay(0)` instead of `await delay(); await delay()`.
+- Mark `async` only when it `await`s. Structure: **act → await → assert**.
+- `delay()` (no args) drains one microtask hop (`= await Promise.resolve()`) — sufficient when exactly one microtask-bound continuation must settle (`signal.set(x)` → one effect callback). **NOT** sufficient for multi-hop chains.
+- `await delay(0)` (setTimeout 0) crosses a macrotask boundary, draining the entire pending microtask queue — use for multi-hop promise chains (`.then().catch()`), async generator yields (each `yield` resumes on a separate microtask), or GC setup needing a full flush. The sanctioned alternative to the banned double-`delay()`.
+- `await delay(N)` — a real-time wait of N ms (transition leave timer: `await delay(160); // duration(100) + safety buffer(50) + frame slack`).
+- `await delay(val, ms)` — resolve a value after ms (mocking async APIs).
+- Polling loop `await delay(10)` for conditions with no contractually fixed timing: `for (let i = 0; i < 100; i++) { if (condition) break; await delay(10); }` — but see the observer-cleanup rule before polling on DOM removals.
+- **Observer-driven cleanup waits (element `remove()` → MutationObserver → effect disposal): poll with microtask hops + a mirror assert — never macrotask waits between staged removals.** `for (let __i = 0; __i < 50; __i++) { if (peekState(el) === undefined) break; await delay(); }` then `expect(peekState(el)).toBeUndefined();`. HappyDOM holds the observer's report closure only via `WeakRef` — a macrotask idle before a removal lets GC kill it, and the next removal is then NEVER reported (not late: never), so cleanup silently never runs. Microtask hops never idle the loop; delivery + cleanup are microtask-scheduled, so the loop settles within a few hops. Poll the state-carrying element (the component root) — `peekState` of a removed static wrapper is vacuously `undefined` at iteration 0.
 
 ### Package-Exported Testing Utilities
 
-Imported from `@hellajs/dom/bundle`. Use for deterministic lifecycle timing:
+Imported from `@hellajs/dom/bundle` (re-exports of `internal/` state accessors — fair game per §Test Coverage). Prefer over waiting for the scoped MutationObserver:
 
 | Utility | Purpose |
 |---------|---------|
-
-Prefer over waiting for the scoped MutationObserver.
+| `peekState(el)` | Read an element's ElementState without tracking — the observer-cleanup poll primitive |
+| `getState` / `hasState` / `deleteState` | State assertions and explicit state teardown |
+| `resetDom` | Full DOM-package state reset (what `resetTestState` builds on) |
+| `checkMultiSelectors` / `multiSelectors` | Multi-selector registry inspection |
 
 ## Mock Patterns
 
-- `mock(() => {})` for call tracking; `mock(() => value)` for return values.
-- `mockClear()` between assertion phases.
-- Pure call-tracking uses `mock()`. Signal reads/value returns don't qualify for the side-effect counter exception (see Anti-Patterns).
+- `mock(() => {})` for call tracking; `mock(() => value)` for return values. `mockClear()` between assertion phases.
+- Pure call-tracking uses `mock()`; signal reads/value returns never qualify for the side-effect counter exception (§Anti-Patterns).
 - Global mocking: save in `beforeEach`, restore in `afterEach`, cast `as unknown as typeof X`.
 - DOM API mocking: `Object.defineProperty` for readonly props; save/restore for prototype patching.
-- Spy typing: type a spy's recorded call signature with `mock`'s explicit generic (`mock<(type: string, opts?: unknown) => void>(() => {})`), never named-but-unused `_` params on the implementation — the eslint config carries no `argsIgnorePattern`, so they fail the gate.
+- Spy typing: type the recorded call signature with `mock`'s explicit generic (`mock<(type: string, opts?: unknown) => void>(() => {})`), never named-but-unused `_` params — eslint carries no `argsIgnorePattern`; they fail the gate.
 - Time mocking (`Date.now`, `performance.now`): declare the mock-time closure at describe scope, override in `beforeEach`, restore in `afterEach`. Tests advance the closure; they never own the save/restore pair, so a failing assertion can't leak a frozen clock.
-- Error handler setup: extract the common `onError` pattern into a shared helper (e.g. `fallbackHandler(defaultNode)`) in `tests/helpers.ts`. Call the helper at the top of each test instead of repeating the full lambda.
+- Error handler setup: extract the common `onError` pattern into a shared helper (`fallbackHandler(defaultNode)`) in `tests/helpers.ts`; call it at the top of each test instead of repeating the lambda.
 
 ## Assertion Patterns
 
@@ -208,7 +200,7 @@ Prefer over waiting for the scoped MutationObserver.
 
 ## DOM Element Access
 
-Query `document` directly via `getElementById`. Use `setupContainer()` only when a test needs an isolated root.
+Query `document` directly via `getElementById`; `setupContainer()` only when a test needs an isolated root.
 
 ```typescript
 const el = document.getElementById("test")!;
@@ -231,25 +223,34 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 ## Comments
 
 - No comments on obvious logic — names explain intent.
-- Section comments to group assertions in long tests.
-- ASCII dependency graphs for topology/complex reactive tests.
-- Inline comments for non-obvious setup or ordering.
+- Section comments to group assertions in long tests; ASCII dependency graphs for topology/complex reactive tests; inline comments for non-obvious setup or ordering.
 - Comments explain **why**, not **what**.
 
 ## Code Style
 
 - Semicolons always; arrow functions for inline helpers.
-- `unknown` only — never `any`.
-- No AAA pattern — interleave setup, action, assertion.
+- `unknown` only — never `any`. No AAA pattern — interleave setup, action, assertion.
 - `test.each()` for parameterized tests; `@ts-expect-error` for intentionally invalid inputs.
 
 ## Test Coverage
 
 - 100% of public API. Real-world integration patterns, not internals. Error and edge cases alongside happy paths. Each behavior tested exactly once in the most relevant file.
-- **Barrel rule**: when `index.ts` re-exports a utility (type guard, predicate, env-probe, iterator helper), the authoring package **must** cover it — even if consumers also exercise it. The barrel defines the public surface; coverage follows the barrel. Consumer coverage doesn't protect the author from silent contract drift (e.g. a predicate whose name suggests general semantics but whose implementation is narrow).
-- **Compile-shape rule**: when testing component-child handling (`Suspense`/`Lazy`/`ForEach`/`Portal`/`Transition`, or anything reading `props.children`), cover BOTH compile shapes — the `html` tagged template (single child) AND JSX (`component(Comp, { children: [child] })`, an **array**). babel compiles JSX component children to an array while the `html` template passes a single child; a fix that passes for one shape can stringify or drop the other. Concrete miss: a `<Suspense>` fix that handled a bare function child passed every `html`-template test but still rendered `[object Promise]` for JSX `<Suspense>{() => …}</Suspense>` — the array wasn't unwrapped before evaluation.
-- Never import non-public APIs. Functions/types not exported from `index.ts` are internal. Exports from `index.ts` (including testing utilities from `internal/` modules) are fair game.
-- **Carveout — `plugins/**` build plugins**: Plugin internals (`src/**/*.mjs`) may be imported directly in unit tests when (a) the helpers are pure functions whose edge cases are impractical to reach through the plugin's public transform surface (single default export or visitor), and (b) there is no `index.ts` barrel to re-export them from. This exemption is narrow: runtime packages under `packages/` must keep the strict barrel-exclusive rule; `plugins/**` is the only scope where the practical benefit of isolated parser/util tests outweighs the internal-import cost.
+- **Barrel rule**: when `index.ts` re-exports a utility (type guard, predicate, env-probe, iterator helper), the authoring package **must** cover it — even if consumers also exercise it. The barrel defines the public surface; coverage follows the barrel. Consumer coverage doesn't protect the author from silent contract drift (a predicate whose name suggests general semantics but whose implementation is narrow).
+- **Compile-shape rule**: when testing component-child handling (`Suspense`/`Lazy`/`ForEach`/`Portal`/`Transition`, or anything reading `props.children`), cover BOTH compile shapes — the `html` tagged template (single child) AND JSX (`component(Comp, { children: [child] })`, an **array**). babel compiles JSX component children to an array while the `html` template passes a single child; a fix that passes for one shape can stringify or drop the other. Concrete miss: a `<Suspense>` fix that handled a bare function child passed every `html`-template test but still rendered `[object Promise]` for JSX — the array wasn't unwrapped before evaluation.
+- Never import non-public APIs: functions/types not exported from `index.ts` are internal; exports from `index.ts` (including testing utilities from `internal/` modules) are fair game.
+- **Carveout — `plugins/**`**: plugin internals (`src/**/*.mjs`) may be imported directly in unit tests when (a) the helpers are pure functions whose edge cases are impractical to reach through the public transform surface (single default export or visitor), and (b) no `index.ts` barrel exists to re-export them. Narrow: runtime packages keep the strict barrel-exclusive rule; `plugins/**` is the only scope where isolated parser/util tests outweigh the internal-import cost.
+
+## Triage & Gate Semantics
+
+How test gates are run and triaged. `bun coverage` (§Scripts) is the single verification gate; these rules govern its scoped form and failure handling.
+
+- **No bare `bun test` for verification.** Tests import from `dist/` bundles; `bun test` never rebuilds them and silently tests stale code. Mid-flight iteration uses the triage form: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.ts]` (explicit rebuild + scoped tests). The green baseline and final gate are always `bun coverage <package>`.
+- **Scoped-run scoping.** `bun coverage <package>` scopes tests + eslint to the target package; its `tsc` and guard stages stay repo-wide. A scoped run failing on a file OUTSIDE the target is foreign, not yours: confirm your package clean (`bunx eslint packages/<pkg>`), report the foreign failure, move on — CI's unscoped `bun coverage` owns the full-repo gate.
+- **Bundle-stage foreign block.** `bundle.ts --quiet` builds ALL packages before scoped tests run, so a foreign bundle failure blocks the target's own tests. Verify via `bun bundle <package>` (explicit rebuild — honors no-stale-dist) followed by the scoped test command coverage runs internally (`bun test packages/<package>/tests --coverage`); report the foreign failure.
+- **Gate-failure attribution.** A check failing on files outside your diff → `git status -sb` first; verify the files carry no edits of yours (concurrent user changes) before debugging your own work. Re-run the gate after the foreign change settles.
+- **Plugin exception.** `bun coverage <plugin>` fails — `isValidPackage` resolves under `packages/` only. For plugins, use `bun test plugins/<p>/tests` + `bun lint`. Plugin tests import source, not `dist/` — except `plugins/babel/tests/parity.test.ts`, whose runtime side imports the `@hellajs/dom` dist bundle: `bun bundle dom --quiet` first when dom's template parsing changes.
+- **Coverage blind spots.** `bun coverage` runs tsc + eslint + tests but enforces NEITHER the guides' structural rules (`guides/code.md`: thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `for…of`/`for…in`, `@internal` visibility) NOR this guide's anti-patterns (§Anti-Patterns) — no lint counterpart exists. A new file, file structure, or shared test helper → run `audit` against the matching guide as part of verification.
+- **Measurement target.** Coverage instruments built bundles (`dist/`), not `lib/` — `lib/` is truth, the bundle is the measurement. A reading is point-in-time: re-run `bun coverage` immediately before reporting coverage findings.
 
 ## Verification Checklist
 
@@ -291,3 +292,9 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] No test imports a symbol not exported from `lib/index.ts`
 - [ ] `bun coverage` shows 100% on the relevant source lines; overall not lower than baseline
 - [ ] Component-child handling covered in BOTH compile shapes — `html` template (single child) and JSX (`children: [child]` array)
+
+**Gate usage (§Triage & Gate Semantics)**
+- [ ] No bare `bun test` used for verification — mid-flight iteration used the triage form; final gate was `bun coverage <package>`
+- [ ] Foreign failure triaged per protocol (own package verified clean, failure reported), not debugged as own work
+- [ ] Plugins verified via the plugin exception path, not `bun coverage`
+- [ ] New file/structure/helper → `audit` run against the matching guide (coverage's blind spots)

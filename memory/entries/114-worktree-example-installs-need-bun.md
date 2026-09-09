@@ -3,8 +3,8 @@ type: decision
 title: Worktree example installs need bun bundle first and a root bun.lock restore after
 description: Fresh worktrees need bun bundle before example builds (dist/ absent); bun install inside examples/ rewrites the root bun.lock, so restore it from the recorded baseline after.
 tags: [tooling, worktrees]
-timestamp: 2026-02-06
-last_confirmed: 2026-02-06
+timestamp: 2026-09-09
+last_confirmed: 2026-09-09
 triggers: [worktree-example, astro-build, root-bun-lock]
 ---
 

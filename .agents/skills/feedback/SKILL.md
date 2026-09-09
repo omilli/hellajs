@@ -6,52 +6,49 @@ description: >
 
 # Feedback
 
-The self-improvement loop: AGENTS.md, `guides/`, and `.agents/skills/` govern the work; feedback governs them. Conservative by design, like `audit` — "a clean run is a good run." Propose only when a specific moment in the run shows the config underperformed. Compound value is high (fixing a rule once improves every future run), but the bar is cited evidence from THIS run, not imagination. Governed by prime.
+The self-improvement loop: AGENTS.md, `guides/`, and `.agents/skills/` govern the work; feedback governs them. Conservative by design — a clean run is a good run. Compound value is high (one rule fix improves every future run), but the bar is cited evidence from THIS run, never imagination. Governed by prime.
 
-## Step 1 — Identify the friction
+## Step 1 — Evaluate the trigger table (mechanical, not judgment)
 
-Review the run: tool calls, outputs, errors, rework, user corrections, wrong assumptions. Look for:
+Feedback fires iff ANY row held this run:
 
-- **Rule or tool that didn't hold** — prescribed CLI not installed; command failed; check missed a real problem caught later (e.g. a guard passing on a structural rule it cannot see, §Testing).
-- **Unverified assumption** — carried from memory but contradicted by environment/source.
-- **Redundancy** — line duplicating the always-loaded context or another file.
-- **Rework/ambiguity** — output re-derived, guessed, or corrected.
-- **User correction** — user pointed out something missed/wrong.
+| # | Trigger | Read as |
+|---|---|---|
+| 1 | A check, gate, or command failed ≥2 attempts | A rule or tool didn't hold — the prescription was wrong for reality |
+| 2 | A stated rule, guide, or skill text conflicted with observed source/behavior | Config drift or a wrong rule |
+| 3 | The user corrected or redirected mid-run | The config steered wrong |
+| 4 | A tool behaved contrary to its documented contract | Doc rot in the config |
+| 5 | Output was re-derived, redone, or guessed-then-corrected | An instruction was missing/vague |
+| 6 | Redundancy found: a line duplicating always-loaded context or another file | Context tax |
 
-**Scan both scopes before closing.** Sort every finding by scope — project (this repo) or global (generalizes across all your projects) — because a recallable finding routes to the repo KB or your global store, and a rule-change routes to repo or global config. The first finding noticed anchors attention; re-scan the scope you didn't surface.
+Zero rows → "clean run, no proposals", stop. Do not rationalize a row into existence; do not wave one away — evaluate the table literally.
 
-No friction → "clean run, no proposals", stop.
+**Scan both scopes before closing** — project (this repo) vs global (generalizes across projects). The first finding noticed anchors attention; re-scan the other scope.
 
 ## Step 2 — Propose, conservatively
 
-One proposal per friction point:
+One proposal per fired trigger:
 
 > **Target**: `AGENTS.md §[section]` | `guides/[file].md §[section]` | `.agents/skills/[skill]/SKILL.md §[step]`
-> **Evidence**: [the specific moment in this run]
-> **Gap**: [what the config didn't cover or got wrong]
-> **Proposal**: [the specific edit, with reasoning]
+> **Evidence**: the specific moment in this run (the trigger row + what happened)
+> **Gap**: what the config didn't cover or got wrong
+> **Proposal**: the specific edit, with reasoning
 
-No bundling unrelated issues; no hypothetical improvements without run evidence. A proposal touching a guide syncs the checklist item that audits the rule in the same pass — `audit` ticks the checklist, not the prose (§Style guides).
+No bundling unrelated issues; no hypothetical improvements without run evidence. A proposal touching a guide syncs the checklist item that audits the rule in the same pass — `audit` ticks the checklist, not the prose.
 
 ## Step 3 — Route each proposal
 
-Two axes:
-
 **Kind:**
-- **Config/skill gap** — instruction missing/vague/wrong → propose an edit to root `AGENTS.md`, `guides/`, or a skill under `.agents/skills/` (skills are first-party — §Skills).
-- **Rule gap** — a *project* rule conflicted with the work → emit a rule-update proposal for that rule (guide, guard, or AGENTS.md), not a config edit.
-- **Recallable fact/decision** — verified this run, worth recalling on demand but not a rule change → hand to `memory`.
+- **Config/skill gap** (instruction missing/vague/wrong) → edit root `AGENTS.md`, `guides/`, or `.agents/skills/` (first-party files).
+- **Project rule conflicted with the work** → rule-update proposal for that rule (guide, guard, or AGENTS.md), not a config edit.
+- **Recallable fact/decision, not a rule** → hand to `memory`.
 
-**Scope (for config/skill gaps):**
-- **Project** — specific to this repo → root `AGENTS.md`, `guides/`, or `.agents/skills/`.
-- **Global** — generalizes across all your projects → the user's own global agent config, outside this repo.
-
-Test: *would this fix apply in any project, or only this one?* Don't bury a universal lesson in one project; don't pollute a project's config with generic rules.
+**Scope:** project → this repo's config; global → the user's global agent config (outside this repo). Test: *would this fix apply in any project?* Don't bury a universal lesson in one project; don't pollute project config with generic rules.
 
 ## Step 4 — Apply, uncommitted
 
-Feedback applies each proposal immediately — no approval round-trip. `author` applies AGENTS.md/guides edits (voice + cross-reference sync in the same pass); `skill` applies SKILL.md anatomy edits. Report each applied edit: file + section + evidence + reasoning. The edit lands **uncommitted** — the never-commit rule is the checkpoint: main-tree edits are reviewed as `git diff` before the user commits; worktree edits ride the merge review. Rejection = revert the diff. A proposal rejected on the merits → dropped; don't re-propose unless new evidence recurs.
+Apply immediately — no approval round-trip. `author` applies AGENTS.md/guides edits (voice + cross-reference sync same-pass); `skill` applies SKILL.md anatomy edits. Report each edit: file + section + evidence + reasoning. Everything lands **uncommitted** — the never-commit rule is the checkpoint: reviewed as `git diff`, rejected by reverting. A merits rejection is dropped; re-propose only on new evidence.
 
 ## Self-check
 
-Every proposal cites a specific moment in THIS run (no hypothetical); both scopes scanned, not anchored on the first finding; clean run → said so and proposed nothing; each applied via `author`/`skill`, uncommitted, evidence cited.
+Trigger table evaluated literally (each row checked, not vibes); both scopes scanned; every proposal cites its trigger row + the specific moment; clean run → said so; applied via `author`/`skill`, uncommitted.
