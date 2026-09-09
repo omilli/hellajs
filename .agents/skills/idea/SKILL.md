@@ -12,7 +12,7 @@ Grill the user until the plan is concrete enough to build without surprise. Not 
 
 1. **Find the crux first.** Most of a plan is noise. Name the 1–3 decisions that determine success/failure, and why they are the crux. Crux classes this repo produces: **ownership/layering** (where rule text lives — AGENTS.md vs skill vs guide; one home, cited elsewhere), **rename/merge ripple** (names are load-bearing: §Skills tables, sibling handoff gates, generated mirrors, docs — same-pass sync or it's an unfinished edit), **automation hazards** (hook/CI executing a chain that can clobber or drift — map who runs what before editing the chain).
 2. **Depth-first.** Resolve one branch before opening another. A dangling "figure it out later" on a load-bearing fork is failure — park only reversible/low-stakes items.
-3. **One question, or a tight batch — never a wall.** Every question load-bearing. Answerable by reading the codebase → read it, don't ask.
+3. **One question, or a tight batch — never a wall.** Every question load-bearing. Framed as end-user consequences — the code users write, what wakes up, what bites — never architecture vocabulary; the decider cannot choose what they cannot picture as behavior. Answerable by reading the codebase → read it, don't ask.
 4. **Steelman, then attack.** Strongest version before probing where it breaks. No strawmen, no sycophancy.
 5. **Make assumptions explicit.** Name them; flag the risky ones.
 6. **Weight by reversibility.** Push hardest on irreversible/foundational decisions (public API, package contracts, migrations, published docs). Let reversible choices slide toward action.
