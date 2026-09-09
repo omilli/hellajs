@@ -1,0 +1,28 @@
+---
+import Counter from '../components/Counter.tsx';
+import MouseTracker from '../components/MouseTracker.ts';
+import NameSync from '../components/NameSync.ts';
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Astro Islands</title>
+  </head>
+  <body>
+    <h1>Astro Islands</h1>
+
+    <!-- Island 1: server-rendered JSX, adopted in place by hydrate() -->
+    <Counter client:load initial={0} />
+
+    <!-- Island 2: client-only html template, rendered fresh on the client -->
+    <MouseTracker client:only="astro-hellajs" />
+
+    <!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->
+    <label for="name-input">Name</label>
+    <input id="name-input" value="World" />
+    <p id="greeting"></p>
+
+    <!-- Island 3: client-only $ref bindings into Astro's own HTML -->
+    <NameSync client:only="astro-hellajs" />
+  </body>
+</html>

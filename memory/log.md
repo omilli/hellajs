@@ -3,6 +3,8 @@
 ## 2026-09-09
 * **Creation**: Added concept [112](entries/112.md) (type: decision).
 * **Deprecation**: Archived [004](archive/004-defer-per-element-array-reactivity.md) → superseded by [112](entries/112.md).
+* **Creation**: Added concept [113](entries/113.md) (type: decision).
+* **Creation**: Added concept [114](entries/114.md) (type: decision).
 
 ## 2026-09-08
 * **Creation**: Added concept [099](entries/099.md) (type: decision).

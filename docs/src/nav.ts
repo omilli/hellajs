@@ -45,6 +45,7 @@ export const navigation = {
         "SSR-Islands",
         "SSR-Routing",
         "SSR-Streaming",
+        "Astro-Islands",
       ],
     }
   ],

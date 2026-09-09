@@ -1,0 +1,331 @@
+# Build an Astro Islands App
+
+Run HellaJS components as first-class islands in an [Astro](https://astro.build) project: one page, three islands, three integration modes. A server-rendered JSX counter hydrates in place, a client-only `html` template tracks the cursor, and a `$ref` island binds reactive state to HTML that Astro itself rendered.
+
+Jump to the [Complete Code](#complete-code) for the finished application.
+
+## What You'll Learn
+
+- **[Astro integration](/plugins/astro)**: Register the renderer and reach HellaJS components from `.astro` pages with `client:*` directives
+- **[`hydrate`](/reference/dom/hydrate)**: Adopt server-rendered HTML in place on the client
+- **[`html`](/reference/dom/html)**: Build client-only islands from tagged templates in plain `.ts` files
+- **[`$ref`](/reference/dom/$ref)**: Bind reactive state to DOM nodes Astro rendered outside any island
+
+We'll start with a server-rendered island, then add the two client-only modes step by step so you can see what each directive changes.
+
+## Project Setup
+
+### Installation
+
+Create a project folder and install Astro with the HellaJS integration.
+
+```bash
+mkdir astro-islands && cd astro-islands
+npm init -y
+npm install astro astro-plugin-hellajs @hellajs/core @hellajs/dom
+```
+
+### Configuration
+
+`astro.config.mjs` registers the integration. It wires the HellaJS Vite plugin (JSX and `html` templates compile to HellaNode objects) and adds a framework renderer named `astro-hellajs`.
+
+```js
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import hellajs from 'astro-plugin-hellajs';
+
+export default defineConfig({
+  integrations: [hellajs()],
+});
+```
+
+`tsconfig.json` opts into JSX and pulls in the HellaJS JSX types.
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"]
+  }
+}
+```
+
+`package.json` marks the project as an ES module and wires the Astro scripts.
+
+```json
+// package.json
+{
+  "name": "astro-islands",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "devDependencies": {
+    "astro": "^7.0.0"
+  }
+}
+```
+
+## Server-Rendered JSX Island
+
+The default mode: the component renders to HTML on the server and hydrates on the client. Create `src/pages/index.astro` importing a `Counter` component and mounting it with `client:load`:
+
+```astro
+// src/pages/index.astro
+---
+import Counter from '../components/Counter.tsx';
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Astro Islands</title>
+  </head>
+  <body>
+    <h1>Astro Islands</h1>
+
+    <!-- Island 1: server-rendered JSX, adopted in place by hydrate() -->
+    <Counter client:load initial={0} />
+  </body>
+</html>
+```
+
+Create `src/components/Counter.tsx`:
+
+```tsx
+// src/components/Counter.tsx
+import { signal } from "@hellajs/core";
+
+export default function Counter({ initial = 0 }: { initial?: number }) {
+  const count = signal(initial);
+  return <button on:click={() => count(count() + 1)}>{count()}</button>;
+}
+```
+
+**Code Explanation**
+
+- **[`signal`](/reference/core/signal)`(initial)`**: Holds the count. `initial` arrives as a prop from the `.astro` page
+- **`{count()}`**: The Babel transform wraps child expressions that call signals into reactive thunks, so the button label tracks `count` without manual wiring
+- **`on:click`**: The HellaJS event prefix. Handlers attach through global event delegation after hydration
+
+When Astro renders the page, the integration's server entry runs `Counter({ initial: 0 })` and stringifies the resulting tree with [`ssr`](/reference/ssr/ssr). Reactive regions are wrapped in `<!--[-->...<!--]-->` markers. On the client, Astro's island runtime loads the component and [`hydrate`](/reference/dom/hydrate) re-runs it against the existing server DOM, attaching state and handlers in place instead of replacing the HTML.
+
+Start the dev server and open the page:
+
+```bash
+npm run dev
+```
+
+The app serves at `http://localhost:4321`. View the page source: the button arrives with its initial label already inside it, wrapped in `<!--[-->` markers within an `<astro-island>` element.
+
+## Client-Only Island with `html`
+
+Cursor tracking has nothing worth server-rendering: the coordinates start at zero and only matter once a mouse is present. Mount the next island with `client:only="astro-hellajs"` and it never runs on the server: Astro emits an empty island, and `hydrate` renders fresh into it on the client.
+
+Create `src/components/MouseTracker.ts`. Note the `.ts` extension: the Vite plugin transforms plain TypeScript files too, so `html` templates work without JSX.
+
+```ts
+// src/components/MouseTracker.ts
+import { signal } from "@hellajs/core";
+import { html } from "@hellajs/dom";
+
+export default function MouseTracker() {
+  const pointerX = signal(0);
+  const pointerY = signal(0);
+
+  return html`
+    <div on:mousemove=${(event: MouseEvent) => {
+      pointerX(event.clientX);
+      pointerY(event.clientY);
+    }}>
+      Move your cursor here. Pointer: ${pointerX}, ${pointerY}
+    </div>
+  `;
+}
+```
+
+Add the import and the island to `src/pages/index.astro`:
+
+```astro
+---
+//... existing imports
+import MouseTracker from '../components/MouseTracker.ts';
+---
+<!-- ... -->
+<!-- Island 2: client-only html template, rendered fresh on the client -->
+<MouseTracker client:only="astro-hellajs" />
+```
+
+**Code Explanation**
+
+- **[`html`](/reference/dom/html)**: Tagged template parsed into a HellaNode tree. Interpolations become reactive bindings
+- **`${pointerX}, ${pointerY}`**: Interpolating the signals themselves (not calling them) creates live text bindings that update as the cursor moves
+- **`on:mousemove`**: The same event prefix as JSX, usable inside `html` templates
+- **`client:only="astro-hellajs"`**: Skips the server entirely. The value is the renderer name registered by the integration; Astro requires it because it cannot detect which framework a `client:only` component belongs to
+
+## Binding Astro's HTML with `$ref`
+
+The third mode needs no island markup of its own: `$ref` reaches into HTML that Astro rendered anywhere on the page. Add a plain input and greeting paragraph to `src/pages/index.astro`, plus the island that wires them together:
+
+```astro
+---
+//... existing imports
+import NameSync from '../components/NameSync.ts';
+---
+<!-- ... -->
+<!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->
+<label for="name-input">Name</label>
+<input id="name-input" value="World" />
+<p id="greeting"></p>
+
+<!-- Island 3: client-only $ref bindings into Astro's own HTML -->
+<NameSync client:only="astro-hellajs" />
+```
+
+Create `src/components/NameSync.ts`:
+
+```ts
+// src/components/NameSync.ts
+import { signal } from "@hellajs/core";
+import { $ref, html } from "@hellajs/dom";
+
+export default function NameSync() {
+  const name = signal("World");
+
+  $ref("#name-input").on("input", (event) => {
+    const input = event.target as HTMLInputElement;
+    name(input.value);
+  });
+  $ref("#greeting").bind(() => `Hello, ${name()}!`);
+
+  return html`
+    <p>Typing in the input above updates the greeting through a $ref binding.</p>
+  `;
+}
+```
+
+**Code Explanation**
+
+- **[`$ref`](/reference/dom/$ref)`("#name-input")`**: Queries `document` at call time and wraps the first match in a chainable reference
+- **`.on("input", ...)`**: Attaches a delegated listener. Every keystroke writes the field's value into the `name` signal
+- **`.bind(() => ...)`**: Binds a reactive function to the element's text. The greeting updates whenever `name` changes
+- **The returned `html` node**: Gives the island a small visible root; the real work happens through the two `$ref` bindings
+
+<div role="alert" class="alert alert-error">
+  <span>⚠️</span>
+  <span>$ref queries document at call time. It throws on the server (no document exists), so keep $ref calls in client:only islands or client scripts. A client:load component body executes during server rendering, which is why NameSync is client:only.</span>
+</div>
+
+**Good:** the component using `$ref` mounted `client:only`
+```astro
+<NameSync client:only="astro-hellajs" />
+```
+
+**Bad:** the same component mounted `client:load` (its body runs during SSR)
+```astro
+<NameSync client:load />
+```
+
+## Next Steps
+
+- **[SSR Islands tutorial](/learn/tutorials/ssr-islands)**: Render a static shell with `ssr()` and mount islands without Astro
+- **[Hydration concept](/learn/concepts/hydration)**: How `hydrate()` adopts existing DOM in place
+- **[Astro plugin page](/plugins/astro)**: Install details, slot passthrough, and the exclusive-use rule
+
+One page can mix all three modes: pick `client:load` when the first paint needs the markup, and `client:only` when the island only makes sense in a browser.
+
+## Complete Code
+
+### `src/pages/index.astro`
+
+```astro
+// src/pages/index.astro
+---
+import Counter from '../components/Counter.tsx';
+import MouseTracker from '../components/MouseTracker.ts';
+import NameSync from '../components/NameSync.ts';
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Astro Islands</title>
+  </head>
+  <body>
+    <h1>Astro Islands</h1>
+
+    <!-- Island 1: server-rendered JSX, adopted in place by hydrate() -->
+    <Counter client:load initial={0} />
+
+    <!-- Island 2: client-only html template, rendered fresh on the client -->
+    <MouseTracker client:only="astro-hellajs" />
+
+    <!-- Plain Astro-rendered HTML that island 3 binds to from the outside -->
+    <label for="name-input">Name</label>
+    <input id="name-input" value="World" />
+    <p id="greeting"></p>
+
+    <!-- Island 3: client-only $ref bindings into Astro's own HTML -->
+    <NameSync client:only="astro-hellajs" />
+  </body>
+</html>
+```
+
+### `src/components/Counter.tsx`
+
+```tsx
+// src/components/Counter.tsx
+import { signal } from "@hellajs/core";
+
+export default function Counter({ initial = 0 }: { initial?: number }) {
+  const count = signal(initial);
+  return <button on:click={() => count(count() + 1)}>{count()}</button>;
+}
+```
+
+### `src/components/MouseTracker.ts`
+
+```ts
+// src/components/MouseTracker.ts
+import { signal } from "@hellajs/core";
+import { html } from "@hellajs/dom";
+
+export default function MouseTracker() {
+  const pointerX = signal(0);
+  const pointerY = signal(0);
+
+  return html`
+    <div on:mousemove=${(event: MouseEvent) => {
+      pointerX(event.clientX);
+      pointerY(event.clientY);
+    }}>
+      Move your cursor here. Pointer: ${pointerX}, ${pointerY}
+    </div>
+  `;
+}
+```
+
+### `src/components/NameSync.ts`
+
+```ts
+// src/components/NameSync.ts
+import { signal } from "@hellajs/core";
+import { $ref, html } from "@hellajs/dom";
+
+export default function NameSync() {
+  const name = signal("World");
+
+  $ref("#name-input").on("input", (event) => {
+    const input = event.target as HTMLInputElement;
+    name(input.value);
+  });
+  $ref("#greeting").bind(() => `Hello, ${name()}!`);
+
+  return html`
+    <p>Typing in the input above updates the greeting through a $ref binding.</p>
+  `;
+}
+```

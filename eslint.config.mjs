@@ -10,6 +10,7 @@ export default tseslint.config(
 			"**/dist/**",
 			"**/out/**",
 			"**/.cache/**",
+			"**/.astro/**",
 			"**/coverage/**",
 			"docs/**",
 			".agents/**",

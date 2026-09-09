@@ -51,6 +51,12 @@ export default function Counter({ initial = 0 }) {
 }
 ```
 
+`client:only` islands carry the renderer name as the directive value: `client:only="astro-hellajs"`. Astro skips its server-side framework detection for client-only components, so it cannot infer the framework and requires the registered renderer name (`astro-hellajs`, set by the integration's `addRenderer`).
+
+## Example
+
+The [Astro Islands tutorial](/learn/tutorials/astro-islands) builds a complete runnable app: a server-rendered counter, a client-only `html` template island, and a `$ref` island bound into Astro's own HTML.
+
 ## How it works
 
 - **SSR**: the renderer's `renderToStaticMarkup` runs `Component(props)` to produce a HellaNode tree and stringifies it with [`ssr`](/reference/ssr/ssr). Nested `component()` calls execute server-side with no DOM; reactive values read at their current value. Dynamic regions are wrapped in `<!--[-->…<!--]-->` markers.

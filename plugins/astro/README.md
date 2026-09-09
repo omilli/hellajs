@@ -43,6 +43,10 @@ export default function Counter({ initial = 0 }) {
 
 The server renders the component to HTML with `<!--[-->…<!--]-->` markers; the client `hydrate()`s it in place. All `client:*` directives are supported (`load`, `idle`, `visible`, `media`, `only`); the markers survive Astro's island serialization.
 
+`client:only` islands carry the renderer name as the directive value (`client:only="astro-hellajs"`): Astro skips server-side framework detection for client-only components and needs the name explicitly.
+
+A complete walkthrough lives in the [Astro Islands tutorial](https://hellajs.com/learn/tutorials/astro-islands).
+
 ## Exclusive use
 
 This integration wires `vite-plugin-hellajs`, which transforms **all** `.jsx`/`.tsx`/`.js`/`.ts` (excluding `node_modules`). It assumes HellaJS is the project's only JSX framework; mixing React/Solid/etc. in the same project is unsupported.

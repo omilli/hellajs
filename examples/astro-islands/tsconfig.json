@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+    "types": ["@hellajs/dom"]
+  }
+}
