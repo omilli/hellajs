@@ -48,10 +48,6 @@ mount(App, "#app");
 
 ## Element Syntax
 
-Pass a signal **reference** for a reactive value: `{count}` works identically in JSX and `html` (runtime or compiled). For a **compound** expression (`{count() * 2}`, `{items().map(…)}`) the call is required, and compiled code auto-wraps it; runtime `html` needs an explicit `() => …` wrapper. For a one-time static read, hoist the value out of the template or wrap the read in [`untracked`](/reference/core/untracked).
-
-> **Runtime `html`** (no compiler) requires explicit `() => …` wrappers for reactive **compound** expressions; simple signal references (`${count}`) work as-is. See [`html`](/reference/dom/html).
-
 ### Reactive Bindings
 
 A signal **reference** is the simplest reactive binding. A **compound** expression (arithmetic, conditional, method call) calls the signal and auto-wraps in compiled code. Both update the DOM when their dependencies change.
@@ -67,7 +63,20 @@ A signal **reference** is the simplest reactive binding. A **compound** expressi
 {count() > 5 && <p>Great job!</p>}
 ```
 
-An explicit `() => …` wrapper is still accepted and behaves identically, required for compound expressions in runtime `html`.
+The compiler auto-wraps compound expressions in compiled `html` templates too.
+
+<div role="error" class="alert alert-error text-base">
+  <span>Runtime `html` requires an explicit `() => …` wrapper as shown below.</span>
+</div> 
+
+```js
+// Runtime html`` (no compiler): reference stays bare, compound wrapped
+html`<div>
+  <h1>${count}</h1>
+  <h2>${() => count() * 2}</h2>
+  ${() => count() > 5 && html`<p>Great job!</p>`}
+</div>
+```
 
 ### Static Values
 
@@ -97,7 +106,7 @@ const total = count();
 
 ### Array Attributes
 
-Array values for attributes are joined with spaces, filtering falsy values. A call inside the array makes the whole attribute reactive in compiled code; no manual wrapper needed (runtime `html` still requires `() => …`).
+Array values for attributes are joined with spaces, filtering falsy values. A call inside the array makes the whole attribute reactive in compiled code; no manual wrapper needed.
 
 ```jsx
 const isActive = signal(true);
@@ -105,6 +114,15 @@ const isActive = signal(true);
 <div class={["base", isActive() && "active", "always"]}>
   {/* Compiled: isActive() auto-wraps, class="base active always"; → "base always" once false */}
 </div>
+```
+
+Runtime `html` wraps the whole array instead:
+
+```js
+const isActive = signal(true);
+
+// Runtime: class recomputes as isActive flips
+html`<div class=${() => ["base", isActive() && "active", "always"]}>Tab</div>
 ```
 
 ## SVG and MathML
