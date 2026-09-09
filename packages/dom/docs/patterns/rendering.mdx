@@ -12,7 +12,7 @@ import { mount } from "@hellajs/dom";
 
 const isActive = signal(false);
 
-const template = <div class={() => (isActive() ? "btn-active" : "btn-inactive")}>Toggle</div>;
+const template = <div class={isActive() ? "btn-active" : "btn-inactive"}>Toggle</div>;
 
 mount(template, "#app");
 ```

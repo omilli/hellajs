@@ -255,7 +255,9 @@ const AdminPanel = () => (
 **Conditional Loading:**
 
 ```jsx
-const FeatureFlag = ({ flag, children }: { flag: () => boolean; children?: unknown }) => (
+import type { HellaChildren } from "@hellajs/dom";
+
+const FeatureFlag = ({ flag, children }: { flag: () => boolean; children?: HellaChildren }) => (
   flag() ? (
     children
   ) : (

@@ -13,6 +13,7 @@ npm install @hellajs/core @hellajs/css
 ```jsx
 import { signal } from '@hellajs/core';
 import { css, cssText, cva, style, vars } from '@hellajs/css';
+import type { HellaChildren } from '@hellajs/dom';
 
 // Globals: css() registers on both platforms and returns ""
 css({
@@ -46,7 +47,7 @@ const button = cva({
 });
 
 // The class is the identity; use it directly in components
-const Card = ({ title, children }: { title: string; children?: unknown }) => (
+const Card = ({ title, children }: { title: string; children?: HellaChildren }) => (
   <div class={card}>
     <h2>{title}</h2>
     {children}

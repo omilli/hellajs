@@ -3,7 +3,6 @@
 Wraps a component function with automatic effect cleanup scope.
 
 <div role="alert" class="alert alert-info alert-soft">
-  <span>ℹ️</span>
   <span>This is a low-level API used internally by the Babel plugin and `html` template system. You only need this when building components with raw HellaNode AST objects.</span>
 </div>
 
@@ -129,30 +128,3 @@ const Parent = (props) => ({
 // Parent itself wrapped when used
 mount(component(Parent, {}), document.body);
 ```
-
-<details>
-<summary>Internal Mechanics</summary>
-
-`component()` creates a reactive scope around the component function:
-
-```js
-function component(componentFn, props) {
-  let result;
-  try {
-    const dispose = scope(() => result = componentFn(props));
-    if (result.static) result = { ...result };
-    result.componentScope = chainScopes(result.componentScope, dispose);
-  } catch (e) {
-    dispatchError(e, { phase: "render" }); // Dispatches through error handling system
-    return { tag: "$", children: [] };
-  }
-  return result;
-}
-```
-
-- Calls the component function inside a `scope()`
-- Wraps a fully-static root in a fresh node (static roots are shared by reference across invocations; mutating the shared node would let the last `component()` call win)
-- Attaches the disposer as `componentScope`, chained onto any scope the returned node already carries: a component returning another component's result disposes both scopes
-- When the node (or, for a fragment root, its last child: a static tail, or the trailing child's persistent anchor) is removed from the DOM, the cleanup system calls `componentScope()`
-
-</details>

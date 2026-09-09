@@ -18,8 +18,9 @@ Decision index — jump to the section for the decision you are making. This gui
 | Overloaded function? | §API Section → Overloaded Functions |
 | Callable namespace member (`ssr.async`)? | §API Section → Callable Namespaces |
 | Language tag for a code block? | §Code Examples → Language Tags |
-| Both JSX and html in one example? | §Dual Syntax → Never Mix in One Block |
+| Both JSX and html in one example? | §Example Syntax (JSX Default) → Never Mix in One Block |
 | Import style? | §Code Examples → Import Style |
+| Example code style (attribute values, prop types, children type, css layout)? | §Code Examples → Example Code Style |
 | Cross-reference link format? | §Cross-References |
 | Frontmatter rules? | §File Locations & Naming → Frontmatter |
 | Length limits per doc type? | §Length Targets |
@@ -29,7 +30,7 @@ Decision index — jump to the section for the decision you are making. This gui
 | Website wrapper page? | §Website Wrapper Pages |
 | Site-only / cross-package page? | §Website Wrapper Pages → Site-Authored Content Pages |
 
-Sections in order: File Locations & Naming · Decision Precedence · Template Selection · Function & Prefix Docs · Concept Docs · Pattern Docs · Index Docs · Tutorial Docs · Website Wrapper Pages · **Extending Existing Content** · Content Scope · API Section · Code Examples · Dual Syntax · Cross-References · Tables · Alert Boxes · `<details>` Sections · Content Tone · Typography · Section Headings · Length Targets · Verification Checklist.
+Sections in order: File Locations & Naming · Decision Precedence · Template Selection · Function & Prefix Docs · Concept Docs · Pattern Docs · Index Docs · Tutorial Docs · Website Wrapper Pages · **Extending Existing Content** · Content Scope · API Section · Code Examples · Example Syntax (JSX Default) · Cross-References · Tables · Alert Boxes · Content Tone · Typography · Section Headings · Length Targets · Verification Checklist.
 
 ## File Locations & Naming
 
@@ -62,7 +63,7 @@ When rules conflict, resolve in this order:
 1. **Accuracy** — code examples must reflect actual behavior
 2. **Consistency** — follow the template structure and conventions
 3. **Clarity** — a reader unfamiliar with the codebase understands the doc
-4. **Brevity** — less prose, more code
+4. **Examples first** — where an example can demonstrate the claim, lead with the example; prose carries only what code cannot show (constraints, ordering, gotchas)
 
 ## Template Selection
 
@@ -138,7 +139,6 @@ Detailed explanation.
 - **`##` sections**: Free-form, organized by topic. Use descriptive section names.
 - **Code examples**: Self-contained with imports on first example per page.
 - **Cross-references**: Link to API docs on first mention of each export.
-- **`<details>` blocks**: Internal mechanics sections go at end of the doc.
 
 ## Pattern Docs
 
@@ -274,7 +274,7 @@ Full runnable code matching the example app.
 - **Progressive build**: each section adds code on top of the previous; never removes or rewrites earlier code. **Context markers** (`//... add after X`, `//... rest unchanged`) show placement — never full file repeats; the reader builds up from previous sections.
 - **Exercise blanks**: `/**/` marks a reader-filled blank (`const filter = /**/;`), legal alongside `//...` markers. `bun doc-snippets` skips blocks containing `/**/` (answers vary); every non-blank line must still be valid for the language tag, and the answer must appear in a later section or Complete Code.
 - **Code Explanation**: always after every code block — bullet list, bold backtick-wrapped API names linking to reference docs on first mention, factual tone.
-- **Alert boxes**: `<div role="alert" class="alert alert-error">` + `<span>⚠️</span>` for critical warnings (mutation pitfalls, reactivity gotchas), followed by Good/Bad examples. No component imports — content docs live outside `docs/`.
+- **Alert boxes**: `<div role="alert" class="alert alert-error">` for critical warnings (mutation pitfalls, reactivity gotchas), followed by Good/Bad examples. No component imports — content docs live outside `docs/`.
 - **Dev server callout**: in the section where the app first becomes reachable, the actual run command + URL — Vite: `npm run dev` + `http://localhost:5173`; Bun-served SSR: the serve command (`bun src/server.js`) + its URL.
 - **What You'll Learn**: bold concept labels + brief descriptions, linked to reference docs on first mention. **Project Setup**: always `### Installation` (npm commands) + `### Configuration` (vite config, tsconfig).
 - **Next Steps**: 3 links + one-line closing sentence. **Complete Code**: every source file under `examples/{name}/src/` appears identically (ambient shims like `vite-env.d.ts` may be omitted); single-file apps one block, multi-file one `### `src/...`` heading + block per file; configs appear in Project Setup.
@@ -491,6 +491,38 @@ import { signal, computed } from '@hellajs/core';
 - First example in a doc must show the import for the export being documented. Subsequent examples in the same doc may omit if they're the same.
 - Prefix docs (`on:`, `e:`, etc.) must also show imports in their first example.
 
+### Example Code Style
+
+Four rules for how example code is written:
+
+- **Attribute values written directly**: `class={active() ? "on" : "off"}`, never function-wrapped. Function-wrapping is the `html` runtime's getter contract and may appear only in `html`-method docs (verified: `plugins/babel/src/utils/reactive.mjs` `maybeReactive` auto-wraps call-containing expressions and passes top-level functions through — JSX examples never need it).
+- **Extracted prop types**: component examples extract multi-prop inline prop types to a named `type` declared above the component; never inline `{ a, children }: { a: string; children?: HellaChildren }`.
+- **`children` typed `HellaChildren`**: imported from `@hellajs/dom`, never a catch-all placeholder (the pre-convention examples lied about the contract).
+- **Multiline `css()` / `style()` calls**: always break across lines, one property per line — single-property calls included.
+
+```tsx
+// ❌ Function-wrapped attribute, inline multi-prop type, single-line css
+function Badge({ label }: { label: string }) {
+  const badge = css({ color: "crimson" });
+  return <span class={() => "badge"}>{label}</span>;
+}
+```
+
+```tsx
+// ✅ Direct attribute value, extracted prop type, HellaChildren, multiline css
+import { css } from '@hellajs/css';
+import type { HellaChildren } from '@hellajs/dom';
+
+type BadgeProps = { label: string; children?: HellaChildren };
+
+function Badge({ label, children }: BadgeProps) {
+  const badge = css({
+    color: "crimson",
+  });
+  return <span class="badge">{label}{children}</span>;
+}
+```
+
 ### Good/Bad Patterns
 
 - `❌` for bad patterns (with comment explaining why)
@@ -554,26 +586,15 @@ try {
 
 5–30 lines. If >30, simplify. If the concept genuinely requires more, use context markers (`//...`) to omit irrelevant parts.
 
-## Dual Syntax (JSX + html)
+## Example Syntax (JSX Default)
 
-### When to Show Both
+JSX is the only example syntax in every package, `dom` included. Write every example as JSX.
 
-Show both JSX and html template syntax when:
-- The feature is DOM-specific with meaningfully different JSX and html forms (`ForEach`, `Portal`, `Lazy`, `Transition`)
-
-Show only one syntax when:
-- The feature is package-agnostic (signal, computed, effect, store, resource)
-- The feature only exists in one syntax form
-
-### How to Show Both
-
-1. Show the primary example in JSX (under `## Basic Usage`).
-2. Show the html template equivalent immediately after, under the same section or a dedicated `### html Template Syntax` sub-heading.
-3. Both examples should be self-contained with imports.
+The `html` tagged-literal syntax appears exclusively in docs whose subject is the `html` method itself (`packages/dom/docs/api/html.mdx`); those blocks keep the `js` language tag (§Language Tags unchanged).
 
 ### Never Mix in One Block
 
-A single fenced block never mixes the two syntaxes: no `html` tagged literal inside a `jsx`-tagged block, no JSX inside a `js`-tagged template block. The language tag promises one syntax (§Language Tags); a mixed block breaks that contract and teaches neither form in isolation. Show dual syntax as two separately-tagged examples per §How to Show Both.
+A single fenced block never mixes the two syntaxes: no `html` tagged literal inside a `jsx`-tagged block, no JSX inside a `js`-tagged template block. The language tag promises one syntax (§Language Tags); a mixed block breaks that contract and teaches neither form in isolation.
 
 ```jsx
 // ❌ jsx-tagged block carrying an html`` body — mixed syntax
@@ -641,45 +662,25 @@ Use Astro alert syntax for callouts needing visual emphasis:
 
 ```html
 <div role="alert" class="alert alert-info alert-soft">
-  <span>ℹ️</span>
   <span>Content here</span>
 </div>
 ```
 
 - Use sparingly — most information belongs in normal text.
-- Prefer `alert-info` for informational notes. Avoid `alert-warning` (use `⚠️` inline instead).
-- Use `<div role="alert" class="alert alert-error">` with a `<span>⚠️</span>` for critical warnings in tutorials. Never import site-only components (e.g. `astro-icon`) in content docs — they live outside `docs/` and cannot resolve them.
+- Prefer `alert-info` for informational notes. Avoid `alert-warning`.
+- Use `<div role="alert" class="alert alert-error">` for critical warnings in tutorials. Never import site-only components (e.g. `astro-icon`) in content docs — they live outside `docs/` and cannot resolve them.
 
 ### Blockquote Callouts
 
-For single-sentence callouts needing more emphasis than an inline emoji but less than a full alert box, use a blockquote with leading `⚠️`:
+For single-sentence callouts needing more emphasis than plain prose but less than a full alert box, use a blockquote with a bold label:
 
-> ⚠️ **Performance**: snapshot accesses every signal in the store.
+> **Performance**: snapshot accesses every signal in the store.
 
 At most one per section. Prefer inline `⚠️` for in-code warnings; Astro alert boxes for multi-sentence or critical warnings.
 
-## `<details>` Sections
-
-For internal implementation mechanics that are educational but not required for API usage.
-
-```html
-<details>
-<summary>Internal Mechanics</summary>
-
-Content explaining implementation details.
-
-</details>
-```
-
-- Always use `Internal Mechanics` as the summary label.
-- Place at the end of the doc (after all standard sections).
-- Content explains *how* the system works internally, not *how to use* it.
-- Use sparingly — most docs don't need them. Common in concept docs, rare in API docs.
-- Good candidates: template AST structure, reconciliation algorithm internals, event delegation routing. Not needed for: configuration options, usage patterns, API behavior.
-
 ## Content Tone
 
-All doc types: present tense, no hedging ("Prevents propagation" not "Helps prevent propagation").
+All doc types: present tense, no hedging ("Prevents propagation" not "Helps prevent propagation"). Where an example can demonstrate the claim, lead with the example; prose carries only what code cannot show (constraints, ordering, gotchas).
 
 - **API Docs**: Direct and factual. No "you can" or "you might want to". Describe behavior, not intentions: "Signals create reactive links" not "You can use signals to create reactive links". "Returns a class name" not "Will return a class name".
 - **Concept Docs**: Explanatory and educational. May use analogies. Still present tense, no hedging. Cross-reference API docs on first mention of each export.
@@ -703,7 +704,7 @@ Rewrites must not change meaning, link targets, identifiers, or fenced code sema
 
 ## Section Headings
 
-Headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are **banned**. Source-code dumps belong in a `<details>` block with the summary `Internal Mechanics` (see `<details>` Sections), not under a generic `### Implementation` heading.
+Headings at every level (`#`, `##`, `###`, `####`) must describe their specific topic. Generic labels — `Overview`, `Summary`, `Comparison`, `Implementation`, `Lifecycle`, `Details` — communicate nothing to a reader scanning the table of contents and are **banned**. Internal implementation mechanics are not documented at all — no source dumps and no internals sections. Name the subject directly or cut the content.
 
 Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparison`; `### Connection, Disconnection, and Reconnection` instead of `### Lifecycle`.
 
@@ -742,7 +743,11 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 
 **Code examples**
 - [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
-- [ ] No fenced block mixes JSX and html-template syntax — dual syntax is two separately-tagged blocks (§Dual Syntax → Never Mix in One Block)
+- [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
+- [ ] Attribute values written directly, never function-wrapped — function-wrapping only in `html`-method docs; `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
+- [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `bun lint:structure` skips them (§Code Examples → Example Code Style)
+- [ ] No `unknown` annotation on any `children` prop — always `HellaChildren` from `@hellajs/dom`; enforced by `bun lint:structure` (`children??: unknown` banned) (§Code Examples → Example Code Style)
+- [ ] `css()` / `style()` calls multiline, one property per line, single-property calls included; enforced by `bun lint:structure` (§Code Examples → Example Code Style)
 - [ ] Imports shown (package imports `@hellajs/...`, never relative); first example imports the documented export
 - [ ] No test-framework assertions (`expect` / `toBe` / `describe` / `it` / `test`) — use comments and `console.log`
 - [ ] No single-letter variable names (well-known `i`, `x`, `fn` excepted)

@@ -137,7 +137,6 @@ export default defineConfig({
 Note the middleware passes `req.url` to `render()`: a single page, so the URL is irrelevant and `render` ignores it.
 
 <div role="alert" class="alert alert-error text-base">
-  <span>⚠️</span>
   <span>JSX is not a <code>HellaNode</code> until a build plugin transforms it. Running a JSX server entry through a runtime that supplies its own JSX (a React runtime) compiles to <code>createElement</code> calls and emits <code>[object Object]</code> or a React error: wrong output, not a loud one. Routing the server through Vite (as here) applies <code>vite-plugin-hellajs</code> to the server entry, so the trap never opens.</span>
 </div>
 
@@ -431,7 +430,6 @@ hydrate(<Dashboard />, '#app');
 ```
 
 <div role="alert" class="alert alert-warning text-base">
-  <span>⚠️</span>
   <span>A bare getter that returns a <em>rejected</em> <code>Promise</code> errors the stream. If the static shell has already flushed, the failure is partial; catch it at the stream consumer (the read loop in the middleware). A getter inside a <code>&lt;Suspense&gt;</code> region that rejects is isolated instead: the region's <code>&lt;template&gt;</code> is skipped (its fallback stays), the stream completes with the healthy regions, and <code>hydrate</code> re-suspends the failed region on the client, where the rejection reaches the nearest error boundary.</span>
 </div>
 

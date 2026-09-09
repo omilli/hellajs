@@ -90,7 +90,6 @@ export const App = () => html`
 - **Reactive active class**: `class` wraps the getter in a reactive effect, so [`route`](/reference/router/route)`().active(href)` re-runs on every navigation. Use `class`, not plain `class`: a plain attribute is set once at mount and never updates
 
 <div role="alert" class="alert alert-error text-base">
-  <span>⚠️</span>
   <span>Route handlers must be pure setters, not <code>() => mount(...)</code>. <a href="/reference/dom/mount">mount</a> needs a <code>document</code> and throws on the server. Put side effects (analytics, subscriptions) in component <a href="/reference/core/effect">effect</a> bodies, not in the handler.</span>
 </div>
 

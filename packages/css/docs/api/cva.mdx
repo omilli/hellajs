@@ -163,7 +163,7 @@ const button = cva({
 });
 
 // The class attribute re-resolves when size changes
-<button class={() => button({ size: size() })}>Resize me</button>
+<button class={button({ size: size() })}>Resize me</button>
 ```
 
 Reactive *values* inside declarations belong to [`vars`](/reference/css/vars); combine a recipe for structure with vars for reactive theming.

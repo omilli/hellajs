@@ -27,6 +27,12 @@ export type HellaPrimitive<T = unknown> = string | string[] | number | boolean |
 export type HellaChild = HellaNode | HellaRaw | HellaPrimitive | Node | null | undefined;
 
 /**
+ * Children for a component's props. JSX compiles component children to an
+ * array, the `html` runtime to a single child, so both shapes are accepted.
+ */
+export type HellaChildren = HellaChild | HellaChild[];
+
+/**
  * A raw HTML string rendered as an opaque child. `ssr` emits the HTML verbatim (marker-bounded);
  * `hydrate` adopts the existing server DOM without re-binding anything inside. Created by {@link raw};
  * the `{ raw }` shape is the duck-type contract `ssr`/`hydrate` recognize, so never hand-construct.

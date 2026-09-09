@@ -77,10 +77,3 @@ Discrete events (`click`, `mousedown`, `mouseup`, `keydown`, `change`) dispatche
 ### Dead Streams
 
 If the document finishes loading (`readystatechange` → `complete`) while regions are still deferred, the stream is dead: each remaining region degrades to client-side re-suspension: the fallback stays mounted, the children re-run, and the resolved content swaps in when it settles. This matches the behavior `hydrate` applies when it runs after loading with a missing stage.
-
-<details>
-<summary>Internal Mechanics</summary>
-
-`hydrate` walks the HellaNode AST in parallel with the existing DOM using a node pointer. For each AST child it consumes the matching server node(s): static elements are recursed into, function-ref prop effects and `on:`/`e:` handlers are registered against the existing element, and static attributes are skipped (the server already applied them). `ForEach` and `Transition` receive the existing nodes through a hydrate context and seed their internal maps from them instead of building fresh; their update paths run unchanged against the seeded maps. Every dynamic region (a reactive child, a control-flow component, or a nested fragment) is bounded by `<!--[-->…<!--]-->` comment markers the server emits; `hydrate` reads those Comment nodes to locate and adopt each region in place: no structural inference, no text rebuild.
-
-</details>

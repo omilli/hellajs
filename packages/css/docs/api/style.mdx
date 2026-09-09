@@ -118,12 +118,14 @@ Value semantics match [`css`](/reference/css/css) exactly, including the throw o
 ```jsx
 // ❌ Throws; functions are not CSS values
 try {
-  style({ padding: () => '1rem' });
+  style({
+    padding: () => '1rem',
+  });
 } catch {}
 
 // ✅ Resolve conditions outside the object
 const btn = style({ padding: '0.5rem' }, { label: 'btn' });
-// then pick classes: class={() => big() ? btn : compactBtn}
+// then pick classes: class={big() ? btn : compactBtn}
 ```
 
 ### Removal

@@ -3,11 +3,12 @@ import path from "node:path";
 import { logger, packagesDir, projectRoot } from "./utils/index.js";
 
 /**
- * Guard (`bun lint:structure`): five structural checks over the docs surfaces.
+ * Guard (`bun lint:structure`): six structural checks over the docs surfaces.
  * Catches the classes of defect that shipped before it existed — an unclosed code
  * fence that mangled every block after it, Complete-Code drift between a tutorial
  * and the app it documents, broken `#`-anchors, pages unreachable from the nav,
- * and wrappers carrying content against the zero-content rule.
+ * wrappers carrying content against the zero-content rule, and doc-example
+ * constructs the conventions ban.
  *
  * 1. Fence parity — every `.mdx` under each package's `docs/`, every
  *    `examples/<name>/tutorial.mdx`, and every page under `docs/src/pages/` must
@@ -44,6 +45,16 @@ import { logger, packagesDir, projectRoot } from "./utils/index.js";
  *    page must also appear in its enumeration page (`learn/index.mdx` for
  *    concepts/tutorials, `learn/patterns/index.mdx` for patterns).
  *
+ * 6. Example conventions — the mechanically detectable code-style rules from
+ *    `guides/docs.md`: no `children` prop typed `unknown`, no `<summary>Internal
+ *    Mechanics</summary>` details blocks, no `<span>⚠️</span>` / `<span>ℹ️</span>`
+ *    alert icon spans, no `> ⚠️` blockquote markers, no function-wrapped
+ *    `class`/`style`/`title`/`href`/`id` attributes inside jsx/tsx fences, and no
+ *    single-line `css()`/`style()` object arguments (multiline always,
+ *    single-property calls included). The JSX-only-syntax rule stays
+ *    audit-enforced — which docs count as "explicitly about the html method" is
+ *    a judgment boundary.
+ *
  * No package scoping; scans every package, example, and site page.
  */
 
@@ -68,6 +79,14 @@ const TAG_RE = /^<[A-Za-z][\w.]*\s*(?:\/>|>.*<\/[A-Za-z][\w.]*>)$/;
 const DIVIDER_DIV_RE = /^<div class="[^"]*border-t[^"]*".*<\/div>$/;
 const PACKAGE_DOC_IMPORT_RE =
   /^import\s.+from\s+["']@(core|css|dom|resource|router|store|ssr|examples)\/([^"']+)["']/;
+
+const CHILDREN_UNKNOWN_RE = /children\??:\s*unknown/;
+const INTERNAL_MECHANICS_RE = /<summary>Internal Mechanics<\/summary>/;
+const ALERT_ICON_SPAN_RE = /<span>(⚠️|ℹ️)<\/span>/;
+const BLOCKQUOTE_WARN_RE = /^> ⚠️/;
+const JSX_FENCE_RE = /^```(jsx|tsx)\b/;
+const WRAPPED_ATTR_RE = /(class|style|title|href|id)=\{\(\) =>/;
+const INLINE_CSS_OBJECT_RE = /(css|style)\(\{[^}\n]*\}\)/;
 
 /** Alias prefix → the directory it resolves to under the repo root. */
 const ALIAS_DIRS: Record<string, string> = {
@@ -530,6 +549,52 @@ function checkRegistration(): Finding[] {
   return findings;
 }
 
+/**
+ * Check 6 — example conventions: the mechanically detectable code-style rules
+ * from guides/docs.md. `children` props are never typed `unknown`, Internal
+ * Mechanics details blocks are gone, alert callouts carry no icon spans and no
+ * blockquote warning markers, jsx/tsx fences carry no function-wrapped
+ * `class`/`style`/`title`/`href`/`id` attributes, and `css()`/`style()` object
+ * arguments are always multiline. The JSX-only-syntax rule stays audit-enforced
+ * (the html-method boundary is judgment); each finding names its construct.
+ * @param corpus Every mdx file in scope
+ * @returns Findings (one per offending line)
+ */
+function checkExampleConventions(corpus: string[]): Finding[] {
+  const findings: Finding[] = [];
+  for (const file of corpus) {
+    const content = readFileOrNull(file);
+    if (content === null) continue;
+    let inJsxFence = false;
+    for (const [idx, line] of content.split("\n").entries()) {
+      const lineNo = idx + 1;
+      if (FENCE_RE.test(line)) {
+        inJsxFence = JSX_FENCE_RE.test(line);
+        continue;
+      }
+      if (CHILDREN_UNKNOWN_RE.test(line)) {
+        findings.push({ file, message: `line ${lineNo}: children prop typed unknown — use HellaChildren from @hellajs/dom` });
+      }
+      if (INTERNAL_MECHANICS_RE.test(line)) {
+        findings.push({ file, message: `line ${lineNo}: Internal Mechanics details block — internal implementation is not documented` });
+      }
+      if (ALERT_ICON_SPAN_RE.test(line)) {
+        findings.push({ file, message: `line ${lineNo}: alert icon span — the alert template carries content only` });
+      }
+      if (BLOCKQUOTE_WARN_RE.test(line)) {
+        findings.push({ file, message: `line ${lineNo}: blockquote warning marker — lead with a bold label instead` });
+      }
+      if (inJsxFence && WRAPPED_ATTR_RE.test(line)) {
+        findings.push({ file, message: `line ${lineNo}: function-wrapped attribute — write the value directly` });
+      }
+      if (INLINE_CSS_OBJECT_RE.test(line)) {
+        findings.push({ file, message: `line ${lineNo}: single-line css()/style() object argument — break it across lines` });
+      }
+    }
+  }
+  return findings;
+}
+
 async function main(): Promise<void> {
   try {
     const corpus = collectMdxCorpus();
@@ -539,6 +604,7 @@ async function main(): Promise<void> {
       ...checkAnchors(),
       ...checkWrappers(),
       ...checkRegistration(),
+      ...checkExampleConventions(corpus),
     ];
 
     for (const f of findings) {
@@ -546,7 +612,7 @@ async function main(): Promise<void> {
     }
 
     if (findings.length === 0) {
-      logger.success(`Docs structure clean (${corpus.length} mdx files, 5 checks)`);
+      logger.success(`Docs structure clean (${corpus.length} mdx files, 6 checks)`);
       process.exit(0);
     }
     logger.error(`${findings.length} structure finding(s)`);

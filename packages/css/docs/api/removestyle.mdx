@@ -77,7 +77,9 @@ style({ color: 'red' }, { label: 'x' });
 removeStyle({ color: 'red' }, { label: 'x' });
 
 // ❌ Won't match; different content
-style({ color: 'red' });
+style({
+  color: 'red',
+});
 removeStyle({ color: 'blue' }); // no-op, never registered
 ```
 

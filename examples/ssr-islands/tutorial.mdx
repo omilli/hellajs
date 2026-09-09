@@ -166,7 +166,6 @@ mount(Counter, '#slot');
 - **[`mount`](/reference/dom/mount)`(Counter, '#slot')`**: Renders the island into the empty slot. The server left `#slot` empty, so nothing is wiped
 
 <div role="alert" class="alert alert-error text-base">
-  <span>⚠️</span>
   <span>mount calls replaceChildren on its target: pointing it at any element the server already populated wipes that HTML. Always mount into an empty slot.</span>
 </div>
 

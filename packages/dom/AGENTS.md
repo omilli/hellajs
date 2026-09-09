@@ -13,7 +13,7 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `resetDom` | State reset (test/introspection) | `lib/internal/reset.ts` |
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
 | `getState`, `hasState`, `peekState`, `deleteState` | ElementState access (test/introspection) | `lib/internal/state.ts` |
-| `HellaNode`, `HellaChild`, `ElementHooks`, `HookType`, `HookFn`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DirectListenerSpec`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `SuspenseProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
+| `HellaNode`, `HellaChild`, `HellaChildren`, `ElementHooks`, `HookType`, `HookFn`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DirectListenerSpec`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `SuspenseProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
 | `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes`, `StyleObject` | Type-only | `lib/types/attributes.d.ts` |
 
 **Throw contracts.** `mount` → `[dom] mount: target "<target>" not found in document`. `ForEach` → `[dom] ForEach: each is required` / `[dom] ForEach: use must be a function`. `element` → `[dom] element: tagName must be a hyphenated string / render must be a function`. `Lazy` → `[dom] Lazy: loader must be a function`. `Portal` → `[dom] Portal: type must be one of "append" | "prepend" | "replace" | "before" | "after"` (at construction) / `[dom] Portal: target "<to>" not found in document` (at first effect run, not at construction).

@@ -229,7 +229,9 @@ const spacing = signal('1rem');
 
 // ❌ Throws; css() never calls property functions
 try {
-  css({ padding: () => spacing() });
+  css({
+    padding: () => spacing(),
+  });
 } catch {}
 // Error: [css] function values are not supported in css objects
 //        (message continues: use vars() for reactive values, key: padding)

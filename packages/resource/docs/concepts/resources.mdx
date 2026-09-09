@@ -319,32 +319,3 @@ await saveUser.mutate({ action: 'save' });
 ```
 
 `invalidates` deletes cache entries only: a resource currently displaying a matched key keeps its data; only the next fetch for that key hits the network. Call `invalidate()` or `fetch()` on any resource that must refresh immediately.
-
-<details>
-<summary>Internal Mechanics</summary>
-
-Resources coordinate reactive primitives, caching systems, and async operations to provide predictable data management patterns.
-
-#### Resource State Machine
-
-Resources maintain a simple state machine with four states.
-
-- **idle** - No active request; **loading** - Request in progress
-- **success** - Data available; **error** - Request failed
-
-```
-idle -> loading -> success
-  ^         |          |
-  |     abort()    invalidate()
-  |         |     (data available: stays in success)
-  |       error
-  +---------+
-```
-
-`abort()` resets to idle, restores `initialData`, clears errors, and cancels in-flight fetches and mutations. `reset()` restores the same state without cancelling and re-arms polling; `abort()` stops polling permanently (recreate the resource to resume). `invalidate()` clears cache and triggers a fresh request.
-
-#### Loading vs Fetching
-
-`isLoading()` is true only when no data exists (full spinner); `isFetching()` is true during any network activity including background refetches. See the SWR section above for a worked example.
-
-</details>

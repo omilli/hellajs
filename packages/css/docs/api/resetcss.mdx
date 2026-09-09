@@ -16,8 +16,14 @@ function resetCss(): void
 import { css, resetCss } from '@hellajs/css';
 
 // Create some styles
-const button = css({ background: 'blue', color: 'white' });
-const card = css({ padding: '1rem', border: '1px solid #ccc' });
+const button = css({
+  background: 'blue',
+  color: 'white',
+});
+const card = css({
+  padding: '1rem',
+  border: '1px solid #ccc',
+});
 
 // Later, reset everything
 resetCss();

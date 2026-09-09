@@ -7,7 +7,9 @@ Components are simple functions that return elements. They compose naturally thr
 Components use uppercase names in JSX. For html template literals, use `<${Component}>` syntax.
 
 ```jsx
-const MyComponent = ({ title, children }: { title: string; children?: unknown }) => {
+import type { HellaChildren } from "@hellajs/dom";
+
+const MyComponent = ({ title, children }: { title: string; children?: HellaChildren }) => {
  return  <div>{title} - {children}</div>;
 }
 
@@ -28,14 +30,14 @@ Components compose through props and children, just like regular function argume
 ```jsx
 import { mount } from "@hellajs/dom";
 
-const Card = ({ title, variant = "default", children }: { title: string; variant?: string; children?: unknown }) => (
+const Card = ({ title, variant = "default", children }: { title: string; variant?: string; children?: HellaChildren }) => (
   <div class={`card card-${variant}`}>
     <div class="card-header"><h2>{title}</h2></div>
     <div class="card-content">{children}</div>
   </div>
 );
 
-const Button = ({ variant = "primary", click, children }: { variant?: string; click: () => void; children?: unknown }) => (
+const Button = ({ variant = "primary", click, children }: { variant?: string; click: () => void; children?: HellaChildren }) => (
   <button class={`btn btn-${variant}`} on:click={click}>
     {children}
   </button>
@@ -66,7 +68,7 @@ const TodoCard = ({ todo }: { todo: Signal<Todo> }) => (
   <div class="todo-card">
     <h3>{todo().text}</h3>
     <p>Priority: {todo().priority}</p>
-    <span class={() => `status ${todo().done ? "completed" : "pending"}`}>
+    <span class={`status ${todo().done ? "completed" : "pending"}`}>
       {todo().done ? "Completed" : "Pending"}
     </span>
   </div>

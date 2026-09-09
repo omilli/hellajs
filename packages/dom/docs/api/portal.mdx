@@ -25,8 +25,9 @@ Use `Portal` to render content outside the component tree, like modals or toolti
 ```jsx
 import { Portal } from "@hellajs/dom";
 import type { Signal } from "@hellajs/core";
+import type { HellaChildren } from "@hellajs/dom";
 
-const Modal = ({ isOpen, children }: { isOpen: Signal<boolean>; children?: unknown }) => {
+const Modal = ({ isOpen, children }: { isOpen: Signal<boolean>; children?: HellaChildren }) => {
   if (!isOpen()) return null;
   
   return (
@@ -192,7 +193,7 @@ Children rendered through a portal maintain their lifecycle hooks and reactive b
 **Modals and Dialogs:**
 
 ```jsx
-const Dialog = ({ open, onClose, children }: { open: () => boolean; onClose: () => void; children?: unknown }) => (
+const Dialog = ({ open, onClose, children }: { open: () => boolean; onClose: () => void; children?: HellaChildren }) => (
   <Portal to="#dialog-root">
     {[open() ? (
       <div class="dialog-backdrop" on:click={onClose}>

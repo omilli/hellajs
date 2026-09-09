@@ -216,7 +216,6 @@ export default function NameSync() {
 - **The returned `html` node**: Gives the island a small visible root; the real work happens through the two `$ref` bindings
 
 <div role="alert" class="alert alert-error">
-  <span>⚠️</span>
   <span>$ref queries document at call time. It throws on the server (no document exists), so keep $ref calls in client:only islands or client scripts. A client:load component body executes during server rendering, which is why NameSync is client:only.</span>
 </div>
 

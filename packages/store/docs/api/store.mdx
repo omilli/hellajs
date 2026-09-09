@@ -95,7 +95,7 @@ type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 
 A reactive snapshot of the entire store state as a plain JavaScript object. The snapshot function is reactive and will re-compute when any store property changes.
 
-> ⚠️ **Performance**: snapshot accesses every signal in the store. When composed stores are nested, the dependency footprint covers the full composed tree; any leaf signal change triggers re-computation. Use individual property access for targeted reactivity in wide or deeply composed stores. Writes that compare equal under the [`equals` option](#write-equality) never trigger re-computation.
+> **Performance**: snapshot accesses every signal in the store. When composed stores are nested, the dependency footprint covers the full composed tree; any leaf signal change triggers re-computation. Use individual property access for targeted reactivity in wide or deeply composed stores. Writes that compare equal under the [`equals` option](#write-equality) never trigger re-computation.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -145,7 +145,7 @@ console.log(appStore.step());        // 2
 console.log(appStore.user.name());   // Bob
 ```
 
-> ⚠️ `$update()` writes signal-backed properties, materializes unknown keys, and throws on everything else; nothing is silently dropped:
+> `$update()` writes signal-backed properties, materializes unknown keys, and throws on everything else; nothing is silently dropped:
 > - **Unknown key**: `$update({ newProp: 1 })` materializes `newProp` (a signal for leaves, a nested store for plain objects) and returns the store typed with it; see [Growing Stores](#growing-stores). The throw survives only for externally-replaced properties (redefined or deleted from outside the store), which stay `[store] $update: unknown key "newProp"`.
 > - **Function property**: `$update({ onSave: fn })` throws `[store] $update: "onSave" is a function property, not state` ("assign it directly" in the full message). Swap functions by assigning directly: `appStore.onSave = newHandler`. A function value on a NEW key throws too: `[store] $update: key "onSave" cannot hold a function`.
 > - **Reserved key**: `$update({ $snapshot: 1 })` throws `[store] $update: reserved key "snapshot"`.
@@ -198,7 +198,7 @@ appStore.$update(draft => { draft.tags = ['b']; });
 
 Declared-optional keys subscribe once materialized (`$subscribe` throws for keys that were never written, like any absent key), and declared `middleware` and `equals` entries apply to them: options are keyed by the declared shape, so the entry runs at materialization and on every later write.
 
-> ⚠️ **Nested future keys must not be declared optional.** An optional plain-object member types as a leaf signal rather than a nested store: the only compiling call form (`appStore.user?.()`) throws at runtime once the key materializes, while the runtime-correct `appStore.user.name()` stays a type error. Declare placeholder values for nested shapes instead: `store({ user: { name: '' } })` types every level up front with no future-key ceremony. Keep the returned-reference pattern above for nested shapes discovered at runtime.
+> **Nested future keys must not be declared optional.** An optional plain-object member types as a leaf signal rather than a nested store: the only compiling call form (`appStore.user?.()`) throws at runtime once the key materializes, while the runtime-correct `appStore.user.name()` stays a type error. Declare placeholder values for nested shapes instead: `store({ user: { name: '' } })` types every level up front with no future-key ceremony. Keep the returned-reference pattern above for nested shapes discovered at runtime.
 
 Keys absent from the creation declaration get no middleware or [write equality](/learn/concepts/state#write-equality): both are keyed by the declared shape, so declare a key in the initial object or type parameter when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `$update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.$update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
 
@@ -313,7 +313,7 @@ type PartialDeep<T> = {
 
 - **`T`**: The object type to make partially optional.
 
-> ⚠️ `PartialDeep` preserves arrays and functions without recursing into them. A partial update to `{ items: [...] }` writes the whole array through the container's reconcile: object elements at existing positions patch in place, equal positions write nothing, and length differences restructure.
+> `PartialDeep` preserves arrays and functions without recursing into them. A partial update to `{ items: [...] }` writes the whole array through the container's reconcile: object elements at existing positions patch in place, equal positions write nothing, and length differences restructure.
 
 ### `ReadonlyKeys<T, O>`
 

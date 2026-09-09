@@ -203,7 +203,6 @@ const TodoApp = () => {
 - **`todos().filter(...)`**:  Creates a new array without the removed todo
 
 <div role="alert" class="alert alert-error text-base">
-  <span>⚠️</span>
   <span>Always create new arrays when updating signals. Mutating existing arrays won't trigger updates.</span>
 </div>
 
@@ -286,7 +285,6 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
 - **`{todos().length === 0 && (...)}`**:  Conditional empty state
 
 <div role="alert" class="alert alert-error text-base">
-  <span>⚠️</span>
   <span>Always use `<ForEach>` for signal lists or they won't be reactive.</span>
 </div>
 
