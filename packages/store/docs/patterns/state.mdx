@@ -295,3 +295,56 @@ total(); // 27
 cart.discount(0.2);
 total(); // 24
 ```
+
+### Persist to localStorage
+
+The quickstart for [`persistStore`](/reference/store/persiststore) with [`localStorageAdaptor`](/reference/store/localstorageadaptor): one call, synchronous rehydration, write-through on every change.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const settings = store({ theme: 'light', fontSize: 12 });
+const persist = persistStore(settings, localStorageAdaptor('settings'));
+
+settings.theme('dark'); // localStorage: {"theme":"dark","fontSize":12}
+```
+
+### Persist a Subset with partialize
+
+Keep volatile or non-serializable keys out of storage: only the projected keys are written, and changes to excluded keys never trigger writes.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const editor = store({
+  document: { title: 'Untitled', body: '' },
+  cursor: 0,
+  autosaveDraft: null as string | null
+});
+const persist = persistStore(editor, localStorageAdaptor('editor'), {
+  partialize: (s) => ({ document: s.document })
+});
+
+editor.autosaveDraft('tmp'); // excluded key; no storage write
+editor.$update({ document: { title: 'Draft', body: 'Hello' } }); // persisted
+```
+
+### Sync Tabs via the Storage Event
+
+Cross-tab sync is not built in; the browser's `storage` event plus `$update()` covers it. The write-through dedupes the echo, so there is no feedback loop.
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const counter = store({ count: 0 });
+const adaptor = localStorageAdaptor('shared-count');
+const persist = persistStore(counter, adaptor);
+
+window.addEventListener('storage', (event) => {
+  if (event.key !== 'shared-count' || event.newValue === null) return;
+  counter.$update(JSON.parse(event.newValue));
+});
+```

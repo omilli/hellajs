@@ -30,7 +30,7 @@ counter.step(2);
 
 ## What Stores Provide
 
-Beyond basic get/set, stores offer several capabilities, each documented in detail in the [`store`](/reference/store/store) reference.
+Beyond basic get/set, stores offer several capabilities, each covered in a section below or in the [`store`](/reference/store/store) reference.
 
 - **Readonly**: Restrict specific properties or the entire store to read-only access, enforced at the type level.
 - **Snapshots**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
@@ -154,6 +154,182 @@ Object elements convert on entry, so a `Set` key stores the converted element st
 The `Reactive<T>` mapping routes plain-object elements (type-literal shapes) to element stores. Elements typed as `interface`s miss the mapping's object gate and type as raw values while the runtime still converts them; use type aliases for element shapes, the same pre-existing limitation as the object branch of `Store<T>`.
 
 
+## Middleware
+
+Transform or validate values before they are stored. Middleware runs synchronously on every set operation for the configured properties.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({
+  name: '',
+  email: '',
+  age: 0
+}, {
+  middleware: {
+    name: (v) => v.trim(),
+    email: (v) => v.toLowerCase(),
+    age: (v) => {
+      if (v < 0) throw new Error('Age cannot be negative');
+      return v;
+    }
+  }
+});
+
+user.name('John');              // stored as 'John'
+user.email('john@example.com'); // stored as 'john@example.com'
+user.age(-5);                   // throws Error
+```
+
+Middleware also applies through `$update()`:
+
+```typescript
+user.$update({ name: 'Jane', age: 30 });
+user.$update(draft => { draft.email = 'jane@example.com'; });
+```
+
+Middleware works with nested stores too. Middleware for nested objects must be a nested object mapping individual property keys to their middleware functions:
+
+```typescript
+const app = store({
+  user: { name: '', email: '' },
+  settings: { theme: 'light' }
+}, {
+  middleware: {
+    user: {
+      name: (v) => v.trim(),
+      email: (v) => v.toLowerCase()
+    },
+    settings: {
+      theme: (v) => {
+        if (!['light', 'dark'].includes(v)) throw new Error('Invalid theme');
+        return v;
+      }
+    }
+  }
+});
+```
+
+Middleware runs *before* changes are stored; use it for validation, transformation, or normalization. Effects run *after*; see [reactivity](/learn/concepts/reactivity) for logging and derived-state patterns. For persistence, use [persistStore](/reference/store/persiststore); see [Persistence](#persistence).
+
+## Persistence
+
+`persistStore(store, adaptor)` connects a store to storage, rehydrating persisted state at creation and writing every change through. Synchronous backends like localStorage apply before `persistStore` returns; async backends such as IndexedDB resolve later, and the reactive `hydrated()` flag gates on it:
+
+```typescript
+import { store } from '@hellajs/store';
+import { persistStore, localStorageAdaptor } from '@hellajs/store';
+
+const settings = store({ theme: 'light', fontSize: 12 });
+const persist = persistStore(settings, localStorageAdaptor('settings'));
+
+// Persisted values applied; every later change writes through
+settings.theme('dark');
+```
+
+Corrupt or outdated persisted state never bricks the app: storage is cleared, the initial state stays, and `onError` reports. See the [persistStore reference](/reference/store/persiststore) for the full hydration contract and the [State patterns](/learn/patterns/state) for partial persistence and cross-tab recipes.
+
+## Write Equality
+
+Direct writes are reference-compared by default: writing a new array with identical content wakes every subscriber of that leaf. The `equals` option opts a key into content equality: reach for it when a store holds object, array, `Date`, `Map`, or class-instance leaves that are replaced wholesale on every save:
+
+```typescript
+import { effect } from '@hellajs/core';
+import { store } from '@hellajs/store';
+
+const appStore = store({ items: [1, 2], user: { name: 'a' } }, {
+  equals: {
+    items: 'structural', // compares by content, like the draft path
+    user: { name: (prev, next) => prev === next }, // nested maps reach nested stores
+  },
+});
+
+effect(() => {
+  console.log(appStore.items()); // Logs: [1, 2]
+});
+
+appStore.items([1, 2]); // same content; write skipped, effect stays asleep
+```
+
+A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it (direct calls, `$update(partial)`, and `$update(draft => …)`), and equality runs after middleware, so the comparator sees the transformed value. Invalid values throw at create time: a leaf accepts a comparator function or `'structural'`; an object key accepts a nested map only, so `'structural'` on an object key throws.
+
+Prefer the draft path for fine-grained array edits and reserve `'structural'` for large leaves that are replaced wholesale; it costs O(n) per write. See [write equality](/reference/store/store#write-equality) for the full option shape.
+
+## Readonly
+
+Granular control over which properties can be modified, enforced at the type level.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const configStore = store(
+  { apiUrl: 'https://api.com', theme: 'light', debug: false },
+  { readonly: ['apiUrl'] as const }
+);
+
+configStore.theme('dark');           // Updates normally
+// ❌ configStore.apiUrl('new-url'); throws: readonly key
+```
+
+Readonly propagates deep. `readonly: true` locks every plain-object level of the tree, and a listed object key locks the entire subtree below it: `readonly: ['user']` makes `user` and everything inside it readonly. Each nested level derives its own full readonly key set, so intermediate objects stay locked too:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const app = store(
+  { user: { name: 'Alice', prefs: { theme: 'dark' } }, version: 1 },
+  { readonly: true }
+);
+
+// ❌ app.user.name("Bob"); throws: readonly propagates into nested objects
+// ❌ app.user.prefs.theme("light"); throws: every plain-object level is locked
+app.user.prefs.theme(); // 'dark'; reading works everywhere
+
+const partial = store(
+  { user: { name: 'Alice' }, theme: 'light' },
+  { readonly: ['user'] as const }
+);
+
+// ❌ partial.user.name("Bob"); throws: the whole user subtree is readonly
+partial.theme('dark');  // Updates normally; only listed keys lock
+```
+
+Composed stores keep their own readonly configuration. A pre-configured readonly store stays readonly when composed into a writable parent, and a writable store composed into a `readonly: true` parent stays writable; composition adopts the inner store's signals as-is:
+
+```typescript
+import { store } from '@hellajs/store';
+
+const user = store({ name: 'Alice' }, { readonly: true });
+const app = store({ user });
+
+// ❌ app.user.name("Bob"); throws: user retains its readonly state
+app.user.name();      // 'Alice'
+```
+
+## Subscriptions
+
+`$subscribe` observes one signal-backed property without reading the rest of the store. The callback receives the next and previous values; the initial subscribe does not fire it.
+
+```typescript
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0, user: { name: 'Alice' } });
+
+const unsub = appStore.$subscribe('count', (next, prev) => {
+  console.log(prev, '→', next);
+});
+
+appStore.count(5); // Logs: 0 → 5
+unsub();
+appStore.count(6); // silent; unsubscribed
+```
+
+The callback runs untracked: reading other signals inside it never widens the subscription. Writes that compare equal to the current value skip the callback entirely, and multiple writes inside [`batch`](/reference/core/batch)`()` fire it once, with the final value, when the batch ends.
+
+Only signal-backed properties are subscribable: nested stores, preserved functions, reserved keys, and unknown keys throw. A composed parent exposes only its own signal-backed keys: subscribe on the store that owns the key (the nested store itself), and writes through either reference fire it because composed stores share signals.
+
+Use `$subscribe` where an [`effect`](/reference/core/effect) falls short: effects see no previous value, fire on setup, and reading `$snapshot()` inside one subscribes to the entire tree. `$subscribe` is per-property, silent on setup, and carries `(next, prev)`, the shape logging, analytics, and undo stacks want.
+
 ## Important Store Behaviors
 
 ### Update Errors
@@ -211,7 +387,7 @@ app.$snapshot();      // { count: 0, tags: ['a'] }; runtime sees the key, app's 
 
 When the future keys are known at creation, declare them optional in the type parameter instead: `store<{ count: number; tags?: string[] }>({ count: 0 })` grows on the same binding, reads stay `string[] | undefined` and use optional chaining (`appStore.tags?.()` is `undefined` until the first write materializes the property), and draft additions of declared keys type-check. Optional declaration works for leaf and array values; nested future objects need placeholder values (`store({ user: { name: '' } })`) or the returned reference, because an optional plain-object member types as a leaf signal instead of a nested store.
 
-Plain-object values become nested stores, middleware and [write equality](/learn/concepts/store-control#write-equality) are keyed by the declared shape (declare a key in the initial object or type parameter when it needs either), and [`persistStore`](/reference/store/persiststore) materializes persisted keys beyond the initial shape on hydration. See [Growing Stores](/reference/store/store#growing-stores) for the full contract.
+Plain-object values become nested stores, middleware and [write equality](#write-equality) are keyed by the declared shape (declare a key in the initial object or type parameter when it needs either), and [`persistStore`](/reference/store/persiststore) materializes persisted keys beyond the initial shape on hydration. See [Growing Stores](/reference/store/store#growing-stores) for the full contract.
 
 ### Non-Writable Properties
 

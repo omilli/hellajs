@@ -119,9 +119,9 @@ Global and per-route hooks with `leave`, `before`, and `after` execution points.
 | `hooks.before(to, from)` | Before the incoming route's guards | `false` cancels, a non-empty `string` redirects (replace), a `Promise` blocks on the client |
 | `hooks.after(to, from)` | After the route commits | Cannot block |
 
-Route-level `leave` hooks run child→parent after the global `leave`, receiving the departed route's params/query, the unsaved-form flow, with [`navigate(path, { force: true })`](/reference/router/navigate) as the override. See [Leave Guards](/learn/concepts/route-hooks#leave-guards) for the full contract.
+Route-level `leave` hooks run child→parent after the global `leave`, receiving the departed route's params/query, the unsaved-form flow, with [`navigate(path, { force: true })`](/reference/router/navigate) as the override. See [Leave Guards](/learn/concepts/routing#leave-guards) for the full contract.
 
-Routes can also carry `meta` for analytics, SEO, or feature flags; `inheritMeta` cascades parent meta down the nested match chain. See [route hooks](/learn/concepts/route-hooks#route-metadata) for the cascade, per-route boundaries, and inline `navigate()` precedence.
+Routes can also carry `meta` for analytics, SEO, or feature flags; `inheritMeta` cascades parent meta down the nested match chain. See [Route Metadata](/learn/concepts/routing#route-metadata) for the cascade, per-route boundaries, and inline `navigate()` precedence.
 
 ```typescript
 router({
@@ -409,4 +409,4 @@ router({
 });
 ```
 
-For recovery patterns, see [Route Guards](/learn/concepts/route-hooks).
+For recovery patterns, see [Route Guards](/learn/concepts/routing#route-guards).

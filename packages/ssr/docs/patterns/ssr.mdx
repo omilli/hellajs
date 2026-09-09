@@ -1,6 +1,6 @@
 # SSR
 
-Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr). For URL→view routing on the server (a request URL driving the rendered view, with shared client [`hydrate`](/reference/dom/hydrate)), see [SSR Routing](/learn/patterns/routing-ssr).
+Copy-paste recipes for server rendering with [`@hellajs/ssr`](/reference/ssr/ssr). For URL→view routing on the server (a request URL driving the rendered view, with shared client [`hydrate`](/reference/dom/hydrate)), see the [Routing](/learn/patterns/routing) SSR recipes.
 
 ### Plain HTML with Bun.serve
 
@@ -209,7 +209,7 @@ Bun.serve({
 });
 ```
 
-With [SSR Routing](/learn/patterns/routing-ssr), each route view owns its entries the same way: the request URL picks the view, the view picks the head. Streaming note: under [`ssr.stream`](/reference/ssr/ssr#stream) the bag fills as the walk proceeds, but a streamed document emits its `<head>` up front; pass head entries to `doc` explicitly when streaming.
+With the [Routing](/learn/patterns/routing) SSR recipes, each route view owns its entries the same way: the request URL picks the view, the view picks the head. Streaming note: under [`ssr.stream`](/reference/ssr/ssr#stream) the bag fills as the walk proceeds, but a streamed document emits its `<head>` up front; pass head entries to `doc` explicitly when streaming.
 
 ### Streaming responses
 

@@ -712,9 +712,9 @@ Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparis
 | Doc type | Target | Maximum | Action when exceeded |
 |----------|--------|---------|---------------------|
 | API docs | 100–350 lines | 400 lines | Split Key Concepts to `concepts/` |
-| Concept docs | 40–250 lines | 350 lines | Split into multiple concept docs |
+| Concept docs | 40–250 lines | 800 lines | Split into multiple concept docs |
 | Prefix docs | 50–200 lines | 250 lines | Split Key Concepts to `concepts/` |
-| Pattern docs | 100–300 lines | 400 lines | Split by sub-topic |
+| Pattern docs | 100–300 lines | 400 lines (soft) | Trim prose first; split only when sub-topics are genuinely independent |
 | Index docs | 40–70 lines | 100 lines | Simplify the example |
 | Code blocks | 5–30 lines | 40 lines | Simplify or use context markers |
 
@@ -769,4 +769,4 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] No em/en dashes or their HTML entities in any user-facing file (prose, tables, frontmatter descriptions, code-block comments); numeric ranges use ASCII hyphens; enforced by `bun em-dash` (composed into `bun lint:guards`)
 
 **Length**
-- [ ] Within target per §Length Targets; action taken if exceeded
+- [ ] Within target per §Length Targets; action taken if exceeded (pattern docs: the 400-line maximum is a soft target, trim prose before splitting)

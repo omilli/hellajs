@@ -200,7 +200,7 @@ Declared-optional keys subscribe once materialized (`$subscribe` throws for keys
 
 > ⚠️ **Nested future keys must not be declared optional.** An optional plain-object member types as a leaf signal rather than a nested store: the only compiling call form (`appStore.user?.()`) throws at runtime once the key materializes, while the runtime-correct `appStore.user.name()` stays a type error. Declare placeholder values for nested shapes instead: `store({ user: { name: '' } })` types every level up front with no future-key ceremony. Keep the returned-reference pattern above for nested shapes discovered at runtime.
 
-Keys absent from the creation declaration get no middleware or [write equality](/learn/concepts/store-control#write-equality): both are keyed by the declared shape, so declare a key in the initial object or type parameter when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `$update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.$update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
+Keys absent from the creation declaration get no middleware or [write equality](/learn/concepts/state#write-equality): both are keyed by the declared shape, so declare a key in the initial object or type parameter when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `$update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.$update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
 
 ### `$cleanup`
 
@@ -273,7 +273,7 @@ console.log(appStore.user.name());   // Bob
 
 ### Deep Reactivity
 
-All nested objects become stores, Array/Map/Set values become granular collection containers with element stores, and functions stay as-is, a fully reactive state tree. See [State](/learn/concepts/state) for the deep walk and effect examples, the [deep collection keys](/learn/concepts/state#deep-collection-keys) section for the granularity matrix, and [Store Control](/learn/concepts/store-control) for [middleware](/learn/concepts/store-control#middleware) and [readonly](/learn/concepts/store-control#readonly) configuration.
+All nested objects become stores, Array/Map/Set values become granular collection containers with element stores, and functions stay as-is, a fully reactive state tree. See [State](/learn/concepts/state) for the deep walk and effect examples, the [deep collection keys](/learn/concepts/state#deep-collection-keys) section for the granularity matrix, and the [middleware](/learn/concepts/state#middleware) and [readonly](/learn/concepts/state#readonly) sections for control configuration.
 
 ### Nested Stores
 
@@ -289,7 +289,7 @@ Pass a function to `$update()` for ergonomic mutations on a mutable draft of the
 
 ### Write Equality
 
-By default every write is reference-compared; the `equals` option replaces that per key with a comparator function or the `'structural'` content-equality preset, inherited by every write path (direct calls, `$update(partial)`, and the draft path). For collection keys the comparator applies per element: it receives two elements (two values for a Map), never two whole collections. See [write equality](/learn/concepts/store-control#write-equality) for the option shape, invalid-value errors, and the O(n) cost note.
+By default every write is reference-compared; the `equals` option replaces that per key with a comparator function or the `'structural'` content-equality preset, inherited by every write path (direct calls, `$update(partial)`, and the draft path). For collection keys the comparator applies per element: it receives two elements (two values for a Map), never two whole collections. See [write equality](/learn/concepts/state#write-equality) for the option shape, invalid-value errors, and the O(n) cost note.
 
 ### Function Preservation
 
@@ -317,7 +317,7 @@ type PartialDeep<T> = {
 
 ### `ReadonlyKeys<T, O>`
 
-Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [readonly](/learn/concepts/store-control#readonly) for usage.
+Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [readonly](/learn/concepts/state#readonly) for usage.
 
 ```typescript
 type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
@@ -381,7 +381,7 @@ userStore.$cleanup();
 
 ### Readonly Propagates Deep
 
-`readonly: true` locks every plain-object level of the store tree, and a listed object key locks its entire subtree. Composed stores are the exception: adoption preserves their signals, so a composed store keeps its own readonly configuration regardless of the parent's. See [readonly](/learn/concepts/store-control#readonly) for the full explanation and examples.
+`readonly: true` locks every plain-object level of the store tree, and a listed object key locks its entire subtree. Composed stores are the exception: adoption preserves their signals, so a composed store keeps its own readonly configuration regardless of the parent's. See [readonly](/learn/concepts/state#readonly) for the full explanation and examples.
 
 ### Signals Survive Cleanup
 
