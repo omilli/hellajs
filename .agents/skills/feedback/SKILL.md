@@ -40,7 +40,7 @@ No bundling unrelated issues; no hypothetical improvements without run evidence.
 
 **Kind:**
 - **Config/skill gap** (instruction missing/vague/wrong) → edit root `AGENTS.md`, `guides/`, or `.agents/skills/` (first-party files).
-- **Project rule conflicted with the work** → rule-update proposal for that rule (guide, guard, or AGENTS.md), not a config edit.
+- **Project rule conflicted with the work** → rule update for that rule (guide, guard, or AGENTS.md), not a config edit. User-directed work pre-accepts its rule update: derive it and apply uncommitted via Step 4 (`author`/`skill`); agent-initiated conflicts surface as proposals for the user (AGENTS.md §Non-negotiables).
 - **Recallable fact/decision, not a rule** → hand to `memory`.
 
 **Scope:** project → this repo's config; global → the user's global agent config (outside this repo). Test: *would this fix apply in any project?* Don't bury a universal lesson in one project; don't pollute project config with generic rules.

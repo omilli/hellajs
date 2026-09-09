@@ -3,8 +3,8 @@ type: decision
 title: Router SSR is library territory — router({ url }) + synchronous init make the router server-runnable; no new primitive, no per-request rewrite for the sync path
 description: Router SSR is library territory (supersedes 017) — router({ url }) plus synchronous init make the router server-runnable and composable with ssr/hydrate; no new primitive, no per-request rewrite.
 tags: [arch, ssr, router, isomorphic]
-timestamp: 2026-08-27
-last_confirmed: 2026-08-27
+timestamp: 2026-09-09
+last_confirmed: 2026-09-09
 triggers: [router-ssr, isomorphic-routing, router-url-option, synchronous-init]
 supersedes: 017
 ---
@@ -22,6 +22,6 @@ The crux: 017 conflated "a standalone `resolveRoute(config, url)` primitive isn'
 - `packages/router/lib/types.d.ts`: `RouterConfig.url?: string` — "Resolve against this URL instead of `window.location`. Used for SSR, where there is no window."
 - `packages/router/lib/router.ts`: `const initialPath = config.url ?? (hasWindow() ? (routerMode === "hash" ? getHashPath() : window.location.pathname + window.location.search) : "/");` and a direct `updateRoute()` (was `queueMicrotask(() => updateRoute())`). Init is now synchronous; `navigate()` already was.
 - `packages/router/tests/ssr.test.ts`: 6 scenarios (synchronous resolution; `url` overrides `window.location`; path params; query string; handler fires once during `router()`; re-resolves url on each `router()` call in one process — added by 027). `bun coverage router` exits 0 (164 pass, 100% lines).
-- `packages/router/docs/patterns/routing-ssr.mdx` (renamed from `ssr.mdx` 2026-08-27): Bun.serve recipes for `ssr`/`ssrAsync`/`ssrStream` + one shared `hydrate` + pure-handler & concurrency idioms; wrapper `docs/src/pages/learn/patterns/routing-ssr.mdx`.
+- `packages/router/docs/patterns/routing.mdx` (SSR sections; `ssr.mdx` renamed to `routing-ssr.mdx` 2026-08-27, merged into `routing.mdx` 2026-09-09, hydrate section dropped): Bun.serve recipes for `ssr`/`ssrAsync`/`ssrStream` + pure-handler & concurrency idioms; wrapper `docs/src/pages/learn/patterns/routing.mdx`.
 - `plans/router/code/router-ssr/index.md`: the resolved design + the two-unit set.
 - 017's still-valid sub-facts survive elsewhere: env-agnostic primitives (memory 005); `ssr` reads once / runs no effects (ssr-comparison.md §2). Only the "meta-framework territory, don't build it" verdict is overturned.

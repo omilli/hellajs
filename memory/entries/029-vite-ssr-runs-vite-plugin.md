@@ -3,8 +3,8 @@ type: decision
 title: "Vite SSR runs vite-plugin-hellajs on the server entry — ssrLoadModule('/src/server.tsx') transforms server-side JSX to HellaNode; a configureServer middleware streams the SSR HTML"
 description: vite-plugin-hellajs transforms the Vite SSR pipeline too — ssrLoadModule of a .tsx server entry yields HellaNode JSX; a configureServer middleware streams it, dodging Bun's React JSX runtime.
 tags: [arch, ssr, dom, jsx, vite, plugin]
-timestamp: 2026-08-27
-last_confirmed: 2026-08-27
+timestamp: 2026-09-09
+last_confirmed: 2026-09-09
 triggers: [vite-ssr, jsx-server-entry, ssrloadmodule, vite-plugin-server, configure-server-ssr]
 ---
 
@@ -12,7 +12,7 @@ triggers: [vite-ssr, jsx-server-entry, ssrloadmodule, vite-plugin-server, config
 
 # Why
 
-The documented SSR precedent (`packages/router/docs/patterns/routing-ssr.mdx`, renamed from `ssr.mdx` 2026-08-27, + its wrapper) uses
+The documented SSR precedent (the SSR sections of `packages/router/docs/patterns/routing.mdx`, merged 2026-09-09 from `routing-ssr.mdx`; no separate wrapper) uses
 `html` + `Bun.serve` — the `html\`\` parser is DOM-free and runs at runtime, so the server entry
 needs NO build plugin. But a JSX server entry (`<App />`) is NOT a HellaNode until a build plugin
 transforms it; running it through a runtime that supplies its own JSX (Bun's React runtime) silently
