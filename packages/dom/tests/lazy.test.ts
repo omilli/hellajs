@@ -207,7 +207,9 @@ describe("dom", () => {
       await pendingPromise;
       await delay();
 
-      expect(container.textContent).toContain("Loading");
+      // unmount ran lazyCleanup: the loading node is removed with the anchor, and the late
+      // resolution inserts nothing
+      expect(container.textContent).toBe("");
       expect(container.textContent).not.toContain("Should not render");
     });
 
@@ -236,7 +238,7 @@ describe("dom", () => {
       await delay(20);
 
       expect(container.textContent).not.toContain("Fallback");
-      expect(container.textContent).toContain("Loading");
+      expect(container.textContent).toBe("");
     });
 
     test("passes abort signal to loader and aborts on cleanup", async () => {

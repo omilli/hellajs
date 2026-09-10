@@ -26,7 +26,7 @@ export function Transition(props: TransitionProps): JSX.Element {
     let leaveTimer: ReturnType<typeof setTimeout> | null = null;
     let isFirstRender = true;
 
-    registry.addEffect(parent, () => {
+    registry.addEffect(anchor, () => {
       const isFirst = isFirstRender;
       isFirstRender = false;
 
@@ -93,10 +93,17 @@ export function Transition(props: TransitionProps): JSX.Element {
       }
     });
 
-    getState(parent).transitionCleanup = () => {
+    // anchor-owned lifecycle (see ForEach): the anchor carries the effect + this disposer, so a
+    // reactive getter switching away removes the current node alongside disposing the effect
+    getState(anchor).transitionCleanup = () => {
       if (leaveTimer) {
         clearTimeout(leaveTimer);
         leaveTimer = null;
+      }
+      if (current) {
+        cleanupSubtree(current);
+        current.parentNode?.removeChild(current);
+        current = null;
       }
     };
   }) as JSX.Element;

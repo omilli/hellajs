@@ -17,6 +17,8 @@ export interface ElementState {
   isMounted: boolean;
   componentScope?: () => void;
   portalCleanup?: () => void;
+  /** Disposer registered by ForEach on its text anchor: removes every tracked item from its live parent and clears the key maps. */
+  forEachCleanup?: () => void;
   errorConfig?: ErrorConfig;
   originalNode?: HellaNode;
   cachedBoundary?: Element;

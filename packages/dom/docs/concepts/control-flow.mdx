@@ -70,7 +70,7 @@ mount(TodoList, "#app");
 
 A bare `{todos().map(...)}` is reactive (it reads the signal). For a one-time static snapshot, hoist the read (`const items = todos()`) or wrap it in [`untracked`](/reference/core/untracked); or, for lists that change, prefer [`ForEach`](/reference/dom/foreach).
 
-ForEach tracks items by key: an explicit `key` attribute, then the item's `id` property, then the array index as fallback. Keys use key-only comparison, so the same key always reuses its DOM node even when the item reference changes (for example after a `.map()` spread); index-keyed items fall back to reference equality instead. Updates always set a fresh array reference (`items([...items(), "D"])`); mutating the array in place does not trigger reactivity. List items and their effects are cleaned up automatically when removed from the DOM.
+ForEach tracks items by key: an explicit `key` attribute, then the item's `id` property, then the array index as fallback. Keys use key-only comparison, so the same key always reuses its DOM node even when the item reference changes (for example after a `.map()` spread); index-keyed items fall back to reference equality instead. Updates always set a fresh array reference (`items([...items(), "D"])`); mutating the array in place does not trigger reactivity. List items and their effects are cleaned up automatically when removed from the DOM, or when a reactive condition switches away from the list.
 
 See [`ForEach`](/reference/dom/foreach) for full keyed reconciliation details.
 

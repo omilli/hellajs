@@ -3,6 +3,7 @@ import { isFunction } from "./internal/core";
 import { registry } from "./registry";
 import { resolveNode, childNamespaceOf } from "./internal/render";
 import { cleanupSubtree } from "./internal/cleanup";
+import { getState } from "./internal/state";
 import { peekHydrateContext } from "./internal/hydrate";
 import type { HellaNode, HellaChild, ForEachProps } from "./types/nodes";
 
@@ -111,7 +112,7 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
     const anchor = hctx ? hctx.anchor : document.createTextNode("");
     if (!hctx) parent.appendChild(anchor);
 
-    registry.addEffect(parent, () => {
+    registry.addEffect(anchor, () => {
       const actualParent = anchor.parentNode as Element;
       if (!actualParent) return;
       const itemNs = childNamespaceOf(actualParent);
@@ -378,6 +379,24 @@ export function ForEach<T>(props: ForEachProps<T>): JSX.Element {
         currentKeys.length = 0;
       }
     });
+
+    // anchor-owned lifecycle: the component's own text anchor carries the effect + this disposer,
+    // so a reactive getter switching away from the list removes its output (removeTrackedItem per
+    // item against the live parent) and disposes the effect (clean/drainAnchorCleanup on the anchor)
+    getState(anchor).forEachCleanup = () => {
+      const liveParent = anchor.parentNode;
+      if (liveParent) {
+        const entries = Array.from(keyToNode.values());
+        let ei = 0;
+        const eLen = entries.length;
+        while (ei < eLen) {
+          removeTrackedItem(entries[ei++]!, liveParent as Element);
+        }
+      }
+      keyToNode.clear();
+      keyToItem.clear();
+      currentKeys.length = 0;
+    };
   }) as JSX.Element;
 
   fn.isDynamic = true;

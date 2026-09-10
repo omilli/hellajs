@@ -159,7 +159,7 @@ HellaJS's `element()` is the most Web-Components-native authoring path in the gr
 
 HellaJS pairs two cooperating mechanisms:
 
-1. **Synchronous `cleanupSubtree()`**, called directly at every internal removal point: reactive child swaps (`lib/internal/render.ts`), ForEach stale removal and list clearing (`lib/ForEach.ts`), transition leave completion (`lib/Transition.ts`), lazy/suspense region drops (`lib/internal/hydrate.ts`). Per node it runs `beforeDestroy`, disposes component/lazy/transition/portal/suspense scopes, drains effects, removes direct handlers, runs `afterDestroy`, and deletes state (`lib/internal/cleanup.ts`).
+1. **Synchronous `cleanupSubtree()`**, called directly at every internal removal point: reactive child swaps (`lib/internal/render.ts`), ForEach stale removal and list clearing (`lib/ForEach.ts`), transition leave completion (`lib/Transition.ts`), lazy/suspense region drops (`lib/internal/hydrate.ts`). Per node it runs `beforeDestroy`, disposes component/forEach/lazy/transition/portal/suspense scopes, drains effects, removes direct handlers, runs `afterDestroy`, and deletes state (`lib/internal/cleanup.ts`).
 2. **A scoped `MutationObserver` safety net**: one observer shared across all mount targets (`observedContainers` WeakSet) feeds removed state-carrying nodes into a cleanup queue drained on a microtask, skipping nodes that re-attached by the time it runs (`lib/internal/queue.ts`).
 
 All per-element state lives in a `WeakMap<Node, ElementState>`: no expando properties on DOM nodes, and the state GCs with the node it describes (`lib/internal/state.ts`). `effects`, `directHandlers`, and `hooks` are lazy-allocated on first use, so a reactive leaf pays for little more than `{ handlers, isMounted }` (`lib/internal/state.ts`).

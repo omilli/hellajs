@@ -37,7 +37,7 @@ registry.addEffect(element, () => {
 });
 ```
 
-Effects also trigger `beforeUpdate` and `afterUpdate` hooks when the element is mounted.
+Effects also trigger `beforeUpdate` and `afterUpdate` hooks when the element is mounted. Dynamic components (`ForEach`, `Transition`) register their internal effect on their own anchor, so a parent element's `hook:beforeUpdate`/`hook:afterUpdate` do not fire for list or visibility updates.
 
 ### `addHook`
 

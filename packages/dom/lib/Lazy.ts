@@ -1,6 +1,7 @@
 import { isFunction } from "./internal/core";
 import { getState } from "./internal/state";
 import { mountNode, resolveNode, childNamespaceOf, clearRenderedNodes } from "./internal/render";
+import { cleanupSubtree } from "./internal/cleanup";
 import { peekHydrateContext } from "./internal/hydrate";
 import type { LazyProps, HellaNode } from "./types/nodes";
 
@@ -33,11 +34,22 @@ export function Lazy(props: LazyProps): JSX.Element {
 
     let isCancelled = false;
     const controller = new AbortController();
+    let contentNode: Node | null = null;
 
-    const state = getState(parent);
+    // anchor-owned lifecycle (see ForEach): the anchor carries this disposer, so a reactive getter
+    // switching away aborts the in-flight loader and removes whatever Lazy inserted
+    const state = getState(anchor);
     state.lazyCleanup = () => {
       isCancelled = true;
       controller.abort();
+      if (loadingNode) {
+        cleanupSubtree(loadingNode);
+        loadingNode.parentNode?.removeChild(loadingNode);
+      }
+      if (contentNode) {
+        cleanupSubtree(contentNode);
+        contentNode.parentNode?.removeChild(contentNode);
+      }
     };
 
     props.loader({ signal: controller.signal })
@@ -47,6 +59,7 @@ export function Lazy(props: LazyProps): JSX.Element {
         if (existing.length) clearRenderedNodes(existing, parent);   // swap the server-rendered region for the fresh mount
         const resolved = isFunction(component) ? component(props.props) : component;
         const mounted = mountNode(resolved as HellaNode, undefined, childNamespaceOf(anchor.parentNode));
+        contentNode = mounted;
         anchor.parentNode.insertBefore(mounted, anchor);
       })
       .catch((err: unknown) => {
@@ -55,6 +68,7 @@ export function Lazy(props: LazyProps): JSX.Element {
         if (props.fallback) {
           if (existing.length) clearRenderedNodes(existing, parent); // replace the server content with the error UI
           const mounted = resolveNode(props.fallback, undefined, childNamespaceOf(anchor.parentNode));
+          contentNode = mounted;
           anchor.parentNode.insertBefore(mounted, anchor);
         } else {
           console.error("[dom] Lazy:", err);                        // no fallback — leave the server content in place (static degradation)

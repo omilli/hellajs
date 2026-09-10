@@ -41,6 +41,7 @@ function clean(node: Node) {
 
   state.componentScope?.();
   state.portalCleanup?.();
+  state.forEachCleanup?.();
   state.lazyCleanup?.();
   state.transitionCleanup?.();
   state.suspenseCleanup?.();
@@ -60,6 +61,35 @@ function clean(node: Node) {
   runHooks(node, "afterDestroy");
 
   deleteState(node);
+}
+
+/**
+ * @internal
+ * Drains a persistent region anchor's component state at reactive-region re-run start: runs the
+ * five component cleanup slots (`componentScope` excluded — the anchor never carries a component
+ * scope) and drains `effects`, then clears them. Unlike `clean`, keeps the state entry — the
+ * region anchor persists across re-renders, only its per-run occupants are disposed.
+ * @param node The region anchor to drain
+ */
+export function drainAnchorCleanup(node: Node) {
+  const state = peekState(node);
+  if (!state) return;
+
+  state.portalCleanup?.();
+  state.forEachCleanup?.();
+  state.lazyCleanup?.();
+  state.transitionCleanup?.();
+  state.suspenseCleanup?.();
+
+  const effects = state.effects;
+  if (effects) {
+    let i = 0;
+    const len = effects.length;
+    while (i < len) {
+      effects[i++]!();
+    }
+    effects.length = 0;
+  }
 }
 
 /**

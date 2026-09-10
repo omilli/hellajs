@@ -7,6 +7,7 @@ import { registry } from "../registry";
 import { getState } from "./state";
 import { deferSuspenseRegion, resetDeferredState, setDeferredAdopters } from "./deferred";
 import { mountNode, resolveNode, getBoundaryConfig, clearRenderedNodes, childNamespaceOf, HTML_NS } from "./render";
+import { drainAnchorCleanup } from "./cleanup";
 
 /**
  * @internal
@@ -173,12 +174,15 @@ setDeferredAdopters(adoptRegion, swapSuspenseStage);
  * Sets up a reactive (non-dynamic) child's effect against a marker-bounded region: the server-rendered
  * nodes are ADOPTED as the initial render (first run skipped); subsequent signal changes clear + render
  * fresh (mirroring `appendToParent`, incl. the isDynamic-resolved `Proxy` branch — safe here because
- * `clearRenderedNodes` runs before re-rendering on subsequent runs).
+ * `clearRenderedNodes` runs before re-rendering on subsequent runs). Each re-run first drains any
+ * component state left on the persistent region anchor (`drainAnchorCleanup` — a no-op for the common
+ * text/element case), so a dynamic component's effect and disposers never outlive their run.
  */
 function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: Node, existing: Node[], boundaryElement?: Element): void {
   const renderedNodes: Node[] = existing;
   let firstRun = existing.length > 0;
   registry.addEffect(parent, () => {
+    drainAnchorCleanup(anchor);
     const actualParent = anchor.parentNode;
     if (!actualParent) return;
     try {

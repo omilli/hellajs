@@ -1,5 +1,6 @@
 import { isFunction } from "./internal/core";
 import { resolveNode, clearRenderedNodes, childNamespaceOf } from "./internal/render";
+import { cleanupSubtree } from "./internal/cleanup";
 import { peekHydrateContext, hydrateSequence } from "./internal/hydrate";
 import { dispatchError, toError, resolveErrorConfig } from "./internal/dispatch";
 import { getState } from "./internal/state";
@@ -9,7 +10,9 @@ import type { SuspenseProps, HellaElement, HellaChild } from "./types/nodes";
  * Suspends `value` into `parent` before `anchor`: a thenable keeps the current fallback (removed via
  * `clearFallback` on settle) and swaps the resolved content in; a sync value replaces the fallback
  * immediately. Rejections bubble to the nearest boundary (`resolveErrorConfig`). Shared by the
- * fresh-mount and hydrate-degradation paths.
+ * fresh-mount and hydrate-degradation paths. Registers `suspenseCleanup` on the **anchor** and
+ * tracks every inserted node, so an anchor teardown (reactive switch-away, region re-run, subtree
+ * removal) cancels a pending child and removes the suspended content.
  */
 function suspendChild(
   parent: Element,
@@ -18,25 +21,51 @@ function suspendChild(
   clearFallback: () => void
 ): void {
   const ns = childNamespaceOf(parent);
+  const renderedNodes: Node[] = [];
+  let cancelled = false;
+  getState(anchor).suspenseCleanup = () => {
+    cancelled = true;
+    clearFallback();
+    let i = 0;
+    const len = renderedNodes.length;
+    while (i < len) {
+      const node = renderedNodes[i++]!;
+      cleanupSubtree(node);
+      node.parentNode?.removeChild(node);
+    }
+    renderedNodes.length = 0;
+  };
+  /** Inserts `node` before the anchor, tracking each top-level child (a fragment drains and tracks its children — the husk is empty after insertion). */
+  const insertTracked = (node: Node): void => {
+    if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+      let f: ChildNode | null = (node as DocumentFragment).firstChild;
+      while (f) {
+        renderedNodes.push(f);
+        parent.insertBefore(f, anchor);
+        f = node.firstChild;
+      }
+      return;
+    }
+    renderedNodes.push(node);
+    parent.insertBefore(node, anchor);
+  };
   if (value && isFunction((value as Promise<unknown>).then)) {
-    let cancelled = false;
-    getState(parent).suspenseCleanup = () => { cancelled = true; };
     (value as Promise<HellaChild | HellaChild[]>)
       .then((resolved) => {
         if (cancelled || !anchor.parentNode) return;
         clearFallback();
-        parent.insertBefore(resolveNode(resolved, undefined, ns), anchor);
+        insertTracked(resolveNode(resolved, undefined, ns));
       })
       .catch((err: unknown) => {
         if (cancelled || !anchor.parentNode) return;
         clearFallback();
         const errNode = dispatchError(toError(err), { phase: "mount", element: parent as HellaElement, config: resolveErrorConfig(parent) });
-        if (errNode) anchor.parentNode?.insertBefore(resolveNode(errNode, undefined, ns), anchor);
+        if (errNode) insertTracked(resolveNode(errNode, undefined, ns));
       });
     return;
   }
   clearFallback();
-  parent.insertBefore(resolveNode(value, undefined, ns), anchor);
+  insertTracked(resolveNode(value, undefined, ns));
 }
 
 /**
