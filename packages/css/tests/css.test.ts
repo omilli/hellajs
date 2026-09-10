@@ -167,15 +167,12 @@ describe("css", () => {
       );
     });
 
-    test("throws on function values at any nesting depth", () => {
+    test.each([
+      { ".card": { padding: () => "1px" } },
+      { "@media (min-width: 1px)": { ".card": { padding: () => "1px" } } },
+    ])("throws on function values at any nesting depth", (nested) => {
       // @ts-expect-error - testing invalid input
-      expect(() => css({ ".card": { padding: () => "1px" } })).toThrow(
-        "[css] function values are not supported in css objects"
-      );
-      // @ts-expect-error - testing invalid input
-      expect(() => css({ "@media (min-width: 1px)": { ".card": { padding: () => "1px" } } })).toThrow(
-        "[css] function values are not supported in css objects"
-      );
+      expect(() => css(nested)).toThrow("[css] function values are not supported in css objects");
     });
 
     test.each([

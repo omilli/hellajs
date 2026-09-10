@@ -8,7 +8,7 @@ beforeEach(() => {
 });
 
 describe("vars scoped", () => {
-  test("scoped vars with class selector", () => {
+  test("scoped option wraps vars in the class selector", () => {
     const varsObj = vars({
       theme: {
         primary: "#ff0000",
@@ -24,7 +24,7 @@ describe("vars scoped", () => {
     expect(varsObj.theme.secondary).toBe("var(--theme-secondary)");
   });
 
-  test("scoped vars with ID selector", () => {
+  test("scoped option wraps vars in the ID selector", () => {
     const varsObj = vars({
       layout: {
         padding: "20px",
@@ -40,7 +40,7 @@ describe("vars scoped", () => {
     expect(varsObj.layout.margin).toBe("var(--layout-margin)");
   });
 
-  test("prefixed vars", () => {
+  test("prefix option prefixes every custom property", () => {
     const varsObj = vars({
       colors: {
         primary: "blue",
@@ -56,7 +56,7 @@ describe("vars scoped", () => {
     expect(varsObj.colors.accent).toBe("var(--comp-colors-accent)");
   });
 
-  test("scoped and prefixed vars combined", () => {
+  test("scoped and prefix options compose", () => {
     const varsObj = vars({
       typography: {
         size: "16px",
@@ -96,7 +96,7 @@ describe("vars scoped", () => {
     expect(content).toContain("--theme-secondary:blue");
   });
 
-  test("reactive scoped vars", () => {
+  test("reactive leaves rewrite the scoped rule on signal writes", () => {
     const color = signal("green");
     const size = signal("18px");
 

@@ -1,11 +1,12 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { signal } from "@hellajs/core";
-import { getStylesheet } from "@utils/test-helpers.js";
+import { getStylesheet, resetTestState } from "@utils/test-helpers.js";
 import { css, style, vars, keyframes, cssText, removeCss, removeVars, removeStyle, resetCss, resetVars } from "@hellajs/css/bundle";
 
 let origDocument: unknown;
 
 beforeEach(() => {
+  resetTestState();
   origDocument = globalThis.document;
   (globalThis as unknown as Record<string, unknown>).document = undefined;
 });

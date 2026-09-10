@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 describe("css at-rules", () => {
-  test("media query with nested selectors", () => {
+  test("media query inherits nested selectors", () => {
     css({
       "@media (prefers-color-scheme: dark)": {
         ":root": {
@@ -65,10 +65,8 @@ describe("css at-rules", () => {
         fontStyle: "normal",
       },
     });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@font-face{");
-    expect(content).toContain("font-family:Inter");
-    expect(content).toContain("font-weight:400");
+    expect(cssText()).toBe('@font-face{font-family:"Inter";src:url("/fonts/inter.woff2") format("woff2");font-weight:400;font-style:normal}');
+    expect(getStylesheet("hella-css")).toBe('@font-face{font-family:Inter;src:url("/fonts/inter.woff2") format("woff2");font-weight:400;font-style:normal}');
   });
 
   test("@container generates correct rule", () => {
@@ -79,9 +77,8 @@ describe("css at-rules", () => {
         },
       },
     });
-    const content = getStylesheet("hella-css");
-    expect(content).toContain("@container (min-width:400px)");
-    expect(content).toContain(".card{font-size:1.25rem}");
+    expect(cssText()).toBe("@container (min-width: 400px){.card{font-size:1.25rem}}");
+    expect(getStylesheet("hella-css")).toBe("@container (min-width:400px){.card{font-size:1.25rem}}");
   });
 
   test("@supports generates correct rule", () => {

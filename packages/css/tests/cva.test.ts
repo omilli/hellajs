@@ -182,11 +182,13 @@ describe("cva", () => {
     expect(getStylesheet("hella-css")).toBe("");
   });
 
-  test("throws on invalid config shapes", () => {
-    expect(() => cva(42 as never)).toThrow("[css] cva: expected a config object");
-    expect(() => cva({ variants: null } as never)).toThrow("[css] cva: expected a variants object");
-    expect(() => cva({ base: 42, variants: {} } as never)).toThrow("[css] cva: expected base to be a style object or class string");
-    expect(() => cva({ media: "md", variants: {} } as never)).toThrow("[css] cva: expected media to be a breakpoint object");
+  test.each([
+    [42, "[css] cva: expected a config object"],
+    [{ variants: null }, "[css] cva: expected a variants object"],
+    [{ base: 42, variants: {} }, "[css] cva: expected base to be a style object or class string"],
+    [{ media: "md", variants: {} }, "[css] cva: expected media to be a breakpoint object"],
+  ] as const)("throws on invalid config shapes", (invalid, message) => {
+    expect(() => cva(invalid as never)).toThrow(message);
   });
 
   test("throws on non-object props", () => {

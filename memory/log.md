@@ -14,6 +14,7 @@
 * **Creation**: Added concept [132](entries/132.md) (type: decision).
 * **Creation**: Added concept [133](entries/133.md) (type: decision). Creation bullet for 127 was omitted by the worker's log update; recorded here at renumbering.
 * **Creation**: Added concept [134](entries/134.md) (type: decision).
+* **Update**: Refreshed [049](entries/049-green-happy-dom-css-asserts.md) — added conditional-at-rule query colon-space collapse mapping (empirically confirmed via the dual exact pins in css-at-rules.test.ts, bun coverage css 213 pass)
 
 ## 2026-09-11
 * **Creation**: Added concept [122](entries/122.md) (type: correction).

@@ -8,7 +8,7 @@ beforeEach(() => {
 });
 
 describe("vars", () => {
-  test("caching works", () => {
+  test("returns the same result shape for structurally equal objects", () => {
     const vars1 = { colors: { primary: "red" } };
     const vars2 = { colors: { primary: "red" } };
 
@@ -19,7 +19,7 @@ describe("vars", () => {
     expect(result1.colors.primary).toBe("var(--colors-primary)");
   });
 
-  test("deep nesting", () => {
+  test("flattens deeply nested objects to one var() leaf", () => {
     const result = vars({ theme: { colors: { primary: { light: "#ff6b6b" } } } });
     const keys = "theme.colors.primary.light".split(".");
     let current: Record<string, unknown> = result as Record<string, unknown>;
@@ -50,7 +50,7 @@ describe("vars", () => {
     expect(result2).not.toBe(result1);
   });
 
-  test("static vars work without effects", () => {
+  test("static vars populate the result without creating effects", () => {
     const varsObj = vars({
       colors: { primary: "red", secondary: "blue" },
       spacing: { small: "4px", large: "16px" }
@@ -101,16 +101,16 @@ describe("vars", () => {
     expect(varsObj.colors.secondary).toBe("var(--colors-secondary)");
   });
 
-  test("mixed static and reactive vars", () => {
+  test("mixes static and reactive leaves in one vars object", () => {
     const dynamicColor = signal("purple");
 
     vars({
       colors: {
-        primary: dynamicColor,    // reactive
-        secondary: "orange",      // static
-        accent: "pink"           // static
+        primary: dynamicColor,
+        secondary: "orange",
+        accent: "pink"
       },
-      spacing: "8px"            // static
+      spacing: "8px"
     });
 
     flush();
@@ -127,7 +127,7 @@ describe("vars", () => {
     expect(varsText).toContain("--colors-secondary:orange");
   });
 
-  test("nested reactive dependencies", () => {
+  test("nested reactive leaves update on signal writes", () => {
     const theme = signal("dark");
     const size = signal("large");
 
@@ -176,7 +176,7 @@ describe("vars", () => {
     expect(getStylesheet("hella-vars")).toBe("");
   });
 
-  test("computed signal integration", () => {
+  test("computed leaves re-derive on dependency writes", () => {
     const baseColor = signal("ff0000");
     const opacity = signal(0.8);
 

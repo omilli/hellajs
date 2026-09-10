@@ -16,7 +16,7 @@ describe("vars flatten", () => {
     expect(varsObj.theme.color).toBe("var(--theme-color)");
   });
 
-  test("mixed static and function values deep in nesting", () => {
+  test("resolves function leaves deep in the tree alongside static values", () => {
     const varsObj = vars({
       a: {
         b: {
