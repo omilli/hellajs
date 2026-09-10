@@ -136,7 +136,7 @@ Entry `audits.ts` → `run.ts` (section derivation from the package dir, set-dir
 
   ## Remote daemon pipeline (`scripts/remote/`, one concern per file)
 
-Entry `remote.ts` → `server.ts` (`Bun.serve` on `127.0.0.1`: panel statics from `remote/panel/`, `GET /api/launchables` JSON behind bearer auth, and the WS endpoint authenticating via the `hello` token frame; token auto-generated `node:crypto` random into `.remote/token` on first start) — phone control of the laptop over the tailnet: supervise runs, structured dialog cards, standalone pi chat sessions, ntfy push. No TLS in-process — the tailnet is the transport; `tailscale serve --bg --http=<port>` adds HTTPS at the MagicDNS name. State is machine-local and gitignored (`.remote/`: token, `config.json`, `logs/`).
+Entry `remote.ts` → `server.ts` (`Bun.serve` on `127.0.0.1`: panel statics from `remote/panel/`, `GET /api/launchables` JSON behind bearer auth, and the WS endpoint authenticating via the `hello` token frame; token auto-generated `node:crypto` random into `.remote/token` on first start) — phone control of the laptop over the tailnet: supervise runs, structured dialog cards, standalone pi chat sessions, ntfy push. No TLS in-process — the tailnet is the transport; `tailscale serve --bg --tcp=8798 <port>` raw-TCP-forwards (phone opens `http://$(tailscale ip -4):8798`: no DNS, no Host matching; `--bg <port>` HTTPS at the MagicDNS name needs outbound ACME egress, else TLS hangs). State is machine-local and gitignored (`.remote/`: token, `config.json`, `logs/`).
 
 | File | Concern |
 |---|---|

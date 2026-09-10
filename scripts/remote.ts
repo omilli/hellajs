@@ -58,15 +58,18 @@ function parseArgs(argv: string[]): RemoteArgs {
 }
 
 /**
- * Print the daemon banner: panel URL, token location, tailnet setup, push
- * guidance.
+ * Print the daemon banner: panel URL, token location, tailnet setup (raw TCP
+ * forward primary; HTTP and HTTPS variants carry their phone-DNS and ACME
+ * dependencies), push guidance.
  *
  * @param port The bound TCP port.
  */
 function printBanner(port: number): void {
   logger.success(`remote daemon listening: http://127.0.0.1:${port}`);
   logger.info(`  panel token: cat .remote/token   (the panel asks for it on first load)`);
-  logger.info(`  tailnet:     tailscale serve --bg --http=${port}   (proxied at your MagicDNS name, HTTPS included)`);
+  logger.info(`  tailnet:     tailscale serve --bg --tcp=8798 ${port}   (raw TCP pipe, no DNS or Host matching; phone opens http://$(tailscale ip -4):8798)`);
+  logger.info(`  alt:         tailscale serve --bg --http=${port} ${port}   (HTTP at the MagicDNS name; phone DNS must resolve it: Chrome "Use secure DNS" and Android "Private DNS" off)`);
+  logger.info(`  https:       tailscale serve --bg ${port}   (443 at the MagicDNS name; needs outbound ACME egress to Let's Encrypt, else the TLS handshake hangs)`);
   logger.info(`  push:        set "ntfyTopic" in .remote/config.json for ntfy pings on start and run exits`);
   logger.info(`  privacy:     self-host ntfy on the laptop and point "ntfyBase" at it to keep push inside the VPN`);
 }
