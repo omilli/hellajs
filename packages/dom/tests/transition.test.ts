@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { flush, signal } from "@hellajs/core";
-import { delay, resetTestState } from "@utils/test-helpers.js";
+import { delay, resetTestState, suppressConsole } from "@utils/test-helpers.js";
 import { mount, html, Transition, component } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
@@ -233,7 +233,15 @@ describe("dom", () => {
 
       app.unmount();
 
-      await delay(160);
+      const suppressed = suppressConsole();
+      try {
+        await delay(160);
+      } finally {
+        suppressed.restore();
+      }
+
+      expect(suppressed.errors.length).toBe(0);
+      expect(document.getElementById("content")).toBeNull();
     });
 
     test("works with reactive show function wrapping a signal", () => {

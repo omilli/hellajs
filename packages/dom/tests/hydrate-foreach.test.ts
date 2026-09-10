@@ -168,7 +168,7 @@ describe("dom", () => {
       await delay();                                 // sync-rendered loading UI stays visible while the loader runs (not cleared at hydrate)
       expect(container.querySelector("#loading")).not.toBeNull();
       resolveLoader(() => html`<span id="loaded">loaded</span>` as HellaNode);
-      await delay(10);
+      await delay(0);
       expect(loader).toHaveBeenCalledTimes(1);
       expect(container.querySelector("#loaded")!.textContent).toBe("loaded");
       expect(container.querySelector("#loading")).toBeNull();
@@ -188,7 +188,7 @@ describe("dom", () => {
       expect(container.textContent).not.toContain("loading");
 
       phased.resolveClient(html`<span id="fresh">fresh</span>` as HellaNode);
-      await delay(10);
+      await delay(0);
       expect(container.textContent).toBe("fresh");                 // fresh render replaced the server content
       expect(container.querySelector("#c")).toBeNull();
     });
@@ -202,7 +202,7 @@ describe("dom", () => {
       hydrate(html`<${App} />`, container);
       await delay();
       phased.rejectClient(new Error("boom"));
-      await delay(10);
+      await delay(0);
       expect(container.textContent).toBe("fb");
       expect(container.querySelector("#c")).toBeNull();
     });
@@ -218,7 +218,7 @@ describe("dom", () => {
         hydrate(html`<${App} />`, container);
         await delay();
         phased.rejectClient(new Error("boom"));
-        await delay(10);
+        await delay(0);
       } finally {
         suppressed.restore();
       }

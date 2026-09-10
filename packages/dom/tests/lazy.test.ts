@@ -44,7 +44,7 @@ describe("dom", () => {
 
       resolveComponent(AsyncComponent);
       await successPromise;
-      await delay(10);
+      await delay(0);
 
       expect(container.textContent).not.toContain("Loading...");
       expect(container.textContent).toContain("Success");
@@ -68,7 +68,7 @@ describe("dom", () => {
 
       resolveComponent(AsyncComponent);
       await successPromise;
-      await delay(10);
+      await delay(0);
 
       expect(container.textContent).toContain("Success");
     });
@@ -86,7 +86,7 @@ describe("dom", () => {
       const container = document.getElementById("container")!;
       expect(container.textContent).toBe("");
 
-      await delay(20);
+      await delay(0);
 
       expect(container.textContent).toContain("Fallback");
     });
@@ -103,7 +103,7 @@ describe("dom", () => {
         const container = document.getElementById("container")!;
         expect(container.textContent).toBe("");
 
-        await delay(20);
+        await delay(0);
 
         expect(container.textContent).toBe("");
         expect(suppressed.errors).toHaveLength(1);
@@ -133,7 +133,7 @@ describe("dom", () => {
 
       resolveLoader(ProfileComponent);
       await loaderPromise;
-      await delay(10);
+      await delay(0);
 
       const profile = document.getElementById("profile")!;
       expect(profile.textContent).toContain("42");
@@ -157,7 +157,7 @@ describe("dom", () => {
       const container = document.getElementById("container")!;
       expect(container.textContent).toContain("Loading...");
 
-      await delay(20);
+      await delay(0);
 
       expect(document.getElementById("loading-indicator")).toBeNull();
       expect(container.textContent).not.toContain("Loading...");
@@ -180,7 +180,7 @@ describe("dom", () => {
 
       resolveComponent();
       await promise;
-      await delay(10);
+      await delay(0);
 
       expect(container.textContent).toBe("Done");
     });
@@ -235,7 +235,7 @@ describe("dom", () => {
       app.unmount();
 
       rejectLoader(new Error("load failed"));
-      await delay(20);
+      await delay(0);
 
       expect(container.textContent).not.toContain("Fallback");
       expect(container.textContent).toBe("");

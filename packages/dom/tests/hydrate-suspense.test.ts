@@ -2,8 +2,8 @@ import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer, suppressConsole } from "@utils/test-helpers.js";
 import { hydrate, mount, html, Suspense, component, onError } from "@hellajs/dom/bundle";
-import { streamContainer } from "./helpers";
 import type { HellaNode } from "@hellajs/dom";
+import { streamContainer, ssrContainer } from "./helpers";
 
 beforeEach(() => {
   resetTestState();
@@ -95,7 +95,6 @@ describe("dom hydrate <Suspense>", () => {
   test("adopts children from an ssr.async render (no stage — children already present)", async () => {
     const handler = mock(() => {});
     const App = () => html`<div id="root"><${Suspense} fallback=${html`<i>wait</i>`}><button id="btn" on:click=${handler}>go</button></${Suspense}></div>`;
-    const { ssrContainer } = await import("./helpers");
     const container = ssrContainer(html`<${App} />` as HellaNode);   // sync ssr → children present, no template
     expect(container.querySelector("#btn")).not.toBeNull();
 
@@ -108,7 +107,7 @@ describe("dom hydrate <Suspense>", () => {
     const container = setupContainer();
     mount(html`<div><${Suspense} fallback=${html`<i id="fb">wait</i>`}>${() => Promise.resolve(html`<p id="p">data</p>`)}</${Suspense}></div>`, container);
     expect(container.querySelector("#fb")).not.toBeNull();        // fallback shown immediately
-    await delay(10);
+    await delay(0);
     expect(container.querySelector("#fb")).toBeNull();            // fallback removed
     expect(container.querySelector("#p")!.textContent).toBe("data");   // resolved swapped in
   });
@@ -128,7 +127,7 @@ describe("dom hydrate <Suspense>", () => {
     const container = setupContainer();
     mount(html`<div>${component(Suspense, { fallback: html`<i id="fb">wait</i>`, children: [() => Promise.resolve(html`<p id="p">data</p>` as HellaNode)] })}</div>`, container);
     expect(container.querySelector("#fb")).not.toBeNull();
-    await delay(10);
+    await delay(0);
     expect(container.querySelector("#fb")).toBeNull();
     expect(container.querySelector("#p")!.textContent).toBe("data");
     expect(container.textContent).not.toContain("[object");
@@ -138,7 +137,7 @@ describe("dom hydrate <Suspense>", () => {
     const container = setupContainer();
     mount(html`<div><${Suspense}>${() => Promise.resolve(html`<p id="p">data</p>`)}</${Suspense}></div>`, container);
     expect(container.querySelector("#p")).toBeNull();              // nothing while pending
-    await delay(10);
+    await delay(0);
     expect(container.querySelector("#p")!.textContent).toBe("data");
   });
 
@@ -148,7 +147,7 @@ describe("dom hydrate <Suspense>", () => {
     const container = setupContainer();
     mount(html`<div><${Suspense} fallback=${html`<i id="fb">wait</i>`}>${() => Promise.reject(new Error("boom"))}</${Suspense}></div>`, container);
     expect(container.querySelector("#fb")).not.toBeNull();        // pending fallback shown
-    await delay(10);
+    await delay(0);
     expect(handler).toHaveBeenCalledTimes(1);                    // bubbled to onError
     expect(container.querySelector("#fb")).toBeNull();            // pending fallback removed
     expect(container.querySelector("#err")!.textContent).toBe("failed");   // error fallback rendered
@@ -160,7 +159,7 @@ describe("dom hydrate <Suspense>", () => {
     try {
       const container = setupContainer();
       mount(html`<div><${Suspense} fallback=${html`<i id="fb">wait</i>`}>${() => Promise.reject(new Error("boom"))}</${Suspense}></div>`, container);
-      await delay(10);
+      await delay(0);
       expect(container.querySelector("#fb")).toBeNull();          // pending fallback removed
       expect(suppressed.errors.length).toBeGreaterThan(0);         // [dom] logged
       expect(container.querySelector("i")).toBeNull();             // nothing rendered
@@ -180,7 +179,7 @@ describe("dom hydrate <Suspense>", () => {
     handle.unmount();                                             // suspenseCleanup → cancelled
     resolvePromise(html`<p id="late">late</p>` as HellaNode);                 // resolve after unmount
     await pending;
-    await delay(10);
+    await delay(0);
     expect(container.querySelector("#late")).toBeNull();         // cancelled — resolved content never inserted
   });
 
@@ -194,7 +193,7 @@ describe("dom hydrate <Suspense>", () => {
     `);
     handle.unmount();                                             // suspenseCleanup → cancelled
     rejectPromise(new Error("boom"));                             // reject after unmount
-    await delay(10);
+    await delay(0);
     expect(handler).not.toHaveBeenCalled();                       // cancelled → no dispatchError
     off();
   });

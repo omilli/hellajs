@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import {resetTestState} from "@utils/test-helpers.js";
-import { mount, html, Portal } from "@hellajs/dom/bundle";
+import { mount, html, Portal, component } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
   resetTestState('<div id="app"></div><div id="modal-root"></div>');
@@ -132,6 +132,30 @@ describe("dom", () => {
           </${Portal}>
         </div>
       `);
+
+      const target = document.querySelector("#target")!;
+      expect(target.querySelectorAll("p").length).toBe(0);
+      expect(target.querySelectorAll("span").length).toBe(3);
+      expect(target.textContent).toBe("New ANew BNew C");
+    });
+
+    // JSX compiles <Portal><b/></Portal> to component(Portal, { children: [<b/>] }) — an array.
+    test("renders a single JSX array child into the portal target", () => {
+      resetTestState('<div id="app"></div><div id="modal-root"></div>');
+
+      mount(html`<div>${component(Portal, { to: "#modal-root", children: [html`<b id="pjsx">x</b>`] })}</div>`);
+
+      expect(document.querySelector("#modal-root #pjsx")?.textContent).toBe("x");
+    });
+
+    test("renders JSX array children in document order with type replace", () => {
+      resetTestState('<div id="app"></div><div id="target"><p>Old 1</p><p>Old 2</p></div>');
+
+      mount(html`<div>${component(Portal, { to: "#target", type: "replace" as const, children: [
+        html`<span>New A</span>`,
+        html`<span>New B</span>`,
+        html`<span>New C</span>`
+      ] })}</div>`);
 
       const target = document.querySelector("#target")!;
       expect(target.querySelectorAll("p").length).toBe(0);

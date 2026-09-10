@@ -243,12 +243,12 @@ describe("dom", () => {
       document.body.appendChild(el);
 
       checkMultiSelectors();
-      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) !== undefined)) break; await delay(10); }
+      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) !== undefined)) break; await delay(); }
 
       expect(peekState(el)).toBeDefined();
 
       el.remove();
-      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) === undefined)) break; await delay(10); }
+      for (let __i = 0; __i < 50; __i++) { if ((peekState(el) === undefined)) break; await delay(); }
 
       expect(peekState(el)).toBeUndefined();
     });

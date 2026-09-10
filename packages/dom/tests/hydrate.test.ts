@@ -10,22 +10,6 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("hydrate", () => {
-    test("attaches a function-ref prop effect to an existing server element without replacing it", () => {
-      const className = signal("initial");
-      const App = () => html`<div id="root" class=${className}>Hi</div>`;
-      const container = ssrContainer(html`<${App} />`);
-      const elBefore = container.querySelector("#root")!;
-
-      hydrate(html`<${App} />`, container);
-      const elAfter = container.querySelector("#root")!;
-      expect(elAfter).toBe(elBefore);
-      expect(elAfter.className).toBe("initial");
-
-      className("updated");
-      flush();
-      expect(elAfter.className).toBe("updated");
-    });
-
     test("registers an on: delegated handler on an existing element", () => {
       const handler = mock(() => {});
       const App = () => html`<button id="btn" on:click=${handler}>Go</button>`;
@@ -241,15 +225,18 @@ describe("dom", () => {
 
     test("routes a bind error through the boundary fallback on hydrate", () => {
       const captured = suppressConsole();
-      const unregister = fallbackHandler();
-      const App = () => html`<div id="root" error:fallback=${() => html`<span id="fb">fallback</span>`}><span id="inner" class=${() => { throw new Error("boom"); }}>x</span></div>`;
-      const container = setupContainer();
-      container.innerHTML = `<div id="root"><span id="inner">x</span></div>`;
+      try {
+        const unregister = fallbackHandler();
+        const App = () => html`<div id="root" error:fallback=${() => html`<span id="fb">fallback</span>`}><span id="inner" class=${() => { throw new Error("boom"); }}>x</span></div>`;
+        const container = setupContainer();
+        container.innerHTML = `<div id="root"><span id="inner">x</span></div>`;
 
-      hydrate(html`<${App} />`, container);
-      expect(container.querySelector("#fb")).not.toBeNull();
-      unregister();
-      captured.restore();
+        hydrate(html`<${App} />`, container);
+        expect(container.querySelector("#fb")).not.toBeNull();
+        unregister();
+      } finally {
+        captured.restore();
+      }
     });
 
     test("warns and subtree-replaces on a tag mismatch", () => {

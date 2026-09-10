@@ -13,18 +13,20 @@ describe("dom", () => {
   describe("error catching", () => {
     test("handler throws is caught and logged", () => {
       const suppressed = suppressConsole();
+      try {
+        onError(() => { throw new Error("Handler error"); });
 
-      onError(() => { throw new Error("Handler error"); });
+        const container = setupContainer();
+        mount(html`
+          <div error:fallback=${() => html`<span>E</span>`}>
+            ${() => { throw new Error("Original"); }}
+          </div>
+        `, container);
 
-      const container = setupContainer();
-      mount(html`
-        <div error:fallback=${() => html`<span>E</span>`}>
-          ${() => { throw new Error("Original"); }}
-        </div>
-      `, container);
-
-      expect(suppressed.errors.some((e: unknown[]) => typeof e[0] === "string" && e[0].includes("handler threw"))).toBe(true);
-      suppressed.restore();
+        expect(suppressed.errors.some((e: unknown[]) => typeof e[0] === "string" && e[0].includes("handler threw"))).toBe(true);
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("resolveErrorConfig returns undefined when no config exists", () => {
@@ -75,46 +77,51 @@ describe("dom", () => {
 
     test("direct event handler error without boundary replaces element", () => {
       const suppressed = suppressConsole();
-      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
+      try {
+        onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
 
-      const container = setupContainer();
-      mount(html`
-        <div id="parent">
-          <button id="btn" e:click=${() => { throw new Error("no config"); }}>X</button>
-        </div>
-      `, container);
+        const container = setupContainer();
+        mount(html`
+          <div id="parent">
+            <button id="btn" e:click=${() => { throw new Error("no config"); }}>X</button>
+          </div>
+        `, container);
 
-      expect((container.querySelector("#btn") as HTMLElement)).not.toBeNull();
+        expect((container.querySelector("#btn") as HTMLElement)).not.toBeNull();
 
-      (container.querySelector("#btn") as HTMLElement)!.click();
+        (container.querySelector("#btn") as HTMLElement)!.click();
 
-      expect((container.querySelector("#btn") as HTMLElement)?.textContent).toBe("E: no config");
-      suppressed.restore();
+        expect((container.querySelector("#btn") as HTMLElement)?.textContent).toBe("E: no config");
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("prevents infinite loop when handler re-triggers error on same boundary via direct event", () => {
       const suppressed = suppressConsole();
+      try {
+        onError((error: Error, context: ErrorContext) => {
+          if (error.message === "first") {
+            const btn = context.element?.querySelector("button");
+            btn?.dispatchEvent(new Event("click"));
+          }
+          return context.config?.fallback?.(error) ?? null;
+        });
 
-      onError((error: Error, context: ErrorContext) => {
-        if (error.message === "first") {
-          const btn = context.element?.querySelector("button");
-          btn?.dispatchEvent(new Event("click"));
-        }
-        return context.config?.fallback?.(error) ?? null;
-      });
+        const container = setupContainer();
+        mount(html`
+          <div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>
+            <button e:click=${() => { throw new Error("second"); }}>X</button>
+            ${() => { throw new Error("first"); }}
+          </div>
+        `, container);
 
-      const container = setupContainer();
-      mount(html`
-        <div error:fallback=${(e: Error) => html`<span>${e.message}</span>`}>
-          <button e:click=${() => { throw new Error("second"); }}>X</button>
-          ${() => { throw new Error("first"); }}
-        </div>
-      `, container);
-
-      expect(suppressed.errors.some((e: unknown[]) =>
-        typeof e[0] === "string" && e[0].includes("infinite loop")
-      )).toBe(true);
-      suppressed.restore();
+        expect(suppressed.errors.some((e: unknown[]) =>
+          typeof e[0] === "string" && e[0].includes("infinite loop")
+        )).toBe(true);
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("effect error in registry.addEffect is caught", () => {

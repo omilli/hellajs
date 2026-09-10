@@ -138,32 +138,36 @@ describe("dom", () => {
 
     test("cache invalidation when boundary config is removed", () => {
       const suppressed = suppressConsole();
+      try {
+        fallbackHandler(html`<span>E</span>`);
 
-      fallbackHandler(html`<span>E</span>`);
+        const shouldThrow = signal(false);
+        const container = setupContainer();
+        const app = mount(html`
+          <div id="b" error:fallback=${() => html`<span>F</span>`}>
+            <span id="deep">${() => { if (shouldThrow()) throw new Error("up"); return "OK"; }}</span>
+          </div>
+        `, container);
 
-      const shouldThrow = signal(false);
-      const container = setupContainer();
-      const app = mount(html`
-        <div id="b" error:fallback=${() => html`<span>F</span>`}>
-          <span id="deep">${() => { if (shouldThrow()) throw new Error("up"); return "OK"; }}</span>
-        </div>
-      `, container);
+        const deep = container.querySelector("#deep") as Element;
 
-      const deep = container.querySelector("#deep") as Element;
+        shouldThrow(true);
+        app.flush();
+        expect(peekState(deep)?.cachedBoundary).toBeDefined();
 
-      shouldThrow(true);
-      app.flush();
-      expect(peekState(deep)?.cachedBoundary).toBeDefined();
+        const boundary = container.querySelector("#b") as HTMLElement;
+        peekState(boundary)!.errorConfig = undefined;
 
-      const boundary = container.querySelector("#b") as HTMLElement;
-      peekState(boundary)!.errorConfig = undefined;
+        shouldThrow(false);
+        app.flush();
+        shouldThrow(true);
+        app.flush();
 
-      shouldThrow(false);
-      app.flush();
-      shouldThrow(true);
-      app.flush();
-
-      suppressed.restore();
+        expect(container.textContent).toBe("E");
+        expect(suppressed.errors.length).toBe(0);
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("direct event handler error is caught with boundary", () => {

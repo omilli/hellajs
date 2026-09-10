@@ -23,12 +23,15 @@ describe("dom", () => {
 
     test("routes rejection through dispatchError when no onError handler", async () => {
       const suppressed = suppressConsole();
-      mount(async () => { throw new Error("async mount fail"); });
-      await delay();
-      expect(suppressed.errors.length).toBe(1);
-      expect(suppressed.errors[0]?.[1]).toBeInstanceOf(Error);
-      expect((suppressed.errors[0]?.[1] as Error).message).toBe("async mount fail");
-      suppressed.restore();
+      try {
+        mount(async () => { throw new Error("async mount fail"); });
+        await delay();
+        expect(suppressed.errors.length).toBe(1);
+        expect(suppressed.errors[0]?.[1]).toBeInstanceOf(Error);
+        expect((suppressed.errors[0]?.[1] as Error).message).toBe("async mount fail");
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("routes rejection through onError handler when registered", async () => {

@@ -199,8 +199,8 @@ describe("dom", () => {
         hydrate(html`<${App} />`, container);
       });
       // a synchronously-rejected promise chains .then(f).catch(g) over two microtask hops —
-      // a real-time wait lets the catch settle before asserting
-      await delay(50);
+      // delay(0) crosses a macrotask boundary, draining the pending microtask queue before firing
+      await delay(0);
 
       expect(handler).toHaveBeenCalledTimes(1);
       expect(container.textContent).not.toContain("loading");

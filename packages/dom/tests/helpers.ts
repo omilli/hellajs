@@ -1,7 +1,17 @@
 import { setupContainer } from "@utils/test-helpers.js";
-import { onError } from "@hellajs/dom/bundle";
+import { html, ForEach, onError } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
-import type { HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaNode } from "@hellajs/dom";
+
+/**
+ * Renders `items` through ForEach inside a `<ul>` — the default renderer wraps each item in a keyed
+ * `<li>`; pass `itemRenderer` to control the per-item markup. Shared by the ForEach test files.
+ */
+export const createList = <T>(items: T[] | (() => T[]), itemRenderer?: (item: T) => HellaChild): HellaNode =>
+  html`<ul><${ForEach} each=${items} use=${itemRenderer || ((item: T) => html`<li key=${item}>Item ${item}</li>`)} /></ul>` as HellaNode;
+
+/** Text content of every `<li>` currently in the document, in DOM order. */
+export const getListTexts = () => Array.from(document.querySelectorAll("li")).map(li => li.textContent);
 
 export const fallbackHandler = (
   def: HellaNode | (() => HellaNode) | null = null

@@ -139,17 +139,20 @@ describe("dom", () => {
 
     test("handler returning null logs error without UI change", () => {
       const suppressed = suppressConsole();
-      const called = mock(() => { });
-      onError(() => {
-        called();
-        return null;
-      });
+      try {
+        const called = mock(() => { });
+        onError(() => {
+          called();
+          return null;
+        });
 
-      const container = setupContainer();
-      mount(html`<div id="content">${() => { throw new Error("Logged"); }}</div>`, container);
+        const container = setupContainer();
+        mount(html`<div id="content">${() => { throw new Error("Logged"); }}</div>`, container);
 
-      expect(called).toHaveBeenCalledTimes(1);
-      suppressed.restore();
+        expect(called).toHaveBeenCalledTimes(1);
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("works with html template error: prefix", () => {
@@ -168,57 +171,66 @@ describe("dom", () => {
 
     test("prevents infinite loop during mount error", () => {
       const suppressed = suppressConsole();
-      const calls = mock(() => { });
+      try {
+        const calls = mock(() => { });
 
-      onError((error: Error, context: ErrorContext) => {
-        calls();
-        return context.config?.fallback?.(error) ?? null;
-      });
+        onError((error: Error, context: ErrorContext) => {
+          calls();
+          return context.config?.fallback?.(error) ?? null;
+        });
 
-      const container = setupContainer();
-      mount(html`<div error:fallback=${() => { throw new Error("fb"); }}>${() => { throw new Error("orig"); }}</div>`, container);
+        const container = setupContainer();
+        mount(html`<div error:fallback=${() => { throw new Error("fb"); }}>${() => { throw new Error("orig"); }}</div>`, container);
 
-      expect(calls).toHaveBeenCalledTimes(1);
-      suppressed.restore();
+        expect(calls).toHaveBeenCalledTimes(1);
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("prevents infinite loop during event error", () => {
       const suppressed = suppressConsole();
-      const calls = mock(() => { });
+      try {
+        const calls = mock(() => { });
 
-      onError((error: Error, context: ErrorContext) => {
-        calls();
-        return context.config?.fallback?.(error) ?? null;
-      });
+        onError((error: Error, context: ErrorContext) => {
+          calls();
+          return context.config?.fallback?.(error) ?? null;
+        });
 
-      const container = setupContainer();
-      mount(html`<div error:fallback=${() => { throw new Error("fb"); }}><button on:click=${() => { throw new Error("orig"); }}>X</button></div>`, container);
+        const container = setupContainer();
+        mount(html`<div error:fallback=${() => { throw new Error("fb"); }}><button on:click=${() => { throw new Error("orig"); }}>X</button></div>`, container);
 
-      const btn = container.querySelector("button");
-      if (btn) btn.click();
+        const btn = container.querySelector("button");
+        if (btn) btn.click();
 
-      expect(calls).toHaveBeenCalledTimes(1);
-      suppressed.restore();
+        expect(calls).toHaveBeenCalledTimes(1);
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("prevents infinite loop during update error", () => {
       const suppressed = suppressConsole();
-      const calls = mock(() => { });
-      const s = signal(false);
+      try {
+        const calls = mock(() => { });
+        const s = signal(false);
 
-      onError((error: Error, context: ErrorContext) => {
-        calls();
-        return context.config?.fallback?.(error) ?? null;
-      });
+        onError((error: Error, context: ErrorContext) => {
+          calls();
+          return context.config?.fallback?.(error) ?? null;
+        });
 
-      const container = setupContainer();
-      const app = mount(html`<div error:fallback=${() => { throw new Error("fb"); }}>${() => { if (s()) throw new Error("orig"); return "ok"; }}</div>`, container);
+        const container = setupContainer();
+        const app = mount(html`<div error:fallback=${() => { throw new Error("fb"); }}>${() => { if (s()) throw new Error("orig"); return "ok"; }}</div>`, container);
 
-      s(true);
-      app.flush();
+        s(true);
+        app.flush();
 
-      expect(calls).toHaveBeenCalledTimes(1);
-      suppressed.restore();
+        expect(calls).toHaveBeenCalledTimes(1);
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("supports multiple handlers, first non-null wins", () => {
@@ -260,17 +272,19 @@ describe("dom", () => {
 
     test("onError(null) clears all handlers", () => {
       const suppressed = suppressConsole();
+      try {
+        onError(() => html`<span>H1</span>` as HellaNode);
+        onError(() => html`<span>H2</span>` as HellaNode);
+        onError(null);
 
-      onError(() => html`<span>H1</span>` as HellaNode);
-      onError(() => html`<span>H2</span>` as HellaNode);
-      onError(null);
+        const container = setupContainer();
+        mount(html`<div>${() => { throw new Error("test"); }}</div>`, container);
 
-      const container = setupContainer();
-      mount(html`<div>${() => { throw new Error("test"); }}</div>`, container);
-
-      expect(suppressed.errors.length).toBeGreaterThan(0);
-      expect(suppressed.errors[0]![0]).toContain("[dom]");
-      suppressed.restore();
+        expect(suppressed.errors.length).toBeGreaterThan(0);
+        expect(suppressed.errors[0]![0]).toContain("[dom]");
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("without boundary, fallback replaces error element content", () => {
@@ -289,23 +303,26 @@ describe("dom", () => {
 
     test("bind error replaces element content when no boundary", () => {
       const suppressed = suppressConsole();
-      onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
+      try {
+        onError((error: Error) => html`<span>E: ${error.message}</span>` as HellaNode);
 
-      const shouldThrow = signal(false);
-      const container = setupContainer();
-      const app = mount(html`
-        <div id="parent">
-          <span id="child" test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>Content</span>
-        </div>
-      `, container);
+        const shouldThrow = signal(false);
+        const container = setupContainer();
+        const app = mount(html`
+          <div id="parent">
+            <span id="child" test=${() => { if (shouldThrow()) throw new Error("bind"); return "ok"; }}>Content</span>
+          </div>
+        `, container);
 
-      expect(container.querySelector("#child")?.textContent).toBe("Content");
+        expect(container.querySelector("#child")?.textContent).toBe("Content");
 
-      shouldThrow(true);
-      app.flush();
+        shouldThrow(true);
+        app.flush();
 
-      expect(container.querySelector("#child")?.textContent).toBe("E: bind");
-      suppressed.restore();
+        expect(container.querySelector("#child")?.textContent).toBe("E: bind");
+      } finally {
+        suppressed.restore();
+      }
     });
 
     test("useful for library integration (tracking + UI)", () => {

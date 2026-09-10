@@ -10,7 +10,7 @@ beforeEach(() => {
 
 describe("dom", () => {
   describe("element", () => {
-    test("with reactive props and signals", async () => {
+    test("renders the initial attribute value and increments on click", async () => {
       element("test-counter", (props: { initial: () => string | null }) => {
         const count = signal(Number(props.initial?.()) || 0);
         return html`
@@ -132,7 +132,7 @@ describe("dom", () => {
       expect(() => element("good-tag", "not a fn" as never)).toThrow(/\[dom\] element:/);
     });
 
-    test("complex element with components", async () => {
+    test("renders slotted content with nested components and updates reactively", async () => {
       const Button = (props: { label: string; onClick: () => void }) =>
         html`<button class="btn" on:click=${props.onClick}>${props.label}</button>`;
 
