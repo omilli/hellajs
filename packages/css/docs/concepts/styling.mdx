@@ -28,7 +28,7 @@ const Counter = () => {
       transform: 'translateY(-1px)'
     }
   }, { label: 'btn' });
-  // "h-btn-r4k2q"; identical on client and server
+  // "h-btn-18z75t4"; identical on client and server
 
   return (
     <div>
@@ -52,7 +52,7 @@ import { style } from '@hellajs/css';
 
 const card = style({ padding: '1rem', borderRadius: '0.5rem' }, { label: 'card' });
 const alert = style(card, { border: '1px solid red' });
-// "h-card-1z0q41 h-b9c8d"; the alert class carries only the added declarations
+// "h-card-irxmls h-1vk88bm"; the alert class carries only the added declarations
 
 const denseCard = style(
   { padding: '1rem', borderRadius: '0.5rem' },
@@ -103,7 +103,7 @@ const button = cva({
 </button>
 ```
 
-Responsive selections emit their class under the breakpoint's media condition, pure CSS, no listeners. Variant classes are static once resolved; reactivity rides the call site with `class={() => button({ size: size() })}`.
+Responsive selections emit their class under the breakpoint's media condition, pure CSS, no listeners. Variant classes are static once resolved; reactivity rides the call site with `class={button({ size: size() })}`.
 
 ## Reactive CSS Variables
 
@@ -167,7 +167,7 @@ const spinner = style({
 
 Every creator registers its rules on both platforms and returns the same value everywhere: the class, the empty string, or the proxy. On the server there is no DOM to inject into; [`cssText`](/reference/css/csstext) collects the registered text (css, style, and keyframes rules in registration order, statement-leading texts such as `@import` hoisted ahead of braced-only ones, then the `vars` buckets) for the response's single `<style>` embed. The client mirrors this order: `hella-css` is always inserted before `hella-vars`, regardless of which creator ran first, so same-specificity cross-sheet rules resolve identically on both platforms.
 
-```js
+```typescript
 import { css, cssText, style, vars } from '@hellajs/css';
 
 const tokens = vars({ bg: '#ffffff' });

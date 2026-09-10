@@ -27,7 +27,7 @@ npm install @hellajs/core @hellajs/css
 
 ### Basic Usage
 
-```tsx
+```jsx
 import { signal } from '@hellajs/core';
 import { css, style, vars } from '@hellajs/css';
 
@@ -57,7 +57,7 @@ const buttonStyle = style({
   cursor: 'pointer',
   '&:hover': { opacity: 0.8 }
 }, { label: 'btn' });
-// "h-btn-r4k2q"; the same class on client and server
+// "h-btn-eak2nr"; the same class on client and server
 
 <button class={buttonStyle}>
   Styled Button

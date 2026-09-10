@@ -13,17 +13,23 @@ function resetCss(): void
 
 
 ```jsx
-import { css, resetCss } from '@hellajs/css';
+import { style, resetCss } from '@hellajs/css';
 
 // Create some styles
-const button = css({
-  background: 'blue',
-  color: 'white',
-});
-const card = css({
-  padding: '1rem',
-  border: '1px solid #ccc',
-});
+const button = style(
+  {
+    background: 'blue',
+    color: 'white',
+  },
+  { label: 'btn' }
+);
+const card = style(
+  {
+    padding: '1rem',
+    border: '1px solid #ccc',
+  },
+  { label: 'card' }
+);
 
 // Later, reset everything
 resetCss();
@@ -56,11 +62,13 @@ const buttonStyle = css({ body: { margin: 0 } });
 ### Memory Management
 
 ```jsx
-import { css, resetCss } from '@hellajs/css';
+import { style, resetCss } from '@hellajs/css';
 
 const generateManyStyles = () => {
   for (let i = 0; i < 1000; i++) {
-    css({ color: `hsl(${i}, 50%, 50%)` });
+    style({
+      color: `hsl(${i}, 50%, 50%)`,
+    });
   }
 };
 

@@ -45,7 +45,7 @@ const buttonStyle = style({
   borderRadius: '0.5rem',
   cursor: 'pointer'
 }, { label: 'btn' });
-// "h-btn-1z0q41r"; the same class on client and server
+// "h-btn-1xk2vi3"; the same class on client and server
 
 <button class={buttonStyle}>Click me</button>
 ```
@@ -56,29 +56,33 @@ const buttonStyle = style({
 
 ```jsx
 css({
-  padding: '1rem',
-  backgroundColor: 'white',
-  borderRadius: '0.5rem',
-  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+  '.card': {
+    padding: '1rem',
+    backgroundColor: 'white',
+    borderRadius: '0.5rem',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
 
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-  },
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+    },
 
-  'h2': {
-    margin: '0 0 0.5rem 0',
-    fontSize: '1.25rem',
-    fontWeight: '600'
-  },
+    'h2': {
+      margin: '0 0 0.5rem 0',
+      fontSize: '1.25rem',
+      fontWeight: '600'
+    },
 
-  '@media (max-width: 768px)': {
-    padding: '0.75rem'
+    '@media (max-width: 768px)': {
+      padding: '0.75rem'
+    }
   }
 });
 // Generated CSS:
-// padding:1rem;...&:hover{...} h2{...}
-// @media (max-width:768px){padding:0.75rem}
+// .card{padding:1rem;background-color:white;border-radius:0.5rem;box-shadow:0 1px 3px rgba(0, 0, 0, 0.1)}
+// .card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0, 0, 0, 0.15)}
+// .card h2{margin:0 0 0.5rem 0;font-size:1.25rem;font-weight:600}
+// @media (max-width: 768px){.card{padding:0.75rem}}
 ```
 
 > **Note:** `css()` is always global; it does not wrap selectors in a class. For scoped styles that compose under a generated class, use [`style`](/reference/css/style).
@@ -115,15 +119,13 @@ Under the unified registration, CSS is defined in shared modules or at the entry
 // styles.ts; shared module, works on both platforms
 import { style } from '@hellajs/css';
 
-// Client AND server: returns "h-btn-1z0q41r"
+// Client AND server: returns "h-btn-1ql06pj"
 export const btnClass = style({ color: 'red' }, { label: 'btn' });
 ```
 
 ```jsx
-// Component.tsx; use the class name from the shared module
-import { btnClass } from './styles';
-
-html`<button class="${btnClass}">Click</button>`
+// Component.tsx; btnClass comes from the shared styles module
+<button class={btnClass}>Click</button>
 ```
 
 ### @-Rules

@@ -7,7 +7,7 @@
   - Load the `prime` skill before any substantive task.
   - **Commits**: the `commit-msg` hook (`.git/hooks/commit-msg`) enforces conventional commits. Type and scope are one release decision, never chosen independently: `feat` (minor) / `fix` (patch) mark deltas to a published package's user-facing API — runtime OR exported type surface (an exported `.d.ts` type alias alone is a `feat`) — and MUST scope to that workspace's name (`feat(dom)`, `fix(css)`); `feat`/`fix` with any other scope (`docs`, `agents`, …) is invalid. Everything else — docs, scripts, agent-config, tests, tooling, internal structure — takes `docs`/`chore`/`refactor`/`test` no matter how novel. A mixed commit containing any package-API delta takes that delta's type + package scope. Breaking API changes add `!` + a `BREAKING CHANGE:` footer (major). Releases are user-handled end to end: never publish.
   - **Never create a changeset.** `.changeset/*.md` files and `bun changeset` are user-only, exactly like commits — even for published-package behavior changes. Note the need in the handoff summary; never list changeset creation in a plan's DoD.
-  - **DoD discipline** — every pass criterion is a runnable check, never a predicted result. The five-trap list (unverified characterizations, unprobed type premises, tiered-tool scoping, sweep-DoD self-matching) is owned by the `plan` skill, Phase 3.
+  - **DoD discipline** — every pass criterion is a runnable check, never a predicted result. The seven-trap list (unverified characterizations, unprobed type premises, tiered-tool scoping, sweep-DoD self-matching, DoD-gloss/delta mismatch, threshold/lever arithmetic) is owned by the `plan` skill, Phase 3.
 
   ## Non-negotiables
 

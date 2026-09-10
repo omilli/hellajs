@@ -182,7 +182,7 @@ const button = style({
 }, { label: 'button' });
 ```
 
-For classes that change at runtime, resolve a [`cva`](/reference/css/cva) recipe per render (`class={() => button({ size: size() })}`), and for style values that react to signals, use [`vars`](/reference/css/vars).
+For classes that change at runtime, resolve a [`cva`](/reference/css/cva) recipe per render (`class={button({ size: size() })}`), and for style values that react to signals, use [`vars`](/reference/css/vars).
 
 ### Style Cleanup
 
@@ -218,7 +218,7 @@ color('blue');  // No longer tracked; no stylesheet update
 
 Every creator registers on both platforms; on the server, collect everything registered into a single `<style>` embed per response with [`cssText`](/reference/css/csstext).
 
-```js
+```typescript
 import { css, cssText, style, vars } from '@hellajs/css';
 
 // Module scope; registers on the server too

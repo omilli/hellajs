@@ -96,7 +96,7 @@ CSS variables automatically update when signals change. Multiple signal updates 
 
 ```jsx
 import { signal } from '@hellajs/core';
-import { vars, css } from '@hellajs/css';
+import { vars, style } from '@hellajs/css';
 
 const ThemeExample = () => {
   const isDark = signal(false);
@@ -111,13 +111,13 @@ const ThemeExample = () => {
     }
   });
 
-  const buttonStyle = css({
+  const buttonStyle = style({
     backgroundColor: theme.colors.primary,
     color: theme.colors.text,
     padding: '0.75rem 1.5rem',
     border: 'none',
     borderRadius: '0.5rem'
-  });
+  }, { label: 'btn' });
 
   return (
     <div>
@@ -139,6 +139,7 @@ const ThemeExample = () => {
 
 ```jsx
 import { signal } from '@hellajs/core';
+import { vars } from '@hellajs/css';
 
 const primaryColor = signal('#3b82f6');
 const accentColor = () => '#64748b';
@@ -351,7 +352,7 @@ vars({ flag: () => isActive() ? '1' : '0' });
 
 Maintains full TypeScript support with nested object typing:
 
-```tsx
+```typescript
 const primary = signal('#3b82f6');
 
 const theme = vars({
@@ -370,7 +371,7 @@ const theme = vars({
 
 ### Boolean and Object Leaves Rejected
 
-**Breaking type-level change from v1.x:** The `vars` parameter type was tightened from `Record<string, unknown>` to `CSSVarInputObject`. Callers passing `boolean`, `Date`, class instances, or functions returning `boolean`/`object` will now get compile-time errors where they compiled before.
+**Breaking type-level change from v1.x:** The `vars` parameter type was tightened from `Record<string, unknown>` to `CSSVarInputObject`. Callers passing leaf types outside the accepted set will now get compile-time errors where they compiled before; the rejected types are enumerated under Accepted Value Types above.
 
 - Runtime behavior is unchanged; `vars` calls `String()` on values, so `true` became `"true"` at runtime
 - Fix: Convert booleans explicitly with `() => flag() ? '1' : '0'`

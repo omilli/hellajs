@@ -7,11 +7,17 @@
 * **Creation**: Added concept [127](entries/127.md) (type: decision).
 * **Update**: Renumbered merge entries 124→126 (accept-small-docs-length-target) and 125→127 (doc-snippets-resets-doc-snippets) at plans-core-audit-docs merge; IDs 124/125 were allocated in-flight by 124-fresh-worktree-builds-need-bun and core-documents-input-validation-throws.
 * **Creation**: Added concept [128](entries/128.md) (type: decision). Renumbered from 124 at merge: ID 124 was taken in-flight by 124-fresh-worktree-builds-need-bun.
+* **Creation**: Added concept [129](entries/129.md) (type: decision).
+* **Update**: Renumbered merged entries 124→130 (relative-import-doc-block-silently), 125→131 (doc-jsx-examples-cannot-run), 126→132 (declarations-only-css-silent-no), 127→133 (docs-trim-gap-prefer-formatting), 128→134 (single-line-vars-calls-legal) at plans-css-audit-docs merge; IDs 124-128 were taken in-flight by 124-fresh-worktree-builds-need-bun, core-documents-input-validation-throws, accept-small-docs-length-target, doc-snippets-resets-doc-snippets, and chrome-only-cssom-behavior-statement.
+* **Creation**: Added concept [130](entries/130.md) (type: decision).
+* **Creation**: Added concept [131](entries/131.md) (type: decision).
+* **Creation**: Added concept [132](entries/132.md) (type: decision).
+* **Creation**: Added concept [133](entries/133.md) (type: decision). Creation bullet for 127 was omitted by the worker's log update; recorded here at renumbering.
+* **Creation**: Added concept [134](entries/134.md) (type: decision).
 
 ## 2026-09-11
 * **Creation**: Added concept [122](entries/122.md) (type: correction).
 * **Creation**: Added concept [123](entries/123.md) (type: decision).
-
 ## 2026-09-09
 * **Creation**: Added concept [112](entries/112.md) (type: decision).
 * **Deprecation**: Archived [004](archive/004-defer-per-element-array-reactivity.md) → superseded by [112](entries/112.md).

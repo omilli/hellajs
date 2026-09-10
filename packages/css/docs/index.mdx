@@ -22,18 +22,12 @@ css({
 
 // Reactive tokens: vars() returns a var() proxy; client and server alike
 const darkMode = signal(false);
-const tokens = vars({
-  accent: () => darkMode() ? '#93c5fd' : '#3b82f6'
-});
+const tokens = vars({ accent: () => darkMode() ? '#93c5fd' : '#3b82f6' });
 
-// Scoped styles: style() returns a content-hashed class; nested selectors compose under it
 const card = style({
   padding: '1rem',
   borderRadius: '8px',
-  backgroundColor: '#f8f9fa',
-
-  'h2': { marginTop: 0 },
-  '&:hover': { backgroundColor: '#e9ecef' }
+  backgroundColor: '#f8f9fa'
 }, { label: 'card' });
 
 // Variant recipes: cva() resolves typed props to a composed class string
@@ -46,8 +40,9 @@ const button = cva({
   defaultVariants: { size: 'sm' }
 });
 
+type CardProps = { title: string; children?: HellaChildren };
 // The class is the identity; use it directly in components
-const Card = ({ title, children }: { title: string; children?: HellaChildren }) => (
+const Card = ({ title, children }: CardProps) => (
   <div class={card}>
     <h2>{title}</h2>
     {children}

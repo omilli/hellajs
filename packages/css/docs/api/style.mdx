@@ -36,7 +36,7 @@ const card = style({
   // Responsive design inherits the class
   '@media (max-width: 768px)': { padding: '0.5rem' }
 }, { label: 'card' });
-// "h-card-1z0q41r"; client AND server
+// "h-card-gndrly"; client AND server
 
 const Card = ({ title }: { title: string }) => (
   <div class={card}>
@@ -49,7 +49,7 @@ const Card = ({ title }: { title: string }) => (
 
 ### Content-Hashed Identity
 
-The class name is derived from the object's content: the same object always produces the same class, on every platform and every render. No user-chosen names to collide, no coordination between server and client: both derive `h-card-1z0q41r` independently and agree.
+The class name is derived from the object's content: the same object always produces the same class, on every platform and every render. No user-chosen names to collide, no coordination between server and client: both derive `h-card-1ql06pj` independently and agree.
 
 ```jsx
 import { style } from '@hellajs/css';
