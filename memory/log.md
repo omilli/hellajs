@@ -1,5 +1,9 @@
 # Memory Update Log
 
+## 2026-09-11
+* **Creation**: Added concept [122](entries/122.md) (type: correction).
+* **Creation**: Added concept [123](entries/123.md) (type: decision).
+
 ## 2026-09-09
 * **Creation**: Added concept [112](entries/112.md) (type: decision).
 * **Deprecation**: Archived [004](archive/004-defer-per-element-array-reactivity.md) → superseded by [112](entries/112.md).

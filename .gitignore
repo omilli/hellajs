@@ -44,3 +44,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .build-cache
 # plans-runner scratch (verification fixtures)
 .plans-runner/
+# remote daemon state (token, ntfy config, run logs) and probe scratch
+.remote/
+.remote-probe/

@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
-import type { TerminalRelay } from "../agent/relay.js";
+import type { Relay } from "../agent/relay.js";
 import { worktreeScript, WT_ROOT } from "../agent/worktree.js";
 import { countTicks, isTicked, listPlanUnits, partitionComponents, setSlug, type PlanUnit } from "./set.js";
 
@@ -216,7 +216,7 @@ interface VenueOutcome {
 async function runVenue(
   venue: Venue,
   options: RunSetOptions,
-  relay: TerminalRelay,
+  relay: Relay,
   setName: string,
   records: UnitRecord[],
 ): Promise<VenueOutcome> {
@@ -277,7 +277,7 @@ async function runUnitWithGate(
   slug: string,
   unit: PlanUnit,
   options: RunSetOptions,
-  relay: TerminalRelay,
+  relay: Relay,
   setName: string,
 ): Promise<UnitGateOutcome> {
   for (let attempt = 1; ; attempt++) {
@@ -349,7 +349,7 @@ async function runUnitWithGate(
  * @param unitName Unit filename, for the prompt text.
  * @returns The chosen operator action.
  */
-async function askGate(relay: TerminalRelay, unitName: string): Promise<"retry" | "deliver" | "abandon" | "halt"> {
+async function askGate(relay: Relay, unitName: string): Promise<"retry" | "deliver" | "abandon" | "halt"> {
   for (;;) {
     const line = (
       await relay.askOrchestrator(`${unitName}: top marker not flipped — retry / deliver-incomplete / abandon / halt?`)

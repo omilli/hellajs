@@ -29,7 +29,7 @@ Performance is **off the list**. Scripts are not hot paths. `for…of`, temporar
 | Shared helper | `scripts/utils/[concern].ts` | Single noun (`fs`, `exec`, `logger`, `paths`) |
 | Shared cross-pipeline concern | `scripts/[concern]/` | Multi-file infra consumed by 2+ pipelines, no CLI entry (e.g. `agent/`) |
 | Utils barrel | `scripts/utils/index.ts` | Re-exports every helper; the only import path scripts use |
-| Test preload | `utils/happydom.js` | The one non-scripts JS file; governed here for style |
+| Test preload | `utils/happydom.js` | Non-scripts JS exceptions: this preload and the browser-served panel statics under `scripts/remote/panel/` (shipped to the phone, never run by bun) |
 
 `scripts/utils/common.js` (the backward-compat re-export shim) is dead weight once `index.ts` exists — do not recreate it. One barrel, one import path.
 
@@ -42,7 +42,7 @@ New script or helper?
 ├─ Shared logic used by 2+ scripts
 │   └─ scripts/utils/[concern].ts — single noun, re-exported by utils/index.ts
 ├─ A shared multi-file concern consumed by 2+ pipelines (no CLI entry)
-│   └─ scripts/[concern]/ — e.g. scripts/agent/ (rpc, relay, stream, driver, worktree)
+│   └─ scripts/[concern]/ — e.g. scripts/agent/ (rpc, relay, web-relay, stream, driver, worktree)
 ├─ A concern that is large (caching, esbuild, terser, declarations, orchestration)
 │   └─ scripts/[pipeline]/[concern].ts — split by concern, NOT one giant file
 └─ A file exceeding ~300 lines

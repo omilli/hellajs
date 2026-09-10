@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HellaJS remote</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>HellaJS remote</h1>
+    <span id="status" class="status off">offline</span>
+  </header>
+
+  <div id="token-gate" class="gate">
+    <p>Enter the panel token from the laptop:</p>
+    <code>cat .remote/token</code>
+    <input id="token" type="password" autocomplete="off" placeholder="panel token">
+    <button id="connect" type="button">Connect</button>
+  </div>
+
+  <main id="main" class="hidden">
+    <div id="banner" class="banner hidden"></div>
+
+    <section>
+      <h2>Launcher</h2>
+      <div id="plan-sets" class="cards"></div>
+      <div id="presets" class="cards"></div>
+      <div class="custom">
+        <label for="custom-command">Custom command</label>
+        <input id="custom-command" type="text" autocomplete="off" spellcheck="false" placeholder="bun coverage dom">
+        <button id="custom-start" type="button">Start</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Pi chat</h2>
+      <div class="pi-spawn">
+        <input id="pi-model" type="text" autocomplete="off" spellcheck="false" placeholder="model (optional, provider/id[:thinking])">
+        <button id="pi-new" type="button">New session</button>
+      </div>
+      <div id="pi-session-list"></div>
+    </section>
+
+    <section>
+      <h2>Dialogs</h2>
+      <div id="dialog-list"></div>
+    </section>
+
+    <section>
+      <h2>Runs</h2>
+      <div id="run-list"></div>
+    </section>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

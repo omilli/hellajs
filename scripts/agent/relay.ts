@@ -69,6 +69,23 @@ function startStdin(onLine: (line: string) => void): void {
 }
 
 /**
+ * The relay contract every dialog surface implements (terminal, web).
+ *
+ * One relay renders pi dialog requests and orchestrator prompts on its
+ * surface and resolves each with the operator's answer from that surface.
+ */
+export interface Relay {
+  /** Start the surface (the terminal relay owns stdin; others no-op). */
+  start(): void;
+  /** Render a fire-and-forget request (`notify`, `setStatus`, …). */
+  notify(request: UiRequest): void;
+  /** Render a dialog request and resolve with the operator's answer. */
+  ask(request: UiRequest): Promise<UiResponsePayload>;
+  /** Ask an orchestrator-owned question and resolve with the answer line. */
+  askOrchestrator(prompt: string): Promise<string>;
+}
+
+/**
  * Terminal relay: renders pi dialog requests, answers them, and routes
  * free-typed lines to steering while an agent runs.
  *
@@ -76,7 +93,7 @@ function startStdin(onLine: (line: string) => void): void {
  * one is open; otherwise `.stop` aborts the agent, any other non-empty line
  * steers it while active, and idle lines are acknowledged and dropped.
  */
-export class TerminalRelay {
+export class TerminalRelay implements Relay {
   private readonly options: RelayOptions;
 
   /**

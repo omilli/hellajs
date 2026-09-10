@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
 import { logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
-import type { TerminalRelay } from "../agent/relay.js";
+import type { Relay } from "../agent/relay.js";
 import { listPlanUnits } from "../plans/set.js";
 
 /** One audit section key; also the plan-set suffix and the prompt's skill suffix. */
@@ -142,7 +142,7 @@ function buildSectionPrompt(plan: SectionPlan, packageName: string, setDir: stri
  * @param key Section key, for the prompt text.
  * @returns The chosen operator action.
  */
-async function askGate(relay: TerminalRelay, key: AuditSection): Promise<GateChoice> {
+async function askGate(relay: Relay, key: AuditSection): Promise<GateChoice> {
   for (;;) {
     const line = (
       await relay.askOrchestrator(`${key}: no findings set and no clean statement — retry / clean / skip / halt?`)
@@ -180,7 +180,7 @@ async function askGate(relay: TerminalRelay, key: AuditSection): Promise<GateCho
 async function runSectionWithGate(
   job: SectionJob,
   options: RunAuditsOptions,
-  relay: TerminalRelay,
+  relay: Relay,
   records: SectionRecord[],
 ): Promise<boolean> {
   for (let attempt = 1; ; attempt++) {

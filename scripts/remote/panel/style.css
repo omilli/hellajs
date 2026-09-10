@@ -1,0 +1,357 @@
+/* Phone-first single column, large tap targets, dark panel. */
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #101418;
+  --panel: #1a2027;
+  --line: #2a323c;
+  --text: #e6edf3;
+  --dim: #8b98a5;
+  --accent: #4da3ff;
+  --danger: #ff6b6b;
+  --ok: #3fb950;
+}
+
+body {
+  margin: 0;
+  max-width: 640px;
+  margin-inline: auto;
+  padding: 0 0.75rem 3rem;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, sans-serif;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.25rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.status {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+
+.status.on {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.status.off {
+  color: var(--dim);
+}
+
+section {
+  margin-top: 1.5rem;
+}
+
+h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  margin: 0 0 0.6rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.gate {
+  margin-top: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gate code {
+  align-self: flex-start;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.banner {
+  margin-top: 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(77, 163, 255, 0.08);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.card .meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.card .title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.card .sub {
+  font-size: 0.8rem;
+  color: var(--dim);
+  overflow-wrap: anywhere;
+}
+
+button {
+  min-height: 44px;
+  min-width: 64px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+button:active {
+  background: rgba(77, 163, 255, 0.15);
+}
+
+button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+button:disabled {
+  opacity: 0.4;
+}
+
+.custom {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.custom label {
+  font-size: 0.85rem;
+  color: var(--dim);
+}
+
+input {
+  min-height: 44px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.run {
+  margin-bottom: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.run .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.run .cmd {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.run.exited .cmd {
+  color: var(--dim);
+}
+
+.run .exit {
+  font-size: 0.8rem;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.run pre {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  max-height: 40vh;
+  overflow: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.run .controls {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--line);
+}
+
+.run .controls input {
+  flex: 1;
+}
+
+.dialog {
+  margin-bottom: 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 0.8rem 0.9rem;
+}
+
+.dialog h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.dialog p {
+  margin: 0 0 0.7rem;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.dialog .options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dialog .free {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dialog .free input {
+  flex: 1;
+}
+
+/* Pi chat sessions */
+
+.pi-spawn {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.pi-spawn input {
+  flex: 1;
+}
+
+.pi-session {
+  margin-bottom: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.pi-session .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.pi-session .meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pi-session .title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.pi-session.ended .title {
+  color: var(--dim);
+}
+
+.pi-session .sub {
+  font-size: 0.8rem;
+  color: var(--dim);
+}
+
+.pi-feed {
+  max-height: 40vh;
+  overflow: auto;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pi-assistant {
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pi-line {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--dim);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pi-session .controls {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--line);
+}
+
+.pi-session .controls input {
+  flex: 1;
+}
+
+.empty {
+  color: var(--dim);
+  font-size: 0.9rem;
+}

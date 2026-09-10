@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 import { logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
-import type { TerminalRelay } from "../agent/relay.js";
+import type { Relay } from "../agent/relay.js";
 import { worktreeScript } from "../agent/worktree.js";
 import { isTicked, listPlanUnits, type PlanUnit } from "../plans/set.js";
 import { unionGate } from "./gate.js";
@@ -170,7 +170,7 @@ export async function runMerge(options: MergeOptions): Promise<number> {
 async function mergeComponent(
   entry: QueueEntry,
   options: MergeOptions,
-  relay: TerminalRelay,
+  relay: Relay,
   setName: string,
   relSetDir: string,
 ): Promise<ComponentOutcome> {
@@ -235,7 +235,7 @@ async function mergeComponent(
  * @param cleaned Whether the worktree was cleaned anyway.
  * @returns The chosen operator action.
  */
-async function askComponentGate(relay: TerminalRelay, slug: string, cleaned: boolean): Promise<"retry" | "skip" | "halt"> {
+async function askComponentGate(relay: Relay, slug: string, cleaned: boolean): Promise<"retry" | "skip" | "halt"> {
   const state = cleaned ? "worktree cleaned but main-tree ticks missing" : "worktree still standing";
   for (;;) {
     const line = (await relay.askOrchestrator(`${slug}: not merged (${state}) — retry / skip / halt?`)).trim().toLowerCase();

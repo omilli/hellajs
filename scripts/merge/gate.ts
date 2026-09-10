@@ -3,7 +3,7 @@ import { join, sep } from "node:path";
 import { execCommandInherited, isValidPackage, logger, projectRoot } from "../utils/index.js";
 import { listPlanUnits } from "../plans/set.js";
 import { dialogHook, driveAgent } from "../agent/driver.js";
-import type { TerminalRelay } from "../agent/relay.js";
+import type { Relay } from "../agent/relay.js";
 
 /** Options for the union gate: the fix instance's model pattern. */
 export interface GateOptions {
@@ -138,7 +138,7 @@ function buildFixPrompt(relSetDir: string, failedCommand: string): string {
  * @param relay The shared terminal relay.
  * @returns The chosen operator action.
  */
-async function askFixGate(relay: TerminalRelay): Promise<"retry" | "halt"> {
+async function askFixGate(relay: Relay): Promise<"retry" | "halt"> {
   for (;;) {
     const line = (await relay.askOrchestrator("union gate still RED after fix — retry-fix / halt?")).trim().toLowerCase();
     if (line === "r" || line === "retry" || line === "retry-fix") {
@@ -164,7 +164,7 @@ async function askFixGate(relay: TerminalRelay): Promise<"retry" | "halt"> {
  */
 export async function unionGate(
   options: GateOptions,
-  relay: TerminalRelay,
+  relay: Relay,
   setName: string,
   relSetDir: string,
 ): Promise<boolean> {
