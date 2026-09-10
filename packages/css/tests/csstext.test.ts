@@ -23,6 +23,23 @@ describe("cssText", () => {
     expect(cssText()).toBe(`body{margin:0px}.${cls}{color:red}a{color:blue}`);
   });
 
+  test("hoists a statement registration ahead of braced-only text", () => {
+    // happy-dom rejects statement inserts (a warn; css-at-rules suppresses it
+    // file-wide), so the collector ordering is asserted via the server text
+    // return — cssText() reads the same registration map on both platforms.
+    const savedDocument = globalThis.document;
+    let text: string;
+    (globalThis as unknown as Record<string, unknown>).document = undefined;
+    try {
+      css({ body: { margin: 0 } });
+      css({ "@import": 'url("x.css")' });
+      text = cssText();
+    } finally {
+      (globalThis as unknown as Record<string, unknown>).document = savedDocument;
+    }
+    expect(text).toBe('@import url("x.css");body{margin:0px}');
+  });
+
   test("excludes host-qualified registrations", () => {
     const host = document.createElement("div");
     document.body.appendChild(host);

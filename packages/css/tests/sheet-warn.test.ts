@@ -54,6 +54,22 @@ describe("css platform-rejected rules", () => {
     expect(content).toContain("body");
   });
 
+  test("statement insert rejection warns and leaves no stale index", () => {
+    // happy-dom rejects every block-less statement form, so the @import insert
+    // fails; the phantom indexMap entry would push a later rule to a stale
+    // index — the same corruption shape pinned for @layer above.
+    css({ "@import": 'url("x.css")' });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('[css] rule rejected by the platform and skipped: @import url("x.css");');
+    css({ body: { margin: "0" } });
+    const sheet = getCssSheet();
+    expect(sheet.cssRules.length).toBe(1);
+    expect(sheet.cssRules[0]!.cssText).toContain("body");
+    const content = getStylesheet("hella-css");
+    expect(content).not.toContain("@import");
+    expect(content).toContain("body");
+  });
+
   test("re-injecting a failed rule key does not corrupt existing rules", () => {
     // First injection fails (happy-dom rejects @layer).
     css({ "@layer base": { h1: { fontSize: "2rem" } } });

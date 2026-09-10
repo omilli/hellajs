@@ -121,6 +121,40 @@ describe("css at-rules", () => {
     expect(serverText).toBe("@layer base{h1{font-size:2rem}p{line-height:1.5}}");
   });
 
+  test("@import statement emits the exact block-less form", () => {
+    const statement = { "@import": 'url("x.css")' };
+    // happy-dom rejects every block-less statement insert (same divergence
+    // family as @layer above), so the composition is asserted via the server
+    // text return (same process() derivation); restored in finally, asserted
+    // after restore so a throwing call cannot leak the patch into siblings.
+    const savedDocument = globalThis.document;
+    let result: string;
+    let serverText: string;
+    (globalThis as unknown as Record<string, unknown>).document = undefined;
+    try {
+      result = css(statement);
+      serverText = cssText();
+    } finally {
+      (globalThis as unknown as Record<string, unknown>).document = savedDocument;
+    }
+    expect(result).toBe("");
+    expect(serverText).toBe('@import url("x.css");');
+  });
+
+  test("statement segments lead the emitted text regardless of key order", () => {
+    const statementLast = { body: { margin: 0 }, "@import": 'url("x.css")' };
+    const savedDocument = globalThis.document;
+    let serverText: string;
+    (globalThis as unknown as Record<string, unknown>).document = undefined;
+    try {
+      css(statementLast);
+      serverText = cssText();
+    } finally {
+      (globalThis as unknown as Record<string, unknown>).document = savedDocument;
+    }
+    expect(serverText).toBe('@import url("x.css");body{margin:0px}');
+  });
+
   test("global @media (no name) is unaffected", () => {
     css({
       "@media (max-width: 768px)": { ".card": { padding: "0.75rem" } },

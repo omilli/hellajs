@@ -117,9 +117,52 @@ function rebaseIndexes(qid: string, removedIndex: number): void {
 }
 
 /**
+ * Increments every indexMap entry of the given sheet at or above
+ * `insertedIndex` — a mid-sheet insertRule shifts all later rules up one,
+ * so their stored indexes must follow or the next deleteRule/upsert hits
+ * the wrong rule. The mirror of rebaseIndexes' post-deleteRule decrement.
+ * Scoped by the qualified sheet key: indexMap spans both sheet ids and all hosts.
+ */
+function shiftIndexesUp(qid: string, insertedIndex: number): void {
+  const prefix = `${qid}:`;
+  indexMap.forEach((v, k) => {
+    if (v >= insertedIndex && k.startsWith(prefix)) indexMap.set(k, v + 1);
+  });
+}
+
+/**
+ * Insert position for a rule: block-less statements (@import, @charset)
+ * land ahead of the first braced rule — the CSSOM rejects a statement placed
+ * after any real rule (check-for-import-rule) — so they take the first braced
+ * rule's index, or append when the sheet holds only statements. Braced rules
+ * always append.
+ */
+function resolveInsertIndex(s: CSSStyleSheet, cssText: string): number {
+  if (cssText.includes("{")) return s.cssRules.length;
+  const rules = s.cssRules;
+  const len = rules.length;
+  let i = 0;
+  while (i < len) {
+    let braced = true;
+    try {
+      braced = rules[i]!.cssText.includes("{");
+    } catch {
+      // cssText access throws on a rule the platform has invalidated; treat it
+      // as braced so the statement lands ahead of it (the placement-safe side).
+    }
+    if (braced) return i;
+    i++;
+  }
+  return len;
+}
+
+/**
  * @internal
  * Insert or replace a single rule by key.
- * Uses the index map to avoid unnecessary DOM operations.
+ * Uses the index map to avoid unnecessary DOM operations. Block-less statement
+ * segments insert ahead of the first braced rule (CSSOM statements must
+ * precede all rules); a mid-sheet insert shifts later rules up, and their
+ * stored indexes rebase to match.
  */
 export function upsertRule(id: string, key: string, cssText: string, host?: ParentNode): void {
   const s = getSheet(id, host);
@@ -157,9 +200,14 @@ export function upsertRule(id: string, key: string, cssText: string, host?: Pare
     return;
   }
 
-  const index = s.cssRules.length;
+  const index = resolveInsertIndex(s, cssText);
   try {
+    // A mid-sheet insert (statement placed before braced rules) shifts every
+    // later rule up one — stored indexes must follow. Computed before the
+    // insert: appending shifts nothing.
+    const shifts = index < s.cssRules.length;
     s.insertRule(cssText, index);
+    if (shifts) shiftIndexesUp(qid, index);
     indexMap.set(ruleKey, index);
   } catch {
     // skip — rule not supported by runtime; indexMap stays clean

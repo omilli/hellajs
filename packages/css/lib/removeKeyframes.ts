@@ -1,6 +1,5 @@
 import { isPlainObject } from "./internal/core";
-import { STYLE_ID, injectedMap } from "./internal/injection";
-import { removeRule } from "./internal/sheet";
+import { deregisterText } from "./internal/injection";
 import { keyframesRule } from "./keyframes";
 import type { KeyframesObject } from "./types";
 
@@ -19,16 +18,5 @@ export function removeKeyframes(obj: KeyframesObject): void {
   if (!isPlainObject(obj)) throw new Error(`[css] removeKeyframes: expected a CSS object, received ${String(obj)}`);
 
   const { cssText: text } = keyframesRule(obj);
-  const entry = injectedMap.get(text);
-  if (!entry) return;
-
-  entry.count--;
-  if (entry.count > 0) return;
-
-  let i = 0;
-  while (i < entry.ruleCount) {
-    removeRule(STYLE_ID, `${text}:${i}`);
-    i++;
-  }
-  injectedMap.delete(text);
+  deregisterText(text);
 }

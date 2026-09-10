@@ -1,6 +1,6 @@
 # cssText
 
-Collects the CSS text registered by [`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes), and [`vars`](/reference/css/vars) calls on the default host, in first-registration order. The server-side `<style>` source.
+Collects the CSS text registered by [`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes), and [`vars`](/reference/css/vars) calls on the default host, in first-registration order (statement-leading texts, e.g. an `@import`, hoist ahead of braced-only texts). The server-side `<style>` source.
 
 ## API
 
@@ -37,7 +37,7 @@ Registration runs without a DOM, so the collector works the same on client and s
 
 ### Vars Append After the CSS-Side Text
 
-Two style elements exist on the client (`hella-css` for rules, `hella-vars` for custom properties), and the collector mirrors that split: css-side registrations (`css`, `style`, `keyframes`) join in call order, then the vars contribution appends (each scope+media bucket's rule, in registration order, media-wrapped when the `media` option was set).
+Two style elements exist on the client (`hella-css` for rules, `hella-vars` for custom properties), and the collector mirrors that split: css-side registrations (`css`, `style`, `keyframes`) join in call order (statement-leading texts hoist ahead of braced-only ones), then the vars contribution appends (each scope+media bucket's rule, in registration order, media-wrapped when the `media` option was set).
 
 ### Host-Qualified Entries Are Excluded
 

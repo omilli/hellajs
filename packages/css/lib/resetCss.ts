@@ -1,4 +1,3 @@
-import { hasDocument } from "./internal/core";
 import { resetSheet } from "./internal/sheet";
 import { STYLE_ID, injectedMap } from "./internal/injection";
 
@@ -9,5 +8,5 @@ import { STYLE_ID, injectedMap } from "./internal/injection";
  */
 export function resetCss(): void {
   injectedMap.clear();
-  if (hasDocument()) resetSheet(STYLE_ID);
+  resetSheet(STYLE_ID);
 }

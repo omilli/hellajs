@@ -38,7 +38,7 @@ function canonicalSteps<T extends Record<string, unknown>>(obj: T): T {
 export function keyframesRule(obj: KeyframesObject): { name: string; cssText: string } {
   const steps = canonicalSteps(obj);
   const name = `h-kf-${hash(stringify(steps))}`;
-  return { name, cssText: `@keyframes ${name}{${process(steps, "", true)}}` };
+  return { name, cssText: `@keyframes ${name}{${process(steps, "", false)}}` };
 }
 
 /**

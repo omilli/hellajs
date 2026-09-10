@@ -60,6 +60,12 @@ describe("platform-independent registration (no document)", () => {
     );
   });
 
+  test("css() throws for top-level declarations on the server too", () => {
+    expect(() => css({ color: "red" })).toThrow(
+      "[css] top-level declarations have no selector — nest them under a selector or at-rule"
+    );
+  });
+
   test("css() throws for function values on the server too", () => {
     // @ts-expect-error - testing invalid input
     expect(() => css({ padding: () => "1px" })).toThrow(

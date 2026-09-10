@@ -6,18 +6,20 @@ const AMP_REGEX = /&/g;
 const CAMEL_REGEX = /[A-Z]/g;
 
 /**
- * CamelCase property names whose numeric values stay unitless. Every other property
- * appends `px` to numeric values (px-by-default with a unitless allowlist — the inverse,
+ * Kebab-case property names whose numeric values stay unitless; both key spellings
+ * resolve through the kebab conversion in process() (camelCase keys convert before
+ * the lookup, kebab-case keys are their own kebab form). Every other property appends
+ * `px` to numeric values (px-by-default with a unitless allowlist — the inverse,
  * a length-property list, is unbounded and drifts with CSS). `--` custom properties never
  * take a unit; they bypass this set via the custom-property key check in process().
  */
 const UNITLESS_PROPERTIES = new Set([
-  "animationIterationCount", "aspectRatio", "borderImageOutset", "borderImageSlice", "borderImageWidth",
-  "columnCount", "columns", "flex", "flexGrow", "flexPositive", "flexShrink", "flexNegative", "flexOrder",
-  "gridArea", "gridRow", "gridRowEnd", "gridRowSpan", "gridRowStart", "gridColumn", "gridColumnEnd",
-  "gridColumnSpan", "gridColumnStart", "fontWeight", "lineClamp", "lineHeight", "opacity", "order",
-  "orphans", "scale", "tabSize", "widows", "zIndex", "zoom", "fillOpacity", "floodOpacity", "stopOpacity",
-  "strokeDasharray", "strokeDashoffset", "strokeMiterlimit", "strokeOpacity", "strokeWidth"
+  "animation-iteration-count", "aspect-ratio", "border-image-outset", "border-image-slice", "border-image-width",
+  "column-count", "columns", "flex", "flex-grow", "flex-positive", "flex-shrink", "flex-negative", "flex-order",
+  "grid-area", "grid-row", "grid-row-end", "grid-row-span", "grid-row-start", "grid-column", "grid-column-end",
+  "grid-column-span", "grid-column-start", "font-weight", "line-clamp", "line-height", "opacity", "order",
+  "orphans", "scale", "tab-size", "widows", "z-index", "zoom", "fill-opacity", "flood-opacity", "stop-opacity",
+  "stroke-dasharray", "stroke-dashoffset", "stroke-miterlimit", "stroke-opacity", "stroke-width"
 ]);
 
 /**
@@ -36,9 +38,9 @@ const CONDITIONAL_AT_RULES = ["@media", "@container", "@supports", "@starting-st
  * @param options Optional configuration. Provide `host` to create the `<style>` element in a shadow root or other parent node instead of `document.head`.
  * @returns Always returns empty string (for backward compatibility), on both platforms.
  * @throws {Error} When obj is not a plain object, when a property value is a function — use `vars()`
- * for reactive values, or when a conditional at-rule body contains direct style declarations with no
- * selector in scope — nest selectors under the at-rule.
- * @returns Always returns empty string (for backward compatibility), on both platforms.
+ * for reactive values, when a conditional at-rule body contains direct style declarations with no
+ * selector in scope — nest selectors under the at-rule, or when the object contains top-level
+ * declarations with no selector — nest them under a selector or at-rule.
  */
 export function css(obj: CSSObject, options: CSSOptions = {}): string {
   if (!isPlainObject(obj)) throw new Error(`[css] css: expected a CSS object, received ${String(obj)}`);
@@ -55,7 +57,11 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * Recursively traverses a CSS object and builds the final CSS string.
  * Conditional at-rules (@media, @container, @supports, @starting-style) inherit
  * the active parent selector (any nested selector); with no selector in scope,
- * a conditional at-rule body containing direct style declarations throws.
+ * a conditional at-rule body containing direct style declarations throws. A
+ * top-level entry (css()/removeCss()) with direct declarations under non-`@`
+ * keys likewise throws — no selector is in scope (`@`-prefixed scalar keys are
+ * block-less statements, emitted `@key value;` and hoisted ahead of all
+ * braced text in the same call's emission, mirroring the client placement).
  * Definitional at-rules (@keyframes, @font-face, @layer, etc.) always process
  * content with an empty selector; their direct declarations emit bare (e.g.
  * `@font-face{font-family:…}`). The `&` token in nested selectors is replaced
@@ -70,11 +76,14 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  *
  * @param obj CSS object to process
  * @param selector Parent selector for nesting resolution
- * @param isGlobal Whether styles are applied globally (no selector wrapping)
+ * @param isTopLevel True only at the css()/removeCss() entry calls; every recursion and
+ * derived rule builder (keyframes steps, scoped styles) passes false
  */
-export function process(obj: CSSObject, selector: string, isGlobal: boolean): string {
+export function process(obj: CSSObject, selector: string, isTopLevel: boolean): string {
   const rules: string[] = [];
   const properties: string[] = [];
+  const statements: string[] = [];
+  let hasDirectDeclaration = false;
   const keys = Object.keys(obj);
   let i = 0;
   const len = keys.length;
@@ -111,8 +120,8 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
           }
         }
         const nestedCss = isConditional && selector
-          ? process(value as CSSObject, selector, isGlobal)
-          : process(value as CSSObject, "", true);
+          ? process(value as CSSObject, selector, false)
+          : process(value as CSSObject, "", false);
         rules.push(`${key}{${nestedCss}}`);
       } else {
         let nestedSelector: string;
@@ -127,18 +136,26 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
           nestedSelector = key;
         }
 
-        rules.push(process(value as CSSObject, nestedSelector, isGlobal));
+        rules.push(process(value as CSSObject, nestedSelector, false));
       }
     } else {
       if (isFunction(value)) {
         throw new Error(`[css] function values are not supported in css objects — use vars() for reactive values, key: ${key}`);
+      }
+      // @-prefixed scalar keys are block-less at-statements (@import, @charset,
+      // @namespace): the value is the statement body, not a declaration. They
+      // lead the emitted text (statements must precede every rule) and take no
+      // scope, like definitional at-rules.
+      if (key.startsWith("@")) {
+        statements.push(`${key} ${Array.isArray(value) ? value.join(", ") : String(value)};`);
+        continue;
       }
       const isCustom = key.startsWith("--");
       const property = isCustom ? key : key.replace(CAMEL_REGEX, (match) => `-${match.toLowerCase()}`);
       let cssValue: string;
       if (Array.isArray(value)) {
         cssValue = value.join(", ");
-      } else if (isNumber(value) && !isCustom && !UNITLESS_PROPERTIES.has(key)) {
+      } else if (isNumber(value) && !isCustom && !UNITLESS_PROPERTIES.has(property)) {
         cssValue = `${value}px`;
       } else {
         cssValue = String(value);
@@ -148,14 +165,21 @@ export function process(obj: CSSObject, selector: string, isGlobal: boolean): st
         cssValue = `"${value}"`;
       }
 
+      if (isTopLevel) hasDirectDeclaration = true;
       properties.push(`${property}:${cssValue}`);
     }
   }
 
-  if (properties.length === 0) return rules.join("");
+  // A top-level entry with direct declarations would emit selector-less text the
+  // platform silently drops — reject loudly instead.
+  if (isTopLevel && hasDirectDeclaration) {
+    throw new Error("[css] top-level declarations have no selector — nest them under a selector or at-rule");
+  }
+  const statementText = statements.join("");
+  if (properties.length === 0) return `${statementText}${rules.join("")}`;
   // No active selector: emit declarations bare (e.g. inside @font-face). Rules
-  // come first so a brace-depth-0 split keeps valid rules separate from any
-  // brace-less garbage the platform will reject.
-  if (!selector) return `${rules.join("")}${properties.join(";")}`;
-  return `${selector}{${properties.join(";")}}${rules.join("")}`;
+  // precede declarations; statements precede both — the registerText split
+  // segments on depth-0 ";" and closing braces, so each piece stays whole.
+  if (!selector) return `${statementText}${rules.join("")}${properties.join(";")}`;
+  return `${statementText}${selector}{${properties.join(";")}}${rules.join("")}`;
 }

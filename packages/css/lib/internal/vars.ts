@@ -1,11 +1,13 @@
 import { hostQualifier, removeRule, upsertRule } from "./sheet";
 import type { CSSVars, VarsOptions } from "../types";
 /**
+ * id attribute of the `<style>` element all vars() rules inject into.
  * @internal
  */
 export const VARS_ID = "hella-vars";
 
 /**
+ * Scope+media bucket registry keyed by the composite bucket key.
  * @internal
  */
 export const scopedVarsRulesMap = new Map<string, VarsBucket>();
@@ -24,16 +26,19 @@ interface VarsBucket {
 }
 
 /**
+ * Flattened-input cache behind vars() result lookups, evicted LRU at CACHE_MAX.
  * @internal
  */
 export const cache = new Map<string, { flattened: Record<string, unknown>, result: unknown }>();
 
 /**
+ * Cache size cap triggering oldest-entry eviction.
  * @internal
  */
 export const CACHE_MAX = 100;
 
 /**
+ * Global-dot pattern for rewriting dotted var keys to nested-scope hyphens.
  * @internal
  */
 export const DOT_REGEX = /\./g;
@@ -54,6 +59,7 @@ interface VarsEntry {
 }
 
 /**
+ * Server/state-only vars() registry: flat keys, prefix, media, host, refcount, cleanup.
  * @internal
  */
 export const varsRegistryStatic = new Map<string, VarsEntry>();

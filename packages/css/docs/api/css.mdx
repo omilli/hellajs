@@ -128,7 +128,7 @@ html`<button class="${btnClass}">Click</button>`
 
 ### @-Rules
 
-All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`) are supported as top-level keys. A conditional at-rule body must contain selectors: direct declarations with no selector in scope throw:
+All CSS `@` rules (`@media`, `@keyframes`, `@font-face`, `@container`, `@supports`, `@layer`, `@import`) are supported as top-level keys. A conditional at-rule body must contain selectors: direct declarations with no selector in scope throw:
 
 ```jsx
 css({
@@ -165,9 +165,18 @@ css({ 'div.card': { '@media (min-width: 1px)': { color: 'red' } } });
 css({ '@media (min-width: 1px)': { color: 'red' } });
 // Error: [css] conditional at-rule "@media (min-width: 1px)" contains
 //        declarations with no selector; nest selectors under the at-rule
+
+// Throws: top-level declarations have no selector either:
+css({
+  color: 'red',
+});
+// Error: [css] top-level declarations have no selector;
+//        nest them under a selector or at-rule
 ```
 
 Nest selectors under the at-rule so every declaration has a selector to attach to. The same input throws in [`removeCss`](/reference/css/removecss) and on the server; the check runs in the shared CSS derivation before any platform branching. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) never inherit a scope; their direct declarations are their normal shape (`@font-face{font-family:…}`).
+
+One level up, a bare top-level declaration throws the sibling error: with no selector or at-rule in scope there is nothing to attach to, so nest it under a selector. The same [`removeCss`](/reference/css/removecss) and server parity hold (shared derivation).
 
 ### Shadow DOM Hosts
 
@@ -306,6 +315,23 @@ css({
 });
 // @keyframes spin{from{transform:rotate(0deg)}}
 ```
+
+`@import` is the statement form: a non-object value becomes the statement body, emitted block-less and hoisted ahead of every braced rule regardless of key order, because statements must precede all rules:
+
+```typescript
+css({
+  '@import': 'url("fonts.css")',
+});
+// @import url("fonts.css");
+
+css({
+  '@import': 'url("fonts.css")',
+  body: { margin: 0 },
+});
+// @import url("fonts.css");body{margin:0px}
+```
+
+Statements serialize ahead of braced-only registrations in [`cssText`](/reference/css/csstext) as well, mirroring the client placement: `cssText()` emits statement-leading texts first, each class in first-registration order. Platforms that reject dynamic statement inserts (some test DOMs) skip them with the warning described under Platform-Rejected Rules Are Skipped With a Warning below.
 
 ### Platform-Rejected Rules Are Skipped With a Warning
 

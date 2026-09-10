@@ -6,6 +6,7 @@
 * **Creation**: Added concept [126](entries/126.md) (type: decision).
 * **Creation**: Added concept [127](entries/127.md) (type: decision).
 * **Update**: Renumbered merge entries 124→126 (accept-small-docs-length-target) and 125→127 (doc-snippets-resets-doc-snippets) at plans-core-audit-docs merge; IDs 124/125 were allocated in-flight by 124-fresh-worktree-builds-need-bun and core-documents-input-validation-throws.
+* **Creation**: Added concept [128](entries/128.md) (type: decision). Renumbered from 124 at merge: ID 124 was taken in-flight by 124-fresh-worktree-builds-need-bun.
 
 ## 2026-09-11
 * **Creation**: Added concept [122](entries/122.md) (type: correction).

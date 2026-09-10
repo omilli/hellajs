@@ -49,6 +49,26 @@ describe("css", () => {
     expect(content).toContain("*{box-sizing:border-box}");
   });
 
+  test("kebab-case unitless property emits without px", () => {
+    css({ body: { "line-height": 1.5 } });
+    expect(getStylesheet("hella-css")).toBe("body{line-height:1.5}");
+  });
+
+  test("kebab-case font-weight number survives parse", () => {
+    css({ body: { "font-weight": 700 } });
+    expect(getStylesheet("hella-css")).toBe("body{font-weight:700}");
+  });
+
+  test("kebab-case length property still appends px", () => {
+    css({ body: { "margin-top": 4 } });
+    expect(getStylesheet("hella-css")).toBe("body{margin-top:4px}");
+  });
+
+  test("camelCase spelling emits the same rule as kebab-case", () => {
+    css({ body: { lineHeight: 1.5 } });
+    expect(getStylesheet("hella-css")).toBe("body{line-height:1.5}");
+  });
+
   test("removeCss with global styles", () => {
     const styles = { body: { margin: "0" } };
     css(styles);
@@ -59,8 +79,31 @@ describe("css", () => {
   });
 
   test("removeCss is a no-op for unknown styles", () => {
-    removeCss({ color: "neveradded" });
+    removeCss({ ".never-added": { color: "red" } });
     expect(getStylesheet("hella-css")).toBe("");
+  });
+
+  test("removeCss drops a statement registration at zero refs", () => {
+    // happy-dom rejects statement inserts (a warn), so refcounting is asserted
+    // via the server registration — cssText() reads the same map on both
+    // platforms.
+    const savedDocument = globalThis.document;
+    let afterOne: string;
+    let afterTwo: string;
+    (globalThis as unknown as Record<string, unknown>).document = undefined;
+    try {
+      const statement = { "@import": 'url("x.css")' };
+      css(statement);
+      css(statement);
+      removeCss(statement);
+      afterOne = cssText();
+      removeCss(statement);
+      afterTwo = cssText();
+    } finally {
+      (globalThis as unknown as Record<string, unknown>).document = savedDocument;
+    }
+    expect(afterOne).toBe('@import url("x.css");');
+    expect(afterTwo).toBe("");
   });
 
   test("resetCss clears CSS rules", () => {
@@ -132,6 +175,21 @@ describe("css", () => {
       // @ts-expect-error - testing invalid input
       expect(() => css({ "@media (min-width: 1px)": { ".card": { padding: () => "1px" } } })).toThrow(
         "[css] function values are not supported in css objects"
+      );
+    });
+
+    test.each([
+      { color: "red" },
+      { fontSize: 12 },
+    ])("css throws on top-level declarations", (invalid) => {
+      expect(() => css(invalid)).toThrow(
+        "[css] top-level declarations have no selector — nest them under a selector or at-rule"
+      );
+    });
+
+    test("removeCss throws on top-level declarations", () => {
+      expect(() => removeCss({ color: "red" })).toThrow(
+        "[css] top-level declarations have no selector — nest them under a selector or at-rule"
       );
     });
   });

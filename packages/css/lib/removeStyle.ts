@@ -1,5 +1,4 @@
-import { hostQualifier, removeRule } from "./internal/sheet";
-import { STYLE_ID, injectedMap } from "./internal/injection";
+import { deregisterText } from "./internal/injection";
 import { resolveStyle } from "./style";
 import type { StyleObject, StyleOptions } from "./types";
 
@@ -27,17 +26,5 @@ export function removeStyle(obj: StyleObject, options?: StyleOptions): void;
 export function removeStyle(base: string | StyleObject, override: StyleObject, options?: StyleOptions): void;
 export function removeStyle(base: string | StyleObject, overrideOrOptions?: StyleObject | StyleOptions, optionsArg?: StyleOptions): void {
   const resolved = resolveStyle("removeStyle", base, overrideOrOptions, optionsArg);
-  const qualified = `${hostQualifier(resolved.host)}${resolved.text}`;
-  const entry = injectedMap.get(qualified);
-  if (!entry) return;
-
-  entry.count--;
-  if (entry.count > 0) return;
-
-  let i = 0;
-  while (i < entry.ruleCount) {
-    removeRule(STYLE_ID, `${resolved.text}:${i}`, resolved.host);
-    i++;
-  }
-  injectedMap.delete(qualified);
+  deregisterText(resolved.text, resolved.host);
 }

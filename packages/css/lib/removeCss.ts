@@ -1,6 +1,5 @@
 import { isPlainObject } from "./internal/core";
-import { hostQualifier, removeRule } from "./internal/sheet";
-import { STYLE_ID, injectedMap } from "./internal/injection";
+import { deregisterText } from "./internal/injection";
 import { process } from "./css";
 import type { CSSObject, CSSOptions } from "./types";
 
@@ -13,8 +12,9 @@ import type { CSSObject, CSSOptions } from "./types";
  * at zero references (a no-op without a DOM).
  * @param obj CSS object to remove (structurally identical objects match, same reference not required)
  * @param options Optional configuration object (must match the options used in css())
- * @throws {Error} When obj is not a plain object, or when a property value is a function —
- * use `vars()` for reactive values.
+ * @throws {Error} When obj is not a plain object, when a property value is a function — use `vars()`
+ * for reactive values, or when the object contains declarations with no selector in scope (top-level
+ * or directly under a conditional at-rule) — the same rejections `css()` makes on the same object.
  */
 export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
   if (!isPlainObject(obj)) throw new Error(`[css] removeCss: expected a CSS object, received ${String(obj)}`);
@@ -22,17 +22,5 @@ export function removeCss(obj: CSSObject, options: CSSOptions = {}): void {
   const host = options.host;
   const cssText = process(obj, "", true);
 
-  const entry = injectedMap.get(`${hostQualifier(host)}${cssText}`);
-  if (!entry) return;
-
-  entry.count--;
-  if (entry.count > 0) return;
-
-  let i = 0;
-  const ruleCount = entry.ruleCount;
-  while (i < ruleCount) {
-    removeRule(STYLE_ID, `${cssText}:${i}`, host);
-    i++;
-  }
-  injectedMap.delete(`${hostQualifier(host)}${cssText}`);
+  deregisterText(cssText, host);
 }

@@ -43,7 +43,9 @@ function mergeStyles(base: StyleObject, override: StyleObject): StyleObject {
  * `label` (string) or `host` (object) — mirroring the overload types, where a
  * value shaped like `{ label: 'x' }` is assignable to StyleOptions but not to
  * a StyleObject override, and `{ label: { … } }` (a nested `label` element
- * selector) only to the override.
+ * selector) only to the override. The bag reading holds only for the
+ * two-argument form: a third argument marks the second as the override per
+ * overload 2.
  */
 function isOptionBag(value: StyleObject | StyleOptions): value is StyleOptions {
   const record = value as Record<string, unknown>;
@@ -101,11 +103,14 @@ export function resolveStyle(
     if (!isPlainObject(base)) {
       throw new Error(`[css] ${fn}: expected a CSS object, received ${String(base)}`);
     }
-    if (overrideOrOptions === undefined || isOptionBag(overrideOrOptions)) {
+    if (
+      overrideOrOptions === undefined ||
+      (optionsArg === undefined && isOptionBag(overrideOrOptions))
+    ) {
       options = (overrideOrOptions as StyleOptions | undefined) ?? optionsArg ?? {};
       obj = base;
     } else {
-      obj = mergeStyles(base, overrideOrOptions);
+      obj = mergeStyles(base, overrideOrOptions as StyleObject);
       options = optionsArg ?? {};
     }
   }
