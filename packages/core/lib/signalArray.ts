@@ -25,9 +25,14 @@ interface ArrayNode<T> {
  * @param options Per-element `equals`, plus element-lifecycle `wrap`/`merge` hooks.
  * @returns A granular array signal.
  * @throws {Error} When `options.equals`, `options.wrap`, or `options.merge` is present and not a function.
+ * @throws {Error} When `initial` is present and not an array.
+ * @throws {Error} When the reconcile setter receives a non-array value.
  */
 export function signalArray<T>(initial?: T[], options?: CollectionOptions<T>): SignalArray<T> {
   const hooks = createHooks("signalArray", options);
+  if (initial !== undefined && !Array.isArray(initial)) {
+    throw new Error(`[core] signalArray: initial must be an array, received ${typeof initial}`);
+  }
   const { read: version, bump } = createVersion();
   const nodes: ArrayNode<T>[] = [];
   const equals = hooks.ce ? { equals: hooks.ce } : undefined;
@@ -44,6 +49,9 @@ export function signalArray<T>(initial?: T[], options?: CollectionOptions<T>): S
 
   const container = function (next?: T[]) {
     if (arguments.length > 0) {
+      if (!Array.isArray(next)) {
+        throw new Error(`[core] signalArray: value must be an array, received ${typeof next}`);
+      }
       // Reconcile position-wise through the value pipeline: equal positions write
       // nothing, changed positions write their child, length changes restructure
       const nextLen = (next as T[]).length;

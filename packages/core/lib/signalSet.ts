@@ -1,5 +1,6 @@
 import { signal } from "./signal";
 import { createHooks, createVersion } from "./internal/collections";
+import { isFunction } from "./internal/utils";
 import type { Signal, SignalSet, CollectionOptions } from "./types";
 
 /**
@@ -18,9 +19,14 @@ import type { Signal, SignalSet, CollectionOptions } from "./types";
  * @param options Element-lifecycle `wrap`; `equals`/`merge` are validated but inert for sets.
  * @returns A granular set signal.
  * @throws {Error} When `options.equals`, `options.wrap`, or `options.merge` is present and not a function.
+ * @throws {Error} When `initial` is present and not iterable.
+ * @throws {Error} When the reconcile setter receives a non-Set value.
  */
 export function signalSet<T>(initial?: Iterable<T>, options?: CollectionOptions<T>): SignalSet<T> {
   const hooks = createHooks("signalSet", options);
+  if (initial !== undefined && !isFunction(initial?.[Symbol.iterator])) {
+    throw new Error(`[core] signalSet: initial must be iterable, received ${typeof initial}`);
+  }
   const { read: version, bump } = createVersion();
   const membership = new Map<T, Signal<boolean>>(); // Per-value membership signals; lazily created by has() probes
   const live = new Set<T>(); // Membership truth
@@ -38,6 +44,9 @@ export function signalSet<T>(initial?: Iterable<T>, options?: CollectionOptions<
   }
 
   const reconcile = (next: Set<T>): void => {
+    if (!(next instanceof Set)) {
+      throw new Error(`[core] signalSet: value must be a Set, received ${typeof next}`);
+    }
     let isStructural = false;
     // Wrap the incoming diff once up front: membership keys on converted values,
     // so the add and delete passes must both compare wrapped, never raw

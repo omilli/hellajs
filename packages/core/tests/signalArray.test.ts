@@ -172,6 +172,27 @@ describe("signalArray", () => {
     );
   });
 
+  test("throws on structurally invalid input", () => {
+    expect(() => signalArray(42 as unknown as number[])).toThrow(
+      "[core] signalArray: initial must be an array, received number"
+    );
+    const items = signalArray([1, 2, 3]);
+    expect(() => items(42 as unknown as number[])).toThrow(
+      "[core] signalArray: value must be an array, received number"
+    );
+    expect(items()).toEqual([1, 2, 3]); // The rejected input leaves the container untouched
+    expect(items.length()).toBe(3);
+  });
+
+  test("accepts the valid input boundaries", () => {
+    const noSeed = signalArray<number>();
+    expect(noSeed()).toEqual([]);
+    expect(signalArray<number>([])()).toEqual([]);
+    const items = signalArray([1, 2]);
+    items([]); // Reconciling to an empty array is a legal structural write
+    expect(items()).toEqual([]);
+  });
+
   describe("element lifecycle hooks", () => {
     test("wrap converts every element entering a node", () => {
       const tag = (element: string) => `:${element}`;

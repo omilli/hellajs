@@ -188,4 +188,23 @@ describe("signalMap", () => {
       "[core] signalMap: merge must be a function, received boolean"
     );
   });
+
+  test("throws on structurally invalid input", () => {
+    expect(() => signalMap(42 as unknown as Iterable<readonly [string, number]>)).toThrow(
+      "[core] signalMap: initial must be iterable, received number"
+    );
+    const scores = signalMap<string, number>([["a", 1]]);
+    expect(() => scores(42 as unknown as Map<string, number>)).toThrow(
+      "[core] signalMap: value must be a Map, received number"
+    );
+    expect(scores()).toEqual(new Map([["a", 1]])); // The rejected input leaves membership untouched
+  });
+
+  test("accepts the valid input boundaries", () => {
+    expect(signalMap<string, number>().size()).toBe(0);
+    const entries = signalMap<string, number>([["a", 1]]); // An entries array is a legal iterable seed
+    expect(entries.get("a")).toBe(1);
+    entries(new Map()); // Reconciling to an empty Map is a legal structural write
+    expect(entries.size()).toBe(0);
+  });
 });

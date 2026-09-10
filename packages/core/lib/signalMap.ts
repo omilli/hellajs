@@ -1,6 +1,7 @@
 import { signal } from "./signal";
 import { computed } from "./computed";
 import { createHooks, createVersion, writeValue } from "./internal/collections";
+import { isFunction } from "./internal/utils";
 import type { Signal, SignalMap, CollectionOptions } from "./types";
 
 /**
@@ -19,12 +20,17 @@ import type { Signal, SignalMap, CollectionOptions } from "./types";
  * @param options Per-value `equals`, plus element-lifecycle `wrap`/`merge` hooks.
  * @returns A granular map signal.
  * @throws {Error} When `options.equals`, `options.wrap`, or `options.merge` is present and not a function.
+ * @throws {Error} When `initial` is present and not iterable.
+ * @throws {Error} When the reconcile setter receives a non-Map value.
  */
 export function signalMap<K, V>(
   initial?: Iterable<readonly [K, V]>,
   options?: CollectionOptions<V>
 ): SignalMap<K, V> {
   const hooks = createHooks("signalMap", options);
+  if (initial !== undefined && !isFunction(initial?.[Symbol.iterator])) {
+    throw new Error(`[core] signalMap: initial must be iterable, received ${typeof initial}`);
+  }
   const { read: version, bump } = createVersion();
   const handles = new Map<K, Signal<V>>(); // Every key ever live; kept after delete so entry() handles stay usable
   const entries = new Map<K, Signal<V | undefined>>(); // Memoized entry() handles, one per key ever requested
@@ -46,6 +52,9 @@ export function signalMap<K, V>(
   }
 
   const reconcile = (next: Map<K, V>): void => {
+    if (!(next instanceof Map)) {
+      throw new Error(`[core] signalMap: value must be a Map, received ${typeof next}`);
+    }
     let isStructural = false;
     const nextKeys = Array.from(next.keys());
     let i = 0;

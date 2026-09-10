@@ -1,5 +1,9 @@
 # Memory Update Log
 
+## 2026-09-10
+* **Creation**: Added concept [125](entries/125.md) (type: decision).
+* **Note**: Renumbered merge entry 124 to 125 at plans-core-audit-code merge; ID 124 was allocated in-flight by 124-fresh-worktree-builds-need-bun.
+
 ## 2026-09-11
 * **Creation**: Added concept [122](entries/122.md) (type: correction).
 * **Creation**: Added concept [123](entries/123.md) (type: decision).

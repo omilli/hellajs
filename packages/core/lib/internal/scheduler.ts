@@ -241,7 +241,7 @@ function executeEffect(effectValue: EffectState, flags: number): void {
 }
 
 /**
- * @internal Drains the scheduled-effect queue: each effect's SCHEDULED bit clears at
+ * Drains the scheduled-effect queue: each effect's SCHEDULED bit clears at
  * dequeue (slot cleared for GC), then it executes. Effects scheduled during the drain
  * are appended and run in the same pass. A throw aborts the drain with the remaining
  * entries intact — the next flush recovers them.

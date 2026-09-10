@@ -100,4 +100,35 @@ describe("signalSet", () => {
     expect(tags.delete("a")).toBe(false);
     expect(tags.size()).toBe(1);
   });
+
+  test("throws on structurally invalid input", () => {
+    expect(() => signalSet(42 as unknown as Iterable<number>)).toThrow(
+      "[core] signalSet: initial must be iterable, received number"
+    );
+    const tags = signalSet([1, 2, 3]);
+    expect(() => tags(42 as unknown as Set<number>)).toThrow(
+      "[core] signalSet: value must be a Set, received number"
+    );
+    expect(tags.size()).toBe(3); // The rejected input leaves membership untouched
+  });
+
+  test("a rejected reconcile argument never wipes membership or wakes readers", () => {
+    const tags = signalSet(["a", "b"]);
+    const reader = mock(() => tags.forEach((value: string) => value));
+    effect(reader);
+    expect(reader).toHaveBeenCalledTimes(1);
+    expect(() => tags(42 as unknown as Set<string>)).toThrow(
+      "[core] signalSet: value must be a Set, received number"
+    );
+    expect(tags.size()).toBe(2);
+    expect(reader).toHaveBeenCalledTimes(1);
+  });
+
+  test("accepts the valid input boundaries", () => {
+    expect(signalSet<string>().size()).toBe(0);
+    expect(signalSet([1, 2, 3]).size()).toBe(3); // An array is a legal iterable seed
+    const tags = signalSet(["a"]);
+    tags(new Set()); // Reconciling to an empty Set is a legal structural write
+    expect(tags.size()).toBe(0);
+  });
 });
