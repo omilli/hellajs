@@ -1,5 +1,5 @@
 import { describe, test, expect, mock } from "bun:test";
-import { signalSet, effect, untracked } from "@hellajs/core";
+import { signalSet, effect, batch, untracked } from "@hellajs/core";
 
 describe("signalSet", () => {
   test("has readers wake on add and delete of their value only", () => {
@@ -73,6 +73,18 @@ describe("signalSet", () => {
     expect(tags.size()).toBe(2);
   });
 
+  test("mutations inside batch propagate once", () => {
+    const tags = signalSet(["a"]);
+    const reader = mock((value: Set<string>) => value);
+    effect(() => reader(tags()));
+    batch(() => {
+      tags.add("b");
+      tags.delete("a");
+    });
+    expect(reader).toHaveBeenCalledTimes(2);
+    expect(reader).toHaveBeenLastCalledWith(new Set(["b"]));
+  });
+
   test("reads inside untracked subscribe to nothing", () => {
     const tags = signalSet(["a"]);
     const reader = mock((present: boolean) => present);
@@ -130,5 +142,17 @@ describe("signalSet", () => {
     const tags = signalSet(["a"]);
     tags(new Set()); // Reconciling to an empty Set is a legal structural write
     expect(tags.size()).toBe(0);
+  });
+
+  test("throws when options members are not functions", () => {
+    expect(() => signalSet(["a"], { equals: 1 as unknown as undefined })).toThrow(
+      "[core] signalSet: equals must be a function, received number"
+    );
+    expect(() => signalSet(["a"], { wrap: "x" as unknown as undefined })).toThrow(
+      "[core] signalSet: wrap must be a function, received string"
+    );
+    expect(() => signalSet(["a"], { merge: true as unknown as undefined })).toThrow(
+      "[core] signalSet: merge must be a function, received boolean"
+    );
   });
 });
