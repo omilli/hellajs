@@ -1,6 +1,10 @@
 # Memory Update Log
 
 ## 2026-09-10
+* **Creation**: Added concept [120](entries/120.md) (type: decision).
+* **Creation**: Added concept [121](entries/121.md) (type: decision).
+* **Creation**: Added concept [124](entries/124.md) (type: decision).
+* **Deprecation**: Archived [114](archive/114-worktree-example-installs-need-bun.md) → superseded by [124](entries/124.md).
 * **Creation**: Added concept [125](entries/125.md) (type: decision).
 * **Note**: Renumbered merge entry 124 to 125 at plans-core-audit-code merge; ID 124 was allocated in-flight by 124-fresh-worktree-builds-need-bun.
 * **Creation**: Added concept [126](entries/126.md) (type: decision).

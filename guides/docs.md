@@ -401,8 +401,8 @@ Show each overload as a separate block with an inline comment describing when to
 ```typescript
 // With an initial value
 function signal<T>(initialValue: T): {
-  (): T; // getter
-  (value: T): void; // setter
+  (): T;
+  (value: T): void;
 };
 
 // Without an initial value

@@ -88,7 +88,7 @@ import { fallbackHandler } from "./helpers";
 - `{feature}.test.ts` — lowercase, hyphenated. The `.test`/`.spec` marker is load-bearing: omitting it makes the file invisible to `bun coverage`. **Never run `bun test` directly — always `bun coverage <package>`** (§Triage & Gate Semantics).
 - Names identify the **specific** API surface or behavior area (`scroll`, `active`, `crumbs`, `hash-mode`, `navigate-options`); categorical prefixes add no information. Category-only or surface-less naming signals mixed concerns — split.
 - Group by feature area, not internal module.
-- 100–300 lines target; soft cap 400 (trim duplication or split on a sub-feature seam); minimum 2 tests per file.
+- 100–300 lines target; soft cap 400 (trim duplication or split on a sub-feature seam); minimum 2 tests per file. The cap is advisory, not a gate: a file well past 400 flags in audit only when a clean sub-feature seam exists — when the file's split seam is a real contract boundary (e.g. mount-side vs hydrate-adopted wiring), a larger file beats tests filed under the wrong seam.
 
 ## Test Structure
 
@@ -230,7 +230,7 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 
 - Semicolons always; arrow functions for inline helpers.
 - `unknown` only — never `any`. No AAA pattern — interleave setup, action, assertion.
-- `test.each()` for parameterized tests; `@ts-expect-error` for intentionally invalid inputs.
+- `test.each()` for parameterized tests; intentionally invalid inputs via `@ts-expect-error` or a cast to the accepted type (`42 as unknown as number[]`) — match the file's existing idiom.
 
 ## Test Coverage
 
@@ -265,7 +265,7 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 **File & structure**
 - [ ] `{surface}.test.ts` — surface-named per §File-naming for tests, no categorical prefix
 - [ ] Max two `describe` levels; at most one inner `describe` per file
-- [ ] 100–300 lines target (soft cap 400); minimum 2 tests per file
+- [ ] 100–300 lines target; soft cap 400 advisory (audit flags only far-past-400 files with a clean seam); minimum 2 tests per file
 
 **Naming & shape**
 - [ ] One behavior per `test()`; present tense, no "should"
