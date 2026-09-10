@@ -42,7 +42,7 @@ mount(App, "#app");
 
 ### Access to Element
 
-Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument. The element arrives as `Element | undefined`; narrow before using HTMLElement-specific APIs.
+Most lifecycle hooks receive the element as the first argument. Exceptions: `beforeMount` and `afterDestroy` do not receive an element argument. The hook parameter is typed `node?: Element`, so TypeScript treats it as possibly undefined even though the runtime always passes the element; narrow before using HTMLElement-specific APIs.
 
 ```jsx
 <div

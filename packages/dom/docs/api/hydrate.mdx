@@ -57,7 +57,7 @@ Unlike [`mount`](/reference/dom/mount), which calls `replaceChildren` and rebuil
 
 ### Keyed List Adoption
 
-[`ForEach`](/reference/dom/foreach) items rendered by the server are adopted directly into the list's reconciliation map; keys are re-derived from the same `each`/`use` calls the server made, with no markers in the HTML. Pushing, removing, or reordering items after hydrate reconciles against the adopted nodes exactly as it would against freshly-mounted ones.
+[`ForEach`](/reference/dom/foreach) items rendered by the server are adopted directly into the list's reconciliation map; keys are re-derived from the same `each`/`use` calls the server made, with no per-item markers or `data-key` attributes in the HTML. The list region itself is bounded by the same `<!--[-->…<!--]-->` comment markers as every dynamic region. Pushing, removing, or reordering items after hydrate reconciles against the adopted nodes exactly as it would against freshly-mounted ones.
 
 ## Important Considerations
 

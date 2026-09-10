@@ -129,12 +129,15 @@ html`<div class=${() => ["base", isActive() && "active", "always"]}>Tab</div>
 
 SVG and MathML mount in their correct namespaces automatically: an `<svg>` root creates in the SVG namespace, descendants inherit it, and a `<math>` root creates in the MathML namespace. Both JSX and `html` behave identically; no wrappers or namespace configuration are needed.
 
-```js
-import { mount, html } from "@hellajs/dom";
+```jsx
+import { mount } from "@hellajs/dom";
 
-mount(html`<svg width="24" height="24">
-  <clipPath id="clip"><rect width="10" height="10" /></clipPath>
-</svg>`, "#app");
+mount(
+  <svg width="24" height="24">
+    <clipPath id="clip"><rect width="10" height="10" /></clipPath>
+  </svg>,
+  "#app"
+);
 ```
 
 Dynamic content works the same way: [`ForEach`](/reference/dom/foreach), [`Lazy`](/reference/dom/lazy), and reactive children under an SVG parent all create their elements in the inherited namespace.

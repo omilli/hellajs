@@ -31,18 +31,7 @@ const items = signal(["Apple", "Banana", "Cherry"]);
 </ul>
 ```
 
-Using `html` template syntax:
-
-```js
-import { signal } from "@hellajs/core";
-import { html, ForEach } from "@hellajs/dom";
-
-const items = signal(["Apple", "Banana", "Cherry"]);
-
-html`<ul>
-  <${ForEach} each=${items} use=${(fruit) => html`<li>${fruit}</li>`} />
-</ul>`
-```
+The same list renders in [`html`](/reference/dom/html#list-rendering) template syntax via the dynamic-tag form.
 
 ## Key Concepts
 
@@ -97,9 +86,9 @@ Key resolution order:
 
 A `use` renderer may return multiple root nodes - a `html` template with several roots, or `<>…</>`.
 
-```js
+```jsx
 import { signal } from "@hellajs/core";
-import { html, ForEach } from "@hellajs/dom";
+import { ForEach } from "@hellajs/dom";
 
 const rows = signal([
   { id: 1, title: "Alpha", note: "first" },
@@ -107,12 +96,17 @@ const rows = signal([
 ]);
 
 // Each item renders two roots (dt + dd) as one fragment item
-html`<dl>
-  <${ForEach}
-    each=${rows}
-    use=${(row) => html`<dt>${row.title}</dt><dd>${row.note}</dd>`}
+<dl>
+  <ForEach
+    each={rows}
+    use={(row: { id: number; title: string; note: string }) => (
+      <>
+        <dt>{row.title}</dt>
+        <dd>{row.note}</dd>
+      </>
+    )}
   />
-</dl>`
+</dl>
 ```
 
 Fragment items are reconciled as a single block: an invisible empty text anchor marks the
@@ -140,7 +134,7 @@ todos().push(newItem);
 
 ### Key Stability
 
-Use stable, unique keys (like database IDs) rather than array indices. Index-keyed items fall back to reference equality, so new item references always re-create DOM nodes.
+Use stable, unique keys (like database IDs) rather than array indices. An explicit `key` (or the item's `id` property) reuses the DOM node by key identity even when the item reference changes, and the reused node's content is not re-rendered, so updates must flow through signals. Items with neither fall back to index keys, which compare by reference instead: a new item reference re-creates the DOM node. An explicit `key={index}` takes the reuse path too, keeping the old node for a new item and leaving non-signal content stale.
 
 ```jsx
 // ✅ Stable keys: same key reuses DOM node regardless of reference
@@ -148,7 +142,7 @@ Use stable, unique keys (like database IDs) rather than array indices. Index-key
   each={items}
   use={(item) => <li key={item.id}>{item.name}</li>}
 />
-// ❌ Index keys: new references always re-create nodes
+// ❌ Index keys: same index reuses the old node for a new item, leaving non-signal content stale
 <ForEach
   each={items}
   use={(item, index) => <li key={index}>{item.name}</li>}

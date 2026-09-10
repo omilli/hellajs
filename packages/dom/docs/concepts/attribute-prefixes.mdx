@@ -70,13 +70,13 @@ mount(App, "#app");
 
 The `style` attribute accepts an object of CSS declarations alongside plain strings. camelCase keys serialize to kebab-case, falsy declarations are skipped, and numbers carry no automatic units: write `"12px"`, not `12`.
 
-```js
-import { mount, html } from "@hellajs/dom";
+```jsx
+import { mount } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 
 const theme = signal("light");
 
-mount(html`<div style=${() => ({ color: theme() === "dark" ? "#fff" : "#000", fontSize: "12px" })}>hi</div>`, "#app");
+mount(<div style={{ color: theme() === "dark" ? "#fff" : "#000", fontSize: "12px" }}>hi</div>, "#app");
 ```
 
 A function-ref style object re-serializes the whole declaration list when its dependencies change; a static object serializes once. String style values pass through unchanged.

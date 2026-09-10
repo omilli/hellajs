@@ -42,6 +42,8 @@ const Modal = ({ isOpen, children }: { isOpen: Signal<boolean>; children?: Hella
 };
 ```
 
+The same component works in [`html`](/reference/dom/html#components) template syntax via the dynamic-tag form.
+
 ## Key Concepts
 
 ### Target Selection
@@ -120,24 +122,6 @@ const message = signal("Initial");
 
 // Later...
 message("Updated!"); // Toast updates in #notifications
-```
-
-### html`` Template Syntax
-
-Use Portal with tagged template syntax.
-
-```js
-import { html, Portal } from "@hellajs/dom";
-
-const content = signal("Hello");
-
-html`
-  <div>
-    <${Portal} to="#modal-root" type="prepend">
-      <span>${content}</span>
-    </${Portal}>
-  </div>
-`
 ```
 
 ## Important Considerations

@@ -20,6 +20,7 @@
 * **Creation**: Added concept [134](entries/134.md) (type: decision).
 * **Update**: Refreshed [049](entries/049-green-happy-dom-css-asserts.md) — added conditional-at-rule query colon-space collapse mapping (empirically confirmed via the dual exact pins in css-at-rules.test.ts, bun coverage css 213 pass)
 * **Update**: Renumber: worker-allocated ID 124 (gc-canaries-over-signal-held, plans-dom-audit-code merge) collided with main-tree 124-fresh-worktree-builds-need-bun — renumbered to 135
+* **Update**: Renumber: worker-allocated IDs 124/125 (converting-doc-fence-js-jsx, hook-props-type-element-optional; plans-dom-audit-docs merge) collided with main-tree 124-fresh-worktree-builds-need-bun and 125-core-documents-input-validation-throws — renumbered to 136/137
 
 ## 2026-09-11
 * **Creation**: Added concept [122](entries/122.md) (type: correction).

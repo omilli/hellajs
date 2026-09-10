@@ -17,11 +17,7 @@ const MyComponent = ({ title, children }: { title: string; children?: HellaChild
 <MyComponent title="Hi">Content</MyComponent>
 ```
 
-```js
-import { html } from "@hellajs/dom";
-// html template literal
-html`<${MyComponent} title="Hi">Content</${MyComponent}>`
-```
+In [`html`](/reference/dom/html#components) template literals, the same component uses the dynamic-tag form: `<${MyComponent} title="Hi">Content</${MyComponent}>`.
 
 ## Component Composition
 
@@ -129,6 +125,6 @@ const Timer = () => {
 mount(Timer, "#app");
 ```
 
-The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. JSX and html templates wrap components automatically. Dynamic components (ForEach, Portal, Lazy) bypass this wrapper since they manage their own scope.
+The low-level [`component`](/reference/dom/component) function wraps component functions with automatic scope management. JSX and html templates wrap components automatically. Dynamic components (ForEach, Portal, Lazy, Transition, Suspense) bypass this wrapper since they manage their own scope.
 
 Render errors (thrown during component execution) are dispatched through the error system and return an empty fragment. See [Error Handling](/learn/concepts/error-handling) for details.

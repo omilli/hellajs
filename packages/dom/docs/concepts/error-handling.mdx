@@ -4,15 +4,14 @@ HellaJS provides a global error handler with element-level configuration for fin
 
 ## Global Error Handler
 
-Set up a global handler using [`onError`](/reference/dom/onerror). The handler receives the error and a context object, and must return a fallback element. Multiple handlers can be registered via separate `onError()` calls; they execute in registration order and the first non-null result wins:
+Set up a global handler using [`onError`](/reference/dom/onerror). The handler receives the error and a context object, and may return a fallback element (a HellaNode) or null/void to decline rendering one. Multiple handlers can be registered via separate `onError()` calls; they execute in registration order and the first non-null result wins:
 
 ```jsx
-import { onError, html } from "@hellajs/dom";
+import { onError } from "@hellajs/dom";
 
 onError((error, context) => {
   console.error(`[${context.phase}]`, error.message);
-  const fallback = html`<div class="error">Something went wrong</div>`;
-  return typeof fallback === "function" ? fallback() : fallback;
+  return <div class="error">Something went wrong</div>;
 });
 ```
 
@@ -22,24 +21,28 @@ onError((error, context) => {
 
 Configure error behavior on individual elements with the `error:` prefix. Delegate to `context.config?.fallback?.(error)` in your handler to use element-level fallbacks:
 
-```js
-import { onError, mount, html } from "@hellajs/dom";
+```jsx
+import { onError, mount } from "@hellajs/dom";
+
+const FlakyComponent = () => <div>Flaky content</div>;
 
 // Delegate to element fallback when available, otherwise use global fallback
 onError((error, context) =>
-  context.config?.fallback?.(error) ?? html`<div class="error">Something went wrong</div>`
+  context.config?.fallback?.(error) ?? <div class="error">Something went wrong</div>
 );
 
-const App = () => html`
-  <div error:fallback=${(e) => html`
-    <div class="error-boundary">
-      <p>Failed: ${e.message}</p>
-      <button on:click=${() => location.reload()}>Reload</button>
-    </div>
-  `}>
+const App = () => (
+  <div
+    error:fallback={(e: Error) => (
+      <div class="error-boundary">
+        <p>Failed: {e.message}</p>
+        <button on:click={() => location.reload()}>Reload</button>
+      </div>
+    )}
+  >
     <FlakyComponent />
   </div>
-`;
+);
 
 mount(App, "#app");
 ```

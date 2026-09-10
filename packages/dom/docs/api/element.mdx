@@ -124,29 +124,31 @@ element("toggle-switch", (props) => {
 });
 ```
 
-### With html`` Templates
+### With JSX
 
-Use tagged template syntax for cleaner component definitions.
+Use JSX for component definitions with familiar markup syntax.
 
-```js
-import { html, element } from "@hellajs/dom";
+```jsx
+import { element } from "@hellajs/dom";
 
-element("user-badge", (props) => html`
+type BadgeProps = { avatar?: () => string | null; name?: () => string | null };
+
+element("user-badge", (props: BadgeProps) => (
   <div class="badge">
-    <img src=${() => props.avatar?.()} alt="avatar" />
-    <span>${() => props.name?.() ?? "Anonymous"}</span>
+    <img src={props.avatar?.() ?? undefined} alt="avatar" />
+    <span>{props.name?.() ?? "Anonymous"}</span>
   </div>
-`);
+));
 ```
 
 ### Shadow DOM
 
 Pass `{ shadow: true }` to render into an open shadow root instead of light DOM; page CSS no longer leaks into the element's content.
 
-```js
-import { html, element } from "@hellajs/dom";
+```jsx
+import { element } from "@hellajs/dom";
 
-element("my-widget", (props) => html`<div class="box">${props.children}</div>`, { shadow: true });
+element("my-widget", (props: { children?: Node[] }) => <div class="box">{props.children}</div>, { shadow: true });
 ```
 
 An object is passed to `attachShadow` verbatim, so `mode: "closed"` works too: outside JavaScript cannot reach the root via `el.shadowRoot`, while the element itself keeps rendering and updating normally.
@@ -157,44 +159,44 @@ Projection still uses captured `props.children`/`props.slots` nodes moved into t
 
 Combine with ForEach, signals, and other features.
 
-```js
+```jsx
 import { signal } from "@hellajs/core";
-import { element, html, ForEach } from "@hellajs/dom";
+import { element, ForEach } from "@hellajs/dom";
 
 element("todo-list", (props) => {
-  const items = signal([]);
+  const items = signal<{ id: number; text: string }[]>([]);
   const input = signal("");
-  
+
   const addItem = () => {
     if (input()) {
       items([...items(), { id: Date.now(), text: input() }]);
       input("");
     }
   };
-  
-  return html`
+
+  return (
     <div class="todo-list">
-      <header>${props.slots?.header}</header>
-      
+      <header>{props.slots?.header}</header>
+
       <div class="input-group">
-        <input 
-          type="text" 
-          value=${input}
-          on:keydown=${(e) => e.key === "Enter" && addItem()}
+        <input
+          type="text"
+          value={input}
+          on:keydown={(e) => e.key === "Enter" && addItem()}
         />
-        <button on:click=${addItem}>Add</button>
+        <button on:click={addItem}>Add</button>
       </div>
-      
+
       <ul>
-        <${ForEach}
-          each=${items}
-          use=${(item) => html`<li key=${item.id}>${item.text}</li>`}
+        <ForEach
+          each={items}
+          use={(item: { id: number; text: string }) => <li key={item.id}>{item.text}</li>}
         />
       </ul>
-      
-      <footer>${props.children}</footer>
+
+      <footer>{props.children}</footer>
     </div>
-  `;
+  );
 });
 ```
 
@@ -277,14 +279,20 @@ Pass `{ shadow: true }` in the third argument to opt into shadow DOM encapsulati
 
 Props provide attribute values as strings. Parse numbers/booleans as needed.
 
-```js
-element("my-slider", (props) => {
+```jsx
+type SliderProps = {
+  min?: () => string | null;
+  max?: () => string | null;
+  value?: () => string | null;
+};
+
+element("my-slider", (props: SliderProps) => {
   // Attributes are strings, convert as needed
   const min = () => Number(props.min?.() ?? 0);
   const max = () => Number(props.max?.() ?? 100);
   const value = signal(Number(props.value?.() ?? 50));
-  
-  return html`<input type="range" min=${min} max=${max} value=${value} />`;
+
+  return <input type="range" min={min()} max={max()} value={value} />;
 });
 ```
 

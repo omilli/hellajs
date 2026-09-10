@@ -93,10 +93,15 @@ mount(<Greeting name="World" />);
 
 A template with multiple root elements mounts every root into the container. `unmount()` removes them all, disposing effects and hooks in each root.
 
-```js
-import { mount, html } from "@hellajs/dom";
+```jsx
+import { mount } from "@hellajs/dom";
 
-const app = mount(html`<span>a</span><span>b</span>`);
+const app = mount(
+  <>
+    <span>a</span>
+    <span>b</span>
+  </>
+);
 
 // Both roots removed, their effects disposed
 app.unmount();
@@ -150,7 +155,7 @@ For component-level effects, use any of these approaches - they all provide auto
 
 ```jsx
 import { effect, signal } from "@hellajs/core";
-import { mount, html } from "@hellajs/dom";
+import { mount } from "@hellajs/dom";
 
 const Timer = () => {
   const seconds = signal(0);
@@ -166,7 +171,4 @@ const Timer = () => {
 
 // Using JSX, component scope is automatic
 mount(<Timer />);
-
-// html`` also provides automatic component scope
-mount(html`<${Timer} />`);
 ```

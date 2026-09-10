@@ -6,24 +6,23 @@ Attach client reactivity to HTML the server rendered, so the user sees content i
 
 Hydration re-executes the component tree on the client and attaches effects, event handlers, and state to the **existing** server-rendered DOM. The server's HTML survives; HellaJS never wipes it. This is the same model SolidJS uses, distinct from React-style re-rendering: component bodies run again (they create signals and effects that can't be serialized), but `createElement` becomes "use the element already at this position."
 
-```js
+```jsx
 import { signal } from "@hellajs/core";
-import { html } from "@hellajs/dom";
-import { ssr } from "@hellajs/ssr";
 import { hydrate } from "@hellajs/dom";
+import { ssr } from "@hellajs/ssr";
 
 const App = () => {
   const count = signal(0);
-  return html`<button on:click=${() => count(count() + 1)}>Clicked ${count} times</button>`;
+  return <button on:click={() => count(count() + 1)}>Clicked {count} times</button>;
 };
 
 // Server ships the rendered button
-const body = ssr(html`<${App} />`);
+const body = ssr(<App />);
 ```
 
-```js
+```jsx
 // Client attaches the click handler to the existing button
-hydrate(html`<${App} />`, "#app");
+hydrate(<App />, "#app");
 ```
 
 The button the server rendered is the exact node the client binds `on:click` to; element identity is preserved.
@@ -45,14 +44,23 @@ When the DOM and the tree disagree, `hydrate` warns and re-mounts the mismatched
 
 ## Keyed List Adoption
 
-[`ForEach`](/reference/dom/foreach) items the server rendered are adopted directly into the list's reconciliation map. Keys are re-derived at hydrate time from the same `each` and `use` calls the server made; no `data-key` markers or comments pollute the HTML. After hydrate, pushing, removing, or reordering items reconciles against the adopted nodes through the normal keyed-diff algorithm.
+[`ForEach`](/reference/dom/foreach) items the server rendered are adopted directly into the list's reconciliation map. Keys are re-derived at hydrate time from the same `each` and `use` calls the server made; no per-item `data-key` attributes or markers appear in the HTML, and the list region itself is bounded by the same `<!--[-->…<!--]-->` comment markers as every dynamic region. After hydrate, pushing, removing, or reordering items reconciles against the adopted nodes through the normal keyed-diff algorithm.
 
-```js
+```jsx
+import { ForEach } from "@hellajs/dom";
+
 const items = signal([{ id: 1, label: "First" }, { id: 2, label: "Second" }]);
-const App = () => html`<ul><${ForEach} each=${items} use=${(i) => html`<li key=${i.id}>${i.label}</li>`} /></ul>`;
+const App = () => (
+  <ul>
+    <ForEach
+      each={items}
+      use={(item: { id: number; label: string }) => <li key={item.id}>{item.label}</li>}
+    />
+  </ul>
+);
 
 // Server emits the two <li>s; client adopts them, then list updates reconcile normally
-hydrate(html`<${App} />`, "#app");
+hydrate(<App />, "#app");
 ```
 
 ## Selective Hydration

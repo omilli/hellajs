@@ -63,12 +63,10 @@ With `e:` handlers, `stopPropagation()` works through the browser's native liste
 
 The `e:` value is either the handler function or a spec object pairing the handler with native listener options: `once`, `passive`, and `capture` are forwarded to `addEventListener` verbatim. The spec matches the exported `DirectListenerSpec` type.
 
-```ts
-import { html } from "@hellajs/dom";
-
+```jsx
 const onceHandler = () => console.log("fired");
 
-html`<button e:click={{ handler: onceHandler, options: { once: true } }}>Fire once</button>`;
+<button e:click={{ handler: onceHandler, options: { once: true } }}>Fire once</button>
 ```
 
 ```jsx

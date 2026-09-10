@@ -44,6 +44,8 @@ const App = () => (
 mount(App, "#app");
 ```
 
+The same component works in [`html`](/reference/dom/html#components) template syntax via the `<${Transition}>` dynamic-tag form.
+
 ## Key Concepts
 
 ### Enter And Leave Animations
@@ -100,25 +102,6 @@ flush();
 // Cancel it mid-animation; node is rescued, leave class removed
 visible(true);
 flush();
-```
-
-### html Template Syntax
-
-Use Transition with tagged template syntax via the `<${Transition}>` dynamic-tag form.
-
-```js
-import { signal } from "@hellajs/core";
-import { html, Transition } from "@hellajs/dom";
-
-const visible = signal(true);
-
-html`
-  <div>
-    <${Transition} show=${visible} enter="fade-in" leave="fade-out" duration=${300}>
-      <span>Toggle me</span>
-    </${Transition}>
-  </div>
-`
 ```
 
 ## Important Considerations

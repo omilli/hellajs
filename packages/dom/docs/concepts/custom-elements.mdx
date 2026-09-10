@@ -59,12 +59,12 @@ Usage in HTML:
 
 Custom elements you consume (rather than author with [`element`](/reference/dom/element)) get property pass-through: on a hyphenated tag, a prop whose key exists as a property on the element is assigned to that property directly (objects and arrays included, by reference) instead of stringifying through `setAttribute`.
 
-```js
-import { mount, html } from "@hellajs/dom";
+```jsx
+import { mount } from "@hellajs/dom";
 
 const points = { series: [1, 2, 3] };
 
-mount(html`<x-chart data=${points}></x-chart>`, "#app");
+mount(<x-chart data={points}></x-chart>, "#app");
 ```
 
 The gate is conservative: a prop falls back to a regular attribute when the key is not present on the element (an unregistered tag, or a property the element never defines). `class` is never a property, so class arrays keep joining into a string even on custom elements.

@@ -62,12 +62,7 @@ const Counter = ({ initial }: { initial: number }) => <div>Count: {initial}</div
 <Counter initial={5} />
 ```
 
-**With html`` (automatic):**
-
-```js
-// Template system wraps in component() automatically
-html`<${Counter} initial=${5} />`
-```
+**With html`` (automatic):** the template system wraps in `component()` automatically: `<${Counter} initial=${5} />`.
 
 **With raw AST (manual):**
 
@@ -98,17 +93,17 @@ const app = {
 
 ### Passthrough Components
 
-Some special components like `ForEach`, `Portal`, `Lazy`, and `Transition` bypass the `component()` wrapper because they manage their own cleanup:
+Some special components like `ForEach`, `Portal`, `Lazy`, `Transition`, and `Suspense` bypass the `component()` wrapper because they manage their own cleanup:
 
-```js
-import { html, ForEach, Portal, Lazy } from "@hellajs/dom";
+```jsx
+import { ForEach, Portal, Lazy } from "@hellajs/dom";
 
 const items = ["a", "b", "c"];
-const renderItem = (item: string) => html`<li>${item}</li>`;
+const renderItem = (item: string) => <li>{item}</li>;
 
 // These components have `isDynamic: true` and are called directly without the `component()` wrapper
 const list = ForEach({ each: items, use: renderItem });
-const portal = Portal({ to: "#modal", children: [html`<div>Modal content</div>`] });
+const portal = Portal({ to: "#modal", children: [<div>Modal content</div>] });
 const lazy = Lazy({ loader: () => import("./Heavy.js") });
 ```
 
