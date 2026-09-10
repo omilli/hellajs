@@ -37,7 +37,7 @@ Every node extends `Reactive` (`lib/internal/links.ts`): `rd` (first dependency 
 | Computed | `computed()` | `WRITABLE \| COMPUTED \| DIRTY` (81) | `cbc` (cached value), `cbf` (compute fn, receives prev), `ce` (optional equals comparator) |
 | Effect | `effect()` | `GUARDED \| SIGNAL_DEPS` (258) | `ef` (effect fn), `ec` (cleanup fn or undefined) |
 
-A `Link` (`lib/types.d.ts`) is the doubly-linked edge: `ls` (source), `lt` (target/subscriber), `lpd`/`lnd` (prev/next dep in target's list), `lps`/`lns` (prev/next sub in source's list). DFS algorithms allocate stack frames `{sv, sp}` (`Stack<T>`).
+A `Link` (`lib/internal/links.ts`) is the doubly-linked edge: `ls` (source), `lt` (target/subscriber), `lpd`/`lnd` (prev/next dep in target's list), `lps`/`lns` (prev/next sub in source's list). DFS algorithms allocate stack frames `{sv, sp}` (`Stack<T>`).
 
 - **Computed starts `WRITABLE | COMPUTED | DIRTY`** so the first read triggers compute; the `WRITABLE` bit lets propagation treat it like a signal (descend into subscribers), and `updateValue` dispatches on the `COMPUTED` bit (never a `cbf` property probe).
 - **Effect starts `GUARDED | SIGNAL_DEPS`** marking it as a sink to be *scheduled* (not traversed) during propagation, and as signals-only until a computed link clears the fast-path bit.
@@ -103,7 +103,7 @@ Module-level singletons that drive tracking and scope registration:
 - **`untracked` nests correctly:** saves/restores the prior `currentValue`, so it composes inside `computed`/`effect` and reads multiple signals in one call.
 - **Batch is a depth counter.** `++batchDepth` on entry, `!--batchDepth` triggers `flush()`. Nested batches drain at outermost exit. Async work scheduled inside escapes the boundary.
 - **Signals-only effects skip flush-time validation; computed-mediated ones never do.** An effect with `SIGNAL_DEPS` (no computed ever linked) is marked `DIRTY` directly by `propagateChange` and runs on flush without `validateStale` — a signal write already proved the change. Consequence: a batch whose writes cancel out (`s(1); s(0)`) re-runs a signals-only effect once (pinned in `batch.test.ts`), while computed-mediated effects still skip (the computed's equal-value check stays authoritative). A single computed link disables the fast path for that effect forever — conservative by design.
-- **Computed auto-GC.** When a computed's last subscriber link is removed, `removeLink` drops **all** of its dependency links (cascading into dep computeds that lose their own last subscriber) and marks it `WRITABLE | DIRTY`. The next read rebuilds the graph and recomputes from scratch.
+- **Computed auto-GC.** When a computed's last subscriber link is removed, `removeLink` drops **all** of its dependency links (cascading into dep computeds that lose their own last subscriber) and marks it `WRITABLE | COMPUTED | DIRTY`. The next read rebuilds the graph and recomputes from scratch.
 
 ## Testing approach (`tests/`)
 

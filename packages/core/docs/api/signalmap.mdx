@@ -17,8 +17,8 @@ function signalMap<K, V>(initial?: Iterable<readonly [K, V]>, options?: Collecti
 ```typescript
 // The granular surface; W is the write-side value type (defaults to V)
 interface SignalMap<K, V, W = V> {
-  (): Map<K, V>;                  // fresh plain Map, tracks everything
-  (value: Map<K, W>): void;       // reconcile key-wise
+  (): Map<K, V>;
+  (value: Map<K, W>): void;
   get(k: K): V | undefined;
   set(k: K, value: W): void;
   has(k: K): boolean;

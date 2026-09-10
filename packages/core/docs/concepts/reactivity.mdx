@@ -1,5 +1,3 @@
-
-
 # Reactivity
 
 HellaJS implements a directed acyclic graph where signals are sources, computed values are transforms, and effects are sinks. Updates propagate through the graph via depth-first traversal with glitch-free guarantees. Each node executes at most once per update cycle.
@@ -86,7 +84,7 @@ todos([
 
 ## Granular Collection Signals
 
-`signalArray`, `signalMap`, and `signalSet` replace immutable spreads for collection state. Each element or key lives in its own child signal plus one structural version per container: a value write wakes only that element's readers, and an in-place structural operation (`push`, `splice`, `set.add`) wakes positional readers without cloning anything.
+[`signalArray`](/reference/core/signalarray), [`signalMap`](/reference/core/signalmap), and [`signalSet`](/reference/core/signalset) replace immutable spreads for collection state. Each element or key lives in its own child signal plus one structural version per container: a value write wakes only that element's readers, and an in-place structural operation (`push`, `splice`, `set.add`) wakes positional readers without cloning anything.
 
 ```typescript
 import { signalArray, effect } from '@hellajs/core';
@@ -100,14 +98,7 @@ items.set(0, 9); // Logs: "First: 9" - only index-0 readers wake
 items([9, 2, 3, 4]); // Reconcile: equal elements write nothing, nothing wakes
 ```
 
-Each container is still a [`signal`](/reference/core/signal): calling it reads a fresh plain snapshot that tracks everything, and calling it with a collection reconciles element-wise. The tracking model has two layers:
-
-- **Value operations** (`set` on an existing element or key) write one child signal. Only readers of that element rerun.
-- **Structural operations** (add, remove, reorder, length change) bump the version with zero child writes. Every positional reader reruns and re-reads its position. Structural granularity is container-level: any structural change wakes every positional reader, unlike per-key tracking in proxy-based systems.
-
-Elements stay raw: the containers do not proxy objects. Two element-lifecycle hooks (`wrap` and `merge`) exist so the store package can convert plain elements into deeply reactive stores on top of the same primitives, with field-precise writes.
-
-See the `signalArray`, `signalMap`, and `signalSet` reference pages for the full method surface and wake tables.
+Each container is still a [`signal`](/reference/core/signal): calling it reads a fresh plain snapshot that tracks everything, and calling it with a collection reconciles element-wise. See the `signalArray`, `signalMap`, and `signalSet` reference pages for the full method surface and wake tables.
 
 ## Advanced Patterns
 
@@ -231,8 +222,6 @@ effect(() => console.log('Todos changed:', todos()));
 todos([{ id: 1 }]); // Content-equal by id: effect does not re-run
 ```
 
-The default equality already treats `NaN` as equal to itself, so repeated `NaN` writes never re-run effects; reach for `equals` when comparing content, or `Object.is` to also distinguish `+0` from `-0`.
-
 ### Untracked Reads
 
 Use [`untracked`](/reference/core/untracked) to read a [`signal`](/reference/core/signal) without establishing a dependency.
@@ -264,4 +253,3 @@ A [`computed`](/reference/core/computed) function receives the previously comput
 ### Lifecycle Management
 
 Use [`scope`](/reference/core/scope) to group multiple effects and clean them up together: one `cleanup()` stops every effect created inside the scope. See the [`scope`](/reference/core/scope) reference for nested scopes, lazy scopes, and cleanup edge cases.
-

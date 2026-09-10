@@ -17,8 +17,8 @@ function signalSet<T>(initial?: Iterable<T>, options?: CollectionOptions<T>): Si
 ```typescript
 // The granular surface; W is the write-side value type (defaults to T)
 interface SignalSet<T, W = T> {
-  (): Set<T>;                     // fresh plain Set, tracks everything
-  (value: Set<W>): void;          // reconcile value-wise
+  (): Set<T>;
+  (value: Set<W>): void;
   add(value: W): this;
   has(value: T | W): boolean;
   delete(value: T | W): boolean;

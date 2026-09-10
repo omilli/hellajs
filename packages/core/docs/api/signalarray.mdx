@@ -17,8 +17,8 @@ function signalArray<T>(initial?: T[], options?: CollectionOptions<T>): SignalAr
 ```typescript
 // The granular surface; W is the write-side element type (defaults to T)
 interface SignalArray<T, W = T> {
-  (): T[];                        // fresh plain snapshot, tracks everything
-  (value: W[]): void;             // reconcile position-wise
+  (): T[];
+  (value: W[]): void;
   get(i: number): T | undefined;
   set(i: number, value: W): void;
   push(...values: W[]): number;

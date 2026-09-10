@@ -7,8 +7,8 @@ Holds a value and notifies dependents when the value changes.
 ```typescript
 // The Signal type: a getter/setter function
 type Signal<T> = {
-  (): T; // getter
-  (value: T): void; // setter
+  (): T;
+  (value: T): void;
 };
 
 // With an initial value
