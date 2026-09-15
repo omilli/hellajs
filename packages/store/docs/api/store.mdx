@@ -5,44 +5,75 @@ Converts a plain object into a deeply reactive store where primitives become sig
 ## API
 
 ```typescript
-import { store } from '@hellajs/store';
-
-// All properties writable (default)
-function store<T>(initial: T, options?: StoreOptions<T>): Store<T>
-
-// All properties readonly
-function store<T>(initial: T, options: { readonly: true }): Store<T, keyof T>
-
 // Specific properties readonly
-function store<T, R extends readonly (keyof T)[]>(
+function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
-  options: { readonly: R }
+  options: { readonly: R; equals?: StoreEquals<T> }
 ): Store<T, R[number]>
 
-// Middleware transformations only
-function store<T>(
+// All properties readonly
+function store<T extends Record<string, unknown>>(
   initial: T,
-  options: { middleware: StoreMiddleware<T> }
+  options: { readonly: true; equals?: StoreEquals<T> }
+): Store<T, keyof T>
+
+// Middleware transformations only
+function store<T extends Record<string, unknown>>(
+  initial: T,
+  options: { middleware: StoreMiddleware<T>; equals?: StoreEquals<T> }
 ): Store<T, never>
 
 // Specific properties readonly + middleware
-function store<T, R extends readonly (keyof T)[]>(
+function store<T extends Record<string, unknown>, R extends readonly (keyof T)[]>(
   initial: T,
-  options: { readonly: R; middleware: StoreMiddleware<T> }
+  options: { readonly: R; middleware: StoreMiddleware<T>; equals?: StoreEquals<T> }
 ): Store<T, R[number]>
 
-type Store<T, R extends PropertyKey = never> = {
+// All properties writable (default)
+function store<T extends Record<string, unknown>>(
+  initial: T,
+  options?: { readonly?: false | undefined; equals?: StoreEquals<T> }
+): Store<T, never>
+
+type Store<T extends Record<string, unknown> = Record<string, never>, R extends PropertyKey = never> = {
   [K in keyof T]:
     T[K] extends (...args: unknown[]) => unknown ? T[K] :
-    T[K] extends unknown[] ? K extends R ? () => T[K] : Signal<T[K]> :
+    T[K] extends unknown[] | Map<unknown, unknown> | Set<unknown> ? (K extends R ? () => T[K] : Reactive<T[K]>) :
     T[K] extends Record<string, unknown> ? (K extends R ? Store<T[K], keyof T[K]> : Store<T[K]>) :
     K extends R ? () => T[K] : Signal<T[K]>;
 } & {
-  snapshot: () => Snapshot<T>;
-  update: (partial: PartialDeep<T> | ((draft: Snapshot<T>) => void)) => void;
-  cleanup: () => void;
-  subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void;
+  $snapshot: () => Snapshot<T>;
+  $update: { <P extends Record<string, unknown>>(partial: PartialDeep<T> & P): Store<Simplify<T & Omit<P, keyof T>>, R>;
+    (mutator: (draft: Snapshot<T>) => void): Store<T, R>;
+  };
+  $cleanup: () => void;
+  $subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void;
 }
+
+// Maps collection element positions to granular containers: arrays become
+// SignalArray, Map/Set become SignalMap/SignalSet, plain-object elements
+// become nested Store; functions and primitives keep their type.
+type Reactive<E> =
+  E extends readonly (infer U)[] ? SignalArray<Reactive<U>, WriteForm<U>> :
+  E extends Map<infer K, infer V> ? SignalMap<K, Reactive<V>, WriteForm<V>> :
+  E extends Set<infer S> ? SignalSet<Reactive<S>, WriteForm<S>> :
+  E extends (...args: never[]) => unknown ? E :
+  E extends Record<string, unknown> ? Store<E> :
+  E;
+
+// Write-side element form for collection containers: plain objects accept
+// partial patches, everything else keeps its type.
+type WriteForm<U> =
+  U extends readonly (infer I)[] ? WriteForm<I>[] :
+  U extends Map<infer K, infer V> ? Map<K, WriteForm<V>> :
+  U extends Set<infer S> ? Set<WriteForm<S>> :
+  U extends (...args: never[]) => unknown ? U :
+  U extends Record<string, unknown> ? PartialDeep<U> :
+  U;
+
+// Flattens an intersection into a single mapped shape so widened stores
+// display and key cleanly.
+type Simplify<T> = { [K in keyof T]: T[K] };
 
 // Keys of T that become signal-backed (settable) store properties.
 // Function-valued keys and plain-object keys (nested stores) are excluded.
@@ -95,7 +126,7 @@ type EqualsFor<V> = ((previous: V, next: V) => boolean) | "structural";
 
 A reactive snapshot of the entire store state as a plain JavaScript object. The snapshot function is reactive and will re-compute when any store property changes.
 
-> **Performance**: snapshot accesses every signal in the store. When composed stores are nested, the dependency footprint covers the full composed tree; any leaf signal change triggers re-computation. Use individual property access for targeted reactivity in wide or deeply composed stores. Writes that compare equal under the [`equals` option](#write-equality) never trigger re-computation.
+> **Performance**: snapshot accesses every signal in the store.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -145,62 +176,18 @@ console.log(appStore.step());        // 2
 console.log(appStore.user.name());   // Bob
 ```
 
-> `$update()` writes signal-backed properties, materializes unknown keys, and throws on everything else; nothing is silently dropped:
-> - **Unknown key**: `$update({ newProp: 1 })` materializes `newProp` (a signal for leaves, a nested store for plain objects) and returns the store typed with it; see [Growing Stores](#growing-stores). The throw survives only for externally-replaced properties (redefined or deleted from outside the store), which stay `[store] $update: unknown key "newProp"`.
-> - **Function property**: `$update({ onSave: fn })` throws `[store] $update: "onSave" is a function property, not state` ("assign it directly" in the full message). Swap functions by assigning directly: `appStore.onSave = newHandler`. A function value on a NEW key throws too: `[store] $update: key "onSave" cannot hold a function`.
-> - **Reserved key**: `$update({ $snapshot: 1 })` throws `[store] $update: reserved key "snapshot"`.
-> - **Store key with a non-object value**: `$update({ user: 'x' })` where `user` is a nested store throws `[store] $update: store key "user" requires an object value`.
-> - **Readonly key**: writing a readonly property throws `[store] readonly key "<key>"`; the same error its setter call throws. Adding a new key to a readonly store throws the same error and nothing materializes.
-> - **Replaced signal**: `$update()` through a settable key whose property was externally replaced (e.g. `outer.inner.value = 42` on a composed store) throws `[store] $update: settable key "value" must hold a signal, received number`; the received kind reflects `typeof` the replaced value.
->
-> The draft path applies the same rules at runtime; its mutator is typed against the current shape, so draft additions materialize untyped. `$update()` throws at the first offending key, in partial-key order; keys processed before it are already applied.
+`$update()` writes signal-backed properties, materializes unknown keys, and throws on everything else; nothing is silently dropped. Error categories:
 
-### Growing Stores
+| Case | Behavior |
+|------|----------|
+| Unknown key | `$update({ newProp: 1 })` materializes `newProp` (a signal for leaves, a nested store for plain objects) and returns the store typed with it; see [Growing Stores](#growing-stores). The throw survives only for externally-replaced properties (redefined or deleted from outside the store), which stay `[store] $update: unknown key "newProp"`. |
+| Function property | `$update({ onSave: fn })` throws `[store] $update: "onSave" is a function property, not state` ("assign it directly" in the full message). Swap functions by assigning directly: `appStore.onSave = newHandler`. A function value on a NEW key throws too: `[store] $update: key "onSave" cannot hold a function`. |
+| Reserved key | `$update({ $snapshot: 1 })` throws `[store] $update: reserved key "$snapshot"`. |
+| Store key with a non-object value | `$update({ user: 'x' })` where `user` is a nested store throws `[store] $update: store key "user" requires an object value`. |
+| Readonly key | Writing a readonly property throws `[store] readonly key "<key>"`; the same error its setter call throws. Adding a new key to a readonly store throws the same error and nothing materializes. |
+| Replaced signal | `$update()` through a settable key whose property was externally replaced (e.g. `outer.inner.value = 42` on a composed store) throws `[store] $update: settable key "value" must hold a signal, received number`; the received kind reflects `typeof` the replaced value. |
 
-Unknown keys materialize on their first `$update()` write, and the call returns the same store typed with the added keys: leaves become signals, plain objects become nested stores, and reads, later updates, `$snapshot()`, and `subscribe` all type the added key immediately. Capture the return to see the widening; the original reference keeps its narrower type (the `Object.assign` seam) while its runtime behavior, `$snapshot()` included, sees the added key right away.
-
-```typescript
-import { store } from '@hellajs/store';
-
-const appStore = store({ count: 0 });
-
-const withTags = appStore.$update({ tags: ['a'] });
-withTags.tags();          // ['a'], a Signal<string[]>
-withTags.$snapshot();      // { count: 0, tags: ['a'] }
-
-const withUser = withTags.$update({ user: { name: 'Bob' } });
-withUser.user.name();     // 'Bob', a Store<{ name: string }>
-
-// ❌ appStore.$update({ count: 'x' });      // type error: existing keys stay validated
-// ❌ appStore.$update({ $snapshot: 1 });      // throws: [store] $update: reserved key "snapshot"
-// ❌ appStore.$update({ onSave: () => {} }); // throws: [store] $update: key "onSave" cannot hold a function
-```
-
-When future keys are known at creation, declare them optional in the type parameter instead: the store grows on the same binding with no captured reference, and reads are optional-chained because the property is absent until the first write materializes it.
-
-```typescript
-import { store } from '@hellajs/store';
-
-// Declare the future key optional; the first write materializes it
-const appStore = store<{ count: number; tags?: string[] }>({ count: 0 });
-
-appStore.$update({ tags: ['a'] });
-appStore.tags?.(); // ['a'], typed string[] | undefined
-
-// Before the first write the property is absent: optional chaining reads
-// undefined, and a direct appStore.tags() call is a type error
-const fresh = store<{ count: number; tags?: string[] }>({ count: 0 });
-fresh.tags?.(); // undefined
-
-// Declared keys type draft additions too, unlike undeclared draft adds
-appStore.$update(draft => { draft.tags = ['b']; });
-```
-
-Declared-optional keys subscribe once materialized (`$subscribe` throws for keys that were never written, like any absent key), and declared `middleware` and `equals` entries apply to them: options are keyed by the declared shape, so the entry runs at materialization and on every later write.
-
-> **Nested future keys must not be declared optional.** An optional plain-object member types as a leaf signal rather than a nested store: the only compiling call form (`appStore.user?.()`) throws at runtime once the key materializes, while the runtime-correct `appStore.user.name()` stays a type error. Declare placeholder values for nested shapes instead: `store({ user: { name: '' } })` types every level up front with no future-key ceremony. Keep the returned-reference pattern above for nested shapes discovered at runtime.
-
-Keys absent from the creation declaration get no middleware or [write equality](/learn/concepts/state#write-equality): both are keyed by the declared shape, so declare a key in the initial object or type parameter when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `$update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.$update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
+The draft path applies the same rules at runtime; its mutator is typed against the current shape, so draft additions materialize untyped. `$update()` throws at the first offending key, in partial-key order; keys processed before it are already applied.
 
 ### `$cleanup`
 
@@ -295,43 +282,60 @@ By default every write is reference-compared; the `equals` option replaces that 
 
 Functions in the initial object are preserved as-is, not wrapped in signals, functional in snapshots. Snapshots preserve the **original** initial function references; a handler swapped in later (`appStore.onSave = newHandler`) is not what `$snapshot()` returns. See [State](/learn/concepts/state) for `computed`-in-store examples.
 
-### `PartialDeep<T>`
+### Growing Stores
 
-Recursive optional mapping used by [`$update()`](#update).
+Unknown keys materialize on their first `$update()` write, and the call returns the same store typed with the added keys: leaves become signals, plain objects become nested stores, and reads, later updates, `$snapshot()`, and `subscribe` all type the added key immediately. Capture the return to see the widening; the original reference keeps its narrower type (the `Object.assign` seam) while its runtime behavior, `$snapshot()` included, sees the added key right away.
 
 ```typescript
-type PartialDeep<T> = {
-  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
-  ? T[K]
-  : T[K] extends unknown[]
-  ? T[K]
-  : T[K] extends Record<string, unknown>
-  ? PartialDeep<T[K]>
-  : T[K];
-};
+import { store } from '@hellajs/store';
+
+const appStore = store({ count: 0 });
+
+const withTags = appStore.$update({ tags: ['a'] });
+withTags.tags();          // ['a'], a Signal<string[]>
+withTags.$snapshot();      // { count: 0, tags: ['a'] }
+
+const withUser = withTags.$update({ user: { name: 'Bob' } });
+withUser.user.name();     // 'Bob', a Store<{ name: string }>
+
+// ❌ appStore.$update({ count: 'x' });      // type error: existing keys stay validated
+// ❌ appStore.$update({ $snapshot: 1 });      // throws: [store] $update: reserved key "$snapshot"
+// ❌ appStore.$update({ onSave: () => {} }); // throws: [store] $update: key "onSave" cannot hold a function
 ```
 
-- **`T`**: The object type to make partially optional.
+When future keys are known at creation, declare them optional in the type parameter instead: the store grows on the same binding with no captured reference, and reads are optional-chained because the property is absent until the first write materializes it.
 
-> `PartialDeep` preserves arrays and functions without recursing into them. A partial update to `{ items: [...] }` writes the whole array through the container's reconcile: object elements at existing positions patch in place, equal positions write nothing, and length differences restructure.
+```typescript
+import { store } from '@hellajs/store';
+
+// Declare the future key optional; the first write materializes it
+const appStore = store<{ count: number; tags?: string[] }>({ count: 0 });
+
+appStore.$update({ tags: ['a'] });
+appStore.tags?.(); // ['a'], typed string[] | undefined
+
+// Before the first write the property is absent: optional chaining reads
+// undefined, and a direct appStore.tags() call is a type error
+const fresh = store<{ count: number; tags?: string[] }>({ count: 0 });
+fresh.tags?.(); // undefined
+
+// Declared keys type draft additions too, unlike undeclared draft adds
+appStore.$update(draft => { draft.tags = ['b']; });
+```
+
+Declared-optional keys subscribe once materialized (`$subscribe` throws for keys that were never written, like any absent key), and declared `middleware` and `equals` entries apply to them: options are keyed by the declared shape, so the entry runs at materialization and on every later write.
+
+> **Nested future keys**: an optional plain-object member types as a leaf signal rather than a nested store, so declare placeholder values instead (`store({ user: { name: '' } })` types every level up front) and keep the returned-reference pattern for shapes discovered at runtime.
+
+Keys absent from the creation declaration get no middleware or [write equality](/learn/concepts/state#write-equality): both are keyed by the declared shape, so declare a key in the initial object or type parameter when it needs either. [`persistStore`](/reference/store/persiststore) hydrates through `$update()`, so persisted keys beyond the initial shape materialize on hydration. Nested stores grow through their own widened references: `withUser.user.$update({ age: 1 })` types `age` on the nested store (the parent's type is not re-derived).
+
+### `PartialDeep<T>`
+
+Recursive optional mapping used by [`$update()`](#update). See [`PartialDeep<T>`](/learn/concepts/state#partialdeept) for the full type.
 
 ### `ReadonlyKeys<T, O>`
 
-Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [readonly](/learn/concepts/state#readonly) for usage.
-
-```typescript
-type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
-  O extends { readonly: true }
-  ? keyof T
-  : O extends { readonly: readonly (keyof T)[] }
-  ? O["readonly"][number]
-  : never;
-```
-
-- **`T`**: The store's value type.
-- **`O`**: The `StoreOptions<T>` or `undefined`.
-
-Applied: `{ readonly: ['apiUrl'] }` resolves to `'apiUrl'`, `{ readonly: true }` to `keyof T`, and `undefined` to `never`.
+Extracts the readonly property key set from a `StoreOptions` value. See [`ReadonlyKeys<T, O>`](/learn/concepts/state#readonlykeyst-o) for the full type.
 
 ## Important Considerations
 

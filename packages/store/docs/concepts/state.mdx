@@ -34,7 +34,7 @@ Beyond basic get/set, stores offer several capabilities, each covered in a secti
 
 - **Readonly**: Restrict specific properties or the entire store to read-only access, enforced at the type level.
 - **Snapshots**: Get a plain object representation of the entire store state. Reactive: recomputes when any property changes.
-- **Subscriptions**: Observe a single property with `subscribe(key, cb)`: the callback receives `(next, prev)` and the call returns an unsubscribe function.
+- **Subscriptions**: Observe a single property with `$subscribe(key, cb)`: the callback receives `(next, prev)` and the call returns an unsubscribe function.
 - **Updates**: Apply partial deep merges or mutate a draft directly for ergonomic multi-property and array changes.
 - **Middleware**: Validate and transform values before they're stored. Runs synchronously on every set operation.
 - **Write equality**: Skip writes whose content matches the stored value: per-key comparators or the `'structural'` content-equality preset.
@@ -210,7 +210,7 @@ const app = store({
 });
 ```
 
-Middleware runs *before* changes are stored; use it for validation, transformation, or normalization. Effects run *after*; see [reactivity](/learn/concepts/reactivity) for logging and derived-state patterns. For persistence, use [persistStore](/reference/store/persiststore); see [Persistence](#persistence).
+Middleware runs *before* changes are stored; use it for validation, transformation, or normalization. Effects run *after*; see [reactivity](/learn/concepts/reactivity) for logging and derived-state patterns. For persistence, use [`persistStore`](/reference/store/persiststore); see [Persistence](#persistence).
 
 ## Persistence
 
@@ -254,6 +254,44 @@ appStore.items([1, 2]); // same content; write skipped, effect stays asleep
 A comparator receives `(previous, next)` and returns `true` to skip the write. Every write path inherits it (direct calls, `$update(partial)`, and `$update(draft => …)`), and equality runs after middleware, so the comparator sees the transformed value. Invalid values throw at create time: a leaf accepts a comparator function or `'structural'`; an object key accepts a nested map only, so `'structural'` on an object key throws.
 
 Prefer the draft path for fine-grained array edits and reserve `'structural'` for large leaves that are replaced wholesale; it costs O(n) per write. See [write equality](/reference/store/store#write-equality) for the full option shape.
+
+### `PartialDeep<T>`
+
+Recursive optional mapping used by [`$update()`](/reference/store/store#update).
+
+```typescript
+type PartialDeep<T> = {
+  [K in keyof T]?: T[K] extends (...args: unknown[]) => unknown
+  ? T[K]
+  : T[K] extends unknown[]
+  ? T[K]
+  : T[K] extends Record<string, unknown>
+  ? PartialDeep<T[K]>
+  : T[K];
+};
+```
+
+- **`T`**: The object type to make partially optional.
+
+> `PartialDeep` preserves arrays and functions without recursing into them. A partial update to `{ items: [...] }` writes the whole array through the container's reconcile: object elements at existing positions patch in place, equal positions write nothing, and length differences restructure.
+
+### `ReadonlyKeys<T, O>`
+
+Extracts the readonly property key set from a `StoreOptions` value. Useful for deriving the readonly keys of a store at the type level. See [readonly](/learn/concepts/state#readonly) for usage.
+
+```typescript
+type ReadonlyKeys<T, O extends StoreOptions<T> | undefined> =
+  O extends { readonly: true }
+  ? keyof T
+  : O extends { readonly: readonly (keyof T)[] }
+  ? O["readonly"][number]
+  : never;
+```
+
+- **`T`**: The store's value type.
+- **`O`**: The `StoreOptions<T>` or `undefined`.
+
+Applied: `{ readonly: ['apiUrl'] }` resolves to `'apiUrl'`, `{ readonly: true }` to `keyof T`, and `undefined` to `never`.
 
 ## Readonly
 
@@ -351,7 +389,7 @@ const grown = app.$update({ tags: [] as string[] }); // ✅ works; unknown keys 
 grown.tags();                           // ✅ [], a Signal<string[]>
 
 // ❌ app.$update({ onSave: () => {} }); // throws: [store] $update: "onSave" is a function property, not state
-// ❌ app.$update({ $snapshot: 1 });      // throws: [store] $update: reserved key "snapshot"
+// ❌ app.$update({ $snapshot: 1 });      // throws: [store] $update: reserved key "$snapshot"
 // ❌ app.$update({ user: 'x' });        // throws: [store] $update: store key "user" requires an object value
 // ❌ app.$update({ onSave2: () => {} }); // throws: [store] $update: key "onSave2" cannot hold a function
 ```

@@ -76,7 +76,7 @@ app.tags?.(); // [ 'a' ] - optional-chained, typed string[] | undefined
 
 ### Mutable Draft Updates
 
-Pass a function to `$update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are extracted via diff and applied per key: collection values reconcile through their containers, so changed positions patch their element stores and untouched positions write nothing. This is particularly useful for array operations.
+Pass a function to `$update()` for ergonomic array operations and coordinated mutations. The function receives a mutable draft copy of the state, and changes are extracted via diff and applied per key: collection values reconcile through their containers, so changed positions patch their element stores and untouched positions write nothing. This is particularly useful for array operations. Wrap the call in [`batch`](/reference/core/batch) to fire collected effects once.
 
 ```typescript
 import { store } from '@hellajs/store';
@@ -98,7 +98,7 @@ todos.$update(draft => {
 
 todos.items(); // [{ id: 2, ... }, { id: 3, ... }]
 todos.count(); // 2
-// The draft function runs synchronously and all changes are applied as individual writes; wrap the call in [`batch`](/reference/core/batch)`()` to fire effects once
+// changes apply as individual writes; wrap in batch() to fire effects once
 ```
 
 ### Structural Array Equality
@@ -145,8 +145,8 @@ console.log(todos.$snapshot().todos.length);     // 2, deep-plain
 
 Pass the container callable to `ForEach` and close over the element stores for field-precise bindings: each row reads its own element store's fields, so a field write re-renders nothing but the bound text.
 
-```typescript
-import { ForEach, html } from '@hellajs/dom';
+```tsx
+import { ForEach } from '@hellajs/dom';
 import { store } from '@hellajs/store';
 import type { Store } from '@hellajs/store';
 
@@ -156,13 +156,14 @@ const todos = store({
   todos: [{ id: 1, text: 'write plans', completed: false }] as Todo[]
 });
 
-html`
-  <ul>
-    <${ForEach} each=${() => todos.todos()}>
-      ${(todo: Store<Todo>) => html`<li class=${() => (todo.completed() ? 'done' : '')}>${() => todo.text()}</li>`}
-    <//>
-  </ul>
-`;
+<ul>
+  <ForEach
+    each={todos.todos}
+    use={(todo: Store<Todo>) => (
+      <li class={todo.completed() ? 'done' : ''}>{todo.text()}</li>
+    )}
+  />
+</ul>;
 ```
 
 Element references are stable across calls (`todos.todos()[0] === todos.todos()[0]`), which is what the keyed reconciliation relies on.

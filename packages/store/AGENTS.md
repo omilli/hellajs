@@ -36,11 +36,11 @@ For each key `K` of `T` (R = set of readonly keys, default `never`):
 | `T[K]` shape | Writable (`K ∉ R`) | Readonly (`K ∈ R`) |
 |---|---|---|
 | function | `T[K]` (preserved) | `T[K]` (preserved) |
-| array | `Signal<T[K]>` | `() => T[K]` |
+| Array/Map/Set | `Reactive<T[K]>` (collection container; object elements as element stores) | `() => T[K]` |
 | plain object | `Store<T[K]>` | `K ∈ R ? Store<T[K], keyof T[K]> : Store<T[K]>` |
 | primitive | `Signal<T[K]>` | `() => T[K]` |
 
-Plus built-ins: `snapshot: () => Snapshot<T>` (composed nested stores unwrap to their data types), `update: (PartialDeep<T> or (draft: Snapshot<T>) => void) => void`, `cleanup: () => void`, `subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void`.
+Plus built-ins: `$snapshot: () => Snapshot<T>` (composed nested stores unwrap to their data types), `$update: (PartialDeep<T> partial) => Store<Simplify<T & Omit<P, keyof T>>, R>` (widening) or `((draft: Snapshot<T>) => void) => Store<T, R>`, `$cleanup: () => void`, `$subscribe: <K extends SettableKeyOf<T>>(key: K, callback: (next: T[K], prev: T[K]) => void) => () => void`.
 
 - **"plain object"** = a value `isPlainObject` returns true for (excludes arrays, `null`, functions, and class instances). `Date`/`Map`/`Set`/`RegExp`/custom instances fall into the primitive row → become a `Signal`, not a nested store.
 - **`R` propagates into nested plain objects, not composed stores** — a plain-object key under `R` is typed `Store<T[K], keyof T[K]>`: each nested level derives its own full key set, so no name-collision false lockdown (the reverted design threaded the parent's `R` down verbatim, typing a nested key readonly merely for sharing a name with a top-level readonly key — near-guaranteed under `readonly: true`, where `R = keyof T`). Composed stores pass through with their own config: their data properties are function-typed and land in the function-preservation row regardless of `R`, matching adoption semantics at the runtime.

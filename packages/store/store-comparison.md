@@ -1,6 +1,6 @@
 # HellaJS @hellajs/store vs. Zustand / Redux Toolkit / Jotai / Valtio / MobX
 
-A ground-up comparison based on the actual source code of `@hellajs/store` v2. Every claim below was verified against `packages/store/lib/`. Competitor versions researched: Zustand 5.0.15, Redux Toolkit 2.12.0, Jotai 2.20.3, Valtio 2.3.2, MobX 7.0.3.
+A ground-up comparison based on the actual source code of `@hellajs/store`. Every claim below was verified against `packages/store/lib/`. Competitor versions researched: Zustand 5.0.15, Redux Toolkit 2.12.0, Jotai 2.20.3, Valtio 2.3.2, MobX 7.0.3.
 
 ---
 

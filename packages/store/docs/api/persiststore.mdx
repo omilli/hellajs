@@ -20,13 +20,21 @@ function persistStore<T extends Record<string, unknown>>(
 
 ```typescript
 interface PersistOptions<T> {
-  serialize?: (state: PartialDeep<T>) => string;        // default JSON.stringify
-  deserialize?: (raw: string) => PartialDeep<T>;        // default JSON.parse
-  partialize?: (state: Snapshot<T>) => PartialDeep<T>;  // default: persist everything
-  debounce?: number;                                    // coalesce writes (ms)
-  onError?: (error: unknown) => void;                   // corruption + adaptor failures
+  serialize?: (state: PartialDeep<T>) => string;
+  deserialize?: (raw: string) => PartialDeep<T>;
+  partialize?: (state: Snapshot<T>) => PartialDeep<T>;
+  debounce?: number;
+  onError?: (error: unknown) => void;
 }
 ```
+
+| Option | Default | Role |
+|--------|---------|------|
+| `serialize` | `JSON.stringify` | Serializes the projected state to a string |
+| `deserialize` | `JSON.parse` | Parses stored raw into an `$update()`-shaped partial |
+| `partialize` | Identity (persist everything) | Projects the snapshot down to the persistable subset |
+| `debounce` | Off (write immediately) | Coalesces write bursts into one write per window (ms) |
+| `onError` | None (errors are silent) | Fires on corrupt stored state and on adaptor failures |
 
 ## Basic Usage
 
@@ -119,7 +127,7 @@ interface StoreAdaptor {
 
 ```typescript
 interface PersistHandle {
-  readonly hydrated: () => boolean;  // signal-backed, reactive
+  readonly hydrated: () => boolean;
   readonly ready: Promise<void>;
   dispose(): void;
 }

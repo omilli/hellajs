@@ -3,6 +3,9 @@
 ## 2026-09-15
 * **Creation**: Added concept [140](entries/140.md) (type: decision).
 * **Creation**: Added concept [141](entries/141.md) (type: decision).
+* **Creation**: Added concept [142](entries/142.md) (type: decision).
+* **memory**: captured: doc-snippets per-line signature-only skip predicate (entry 142) from store docs audit unit 01
+* **Update**: Renumbered doc-snippets signature-only-skip entry from 141 to 142 — main tree had allocated 141 (signalmap-entry-handle-never-writes) before the store docs audit component merged
 
 ## 2026-09-10
 * **Creation**: Added concept [120](entries/120.md) (type: decision).
