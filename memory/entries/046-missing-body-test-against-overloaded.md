@@ -4,7 +4,7 @@ title: A missing-body test against an overloaded function must cast to a concret
 description: "A missing-body negative test against an overloaded function must cast to ONE concrete overload shape ({} as DocOptions & { body: string }) — a broad {} cast fails TS2769 before the runtime throw."
 tags: [testing, typescript, overloads, ssr]
 timestamp: 2026-08-22
-last_confirmed: 2026-08-22
+last_confirmed: 2026-09-10
 triggers: [overload-negative-test, ts2769-overload-cast, missing-body-test, union-options-cast]
 ---
 

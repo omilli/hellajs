@@ -54,43 +54,42 @@ function renderVoidTags(tag: string, tags: ReadonlyArray<MetaTag | LinkTag>): st
  * @returns The concatenated head HTML (no `<head>` wrapper).
  */
 export function buildHead(head: HeadOptions | undefined): string {
+  if (head === undefined) return "";
   let headHtml = "";
-  if (head !== undefined) {
-    if (head.title !== undefined) {
-      headHtml += `<title>${escapeHtml(head.title)}</title>`;
+  if (head.title !== undefined) {
+    headHtml += `<title>${escapeHtml(head.title)}</title>`;
+  }
+  if (head.meta !== undefined) {
+    headHtml += renderVoidTags("meta", head.meta);
+  }
+  if (head.links !== undefined) {
+    headHtml += renderVoidTags("link", head.links);
+  }
+  if (head.styles !== undefined) {
+    let css = "";
+    let i = 0;
+    const len = head.styles.length;
+    while (i < len) {
+      css += head.styles[i]!;
+      i++;
     }
-    if (head.meta !== undefined) {
-      headHtml += renderVoidTags("meta", head.meta);
+    headHtml += `<style>${css}</style>`;
+  }
+  if (head.scripts !== undefined) {
+    let i = 0;
+    const len = head.scripts.length;
+    while (i < len) {
+      const script = head.scripts[i]!;
+      // inline content wins: drop `src` too — a `<script src=…>` ignores its body, so emitting both would silently suppress the inline script
+      const scriptAttrs = buildAttrs(script, script.content !== undefined ? ["content", "src"] : "content");
+      headHtml += script.content !== undefined
+        ? `<script${scriptAttrs}>${script.content}</script>`
+        : `<script${scriptAttrs}></script>`;
+      i++;
     }
-    if (head.links !== undefined) {
-      headHtml += renderVoidTags("link", head.links);
-    }
-    if (head.styles !== undefined) {
-      let css = "";
-      let i = 0;
-      const len = head.styles.length;
-      while (i < len) {
-        css += head.styles[i]!;
-        i++;
-      }
-      headHtml += `<style>${css}</style>`;
-    }
-    if (head.scripts !== undefined) {
-      let i = 0;
-      const len = head.scripts.length;
-      while (i < len) {
-        const script = head.scripts[i]!;
-        // inline content wins: drop `src` too — a `<script src=…>` ignores its body, so emitting both would silently suppress the inline script
-        const scriptAttrs = buildAttrs(script, script.content !== undefined ? ["content", "src"] : "content");
-        headHtml += script.content !== undefined
-          ? `<script${scriptAttrs}>${script.content}</script>`
-          : `<script${scriptAttrs}></script>`;
-        i++;
-      }
-    }
-    if (head.raw !== undefined) {
-      headHtml += head.raw;
-    }
+  }
+  if (head.raw !== undefined) {
+    headHtml += head.raw;
   }
   return headHtml;
 }

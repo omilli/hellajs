@@ -5,6 +5,5 @@
   },
   "include": [
     "./lib/**/*.ts",
-    "lib/index.ts",
   ],
 }

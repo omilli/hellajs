@@ -230,7 +230,7 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 
 - Semicolons always; arrow functions for inline helpers.
 - `unknown` only — never `any`. No AAA pattern — interleave setup, action, assertion.
-- `test.each()` for parameterized tests; intentionally invalid inputs via `@ts-expect-error` or a cast to the accepted type (`42 as unknown as number[]`) — match the file's existing idiom.
+- `test.each()` for parameterized tests; intentionally invalid inputs via `@ts-expect-error` or a cast to the accepted type (`42 as unknown as number[]`) — match the file's existing idiom; an invalid input against an overloaded function casts to one concrete overload shape (`undefined as unknown as DocOptions & { body: string }`) — a bare options-type cast fails TS2769 before the runtime throw runs.
 
 ## Test Coverage
 
@@ -275,6 +275,7 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 **Anti-patterns (none present)**
 - [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test`
 - [ ] No `any` (`unknown` only)
+- [ ] No invalid-input call against an overloaded function cast to the bare options type — cast to one concrete overload shape (TS2769 otherwise)
 - [ ] No `it()` or `test.skip()`
 - [ ] No bare `await delay()` used as double-delay — use `delay(0)` (macrotask) for multi-hop chains
 - [ ] No macrotask waits (`delay(0)`/`delay(N)`/`delay(10)` polls) between staged DOM removals whose cleanup the test waits on — observer-driven cleanup waits use the microtask-hop `peekState` poll + mirror assert (HappyDOM WeakRef GC hazard)

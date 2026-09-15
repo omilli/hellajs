@@ -81,7 +81,7 @@ function walkChild(child: HellaChild, options?: SsrOptions): string {
     }
     return MARK_OPEN + body + MARK_CLOSE;          // wrap every dynamic region
   }
-  if (typeof child === "object" && child !== null && "raw" in child) {
+  if (typeof child === "object" && "raw" in child) {
     return MARK_OPEN + child.raw + MARK_CLOSE;   // raw HTML region — verbatim, marker-bounded (opaque to hydrate)
   }
   if (typeof child === "object" && (child as HellaNode).tag !== undefined) {

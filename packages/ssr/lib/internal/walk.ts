@@ -128,7 +128,7 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[], head?: 
     yield MARK_CLOSE;
     return;
   }
-  if (typeof child === "object" && child !== null && "raw" in child) {
+  if (typeof child === "object" && "raw" in child) {
     yield MARK_OPEN;
     yield child.raw;                                                 // raw HTML region — verbatim, marker-bounded (parity with sync walkChild)
     yield MARK_CLOSE;

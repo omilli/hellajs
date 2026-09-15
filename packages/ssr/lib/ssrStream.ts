@@ -135,11 +135,11 @@ export function ssrStream(node: HellaNode, options?: StreamOptions): ReadableStr
     cancel() {
       done = true;                          // best-effort: suppress further enqueues into the cancelled stream
       void gen.return(undefined);           // stop the main generator when the consumer cancels
-      let si = 0;                           // also return any staged <Suspense> swaps, so their deferred work doesn't continue into a dead stream
-      const sLen = pending.length;
-      while (si < sLen) {
-        void pending[si]!.childGen.return(undefined);
-        si++;
+      let i = 0;                            // also return any staged <Suspense> swaps, so their deferred work doesn't continue into a dead stream
+      const len = pending.length;
+      while (i < len) {
+        void pending[i]!.childGen.return(undefined);
+        i++;
       }
     },
   });

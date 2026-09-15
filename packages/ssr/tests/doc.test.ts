@@ -124,6 +124,11 @@ describe("doc", () => {
     expect(() => doc({} as DocOptions & { body: string })).toThrow(/^\[ssr\] doc: body is required, received undefined$/);
   });
 
+  test("throws when the options object is missing or null", () => {
+    expect(() => doc(undefined as unknown as DocOptions & { body: string })).toThrow(/^\[ssr\] doc: body is required, received undefined$/);
+    expect(() => doc(null as unknown as DocOptions & { body: string })).toThrow(/^\[ssr\] doc: body is required, received undefined$/);
+  });
+
   test("wraps the body in <div id=\"app\"> for an id-only string mount", () => {
     expect(doc({ body: "X", mount: "#app" })).toContain("<body><div id=\"app\">X</div></body>");
   });

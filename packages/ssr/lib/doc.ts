@@ -106,8 +106,8 @@ export function doc(options: DocOptions & { body: string }): string;
  */
 export function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableStream<string>;
 export function doc(options: DocOptions): string | ReadableStream<string> {
-  if (options.body === undefined) {
-    throw new Error(`[ssr] doc: body is required, received ${options.body}`);
+  if (options?.body === undefined) {
+    throw new Error(`[ssr] doc: body is required, received ${options?.body}`);
   }
   const mount = options.mount !== undefined ? parseMount(options.mount) : undefined;
   const data = buildDataScript(options.data);
