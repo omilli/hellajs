@@ -18,18 +18,20 @@ describe("resource", () => {
       expect(r.data()).toBe("ok");
     });
 
-    test("retry: true = 1 retry, false = 0", async () => {
-      const fetcher1 = mock(() => Promise.reject(new Error("x")));
-      const r1 = resource(fetcher1, { retry: true, retryDelay: 10 });
-      r1.fetch({ force: true });
-      for (let __i = 0; __i < 50; __i++) { if ((fetcher1.mock.calls.length >= 2)) break; await delay(10); };
-      expect(fetcher1).toHaveBeenCalledTimes(2);
+    test("retry: true retries exactly once", async () => {
+      const fetcher = mock(() => Promise.reject(new Error("x")));
+      const r = resource(fetcher, { retry: true, retryDelay: 10 });
+      r.fetch({ force: true });
+      for (let __i = 0; __i < 50; __i++) { if ((fetcher.mock.calls.length >= 2)) break; await delay(10); };
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    });
 
-      const fetcher2 = mock(() => Promise.reject(new Error("x")));
-      const r2 = resource(fetcher2, { retry: false });
-      r2.fetch({ force: true });
+    test("retry: false never retries", async () => {
+      const fetcher = mock(() => Promise.reject(new Error("x")));
+      const r = resource(fetcher, { retry: false });
+      r.fetch({ force: true });
       await delay(20);
-      expect(fetcher2).toHaveBeenCalledTimes(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
     });
 
     test("conditional retry based on error", async () => {
@@ -107,26 +109,18 @@ describe("resource", () => {
     });
 
     test("retry count resets between requests", async () => {
-      let n = 0;
-      let fail = true;
-      const fetcher = mock(() => {
-        n++;
-        return (n === 1 && fail) ? Promise.reject(new Error("x")) : delay("ok");
-      });
-      const r = resource(
-        fetcher,
-        { retry: 3, retryDelay: 10 }
+      const fetcher = mock(() =>
+        fetcher.mock.calls.length === 1 ? Promise.reject(new Error("x")) : delay("ok")
       );
+      const r = resource(fetcher, { retry: 3, retryDelay: 10 });
       r.fetch({ force: true });
       for (let __i = 0; __i < 50; __i++) { if ((!r.isFetching())) break; await delay(10); }
       expect(fetcher).toHaveBeenCalledTimes(2);
-      expect(n).toBe(2);
 
-      n = 0; fail = true;
+      fetcher.mockClear();
       r.fetch({ force: true });
       for (let __i = 0; __i < 50; __i++) { if ((!r.isFetching())) break; await delay(10); }
-      expect(fetcher).toHaveBeenCalledTimes(4);
-      expect(n).toBe(2);
+      expect(fetcher).toHaveBeenCalledTimes(2);
     });
 
     test("retries before caching the result", async () => {

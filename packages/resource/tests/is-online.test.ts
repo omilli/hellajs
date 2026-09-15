@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { resourceCache } from "@hellajs/resource/bundle";
 
@@ -8,9 +8,13 @@ describe("resourceCache", () => {
   });
 
   describe("isOnline", () => {
+    // onlineStatus is module state resetTestState() does not cover — always leave the world online
+    afterEach(() => {
+      window.dispatchEvent(new Event("online"));
+    });
+
     test("returns navigator.onLine value", () => {
-      // Default is typically true in happydom
-      expect(typeof resourceCache.isOnline()).toBe("boolean");
+      expect(resourceCache.isOnline()).toBe(navigator.onLine);
     });
 
     test("tracks online status changes from window events", () => {

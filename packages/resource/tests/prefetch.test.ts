@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { expectAbortError, expectErrorMessage } from "./helpers";
 
 describe("resourceCache", () => {
   describe("prefetch", () => {
@@ -62,7 +63,7 @@ describe("resourceCache", () => {
       expect(fetcher).toHaveBeenCalledTimes(1);
     });
 
-    test("retries on failure and aborts on signal", async () => {
+    test("retries on failure", async () => {
       const retryingFetcher = mock(async (id: number) => {
         if (retryingFetcher.mock.calls.length === 1) throw new Error("transient");
         return { id };
@@ -75,7 +76,9 @@ describe("resourceCache", () => {
       });
       expect(retried).toEqual({ id: 1 });
       expect(retryingFetcher).toHaveBeenCalledTimes(2);
+    });
 
+    test("aborts on signal", async () => {
       const controller = new AbortController();
       const hangingFetcher = mock(() => new Promise<{ done: boolean }>(() => {}));
       const hanging = resourceCache.prefetch({
@@ -85,13 +88,7 @@ describe("resourceCache", () => {
       });
       await delay(1);
       controller.abort();
-      try {
-        await hanging;
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(DOMException);
-        expect((err as DOMException).name).toBe("AbortError");
-      }
+      await expectAbortError(hanging);
     });
 
     test("rejects invalid options and non-function fetcher", () => {
@@ -104,37 +101,19 @@ describe("resourceCache", () => {
     test("aborts via timeout", async () => {
       const fetcher = mock(() => new Promise<{ done: boolean }>(() => {}));
       const p = resourceCache.prefetch({ fetcher, key: 1, timeout: 10 });
-      try {
-        await p;
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(DOMException);
-        expect((err as DOMException).name).toBe("AbortError");
-      }
+      await expectAbortError(p);
     });
 
     test("aborts immediately with a pre-aborted signal", async () => {
       const controller = new AbortController();
       controller.abort();
       const fetcher = mock(async (id: number) => ({ id }));
-      try {
-        await resourceCache.prefetch({ fetcher, key: 1, abortSignal: controller.signal });
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(DOMException);
-        expect((err as DOMException).name).toBe("AbortError");
-      }
+      await expectAbortError(resourceCache.prefetch({ fetcher, key: 1, abortSignal: controller.signal }));
     });
 
     test("rejects when retries are exhausted", async () => {
       const fetcher = mock(async () => { throw new Error("always fails"); });
-      try {
-        await resourceCache.prefetch({ fetcher, key: 1, retry: 1, retryDelay: 1 });
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(Error);
-        expect((err as Error).message).toBe("always fails");
-      }
+      await expectErrorMessage(resourceCache.prefetch({ fetcher, key: 1, retry: 1, retryDelay: 1 }), "always fails");
     });
 
     test("aborts during a retry delay", async () => {
@@ -149,13 +128,7 @@ describe("resourceCache", () => {
       });
       await delay(5);
       controller.abort();
-      try {
-        await p;
-        expect(true).toBe(false);
-      } catch (err) {
-        expect(err).toBeInstanceOf(DOMException);
-        expect((err as DOMException).name).toBe("AbortError");
-      }
+      await expectAbortError(p);
     });
 
     test("external-signal listeners are released when prefetch settles", async () => {

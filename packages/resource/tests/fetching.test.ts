@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { effect, signal } from "@hellajs/core";
-import {delay} from "@utils/test-helpers.js";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resource } from "@hellajs/resource/bundle";
 import { mockUser, mockPosts } from "./helpers";
 
@@ -9,6 +9,7 @@ describe("resource", () => {
     let originalFetch: typeof globalThis.fetch;
 
     beforeEach(() => {
+      resetTestState();
       originalFetch = globalThis.fetch;
     });
 
@@ -89,23 +90,21 @@ describe("resource", () => {
     });
 
     test("calls onSuccess callback", async () => {
-      let successData: undefined | typeof mockUser;
-      const successR = resource(() => delay(mockUser), {
-        onSuccess: (data) => { successData = data; }
-      });
+      const onSuccess = mock(() => { });
+      const successR = resource(() => delay(mockUser), { onSuccess });
       successR.fetch({ force: true });
       await delay(20);
-      expect(successData).toEqual(mockUser);
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(onSuccess).toHaveBeenCalledWith(mockUser);
     });
 
     test("calls onError callback", async () => {
-      let errorData: undefined | string;
-      const errorR = resource(() => Promise.reject("Error"), {
-        onError: (err) => { errorData = err as string; }
-      });
+      const onError = mock(() => { });
+      const errorR = resource(() => Promise.reject("Error"), { onError });
       errorR.fetch({ force: true });
       await delay(20);
-      expect(errorData).toBe("Error");
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(onError).toHaveBeenCalledWith("Error");
     });
 
     test("shows initial data", () => {

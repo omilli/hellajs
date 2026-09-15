@@ -1,6 +1,7 @@
 import { describe, test, expect, mock, beforeEach } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resource, resourceCache } from "@hellajs/resource/bundle";
+import { expectErrorMessage } from "./helpers";
 
 describe("resource", () => {
   beforeEach(() => {
@@ -22,98 +23,53 @@ describe("resource", () => {
     expect(r.status()).toBe("success");
   });
 
-  test("handles timeout", async () => {
-    const r = resource(() => delay("response", 50), { timeout: 10 });
-
-    try {
-      await r.mutate("input");
-      expect(true).toBe(false);
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-  });
-
-  test("handles external AbortSignal", async () => {
-    const controller = new AbortController();
-    const r = resource(() => delay("response", 50), { abortSignal: controller.signal });
-
-    setTimeout(() => controller.abort(), 10);
-
-    try {
-      await r.mutate("input");
-      expect(true).toBe(false);
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-  });
-
   test("calls onMutate hook", async () => {
-    let mutateContext: unknown;
+    const onMutate = mock((vars: unknown) => `context-${vars}`);
 
     const r = resource(
       async (vars: string) => delay(`result-${vars}`, 10),
-      {
-        onMutate: async (vars) => {
-          mutateContext = `context-${vars}`;
-          return mutateContext;
-        }
-      }
+      { onMutate }
     );
 
     await r.mutate("test");
-    expect(mutateContext).toBe("context-test");
+
+    expect(onMutate).toHaveBeenCalledTimes(1);
+    expect(onMutate).toHaveBeenCalledWith("test");
   });
 
   test("calls onSuccess and onSettled hooks", async () => {
     const onSuccess = mock(() => { });
-    const settledResult: { result?: string, error?: unknown, vars?: unknown } = {};
+    const onSettled = mock(() => { });
 
     const r = resource(
       async (vars: string) => delay(`result-${vars}`, 10),
-      {
-        onSuccess,
-        onSettled: async (result, error, vars) => {
-          settledResult.result = result;
-          settledResult.error = error;
-          settledResult.vars = vars;
-        }
-      }
+      { onSuccess, onSettled }
     );
 
     await r.mutate("test");
 
     expect(onSuccess).toHaveBeenCalledTimes(1);
-    expect(settledResult.result).toBe("result-test");
-    expect(settledResult.error).toBeUndefined();
-    expect(settledResult.vars).toBe("test");
+    expect(onSuccess).toHaveBeenCalledWith("result-test");
+    expect(onSettled).toHaveBeenCalledTimes(1);
+    expect(onSettled).toHaveBeenCalledWith("result-test", undefined, "test", undefined);
   });
 
   test("calls onError and onSettled on failure", async () => {
-    const onError = mock(() => {});
-    let settledError: unknown;
+    const onError = mock(() => { });
+    const onSettled = mock(() => { });
 
     const r = resource(
       async () => {
         throw new Error("Mutation failed");
       },
-      {
-        onError,
-        onSettled: async (_result, error) => {
-          settledError = error;
-        }
-      }
+      { onError, onSettled }
     );
 
-    try {
-      await r.mutate("test");
-      expect(true).toBe(false);
-    } catch {
-      expect(onError).toHaveBeenCalledTimes(1);
-      expect(settledError).toBeInstanceOf(Error);
-      expect((settledError as Error).message).toBe("Mutation failed");
-    }
+    await expectErrorMessage(r.mutate("test"), "Mutation failed");
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onSettled).toHaveBeenCalledTimes(1);
+    expect(onSettled).toHaveBeenCalledWith(undefined, expect.any(Error), "test", undefined);
   });
 
   test("settles once when success-path onSettled throws", async () => {
@@ -123,12 +79,7 @@ describe("resource", () => {
 
     const r = resource(async (vars: string) => delay(`saved-${vars}`, 10), { onSettled });
 
-    try {
-      await r.mutate("v");
-      expect(true).toBe(false);
-    } catch (err) {
-      expect((err as Error).message).toBe("settled-boom");
-    }
+    await expectErrorMessage(r.mutate("v"), "settled-boom");
 
     expect(onSettled).toHaveBeenCalledTimes(1);
     expect(onSettled).toHaveBeenCalledWith("saved-v", undefined, "v", undefined);
@@ -151,65 +102,6 @@ describe("resource", () => {
     expect(resourceCache.map.has("user:1")).toBe(true);
   });
 
-  test("handles abort during execution", async () => {
-    const promise = new Promise<string>(() => { });
-
-    const r = resource(() => promise);
-
-    const mutationPromise = r.mutate("test");
-    await delay(1);
-
-    r.abort();
-
-    try {
-      await mutationPromise;
-      expect(true).toBe(false);
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-
-    expect(r.isLoading()).toBe(false);
-  });
-
-  test("onSettled is not called when mutation is aborted after onMutate ran", async () => {
-    const promise = new Promise<string>(() => { });
-    const onMutate = mock(() => "context");
-    const onSettled = mock(() => {});
-
-    const r = resource(() => promise, { onMutate, onSettled });
-
-    const mutationPromise = r.mutate("test");
-    await delay(1);
-
-    r.abort();
-
-    try {
-      await mutationPromise;
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-
-    expect(onMutate).toHaveBeenCalledTimes(1);
-    expect(onSettled).toHaveBeenCalledTimes(0);
-  });
-
-  test("handles already aborted external signal", async () => {
-    const controller = new AbortController();
-    controller.abort();
-
-    const r = resource(() => delay("response", 10), { abortSignal: controller.signal });
-
-    try {
-      await r.mutate("test");
-      expect(true).toBe(false);
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-  });
-
   test("reset clears mutation context", async () => {
     const r = resource(() => delay("data"));
 
@@ -222,65 +114,6 @@ describe("resource", () => {
     expect(r.data()).toBeUndefined();
     expect(r.status()).toBe("idle");
     expect(r.error()).toBeUndefined();
-  });
-
-  test("clears isFetching when mutation is aborted by timeout", async () => {
-    const r = resource(() => new Promise(() => { }), { timeout: 30 });
-
-    try {
-      await r.mutate("input");
-      expect(true).toBe(false);
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-
-    expect(r.isFetching()).toBe(false);
-    expect(r.isLoading()).toBe(false);
-    expect(r.error()).toBeUndefined();
-    expect(r.status()).toBe("idle");
-  });
-
-  test("clears isFetching when mutation is aborted by external signal", async () => {
-    const controller = new AbortController();
-    const r = resource(() => new Promise(() => { }), { abortSignal: controller.signal });
-
-    setTimeout(() => controller.abort(), 10);
-
-    try {
-      await r.mutate("input");
-      expect(true).toBe(false);
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-
-    expect(r.isFetching()).toBe(false);
-    expect(r.isLoading()).toBe(false);
-    expect(r.error()).toBeUndefined();
-    expect(r.status()).toBe("idle");
-  });
-
-  test("clears isFetching when mutation is aborted via abort()", async () => {
-    const r = resource(() => new Promise(() => { }));
-
-    const mutationPromise = r.mutate("input");
-    await delay(1);
-
-    r.abort();
-
-    try {
-      await mutationPromise;
-      expect(true).toBe(false);
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-
-    expect(r.isFetching()).toBe(false);
-    expect(r.isLoading()).toBe(false);
-    expect(r.error()).toBeUndefined();
-    expect(r.status()).toBe("idle");
   });
 
   test("isFetching true during mutation execution", async () => {
@@ -412,27 +245,4 @@ describe("resource", () => {
     expect(r.data()).toBe("saved");
   });
 
-  test("aborts during a mutation retry delay without settling", async () => {
-    const fetcher = mock(() => Promise.reject(new Error("x")));
-    const onSettled = mock(() => { });
-    const r = resource(fetcher, { retry: 10, retryDelay: 1000, onSettled });
-
-    const mutation = r.mutate("input");
-    await delay(10);
-    r.abort();
-
-    try {
-      await mutation;
-      expect(true).toBe(false);
-    } catch (err) {
-      expect(err).toBeInstanceOf(DOMException);
-      expect((err as DOMException).name).toBe("AbortError");
-    }
-
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(onSettled).toHaveBeenCalledTimes(0);
-    expect(r.isFetching()).toBe(false);
-    expect(r.isLoading()).toBe(false);
-    expect(r.status()).toBe("idle");
-  });
 });

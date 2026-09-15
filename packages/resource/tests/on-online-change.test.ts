@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import { resourceCache } from "@hellajs/resource/bundle";
 
@@ -8,6 +8,11 @@ describe("resourceCache", () => {
   });
 
   describe("onOnlineChange", () => {
+    // onlineStatus is module state resetTestState() does not cover — always leave the world online
+    afterEach(() => {
+      window.dispatchEvent(new Event("online"));
+    });
+
     test("subscribes to online status changes", () => {
       const callback = mock(() => { });
       const unsubscribe = resourceCache.onOnlineChange(callback);

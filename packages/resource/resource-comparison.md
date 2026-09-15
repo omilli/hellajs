@@ -151,7 +151,7 @@ HellaJS mutations live on the resource itself (`resource.mutate(variables)`) rat
 
 Concurrent mutations run independently: each call owns its abort controller and its `onMutate` rollback context and settles individually, matching TanStack's concurrency model (server-side idempotency is the application's concern; guard double-submits with `isFetching()`). Reads and mutations never abort each other; `abort()` cancels the active read and every live mutation (`lib/resource.ts`).
 
-A subtle behavior the test suite pins down: **`onSettled` is not called when a mutation is aborted**, even if `onMutate` already ran and produced a rollback context (`lib/resource.ts`, `tests/mutations.test.ts`). Abort is a cancellation, not a failure; anything staged in `onMutate` is the caller's responsibility to undo.
+A subtle behavior the test suite pins down: **`onSettled` is not called when a mutation is aborted**, even if `onMutate` already ran and produced a rollback context (`lib/resource.ts`, `tests/mutation-abort.test.ts`). Abort is a cancellation, not a failure; anything staged in `onMutate` is the caller's responsibility to undo.
 
 On success, the optional `invalidates: Array<string | RegExp>` option drives cross-scope cache invalidation: strings dispatch to `resourceCache.invalidateByPrefix`, RegExps to `invalidateByPattern` (`lib/resource.ts`). This deletes cache entries only: a resource currently displaying a matched key keeps its data; only the next fetch for that key goes to the network (`lib/resource.ts`, `tests/invalidates.test.ts`). No invalidation runs on error or abort. The documented read/write pattern uses two resources: one fetcher for reads, one for writes, with `onMutate` pushing into the read resource via `setData` (`docs/concepts/resources.mdx`).
 
@@ -258,7 +258,7 @@ Offline pausing is opt-in: `pauseWhenOffline: true` defers reads at `run()` entr
 - **Cache outlives resources**: entries are module-level and survive `dispose()`/recreation; only the resource tears down (`lib/cache.ts`, `lib/resource.ts`).
 - **Transform via `computed`**: raw data is cached, `data()` returns a transformed view through a `@hellajs/core` computed, so transforms always read through to current raw data (`lib/resource.ts`).
 - **Opt-in structural sharing**: `structuralSharing` reuses unchanged plain-object/array subtree references on fetch success; `Map`/`Set`/`Date`/class instances use strict equality and are never merged (`lib/internal/structural.ts`).
-- **`onSettled` suppressed on mutation abort**: cancelled mutations skip the settled hook even if `onMutate` already ran, treating abort as cancellation, not failure (`lib/resource.ts`, `tests/mutations.test.ts`).
+- **`onSettled` suppressed on mutation abort**: cancelled mutations skip the settled hook even if `onMutate` already ran, treating abort as cancellation, not failure (`lib/resource.ts`, `tests/mutation-abort.test.ts`).
 - **Pattern + prefix batch invalidation across all scopes**: `invalidateByPrefix` and `invalidateByPattern` sweep every fetcher scope in one call, string keys only (`lib/cache.ts`).
 - **Reusable network-status subscription**: `resourceCache.onOnlineChange(cb)` exposes the online/offline callback set to non-resource code as well (`lib/cache.ts`).
 - **Factory reset**: `resetResource()` clears cache, dedup registrations, online callbacks, and the cleanup throttle in one call for logout/HMR/testing (`lib/resetResource.ts`).

@@ -142,7 +142,7 @@ describe("resource", () => {
       expect(r2.data()).toBe("initial-2");
     });
 
-    test("sequential requests after deduplication work correctly", async () => {
+    test("deduplicates each new in-flight round sequentially", async () => {
       const fetcher = mock(async (key: string) => {
         const result = `data-${key}-${fetcher.mock.calls.length}`;
         await delay(20);

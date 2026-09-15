@@ -48,11 +48,18 @@ describe("resource", () => {
       expect(prefixSpy).not.toHaveBeenCalled();
     });
 
-    test("does not invalidate on mutation error or abort", async () => {
+    test("does not invalidate on mutation error", async () => {
       const { prefixSpy, patternSpy } = spyInvalidators();
 
       const failing = resource(async () => { throw new Error("boom"); }, { invalidates: ["user:"] });
       await failing.mutate({}).catch(() => {});
+
+      expect(prefixSpy).not.toHaveBeenCalled();
+      expect(patternSpy).not.toHaveBeenCalled();
+    });
+
+    test("does not invalidate on mutation abort", async () => {
+      const { prefixSpy, patternSpy } = spyInvalidators();
 
       const controller = new AbortController();
       const aborting = resource(() => new Promise<string>(() => {}), {

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { resetResource, resourceCache, resource } from "@hellajs/resource/bundle";
 
@@ -8,6 +8,11 @@ describe("resetResource", () => {
 
   beforeEach(() => {
     resetTestState();
+    originalNow = Date.now;
+  });
+
+  afterEach(() => {
+    Date.now = originalNow;
   });
 
   test("clears the cache map", () => {
@@ -31,7 +36,6 @@ describe("resetResource", () => {
 
   test("resets cleanup throttle — next setCacheData runs cleanup unconditionally", () => {
     mockTime = 1000;
-    originalNow = Date.now;
     Date.now = () => mockTime;
 
     resourceCache.setConfig({ maxSize: 10, enableLRU: false });
@@ -43,8 +47,6 @@ describe("resetResource", () => {
 
     resourceCache.set("new", "val", 10000);
     expect(resourceCache.map.size).toBe(1);
-
-    Date.now = originalNow;
   });
 
   test("invalidateAll is not a full reset — leaves online callbacks registered", () => {
