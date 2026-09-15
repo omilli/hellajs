@@ -29,7 +29,7 @@ Neither → taste, drop. Severity (blocker / should-fix / nit) + one clause nami
 
 Compressed prose rots silently — run the mechanical checks:
 
-- **Table rows resolve** — every script/module row in `scripts/AGENTS.md` names a file that `fd <file> scripts/` finds, and the row's symbol/flag claims hold against it (`rg -w -q "<symbol>" <file>` exits 0). A miss is a finding (drifted row), severity should-fix.
+- **Table rows resolve** — every script/module row in `scripts/AGENTS.md` names a file that `fd --full-path -q "<file>$" scripts/` finds (suffix-anchor the pattern — `--full-path` matches absolute paths, a `^` prefix never hits), and the row's symbol/flag claims hold against it (`rg -w -q "<symbol>" <file>` exits 0). A miss is a finding (drifted row), severity should-fix.
 - **Citations resolve** — every `§Name` citation resolves to a real heading in the named file. Dangling = finding.
 - **Invariant one-liners match source** — prose describing current behavior (queue orders, retry counts, which runner invokes what) spot-checked against the code it describes. Divergence is NOT a rule conflict: it routes to `plan` as a factual fix; report it with the source citation.
 

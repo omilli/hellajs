@@ -29,7 +29,7 @@ Neither → taste, drop. Severity (blocker / should-fix / nit) + one clause nami
 
 Compressed prose rots silently — run the mechanical checks:
 
-- **File-map anchors resolve** — for every `file.ts symbol` anchor in the package AGENTS.md: `fd <file> <pkg-root>` finds the file AND `rg -w -q "<symbol>" <file>` exits 0. A miss is a finding (drifted anchor), severity should-fix.
+- **File-map anchors resolve** — for every `file.ts symbol` anchor in the package AGENTS.md: `fd --full-path -q "<file>$" <pkg-root>` finds the file (suffix-anchor the pattern — `--full-path` matches absolute paths, a `^` prefix never hits) AND `rg -w -q "<symbol>" <file>` exits 0. A miss is a finding (drifted anchor), severity should-fix.
 - **Citations resolve** — every `§Name` citation and every skill-name token resolves to a real heading / `.agents/skills/<name>/SKILL.md`. Dangling = finding.
 - **Invariant one-liners match source** — AGENTS.md prose describing current behavior ("No try/catch in X", queue orders, timing contracts) spot-checked against the code it describes. Divergence is NOT a rule conflict: it routes to `plan` as a factual fix in the change's blast radius (root AGENTS.md §Skills); report it with the source citation.
 

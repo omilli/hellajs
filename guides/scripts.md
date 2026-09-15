@@ -4,6 +4,22 @@ Build tooling and CI automation under `scripts/` — NOT the shipped runtime; ru
 
 Governs `scripts/**/*.ts` and `utils/**/*.ts` (the test preload). Config files (`tsconfig*`, `eslint.config.*`, `package.json`, `bunfig.toml`) follow `code.md` plus its Config checklist.
 
+## Contents
+
+Decision index — jump to the section for the decision you are making.
+
+| Decision | Section |
+|---|---|
+| Where does a new script/helper live? | §Canonical paths, §File-structure decision tree |
+| Language, runtime, invocation? | §Language and runtime |
+| Module shape, `globalThis` data? | §Rules → Functions & modules |
+| Which util instead of hand-rolling? | §Rules → Shared utils |
+| Error handling / exit codes? | §Rules → Error handling |
+| CLI args? | §Rules → CLI argument parsing |
+| Build order/dependencies? | §Rules → Dependency graph |
+| Style? | §Rules → Style (shared with code.md) |
+| Final audit before finishing? | §Verification Checklist |
+
 ## Decision Precedence
 
 When rules conflict, resolve in this order:

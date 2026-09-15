@@ -4,6 +4,23 @@
 
 Performance-critical runtime library. Every abstraction must earn its cost against the hot path.
 
+## Contents
+
+Decision index — jump to the section for the decision you are making; do not scan linearly.
+
+| Decision | Section |
+|---|---|
+| Where does a new symbol/file live? | §Canonical paths, §File-placement decision tree |
+| Shape of a new/changed signature? | §Signature-shape decision tree |
+| Canonical example to pattern-match? | §Canonical examples |
+| Import, type, loop, memory, condition, guard, or error question? | §Code Rules (subsection per topic) |
+| Naming a variable/function/type/file? | §Naming Conventions |
+| How large may a function/file be? | §File and Function Size |
+| JSDoc shape, `@internal`? | §JSDoc (visibility rules in §Code Rules → Types) |
+| Package layout, `index.ts` barrel? | §Package File Structure |
+| Holding a config file? | §Config Verification Checklist |
+| Final audit before finishing? | §Verification Checklist |
+
 ## Canonical paths
 
 Every `index.ts` / `lib/` reference resolves against these locations. The public barrel is `lib/index.ts` — not `packages/[pkg]/index.ts`, which does not exist.
@@ -151,6 +168,8 @@ while (i < len) {
 ```
 
 `Object.entries()` over `Object.keys()` only when both key and value are needed — the `[key, value]` destructure replaces the indexed lookup.
+
+Enforcement: eslint `no-restricted-syntax` bans `ForOfStatement` (non-`await`) and `ForInStatement` in `packages/*/lib`; `isNull`/`isFalsy` conversions are prose-enforced (audited via the checklist).
 
 ### Memory
 
@@ -363,7 +382,7 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 - [ ] No parameter added just to pass it through unchanged
 
 **Loops & memory**
-- [ ] Cached `while` loops; no `for…of`/`for…in` anywhere (`.forEach` cold paths only; `for await…of` for async iterables)
+- [ ] Cached `while` loops; no `for…of`/`for…in` anywhere (`.forEach` cold paths only; `for await…of` for async iterables) (eslint-enforced)
 - [ ] No collection reallocation where `.clear()` or swap works
 - [ ] No bare `l` for cached length (`len` / `<prefix>Len`)
 

@@ -45,7 +45,7 @@ Skills carry workflow logic — loop steps, gates, evidence rules — and name H
 After any substantive work (skill used, files edited, commands run, decision made), scan both tracks and invoke the matching skill yourself — do not wait for the user. Root AGENTS.md §Response protocol carries the summary table; this section is the authoritative protocol.
 
 - **Downstream** — the next skill if work continues (entry → `plan`; `plan` → `worker`; `worker` → `plan` on a gap, `idea` on a fork). One sentence + justification, or "nothing downstream."
-- **Self-improvement** — evaluate the `feedback` trigger table (that skill's Step 1): any trigger fired → `feedback`. A recallable verified fact/decision → `memory`.
+- **Self-improvement** — run the `feedback` thread scan (`bun .agents/skills/feedback/scripts/scan.ts`, that skill's Step 1), then evaluate its trigger table: any trigger fired → `feedback`, reusing the fresh report. A recallable verified fact/decision → `memory`.
 
 Worker completions fire the completion pipeline (matching audit-* skill → redo → feedback → memory) without offering; every other handoff invokes the target skill rather than offering it. Clean run → skip self-improvement; trivial change → skip everything. Mandatory — silently skipping the gate equals skipping a verification step.
 

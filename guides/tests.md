@@ -4,6 +4,29 @@
 
 Tests are documentation — a reader understands every behavior from tests alone. DRY above all: every repeated setup, assertion, or helper across files is a violation.
 
+## Contents
+
+Decision index — jump to the section for the decision you are making; do not scan linearly.
+
+| Decision | Section |
+|---|---|
+| Which `test()`s does a plan scenario yield? | §Scenario → test() derivation |
+| What to name the file? | §File-naming for tests |
+| Is something banned? | §Anti-Patterns |
+| Import sources/order? | §Test Framework |
+| File size/grouping? | §Files |
+| `describe` nesting, test naming? | §Test Structure |
+| Reset, cleanup, patched globals? | §Shared State and Cleanup |
+| Which async wait / delay form? | §Shared State and Cleanup → Async Tests |
+| Mocking anything? | §Mock Patterns |
+| Which assertion form? | §Assertion Patterns |
+| How to access the DOM? | §DOM Element Access |
+| Variable naming? | §Variable Naming |
+| Comments / code style? | §Comments, §Code Style |
+| What must be covered? | §Test Coverage |
+| Running gates / triaging failures? | §Triage & Gate Semantics |
+| Final audit before finishing? | §Verification Checklist |
+
 ## Decision Precedence
 
 1. **DRY** — shared helpers mandatory; two tests with the same setup → extract.
@@ -48,6 +71,8 @@ A file name that is only a category (`features-*.test.ts`, `unit-*.test.ts`) sig
 - Never the double-delay (`await delay(); await delay()`) — `await delay(0)` (macrotask) instead.
 - Never track callback invocations with boolean flags (`let called = false`) or pure integer counters (`let runs = 0`) — `mock()`. Renamed flags (`cleaned`, `handlerCalled`, `errorOccurred`, `asyncCompleted`) are the same pattern. Sole exception: a counter incremented inside a callback that **also** performs observable side effects (`count++; flush()`, DOM writes, network calls). Signal reads or value returns (`return signal()`) don't qualify — `mock()`.
 - Never assert generated output (CSS text, HTML strings, serialized forms) by substring alone when the artifact's **structure** is the contract — `toContain` passes inside structurally invalid output (`@font-face{{font-family:…}}` satisfied substring asserts while browsers parsed it to an empty rule). Every generated shape gets at least one exact-form `toBe` assert.
+
+Enforcement: eslint `no-restricted-syntax` bans `it()`, `test.skip()`, and `jest.*`/`vi.*` calls in `*.test.ts`; the rest are prose-enforced (audited via the checklist).
 
 ### Replace pattern
 
@@ -181,7 +206,7 @@ Imported from `@hellajs/dom/bundle` (re-exports of `internal/` state accessors �
 - Global mocking: save in `beforeEach`, restore in `afterEach`, cast `as unknown as typeof X`.
 - DOM API mocking: `Object.defineProperty` for readonly props; save/restore for prototype patching.
 - Spy typing: type the recorded call signature with `mock`'s explicit generic (`mock<(type: string, opts?: unknown) => void>(() => {})`), never named-but-unused `_` params — eslint carries no `argsIgnorePattern`; they fail the gate.
-- Time mocking (`Date.now`, `performance.now`): declare the mock-time closure at describe scope, override in `beforeEach`, restore in `afterEach`. Tests advance the closure; they never own the save/restore pair, so a failing assertion can't leak a frozen clock.
+- Time mocking (`Date.now`, `performance.now`): declare the mock-time closure at describe scope, capture the original in `beforeEach`, restore in `afterEach`. Tests needing the mock override it in-body and advance the closure; they never own the save/restore pair, so a failing assertion can't leak a frozen clock.
 - Error handler setup: extract the common `onError` pattern into a shared helper (`fallbackHandler(defaultNode)`) in `tests/helpers.ts`; call it at the top of each test instead of repeating the lambda.
 
 ## Assertion Patterns
@@ -249,7 +274,7 @@ How test gates are run and triaged. `bun coverage` (§Scripts) is the single ver
 - **Bundle-stage foreign block.** `bundle.ts --quiet` builds ALL packages before scoped tests run, so a foreign bundle failure blocks the target's own tests. Verify via `bun bundle <package>` (explicit rebuild — honors no-stale-dist) followed by the scoped test command coverage runs internally (`bun test packages/<package>/tests --coverage`); report the foreign failure.
 - **Gate-failure attribution.** A check failing on files outside your diff → `git status -sb` first; verify the files carry no edits of yours (concurrent user changes) before debugging your own work. Re-run the gate after the foreign change settles.
 - **Plugin exception.** `bun coverage <plugin>` fails — `isValidPackage` resolves under `packages/` only. For plugins, use `bun test plugins/<p>/tests` + `bun lint`. Plugin tests import source, not `dist/` — except `plugins/babel/tests/parity.test.ts`, whose runtime side imports the `@hellajs/dom` dist bundle: `bun bundle dom --quiet` first when dom's template parsing changes.
-- **Coverage blind spots.** `bun coverage` runs tsc + eslint + tests but enforces NEITHER the guides' structural rules (`guides/code.md`: thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `for…of`/`for…in`, `@internal` visibility) NOR this guide's anti-patterns (§Anti-Patterns) — no lint counterpart exists. A new file, file structure, or shared test helper → run `audit-tests` as part of verification.
+- **Coverage blind spots.** `bun coverage` runs tsc + eslint + tests; eslint covers only the mechanical subset (`for…of`/`for…in` and raw typeof in `packages/*/lib`, banned test APIs in `*.test.ts`). Everything else — `guides/code.md`'s thin-wrapper ban, `lib/internal/` placement, single-callsite <30-line extraction, `@internal` visibility, and most of §Anti-Patterns — has no lint counterpart. A new file, file structure, or shared test helper → run `audit-tests` as part of verification.
 - **Measurement target.** Coverage instruments built bundles (`dist/`), not `lib/` — `lib/` is truth, the bundle is the measurement. A reading is point-in-time: re-run `bun coverage` immediately before reporting coverage findings.
 
 ## Verification Checklist
@@ -273,10 +298,10 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] `async` only when it `await`s; structure is act → await → assert
 
 **Anti-patterns (none present)**
-- [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test`
+- [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test` (eslint-enforced)
 - [ ] No `any` (`unknown` only)
 - [ ] No invalid-input call against an overloaded function cast to the bare options type — cast to one concrete overload shape (TS2769 otherwise)
-- [ ] No `it()` or `test.skip()`
+- [ ] No `it()` or `test.skip()` (eslint-enforced)
 - [ ] No bare `await delay()` used as double-delay — use `delay(0)` (macrotask) for multi-hop chains
 - [ ] No macrotask waits (`delay(0)`/`delay(N)`/`delay(10)` polls) between staged DOM removals whose cleanup the test waits on — observer-driven cleanup waits use the microtask-hop `peekState` poll + mirror assert (HappyDOM WeakRef GC hazard)
 - [ ] No boolean-flag or pure-integer call counters — `mock()` (exception: counter with observable side effects)

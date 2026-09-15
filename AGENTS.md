@@ -85,7 +85,7 @@
   | `plan` | Turn a goal or evidence map into a task-contract (Files, delta, DoD). |
   | `worker` | Execute a plan task-by-task, ticking each DoD with cited evidence; plan-file runs execute in worktrees and end delivered for merge. |
   | `merge` | Per-component worktree merge as one conventional commit; executed by `bun merge`. |
-  | `feedback` | After a run with friction, conservatively apply config/skill edits, uncommitted. |
+  | `feedback` | After a run: thread-scan the session transcript (failed/repeated commands, context bloat, wasted round-trips) for ground-truth evidence, then conservatively apply config/skill edits, uncommitted. |
   | `memory` | Persist verified decisions/facts to `memory/`; refresh/supersede. |
   | `author` | Author/revise `AGENTS.md`, agent prompts, rules files, skills. Standalone. |
 
@@ -106,7 +106,7 @@
 
   ## Style guides
 
-  Read the matching guide before editing — each is a decision procedure (trees + canonical paths/examples at top, rules in the middle, verification checklist at the end); read the relevant section, not the whole file. A rule edit syncs the checklist item that audits it in the same pass — the matching `audit-*` skill ticks the checklist, not the prose.
+  Read the matching guide before editing — each is a decision procedure (Contents decision index at top, trees + canonical paths/examples next, rules in the middle, verification checklist at the end). The Contents index is the entry point: match the decision at hand to its row, then `read` that section (offset/limit on the long guides); one edit often pulls several rows — a test edit touches both §Assertion Patterns and §Code Style. Never write from memory of an earlier read: on multi-file tasks, re-slice the governing sections before each new file. A rule edit syncs the checklist item that audits it in the same pass — the matching `audit-*` skill ticks the checklist, not the prose.
 
   | Trigger | Guide |
   |---|---|
@@ -154,7 +154,7 @@
 
   Tests run under HappyDOM via preload (`utils/happydom.js`, in `bunfig.toml`); conventions (framework, imports, structure, anti-patterns, the checklist): `guides/tests.md`. Gate semantics and triage protocol (scoped runs, foreign failures, plugin exception, blind spots, measurement target): `guides/tests.md` §Triage & Gate Semantics.
 
-  **NEVER verify with bare `bun test`** — `packages/` tests import `dist/` bundles and `bun test` never rebuilds them (silently stale). The single verification gate is `bun coverage <package>`. Mid-flight iteration only: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.ts]`. Never list standalone `bun lint` or `bun test` in a plan's DoD when `bun coverage` is present. `bun coverage` enforces neither the guides' structural rules nor their anti-patterns — a new file, file structure, or shared test helper gets the matching `audit-*` skill run as part of verification.
+  **NEVER verify with bare `bun test`** — `packages/` tests import `dist/` bundles and `bun test` never rebuilds them (silently stale). The single verification gate is `bun coverage <package>`. Mid-flight iteration only: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.ts]`. Never list standalone `bun lint` or `bun test` in a plan's DoD when `bun coverage` is present. `bun coverage`'s eslint stage covers only the mechanical subset (banned loops/guards in `packages/*/lib`, banned test APIs in `*.test.ts`); the rest of the guides' structural rules and anti-patterns are audit-enforced — a new file, file structure, or shared test helper gets the matching `audit-*` skill run as part of verification.
 
   Plan-file worker runs execute in a component worktree (`../hellajs-wt/<slug>/`, seeded by `worker`'s `worktree.mjs`): bundle/coverage run inside the worktree; merge-back lands via `bun merge`. Inline plans and foreign-failure triage are unchanged.
 </hellajs-agent>

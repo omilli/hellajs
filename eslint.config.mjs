@@ -84,6 +84,29 @@ export default tseslint.config(
 		},
 	},
 	{
+		// Iterator-allocating loops are banned in package libs
+		// (guides/code.md §Loops) — cached while loops are the canonical form.
+		// `for await…of` passes the await=false selector (permitted for async iterables).
+		files: ["packages/*/lib/**/*.{ts,tsx}"],
+		rules: {
+			"no-restricted-syntax": ["error", {
+				selector: "ForOfStatement[await=false], ForInStatement",
+				message: "Cached while loops are the canonical form in lib/ — for…of/for…in allocate an iterator per iteration (guides/code.md §Loops). for await…of is permitted for async iterables; use .forEach on cold paths.",
+			}],
+		},
+	},
+	{
+		// Banned test APIs (guides/tests.md §Anti-Patterns) — bun:test only:
+		// test() for cases, mock() for call tracking.
+		files: ["packages/*/tests/**/*.test.ts", "plugins/*/tests/**/*.test.ts"],
+		rules: {
+			"no-restricted-syntax": ["error", {
+				selector: "CallExpression[callee.name='it'], CallExpression[callee.object.name='test'][callee.property.name='skip'], CallExpression[callee.object.name=/^(jest|vi)$/]",
+				message: "bun:test only — test() (never it()/test.skip()) and mock() (never jest.fn/jest.spyOn/vi.fn) (guides/tests.md §Anti-Patterns).",
+			}],
+		},
+	},
+	{
 		files: ["**/*.mjs", "**/*.js"],
 		rules: {
 			"@typescript-eslint/no-require-imports": "off",

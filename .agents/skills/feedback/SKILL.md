@@ -1,14 +1,25 @@
 ---
 name: feedback
 description: >
-  Review a just-completed non-trivial run for friction and conservatively apply edits to AGENTS.md, the guides, or a skill (left uncommitted for diff review) so the next run is better. Use after a task that hit errors, rework, a wrong assumption, a rule or tool that didn't hold, or a user correction — or when explicitly asked how a run went. A clean run proposes nothing; that is the common and correct outcome. Use ONLY for improving the config/skills, not for doing the work itself.
+  Review a just-completed run for friction and conservatively apply edits to AGENTS.md, the guides, or a skill (left uncommitted for diff review) so the next run is better. Runs the thread scan first: parses the session transcript for failed/repeated commands, context bloat, and wasted round-trips as ground truth instead of self-recall. Use after a task that hit errors, rework, a wrong assumption, a rule or tool that didn't hold, or a user correction — when explicitly asked how a run went — or at any handoff whose trigger evaluation needs evidence. A clean run proposes nothing; that is the common and correct outcome. Use ONLY for improving the config/skills, not for doing the work itself.
 ---
 
 # Feedback
 
-The self-improvement loop: AGENTS.md, `guides/`, and `.agents/skills/` govern the work; feedback governs them. Conservative by design — a clean run is a good run. Compound value is high (one rule fix improves every future run), but the bar is cited evidence from THIS run, never imagination. Governed by prime.
+The self-improvement loop: AGENTS.md, `guides/`, and `.agents/skills/` govern the work; feedback governs them. Conservative by design — a clean run is a good run. Compound value is high (one rule fix improves every future run), but the bar is cited evidence from THIS run, never imagination. Evidence is ground truth: the thread scan parses the session transcript (every command, result, and token), never self-recall alone. Governed by prime.
 
-## Step 1 — Evaluate the trigger table (mechanical, not judgment)
+## Step 1 — Scan the thread, then evaluate the trigger table
+
+Ground truth before recall — run the thread scan (skip only when the handoff gate just produced the report):
+
+    bun .agents/skills/feedback/scripts/scan.ts        # this thread's session
+    bun .agents/skills/feedback/scripts/scan.ts --all  # every session + cross-run recurrence
+
+No session file resolves → say so and evaluate from run awareness alone. Classify every scan hit before judging rows:
+
+- **Preventable** — a missing or vague instruction caused it (name guessed wrong, output re-derived, an unshaped dump) → maps to a trigger row; propose.
+- **Noise** — typo, environment, one-off exploration miss. Recorded; no proposal.
+- **Rule violated** — an always-loaded economy rule (global config §Shell & tool economy / §Discovery) already forbids it. One-off → no proposal. Recurring across runs (`--all`) → the rule is not holding; propose sharpening or relocating it.
 
 Feedback fires iff ANY row held this run:
 
@@ -20,6 +31,7 @@ Feedback fires iff ANY row held this run:
 | 4 | A tool behaved contrary to its documented contract | Doc rot in the config |
 | 5 | Output was re-derived, redone, or guessed-then-corrected | An instruction was missing/vague |
 | 6 | Redundancy found: a line duplicating always-loaded context or another file | Context tax |
+| 7 | Scan hit classified preventable or recurring: failed command, duplicate invocation, over-read, unbatched round-trip, truncation-marked dump | An economy rule was missing, vague, or not holding |
 
 Zero rows → "clean run, no proposals", stop. Do not rationalize a row into existence; do not wave one away — evaluate the table literally.
 
@@ -30,7 +42,7 @@ Zero rows → "clean run, no proposals", stop. Do not rationalize a row into exi
 One proposal per fired trigger:
 
 > **Target**: `AGENTS.md §[section]` | `guides/[file].md §[section]` | `.agents/skills/[skill]/SKILL.md §[step]`
-> **Evidence**: the specific moment in this run (the trigger row + what happened)
+> **Evidence**: the trigger row + the scan line or the specific run moment
 > **Gap**: what the config didn't cover or got wrong
 > **Proposal**: the specific edit, with reasoning
 
@@ -53,4 +65,4 @@ Apply immediately — no approval round-trip. `author` applies AGENTS.md/guides/
 
 ## Self-check
 
-Trigger table evaluated literally (each row checked, not vibes); both scopes scanned; every proposal cites its trigger row + the specific moment; clean run → said so; applied via `author`, uncommitted.
+Scan ran (or its absence stated); every scan hit classified (preventable / noise / rule-violated); trigger table evaluated literally (each row checked, not vibes); both scopes scanned; every proposal cites its trigger row + the scan line or run moment; clean run → said so; applied via `author`, uncommitted.
