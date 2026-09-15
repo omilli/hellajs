@@ -1,6 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { effect } from "@hellajs/core";
 import { store } from "@hellajs/store/bundle";
+import { spyCleanup } from "./helpers";
 
 describe("store", () => {
 describe("cleanup", () => {
@@ -9,32 +10,8 @@ describe("cleanup", () => {
       level1: { level2: { value: "deep" } }
     });
 
-    const level1Cleaned = mock(() => {});
-    const level2Cleaned = mock(() => {});
-
-    const originalLevel1Cleanup = data.level1.$cleanup;
-    const originalLevel2Cleanup = data.level1.level2.$cleanup;
-
-    // Store methods are non-writable — redefine via defineProperty to spy (configurable stays true)
-    Object.defineProperty(data.level1, "$cleanup", {
-      value: function () {
-        level1Cleaned();
-        originalLevel1Cleanup.call(this);
-      },
-      writable: false,
-      enumerable: true,
-      configurable: true
-    });
-
-    Object.defineProperty(data.level1.level2, "$cleanup", {
-      value: function () {
-        level2Cleaned();
-        originalLevel2Cleanup.call(this);
-      },
-      writable: false,
-      enumerable: true,
-      configurable: true
-    });
+    const level1Cleaned = spyCleanup(data.level1);
+    const level2Cleaned = spyCleanup(data.level1.level2);
 
     data.$cleanup();
 

@@ -2,6 +2,7 @@ import { describe, test, expect, mock } from "bun:test";
 import { effect } from "@hellajs/core";
 import { delay } from "@utils/test-helpers.js";
 import { store, persistStore } from "@hellajs/store/bundle";
+import { withoutWindow } from "./helpers";
 
 const createAdaptor = (initial: string | null) => {
   let stored: string | null = initial;
@@ -350,9 +351,7 @@ describe("persist", () => {
 
   test("is inert without window", async () => {
     const adaptor = createAdaptor('{"theme":"dark"}');
-    const win = globalThis.window;
-    Reflect.deleteProperty(globalThis, "window");
-    try {
+    await withoutWindow(async () => {
       const data = store({ theme: "light" });
       const handle = persistStore(data, adaptor);
 
@@ -364,9 +363,7 @@ describe("persist", () => {
 
       handle.dispose();
       // noop — verifies the SSR branch's noop does not throw
-    } finally {
-      globalThis.window = win;
-    }
+    });
   });
 });
 });

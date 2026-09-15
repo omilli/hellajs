@@ -1,6 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { effect } from "@hellajs/core";
 import { store } from "@hellajs/store/bundle";
+import { spyCleanup } from "./helpers";
 
 describe("store", () => {
   describe("nested", () => {
@@ -117,18 +118,7 @@ describe("store", () => {
       const inner = store({ value: "a", nested: { count: 0 } });
       const outer = store({ inner });
 
-      const nestedCleaned = mock(() => {});
-      const origCleanup = outer.inner.nested.$cleanup;
-      // Store methods are non-writable — redefine via defineProperty to spy (configurable stays true)
-      Object.defineProperty(outer.inner.nested, "$cleanup", {
-        value: function () {
-          nestedCleaned();
-          origCleanup.call(this);
-        },
-        writable: false,
-        enumerable: true,
-        configurable: true
-      });
+      const nestedCleaned = spyCleanup(outer.inner.nested);
 
       outer.$cleanup();
 

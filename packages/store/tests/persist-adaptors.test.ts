@@ -1,5 +1,6 @@
 import { describe, test, expect } from "bun:test";
 import { localStorageAdaptor, sessionStorageAdaptor } from "@hellajs/store/bundle";
+import { withoutWindow } from "./helpers";
 
 describe("store", () => {
 describe("persist-adaptors", () => {
@@ -28,15 +29,8 @@ describe("persist-adaptors", () => {
   });
 
   test("defers storage access until a method is called", () => {
-    const win = globalThis.window;
-    Reflect.deleteProperty(globalThis, "window");
-    let adaptor;
-    try {
-      adaptor = localStorageAdaptor("hella-persist-lazy");
-      expect(adaptor).toBeDefined();
-    } finally {
-      globalThis.window = win;
-    }
+    const adaptor = withoutWindow(() => localStorageAdaptor("hella-persist-lazy"));
+    expect(adaptor).toBeDefined();
 
     adaptor.write("x");
     expect(window.localStorage.getItem("hella-persist-lazy")).toBe("x");

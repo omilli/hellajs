@@ -1,6 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store/bundle";
+import { spyCleanup } from "./helpers";
 
 describe("store", () => {
 describe("future", () => {
@@ -149,17 +150,7 @@ describe("future", () => {
     const s1 = s.$update({ user: { name: "Bob" } });
 
     const nested = s1.user;
-    const originalCleanup = nested.$cleanup;
-    const nestedCleaned = mock(() => {});
-    Object.defineProperty(nested, "$cleanup", {
-      value: function () {
-        nestedCleaned();
-        originalCleanup.call(this);
-      },
-      writable: false,
-      enumerable: true,
-      configurable: true
-    });
+    const nestedCleaned = spyCleanup(nested);
 
     s.$cleanup();
     expect(nestedCleaned).toHaveBeenCalledTimes(1);
