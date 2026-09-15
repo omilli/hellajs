@@ -17,9 +17,9 @@ Two standing rules, user-authorized here, overriding the never-commit default fo
 
 **Orchestrator-owned — never do these inside a component merge:** queue derivation (slug matching, merged-state skip, ordering), the set `index.md` top-marker flip, and the union gate (`bun coverage <pkg>` from the set's scope or its runtime-delta packages, `bun lint` fallback; plugin exception — `guides/tests.md` §Triage & Gate Semantics). The runner executes the gate after the last component and, on red, re-enters this skill with a fix prompt. If the prompt names your component, merge that one and stop.
 
-**Re-entry:** a continuation pass may resume partial progress — main-tree ticks or landed commits from a previous attempt. Verify what already landed (`git log`, `worktree.mjs status <slug>`) before doing anything; never re-merge landed commits.
+**Re-entry:** a continuation pass may resume partial progress — main-tree ticks or landed commits from a previous attempt. Verify what already landed (`git log`, `bun .agents/skills/worker/scripts/worktree.mjs status <slug>`) before doing anything; never re-merge landed commits.
 
-Mechanics are script-owned (`worktree.mjs` — `commit`, `status`, `clean` as invoked here); this skill adds the judgment the script must never have: completeness and overlap checks, conflict resolution, commit messages, memory-ID collisions.
+Mechanics are script-owned (`worktree.mjs` = `bun .agents/skills/worker/scripts/worktree.mjs` — `commit`, `status`, `clean` as invoked here); this skill adds the judgment the script must never have: completeness and overlap checks, conflict resolution, commit messages, memory-ID collisions.
 
 ## Step 1 — Pre-commit checks
 
