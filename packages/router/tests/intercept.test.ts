@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { suppressConsole } from "@utils/test-helpers.js";
 import { router, route } from "@hellajs/router/bundle";
 import { setupRouterEnv, expectLoggedError } from "./helpers";
@@ -7,18 +7,11 @@ describe("router", () => {
 describe("anchor interception", () => {
   let container: HTMLDivElement;
   let render: (content: string) => void;
-  let origHref: string;
 
   beforeEach(() => {
-    origHref = window.location.href;
     const env = setupRouterEnv();
     container = env.container;
     render = env.render;
-    window.location.href = "http://localhost/";
-  });
-
-  afterEach(() => {
-    window.location.href = origHref;
   });
 
   test("intercepts same-origin anchor click and navigates", () => {
@@ -239,7 +232,7 @@ describe("anchor interception", () => {
   });
 
   test("does not intercept same-page hash anchors", () => {
-    window.location.href = "http://localhost/docs";
+    setupRouterEnv("http://localhost/docs");
     router({
       routes: { "/docs": () => render("docs") }
     });
@@ -258,7 +251,7 @@ describe("anchor interception", () => {
   });
 
   test("does not intercept full-href links differing only by hash", () => {
-    window.location.href = "http://localhost/docs";
+    setupRouterEnv("http://localhost/docs");
     router({
       routes: { "/docs": () => render("docs") }
     });

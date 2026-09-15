@@ -6,18 +6,14 @@ import { setupRouterEnv, expectLoggedError } from "./helpers";
 describe("router", () => {
   describe("leave guards", () => {
     let sup: ReturnType<typeof suppressConsole>;
-    let origHref: string;
 
     beforeEach(() => {
-      origHref = window.location.href;
       setupRouterEnv();
-      window.location.href = "http://localhost/";
       sup = suppressConsole();
     });
 
     afterEach(() => {
       sup.restore();
-      window.location.href = origHref;
     });
 
     test("leave runs global first, then child to parent", () => {
@@ -191,7 +187,7 @@ describe("router", () => {
     test("leave does not run when the router resolves its initial route", () => {
       const leave = mock(() => {});
       const handler = mock(() => {});
-      window.location.href = "http://localhost/editor";
+      setupRouterEnv("http://localhost/editor");
 
       router({ routes: { "/editor": { leave, handler } } });
 

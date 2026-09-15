@@ -5,14 +5,16 @@ export const renderInto = (container: HTMLElement) => (content: string) => {
   container.textContent = content;
 };
 
-export const setupRouterEnv = (): {
+export const setupRouterEnv = (pageUrl = "http://localhost/"): {
   container: HTMLDivElement;
   render: (content: string) => void;
 } => {
   resetTestState();
   const container = setupContainer();
   const render = renderInto(container);
-  window.history.replaceState({}, "", "/");
+  // A real document URL — pushState/replaceState do not move `pathname` off
+  // about:blank's "blank", which init/popstate simulations rely on.
+  window.location.href = pageUrl;
   return { container, render };
 };
 

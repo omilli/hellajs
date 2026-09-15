@@ -7,18 +7,14 @@ import { setupRouterEnv, expectLoggedError } from "./helpers";
 describe("router", () => {
   describe("async guards", () => {
     let sup: ReturnType<typeof suppressConsole>;
-    let origHref: string;
 
     beforeEach(() => {
-      origHref = window.location.href;
       setupRouterEnv();
-      window.location.href = "http://localhost/";
       sup = suppressConsole();
     });
 
     afterEach(() => {
       sup.restore();
-      window.location.href = origHref;
     });
 
     /** A guard verdict held in flight until the test releases it. */

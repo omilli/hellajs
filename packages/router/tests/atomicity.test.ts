@@ -1,13 +1,12 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { effect } from "@hellajs/core";
-import {resetTestState} from "@utils/test-helpers.js";
 import { router, route, navigate } from "@hellajs/router/bundle";
+import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
   describe("atomicity", () => {
     beforeEach(() => {
-      resetTestState();
-      window.history.replaceState({}, "", "/");
+      setupRouterEnv();
       router({
         routes: {
           "/users/:id": () => { },

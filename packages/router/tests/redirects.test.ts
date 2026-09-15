@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { flush } from "@hellajs/core";
 import { suppressConsole } from "@utils/test-helpers.js";
 import { router, navigate, route } from "@hellajs/router/bundle";
@@ -7,55 +7,51 @@ import { setupRouterEnv, expectLoggedError } from "./helpers";
 describe("router", () => {
   let container: HTMLDivElement;
   let render: (content: string) => void;
+  let sup: ReturnType<typeof suppressConsole>;
 
   beforeEach(() => {
     const env = setupRouterEnv();
     container = env.container;
     render = env.render;
+    sup = suppressConsole();
+  });
+
+  afterEach(() => {
+    sup.restore();
   });
 
   describe("redirects", () => {
     test("cancels a cyclic redirect chain instead of overflowing the stack", () => {
-      const sup = suppressConsole();
-      try {
-        router({
-          routes: {
-            "/a": () => render("a"),
-            "/b": () => render("b")
-          },
-          redirects: [{ from: ["/a"], to: "/b" }, { from: ["/b"], to: "/a" }]
-        });
+      router({
+        routes: {
+          "/a": () => render("a"),
+          "/b": () => render("b")
+        },
+        redirects: [{ from: ["/a"], to: "/b" }, { from: ["/b"], to: "/a" }]
+      });
 
-        navigate("/safe");
-        const pathBefore = route().path;
-        navigate("/a");
+      navigate("/safe");
+      const pathBefore = route().path;
+      navigate("/a");
 
-        expect(route().path).toBe(pathBefore);
-        expectLoggedError(sup, "[router] redirect loop detected:", "exceeded 20 hops resolving /a");
-      } finally {
-        sup.restore();
-      }
+      expect(route().path).toBe(pathBefore);
+      expectLoggedError(sup, "[router] redirect loop detected:", "exceeded 20 hops resolving /a");
     });
 
     test("cancels a self-redirect instead of overflowing the stack", () => {
-      const sup = suppressConsole();
-      try {
-        router({
-          routes: {
-            "/a": () => render("a")
-          },
-          redirects: [{ from: ["/a"], to: "/a" }]
-        });
+      router({
+        routes: {
+          "/a": () => render("a")
+        },
+        redirects: [{ from: ["/a"], to: "/a" }]
+      });
 
-        navigate("/safe");
-        const pathBefore = route().path;
-        navigate("/a");
+      navigate("/safe");
+      const pathBefore = route().path;
+      navigate("/a");
 
-        expect(route().path).toBe(pathBefore);
-        expectLoggedError(sup, "[router] redirect loop detected:", "exceeded 20 hops resolving /a");
-      } finally {
-        sup.restore();
-      }
+      expect(route().path).toBe(pathBefore);
+      expectLoggedError(sup, "[router] redirect loop detected:", "exceeded 20 hops resolving /a");
     });
 
     test("resolves a multi-hop redirect chain under the cap", () => {
@@ -77,21 +73,16 @@ describe("router", () => {
     });
 
     test("router() init survives cyclic redirects", () => {
-      const sup = suppressConsole();
-      try {
-        const info = router({
-          routes: {
-            "/a": () => {},
-            "/b": () => {}
-          },
-          redirects: [{ from: ["/a"], to: "/b" }, { from: ["/b"], to: "/a" }],
-          url: "/a"
-        });
+      const info = router({
+        routes: {
+          "/a": () => {},
+          "/b": () => {}
+        },
+        redirects: [{ from: ["/a"], to: "/b" }, { from: ["/b"], to: "/a" }],
+        url: "/a"
+      });
 
-        expect(info.path).toBe("/a");
-      } finally {
-        sup.restore();
-      }
+      expect(info.path).toBe("/a");
     });
 
     test("redirects using route map", () => {

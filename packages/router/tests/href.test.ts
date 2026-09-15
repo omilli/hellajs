@@ -36,9 +36,12 @@ describe("href", () => {
       .toBe("/users/1/posts/2");
   });
 
-  test("serializes query encoded and omits the ? for empty query", () => {
+  test("URL-encodes query keys and values", () => {
     expect(href("/search", { query: { q: "hello world", "a&b": "c=d" } }))
       .toBe("/search?q=hello%20world&a%26b=c%3Dd");
+  });
+
+  test("omits the ? for an empty query object", () => {
     expect(href("/search", { query: {} })).toBe("/search");
   });
 

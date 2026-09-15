@@ -6,18 +6,14 @@ import { setupRouterEnv, expectLoggedError } from "./helpers";
 describe("router", () => {
   describe("guards", () => {
     let sup: ReturnType<typeof suppressConsole>;
-    let origHref: string;
 
     beforeEach(() => {
-      origHref = window.location.href;
       setupRouterEnv();
-      window.location.href = "http://localhost/";
       sup = suppressConsole();
     });
 
     afterEach(() => {
       sup.restore();
-      window.location.href = origHref;
     });
 
     test("before returning false cancels navigation with no history change", () => {

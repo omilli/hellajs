@@ -111,20 +111,30 @@ describe("router", () => {
       expect(container.textContent).toBe("home");
     });
 
-    test("follows string and array redirect rules", () => {
+    test("redirects a string route value to the target route", () => {
       router({
         routes: {
           "/": () => render("home"),
           "/new": () => render("new-home"),
           "/old": "/new"
         },
-        redirects: [{ from: ["/legacy"], to: "/new" }],
         mode: "memory"
       });
 
       navigate("/old");
       expect(route().path).toBe("/new");
       expect(container.textContent).toBe("new-home");
+    });
+
+    test("follows redirects-array entries from global config", () => {
+      router({
+        routes: {
+          "/": () => render("home"),
+          "/new": () => render("new-home")
+        },
+        redirects: [{ from: ["/legacy"], to: "/new" }],
+        mode: "memory"
+      });
 
       navigate("/legacy");
       expect(route().path).toBe("/new");

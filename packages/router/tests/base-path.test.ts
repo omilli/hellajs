@@ -1,20 +1,12 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import { router, navigate, route, resetRouter } from "@hellajs/router/bundle";
 import { setupRouterEnv } from "./helpers";
 
 describe("router", () => {
   describe("base path", () => {
-    let origHref: string;
-
     beforeEach(() => {
-      origHref = window.location.href;
-      setupRouterEnv();
+      setupRouterEnv("http://localhost/app/users/7");
       resetRouter();
-      window.location.href = "http://localhost/app/users/7";
-    });
-
-    afterEach(() => {
-      window.location.href = origHref;
     });
 
     test("strips the base from the initial URL", () => {

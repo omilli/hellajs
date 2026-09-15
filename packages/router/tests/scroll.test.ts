@@ -9,7 +9,6 @@ describe("scroll", () => {
   let render: (content: string) => void;
   let scrollSpy: ReturnType<typeof mock<() => void>>;
   let origScrollTo: typeof window.scrollTo;
-  let origHref: string;
 
   beforeEach(() => {
     const { render: r } = setupRouterEnv();
@@ -17,15 +16,10 @@ describe("scroll", () => {
     origScrollTo = window.scrollTo;
     scrollSpy = mock(() => { });
     window.scrollTo = scrollSpy;
-    origHref = window.location.href;
-    // A real document URL — pushState/replaceState do not move `pathname` off
-    // about:blank's "blank", which popstate simulations rely on (see guards tests).
-    window.location.href = "http://localhost/";
   });
 
   afterEach(() => {
     window.scrollTo = origScrollTo;
-    window.location.href = origHref;
   });
 
   test("scrollBehavior 'top' calls scrollTo with { top: 0, left: 0 }", () => {

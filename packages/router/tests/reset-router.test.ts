@@ -38,6 +38,7 @@ describe("resetRouter", () => {
     router({
       routes: { "/": () => handler() },
     });
+    handler.mockClear();
     navigate("/");
     expect(handler).toHaveBeenCalledTimes(1);
   });
