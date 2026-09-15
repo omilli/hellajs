@@ -6,7 +6,7 @@ description: >
 
 # Author
 
-These files are consumed by agents, not humans. They load on every session or matching trigger, so every line is a permanent context tax — a redundant or human-targeted line earns nothing. author owns the **voice/format/method layer** across agent-instruction files. For a SKILL.md, `skill` leads anatomy/progressive disclosure — author informs voice. For AGENTS.md, agent prompts, command templates, project rules/style guides, author leads. Governed by prime: an edit to an always-loaded file changes every future run.
+These files are consumed by agents, not humans. They load on every session or matching trigger, so every line is a permanent context tax — a redundant or human-targeted line earns nothing. author owns the **voice/format/method layer** across agent-instruction files — for AGENTS.md, agent prompts, command templates, project rules/style guides, and SKILL.md files (voice + anatomy below). Governed by prime: an edit to an always-loaded file changes every future run.
 
 ## Escape hatch
 
@@ -35,6 +35,14 @@ Match the file's **existing** conventions exactly — one line-wrap style, one b
 - **Dense** — lead with the load-bearing word; cut hedges, filler, motivation, human-targeted scaffolding.
 - **Trigger-focused (descriptions/frontmatter)** — front-load literal keywords that should fire the file; cover *what* AND *when*; gate with "Use ONLY when…" where it must stay quiet.
 - **Explain why where it aids generalization** — don't narrate the obvious.
+
+## Skill anatomy (SKILL.md only)
+
+- **Frontmatter hard rules** — `name` required, lowercase-hyphen, ≤64 chars, must match the folder name; `description` is the trigger, not a summary, hard cap 1024 chars (pi `docs/skills.md`) — longer descriptions surface as skill conflicts; `compatibility` optional, rarely needed.
+- **Folder layout** — `SKILL.md` (frontmatter + body, under ~500 lines) plus optional `scripts/` (recurring helper logic — formatter, parser, builder — bundled once, runs without entering context), `references/` (bulky/conditional/domain-specific content; multi-domain skills split by variant and read only the relevant one; >300 lines needs a table of contents), `assets/` (output templates, icons, files).
+- **Progressive disclosure tiers** — metadata (name + description) always in context; body loaded on run; bundled resources loaded on demand, effectively unlimited.
+- **Capturing a new skill's intent** — mine the current conversation before asking: tool sequence, step order, corrections, input/output formats. Ask only what determines the shape: what it enables, exact output format (get a concrete example), trigger, edge cases/constraints.
+- **Editing an existing skill** — critique against the steps above before editing; preserve the folder name and `name` field through content edits; cut anything not pulling its weight.
 
 ## Step 4 — The density gate (before finishing)
 
