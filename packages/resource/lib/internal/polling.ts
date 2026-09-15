@@ -73,7 +73,7 @@ export function createPolling<TTransformed>(config: PollingConfig<TTransformed>)
 
     // Get initial interval
     const initialInterval = isFunction(refetchInterval)
-      ? (refetchInterval as (data: TTransformed | undefined) => number | false)(undefined)
+      ? (refetchInterval as (data: TTransformed | undefined) => number | false)(untracked(data))
       : (refetchInterval as number);
 
     if (initialInterval && initialInterval > 0) {

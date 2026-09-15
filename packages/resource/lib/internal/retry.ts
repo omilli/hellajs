@@ -68,14 +68,16 @@ export function fetchWithRetry<T>(
         retryCount++;
         const categorizedError = categorizeError(err);
         if (!retryConfig.shouldRetry(retryCount, categorizedError)) throw err;
+        let onAbort!: () => void;
         await new Promise<void>(resolve => {
           const timeoutId = setTimeout(() => resolve(), retryConfig.getDelay(retryCount, categorizedError));
           // Clear the delay timer if aborted during the wait; the top-of-loop check then exits.
-          signal.addEventListener("abort", () => {
+          onAbort = () => {
             clearTimeout(timeoutId);
             resolve();
-          }, { once: true });
-        });
+          };
+          signal.addEventListener("abort", onAbort, { once: true });
+        }).finally(() => signal.removeEventListener("abort", onAbort));
       }
     }
   })();

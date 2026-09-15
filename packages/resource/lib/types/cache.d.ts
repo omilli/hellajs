@@ -22,9 +22,9 @@ export interface CacheEntry<T> {
  */
 export interface CacheConfig {
   /** Maximum number of entries before LRU eviction begins */
-  maxSize?: number;
+  readonly maxSize?: number;
   /** Whether to enable Least Recently Used eviction strategy */
-  enableLRU?: boolean;
+  readonly enableLRU?: boolean;
 }
 
 /**

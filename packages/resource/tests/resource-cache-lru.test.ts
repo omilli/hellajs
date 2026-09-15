@@ -66,4 +66,18 @@ describe("resourceCache", () => {
       expect(resourceCache.get<string>("key5")).toBe("data5");
     });
   });
+
+  test("config returns a copy — mutation cannot corrupt LRU", () => {
+    (resourceCache.config as { maxSize: number }).maxSize = -1;
+
+    resourceCache.set("k", 1, 60000);
+
+    expect(resourceCache.map.size).toBe(1);
+  });
+
+  test("CacheConfig fields are readonly at the type surface", () => {
+    // @ts-expect-error CacheConfig fields are readonly
+    resourceCache.config.maxSize = 5;
+    expect(resourceCache.config.maxSize).toBe(1000);
+  });
 });

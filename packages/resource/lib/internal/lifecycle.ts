@@ -2,7 +2,7 @@
  * Window-focus and network-reconnect refetch controllers.
  */
 import { hasDocument, hasWindow } from "./core";
-import { resourceCache } from "../cache";
+import { resourceCache } from "../resourceCache";
 
 /**
  * @internal

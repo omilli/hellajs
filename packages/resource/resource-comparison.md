@@ -28,10 +28,10 @@ HellaJS sits between Solid's `createResource` (closest architectural sibling: si
 
 A resource is a self-contained reactive object (a handful of signals for state plus an async `run()` pipeline), reading from and writing into a module-level cache it does not own. The cache mechanics:
 
-- The cache is a **nested `Map<scope, Map<key, CacheEntry>>`** in a single module-level `cacheMap` (`lib/cache.ts`). Each resource's cache scope is keyed by the fetcher function reference, so resources with different fetchers never collide even when they produce identical key values; resources that share the same fetcher function share a scope, which is what makes the transform pattern work: multiple resources deriving different views from one cached payload (`lib/cache.ts`). Within a scope, keys compare by value for primitives and **structurally** for plain objects/arrays; every cache and dedup boundary normalizes keys through `stableKey` (`lib/internal/key.ts`), so a `key: () => ({ ...filters() })` rebuild hits the existing entry, while any other object shape (`Date`, `Map`, `Set`, class instances) stays reference-keyed.
+- The cache is a **nested `Map<scope, Map<key, CacheEntry>>`** in a single module-level `cacheMap` (`lib/resourceCache.ts`). Each resource's cache scope is keyed by the fetcher function reference, so resources with different fetchers never collide even when they produce identical key values; resources that share the same fetcher function share a scope, which is what makes the transform pattern work: multiple resources deriving different views from one cached payload (`lib/resourceCache.ts`). Within a scope, keys compare by value for primitives and **structurally** for plain objects/arrays; every cache and dedup boundary normalizes keys through `stableKey` (`lib/internal/key.ts`), so a `key: () => ({ ...filters() })` rebuild hits the existing entry, while any other object shape (`Date`, `Map`, `Set`, class instances) stays reference-keyed.
 - Each entry stores `data`, `timestamp`, `cacheTime` (TTL), `staleTime` (freshness), and `lastAccess` (LRU) (`lib/types/cache.d.ts`).
-- The public `resourceCache.map` is a `CacheMapView` that flattens the nested structure into a read-only `get`/`has`/`size`/`clear` interface searching across all scopes (`lib/cache.ts`). Manual `resourceCache.set()` writes go to a separate `PUBLIC_SCOPE` symbol, so a manual entry and a resource entry with the same key coexist as two entries (`lib/cache.ts`).
-- The cache survives resource disposal: individual resources read from and write to the global cache, but the cache itself is keyed by fetcher identity and lives independently of any resource instance (`lib/cache.ts`). Note that `cacheMap` is a strong `Map`: fetchers passed to `resource()` are retained while any of their entries are live; once every entry in a scope has expired, the throttled cleanup pass deletes the emptied scope and releases the fetcher (`lib/cache.ts`).
+- The public `resourceCache.map` is a `CacheMapView` that flattens the nested structure into a read-only `get`/`has`/`size`/`clear` interface searching across all scopes (`lib/resourceCache.ts`). Manual `resourceCache.set()` writes go to a separate `PUBLIC_SCOPE` symbol, so a manual entry and a resource entry with the same key coexist as two entries (`lib/resourceCache.ts`).
+- The cache survives resource disposal: individual resources read from and write to the global cache, but the cache itself is keyed by fetcher identity and lives independently of any resource instance (`lib/resourceCache.ts`). Note that `cacheMap` is a strong `Map`: fetchers passed to `resource()` are retained while any of their entries are live; once every entry in a scope has expired, the throttled cleanup pass deletes the emptied scope and releases the fetcher (`lib/resourceCache.ts`).
 
 ### TanStack Query
 
@@ -73,20 +73,20 @@ No cache and no deduplication. `useFetch` is a reactive wrapper around `window.f
 
 ## 4. Caching Model
 
-HellaJS exposes cache configuration as a global singleton: `resourceCache.setConfig({ maxSize, enableLRU })` with defaults `maxSize: 1000` and `enableLRU: true` (`lib/cache.ts`).
+HellaJS exposes cache configuration as a global singleton: `resourceCache.setConfig({ maxSize, enableLRU })` with defaults `maxSize: 1000` and `enableLRU: true` (`lib/resourceCache.ts`).
 
 | Mechanism | HellaJS | TanStack Query | SWR | RTK Query | Solid | VueUse |
 |---|---|---|---|---|---|---|
-| Scope | Per fetcher (`lib/cache.ts`) | Global by key | Global by key | Per endpoint+args | User-supplied | None |
-| TTL | `cacheTime` per entry, `0` disables (`lib/cache.ts`) | `gcTime` after going inactive (default 5 min) | No entry TTL | `keepUnusedDataFor` (default 60 s) | None | None |
-| Freshness | `staleTime` per entry (`lib/cache.ts`) | `staleTime` per query | `revalidateIfStale` | Implicit | None | None |
-| Eviction | Global LRU, lazy on write (`lib/cache.ts`) | Inactive GC | None (time-based only) | Reference-count GC | None | None |
-| Batch ops | `updateMultiple`, `invalidateMultiple`, `invalidateByPrefix`, `invalidateByPattern`, `invalidateAll` (`lib/cache.ts`) | `invalidateQueries({ predicate })`, `removeQueries` | None built-in | `invalidateTags`, `resetApiState` | None | None |
-| Cleanup | Throttled 60 s interval, 100 entries per pass (`lib/cache.ts`) | Per-query GC timers | Time-based | RTK middleware | None | None |
+| Scope | Per fetcher (`lib/resourceCache.ts`) | Global by key | Global by key | Per endpoint+args | User-supplied | None |
+| TTL | `cacheTime` per entry, `0` disables (`lib/resourceCache.ts`) | `gcTime` after going inactive (default 5 min) | No entry TTL | `keepUnusedDataFor` (default 60 s) | None | None |
+| Freshness | `staleTime` per entry (`lib/resourceCache.ts`) | `staleTime` per query | `revalidateIfStale` | Implicit | None | None |
+| Eviction | Global LRU, lazy on write (`lib/resourceCache.ts`) | Inactive GC | None (time-based only) | Reference-count GC | None | None |
+| Batch ops | `updateMultiple`, `invalidateMultiple`, `invalidateByPrefix`, `invalidateByPattern`, `invalidateAll` (`lib/resourceCache.ts`) | `invalidateQueries({ predicate })`, `removeQueries` | None built-in | `invalidateTags`, `resetApiState` | None | None |
+| Cleanup | Throttled 60 s interval, 100 entries per pass (`lib/resourceCache.ts`) | Per-query GC timers | Time-based | RTK middleware | None | None |
 
-The LRU implementation is brute-force: on every write that pushes the total over `maxSize`, all entries across all scopes are flattened into an array, sorted by `lastAccess` ascending, and the oldest are deleted (`lib/cache.ts`). The package AGENTS.md is candid about this: an `O(n log n)` full sort per eviction is fine at the default `maxSize: 1000`, but a workload with thousands of entries and high churn pays it on every overflow. `getCacheData` refreshes `lastAccess` on read, making the policy a true LRU rather than FIFO (`lib/cache.ts`); `resourceCache.map.get` and `resourceCache.get` are different code paths: only the latter refreshes `lastAccess` (`lib/cache.ts`).
+The LRU implementation is brute-force: on every write that pushes the total over `maxSize`, all entries across all scopes are flattened into an array, sorted by `lastAccess` ascending, and the oldest are deleted (`lib/resourceCache.ts`). The package AGENTS.md is candid about this: an `O(n log n)` full sort per eviction is fine at the default `maxSize: 1000`, but a workload with thousands of entries and high churn pays it on every overflow. `getCacheData` refreshes `lastAccess` on read, making the policy a true LRU rather than FIFO (`lib/resourceCache.ts`); `resourceCache.map.get` and `resourceCache.get` are different code paths: only the latter refreshes `lastAccess` (`lib/resourceCache.ts`).
 
-The default is **no caching**: `cacheTime: 0` makes `setCacheData` a no-op, so every non-force `fetch()` falls through to dedup/network (`lib/cache.ts`, `lib/resource.ts`). TanStack Query inverts this: data lands in the cache by default and is garbage-collected after five inactive minutes (per the v5 Important Defaults guide). RTK Query caches by default too, gated by subscription counts (per its cache-behavior docs). HellaJS requires an explicit opt-in, which pairs with its no-auto-fetch default (`refetchOnKeyChange: false`, `lib/resource.ts`).
+The default is **no caching**: `cacheTime: 0` makes `setCacheData` a no-op, so every non-force `fetch()` falls through to dedup/network (`lib/resourceCache.ts`, `lib/resource.ts`). TanStack Query inverts this: data lands in the cache by default and is garbage-collected after five inactive minutes (per the v5 Important Defaults guide). RTK Query caches by default too, gated by subscription counts (per its cache-behavior docs). HellaJS requires an explicit opt-in, which pairs with its no-auto-fetch default (`refetchOnKeyChange: false`, `lib/resource.ts`).
 
 ---
 
@@ -100,7 +100,7 @@ HellaJS's dedup is structurally distinct. The `OngoingRequest` shape stores `{ p
 
 Because joiners adopt the shared controller, an abort on one joined resource aborts the shared request and resets every joiner to its `initialData` (`lib/resource.ts`, verified in `tests/deduplication.test.ts`). The `WeakMap` keyed by fetcher means entries are reclaimed automatically when a fetcher is garbage-collected (`lib/internal/dedupe.ts`).
 
-`fetch({ force: true })` bypasses the cache and dedup *lookups* but registers its own in-flight promise via `setOngoing`, so later non-force fetches join a force request while it runs (`lib/resource.ts`); the SWR background refetch is exactly such a force call (`lib/resource.ts`). The same sharing also backs `resourceCache.prefetch`, which joins or registers an in-flight request for its fetcher+key (`lib/cache.ts`).
+`fetch({ force: true })` bypasses the cache and dedup *lookups* but registers its own in-flight promise via `setOngoing`, so later non-force fetches join a force request while it runs (`lib/resource.ts`); the SWR background refetch is exactly such a force call (`lib/resource.ts`). The same sharing also backs `resourceCache.prefetch`, which joins or registers an in-flight request for its fetcher+key (`lib/resourceCache.ts`).
 
 | Library | Dedup strategy |
 |---|---|
@@ -111,7 +111,7 @@ Because joiners adopt the shared controller, an abort on one joined resource abo
 | Solid `createResource` | None: each resource owns its request |
 | VueUse `useFetch` | None: every call issues a new request |
 
-HellaJS is the only library that keys deduplication by **fetcher identity** rather than by key alone. The advantage: two different fetchers that happen to produce the same key value isolate automatically. The disadvantage: an inline arrow function passed as a fetcher defeats both dedup and cache (a fresh closure per call is a fresh scope), so sharing requires a named, stable fetcher reference (`lib/resource.ts`, `lib/cache.ts`).
+HellaJS is the only library that keys deduplication by **fetcher identity** rather than by key alone. The advantage: two different fetchers that happen to produce the same key value isolate automatically. The disadvantage: an inline arrow function passed as a fetcher defeats both dedup and cache (a fresh closure per call is a fresh scope), so sharing requires a named, stable fetcher reference (`lib/resource.ts`, `lib/resourceCache.ts`).
 
 ---
 
@@ -164,7 +164,7 @@ On success, the optional `invalidates: Array<string | RegExp>` option drives cro
 | Solid `createResource` | `mutate` is the underlying signal's setter: no lifecycle hooks, no rollback context (source, 1.9.x) |
 | VueUse `useFetch` | None: reads only; writes go through separate `fetch` calls |
 
-HellaJS's mutation API is closest to TanStack Query's `useMutation` in lifecycle shape, but it has no tag system. RTK Query's `providesTags`/`invalidatesTags` refetch mounted queries automatically when a mutation lands; HellaJS's `invalidates` only deletes cache entries, and refreshing mounted resources is explicit: call `otherResource.invalidate()` from `onSettled`, or batch it with `resourceCache.invalidateResources` (`lib/cache.ts`).
+HellaJS's mutation API is closest to TanStack Query's `useMutation` in lifecycle shape, but it has no tag system. RTK Query's `providesTags`/`invalidatesTags` refetch mounted queries automatically when a mutation lands; HellaJS's `invalidates` only deletes cache entries, and refreshing mounted resources is explicit: call `otherResource.invalidate()` from `onSettled`, or batch it with `resourceCache.invalidateResources` (`lib/resourceCache.ts`).
 
 ---
 
@@ -175,7 +175,7 @@ HellaJS separates two time windows: `cacheTime` (TTL: how long the entry lives) 
 1. The TTL check passes and the cached value is pushed to `rawData` synchronously, with no promise allocation (`lib/resource.ts`).
 2. If `staleTime` is configured, `isStale(entry)` is true, and `revalidateOnStale` is true, a background `run(true)` fires un-awaited while `isFetching` becomes true and `isLoading` stays false (`lib/resource.ts`).
 
-Defaults: `cacheTime: 0` (no caching) and `staleTime: Infinity` for resources (`lib/resource.ts`). Data is served stale-then-revalidated only when both are opted into. Manual `resourceCache.set()` writes default `staleTime` to `0` instead (always stale), so manual entries behave differently from resource-driven ones (`lib/cache.ts`).
+Defaults: `cacheTime: 0` (no caching) and `staleTime: Infinity` for resources (`lib/resource.ts`). Data is served stale-then-revalidated only when both are opted into. Manual `resourceCache.set()` writes default `staleTime` to `0` instead (always stale), so manual entries behave differently from resource-driven ones (`lib/resourceCache.ts`).
 
 The dual-flag design is what enables the `isLoading` vs `isFetching` distinction: `isLoading` is true only when there is no data at all; `isFetching` is true for any network activity including background refetches (`lib/resource.ts`). SWR names the same split `isLoading` vs `isValidating`; TanStack splits `status` (`pending`/`error`/`success`) from `fetchStatus` (`fetching`/`paused`/`idle`) (per the v5 Queries guide).
 
@@ -196,7 +196,7 @@ The defaults are the philosophical divide: TanStack and SWR revalidate aggressiv
 
 ## 9. Retry & Polling
 
-HellaJS normalizes retry configuration into `{ maxRetries, shouldRetry, getDelay }`: `retry` accepts a number, a boolean (`true` = retry once), or a predicate receiving the failure count (starting at 1 on the first failure) and the categorized `ResourceError`; `retryDelay` accepts a fixed ms or a function of attempt and error (`lib/internal/retry.ts`, `lib/types/resource.d.ts`). The shared `fetchWithRetry` loop is consumed by `run`, `mutate`, and `prefetch`; mutations retry with the same abort-interruptible delays as reads (`lib/internal/retry.ts`, `lib/resource.ts`, `lib/cache.ts`):
+HellaJS normalizes retry configuration into `{ maxRetries, shouldRetry, getDelay }`: `retry` accepts a number, a boolean (`true` = retry once), or a predicate receiving the failure count (starting at 1 on the first failure) and the categorized `ResourceError`; `retryDelay` accepts a fixed ms or a function of attempt and error (`lib/internal/retry.ts`, `lib/types/resource.d.ts`). The shared `fetchWithRetry` loop is consumed by `run`, `mutate`, and `prefetch`; mutations retry with the same abort-interruptible delays as reads (`lib/internal/retry.ts`, `lib/resource.ts`, `lib/resourceCache.ts`):
 
 ```typescript
 // Exponential backoff with conditional retry
@@ -208,7 +208,7 @@ Defaults: `retry: 0` and `retryDelay: 1000` ms (`lib/resource.ts`). No retries h
 
 Polling is a recursive `setTimeout` chain so each tick recomputes a dynamic interval from the latest data through `untracked(data)`: the interval can be a number, `false` to stop, or a function of the current data (`lib/internal/polling.ts`). Ticks are skipped when `document.visibilityState === "hidden"` unless `refetchIntervalInBackground` is set (`lib/internal/polling.ts`).
 
-Polling arms on `refetchInterval` and `enabled` alone; it works standalone like TanStack's `refetchInterval` and SWR's `refreshInterval`, with no auto-fetch opt-in. It arms once (at creation when `enabled` is truthy, otherwise on the first truthy `enabled` evaluation inside the effect), and `reset()` re-arms it; only `abort()` stops it permanently until the resource is recreated (`lib/resource.ts`, `tests/polling.test.ts`). Focus and reconnect listeners have their own, weaker gates: `refetchOnWindowFocus` and `refetchOnReconnect` set up their listeners independently of auto-fetch (`lib/resource.ts`, `tests/focus.test.ts`). Focus listens on both `visibilitychange` (becoming visible) and the window `focus` event; switching between OS windows refetches without hiding the tab, and a back-to-back tab return (both events) is collapsed into one call by dedup (`lib/internal/lifecycle.ts`); reconnect rides `resourceCache.onOnlineChange`, backed by global `online`/`offline` window listeners registered once at module load (`lib/cache.ts`, `lib/internal/lifecycle.ts`).
+Polling arms on `refetchInterval` and `enabled` alone; it works standalone like TanStack's `refetchInterval` and SWR's `refreshInterval`, with no auto-fetch opt-in. It arms once (at creation when `enabled` is truthy, otherwise on the first truthy `enabled` evaluation inside the effect), and `reset()` re-arms it; only `abort()` stops it permanently until the resource is recreated (`lib/resource.ts`, `tests/polling.test.ts`). Focus and reconnect listeners have their own, weaker gates: `refetchOnWindowFocus` and `refetchOnReconnect` set up their listeners independently of auto-fetch (`lib/resource.ts`, `tests/focus.test.ts`). Focus listens on both `visibilitychange` (becoming visible) and the window `focus` event; switching between OS windows refetches without hiding the tab, and a back-to-back tab return (both events) is collapsed into one call by dedup (`lib/internal/lifecycle.ts`); reconnect rides `resourceCache.onOnlineChange`, backed by global `online`/`offline` window listeners registered once at module load (`lib/resourceCache.ts`, `lib/internal/lifecycle.ts`).
 
 Offline pausing is opt-in: `pauseWhenOffline: true` defers reads at `run()` entry while `resourceCache.isOnline()` is false (no fetcher call, no error state, `isPaused()` true), and a per-resource `onOnlineChange` listener replays the deferred fetch with its stashed force flag on reconnect; mutations are not paused (`lib/resource.ts`, `lib/types/resource.d.ts`, `tests/offline-pausing.test.ts`). This inverts TanStack Query, whose default `networkMode: 'online'` pauses queries and mutations while offline (`fetchStatus: 'paused'`) and resumes them on reconnect (v5 network-mode docs), while SWR keeps attempting and leans on its reconnect retry backoff.
 
@@ -227,10 +227,10 @@ Offline pausing is opt-in: `pauseWhenOffline: true` defers reads at `run()` entr
 
 | Feature | HellaJS | TanStack Query | SWR | RTK Query | Solid `createResource` | VueUse `useFetch` |
 |---|---|---|---|---|---|---|
-| Cache TTL (`cacheTime`/`gcTime`) | Per-entry (`lib/cache.ts`) | Per-query, default 5 min | None | Per-endpoint, default 60 s | None | None |
-| Stale time (`staleTime`) | Per-entry (`lib/cache.ts`) | Per-query, default 0 | `revalidateIfStale` | Implicit | None | None |
-| LRU eviction | Global, `maxSize` configurable (`lib/cache.ts`) | Inactive GC | None | Ref-count GC | None | None |
-| Fetcher-scoped cache | `Map<fetcher, …>` (`lib/cache.ts`) | No | No | No | No | No |
+| Cache TTL (`cacheTime`/`gcTime`) | Per-entry (`lib/resourceCache.ts`) | Per-query, default 5 min | None | Per-endpoint, default 60 s | None | None |
+| Stale time (`staleTime`) | Per-entry (`lib/resourceCache.ts`) | Per-query, default 0 | `revalidateIfStale` | Implicit | None | None |
+| LRU eviction | Global, `maxSize` configurable (`lib/resourceCache.ts`) | Inactive GC | None | Ref-count GC | None | None |
+| Fetcher-scoped cache | `Map<fetcher, …>` (`lib/resourceCache.ts`) | No | No | No | No | No |
 | Request deduplication | `WeakMap<fetcher, Map<key, …>>` (`lib/internal/dedupe.ts`) | Per-query instance | Time-windowed (2 s) | Per-`queryCacheKey` | None | None |
 | Shared `AbortController` for dedup'd requests | Yes (`lib/resource.ts`) | Per-query signal | Per-request | Per-query signal | None | None |
 | External `AbortSignal` composition | Yes (`lib/internal/abort.ts`) | Yes (`queryFn` signal) | No fetcher signal | Yes (`baseQuery` signal) | Manual | Manual |
@@ -244,23 +244,23 @@ Offline pausing is opt-in: `pauseWhenOffline: true` defers reads at `run()` entr
 | Mutations with rollback context | Yes (`lib/resource.ts`) | Yes | Yes (`optimisticData`) | Via `onQueryStarted` | No | No |
 | Data transformation (cache raw, read transformed) | Yes, via `computed` (`lib/resource.ts`) | `select` option | No | `transformResponse` | Manual | `afterFetch` interceptor |
 | Structural sharing (referential stability) | Opt-in `structuralSharing` (`lib/internal/structural.ts`) | Default on | Deep-compare re-render skip (`dequal`) | No | No | No |
-| Prefetch without a resource | `resourceCache.prefetch(...)` (`lib/cache.ts`) | `queryClient.fetchQuery`/`prefetchQuery` | `preload` | `initiate` | None | None |
-| Batch invalidation (prefix/pattern/predicate) | Yes (`lib/cache.ts`) | `invalidateQueries({ predicate })` | No | `invalidateTags` | No | No |
+| Prefetch without a resource | `resourceCache.prefetch(...)` (`lib/resourceCache.ts`) | `queryClient.fetchQuery`/`prefetchQuery` | `preload` | `initiate` | None | None |
+| Batch invalidation (prefix/pattern/predicate) | Yes (`lib/resourceCache.ts`) | `invalidateQueries({ predicate })` | No | `invalidateTags` | No | No |
 | Structured error category | Yes: `not_found`/`server`/`client`/`unknown` (`lib/internal/errors.ts`) | Error instance | Error instance | Error instance | Error instance | Error/statusCode refs |
 | SSR dehydration / hydration | No: resources no-op on the server (`lib/resource.ts`) | `dehydrate`/`hydrate` + `HydrationBoundary` | `fallback` data | `extractRehydrationInfo` rehydration | `ssrLoadFrom`/`storage` options | None |
 | Framework-agnostic reactive object | Yes | No (adapters) | React-only | Redux-bound | Solid-only | Vue-only |
 
 ### Notable HellaJS differentiators
 
-- **Fetcher-scoped cache isolation**: the nested `Map<fetcher, Map<key, …>>` gives resources with different fetchers isolated scopes even for identical keys, while resources sharing a fetcher share one scope (the transform pattern's requirement) (`lib/cache.ts`).
+- **Fetcher-scoped cache isolation**: the nested `Map<fetcher, Map<key, …>>` gives resources with different fetchers isolated scopes even for identical keys, while resources sharing a fetcher share one scope (the transform pattern's requirement) (`lib/resourceCache.ts`).
 - **Dedup keyed by fetcher identity via `WeakMap`**: in-flight registrations are reclaimed when the fetcher is garbage-collected; joiners share both the promise and the `AbortController` (`lib/internal/dedupe.ts`, `lib/resource.ts`).
-- **Public vs fetcher scope separation**: manual `resourceCache.set()` writes go to a `PUBLIC_SCOPE` symbol that never collides with resource-driven entries, even for the same key (`lib/cache.ts`).
-- **Cache outlives resources**: entries are module-level and survive `dispose()`/recreation; only the resource tears down (`lib/cache.ts`, `lib/resource.ts`).
+- **Public vs fetcher scope separation**: manual `resourceCache.set()` writes go to a `PUBLIC_SCOPE` symbol that never collides with resource-driven entries, even for the same key (`lib/resourceCache.ts`).
+- **Cache outlives resources**: entries are module-level and survive `dispose()`/recreation; only the resource tears down (`lib/resourceCache.ts`, `lib/resource.ts`).
 - **Transform via `computed`**: raw data is cached, `data()` returns a transformed view through a `@hellajs/core` computed, so transforms always read through to current raw data (`lib/resource.ts`).
 - **Opt-in structural sharing**: `structuralSharing` reuses unchanged plain-object/array subtree references on fetch success; `Map`/`Set`/`Date`/class instances use strict equality and are never merged (`lib/internal/structural.ts`).
 - **`onSettled` suppressed on mutation abort**: cancelled mutations skip the settled hook even if `onMutate` already ran, treating abort as cancellation, not failure (`lib/resource.ts`, `tests/mutation-abort.test.ts`).
-- **Pattern + prefix batch invalidation across all scopes**: `invalidateByPrefix` and `invalidateByPattern` sweep every fetcher scope in one call, string keys only (`lib/cache.ts`).
-- **Reusable network-status subscription**: `resourceCache.onOnlineChange(cb)` exposes the online/offline callback set to non-resource code as well (`lib/cache.ts`).
+- **Pattern + prefix batch invalidation across all scopes**: `invalidateByPrefix` and `invalidateByPattern` sweep every fetcher scope in one call, string keys only (`lib/resourceCache.ts`).
+- **Reusable network-status subscription**: `resourceCache.onOnlineChange(cb)` exposes the online/offline callback set to non-resource code as well (`lib/resourceCache.ts`).
 - **Factory reset**: `resetResource()` clears cache, dedup registrations, online callbacks, and the cleanup throttle in one call for logout/HMR/testing (`lib/resetResource.ts`).
 
 ---
@@ -333,12 +333,12 @@ Architecturally, HellaJS resource is the closest sibling to Solid's `createResou
 
 What sets HellaJS apart (and no single competitor matches all of):
 
-1. **Fetcher-scoped cache**: `Map<fetcher, Map<key, …>>` isolates resources by fetcher identity, not by a global key string; TanStack/SWR/RTK Query all use global key namespaces, and Solid/VueUse do not cache at all (`lib/cache.ts`).
+1. **Fetcher-scoped cache**: `Map<fetcher, Map<key, …>>` isolates resources by fetcher identity, not by a global key string; TanStack/SWR/RTK Query all use global key namespaces, and Solid/VueUse do not cache at all (`lib/resourceCache.ts`).
 2. **Framework-agnostic reactive object**: the resource is a plain object of signal getters and methods, consumable anywhere `@hellajs/core` signals work; TanStack Query requires per-framework adapters, SWR is React-only, RTK Query requires Redux, and Solid/VueUse are framework-bound (`lib/resource.ts`).
 3. **`WeakMap`-keyed dedup with shared `AbortController`**: concurrent identical requests share both the promise and the abort controller, and a `force: true` fetch registers itself so later non-force fetches join it in flight; no competitor composes abort through the dedup layer (`lib/internal/dedupe.ts`, `lib/resource.ts`).
-4. **Public-scope vs fetcher-scope cache separation**: `resourceCache.set()` writes to a `PUBLIC_SCOPE` symbol that can never collide with resource-driven entries (`lib/cache.ts`).
+4. **Public-scope vs fetcher-scope cache separation**: `resourceCache.set()` writes to a `PUBLIC_SCOPE` symbol that can never collide with resource-driven entries (`lib/resourceCache.ts`).
 5. **Default-off caching, retries, and refetch triggers**: `cacheTime: 0`, `retry: 0`, and every refetch flag off by default; TanStack Query and SWR ship aggressive defaults (immediate staleness, focus/reconnect refetch, automatic retries). Opting in is one option per behavior, at the cost of no free caching on first use (`lib/resource.ts`).
 6. **Structured error categories**: fetch errors carry a `category` (`not_found`/`server`/`client`/`unknown`) parsed from the error message, enabling retry predicates keyed on status class without re-parsing (`lib/internal/errors.ts`).
-7. **Cross-scope prefix/pattern invalidation**: `invalidateByPrefix`/`invalidateByPattern` sweep every fetcher scope in one call (`lib/cache.ts`); TanStack Query offers `predicate` filters over a single namespace, RTK Query offers tags, SWR/Solid/VueUse offer nothing equivalent.
+7. **Cross-scope prefix/pattern invalidation**: `invalidateByPrefix`/`invalidateByPattern` sweep every fetcher scope in one call (`lib/resourceCache.ts`); TanStack Query offers `predicate` filters over a single namespace, RTK Query offers tags, SWR/Solid/VueUse offer nothing equivalent.
 
 Its gaps are the predictable ones: ecosystem size and adoption maturity (TanStack Query, SWR, and RTK Query each have orders of magnitude more users, integrations, and answered questions), DevTools (TanStack Query ships dedicated devtools; HellaJS has none), SSR dehydration (TanStack Query's `dehydrate`/`hydrate` and Solid's `ssrLoadFrom`/`storage` move server-fetched state to the client; HellaJS resources no-op on the server, so server data must be passed as `initialData` and prefetched manually via `resourceCache.prefetch`), structural sharing defaults (TanStack Query stabilizes references out of the box; HellaJS requires `structuralSharing: true` per resource), framework hooks (no `useQuery`/`useSWR`-style integrations, a hand-written adapter bridges into React or Vue), no Suspense integration (Solid and TanStack integrate natively; HellaJS exposes loading/error state only), and no OpenAPI/GraphQL codegen story comparable to RTK Query's endpoint generation.

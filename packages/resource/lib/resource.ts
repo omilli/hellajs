@@ -1,13 +1,14 @@
 import { signal, computed, effect, untracked, isFunction, isString, isNumber, isObject, hasWindow } from "./internal/core";
 import type { ResourceOptions, Resource, ResourceError, Fetcher, FetchOptions } from "./types/resource";
 import type { CacheEntry } from "./types/cache";
-import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./cache";
+import { cacheMap, cleanupExpiredCache, setCacheData, getCacheData, isStale, resourceCache } from "./resourceCache";
 import { isAbortError, categorizeError } from "./internal/errors";
 import { resolveRetryConfig, fetchWithRetry } from "./internal/retry";
 import { wireRequestControls } from "./internal/abort";
 import { createPolling } from "./internal/polling";
 import { createFocus, createReconnect } from "./internal/lifecycle";
-import { getOngoing, setOngoing, deleteOngoing } from "./internal/dedupe";
+import { getOngoing, setOngoing, deleteOngoingIf } from "./internal/dedupe";
+import type { OngoingRequest } from "./internal/dedupe";
 import { stableKey } from "./internal/key";
 import { structuralShare } from "./internal/structural";
 
@@ -48,7 +49,7 @@ export function resource<T, K = undefined, TTransformed = T>(
 ): Resource<TTransformed, T> {
   if (!isString(fetcher) && !isFunction(fetcher))
     throw new Error("[resource] resource: fetcher must be a string URL or function, received " + typeof fetcher);
-  if (options !== undefined && (!isObject(options) || Array.isArray(options)))
+  if (!isObject(options) || Array.isArray(options))
     throw new Error("[resource] resource: options must be an object, received " + options);
   if (options.cacheTime !== undefined && (!isNumber(options.cacheTime) || Number.isNaN(options.cacheTime) || options.cacheTime < 0))
     throw new Error("[resource] resource: cacheTime must be a non-negative number, received " + options.cacheTime);
@@ -155,14 +156,17 @@ export function resource<T, K = undefined, TTransformed = T>(
     return controller || new AbortController();
   };
 
-  /** Settles the deferred promise and cleans up dedup registration. */
+  /** Settles the deferred promise and cleans up this request's dedup registration. */
   const settleRun = <R>(
     settle: (value: R) => void,
     value: R,
-    cacheKey: unknown
+    cacheKey: unknown,
+    request: OngoingRequest
   ) => {
     settle(value);
-    deduplicate && deleteOngoing(fetcherFn, cacheKey);
+    // Compare-and-delete: a force fetch that superseded this request must keep
+    // its own registration.
+    deduplicate && deleteOngoingIf(fetcherFn, cacheKey, request);
   };
 
   let cleanupEffect: (() => void) | undefined;
@@ -246,6 +250,11 @@ export function resource<T, K = undefined, TTransformed = T>(
               handleSuccess(shared);
               return shared;
             }
+            // Joined an already-aborted request: the shared await is skipped
+            // and the owner's settle never clears this resource's flags —
+            // mirror handleSuccessError's AbortError path.
+            isLoading(false);
+            isFetching(false);
           } catch (err) {
             handleSuccessError(err);
           }
@@ -273,11 +282,10 @@ export function resource<T, K = undefined, TTransformed = T>(
       rejectPromise = reject;
     });
 
+    const request: OngoingRequest = { promise: requestPromise, abortController: currentAbortController };
+
     if (deduplicate) {
-      setOngoing(fetcherFn, cacheKey, {
-        promise: requestPromise,
-        abortController: currentAbortController,
-      });
+      setOngoing(fetcherFn, cacheKey, request);
       // Silently handle rejection when no one is awaiting
       // This prevents unhandled promise rejection errors
       requestPromise.catch(() => { });
@@ -290,12 +298,12 @@ export function resource<T, K = undefined, TTransformed = T>(
       const shared = structuralSharing ? structuralShare<T>(untracked(() => rawData()), result) : result;
       setCacheData(fetcherFn, cacheKey, shared, cacheTime, staleTime ?? Infinity);
       !currentSignal.aborted && handleSuccess(shared);
-      settleRun(resolvePromise!, shared, cacheKey);
+      settleRun(resolvePromise!, shared, cacheKey, request);
       // Superseded-by-abort fetches never applied the data — resolve without it
       return currentSignal.aborted ? undefined : shared;
     } catch (err) {
       handleSuccessError(err);
-      settleRun(rejectPromise!, err, cacheKey);
+      settleRun(rejectPromise!, err, cacheKey, request);
     } finally {
       releaseControls();
     }

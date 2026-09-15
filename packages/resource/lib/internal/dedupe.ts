@@ -7,8 +7,11 @@
  * full reset must reassign a new instance rather than iterate.
  */
 
-/** An in-flight request shared between deduplicated callers. */
-interface OngoingRequest {
+/**
+ * An in-flight request shared between deduplicated callers.
+ * @internal
+ */
+export interface OngoingRequest {
   promise: Promise<unknown>;
   abortController: AbortController;
 }
@@ -54,10 +57,14 @@ export function setOngoing(fetcher: object, cacheKey: unknown, request: OngoingR
 
 /**
  * @internal
- * Removes the ongoing request entry for a fetcher + cache key.
+ * Removes the ongoing request entry for a fetcher + cache key only when the
+ * registered entry is still the given request — a superseding registration
+ * (e.g. a force fetch overwriting the slot) is left intact.
  * @param fetcher - The fetcher function identifying the cache scope
  * @param cacheKey - The cache key within the fetcher scope
+ * @param request - The in-flight request expected to still be registered
  */
-export function deleteOngoing(fetcher: object, cacheKey: unknown): void {
-  ongoingRequestsMap.get(fetcher)?.delete(cacheKey);
+export function deleteOngoingIf(fetcher: object, cacheKey: unknown, request: OngoingRequest): void {
+  const fetcherMap = ongoingRequestsMap.get(fetcher);
+  if (fetcherMap?.get(cacheKey) === request) fetcherMap.delete(cacheKey);
 }

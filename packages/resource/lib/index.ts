@@ -1,6 +1,6 @@
 // Core API
 export { resource } from "./resource";
-export { resourceCache } from "./cache";
+export { resourceCache } from "./resourceCache";
 export { resetResource } from "./resetResource";
 
 export type * from "./types/resource";

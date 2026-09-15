@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
-import { resource } from "@hellajs/resource/bundle";
+import { resource, resourceCache } from "@hellajs/resource/bundle";
 
 describe("resource", () => {
   describe("deduplication", () => {
@@ -224,6 +224,78 @@ describe("resource", () => {
       expect(r1.data()).toBe("data-user-1-1");
       expect(r2.data()).toBe("data-user-1-1");
       expect(r3.data()).toBe("data-user-1-2");
+    });
+
+    test("a non-force fetch joins a force request that superseded an in-flight request", async () => {
+      const fetcher = mock(async (key: string) => {
+        const result = `data-${key}-${fetcher.mock.calls.length}`;
+        await delay(60);
+        return result;
+      });
+
+      const r = resource(fetcher, { key: () => "user-1", deduplicate: true });
+
+      r.fetch();
+      await delay(5);
+
+      // Supersedes the in-flight request and overwrites its dedup slot
+      r.fetch({ force: true });
+      // Long enough for the superseded request's settle microtasks to run
+      await delay(10);
+
+      // The superseded settle must not have deleted the force registration
+      r.fetch();
+
+      await delay(150);
+
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+
+    test("joining an already-aborted request clears activity flags", async () => {
+      const fetcher = mock(async (key: string) => {
+        await delay(60);
+        return `data-${key}`;
+      });
+
+      const r1 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+      const r2 = resource(fetcher, { key: () => "user-1", deduplicate: true });
+
+      r1.fetch();
+      r1.abort();
+      // Synchronous join onto the already-aborted registration — no await
+      // between abort and fetch, so the owner's settle has not run yet
+      r2.fetch();
+
+      await delay(10);
+
+      expect(r2.isFetching()).toBe(false);
+      expect(r2.isLoading()).toBe(false);
+      expect(r2.status()).toBe("idle");
+    });
+
+    test("prefetch registration survives a superseding force fetch", async () => {
+      const fetcher = mock(async (key: string) => {
+        const result = `data-${key}-${fetcher.mock.calls.length}`;
+        // Prefetch settles early; the force fetch stays in flight past the join
+        await delay(fetcher.mock.calls.length === 1 ? 30 : 120);
+        return result;
+      });
+
+      resourceCache.prefetch({ fetcher, key: "user-1" });
+      await delay(5);
+
+      const r = resource(fetcher, { key: () => "user-1", deduplicate: true });
+      // Overwrites the prefetch's dedup slot
+      r.fetch({ force: true });
+      // Waits past the prefetch settle — its finally must not delete the force
+      // registration — while the force request is still in flight
+      await delay(35);
+
+      r.fetch();
+
+      await delay(150);
+
+      expect(fetcher).toHaveBeenCalledTimes(2);
     });
   });
 });

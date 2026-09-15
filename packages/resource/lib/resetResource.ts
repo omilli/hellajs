@@ -1,4 +1,4 @@
-import { resetCacheState } from "./cache";
+import { resetCacheState } from "./resourceCache";
 import { resetDedupe } from "./internal/dedupe";
 
 /**

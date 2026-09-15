@@ -191,5 +191,9 @@ describe("resource", () => {
       expect(resourceCache.set(key, { a: 1 }, 0)).toBe(key);
       expect(resourceCache.get(key)).toBeUndefined();
     });
+
+    test("throws when cacheTime is null", () => {
+      expect(() => resourceCache.set("k", 1, null as unknown as number)).toThrow("[resource] set: cacheTime must be a non-negative number, received null");
+    });
   });
 });

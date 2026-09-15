@@ -137,6 +137,35 @@ describe("resource", () => {
       expect(fetcher).toHaveBeenCalledTimes(2);
     });
 
+    test("a completed retried fetch leaves no residual abort listeners", async () => {
+      const originalAdd = AbortSignal.prototype.addEventListener;
+      const originalRemove = AbortSignal.prototype.removeEventListener;
+      const addSpy = mock(function (this: AbortSignal, ...args: Parameters<AbortSignal["addEventListener"]>) {
+        return originalAdd.apply(this, args);
+      });
+      const removeSpy = mock(function (this: AbortSignal, ...args: Parameters<AbortSignal["removeEventListener"]>) {
+        return originalRemove.apply(this, args);
+      });
+      AbortSignal.prototype.addEventListener = addSpy as unknown as typeof originalAdd;
+      AbortSignal.prototype.removeEventListener = removeSpy as unknown as typeof originalRemove;
+      try {
+        const fetcher = mock(() => {
+          if (fetcher.mock.calls.length < 3) return Promise.reject(new Error("x"));
+          return delay("ok");
+        });
+        const r = resource(fetcher, { retry: 2, retryDelay: 10 });
+        r.fetch({ force: true });
+        for (let __i = 0; __i < 50; __i++) { if (r.status() === "success") break; await delay(10); }
+        expect(r.status()).toBe("success");
+        expect(fetcher).toHaveBeenCalledTimes(3);
+        expect(addSpy.mock.calls.length).toBeGreaterThan(0);
+        expect(addSpy.mock.calls.length).toBe(removeSpy.mock.calls.length);
+      } finally {
+        AbortSignal.prototype.addEventListener = originalAdd;
+        AbortSignal.prototype.removeEventListener = originalRemove;
+      }
+    });
+
     test("respects enabled: false", async () => {
       const fetcher = mock(() => Promise.reject(new Error("x")));
       const r = resource(fetcher, { retry: 3, enabled: false });

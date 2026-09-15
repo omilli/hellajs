@@ -29,8 +29,8 @@ interface ResourceCache {
 }
 
 interface CacheConfig {
-  maxSize?: number;
-  enableLRU?: boolean;
+  readonly maxSize?: number;
+  readonly enableLRU?: boolean;
 }
 
 interface CacheEntry<T> {
@@ -84,7 +84,7 @@ console.log('Cached data:', entry?.data); // { name: 'John' }
 
 ### `config`
 
-Readonly access to current cache configuration settings.
+Returns a copy of the current cache configuration. Reads never expose the live config object; `setConfig` is the only way to mutate settings.
 
 ```typescript
 console.log(resourceCache.config); // { maxSize: 1000, enableLRU: true }

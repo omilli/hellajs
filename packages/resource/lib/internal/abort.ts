@@ -16,13 +16,13 @@
  * @param signal - The request's own abort signal (not yet aborted)
  */
 export function raceAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) => {
-      const onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
-      signal.addEventListener("abort", onAbort, { once: true });
-    })
-  ]);
+  let onAbort!: () => void;
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(new DOMException("Request was aborted", "AbortError"));
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+  return Promise.race([promise, aborted])
+    .finally(() => signal.removeEventListener("abort", onAbort));
 }
 
 /**

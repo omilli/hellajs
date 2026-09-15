@@ -99,6 +99,20 @@ describe("resource", () => {
       r.dispose();
     });
 
+    test("passes seeded initialData to the arm-time dynamic interval evaluation", () => {
+      const armTimeArgs: Array<string | undefined> = [];
+      const r = resource(() => delay(5).then(() => "fetched"), {
+        initialData: "seeded",
+        refetchInterval: (data) => {
+          armTimeArgs.push(data);
+          return false;
+        },
+      });
+
+      expect(armTimeArgs).toEqual(["seeded"]);
+      r.dispose();
+    });
+
     test.each([false, 0])("refetchInterval %p disables polling", async (value) => {
       const fetcher = mock(() => delay(5).then(() => `data-${fetcher.mock.calls.length}`));
       const r = resource(fetcher, {
