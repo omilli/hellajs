@@ -60,7 +60,7 @@ export interface RemoteServerOptions {
   port?: number;
   /** State directory override (probe uses a temp dir). */
   stateDir?: string;
-  /** Default `-m` model for new pi sessions (`--model` passthrough). */
+  /** Default `--model` for new pi sessions (`--model` passthrough). */
   model?: string;
 }
 

@@ -75,13 +75,13 @@ export class PiRpc {
    * bidirectional JSON stream (commands in, events out), not a one-shot
    * captured or inherited run — neither `execCommand` contract fits.
    *
-   * @param options Session name, optional `-m` model pattern, and handlers.
+   * @param options Session name, optional `--model` model pattern, and handlers.
    */
   public constructor(options: PiRpcOptions) {
     this.handlers = options.handlers;
     const args = ["--mode", "rpc", "-n", options.sessionName];
     if (options.model !== undefined) {
-      args.push("-m", options.model);
+      args.push("--model", options.model);
     }
     this.proc = Bun.spawn(["pi", ...args], {
       cwd: projectRoot,

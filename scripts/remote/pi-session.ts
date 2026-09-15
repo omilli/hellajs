@@ -68,7 +68,7 @@ export class PiSessionManager {
   /**
    * Spawn one pi session child and register it.
    *
-   * @param model Optional `-m` model override (falls back to the daemon
+   * @param model Optional `--model` model override (falls back to the daemon
    * default, then pi's own default).
    * @returns The registered session record.
    * @throws When the `pi` binary cannot be spawned (Bun.spawn propagates).
