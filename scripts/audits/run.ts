@@ -5,6 +5,12 @@ import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/drive
 import type { Relay } from "../agent/relay.js";
 import { listPlanUnits } from "../worker/set.js";
 
+/** Default model pattern for audit instances (`--model` overrides). */
+const DEFAULT_AUDITS_MODEL = "glm-5.3";
+
+/** Default thinking level for audit instances (`--thinking` overrides). */
+const DEFAULT_AUDITS_THINKING = "max";
+
 /** One audit section key; also the plan-set suffix and the prompt's skill suffix. */
 export type AuditSection = "code" | "tests" | "docs";
 
@@ -25,6 +31,7 @@ export interface RunAuditsOptions {
   packageName: string;
   section?: AuditSection;
   model?: string;
+  thinking?: string;
   dryRun: boolean;
 }
 
@@ -172,7 +179,7 @@ async function askGate(relay: Relay, key: AuditSection): Promise<GateChoice> {
  * a findings set ends it, anything else reaches the operator gate.
  *
  * @param job The section job (plan + set dir).
- * @param options Run options (model).
+ * @param options Run options (model, thinking).
  * @param relay The shared terminal relay.
  * @param records Accumulator for the final summary.
  * @returns True when the operator halted the whole run.
@@ -192,6 +199,7 @@ async function runSectionWithGate(
       sessionName,
       prompt: buildSectionPrompt(job, options.packageName, job.setDir),
       model: options.model,
+      thinking: options.thinking,
       relay,
       onUiRequest: dialogHook(relay),
     });
@@ -278,10 +286,12 @@ function printSummary(records: SectionRecord[], halted: boolean): void {
  * dirs without spawning. Exit code is 0 only when every attempted section
  * ended findings-captured, clean, or accepted-clean.
  *
- * @param options Package name, optional section filter, model, dry-run flag.
+ * @param options Package name, optional section filter, model, thinking level, dry-run flag.
  * @returns Process exit code.
  */
 export async function runAudits(options: RunAuditsOptions): Promise<number> {
+  options.model ??= DEFAULT_AUDITS_MODEL;
+  options.thinking ??= DEFAULT_AUDITS_THINKING;
   const jobs: SectionJob[] = deriveSections(options.packageName)
     .filter((plan: SectionPlan): boolean => options.section === undefined || plan.key === options.section)
     .map((plan: SectionPlan): SectionJob => ({ ...plan, setDir: computeSetDir(options.packageName, plan.key) }));

@@ -5,9 +5,10 @@ import { listPlanUnits } from "../worker/set.js";
 import { dialogHook, driveAgent } from "../agent/driver.js";
 import type { Relay } from "../agent/relay.js";
 
-/** Options for the union gate: the fix instance's model pattern. */
+/** Options for the union gate: the fix instance's model pattern and thinking level. */
 export interface GateOptions {
   model?: string;
+  thinking?: string;
 }
 
 /**
@@ -182,6 +183,7 @@ export async function unionGate(
       sessionName,
       prompt: buildFixPrompt(relSetDir, failed),
       model: options.model,
+      thinking: options.thinking,
       relay,
       onUiRequest: dialogHook(relay),
     });

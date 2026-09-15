@@ -1,4 +1,5 @@
 import { logger, isValidPackage } from "./utils/index.js";
+import { isThinkingLevel } from "./agent/rpc.js";
 import { type AuditSection, runAudits } from "./audits/run.js";
 
 /** Parsed CLI configuration. */
@@ -7,6 +8,7 @@ interface AuditsArgs {
   model?: string;
   section?: AuditSection;
   target?: string;
+  thinking?: string;
 }
 
 /**
@@ -37,6 +39,11 @@ function parseArgs(argv: string[]): AuditsArgs {
         throw new Error("invalid --model (expected provider/id[:thinking])");
       }
       args.model = value;
+    } else if (key === "--thinking") {
+      if (!isThinkingLevel(value)) {
+        throw new Error("invalid --thinking (expected off|minimal|low|medium|high|xhigh|max)");
+      }
+      args.thinking = value;
     } else if (key === "--section") {
       if (value !== "code" && value !== "tests" && value !== "docs") {
         throw new Error("invalid --section (expected code|tests|docs)");
@@ -68,7 +75,7 @@ function resolveTarget(target: string): string {
 
 /** Print the usage line. */
 function printUsage(): void {
-  logger.error("usage: bun audits <package> [--section=code|tests|docs] [--model=<provider/id[:thinking]>] [--dry-run]");
+  logger.error("usage: bun audits <package> [--section=code|tests|docs] [--model=<provider/id>] [--thinking=<level>] [--dry-run]");
   logger.error("       accepts a bare name (core) or packages/core; --dry-run prints derived sections and set dirs, then exits");
 }
 
@@ -82,7 +89,7 @@ async function main(): Promise<void> {
     }
     const packageName = resolveTarget(args.target);
     process.exit(
-      await runAudits({ packageName, section: args.section, model: args.model, dryRun: args.dryRun }),
+      await runAudits({ packageName, section: args.section, model: args.model, thinking: args.thinking, dryRun: args.dryRun }),
     );
   } catch (error) {
     logger.error(`audits failed: ${(error as Error).message}`);

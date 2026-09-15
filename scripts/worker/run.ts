@@ -6,6 +6,9 @@ import type { Relay } from "../agent/relay.js";
 import { worktreeScript, WT_ROOT } from "../agent/worktree.js";
 import { countTicks, isTicked, listPlanUnits, partitionComponents, setSlug, type PlanUnit } from "./set.js";
 
+/** Default model pattern for worker instances (`--model` overrides). */
+const DEFAULT_WORKER_MODEL = "glm-5.3-flash";
+
 /** Execution mode over the worktree venue (spec D9). */
 export type WorktreeMode = "single" | "split";
 
@@ -13,6 +16,7 @@ export type WorktreeMode = "single" | "split";
 export interface RunSetOptions {
   setDir: string;
   model?: string;
+  thinking?: string;
   mode: WorktreeMode;
 }
 
@@ -96,10 +100,12 @@ function worktreeTicked(unitPath: string): boolean {
  * Interactive-chains self-test: spawn → dialog relay → response → settle →
  * report → clean exit.
  *
- * @param model Optional model pattern passed to `pi -m`.
+ * @param model Optional model pattern passed to `pi -m` (defaults to `DEFAULT_WORKER_MODEL`).
+ * @param thinking Optional thinking level passed to `--thinking`.
  * @returns Process exit code.
  */
-export async function runProbe(model?: string): Promise<number> {
+export async function runProbe(model?: string, thinking?: string): Promise<number> {
+  model ??= DEFAULT_WORKER_MODEL;
   const relay = makeRelay();
   relay.start();
   installSigint();
@@ -108,6 +114,7 @@ export async function runProbe(model?: string): Promise<number> {
     sessionName: "plans: probe",
     prompt: PROBE_PROMPT,
     model,
+    thinking,
     relay,
     onUiRequest: dialogHook(relay, (): void => {
       dialogs += 1;
@@ -140,6 +147,7 @@ export async function runProbe(model?: string): Promise<number> {
  * @returns Process exit code.
  */
 export async function runSet(options: RunSetOptions): Promise<number> {
+  options.model ??= DEFAULT_WORKER_MODEL;
   const units = listPlanUnits(options.setDir);
   const setName = basename(options.setDir);
   const relay = makeRelay();
@@ -207,7 +215,7 @@ interface VenueOutcome {
  * refuse them anyway).
  *
  * @param venue The worktree slug and its units.
- * @param options Run options (set folder, model, mode).
+ * @param options Run options (set folder, model, thinking, mode).
  * @param relay The shared terminal relay.
  * @param setName Set folder basename, for session names.
  * @param records Accumulator for the final summary.
@@ -266,7 +274,7 @@ interface UnitGateOutcome {
  * @param wtSetDir Absolute path to the worktree copy of the set folder.
  * @param slug The target worktree slug.
  * @param unit The plan unit (main-tree file, for the record).
- * @param options Run options (set folder, model, mode).
+ * @param options Run options (set folder, model, thinking, mode).
  * @param relay The shared terminal relay.
  * @param setName Set folder basename, for session names.
  * @returns The unit record and its terminal action.
@@ -290,6 +298,7 @@ async function runUnitWithGate(
       sessionName,
       prompt: buildUnitPrompt(wtUnitPath, wtSetDir, slug, attempt > 1),
       model: options.model,
+      thinking: options.thinking,
       relay,
       onUiRequest: dialogHook(relay),
     });

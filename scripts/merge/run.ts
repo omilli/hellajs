@@ -11,10 +11,14 @@ import { allTickedInMainTree, deriveQueue, isCompleteInWorktree, mainTreeTickTot
 /** Default model pattern for merge instances (`--model` overrides). */
 const DEFAULT_MERGE_MODEL = "glm-5.3-flash";
 
+/** Default thinking level for merge instances (`--thinking` overrides). */
+const DEFAULT_MERGE_THINKING = "low";
+
 /** Options for one full merge run. */
 export interface MergeOptions {
   setDir: string;
   model?: string;
+  thinking?: string;
   dryRun: boolean;
 }
 
@@ -88,6 +92,7 @@ function buildMergePrompt(entry: QueueEntry, setDir: string, relSetDir: string, 
  */
 export async function runMerge(options: MergeOptions): Promise<number> {
   options.model ??= DEFAULT_MERGE_MODEL;
+  options.thinking ??= DEFAULT_MERGE_THINKING;
   const units = listPlanUnits(options.setDir);
   const setName = basename(options.setDir);
   const relSetDir = relative(projectRoot, options.setDir);
@@ -165,7 +170,7 @@ export async function runMerge(options: MergeOptions): Promise<number> {
  * outstanding and the run exits non-zero.
  *
  * @param entry The component to merge.
- * @param options Run options (set folder, model).
+ * @param options Run options (set folder, model, thinking).
  * @param relay The shared terminal relay.
  * @param setName Set folder basename, for session names.
  * @param relSetDir Repo-relative set-folder path.
@@ -188,6 +193,7 @@ async function mergeComponent(
       sessionName,
       prompt: buildMergePrompt(entry, options.setDir, relSetDir, attempt > 1),
       model: options.model,
+      thinking: options.thinking,
       relay,
       onUiRequest: dialogHook(relay),
     });

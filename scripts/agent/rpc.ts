@@ -37,7 +37,24 @@ export interface RpcHandlers {
 export interface PiRpcOptions {
   sessionName: string;
   model?: string;
+  thinking?: string;
   handlers: RpcHandlers;
+}
+
+/** Valid pi `--thinking` levels (`pi --help`). */
+export const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
+
+/** One valid pi thinking level. */
+export type ThinkingLevel = (typeof THINKING_LEVELS)[number];
+
+/**
+ * True when `value` is a valid pi thinking level.
+ *
+ * @param value Raw CLI value.
+ * @returns True when pi accepts the level.
+ */
+export function isThinkingLevel(value: string): value is ThinkingLevel {
+  return (THINKING_LEVELS as readonly string[]).includes(value);
 }
 
 /** Dialog methods that block until an `extension_ui_response` arrives. */
@@ -75,13 +92,16 @@ export class PiRpc {
    * bidirectional JSON stream (commands in, events out), not a one-shot
    * captured or inherited run — neither `execCommand` contract fits.
    *
-   * @param options Session name, optional `--model` model pattern, and handlers.
+   * @param options Session name, optional `--model` model pattern, optional `--thinking` level, and handlers.
    */
   public constructor(options: PiRpcOptions) {
     this.handlers = options.handlers;
     const args = ["--mode", "rpc", "-n", options.sessionName];
     if (options.model !== undefined) {
       args.push("--model", options.model);
+    }
+    if (options.thinking !== undefined) {
+      args.push("--thinking", options.thinking);
     }
     this.proc = Bun.spawn(["pi", ...args], {
       cwd: projectRoot,

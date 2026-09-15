@@ -9,6 +9,7 @@ export interface DriveOptions {
   sessionName: string;
   prompt: string;
   model?: string;
+  thinking?: string;
   relay: Relay;
   onUiRequest: (request: UiRequest) => void;
 }
@@ -46,13 +47,14 @@ export function dialogHook(relay: Relay, onAsk?: () => void): DialogHook {
  * Spawn one fresh pi instance, deliver the prompt, relay its dialogs, and
  * return its final assistant text.
  *
- * @param options Session name, prompt, model, relay, and dialog hook.
+ * @param options Session name, prompt, model, thinking level, relay, and dialog hook.
  * @returns The last assistant message text.
  */
 export async function driveAgent(options: DriveOptions): Promise<string> {
   const rpc = new PiRpc({
     sessionName: options.sessionName,
     model: options.model,
+    thinking: options.thinking,
     handlers: {
       onEvent: (event): void => {
         streamEvent(event);

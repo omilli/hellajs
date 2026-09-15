@@ -1,4 +1,5 @@
 import { logger } from "./utils/index.js";
+import { isThinkingLevel } from "./agent/rpc.js";
 import { resolveSetFolder } from "./worker/set.js";
 import { runMerge } from "./merge/run.js";
 
@@ -7,6 +8,7 @@ interface MergeArgs {
   dryRun: boolean;
   model?: string;
   setFolder?: string;
+  thinking?: string;
 }
 
 /**
@@ -37,6 +39,11 @@ function parseArgs(argv: string[]): MergeArgs {
         throw new Error("invalid --model (expected provider/id[:thinking])");
       }
       args.model = value;
+    } else if (key === "--thinking") {
+      if (!isThinkingLevel(value)) {
+        throw new Error("invalid --thinking (expected off|minimal|low|medium|high|xhigh|max)");
+      }
+      args.thinking = value;
     } else {
       throw new Error(`unknown flag "${key}"`);
     }
@@ -46,7 +53,7 @@ function parseArgs(argv: string[]): MergeArgs {
 
 /** Print the usage line. */
 function printUsage(): void {
-  logger.error("usage: bun merge <set-folder> [--model=<provider/id[:thinking]>] [--dry-run]");
+  logger.error("usage: bun merge <set-folder> [--model=<provider/id>] [--thinking=<level>] [--dry-run]");
   logger.error("       --dry-run prints the derived queue and completeness, then exits before any spawn");
 }
 
@@ -59,7 +66,7 @@ async function main(): Promise<void> {
       process.exit(1);
     }
     const setDir = resolveSetFolder(args.setFolder);
-    process.exit(await runMerge({ setDir, model: args.model, dryRun: args.dryRun }));
+    process.exit(await runMerge({ setDir, model: args.model, thinking: args.thinking, dryRun: args.dryRun }));
   } catch (error) {
     logger.error(`merge failed: ${(error as Error).message}`);
     process.exit(1);
