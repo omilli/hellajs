@@ -58,7 +58,8 @@ export type HistoryMode = "history" | "hash" | "memory";
  * - "preserve": Keep current scroll position
  * - Custom function returning scroll position or null to skip. Receives `(to, from, savedPosition)`;
  *   `savedPosition` is the scroll position captured when the returned-to page was last left,
- *   non-null only on back/forward navigations (null on pushes and replaces).
+ *   non-null only on back/forward navigations (null on pushes and replaces). A throw is caught
+ *   and logged (`[router] scrollBehavior:`) and scrolling is skipped — navigation is unaffected.
  */
 export type ScrollBehavior =
   | "auto"
@@ -128,7 +129,7 @@ export interface RouterConfig {
   routes: Routes;
   /** Global hooks that execute on every route change */
   hooks?: GlobalHooks;
-  /** Handler or redirect path for unmatched routes. The handler receives the attempted path (query included — same shape as `route().path`); a string replace-redirects to that path. */
+  /** Handler or redirect path for unmatched routes. The handler receives the attempted path (query included — same shape as `route().path`); a string replace-redirects to that path. A throwing handler is caught and logged (`[router] notFound:`) — it never escapes `router()` init or `navigate()`. */
   notFound?: string | ((path: string) => void);
   /** Array of redirect rules mapping source paths to targets */
   redirects?: Redirect[];
@@ -147,6 +148,11 @@ export interface RouterConfig {
 }
 
 /**
+ * Global hook signature shared by every `GlobalHooks` member.
+ */
+type GlobalHookFn = (to: string, from: string) => Promise<unknown> | unknown;
+
+/**
  * Global hooks that execute on every route change.
  */
 export interface GlobalHooks {
@@ -161,7 +167,7 @@ export interface GlobalHooks {
    * server it cannot block. Runs before route-level `leave` hooks (which then run child→parent);
    * skipped by `navigate(path, { force: true })` and on same-path navigation (query ignored).
    */
-  leave?: (to: string, from: string) => Promise<unknown> | unknown;
+  leave?: GlobalHookFn;
   /**
    * Hook executed before every route change. Acts as a global guard. Receives `to` (the incoming
    * path, query included — same shape as `route().path`) and `from` (the pre-commit current path,
@@ -173,13 +179,13 @@ export interface GlobalHooks {
    * (rejection cancels and logs). On the server it cannot block: the navigation proceeds and only
    * a rejection is logged.
    */
-  before?: (to: string, from: string) => Promise<unknown> | unknown;
+  before?: GlobalHookFn;
   /**
    * Hook executed after every route change. Receives `to` and `from` paths (query included) —
    * `route()` already holds the committed `to` route when it runs, so `from` supplies the prior
    * path without capturing it yourself.
    */
-  after?: (to: string, from: string) => Promise<unknown> | unknown;
+  after?: GlobalHookFn;
 }
 
 /**

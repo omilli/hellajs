@@ -17,10 +17,6 @@ export type RouteMatch = {
   query: Params;
   /** Remaining unmatched path segment for nested matching */
   remainingPath: string;
-  /** Path input at this nesting level */
-  fullPath: string;
-  /** Metadata from the matched route */
-  meta?: Record<string, unknown>;
 };
 
 /**
@@ -195,8 +191,7 @@ export function matchNestedEntry(
     pattern,
     params: match.params,
     query: parseQuery(queryString),
-    remainingPath: match.remainingPath,
-    fullPath: path
+    remainingPath: match.remainingPath
   };
 
   const nonStringRouteValue = routeValue as RouteValue;
@@ -257,8 +252,8 @@ export function matchNestedRoute(
  * @returns Match result with parameters and query, or null.
  */
 export function matchRoute(routePattern: string, path: string): { params: Params; query: Params } | null {
-  const [, queryString] = path.split("?") as [string, string | undefined];
-  const match = matchPattern(routePattern, path.split("?")[0]!, false);
+  const [pathWithoutQuery, queryString] = path.split("?") as [string, string | undefined];
+  const match = matchPattern(routePattern, pathWithoutQuery, false);
 
   return match ? {
     params: match.params,

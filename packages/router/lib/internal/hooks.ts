@@ -41,6 +41,21 @@ export function executeHook(
 }
 
 /**
+ * Executes the notFound handler with error handling — a throw is caught and logged so it
+ * never escapes `router()` init, `navigate()`, or the click interceptor.
+ * @internal
+ * @param handler The notFound handler function to execute.
+ * @param path The path that failed to match a route.
+ */
+export function executeNotFound(handler: (path: string) => void, path: string): void {
+  try {
+    handler(path);
+  } catch (error) {
+    console.error("[router] notFound:", error);
+  }
+}
+
+/**
  * Executes a global hook with error handling.
  * @internal
  * @param hookFn The global hook function to execute.

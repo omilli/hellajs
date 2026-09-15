@@ -5,6 +5,7 @@ import { matchRoute, matchNestedEntry } from "./match";
 import type { RouteMatch } from "./match";
 import { buildPath } from "./path";
 import { extractHandler, extractMeta, extractInheritMeta, extractScroll, executeRouteWithHooks, runGuardsFlat, runGuardsNested, setMatchedChain, type GuardVerdict } from "./matched";
+import { executeNotFound } from "./hooks";
 import { handleScroll, takeSavedScroll, scrollStack } from "./scroll";
 import { EMPTY_OBJECT, EMPTY_CRUMBS, getCachedRouteEntries, hasChildren } from "./utils";
 import type { RouteValue, Crumb, ScrollBehavior, Handler, Params, RouteInfo } from "../types";
@@ -147,7 +148,7 @@ export function updateRoute(
     }));
 
     asyncHops = 0;
-    notFoundValue && notFoundValue(currentPath);
+    notFoundValue && executeNotFound(notFoundValue, currentPath);
     handleScroll(currentPath, inlineScroll, undefined, isPop, takeSavedScroll(isPop));
     return "matched";
   } finally {

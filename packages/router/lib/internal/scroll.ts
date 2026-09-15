@@ -77,7 +77,11 @@ export function handleScroll(
   if (behavior === "top") {
     scrollPos = { top: 0, left: 0 };
   } else if (isFunction(behavior)) {
-    scrollPos = behavior(toPath, fromPath, isPop ? savedPosition ?? null : null);
+    try {
+      scrollPos = behavior(toPath, fromPath, isPop ? savedPosition ?? null : null);
+    } catch (error) {
+      console.error("[router] scrollBehavior:", error);
+    }
   }
 
   if (scrollPos && hasWindow()) {

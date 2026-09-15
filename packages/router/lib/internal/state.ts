@@ -1,5 +1,5 @@
 import { signal } from "./core";
-import type { GlobalHooks, RouteValue, Redirect, HistoryMode, ScrollBehavior } from "../types";
+import type { GlobalHooks, RouteValue, Redirect, HistoryMode, ScrollBehavior, RouterConfig } from "../types";
 
 /**
  * Signal containing the current route map.
@@ -23,7 +23,7 @@ export const redirects = signal<Redirect[]>([]);
  * Signal containing the not found handler.
  * @internal
  */
-export const notFound = signal<string | ((path: string) => void) | null>(null);
+export const notFound = signal<RouterConfig["notFound"] | null>(null);
 
 /**
  * Signal containing the current history mode.

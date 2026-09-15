@@ -256,5 +256,47 @@ describe("errors", () => {
     expect(handler).not.toHaveBeenCalled();
     expect(container.textContent).toBe("");
   });
+
+  test("notFound handler throwing during init is caught and logged", () => {
+    // HappyDOM's location stays about:blank, so the attempted path is pinned via `url`.
+    router({
+      routes: {},
+      url: "/",
+      notFound: () => { throw new Error("nf error"); }
+    });
+
+    expectLoggedError(sup, "[router] notFound:", "nf error");
+    expect(route().path).toBe("/");
+  });
+
+  test("notFound handler throwing during navigate is caught and logged", () => {
+    const notFoundHandler = () => { throw new Error("nf navigate error"); };
+
+    router({
+      routes: {
+        "/": () => render("home")
+      },
+      notFound: notFoundHandler
+    });
+
+    navigate("/nope");
+
+    expectLoggedError(sup, "[router] notFound:", "nf navigate error");
+    expect(route().handler).toBe(notFoundHandler);
+  });
+
+  test("scrollBehavior throwing is caught and logged, navigation still commits", () => {
+    router({
+      routes: {
+        "/x": () => render("x")
+      },
+      scrollBehavior: () => { throw new Error("scroll error"); }
+    });
+
+    navigate("/x");
+
+    expectLoggedError(sup, "[router] scrollBehavior:", "scroll error");
+    expect(route().path).toBe("/x");
+  });
 });
 });
