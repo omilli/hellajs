@@ -23,12 +23,12 @@ function href<T extends string>(
 
 Same-origin `<a>` clicks are intercepted and routed through [`navigate`](/reference/router/navigate) by default, so `href()` paired with a plain anchor is the primary navigation path: no click handler, no hand-written template strings.
 
-```js
-import { html } from '@hellajs/dom';
+```jsx
 import { href } from '@hellajs/router';
 
-const Nav = (user) =>
-  html`<a href=${href("/users/:id", { params: { id: user.id }, query: { tab: "overview" } })}>Profile</a>`;
+const Nav = ({ id }: { id: string }) => (
+  <a href={href('/users/:id', { params: { id }, query: { tab: 'overview' } })}>Profile</a>
+);
 ```
 
 It also works as a plain string builder anywhere a URL is needed:
@@ -82,9 +82,11 @@ href('/users/:id'); // '/users/'
 
 `href()` returns **logical** paths, the same targets [`navigate`](/reference/router/navigate) accepts. In history mode with a `base` configured, a physical anchor `href` carries the base prefix (middle-click and hard reload hit the server):
 
-```typescript
+```jsx
 // router({ base: '/app', ... })
-html`<a href=${'/app' + href('/users/:id', { params: { id: user.id } })}>Profile</a>`;
+const ProfileLink = ({ id }: { id: string }) => (
+  <a href={'/app' + href('/users/:id', { params: { id } })}>Profile</a>
+);
 ```
 
 ### Input Validation

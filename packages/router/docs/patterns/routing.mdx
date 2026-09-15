@@ -1,4 +1,3 @@
-
 # Routing
 
 Short, copy-pasteable code patterns for common routing tasks with [`router`](/reference/router/router), [`navigate`](/reference/router/navigate), and [`route`](/reference/router/route), plus server-rendering recipes for routed apps.
@@ -147,7 +146,7 @@ router({
 });
 ```
 
-While the guard is in flight, [`route`](/reference/router/route)`().pending` is `true` and the current match stays committed; use it to render a loading state. No handler-side revalidation is needed: the handler runs only after the guard settles.
+While the guard is in flight, [`route`](/reference/router/route)`().pending` is `true`; render a loading state off it (see [Pending State](/reference/router/route#pending-state)); the handler runs only after the guard settles, so no handler-side revalidation is needed.
 
 ### Nested Routes
 
@@ -404,7 +403,7 @@ The view-signal style is the isomorphic handler form: the same handlers fire on 
 
 ### Server: ssr()
 
-[`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying. There is no `window` on the server; pass the request URL via the `url` option. It accepts the full request URL (`req.url`) or a path (`pathname + search`); the origin and hash are ignored.
+[`ssr`](/reference/ssr/ssr) is synchronous, so resolve the route before stringifying: pass the request URL via the `url` option, the full request URL (`req.url`) or a path (`pathname + search`); see [`router`](/reference/router/router) for `url` semantics.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -468,7 +467,7 @@ Bun.serve({
 
 ### Server: ssr.stream()
 
-[`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell before async values resolve. Wrap an async subtree in [`<Suspense>`](/reference/dom/suspense) for out-of-order streaming: the shell and the `fallback` flush immediately while the children resolve. Assemble the full document with [`doc`](/reference/ssr/doc)'s stream overload: the head and mount wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after the body closes.
+[`ssr.stream`](/reference/ssr/ssr#stream) flushes the static shell before async values resolve: wrap an async subtree in [`<Suspense>`](/reference/dom/suspense) and the shell plus `fallback` flush immediately while the children resolve. Assemble the full document with [`doc`](/reference/ssr/doc)'s stream overload: the head and mount wrapper flush first, each body chunk pipes through as it renders, and the closing tags land only after the body closes.
 
 ```js
 import { signal } from '@hellajs/core';
@@ -518,4 +517,4 @@ Route handlers should be pure state-setters (`() => currentView(View())`). Put s
 
 Synchronous [`ssr`](/reference/ssr/ssr) is concurrency-safe: [`router`](/reference/router/router)`({ url })` + the render is one synchronous block with no `await`, so no second request can interleave and overwrite the router's module-level signals mid-render. [`ssr.async`](/reference/ssr/ssr#async) and [`ssr.stream`](/reference/ssr/ssr#stream) yield at each awaited Promise; they stay correct while every shared-signal read (the router's [`route`](/reference/router/route)`()`, your `currentView`) happens before the first `await` in tree order. Full safety under arbitrary streaming concurrency needs a router instance per request; revisit it only when a real concurrent-streaming workload demands it.
 
-One consequence of the synchronous server resolution: async guards cannot block on the server. A `Promise`-returning `before` proceeds immediately (only its rejection is logged) and [`route`](/reference/router/route)`().pending` stays `false`; keep server-gating guards synchronous, and do async data work in [`ssr.async`](/reference/ssr/ssr#async) children instead.
+One consequence of the synchronous server resolution: async guards cannot block on the server. A `Promise`-returning `before` proceeds immediately (only its rejection is logged), so [`route`](/reference/router/route)`().pending` stays `false` (see [Pending State](/reference/router/route#pending-state)); keep server-gating guards synchronous and do async data work in [`ssr.async`](/reference/ssr/ssr#async) children instead.

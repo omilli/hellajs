@@ -65,7 +65,7 @@ Next.js removes the configuration object entirely: folders under `app/` are URL 
 
 Sources: each package's published `package.json`, fetched from the npm registry this session.
 
-- HellaJS declares zero runtime dependencies and a single peer: the reactivity core (`package.json`). The published `dist/` ships a per-module tree-shakable layout (`./navigate`, `./route`, …) plus a pre-bundled `@hellajs/router/bundle` entry; its only imports from core are `signal` and four utility functions re-exported through one internal shim (`lib/internal/core.ts`).
+- HellaJS declares zero runtime dependencies and a single peer: the reactivity core (`package.json`). The published `dist/` ships a per-module tree-shakable layout (`./navigate`, `./route`, …) plus a pre-bundled `@hellajs/router/bundle` entry; its only imports from core are `signal` and six utility functions re-exported through one internal shim (`lib/internal/core.ts`).
 - TanStack is the heaviest non-framework router: the React adapter plus `router-core`, a custom history package, a store, and `isbot`, the cost of the generated-type and loader/search-schema runtime.
 - Vue Router's dependency footprint is the largest in the group because the v5 package ships its file-based-routing/typed-routes codegen in-package; the browser entry doesn't execute the toolchain, but a plain `npm install vue-router` pulls all 17 packages.
 - Solid Router is the leanest framework-coupled option: zero dependencies of its own, one peer.

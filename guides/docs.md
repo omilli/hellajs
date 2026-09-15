@@ -23,7 +23,7 @@ Decision index — jump to the section for the decision you are making. This gui
 | Example code style (attribute values, prop types, children type, css layout)? | §Code Examples → Example Code Style |
 | Cross-reference link format? | §Cross-References |
 | Frontmatter rules? | §File Locations & Naming → Frontmatter |
-| Length limits per doc type? | §Length Targets |
+| Length ranges per doc type? | §Length Targets |
 | Em/en dash usage? | §Typography |
 | Section heading naming (banned generics)? | §Section Headings |
 | Tutorial progressive-build? | §Tutorial Docs |
@@ -365,7 +365,7 @@ Never duplicate (§Splitting & Duplicate Rules): if two docs would cover the sam
 ### Splitting & Duplicate Rules
 
 - Only document exports from `index.ts`. Testing utilities and internal state accessors exported from `internal/` paths are **not** documented.
-- When an API doc exceeds ~350 lines, evaluate whether `## Key Concepts` sections should move to a `concepts/` doc. Leave a brief summary in the API doc with a cross-reference.
+- When an API doc crosses its §Length Targets flag line, evaluate whether `## Key Concepts` sections should move to a `concepts/` doc. Leave a brief summary in the API doc with a cross-reference.
 - **Cross-reference rather than duplicate.** If two docs cover the same topic, show a brief summary with a cross-reference. The `mount` doc should not re-document lifecycle hooks — reference the `hook:` prefix doc instead:
 
 ```markdown
@@ -590,7 +590,7 @@ try {
 
 JSX is the only example syntax in every package, `dom` included. Write every example as JSX.
 
-The `html` tagged-literal syntax appears exclusively in docs whose subject is the `html` method itself (`packages/dom/docs/api/html.mdx`); those blocks keep the `js` language tag (§Language Tags unchanged).
+The `html` tagged-literal syntax appears in docs whose subject is the `html` method itself (`packages/dom/docs/api/html.mdx`) and in recipe blocks targeting a build-free runtime: server entries pairing `router({ url })` with `ssr`, where no build plugin transpiles JSX. Those blocks keep the `js` language tag (§Language Tags unchanged). Mixing the two syntaxes in one fenced block stays banned (§Never Mix in One Block unchanged).
 
 ### Never Mix in One Block
 
@@ -710,14 +710,16 @@ Name the subject directly: `### JSX vs html vs Raw AST` instead of `### Comparis
 
 ## Length Targets
 
-| Doc type | Target | Maximum | Action when exceeded |
-|----------|--------|---------|---------------------|
-| API docs | 100–350 lines | 400 lines | Split Key Concepts to `concepts/` |
-| Concept docs | 40–250 lines | 800 lines | Split into multiple concept docs |
-| Prefix docs | 50–200 lines | 250 lines | Split Key Concepts to `concepts/` |
-| Pattern docs | 100–300 lines | 400 lines (soft) | Trim prose first; split only when sub-topics are genuinely independent |
-| Index docs | 40–70 lines | 100 lines | Simplify the example |
-| Code blocks | 5–30 lines | 40 lines | Simplify or use context markers |
+| Doc type | Healthy range | Flag beyond |
+|----------|---------------|-------------|
+| API docs | 100–450 lines | 600 lines |
+| Concept docs | 40–500 lines | 800 lines |
+| Prefix docs | 50–300 lines | 450 lines |
+| Pattern docs | 100–450 lines | 600 lines |
+| Index docs | 40–100 lines | 150 lines |
+| Code blocks | 5–40 lines | 100 lines |
+
+Within the healthy range, length is not a review topic. Between the range and the flag line, length is judgment: trim repeated prose, split only genuinely independent sub-topics. Beyond the flag line, trim or split. Flag lines are calibrated above every current doc, so the audit raises length only for way-beyond outliers.
 
 ## Verification Checklist
 
@@ -743,7 +745,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 
 **Code examples**
 - [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
-- [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
+- [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`) or build-free-runtime recipe blocks (§Example Syntax (JSX Default)); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
 - [ ] Attribute values written directly, never function-wrapped — function-wrapping only in `html`-method docs; `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
 - [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `bun lint:structure` skips them (§Code Examples → Example Code Style)
 - [ ] No `unknown` annotation on any `children` prop — always `HellaChildren` from `@hellajs/dom`; enforced by `bun lint:structure` (`children??: unknown` banned) (§Code Examples → Example Code Style)
@@ -774,4 +776,4 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] No em/en dashes or their HTML entities in any user-facing file (prose, tables, frontmatter descriptions, code-block comments); numeric ranges use ASCII hyphens; enforced by `bun em-dash` (composed into `bun lint:guards`)
 
 **Length**
-- [ ] Within target per §Length Targets; action taken if exceeded (pattern docs: the 400-line maximum is a soft target, trim prose before splitting)
+- [ ] Within the healthy range per §Length Targets, or beyond a flag line with trim/split action taken; the range-to-flag zone is judgment, not a finding

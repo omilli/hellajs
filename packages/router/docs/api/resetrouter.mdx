@@ -41,7 +41,7 @@ resetRouter();
 - `scrollBehavior` → `undefined`
 - `previousPath` → `"/"`
 - `inheritMeta` → `false`
-- `route` → default `RouteInfo`: `handler: null`, `params: {}`, `query: {}`, `path: "/"`, `meta: undefined`, `crumbs: []` (frozen), `active` predicate reattached
+- `route` → default `RouteInfo`: `handler: null`, `params: {}`, `query: {}`, `path: "/"`, `pending: false`, `meta: undefined`, `crumbs: []` (frozen), `active` predicate reattached
 
 Reading `route()` immediately after `resetRouter()` returns these defaults, not the prior match.
 

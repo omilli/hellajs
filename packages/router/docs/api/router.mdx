@@ -139,7 +139,7 @@ router({
 });
 ```
 
-Global hooks receive `(to, from)` paths: `to` is the incoming path with its query string, `from` is the path being left before the commit. The login-redirect pattern uses `to` to preserve the attempted destination:
+Global hooks receive `(to, from)` paths (`to` carries the query string). The login-redirect pattern uses `to` to preserve the attempted destination:
 
 ```typescript
 const user = signal<string | null>(null);
@@ -281,12 +281,7 @@ router({
 
 ### Arity-Based Dispatch Behavior
 
-Handlers and hooks are typed `(params: Params, query: Params) => unknown`. On dynamic routes (which have path parameters) both arguments are always passed. For static routes (no path parameters), the router uses function parameter arity (`fn.length`) to determine arguments:
-
-- If a function declares 2 or more parameters (e.g. `(params, query) => ...`), the first argument (`params`) will be `undefined`, and the second argument will be the parsed `query` object.
-- If a function declares 0 or 1 parameter (e.g. `(query) => ...`), the first argument will be the parsed `query` object, even though the type labels that parameter `params`.
-
-To ensure consistency and prevent errors, always declare handlers and hooks using the full `(params, query)` signature when you need to access query parameters:
+Handlers and hooks are typed `(params: Params, query: Params) => unknown`. On dynamic routes (which have path parameters) both arguments are always passed. On static routes (no path parameters), the router dispatches by function arity (`fn.length`): a function declaring 2 or more parameters gets `undefined` first and the parsed `query` second, while one declaring 0 or 1 parameters gets the parsed `query` object as its first argument, even though the type labels that parameter `params`. Always declare handlers and hooks using the full `(params, query)` signature when you need query parameters:
 
 ```typescript
 // ❌ Dangerous: assumes query is always first argument, will fail on dynamic routes
@@ -302,15 +297,7 @@ const searchHandler = (params, query) => {
 
 ### Hook Returns
 
-`before` and `leave` hooks can block or redirect navigation by returning specific values:
-
-| Return | Behavior |
-|---|---|
-| `void` / `true` / `undefined` | Proceed: handler executes normally |
-| `false` | Cancel: navigation is blocked, URL unchanged |
-| `string` | Redirect: navigates to the returned path |
-| `throw` | Cancel: navigation is blocked, error logged |
-| `Promise` | Blocks on the client: the navigation defers until resolution, which is interpreted as the verdict (rejection cancels + logs). On the server it proceeds with only the rejection logged |
+`before` and `leave` hooks return the navigation verdict: `void`/`true`/`undefined` proceeds, `false` cancels (URL unchanged), a non-empty `string` redirects (replace), and `throw` cancels with the error logged. A `Promise` defers the commit on the client (its resolution is the verdict; a rejection cancels) and proceeds on the server with only a rejection logged. The full verdict table: [Route Guards](/learn/concepts/routing#route-guards).
 
 ```typescript
 const authState = signal({ authenticated: false });
@@ -353,8 +340,6 @@ navigate('/protected');
 ```
 
 Render a loading state off `route().pending` while a deferred navigation is in flight. A second navigation during the wait supersedes the deferred one; the newer navigation owns the URL, and the abandoned continuation never commits.
-
-On the server (`url` mode) there is no deferral: an async guard cannot block a synchronous render, so navigation proceeds and only a rejection is logged.
 
 On `false` or throw in a popstate/hashchange event, the router restores the previous URL via `replaceState`, synchronously for sync guards, or from the continuation once an async guard's awaited verdict cancels.
 
