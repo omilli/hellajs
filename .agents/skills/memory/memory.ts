@@ -31,6 +31,7 @@ import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
 
 const STALE_DEFAULT_DAYS = 180;
+const QUERY_LIMIT = 10;
 const SLUG_MAX_WORDS = 5;
 const SLUG_MAX_CHARS = 40;
 const DESC_MAX_CHARS = 200;
@@ -369,7 +370,8 @@ function cmdRebuild(): number {
       "Each line carries the concept's id-slug, title, and triggers for Grep; description/tags/type live in the entry's frontmatter. -->",
     "",
     "OKF v0.1 bundle. Active concepts in `entries/`; retired in `archive/` (not listed). " +
-      "Query path: Grep THIS file for a keyword → Read the matched concept.",
+      "Query path: `memory.ts query <term>...` (ranked titles + descriptions, top 10; `--all` widens) " +
+      "→ open a matched concept only when its description is load-bearing; grep THIS file when a regex probe is needed.",
     "",
   ];
   for (const r of rows) {
@@ -568,29 +570,33 @@ function cmdPrune(apply: boolean): number {
   return apply ? cmdRebuild() : 0;
 }
 
-/** Scan entry frontmatter for a keyword; print ranked titles + descriptions. */
-function cmdQuery(keyword: string): number {
-  const kw = keyword.toLowerCase();
+/** Scan entry frontmatter for keywords; print ranked titles + descriptions (top 10 unless `--all`). */
+function cmdQuery(keywords: string[], all: boolean): number {
+  const kws = keywords.map((k) => k.toLowerCase());
   const scored: Array<{ score: number; row: Row }> = [];
   for (const r of loadDir(entriesDir())) {
     let score = 0;
-    if (r.triggers.some((t) => t.toLowerCase().includes(kw))) score += 4;
-    if (r.tags.some((t) => t.toLowerCase().includes(kw))) score += 3;
-    if (r.title.toLowerCase().includes(kw)) score += 2;
-    if (r.description.toLowerCase().includes(kw)) score += 1;
+    for (const kw of kws) {
+      if (r.triggers.some((t) => t.toLowerCase().includes(kw))) score += 4;
+      if (r.tags.some((t) => t.toLowerCase().includes(kw))) score += 3;
+      if (r.title.toLowerCase().includes(kw)) score += 2;
+      if (r.description.toLowerCase().includes(kw)) score += 1;
+    }
     if (score > 0) scored.push({ score, row: r });
   }
   scored.sort((a, b) => b.score - a.score);
   if (scored.length === 0) {
-    console.log(`no matches for '${kw}'`);
+    console.log(`no matches for ${kws.join(" ")}`);
     return 0;
   }
-  for (const { score, row } of scored) {
+  const limit = all ? scored.length : QUERY_LIMIT;
+  for (const { score, row } of scored.slice(0, limit)) {
     console.log(`--- ${row.id} (score=${score}) ${relative(ROOT, row.file)} ---`);
     console.log(`# ${row.title}`);
     console.log(row.description);
     console.log("");
   }
+  if (scored.length > limit) console.log(`(+${scored.length - limit} more, pass --all)`);
   return 0;
 }
 
@@ -606,7 +612,7 @@ function usage(): never {
   console.error(
     "usage: bun .agents/skills/memory/memory.ts [--root <dir>] <command> [args]\n" +
       "commands: rebuild | add [--fix] | stale [days] | stats | supersede <old> <new> |\n" +
-      "          prune [--apply] | query <keyword> | log <message> [--label <label>]"
+      "          prune [--apply] | query <keyword>... [--all] | log <message> [--label <label>]"
   );
   process.exit(2);
 }
@@ -681,8 +687,10 @@ function main(): number {
     case "prune":
       return cmdPrune(booleanFlag(rest, "--apply"));
     case "query": {
-      if (rest.length !== 1) usage();
-      return cmdQuery(rest[0] ?? "");
+      const all = rest.includes("--all");
+      const keywords = rest.filter((a) => a !== "--all");
+      if (keywords.length < 1) usage();
+      return cmdQuery(keywords, all);
     }
     case "log": {
       const { message, label } = parseLogArgs(rest);
