@@ -2,6 +2,18 @@ import { describe, test, expect, mock } from "bun:test";
 import { effect, flush } from "@hellajs/core";
 import { store } from "@hellajs/store/bundle";
 
+function expectUnwritten(read: () => unknown, update: () => void): void {
+  const tracker = mock(() => { });
+  effect(() => {
+    read();
+    tracker();
+  });
+  flush();
+  update();
+  flush();
+  expect(tracker).toHaveBeenCalledTimes(1);
+}
+
 describe("store", () => {
   describe("draft", () => {
     test("clones Date in draft update", () => {
@@ -150,6 +162,46 @@ describe("store", () => {
       expect(Array.from(data.members()).some(member => member.id() === 99)).toBe(true);
     });
 
+    test("writes through duplicate-content Set swap in draft update", () => {
+      const data = store({ tags: new Set<Record<string, number>>([{ x: 1 }, { x: 1 }]) });
+
+      data.$update(draft => {
+        draft.tags = new Set<Record<string, number>>([{ x: 1 }, { y: 2 }]);
+      });
+
+      expect(Array.from(data.$snapshot().tags as Set<Record<string, number>>)).toEqual([{ x: 1 }, { y: 2 }]);
+    });
+
+    test("writes through reversed duplicate-content Set swap in draft update", () => {
+      const data = store({ tags: new Set<Record<string, number>>([{ x: 1 }, { y: 2 }]) });
+
+      data.$update(draft => {
+        draft.tags = new Set([{ x: 1 }, { x: 1 }]);
+      });
+
+      expect(Array.from(data.$snapshot().tags as Set<Record<string, number>>)).toEqual([{ x: 1 }, { x: 1 }]);
+    });
+
+    test("leaves identical-content Set swap unwritten", () => {
+      const data = store({ tags: new Set([{ x: 1 }, { x: 1 }]) });
+      expectUnwritten(
+        () => data.tags(),
+        () => data.$update(draft => {
+          draft.tags = new Set([{ x: 1 }, { x: 1 }]);
+        })
+      );
+    });
+
+    test("compares NaN Set members by SameValueZero", () => {
+      const data = store({ tags: new Set([Number.NaN, { x: 1 }]) });
+      expectUnwritten(
+        () => data.tags(),
+        () => data.$update(draft => {
+          draft.tags = new Set([Number.NaN, { x: 1 }]);
+        })
+      );
+    });
+
     test("preserves class instance prototype when the draft mutates it", () => {
       class Point {
         x: number;
@@ -167,20 +219,12 @@ describe("store", () => {
 
     test("does not re-fire effects subscribed to untouched properties", () => {
       const data = store({ timestamp: new Date(1000), count: 0 });
-      const tracker = mock(() => { });
-
-      effect(() => {
-        data.timestamp();
-        tracker();
-      });
-      flush();
-
-      data.$update(draft => {
-        draft.count = 1;
-      });
-      flush();
-
-      expect(tracker).toHaveBeenCalledTimes(1);
+      expectUnwritten(
+        () => data.timestamp(),
+        () => data.$update(draft => {
+          draft.count = 1;
+        })
+      );
       expect(data.count()).toBe(1);
     });
   });

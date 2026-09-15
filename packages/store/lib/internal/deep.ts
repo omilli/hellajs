@@ -26,10 +26,12 @@ const isMarked = (fn: unknown): boolean =>
 /**
  * @internal
  * Reader-method names the readonly collection guard forwards to the real
- * container. Every other method gets a throwing stub, so a future core mutator
- * fails closed on readonly keys instead of silently mutating.
+ * container. Every other method — including `nodeAt`/`entry`, which return
+ * live core handles (a writable child Signal / a computed that ignores write
+ * args) — gets a throwing stub, so any write path fails closed on readonly
+ * keys instead of silently mutating or silently no-oping.
  */
-const collectionReaders = new Set(["get", "has", "length", "size", "keys", "values", "forEach", "map", "entry", "nodeAt"]);
+const collectionReaders = new Set(["get", "has", "length", "size", "keys", "values", "forEach", "map"]);
 
 /**
  * @internal
@@ -45,8 +47,6 @@ interface CollectionKeyOptions {
   /** Container-level transform over whole-collection setter calls; container methods bypass it. */
   middleware?: (value: unknown) => unknown;
 }
-
-/**
 
 /**
  * @internal

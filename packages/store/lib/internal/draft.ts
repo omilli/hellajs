@@ -78,11 +78,15 @@ export function structurallyEqual(a: unknown, b: unknown): boolean {
     let si = 0;
     while (si < members.length) {
       const member = members[si]!;
-      if (b.has(member)) { si++; continue; }
       let matched = false;
       let ri = 0;
       while (ri < remaining.length) {
-        if (structurallyEqual(member, remaining[ri]!)) { matched = true; break; }
+        const candidate = remaining[ri]!;
+        if (candidate === member || (candidate !== candidate && member !== member) || structurallyEqual(member, candidate)) {
+          matched = true;
+          remaining.splice(ri, 1);
+          break;
+        }
         ri++;
       }
       if (!matched) return false;

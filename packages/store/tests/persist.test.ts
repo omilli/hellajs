@@ -18,13 +18,15 @@ const createAdaptor = (initial: string | null) => {
 
 const deferredAdaptor = () => {
   let resolveRead!: (value: string | null) => void;
-  const promise = new Promise<string | null>((resolve) => {
+  let rejectRead!: (error: unknown) => void;
+  const promise = new Promise<string | null>((resolve, reject) => {
     resolveRead = resolve;
+    rejectRead = reject;
   });
   const read = mock(() => promise);
   const write = mock(() => {});
   const clear = mock(() => {});
-  return { read, write, clear, resolveRead };
+  return { read, write, clear, resolveRead, rejectRead };
 };
 
 describe("store", () => {
@@ -322,6 +324,23 @@ describe("persist", () => {
     data.count(2);
     await delay(30);
     expect(adaptor.write).not.toHaveBeenCalled();
+  });
+
+  test("abandons hydration when a disposed handle's async read rejects", async () => {
+    const { read, write, clear, rejectRead } = deferredAdaptor();
+    const onError = mock((error: unknown) => error);
+    const data = store({ theme: "light" });
+    const handle = persistStore(data, { read, write, clear }, { onError });
+
+    const onReady = mock(() => {});
+    handle.ready.then(onReady);
+    handle.dispose();
+    rejectRead(new Error("storage down"));
+    await delay(0);
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(handle.hydrated()).toBe(false);
+    expect(onReady).not.toHaveBeenCalled();
   });
 
   test("resolves ready after hydration settles", async () => {

@@ -184,5 +184,65 @@ describe("store", () => {
       expect(data.config.theme()).toBe("dark");
       expect(data.name()).toBe("app");
     });
+
+    // Contract change (deep collections): `nodeAt`/`entry` return writable core
+    // handles, so the readonly guard stubs them out fail-closed — writes through
+    // them throw instead of mutating (array) or silently no-oping (Map)
+    test("readonly array nodeAt handle throws and leaves the container unchanged", () => {
+      const data = store({
+        items: [1, 2, 3]
+      }, { readonly: true });
+
+      expect(() => (data.items as unknown as { nodeAt(i: number): (v?: number) => void }).nodeAt(0)(99)).toThrow('[store] readonly key "items"');
+
+      expect(data.items()).toEqual([1, 2, 3]);
+    });
+
+    test("readonly Map entry handle throws instead of silently no-oping", () => {
+      const data = store({
+        counts: new Map([["a", 1]])
+      }, { readonly: true });
+
+      expect(() => (data.counts as unknown as { entry(k: string): (v?: number) => void }).entry("a")(99)).toThrow('[store] readonly key "counts"');
+
+      expect(data.counts().get("a")).toBe(1);
+    });
+
+    test("readonly containers keep the reader surface: bare call, get, length, size, map, forEach", () => {
+      const data = store({
+        items: [1, 2, 3],
+        counts: new Map([["a", 1]])
+      }, { readonly: true });
+
+      expect(data.items()).toEqual([1, 2, 3]);
+      expect((data.items as unknown as { length(): number }).length()).toBe(3);
+      expect((data.items as unknown as { get(i: number): number }).get(1)).toBe(2);
+      expect((data.items as unknown as { map(fn: (v: number) => number): number[] }).map(v => v * 2)).toEqual([2, 4, 6]);
+      const seen: number[] = [];
+      (data.items as unknown as { forEach(fn: (v: number) => void): void }).forEach(v => seen.push(v));
+      expect(seen).toEqual([1, 2, 3]);
+      expect(data.counts().get("a")).toBe(1);
+      expect((data.counts as unknown as { size(): number }).size()).toBe(1);
+      expect((data.counts as unknown as { get(k: string): number }).get("a")).toBe(1);
+    });
+
+    test("writable collections still forward nodeAt and entry", () => {
+      const data = store({
+        items: [1, 2, 3],
+        counts: new Map([["a", 1]])
+      });
+
+      // nodeAt returns a writable child Signal — the write applies
+      (data.items as unknown as { nodeAt(i: number): (v?: number) => void }).nodeAt(0)(99);
+      expect((data.items as unknown as { get(i: number): number }).get(0)).toBe(99);
+
+      // entry returns a computed handle (writes are ignored by core, even here);
+      // forwarding means the handle is live — its read tracks a later update
+      const handle = (data.counts as unknown as { entry(k: string): () => number }).entry("a");
+      expect(handle()).toBe(1);
+      data.$update({ counts: new Map([["a", 42]]) });
+      expect(handle()).toBe(42);
+      expect((data.counts as unknown as { get(k: string): number }).get("a")).toBe(42);
+    });
   });
 });

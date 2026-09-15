@@ -313,7 +313,7 @@ export function createStore<T extends Record<string, unknown>>(
     { writable: false }
   );
 
-  const initialEntries = Array.from(Object.entries(initial));
+  const initialEntries = Object.entries(initial);
   let i = 0;
   const len = initialEntries.length;
   while (i < len) {

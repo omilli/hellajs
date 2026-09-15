@@ -32,11 +32,13 @@ export function persistStore<T extends Record<string, unknown>>(
     };
   }
 
-  const serialize = options?.serialize ?? ((state: PartialDeep<T>) => JSON.stringify(state));
-  const deserialize = options?.deserialize ?? ((raw: string) => JSON.parse(raw) as PartialDeep<T>);
-  const partialize = options?.partialize ?? ((state: Snapshot<T>) => state as PartialDeep<T>);
-  const onError = options?.onError;
-  const debounceMs = options?.debounce;
+  const {
+    serialize = (state: PartialDeep<T>) => JSON.stringify(state),
+    deserialize = (raw: string) => JSON.parse(raw) as PartialDeep<T>,
+    partialize = (state: Snapshot<T>) => state as PartialDeep<T>,
+    onError,
+    debounce: debounceMs
+  }: PersistOptions<T> = options ?? {};
 
   const hydratedSignal = signal(false);
   let resolveReady!: () => void;
@@ -163,7 +165,7 @@ export function persistStore<T extends Record<string, unknown>>(
         },
         (error: unknown) => {
           onError?.(error);
-          finish();
+          if (!disposed) finish();
         }
       );
     } else {
