@@ -1,7 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { signal } from "@hellajs/core";
 import { suppressConsole } from "@utils/test-helpers.js";
-import { html, ForEach, Transition, Portal, Lazy } from "@hellajs/dom/bundle";
+import { html, ForEach, Transition, Portal, Lazy, component } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import { headParityCases, unknownKindNode } from "./helpers";
@@ -59,6 +59,13 @@ describe("ssr", () => {
   test("emits an empty marker region when Transition show is false", () => {
     const node = html`<div><${Transition} show=${false}>${html`<p>on</p>`}</${Transition}></div>` as HellaNode;
     expect(ssr(node)).toBe("<div><!--[--><!--]--></div>");
+  });
+
+  test("renders Transition array children when show is true (JSX shape: children is [child])", () => {
+    // component(Transition, { children: [child] }) — the JSX compile passes children as an ARRAY;
+    // byte-identical to the single-child template case above (the array iterates to the same one child).
+    const node = html`<div>${component(Transition as unknown as (props: Record<string, unknown>) => HellaNode, { show: true, children: [html`<p>on</p>`] })}</div>` as HellaNode;
+    expect(ssr(node)).toBe("<div><!--[--><p>on</p><!--]--></div>");
   });
 
   test("emits an empty marker region for Portal and does not throw", () => {

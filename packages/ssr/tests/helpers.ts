@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import { html, ForEach } from "@hellajs/dom/bundle";
+import { html, ForEach, Transition, component } from "@hellajs/dom/bundle";
 import type { HellaNode } from "@hellajs/dom";
 import type { HeadOptions } from "@hellajs/ssr";
 
@@ -31,6 +31,7 @@ export const parityCases: { name: string; node: HellaNode }[] = [
   { name: "reactive child resolving to a non-HellaNode object", node: html`<div>${signal({ notag: true } as unknown as HellaNode)}</div>` as HellaNode },
   { name: "reactive getter returning an isDynamic component", node: html`<div>${() => ForEach({ each: signal([1, 2, 3]), use: (n: number) => html`<li>${n}</li>` })}</div>` as HellaNode },
   { name: "isDynamic function without ssr meta (empty region)", node: html`<div>${bareDynamicFn}</div>` as HellaNode },
+  { name: "Transition with JSX array children (children: [child])", node: html`<div>${component(Transition as unknown as (props: Record<string, unknown>) => HellaNode, { show: true, children: [html`<p>on</p>`] })}</div>` as HellaNode },
 ];
 
 /** Attribute-serialization parity cases — exercise the `serializeProp` branches (void / boolean / array / falsy). */

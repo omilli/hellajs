@@ -76,7 +76,7 @@ describe("ssr.stream", () => {
     expect(step.mock.calls.length).toBeLessThanOrEqual(2);   // read-ahead bounded by the queue high-water mark, not the full walk
     let chunk = await reader.read();                // resume consuming — the walk advances with the reads
     while (!chunk.done) { chunk = await reader.read(); }
-    expect(step.mock.calls.length).toBe(6);         // every child walked once the stream is fully consumed
+    expect(step).toHaveBeenCalledTimes(6);          // every child walked once the stream is fully consumed
   });
 
   test("cancel stops the generator (best-effort, no throw)", async () => {

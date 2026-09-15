@@ -69,7 +69,7 @@ describe("doc", () => {
   });
 
   test("renders void <link> tags in order", () => {
-    expect(doc({ body: "X", head: { links: [{ rel: "stylesheet", href: "/a.css" }, { rel: "icon", href: "/f.ico" }] } })).toContain("<link rel=\"stylesheet\" href=\"/a.css\"><link rel=\"icon\" href=\"/f.ico\">");
+    expect(doc({ body: "X", head: { links: [{ rel: "stylesheet", href: "/a.css" }, { rel: "icon", href: "/f.ico" }] } })).toBe("<!DOCTYPE html><html><head><link rel=\"stylesheet\" href=\"/a.css\"><link rel=\"icon\" href=\"/f.ico\"></head><body>X</body></html>");
   });
 
   test("joins head.styles into one <style> without re-escaping", () => {
@@ -77,11 +77,11 @@ describe("doc", () => {
   });
 
   test("renders an external script from { src }", () => {
-    expect(doc({ body: "X", head: { scripts: [{ src: "/app.js" }] } })).toContain("<script src=\"/app.js\"></script>");
+    expect(doc({ body: "X", head: { scripts: [{ src: "/app.js" }] } })).toBe("<!DOCTYPE html><html><head><script src=\"/app.js\"></script></head><body>X</body></html>");
   });
 
   test("renders an inline script from { content } without escaping", () => {
-    expect(doc({ body: "X", head: { scripts: [{ content: "if(a<b){}" }] } })).toContain("<script>if(a<b){}</script>");
+    expect(doc({ body: "X", head: { scripts: [{ content: "if(a<b){}" }] } })).toBe("<!DOCTYPE html><html><head><script>if(a<b){}</script></head><body>X</body></html>");
   });
 
   test("drops src when content is set (inline wins — a <script src> would ignore its body)", () => {
@@ -105,7 +105,7 @@ describe("doc", () => {
   });
 
   test("appends head.raw verbatim inside <head>", () => {
-    expect(doc({ body: "X", head: { raw: "<!--ga-->" } })).toContain("<head><!--ga--></head>");
+    expect(doc({ body: "X", head: { raw: "<!--ga-->" } })).toBe("<!DOCTYPE html><html><head><!--ga--></head><body>X</body></html>");
   });
 
   test("places body verbatim without re-escaping", () => {
@@ -134,11 +134,11 @@ describe("doc", () => {
   });
 
   test("emits the mount's tag for a tag#id string mount", () => {
-    expect(doc({ body: "X", mount: "main#app" })).toContain("<body><main id=\"app\">X</main></body>");
+    expect(doc({ body: "X", mount: "main#app" })).toBe("<!DOCTYPE html><html><head></head><body><main id=\"app\">X</main></body></html>");
   });
 
   test("joins class mounts with spaces (string body)", () => {
-    expect(doc({ body: "X", mount: ".wrap.x" })).toContain("<body><div class=\"wrap x\">X</div></body>");
+    expect(doc({ body: "X", mount: ".wrap.x" })).toBe("<!DOCTYPE html><html><head></head><body><div class=\"wrap x\">X</div></body></html>");
   });
 
   test("string mode equals the streamed mode byte-for-byte for the same body", async () => {
@@ -221,7 +221,7 @@ describe("doc", () => {
     expect(step.mock.calls.length).toBeLessThanOrEqual(2);   // read-ahead bounded by the two queues' high-water marks
     let chunk = await reader.read();                 // resume consuming — the document and body advance with the reads
     while (!chunk.done) { chunk = await reader.read(); }
-    expect(step.mock.calls.length).toBe(6);          // draining the document drains (and completes) the body
+    expect(step).toHaveBeenCalledTimes(6);           // draining the document drains (and completes) the body
   });
 
   test("emits the data payload after the mount wrapper, before </body> (string mode)", () => {
