@@ -4,9 +4,12 @@ import { logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
 import type { Relay } from "../agent/relay.js";
 import { worktreeScript } from "../agent/worktree.js";
-import { isTicked, listPlanUnits, type PlanUnit } from "../plans/set.js";
+import { isTicked, listPlanUnits, type PlanUnit } from "../worker/set.js";
 import { unionGate } from "./gate.js";
 import { allTickedInMainTree, deriveQueue, isCompleteInWorktree, mainTreeTickTotal, type QueueEntry } from "./queue.js";
+
+/** Default model pattern for merge instances (`--model` overrides). */
+const DEFAULT_MERGE_MODEL = "glm-5.3-flash";
 
 /** Options for one full merge run. */
 export interface MergeOptions {
@@ -84,6 +87,7 @@ function buildMergePrompt(entry: QueueEntry, setDir: string, relSetDir: string, 
  * @returns Process exit code.
  */
 export async function runMerge(options: MergeOptions): Promise<number> {
+  options.model ??= DEFAULT_MERGE_MODEL;
   const units = listPlanUnits(options.setDir);
   const setName = basename(options.setDir);
   const relSetDir = relative(projectRoot, options.setDir);

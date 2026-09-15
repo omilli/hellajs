@@ -3,7 +3,7 @@
  * (`scripts/remote/server.ts`).
  *
  * Three start kinds: plan sets enumerated from the real `plans/` tree
- * (read-only, reusing the `scripts/plans/set.ts` listing), fixed presets,
+ * (read-only, reusing the `scripts/worker/set.ts` listing), fixed presets,
  * and a custom-command escape hatch parsed to an argv array (never a
  * shell). Owns the concurrency guards that keep worktree-driving runs from
  * racing each other.
@@ -11,7 +11,7 @@
 
 import { readdirSync } from "node:fs";
 import path from "node:path";
-import { listPlanUnits } from "../plans/set.js";
+import { listPlanUnits } from "../worker/set.js";
 import { projectRoot } from "../utils/index.js";
 
 /** One preset command (exact argv, no shell). */
@@ -61,7 +61,7 @@ function subdirectories(dir: string): string[] {
 /**
  * Enumerate the plan sets under `plans/` (three levels:
  * `<package>/<category>/<topic>`), reusing the `listPlanUnits` enumeration
- * shape from `scripts/plans/set.ts` read-only.
+ * shape from `scripts/worker/set.ts` read-only.
  *
  * @returns Plan sets with their unit counts, in path order.
  */
@@ -161,7 +161,7 @@ export function startCustom(command: string): string[] {
  */
 export function resolveStartArgv(kind: string, ref: string, explicitArgv: string[] | null): string[] {
   if (kind === "plan-set") {
-    return ["bun", "plans", ref];
+    return ["bun", "worker", ref];
   }
   if (kind === "preset") {
     const preset = PRESETS.find((entry: Preset): boolean => entry.ref === ref);

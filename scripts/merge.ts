@@ -1,5 +1,5 @@
 import { logger } from "./utils/index.js";
-import { resolveSetFolder } from "./plans/set.js";
+import { resolveSetFolder } from "./worker/set.js";
 import { runMerge } from "./merge/run.js";
 
 /** Parsed CLI configuration. */

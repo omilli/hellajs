@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join, sep } from "node:path";
 import { execCommandInherited, isValidPackage, logger, projectRoot } from "../utils/index.js";
-import { listPlanUnits } from "../plans/set.js";
+import { listPlanUnits } from "../worker/set.js";
 import { dialogHook, driveAgent } from "../agent/driver.js";
 import type { Relay } from "../agent/relay.js";
 

@@ -45,7 +45,7 @@
 		"coverage": "bun ./scripts/coverage.ts",
 		"bench": "bun ./scripts/bench.ts",
 		"changeset": "changeset",
-		"plans": "bun ./scripts/plans.ts",
+		"worker": "bun ./scripts/worker.ts",
 		"merge": "bun ./scripts/merge.ts",
 		"audits": "bun ./scripts/audits.ts",
 		"remote": "bun ./scripts/remote.ts",

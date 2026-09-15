@@ -3,7 +3,7 @@ import { join, relative } from "node:path";
 import { logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
 import type { Relay } from "../agent/relay.js";
-import { listPlanUnits } from "../plans/set.js";
+import { listPlanUnits } from "../worker/set.js";
 
 /** One audit section key; also the plan-set suffix and the prompt's skill suffix. */
 export type AuditSection = "code" | "tests" | "docs";
@@ -257,7 +257,7 @@ function printSummary(records: SectionRecord[], halted: boolean): void {
   }
   const sets = records.filter((record: SectionRecord): boolean => record.setRel !== null);
   if (sets.length > 0) {
-    const invocations = sets.map((record: SectionRecord): string => `bun plans ${record.setRel}`).join("  ·  ");
+    const invocations = sets.map((record: SectionRecord): string => `bun worker ${record.setRel}`).join("  ·  ");
     logger.info(`review the plan sets, then execute each with: ${invocations}`);
   }
   if (halted) {

@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
 import { projectRoot } from "../utils/index.js";
 import { WT_ROOT } from "../agent/worktree.js";
-import { isTicked, listPlanUnits, partitionComponents, setSlug, countTicks, type PlanUnit } from "../plans/set.js";
+import { isTicked, listPlanUnits, partitionComponents, setSlug, countTicks, type PlanUnit } from "../worker/set.js";
 
 /** One worktree inventory line, as printed by `worktree.mjs list`. */
 export interface WorktreeEntry {

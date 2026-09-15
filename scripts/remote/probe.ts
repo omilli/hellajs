@@ -384,7 +384,7 @@ export async function runProbe(options: ProbeOptions): Promise<void> {
     );
 
     // Pi chat session: a daemon-owned pi child driven over WS end to end
-    // (the `bun plans --probe` precedent — the interactive chain tests
+    // (the `bun worker --probe` precedent — the interactive chain tests
     // itself). Skips (exit 0) only when pi is absent from PATH.
     if (Bun.which("pi") === null) {
       logger.warn("pi not on PATH - skipping the pi chat session leg of the probe");

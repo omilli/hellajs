@@ -1,6 +1,6 @@
 import { logger } from "./utils/index.js";
-import { resolveSetFolder } from "./plans/set.js";
-import { type WorktreeMode, runProbe, runSet } from "./plans/run.js";
+import { resolveSetFolder } from "./worker/set.js";
+import { type WorktreeMode, runProbe, runSet } from "./worker/run.js";
 
 /** Parsed CLI configuration. */
 interface PlansArgs {
@@ -52,8 +52,8 @@ function parseArgs(argv: string[]): PlansArgs {
 
 /** Print the usage line. */
 function printUsage(): void {
-  logger.error("usage: bun plans <set-folder> [--wt=single|split] [--model=<provider/id[:thinking]>]");
-  logger.error("       bun plans --probe [--model=<provider/id[:thinking]>]");
+  logger.error("usage: bun worker <set-folder> [--wt=single|split] [--model=<provider/id[:thinking]>]");
+  logger.error("       bun worker --probe [--model=<provider/id[:thinking]>]");
 }
 
 /** Entry point: parse args, validate, and dispatch to probe or run. */
@@ -70,7 +70,7 @@ async function main(): Promise<void> {
     const setDir = resolveSetFolder(args.setFolder);
     process.exit(await runSet({ setDir, model: args.model, mode: args.mode }));
   } catch (error) {
-    logger.error(`plans failed: ${(error as Error).message}`);
+    logger.error(`worker failed: ${(error as Error).message}`);
     process.exit(1);
   }
 }
