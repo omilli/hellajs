@@ -11,16 +11,23 @@ npm install @hellajs/dom @hellajs/ssr
 ### Example
 
 ```js
+import { signal } from '@hellajs/core';
 import { html } from '@hellajs/dom';
 import { ssr, doc } from '@hellajs/ssr';
 
-const greet = (name) => html`<div><h1>Hello ${name}</h1></div>`;
+const count = signal(5);
+const greet = (name) => html`<div><h1>Hello ${name}</h1><p>Count: ${count}</p></div>`;
 
 const body = ssr(greet('World'));
-// body: "<div><h1>Hello World</h1></div>"
+// body: "<div><h1>Hello World</h1><p>Count: <!--[-->5<!--]--></p></div>"
 
 // Assemble a full document
-const page = doc({ head: { title: 'Hello' }, body });
+const page = doc({
+  lang: 'en',
+  mount: '#app',
+  head: { title: 'Hello', meta: [{ charset: 'utf-8' }] },
+  body,
+});
 ```
 
 ### API

@@ -5,7 +5,10 @@ Assemble a rendered body and an optional head into a complete HTML document: a p
 ## API
 
 ```typescript
+// String body (from ssr / ssr.async): returns the complete document string
 function doc(options: DocOptions & { body: string }): string
+
+// ReadableStream body (from ssr.stream): streaming document, shell first, closing tags last
 function doc(options: DocOptions & { body: ReadableStream<string> }): ReadableStream<string>
 ```
 
