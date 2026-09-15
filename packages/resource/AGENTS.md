@@ -34,7 +34,7 @@ Reactive async data fetching over `@hellajs/core`. Cache-first pipeline with fet
 
 Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loading/fetching and fires `onError` only for a truthy error; `handleSuccessError` clears loading/fetching for AbortError **without** setting error, else delegates to `handleError`; `handleSuccess` writes `rawData`, clears flags, fires `onSuccess`; `cleanAbort(controller?)` aborts the prior controller and returns `controller ?? new AbortController()`.
 
-### Cache (`cacheMap`, cache.ts:12)
+### Cache (`cacheMap`, lib/cache.ts)
 
 - `cacheMap = new Map<unknown, Map<unknown, CacheEntry>>()` — **strong Map**, outer key = fetcher function reference, inner key = the `stableKey`-normalized cache key (structural equality for arrays/plain objects; reference for everything else). Fetchers are retained while their scope holds entries; `cleanupExpiredCache` reaps a scope once its last entry expires, and `getScope` recreates it on the next write (agent: avoid unbounded unique-fetcher patterns — live entries still pin their fetcher).
 - `PUBLIC_SCOPE = Symbol("public")` — target scope for `resourceCache.set()`.
@@ -44,7 +44,7 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 - `cleanupExpiredCache`: throttled to 60s (`lastCleanupTime` module var), 100-entry batch cap, deletes where `now - timestamp > cacheTime`, then reapes scopes left empty (`cacheMap.delete(scope)`) — the only empty-scope reap site; scopes emptied by invalidation or LRU eviction are released by the next throttled pass (≤60 s + next cache write).
 - `isStale(entry)`: `staleTime === Infinity` → false; else `now - timestamp > staleTime`.
 
-### Deduplication (`ongoingRequestsMap`, dedupe.ts:17)
+### Deduplication (`ongoingRequestsMap`, lib/internal/dedupe.ts)
 
 - `WeakMap<object, Map<key, {promise, abortController}>>` — GCs with the fetcher. Inner keys are `stableKey`-normalized, so equal-shaped object keys join. **No subscriber list**; joiners simply `await` the shared promise and share the shared `abortController`.
 - `force` skips the *lookup* but `setOngoing` still registers the in-flight promise, so later non-force fetches join a force request while it runs.
@@ -68,7 +68,7 @@ Key internal helpers: `handleError(err?, loading?, fetching?)` sets error/loadin
 - **Offline pausing** (`pauseWhenOffline`): a per-resource `resourceCache.onOnlineChange` listener registered at creation (only when the flag is set). On `online` it fires **only for a live deferral** (`paused()` true): `paused(false)` + `run(stashedForce)` — an online event with nothing stashed never fetches (that is `refetchOnReconnect`'s job; with both set, cache/dedupe absorbs the overlap). The stashed force flag is last-write-wins — a polling tick's deferred `run(false)` overwrites a stashed `true`.
 - **Setup gates differ**: `polling.setup()` requires `isEnabled() && refetchInterval` — it works standalone, no auto-fetch opt-in — and arms **once**: at creation when enabled, otherwise on the first truthy enabled evaluation inside the effect (an `enabled` getter flipping false→true starts polling); key changes never reset the cadence. `focus.setup()` and `reconnect.setup()` require only their own boolean flags (work without auto-fetch). All three are cleared by `abort`/`reset`/`dispose`; `reset()` re-arms polling, `abort()` does not (recreate to resume). The offline-pause listener follows the same lifecycle (cleared by `abort`/`reset`/`dispose`, never re-armed; `reset()`/`abort()` also clear `paused`).
 
-### LRU eviction (cache.ts:111)
+### LRU eviction (lib/cache.ts `setCacheData`)
 
 Global, lazy, on every `setCacheData` that pushes `totalSize()` over `maxSize` (when `enableLRU`): flatten every entry across all scopes → sort by `lastAccess` ascending → delete the N oldest from their owning scope. O(n log n) full sort, no heap.
 
@@ -187,19 +187,19 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 - `fetch({force:true})` skips cache + dedup **lookup** but still calls `setOngoing`, so later non-force fetches join it while in flight. (resource.ts `run`)
 - SWR background call is `run(true)` (force): it skips the cache lookup but re-enters dedup. (resource.ts `run` cache phase)
 - With `cacheTime=0` (default), every non-force `fetch()` falls through to dedup/network — no cache phase runs. (resource.ts `run` cache phase)
-- `setData` always updates `rawData`; cache write is gated on `cacheTime > 0`. With an expired cache entry, `setData`'s `getCacheData` deletes the stale entry and the updater still sees `rawData()` as the old value, then re-creates the entry. (resource.ts `setData`, resource-cache.test.ts)
+- `setData` always updates `rawData`; cache write is gated on `cacheTime > 0`. With an expired cache entry, `setData`'s `getCacheData` deletes the stale entry and the updater still sees `rawData()` as the old value, then re-creates the entry. (resource.ts `setData`, tests/resource-cache-update.test.ts)
 - `mutate` results are **not** cached and do not dedup; `handleSuccess` fires (and `onSuccess`) but `setCacheData` is never called. (resource.ts `mutate`)
 - Cache + dedup are keyed by **fetcher reference identity**. Each `resource("url")` call builds a fresh fetcher closure → two URL resources with the same URL get **separate** cache/dedup scopes. Share a named fetcher function to share scope (needed for transform-sharing). (resource.ts URL-overload closure)
 - Within a fetcher scope, keys compare **structurally** for arrays/plain objects — `run`/`setData`/`invalidate` and every `resourceCache` key-taking method normalize through `stableKey` (`lib/internal/key.ts`), so `key: () => ({ ...filters() })` rebuilds hit the same entries. Primitives pass through byte-identical (the whole backward-compat story); top-level `Date`/`Map`/`Set`/class instances — and objects **containing** non-plain values (incl. symbol-keyed properties) — fall back to reference identity (a nested non-plain value aborts hashing for the whole key). The fetcher still receives the **raw** key; `cacheKey()` returns it too. Hashed keys are opaque strings — `invalidateByPrefix`/`invalidateByPattern` cannot meaningfully match them.
-- `resourceCache.set()` targets `PUBLIC_SCOPE`; a manual entry and a resource entry with the same key coexist as two entries. (cache.ts:229, collision.test.ts:167)
-- `resourceCache.map.get` does **not** refresh `lastAccess`; `resourceCache.get` does. They are different code paths. (cache.ts:183 vs 232)
+- `resourceCache.set()` targets `PUBLIC_SCOPE`; a manual entry and a resource entry with the same key coexist as two entries. (lib/cache.ts `set`, tests/collision.test.ts `resourceCache.set and resource cache do not collide on same key`)
+- `resourceCache.map.get` does **not** refresh `lastAccess`; `resourceCache.get` does. They are different code paths. (lib/cache.ts `flatView.get` vs `getCacheData`)
 
 **Abort & error**
 - AbortError never sets `error()`; status falls back to data-derived (typically `idle`). Check `isIdle() && !isFetching()` rather than `error()` after abort/timeout. (resource.ts `handleSuccessError`)
 - A success-path `onSettled` throw rejects `mutate` with the callback's own error and fires `onSettled` exactly once: settlement lives outside the error-mapping catch, so `error()`/`isLoading`/`isFetching` stay untouched (resource stays `success`, committed data stands) and `invalidates` is skipped. (resource.ts `mutate`)
 - `onError` fires only when a truthy error reaches `handleError` — never on the state-clearing calls (fetch start, cache hit, dedup join, abort, reset).
 - `dispose()` does **not** abort in-flight requests and does **not** touch the cache; a resolving fetcher promise still updates `rawData` after dispose. It only clears polling/focus/reconnect + the key-change effect. One-way (resource is dead after). (resource.ts `dispose`, fetching.test.ts)
-- Dedup joiners adopt the shared `abortController`; aborting one joined resource aborts the shared controller and resets **all** joiners to their `initialData`. (resource.ts `run` dedup phase, deduplication.test.ts:110)
+- Dedup joiners adopt the shared `abortController`; aborting one joined resource aborts the shared controller and resets **all** joiners to their `initialData`. (resource.ts `run` dedup phase, tests/deduplication.test.ts `handles abort during deduplication`)
 - `onSettled` is skipped on mutation abort — even if `onMutate` already ran and produced a context for rollback. (resource.ts `mutate`, mutations.test.ts)
 - Concurrent `mutate()` calls are independent — per-call abort controller, per-call `onMutate` context threaded to that call's `onSettled` (no shared `mutationContext` closure); only `abort()`, `timeout`, or the external signal cancels a mutation. (resource.ts `mutate`)
 - External `abortSignal` already-aborted at call time → internal controller aborted synchronously before the fetcher runs. (resource.ts `run` request phase)
@@ -209,21 +209,21 @@ Opt-in (`structuralSharing`, default false). On fetch-success only: returns `pre
 **Lifecycle & reactivity**
 - `data` is **always** a `computed` (with or without transform); reading `data()` inside an effect tracks `rawData`. (resource.ts `data` computed)
 - `status()` reads `rawData()` directly, so `transform` cannot change status. A fetch returning a value equal to `initialData` leaves status `idle`. (resource.ts `status`)
-- Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts `run` guard, retry.test.ts:153)
+- Manual `fetch()` bypasses `enabled` **only when `enabled` is a getter**; static `enabled:false` blocks manual fetch too (guard: `manual && enabledIsFn`). (resource.ts `run` guard, tests/retry.test.ts `respects enabled: false`)
 - Auto-fetch requires `refetchOnKeyChange:true`. With an explicit `key`, the effect skips fetches while the key resolves to `null`/`undefined`; with **no** explicit key (default `() => undefined`) it always fetches. (resource.ts key-change effect, fetching.test.ts)
 - `keepPreviousData: false` clears `rawData(undefined)` when the tracked key changes, before the auto `run(false)` — the fetch window reads `data()` `undefined`, `isLoading()` true, `status()` `"loading"`. `initialData` is deliberately not re-applied (a key change is a refetch, not the never-fetched state). The effect's `prevKey`/`hasPrevKey` closure updates on every key evaluation: the first evaluation and enabled flips with an unchanged key never clear; a key passing through `null`/`undefined` still counts as changed on the next non-null value. (resource.ts key-change effect, keep-previous-data.test.ts)
 - `polling.setup()` is gated on `isEnabled() && refetchInterval` (standalone — no auto-fetch opt-in) and armed via a `pollingArmed` flag: creation-time arm, or first truthy enabled evaluation in the effect; not re-armed by key changes or after `abort`, re-armed by `reset()`. `focus`/`reconnect` setup are gated only on their own flags and work without auto-fetch. (resource.ts setup gates, focus.test.ts)
 - `pauseWhenOffline` defers at `run()` entry only — in-flight requests are not paused (they fail into `error()` as usual), and the deferral check precedes the cache phase, so even TTL-fresh cache hits defer while offline. `isPaused()` self-heals: any `run()` that proceeds online, plus `abort()`/`reset()`/`dispose()`, clears it. (resource.ts `run` offline deferral, offline-pausing.test.ts)
-- `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained while their scope holds entries — reaped once empty); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (cache.ts:12, dedupe.ts:17)
-- Cache entries are module-level and survive `dispose()`/resource recreation. (cache.ts:12)
+- `cacheMap` is a strong `Map` keyed by fetcher (fetchers retained while their scope holds entries — reaped once empty); `ongoingRequestsMap` is a `WeakMap<object,...>` (GCs with fetcher). (lib/cache.ts `cacheMap`, lib/internal/dedupe.ts `ongoingRequestsMap`)
+- Cache entries are module-level and survive `dispose()`/resource recreation. (lib/cache.ts `cacheMap`)
 
 **Cache invalidation**
-- `invalidateByPrefix` / `invalidateByPattern` match **string keys only**; non-string keys are skipped silently. (cache.ts:300,326, batch-invalidation.test.ts:35)
-- `update`/`updateCacheData` return `false` on miss or expired entry (and delete the expired entry in passing). (cache.ts:156-179)
-- LRU eviction is **global** across all scopes; runs only when `totalSize()` exceeds `maxSize` after a `setCacheData`. (cache.ts:111-137, collision.test.ts:130)
-- `cleanupExpiredCache` is throttled (60s) and capped (100 deletions/pass); invoked lazily from `setCacheData` and the cache-lookup phase of `run`; reaps scopes it empties, while invalidation/LRU-emptied scopes await the next throttled pass. (cache.ts:71-103)
-- `staleTime` default differs by entry point: resources pass `staleTime ?? Infinity` (never stale); `resourceCache.set` defaults `staleTime` to `0` (always stale). (resource.ts `run`, cache.ts:224)
-- `invalidateResources` calls `.invalidate()` on each member synchronously (no batching/dedup of the resulting refetches). (cache.ts:345)
+- `invalidateByPrefix` / `invalidateByPattern` match **string keys only**; non-string keys are skipped silently. (lib/cache.ts `invalidateByPrefix` / `invalidateByPattern`, tests/invalidate-by-prefix.test.ts `does not match numeric keys with string prefix`)
+- `update`/`updateCacheData` return `false` on miss or expired entry (and delete the expired entry in passing). (lib/cache.ts `updateCacheData`)
+- LRU eviction is **global** across all scopes; runs only when `totalSize()` exceeds `maxSize` after a `setCacheData`. (lib/cache.ts `setCacheData` eviction, tests/collision.test.ts `LRU eviction is global across fetcher scopes`)
+- `cleanupExpiredCache` is throttled (60s) and capped (100 deletions/pass); invoked lazily from `setCacheData` and the cache-lookup phase of `run`; reaps scopes it empties, while invalidation/LRU-emptied scopes await the next throttled pass. (lib/cache.ts `cleanupExpiredCache`)
+- `staleTime` default differs by entry point: resources pass `staleTime ?? Infinity` (never stale); `resourceCache.set` defaults `staleTime` to `0` (always stale). (resource.ts `run`, lib/cache.ts `set`)
+- `invalidateResources` calls `.invalidate()` on each member synchronously (no batching/dedup of the resulting refetches). (lib/cache.ts `invalidateResources`)
 
 ## Performance & memory
 

@@ -1,6 +1,6 @@
 # HellaJS @hellajs/resource vs. TanStack Query / SWR / RTK Query / Solid createResource / VueUse useFetch
 
-A ground-up comparison based on the actual source code of `@hellajs/resource` v2. Every claim below was verified against `packages/resource/lib/`. Competitor versions researched: TanStack Query 5.102 (v5 guides), SWR 2.5.1 (source), RTK Query in Redux Toolkit 2.12.0 (docs), Solid 1.9.15 (source), VueUse 14.4.0 (source).
+A ground-up comparison based on the actual source code of `@hellajs/resource` v1. Every claim below was verified against `packages/resource/lib/`. Competitor versions researched: TanStack Query 5.102 (v5 guides), SWR 2.5.1 (source), RTK Query in Redux Toolkit 2.12.0 (docs), Solid 1.9.15 (source), VueUse 14.4.0 (source).
 
 ---
 
