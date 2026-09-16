@@ -1,0 +1,76 @@
+# Headless Behaviors
+
+Headless behaviors are pure DOM wiring functions: focus traps, escape and outside-click listeners, roving tabindex. They move focus and attach document-level events; they never own markup or state.
+
+## Behavior Functions, Not Components
+
+Each behavior is one function that takes real DOM nodes and returns a dispose handle. There is no component wrapper, no props object, no hidden instance: [`trapFocus`](/reference/primitives/trapfocus) takes a container, [`onEscape`](/reference/primitives/onescape) takes a target and a callback, [`onOutside`](/reference/primitives/onoutside) takes a getter and a callback, [`rovingTabIndex`](/reference/primitives/rovingtabindex) takes a container.
+
+A headless component layer would rebuild component machinery HellaJS already has (component detection, lazy and async wrappers) and force props-passthrough plumbing onto what are three one-line wirings. Behavior functions compose with whatever renders the DOM: signals and templates, portals, custom elements, or no HellaJS at all.
+
+## State Stays in Caller Signals
+
+The behaviors hold zero state. Which panel is open, which tab is active, whether the menu is dismissed: all of it lives in your signals, and the behaviors read it through the callbacks and getters you hand them. [`onOutside`](/reference/primitives/onoutside) never learns what a portal is; it re-invokes your getter and trusts the nodes it returns. This is the split that keeps the package dependency-free: `@hellajs/primitives` has no runtime dependencies and no peers, so copy/paste registry components import it without dragging a reactivity model along.
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { onOutside } from "@hellajs/primitives";
+
+const open = signal(false);
+
+const Menu = () => (
+  <nav hook:afterMount={(node) => {
+    if (!(node instanceof HTMLElement)) return;
+    // open() is the single source of truth; onOutside only reports the gesture
+    onOutside(() => [node], () => open(false));
+  }}>
+    <button>Menu</button>
+  </nav>
+);
+
+mount(<Menu />, "#app");
+```
+
+## The Dispose-Handle Contract
+
+Every behavior returns `() => void`. The handle removes the listeners and undoes the DOM mutations the behavior made ([`trapFocus`](/reference/primitives/trapfocus) restores the pre-trap focus, [`rovingTabIndex`](/reference/primitives/rovingtabindex) restores original `tabindex` attributes). Two wirings listen on `document`, so a dispose skipped on close leaks a live global listener: call the handle in the same path that closes or unmounts the UI.
+
+## Composing With `hook:` and `$ref`
+
+The `hook:` element prefixes are the natural mount and cleanup points: wire in `hook:afterMount`, dispose in `hook:beforeDestroy`. The hook hands you the very element it sits on, so no querying is needed at any layer.
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { trapFocus, onEscape, onOutside } from "@hellajs/primitives";
+
+const open = signal(false);
+const cleanup: (() => void)[] = [];
+
+const Dialog = () => (
+  <div class="overlay">
+    <div
+      class="panel"
+      hook:afterMount={(node) => {
+        if (!(node instanceof HTMLElement)) return;
+        cleanup.push(
+          trapFocus(node),
+          onEscape(node, () => open(false)),
+          onOutside(() => [node], () => open(false))
+        );
+      }}
+      hook:beforeDestroy={() => {
+        cleanup.forEach((dispose) => dispose());
+        cleanup.length = 0;
+      }}
+    >
+      <button on:click={() => open(false)}>Close</button>
+    </div>
+  </div>
+);
+
+mount(<div>{() => (open() ? <Dialog /> : <p>Nothing open</p>)}</div>, "#app");
+```
+
+For markup you did not render (static HTML, server-generated pages), [`$ref`](/reference/dom/$ref) and [`$collection`](/reference/dom/$collection) fill the same role: resolve the nodes, wire the behaviors, keep the handles beside the ref. Inside your own templates, prefer `hook:`. The behaviors take plain `Node`s, so any way of producing a node works.

@@ -1,0 +1,93 @@
+# onOutside
+
+Calls a handler when a document pointerdown lands outside every node a getter resolves, returning the dispose handle that removes the listener.
+
+## API
+
+```typescript
+function onOutside(
+  targets: () => (Node | null)[],
+  handler: () => void
+): () => void
+```
+
+- `targets`: Getter returning the nodes counted as inside; `null` entries are ignored. Re-invoked on every pointerdown.
+- `handler`: Zero-argument callback fired when the pointerdown lands outside all resolved targets.
+- **Returns**: Dispose handle. Calling it removes the document pointerdown listener.
+
+## Basic Usage
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { onOutside } from "@hellajs/primitives";
+
+let dismiss: (() => void) | undefined;
+
+const Menu = () => (
+  <nav
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      // The getter re-resolves per event, so the target stays current
+      dismiss = onOutside(() => [node], () => node.remove());
+    }}
+    hook:beforeDestroy={() => dismiss?.()}
+  >
+    <button>Menu</button>
+  </nav>
+);
+
+mount(<Menu />, "#app");
+// Clicking anywhere outside the menu removes it
+```
+
+## Key Concepts
+
+### Getter Targets
+
+`targets` is a function, not a static list. Every pointerdown re-resolves it, so portal content, conditionally rendered panels, and lists that swap DOM nodes stay correct without rewiring. A `null` entry (a portal not yet mounted, a ref not yet set) is skipped rather than treated as outside:
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { onOutside } from "@hellajs/primitives";
+
+let menuNode: HTMLElement | null = null;
+let dialogNode: HTMLElement | null = null;
+const closeMenus = () => console.log("closed");
+
+const App = () => (
+  <main>
+    <nav
+      hook:afterMount={(node) => {
+        if (node instanceof HTMLElement) menuNode = node;
+      }}
+    >
+      <button>Menu</button>
+    </nav>
+    {/* dialogNode is assigned by the dialog's own hook:afterMount and
+        nulled on destroy, so it is null between dialog opens */}
+  </main>
+);
+
+mount(<App />, "#app");
+onOutside(() => [menuNode, dialogNode], closeMenus);
+// The null dialogNode entry is ignored per event
+```
+
+### Document-Level, Capture Phase
+
+The listener sits on `document` in the capture phase, so it observes pointerdowns before element-level handlers. A click inside any resolved target is ignored wherever it lands in that subtree; a click anywhere else fires the handler.
+
+## Important Considerations
+
+### Dispose With the Feature
+
+The listener lives on `document`, so it outlives the elements the getter returns. Call the dispose handle in the close or unmount path, or outside clicks keep firing the handler after the UI is gone.
+
+### Input Validation
+
+`onOutside()` throws when `targets` or `handler` is `null` or `undefined`: `[primitives] onOutside: targets is required`, `[primitives] onOutside: handler is required`.
+
+```typescript
+// ❌ Throws
+onOutside(null, () => {}); // [primitives] onOutside: targets is required
+```

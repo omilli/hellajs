@@ -101,6 +101,20 @@ Principle: each target is (a) the dominant market leader, (b) the closest archit
 
 ---
 
+## @hellajs/primitives
+
+**Category:** Headless DOM behaviors — focus trap, escape/outside dismissal wiring, roving tabindex; pure functions over real nodes.
+
+**Angle:** The behavior layer under component libraries. HellaJS exposes the wiring (trap, dismiss, rove) as the public API; the competitors ship it as internal machinery under component parts or as framework-adapter machines. Zag is the closest sibling: its `@zag-js/focus-trap` / `@zag-js/dismissable` utilities mirror the same function-plus-dispose-handle shape.
+
+| Target | Why |
+|---|---|
+| Radix Primitives | Dominant headless parts library; FocusScope / DismissableLayer / RovingFocusGroup are the same behaviors as internal machinery, hidden behind Dialog/Tabs parts — the parts-over-behaviors counterpoint |
+| Base UI | MUI's headless parts model, single tree-shakable package; behaviors live inside components with composition escape hatches (useRender) |
+| Zag | Closest architectural sibling: framework-agnostic behavior utilities and state machines, adapter-per-framework — the same wiring with a machine layer on top |
+
+---
+
 ## @hellajs/ssr
 
 **Category:** SSR stringifier + hydration contract — HellaNode AST → HTML string with region markers.

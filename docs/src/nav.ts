@@ -17,6 +17,7 @@ export const navigation = {
         "Custom-Elements",
         "SSR",
         "Hydration",
+        "Headless-Behaviors",
       ],
     },
     {
@@ -74,6 +75,7 @@ export const navigation = {
     { router: ["router", "route", "navigate", "href", "resetrouter"] },
     { resource: ["resource", "resourcecache", "resetresource"] },
     { ssr: ["ssr", "doc"] },
+    { primitives: ["trapfocus", "onescape", "onoutside", "rovingtabindex"] },
   ],
   plugins: ["babel", "rollup", "vite", "astro"],
 } as const;

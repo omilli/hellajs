@@ -1,0 +1,123 @@
+# rovingTabIndex
+
+Implements the roving tabindex pattern over a container's items: arrow keys move focus along the active orientation, Home and End jump to the ends, and `tabindex` roves with focus until the dispose handle is called.
+
+## API
+
+```typescript
+function rovingTabIndex(
+  container: ParentNode,
+  options?: RovingTabIndexOptions
+): () => void
+```
+
+- `container`: Element whose items form the roving group.
+- `options.selector`: Item selector. Defaults to the shared focusable collector.
+- `options.orientation`: `"horizontal"` or `"vertical"`; arrow keys traverse only that axis. Both axes are active when unset.
+- `options.loop`: Wrap from the last item to the first and back. Default `true`.
+- **Returns**: Dispose handle. Calling it removes the keydown wiring and restores each item's original `tabindex` attribute.
+
+## Basic Usage
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { rovingTabIndex } from "@hellajs/primitives";
+
+let dispose: (() => void) | undefined;
+
+const Tabs = () => (
+  <div
+    role="tablist"
+    hook:afterMount={(node) => {
+      if (node instanceof HTMLElement) dispose = rovingTabIndex(node);
+    }}
+    hook:beforeDestroy={() => dispose?.()}
+  >
+    <button role="tab">One</button>
+    <button role="tab">Two</button>
+    <button role="tab">Three</button>
+  </div>
+);
+
+mount(<Tabs />, "#app");
+// Arrow keys move focus between tabs; tabindex roves (0 on the focused tab,
+// -1 on the rest); on unmount the original tabindex attributes are restored
+```
+
+## Key Concepts
+
+### Roving Mechanic
+
+On setup the first item gets `tabindex="0"` and the rest `tabindex="-1"`, so Tab enters the group once at the current item. Each arrow move focuses the next or previous item and moves the `0`. Screen readers announce a single tab stop; arrow keys do the in-group traversal.
+
+### Orientation
+
+With `orientation: "horizontal"`, only ArrowLeft and ArrowRight traverse; with `"vertical"`, only ArrowUp and ArrowDown. Unset, all four arrows traverse, which suits toolbars and grids.
+
+### Loop and Boundaries
+
+By default focus wraps past the ends. `loop: false` stops at the first and last items instead, the convention for tablists:
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { rovingTabIndex } from "@hellajs/primitives";
+
+const Tabs = () => (
+  <div
+    role="tablist"
+    hook:afterMount={(node) => {
+      if (node instanceof HTMLElement) {
+        rovingTabIndex(node, { orientation: "horizontal", loop: false });
+      }
+    }}
+  >
+    <button role="tab">One</button>
+    <button role="tab">Two</button>
+  </div>
+);
+
+mount(<Tabs />, "#app");
+```
+
+### Custom Item Selector
+
+Items that are not plain focusables (spans carrying click handlers, custom elements) select by class. The group is re-queried on every keypress, so items added or removed later join the group immediately:
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { rovingTabIndex } from "@hellajs/primitives";
+
+const Toolbar = () => (
+  <div
+    class="options"
+    hook:afterMount={(node) => {
+      if (node instanceof HTMLElement) rovingTabIndex(node, { selector: ".option" });
+    }}
+  >
+    <span class="option" tabindex="0">Cut</span>
+    <span class="option" tabindex="-1">Copy</span>
+    <span class="option" tabindex="-1">Paste</span>
+  </div>
+);
+
+mount(<Toolbar />, "#app");
+```
+
+## Important Considerations
+
+### tabindex="-1" Items and the Default Selector
+
+The default collector matches `[tabindex]:not([tabindex="-1"])`, and roving writes `tabindex="-1"` onto inactive items. Items collected only through their `tabindex` attribute (spans with `tabindex="0"`, not natively focusable) therefore drop out of the default group after the first move. Give such groups a `selector` that matches the items regardless of their current `tabindex`.
+
+### Keyboard Focus Starts Inside the Group
+
+Arrow keys act only while `activeElement` is one of the group's items; the wiring never steals focus on setup. Focus the first item (Tab into the group, or focus it programmatically) before arrows apply.
+
+### Input Validation
+
+`rovingTabIndex()` throws when `container` is `null` or `undefined`: `[primitives] rovingTabIndex: container is required`.
+
+```typescript
+// ❌ Throws
+rovingTabIndex(null); // [primitives] rovingTabIndex: container is required
+```

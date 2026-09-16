@@ -29,6 +29,7 @@
   | router | Reactive routing: nested routes, parameter inheritance, lifecycle hooks, History API. Resolution: redirects → nested → flat → notFound. |
   | store | Deeply reactive state: plain objects auto-convert to granular signals/stores with TS inference; `$snapshot` / `$update` / `$cleanup` / `$subscribe`. |
   | ssr | Pure HTML stringifier: HellaNode AST → HTML, zero runtime imports (mirrors dom's `renderProp` rules). `resource` no-ops on the server. |
+| primitives | Headless DOM behaviors: focus trap, escape/outside wiring, roving tabindex. Pure functions over real nodes, zero deps; every call returns a dispose handle. |
 
   ## Plugins
 
@@ -128,7 +129,7 @@
   - `examples/` — `bench`, `blog`, `counter`, `theme-switcher`, `todo`, `ssr-islands`, `ssr-routing`, `ssr-streaming`, `astro-islands`. All except `bench` carry `tutorial.mdx` next to the code (`guides/docs.md` §Tutorial Docs).
   - `guides/` — style guides (§Style guides).
   - `memory/` — knowledge base: `entries/*.md` canonical, `index.md` derived (`memory.ts rebuild`; never hand-edited), `archive/` retired. `memory` is the single writer.
-  - `packages/` — the seven workspaces.
+  - `packages/` — the eight workspaces.
   - `plans/` — agent-generated plan contracts at `plans/<package>/<category>/<topic>/`. Files-list derivations: rename/removal plans → repo-wide `rg '<old-name>'` (comparison docs, READMEs, tutorials, nav — prose enumeration misses them); behavior-contract changes → repo-wide `rg` of the claim sentence falsified; sweep-DoD plans → the DoD's own `rg` pattern's match set. Comparison-delta competitor cells cite the competitor source per cell or route through `comparison` (workers lack web access). A unit's delta describes the state after that unit, never a later unit's end-state.
   - `plugins/` — `babel`, `rollup`, `vite`, `astro`.
   - `scripts/` — build/CI automation + `utils/` + `bundle/` pipeline; see `scripts/AGENTS.md` and `guides/scripts.md`.

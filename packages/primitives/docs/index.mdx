@@ -1,0 +1,65 @@
+## Primitives
+
+Headless DOM behaviors for copy/paste components: focus trapping, escape and outside wiring, roving tabindex. Pure functions over real DOM nodes, zero dependencies.
+
+### Installation
+
+```bash
+npm install @hellajs/primitives
+```
+
+### Example
+
+A dismissible panel with trapped focus, wired through `hook:` attributes and disposed in one place:
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { trapFocus, onEscape, onOutside } from "@hellajs/primitives";
+
+const open = signal(false);
+const wirings: (() => void)[] = [];
+
+const closePanel = () => {
+  open(false);
+  wirings.forEach((dispose) => dispose());
+  wirings.length = 0;
+};
+
+const Panel = () => (
+  <div
+    class="panel"
+    role="dialog"
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      wirings.push(
+        trapFocus(node),
+        onEscape(node, closePanel),
+        onOutside(() => [node], closePanel)
+      );
+    }}
+  >
+    <button on:click={closePanel}>Close</button>
+  </div>
+);
+
+mount(
+  <div>
+    {() => (open() ? <Panel /> : <button on:click={() => open(true)}>Open</button>)}
+  </div>,
+  "#app"
+);
+```
+
+When the panel unmounts for any reason, `hook:beforeDestroy` is the matching cleanup point (see [Headless Behaviors](/learn/concepts/headless-behaviors)).
+
+### API
+
+- **[trapFocus](/reference/primitives/trapfocus)**: Trap Tab and Shift+Tab inside a container, wrapping at the edges
+- **[onEscape](/reference/primitives/onescape)**: Call a handler on Escape keydown at a target
+- **[onOutside](/reference/primitives/onoutside)**: Call a handler on document pointerdown outside resolved targets
+- **[rovingTabIndex](/reference/primitives/rovingtabindex)**: Arrow-key focus movement with a roving tabindex over a container's items
+
+### Concepts
+
+- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Why behavior functions over headless components, the dispose-handle contract, and composition with `hook:` and `$ref`

@@ -1,0 +1,71 @@
+# trapFocus
+
+Traps Tab and Shift+Tab navigation inside a container, wrapping focus at the edges until the dispose handle is called.
+
+## API
+
+```typescript
+function trapFocus(
+  container: ParentNode,
+  options?: TrapFocusOptions
+): () => void
+```
+
+- `container`: Element whose focusable descendants form the trap.
+- `options.initialFocus`: Element to focus on trap; defaults to the first focusable child.
+- `options.restoreFocus`: Restore focus to the pre-trap `activeElement` when the dispose handle runs. Default `true`.
+- **Returns**: Dispose handle. Calling it removes the document keydown listener and restores focus to the pre-trap element unless `restoreFocus` is `false`.
+
+## Basic Usage
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { trapFocus } from "@hellajs/primitives";
+
+let release: (() => void) | undefined;
+
+const Panel = () => (
+  <div
+    hook:afterMount={(node) => {
+      if (node instanceof HTMLElement) release = trapFocus(node);
+    }}
+    hook:beforeDestroy={() => release?.()}
+  >
+    <input placeholder="First focusable" />
+    <button>Submit</button>
+  </div>
+);
+
+mount(<Panel />, "#app");
+// While the panel is open, Tab wraps inside it; on unmount,
+// Tab moves freely and focus returns to the pre-trap element
+```
+
+## Key Concepts
+
+### What Counts as Focusable
+
+The trap resolves focusables with the shared collector: `a[href]` links, enabled `button`, `input`, `select`, and `textarea` controls, and elements carrying a `tabindex` other than `-1`. The set is re-queried on every keypress, so focusables rendered later join the trap without rewiring.
+
+### Edge Wrapping
+
+`Tab` from the last focusable moves focus to the first; `Shift+Tab` from the first moves to the last. The keydown listener sits on `document` in the capture phase, so the wrap wins over element-level handlers wherever focus sits inside the container.
+
+### Focus Restoration
+
+`document.activeElement` is captured before the initial focus lands. Releasing the trap focuses it again, so a dialog opened from a button returns focus to that button on close.
+
+## Important Considerations
+
+### Release in Every Close Path
+
+The listener lives on `document`, so it outlives the panel element. A panel removed from the DOM while the trap is active keeps the keydown listener wired to the detached container; call the dispose handle in the same code path that closes or destroys the panel.
+
+### Input Validation
+
+`trapFocus()` throws when `container` is `null` or `undefined`: `[primitives] trapFocus: container is required`.
+
+```typescript
+// ❌ Throws
+trapFocus(null); // [primitives] trapFocus: container is required
+```

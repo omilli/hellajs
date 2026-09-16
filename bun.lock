@@ -49,6 +49,10 @@
         "@hellajs/core": "^1.0.6",
       },
     },
+    "packages/primitives": {
+      "name": "@hellajs/primitives",
+      "version": "0.1.0",
+    },
     "packages/resource": {
       "name": "@hellajs/resource",
       "version": "1.1.1",
@@ -399,6 +403,8 @@
     "@hellajs/css": ["@hellajs/css@workspace:packages/css"],
 
     "@hellajs/dom": ["@hellajs/dom@workspace:packages/dom"],
+
+    "@hellajs/primitives": ["@hellajs/primitives@workspace:packages/primitives"],
 
     "@hellajs/resource": ["@hellajs/resource@workspace:packages/resource"],
 

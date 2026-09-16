@@ -3,6 +3,7 @@
 ## 2026-09-16
 * **Creation**: Added concept [146](entries/146.md) (type: correction).
 * **Deprecation**: Archived [008](archive/008-dom-multiple-components-isolation-test.md) → superseded by [146](entries/146-dom-multiple-components-isolation-test.md).
+* **Update**: Renumber: worker-allocated ID 146 (typed-event-listeners-generic-node, ui-primitives merge) collided with main-tree 146-dom-multiple-components-isolation-test — renumbered to 148
 
 ## 2026-09-15
 * **Creation**: Added concept [140](entries/140.md) (type: decision).
@@ -13,6 +14,8 @@
 * **Creation**: Added concept [143](entries/143.md) (type: decision).
 * **Creation**: Added concept [144](entries/144.md) (type: decision).
 * **Creation**: Added concept [145](entries/145.md) (type: decision).
+* **Creation**: Added concept [148](entries/148.md) (type: decision).
+* **Creation**: Added concept [147](entries/147.md) (type: decision).
 
 ## 2026-09-10
 * **Creation**: Added concept [120](entries/120.md) (type: decision).
