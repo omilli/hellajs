@@ -33,6 +33,8 @@ export interface ScopedRuleOptions {
   label?: string;
   /** Media condition interpolated verbatim — wraps the whole rule text as `@media {q}{ … }`. */
   media?: string;
+  /** Cascade layer name interpolated verbatim — wraps the whole rule text (outermost of `media`) as `@layer {name}{ … }`. */
+  layer?: string;
   /** Registration host; ignored by derivation (see interface doc). */
   host?: ParentNode;
 }
@@ -51,17 +53,19 @@ export interface ScopedRule {
  * @internal
  * Derives the deterministic scoped class and rule text for a style object —
  * no registration, no DOM. `scopedClassName` produces the class, `process`
- * emits the rules under `.{cls}`, and a `media` condition wraps the whole
- * text in the at-rule (`@media {q}{ … }`). Shared by `style()` (via
- * `resolveStyle`) and `cva()` — the same object, label, and media always
- * derive the same pair, which is what lets `removeStyle()` locate what either
- * API registered.
+ * emits the rules under `.{cls}`, a `media` condition wraps the whole text
+ * in the at-rule (`@media {q}{ … }`), and a `layer` name wraps that
+ * outermost (`@layer {name}{ … }`). Shared by `style()` (via
+ * `resolveStyle`) and `cva()` — the same object, label, media, and layer
+ * always derive the same pair, which is what lets `removeStyle()` locate
+ * what either API registered.
  * @param obj Style object to scope under the generated class
- * @param options Optional derivation bag — `label`, `media`, `host`
+ * @param options Optional derivation bag — `label`, `media`, `layer`, `host`
  * @returns The scoped class name and its emitted rule text
  */
 export function scopedRule(obj: StyleObject, options: ScopedRuleOptions = {}): ScopedRule {
   const cls = scopedClassName(obj, options.label);
   const text = process(obj, `.${cls}`, false);
-  return { cls, cssText: options.media ? `@media ${options.media}{${text}}` : text };
+  const mediaText = options.media ? `@media ${options.media}{${text}}` : text;
+  return { cls, cssText: options.layer ? `@layer ${options.layer}{${mediaText}}` : mediaText };
 }

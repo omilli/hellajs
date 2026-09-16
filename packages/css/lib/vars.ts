@@ -15,17 +15,17 @@ import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, 
  * leaves resolve once to their initial values.
  * @template T
  * @param vars Object containing CSS variable definitions. Can include nested objects and reactive signals.
- * @param options Configuration options for scoping, prefixing, media conditions, and style host
+ * @param options Configuration options for scoping, prefixing, media conditions, cascade layers, and style host
  * @returns Proxy object with var() references, on both platforms.
  * @throws {Error} When vars is not a plain object.
- * @throws {Error} When the same reactive vars object is registered a second time with differing scoped/prefix/media/host options.
+ * @throws {Error} When the same reactive vars object is registered a second time with differing scoped/prefix/media/layer/host options.
  */
 export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions = {}): CSSVars<T> {
   if (!isPlainObject(vars)) throw new Error(`[css] vars: expected a plain object, received ${String(vars)}`);
 
   const { flat, hasFns } = flattenVars(vars);
-  const { scope, fullPrefix, media, host } = resolveVarsOptions(options);
-  const resolved = { scope, fullPrefix, media, host };
+  const { scope, fullPrefix, media, layer, host } = resolveVarsOptions(options);
+  const resolved = { scope, fullPrefix, media, layer, host };
 
   if (!hasFns) {
     const inputHash = hash(stringify(vars) + stringify(options) + hostQualifier(host));
@@ -58,6 +58,7 @@ export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions 
         scope,
         fullPrefix,
         media,
+        layer,
         host,
         refCount: 1,
       });
@@ -67,8 +68,8 @@ export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions 
 
   const existingEntry = varsRegistryReactive.get(vars);
   if (existingEntry) {
-    if (scope !== existingEntry.scope || fullPrefix !== existingEntry.fullPrefix || media !== existingEntry.media || host !== existingEntry.host) {
-      throw new Error(`[css] vars: reactive vars object already registered with different options (scoped/prefix/media/host); use a separate object per scope, received ${String(vars)}`);
+    if (scope !== existingEntry.scope || fullPrefix !== existingEntry.fullPrefix || media !== existingEntry.media || layer !== existingEntry.layer || host !== existingEntry.host) {
+      throw new Error(`[css] vars: reactive vars object already registered with different options (scoped/prefix/media/layer/host); use a separate object per scope, received ${String(vars)}`);
     }
     existingEntry.refCount++;
     applyRules(flat, resolved);
@@ -92,6 +93,7 @@ export function vars<T extends CSSVarInputObject>(vars: T, options: VarsOptions 
     scope,
     fullPrefix,
     media,
+    layer,
     host,
     refCount: 1,
     cleanup,

@@ -8,7 +8,7 @@ Creates CSS custom properties (variables) from JavaScript objects with automatic
 function vars<T extends CSSVarInputObject>(vars: T, options?: VarsOptions): CSSVars<T>
 ```
 - `vars`: Object containing CSS variable definitions. Can include nested objects and reactive signals.
-- `options`: Optional configuration for scoping, prefixing, and media conditions
+- `options`: Optional configuration for scoping, prefixing, media conditions, and cascade layers
 - **Returns**: A same-shaped proxy of `var()` references, on BOTH platforms: on the client the declarations are injected into the CSSOM; on the server the registration is state-only (collect it with [`cssText`](/reference/css/csstext)).
 
 ### Options
@@ -18,6 +18,7 @@ interface VarsOptions {
   scoped?: string;   // CSS selector to scope variables to
   prefix?: string;   // Prefix for all CSS variable names
   media?: string;    // Media condition the variables live under
+  layer?: string;    // Cascade layer the declarations wrap in
   host?: ParentNode; // Node the <style> element is created in
 }
 ```
@@ -25,6 +26,7 @@ interface VarsOptions {
 - **`scoped`**: CSS selector to limit variable scope (e.g., `.theme-container`, `#app`, `[data-theme]`)
 - **`prefix`**: Prefix added to all CSS variable names for namespace organization
 - **`media`**: Media condition wrapping the declarations, e.g. `(prefers-color-scheme: dark)`, interpolated verbatim into `@media (…)`
+- **`layer`**: Cascade layer name wrapping the declarations, e.g. `hella`, interpolated verbatim into `@layer <name>`. Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `@media` when both apply
 - **`host`**: Parent node the `<style>` element is created in; e.g. a `ShadowRoot`. Defaults to `document.head`. Shadow roots don't match `:root`, so pair `host` with `scoped: ':host'` to apply variables to the host element
 
 ### Types
@@ -212,7 +214,7 @@ vars({
 
 ### Reactive Vars Are Keyed by Reference
 
-A **reactive** vars object (one with any function leaf) is registered by object **reference**, not by value. A second `vars()` call passing the *same* reference returns the same result proxy and bumps its reference count. Passing the same reference a second time with *different* `scoped`/`prefix`/`media` options throws; use a distinct object per scope so each gets its own reactive effect:
+A **reactive** vars object (one with any function leaf) is registered by object **reference**, not by value. A second `vars()` call passing the *same* reference returns the same result proxy and bumps its reference count. Passing the same reference a second time with *different* `scoped`/`prefix`/`media`/`layer` options throws; use a distinct object per scope so each gets its own reactive effect:
 
 ```jsx
 import { signal } from '@hellajs/core';

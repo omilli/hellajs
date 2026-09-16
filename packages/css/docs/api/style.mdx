@@ -16,6 +16,7 @@ function style(base: string | StyleObject, override: StyleObject, options?: Styl
 - `override`: Style object contributing the new declarations
 - `options`: Optional configuration
   - `label`: Readable segment embedded in the class name (`h-{label}-{hash}`), sanitized to `[a-zA-Z0-9-]`; a label empty after sanitization is treated as absent
+  - `layer`: Cascade layer name the emitted rules wrap in (`@layer <name>`), interpolated verbatim. Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `@media` when both apply
   - `host`: Node the `<style>` element is created in; e.g. a `ShadowRoot` for web components. Defaults to `document.head`
 - **Returns**: The class name (`h-{label}-{hash}` / `h-{hash}`) for `class` attributes; the composed form prefixes a string base verbatim
 

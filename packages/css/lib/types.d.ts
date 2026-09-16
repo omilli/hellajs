@@ -37,6 +37,8 @@ export type CSSObject = {
 export interface StyleOptions {
   /** Label embedded in the generated class name (`h-{label}-{hash}`). Sanitized to [a-zA-Z0-9-]; a label empty after sanitization is treated as absent. */
   label?: string;
+  /** Name of the cascade layer the emitted rules wrap in (`@layer <name>`). Layered rules lose to unlayered author CSS by construction; composes outermost of `media`. Interpolated verbatim. */
+  layer?: string;
   /** Node the `<style>` element is created in — e.g. a `ShadowRoot` for web components. Defaults to `document.head`. */
   host?: ParentNode;
 }
@@ -149,6 +151,8 @@ export interface VarsOptions {
   prefix?: string;
   /** A media condition to place the variables under, e.g. `(prefers-color-scheme: dark)`. Interpolated verbatim. */
   media?: string;
+  /** Name of the cascade layer the emitted declarations wrap in (`@layer <name>`). Layered declarations lose to unlayered author CSS by construction; composes outermost of `media`. Interpolated verbatim. */
+  layer?: string;
   /** Node the `<style>` element is created in — e.g. a `ShadowRoot` for web components. Defaults to `document.head`. */
   host?: ParentNode;
 }

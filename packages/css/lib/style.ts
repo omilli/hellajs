@@ -40,12 +40,12 @@ function mergeStyles(base: StyleObject, override: StyleObject): StyleObject {
 
 /**
  * A second plain-object argument is an options bag only when every own key is
- * `label` (string) or `host` (object) — mirroring the overload types, where a
- * value shaped like `{ label: 'x' }` is assignable to StyleOptions but not to
- * a StyleObject override, and `{ label: { … } }` (a nested `label` element
- * selector) only to the override. The bag reading holds only for the
- * two-argument form: a third argument marks the second as the override per
- * overload 2.
+ * `label` (string), `layer` (string), or `host` (object) — mirroring the
+ * overload types, where a value shaped like `{ label: 'x' }` is assignable to
+ * StyleOptions but not to a StyleObject override, and `{ label: { … } }` (a
+ * nested `label` element selector) only to the override. The bag reading
+ * holds only for the two-argument form: a third argument marks the second as
+ * the override per overload 2.
  */
 function isOptionBag(value: StyleObject | StyleOptions): value is StyleOptions {
   const record = value as Record<string, unknown>;
@@ -59,6 +59,8 @@ function isOptionBag(value: StyleObject | StyleOptions): value is StyleOptions {
       if (v !== undefined && !isString(v)) return false;
     } else if (key === "host") {
       if (v !== undefined && !isObject(v)) return false;
+    } else if (key === "layer") {
+      if (v !== undefined && !isString(v)) return false;
     } else {
       return false;
     }
@@ -131,7 +133,7 @@ export function resolveStyle(
  * the server the registration is state-only (collect it with
  * [`cssText`](/reference/css/csstext)).
  * @param obj Style object to scope under the generated class
- * @param options Optional configuration. `label` embeds a readable segment in the class name; `host` creates the `<style>` element in a shadow root or other parent node instead of `document.head`.
+ * @param options Optional configuration. `label` embeds a readable segment in the class name; `layer` wraps the emitted rules in a named `@layer` (layered rules lose to unlayered author CSS); `host` creates the `<style>` element in a shadow root or other parent node instead of `document.head`.
  * @returns The class name (`h-{label}-{hash}` / `h-{hash}`) for `class` attributes.
  * @throws {Error} When obj is not a plain object, or when a property value is a function — use `vars()` for reactive values.
  */
@@ -142,7 +144,7 @@ export function style(obj: StyleObject, options?: StyleOptions): string;
  * a single class (override wins, nested objects merge, arrays replace).
  * @param base Class string or style object to compose onto
  * @param override Style object contributing the new declarations
- * @param options Optional configuration. `label` embeds a readable segment in the class name; `host` creates the `<style>` element in a shadow root or other parent node instead of `document.head`.
+ * @param options Optional configuration. `label` embeds a readable segment in the class name; `layer` wraps the emitted rules in a named `@layer` (layered rules lose to unlayered author CSS); `host` creates the `<style>` element in a shadow root or other parent node instead of `document.head`.
  * @returns The composed class list for `class` attributes.
  * @throws {Error} When a style argument is not a plain object, or when a property value is a function — use `vars()` for reactive values.
  */

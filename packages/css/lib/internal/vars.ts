@@ -7,20 +7,21 @@ import type { CSSVars, VarsOptions } from "../types";
 export const VARS_ID = "hella-vars";
 
 /**
- * Scope+media bucket registry keyed by the composite bucket key.
+ * Scope+media+layer bucket registry keyed by the composite bucket key.
  * @internal
  */
 export const scopedVarsRulesMap = new Map<string, VarsBucket>();
 
 /**
- * One scope+media bucket under an optional host: the resolved placement
- * (scope selector, media condition, host) plus the accumulated variable
- * declarations. The placement travels with the bucket so `varsText()` can
- * serialize default-host buckets without parsing the composite bucket key.
+ * One scope+media+layer bucket under an optional host: the resolved placement
+ * (scope selector, media condition, cascade layer, host) plus the accumulated
+ * variable declarations. The placement travels with the bucket so `varsText()`
+ * can serialize default-host buckets without parsing the composite bucket key.
  */
 interface VarsBucket {
   scope: string;
   media: string;
+  layer: string;
   host?: ParentNode;
   vars: Map<string, string>;
 }
@@ -46,13 +47,15 @@ export const DOT_REGEX = /\./g;
 /**
  * Registry entry tracking a single vars() call's flat keys, scope,
  * resolved prefix (trailing hyphen included), resolved media condition,
- * style host, reference count, and optional effect cleanup.
+ * resolved cascade layer, style host, reference count, and optional effect
+ * cleanup.
  */
 interface VarsEntry {
   flatKeys: string[];
   scope: string;
   fullPrefix: string;
   media: string;
+  layer: string;
   host?: ParentNode;
   refCount: number;
   cleanup?: () => void;
@@ -80,48 +83,52 @@ export let varsResultReactive = new WeakMap<object, CSSVars<Record<string, unkno
 
 /**
  * CSSVarsOptions in emitted form: scope default resolved, prefix
- * trailing-hyphenated, media normalized to `""` when absent, host passed
- * through for sheet placement and key qualification.
+ * trailing-hyphenated, media and layer normalized to `""` when absent, host
+ * passed through for sheet placement and key qualification.
  */
 interface ResolvedVarsOptions {
   scope: string;
   fullPrefix: string;
   media: string;
+  layer: string;
   host?: ParentNode;
 }
 
 /**
  * @internal
  * Resolves VarsOptions once: scope falls back to `:root`, the raw prefix
- * gains its trailing hyphen, media normalizes to `""`. Every vars path
- * derives scope/prefix/media/host through this — the single definition (no
- * per-site duplication to drift).
+ * gains its trailing hyphen, media and layer normalize to `""`. Every vars
+ * path derives scope/prefix/media/layer/host through this — the single
+ * definition (no per-site duplication to drift).
  */
-export function resolveVarsOptions({ scoped, prefix: rawPrefix = "", media, host }: VarsOptions): ResolvedVarsOptions {
+export function resolveVarsOptions({ scoped, prefix: rawPrefix = "", media, layer, host }: VarsOptions): ResolvedVarsOptions {
   return {
     scope: scoped || ":root",
     fullPrefix: rawPrefix ? `${rawPrefix}-` : "",
     media: media || "",
+    layer: layer || "",
     host,
   };
 }
 
 /**
- * Composite bucket/rule key for one scope+media pair under an optional host —
- * the same scope under different media conditions or in different hosts
- * coexists as separate buckets.
+ * Composite bucket/rule key for one scope+media+layer triple under an
+ * optional host — the same scope under different media conditions, layers,
+ * or hosts coexists as separate buckets.
  */
-function varsBucketKey(scope: string, media: string, host?: ParentNode): string {
-  return `${media ? `@media ${media}` : ""}|${hostQualifier(host)}${scope}`;
+function varsBucketKey(scope: string, media: string, layer: string, host?: ParentNode): string {
+  return `${media ? `@media ${media}` : ""}|${layer ? `@layer ${layer}` : ""}|${hostQualifier(host)}${scope}`;
 }
 
 /**
  * @internal
- * Full rule text for one scope+media bucket: declarations wrapped in the
- * scope selector, then in the media at-rule when present.
+ * Full rule text for one scope+media+layer bucket: declarations wrapped in
+ * the scope selector, then in the media at-rule when present, then in the
+ * layer at-rule (outermost) when present.
  */
-export function varsRuleText(scope: string, media: string, decls: string): string {
-  return `${media ? `@media ${media}{` : ""}${scope}{${decls}}${media ? "}" : ""}`;
+export function varsRuleText(scope: string, media: string, layer: string, decls: string): string {
+  const inner = `${media ? `@media ${media}{` : ""}${scope}{${decls}}${media ? "}" : ""}`;
+  return layer ? `@layer ${layer}{${inner}}` : inner;
 }
 
 /**
@@ -130,14 +137,14 @@ export function varsRuleText(scope: string, media: string, decls: string): strin
  * and upserts the scope rule into the stylesheet.
  * Takes the pre-resolved options from `resolveVarsOptions`.
  */
-export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, media, host }: ResolvedVarsOptions) {
+export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, media, layer, host }: ResolvedVarsOptions) {
   const entries = Object.entries(flat);
   const len = entries.length;
-  const key = varsBucketKey(scope, media, host);
+  const key = varsBucketKey(scope, media, layer, host);
 
   let bucket = scopedVarsRulesMap.get(key);
   if (!bucket) {
-    bucket = { scope, media, host, vars: new Map() };
+    bucket = { scope, media, layer, host, vars: new Map() };
     scopedVarsRulesMap.set(key, bucket);
   }
 
@@ -147,7 +154,7 @@ export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, m
     bucket.vars.set(`${fullPrefix}${k}`, String(v));
   }
 
-  upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(bucket.vars)), host);
+  upsertRule(VARS_ID, key, varsRuleText(scope, media, layer, serializeDecls(bucket.vars)), host);
 }
 
 /**
@@ -157,8 +164,8 @@ export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, m
  * is removed entirely.
  * Takes the pre-resolved options from `resolveVarsOptions`.
  */
-export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media, host }: ResolvedVarsOptions): void {
-  const key = varsBucketKey(scope, media, host);
+export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media, layer, host }: ResolvedVarsOptions): void {
+  const key = varsBucketKey(scope, media, layer, host);
   const bucket = scopedVarsRulesMap.get(key);
   if (!bucket) return;
 
@@ -172,7 +179,7 @@ export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media, 
     scopedVarsRulesMap.delete(key);
     removeRule(VARS_ID, key, host);
   } else {
-    upsertRule(VARS_ID, key, varsRuleText(scope, media, serializeDecls(bucket.vars)), host);
+    upsertRule(VARS_ID, key, varsRuleText(scope, media, layer, serializeDecls(bucket.vars)), host);
   }
 }
 
@@ -195,7 +202,7 @@ export function resetReactiveRegistries(): void {
 export function varsText(): string {
   let text = "";
   scopedVarsRulesMap.forEach((bucket) => {
-    if (!bucket.host) text += varsRuleText(bucket.scope, bucket.media, serializeDecls(bucket.vars));
+    if (!bucket.host) text += varsRuleText(bucket.scope, bucket.media, bucket.layer, serializeDecls(bucket.vars));
   });
   return text;
 }
