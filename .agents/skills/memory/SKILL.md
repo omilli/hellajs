@@ -45,7 +45,7 @@ New concept retires an active one → `memory.ts supersede <old> <new>`: moves o
 
 ## Step 5 — Refresh on staleness
 
-`memory.ts stale` lists concepts with `last_confirmed` older than 180 days (pass a count to override). Each: re-verify against current source before trusting. Still true → bump `last_confirmed` + `timestamp`, `rebuild`. False → Step 4 + act on the new truth. Loading is the trigger; no scheduled maintenance.
+`memory.ts stale` lists concepts with `last_confirmed` older than 180 days (pass a count to override). Each: re-verify against current source before trusting. Still true → bump `last_confirmed` + `timestamp`, `rebuild`. False → Step 4 + act on the new truth. Loading is the trigger for spot refreshes; the bulk path is `bun memory [--all] [--days=<n>]` — one fresh instance per queued entry (oldest first, `--limit` caps) running exactly this step, scoped to one entry per instance: still true → bump, false → supersede, blocked → operator gate.
 
 ## Step 6 — Prune archive orphans
 

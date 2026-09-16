@@ -1,5 +1,9 @@
 # Memory Update Log
 
+## 2026-09-16
+* **Creation**: Added concept [146](entries/146.md) (type: correction).
+* **Deprecation**: Archived [008](archive/008-dom-multiple-components-isolation-test.md) → superseded by [146](entries/146-dom-multiple-components-isolation-test.md).
+
 ## 2026-09-15
 * **Creation**: Added concept [140](entries/140.md) (type: decision).
 * **Creation**: Added concept [141](entries/141.md) (type: decision).

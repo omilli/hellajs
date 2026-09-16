@@ -48,6 +48,7 @@
 		"worker": "bun ./scripts/worker.ts",
 		"merge": "bun ./scripts/merge.ts",
 		"audits": "bun ./scripts/audits.ts",
+		"memory": "bun ./scripts/memory.ts",
 		"remote": "bun ./scripts/remote.ts",
 		"release": "bun bundle --quiet && bun ./scripts/release.ts",
 		"visibility": "bun ./scripts/type-visibility.ts",
