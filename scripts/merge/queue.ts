@@ -1,14 +1,8 @@
 import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
 import { projectRoot } from "../utils/index.js";
-import { WT_ROOT } from "../agent/worktree.js";
+import { carrierTicked, parseWorktreeList, WT_ROOT, type WorktreeEntry } from "../agent/worktree.js";
 import { isTicked, listPlanUnits, partitionComponents, setSlug, countTicks, type PlanUnit } from "../worker/set.js";
-
-/** One worktree inventory line, as printed by `worktree.mjs list`. */
-export interface WorktreeEntry {
-  slug: string;
-  plans: string;
-}
 
 /** One merge queue entry: a component worktree plus its plan units. */
 export interface QueueEntry {
@@ -24,50 +18,59 @@ export interface QueueResult {
 }
 
 /**
- * Parse `worktree.mjs list` output into slug + carried-plan entries.
+ * Match a protocol worktree slug back to its plan component.
  *
- * Lines look like `<slug>  branch=<b>  baseline=<h>  plans=<rel>`; the
- * `(no protocol worktrees)` placeholder matches no line.
+ * Resolution order: the whole-set slug (single mode) matches everything; a
+ * carrier holding delivered-but-unmerged ticks (worktree copy `[x]`, main
+ * tree `[x]` absent — merged units ride along in the carried folder and say
+ * nothing about the carrier) resolves to the unique component containing
+ * them, which is the worker's venue-adoption rule mirrored; a carrier with
+ * no delivered ticks falls back to the runner's derived-slug arithmetic
+ * (`<setSlug>-<component-first-unit-stem>`); ticks spanning multiple
+ * components are an ambiguous carrier. Null when nothing matches.
  *
- * @param output Captured stdout of `worktree.mjs list`.
- * @returns Parsed entries, in listing order.
- */
-export function parseWorktreeList(output: string): WorktreeEntry[] {
-  const entries: WorktreeEntry[] = [];
-  for (const line of output.split("\n")) {
-    const match = line.match(/^(\S+)\s+branch=\S+\s+baseline=\S+\s+plans=(\S+)$/);
-    if (match !== null) {
-      entries.push({ slug: match[1] ?? "", plans: match[2] ?? "" });
-    }
-  }
-  return entries;
-}
-
-/**
- * Match a protocol slug back to its plan component.
- *
- * The plans runner names venues deterministically: the whole set in one
- * worktree is `<setSlug>`, one worktree per dependency-connected component is
- * `<setSlug>-<first-unit-stem>`. Anything else is an anomaly.
- *
- * @param slug A protocol worktree slug.
+ * @param entry A parsed inventory entry (slug + carried plans folder).
  * @param setSlugValue The set's slug.
+ * @param relSetDir Repo-relative set-folder path the carrier carries.
  * @param units Every unit of the set, in filename order.
- * @param components The set's dependency-connected components.
- * @returns The component's units, or null when the slug matches nothing.
+ * @param components The set's dependency-connected components (all units).
+ * @returns The carrier's component, or null when the slug matches nothing.
  */
 function matchComponent(
-  slug: string,
+  entry: WorktreeEntry,
   setSlugValue: string,
+  relSetDir: string,
   units: PlanUnit[],
   components: PlanUnit[][],
 ): PlanUnit[] | null {
-  if (slug === setSlugValue) {
+  if (entry.slug === setSlugValue) {
     return units;
+  }
+  const componentOf = new Map<string, PlanUnit[]>();
+  for (const component of components) {
+    for (const unit of component) {
+      componentOf.set(unit.name, component);
+    }
+  }
+  const hosts = new Set<PlanUnit[]>();
+  for (const unit of units) {
+    if (isTicked(unit.path) || !carrierTicked(entry.slug, relSetDir, unit.name)) {
+      continue;
+    }
+    const component = componentOf.get(unit.name);
+    if (component !== undefined) {
+      hosts.add(component);
+    }
+  }
+  if (hosts.size === 1) {
+    return [...hosts][0] ?? null;
+  }
+  if (hosts.size > 1) {
+    return null;
   }
   for (const component of components) {
     const stem = (component[0]?.name ?? "").replace(/\.md$/, "");
-    if (slug === `${setSlugValue}-${stem}`) {
+    if (entry.slug === `${setSlugValue}-${stem}`) {
       return component;
     }
   }
@@ -89,17 +92,17 @@ function matchComponent(
 export function deriveQueue(setDir: string, inventory: string): QueueResult {
   const relSetDir = relative(projectRoot, setDir);
   const units = listPlanUnits(setDir);
-  // Mirror of the worker's venue derivation (scripts/worker/run.ts): components
-  // partition OUTSTANDING units only, so standing venue slugs — named after the
-  // outstanding component's first unit — resolve instead of reporting anomalies.
-  const components = partitionComponents(units.filter((unit: PlanUnit): boolean => !isTicked(unit.path)));
+  // Mirror of the worker's venue derivation (scripts/worker/run.ts):
+  // components partition ALL units, and a standing slug resolves by the
+  // carrier's own delivered ticks first, derived-slug arithmetic second.
+  const components = partitionComponents(units);
   const order = new Map(units.map((unit: PlanUnit, index: number): [string, number] => [unit.name, index]));
   const result: QueueResult = { queue: [], preMerged: [], anomalies: [] };
   for (const entry of parseWorktreeList(inventory)) {
     if (entry.plans !== relSetDir) {
       continue;
     }
-    const component = matchComponent(entry.slug, setSlug(setDir), units, components);
+    const component = matchComponent(entry, setSlug(setDir), relSetDir, units, components);
     if (component === null) {
       result.anomalies.push(entry.slug);
       continue;

@@ -3,7 +3,7 @@ import { basename, join, relative } from "node:path";
 import { logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
 import type { Relay } from "../agent/relay.js";
-import { worktreeScript, WT_ROOT } from "../agent/worktree.js";
+import { carrierTicked, parseWorktreeList, worktreeScript, WT_ROOT, type WorktreeEntry } from "../agent/worktree.js";
 import { countTicks, isTicked, listPlanUnits, partitionComponents, setSlug, type PlanUnit } from "./set.js";
 
 /** Default model pattern for worker instances (`--model` overrides). */
@@ -150,35 +150,23 @@ export async function runSet(options: RunSetOptions): Promise<number> {
   options.model ??= DEFAULT_WORKER_MODEL;
   const units = listPlanUnits(options.setDir);
   const setName = basename(options.setDir);
+  const relSetDir = relative(projectRoot, options.setDir);
   const relay = makeRelay();
   relay.start();
   installSigint();
-  const inventory = await worktreeScript(["list"]);
-  if (inventory !== null && !inventory.includes("(no protocol worktrees)")) {
+  const inventory = (await worktreeScript(["list"])) ?? "";
+  if (inventory !== "" && !inventory.includes("(no protocol worktrees)")) {
     logger.info(`existing protocol worktrees:\n${inventory.trimEnd()}`);
   }
-  const venues: Venue[] =
-    options.mode === "split"
-      ? // Merged units are filtered before partitioning: a ticked unit must never
-        // anchor a venue slug, or a post-merge relaunch re-enters the merged
-        // unit's venue instead of the outstanding component's. Merge-side mirror:
-        // deriveQueue partitions the same filtered set (scripts/merge/queue.ts).
-        partitionComponents(units.filter((unit: PlanUnit): boolean => !isTicked(unit.path))).map((component: PlanUnit[]): Venue => ({
-          slug: `${setSlug(options.setDir)}-${component[0]?.name.replace(/\.md$/, "") ?? "component"}`,
-          units: component,
-        }))
-      : [{ slug: setSlug(options.setDir), units }];
+  const carriers = parseWorktreeList(inventory).filter((entry: WorktreeEntry): boolean => entry.plans === relSetDir);
+  const { venues, skips } = deriveVenues(units, carriers, relSetDir, setSlug(options.setDir), options.mode);
+  for (const skip of skips) {
+    logger.info(`skip ${skip.unit.name} (${skip.detail})`);
+  }
   logger.info(`plan set ${setName} · ${units.length} unit(s) · mode ${options.mode} · ${venues.length} venue(s)`);
-  const records: UnitRecord[] = [];
+  const records: UnitRecord[] = [...skips];
   let halted = false;
   for (const venue of venues) {
-    if (venue.units.every((unit: PlanUnit): boolean => isTicked(unit.path))) {
-      for (const unit of venue.units) {
-        logger.info(`skip ${unit.name} (main-tree marker [x] — already merged)`);
-        records.push({ unit, status: "skipped", detail: "pre-ticked", session: null });
-      }
-      continue;
-    }
     const outcome = await runVenue(venue, options, relay, setName, records);
     if (outcome.halted) {
       halted = true;
@@ -191,10 +179,7 @@ export async function runSet(options: RunSetOptions): Promise<number> {
     logger.success(`component ${venue.slug} complete — standing for review (merge is user-invoked)`);
   }
   printSummary(records, halted);
-  const relSetDir = relative(projectRoot, options.setDir);
-  const standing = ((await worktreeScript(["list"])) ?? "")
-    .split("\n")
-    .filter((line: string): boolean => line.includes(`plans=${relSetDir}`));
+  const standing = inventory.split("\n").filter((line: string): boolean => line.includes(`plans=${relSetDir}`));
   if (standing.length > 0) {
     logger.info(
       `outstanding worktrees of this set — review, then run \`bun merge ${relSetDir}\`:\n${standing.join("\n")}`,
@@ -208,6 +193,77 @@ export async function runSet(options: RunSetOptions): Promise<number> {
 interface VenueOutcome {
   failedCount: number;
   halted: boolean;
+}
+
+/**
+ * Derive execution venues from the set's real delivery state.
+ *
+ * Components partition ALL units, so a plan rework that inserts or replaces
+ * units cannot re-anchor an outstanding component. A unit is delivered when
+ * its main-tree marker reads `[x]` (merged) or any standing carrier's copy
+ * reads `[x]` (executed, awaiting merge); delivered units are skipped, never
+ * re-dispatched — main-tree copies stay `[ ]` until merge, so selection on
+ * the main-tree marker alone would re-run every delivered unit of an
+ * unmerged set. A component's venue adopts a standing carrier that already
+ * holds delivered units of that component: its later units depend on those
+ * deliveries, so the component continues inside that worktree — a fresh cut
+ * would be anchored at the first pending unit and could not see them. The
+ * adoption is refused when ambiguous (duplicate provisioning); the derived
+ * fallback slug then collides in `worktree.mjs new`, surfacing to the
+ * operator. Merge-side mirror: deriveQueue matches standing slugs to
+ * components by the same carrier-tick affinity (scripts/merge/queue.ts).
+ *
+ * @param units Every unit of the set, in filename order.
+ * @param carriers Standing protocol worktrees carrying this set folder.
+ * @param relSetDir Repo-relative set-folder path the carriers carry.
+ * @param slugBase The set slug — fresh-venue prefix in split mode, whole slug in single mode.
+ * @param mode Worktree mode (split: one venue per component; single: one for the set).
+ * @returns Venues to execute, plus the delivered units skipped as records.
+ */
+export function deriveVenues(
+  units: PlanUnit[],
+  carriers: WorktreeEntry[],
+  relSetDir: string,
+  slugBase: string,
+  mode: WorktreeMode,
+): { venues: Venue[]; skips: UnitRecord[] } {
+  const holding = (unit: PlanUnit): WorktreeEntry | undefined =>
+    carriers.find((entry: WorktreeEntry): boolean => carrierTicked(entry.slug, relSetDir, unit.name));
+  const groups = mode === "split" ? partitionComponents(units) : [units];
+  const venues: Venue[] = [];
+  const skips: UnitRecord[] = [];
+  for (const group of groups) {
+    const pending: PlanUnit[] = [];
+    for (const unit of group) {
+      if (isTicked(unit.path)) {
+        skips.push({ unit, status: "skipped", detail: "main-tree marker [x] — already merged", session: null });
+        continue;
+      }
+      const carrier = holding(unit);
+      if (carrier !== undefined) {
+        skips.push({
+          unit,
+          status: "skipped",
+          detail: `worktree ${carrier.slug} marker [x] — delivered, awaiting merge`,
+          session: null,
+        });
+        continue;
+      }
+      pending.push(unit);
+    }
+    if (pending.length === 0) {
+      continue;
+    }
+    const adopting = carriers.filter((entry: WorktreeEntry): boolean =>
+      group.some((unit: PlanUnit): boolean => carrierTicked(entry.slug, relSetDir, unit.name)));
+    const derived =
+      mode === "split"
+        ? `${slugBase}-${pending[0]?.name.replace(/\.md$/, "") ?? "component"}`
+        : slugBase;
+    const slug = adopting.length === 1 ? (adopting[0]?.slug ?? derived) : derived;
+    venues.push({ slug, units: pending });
+  }
+  return { venues, skips };
 }
 
 /**

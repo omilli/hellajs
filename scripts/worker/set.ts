@@ -11,16 +11,18 @@ export interface PlanUnit {
 /**
  * List a plan set's unit files in filename order.
  *
- * Only `NN-*.md` files are units; `index.md` and other non-numbered files are
- * set context, not executable units. The orchestrator reads the set but never
- * writes plan files — the worker skill owns every tick.
+ * Only `NN[-suffix]*.md` files are units (letter suffixes like `02b-` are
+ * inserted rework units and are first-class units); `index.md` and other
+ * non-numbered files are set context, not executable units. The orchestrator
+ * reads the set but never writes plan files — the worker skill owns every
+ * tick.
  *
  * @param setDir Absolute path to the plan-set folder.
  * @returns Unit files sorted by filename.
  */
 export function listPlanUnits(setDir: string): PlanUnit[] {
   return readdirSync(setDir)
-    .filter((name: string): boolean => /^\d+-.*\.md$/.test(name))
+    .filter((name: string): boolean => /^\d+[a-z]*-.*\.md$/.test(name))
     .sort()
     .map((name: string): PlanUnit => ({ name, path: join(setDir, name) }));
 }

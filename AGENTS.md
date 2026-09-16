@@ -122,7 +122,7 @@
   ## Folder structure
 
   - `.agents/skills/` — the thirteen first-party skills + `comparison/` (standalone).
-  - `../hellajs-wt/` — per-component worktrees (`wt/<slug>` branches), protocol-owned: seeded by `worker`'s `worktree.mjs`, merged back only by `bun merge`.
+  - `../hellajs-wt/` — per-component worktrees (`wt/<slug>` branches), protocol-owned: seeded by `worker`'s `worktree.mjs`, merged back only by `bun merge`. A worktree may host a live instance mid-unit: never run mutating commands (coverage/bundle/clean, any write) in one you don't own — probe read-only (`worktree.mjs list`/`status`, file reads).
   - `.changeset/` — changeset config.
   - `.github/` — workflows (CI + release).
   - `docs/` — Astro docs site, importing package docs from `packages/*/docs/`. **A Docs task spans the full site surface**: `learn/concepts/` + `learn/patterns/` + `learn/tutorials/` wrapper pages, `reference/{pkg}/` API wrappers, `nav.ts` registration, and the enumeration indexes. A user-facing feature needs: a concept doc, a pattern doc when copy-paste recipes apply, `nav.ts` registration, and every enumeration listing it updated. Before scoping a Docs task, grep the site for prose claims the change falsifies (e.g. an "X not supported" alert).
