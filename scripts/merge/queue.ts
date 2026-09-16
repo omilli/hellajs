@@ -89,7 +89,10 @@ function matchComponent(
 export function deriveQueue(setDir: string, inventory: string): QueueResult {
   const relSetDir = relative(projectRoot, setDir);
   const units = listPlanUnits(setDir);
-  const components = partitionComponents(units);
+  // Mirror of the worker's venue derivation (scripts/worker/run.ts): components
+  // partition OUTSTANDING units only, so standing venue slugs — named after the
+  // outstanding component's first unit — resolve instead of reporting anomalies.
+  const components = partitionComponents(units.filter((unit: PlanUnit): boolean => !isTicked(unit.path)));
   const order = new Map(units.map((unit: PlanUnit, index: number): [string, number] => [unit.name, index]));
   const result: QueueResult = { queue: [], preMerged: [], anomalies: [] };
   for (const entry of parseWorktreeList(inventory)) {

@@ -159,7 +159,11 @@ export async function runSet(options: RunSetOptions): Promise<number> {
   }
   const venues: Venue[] =
     options.mode === "split"
-      ? partitionComponents(units).map((component: PlanUnit[]): Venue => ({
+      ? // Merged units are filtered before partitioning: a ticked unit must never
+        // anchor a venue slug, or a post-merge relaunch re-enters the merged
+        // unit's venue instead of the outstanding component's. Merge-side mirror:
+        // deriveQueue partitions the same filtered set (scripts/merge/queue.ts).
+        partitionComponents(units.filter((unit: PlanUnit): boolean => !isTicked(unit.path))).map((component: PlanUnit[]): Venue => ({
           slug: `${setSlug(options.setDir)}-${component[0]?.name.replace(/\.md$/, "") ?? "component"}`,
           units: component,
         }))
