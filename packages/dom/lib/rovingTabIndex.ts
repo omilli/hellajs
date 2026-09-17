@@ -1,5 +1,5 @@
 import { getFocusables } from "./internal/focusables";
-import type { RovingTabIndexOptions } from "./types";
+import type { RovingTabIndexOptions } from "./types/behaviors";
 
 /**
  * Implements roving tabindex over `container`'s items: arrow keys move focus along
@@ -17,7 +17,7 @@ import type { RovingTabIndexOptions } from "./types";
  */
 export function rovingTabIndex(container: ParentNode, options?: RovingTabIndexOptions): () => void {
   if (container == null) {
-    throw new Error("[primitives] rovingTabIndex: container is required");
+    throw new Error("[dom] rovingTabIndex: container is required");
   }
   const isHorizontal = options?.orientation !== "vertical";
   const isVertical = options?.orientation !== "horizontal";

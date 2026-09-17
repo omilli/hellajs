@@ -69,15 +69,6 @@
       ],
       "@hellajs/ssr/*": [
         "./packages/ssr/lib/*"
-      ],
-      "@hellajs/primitives": [
-        "./packages/primitives/lib/index.ts"
-      ],
-      "@hellajs/primitives/bundle": [
-        "./packages/primitives/lib/index.ts"
-      ],
-      "@hellajs/primitives/*": [
-        "./packages/primitives/lib/*"
       ]
     }
   },

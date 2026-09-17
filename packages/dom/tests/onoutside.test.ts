@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { onOutside } from "@hellajs/primitives/bundle";
+import { onOutside } from "@hellajs/dom/bundle";
 import { setupButtons, pointerDown } from "./helpers";
 
 describe("onOutside", () => {
@@ -42,7 +42,7 @@ describe("onOutside", () => {
     pointerDown(stray);
     expect(handler).toHaveBeenCalledTimes(1);
 
-    expect(() => onOutside(null as never, handler)).toThrow("[primitives] onOutside: targets is required");
-    expect(() => onOutside(() => [], null as never)).toThrow("[primitives] onOutside: handler is required");
+    expect(() => onOutside(null as never, handler)).toThrow("[dom] onOutside: targets is required");
+    expect(() => onOutside(() => [], null as never)).toThrow("[dom] onOutside: handler is required");
   });
 });

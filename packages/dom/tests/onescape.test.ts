@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { onEscape } from "@hellajs/primitives/bundle";
+import { onEscape } from "@hellajs/dom/bundle";
 import { setupButtons, pressKey } from "./helpers";
 
 describe("onEscape", () => {
@@ -35,7 +35,7 @@ describe("onEscape", () => {
     pressKey(container, "Escape");
     expect(handler).not.toHaveBeenCalled();
 
-    expect(() => onEscape(null as never, handler)).toThrow("[primitives] onEscape: target is required");
-    expect(() => onEscape(container, null as never)).toThrow("[primitives] onEscape: handler is required");
+    expect(() => onEscape(null as never, handler)).toThrow("[dom] onEscape: target is required");
+    expect(() => onEscape(container, null as never)).toThrow("[dom] onEscape: handler is required");
   });
 });

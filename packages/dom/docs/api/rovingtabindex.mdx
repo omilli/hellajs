@@ -21,7 +21,7 @@ function rovingTabIndex(
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/primitives";
+import { rovingTabIndex } from "@hellajs/dom";
 
 let dispose: (() => void) | undefined;
 
@@ -60,7 +60,7 @@ By default focus wraps past the ends. `loop: false` stops at the first and last 
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/primitives";
+import { rovingTabIndex } from "@hellajs/dom";
 
 const Tabs = () => (
   <div
@@ -85,7 +85,7 @@ Items that are not plain focusables (spans carrying click handlers, custom eleme
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { rovingTabIndex } from "@hellajs/primitives";
+import { rovingTabIndex } from "@hellajs/dom";
 
 const Toolbar = () => (
   <div
@@ -115,9 +115,9 @@ Arrow keys act only while `activeElement` is one of the group's items; the wirin
 
 ### Input Validation
 
-`rovingTabIndex()` throws when `container` is `null` or `undefined`: `[primitives] rovingTabIndex: container is required`.
+`rovingTabIndex()` throws when `container` is `null` or `undefined`: `[dom] rovingTabIndex: container is required`.
 
 ```typescript
 // ❌ Throws
-rovingTabIndex(null); // [primitives] rovingTabIndex: container is required
+rovingTabIndex(null); // [dom] rovingTabIndex: container is required
 ```

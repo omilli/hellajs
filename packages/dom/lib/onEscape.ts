@@ -12,10 +12,10 @@
  */
 export function onEscape(target: Node | Window, handler: () => void): () => void {
   if (target == null) {
-    throw new Error("[primitives] onEscape: target is required");
+    throw new Error("[dom] onEscape: target is required");
   }
   if (handler == null) {
-    throw new Error("[primitives] onEscape: handler is required");
+    throw new Error("[dom] onEscape: handler is required");
   }
   const onKeyDown = (event: Event): void => {
     if ((event as KeyboardEvent).key === "Escape") handler();

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { trapFocus } from "@hellajs/primitives/bundle";
+import { trapFocus } from "@hellajs/dom/bundle";
 import { setupButtons, pressKey } from "./helpers";
 
 describe("trapFocus", () => {
@@ -57,6 +57,6 @@ describe("trapFocus", () => {
     expect(document.activeElement).toBe(buttons[1]!);
     releaseAgain();
 
-    expect(() => trapFocus(null as never)).toThrow("[primitives] trapFocus: container is required");
+    expect(() => trapFocus(null as never)).toThrow("[dom] trapFocus: container is required");
   });
 });

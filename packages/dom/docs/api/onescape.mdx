@@ -19,7 +19,7 @@ function onEscape(
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onEscape } from "@hellajs/primitives";
+import { onEscape } from "@hellajs/dom";
 
 let dismiss: (() => void) | undefined;
 
@@ -45,11 +45,11 @@ The handler fires for `key === "Escape"` and nothing else; every other key is ig
 
 ### Pairs with onOutside
 
-Escape covers the keyboard close gesture; [`onOutside`](/reference/primitives/onoutside) covers the pointer gesture. A dismissible panel wires both on the same node and disposes both on close:
+Escape covers the keyboard close gesture; [`onOutside`](/reference/dom/behaviors) covers the pointer gesture. A dismissible panel wires both on the same node and disposes both on close:
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onEscape, onOutside } from "@hellajs/primitives";
+import { onEscape, onOutside } from "@hellajs/dom";
 
 const dismissals: (() => void)[] = [];
 const close = () => {
@@ -80,9 +80,9 @@ The listener attaches to the target for as long as the wiring lives. A component
 
 ### Input Validation
 
-`onEscape()` throws when `target` or `handler` is `null` or `undefined`: `[primitives] onEscape: target is required`, `[primitives] onEscape: handler is required`.
+`onEscape()` throws when `target` or `handler` is `null` or `undefined`: `[dom] onEscape: target is required`, `[dom] onEscape: handler is required`.
 
 ```typescript
 // ❌ Throws
-onEscape(null, () => {}); // [primitives] onEscape: target is required
+onEscape(null, () => {}); // [dom] onEscape: target is required
 ```

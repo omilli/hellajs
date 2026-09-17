@@ -13,10 +13,10 @@
  */
 export function onOutside(targets: () => (Node | null)[], handler: () => void): () => void {
   if (targets == null) {
-    throw new Error("[primitives] onOutside: targets is required");
+    throw new Error("[dom] onOutside: targets is required");
   }
   if (handler == null) {
-    throw new Error("[primitives] onOutside: handler is required");
+    throw new Error("[dom] onOutside: handler is required");
   }
   const onPointerDown = (event: PointerEvent): void => {
     const nodes = targets();

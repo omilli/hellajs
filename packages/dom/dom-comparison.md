@@ -219,6 +219,27 @@ HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary
 | SVG / MathML | Namespaced (`createElementNS`, `foreignObject` resets) (`lib/internal/render.ts`) | Yes | Yes | Yes | Yes | Yes |
 | Context / DI | None: signals + props | `createContext` | `setContext`/`getContext` | Context | provide / inject | DI + inject |
 
+### Headless behavior functions
+
+Dom also ships the headless wiring layer as four dependency-free functions: `trapFocus`, `onEscape`, `onOutside`, and `rovingTabIndex` (`lib/trapFocus.ts`, `lib/onEscape.ts`, `lib/onOutside.ts`, `lib/rovingTabIndex.ts`). The React-ecosystem headless libraries keep the same behaviors internal to their components:
+
+| Behavior | HellaJS dom | Radix Primitives | Base UI | Zag |
+|---|---|---|---|---|
+| Standalone focus trap | Yes (`lib/trapFocus.ts`) | Internal only (FocusScope) | Internal only | Yes (`@zag-js/focus-trap`) |
+| Standalone outside-press / Escape | Yes (`lib/onOutside.ts`, `lib/onEscape.ts`) | Internal only (DismissableLayer) | Internal only | Yes (`@zag-js/dismissable`) |
+| Standalone roving tabindex | Yes (`lib/rovingTabIndex.ts`) | No public surface | No public surface | No public surface |
+| Focus restore on close | Yes, default on (`lib/trapFocus.ts`) | Yes, `onCloseAutoFocus` customizable | Yes, in components | Yes, `returnFocusOnDeactivate` |
+| Dynamic content re-query | Per keypress / per press (`lib/trapFocus.ts`, `lib/onOutside.ts`) | Via layer composition | Via parts | Via machine events |
+| Orientation / loop control | Both options (`lib/types/behaviors.d.ts`) | Via RovingFocusGroup internals | Per component | Per machine |
+| Home / End jumps | Yes (`lib/rovingTabIndex.ts`) | Yes (in components) | Yes (in components) | Yes (in machines) |
+| Nested traps | No | Yes (FocusScope stacking) | Yes (in components) | Yes (focus-trap utility) |
+| Shadow DOM traversal | No | Yes | Yes | Yes |
+| ARIA attributes provided | No: wiring only | Yes (parts set roles/ids) | Yes | Yes (`connect` getters) |
+| Framework adapters | None needed (plain DOM) | React | React | React, Solid, Vue, Svelte |
+| Works without a framework | Yes | No | No | Partially (utilities, not machines) |
+
+HellaJS is the only entry whose entire behavior surface is the wiring itself: the trap, the dismissal listeners, and the roving group are public functions, not machinery hidden under components. Every call returns a dispose handle that undoes its DOM mutations (`rovingTabIndex` restores original `tabindex` attributes from an init-time snapshot, `trapFocus` refocuses the pre-trap `activeElement`; `lib/rovingTabIndex.ts`, `lib/trapFocus.ts`). The honest gaps: the trap handles only edge wrapping (no nested traps, no shadow DOM traversal), and the default focusable collector excludes `tabindex="-1"` while roving writes `-1` onto inactive items, so tabindex-collected groups need an explicit `selector` (`lib/internal/focusables.ts`, `lib/rovingTabIndex.ts`).
+
 ### Notable HellaJS differentiators
 
 - `$ref` / `$collection` wrap existing DOM outside HellaJS's render tree, queueing operations until a match appears via an independent `MutationObserver` on `document.body`: `bind`/`on`/`hooks` apply to nodes HellaJS never created (`lib/$ref.ts`, `lib/$collection.ts`, `lib/internal/selectors.ts`).

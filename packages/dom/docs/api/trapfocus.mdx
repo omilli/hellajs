@@ -20,7 +20,7 @@ function trapFocus(
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { trapFocus } from "@hellajs/primitives";
+import { trapFocus } from "@hellajs/dom";
 
 let release: (() => void) | undefined;
 
@@ -63,9 +63,9 @@ The listener lives on `document`, so it outlives the panel element. A panel remo
 
 ### Input Validation
 
-`trapFocus()` throws when `container` is `null` or `undefined`: `[primitives] trapFocus: container is required`.
+`trapFocus()` throws when `container` is `null` or `undefined`: `[dom] trapFocus: container is required`.
 
 ```typescript
 // ❌ Throws
-trapFocus(null); // [primitives] trapFocus: container is required
+trapFocus(null); // [dom] trapFocus: container is required
 ```

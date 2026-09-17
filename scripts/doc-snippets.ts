@@ -76,7 +76,7 @@ interface Diagnostic {
 const LANGS_TS = new Set(["typescript", "ts", "tsx", "jsx"]);
 const LANGS_JS = new Set(["js"]);
 const OUT_DIR = path.join(projectRoot, ".doc-snippets");
-const PACKAGES = ["core", "dom", "css", "resource", "router", "store", "ssr", "primitives"] as const;
+const PACKAGES = ["core", "dom", "css", "resource", "router", "store", "ssr"] as const;
 const CONTINUATION_RE = /^[.([,:?+*&|)}\]]|^(=>|&&|\|\||\?\?)/;
 const EXTERNAL_IMPORT_RE = /^import\s[^"']*from\s+["'](?!@hellajs\/)[^"']+["']/;
 /** Real assignment `=` — arrows and comparators stripped first. */

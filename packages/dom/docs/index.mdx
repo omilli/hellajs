@@ -64,6 +64,10 @@ mount(Counter, "#app");
 - **[$collection](/reference/dom/$collection)**: Bind to multiple existing DOM elements
 - **[component](/reference/dom/component)**: Low-level component creation
 - **[registry](/reference/dom/registry)**: Low-level lifecycle management API for DOM elements. Manages effects and hooks attached to elements
+- **[trapFocus](/reference/dom/behaviors)**: Trap Tab and Shift+Tab inside a container, wrapping at the edges
+- **[onEscape](/reference/dom/behaviors)**: Call a handler on Escape keydown at a target
+- **[onOutside](/reference/dom/behaviors)**: Call a handler on document pointerdown outside resolved targets
+- **[rovingTabIndex](/reference/dom/behaviors)**: Arrow-key focus movement with a roving tabindex over a container's items
 
 ### Concepts
 
@@ -75,6 +79,7 @@ mount(Counter, "#app");
 - **[Reactive Refs](/learn/concepts/reactive-refs)**: $ref and $collection for existing DOM elements
 - **[Custom Elements](/learn/concepts/custom-elements)**: Web Components with reactive props
 - **[Hydration](/learn/concepts/hydration)**: Attach reactivity to server-rendered HTML in place
+- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, escape and outside wiring, and roving tabindex as pure dispose-handle functions
 
 ### Patterns
 

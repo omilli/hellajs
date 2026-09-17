@@ -1,5 +1,12 @@
 # Memory Update Log
 
+## 2026-09-18
+* **Creation**: Added concept [151](entries/151.md) (type: decision).
+* **Update**: Renumber: worker-allocated ID 150 (feedback-scan-ts-needs-session, dom-dissolve merge) collided with main-tree 150-close-dynamic-html-template-component — renumbered to 151
+
+## 2026-09-17
+* **Creation**: Added concept [149](entries/149.md) (type: decision).
+
 ## 2026-09-16
 * **Creation**: Added concept [146](entries/146.md) (type: correction).
 * **Deprecation**: Archived [008](archive/008-dom-multiple-components-isolation-test.md) → superseded by [146](entries/146-dom-multiple-components-isolation-test.md).

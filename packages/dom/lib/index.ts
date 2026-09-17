@@ -16,9 +16,14 @@ export { component } from "./component";
 export { raw } from "./raw";
 export { registry } from "./registry";
 export { onError } from "./error";
+export { trapFocus } from "./trapFocus";
+export { onEscape } from "./onEscape";
+export { onOutside } from "./onOutside";
+export { rovingTabIndex } from "./rovingTabIndex";
 
 export type * from "./types/nodes";
 export type * from "./types/attributes";
+export type * from "./types/behaviors";
 
 declare global {
   namespace JSX {

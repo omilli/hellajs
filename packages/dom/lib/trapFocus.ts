@@ -1,5 +1,5 @@
 import { getFocusables } from "./internal/focusables";
-import type { TrapFocusOptions } from "./types";
+import type { TrapFocusOptions } from "./types/behaviors";
 
 /**
  * Traps Tab navigation inside `container`: Tab from the last focusable child wraps
@@ -17,7 +17,7 @@ import type { TrapFocusOptions } from "./types";
  */
 export function trapFocus(container: ParentNode, options?: TrapFocusOptions): () => void {
   if (container == null) {
-    throw new Error("[primitives] trapFocus: container is required");
+    throw new Error("[dom] trapFocus: container is required");
   }
   const restoreFocus = options?.restoreFocus !== false;
   const previous = restoreFocus ? (document.activeElement as HTMLElement | null) : null;

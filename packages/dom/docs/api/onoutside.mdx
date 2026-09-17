@@ -19,7 +19,7 @@ function onOutside(
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onOutside } from "@hellajs/primitives";
+import { onOutside } from "@hellajs/dom";
 
 let dismiss: (() => void) | undefined;
 
@@ -48,7 +48,7 @@ mount(<Menu />, "#app");
 
 ```jsx
 import { mount } from "@hellajs/dom";
-import { onOutside } from "@hellajs/primitives";
+import { onOutside } from "@hellajs/dom";
 
 let menuNode: HTMLElement | null = null;
 let dialogNode: HTMLElement | null = null;
@@ -85,9 +85,9 @@ The listener lives on `document`, so it outlives the elements the getter returns
 
 ### Input Validation
 
-`onOutside()` throws when `targets` or `handler` is `null` or `undefined`: `[primitives] onOutside: targets is required`, `[primitives] onOutside: handler is required`.
+`onOutside()` throws when `targets` or `handler` is `null` or `undefined`: `[dom] onOutside: targets is required`, `[dom] onOutside: handler is required`.
 
 ```typescript
 // ❌ Throws
-onOutside(null, () => {}); // [primitives] onOutside: targets is required
+onOutside(null, () => {}); // [dom] onOutside: targets is required
 ```

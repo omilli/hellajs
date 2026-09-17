@@ -50,6 +50,17 @@ function App() {
 mount(App, '#app');
 ```
 
+## Behaviors
+
+Four headless wiring functions ship flat on the barrel. Each takes real DOM nodes and returns a dispose handle; state stays in caller signals.
+
+- **trapFocus**: Trap Tab/Shift+Tab inside a container
+- **onEscape**: Call a handler on Escape keydown
+- **onOutside**: Call a handler on outside pointerdown
+- **rovingTabIndex**: Arrow-key focus movement with a roving tabindex
+
+See [Headless Behaviors](https://hellajs.com/learn/concepts/headless-behaviors).
+
 ## License
 
 This software is provided "as is" under the MIT License, without any warranties. The authors are not liable for any damages arising from its use.

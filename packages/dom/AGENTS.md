@@ -10,13 +10,15 @@ Surgical DOM rendering — no virtual DOM diffing. Only elements with reactive d
 | `$ref`, `$collection` | Reactive wrappers over existing DOM | `lib/$ref.ts`, `lib/$collection.ts` |
 | `raw` | Raw HTML child sentinel — `ssr` emits verbatim, `hydrate` adopts opaquely | `lib/raw.ts` |
 | `registry` | `addEffect` / `addHook` registration API | `lib/registry.ts` |
+| `trapFocus`, `onEscape`, `onOutside`, `rovingTabIndex` | Behavior functions → dispose handle | `lib/{trapFocus,onEscape,onOutside,rovingTabIndex}.ts` |
 | `resetDom` | State reset (test/introspection) | `lib/internal/reset.ts` |
 | `checkMultiSelectors`, `multiSelectors` | Selector-watcher state (test/introspection) | `lib/internal/selectors.ts` |
 | `getState`, `hasState`, `peekState`, `deleteState` | ElementState access (test/introspection) | `lib/internal/state.ts` |
 | `HellaNode`, `HellaChild`, `HellaChildren`, `ElementHooks`, `HookType`, `HookFn`, `ErrorConfig`, `ErrorContext`, `ErrorFn`, `DirectListenerSpec`, `DomWrapper`, `DomRef`, `DomCollection`, `ForEachProps`, `PortalProps`, `LazyProps`, `TransitionProps`, `SuspenseProps`, `ComponentFn`, `RenderFn`, … | Type-only | `lib/types/nodes.d.ts` |
 | `DOMEventMap`, `HTMLAttributeMap`, `HTMLAttributes`, `StyleObject` | Type-only | `lib/types/attributes.d.ts` |
+| `TrapFocusOptions`, `RovingTabIndexOptions` | Type-only | `lib/types/behaviors.d.ts` |
 
-**Throw contracts.** `mount` → `[dom] mount: target "<target>" not found in document`. `ForEach` → `[dom] ForEach: each is required` / `[dom] ForEach: use must be a function`. `element` → `[dom] element: tagName must be a hyphenated string / render must be a function`. `Lazy` → `[dom] Lazy: loader must be a function`. `Portal` → `[dom] Portal: type must be one of "append" | "prepend" | "replace" | "before" | "after"` (at construction) / `[dom] Portal: target "<to>" not found in document` (at first effect run, not at construction).
+**Throw contracts.** `mount` → `[dom] mount: target "<target>" not found in document`. `ForEach` → `[dom] ForEach: each is required` / `[dom] ForEach: use must be a function`. `element` → `[dom] element: tagName must be a hyphenated string / render must be a function`. `Lazy` → `[dom] Lazy: loader must be a function`. `Portal` → `[dom] Portal: type must be one of "append" | "prepend" | "replace" | "before" | "after"` (at construction) / `[dom] Portal: target "<to>" not found in document` (at first effect run, not at construction). `trapFocus` → `[dom] trapFocus: container is required`. `onEscape` → `[dom] onEscape: target is required / handler is required`. `onOutside` → `[dom] onOutside: targets is required / handler is required`. `rovingTabIndex` → `[dom] rovingTabIndex: container is required`.
 
 ## ElementState (`lib/internal/state.ts`) — `WeakMap<Node, ElementState>`
 
@@ -223,6 +225,25 @@ Public, exported. `addEffect(node, fn)` wraps `fn` in `effect(...)` bracketed by
 
 Branch order: `value`/`checked`/`selected`/`innerHTML` → set the IDL property directly (falsy → `''`, never `removeAttribute`); `isFalsy` (`false`/`null`/`undefined`) → `removeAttribute`; `key === "style"` + plain object (`isPlainObject` from `./core`) → kebab-case serialization — camelCase→kebab keys, falsy declarations dropped, **no auto-px** on numbers, `"; "` join, one `setAttribute("style", …)`; custom elements (`tagName` contains `-` **and** `key in element`) → raw property assignment, objects/arrays by reference — the `in` chain check is deliberate (CE props live on prototypes as often as instances; standard tags are never hyphenated, `class` is never `in` an element, so class arrays still join); `true` → empty string; arrays → space-joined filtering falsy (class lists); else `setAttribute`. **`isFalsy(0)` is false** — signal `0` renders `"0"`.
 
+## Headless behaviors (`lib/{trapFocus,onEscape,onOutside,rovingTabIndex}.ts`)
+
+Flat dispose-handle wiring over real nodes, zero deps by design: no core shim, raw `== null` validation (the guide's stays-raw form; never convert to `typeof` comparisons — eslint-banned in `packages/*/lib`). State stays in caller signals.
+
+| File | Responsibility |
+|---|---|
+| `trapFocus.ts` | Document capture-phase keydown; wraps Tab/Shift+Tab when `activeElement` is exactly the first/last focusable. Focuses `initialFocus()` result or the first focusable at trap time; captures pre-trap `activeElement` and restores it on release unless `restoreFocus: false`. Focusables re-queried per keypress (dynamic children join the trap). |
+| `onEscape.ts` | Bubble-phase keydown on the target itself; fires `handler` only on `key === "Escape"`. |
+| `onOutside.ts` | Document capture-phase pointerdown; re-invokes the `targets` getter per event, skips `null` entries, ignores the press when any resolved node `.contains(event.target)`, else fires `handler`. |
+| `rovingTabIndex.ts` | Container bubble-phase keydown over `getFocusables(container, selector)`. Init: first item `tabindex=0`, rest `-1`, never steals focus. Per key: resolve `current` via `indexOf(activeElement)` (`-1` → ignore — arrows act only with focus inside the group); orientation gates the axis; Home/End become deltas; `loop` wraps (`(target + len) % len`) or clamps at the ends; writes `tabindex=0` on the target item, `-1` on the rest. Dispose restores each init-snapshot item's original attribute (`removeAttribute` when it had none). |
+| `internal/focusables.ts` | `FOCUSABLE_SELECTOR` (`a[href]`, enabled `button`/`input`/`select`/`textarea`, `[tabindex]:not([tabindex="-1"])`) + `getFocusables(root, selector?)` — the shared collector for `trapFocus` (default) and `rovingTabIndex` (default + `selector` override). |
+
+Non-obvious:
+
+- **Dispose is REQUIRED in cleanup paths.** `trapFocus` and `onOutside` listen on `document` — the wiring outlives the trapped/observed element; skipping the dispose handle leaks a live global listener against a detached container.
+- **Default collector vs roving's `-1` writes.** `getFocusables` excludes `tabindex="-1"`, and roving writes `-1` onto inactive items. Items collected only via their `tabindex` attribute (spans, not natively focusable) drop out of the default group after the first move; such groups must pass `selector`. Natively focusable items (buttons, links, inputs) stay collected — the selector arms match them regardless of `tabindex`.
+- **`onEscape`/`rovingTabIndex` listeners take `(event: Event)`.** Generic `Node`/`ParentNode` targets only expose the string→`EventListener` overload (no keyed event map, unlike `document`), so those two closures narrow `(event as KeyboardEvent)` once at the top; `trapFocus`/`onOutside` attach to `document` and keep concrete event params.
+- **Wrap only at the exact edges.** `trapFocus` intercepts when `activeElement` is the first or last focusable; focus elsewhere inside the container falls through to native Tab behavior. Pull-back from outside the container is deliberately absent.
+
 ## Non-obvious behaviors (gotchas)
 
 - **Treat returned HellaNodes as immutable.** Static subtrees are shared by reference across invocations of the same `html` literal.
@@ -261,7 +282,7 @@ Branch order: `value`/`checked`/`selected`/`innerHTML` → set the IDL property 
 
 Integration-style, public API only. Runtime imports from **`@hellajs/dom/bundle`** (the instrumented bundle); type-only from `@hellajs/dom`. Generic conventions (import sources/order, `mock()` tracking, `resetTestState`) are owned by `guides/tests.md` — package-specific facts: the publicly-exported introspection helpers used directly are `peekState`, `getState`, `multiSelectors`, `checkMultiSelectors`.
 
-`tests/helpers.ts` exports `fallbackHandler(defaultFallback)` — registers an `onError` handler delegating to `context.config?.fallback?.(error)` else returning the default; the standard pattern for exercising element-level fallback through the global handler.
+`tests/helpers.ts` exports `fallbackHandler(defaultFallback)` — registers an `onError` handler delegating to `context.config?.fallback?.(error)` else returning the default; the standard pattern for exercising element-level fallback through the global handler. Behavior helpers shared by the four behavior test files: `setupButtons` (container + labeled buttons in the body), `pressKey` (bubbling, **`cancelable: true`** keydown — without it `defaultPrevented` asserts fail silently), `pointerDown`.
 
 - `mount.test.ts` — sync/async component fns, signal `0` renders `"0"`, async-mount error routing, target-miss throw.
 - `mount-targets.test.ts`, `mount-binding.test.ts`, `mount-edge-cases.test.ts` — selector-vs-Element targets, direct-prop falsy fallback, raw-`Node` passthrough, `componentScope`/`errorConfig` transfer to state.
@@ -278,6 +299,7 @@ Integration-style, public API only. Runtime imports from **`@hellajs/dom/bundle`
 - `element.test.ts` — custom-element props/slots/lifecycle, attribute reactivity, reconnect.
 - `ref.test.ts`, `collection.test.ts` — queued ops, auto-watching, method chaining, `dispose()`, selector-registry state.
 - `component.test.ts`, `registry.test.ts` — `component()` scope wrapping, `addEffect`/`addHook` stacking.
+- `trapfocus.test.ts`, `onescape.test.ts`, `onoutside.test.ts`, `rovingtabindex.test.ts` — the four headless behaviors: edge wrapping, initialFocus/restoreFocus, orientation/loop/clamp, Home/End, tabindex roving + snapshot restore, getter-target outside press, dispose stops wiring, input validation.
 
 **Pattern across all tests:** `mount` → drive signals → `flush()` (core, sync, no `await`) → assert DOM. `afterMount` fires during `mount()`/`hydrate()` already; the handle's `flush()` is only needed to drain the cleanup queue synchronously (e.g. `afterDestroy` assertions). For removal assertions, `el.remove()` then `await delay()` to let the MutationObserver fire and process cleanup. Never test two behaviors in one test; aim for 100% coverage.
 

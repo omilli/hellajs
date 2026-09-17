@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { rovingTabIndex } from "@hellajs/primitives/bundle";
+import { rovingTabIndex } from "@hellajs/dom/bundle";
 import { setupButtons, pressKey } from "./helpers";
 
 describe("rovingTabIndex", () => {
@@ -108,6 +108,6 @@ describe("rovingTabIndex", () => {
     pressKey(first, "ArrowRight");
     expect(document.activeElement).toBe(first);
 
-    expect(() => rovingTabIndex(null as never)).toThrow("[primitives] rovingTabIndex: container is required");
+    expect(() => rovingTabIndex(null as never)).toThrow("[dom] rovingTabIndex: container is required");
   });
 });
