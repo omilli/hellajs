@@ -10,7 +10,7 @@ Execute a plan task-by-task. The plan is the contract: shared scope + typed task
 
 ## Step 0 — Dependency gate (if the plan file has deps)
 
-Frontmatter `depends_on: [sibling, ...]` → resolve each to a sibling file in the folder, read its top marker. Any dep still `[ ]` → **blocked**: don't start; report "blocked on <dep>"; pick an unblocked file or hand back to the orchestrator. Never execute a blocked file; never tick around a missing dep.
+Frontmatter `depends_on: [sibling, ...]` → resolve each to a sibling file in the folder, read its top marker — when a worktree already carries the set folder, its unit copies are authoritative (durable ticks; the main-tree copy trails until merge). Any dep still `[ ]` → **blocked**: don't start; report "blocked on <dep>"; pick an unblocked file or hand back to the orchestrator. Never execute a blocked file; never tick around a missing dep.
 
 Then slice vertically: finish the current unit — every task ticked, top marker `[x]` — before starting a sibling. Horizontal (type-)batching defeats the unit boundary; only a hard `depends_on` block justifies setting a unit down mid-flight.
 

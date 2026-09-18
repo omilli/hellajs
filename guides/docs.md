@@ -320,7 +320,7 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 
 - **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`. **Components-section page** (`docs/src/pages/components/{name}.astro`): a self-contained `.astro` page — frontmatter imports `MainLayout` + `@ui/concepts/{name}.mdx`; the body renders the empty demo frame (`<div class="demo-frame dark" id="demo"></div>`) and the package-doc content tag, and a page-level `<script>` composes the vendored components through the `<${Component}>` embedded-tag syntax and `mount`s into `#demo` — the frame and script are sanctioned structural content alongside the package-doc component tag, not prose.
 - **Component name**: PascalCase from the file name (`signal.mdx` → `SignalContent`). **No content** between the import and the component tag.
-- A wrapper MAY import and render multiple package docs, separated by `<div class="...border-t..."></div>`, when the site joins related concepts from different packages under one URL — each import still follows the alias + PascalCase rules, and the wrapper still carries zero prose.
+- A wrapper MAY import and render multiple package docs, separated by `<div class="...border-t..."></div>`, when the site joins related content under one URL — concepts from different packages, or sibling exports within one package (dom's `/reference/dom/behaviors` joins its behavior-function api docs) — each import still follows the alias + PascalCase rules, and the wrapper still carries zero prose.
 
 ### Site-Authored Content Pages
 
