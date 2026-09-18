@@ -32,4 +32,15 @@ describe("readConfig", () => {
     expect(() => readConfig(root))
       .toThrow('[ui] readConfig: style must be one of css, tailwind, received "bogus"');
   });
+
+  test("throws the invalid-JSON contract for unparseable hella.ui.json", () => {
+    writeFileSync(join(root, "hella.ui.json"), "{ oops");
+    expect(() => readConfig(root)).toThrow("[ui] readConfig: invalid JSON in");
+  });
+
+  test("throws the format contract for an invalid format", () => {
+    writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ format: "bogus" }));
+    expect(() => readConfig(root))
+      .toThrow('[ui] readConfig: format must be jsx or html, received "bogus"');
+  });
 });

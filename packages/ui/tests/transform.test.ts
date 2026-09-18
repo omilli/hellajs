@@ -204,6 +204,12 @@ describe("applyStyleVariant", () => {
       .toThrow('[ui] applyStyleVariant: style module imports must use package specifiers, got "../cn/cn"');
   });
 
+  test("a style module import without a double-quoted specifier throws", () => {
+    const singleQuoted = "import { base } from 'some-pkg';\n";
+    expect(() => applyStyleVariant(canonical, singleQuoted, "css"))
+      .toThrow('[ui] applyStyleVariant: style module import has no specifier: "import { base } from \'some-pkg\';"');
+  });
+
   test("a style module exporting through default or braces throws", () => {
     const defaulted = "export default \"a\";\n";
     expect(() => applyStyleVariant(canonical, defaulted, "css"))
@@ -220,6 +226,18 @@ describe("applyStyleVariant", () => {
     ].join("\n");
     expect(() => applyStyleVariant(notArray, tailwindModule, "tailwind"))
       .toThrow('[ui] applyStyleVariant: compose region must be a plain class array (no "[" found)');
+  });
+
+  test("a compose region without a closing bracket throws on the tailwind wrap", () => {
+    const unclosed = [
+      "// @hella:styles",
+      "// @hella:end",
+      "// @hella:compose",
+      "[base",
+      "// @hella:end",
+    ].join("\n");
+    expect(() => applyStyleVariant(unclosed, tailwindModule, "tailwind"))
+      .toThrow('[ui] applyStyleVariant: compose region must be a plain class array (no "]" found)');
   });
 
   test("an empty compose region throws on the tailwind wrap", () => {

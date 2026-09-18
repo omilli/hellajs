@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { addComponent } from "@hellajs/ui/bundle";
-import type { UiStyle } from "@hellajs/ui";
+import type { UiFormat, UiStyle } from "@hellajs/ui";
 
 const root = join(import.meta.dir, ".tmp", "add");
 const componentsDir = join(root, "src", "components");
@@ -64,6 +64,12 @@ describe("addComponent", () => {
     expect(existsSync(join(componentsDir, "button.tsx"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-html.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+  });
+
+  test("lang js renames the copied helper to cn.js", () => {
+    addComponent(["button"], { dir: root, style: "tailwind", lang: "js" });
+    expect(existsSync(join(componentsDir, "cn.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "cn.ts"))).toBe(false);
   });
 
   test("css add of input pulls the tokens theme and no tailwind artifacts", () => {
@@ -139,6 +145,31 @@ describe("addComponent", () => {
   test("unknown style throws the two-style contract", () => {
     expect(() => addComponent(["button"], { dir: root, style: "bogus" as UiStyle }))
       .toThrow('[ui] addComponent: style must be one of css, tailwind, received "bogus"');
+  });
+
+  test("empty names throw the at-least-one contract", () => {
+    expect(() => addComponent([], { dir: root }))
+      .toThrow("[ui] addComponent: at least one component name is required");
+  });
+
+  test("invalid format throws the two-format contract", () => {
+    expect(() => addComponent(["button"], { dir: root, format: "bogus" as UiFormat }))
+      .toThrow('[ui] addComponent: format must be jsx or html, received "bogus"');
+  });
+
+  test("a target dir without package.json throws the checkPeers contract", () => {
+    const bare = join(root, "bare");
+    mkdirSync(bare);
+    expect(() => addComponent(["button"], { dir: bare }))
+      .toThrow(`[ui] checkPeers: package.json not found in ${bare}`);
+  });
+
+  test("a target dir with unparseable package.json throws the checkPeers JSON contract", () => {
+    const broken = join(root, "broken");
+    mkdirSync(broken);
+    writeFileSync(join(broken, "package.json"), "{ oops");
+    expect(() => addComponent(["button"], { dir: broken }))
+      .toThrow(`[ui] checkPeers: invalid JSON in ${join(broken, "package.json")}`);
   });
 
   test.each([
