@@ -10,6 +10,7 @@
 * **Creation**: Added concept [169](entries/169.md) (type: decision).
 * **Deprecation**: Archived [022](archive/022-dom-s-hellajs-ssr-test.md) → superseded by [169](entries/169.md).
 * **Creation**: Added concept [170](entries/170.md) (type: decision).
+* **Creation**: Added concept [171](entries/171.md) (type: decision).
 
 ## 2026-09-17
 * **Creation**: Added concept [149](entries/149.md) (type: decision).
