@@ -1,0 +1,92 @@
+{
+  "entries": {
+    "theme": {
+      "styles": {
+        "css": {
+          "files": ["tokens.js"],
+          "deps": ["@hellajs/css"],
+          "registryDependencies": []
+        },
+        "tailwind": {
+          "files": ["theme.css"],
+          "deps": ["tw-animate-css"],
+          "registryDependencies": []
+        }
+      }
+    },
+    "cn": {
+      "styles": {
+        "tailwind": {
+          "files": ["cn.ts"],
+          "deps": ["clsx", "tailwind-merge"],
+          "registryDependencies": []
+        }
+      }
+    },
+    "button": {
+      "files": ["button.tsx", "button-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "card": {
+      "files": ["card.tsx", "card-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "input": {
+      "files": ["input.tsx", "input-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "dialog": {
+      "files": ["dialog.tsx", "dialog-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "tabs": {
+      "files": ["tabs.tsx", "tabs-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    }
+  }
+}

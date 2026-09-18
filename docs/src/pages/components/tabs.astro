@@ -1,0 +1,32 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import TabsContent from "@ui/concepts/tabs.mdx";
+
+const title = "Tabs";
+const description = "Interactive Tabs demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <TabsContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Tabs from "../../components/ui/tabs";
+  import "../../components/ui/tokens.js";
+
+  const account = [
+    { id: "account", label: "Account", content: html`<p>Change your name, email, and profile details.</p>` },
+    { id: "password", label: "Password", content: html`<p>Set a new password. Minimum eight characters.</p>` },
+    { id: "notifications", label: "Notifications", content: html`<p>Choose which alerts you receive by email.</p>` },
+  ];
+  const line = [
+    { id: "overview", label: "Overview", content: html`<p>A summary of your workspace activity this week.</p>` },
+    { id: "activity", label: "Activity", content: html`<p>Recent edits, comments, and mentions.</p>` },
+  ];
+  mount(html`<div class="demo-stack">
+    <${Tabs} items=${account} />
+    <${Tabs} items=${line} variant="line" />
+  </div>`, document.getElementById("demo")!);
+</script>

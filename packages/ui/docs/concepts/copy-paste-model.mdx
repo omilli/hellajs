@@ -1,0 +1,82 @@
+# Copy-Paste Model
+
+The registry ships component source files and the CLI copies them into your project: the copied file is yours to edit, the package never becomes a runtime dependency, and there is no importable component surface.
+
+## The CLI
+
+Three commands cover the whole workflow:
+
+```bash
+bunx @hellajs/ui init
+bunx @hellajs/ui add button
+bunx @hellajs/ui list
+```
+
+`init` writes `hella.ui.json` to the project root and adds the shared `theme` entry:
+
+```json
+{
+  "componentsDir": "src/components",
+  "style": "css",
+  "format": "jsx",
+  "lang": "ts"
+}
+```
+
+`add` reads that config for its defaults; `--style`, `--format`, and `--lang` override them per call. `--dir` targets another project root, `--overwrite` replaces existing files, and `--force` rewrites an existing `hella.ui.json`. `list` prints every entry in the registry.
+
+Resolution is recursive: `add button` also copies every entry `button` depends on. The css style brings `tokens.js` along; the tailwind style brings `theme.css` and `cn.ts`.
+
+## One File Per Add
+
+Each component copies as one file per format into `componentsDir`:
+
+| Format | Source | Copied as |
+|---|---|---|
+| jsx (`--format jsx`) | `button.tsx` | `button.tsx` |
+| html (`--format html`) | `button-html.ts` | `button.ts` |
+
+The rename is deliberate: `import Button from './components/button'` resolves in both formats.
+
+The copied file carries everything it needs: markup, props, and the style declarations for the chosen style, spliced in at copy time. It never imports the registry, `@hellajs/ui`, or any file the CLI did not copy beside it.
+
+The canonical source carries marker regions the CLI consumes at copy time (and strips from the output): exactly one `// @hella:styles` region, where the style module's declarations land, and one `// @hella:compose` region per styled part, holding that part's live class array - multi-part components like Card carry seven. Each region closes with `// @hella:end`. The splice produces a different body per style:
+
+- **css** splices [`style`](/reference/css/style) maps into the styles region and keeps every compose array in its `class` attribute; dom joins plain arrays there, and the maps emit under the `hella` cascade layer.
+- **tailwind** splices plain utility strings into the styles region, wraps every compose array in `cn(...)`, and injects `import { cn } from "./cn.js";` so the helper import resolves next to the copied file.
+
+Style modules export `base` plus one lowerCamel export per styled part (`header`, `title`, `close`, ...); `variants`/`sizes` string maps appear only where a component actually has them (Button's variant and size sets, TabsList's pill/line).
+
+Editing the copied file is the supported customization path: change the markup, add a prop, retune the maps. Nothing upstream can drift out from under you, because nothing upstream exists at runtime.
+
+## Styles and Formats
+
+| Flavor | `--format jsx` | `--format html` |
+|---|---|---|
+| `--style css` (default) | `style()` maps, class array | same declarations in a runtime template |
+| `--style tailwind` | utility-string maps, `cn(...)` | same, in a runtime template |
+
+Both formats receive the same style declarations; only the markup carrier differs. JSX compiles through the HellaJS babel plugin, wrapped as [`vite-plugin-hellajs`](/plugins/vite); the html format renders through the runtime `html` tagged template.
+
+By default the copied files stay TypeScript. `--lang js` strips types at copy time and retargets the extensions; the output is plain JavaScript with the same declarations and markup (see Plain JavaScript):
+
+| `--lang ts` (default) | `--lang js` |
+|---|---|
+| `button.tsx`, `button.ts`, `cn.ts` | `button.jsx`, `button.js`, `cn.js` |
+
+## The cn Helper
+
+Tailwind adds copy `cn.ts`: a one-function helper that joins classes with `clsx` and resolves conflicts with `tailwind-merge`. Both packages land in your project's dependencies; the CLI reads your `package.json` at add time and names exactly what is missing. Conflict resolution is the override mechanism: a utility in `props.class` wins over the same utility group baked into the component.
+
+css projects have no `cn`: the class array composes statically, and precedence between registry CSS and your own is the cascade layer's job (see Theming). For joining class fragments in your own code, [`cx`](/reference/css/cx) is the css-package joiner, and [`cva`](/reference/css/cva) layers typed variant recipes over it.
+
+## Peer Dependencies
+
+Copied source imports packages as regular dependencies of your project. `add` prints an install hint naming exactly what is missing.
+
+| What you add | Extra packages the copies import |
+|---|---|
+| Any component, css style | `@hellajs/css` |
+| Any component, tailwind style | `clsx`, `tailwind-merge`, `tw-animate-css` |
+
+Every component entry declares `@hellajs/core` and `@hellajs/dom` as base peers; `add` checks them in your `package.json` alongside the style's extras.

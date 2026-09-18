@@ -1,0 +1,65 @@
+{
+  "name": "@hellajs/ui",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "hellajs-ui": "./bin/hellajs-ui.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./bundle": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/bundle.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.js.map",
+    "dist/*.d.ts",
+    "dist/*.json",
+    "dist/internal",
+    "registry",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "@hellajs/core": "^1.0.0",
+    "@hellajs/dom": "^1.0.0",
+    "@hellajs/css": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@hellajs/css": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/omilli/hellajs.git",
+    "directory": "packages/ui"
+  },
+  "homepage": "git+https://github.com/omilli/hellajs.git",
+  "bugs": {
+    "url": "https://github.com/omilli/hellajs/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "esbuild": "^0.27.2"
+  },
+  "devDependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.7.0"
+  }
+}

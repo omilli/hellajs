@@ -31,7 +31,7 @@ import { logger, packagesDir, projectRoot } from "./utils/index.js";
  *
  * 4. Wrapper validity — every site page under `docs/src/pages/` must carry frontmatter
  *    with `title`, `description`, and `layout`. Pages that import a package doc
- *    (the `@core/…`–`@examples/…` aliases) are import-rendering wrappers: their
+ *    (the `@core/…`–`@examples/…` site aliases) are import-rendering wrappers: their
  *    body may contain only imports, component tags, and optional
  *    `border-t` divider divs. Site-authored content pages (no package-doc
  *    import — quick-start, testing patterns) are exempt from the zero-content
@@ -75,10 +75,10 @@ const SITE_HREF_RE = /href="(\/[^"\s]+#([^"\s]+))"/g;
 const HEADING_RE = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
 const SECTION_END_RE = /^## /;
 const IMPORT_RE = /^import\s.+/;
-const TAG_RE = /^<[A-Za-z][\w.]*\s*(?:\/>|>.*<\/[A-Za-z][\w.]*>)$/;
+const TAG_RE = /^<[A-Za-z][\w.]*\s[^>]*\/?>$|^<[A-Za-z][\w.]*>.*<\/[A-Za-z][\w.]*>$/;
 const DIVIDER_DIV_RE = /^<div class="[^"]*border-t[^"]*".*<\/div>$/;
 const PACKAGE_DOC_IMPORT_RE =
-  /^import\s.+from\s+["']@(core|css|dom|resource|router|store|ssr|examples)\/([^"']+)["']/;
+  /^import\s.+from\s+["']@(core|css|dom|resource|router|store|ssr|ui|examples)\/([^"']+)["']/;
 
 const CHILDREN_UNKNOWN_RE = /children\??:\s*unknown/;
 const INTERNAL_MECHANICS_RE = /<summary>Internal Mechanics<\/summary>/;
@@ -97,6 +97,7 @@ const ALIAS_DIRS: Record<string, string> = {
   router: "packages/router/docs",
   store: "packages/store/docs",
   ssr: "packages/ssr/docs",
+  ui: "packages/ui/docs",
   examples: "examples",
 };
 
@@ -323,8 +324,8 @@ function checkTutorialParity(): Finding[] {
 }
 
 /**
- * Maps a site URL path to its mdx file under docs/src/pages (index.mdx serves
- * its directory URL), mirroring doc-links' mapping.
+ * Maps a site URL path to its .mdx or .astro file under docs/src/pages (index
+ * pages serve their directory URL), mirroring doc-links' mapping.
  * @param urlPath The URL path (anchors/queries already stripped)
  * @returns The absolute file path, or null if no page matches
  */
@@ -332,6 +333,8 @@ function sitePageFile(urlPath: string): string | null {
   const candidates = [
     path.join(docsPagesDir, `${urlPath}.mdx`),
     path.join(docsPagesDir, urlPath, "index.mdx"),
+    path.join(docsPagesDir, `${urlPath}.astro`),
+    path.join(docsPagesDir, urlPath, "index.astro"),
   ];
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) return candidate;
@@ -415,8 +418,8 @@ function frontmatterLines(content: string): string[] | null {
 
 /**
  * Check 4 — wrapper validity: frontmatter completeness everywhere; import-rendering
- * wrappers carry no body content beyond imports, component tags, and border-t
- * divider divs. Site-authored pages (no package-doc import) skip the content rule.
+ * wrappers carry no body content beyond imports, component tags, and
+ * border-t divider divs. Site-authored pages (no package-doc import) skip the content rule.
  * @returns Findings
  */
 function checkWrappers(): Finding[] {
@@ -453,7 +456,8 @@ function checkWrappers(): Finding[] {
 }
 
 /**
- * Check 5 — nav/index registration: pages ↔ nav.ts agree both ways; learn content
+ * Check 5 — nav/index registration: pages ↔ nav.ts agree both ways (learn,
+ * reference, components, and plugins sections); learn content
  * pages also appear in their enumeration page.
  * @returns Findings
  */
@@ -468,9 +472,16 @@ function checkRegistration(): Finding[] {
   // Flatten nav entries, scoped per section: learn labels, reference slugs, plugin names.
   const referenceIdx = nav.indexOf("reference:");
   const pluginsIdx = nav.indexOf("plugins:");
-  const learnSlice = nav.slice(0, referenceIdx === -1 ? undefined : referenceIdx);
+  const componentsIdx = nav.indexOf("components:");
+  const learnSlice = nav.slice(0, componentsIdx === -1 ? (referenceIdx === -1 ? undefined : referenceIdx) : componentsIdx);
   const learnSlugs = new Set<string>();
   for (const m of learnSlice.matchAll(/"([^"]+)"/g)) learnSlugs.add(m[1]!.toLowerCase());
+
+  const componentSlugs = new Set<string>();
+  if (componentsIdx !== -1) {
+    const compSlice = nav.slice(componentsIdx, referenceIdx === -1 ? undefined : referenceIdx);
+    for (const m of compSlice.matchAll(/"([^"]+)"/g)) componentSlugs.add(m[1]!.toLowerCase());
+  }
 
   const pluginSlugs = new Set<string>();
   const referenceSlugs = new Map<string, Set<string>>();
@@ -493,9 +504,9 @@ function checkRegistration(): Finding[] {
   const learnIndex = readFileOrNull(path.join(docsPagesDir, "learn", "index.mdx")) ?? "";
   const patternsIndex = readFileOrNull(path.join(docsPagesDir, "learn", "patterns", "index.mdx")) ?? "";
 
-  const registered = { learn: new Set<string>(), reference: new Set<string>(), plugins: new Set<string>() };
-  for (const file of collectFiles(docsPagesDir, [".mdx"])) {
-    const rel = path.relative(docsPagesDir, file).replace(/\.mdx$/, "");
+  const registered = { learn: new Set<string>(), reference: new Set<string>(), plugins: new Set<string>(), components: new Set<string>() };
+  for (const file of collectFiles(docsPagesDir, [".mdx", ".astro"])) {
+    const rel = path.relative(docsPagesDir, file).replace(/\.(mdx|astro)$/, "");
     if (rel === "index" || rel.endsWith("/index")) continue;
     const parts = rel.split(path.sep);
     const section = parts[0]!;
@@ -516,6 +527,11 @@ function checkRegistration(): Finding[] {
       const pkg = parts[1]!;
       const entry = referenceSlugs.get(pkg);
       if (entry === undefined || !entry.has(slug)) {
+        findings.push({ file, message: `page not registered in nav.ts (${rel})` });
+      }
+    } else if (section === "components") {
+      registered.components.add(rel);
+      if (!componentSlugs.has(slug.toLowerCase())) {
         findings.push({ file, message: `page not registered in nav.ts (${rel})` });
       }
     } else if (section === "plugins") {
@@ -539,6 +555,11 @@ function checkRegistration(): Finding[] {
       if (!registered.reference.has(`reference/${pkg}/${slug}`)) {
         findings.push({ file: navFile, message: `nav.ts reference entry ${pkg}/${slug} matches no page` });
       }
+    }
+  }
+  for (const slug of componentSlugs) {
+    if (!registered.components.has(`components/${slug}`)) {
+      findings.push({ file: navFile, message: `nav.ts components entry "${slug}" matches no page` });
     }
   }
   for (const slug of pluginSlugs) {

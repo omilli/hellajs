@@ -1,0 +1,97 @@
+# Input
+
+A single-line form field styled to shadcn's new-york-v4 Input: one base look, a focus ring, and an invalid state, reading and writing its value reactively in one owned file per format.
+
+## Install
+
+```bash
+bunx @hellajs/ui add input
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Input from './components/input';
+
+const EmailField = () => {
+  const email = signal('');
+
+  return (
+    <Input
+      type="email"
+      placeholder="you@example.com"
+      ariaLabel="Email address"
+      value={email}
+      oninput={(v) => email(v)}
+    />
+  );
+};
+```
+
+`value` accepts a plain string or a bare [`signal`](/reference/core/signal). A signal keeps the field in sync after mount, and `oninput` receives the typed string on every input event. `ariaInvalid` drives the invalid state - the destructive border and ring shadcn applies to failed validation - and the input carries `data-slot="input"` for targeting:
+
+```jsx
+<Input placeholder="Required field" ariaInvalid={submitted && email === ''} />
+```
+
+The html-format file (`input.ts`, copied with `--format html`) renders through a template instead of JSX:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Input from './components/input';
+
+mount(
+  html`<form>${Input({ type: 'email', placeholder: 'you@example.com' })}</form>`,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`dark:bg-input/30`, `focus-visible:ring-[3px]`), and the class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Input from './components/input';
+
+const SearchField = () => {
+  const query = signal('');
+
+  return (
+    <Input
+      type="search"
+      placeholder="Search"
+      class="max-w-sm"
+      value={query}
+      oninput={(v) => query(v)}
+    />
+  );
+};
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Input from './components/input';
+
+mount(Input({ type: 'search', placeholder: 'Search' }), '#app');
+```
+
+## Customizing
+
+The copied file is yours. shadcn's Input has no variants or sizes: the style module exports `base`, `focus`, and `invalid`, and the composition bakes all three in that order. Edit any of the three `style()` maps in place; `props.class` lands last in the composition, so one-off classes from the call site always ride along. Focus styling is shadcn's ring (a 3px ring plus border color under `:focus-visible`), not an outline.

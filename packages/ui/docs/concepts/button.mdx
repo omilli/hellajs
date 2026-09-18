@@ -1,0 +1,90 @@
+# Button
+
+An interactive trigger styled byte-faithfully to shadcn's new-york-v4 Button: six variants, eight sizes, an `aria-invalid` state, and `onclick` wiring through dom's delegated event system, all baked into one owned file.
+
+## Install
+
+```bash
+bunx @hellajs/ui add button
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. `variant` picks between `default`, `destructive`, `outline`, `secondary`, `ghost`, and `link`; `size` between `default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, and `icon-lg`. The root carries `data-slot="button"`, `data-variant`, and `data-size`, and `aria-invalid` reflects the `ariaInvalid` prop.
+
+```jsx
+import Button from './components/button';
+
+const Actions = () => (
+  <div class="flex gap-2">
+    <Button onclick={() => console.log('saved')}>Save</Button>
+    <Button variant="outline">Cancel</Button>
+    <Button variant="destructive" size="sm">Delete</Button>
+    <Button size="icon" aria-label="Add">+</Button>
+  </div>
+);
+```
+
+The html-format file (`button.ts`, copied with `--format html`) renders through a template instead of JSX; children sit between the component tags:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Button from './components/button';
+
+const save = () => console.log('saved');
+
+mount(
+  html`
+    <div class="flex gap-2">
+      <${Button} onclick=${save}>Save<//>
+      <${Button} variant="outline">Cancel<//>
+      <${Button} variant="ghost" size="sm">Dismiss<//>
+    </div>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-primary`, `rounded-md`), and the class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import Button from './components/button';
+
+const Toolbar = () => (
+  <Button variant="outline" size="lg" class="w-full">
+    Deploy to production
+  </Button>
+);
+```
+
+`aria-invalid` styles the destructive ring state shadcn applies to form-adjacent buttons; pass `ariaInvalid` and the border and focus ring read the destructive token:
+
+```jsx
+<Button ariaInvalid={hasError} onclick={retry}>Retry submit</Button>
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Button from './components/button';
+
+mount(Button({ variant: 'outline', size: 'lg', class: 'w-full' }), '#app');
+```
+
+## Customizing
+
+The copied file is yours. The `class` composition bakes `variants.default` and `sizes.default`; swap either member (any variant or size name above) or edit the maps in place: `variants` carries the surface treatment and `sizes` the height, padding, and icon scale. `props.class` lands last in the composition, so one-off classes from the call site always ride along. The focus ring is shadcn's copied look - a 3px ring plus border color under `:focus-visible` - so an `outline-none` reset is part of the base, not a bug to undo.

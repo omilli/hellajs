@@ -45,6 +45,7 @@ export const navigation = {
       ],
     }
   ],
+  components: ["Button", "Input", "Card", "Dialog", "Tabs"],
   reference: [
     { core: ["signal", "signalArray", "signalMap", "signalSet", "computed", "effect", "batch", "scope", "untracked", "flush"] },
     {

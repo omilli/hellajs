@@ -1,0 +1,113 @@
+# Card
+
+A panel surface styled to shadcn's seven-part Card: a default `Card` plus named `CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`, and `CardFooter` parts, each carrying its `data-slot` and composable in any arrangement.
+
+## Install
+
+```bash
+bunx @hellajs/ui add card
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. Every part takes `{ children?, class? }`, and the header automatically switches to a two-column grid when a `CardAction` is present.
+
+```jsx
+import Card, { CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/card';
+import Button from './components/button';
+
+const ProfileCard = () => (
+  <Card class="w-80">
+    <CardHeader>
+      <CardTitle>Ada Lovelace</CardTitle>
+      <CardDescription>Wrote the first program.</CardDescription>
+      <CardAction>
+        <Button size="sm" variant="outline">Follow</Button>
+      </CardAction>
+    </CardHeader>
+    <CardContent>
+      <p>Published notes on the Analytical Engine in 1843.</p>
+    </CardContent>
+    <CardFooter>
+      <Button>Read the paper</Button>
+    </CardFooter>
+  </Card>
+);
+```
+
+The html-format file (`card.ts`, copied with `--format html`) renders through a template instead of JSX; each part is a plain function call:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Card, { CardContent, CardDescription, CardHeader, CardTitle } from './components/card';
+
+mount(
+  html`
+    <main>
+      <${Card} class="w-80">
+        ${CardHeader({
+          children: [
+            CardTitle({ children: 'Ada Lovelace' }),
+            CardDescription({ children: 'Wrote the first program.' }),
+          ],
+        })}
+        ${CardContent({ children: html`<p>Published notes on the Analytical Engine in 1843.</p>` })}
+      </${Card}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-card`, `rounded-xl`), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import Card, { CardContent, CardDescription, CardHeader, CardTitle } from './components/card';
+
+const StatCard = () => (
+  <Card class="max-w-sm">
+    <CardHeader>
+      <CardTitle>Deploys</CardTitle>
+      <CardDescription>128 this week.</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <p>All regions green.</p>
+    </CardContent>
+  </Card>
+);
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Card, { CardHeader, CardTitle } from './components/card';
+
+mount(
+  html`
+    <main>
+      <${Card} class="max-w-sm">
+        ${CardHeader({ children: CardTitle({ children: 'Deploys' }) })}
+      </${Card}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Customizing
+
+The copied file is yours. shadcn's Card has no variants or sizes: the style module exports one class per part (`base`, `header`, `title`, `description`, `action`, `content`, `footer`), and each part's compose bakes its own class plus `props.class`. Every part renders its `data-slot` (`card`, `card-header`, `card-title`, `card-description`, `card-action`, `card-content`, `card-footer`), so one-off overrides can also target parts through the `[data-slot]` attribute selectors. Edit any map in place; `props.class` lands last in each composition.

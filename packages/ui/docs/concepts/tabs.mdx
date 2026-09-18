@@ -1,0 +1,129 @@
+# Tabs
+
+A tablist and panels styled to shadcn's Tabs, wired for full keyboard use: selection lives in an internal signal, arrow keys move focus and selection together, and the tablist hands its keys to the [`rovingTabIndex`](/reference/dom/behaviors) behavior from `@hellajs/dom`. You describe the tabs as data; the component renders the WAI-ARIA plumbing - `data-state` plus `aria-selected` on each trigger, panels nested inside the orientation-carrying root - around them. A `variant` prop picks the segmented pill (`default`) or the underlined `line` look.
+
+## Install
+
+```bash
+bunx @hellajs/ui add tabs
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The tabs wire their keyboard behavior from the copied file using `@hellajs/dom` behavior functions.
+
+## Items
+
+Each entry in the `items` array is one tab and its panel:
+
+| Field | Type | Behavior |
+|---|---|---|
+| `id` | `string` | Stable identity: drives selection, the generated `hella-tabs-tab-<id>` and `hella-tabs-panel-<id>` pair, and the `initialId` lookup |
+| `label` | `string` | Text rendered inside the tab button |
+| `content` | `HellaChild \| (() => HellaChild)` | Panel body. Pass a getter reading a signal and the panel re-renders when that signal changes; the tablist is never rebuilt |
+
+Three optional props tune the rest. `initialId` opens a tab other than the first; `orientation` flips the tablist to `"vertical"`, which moves the arrow keys to Up and Down, declares `aria-orientation`, and stacks the panels; and `variant` picks `"default"` (a muted pill, active tab elevated with a shadow) or `"line"` (a transparent list whose active tab draws a foreground underline through its `::after`).
+
+```jsx
+import { signal } from '@hellajs/core';
+import Tabs from './components/tabs';
+
+const Settings = () => {
+  const plan = signal('Pro');
+
+  return (
+    <Tabs
+      initialId="billing"
+      items={[
+        { id: 'profile', label: 'Profile', content: 'Name, avatar, timezone.' },
+        { id: 'billing', label: 'Billing', content: () => `Current plan: ${plan()}.` },
+      ]}
+    />
+  );
+};
+```
+
+The html-format file (`tabs.ts`, copied with `--format html`) works the same way from a template; build the items array once and pass it in:
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+import Tabs from './components/tabs';
+
+const plan = signal('Pro');
+const items = [
+  { id: 'profile', label: 'Profile', content: 'Name, avatar, timezone.' },
+  { id: 'billing', label: 'Billing', content: () => `Current plan: ${plan()}.` },
+];
+
+mount(html`<main><${Tabs} items=${items} initialId="billing" variant="line" /></${Tabs}></main>`, '#app');
+```
+
+## Keyboard Interaction
+
+The tablist node carries `hook:afterMount`, which hands it to `rovingTabIndex`; `hook:beforeDestroy` calls the returned dispose handle. Focus and selection travel together (automatic activation): the tab you land on is the tab that opens. One tab carries `tabindex="0"` and the rest `-1`, so Tab moves past the whole tablist instead of walking every item, and clicking a tab selects it too.
+
+| Key | Behavior |
+|---|---|
+| `ArrowRight` / `ArrowLeft` | Focus and select the next / previous tab, wrapping at the ends (horizontal tablists, the default) |
+| `ArrowDown` / `ArrowUp` | The same movement along the vertical axis when `orientation` is `"vertical"` |
+| `Home` / `End` | Focus and select the first / last tab |
+
+## Generated Accessibility Wiring
+
+The ids link the parts without any querySelector in the copied file: each tab's `aria-controls` names its panel's `id`, each panel's `aria-labelledby` names its tab back, and `aria-selected` marks the active tab. Inactive panels carry the `hidden` attribute, so they stay out of view and out of the tab order. Selection state is an internal signal; you never manage an `activeTab` ref, and there is no controlled mode to sync with.
+
+## Structure Parts
+
+Three named parts ship beside the default `Tabs`: `TabsList`, `TabsTrigger`, and `TabsContent` - the default `Tabs` composes them internally, and they are exported so the structure stays yours when the items-shaped flow does not fit. Triggers and contents pair through the raw `TabsItem` id: the trigger's DOM id is `hella-tabs-tab-<id>` and the content's is `hella-tabs-panel-<id>`. Each trigger takes `active` and `onActivate` accessors plus `orientation` and `listVariant` context (re-declared as `data-orientation` and `data-variant` on the button); each content takes `active` and reads `hidden` from it. hella has no context primitive, so manual composition passes state explicitly - that is the documented divergence from shadcn's context-wired composition.
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the root), `list` plus `variants` (`default` pill, `line` underline), `trigger`, and `content`. Active-tab and variant styling keys off the `data-state` and `data-variant` attributes the parts carry; the active underline is the trigger's `::after`, flipped visible under `[data-variant='line'][data-state='active']`. The panels hold whatever `content` renders.
+
+```jsx
+import Tabs from './components/tabs';
+
+const Report = () => (
+  <Tabs
+    class="border-red-600"
+    variant="line"
+    items={[{ id: 'summary', label: 'Summary', content: 'All-time totals.' }]}
+  />
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, utilities read it through arbitrary-value shorthands like `text-foreground/60`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The active tab styles key off Tailwind's `data-[state=active]:` variant and the named group selectors (`group-data-[variant=line]/tabs-list:...`) read the tablist's `data-variant`.
+
+```jsx
+import Tabs from './components/tabs';
+
+const Report = () => (
+  <Tabs
+    class="max-w-md"
+    variant="line"
+    items={[{ id: 'summary', label: 'Summary', content: 'All-time totals.' }]}
+  />
+);
+```
+
+## Customizing
+
+The copied file is yours. The default `Tabs` is one component over an items array; when a panel needs richer composition, pass nodes or components in `content` (any `HellaChild` renders), and when the shape itself must change, edit the markup in place or compose the exported `TabsList` / `TabsTrigger` / `TabsContent` parts directly. `props.class` lands on the root next to `base`, and each part's compose bakes its own class with `props.class` landing last; edit the `list` / `variants` / `trigger` maps to restyle every tab at once.
+
+<div role="alert" class="alert alert-info alert-soft">
+  <span>Panel switches are instant: switching tabs swaps panels without motion. Motion composes later through the dom <code>Transition</code> primitive without changing the tabs' contract.</span>
+</div>

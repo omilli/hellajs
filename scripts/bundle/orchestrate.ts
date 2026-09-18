@@ -17,6 +17,7 @@ import {
 import { cleanCache, isCacheValid, updateCache } from "./cache.js";
 import { buildBundle, buildIndividualModules } from "./esbuild-build.js";
 import { buildDeclarations, copyDeclarationFiles } from "./declarations.js";
+import { compileRegistry } from "./registry.js";
 import { validateBuildArtifacts } from "./validate.js";
 import { calculateMetrics } from "./metrics.js";
 
@@ -82,6 +83,7 @@ async function buildSinglePackageEntry(
 
     await buildDeclarations(packageInfo, cwd);
     await copyDeclarationFiles(packageInfo);
+    if (packageName === "ui") await compileRegistry(packageInfo);
     await validateBuildArtifacts(dir);
 
     const metrics = await calculateMetrics(packageInfo, allMetrics);

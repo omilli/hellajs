@@ -4,7 +4,7 @@
 
   ## Architecture
 
-  - **Three page kinds**: (1) *wrapper* pages (`learn/concepts/*`, `reference/{pkg}/*`) — frontmatter + `layout` + `import X from '@pkg/…'` + `<X />`; content is external. (2) *self-contained* pages (`pages/plugins/*`, `learn/quick-start.mdx`, landing) — prose written inline. (3) *enumeration* pages (`learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx`) — hand-maintained link lists.
+  - **Three page kinds**: (1) *wrapper* pages (`learn/concepts/*`, `reference/{pkg}/*`) — frontmatter + `layout` + `import X from '@pkg/…'` + `<X />`; content is external. (2) *self-contained* pages (`pages/plugins/*`, `learn/quick-start.mdx`, landing, `pages/components/{button,input,card,dialog,tabs}.astro`) — prose written inline; the components pages are `.astro` (an inline demo `<script>` + the `@ui/concepts/<name>.mdx` import), not mdx. (3) *enumeration* pages (`learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx`, `components/index.mdx`) — hand-maintained link lists.
   - **Content aliases** — `@core` / `@css` / `@dom` / `@resource` / `@router` / `@store` → `../packages/<pkg>/docs/*`. Defined in **two** places (`astro.config.mjs` `vite.resolve.alias` + `tsconfig.json` `compilerOptions.paths`); keep both in sync when adding a package.
   - **Sidebar** — `nav.ts` is the single source of truth; `Sidebar.astro` `import.meta.glob`s every `pages/**/*.mdx` and match-merges frontmatter titles against nav entries at render time. Three top-level sections: `learn` (Quick-Start + Concepts/Patterns/Tutorials groups), `reference` (per-package), `plugins`.
   - **Search** — `astro-pagefind` indexes the built output (not source); rebuild (`astro build`) before verifying search results.
@@ -31,6 +31,7 @@
   | `src/pages/learn/**` | `quick-start.mdx` + `concepts/` + `patterns/` + `tutorials/` — ALL are thin wrappers; content lives in `packages/*/docs/` (concepts/patterns) and `examples/{name}/tutorial.mdx` (tutorials). |
   | `src/pages/reference/{pkg}/**` | One wrapper page per exported symbol; imports `@<pkg>/api/<symbol>.mdx`. |
   | `src/pages/plugins/{babel,rollup,vite}.mdx` | Self-contained install/config guides (no package-doc import). |
+  | `src/pages/components/{index.mdx,<name>.astro}` | Enumeration page (`index.mdx`) + five self-contained component pages — each `.astro` holds the demo frame (`#demo`), an inline `<script>` composing the CLI-vendored `src/components/ui/` files and `mount()`ing into the frame, and the package-docs prose via `@ui/concepts/<name>.mdx`. |
   | `public/favicon.svg` | Site icon. |
   | `integrations/` | Empty placeholder. |
 
@@ -80,13 +81,13 @@
   - **Dark theme is hardcoded** — both layouts set `<html data-theme="dark">`; `global.css` overrides daisyUI `--color-base-*`. There is no theme toggle.
   - **SSR is unsupported** — packages are client-side; the site is a static `astro build`. `learn/index.mdx` carries an explicit "Server-side rendering is not currently supported" alert; do not silently remove it.
   - **`slug` vs `title`** — nav string entries map to URL slugs (lowercased), but the sidebar displays `frontmatter.title` when present. A page whose title casing differs from its slug still resolves correctly; only a missing/renamed *file* breaks the link.
-  - **MDX is the only content format** — `Sidebar.astro` globs `**/*.mdx`; `.astro`/`.md` pages are not sidebar-discoverable (the landing `index.astro` is intentionally outside the nav).
+  - **MDX is the default content format** — `Sidebar.astro` globs `**/*.mdx` for frontmatter titles; `.astro` pages are not glob-discoverable, so their sidebar titles resolve from the nav entry itself (dash→space fallback — the `components/<name>.astro` pages rely on this; the landing `index.astro` is intentionally outside the nav).
 
   ## Drift surface (verify on every page add/remove/rename)
 
   The docs site has no test catching broken internal links, so each change must manually reconcile the full surface — this is the docs-site analogue of the root "full blast radius" rule:
 
-  - **`nav.ts` ↔ `pages/**/*.mdx`** — every entry must resolve to a file; every sidebar-visible page needs an entry. Stale entries render dead links or fall back to dash→space titles.
+  - **`nav.ts` ↔ `pages/**/*.{mdx,astro}`** — every entry must resolve to a file; every sidebar-visible page needs an entry. Stale entries render dead links or fall back to dash→space titles.
   - **Enumeration pages** — `learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx` are hand-maintained; known to drift. Re-walk these whenever a page is added, removed, or renamed.
   - **Prose cross-references** — before changing a behavior the docs describe, grep `src/pages/` for claims the change falsifies (e.g. an "X not supported" alert a new feature makes false).
   - **Aliases** — a new package needs its `@<pkg>` alias added to **both** `astro.config.mjs` and `tsconfig.json`.

@@ -1,0 +1,80 @@
+# Plain JavaScript
+
+The registry's canonical source is TypeScript, and `--lang ts` (the default) copies it verbatim. `--lang js` strips the types at copy time: same components, same style declarations, plain `.js` and `.jsx` files on disk.
+
+## The Flag
+
+Pass the flag per call:
+
+```bash
+bunx @hellajs/ui add button --format html --lang js
+# writes src/components/button.js: plain JS, runtime html template, zero build step
+```
+
+Or make it the project default in `hella.ui.json`, where `add` picks it up like `style` and `format`:
+
+```json
+{
+  "componentsDir": "src/components",
+  "lang": "js"
+}
+```
+
+`init` writes `"lang": "ts"` into new configs, and a config written before the field existed keeps behaving as `ts`.
+
+## What Lands on Disk
+
+`--lang js` retargets every TypeScript file the entry copies; stylesheets and token modules pass through untouched.
+
+| Source | `--lang ts` (default) | `--lang js` |
+|---|---|---|
+| `button.tsx` | `button.tsx` | `button.jsx` |
+| `button-html.ts` | `button.ts` | `button.js` |
+| `cn.ts` | `cn.ts` | `cn.js` |
+| `tokens.js`, `theme.css` | unchanged | unchanged |
+
+The strip runs after the style splice, so the copied file still carries its full css or tailwind declarations. The strip is structural, not cosmetic: no `interface` or `import type` remains, JSX survives verbatim in `.jsx`, and the runtime `html` template survives in `.js`. Imports of `@hellajs/*` packages stay exactly as authored.
+
+## No-Build Browser Pages
+
+The html format plus `--lang js` runs in the browser with no bundler and no transpiler. The copied file is a plain ES module importing `@hellajs/*` by bare specifier, and an import map resolves those specifiers to wherever you host the runtime:
+
+```html
+<script type="importmap">
+{
+  "imports": {
+    "@hellajs/core": "https://esm.sh/@hellajs/core@1.0.11",
+    "@hellajs/dom": "https://esm.sh/@hellajs/dom@1.4.2",
+    "@hellajs/css": "https://esm.sh/@hellajs/css@1.1.1"
+  }
+}
+</script>
+<script type="module">
+  import { mount } from "@hellajs/dom";
+  import Button from "./src/components/button.js";
+
+  mount(Button({ variant: "outline", children: "Save" }), document.body);
+</script>
+```
+
+The map must cover every bare specifier the copied file imports: css-flavor files also import `@hellajs/css`, and tailwind-flavor files import `clsx` and `tailwind-merge` beside the copied `cn.js`. The jsx format never joins this story; JSX needs a transpiler, so no-build pages use the html format.
+
+## JSX Projects Without TypeScript
+
+Shops that standardize on JavaScript keep their bundler and drop their TypeScript tooling: `--lang js --format jsx` writes `.jsx` files that compile through the HellaJS babel plugin, delivered as [`vite-plugin-hellajs`](/plugins/vite):
+
+```js
+// vite.config.js
+import { defineConfig } from "vite";
+import viteHellaJS from "vite-plugin-hellajs";
+
+export default defineConfig({
+  plugins: [viteHellaJS()],
+});
+```
+
+A generic JSX transpiler is not a substitute: HellaJS JSX compiles to vnode calls, not `React.createElement`, so the plugin (or the babel plugin behind it) is required.
+
+## Bun and Deno
+
+Bun and Deno execute TypeScript natively, so they need none of this: default `--lang ts` copies run as-is with no flag and no strip step. `--lang js` exists for runtimes and toolchains that only speak JavaScript.

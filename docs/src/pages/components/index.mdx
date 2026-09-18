@@ -1,0 +1,15 @@
+---
+title: Components
+description: "Copy-paste registry components installed on these very pages by the same `add` command readers run, with install and usage for both style flavors."
+layout: ../../layouts/MainLayout.astro
+---
+
+# Components
+
+`@hellajs/ui` ships a copy-paste registry: `bunx @hellajs/ui add <name>` copies one editable file per component into your project. Every component ships in two style flavors (`css`, the default, styled with [`@hellajs/css`](/reference/css) under the `hella` cascade layer; `tailwind`, backed by `theme.css` and `cn.ts`) and two formats (`jsx` and `html`), with `hella.ui.json` remembering your defaults. The components running on these pages were installed by that same `add` command: the site vendors them into `src/components/ui/` (css flavor, html format, pure runtime, no compiler), byte-identical to what `add --format html` writes. Registry styles inject under the `hella` cascade layer, declared after the site's own layers so component rules win over the site's preflight; each page carries the full install and per-style usage from the package docs.
+
+- [Button](/components/button): the full shadcn variant and size set with a click counter.
+- [Input](/components/input): a controlled input echoing its value, plus the invalid state.
+- [Card](/components/card): the seven-part composition - header, title, description, action, content, footer.
+- [Dialog](/components/dialog): a portal-mounted modal with wired titles, enter/exit animations, and dismissal wiring.
+- [Tabs](/components/tabs): pill and line tablists with roving tabindex and aria wiring across panels.

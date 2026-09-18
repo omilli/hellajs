@@ -1,0 +1,31 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import CardContent from "@ui/concepts/card.mdx";
+
+const title = "Card";
+const description = "Interactive Card demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <CardContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Button from "../../components/ui/button";
+  import Card, { CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <${Card} class="demo-card">
+      <${CardHeader}>
+        <${CardTitle}>Notifications</${CardTitle}>
+        <${CardDescription}>You have three unread messages waiting in your inbox.</${CardDescription}>
+        <${CardAction}><${Button} variant="outline" size="sm">Mark all read</${Button}></${CardAction}>
+      </${CardHeader}>
+      <${CardContent}><p>Review your notification preferences and inbox rules at any time from settings.</p></${CardContent}>
+      <${CardFooter}><${Button}>Open settings</${Button}></${CardFooter}>
+    </${Card}>
+  </div>`, document.getElementById("demo")!);
+</script>

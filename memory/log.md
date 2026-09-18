@@ -3,6 +3,10 @@
 ## 2026-09-18
 * **Creation**: Added concept [151](entries/151.md) (type: decision).
 * **Update**: Renumber: worker-allocated ID 150 (feedback-scan-ts-needs-session, dom-dissolve merge) collided with main-tree 150-close-dynamic-html-template-component — renumbered to 151
+* **Creation**: Added concept [150](entries/150.md) (type: decision).
+* **Creation**: Added concepts [152](entries/152.md) and [153](entries/153.md) (type: correction) — commitlint hook crash on workspace-deleting commits; bun isolated-linker worktree repair recipe (primitives-dissolution merge + ui sweep run)
+* **Creation**: Added concept [154](entries/154.md) (type: decision).
+* **Update**: ui set merge: added concepts [155](entries/155-package-tsconfig-must-narrow-base.md) [156](entries/156-per-module-dist-build-s.md) [157](entries/157-delegated-on-handlers-fire-from-body-capture.md) [158](entries/158-happydom-focus-fires-bubbling-focusin.md) [159](entries/159-docs-site-aliases-resolve-via-tsconfig-paths.md) [160](entries/160-esbuild-externals-ride-only-bundle.md) [168](entries/168-tailwind-v4-var-shorthands-and-opacity-modifiers-verified.md); Renumber: worker-allocated IDs 149/150/151/152/153/154/161 collided with main-tree entries — renumbered to [162](entries/162-worker-split-mode-venues-inherit.md) [163](entries/163-ts6-shadows-same-basename-tsx-when-ts-in-program.md) [168] [164](entries/164-ts6-tsc-ignoreconfig-explicit-files.md) [165](entries/165-bundle-cache-hash-set-untracked-packages.md) [166](entries/166-bun-glob-requires-as-full.md) [167](entries/167-vite-import-meta-glob-resolves.md) (plans/ui/code/hellajs-ui merge)
 
 ## 2026-09-17
 * **Creation**: Added concept [149](entries/149.md) (type: decision).

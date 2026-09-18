@@ -34,6 +34,7 @@ export async function buildWithEsbuild(
     "--format=esm",
     "--target=es2020",
     "--platform=browser",
+    "--external:node:*",
     "--out-extension:.js=.js",
     ...externals,
   ];
@@ -51,6 +52,27 @@ async function getAllSourceModules(packageDir: string): Promise<string[]> {
 
   const files = await scanDirRecursive(libDir, /\.ts$/);
   return files.filter((file) => !file.endsWith(".d.ts"));
+}
+
+/**
+ * External flags for a package's peers plus its declared runtime dependencies:
+ * peers are convention-declared, and a declared dependency (ui's esbuild JS
+ * API) must never inline into dist. Only the bundle build consumes these —
+ * the per-module build passes no `--bundle`, so esbuild rejects `--external`
+ * there and a pure transpile preserves external imports verbatim.
+ * @param packageInfo Package metadata carrying peerDependencies keys and the parsed package.json.
+ * @returns esbuild `--external:` flags.
+ */
+function externalFlags(packageInfo: {
+  peerDeps: string[];
+  packageJson: Record<string, unknown>;
+}): string[] {
+  const dependencies = Object.keys(
+    (packageInfo.packageJson.dependencies as Record<string, string>) || {},
+  );
+  return [...packageInfo.peerDeps, ...dependencies].map(
+    (dep) => `--external:${dep}`,
+  );
 }
 
 /**
@@ -74,10 +96,8 @@ export async function buildBundle(
   cwd: string,
   bundleMode = "dev",
 ): Promise<Record<string, unknown>> {
-  const { dir, distDir, peerDeps } = packageInfo;
-  const externals = peerDeps.flatMap(
-    (dep: string) => [`--external:${dep}`],
-  );
+  const { dir, distDir } = packageInfo;
+  const externals = externalFlags(packageInfo);
   const variants: (typeof VARIANTS)[number][] =
     bundleMode === "size" ? [VARIANTS[1]!] : VARIANTS;
   const bundleMetrics: Record<string, unknown> = {};

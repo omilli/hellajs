@@ -5,6 +5,7 @@
     "emitDeclarationOnly": false,
     "declaration": false,
     "allowJs": true,
+    "jsx": "preserve",
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@utils/*": [
@@ -69,6 +70,15 @@
       ],
       "@hellajs/ssr/*": [
         "./packages/ssr/lib/*"
+      ],
+      "@hellajs/ui": [
+        "./packages/ui/lib/index.ts"
+      ],
+      "@hellajs/ui/bundle": [
+        "./packages/ui/lib/index.ts"
+      ],
+      "@hellajs/ui/*": [
+        "./packages/ui/lib/*"
       ]
     }
   },
@@ -77,6 +87,9 @@
     ".agents/skills/memory/memory.ts",
     "packages/*/lib/**/*.ts",
     "packages/*/tests/**/*.ts",
+    "packages/ui/bin/**/*.js",
+    "packages/ui/registry/**/*.ts",
+    "packages/ui/registry/**/*.js",
     "plugins/*/src/**/*.mjs",
     "plugins/*/tests/**/*.ts",
     "plugins/*/index.d.ts",
@@ -87,6 +100,7 @@
   ],
   "exclude": [
     "**/dist/**",
-    "**/node_modules/**"
+    "**/node_modules/**",
+    "packages/ui/registry/**/*-html.ts"
   ]
 }

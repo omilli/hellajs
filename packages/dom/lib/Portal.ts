@@ -1,4 +1,5 @@
 import { resolveNode, childNamespaceOf } from "./internal/render";
+import { queueMountWalk } from "./internal/queue";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
 import { peekHydrateContext } from "./internal/hydrate";
@@ -53,6 +54,14 @@ export function Portal(props: PortalProps): JSX.Element {
       }
 
       (target[INSERT_METHODS[type]!] as (content: DocumentFragment) => void)(fragment);
+      // Deliver afterMount for the inserted content: the remote target is not a
+      // registered observer container, so the insertion is invisible to the
+      // scoped observer — the walk must be queued explicitly.
+      let w = 0;
+      while (w < portalNodes.length) {
+        const inserted = portalNodes[w++]!;
+        queueMountWalk(inserted);
+      }
     });
 
     getState(anchor).portalCleanup = () => {

@@ -24,7 +24,11 @@ export const registry = {
     const dispose = effect(() => {
       // update hooks gate: hooks rarely exist — two property loads, not two WeakMap gets per run.
       // isMounted resolves lazily from isConnected so hooks added post-mount still fire on updates.
-      if (state.hooks && (state.isMounted || (state.isMounted = el.isConnected))) {
+      // The lazy assignment is suppressed while a mount/hydrate attach is in flight: hydration
+      // adopts elements that are ALREADY connected, so without the guard a hooked element hosting
+      // an effect (e.g. a tablist carrying its items region) self-marks isMounted during the
+      // attach and the flush walk's idempotence gate then never fires its afterMount.
+      if (state.hooks && (state.isMounted || (!isMountInFlight() && (state.isMounted = el.isConnected)))) {
         try {
           runHooks(node, "beforeUpdate");
         } catch (err) {

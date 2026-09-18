@@ -306,8 +306,8 @@ export interface PortalProps {
   to: string;
   /** Insertion method (default: "append") */
   type?: PortalInsertType;
-  /** Content to portal */
-  children?: HellaChild[];
+  /** Content to portal — a single child or an array. */
+  children?: HellaChildren;
 }
 
 /**

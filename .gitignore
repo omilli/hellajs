@@ -47,3 +47,5 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # remote daemon state (token, ntfy config, run logs) and probe scratch
 .remote/
 .remote-probe/
+# ui package e2e scratch (cli-e2e copies tests/fixtures/empty-app here)
+packages/ui/tests/.tmp/

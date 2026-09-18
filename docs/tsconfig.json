@@ -33,6 +33,12 @@
       "@ssr/*": [
         "../packages/ssr/docs/*"
       ],
+      "@primitives/*": [
+        "../packages/primitives/docs/*"
+      ],
+      "@ui/*": [
+        "../packages/ui/docs/*"
+      ],
       "@examples/*": [
         "../examples/*"
       ]

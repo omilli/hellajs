@@ -12,6 +12,9 @@ export default tseslint.config(
 			"**/.cache/**",
 			"**/.astro/**",
 			"**/coverage/**",
+			"packages/ui/tests/.tmp/**",
+			"packages/ui/registry/**/*.tsx",
+			"packages/ui/registry/**/*-html.ts",
 			"docs/**",
 			".agents/**",
 			".doc-snippets/**",
@@ -118,6 +121,16 @@ export default tseslint.config(
 			globals: {
 				...globals.node,
 				document: "readonly",
+			},
+		},
+	},
+	{
+		// Package bin runners execute under bun/node, not the browser — they get
+		// the Node runtime globals (process, etc.).
+		files: ["packages/*/bin/**/*.js"],
+		languageOptions: {
+			globals: {
+				...globals.node,
 			},
 		},
 	},

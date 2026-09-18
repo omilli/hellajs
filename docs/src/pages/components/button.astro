@@ -1,0 +1,38 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import ButtonContent from "@ui/concepts/button.mdx";
+
+const title = "Button";
+const description = "Interactive Button demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <ButtonContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Button from "../../components/ui/button";
+  import "../../components/ui/tokens.js";
+
+  const clicks = signal(0);
+  mount(html`<div class="demo-stack">
+    <${Button} onclick=${() => clicks(clicks() + 1)}>${() => `Save changes (${clicks()})`}</${Button}>
+    <div class="demo-row">
+      <${Button}>Default</${Button}>
+      <${Button} variant="secondary">Secondary</${Button}>
+      <${Button} variant="destructive">Destructive</${Button}>
+      <${Button} variant="outline">Outline</${Button}>
+      <${Button} variant="ghost">Ghost</${Button}>
+      <${Button} variant="link">Link</${Button}>
+    </div>
+    <div class="demo-row">
+      <${Button} size="xs">Extra small</${Button}>
+      <${Button} size="sm">Small</${Button}>
+      <${Button} size="lg">Large</${Button}>
+      <${Button} size="icon" aria-label="Add">+</${Button}>
+    </div>
+  </div>`, document.getElementById("demo")!);
+</script>

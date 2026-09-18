@@ -1,0 +1,62 @@
+# Theming
+
+One palette maintained in two artifact flavors, both emitted under the `hella` cascade layer: unlayered author CSS always wins, so a retheme is an override, not a specificity fight.
+
+## Two Artifacts, One Palette
+
+css projects theme through `tokens.js`, copied by `init`: a [`vars`](/reference/css/vars) sheet that registers the light palette as custom properties on `:root` and remaps the same properties under `.dark`. Import it once in the app entry, before any styled component mounts; server rendering collects it through [`cssText`](/reference/css/csstext) like every other `@hellajs/css` registration.
+
+```jsx
+import './components/tokens.js';
+import Button from './components/button';
+
+const App = () => (
+  <main>
+    <Button variant="outline" onclick={() => console.log('themed')}>
+      Themed button
+    </Button>
+  </main>
+);
+```
+
+tailwind projects theme through `theme.css`: a plain CSS palette with zero JavaScript and zero `@hellajs/css`. Link or import it once; nothing else in the tailwind flavor touches a JS styling API.
+
+The split is deliberate. A tailwind project should not need a CSS-in-JS runtime for its palette, so the same token names are maintained twice: `--primary`, `--foreground`, `--muted`, `--border`, `--ring`, `--radius`, and their dark remaps are identical in both artifacts.
+
+## The Override Contract
+
+Everything the registry emits lives in the `hella` cascade layer: component declarations through the [`style`](/reference/css/style) `layer` option, both palettes wrapped or layered explicitly. Unlayered CSS always beats layered CSS in the cascade, which hands you two override paths:
+
+- **Retheme**: override the custom properties in your own unlayered stylesheet. Every component reads the palette through `var(--*)` literals, so one block retints the whole registry.
+- **Restyle**: pass your own classes through `props.class` or edit the copied file. Your unlayered rules win over the component's layered declarations without specificity games.
+
+```css
+/* unlayered, so it always wins over the hella layer */
+:root {
+  --primary: oklch(0.55 0.21 260);
+  --radius: 0.25rem;
+}
+```
+
+The same contract covers utilities in a tailwind project: utilities are unlayered, so `bg-blue-600` beats the layered `bg-primary` baked into the component.
+
+## Dark Mode
+
+Dark mode is the `dark` class: both palettes remap under a `.dark` ancestor selector, and the class works on `<html>` or any subtree, so sections of the page can theme independently. This is shadcn's own contract - its components style dark variants through `&:is(.dark *)`, and the registry's css flavor translates them with the same selector:
+
+```typescript
+import { signal } from '@hellajs/core';
+
+const isDark = signal(false);
+
+const toggleTheme = () => {
+  isDark(!isDark());
+  document.documentElement.classList.toggle('dark', isDark());
+};
+```
+
+## Tailwind Utilities Read the Same Vars
+
+The tailwind flavor's `theme.css` is shadcn's own new-york-v4 theme (chart tokens excluded): the `@custom-variant dark` definition, the full `@theme inline` block mapping every palette token including the sidebar set and the radius scale onto Tailwind color and radius utilities, the `:root` and `.dark` palettes, and the `@layer base` reset. It imports `tw-animate-css`, which the Dialog's `animate-in` / `animate-out` utilities require - `init` names it in the peer check for tailwind projects. Utilities then read the palette directly: `bg-primary`, `text-foreground`, `rounded-md` (the theme maps `--radius-md` onto `calc(var(--radius) * 0.8)`). Opacity modifiers compose through `color-mix`, so `hover:bg-primary/90` in the copied button works without extra configuration. This is why the two flavors can share one set of token names while only the tailwind flavor ships utilities.
+
+The css flavor's `tokens.js` carries the same palette values in its narrower shape: the eighteen tokens the components consume (`background` through `ring`, plus `radius`) as a [`vars`](/reference/css/vars) sheet, with the `.dark` remaps under the `hella` layer. Sidebar and chart tokens are excluded - the css flavor ships only what its components read.

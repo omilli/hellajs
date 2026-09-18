@@ -13,6 +13,7 @@ const { pathname } = Astro.url;
 
 const getSection = (path: string) => {
   if (path.startsWith("/learn")) return "learn";
+  if (path.startsWith("/components")) return "components";
   if (path.startsWith("/reference")) return "reference";
   if (path.startsWith("/plugins")) return "plugins";
   return null;
@@ -62,6 +63,7 @@ const sectionNodes = currentSection
 
 const mainNavLinks = [
   { label: "Learn", root: "/learn" },
+  { label: "Components", root: "/components" },
   {
     label: "API Reference",
     root: "/reference",

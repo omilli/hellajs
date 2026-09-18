@@ -9,6 +9,9 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@hellajs/core": "workspace:*",
+    "@hellajs/css": "workspace:*",
+    "@hellajs/dom": "workspace:*",
     "@astrojs/mdx": "7.0.5",
     "@fontsource-variable/mulish": "^5.2.8",
     "@iconify-json/ph": "^1.2.2",

@@ -1,0 +1,33 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DialogContent from "@ui/concepts/dialog.mdx";
+
+const title = "Dialog";
+const description = "Interactive Dialog demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <DialogContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Button from "../../components/ui/button";
+  import Dialog from "../../components/ui/dialog";
+  import "../../components/ui/tokens.js";
+
+  const open = signal(false);
+  mount(html`<div class="demo-stack">
+    <${Button} variant="destructive" onclick=${() => open(true)}>Delete account</${Button}>
+    <p class="demo-note">Opens a portal-mounted dialog with wired title and description, an X close button, and enter/exit animations.</p>
+    <${Dialog} open=${open} onClose=${() => open(false)} title="Delete account" description="This permanently removes your account and all of its data.">
+      <p>This action cannot be undone. All of your projects will be lost.</p>
+      <div class="demo-row">
+        <${Button} variant="outline" onclick=${() => open(false)}>Cancel</${Button}>
+        <${Button} variant="destructive" onclick=${() => open(false)}>Delete</${Button}>
+      </div>
+    </${Dialog}>
+  </div>`, document.getElementById("demo")!);
+</script>

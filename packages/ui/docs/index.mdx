@@ -1,0 +1,58 @@
+## ui
+
+Copy/paste component registry: `bunx @hellajs/ui add <name>` copies owned, editable component source into your project; the npm artifact IS the CLI, and there is no importable component surface.
+
+### Installation
+
+```bash
+bunx @hellajs/ui init
+```
+
+No install step is required; run the CLI through your package runner. `init` writes `hella.ui.json` (style and format defaults) and adds the shared `theme` entry; `add` copies components into `src/components/`.
+
+### Example
+
+```bash
+bunx @hellajs/ui add button
+```
+
+```jsx
+import Button from './components/button';
+
+const App = () => (
+  <Button variant="outline" onclick={() => console.log('clicked')}>
+    Click me
+  </Button>
+);
+```
+
+The copied file is yours to edit; the style declarations ride inside it, so nothing is imported from the package at runtime.
+
+### Registry
+
+Seven entries: five components plus the two shared entries every project themes and composes through.
+
+| Entry | Styles | Copied files | Extra peers |
+|---|---|---|---|
+| `theme` | css, tailwind | `tokens.js` (css) or `theme.css` + `cn.ts` (tailwind) | css: `@hellajs/css` |
+| `cn` | tailwind only | `cn.ts` | `clsx`, `tailwind-merge` |
+| `button` | css, tailwind | `button.tsx`, `button.ts` (html format) | css: `@hellajs/css`; tailwind: `clsx`, `tailwind-merge` |
+| `input` | css, tailwind | `input.tsx`, `input.ts` (html format) | css: `@hellajs/css`; tailwind: `clsx`, `tailwind-merge` |
+| `card` | css, tailwind | `card.tsx`, `card.ts` (html format) | css: `@hellajs/css`; tailwind: `clsx`, `tailwind-merge` |
+| `dialog` | css, tailwind | `dialog.tsx`, `dialog.ts` (html format) | none beyond the style extras |
+| `tabs` | css, tailwind | `tabs.tsx`, `tabs.ts` (html format) | none beyond the style extras |
+
+`add` resolves dependencies recursively: adding any component brings `theme` along, and tailwind adds also bring `cn`.
+
+### API
+
+The package's interface is the CLI:
+
+- **`init`**: writes `hella.ui.json` with style and format defaults, then adds the theme entry for the configured style.
+- **`add`**: copies registry entries into `componentsDir`, splicing the chosen style's declarations into the file; `--style`, `--format`, `--dir`, and `--overwrite` override the config per call.
+- **`list`**: prints every entry name in the registry.
+
+### Concepts
+
+- **[Styling](/learn/concepts/styling)**: how the css flavor's scoped classes and cascade layers build on `@hellajs/css`
+- **Plain JavaScript**: copying registry source as plain `.jsx`/`.js` for JS-only toolchains and no-build browser pages, and when to skip the flag (Bun and Deno)

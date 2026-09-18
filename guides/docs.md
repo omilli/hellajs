@@ -308,15 +308,17 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 | `@core/` | `packages/core/docs/` |
 | `@dom/` | `packages/dom/docs/` |
 | `@css/` | `packages/css/docs/` |
+| `@primitives/` | `packages/primitives/docs/` |
 | `@resource/` | `packages/resource/docs/` |
 | `@router/` | `packages/router/docs/` |
 | `@store/` | `packages/store/docs/` |
 | `@ssr/` | `packages/ssr/docs/` |
+| `@ui/` | `packages/ui/docs/` |
 | `@examples/` | `examples/` |
 
 ### Rules
 
-- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`.
+- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`. **Components-section page** (`docs/src/pages/components/{name}.astro`): a self-contained `.astro` page — frontmatter imports `MainLayout` + `@ui/concepts/{name}.mdx`; the body renders the empty demo frame (`<div class="demo-frame dark" id="demo"></div>`) and the package-doc content tag, and a page-level `<script>` composes the vendored components through the `<${Component}>` embedded-tag syntax and `mount`s into `#demo` — the frame and script are sanctioned structural content alongside the package-doc component tag, not prose.
 - **Component name**: PascalCase from the file name (`signal.mdx` → `SignalContent`). **No content** between the import and the component tag.
 - A wrapper MAY import and render multiple package docs, separated by `<div class="...border-t..."></div>`, when the site joins related concepts from different packages under one URL — each import still follows the alias + PascalCase rules, and the wrapper still carries zero prose.
 
@@ -486,7 +488,7 @@ Every code block must show relevant imports at the top:
 import { signal, computed } from '@hellajs/core';
 ```
 
-- Use package imports (`@scope/package-name`), never relative paths.
+- Use package imports (`@scope/package-name`), never relative paths. Registry components (`@hellajs/ui` docs) are the exception: the copied file is app-local source with no package surface, so usage imports it from the project's components dir (`import Input from './components/input';`).
 - Only show imports needed for the example — not every dependency.
 - First example in a doc must show the import for the export being documented. Subsequent examples in the same doc may omit if they're the same.
 - Prefix docs (`on:`, `e:`, etc.) must also show imports in their first example.
@@ -733,6 +735,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 **Frontmatter**
 - [ ] Package docs (`packages/*/docs/**/*.mdx`) have no frontmatter
 - [ ] Website wrappers (`docs/src/pages/**/*.mdx`) carry `title`, `description`, `layout`
+- [ ] Components-section pages (`docs/src/pages/components/*.astro`) import `MainLayout` + `@ui/concepts/<name>.mdx`, render the `#demo` demo frame, and carry the inline demo `<script>` (§Rules)
 - [ ] Site-authored content pages (no package-doc import) carry complete frontmatter and are registered in `nav.ts` + their enumeration index
 
 **Structure (Function & Prefix docs)**

@@ -1,0 +1,218 @@
+# Dialog
+
+A modal styled to shadcn's Dialog: an overlay plus centered panel with enter and exit animations, a wired title and description, an X close button, and focus trap, escape, and outside dismissal. The caller owns an `open` signal and an `onClose` callback; the component wires everything else around them.
+
+## Install
+
+```bash
+bunx @hellajs/ui add dialog
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The dialog wires its dismissal and focus behaviors from the copied file using `@hellajs/dom` behavior functions.
+
+## Opening and Closing
+
+The caller's `open` signal is the trigger. Flipping it true portals the overlay and panel into `document.body` with `data-state="open"` and the enter animation; flipping it false starts the exit - the panel stays mounted under `data-state="closed"` until the exit animation ends (a 250ms fallback unmounts it if animations never run). While leaving, the dismissal wirings are down: the exit runs unwired and repeat `onClose` calls are no-ops.
+
+`title` and `description` are optional strings that render wired `DialogTitle` and `DialogDescription` parts - the panel's `aria-labelledby` and `aria-describedby` point at their generated ids. `showCloseButton` (default true) renders the absolute X button with its `sr-only` "Close" label.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Dialog from './components/dialog';
+
+const Confirm = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Dialog open={isOpen} onClose={close} title="Deploy to production" description="Ship the release to all regions?">
+      <button on:click={close}>Confirm</button>
+    </Dialog>
+  );
+};
+```
+
+`onClose` never flips the signal for you; the callback exists so dismissal behaviors can ask you to close. Wire it to the signal write, and every dismissal path stays in your hands.
+
+Props beyond `open` and `onClose`:
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `title` | - | Optional string rendered as a wired `DialogTitle` (the panel's `aria-labelledby` target) |
+| `description` | - | Optional string rendered as a wired `DialogDescription` (the panel's `aria-describedby` target) |
+| `showCloseButton` | `true` | Renders the X close button in the panel's top-right corner |
+| `closeOnEscape` | `true` | Escape keydown while the panel is open calls `onClose` |
+| `closeOnOutside` | `true` | Pointerdown outside the panel (the overlay included) calls `onClose` |
+
+Pass `false` to a dismissal prop to hold the dialog open against that path; Escape and outside clicks then leave dismissal entirely to your own controls.
+
+## Structure Parts
+
+Seven named parts ship beside the default `Dialog`: `DialogOverlay`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, and `DialogClose` - each carrying its `data-slot` and class compose. hella has no Radix-style context primitive, so manual composition passes state explicitly: portal the overlay and panel yourself, and hand both a `state` accessor.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { Portal } from '@hellajs/dom';
+import Dialog, { DialogClose, DialogContent, DialogDescription, DialogOverlay, DialogTitle } from './components/dialog';
+
+const Manual = () => {
+  const isOpen = signal(false);
+  const state = () => (isOpen() ? 'open' : 'closed');
+
+  return (
+    <>
+      <button on:click={() => isOpen(true)}>Open</button>
+      {() => isOpen() && (
+        <Portal to="body">
+          <DialogOverlay state={state} />
+          <DialogContent state={state} onClose={() => isOpen(false)}>
+            <DialogTitle>Manually composed</DialogTitle>
+            <DialogDescription>Same wiring, your arrangement.</DialogDescription>
+            <DialogClose onClose={() => isOpen(false)} />
+          </DialogContent>
+        </Portal>
+      )}
+    </>
+  );
+};
+```
+
+The default `Dialog` composes these parts for you; the exports exist so the structure stays yours when the props-shaped flow does not fit.
+
+## Behaviors, Not Queries
+
+The copied file never runs a `querySelector`. The panel node carries `hook:` attributes, and the wiring is inline in the markup you own:
+
+```jsx
+import { onEscape, onOutside, trapFocus } from "@hellajs/dom";
+
+const Panel = (props: { closeOnEscape?: boolean; closeOnOutside?: boolean; onClose: () => void }) => {
+  const wirings: (() => void)[] = [];
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      hook:afterMount={(node) => {
+        if (!(node instanceof HTMLElement)) return;
+        if (props.closeOnEscape !== false) wirings.push(onEscape(node, props.onClose));
+        if (props.closeOnOutside !== false) wirings.push(onOutside(() => [node], props.onClose));
+        wirings.push(trapFocus(node));
+      }}
+      hook:beforeDestroy={() => {
+        while (wirings.length) wirings.pop()!();
+      }}
+    />
+  );
+};
+```
+
+When the panel mounts, `hook:afterMount` hands the real node to three headless behaviors; when the exit starts or the panel unmounts, the dispose handles drain. Each call maps to one accessibility guarantee:
+
+| Call | Guarantee |
+|---|---|
+| [`trapFocus`](/reference/dom/behaviors) | Tab never leaves the panel, the first focusable child receives focus on open, and focus returns to the pre-open element on close |
+| [`onEscape`](/reference/dom/behaviors) | Escape closes the dialog from anywhere in the document |
+| [`onOutside`](/reference/dom/behaviors) | Clicking outside the panel (overlay or page behind it) closes the dialog |
+
+The `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` attributes are already on the panel; the label points at the rendered title heading through a generated id, so two dialogs never fight over one label.
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports one class per part: `base` (the overlay), `content` (the panel, `max-w-[calc(100%-2rem)]` wide and `32rem` from `sm` up), `close`, `header`, `footer`, `title`, and `description`. The enter and exit animations are hand-rolled `@keyframes` (fade for the overlay, fade plus zoom for the panel) declared in the module and applied under `[data-state='open']` / `[data-state='closed']` selectors; the copied budget is 200ms on the panel and 150ms on the overlay.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Dialog from './components/dialog';
+
+const DeleteAccount = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Dialog open={isOpen} onClose={close} title="Delete account" class="border-red-600">
+      <p>This removes every project. There is no undo.</p>
+      <button on:click={close}>Delete</button>
+    </Dialog>
+  );
+};
+```
+
+The html-format file (`dialog.ts`, copied with `--format html`) renders through a template instead of JSX; the dialog mounts as a reactive child of whatever wraps it:
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+import Dialog from './components/dialog';
+
+const isOpen = signal(false);
+const close = () => isOpen(false);
+
+mount(
+  html`
+    <main>
+      <${Dialog} open=${isOpen} onClose=${close} title="Delete account">
+        <p>This removes every project. There is no undo.</p>
+      <${Dialog}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-background`, `animate-in`, `zoom-in-95`), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Dialog from './components/dialog';
+
+const SignOut = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Dialog open={isOpen} onClose={close} title="Sign out" class="max-w-md">
+      <p>You will need your passkey to sign back in.</p>
+      <button on:click={close}>Sign out</button>
+    </Dialog>
+  );
+};
+```
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+import Dialog from './components/dialog';
+
+const isOpen = signal(false);
+const close = () => isOpen(false);
+
+mount(
+  html`
+    <main>
+      <${Dialog} open=${isOpen} onClose=${close} title="Sign out">
+        <p>You will need your passkey to sign back in.</p>
+      </${Dialog}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Customizing
+
+The copied file is yours. The class composition bakes `content` into the panel; `props.class` lands last in the composition, so one-off classes from the call site always ride along. The overlay's look is the whole of `base`; restyle it there. shadcn's Dialog has one width (`max-w-[calc(100%-2rem)]`, `32rem` from `sm` up) - there is no size scale to swap. Edit the animation budgets in the `animation` declarations under the `[data-state]` selectors, or the `@keyframes` they reference.

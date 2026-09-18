@@ -190,7 +190,39 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
       const isDyn = isFunction(resolved) && (resolved as RenderFn).isDynamic;
       if (firstRun && !isDyn) {
         firstRun = false;
-        return;                      // adopt text/element nodes; dependency registered via resolveValue
+        // Adopted ELEMENT regions must still be wired: pair the resolved vnodes
+        // with the server nodes positionally and hydrateNode them, so prop
+        // effects and handlers register (a bare adopt leaves the region inert
+        // whenever the closure reads no top-level signal — e.g. a list whose
+        // signal reads live inside per-item prop getters). Text regions and
+        // count/tag mismatches keep the bare adopt; resolveValue already
+        // registered the closure's own dependencies.
+        if (Array.isArray(resolved) && resolved.length === renderedNodes.length) {
+          let pairable = true;
+          let i = 0;
+          while (i < resolved.length) {
+            const vnode = resolved[i] as HellaNode;
+            const el = renderedNodes[i];
+            if (
+              !isObject(vnode) || (vnode as HellaNode).tag === undefined ||
+              !el || el.nodeType !== Node.ELEMENT_NODE ||
+              !tagMatches(el as Element, vnode.tag as string)
+            ) {
+              pairable = false;
+              break;
+            }
+            i++;
+          }
+          if (pairable) {
+            let j = 0;
+            while (j < resolved.length) {
+              hydrateNode(resolved[j] as HellaNode, renderedNodes[j] as Element, boundaryElement);
+              j++;
+            }
+            return;
+          }
+        }
+        return;
       }
       firstRun = false;
       clearRenderedNodes(renderedNodes, actualParent);

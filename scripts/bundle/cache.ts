@@ -38,6 +38,12 @@ async function getAllSourceFiles(packageDir: string): Promise<string[]> {
       ...(await scanDirRecursive(libDir, /\.(ts|tsx|js|jsx)$/)),
     );
   }
+  const registryDir = path.join(packageDir, "registry");
+  if (fsStat.existsSync(registryDir)) {
+    sourceFiles.push(
+      ...(await scanDirRecursive(registryDir, /\.(ts|tsx|js|jsx|json|css|classes)$/)),
+    );
+  }
   return sourceFiles;
 }
 

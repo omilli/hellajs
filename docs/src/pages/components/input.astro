@@ -1,0 +1,26 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import InputContent from "@ui/concepts/input.mdx";
+
+const title = "Input";
+const description = "Interactive Input demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <InputContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Input from "../../components/ui/input";
+  import "../../components/ui/tokens.js";
+
+  const email = signal("");
+  mount(html`<div class="demo-stack">
+    <${Input} value=${() => email()} oninput=${(v) => email(v)} placeholder="Email address" />
+    <${Input} placeholder="Required field" ariaInvalid=${true} aria-label="Invalid input example" />
+    <p class="demo-note">Echoing: ${() => email() === "" ? "nothing yet" : email()}</p>
+  </div>`, document.getElementById("demo")!);
+</script>

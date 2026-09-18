@@ -112,7 +112,7 @@ Performance beats DRY when extracting a helper adds hot-path overhead. Correctne
 - Function expressions only when the body needs its own `this`/`arguments` binding (method assignments via `obj.method()`, arity disambiguation via `arguments.length`); arrows everywhere else
 - Parenthesize single-parameter arrows in multi-line bodies and top-level declarations (`(x) => fn(x)`); bare single-param inline callbacks (`cleanup => cleanup()`) permitted
 - Destructure at the top of function scope when accessing 2+ properties
-- JSDoc on every function and type. `@internal` for symbols `export`ed from their module but not re-exported by the package's `index.ts`. Non-exported symbols are local — JSDoc only. Exception: `@hellajs/core`'s `lib/internal/` modules are the shared kernel — symbols exported for sibling reuse (`internal/utils.ts` type guards, `internal/flags.ts` bitflags) are exempt (the `internal/` path already signals non-public; the `./*` exports map intentionally exposes them). The tag remains required on top-level `lib/*.ts` exports the barrel omits
+- JSDoc on every function and type. `@internal` for symbols `export`ed from their module but not re-exported by the package's `index.ts`. Non-exported symbols are local — JSDoc only. Exception: `@hellajs/core`'s `lib/internal/` modules are the shared kernel — symbols exported for sibling reuse (`internal/utils.ts` type guards, `internal/flags.ts` bitflags) are exempt (the `internal/` path already signals non-public; the `./*` exports map intentionally exposes them). The tag remains required on top-level `lib/*.ts` exports the barrel omits. Exception: `packages/ui/registry/**` files are canonical user-facing copy/paste output — comment and JSDoc requirements do not apply to them (`@hella:*` marker comments are CLI-owned processing directives, stripped on copy; style-module `export` prefixes are splice directives, stripped on copy)
 - Exported `let`/`const` follow the same JSDoc rule. Mutable exported state (`export let`) documents why mutation is the chosen shape
 - Inline comments only for logic requiring 2+ concepts not visible in scope — never restate the code. Expanding a deliberately-abbreviated field name is "decoding," not "restating," when the abbreviation is mandated by the performance rule
 
@@ -127,7 +127,7 @@ import { value } from "./internal/module";
 - Double quotes for all imports and string literals; semicolons always — enforced by `@stylistic/quotes` in `eslint.config.mjs` (`packages/dom/**`, `plugins/**`)
 - Separate `import type` for all type-only imports — never inline `type` in a value import
 - Import only what each file uses
-- No external runtime dependencies. Exception: type-only imports from `.d.ts`-only packages declared as an intentional `dependency` (types erase at compile time, zero bundle weight — `import type * as CSS from "csstype"` in `packages/css/lib/types.d.ts` is canonical)
+- No external runtime dependencies. Exceptions: type-only imports from `.d.ts`-only packages declared as an intentional `dependency` (types erase at compile time, zero bundle weight — `import type * as CSS from "csstype"` in `packages/css/lib/types.d.ts` is canonical); a package whose published artifact is a CLI may declare a real runtime dependency its `lib/` imports (`@hellajs/ui`'s `esbuild` for add-time type-stripping — the CLI needs it at user runtime, so it cannot be a devDep; the bundle externals rule keeps the JS API external in `dist`)
 
 ### Types
 
@@ -375,7 +375,7 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 - [ ] `Options` vs `Config` vs `Props` chosen by what the fields do
 
 **Functions & JSDoc**
-- [ ] JSDoc on every function and type; `@internal` where exported but not barrel-re-exported (core `lib/internal/` shared-kernel exports exempt)
+- [ ] JSDoc on every function and type; `@internal` where exported but not barrel-re-exported (core `lib/internal/` shared-kernel exports exempt; `packages/ui/registry/**` canonicals and style modules exempt as user-facing output)
 - [ ] No wrapper functions that only forward (exception: overload implementations)
 - [ ] No single-callsite helper under 30 lines
 - [ ] Extracted helpers in `lib/internal/` meet one of the four placement criteria; pure single-caller helpers co-located

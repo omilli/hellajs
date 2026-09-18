@@ -19,6 +19,7 @@ export default defineConfig({
         '@router/*': '../packages/router/docs/*',
         '@store/*': '../packages/store/docs/*',
         '@ssr/*': '../packages/ssr/docs/*',
+        '@ui/*': '../packages/ui/docs/*',
         '@examples/*': '../examples/*'
       }
     }

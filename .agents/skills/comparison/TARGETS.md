@@ -127,3 +127,17 @@ Principle: each target is (a) the dominant market leader, (b) the closest archit
 | Svelte 5 SSR | Compiled-to-string, the compiler-first counterpoint |
 | React `renderToString` / `renderToPipeableStream` | The dominant baseline; `<!-- -->` text separators + `<!--$--><!--/$-->` segment markers |
 | Vue 3 `renderToString` | Marker source verified this session (`<!--[-->`/`<!--]-->`); the format HellaJS adopted |
+
+## @hellajs/ui
+
+**Category:** Copy-paste component registry + CLI.
+
+**Angle:** Distribution-model angle. HellaJS ui has no importable component surface — the npm artifact IS a CLI that copies owned, editable source. Compare against the copy/paste leader (shadcn/ui), the headless-primitives approach (Base UI), and the multi-flavor styling approach (Park UI).
+
+| Target | Why |
+|---|---|
+| shadcn/ui | The dominant copy/paste registry; the model HellaJS ui follows |
+| Base UI | Headless behavior primitives (unstyled), the composition counterpoint |
+| Park UI | Multi-flavor styling (panda-css etc.) over Ark UI, the styling-variants sibling |
+
+---

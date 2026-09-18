@@ -14,8 +14,8 @@ import { logger, packagesDir, pluginsDir, projectRoot } from "./utils/index.js";
  * public and must not satisfy a doc link.
  *
  * 2. Page-existence check — fail if an internal site URL (any markdown link or `href`
- * under `/learn`, `/reference`, `/plugins`) resolves to no `.mdx` page under
- * `docs/src/pages/`. Catches link rot the export-name check cannot see: renamed or
+ * under `/learn`, `/components`, `/reference`, `/plugins`) resolves to no `.mdx`/`.astro`
+ * page under `docs/src/pages/`. Catches link rot the export-name check cannot see: renamed or
  * deleted pages (`/learn/patterns/data` after the file became `resource.mdx`),
  * wrong slugs (`css-vars` vs `cssvars`, `ForEach` vs `foreach`), dropped wrappers
  * (`/reference/ssr` with no `docs/src/pages/reference/ssr/index.mdx`), and enumeration
@@ -284,14 +284,14 @@ function urlPath(url: string): string {
 }
 
 /**
- * Whether a URL is an internal docs-site URL (under `/learn`, `/reference`, or
- * `/plugins`). Relative paths, external URLs, and other roots (`/@hellajs/…`
- * JSDoc links) are not site pages.
+ * Whether a URL is an internal docs-site URL (under `/learn`, `/components`,
+ * `/reference`, or `/plugins`). Relative paths, external URLs, and other roots
+ * (`/@hellajs/…` JSDoc links) are not site pages.
  * @param url The link target
  * @returns True if the URL targets the docs site
  */
 function isSiteUrl(url: string): boolean {
-  return /^\/(?:learn|reference|plugins)(?:\/|$)/.test(urlPath(url));
+  return /^\/(?:learn|components|reference|plugins)(?:\/|$)/.test(urlPath(url));
 }
 
 /**
@@ -314,16 +314,16 @@ function extractSiteUrls(content: string): string[] {
 }
 
 /**
- * Builds the set of URLs the docs site serves, from every `.mdx` under
+ * Builds the set of URLs the docs site serves, from every `.mdx`/`.astro` under
  * `docs/src/pages/`. Each page serves `/<rel-path-without-extension>`; an
- * `index.mdx` additionally serves its directory URL (`learn/index.mdx` →
+ * index page additionally serves its directory URL (`learn/index.mdx` →
  * `/learn` as well as `/learn/index`).
  * @returns Set of servable site URLs
  */
 function buildSitePages(): Set<string> {
   const pages = new Set<string>();
-  for (const file of collectFiles(docsPagesDir, [".mdx"])) {
-    const rel = path.relative(docsPagesDir, file).replace(/\.mdx$/, "");
+  for (const file of collectFiles(docsPagesDir, [".mdx", ".astro"])) {
+    const rel = path.relative(docsPagesDir, file).replace(/\.(mdx|astro)$/, "");
     pages.add(`/${rel}`);
     if (rel === "index" || rel.endsWith("/index")) {
       pages.add(`/${rel.slice(0, -"index".length).replace(/\/+$/, "")}`);

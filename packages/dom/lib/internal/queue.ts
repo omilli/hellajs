@@ -177,6 +177,24 @@ export function processCleanupQueue() {
 }
 
 /**
+ * Queues an inserted root node for the afterMount mount walk and schedules the
+ * flush. This is the delivery path for content inserted into a target the
+ * scoped observer does not watch — Portal's remote target is the case: only
+ * mount/hydrate roots are registered containers, so without this the inserted
+ * subtree's afterMount hooks would never fire. Element nodes only, mirroring
+ * the observer's addition filter; the walk itself is idempotent (isMounted).
+ * @param node The inserted root node to walk.
+ */
+export function queueMountWalk(node: Node): void {
+  if (node.nodeType !== Node.ELEMENT_NODE) return;
+  mountQueue.add(node);
+  if (mountHooksExist && !isMountScheduled) {
+    isMountScheduled = true;
+    queueMicrotask(processMountQueue);
+  }
+}
+
+/**
  * @internal
  * Processes all pending mount operations.
  */

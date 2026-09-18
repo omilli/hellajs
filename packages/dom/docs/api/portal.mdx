@@ -10,7 +10,7 @@ function Portal(props: PortalProps): JSX.Element
 interface PortalProps {
   to: string;                    // CSS selector for target element
   type?: PortalInsertType;       // Insertion method (default: "append")
-  children?: HellaChild[];       // Content to portal
+  children?: HellaChildren;      // Content to portal (single child or array)
 }
 
 type PortalInsertType = "append" | "prepend" | "replace" | "before" | "after";

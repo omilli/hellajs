@@ -2,6 +2,12 @@
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 
+/* Registry styles inject as `@layer hella` (the components pages' inline demo
+   scripts); this statement appends hella after tailwind's theme/base/components
+   order. Cascade layers trump specificity, so registry class rules sit above
+   preflight and daisyUI regardless of injection order. */
+@layer hella;
+
 /* Docs content lives outside the docs/ site; without explicit @source entries
    Tailwind never scans it and tree-shakes every daisyUI class used only there
    (alert-info, alert-soft, ...) out of the build. Paths are relative to THIS
@@ -115,4 +121,52 @@ body:has(#sidebar-drawer:checked) .sidebar-close {
 
 #toc-mobile:focus-within .toc-chevron {
   rotate: 180deg;
+}
+
+/* Component demo harness (the `docs/src/pages/components/<name>.astro` demo
+   frames). Unlayered by design: layered rules lose to unlayered author CSS by
+   construction, and the harness must override the registry's hella layer the
+   same way the retired per-demo shell did. Scoped to .demo-frame so nothing
+   leaks into site typography. */
+.demo-frame {
+  background-color: var(--color-base-50);
+  border: 1px solid var(--color-slate-700);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  margin-block: 1.25rem;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.demo-frame h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.demo-frame p {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.demo-stack {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 26rem;
+  width:100%;
+}
+
+.demo-row {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.demo-note {
+  color: var(--muted);
 }
