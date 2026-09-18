@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { resetTestState, getStylesheet, getHostStylesheet } from "@utils/test-helpers.js";
-import { style, removeStyle } from "@hellajs/css/bundle";
+import { style, removeStyle, cssText } from "@hellajs/css/bundle";
 import { createShadowHost } from "./helpers";
 
 beforeEach(() => {
@@ -39,11 +39,16 @@ describe("style composition", () => {
     const host = createShadowHost();
     const composed = style({ color: "red" }, { label: "x" }, { host });
 
-    expect(getHostStylesheet(host)).toBe(`.${composed}{color:red;label:x}`);
+    // happy-dom ≥20.14 matches Chrome: unknown-property declarations drop at
+    // parse time, so the hosted sheet reads back without the `label:x` pin.
+    expect(getHostStylesheet(host)).toBe(`.${composed}{color:red}`);
     expect(document.getElementById("hella-css")).toBeNull();
 
     const direct = style({ color: "red", label: "x" });
     expect(composed).toBe(direct);
+    // hosted registration is excluded from cssText(), so the full emission
+    // (label:x included) is pinned through the same-derivation document path
+    expect(cssText()).toBe(`.${direct}{color:red;label:x}`);
   });
 
   test("removeStyle with the same three arguments removes the hosted composition", () => {

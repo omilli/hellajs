@@ -55,6 +55,9 @@
     "packages/dom": {
       "name": "@hellajs/dom",
       "version": "1.4.2",
+      "devDependencies": {
+        "@hellajs/ssr": "workspace:*",
+      },
       "peerDependencies": {
         "@hellajs/core": "^1.0.6",
       },
