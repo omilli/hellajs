@@ -1,0 +1,28 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import TextareaContent from "@ui/concepts/textarea.mdx";
+
+const title = "Textarea";
+const description = "Interactive Textarea demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <TextareaContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Textarea from "../../components/ui/textarea";
+  import "../../components/ui/tokens.js";
+
+  const bio = signal("");
+  mount(html`<div class="demo-stack">
+    <div class="flex flex-col gap-2">
+      <${Textarea} value=${() => bio()} oninput=${(v) => bio(v)} placeholder="Tell us about yourself" rows=${4} aria-label="Biography" />
+      <p class="demo-note">${() => bio().length} characters</p>
+    </div>
+    <${Textarea} placeholder="Required field" ariaInvalid=${true} aria-label="Invalid textarea example" />
+  </div>`, document.getElementById("demo")!);
+</script>

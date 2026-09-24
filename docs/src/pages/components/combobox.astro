@@ -1,0 +1,33 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import ComboboxTitle from "@ui/concepts/combobox.mdx";
+
+const title = "Combobox";
+const description = "Interactive Combobox demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <ComboboxTitle />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Combobox from "../../components/ui/combobox";
+  import "../../components/ui/tokens.js";
+
+  const fruits = [
+    { value: "apple", label: "Apple" },
+    { value: "blueberry", label: "Blueberry" },
+    { value: "canteloupe", label: "Canteloupe" },
+    { value: "date", label: "Date" },
+  ];
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Combobox} items=${fruits} placeholder="Search fruit" />
+      <${Combobox} items=${fruits} multiple placeholder="Pick several" />
+    </div>
+    <p class="demo-note">Typing filters case-insensitively and Enter commits the active option. The multiple picker toggles values into removable chips and stays open.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -22,13 +22,13 @@ describe("docs vendoring drift", () => {
   });
 
   test("add reproduces the vendored docs file set", async () => {
-    const [exit] = await runCli(["add", "button", "input", "card", "dialog", "tabs", "theme"], root);
+    const [exit] = await runCli(["add", "button", "input", "card", "dialog", "tabs", "badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label", "textarea", "native-select", "aspect-ratio", "avatar", "progress", "table", "slider", "resizable", "scroll-area", "button-group", "calendar", "input-group", "input-otp", "form", "field", "pagination", "item", "marker", "direction", "dropdown-menu", "menubar", "navigation-menu", "breadcrumb", "select", "combobox", "command", "bubble", "message", "message-scroller", "attachment", "collapsible", "accordion", "context-menu", "checkbox", "radio-group", "switch", "toggle", "toggle-group", "tooltip", "hover-card", "popover", "alert-dialog", "sheet", "drawer", "sonner", "sidebar", "theme"], root);
     expect(exit).toBe(0);
     expect(readdirSync(componentsDir).sort()).toEqual(readdirSync(vendoredDir).sort());
   });
 
   test.each(readdirSync(vendoredDir).sort())("%s byte-matches the fresh add output", async (name) => {
-    const [exit] = await runCli(["add", "button", "input", "card", "dialog", "tabs", "theme"], root);
+    const [exit] = await runCli(["add", "button", "input", "card", "dialog", "tabs", "badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label", "textarea", "native-select", "aspect-ratio", "avatar", "progress", "table", "slider", "resizable", "scroll-area", "button-group", "calendar", "input-group", "input-otp", "form", "field", "pagination", "item", "marker", "direction", "dropdown-menu", "menubar", "navigation-menu", "breadcrumb", "select", "combobox", "command", "bubble", "message", "message-scroller", "attachment", "collapsible", "accordion", "context-menu", "checkbox", "radio-group", "switch", "toggle", "toggle-group", "tooltip", "hover-card", "popover", "alert-dialog", "sheet", "drawer", "sonner", "sidebar", "theme"], root);
     expect(exit).toBe(0);
     expect(readFileSync(join(componentsDir, name), "utf8")).toBe(readFileSync(join(vendoredDir, name), "utf8"));
   });

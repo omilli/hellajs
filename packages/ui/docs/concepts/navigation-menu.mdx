@@ -1,0 +1,107 @@
+# Navigation Menu
+
+A horizontal navigation surface styled to shadcn's NavigationMenu: triggers open content panels into a shared viewport slot under the bar, an indicator slides under the active trigger, and links carry the active accent styles.
+
+## Install
+
+```bash
+bunx @hellajs/ui add navigation-menu
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Composition
+
+There is no Radix-style context, so the state the upstream provider distributes threads through explicit props instead (the tabs precedent): each trigger and content takes its active state as an accessor, and the owner signal sits in your component.
+
+```jsx
+import { signal } from '@hellajs/core';
+import NavigationMenu from './components/navigation-menu';
+import {
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
+  NavigationMenuLink,
+  NavigationMenuIndicator,
+} from './components/navigation-menu';
+
+const value = signal('');
+const toggle = (id) => value(value() === id ? '' : id);
+
+const Nav = () => (
+  <NavigationMenu>
+    <NavigationMenuList>
+      <NavigationMenuItem>
+        <NavigationMenuTrigger
+          value="learn"
+          active={() => value() === 'learn'}
+          onActivate={() => toggle('learn')}
+        >
+          Learn
+        </NavigationMenuTrigger>
+        <NavigationMenuContent active={() => value() === 'learn'}>
+          <NavigationMenuLink href="#intro">Introduction</NavigationMenuLink>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+    </NavigationMenuList>
+    <NavigationMenuViewport active={() => value() !== ''} />
+    <NavigationMenuIndicator active={() => value() !== ''} />
+  </NavigationMenu>
+);
+```
+
+| Root prop | Default | Behavior |
+|---|---|---|
+| `value` | internal signal | Controlled id of the open panel ("" when closed), fed by trigger announcements |
+| `onValueChange` | - | Reports every store flip |
+| `viewport` | `true` | Renders the shared viewport slot as the last child; set `false` to render `NavigationMenuViewport` manually |
+| `children` | - | The list, viewport, and indicator |
+| `class` | - | Extra classes on the bar |
+
+Triggers carrying a `value` announce clicks on a document-level event, so the root's store and the appended viewport follow without extra wiring: the store is a mirror, never a second state owner. Rendering the indicator with no `active` or `anchor` props joins the same announcement stream and follows the active trigger automatically.
+
+### Viewport and Indicator Divergence
+
+Upstream renders panels into a provider-owned viewport and animates its width and height through measurement. HellaJS keeps the shared slot but drops the provider: every `NavigationMenuContent` portals into the viewport slot (`[data-slot="navigation-menu-viewport"]`), the slot sits absolutely under the bar, and the panel's enter and exit are fade and zoom keyframes on the viewport's `data-state`. The indicator approximates upstream's spring with a 200ms transform and width transition: it measures the active trigger against the bar (on mount, on activation, and on resize) and translates under it.
+
+Closing runs through the same exit budget as the menus: a closed panel stays mounted under `data-state="closed"` until its `animationend` (or the 250ms fallback) unmounts it, so a trigger swap animates the outgoing panel before the viewport releases it.
+
+For a second navigation menu on the same page, render `NavigationMenuViewport` manually with `viewport={false}`, give the slot an `id`, and pass `#<id>` as each content's `viewport` selector so panels land in their own slot.
+
+## Structure Parts
+
+Seven named parts ship beside the default `NavigationMenu`: `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink`, `NavigationMenuViewport`, and `NavigationMenuIndicator`.
+
+| Part | Props beyond `children`/`class` | Renders |
+|---|---|---|
+| `NavigationMenuList` | - | The `ul` row of items |
+| `NavigationMenuItem` | - | A `li` slot for one trigger plus its content |
+| `NavigationMenuTrigger` | `value`, `active`, `onActivate` | The bar button with the rotating chevron and `data-state`/`aria-expanded` |
+| `NavigationMenuContent` | `active`, `viewport`, `onExited` | The panel; portals into the shared viewport slot while open |
+| `NavigationMenuLink` | `href`, `active` | The in-panel link; `active` renders `data-active="true"` and its accent styles |
+| `NavigationMenuViewport` | `active`, `id` | The absolute slot under the bar; `data-state` drives its enter and exit |
+| `NavigationMenuIndicator` | `active`, `anchor` | The underline diamond; measures the active trigger and transitions between positions |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer. The module exports `base` (the bar), `list` and `item` (the row and its slots), `trigger` (the accent states plus the open-state chevron rotation), `content` (panel placement with the `md:` absolute layout), `link` (hover, focus, and `data-active` accent states), `viewportWrapper` and `viewport` (the shared slot with its fade and zoom keyframes), and `indicator` with `diamond` (the measured underline). The `data-[motion=…]` slide variants of the upstream string stay inert here: panels portal into the viewport, so no motion attribute is ever set.
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`data-[state=open]:bg-accent/50`, `focus-visible:ring-[3px]`, the `group-data-[state=open]:rotate-180` chevron, and the `**:` link-focus suppressions), and each part's class array wraps in `cn()`. The indicator string appends `transition-[transform,width] duration-200`, the entry's documented spring approximation.
+
+## Customizing
+
+The copied file is yours. The viewport slot's look is `viewport`; the panel's look is `content`. Hold the exit animation off by removing the keyframe rules from `viewport`, or move the panel inline by giving `NavigationMenuContent` a custom `viewport` selector that resolves anywhere in your document.

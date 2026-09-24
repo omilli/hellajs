@@ -1,0 +1,105 @@
+# Breadcrumb
+
+A navigation trail styled to shadcn's Breadcrumb: an ordered list of items with separators, the current page marked for assistive tech, an ellipsis for collapsed segments, and dropdown composition for overflow.
+
+## Install
+
+```bash
+bunx @hellajs/ui add breadcrumb
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The entry declares `button` and `dropdown-menu` as registry dependencies, so `add breadcrumb` copies both recursively: the overflow recipe below composes a `DropdownMenu` inside the trail.
+
+## Composition
+
+`Breadcrumb` renders the labeled `nav`; `BreadcrumbList` is the ordered list; each `BreadcrumbItem` is one `li` slot holding a `BreadcrumbLink`, the `BreadcrumbPage`, an ellipsis, or a dropdown. `BreadcrumbSeparator` renders between items and inlines the chevron, accepting children to replace it.
+
+```jsx
+import Breadcrumb from './components/breadcrumb';
+import {
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from './components/breadcrumb';
+
+const Trail = () => (
+  <Breadcrumb>
+    <BreadcrumbList>
+      <BreadcrumbItem>
+        <BreadcrumbLink href="/">Home</BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <BreadcrumbLink href="/components">Components</BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
+      </BreadcrumbItem>
+    </BreadcrumbList>
+  </Breadcrumb>
+);
+```
+
+`BreadcrumbPage` renders `role="link"` with `aria-disabled="true"` and `aria-current="page"`: it marks where the reader is, not a link to click. Separators are `role="presentation"` and hidden from the accessibility tree, so screen readers announce the trail through the list semantics alone.
+
+Collapsed segments compose `BreadcrumbEllipsis` inside an item. The ellipsis inlines the more-horizontal icon plus a `sr-only` "More" label and carries `role="presentation"` with `aria-hidden="true"`.
+
+## Structure Parts
+
+Six named parts ship beside the default `Breadcrumb`: `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbPage`, `BreadcrumbSeparator`, and `BreadcrumbEllipsis`. `BreadcrumbLink` takes an `href` passthrough (there is no router coupling), and every part takes `class` for one-off restyles.
+
+### Overflow with a Dropdown
+
+When the trail hides middle segments, put a `DropdownMenu` inside a `BreadcrumbItem`: the ellipsis labels the trigger and the menu lists the hidden levels.
+
+```jsx
+import { BreadcrumbEllipsis } from './components/breadcrumb';
+import DropdownMenu from './components/dropdown-menu';
+import { DropdownMenuItem } from './components/dropdown-menu';
+import { BreadcrumbItem } from './components/breadcrumb';
+
+const Overflow = () => (
+  <BreadcrumbItem>
+    <DropdownMenu
+      content={
+        <>
+          <DropdownMenuItem>Components</DropdownMenuItem>
+          <DropdownMenuItem>Labels</DropdownMenuItem>
+        </>
+      }
+    >
+      <BreadcrumbEllipsis />
+    </DropdownMenu>
+  </BreadcrumbItem>
+);
+```
+
+The composed `DropdownMenu` owns its own open state, so the breadcrumb needs no extra wiring; the entry's registry dependency copies `dropdown-menu` (and its `button` dependency) alongside the trail.
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer. The module exports `list` (the wrapping flex row with the `sm:` gap step), `item`, `link` (the color transition on hover), `page` (the foreground weight and color), `separator` (sizing the chevron through its `svg` selector), `ellipsis` with `ellipsisIcon` (the 2.25rem hit area and 1rem icon), and `srOnly` (the visually hidden label). The `base` export is an empty string: the upstream `nav` carries no classes of its own, and the class list stays a passthrough for user overrides.
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`text-muted-foreground`, `sm:gap-2.5`, `[&>svg]:size-3.5`), and each part's class array wraps in `cn()`.
+
+## Customizing
+
+The copied file is yours. The trail's rhythm is `list`; swap the chevron by passing children to `BreadcrumbSeparator`, and restyle links through `link`. The html-format file (`breadcrumb.ts`, copied with `--format html`) renders the same parts through templates.

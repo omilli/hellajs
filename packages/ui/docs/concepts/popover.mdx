@@ -1,0 +1,166 @@
+# Popover
+
+A click-toggled panel styled to shadcn's Popover: the trigger button opens an anchored, non-modal surface; Escape and an outside press dismiss it; stacked popovers dismiss one layer at a time, top first.
+
+## Install
+
+```bash
+bunx @hellajs/ui add popover
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The popover wires its dismissal and positioning from the copied file using `@hellajs/dom` behavior functions.
+
+## Opening and Closing
+
+The composed `Popover` wraps its children in the trigger button and takes the panel through the `content` prop. Clicking toggles; the trigger carries `data-state` and `aria-expanded` so styling and assistive tech track the open state.
+
+```jsx
+import Popover from './components/popover';
+
+const Notifications = () => (
+  <Popover content={<p>You are all caught up.</p>}>
+    Notifications
+  </Popover>
+);
+```
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `open` | - | Controlled open accessor; when given, the root never writes its internal signal |
+| `onOpenChange` | - | Reports every requested open and close flip |
+| `anchor` | - | Resolves the positioning anchor; defaults to the trigger element |
+| `content` | - | The panel children, portaled into `document.body` while open |
+| `class` | - | Extra classes on the trigger button |
+
+Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the panel ask the top layer to close. The popover is non-modal: there is no focus trap, and focus moves to the panel on open (upstream parity). Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
+
+## Structure Parts
+
+Six named parts ship beside the default `Popover`: `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`, `PopoverHeader`, `PopoverTitle`, and `PopoverDescription`. hella has no Radix-style context, so manual composition passes state explicitly: portal the content yourself, hand it a `state` accessor and an `onDismiss` callback, and point its `anchor` at whatever should anchor it.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { Portal } from '@hellajs/dom';
+import PopoverContent, { PopoverHeader, PopoverTitle, PopoverDescription } from './components/popover';
+
+const Manual = () => {
+  const open = signal(false);
+  const state = () => (open() ? 'open' : 'closed');
+  let button;
+
+  return (
+    <>
+      <button
+        type="button"
+        hook:afterMount={(node) => { button = node; }}
+        on:click={() => open(!open())}
+      >
+        Open
+      </button>
+      {() => open() && (
+        <Portal to="body">
+          <PopoverContent
+            state={state}
+            anchor={() => button}
+            onDismiss={() => open(false)}
+          >
+            <PopoverHeader>
+              <PopoverTitle>Dimensions</PopoverTitle>
+              <PopoverDescription>Set the width and height.</PopoverDescription>
+            </PopoverHeader>
+          </PopoverContent>
+        </Portal>
+      )}
+    </>
+  );
+};
+```
+
+`PopoverContent({ state, id, side, align, sideOffset, alignOffset, anchor, onDismiss, children, class })` renders the panel: `role="dialog"`, `tabindex="-1"` for the focus-on-open contract, `data-state`/`data-side`/`data-align` for the animation selectors. `PopoverAnchor` is a bare anchor span for compositions where the trigger should not be the positioning target.
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `side` | `"bottom"` | Which side of the anchor the panel sits on |
+| `align` | `"center"` | Alignment along the anchor's edge |
+| `sideOffset` | `4` | Gap between the anchor and the panel edge, in px |
+| `alignOffset` | `0` | Cross-axis shift applied after positioning, in px |
+| `anchor` | - | Resolves the anchor element; positioning is skipped when undefined |
+| `onDismiss` | - | Escape and outside pointerdown fire this when the popover is the top layer |
+
+The wirings the content part installs when its props are present:
+
+| Wiring | Guarantee |
+|---|---|
+| [`anchorPosition`](/reference/dom/behaviors) | Fixed positioning against the anchor, collision flipping, repositioning on scroll and resize |
+| [`layerDismissal`](/reference/dom/behaviors) | Escape and outside pointerdown close only the top layer, so popovers stack cleanly |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (empty; trigger, anchor, and header structure are deliberately light), `content` (the popover surface at `18rem` wide with border, shadow, and enter and exit keyframes composed from fade, a 95% zoom, and the side's slide direction), plus `header`, `title`, and `description`. The copied budget is 150ms both ways.
+
+```jsx
+import Popover, { PopoverContent, PopoverHeader, PopoverTitle, PopoverDescription } from './components/popover';
+
+const Settings = () => (
+  <Popover
+    content={
+      <PopoverHeader>
+        <PopoverTitle>Settings</PopoverTitle>
+        <PopoverDescription>Preferences apply immediately.</PopoverDescription>
+      </PopoverHeader>
+    }
+    class="w-72"
+  >
+    Open settings
+  </Popover>
+);
+```
+
+The html-format file (`popover.ts`, copied with `--format html`) renders through a template instead of JSX; the popover mounts as a reactive child of whatever wraps it:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Popover from './components/popover';
+
+mount(
+  html`
+    <main>
+      <${Popover} content=${html`<p>Three new messages.</p>`}>
+        Inbox
+      <${Popover}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-popover`, `w-72`, `shadow-md`, the `data-[state=open]:animate-in` set, the `data-[side=…]` slide variants, and the `font-medium` / `text-muted-foreground` structure parts), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The enter and exit motion relies on the `tw-animate-css` utilities the theme's tailwind entry depends on.
+
+```jsx
+import Popover from './components/popover';
+
+const Filter = () => (
+  <Popover content={<p>Filter by label, assignee, or state.</p>}>
+    Filter
+  </Popover>
+);
+```
+
+## Customizing
+
+The copied file is yours. The panel's look is the whole of `content`; restyle it there. Width is the upstream `18rem`: change the `width` declaration (css) or the `w-72` token (tailwind), and `props.class` on the composed `Popover` lands on the trigger button. The dismissal surface is the `layerDismissal` wiring; hold the popover open against Escape and outside presses by composing `PopoverContent` without `onDismiss`.

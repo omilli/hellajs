@@ -45,7 +45,7 @@ export const navigation = {
       ],
     }
   ],
-  components: ["Button", "Input", "Card", "Dialog", "Tabs"],
+  components: ["Button", "Input", "Card", "Dialog", "Tabs", "Badge", "Alert", "Kbd", "Separator", "Skeleton", "Spinner", "Empty", "Label", "Textarea", "Native-Select", "Aspect-Ratio", "Avatar", "Progress", "Table", "Button-Group", "Input-Group", "Field", "Pagination", "Item", "Marker", "Direction", "Bubble", "Message", "Message-Scroller", "Attachment", "Collapsible", "Accordion", "Checkbox", "Radio-Group", "Switch", "Toggle", "Toggle-Group", "Slider", "Resizable", "Tooltip", "Hover-Card", "Popover", "Dropdown-Menu", "Context-Menu", "Menubar", "Navigation-Menu", "Breadcrumb", "Select", "Combobox", "Command", "Alert-Dialog", "Sheet", "Drawer", "Sonner", "Scroll-Area", "Calendar", "Input-Otp", "Form", "Sidebar"],
   reference: [
     { core: ["signal", "signalArray", "signalMap", "signalSet", "computed", "effect", "batch", "scope", "untracked", "flush"] },
     {

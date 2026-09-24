@@ -14,10 +14,10 @@ A ground-up comparison based on the actual source code of `@hellajs/ui` v2. Ever
 | Behavior primitives | `hook:` wiring to `@hellajs/dom` behaviors, no querySelector (`registry/dialog/dialog.tsx`) | Radix UI or Base UI or React Aria (`--base` choice) | Its own headless primitives are the product | Ark UI (headless machines) |
 | Framework | Framework-agnostic source: JSX and runtime `html` formats (`lib/types.d.ts`) | React primary; other frameworks via ports | React only | React, Vue, Solid via Ark UI |
 | Theming | Split theme: `tokens.js` (css) or `theme.css` (tailwind), both under `@layer hella` | CSS variables + Tailwind theme | None (unstyled) | Panda CSS presets and themes |
-| Catalog (v1) | 5 components + theme + cn (`registry/registry.json`) | 50+ components, blocks, charts | 30+ headless components | 40+ components |
+| Catalog | 59 components + theme + cn: full shadcn new-york-v4 parity minus chart (`registry/registry.json`) | 50+ components, blocks, charts | 30+ headless components | 40+ components |
 | Config file | `hella.ui.json` (`lib/internal/config.ts`) | `components.json` | none needed | `park-ui.json` |
 
-HellaJS ui applies the copy/paste distribution model to its own framework-neutral component source: the npm package contains a CLI and a registry of canonical component files, and `add` splices the chosen style flavor into the chosen markup format before writing one owned file per component. shadcn/ui is the same distribution idea at 10x the catalog and ecosystem scale, backed by Radix or Base UI primitives and Tailwind. Park UI is the closest styling-architecture sibling (owned source over headless machines), but couples to Panda CSS and Ark UI. Base UI is the deliberate counterpoint: nothing is copied and nothing is styled; you import headless primitives and write every style yourself.
+HellaJS ui applies the copy/paste distribution model to its own framework-neutral component source: the npm package contains a CLI and a registry of canonical component files, and `add` splices the chosen style flavor into the chosen markup format before writing one owned file per component. shadcn/ui is the same distribution idea at a far larger ecosystem scale (blocks, charts, theme registry, MCP integration), backed by Radix or Base UI primitives and Tailwind. Park UI is the closest styling-architecture sibling (owned source over headless machines), but couples to Panda CSS and Ark UI. Base UI is the deliberate counterpoint: nothing is copied and nothing is styled; you import headless primitives and write every style yourself.
 
 ---
 
@@ -114,7 +114,7 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 
 - Ark UI supplies the headless machines (state, keyboard, aria) consumed by every Park UI component; the copied source owns only the styling recipe and the part composition.
 
-**Verdict:** HellaJS ui takes the thinnest accessibility layer of the three: it wires proven headless behaviors only where the component needs them (dialog focus management, tabs roving) and leaves everything else as plain accessible markup. That keeps the copied file free of primitive-package dependencies but gives it a far smaller guarantee surface: no scroll locking, no focus-scope restore beyond the trap's own restore, no composite widget machinery beyond roving tabindex. shadcn/ui, Base UI, and Park UI all delegate to dedicated accessibility engines that have absorbed years of edge cases HellaJS ui's five-component catalog has not encountered.
+**Verdict:** HellaJS ui takes the thinnest accessibility layer of the three: it wires proven headless behaviors only where the component needs them (dialog focus management, tabs roving) and leaves everything else as plain accessible markup. That keeps the copied file free of primitive-package dependencies but gives it a far smaller guarantee surface: no scroll locking, no focus-scope restore beyond the trap's own restore, no composite widget machinery beyond roving tabindex. shadcn/ui, Base UI, and Park UI all delegate to dedicated accessibility engines that have absorbed years of edge cases HellaJS ui's zero-dependency behavior rewrites have not yet encountered.
 
 ---
 
@@ -143,7 +143,7 @@ HellaJS ui's override contract is the strongest story for css projects: preceden
 | Dark mode | both palettes remap under the `.dark` class (`registry/theme/`) | CSS variables + class strategy | bring your own | Panda theme presets |
 | SSR-friendly styling | css flavor collects through `cssText()` (`registry/theme/tokens.js`) | Tailwind build output (static CSS) | n/a | Panda static extraction |
 | Enter/exit animations | Dialog ships both flavors: hand-rolled keyframes (css) or `tw-animate-css` utilities (tailwind) (`registry/dialog/dialog-css.ts`) | `tw-animate-css` utilities | bring your own | Panda canned animations |
-| Component catalog (v1) | 5 components | 50+ components, blocks, charts | 30+ headless components | 40+ components |
+| Component catalog | 59 components, new-york-v4 parity minus chart | 50+ components, blocks, charts | 30+ headless components | 40+ components |
 | Ecosystem tooling (presets, registries, MCP) | none | extensive | shadcn integration only | themes, Figma kit |
 
 ### Notable HellaJS differentiators
@@ -189,4 +189,4 @@ What sets HellaJS ui apart, and no single competitor matches all of:
 3. **Zero package runtime** (the copied file imports only framework peers the CLI checked; the css flavor adds no runtime library at all beyond the framework itself) (`lib/internal/peers.ts`).
 4. **Behavior as owned inline wiring** (focus trap, escape, outside close, and roving tabindex are visible in the copied markup through `hook:` attributes rather than hidden inside an imported primitive) (`registry/dialog/dialog.tsx`).
 
-Its gaps are real: the catalog is five components against dozens from each competitor; the accessibility guarantee surface (no scroll locking, no composite-widget machinery, no screen-reader-tested primitives) is a fraction of Radix, Base UI, or Ark UI; there is no ecosystem tooling (no preset marketplace, registry platform, MCP server, or Figma kit); and the project is new, so the "no bug reports, fix it in your codebase" ownership trade carries all of the maintenance itself. Against shadcn/ui specifically, HellaJS ui competes on architecture purity and runtime economy, not on breadth.
+Its gaps are real: no chart and no blocks against shadcn's platform breadth; the accessibility guarantee surface (no scroll locking, no composite-widget machinery, no screen-reader-tested primitives) is a fraction of Radix, Base UI, or Ark UI; there is no ecosystem tooling (no preset marketplace, registry platform, MCP server, or Figma kit); and the project is new, so the "no bug reports, fix it in your codebase" ownership trade carries all of the maintenance itself. Against shadcn/ui specifically, HellaJS ui now matches the new-york-v4 component catalog (chart and blocks excepted) and competes on architecture purity and runtime economy rather than ecosystem reach.

@@ -1,0 +1,105 @@
+# Item
+
+A flexible list-row composition kit styled byte-faithfully to shadcn's new-york-v4 Item: ten parts covering the group, separator, row, media slot, content stack, title, description, actions, header, and footer, built for settings lists, result rows, and media objects.
+
+## Install
+
+```bash
+bunx @hellajs/ui add item
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. The entry declares `separator` as a registry dependency, so the add command copies it into your project alongside the kit.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. Compose the parts by hand; there is no context object and no schema prop.
+
+```jsx
+import Item, { ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from './components/item';
+import Button from './components/button';
+
+const Results = () => (
+  <ItemGroup>
+    <Item>
+      <ItemMedia variant="icon">A</ItemMedia>
+      <ItemContent>
+        <ItemTitle>Archive</ItemTitle>
+        <ItemDescription>Move the report to long-term storage.</ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <Button size="sm" variant="outline">Run</Button>
+      </ItemActions>
+    </Item>
+    <ItemSeparator />
+  </ItemGroup>
+);
+```
+
+`variant` picks the row treatment (`default` transparent, `outline` bordered, `muted` tinted) and `size` its padding (`default` or `sm`). `ItemMedia` takes `icon` or `image` variants for its own sizing box.
+
+`selected` marks the row interactively: pass a boolean or a reactive function and the row renders `data-selected` plus `aria-selected`, updating as the signal changes. It is the first hella composite with built-in selection state.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Item, { ItemContent, ItemGroup, ItemTitle } from './components/item';
+
+const active = signal('a');
+const pick = (id) => active(id);
+
+const Tabs = () => (
+  <ItemGroup>
+    {['a', 'b'].map((id) => (
+      <Item key={id} selected={() => active() === id} onclick={() => pick(id)}>
+        <ItemContent><ItemTitle>Option {id.toUpperCase()}</ItemTitle></ItemContent>
+      </Item>
+    ))}
+  </ItemGroup>
+);
+```
+
+The html-format file (`item.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Item, { ItemContent, ItemTitle } from './components/item';
+
+mount(
+  html`<${Item}>
+    <${ItemContent}><${ItemTitle}>Standalone row</${ItemTitle}></${ItemContent}>
+  </${Item}>`,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the media's `group-has-[[data-slot=item-description]]/item:self-start` shift and the link hover treatment `[a]:hover:bg-accent/50` inherited from the ref, and the class arrays wrap in `cn()`.
+
+```jsx
+import Item, { ItemContent, ItemTitle } from './components/item';
+
+const Muted = () => (
+  <Item variant="muted" size="sm">
+    <ItemContent><ItemTitle>Compact row</ItemTitle></ItemContent>
+  </Item>
+);
+```
+
+## Composition Notes
+
+`ItemHeader` and `ItemFooter` render full-width (`basis-full`) rows that break out of the flex-wrap flow, matching the ref's layout for titled sections. The row is self-contained: the separator markup is re-stated inline rather than imported, and anchors inside an item pick up the underline and hover rules from the row's own selectors.
+
+## Customizing
+
+The copied file is yours. The css style module exports `group`, `separatorBase` plus `separator`, `base`, `variants` and `sizes` (the row treatments), `media` plus `mediaVariants`, `content`, `title`, `description`, `actions`, `header`, and `footer`. The description clamps to two lines through the `-webkit-line-clamp` keys; raise the clamp there if your copy needs more room.

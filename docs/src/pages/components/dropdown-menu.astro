@@ -1,0 +1,42 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DropdownMenuTitle from "@ui/concepts/dropdown-menu.mdx";
+
+const title = "Dropdown Menu";
+const description = "Interactive Dropdown Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <DropdownMenuTitle />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Button from "../../components/ui/button";
+  import DropdownMenu, {
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+  } from "../../components/ui/dropdown-menu";
+  import "../../components/ui/tokens.js";
+
+  const fileItems = html`
+    <${DropdownMenuLabel}>File</${DropdownMenuLabel}>
+    <${DropdownMenuItem} shortcut=${"⌘N"}>New Window</${DropdownMenuItem}>
+    <${DropdownMenuItem}>Open Recent</${DropdownMenuItem}>
+    <${DropdownMenuSub} content=${html`<${DropdownMenuItem}>Export as PDF</${DropdownMenuItem}><${DropdownMenuItem}>Export as HTML</${DropdownMenuItem}>`}>
+      Export
+    </${DropdownMenuSub}>
+    <${DropdownMenuSeparator}></${DropdownMenuSeparator}>
+    <${DropdownMenuItem} destructive=${true}>Delete</${DropdownMenuItem}>
+  `;
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${DropdownMenu} content=${fileItems}><${Button} variant="outline">File</${Button}></${DropdownMenu}>
+    </div>
+    <p class="demo-note">Click or press ArrowDown to open; arrows rove, Enter activates, Escape pops one layer, Tab closes all.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

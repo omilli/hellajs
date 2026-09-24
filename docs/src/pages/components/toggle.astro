@@ -1,0 +1,34 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import ToggleContent from "@ui/concepts/toggle.mdx";
+
+const title = "Toggle";
+const description = "Interactive Toggle demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <ToggleContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Toggle from "../../components/ui/toggle";
+  import "../../components/ui/tokens.js";
+
+  const bold = signal(false);
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Toggle}
+        pressed=${() => bold()}
+        onPressedChange=${(next: boolean) => bold(next)}
+       
+      >Bold</${Toggle}>
+      <${Toggle} variant="outline">Italic</${Toggle}>
+      <${Toggle} size="sm">Strike</${Toggle}>
+      <${Toggle} size="lg" variant="outline">Underline</${Toggle}>
+    </div>
+    <p class="demo-note">Bold is ${() => (bold() ? "on" : "off")}.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

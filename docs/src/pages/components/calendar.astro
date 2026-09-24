@@ -1,0 +1,50 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import CalendarContent from "@ui/concepts/calendar.mdx";
+
+const title = "Calendar";
+const description = "Interactive Calendar demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <CalendarContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Calendar from "../../components/ui/calendar";
+  import "../../components/ui/tokens.js";
+
+  const picked = signal<Date | undefined>(undefined);
+  const stay = signal<{ from?: Date; to?: Date }>({});
+
+  const format = (date?: Date): string =>
+    date ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  const stayLabel = (): string => {
+    const { from, to } = stay();
+    if (!from) return "Pick a check-in date";
+    return to ? `${format(from)} to ${format(to)}` : `${format(from)} to ...`;
+  };
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Calendar}
+        defaultMonth=${new Date(2025, 2, 1)}
+        onSelect=${(date: Date) => picked(date)}
+      />
+      <${Calendar}
+        mode="range"
+        defaultMonth=${new Date(2025, 2, 1)}
+        onSelect=${(range: { from?: Date; to?: Date }) => stay(range)}
+      />
+    </div>
+    <p class="demo-note">
+      Left: single selection
+      ${() => (picked() ? `, currently ${format(picked())}` : ", pick any day")} .
+      Right: a range span with hover preview, currently ${stayLabel}.
+      Both grids rove focus with the arrow keys, jump by page keys, and select with Enter.
+    </p>
+  </div>`, document.getElementById("demo")!);
+</script>

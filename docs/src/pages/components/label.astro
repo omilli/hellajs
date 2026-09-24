@@ -1,0 +1,29 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import LabelContent from "@ui/concepts/label.mdx";
+
+const title = "Label";
+const description = "Interactive Label demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <LabelContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Label from "../../components/ui/label";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <div class="flex flex-col gap-2">
+      <${Label} for="demo-name">Project name</${Label}>
+      <input id="demo-name" placeholder="acme-site" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" />
+    </div>
+    <div class="flex items-center gap-3">
+      <${Label} for="demo-region">Region</${Label}>
+      <input id="demo-region" value="eu-central-1" class="flex h-9 w-40 rounded-md border border-input bg-transparent px-3 text-sm" />
+    </div>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -1,0 +1,40 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import ContextMenuTitle from "@ui/concepts/context-menu.mdx";
+
+const title = "Context Menu";
+const description = "Interactive Context Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <ContextMenuTitle />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import ContextMenu, {
+    ContextMenuItem,
+    ContextMenuLabel,
+    ContextMenuSeparator,
+    ContextMenuSub,
+  } from "../../components/ui/context-menu";
+  import "../../components/ui/tokens.js";
+
+  const canvasItems = html`
+    <${ContextMenuLabel}>Canvas</${ContextMenuLabel}>
+    <${ContextMenuItem} shortcut=${"⌘D"}>Duplicate</${ContextMenuItem}>
+    <${ContextMenuSub} content=${html`<${ContextMenuItem}>Bring to Front</${ContextMenuItem}><${ContextMenuItem}>Send to Back</${ContextMenuItem}>`}>
+      Arrange
+    </${ContextMenuSub}>
+    <${ContextMenuSeparator}></${ContextMenuSeparator}>
+    <${ContextMenuItem} destructive=${true}>Delete</${ContextMenuItem}>
+  `;
+
+  mount(html`<div class="demo-stack">
+    <${ContextMenu} content=${canvasItems}>
+      <div style="padding: 2rem 3rem; border: 1px dashed var(--border); border-radius: 0.5rem; cursor: context-menu;">Right-click this zone</div>
+    </${ContextMenu}>
+    <p class="demo-note">The menu opens at the pointer coordinates; Escape pops one layer, an outside press dismisses it.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

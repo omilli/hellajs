@@ -1,0 +1,52 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import InputOtpContent from "@ui/concepts/input-otp.mdx";
+
+const title = "Input OTP";
+const description = "Interactive Input OTP demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <InputOtpContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import InputOTP from "../../components/ui/input-otp";
+  import { InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "../../components/ui/input-otp";
+  import "../../components/ui/tokens.js";
+
+  const code = signal("");
+
+  const mask = (value: string): string =>
+    (value + "_".repeat(6)).slice(0, 6).split("").join(" ");
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${InputOTP}
+        length=${6}
+        value=${() => code()}
+        onChange=${(next: string) => code(next)}
+        onComplete=${(next: string) => console.log("complete:", next)}
+      >
+        <${InputOTPGroup}>
+          <${InputOTPSlot} index=${0} />
+          <${InputOTPSlot} index=${1} />
+          <${InputOTPSlot} index=${2} />
+        <//>
+        <${InputOTPSeparator} />
+        <${InputOTPGroup}>
+          <${InputOTPSlot} index=${3} />
+          <${InputOTPSlot} index=${4} />
+          <${InputOTPSlot} index=${5} />
+        <//>
+      <//>
+    </div>
+    <p class="demo-note">
+      One hidden input owns the keyboard, so typing, backspace, arrows, and paste all behave natively.
+      The code so far: ${() => mask(code())} . Focus lands on the next empty slot and the caret slot blinks.
+    </p>
+  </div>`, document.getElementById("demo")!);
+</script>

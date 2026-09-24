@@ -1,0 +1,94 @@
+# Input Group
+
+A fake-input wrapper that joins an input or textarea with buttons, text, and dropdowns under one border, styled byte-faithfully to shadcn's new-york-v4 InputGroup. The group owns the focus and invalid rings: its `:has` selectors light the whole composite up when the inner control receives focus or carries `aria-invalid`, while the control itself strips its own ring.
+
+## Install
+
+```bash
+bunx @hellajs/ui add input-group
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. The entry declares `button`, `input`, and `textarea` as registry dependencies, so the add command copies all three into your project alongside the group.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. `InputGroupInput` and `InputGroupTextarea` carry `data-slot="input-group-control"`, which is the hook the group's focus and error selectors read.
+
+```jsx
+import InputGroup, { InputGroupAddon, InputGroupInput, InputGroupText } from './components/input-group';
+
+const Search = () => (
+  <InputGroup>
+    <InputGroupAddon>
+      <InputGroupText>Search</InputGroupText>
+    </InputGroupAddon>
+    <InputGroupInput placeholder="Enter query" />
+  </InputGroup>
+);
+```
+
+`InputGroupAddon` takes `align` (`inline-start`, `inline-end`, `block-start`, `block-end`) to order and pad itself around the control; block alignments stack the group into a column. Clicking an addon focuses the group's input unless the click landed on a button, matching the ref's pointer behavior.
+
+```jsx
+import InputGroup, { InputGroupAddon, InputGroupButton, InputGroupTextarea, InputGroupText } from './components/input-group';
+
+const Comment = () => (
+  <InputGroup>
+    <InputGroupAddon align="block-start">
+      <InputGroupText>New comment</InputGroupText>
+    </InputGroupAddon>
+    <InputGroupTextarea placeholder="Write your reply" />
+    <InputGroupAddon align="block-end">
+      <InputGroupButton>Send</InputGroupButton>
+    </InputGroupAddon>
+  </InputGroup>
+);
+```
+
+The html-format file (`input-group.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import InputGroup, { InputGroupInput, InputGroupText } from './components/input-group';
+
+mount(
+  html`<${InputGroup}>
+    <${InputGroupAddon}><${InputGroupText}>$</${InputGroupText}></${InputGroupAddon}>
+    <${InputGroupInput} placeholder="0.00" />
+  </${InputGroup}>`,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the focus wiring `has-[[data-slot=input-group-control]:focus-visible]:ring-[3px]` and the invalid wiring `has-[[data-slot][aria-invalid=true]]:border-destructive`, and the class arrays wrap in `cn()`.
+
+```jsx
+import InputGroup, { InputGroupInput } from './components/input-group';
+
+const Wide = () => (
+  <InputGroup class="max-w-sm">
+    <InputGroupInput placeholder="Filter tasks" />
+  </InputGroup>
+);
+```
+
+## Disabled State
+
+Pass `disabled` to the group and it renders `data-disabled="true"`; every addon reads that attribute and drops to half opacity. Upstream takes the attribute through an untyped spread; here it is an explicit prop so the css flavor can target it with a stable selector.
+
+## Customizing
+
+The copied file is yours. The css style module exports `base` (the border, the alignment `:has` rules, and the focus and error ring wiring), `addon` plus `addonAlign` (the four alignment maps), `buttonBase` through `sizes` (the inline duplication of the button flavor with the group's tighter size overrides), `text`, and the input and textarea blocks ending in `Control` (the ring-stripping overrides). Resize the group through a `class` override, or retone the error ring by editing the destructive `:has` keys in `base`.

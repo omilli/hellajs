@@ -1,0 +1,47 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import CommandContent from "@ui/concepts/command.mdx";
+
+const title = "Command";
+const description = "Interactive Command demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <CommandContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Button from "../../components/ui/button";
+  import Command, { CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem, CommandShortcut } from "../../components/ui/command";
+  import "../../components/ui/tokens.js";
+
+  const commands = [
+    { value: "theme-light", label: "Light theme", group: "Theme", shortcut: "⌘1" },
+    { value: "theme-dark", label: "Dark theme", group: "Theme", shortcut: "⌘2" },
+    { value: "deploy", label: "Deploy site", group: "Actions", keywords: ["publish", "ship"] },
+    { value: "new-post", label: "New post", group: "Actions", shortcut: "⌘N" },
+  ];
+
+  const paletteOpen = signal(false);
+  const closePalette = () => paletteOpen(false);
+
+  mount(html`<div class="demo-stack">
+    <${Command} items=${commands} class="demo-command" />
+    <div class="demo-row">
+      <${Button} variant="outline" onclick=${() => paletteOpen(true)}>Open palette ⌘K</${Button}>
+    </div>
+    <p class="demo-note">Typing ranks matches (earlier hits, word-boundary starts, keyword bonuses); arrows move the accent row, Enter reports the active value. The palette reuses the dialog surface with escape, outside-press dismissal, and a focus trap.</p>
+    <${CommandDialog} open=${paletteOpen} onClose=${closePalette} title="Command Palette" description="Search for a command to run...">
+      <${CommandInput} placeholder="Type a command or search..." />
+      <${CommandList}>
+        <${CommandGroup} heading="Actions">
+          <${CommandItem} onSelect=${closePalette}>Reload theme<${CommandShortcut}>⌘R</${CommandShortcut}></${CommandItem}>
+          <${CommandItem} onSelect=${closePalette}>Open settings<${CommandShortcut}>⌘S</${CommandShortcut}></${CommandItem}>
+        </${CommandGroup}>
+      </${CommandList}>
+    <//>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -1,0 +1,34 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import BadgeContent from "@ui/concepts/badge.mdx";
+
+const title = "Badge";
+const description = "Interactive Badge demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <BadgeContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Badge from "../../components/ui/badge";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Badge}>Default</${Badge}>
+      <${Badge} variant="secondary">Secondary</${Badge}>
+      <${Badge} variant="destructive">Destructive</${Badge}>
+      <${Badge} variant="outline">Outline</${Badge}>
+      <${Badge} variant="ghost">Ghost</${Badge}>
+      <${Badge} variant="link">Link</${Badge}>
+    </div>
+    <div class="demo-row">
+      <${Badge}>Deployed <span class="ml-1">v2.4</span></${Badge}>
+      <${Badge} variant="secondary">128 open</${Badge}>
+      <${Badge} variant="outline">beta</${Badge}>
+    </div>
+  </div>`, document.getElementById("demo")!);
+</script>

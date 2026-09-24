@@ -1,0 +1,122 @@
+# Empty
+
+An empty-state surface styled byte-faithfully to shadcn's new-york-v4 Empty: a default `Empty` plus named `EmptyHeader`, `EmptyMedia`, `EmptyTitle`, `EmptyDescription`, and `EmptyContent` parts, each carrying its `data-slot` and composable in any arrangement.
+
+## Install
+
+```bash
+bunx @hellajs/ui add empty
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. Every part takes `{ children?, class? }`, and `EmptyMedia` adds a `variant` prop: `default` is a bare wrapper, while `icon` renders the rounded muted 2.5rem icon tile.
+
+```jsx
+import Empty, { EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
+
+const NoResults = () => (
+  <Empty>
+    <EmptyHeader>
+      <EmptyMedia variant="icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+      </EmptyMedia>
+      <EmptyTitle>No results found</EmptyTitle>
+      <EmptyDescription>Try a different keyword or clear your filters.</EmptyDescription>
+    </EmptyHeader>
+    <EmptyContent>
+      <p>Queries match against file names and contents.</p>
+    </EmptyContent>
+  </Empty>
+);
+```
+
+The media variant stays plain for illustrations or avatars; the icon tile styling only applies when you ask for it:
+
+```jsx
+import Empty, { EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
+
+const NoAccess = () => (
+  <Empty>
+    <EmptyHeader>
+      <EmptyMedia>
+        <img src="/illustrations/lock.svg" alt="" />
+      </EmptyMedia>
+      <EmptyTitle>Access restricted</EmptyTitle>
+    </EmptyHeader>
+    <EmptyContent>Ask an admin for permission.</EmptyContent>
+  </Empty>
+);
+```
+
+The html-format file (`empty.ts`, copied with `--format html`) renders through a template instead of JSX; each part is a plain function call:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Empty, { EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
+
+mount(
+  html`
+    <${Empty}>
+      ${EmptyHeader({
+        children: [
+          EmptyMedia({ variant: 'icon' }),
+          EmptyTitle({ children: 'No results found' }),
+          EmptyDescription({ children: 'Try a different keyword or clear your filters.' }),
+        ],
+      })}
+    </${Empty}>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`border-dashed`, `bg-muted`), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import Empty, { EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
+
+const NoPosts = () => (
+  <Empty class="border">
+    <EmptyHeader>
+      <EmptyTitle>No posts yet</EmptyTitle>
+      <EmptyDescription>Publish your first post to see it here.</EmptyDescription>
+    </EmptyHeader>
+    <EmptyContent>Posts are private until published.</EmptyContent>
+  </Empty>
+);
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Empty, { EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
+
+mount(
+  Empty({
+    children: [
+      EmptyHeader({ children: EmptyTitle({ children: 'No posts yet' }) }),
+      EmptyContent({ children: 'Posts are private until published.' }),
+    ],
+  }),
+  '#app',
+);
+```
+
+## Customizing
+
+The copied file is yours. The style module exports one class per part (`base`, `header`, `media`, `title`, `description`, `content`) plus `mediaVariants` (the `default`/`icon` pair); each part's compose bakes its own class plus `props.class`. Every part renders its `data-slot` (`empty`, `empty-header`, `empty-icon`, `empty-title`, `empty-description`, `empty-content`), so one-off overrides can also target parts through the `[data-slot]` attribute selectors. The root's dashed border comes up at the `md` breakpoint's larger padding automatically; the surface itself stays transparent until you give it a border or background.

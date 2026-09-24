@@ -1,0 +1,30 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import ProgressContent from "@ui/concepts/progress.mdx";
+
+const title = "Progress";
+const description = "Interactive Progress demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <ProgressContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Progress from "../../components/ui/progress";
+  import "../../components/ui/tokens.js";
+
+  const uploaded = signal(40);
+  const scanning = signal(null);
+  const step = () => uploaded(uploaded() >= 100 ? 0 : uploaded() + 20);
+  mount(html`<div class="demo-stack">
+    <div class="flex flex-col gap-2">
+      <${Progress} value=${() => uploaded()} />
+      <button class="w-fit rounded-md border px-2 py-1 text-xs" onclick=${step}>Advance upload (${() => uploaded()}%)</button>
+    </div>
+    <${Progress} value=${() => scanning()} aria-label="Indeterminate scan" />
+  </div>`, document.getElementById("demo")!);
+</script>

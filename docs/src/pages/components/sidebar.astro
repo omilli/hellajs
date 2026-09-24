@@ -1,0 +1,66 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SidebarContent from "@ui/concepts/sidebar.mdx";
+
+const title = "Sidebar";
+const description = "Interactive Sidebar demo running the CLI-vendored css-flavor source the same `add` command installs, with the provider-owned open and mobile state and the full menu part family.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <SidebarContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarSeparator,
+    SidebarTrigger,
+  } from "../../components/ui/sidebar";
+  import "../../components/ui/tokens.js";
+
+  mount(html`
+    <${SidebarProvider}>
+      ${(state) => html`
+        <div class="demo-stack">
+          <${Sidebar} open=${state.open} mobile=${state.mobile} openMobile=${state.openMobile} onOpenMobileChange=${state.setOpenMobile} collapsible="icon">
+            <${SidebarHeader}><span class="demo-note">Acme Inc</span></${SidebarHeader}>
+            <${SidebarContent}>
+              <${SidebarGroup}>
+                <${SidebarGroupLabel}>Application</${SidebarGroupLabel}>
+                <${SidebarGroupContent}>
+                  <${SidebarMenu}>
+                    <${SidebarMenuItem}>
+                      <${SidebarMenuButton} active tooltip="Home" open=${state.open} mobile=${state.mobile}>Home</${SidebarMenuButton}>
+                    </${SidebarMenuItem}>
+                    <${SidebarMenuItem}>
+                      <${SidebarMenuButton} tooltip="Search" open=${state.open} mobile=${state.mobile}>Search</${SidebarMenuButton}>
+                    </${SidebarMenuItem}>
+                  </${SidebarMenu}>
+                </${SidebarGroupContent}>
+              </${SidebarGroup}>
+            </${SidebarContent}>
+            <${SidebarSeparator} />
+            <${SidebarFooter}><span class="demo-note">Ctrl+B toggles</span></${SidebarFooter}>
+          </${Sidebar}>
+          <${SidebarInset}>
+            <${SidebarTrigger} onToggle=${state.onToggle} />
+            <p class="demo-note">The panel collapses to icons on toggle; menu buttons show their tooltip while collapsed, and the shell switches to a sheet under 769px.</p>
+          </${SidebarInset}>
+        </div>
+      `}
+    </${SidebarProvider}>
+  `, document.getElementById("demo")!);
+</script>

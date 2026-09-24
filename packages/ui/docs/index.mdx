@@ -30,17 +30,32 @@ The copied file is yours to edit; the style declarations ride inside it, so noth
 
 ### Registry
 
-Seven entries: five components plus the two shared entries every project themes and composes through.
+Sixty-one entries: fifty-nine components plus `theme` and `cn`, the shared entries every project themes and composes through. Every component follows one shape: `<name>.tsx` plus `<name>.ts` (html format) copied per `add`, css adds `@hellajs/css`, tailwind adds `clsx` and `tailwind-merge`, and registry dependencies copy recursively alongside.
 
 | Entry | Styles | Copied files | Extra peers |
 |---|---|---|---|
 | `theme` | css, tailwind | `tokens.js` (css) or `theme.css` + `cn.ts` (tailwind) | css: `@hellajs/css` |
 | `cn` | tailwind only | `cn.ts` | `clsx`, `tailwind-merge` |
-| `button` | css, tailwind | `button.tsx`, `button.ts` (html format) | css: `@hellajs/css`; tailwind: `clsx`, `tailwind-merge` |
-| `input` | css, tailwind | `input.tsx`, `input.ts` (html format) | css: `@hellajs/css`; tailwind: `clsx`, `tailwind-merge` |
-| `card` | css, tailwind | `card.tsx`, `card.ts` (html format) | css: `@hellajs/css`; tailwind: `clsx`, `tailwind-merge` |
-| `dialog` | css, tailwind | `dialog.tsx`, `dialog.ts` (html format) | none beyond the style extras |
-| `tabs` | css, tailwind | `tabs.tsx`, `tabs.ts` (html format) | none beyond the style extras |
+
+The component catalog, grouped by family:
+
+| Family | Components |
+|---|---|
+| Core | `button`, `input`, `card`, `dialog`, `tabs` |
+| Statics | `badge`, `alert`, `kbd`, `separator`, `skeleton`, `spinner`, `empty`, `label` |
+| Forms and data | `textarea`, `native-select`, `table`, `aspect-ratio`, `avatar`, `progress`, `input-otp`, `form` |
+| Composites | `button-group`, `input-group`, `field`, `pagination`, `item`, `marker`, `direction` |
+| Chat | `bubble`, `message`, `message-scroller`, `attachment` |
+| Disclosure | `collapsible`, `accordion` |
+| Selection | `checkbox`, `radio-group`, `switch`, `toggle`, `toggle-group` |
+| Sliders and panes | `slider`, `resizable` |
+| Anchored surfaces | `tooltip`, `hover-card`, `popover` |
+| Menus and navigation | `dropdown-menu`, `context-menu`, `menubar`, `navigation-menu`, `breadcrumb` |
+| Select and command | `select`, `combobox`, `command` |
+| Dialog variants | `alert-dialog`, `sheet`, `drawer` |
+| Feedback and focus | `sonner`, `scroll-area` |
+| Calendar | `calendar` |
+| Layout shells | `sidebar` |
 
 `add` resolves dependencies recursively: adding any component brings `theme` along, and tailwind adds also bring `cn`.
 

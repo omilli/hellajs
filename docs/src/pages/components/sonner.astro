@@ -1,0 +1,51 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SonnerContent from "@ui/concepts/sonner.mdx";
+
+const title = "Sonner";
+const description = "Interactive Sonner toast demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <SonnerContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Button from "../../components/ui/button";
+  import Toaster, { toast } from "../../components/ui/sonner";
+  import "../../components/ui/tokens.js";
+
+  const pending = signal(false);
+
+  const firePromise = () => {
+    pending(true);
+    toast.promise(
+      new Promise<string>((resolve) => setTimeout(() => resolve("report.pdf"), 1600)),
+      {
+        loading: "Uploading",
+        success: (name) => `Uploaded ${name}`,
+        error: "Upload failed",
+      },
+    );
+    setTimeout(() => pending(false), 1700);
+  };
+
+  mount(html`<div class="demo-stack">
+    <${Toaster} richColors />
+    <div class="demo-row">
+      <${Button} onclick=${() => toast("Saved", { description: "Your work is safe.", type: "success" })}>Success</${Button}>
+      <${Button} onclick=${() => toast("Something broke.", { type: "error" })}>Error</${Button}>
+      <${Button} onclick=${() => toast("Disk almost full.", { type: "warning" })}>Warning</${Button}>
+      <${Button} onclick=${() => toast("New version available.", { type: "info" })}>Info</${Button}>
+    </div>
+    <div class="demo-row">
+      <${Button} variant="outline" onclick=${() => toast("Deleted", { action: { label: "Undo", onclick: () => toast("Restored.", { type: "success" }) } }) }}>Action toast</${Button}>
+      <${Button} variant="outline" onclick=${firePromise}>${() => (pending() ? "Uploading…" : "Promise toast")}</${Button}>
+      <${Button} variant="outline" onclick=${() => toast.dismiss()}>Dismiss all</${Button}>
+    </div>
+    <p class="demo-note">Toasts stack bottom-right (three visible, older ones shrink and retire), pause their countdown on hover, and swipe away past 45% of the toast width. The X button appears on hover.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

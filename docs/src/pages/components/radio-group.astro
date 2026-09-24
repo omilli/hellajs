@@ -1,0 +1,39 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import RadioGroupContent from "@ui/concepts/radio-group.mdx";
+
+const title = "Radio Group";
+const description = "Interactive Radio Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <RadioGroupContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import RadioGroup from "../../components/ui/radio-group";
+  import "../../components/ui/tokens.js";
+
+  const plan = signal("pro");
+  mount(html`<div class="demo-stack">
+    <${RadioGroup}
+      items=${[
+        { value: "free", label: "Free" },
+        { value: "pro", label: "Pro" },
+        { value: "team", label: "Team", disabled: true },
+      ]}
+      value=${() => plan()}
+      onValueChange=${(next: string) => plan(next)}
+    />
+    <p class="demo-note">Selected plan: ${() => plan()}</p>
+    <${RadioGroup}
+      items=${[
+        { value: "dark", label: "Dark" },
+        { value: "light", label: "Light" },
+      ]}
+    />
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -1,0 +1,30 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import CollapsibleContent from "@ui/concepts/collapsible.mdx";
+
+const title = "Collapsible";
+const description = "Interactive Collapsible demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <CollapsibleContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Collapsible from "../../components/ui/collapsible";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <${Collapsible}
+      defaultOpen
+      trigger="What ships in the box?"
+      content=${html`<p class="demo-note">One editable file per component, a theme entry, and no runtime dependency.</p>`}
+    />
+    <${Collapsible}
+      trigger="Can I edit the copied source?"
+      content=${html`<p class="demo-note">Yes. The file lands in your project and the style declarations ride inside it.</p>`}
+    />
+  </div>`, document.getElementById("demo")!);
+</script>

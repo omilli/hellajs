@@ -1,0 +1,36 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import BubbleContent from "@ui/concepts/bubble.mdx";
+
+const title = "Bubble";
+const description = "Interactive Bubble demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <BubbleContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { Bubble, BubbleContent, BubbleGroup, BubbleReactions } from "../../components/ui/bubble";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <${BubbleGroup}>
+      <${Bubble} variant="outline">
+        <${BubbleContent}>How does the auto-stick scroller know I am at the bottom?</${BubbleContent}>
+      </${Bubble}>
+      <${Bubble} align="end">
+        <${BubbleContent}>A scroll listener watches the distance to the bottom.</${BubbleContent}>
+      </${Bubble}>
+      <${Bubble} variant="muted">
+        <${BubbleContent}>Shipping the demo today.</${BubbleContent}>
+        <${BubbleReactions}>
+          <button>👍 3</button>
+          <button>🎉 1</button>
+        </${BubbleReactions}>
+      </${Bubble}>
+    </${BubbleGroup}>
+  </div>`, document.getElementById("demo")!);
+</script>

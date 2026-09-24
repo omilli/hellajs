@@ -1,0 +1,61 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import NavigationMenuTitle from "@ui/concepts/navigation-menu.mdx";
+
+const title = "Navigation Menu";
+const description = "Interactive Navigation Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <NavigationMenuTitle />
+</MainLayout>
+
+<script>
+  import { signal } from "@hellajs/core";
+  import { html, mount } from "@hellajs/dom";
+  import NavigationMenu from "../../components/ui/navigation-menu";
+  import {
+    NavigationMenuList,
+    NavigationMenuItem,
+    NavigationMenuTrigger,
+    NavigationMenuContent,
+    NavigationMenuLink,
+    NavigationMenuViewport,
+    NavigationMenuIndicator,
+  } from "../../components/ui/navigation-menu";
+  import "../../components/ui/tokens.js";
+
+  const value = signal("");
+  const toggle = (id: string): void => value(value() === id ? "" : id);
+
+  const trigger = (id: string, label: string) => html`
+    <${NavigationMenuTrigger} value=${id} active=${() => value() === id} onActivate=${() => toggle(id)}>${label}</${NavigationMenuTrigger}>
+  `;
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${NavigationMenu} onValueChange=${(next: string) => value(next)}>
+        <${NavigationMenuList}>
+          <${NavigationMenuItem}>
+            ${trigger("learn", "Learn")}
+            <${NavigationMenuContent} active=${() => value() === "learn"}>
+              <${NavigationMenuLink} href=${"#intro"}>Introduction</${NavigationMenuLink}>
+              <${NavigationMenuLink} href=${"#themes"}>Themes and Tokens</${NavigationMenuLink}>
+            </${NavigationMenuContent}>
+          </${NavigationMenuItem}>
+          <${NavigationMenuItem}>
+            ${trigger("reference", "Reference")}
+            <${NavigationMenuContent} active=${() => value() === "reference"}>
+              <${NavigationMenuLink} href=${"#components"}>Components</${NavigationMenuLink}>
+              <${NavigationMenuLink} href=${"#behaviors"}>Headless Behaviors</${NavigationMenuLink}>
+            </${NavigationMenuContent}>
+          </${NavigationMenuItem}>
+        </${NavigationMenuList}>
+        <${NavigationMenuViewport} active=${() => value() !== ""} />
+        <${NavigationMenuIndicator} />
+      </${NavigationMenu}>
+    </div>
+    <p class="demo-note">Click a trigger to open its panel in the shared viewport; the indicator slides under the active trigger; click again to close.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

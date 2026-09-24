@@ -1,0 +1,41 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import EmptyContentPage from "@ui/concepts/empty.mdx";
+
+const title = "Empty";
+const description = "Interactive Empty demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <EmptyContentPage />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Empty, { EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../../components/ui/empty";
+  import "../../components/ui/tokens.js";
+
+  const searchIcon = html`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>`;
+  const bellIcon = html`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>`;
+
+  mount(html`<div class="demo-stack">
+    <${Empty}>
+      <${EmptyHeader}>
+        <${EmptyMedia} variant="icon">${searchIcon}</${EmptyMedia}>
+        <${EmptyTitle}>No results found</${EmptyTitle}>
+        <${EmptyDescription}>Try a different keyword or clear your filters.</${EmptyDescription}>
+      </${EmptyHeader}>
+      <${EmptyContent}>
+        <p>Queries match against file names and contents.</p>
+      </${EmptyContent}>
+    </${Empty}>
+    <${Empty}>
+      <${EmptyHeader}>
+        <${EmptyMedia} variant="icon">${bellIcon}</${EmptyMedia}>
+        <${EmptyTitle}>No notifications</${EmptyTitle}>
+        <${EmptyDescription}>You are all caught up. New activity will show up here.</${EmptyDescription}>
+      </${EmptyHeader}>
+    </${Empty}>
+  </div>`, document.getElementById("demo")!);
+</script>

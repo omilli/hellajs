@@ -1,0 +1,73 @@
+# computeAnchorPosition
+
+Computes fixed-position coordinates for a floating rect against an anchor rect: pure math with no DOM access, and the seam [`anchorPosition`](/reference/dom/behaviors) delegates to.
+
+## API
+
+```typescript
+function computeAnchorPosition(
+  anchor: { top: number; left: number; width: number; height: number },
+  floating: { width: number; height: number },
+  viewport: { width: number; height: number },
+  options?: AnchorPositionOptions
+): { x: number; y: number; placement: Placement; width: number }
+```
+
+- `anchor`: Anchor rect in `getBoundingClientRect()` shape.
+- `floating`: Floating size in `offsetWidth`/`offsetHeight` shape.
+- `viewport`: Viewport size the placement must fit.
+- `options`: `placement` (default `"bottom"`), `offset` gap in px, `matchAnchorWidth`, and `dir` (default `"ltr"`).
+- **Returns**: Fixed coordinates, the final placement after any flip, and the resolved width.
+
+`Placement` is a side plus optional alignment:
+
+```typescript
+type Placement =
+  | "top"
+  | "top-start"
+  | "top-end"
+  | "bottom"
+  | "bottom-start"
+  | "bottom-end"
+  | "left"
+  | "left-start"
+  | "left-end"
+  | "right"
+  | "right-start"
+  | "right-end";
+```
+
+## Basic Usage
+
+```typescript
+import { computeAnchorPosition } from "@hellajs/dom";
+
+const result = computeAnchorPosition(
+  { top: 100, left: 24, width: 96, height: 32 },
+  { width: 200, height: 120 },
+  { width: 1024, height: 768 },
+  { placement: "top", offset: 8 }
+);
+// No room above: flips to "bottom" and clamps x into the viewport
+// result: { x: 0, y: 140, placement: "bottom", width: 200 }
+```
+
+## Key Concepts
+
+### Pure Rect Math, No DOM
+
+The function reads no DOM: plain rect objects in, coordinates out. Test environments with stubbed rects (HappyDOM returns all zeros) and server code can both compute placements. Call it directly to predict where [`anchorPosition`](/reference/dom/behaviors) will place an overlay.
+
+### Flip, Then Shift
+
+When the floating rect does not fit on the requested side, the side flips to its opposite (`top` to `bottom`, `left` to `right`; a vertical side stays vertical). Both axes then shift to clamp inside the viewport, so a `bottom-start` menu anchored near the right edge never overflows it. The returned `placement` reflects the post-flip side.
+
+### Direction Resolves Start and End
+
+`dir` decides which edge `-start` and `-end` mean on the horizontal axis: in `"rtl"`, `bottom-start` aligns to the anchor's right edge. `left` and `right` placements align vertically, so direction never affects their `-start`/`-end`.
+
+## Important Considerations
+
+### Input Validation
+
+`computeAnchorPosition()` throws when `anchor`, `floating`, or `viewport` is `null` or `undefined`: `[dom] computeAnchorPosition: anchor is required`, `[dom] computeAnchorPosition: floating is required`, `[dom] computeAnchorPosition: viewport is required`.

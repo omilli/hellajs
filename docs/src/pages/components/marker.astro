@@ -1,0 +1,31 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import MarkerContent from "@ui/concepts/marker.mdx";
+
+const title = "Marker";
+const description = "Interactive Marker demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <MarkerContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Marker, { MarkerContent, MarkerIcon } from "../../components/ui/marker";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <${Marker}>
+      <${MarkerIcon}>✳</${MarkerIcon}>
+      <${MarkerContent}>Synced 12 entries just now</${MarkerContent}>
+    </${Marker}>
+    <${Marker} variant="separator">
+      <${MarkerContent}>Chapter 4</${MarkerContent}>
+    </${Marker}>
+    <${Marker} variant="border">
+      <${MarkerContent}>End of the list</${MarkerContent}>
+    </${Marker}>
+  </div>`, document.getElementById("demo")!);
+</script>

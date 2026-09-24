@@ -1,0 +1,33 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SkeletonContent from "@ui/concepts/skeleton.mdx";
+
+const title = "Skeleton";
+const description = "Interactive Skeleton demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <SkeletonContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Skeleton from "../../components/ui/skeleton";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <div class="flex items-center gap-4">
+      <${Skeleton} class="size-12 rounded-full" />
+      <div class="flex flex-col gap-2">
+        <${Skeleton} class="h-4 w-32" />
+        <${Skeleton} class="h-4 w-24" />
+      </div>
+    </div>
+    <div class="flex flex-col gap-2">
+      <${Skeleton} class="h-4 w-full" />
+      <${Skeleton} class="h-4 w-full" />
+      <${Skeleton} class="h-4 w-2/3" />
+    </div>
+  </div>`, document.getElementById("demo")!);
+</script>

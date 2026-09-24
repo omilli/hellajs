@@ -1,0 +1,90 @@
+# Label
+
+A form-field caption styled byte-faithfully to shadcn's new-york-v4 Label: the semantic `label` element with a `for` passthrough, plus the group- and peer-driven disabled styles shadcn applies in form layouts.
+
+## Install
+
+```bash
+bunx @hellajs/ui add label
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The root carries `data-slot="label"`, and `for` lands directly on the element so clicking the caption focuses the input without extra wiring.
+
+```jsx
+import Label from './components/label';
+
+const Name = () => (
+  <div class="flex flex-col gap-2">
+    <Label for="name">Project name</Label>
+    <input id="name" placeholder="acme-site" />
+  </div>
+);
+```
+
+The disabled styles follow shadcn's form conventions: a label inside an element marked `.group` with `data-disabled="true"` dims and drops pointer events, and a label following a disabled `.peer` sibling shows the not-allowed cursor. Neither needs props; the ancestor and sibling states drive both:
+
+```jsx
+import Label from './components/label';
+
+const Fieldset = () => (
+  <div class="group" data-disabled="true">
+    <Label for="region">Region</Label>
+  </div>
+);
+```
+
+The html-format file (`label.ts`, copied with `--format html`) renders through a template instead of JSX; children sit between the component tags:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Label from './components/label';
+
+mount(
+  html`<div class="flex flex-col gap-2">
+    <${Label} for="name">Project name</${Label}>
+    <input id="name" placeholder="acme-site" />
+  </div>`,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied string uses shadcn's literal utilities verbatim (including the `group-data-[disabled=true]:*` and `peer-disabled:*` forms), and the class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import Label from './components/label';
+
+const Email = () => (
+  <div class="flex flex-col gap-2">
+    <Label for="email" class="sr-only">Email</Label>
+    <input id="email" type="email" />
+  </div>
+);
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Label from './components/label';
+
+mount(Label({ for: 'email', children: 'Email' }), '#app');
+```
+
+## Customizing
+
+The copied file is yours. The css style module exports a single `base` carrying the layout, typography, and the two disabled-state selectors (ancestor `.group[data-disabled]` and sibling `.peer:disabled`); the compose bakes `base` plus `props.class`. The label reads no tokens beyond the palette, so it follows your theme's foreground automatically.

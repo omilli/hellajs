@@ -87,6 +87,708 @@
           "registryDependencies": ["theme", "cn"]
         }
       }
+    },
+    "badge": {
+      "files": ["badge.tsx", "badge-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "alert": {
+      "files": ["alert.tsx", "alert-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "kbd": {
+      "files": ["kbd.tsx", "kbd-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "separator": {
+      "files": ["separator.tsx", "separator-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "skeleton": {
+      "files": ["skeleton.tsx", "skeleton-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "spinner": {
+      "files": ["spinner.tsx", "spinner-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "empty": {
+      "files": ["empty.tsx", "empty-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "label": {
+      "files": ["label.tsx", "label-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "textarea": {
+      "files": ["textarea.tsx", "textarea-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "native-select": {
+      "files": ["native-select.tsx", "native-select-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "aspect-ratio": {
+      "files": ["aspect-ratio.tsx", "aspect-ratio-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "avatar": {
+      "files": ["avatar.tsx", "avatar-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "progress": {
+      "files": ["progress.tsx", "progress-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "table": {
+      "files": ["table.tsx", "table-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "button-group": {
+      "files": ["button-group.tsx", "button-group-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "separator"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "separator"]
+        }
+      }
+    },
+    "input-group": {
+      "files": ["input-group.tsx", "input-group-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button", "input", "textarea"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button", "input", "textarea"]
+        }
+      }
+    },
+    "field": {
+      "files": ["field.tsx", "field-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "label", "separator"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "label", "separator"]
+        }
+      }
+    },
+    "pagination": {
+      "files": ["pagination.tsx", "pagination-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button"]
+        }
+      }
+    },
+    "item": {
+      "files": ["item.tsx", "item-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "separator"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "separator"]
+        }
+      }
+    },
+    "marker": {
+      "files": ["marker.tsx", "marker-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "direction": {
+      "files": ["direction.tsx", "direction-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "bubble": {
+      "files": ["bubble.tsx", "bubble-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "message": {
+      "files": ["message.tsx", "message-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "message-scroller": {
+      "files": ["message-scroller.tsx", "message-scroller-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button"]
+        }
+      }
+    },
+    "attachment": {
+      "files": ["attachment.tsx", "attachment-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button"]
+        }
+      }
+    },
+    "collapsible": {
+      "files": ["collapsible.tsx", "collapsible-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "accordion": {
+      "files": ["accordion.tsx", "accordion-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "checkbox": {
+      "files": ["checkbox.tsx", "checkbox-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "radio-group": {
+      "files": ["radio-group.tsx", "radio-group-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "switch": {
+      "files": ["switch.tsx", "switch-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "toggle": {
+      "files": ["toggle.tsx", "toggle-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "toggle-group": {
+      "files": ["toggle-group.tsx", "toggle-group-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "toggle"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "toggle"]
+        }
+      }
+    },
+    "slider": {
+      "files": ["slider.tsx", "slider-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "resizable": {
+      "files": ["resizable.tsx", "resizable-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "tooltip": {
+      "files": ["tooltip.tsx", "tooltip-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "hover-card": {
+      "files": ["hover-card.tsx", "hover-card-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "popover": {
+      "files": ["popover.tsx", "popover-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "dropdown-menu": {
+      "files": ["dropdown-menu.tsx", "dropdown-menu-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button"]
+        }
+      }
+    },
+    "context-menu": {
+      "files": ["context-menu.tsx", "context-menu-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button"]
+        }
+      }
+    },
+    "menubar": {
+      "files": ["menubar.tsx", "menubar-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "navigation-menu": {
+      "files": ["navigation-menu.tsx", "navigation-menu-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "breadcrumb": {
+      "files": ["breadcrumb.tsx", "breadcrumb-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button", "dropdown-menu"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button", "dropdown-menu"]
+        }
+      }
+    },
+    "select": {
+      "files": ["select.tsx", "select-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button"]
+        }
+      }
+    },
+    "combobox": {
+      "files": ["combobox.tsx", "combobox-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button", "input-group"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button", "input-group"]
+        }
+      }
+    },
+    "command": {
+      "files": ["command.tsx", "command-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "dialog"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "dialog"]
+        }
+      }
+    },
+    "alert-dialog": {
+      "files": ["alert-dialog.tsx", "alert-dialog-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button"]
+        }
+      }
+    },
+    "sheet": {
+      "files": ["sheet.tsx", "sheet-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "drawer": {
+      "files": ["drawer.tsx", "drawer-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "sonner": {
+      "files": ["sonner.tsx", "sonner-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "scroll-area": {
+      "files": ["scroll-area.tsx", "scroll-area-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "calendar": {
+      "files": ["calendar.tsx", "calendar-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button"]
+        }
+      }
+    },
+    "input-otp": {
+      "files": ["input-otp.tsx", "input-otp-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn"]
+        }
+      }
+    },
+    "form": {
+      "files": ["form.tsx", "form-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "label"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "label"]
+        }
+      }
+    },
+    "sidebar": {
+      "files": ["sidebar.tsx", "sidebar-html.ts"],
+      "deps": ["@hellajs/core", "@hellajs/dom"],
+      "styles": {
+        "css": {
+          "deps": ["@hellajs/css"],
+          "registryDependencies": ["theme", "button", "input", "separator", "skeleton", "sheet", "tooltip"]
+        },
+        "tailwind": {
+          "registryDependencies": ["theme", "cn", "button", "input", "separator", "skeleton", "sheet", "tooltip"]
+        }
+      }
     }
   }
 }

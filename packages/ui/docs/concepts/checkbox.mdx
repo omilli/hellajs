@@ -1,0 +1,108 @@
+# Checkbox
+
+A checked-state control styled to shadcn's Checkbox: a button carrying `role="checkbox"` whose state lives in a signal. The root renders the `aria-checked` and `data-state` attributes and shows the check icon inside its indicator whenever the box is checked or indeterminate.
+
+## Install
+
+```bash
+bunx @hellajs/ui add checkbox
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Usage
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `checked` | `boolean \| (() => boolean)` | Uncontrolled seed or controlled accessor (see below) |
+| `indeterminate` | `boolean \| (() => boolean)` | Mixed state. Wins over `checked` for rendering: `aria-checked="mixed"` and `data-state="indeterminate"` |
+| `onCheckedChange` | `(checked: boolean) => void` | Fires on every click with the requested next value |
+| `disabled` | `boolean` | Blocks clicks and renders the disabled attribute |
+| `ariaInvalid` | `boolean` | Renders `aria-invalid="true"`, which the invalid ring styles key off |
+| `id` | `string` | Rendered on the button for label pairing |
+| `class` | `string` | Lands on the root next to the component class |
+
+```jsx
+import Checkbox from './components/checkbox';
+
+const Settings = () => (
+  <label>
+    <Checkbox id="notifications" /> Email notifications
+  </label>
+);
+```
+
+The html-format file (`checkbox.ts`, copied with `--format html`) works the same way from a template:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Checkbox from './components/checkbox';
+
+mount(
+  html`<label><${Checkbox} id="terms" /> Accept the terms</label>`,
+  '#app',
+);
+```
+
+## Controlled and Uncontrolled
+
+Without `checked`, the root owns a signal seeded by a boolean `checked` prop and flips it on click. Pass an accessor and the checkbox becomes controlled: clicks turn into `onCheckedChange` requests without writing state, so a parent signal that ignores the request keeps the box unchanged.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Checkbox from './components/checkbox';
+
+const subscribed = signal(false);
+
+const Controlled = () => (
+  <label>
+    <Checkbox
+      checked={() => subscribed()}
+      onCheckedChange={(next) => subscribed(next)}
+    />
+    Subscribe
+  </label>
+);
+```
+
+`indeterminate` follows the same shape: a boolean seeds it, an accessor controls it. Clicking a mixed box reports `true` and clears an uncontrolled mixed state; a controlled mixed state clears only when the parent says so. The icon stays the check glyph in every state, matching the ref: only `aria-checked` and `data-state` distinguish mixed from checked.
+
+## Accessibility
+
+The root is a `button` element, so Space toggles it through native activation and it participates in tab order.
+
+| Aspect | Value |
+|---|---|
+| Role | `checkbox` on the root button |
+| State | `aria-checked` is `true`, `false`, or `mixed`; `data-state` is `checked`, `unchecked`, or `indeterminate` |
+| Keyboard | Space toggles; the button is disabled for pointer and keyboard while `disabled` |
+| Labeling | Pair with a `label` element or `aria-labelledby` through the `id` prop |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the root button, including the focus ring and checked palette), `indicator` (the grid-centered icon slot), and `icon` (the check glyph size).
+
+```jsx
+import Checkbox from './components/checkbox';
+
+const Padded = () => <Checkbox class="m-2" ariaInvalid={true} />;
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The checked palette keys off the root's own `data-state` (`data-[state=checked]:bg-primary`), and the dark variants read the `.dark` ancestor.
+
+## Customizing
+
+The copied file is yours. `props.class` lands on the root next to `base`, and the indicator and icon maps restyle every checkbox at once. The indicator element stays mounted in every state; only the icon inside it appears and disappears, so adding a transition on the indicator survives state flips.

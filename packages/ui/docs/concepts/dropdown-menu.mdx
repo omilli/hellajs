@@ -1,0 +1,228 @@
+# Dropdown Menu
+
+A button-triggered menu styled to shadcn's DropdownMenu: the trigger opens a portaled, anchored surface of items; checkbox and radio items select state; submenus open on hover or ArrowRight; Escape pops one layer at a time and item selection closes the whole menu.
+
+## Install
+
+```bash
+bunx @hellajs/ui add dropdown-menu
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The menu wires its positioning, dismissal, typeahead, and layering from the copied file using `@hellajs/dom` behavior functions. The entry also copies `button`: the composed trigger is Button-wrapped (the outline variant), matching the composition the upstream docs recommend.
+
+## Opening and Closing
+
+The composed `DropdownMenu` wraps its children in the trigger button and takes the items through the `content` prop. Clicking toggles; ArrowDown opens; the trigger carries `data-state`, `aria-expanded`, and `aria-haspopup="menu"`, and focus returns to it when the menu closes.
+
+```jsx
+import DropdownMenu from './components/dropdown-menu';
+import { DropdownMenuItem } from './components/dropdown-menu';
+
+const Actions = () => (
+  <DropdownMenu
+    content={
+      <>
+        <DropdownMenuItem onclick={() => console.log('opened')}>Open File</DropdownMenuItem>
+        <DropdownMenuItem shortcut="⌘N">New Window</DropdownMenuItem>
+      </>
+    }
+  >
+    Actions
+  </DropdownMenu>
+);
+```
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `open` | - | Controlled open accessor; when given, the root never writes its internal signal |
+| `onOpenChange` | - | Reports every requested open and close flip |
+| `children` | - | The trigger label |
+| `content` | - | The menu items, portaled into `document.body` while open |
+| `class` | - | Extra classes on the trigger button |
+
+Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus and popovers dismiss one layer at a time. Activating an item closes every open menu layer (upstream close-on-select); the items fire that through a document-level activation event, which is also how Enter and Space close from the keyboard. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
+
+The panel positions through [`anchorPosition`](/reference/dom/behaviors): fixed coordinates against the trigger, flipping on viewport collision, repositioning on scroll and resize. The menu is non-modal: there is no focus trap, and focus moves to the first activatable item on open.
+
+## Structure Parts
+
+Thirteen named parts ship beside the default `DropdownMenu`: `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuGroup`, `DropdownMenuItem`, `DropdownMenuCheckboxItem`, `DropdownMenuRadioGroup`, `DropdownMenuRadioItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`, `DropdownMenuShortcut`, `DropdownMenuSub`, `DropdownMenuSubTrigger`, and `DropdownMenuSubContent`. hella has no Radix-style context, so the parts that upstream wires through a provider take their state as explicit props: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal.
+
+| Part | Props beyond `children`/`class` | Renders |
+|---|---|---|
+| `DropdownMenuTrigger` | - | The manual trigger button (`aria-haspopup="menu"`) |
+| `DropdownMenuContent` | `state`, `id`, `side`, `align`, `sideOffset`, `alignOffset`, `anchor`, `onDismiss`, `onExited`, `onArrowLeft` | The `role="menu"` surface with the full keyboard model |
+| `DropdownMenuGroup` | - | A passthrough grouping div |
+| `DropdownMenuItem` | `destructive`, `inset`, `disabled`, `onclick`, `shortcut` | A `role="menuitem"` row; activation closes every open layer |
+| `DropdownMenuCheckboxItem` | `checked`, `onCheckedChange`, `disabled` | A `role="menuitemcheckbox"` row with the check indicator |
+| `DropdownMenuRadioGroup` | `items`, `value`, `onValueChange` | A group rendering one radio item per entry |
+| `DropdownMenuRadioItem` | `value`, `checked`, `onSelect`, `disabled` | A `role="menuitemradio"` row with the circle indicator |
+| `DropdownMenuLabel` | `inset` | A section label |
+| `DropdownMenuSeparator` | - | A `-mx-1` hairline |
+| `DropdownMenuShortcut` | - | The trailing key-hint span (also rendered by `Item`'s `shortcut` prop) |
+| `DropdownMenuSub` | `content` | A sub-trigger plus its portaled sub-content, open state owned here |
+| `DropdownMenuSubTrigger` | `inset`, `state`, `onOpen` | The manual sub-trigger row (chevron, `aria-haspopup`) |
+| `DropdownMenuSubContent` | `state`, `side`, `align`, `anchor`, `onDismiss`, `onExited`, `onArrowLeft`, `onPointerEnter` | The `role="menu"` sub-surface |
+
+Checkbox and radio state in a menu, one composition:
+
+```jsx
+import { signal } from '@hellajs/core';
+import DropdownMenu from './components/dropdown-menu';
+import {
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from './components/dropdown-menu';
+
+const bold = signal(false);
+const size = signal('medium');
+
+const Format = () => (
+  <DropdownMenu
+    content={
+      <>
+        <DropdownMenuLabel>Formatting</DropdownMenuLabel>
+        <DropdownMenuCheckboxItem
+          checked={() => bold()}
+          onCheckedChange={(next) => bold(next)}
+        >
+          Bold
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup
+          items={[
+            { value: 'small', label: 'Small' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'large', label: 'Large' },
+          ]}
+          value={() => size()}
+          onValueChange={(next) => size(next)}
+        />
+      </>
+    }
+  >
+    Format
+  </DropdownMenu>
+);
+```
+
+A boolean `checked` seeds the internal signal; an accessor makes the item controlled, so activation only reports through `onCheckedChange`. The radio group mirrors that split: a `value` accessor keeps selection external, otherwise the group tracks its own signal until `onValueChange` reports.
+
+Submenus compose through `DropdownMenuSub`: its children label the trigger row and its `content` builds the sub-surface. The sub opens on hover after roughly 100ms of rest, on click, or on ArrowRight; leaving the trigger schedules a close that entering the sub-content cancels.
+
+```jsx
+import DropdownMenu from './components/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuSub } from './components/dropdown-menu';
+
+const More = () => (
+  <DropdownMenu
+    content={
+      <>
+        <DropdownMenuItem>Save</DropdownMenuItem>
+        <DropdownMenuSub
+          content={
+            <>
+              <DropdownMenuItem>Export as PDF</DropdownMenuItem>
+              <DropdownMenuItem>Export as HTML</DropdownMenuItem>
+            </>
+          }
+        >
+          Export
+        </DropdownMenuSub>
+      </>
+    }
+  >
+    File
+  </DropdownMenu>
+);
+```
+
+The sub-content registers its own [`layerDismissal`](/reference/dom/behaviors) layer and anchors against the sub-trigger (right, start aligned, collision flipped), so Escape pops one level at a time and an outside press closes the sub before the parent.
+
+### Keyboard Interaction
+
+| Key | Behavior |
+|---|---|
+| `ArrowDown` / `ArrowUp` | Opens the closed menu from the trigger; inside, roves items with wrap, skipping disabled entries |
+| `Home` / `End` | Jumps to the first or last activatable item |
+| `Enter` / `Space` | Activates the focused item (toggles checkbox and radio rows) |
+| `ArrowRight` / `ArrowLeft` | Enters a focused sub-trigger or exits the sub; flips with the resolved writing direction |
+| `Escape` | Dismisses the top layer only |
+| `Tab` | Closes every open layer |
+| printable keys | Typeahead: selects the first item starting with the buffered keys |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `trigger` (the merged Button base, outline variant, and default size), `content` and `subContent` (the popover surface at `min-width: 8rem` with border, shadow, and enter and exit keyframes composed from fade, a 95% zoom, and the side's slide direction), `item`, `checkItem`, and `radioItem` (focus-highlighted rows with destructive, inset, and disabled selectors), `indicator`, `icon`, and `radioIcon` (the selection indicators), plus `group`, `label`, `separator`, `shortcut`, `subTrigger`, and `chevron`. The copied budget is 150ms both ways.
+
+```jsx
+import DropdownMenu from './components/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from './components/dropdown-menu';
+
+const Theme = () => (
+  <DropdownMenu
+    content={
+      <>
+        <DropdownMenuLabel inset>Appearance</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem destructive>Reset to defaults</DropdownMenuItem>
+      </>
+    }
+    class="w-56"
+  >
+    Theme
+  </DropdownMenu>
+);
+```
+
+The html-format file (`dropdown-menu.ts`, copied with `--format html`) renders through a template instead of JSX; the menu mounts as a reactive child of whatever wraps it:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import DropdownMenu from './components/dropdown-menu';
+
+mount(
+  html`
+    <main>
+      <${DropdownMenu} content=${html`<p>One item.</p>`}>
+        Menu
+      <${DropdownMenu}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-popover`, `min-w-[8rem]`, `shadow-md`, the `data-[state=open]:animate-in` set, the `data-[side=…]` slide variants, the `data-[variant=destructive]` and `dark:` item states, and the `[&_svg]` icon sizing rules), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The enter and exit motion relies on the `tw-animate-css` utilities the theme's tailwind entry depends on.
+
+```jsx
+import DropdownMenu from './components/dropdown-menu';
+import { DropdownMenuItem } from './components/dropdown-menu';
+
+const Row = () => (
+  <DropdownMenu content={<DropdownMenuItem>Duplicate</DropdownMenuItem>}>
+    Row actions
+  </DropdownMenu>
+);
+```
+
+## Customizing
+
+The copied file is yours. The panel's look is the whole of `content`; restyle it there. The trigger's look is the merged `trigger` class (css) or string (tailwind): restyle it to any Button variant by editing that one part. Hold the menu open against item activation by removing the activation event dispatch from the item's click handler, and hold it against Escape and outside presses by composing `DropdownMenuContent` without `onDismiss`.

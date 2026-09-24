@@ -1,0 +1,85 @@
+# Aspect Ratio
+
+A fixed-ratio container for media: one wrapper `div` whose inline `aspect-ratio` style locks the box shape while children stretch to fill it, carrying shadcn's new-york-v4 `data-slot="aspect-ratio"` root.
+
+## Install
+
+```bash
+bunx @hellajs/ui add aspect-ratio
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The component diverges from Radix's padding-bottom technique deliberately: the CSS `aspect-ratio` property is the modern equivalent, needs no inner absolute wrapper, and keeps the ratio readable in one style declaration. The wrapper carries `aspect-ratio: <ratio>` plus `width: 100%` inline (the ratio is a prop, so it cannot live in a stylesheet), and the css style module's `base` map contributes `position: relative` so absolutely positioned children still anchor to the box.
+
+```jsx
+import AspectRatio from './components/aspect-ratio';
+
+const Hero = () => (
+  <AspectRatio ratio={16 / 9} class="bg-muted rounded-lg overflow-hidden">
+    <img src="/hero.png" alt="Product hero" class="size-full object-cover" />
+  </AspectRatio>
+);
+```
+
+The ratio accepts any number; it defaults to 1 (a square). Children render as-is, so images should bring `size-full` and an object-fit utility to cover the frame:
+
+```jsx
+import AspectRatio from './components/aspect-ratio';
+
+const Square = () => (
+  <AspectRatio class="bg-muted">
+    <img src="/avatar.png" alt="Square crop" class="size-full object-cover" />
+  </AspectRatio>
+);
+```
+
+The html-format file (`aspect-ratio.ts`, copied with `--format html`) renders through a template instead of JSX; children sit between the component tags:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import AspectRatio from './components/aspect-ratio';
+
+mount(
+  html`<${AspectRatio} ratio=${1.5}><img src="/hero.png" alt="Hero" class="size-full object-cover" /></${AspectRatio}>`,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the `base` string is the shadcn-root technique (`relative`), the ratio stays inline (a prop value, not a utility), and the class array wraps in `cn()` so author utilities can add rounding, cropping, or a background.
+
+```jsx
+import AspectRatio from './components/aspect-ratio';
+
+const Wide = () => (
+  <AspectRatio ratio={21 / 9} class="overflow-hidden rounded-xl">
+    <img src="/banner.png" alt="Banner" class="size-full object-cover" />
+  </AspectRatio>
+);
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import AspectRatio from './components/aspect-ratio';
+
+mount(html`<${AspectRatio} ratio=${2}><img src="/banner.png" alt="Banner" /></${AspectRatio}>`, '#app');
+```
+
+## Customizing
+
+The copied file is yours. The css style module exports a single `base` map (`position: relative`, the Radix-root technique this entry keeps); the compose bakes `base` plus `props.class`. Everything visual about the frame (rounding, cropping, background while media loads) comes from your `class` prop.

@@ -1,0 +1,40 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import TableContent from "@ui/concepts/table.mdx";
+
+const title = "Table";
+const description = "Interactive Table demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <TableContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Table, { TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
+  import "../../components/ui/tokens.js";
+
+  const invoices = [
+    { invoice: "INV001", status: "Paid", method: "Credit Card", amount: "$250.00" },
+    { invoice: "INV002", status: "Pending", method: "PayPal", amount: "$125.00" },
+    { invoice: "INV003", status: "Paid", method: "Bank Transfer", amount: "$310.00" },
+  ];
+  const row = (invoice) => html`<${TableRow} data-state=${invoice.status === "Pending" ? "selected" : null}>
+    <${TableCell}>${invoice.invoice}</${TableCell}>
+    <${TableCell}>${invoice.status}</${TableCell}>
+    <${TableCell}>${invoice.method}</${TableCell}>
+    <${TableCell} class="text-right">${invoice.amount}</${TableCell}>
+  </${TableRow}>`;
+  mount(html`<${Table}>
+    <${TableCaption}>A list of your recent invoices.</${TableCaption}>
+    <${TableHeader}><${TableRow}>
+      <${TableHead}>Invoice</${TableHead}>
+      <${TableHead}>Status</${TableHead}>
+      <${TableHead}>Method</${TableHead}>
+      <${TableHead} class="text-right">Amount</${TableHead}>
+    </${TableRow}></${TableHeader}>
+    <${TableBody}>${() => invoices.map(row)}</${TableBody}>
+  </${Table}>`, document.getElementById("demo")!);
+</script>

@@ -1,0 +1,141 @@
+# Tooltip
+
+A hover-triggered label styled to shadcn's Tooltip: the trigger wraps your content, the label portals into `document.body`, opens after a hover delay, and anchors to the trigger with collision flipping. Keyboard focus opens it with the same path a pointer takes.
+
+## Install
+
+```bash
+bunx @hellajs/ui add tooltip
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The tooltip wires its timing and positioning from the copied file using `@hellajs/dom` behavior functions.
+
+## Opening and Closing
+
+The composed `Tooltip` wraps its children in the trigger span and takes the label through the `content` prop. Hovering the trigger starts the open timer; leaving starts the close timer; focusing the trigger follows the same path for keyboard users.
+
+```jsx
+import Tooltip from './components/tooltip';
+
+const Save = () => (
+  <Tooltip content="Save the current document" delayDuration={300}>
+    <button type="button">Save</button>
+  </Tooltip>
+);
+```
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `content` | - | The label children, portaled into `document.body` while open |
+| `delayDuration` | `700` | Pointer-hover milliseconds before the label opens |
+| `side` | `"top"` | Which side of the trigger the label anchors to |
+| `align` | `"center"` | Alignment along the trigger's edge |
+| `class` | - | Extra classes on the trigger span |
+
+Adjacent triggers share a 500ms skip window through [`hoverIntent`](/reference/dom/behaviors): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again. After 500ms without any tooltip open, the full delay applies.
+
+`TooltipProvider` ships as a passthrough wrapper for copy-paste parity with upstream. The divergence: upstream configures delay through the provider; here the delay is the per-Tooltip `delayDuration` prop, so the provider carries nothing but children.
+
+## Structure Parts
+
+Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. hella has no Radix-style context, so manual composition passes state explicitly: portal the content yourself, hand it a `state` accessor, and wire the trigger's hover with [`hoverIntent`](/reference/dom/behaviors).
+
+```jsx
+import { signal } from '@hellajs/core';
+import { hoverIntent, Portal } from '@hellajs/dom';
+import { TooltipContent, TooltipTrigger } from './components/tooltip';
+
+const Manual = () => {
+  const open = signal(false);
+  const state = () => (open() ? 'open' : 'closed');
+  let trigger;
+
+  return (
+    <TooltipTrigger
+      describedBy="hella-tooltip-content-1"
+      hook:afterMount={(node) => {
+        trigger = node;
+        hoverIntent(node, {
+          onOpen: () => open(true),
+          onClose: () => open(false),
+          openDelay: 300,
+        });
+      }}
+    >
+      <button type="button">Hover me</button>
+    </TooltipTrigger>
+  );
+};
+```
+
+`TooltipContent({ state, id, side, align, anchor, children, class })` renders the label: `role="tooltip"`, `data-state` driving the enter and exit animations, and `data-side`/`data-align` selecting the slide direction. Positioning wires itself in the markup through [`anchorPosition`](/reference/dom/behaviors):
+
+| Wiring | Guarantee |
+|---|---|
+| [`hoverIntent`](/reference/dom/behaviors) | Open after the delay, close after the leave delay, the shared skip window, and focus parity |
+| [`anchorPosition`](/reference/dom/behaviors) | Fixed positioning against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize |
+
+Two upstream details are intentionally absent: the arrow glyph (Radix positions it; this port omits it) and the provider-level delay config (the per-Tooltip prop replaces it).
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (empty; the trigger is deliberately unstyled) and `content`. The enter animation composes fade, a 95% zoom, and the side's slide direction into one keyframe per side; the exit composes fade and zoom. The copied budget is 150ms both ways.
+
+```jsx
+import Tooltip from './components/tooltip';
+
+const Delete = () => (
+  <Tooltip content="This cannot be undone" side="bottom" class="uppercase">
+    <button type="button">Delete</button>
+  </Tooltip>
+);
+```
+
+The html-format file (`tooltip.ts`, copied with `--format html`) renders through a template instead of JSX; the tooltip mounts as a reactive child of whatever wraps it:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Tooltip from './components/tooltip';
+
+mount(
+  html`
+    <main>
+      <${Tooltip} content="Published minutes ago" delayDuration=${200}>
+        <button type="button">Status</button>
+      <${Tooltip}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied content string uses shadcn's literal utilities verbatim (`bg-foreground`, `animate-in`, `zoom-in-95`, the `data-[side=…]` slide variants), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The enter and exit motion relies on the `tw-animate-css` utilities the theme's tailwind entry depends on.
+
+```jsx
+import Tooltip from './components/tooltip';
+
+const Share = () => (
+  <Tooltip content="Copy a read-only link" class="max-w-64">
+    <button type="button">Share</button>
+  </Tooltip>
+);
+```
+
+## Customizing
+
+The copied file is yours. The label's look is the whole of `content`; restyle it there, and `props.class` on the composed `Tooltip` lands on the trigger span. Width is `w-fit` by construction: long labels wrap only when you constrain them. The animation budget lives in the `animation` declarations under the `[data-state]` selectors, and the per-side slide distance lives in the keyframes (css flavor) or the `slide-in-from-*` tokens (tailwind flavor).

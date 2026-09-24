@@ -1,0 +1,95 @@
+# Skeleton
+
+A loading placeholder styled byte-faithfully to shadcn's new-york-v4 Skeleton: one `div` with the muted accent surface and a slow pulse animation, sized entirely through your own classes.
+
+## Install
+
+```bash
+bunx @hellajs/ui add skeleton
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The root carries `data-slot="skeleton"`, and the pulse ships as a css-flavor keyframe so the tailwind flavor's `animate-pulse` has a faithful translation with no utility framework required.
+
+```jsx
+import Skeleton from './components/skeleton';
+
+const Card = () => (
+  <div class="flex flex-col gap-2">
+    <Skeleton class="h-4 w-2/3" />
+    <Skeleton class="h-4 w-full" />
+    <Skeleton class="h-4 w-full" />
+  </div>
+);
+```
+
+Compose the classic profile placeholder by pairing a circle with text lines; the element has no intrinsic size, so `h-*` and `w-*` classes come from you:
+
+```jsx
+import Skeleton from './components/skeleton';
+
+const Profile = () => (
+  <div class="flex items-center gap-4">
+    <Skeleton class="size-12 rounded-full" />
+    <div class="flex flex-col gap-2">
+      <Skeleton class="h-4 w-32" />
+      <Skeleton class="h-4 w-24" />
+    </div>
+  </div>
+);
+```
+
+The html-format file (`skeleton.ts`, copied with `--format html`) renders through a template instead of JSX:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Skeleton from './components/skeleton';
+
+mount(
+  html`<div class="flex flex-col gap-2">
+    <${Skeleton} class="h-4 w-2/3" />
+    <${Skeleton} class="h-4 w-full" />
+  </div>`,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied string uses shadcn's literal utilities verbatim (`animate-pulse rounded-md bg-accent`), and the class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import Skeleton from './components/skeleton';
+
+const Lines = () => (
+  <div class="flex flex-col gap-2">
+    <Skeleton class="h-4 w-full" />
+    <Skeleton class="h-4 w-5/6" />
+  </div>
+);
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Skeleton from './components/skeleton';
+
+mount(Skeleton({ class: 'h-8 w-full' }), '#app');
+```
+
+## Customizing
+
+The copied file is yours. The css style module exports a single `base` holding the surface, radius, and the pulse `animation` (declared through a hashed `keyframes()` name); the compose bakes `base` plus `props.class`. Pass `rounded-full` (tailwind) or `border-radius` in your own sheet to reshape the block; the pulse keeps running either way.

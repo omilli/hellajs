@@ -31,7 +31,7 @@ describe("main", () => {
 
   test("lists registry components and exits clean", async () => {
     expect(await main(["list"])).toBe(0);
-    expect(listComponents()).toEqual(["button", "card", "cn", "dialog", "input", "tabs", "theme"]);
+    expect(listComponents()).toEqual(["accordion", "alert", "alert-dialog", "aspect-ratio", "attachment", "avatar", "badge", "breadcrumb", "bubble", "button", "button-group", "calendar", "card", "checkbox", "cn", "collapsible", "combobox", "command", "context-menu", "dialog", "direction", "drawer", "dropdown-menu", "empty", "field", "form", "hover-card", "input", "input-group", "input-otp", "item", "kbd", "label", "marker", "menubar", "message", "message-scroller", "native-select", "navigation-menu", "pagination", "popover", "progress", "radio-group", "resizable", "scroll-area", "select", "separator", "sheet", "sidebar", "skeleton", "slider", "sonner", "spinner", "switch", "table", "tabs", "textarea", "theme", "toggle", "toggle-group", "tooltip"]);
   });
 
   test("init writes defaults and theme tokens, warns and keeps an existing config, and --force rewrites it", async () => {

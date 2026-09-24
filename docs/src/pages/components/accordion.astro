@@ -1,0 +1,31 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import AccordionContent from "@ui/concepts/accordion.mdx";
+
+const title = "Accordion";
+const description = "Interactive Accordion demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <AccordionContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Accordion from "../../components/ui/accordion";
+  import "../../components/ui/tokens.js";
+
+  const faq = [
+    { value: "shipping", trigger: "How fast is shipping?", content: html`<p class="demo-note">Two business days, everywhere we deliver.</p>` },
+    { value: "returns", trigger: "What is the return window?", content: html`<p class="demo-note">Thirty days from delivery, no questions asked.</p>` },
+  ];
+  const specs = [
+    { value: "size", trigger: "Size", content: html`<p class="demo-note">12 x 8 x 3 centimeters.</p>` },
+    { value: "weight", trigger: "Weight", content: html`<p class="demo-note">240 grams with the cable.</p>` },
+  ];
+  mount(html`<div class="demo-stack">
+    <${Accordion} type="single" collapsible defaultValue="shipping" items=${faq} />
+    <${Accordion} type="multiple" items=${specs} />
+  </div>`, document.getElementById("demo")!);
+</script>

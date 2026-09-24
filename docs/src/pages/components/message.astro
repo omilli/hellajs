@@ -1,0 +1,35 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import MessageContent from "@ui/concepts/message.mdx";
+
+const title = "Message";
+const description = "Interactive Message demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <MessageContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { Message, MessageAvatar, MessageContent, MessageFooter, MessageGroup, MessageHeader } from "../../components/ui/message";
+  import { Bubble } from "../../components/ui/bubble";
+  import "../../components/ui/tokens.js";
+
+  const row = (name, time, text, align) => html`<${Message} align="${align}">
+    <${MessageAvatar}><span style="font-size:0.625rem">${name}</span></${MessageAvatar}>
+    <${MessageContent}>
+      <${MessageHeader}>${name}</${MessageHeader}>
+      <${Bubble} variant="${align === "end" ? "default" : "outline"}">${text}</${Bubble}>
+      <${MessageFooter}>${time}</${MessageFooter}>
+    </${MessageContent}>
+  </${Message}>`;
+
+  mount(html`<div class="demo-stack">
+    <${MessageGroup}>
+      ${row("Ada", "2 minutes ago", "How does the auto-stick scroller work?", "start")}
+      ${row("You", "Just now", "A ResizeObserver pins the view while new messages land.", "end")}
+    </${MessageGroup}>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -1,0 +1,32 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import AlertDialogContent from "@ui/concepts/alert-dialog.mdx";
+
+const title = "Alert Dialog";
+const description = "Interactive AlertDialog demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <AlertDialogContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Button from "../../components/ui/button";
+  import AlertDialog, { AlertDialogAction, AlertDialogCancel, AlertDialogFooter } from "../../components/ui/alert-dialog";
+  import "../../components/ui/tokens.js";
+
+  const open = signal(false);
+  mount(html`<div class="demo-stack">
+    <${Button} variant="destructive" onclick=${() => open(true)}>Delete project</${Button}>
+    <p class="demo-note">Opens a portal-mounted alert dialog with wired title and description, an Action/Cancel footer, and no outside-click dismissal: escape or the buttons are the only ways out.</p>
+    <${AlertDialog} open=${open} onClose=${() => open(false)} title="Delete project" description="This removes every deployment attached to it. This action cannot be undone.">
+      <${AlertDialogFooter}>
+        <${AlertDialogCancel} onClose=${() => open(false)}>Cancel</${AlertDialogCancel}>
+        <${AlertDialogAction} variant="destructive" onClose=${() => open(false)}>Delete</${AlertDialogAction}>
+      </${AlertDialogFooter}>
+    </${AlertDialog}>
+  </div>`, document.getElementById("demo")!);
+</script>

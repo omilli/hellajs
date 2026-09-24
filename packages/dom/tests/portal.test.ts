@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { flush, signal } from "@hellajs/core";
-import {resetTestState} from "@utils/test-helpers.js";
+import { delay, resetTestState } from "@utils/test-helpers.js";
 import { mount, html, Portal, component } from "@hellajs/dom/bundle";
 
 beforeEach(() => {
@@ -182,6 +182,24 @@ describe("dom", () => {
 
     test("throws on an invalid insert type", () => {
       expect(() => Portal({ to: "#app", type: "apend" as never, children: [] })).toThrow("[dom] Portal: type must be one of");
+    });
+
+    test("cleans nested portal content when the ancestor unmounts", async () => {
+      resetTestState('<div id="app"></div><div id="modal-root"></div>');
+
+      const inner = html`<div id="outer-panel"><${Portal} to="#modal-root"><p id="nested-panel">nested</p></${Portal}></div>`;
+      const handle = mount(html`<div>${component(Portal, { to: "#modal-root", children: [inner] })}</div>`);
+
+      await delay();
+      expect(document.querySelector("#nested-panel")?.isConnected).toBe(true);
+
+      handle.unmount();
+      await delay();
+      // The outer portal's cleanup unwinds its subtree's state before
+      // detaching it, so the nested portal's own cleanup fires and its
+      // content leaves the document too (no stranded remote nodes).
+      expect(document.querySelector("#outer-panel")).toBeNull();
+      expect(document.querySelector("#nested-panel")).toBeNull();
     });
 
     test("throws when target does not exist", () => {

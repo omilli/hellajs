@@ -1,0 +1,31 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SwitchContent from "@ui/concepts/switch.mdx";
+
+const title = "Switch";
+const description = "Interactive Switch demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <SwitchContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Switch from "../../components/ui/switch";
+  import "../../components/ui/tokens.js";
+
+  const airplane = signal(false);
+  mount(html`<div class="demo-stack">
+    <label class="demo-row">
+      <${Switch}
+        checked=${() => airplane()}
+        onCheckedChange=${(next: boolean) => airplane(next)}
+      /> Airplane mode (${() => (airplane() ? "on" : "off")})
+    </label>
+    <label class="demo-row"><${Switch} defaultChecked /> Notifications</label>
+    <label class="demo-row"><${Switch} disabled /> Managed by policy</label>
+  </div>`, document.getElementById("demo")!);
+</script>

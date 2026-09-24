@@ -1,0 +1,44 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import FieldContent from "@ui/concepts/field.mdx";
+
+const title = "Field";
+const description = "Interactive Field demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <FieldContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldTitle } from "../../components/ui/field";
+  import Input from "../../components/ui/input";
+  import "../../components/ui/tokens.js";
+
+  const name = signal("");
+  const errors = () => (name() === "" ? [{ message: "A display name is required." }] : []);
+  mount(html`<div class="demo-stack">
+    <${FieldGroup}>
+      <${Field}>
+        <${FieldLabel} for="demo-name">
+          <${FieldTitle}>Display name</${FieldTitle}>
+          <${FieldContent}>
+            <${FieldDescription}>Shown on your public profile.</${FieldDescription}>
+          </${FieldContent}></${FieldLabel}>
+        <${Input} id="demo-name" placeholder="Ada Lovelace" value="${() => name()}" oninput="${(v) => name(v)}" />
+        <${FieldError} errors="${errors}" />
+      </${Field}>
+      <${Field} orientation="horizontal">
+        <${FieldLabel} for="demo-terms">
+          <${FieldTitle}>Accept terms</${FieldTitle}>
+          <${FieldContent}>
+            <${FieldDescription}>You agree to the house rules.</${FieldDescription}>
+          </${FieldContent}></${FieldLabel}>
+        <input id="demo-terms" type="checkbox" style="width:1rem" />
+      </${Field}>
+    </${FieldGroup}>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -1,0 +1,47 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SliderContent from "@ui/concepts/slider.mdx";
+
+const title = "Slider";
+const description = "Interactive Slider demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <SliderContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Slider from "../../components/ui/slider";
+  import "../../components/ui/tokens.js";
+
+  const volume = signal(40);
+  const range = signal([25, 75]);
+
+  mount(html`<div class="demo-stack">
+    <label class="demo-row">
+      Volume: ${() => volume()}%
+      <${Slider}
+        value=${() => volume()}
+        onValueChange=${(next: number[]) => volume(next[0] ?? 0)}
+      />
+    </label>
+    <label class="demo-row">
+      Price range: ${() => range()[0]} to ${() => range()[1]}
+      <${Slider}
+        value=${() => range()}
+        minStepsBetweenThumbs=${5}
+        onValueChange=${(next: number[]) => range([...next])}
+      />
+    </label>
+    <label class="demo-row">
+      Vertical:
+      <${Slider}
+        value=${[60]}
+        orientation="vertical"
+      />
+    </label>
+  </div>`, document.getElementById("demo")!);
+</script>

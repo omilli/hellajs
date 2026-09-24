@@ -1,0 +1,31 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import TooltipContent from "@ui/concepts/tooltip.mdx";
+
+const title = "Tooltip";
+const description = "Interactive Tooltip demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <TooltipContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Button from "../../components/ui/button";
+  import Tooltip from "../../components/ui/tooltip";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Tooltip} content="Saves every pending change" delayDuration=${100} side=${"top"}>
+        <${Button}>Hover: top</${Button}>
+      <${Tooltip}>
+      <${Tooltip} content="Deploys the current branch" delayDuration=${100} side=${"bottom"} align=${"start"}>
+        <${Button} variant="outline">Hover: bottom-start</${Button}>
+      <${Tooltip}>
+    </div>
+    <p class="demo-note">Hovering opens a portal-mounted, anchor-positioned label; moving between the two buttons skips the delay. Focus opens either one from the keyboard.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

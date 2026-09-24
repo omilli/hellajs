@@ -1,0 +1,104 @@
+# Switch
+
+An on/off control styled to shadcn's Switch: a `role="switch"` button whose thumb slides through pure CSS. The root renders `aria-checked` and `data-state`; the thumb carries the same `data-state` and the style layer translates it into the track palette and the thumb translation.
+
+## Install
+
+```bash
+bunx @hellajs/ui add switch
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Usage
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `checked` | `boolean \| (() => boolean)` | Uncontrolled seed or controlled accessor (see below) |
+| `onCheckedChange` | `(checked: boolean) => void` | Fires on every click with the requested next value |
+| `disabled` | `boolean` | Blocks clicks and renders the disabled attribute |
+| `class` | `string` | Lands on the root next to the component class |
+
+```jsx
+import Switch from './components/switch';
+
+const Settings = () => (
+  <label>
+    <Switch /> Airplane mode
+  </label>
+);
+```
+
+The html-format file (`switch.ts`, copied with `--format html`) works the same way from a template:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Switch from './components/switch';
+
+mount(
+  html`<label><${Switch} /> Airplane mode</label>`,
+  '#app',
+);
+```
+
+## Controlled and Uncontrolled
+
+Without `checked`, the root owns a signal seeded by a boolean `checked` prop and flips it on click. Pass an accessor and the switch becomes controlled: clicks turn into `onCheckedChange` requests without writing state, so a parent signal that ignores the request keeps the switch unchanged.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Switch from './components/switch';
+
+const enabled = signal(false);
+
+const Controlled = () => (
+  <label>
+    <Switch checked={() => enabled()} onCheckedChange={(next) => enabled(next)} />
+    Enabled
+  </label>
+);
+```
+
+## Divergences
+
+The ref exposes a `size` prop (`default` and `sm`). This port pins the rendered output to the ref default: the root carries `data-size="default"` and the `sm` classes ride along in the tailwind module, where they can never match. Resizing a switch is an edit of the copied file away.
+
+## Accessibility
+
+The root is a `button` element, so Space toggles it through native activation and it participates in tab order.
+
+| Aspect | Value |
+|---|---|
+| Role | `switch` on the root button |
+| State | `aria-checked` is `true` or `false`; `data-state` is `checked` or `unchecked` on both root and thumb |
+| Keyboard | Space toggles; the button is disabled for pointer and keyboard while `disabled` |
+| Labeling | Pair with a `label` element or `aria-labelledby` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the track, including the size, palette, and focus ring) and `thumb` (the sliding knob, whose `translate` carries the whole state motion).
+
+```jsx
+import Switch from './components/switch';
+
+const Spaced = () => <Switch class="m-2" />;
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. Both class strings are verbatim from the ref, including the named `group/switch` scoping that lets the thumb read the root's `data-size` and `data-state`.
+
+## Customizing
+
+The copied file is yours. `props.class` lands on the root next to `base`, and the `thumb` map restyles every switch's knob at once. Because the thumb's motion is pure CSS keyed on `data-state`, changing the easing or distance is a one-line edit in the style module.

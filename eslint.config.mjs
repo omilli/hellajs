@@ -19,6 +19,7 @@ export default tseslint.config(
 			".agents/**",
 			".doc-snippets/**",
 			".plans-runner/**",
+			"plans/**",
 		],
 	},
 	js.configs.recommended,

@@ -1,0 +1,37 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import PaginationContent from "@ui/concepts/pagination.mdx";
+
+const title = "Pagination";
+const description = "Interactive Pagination demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <PaginationContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Pagination, { PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../../components/ui/pagination";
+  import "../../components/ui/tokens.js";
+
+  const page = signal(2);
+  const pages = [1, 2, 3, 4, 5];
+  const go = (p) => page(p);
+  const link = (p) => html`<${PaginationItem}>
+    <${PaginationLink} onclick="${() => go(p)}" isActive=${page() === p}>${p}</${PaginationLink}>
+  </${PaginationItem}>`;
+  mount(html`<div class="demo-stack">
+    <${Pagination}>
+      <${PaginationContent}>
+        <${PaginationItem}><${PaginationPrevious} onclick="${() => go(Math.max(1, page() - 1))}" /></${PaginationItem}>
+        ${() => pages.map(link)}
+        <${PaginationItem}><${PaginationEllipsis} /></${PaginationItem}>
+        <${PaginationItem}><${PaginationNext} onclick="${() => go(Math.min(5, page() + 1))}" /></${PaginationItem}>
+      </${PaginationContent}>
+    </${Pagination}>
+    <p style="text-align:center">Page ${() => page()} of 5, driven by the links' onclick.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -1,0 +1,122 @@
+# Menubar
+
+A horizontal menu bar styled to shadcn's Menubar: the bar holds one open menu at a time, triggers open on click or ArrowDown, arrows move between triggers and between open menus, and Escape closes and returns focus to the trigger.
+
+## Install
+
+```bash
+bunx @hellajs/ui add menubar
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The item model mirrors the dropdown-menu entry one to one, duplicated per entry (self-contained files never cross-import), with `menubar-` data slots.
+
+## Composition
+
+The `Menubar` root renders the `role="menubar"` bar and owns which menu is open: an internal value signal holding the open menu's id, or the controlled `value` accessor with `onValueChange` reporting every flip. Each `MenubarMenu` wrapper owns one menu: it renders the trigger button and portals its `content` under the bar, and takes a `value` id that names it in the bar's store.
+
+```jsx
+import Menubar from './components/menubar';
+import { MenubarMenu, MenubarItem, MenubarSeparator } from './components/menubar';
+
+const Bar = () => (
+  <Menubar onValueChange={(id) => console.log('open menu:', id)}>
+    <MenubarMenu
+      value="file"
+      content={
+        <>
+          <MenubarItem shortcut="⌘N">New Window</MenubarItem>
+          <MenubarItem>Open Recent</MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem destructive>Close</MenubarItem>
+        </>
+      }
+    >
+      File
+    </MenubarMenu>
+    <MenubarMenu
+      value="edit"
+      content={<MenubarItem shortcut="⌘C">Copy</MenubarItem>}
+    >
+      Edit
+    </MenubarMenu>
+  </Menubar>
+);
+```
+
+There is no Radix-style context: the bar and its menus coordinate through a document-level announcement. Opening a menu announces its id, siblings close on a foreign announcement (the second trigger click closes the first menu), and the bar mirrors the announcement into its value store. `MenubarMenu` also takes explicit `open` and `onOpenChange` props for wiring a menu without the bar.
+
+| Root prop | Default | Behavior |
+|---|---|---|
+| `value` | internal signal | Controlled id of the open menu ("" when closed); when given, the bar never writes its internal signal |
+| `onValueChange` | - | Reports every open and close flip |
+| `children` | - | The `MenubarMenu` wrappers |
+| `class` | - | Extra classes on the bar |
+
+| Menu prop | Default | Behavior |
+|---|---|---|
+| `value` | generated | This menu's id in the bar's store |
+| `open` | internal signal | Controlled open accessor for manual wiring without the bar |
+| `onOpenChange` | - | Reports this menu's flips |
+| `children` | - | The trigger label |
+| `content` | - | The menu items, portaled into `document.body` while open |
+
+The content anchors against its trigger (bottom, start aligned, 8px gap, -4px cross-axis shift) and dismisses through [`layerDismissal`](/reference/dom/behaviors): Escape and an outside pointerdown close the top layer, item activation closes every open layer, and focus returns to the trigger.
+
+## Structure Parts
+
+Fourteen named parts ship beside the default `Menubar`: `MenubarMenu`, `MenubarTrigger`, `MenubarGroup`, `MenubarContent`, `MenubarItem`, `MenubarCheckboxItem`, `MenubarRadioGroup`, `MenubarRadioItem`, `MenubarLabel`, `MenubarSeparator`, `MenubarShortcut`, `MenubarSub`, `MenubarSubTrigger`, and `MenubarSubContent`. The item parts take the same explicit-state props as their dropdown-menu counterparts: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal with hover-intent timing.
+
+### Keyboard Interaction
+
+| Key | Behavior |
+|---|---|
+| `ArrowLeft` / `ArrowRight` | Bar closed: moves focus between triggers with wrap. A menu open: switches to the adjacent menu (open then move), wrapping at the ends |
+| `ArrowDown` / `Enter` | Opens the focused trigger's menu; inside, roves items with wrap and skips disabled entries |
+| `Home` / `End` | Jumps to the first or last activatable item |
+| `Enter` / `Space` | Activates the focused item; ArrowRight on a focused sub-trigger opens the submenu |
+| `ArrowLeft` (in a submenu) | Closes the submenu, one layer per press |
+| `Escape` | Closes the top layer and returns focus to its trigger |
+| `Tab` | Closes every open layer |
+| printable keys | Typeahead: selects the first item starting with the buffered keys |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the 2.25rem bordered bar), `trigger` (the accent-highlighted menu button with its open state), `content` and `subContent` (the popover surface with enter and exit keyframes composed from fade, a 95% zoom, and the side's slide direction), `item`, `checkItem`, and `radioItem` (focus-highlighted rows with destructive, inset, and disabled selectors), `indicator`, `icon`, and `radioIcon` (the selection indicators), plus `label`, `separator`, `shortcut`, `subTrigger`, and `chevron`. The copied budget is 150ms both ways.
+
+The html-format file (`menubar.ts`, copied with `--format html`) renders through a template instead of JSX:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Menubar from './components/menubar';
+import { MenubarMenu, MenubarItem } from './components/menubar';
+
+mount(
+  html`
+    <${Menubar}>
+      <${MenubarMenu} value=${"file"} content=${html`<${MenubarItem}>Open</${MenubarItem}>`}>File</${MenubarMenu}>
+    </${Menubar}>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`data-[state=open]:bg-accent`, `data-[variant=destructive]:text-destructive`, the `data-[side=…]` slide variants, and the `[&_svg]` icon sizing rules), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The enter and exit motion relies on the `tw-animate-css` utilities the theme's tailwind entry depends on.
+
+## Customizing
+
+The copied file is yours. The bar's look is `base`; the trigger's look is `trigger`. Menus keep their own open state, so a menu composes standalone through `MenubarMenu` with explicit `open` and `onOpenChange` props, and the item parts wire manually exactly as in the dropdown-menu entry.

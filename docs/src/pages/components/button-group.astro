@@ -1,0 +1,42 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import ButtonGroupContent from "@ui/concepts/button-group.mdx";
+
+const title = "Button Group";
+const description = "Interactive Button Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <ButtonGroupContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import ButtonGroup, { ButtonGroupSeparator, ButtonGroupText } from "../../components/ui/button-group";
+  import Button from "../../components/ui/button";
+  import Input from "../../components/ui/input";
+  import "../../components/ui/tokens.js";
+
+  const label = signal("hellajs.com");
+  mount(html`<div class="demo-stack">
+    <${ButtonGroup}>
+      <${Button} variant="outline">Copy</${Button}>
+      <${ButtonGroupSeparator} />
+      <${Button} variant="outline">Paste</${Button}>
+      <${ButtonGroupSeparator} />
+      <${Button} variant="outline">Cut</${Button}>
+    </${ButtonGroup}>
+    <${ButtonGroup}>
+      <${ButtonGroupText}>https://</${ButtonGroupText}>
+      <${Input} value="${() => label()}" oninput="${(v) => label(v)}" />
+      <${Button} variant="outline">Open</${Button}>
+    </${ButtonGroup}>
+    <${ButtonGroup} orientation="vertical">
+      <${Button} variant="outline">Top</${Button}>
+      <${Button} variant="outline">Middle</${Button}>
+      <${Button} variant="outline">Bottom</${Button}>
+    </${ButtonGroup}>
+  </div>`, document.getElementById("demo")!);
+</script>

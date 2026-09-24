@@ -37,6 +37,10 @@ function readEntryFile(entryName: string, file: string): string {
 }
 
 describe("registry", () => {
+  test("manifest carries the full catalog: 61 entries", () => {
+    expect(Object.keys(manifest.entries).length).toBe(61);
+  });
+
   test("every file on disk maps to a manifest slot or a conventional style module", () => {
     for (const [entryName, file] of diskFiles()) {
       const entry = manifest.entries[entryName];

@@ -1,0 +1,157 @@
+# Hover Card
+
+A rich preview card styled to shadcn's Hover Card: hovering a trigger opens an anchored panel, moving the pointer into the panel keeps it open, and leaving both closes it. Keyboard focus follows the same open and close path a pointer takes.
+
+## Install
+
+```bash
+bunx @hellajs/ui add hover-card
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The card wires its timing and positioning from the copied file using `@hellajs/dom` behavior functions.
+
+## Opening and Closing
+
+The composed `HoverCard` wraps its children in the trigger span and takes the panel through the `content` prop. The delays are upstream's: 200ms before opening, 300ms before closing.
+
+```jsx
+import HoverCard from './components/hover-card';
+
+const Author = () => (
+  <HoverCard
+    content={
+      <div>
+        <strong>@milli</strong>
+        <p>Building reactive UI libraries. 142 commits this week.</p>
+      </div>
+    }
+  >
+    <a href="#profile" on:click={(e) => e.preventDefault()}>@milli</a>
+  </HoverCard>
+);
+```
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `open` | - | Controlled open accessor; when given, the root never writes its internal signal |
+| `onOpenChange` | - | Reports every requested open and close flip |
+| `content` | - | The panel children, portaled into `document.body` while open |
+| `class` | - | Extra classes on the trigger span |
+
+Moving the pointer from the trigger into the panel keeps it open: the content carries a second [`hoverIntent`](/reference/dom/behaviors) with zero delays that re-arms the open state the moment the pointer enters, cancelling the trigger's pending close. Leaving the content closes it immediately; returning to the trigger cancels that close in turn, so crossing between the two regions in either direction never flickers. Focus and blur on the trigger reuse the same open and close path for keyboard users.
+
+The control is fully reactive: the pointer ownership flags live in the composed root, so each region's close only fires when the pointer has not moved into the other region.
+
+## Structure Parts
+
+Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. hella has no Radix-style context, so manual composition passes state explicitly: portal the content yourself, hand it a `state` accessor, and wire both regions' hover through [`hoverIntent`](/reference/dom/behaviors).
+
+```jsx
+import { signal } from '@hellajs/core';
+import { hoverIntent, Portal } from '@hellajs/dom';
+import { HoverCardContent, HoverCardTrigger } from './components/hover-card';
+
+const Manual = () => {
+  const open = signal(false);
+  const state = () => (open() ? 'open' : 'closed');
+  let trigger;
+
+  return (
+    <HoverCardTrigger
+      hook:afterMount={(node) => {
+        trigger = node;
+        hoverIntent(node, {
+          onOpen: () => open(true),
+          onClose: () => open(false),
+          openDelay: 200,
+          closeDelay: 300,
+        });
+      }}
+    >
+      <a href="#preview">Preview</a>
+      {() => open() && (
+        <Portal to="body">
+          <HoverCardContent
+            state={state}
+            anchor={() => trigger}
+            onOpen={() => open(true)}
+            onClose={() => open(false)}
+            children={<p>The panel keeps itself open under the pointer.</p>}
+          />
+        </Portal>
+      )}
+    </HoverCardTrigger>
+  );
+};
+```
+
+`HoverCardContent({ state, side, align, anchor, onOpen, onClose, children, class })` renders the panel. Positioning wires itself in the markup through [`anchorPosition`](/reference/dom/behaviors) with the upstream 4px offset:
+
+| Wiring | Guarantee |
+|---|---|
+| [`hoverIntent`](/reference/dom/behaviors) on the trigger | 200ms open delay, 300ms close delay, and focus parity |
+| [`hoverIntent`](/reference/dom/behaviors) on the content | Zero-delay keep-open: entering re-opens instantly, leaving closes immediately |
+| [`anchorPosition`](/reference/dom/behaviors) | Fixed positioning against the trigger, collision flipping, repositioning on scroll and resize |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (empty; the trigger is deliberately unstyled) and `content`: the popover surface at `16rem` wide with border, shadow, and the enter and exit keyframes composed from fade, a 95% zoom, and the side's slide direction. The copied budget is 150ms both ways.
+
+```jsx
+import HoverCard from './components/hover-card';
+
+const Repo = () => (
+  <HoverCard content={<p>hellajs/hella: reactive primitives, zero deps.</p>} side="top">
+    <a href="#repo">hella</a>
+  </HoverCard>
+);
+```
+
+The html-format file (`hover-card.ts`, copied with `--format html`) renders through a template instead of JSX; the card mounts as a reactive child of whatever wraps it:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import HoverCard from './components/hover-card';
+
+mount(
+  html`
+    <main>
+      <${HoverCard} content=${html`<p>Scheduled for Friday.</p>`}>
+        <span>Release</span>
+      <${HoverCard}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied content string uses shadcn's literal utilities verbatim (`bg-popover`, `w-64`, `shadow-md`, the `data-[state=open]:animate-in` set, the `data-[side=…]` slide variants), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The enter and exit motion relies on the `tw-animate-css` utilities the theme's tailwind entry depends on.
+
+```jsx
+import HoverCard from './components/hover-card';
+
+const Stats = () => (
+  <HoverCard content={<p>3.2k stars, 187 forks.</p>} class="underline">
+    <span>Repository</span>
+  </HoverCard>
+);
+```
+
+## Customizing
+
+The copied file is yours. The panel's look is the whole of `content`; restyle it there. Width is the upstream `16rem`: change the `width` declaration (css) or the `w-64` token (tailwind) for a wider card, and `props.class` on the composed `HoverCard` lands on the trigger span. The delays live in the two `hoverIntent` calls at the top of the composed file.

@@ -1,0 +1,136 @@
+# Accordion
+
+Stacked disclosure items styled to shadcn's Accordion: each row is a bordered item whose trigger toggles a grid-animated content region. You describe the accordion as data (`items`), the root owns the open-value set in a signal, and the single and multiple modes enforce Radix's open/close rules without a context primitive. The expand and collapse animate through a measurement-free grid technique, so content height is never measured.
+
+## Install
+
+```bash
+bunx @hellajs/ui add accordion
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Items
+
+Each entry in the `items` array is one accordion row:
+
+| Field | Type | Behavior |
+|---|---|---|
+| `value` | `string` | Stable identity: keys the item's `data-value`, the generated `hella-accordion-trigger-<value>` and `hella-accordion-content-<value>` id pair, and the `defaultValue` lookup |
+| `trigger` | `HellaChildren` | Label node rendered inside the row's trigger button |
+| `content` | `HellaChildren` | Body node rendered inside the row's content region |
+| `disabled` | `boolean` | Blocks activation: `aria-disabled` plus the native `disabled` attribute and the ref's pointer/opacity styles |
+
+Three props tune the rest. `type` picks `"single"` (the default: at most one item open) or `"multiple"` (free toggling); `collapsible` lets a `single` accordion close its last open item; and `defaultValue` seeds the open set, as one value for `single` or a list for `multiple`. Nothing opens until asked: an accordion without `defaultValue` starts fully closed.
+
+```jsx
+import Accordion from './components/accordion';
+
+const Faq = () => (
+  <Accordion
+    type="single"
+    collapsible
+    defaultValue="shipping"
+    items={[
+      { value: 'shipping', trigger: 'How fast is shipping?', content: 'Two business days, everywhere we deliver.' },
+      { value: 'returns', trigger: 'What is the return window?', content: 'Thirty days from delivery.' },
+    ]}
+  />
+);
+```
+
+The html-format file (`accordion.ts`, copied with `--format html`) works the same way from a template; build the items array once and pass it in:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Accordion from './components/accordion';
+
+const items = [
+  { value: 'shipping', trigger: 'How fast is shipping?', content: 'Two business days, everywhere we deliver.' },
+  { value: 'returns', trigger: 'What is the return window?', content: 'Thirty days from delivery.' },
+];
+
+mount(html`<main><${Accordion} items=${items} type="single" collapsible /></main>`, '#app');
+```
+
+## Type and Collapsible Rules
+
+The root holds the open values in a `Set` and gates every toggle through the mode rules:
+
+| Props | Open-click behavior | Open-item-click behavior |
+|---|---|---|
+| `type="single"` (default) | Closes the previous item, opens the clicked one | Does nothing unless `collapsible` is set |
+| `type="single" collapsible` | Same swap | Closes the item, leaving none open |
+| `type="multiple"` | Opens it alongside the rest | Closes it |
+
+Disabled items never enter the toggle path, so they ignore activation in every mode. `data-state` on the item, trigger, and content mirrors the set on every flip, and the trigger's `aria-expanded`, `aria-controls`, and the content region's `aria-labelledby` pair through the generated ids.
+
+## Manual Parts
+
+`AccordionItem`, `AccordionTrigger`, and `AccordionContent` ship beside the default root for custom composition. hella has no context primitive, so state is explicit: the item takes an `active` accessor for its `data-state`, the trigger takes `active`, an `onToggle` callback, a `controls` id, and an `id` to receive the content's `aria-labelledby`, and the content takes `active` plus the matching `id` and `labelledBy`. That is the documented divergence from shadcn's context-wired composition: the root threads these for you when you pass `items`, and manual composition threads them yourself.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { AccordionContent, AccordionItem, AccordionTrigger } from './components/accordion';
+
+const open = signal(true);
+
+const Custom = () => (
+  <AccordionItem value="solo" active={() => open()}>
+    <AccordionTrigger
+      id="solo-trigger"
+      active={() => open()}
+      onToggle={() => open(!open())}
+      controls="solo-content"
+    >
+      Custom trigger
+    </AccordionTrigger>
+    <AccordionContent id="solo-content" labelledBy="solo-trigger" active={() => open()}>
+      Custom body
+    </AccordionContent>
+  </AccordionItem>
+);
+```
+
+## Animation
+
+shadcn animates its content through Radix's measured-height keyframes (`--radix-accordion-content-height`). This port animates the same 200ms window through a measurement-free grid technique instead: the content wrapper is a grid whose rows flip between `0fr` and `1fr` on `data-state`, and an inner wrapper carries `overflow: hidden` with a `min-height: 0` and the ref's `pt-0 pb-4` padding. Opacity rides the same transition. The divergence is invisible to callers; content stays mounted when closed (the grid collapses it), so reactive bodies keep rendering while hidden.
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the root, empty because the ref carries no root styling), `item` (the bottom border, dropped on the last row), `header`, `trigger` (the ref's focus ring, hover underline, and disabled styles plus the open-state chevron rotation), `icon`, and the animation pair `content` plus `contentInner`.
+
+```jsx
+import Accordion from './components/accordion';
+
+const Bordered = () => (
+  <Accordion class="border rounded-md" items={[{ value: 'one', trigger: 'Bordered', content: 'The root class lands next to base.' }]} />
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The trigger classes are verbatim from the shadcn source (`focus-visible:ring-[3px]`, `disabled:pointer-events-none`, the `[&[data-state=open]>svg]:rotate-180` chevron rotation), and the grid animation reads the region's own `data-state` through Tailwind variants.
+
+```jsx
+import Accordion from './components/accordion';
+
+const Wide = () => (
+  <Accordion class="max-w-md" items={[{ value: 'one', trigger: 'Constrained', content: 'Utility overrides compose last.' }]} />
+);
+```
+
+## Customizing
+
+The copied file is yours. `props.class` lands on the root next to `base`, and each part's compose bakes its own class with `props.class` landing last; edit the `item`, `trigger`, `icon`, `content`, or `contentInner` maps to restyle every accordion at once. When the items flow does not fit, compose the exported parts directly: the root is a thin wrapper that owns the open-value set and derives ids, so replacing it only means owning that state yourself.

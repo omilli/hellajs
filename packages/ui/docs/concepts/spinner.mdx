@@ -1,0 +1,88 @@
+# Spinner
+
+An operation-in-progress indicator styled byte-faithfully to shadcn's new-york-v4 Spinner: the loader-circle glyph inlined as a fixed `svg`, spinning through a css animation and announcing itself with `role="status"` and `aria-label="Loading"`.
+
+## Install
+
+```bash
+bunx @hellajs/ui add spinner
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The spin ships as a css-flavor keyframe (1s linear, infinite) so the tailwind flavor's `animate-spin` has a faithful translation with no utility framework required.
+
+```jsx
+import Spinner from './components/spinner';
+
+const Saving = () => (
+  <button type="button" disabled class="inline-flex items-center gap-2">
+    <Spinner />
+    Saving...
+  </button>
+);
+```
+
+The glyph inherits `currentColor` and scales through your own size classes; pair it with text or drop it into a busy overlay:
+
+```jsx
+import Spinner from './components/spinner';
+
+const Loading = () => (
+  <div class="flex items-center gap-2 text-muted-foreground">
+    <Spinner class="size-6" />
+    <span>Fetching the latest deploy...</span>
+  </div>
+);
+```
+
+The html-format file (`spinner.ts`, copied with `--format html`) renders through a template instead of JSX:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Spinner from './components/spinner';
+
+mount(
+  html`<button type="button" disabled class="inline-flex items-center gap-2">
+    <${Spinner} />
+    Saving...
+  </button>`,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied string uses shadcn's literal utilities verbatim (`size-4 animate-spin`), and the class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import Spinner from './components/spinner';
+
+const Inline = () => (
+  <Spinner class="size-3" />
+);
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Spinner from './components/spinner';
+
+mount(Spinner({ class: 'size-6 text-destructive' }), '#app');
+```
+
+## Customizing
+
+The copied file is yours. The css style module exports a single `base` holding the 1rem glyph box and the spin `animation` (declared through a hashed `keyframes()` name); the compose bakes `base` plus `props.class`. The svg innards are fixed (the lucide loader-circle path), so restyling happens on the outside: size, color, and speed all come from your classes or a one-line `animation` edit.

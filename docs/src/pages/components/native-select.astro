@@ -1,0 +1,35 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import NativeSelectContent from "@ui/concepts/native-select.mdx";
+
+const title = "Native Select";
+const description = "Interactive NativeSelect demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <NativeSelectContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import NativeSelect from "../../components/ui/native-select";
+  import "../../components/ui/tokens.js";
+
+  const region = signal("eu");
+  mount(html`<div class="demo-stack">
+    <div class="flex items-center gap-3">
+      <${NativeSelect} value=${() => region()} onchange=${(v) => region(v)} aria-label="Region">
+        <option value="eu">EU Central</option>
+        <option value="us">US East</option>
+        <option value="ap" disabled>AP South (coming soon)</option>
+      </${NativeSelect}>
+      <p class="demo-note">Echoing: ${() => region()}</p>
+    </div>
+    <${NativeSelect} size="sm" aria-label="Compact select">
+      <option value="a">Compact option A</option>
+      <option value="b">Compact option B</option>
+    </${NativeSelect}>
+  </div>`, document.getElementById("demo")!);
+</script>

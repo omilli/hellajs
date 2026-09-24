@@ -1,0 +1,40 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import ScrollAreaContent from "@ui/concepts/scroll-area.mdx";
+
+const title = "Scroll Area";
+const description = "Interactive Scroll Area demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <ScrollAreaContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import ScrollArea, { ScrollBar } from "../../components/ui/scroll-area";
+  import "../../components/ui/tokens.js";
+
+  const rows = Array.from(
+    { length: 40 },
+    (_, i) => html`<div class="border-b border-b-border/60 py-1 text-sm">Item ${i + 1}</div>`,
+  );
+  const cols = Array.from(
+    { length: 12 },
+    (_, i) => html`<div class="flex h-40 min-w-24 items-center justify-center rounded-md border text-sm">Column ${i + 1}</div>`,
+  );
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${ScrollArea} class="h-56 w-72 rounded-md border">
+        <div class="p-3">${rows}</div>
+      </${ScrollArea}>
+      <${ScrollArea} class="h-56 w-72 rounded-md border">
+        <div class="flex w-max gap-3 p-3">${cols}</div>
+        <${ScrollBar} orientation="horizontal" />
+      </${ScrollArea}>
+    </div>
+    <p class="demo-note">Both panes scroll natively (wheel, touch, keyboard) under the custom thumbs: the left one is vertical-only, the right one composes a horizontal bar as a child for both axes. Drag a thumb and the content follows.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -1,5 +1,6 @@
 import { resolveNode, childNamespaceOf } from "./internal/render";
 import { queueMountWalk } from "./internal/queue";
+import { cleanupSubtree } from "./internal/cleanup";
 import { registry } from "./registry";
 import { getState } from "./internal/state";
 import { peekHydrateContext } from "./internal/hydrate";
@@ -69,6 +70,10 @@ export function Portal(props: PortalProps): JSX.Element {
       const len = portalNodes.length;
       while (i < len) {
         const node = portalNodes[i++]!;
+        // Unwind the removed subtree's state (hooks, wirings, nested portals)
+        // before detaching it — the remote target is not an observed container,
+        // so plain removeChild would strand nested portal content there.
+        cleanupSubtree(node);
         node.parentNode?.removeChild(node);
       }
       portalNodes = [];

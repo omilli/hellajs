@@ -9,9 +9,9 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@hellajs/core": "workspace:*",
-    "@hellajs/css": "workspace:*",
-    "@hellajs/dom": "workspace:*",
+    "@hellajs/core": "file:../packages/core",
+    "@hellajs/css": "file:../packages/css",
+    "@hellajs/dom": "file:../packages/dom",
     "@astrojs/mdx": "7.0.5",
     "@fontsource-variable/mulish": "^5.2.8",
     "@iconify-json/ph": "^1.2.2",
@@ -25,5 +25,8 @@
     "daisyui": "^5.5.14",
     "tailwindcss": "^4.1.18",
     "typeit": "^8.8.7"
+  },
+  "overrides": {
+    "@hellajs/ssr": "file:../packages/ssr"
   }
 }

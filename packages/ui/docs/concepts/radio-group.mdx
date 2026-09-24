@@ -1,0 +1,142 @@
+# Radio Group
+
+A single-selection control styled to shadcn's RadioGroup: a `role="radiogroup"` root that renders one labeled row per entry, with arrow-key focus movement shared through the same [roving tabindex](/reference/dom/behaviors) model Tabs uses. Each row is a `label` wrapping a `role="radio"` button and the entry's label text, so clicking the text selects the control.
+
+## Install
+
+```bash
+bunx @hellajs/ui add radio-group
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Usage
+
+The composed root takes an items array, not children slots:
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `items` | `{ value, label, disabled? }[]` | One labeled row per entry |
+| `value` | `() => string` | Controlled selected value (see below) |
+| `onValueChange` | `(value: string) => void` | Fires with the newly selected value; clicking the active item is a no-op |
+| `name` | `string` | Threaded onto every item button. Hidden native inputs for form submission are not rendered (deferred) |
+| `orientation` | `"horizontal" \| "vertical"` | Renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus |
+| `class` | `string` | Lands on the root next to the component class |
+
+```jsx
+import RadioGroup from './components/radio-group';
+
+const Plan = () => (
+  <RadioGroup
+    items={[
+      { value: 'free', label: 'Free' },
+      { value: 'pro', label: 'Pro' },
+      { value: 'team', label: 'Team' },
+    ]}
+  />
+);
+```
+
+The html-format file (`radio-group.ts`, copied with `--format html`) works the same way from a template:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import RadioGroup from './components/radio-group';
+
+mount(
+  html`<${RadioGroup}
+    items=${[
+      { value: 'free', label: 'Free' },
+      { value: 'pro', label: 'Pro' },
+    ]}
+  />`,
+  '#app',
+);
+```
+
+## Controlled and Uncontrolled
+
+Without `value`, the root owns a signal starting with nothing selected and updates it on click. Pass a `value` accessor and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged.
+
+```jsx
+import { signal } from '@hellajs/core';
+import RadioGroup from './components/radio-group';
+
+const plan = signal('pro');
+
+const Controlled = () => (
+  <RadioGroup
+    items={[
+      { value: 'free', label: 'Free' },
+      { value: 'pro', label: 'Pro' },
+    ]}
+    value={() => plan()}
+    onValueChange={(next) => plan(next)}
+  />
+);
+```
+
+## Manual Parts
+
+`RadioGroupItem` ships beside the default root for custom composition. hella has no context primitive, so state is explicit: the part takes a `checked` accessor (boolean or function) that drives `aria-checked`, `data-state`, and the indicator icon, plus an `onSelect` callback. Selection, keyboard movement, and label pairing are yours to thread.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { RadioGroupItem } from './components/radio-group';
+
+const size = signal('m');
+
+const Custom = () => (
+  <div>
+    <RadioGroupItem
+      value="m"
+      checked={() => size() === 'm'}
+      onSelect={() => size('m')}
+    />
+    <RadioGroupItem
+      value="l"
+      checked={() => size() === 'l'}
+      onSelect={() => size('l')}
+    />
+  </div>
+);
+```
+
+## Accessibility
+
+| Aspect | Value |
+|---|---|
+| Roles | `radiogroup` on the root, `radio` on each item button |
+| State | `aria-checked` and `data-state` (`checked` / `unchecked`) per item; `aria-orientation` on the root when set |
+| Keyboard | Arrow keys move focus and select (wrapping at both ends); Home and End jump; disabled items are skipped |
+| Tab | Roving tabindex: `0` on the selected item, `-1` on the rest; the first item receives tab focus when nothing is selected |
+| Labeling | Each row is a `label` wrapping its button, so the entry text names and activates the control |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the grid root), `item` (the circle button with focus ring and disabled styling), `indicator` (the centered icon slot), `icon` (the filled dot), and `row` (the flex label wrapper this port adds to pair labels without context).
+
+```jsx
+import RadioGroup from './components/radio-group';
+
+const Wide = () => <RadioGroup class="gap-4" items={[{ value: 'a', label: 'A' }]} />;
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. Item classes are verbatim from the ref, including the `focus-visible` ring and `dark:` variants.
+
+## Customizing
+
+The copied file is yours. `props.class` lands on the root next to `base`; edit the `item` map to restyle every radio at once. The composed root's row wrapper and the `name` prop's lack of hidden native inputs are the two documented divergences from the Radix ref: selection state, focus movement, and labeling are fully equivalent, while form submission wiring remains a caller concern.

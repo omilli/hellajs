@@ -1,0 +1,156 @@
+# Select
+
+A listbox select styled to shadcn's Select: the trigger button opens an anchored, width-matched listbox; arrows rove the options, typing jumps to a match, and Enter commits the highlighted value; Escape and an outside press dismiss it.
+
+## Install
+
+```bash
+bunx @hellajs/ui add select
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+The select wires its positioning, dismissal, and typeahead from the copied file using `@hellajs/dom` behavior functions.
+
+## Composing a Select
+
+The composed `Select` takes its options as data and renders the trigger plus the portaled listbox. The selected label replaces the placeholder in the trigger; `data-state` and `aria-expanded` track the open state for styling and assistive tech.
+
+```jsx
+import Select from './components/select';
+
+const fruits = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'blueberry', label: 'Blueberry' },
+  { value: 'canteloupe', label: 'Canteloupe', disabled: true },
+];
+
+const FruitPicker = () => (
+  <Select items={fruits} placeholder="Pick a fruit" onValueChange={(value) => console.log(value)} />
+);
+```
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `items` | - | `{ value, label?, disabled? }[]` rendered as options in order |
+| `value` | - | Controlled selected value accessor; when given, the root never writes its internal signal |
+| `onValueChange` | - | Reports the requested selection (including the empty string when cleared) |
+| `placeholder` | - | Shown in the trigger with `data-placeholder` while nothing is selected |
+| `size` | `"default"` | Trigger height; `"sm"` renders the compact `data-size="sm"` variant |
+| `clearable` | - | Renders an inline clear affordance on the trigger while a value is selected |
+| `class` | - | Extra classes on the trigger button |
+
+## Keyboard and Dismissal
+
+The trigger opens on click and on ArrowDown/ArrowUp. Inside the listbox, arrows rove the options with wrap, Home and End jump to the edges, Enter and Space commit the highlighted option, and Tab closes. Typing buffers a typeahead query (reset after 500ms) and highlights the first match: prefix matches win, then a wrapping substring scan. The highlighted option carries `data-highlighted`; the selected option carries `aria-selected="true"`, `data-state="checked"`, and the check icon, and scrolls into view on open.
+
+Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the listbox close it, and focus returns to the trigger. Closing starts the exit - the listbox stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
+
+The panel positions itself through [`anchorPosition`](/reference/dom/behaviors) with `matchAnchorWidth`, so the listbox always stretches to the trigger's width and flips sides on viewport collision. Scroll buttons render at the listbox edges per the upstream design; they repeat-scroll while hovered and hide at their scroll bounds.
+
+## Structure Parts
+
+Nine named parts ship beside the default `Select`: `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectItem`, `SelectLabel`, `SelectSeparator`, `SelectScrollUpButton`, and `SelectScrollDownButton`. hella has no Radix-style context, so manual composition passes state explicitly: portal the content yourself, hand it a `state` accessor and an `onDismiss` callback, and thread each item its selected state.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { Portal } from '@hellajs/dom';
+import SelectContent, { SelectItem } from './components/select';
+
+const Manual = () => {
+  const open = signal(false);
+  const current = signal('apple');
+  const state = () => (open() ? 'open' : 'closed');
+  let trigger;
+
+  return (
+    <button
+      type="button"
+      aria-haspopup="listbox"
+      aria-expanded={open() ? 'true' : 'false'}
+      hook:afterMount={(node) => { trigger = node; }}
+      on:click={() => open(!open())}
+    >
+      {current() || 'Pick one'}
+      {() => open() && (
+        <Portal to="body">
+          <SelectContent
+            state={state}
+            anchor={() => trigger}
+            onDismiss={() => open(false)}
+          >
+            <SelectItem
+              value="apple"
+              label="Apple"
+              selected={() => current() === 'apple'}
+              onselect={() => { current('apple'); open(false); }}
+            />
+          </SelectContent>
+        </Portal>
+      )}
+    </button>
+  );
+};
+```
+
+`SelectContent({ state, id, side, align, sideOffset, anchor, onDismiss, onExited, onClose, children, class })` renders the `role="listbox"` surface with its scroll buttons; `SelectItem({ value, label, disabled, selected, onselect, id, class })` renders one `role="option"`. `SelectValue({ placeholder, value })` renders the chosen label (an accessor keeps it reactive) and the placeholder with `data-placeholder` while empty; the composed root threads it for you.
+
+| Attribute | Where | Purpose |
+|---|---|---|
+| `aria-haspopup="listbox"` / `aria-expanded` / `aria-controls` | trigger | Expands the listbox id |
+| `data-state` / `data-size` / `data-placeholder` | trigger, content, value | Open state, compact size, placeholder styling hooks |
+| `role="option"` / `aria-selected` / `data-state` | item | Listbox option semantics and the check indicator |
+| `data-highlighted` | item | The roving highlight ring |
+| `data-disabled` / `aria-disabled` | item | Skipped by roving and typeahead, unclickable |
+
+## Divergences from the upstream reference
+
+- **No hidden native form control.** Radix renders a visually hidden `select` so browser form submission picks the value up; hella's select renders only the button and listbox. Pair it with `native-select` when a form needs a submittable field.
+- **The clear affordance is pointer-only.** It lives inside the trigger button, so it cannot take keyboard focus without nesting interactive content; keyboard users clear by re-running the composed flow (the empty string is a valid `onValueChange` report) or by pairing with `native-select`.
+- **No `item-aligned` position mode.** The upstream content defaults to overlaying the trigger; hella always anchors below (or flipped) with matched width, like the popper mode.
+- **Labels are props, not context.** `SelectItem` takes its label as a prop and reports selection through `onselect`; there is no controlled-context `value` plumbing to reach into.
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the bordered trigger control with focus ring, invalid, disabled, and placeholder states), `content` (the popover surface with the side-keyed enter and exit keyframes and the per-side popper translate), `viewport` (the padded option container), `item` (the option row with the focus highlight ring, disabled state, and trailing-span layout), `indicator` (the absolutely positioned check slot), `icon` and `chevron` (the inline icon sizes), `label` and `separator` (grouping affordances), and `scrollButton` (the edge scroll rows). `value` and `group` are empty; the trigger styles its value span from outside. The copied budget is 150ms both ways.
+
+```jsx
+import Select from './components/select';
+
+const Compact = () => (
+  <Select items={fruits} size="sm" placeholder="Small" class="w-48" />
+);
+```
+
+The html-format file (`select.ts`, copied with `--format html`) renders through a template instead of JSX; the select mounts as a reactive child of whatever wraps it:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Select from './components/select';
+
+mount(
+  html`
+    <${Select} items=${fruits} placeholder="Pick a fruit" />
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`data-[placeholder]:text-muted-foreground`, `data-[size=sm]:h-8`, the `data-[state=open]:animate-in` set, the `data-[side=…]` slide variants, and the `[&_svg]` sizing hooks), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The enter and exit motion relies on the `tw-animate-css` utilities the theme's tailwind entry depends on.
+
+## Customizing
+
+The copied file is yours. Option rows restyle in `item`; the panel surface in `content` (its `min-w-[8rem]` floor and side animations live there). The trigger's width comes from `w-fit` - widen it with `props.class` (`w-48`, `w-full`) or rewrite the token. The dismissal surface is the `layerDismissal` wiring; hold the listbox open against Escape and outside presses by composing `SelectContent` without `onDismiss`.

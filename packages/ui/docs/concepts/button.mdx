@@ -49,9 +49,9 @@ const save = () => console.log('saved');
 mount(
   html`
     <div class="flex gap-2">
-      <${Button} onclick=${save}>Save<//>
-      <${Button} variant="outline">Cancel<//>
-      <${Button} variant="ghost" size="sm">Dismiss<//>
+      <${Button} onclick=${save}>Save</${Button}>
+      <${Button} variant="outline">Cancel</${Button}>
+      <${Button} variant="ghost" size="sm">Dismiss</${Button}>
     </div>
   `,
   '#app',

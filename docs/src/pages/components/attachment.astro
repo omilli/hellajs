@@ -1,0 +1,47 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import AttachmentContent from "@ui/concepts/attachment.mdx";
+
+const title = "Attachment";
+const description = "Interactive Attachment demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <AttachmentContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import {
+    Attachment,
+    AttachmentAction,
+    AttachmentActions,
+    AttachmentContent,
+    AttachmentDescription,
+    AttachmentGroup,
+    AttachmentMedia,
+    AttachmentTitle,
+  } from "../../components/ui/attachment";
+  import "../../components/ui/tokens.js";
+
+  const chip = (name, note, state) => html`<${Attachment} state="${state}" size="sm">
+    <${AttachmentMedia} state="${state}" />
+    <${AttachmentContent}>
+      <${AttachmentTitle}>${name}</${AttachmentTitle}>
+      <${AttachmentDescription}>${note}</${AttachmentDescription}>
+    </${AttachmentContent}>
+    <${AttachmentActions}>
+      <${AttachmentAction} onclick="${() => alert(`Remove ${name}`)}">x</${AttachmentAction}>
+    </${AttachmentActions}>
+  </${Attachment}>`;
+
+  mount(html`<div class="demo-stack">
+    <${AttachmentGroup}>
+      ${chip("report.pdf", "Uploaded", "done")}
+      ${chip("photo.png", "Uploading...", "uploading")}
+      ${chip("archive.zip", "Failed", "error")}
+      ${chip("drop-file", "Waiting", "idle")}
+    </${AttachmentGroup}>
+  </div>`, document.getElementById("demo")!);
+</script>

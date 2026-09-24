@@ -102,9 +102,11 @@ async function compileFile(
 /**
  * Compile a registry dependency's TS modules into the dependent's output
  * directory so relative imports in spliced tailwind variants (`./cn`)
- * resolve in dist. Dependencies (theme, cn) carry no canonicals, so their
- * files compile verbatim; non-TS dependency files (stylesheets) ride their
- * own entries and are skipped.
+ * resolve in dist. Shared entries (theme, cn) carry no canonicals and
+ * compile verbatim; deps that DO carry canonicals (component
+ * registryDependencies) are skipped — canonicals are self-contained and
+ * never imported by their dependent, and each dep entry compiles its own
+ * resolved flavors at its own dist path.
  *
  * @param depName Registry entry the dependency resolves to.
  * @param style Target registry style.
@@ -127,6 +129,7 @@ async function compileDependency(
   if (dep === undefined) {
     throw new Error(`[bundle] registry dependency "${depName}" is not a declared entry`);
   }
+  if ((dep.files ?? []).length > 0) return;
   const slot = dep.styles?.[style];
   const files = [...(dep.files ?? []), ...(slot?.files ?? [])];
   for (const file of files) {

@@ -4,7 +4,7 @@ title: "In a dirty worktree the pre-change baseline is the session-read file, no
 description: In a dirty worktree the pre-change baseline is the session-read file, not HEAD — write back the pre-edit content, bundle, test, restore; never `git checkout --` a file with uncommitted user changes.
 tags: [workflow, testing]
 timestamp: 2026-08-30
-last_confirmed: 2026-08-30
+last_confirmed: 2026-09-19
 triggers: [coverage-baseline, pre-change-baseline, dirty-worktree]
 ---
 
@@ -19,3 +19,5 @@ Bonus: the reconstructed pre-fix bundle failing exactly the new regression tests
 # Evidence
 
 - Session 2026-08-30 (remove-rule-stale-index run): `git checkout -- packages/css/lib/internal/sheet.ts` in a tree whose style-host unit was fully uncommitted reverted the user's changes alongside mine (diff vs HEAD collapsed to 104-insertions style-host delta); restored from `/tmp` backup, reconstructed the pre-fix sheet.ts from the session read, and measured a clean baseline (99.80%, 1 uncovered). Plan tick `plans/css/code/sheet-internals/remove-rule-stale-index.md` Verify § carries the resulting arithmetic.
+
+Re-confirmed 2026-09-19 (unit 15, ui-shadcn-components set): `git checkout registry/registry.json` on this worktree reverted the file to a 7-entry HEAD, destroying 48 uncommitted unit entries; reconstruction required the AGENTS registry table + registry.test.ts slot pins + the dist/registry directory listing. Read memory before any revert in a plan worktree.

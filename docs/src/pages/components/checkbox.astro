@@ -1,0 +1,32 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import CheckboxContent from "@ui/concepts/checkbox.mdx";
+
+const title = "Checkbox";
+const description = "Interactive Checkbox demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <CheckboxContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Checkbox from "../../components/ui/checkbox";
+  import "../../components/ui/tokens.js";
+
+  const subscribed = signal(false);
+  mount(html`<div class="demo-stack">
+    <label class="demo-row">
+      <${Checkbox}
+        checked=${() => subscribed()}
+        onCheckedChange=${(next: boolean) => subscribed(next)}
+      /> Subscribe (${() => (subscribed() ? "on" : "off")})
+    </label>
+    <label class="demo-row"><${Checkbox} defaultChecked /> Email receipts</label>
+    <label class="demo-row"><${Checkbox} disabled /> Disabled option</label>
+    <label class="demo-row"><${Checkbox} indeterminate /> Partial selection</label>
+  </div>`, document.getElementById("demo")!);
+</script>

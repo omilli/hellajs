@@ -1,5 +1,33 @@
 # Memory Update Log
 
+## 2026-09-24
+* **Update**: Renumber: worker-allocated IDs 172-184 (ui-shadcn-components merge) collided with main-tree entries 172-180 allocated in parallel — renumbered to 181-193
+* **Creation**: Added concept [184](entries/184.md) (type: decision).
+
+## 2026-09-23
+* **Note**: main-tree parallel allocations, uncommitted operator state:
+* **Creation**: Added concept [175](entries/175.md) (type: correction).
+* **Creation**: Added concept [176](entries/176.md) (type: decision).
+* **Creation**: Added concept [177](entries/177.md) (type: decision).
+* **Creation**: Added concept [178](entries/178.md) (type: decision).
+* **Creation**: Added concept [179](entries/179.md) (type: decision).
+* **Creation**: Added concept [180](entries/180.md) (type: decision).
+* **Creation**: Added concept [183](entries/183.md) (type: decision).
+
+## 2026-09-22
+* **Note**: main-tree parallel allocation, uncommitted operator state:
+* **Creation**: Added concept [174](entries/174.md) (type: decision).
+* **Creation**: Added concept [181](entries/181.md) (type: decision).
+
+## 2026-09-19
+* **Note**: main-tree parallel allocations, uncommitted operator state:
+* **Creation**: Added concept [172](entries/172.md) (type: decision).
+* **Creation**: Added concept [173](entries/173.md) (type: decision).
+* **Creation**: Added concept [178](entries/178.md) (type: decision).
+* **memory**: add 178: compiled-registry tests need the bare @hellajs/dom resetDom (dual-instance reset)
+* **Creation**: Added concept [179](entries/179.md) (type: decision).
+* **Creation**: Added concept [180](entries/180.md) (type: decision).
+
 ## 2026-09-18
 * **Creation**: Added concept [151](entries/151.md) (type: decision).
 * **Update**: Renumber: worker-allocated ID 150 (feedback-scan-ts-needs-session, dom-dissolve merge) collided with main-tree 150-close-dynamic-html-template-component — renumbered to 151
@@ -11,6 +39,14 @@
 * **Deprecation**: Archived [022](archive/022-dom-s-hellajs-ssr-test.md) → superseded by [169](entries/169.md).
 * **Creation**: Added concept [170](entries/170.md) (type: decision).
 * **Creation**: Added concept [171](entries/171.md) (type: decision).
+* **Creation**: Added concept [172](entries/172.md) (type: decision).
+* **Creation**: Added concept [173](entries/173.md) (type: decision).
+* **Creation**: Added concept [174](entries/174.md) (type: decision).
+* **Creation**: Added concept [175](entries/175.md) (type: decision).
+* **memory**: unit 03 statics/forms/table: registry dist recovery + compiled-dist probe technique (175)
+* **Creation**: Added concept [176](entries/176.md) (type: decision).
+* **Creation**: Added concept [177](entries/177.md) (type: decision).
+* **Update**: unit 6 disclosure: memory 177 - babel aria/data camelCase call-site rewrite verified from plugins/babel source + ui coverage repro
 
 ## 2026-09-17
 * **Creation**: Added concept [149](entries/149.md) (type: decision).

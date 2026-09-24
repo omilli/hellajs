@@ -1,0 +1,30 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DrawerContent from "@ui/concepts/drawer.mdx";
+
+const title = "Drawer";
+const description = "Interactive Drawer demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <DrawerContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Button from "../../components/ui/button";
+  import Drawer from "../../components/ui/drawer";
+  import "../../components/ui/tokens.js";
+
+  const open = signal(false);
+  mount(html`<div class="demo-stack">
+    <${Button} onclick=${() => open(true)}>Open bottom drawer</${Button}>
+    <p class="demo-note">Slides up from the bottom edge with a grip handle. Drag the panel down: it follows the pointer, the overlay fades with the distance, and release past 25% of the panel height (or a 500px/s flick) dismisses.</p>
+    <${Drawer} open=${open} onClose=${() => open(false)} title="Notifications" description="Three unread digests. Drag down to dismiss.">
+      <p>The whole panel is the drag surface; buttons inside it still click normally.</p>
+      <${Button} variant="outline" onclick=${() => open(false)}>Mark all read</${Button}>
+    </${Drawer}>
+  </div>`, document.getElementById("demo")!);
+</script>

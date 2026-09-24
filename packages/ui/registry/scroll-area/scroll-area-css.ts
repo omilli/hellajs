@@ -1,0 +1,58 @@
+import { style } from "@hellajs/css";
+
+export const base = style({
+  position: "relative",
+}, { label: "hella-scroll-area", layer: "hella" });
+
+export const viewport = style({
+  height: "100%",
+  width: "100%",
+  borderRadius: "inherit",
+  outlineStyle: "none",
+  overflow: "scroll",
+  scrollbarWidth: "none",
+  transitionProperty: "color, box-shadow",
+  transitionDuration: "150ms",
+  transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+  "&::-webkit-scrollbar": {
+    display: "none",
+  },
+  "&:focus-visible": {
+    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    outline: "1px solid",
+  },
+}, { label: "hella-scroll-area-viewport", layer: "hella" });
+
+export const scrollbar = style({
+  display: "flex",
+  padding: "1px",
+  touchAction: "none",
+  userSelect: "none",
+  transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
+  transitionDuration: "150ms",
+  transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+  "&[data-orientation='vertical']": {
+    position: "absolute",
+    top: "0",
+    right: "0",
+    height: "100%",
+    width: "0.625rem",
+    borderLeft: "1px solid transparent",
+  },
+  "&[data-orientation='horizontal']": {
+    position: "absolute",
+    bottom: "0",
+    left: "0",
+    width: "100%",
+    height: "0.625rem",
+    flexDirection: "column",
+    borderTop: "1px solid transparent",
+  },
+}, { label: "hella-scroll-area-scrollbar", layer: "hella" });
+
+export const thumb = style({
+  position: "relative",
+  flex: "1 1 0%",
+  borderRadius: "9999px",
+  backgroundColor: "var(--border)",
+}, { label: "hella-scroll-area-thumb", layer: "hella" });

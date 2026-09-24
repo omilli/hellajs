@@ -1,0 +1,56 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import MenubarTitle from "@ui/concepts/menubar.mdx";
+
+const title = "Menubar";
+const description = "Interactive Menubar demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <MenubarTitle />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Menubar from "../../components/ui/menubar";
+  import {
+    MenubarMenu,
+    MenubarItem,
+    MenubarLabel,
+    MenubarSeparator,
+    MenubarSub,
+  } from "../../components/ui/menubar";
+  import "../../components/ui/tokens.js";
+
+  const fileItems = html`
+    <${MenubarLabel}>File</${MenubarLabel}>
+    <${MenubarItem} shortcut=${"⌘N"}>New Window</${MenubarItem}>
+    <${MenubarItem}>Open Recent</${MenubarItem}>
+    <${MenubarSub} content=${html`<${MenubarItem}>Export as PDF</${MenubarItem}><${MenubarItem}>Export as HTML</${MenubarItem}>`}>
+      Export
+    </${MenubarSub}>
+    <${MenubarSeparator}></${MenubarSeparator}>
+    <${MenubarItem} destructive=${true}>Close</${MenubarItem}>
+  `;
+  const editItems = html`
+    <${MenubarItem} shortcut=${"⌘Z"}>Undo</${MenubarItem}>
+    <${MenubarItem} shortcut=${"⌘C"}>Copy</${MenubarItem}>
+    <${MenubarItem} shortcut=${"⌘V"}>Paste</${MenubarItem}>
+  `;
+  const viewItems = html`
+    <${MenubarItem}>Zoom In</${MenubarItem}>
+    <${MenubarItem}>Zoom Out</${MenubarItem}>
+  `;
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Menubar}>
+        <${MenubarMenu} value=${"file"} content=${fileItems}>File</${MenubarMenu}>
+        <${MenubarMenu} value=${"edit"} content=${editItems}>Edit</${MenubarMenu}>
+        <${MenubarMenu} value=${"view"} content=${viewItems}>View</${MenubarMenu}>
+      </${Menubar}>
+    </div>
+    <p class="demo-note">Click or press ArrowDown to open; arrows switch menus while one is open, Escape returns focus to its trigger, Tab closes all.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

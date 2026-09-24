@@ -1,0 +1,61 @@
+# layerDismissal
+
+Dismisses stacked overlays one layer at a time: Escape and outside pointerdowns fire a layer's handler only while it is top of the shared stack, returning the dispose handle that pops the stack and removes the listeners.
+
+## API
+
+```typescript
+function layerDismissal(
+  nodes: () => (Node | null)[],
+  onDismiss: () => void
+): () => void
+```
+
+- `nodes`: Getter returning the nodes counted as inside the layer; `null` entries are ignored. Re-invoked on every event.
+- `onDismiss`: Zero-argument callback fired when the top layer is dismissed.
+- **Returns**: Dispose handle. Calling it pops the layer off the stack and removes both document listeners.
+
+## Basic Usage
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { layerDismissal } from "@hellajs/dom";
+
+let disposeLayer: (() => void) | undefined;
+
+const Menu = () => (
+  <nav
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      disposeLayer = layerDismissal(() => [node], () => node.remove());
+    }}
+    hook:beforeDestroy={() => disposeLayer?.()}
+  >
+    <button>File</button>
+    <button>Edit</button>
+  </nav>
+);
+
+mount(<Menu />, "#app");
+// Escape or an outside click removes the menu while it is topmost
+```
+
+## Key Concepts
+
+### One Layer per Dismissal
+
+Every wiring pushes onto a shared module-level stack. Escape (document, capture phase) and outside pointerdowns fire only the top layer's `onDismiss`: a submenu wired over a menu over a popover dismisses one surface per gesture, and the layer beneath absorbs the next one.
+
+### Outside Means Outside Every Node
+
+Like `onOutside`, the `nodes` getter re-resolves per event, so portal content and swapped panels stay current without rewiring. A pointerdown inside any of the layer's own resolved nodes never dismisses it.
+
+## Important Considerations
+
+### The Handler Must Dispose
+
+Firing `onDismiss` does not pop the stack. The dismissal callback closes the overlay and disposes the layer in the same path (a `hook:beforeDestroy` cleanup, for example); otherwise the dismissed layer stays top and absorbs every later gesture.
+
+### Input Validation
+
+`layerDismissal()` throws when `nodes` or `onDismiss` is `null` or `undefined`: `[dom] layerDismissal: nodes is required`, `[dom] layerDismissal: onDismiss is required`.

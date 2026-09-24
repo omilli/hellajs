@@ -1,0 +1,150 @@
+# Resizable
+
+Flex panels with drag handles styled to shadcn's Resizable: a group div lays panels out in a row or column, each handle moves the boundary between its two neighboring panels, and the sizes live in a percentage `signal` on the group. The component reimplements the react-resizable-panels behavior over `@hellajs/dom`'s [`onDrag`](/reference/dom/behaviors) wiring, with the group as the single owner: it discovers its panels and handles in the DOM at mount, seeds the layout from each panel's `defaultSize`, and mirrors the signal onto every panel's `flex-grow`.
+
+## Install
+
+```bash
+bunx @hellajs/ui add resizable
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Usage
+
+Compose the three exports: `ResizablePanelGroup` (the default), `ResizablePanel`, and `ResizableHandle`. Place one handle between each pair of panels you want to separate.
+
+```jsx
+import ResizablePanelGroup, {
+  ResizableHandle,
+  ResizablePanel,
+} from './components/resizable';
+
+const Shell = () => (
+  <ResizablePanelGroup direction="horizontal">
+    <ResizablePanel defaultSize={50}>Sidebar</ResizablePanel>
+    <ResizableHandle withHandle />
+    <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
+  </ResizablePanelGroup>
+);
+```
+
+The html-format file (`resizable.ts`, copied with `--format html`) works the same way from a template:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Resizable, { ResizableHandle, ResizablePanel } from './components/resizable';
+
+mount(
+  html`<${Resizable} direction="horizontal">
+    <${ResizablePanel} defaultSize=${50}>Sidebar</${ResizablePanel}>
+    <${ResizableHandle} withHandle />
+    <${ResizablePanel} defaultSize=${50}>Editor</${ResizablePanel}>
+  </${Resizable}>`,
+  '#app',
+);
+```
+
+### ResizablePanelGroup
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `direction` | `"horizontal" \| "vertical"` | Flex axis (default `"horizontal"`), rendered as `aria-orientation` |
+| `onLayout` | `(sizes: number[]) => void` | Reports the panel sizes in percent after each drag or keyboard resize; the initial layout does not fire it |
+| `children` | panels and handles | Discovered in the DOM at mount; every `ResizablePanel` child joins the layout |
+| `class` | `string` | Lands on the group next to the component class |
+
+### ResizablePanel
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `defaultSize` | `number` | Initial share of the group in percent; required, it seeds the group's layout |
+| `minSize` | `number` | Lower percent bound (default `0`) |
+| `maxSize` | `number` | Upper percent bound (default `100`) |
+| `children` | any | Rendered inside the panel |
+| `class` | `string` | Lands on the panel |
+
+### ResizableHandle
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `withHandle` | `boolean` | Renders the grip icon chip (the grip-vertical glyph's path data, inlined per the ref) centered on the divider |
+| `disabled` | `boolean` | Blocks drags and keys, renders `aria-disabled` and `data-disabled` |
+| `class` | `string` | Lands on the handle next to the component class |
+
+## Sizing and Constraints
+
+Dragging a handle moves the boundary between the panel before it and the panel after it: the pixel delta converts to a percentage of the group, the previous panel takes the share the next one gives up. Both sides clamp at their `minSize` and `maxSize`, so a drag that runs out of room stops at the boundary instead of pushing other panels. Panel geometry is measured when the drag starts, not observed continuously.
+
+```jsx
+import ResizablePanelGroup, {
+  ResizableHandle,
+  ResizablePanel,
+} from './components/resizable';
+
+const Clamped = () => (
+  <ResizablePanelGroup direction="horizontal">
+    <ResizablePanel defaultSize={50} minSize={25} maxSize={75}>
+      Sidebar
+    </ResizablePanel>
+    <ResizableHandle />
+    <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
+  </ResizablePanelGroup>
+);
+```
+
+## Keyboard
+
+Each handle is focusable (`role="separator"`, `tabindex="0"`) and moves its pair by 5 percent per press: `ArrowRight` and `ArrowDown` widen the earlier panel, `ArrowLeft` and `ArrowUp` narrow it, always within the pair's min and max.
+
+## Divergences
+
+The upstream library supports layout features this port leaves out; they stay out of scope rather than approximated:
+
+- Resizes only move the handle's adjacent pair. Upstream cascades a single handle drag across every panel in the group so later panels absorb the remainder.
+- No `onCollapse`, `onExpand`, or collapse API.
+- No persisted layouts and no controlled size props: the group is uncontrolled and `onLayout` is the only observation point.
+
+## Accessibility
+
+| Aspect | Value |
+|---|---|
+| Role | `separator` on each handle |
+| Focus | Handles carry `tabindex="0"` (`-1` while disabled) with the focus ring from the style layer |
+| Orientation | `aria-orientation` on the group and every handle, set from `direction` at mount |
+| Disabled | `aria-disabled` and `data-disabled` on the handle |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the flex group), `handle` (the divider, its wide hover strip, and the horizontal rotation for the grip), `grip` (the bordered chip), and `icon` (the glyph size). Panels render no class of their own: the group drives their `flex-grow` inline.
+
+```jsx
+import ResizablePanelGroup, { ResizableHandle, ResizablePanel } from './components/resizable';
+
+const Bordered = () => (
+  <ResizablePanelGroup class="rounded-lg border">
+    <ResizablePanel defaultSize={50}>Left</ResizablePanel>
+    <ResizableHandle withHandle />
+    <ResizablePanel defaultSize={50}>Right</ResizablePanel>
+  </ResizablePanelGroup>
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The strings are verbatim from the ref, including the `aria-[orientation=horizontal]` divider flip and the `[&[aria-orientation=horizontal]>div]:rotate-90` grip turn.
+
+## Customizing
+
+The copied file is yours. The group's `resizePair` function owns the pair math, so changing the keyboard step (5 percent) or the percentage rounding is a one-place edit, and the `handle` map restyles every divider at once.

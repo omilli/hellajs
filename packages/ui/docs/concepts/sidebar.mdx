@@ -1,0 +1,154 @@
+# Sidebar
+
+A composite shell styled to shadcn's Sidebar: a provider that owns the open and mobile state, a collapsible desktop panel with three variants, a mobile sheet past `769px`, and a menu part family (buttons, actions, badges, submenus, skeletons) for the content. Twenty-three parts compose the anatomy; the caller threads the provider's state into each part explicitly.
+
+## Install
+
+```bash
+bunx @hellajs/ui add sidebar
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface. The entry mirrors shadcn's dependency graph, so `add sidebar` also copies `button`, `input`, `separator`, `skeleton`, `sheet`, and `tooltip` unless they are present already.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Composition
+
+`SidebarProvider` owns the state and hands it to a children function; every other part receives what it needs as explicit props. This is the divergence from the reference: hella has no context primitive, so the provider's threaded state object (`open`, `setOpen`, `mobile`, `openMobile`, `setOpenMobile`, `onToggle`) replaces `useSidebar()`.
+
+```jsx
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarFooter, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarSeparator, SidebarTrigger } from './components/sidebar';
+
+const App = () => (
+  <SidebarProvider>
+    {({ open, mobile, openMobile, setOpenMobile, onToggle }) => (
+      <>
+        <Sidebar open={open} mobile={mobile} openMobile={openMobile} onOpenMobileChange={setOpenMobile}>
+          <SidebarHeader>Acme</SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Application</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton active tooltip="Home" open={open} mobile={mobile}>Home</SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>Footer</SidebarFooter>
+          <SidebarSeparator />
+        </Sidebar>
+        <SidebarInset>
+          <SidebarTrigger onToggle={onToggle} />
+          <main>Page content stretches beside the panel.</main>
+        </SidebarInset>
+      </>
+    )}
+  </SidebarProvider>
+);
+```
+
+The wrapper `div` carries `data-slot="sidebar-wrapper"`, the width variables, and both listeners: a `matchMedia("(max-width: 769px)")` listener that flips the `mobile` state, and the reference's Ctrl/Cmd+B shortcut, which calls `onToggle` (the mobile sheet on mobile, the desktop open state otherwise). `open` is the standard dual-surface pair: pass `open` with `onOpenChange` for a controlled signal, or `defaultOpen` (default `true`) to let the provider own it. The reference's `sidebar_state` cookie persistence is dropped; persist the signal yourself if you need it.
+
+The html-format file (`sidebar.ts`, copied with `--format html`) composes through the embedded-tag idiom inside a static root:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger } from './components/sidebar';
+
+mount(
+  html`
+    <${SidebarProvider}>
+      ${(state) => html`
+        <div class="app">
+          <${Sidebar} open=${state.open} mobile=${state.mobile} openMobile=${state.openMobile} onOpenMobileChange=${state.setOpenMobile}>
+            <${SidebarContent}>Panel content</${SidebarContent}>
+          </${Sidebar}>
+          <${SidebarTrigger} onToggle=${state.onToggle} />
+        </div>
+      `}
+    </${SidebarProvider}>
+  `,
+  '#app',
+);
+```
+
+## Collapsible Modes
+
+`collapsible` picks what the desktop panel does when `open` flips false; the root's `data-collapsible` attribute carries the mode and the CSS forks on it.
+
+| Mode | Collapsed behavior |
+|---|---|
+| `"offcanvas"` (default) | The panel slides out of view; the gap closes to zero width |
+| `"icon"` | The panel shrinks to `--sidebar-width-icon` (3rem); labels, badges, actions, and submenus hide, menu buttons square to icons, and a button's `tooltip` shows on hover |
+| `"none"` | The panel renders as a fixed-width column and ignores the open state entirely |
+
+`SidebarMenuButton`'s `tooltip` composes an inline hover label (delay 0) anchored to the button; it renders only while the sidebar is collapsed to icon mode and never on mobile - the `hidden` attribute masks it otherwise. The `open` and `mobile` accessors thread that decision down.
+
+`SidebarRail` is the clickable edge handle (`aria-label` and `title` "Toggle Sidebar") wired to `onToggle`; width dragging is out of scope, so the rail toggles on click only.
+
+## Mobile Behavior
+
+Past the `769px` breakpoint the provider's `mobile` state flips true and `Sidebar` renders the mobile sheet instead of the desktop panel: a portaled overlay plus a `role="dialog"` panel sliding from `side`, with escape, outside-pointerdown, and focus-trap wiring and the same exit hold the sheet entry ships (the panel stays mounted under `data-state="closed"` until its exit animation ends, 350ms fallback). The mechanics are duplicated inline - registry entries are self-contained - so `add sidebar` needs no import from the sheet file. `openMobile`/`setOpenMobile` (threaded from the provider) drive it, and `onToggle` targets it while mobile.
+
+## CSS Variables
+
+| Variable | Value | Declared by |
+|---|---|---|
+| `--sidebar-width` | `16rem` (wrapper inline style) / `18rem` (mobile panel inline style) | The provider wrapper and the mobile panel, both flavors |
+| `--sidebar-width-icon` | `3rem` (wrapper inline style) | The provider wrapper, both flavors |
+| `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring` | shadcn oklch palette | tailwind: `theme.css` `:root` and `.dark`; css: the sidebar style module's own `vars()` registration (same values), because `tokens.js` carries no sidebar colors |
+| `--skeleton-width` | random 50% to 90% per `SidebarMenuSkeleton` | The skeleton part's inline style |
+
+Override the widths by editing the inline `style` strings on the wrapper (and the mobile panel); override the palette through the theme entry (tailwind) or the style module's `vars()` call (css).
+
+## Structure Parts
+
+Twenty-two parts ship beside the `Sidebar` root. Layout: `SidebarHeader`, `SidebarFooter`, `SidebarSeparator`, `SidebarContent`, `SidebarInset` (the `main` that stretches beside the panel). Menu: `SidebarGroup`, `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarGroupContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton` (`variant: "default" | "outline"`, `size: "default" | "sm" | "lg"`, `active`, `tooltip`), `SidebarMenuAction` (`showOnHover` fades it in on item hover at `md` and up), `SidebarMenuBadge`, `SidebarMenuSkeleton` (`showIcon`), `SidebarMenuSub`, `SidebarMenuSubItem`, `SidebarMenuSubButton` (`size: "sm" | "md"`, `active`, anchor by default). Controls: `SidebarTrigger` (the panel-left icon button), `SidebarRail`. Every part carries its `data-slot` and the reference's `data-sidebar` hook, so user CSS can target either.
+
+```jsx
+import { SidebarMenuAction, SidebarMenuBadge, SidebarMenuItem, SidebarMenuSkeleton, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from './components/sidebar';
+
+const LoadingItem = () => (
+  <SidebarMenuItem>
+    <SidebarMenuSkeleton showIcon />
+  </SidebarMenuItem>
+);
+
+const ItemWithAction = () => (
+  <SidebarMenuItem>
+    <SidebarMenuSub>
+      <SidebarMenuSubItem>
+        <SidebarMenuSubButton active href="/settings">Settings</SidebarMenuSubButton>
+      </SidebarMenuSubItem>
+    </SidebarMenuSub>
+    <SidebarMenuBadge>3</SidebarMenuBadge>
+    <SidebarMenuAction showOnHover onclick={() => console.log('configure')}>Configure</SidebarMenuAction>
+  </SidebarMenuItem>
+);
+```
+
+`SidebarInput` renders the search input (`h-8`, `bg-background`) with the input entry's class maps inlined.
+
+## CSS Style
+
+The css flavor composes classes as plain arrays; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer. The module registers the sidebar palette through `vars()` (the table above) and forks the variant, collapsible, and side behavior through attribute selectors over the `data-variant`, `data-collapsible`, `data-side`, and `data-state` attributes the parts emit - the same nesting-free lexicon every translated entry uses, with `peer-*` conditions expressed as sibling selectors (for example `[data-sidebar='menu-button']:hover ~ [data-slot='sidebar-menu-badge']`). The `showOnHover` fade keys on the `data-show-on-hover` attribute the action renders.
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css` (which already declares the full `--sidebar-*` set for `:root` and `.dark`), and the copied strings are shadcn's literal utilities verbatim, including the `group-data-[collapsible=icon]` and `peer-data-[size=sm]/menu-button` named selectors. Each part's class array wraps in `cn()`.
+
+## Customizing
+
+The copied file is yours. Widths live in the two inline `style` strings; the collapse durations live in the `gap` and `container` transition maps (200ms linear, per the reference); the mobile slide pair follows the sheet entry's 500ms in / 300ms out. Variant geometry (floating and inset padding, borders, the inset margins on `SidebarInset`) forks through `data-variant` - restyle one variant by editing its branch, not the others.

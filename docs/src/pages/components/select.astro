@@ -1,0 +1,33 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import SelectTitle from "@ui/concepts/select.mdx";
+
+const title = "Select";
+const description = "Interactive Select demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <SelectTitle />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Select from "../../components/ui/select";
+  import "../../components/ui/tokens.js";
+
+  const fruits = [
+    { value: "apple", label: "Apple" },
+    { value: "blueberry", label: "Blueberry" },
+    { value: "canteloupe", label: "Canteloupe" },
+    { value: "date", label: "Date", disabled: true },
+  ];
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Select} items=${fruits} placeholder="Pick a fruit" />
+      <${Select} items=${fruits} size="sm" placeholder="Compact" />
+    </div>
+    <p class="demo-note">Arrow keys rove the options, typing jumps to a match, and Enter commits. The listbox stretches to the trigger's width; the disabled option is skipped.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

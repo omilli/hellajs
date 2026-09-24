@@ -139,7 +139,7 @@ The target element must exist when the portal effect runs. If not found, an erro
 
 ### Automatic Cleanup
 
-Portal content is automatically removed when the portal's parent element is removed from the DOM.
+Portal content is automatically removed when the portal's parent element is removed from the DOM. Cleanup unwinds the removed subtree's own state first, so portals nested inside portaled content detach with it and their hooks fire.
 
 ```jsx
 const App = () => {

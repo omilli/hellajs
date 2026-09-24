@@ -1,0 +1,187 @@
+# Sheet
+
+A side panel styled to shadcn's Sheet: an overlay plus a panel that slides in from one of the four screen edges with enter and exit animations, a built-in close button, and wired title and description. The caller owns an `open` signal and an `onClose` callback; the component wires everything else around them.
+
+## Install
+
+```bash
+bunx @hellajs/ui add sheet
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Sides
+
+`side` picks the edge the panel mounts on and carries both the geometry and the slide direction: the four variants mirror the shadcn reference verbatim.
+
+| Side | Geometry | Slide |
+|---|---|---|
+| `"right"` (default) | Full height, `w-3/4`, `sm:max-w-sm`, right border | In from the right, out to the right |
+| `"left"` | Full height, `w-3/4`, `sm:max-w-sm`, left border | In from the left, out to the left |
+| `"top"` | Full width, auto height, bottom border | In from the top, out to the top |
+| `"bottom"` | Full width, auto height, top border | In from the bottom, out to the bottom |
+
+```jsx
+import { signal } from '@hellajs/core';
+import Sheet from './components/sheet';
+
+const EditProfile = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Sheet open={isOpen} onClose={close} side="right" title="Edit profile" description="Make changes to your profile here.">
+      <p>Press escape or the X to close.</p>
+    </Sheet>
+  );
+};
+```
+
+Opening portals the overlay and panel into `document.body` with `data-state="open"`, `data-side`, and the enter animation (500ms slide, 150ms overlay fade); flipping `open` false starts the exit (300ms slide) - the panel stays mounted under `data-state="closed"` until the exit animation ends (a 350ms fallback unmounts it if animations never run). While leaving, the dismissal wirings are down: the exit runs unwired and repeat `onClose` calls are no-ops.
+
+Props beyond `open` and `onClose`:
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `side` | `"right"` | Edge the panel mounts on; sets `data-side` and the slide variant |
+| `title` | - | Optional string rendered as a wired `SheetTitle` (the panel's `aria-labelledby` target) |
+| `description` | - | Optional string rendered as a wired `SheetDescription` (the panel's `aria-describedby` target) |
+| `showCloseButton` | `true` | Renders the X close button in the panel's top-right corner |
+| `closeOnEscape` | `true` | Escape keydown while the panel is open calls `onClose` |
+| `closeOnOutside` | `true` | Pointerdown outside the panel (the overlay included) calls `onClose` |
+
+The title and description wiring is what screen readers announce: `role="dialog"` carries `aria-labelledby` and `aria-describedby` pointing at the generated ids, and a manual composition must pass `labelledBy`/`describedBy` itself. The parts render warn-less passthroughs; nothing forces you to include them, but the panel announces nothing without a labelled title.
+
+## Structure Parts
+
+Nine named parts ship beside the default `Sheet`: `SheetTrigger`, `SheetClose`, `SheetPortal`, `SheetOverlay`, `SheetContent`, `SheetHeader`, `SheetFooter`, `SheetTitle`, and `SheetDescription`, each carrying its `data-slot` and class compose. hella has no Radix-style context primitive, so manual composition passes state explicitly: portal the overlay and panel yourself, and hand both a `state` accessor.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { Portal } from '@hellajs/dom';
+import Sheet, { SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetTitle } from './components/sheet';
+
+const Manual = () => {
+  const isOpen = signal(false);
+  const state = () => (isOpen() ? 'open' : 'closed');
+
+  return (
+    <>
+      <button on:click={() => isOpen(true)}>Open</button>
+      {() => isOpen() && (
+        <Portal to="body">
+          <SheetOverlay state={state} />
+          <SheetContent state={state} side="bottom" labelledBy="sheet-manual-title" onClose={() => isOpen(false)}>
+            <SheetHeader>
+              <SheetTitle id="sheet-manual-title">Cart</SheetTitle>
+              <SheetDescription>Three items reserved for you.</SheetDescription>
+            </SheetHeader>
+            <SheetFooter>
+              <SheetClose onClose={() => isOpen(false)} />
+            </SheetFooter>
+          </SheetContent>
+        </Portal>
+      )}
+    </>
+  );
+};
+```
+
+`SheetTrigger` is a bare button: wire its click to your own signal write. `SheetClose` is the X button with its `sr-only` "Close" label; `SheetContent` renders the same shape automatically unless `showCloseButton` is false. `SheetPortal` wraps children in a `Portal to="body"` when a manual composition wants the named part for symmetry.
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer. The module exports `base` (the overlay), `content` (the panel frame), `contentSides` (the per-side geometry and slide animations), `close`, `header`, `footer`, `title`, and `description`. Each side's enter and exit is a hand-rolled `@keyframes` pair (fade composed with a 100% translate along the side's axis) applied under `[data-state='open']` (500ms) / `[data-state='closed']` (300ms) selectors; the overlay fades in 150ms like the dialog's.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Sheet from './components/sheet';
+
+const Notifications = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Sheet open={isOpen} onClose={close} side="top" title="Notifications" class="border-blue-600">
+      <p>Three unread digests.</p>
+    </Sheet>
+  );
+};
+```
+
+The html-format file (`sheet.ts`, copied with `--format html`) renders through a template instead of JSX:
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+import Sheet from './components/sheet';
+
+const isOpen = signal(false);
+const close = () => isOpen(false);
+
+mount(
+  html`
+    <main>
+      <${Sheet} open=${isOpen} onClose=${close} side="top" title="Notifications">
+        <p>Three unread digests.</p>
+      <${Sheet}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-background`, `animate-in`, the four `slide-in-from-*` / `slide-out-to-*` side variants), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Sheet from './components/sheet';
+
+const Filters = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Sheet open={isOpen} onClose={close} side="left" title="Filters" class="max-w-xs">
+      <p>Refine the catalog.</p>
+    </Sheet>
+  );
+};
+```
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+import Sheet from './components/sheet';
+
+const isOpen = signal(false);
+const close = () => isOpen(false);
+
+mount(
+  html`
+    <main>
+      <${Sheet} open=${isOpen} onClose=${close} side="left" title="Filters">
+        <p>Refine the catalog.</p>
+      <${Sheet}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Customizing
+
+The copied file is yours. The class composition bakes `content` plus the side class into the panel; `props.class` lands last in the composition, so one-off classes from the call site always ride along. Side geometry lives in the `contentSides` map: widths, borders, and the slide `@keyframes` pairs. Edit the durations in the `animation` declarations, or restyle a side there without touching the others.

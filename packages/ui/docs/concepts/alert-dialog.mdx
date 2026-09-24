@@ -1,0 +1,193 @@
+# Alert Dialog
+
+A modal confirmation styled to shadcn's AlertDialog: an overlay plus centered panel with enter and exit animations, a wired title and description, and an Action/Cancel button pair. The caller owns an `open` signal and an `onClose` callback; the component wires everything else around them.
+
+## Install
+
+```bash
+bunx @hellajs/ui add alert-dialog
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface. The entry declares button as a registry dependency, so `add` also copies the Button component the Action and Cancel parts compose.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## No Outside Dismissal
+
+Alert dialogs demand a deliberate answer, so the panel has no outside-click dismissal at all: there is no `closeOnOutside` prop, and pointerdowns on the overlay or the page behind it do nothing. Escape closes (suppressible with `closeOnEscape`), and the Action and Cancel buttons close through your own wiring. Radix's AlertDialog makes the same choice; this is the one deliberate divergence from the [Dialog](/components/dialog) surface.
+
+```jsx
+import { signal } from '@hellajs/core';
+import AlertDialog, { AlertDialogAction, AlertDialogCancel, AlertDialogFooter } from './components/alert-dialog';
+
+const DeleteProject = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <AlertDialog open={isOpen} onClose={close} title="Delete project" description="This removes every deployment attached to it.">
+      <AlertDialogFooter>
+        <AlertDialogCancel onClose={close}>Cancel</AlertDialogCancel>
+        <AlertDialogAction variant="destructive" onClose={close}>Delete</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialog>
+  );
+};
+```
+
+`onClose` never flips the signal for you; the callback exists so the dismissal paths can ask you to close. Wire it to the signal write on every Action and Cancel.
+
+Props beyond `open` and `onClose`:
+
+| Prop | Default | Behavior |
+|---|---|---|
+| `title` | - | Optional string rendered as a wired `AlertDialogTitle` (the panel's `aria-labelledby` target) |
+| `description` | - | Optional string rendered as a wired `AlertDialogDescription` (the panel's `aria-describedby` target) |
+| `size` | `"default"` | `"sm"` narrows the panel to `max-w-xs` and grids the footer into two columns |
+| `closeOnEscape` | `true` | Escape keydown while the panel is open calls `onClose` |
+
+## Structure Parts
+
+Eleven named parts ship beside the default `AlertDialog`: `AlertDialogTrigger`, `AlertDialogPortal`, `AlertDialogOverlay`, `AlertDialogContent`, `AlertDialogHeader`, `AlertDialogFooter`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogMedia`, `AlertDialogAction`, and `AlertDialogCancel`, each carrying its `data-slot` and class compose. hella has no Radix-style context primitive, so manual composition passes state explicitly: portal the overlay and panel yourself, and hand both a `state` accessor.
+
+```jsx
+import { signal } from '@hellajs/core';
+import { Portal } from '@hellajs/dom';
+import AlertDialog, { AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogOverlay, AlertDialogTitle } from './components/alert-dialog';
+
+const Manual = () => {
+  const isOpen = signal(false);
+  const state = () => (isOpen() ? 'open' : 'closed');
+
+  return (
+    <>
+      <button on:click={() => isOpen(true)}>Delete</button>
+      {() => isOpen() && (
+        <Portal to="body">
+          <AlertDialogOverlay state={state} />
+          <AlertDialogContent state={state} onClose={() => isOpen(false)}>
+            <AlertDialogHeader>
+              <AlertDialogMedia>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+              </AlertDialogMedia>
+              <AlertDialogTitle>Remove this project?</AlertDialogTitle>
+              <AlertDialogDescription>Deployments attached to it stop immediately.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClose={() => isOpen(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClose={() => isOpen(false)}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </Portal>
+      )}
+    </>
+  );
+};
+```
+
+`AlertDialogTrigger` is a bare button: wire its click to your own signal write, exactly like the manual composition above. `AlertDialogAction` and `AlertDialogCancel` render composed Buttons (default and outline variants by default; both accept the full Button `variant` and `size` picks) and call the `onClose` prop you pass them.
+
+The header, footer, title, and media parts restyle themselves under the panel's `data-size` attribute: `"default"` centers everything and aligns it left from `sm` up, `"sm"` keeps centered text and grids the footer into two columns. `AlertDialogMedia` slots an icon above the title and re-flows the header rows around it on wide screens.
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports one class per part: `base` (the overlay), `content` (the panel, `max-w-[calc(100%-2rem)]` wide and `32rem` from `sm` up), `header`, `footer`, `title`, `description`, and `media`, plus the `buttonBase`, `buttonVariants`, and `buttonSizes` maps the Action and Cancel parts compose. The enter and exit animations are hand-rolled `@keyframes` (fade for the overlay, fade plus zoom for the panel) declared in the module and applied under `[data-state='open']` / `[data-state='closed']` selectors; the copied budget is 200ms on the panel and 150ms on the overlay.
+
+```jsx
+import { signal } from '@hellajs/core';
+import AlertDialog, { AlertDialogAction, AlertDialogCancel } from './components/alert-dialog';
+
+const RevokeKey = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <AlertDialog open={isOpen} onClose={close} title="Revoke API key" class="border-red-600">
+      <p>Applications using this key stop authenticating.</p>
+      <AlertDialogAction variant="destructive" onClose={close}>Revoke</AlertDialogAction>
+      <AlertDialogCancel onClose={close}>Cancel</AlertDialogCancel>
+    </AlertDialog>
+  );
+};
+```
+
+The html-format file (`alert-dialog.ts`, copied with `--format html`) renders through a template instead of JSX; the alert dialog mounts as a reactive child of whatever wraps it:
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+import AlertDialog, { AlertDialogAction, AlertDialogCancel } from './components/alert-dialog';
+
+const isOpen = signal(false);
+const close = () => isOpen(false);
+
+mount(
+  html`
+    <main>
+      <${AlertDialog} open=${isOpen} onClose=${close} title="Revoke API key">
+        <p>Applications using this key stop authenticating.</p>
+        <${AlertDialogAction} variant="destructive" onClose=${close}>Revoke<${AlertDialogAction}>
+        <${AlertDialogCancel} onClose=${close}>Cancel<${AlertDialogCancel}>
+      <${AlertDialog}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-background`, `animate-in`, `zoom-in-95`, the `group-data-[size]` header and footer variants), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import { signal } from '@hellajs/core';
+import AlertDialog, { AlertDialogAction, AlertDialogCancel } from './components/alert-dialog';
+
+const SignOutEverywhere = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <AlertDialog open={isOpen} onClose={close} title="Sign out everywhere" size="sm">
+      <p>This ends every active session.</p>
+      <AlertDialogAction onClose={close}>Sign out</AlertDialogAction>
+      <AlertDialogCancel onClose={close}>Cancel</AlertDialogCancel>
+    </AlertDialog>
+  );
+};
+```
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+import AlertDialog, { AlertDialogAction, AlertDialogCancel } from './components/alert-dialog';
+
+const isOpen = signal(false);
+const close = () => isOpen(false);
+
+mount(
+  html`
+    <main>
+      <${AlertDialog} open=${isOpen} onClose=${close} title="Sign out everywhere" size="sm">
+        <p>This ends every active session.</p>
+        <${AlertDialogAction} onClose=${close}>Sign out<${AlertDialogAction}>
+        <${AlertDialogCancel} onClose=${close}>Cancel<${AlertDialogCancel}>
+      <${AlertDialog}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Customizing
+
+The copied file is yours. The class composition bakes `content` into the panel; `props.class` lands last in the composition, so one-off classes from the call site always ride along. The panel width is the `maxWidth` declarations under the `[data-size]` selectors; the Action and Cancel looks are the `buttonVariants` maps, shared verbatim with the Button component's own declarations. Edit the animation budgets in the `animation` declarations under the `[data-state]` selectors, or the `@keyframes` they reference.

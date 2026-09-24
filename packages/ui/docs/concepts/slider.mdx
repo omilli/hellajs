@@ -1,0 +1,148 @@
+# Slider
+
+A pointer and keyboard value control styled to shadcn's Slider: a track span, a range span, and one thumb span per value. The component reimplements the Radix slider behavior over `@hellajs/dom`'s [`onDrag`](/reference/dom/behaviors) wiring: pointerdown selects the nearest thumb, pointer movement maps track position to a stepped value, and keyboard arrows nudge the focused thumb. Values live in a signal, and the thumbs plus range render their positions as reactive inline styles.
+
+## Install
+
+```bash
+bunx @hellajs/ui add slider
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Usage
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `number[] \| (() => number[])` | Uncontrolled seed array or controlled accessor (see below) |
+| `onValueChange` | `(value: number[]) => void` | Fires with the full value array after every accepted drag or keyboard move |
+| `onValueCommit` | `(value: number[]) => void` | Fires when an interaction ends: drag release and each accepted keyboard change |
+| `min` | `number` | Lower bound (default `0`) |
+| `max` | `number` | Upper bound (default `100`) |
+| `step` | `number` | Value increment (default `1`) |
+| `orientation` | `"horizontal" \| "vertical"` | Layout and value axis (default `"horizontal"`) |
+| `disabled` | `boolean` | Blocks drags and keys, renders the disabled data attribute |
+| `minStepsBetweenThumbs` | `number` | Minimum step gap enforced between neighboring thumbs |
+| `class` | `string` | Lands on the root next to the component class |
+
+```jsx
+import Slider from './components/slider';
+
+const Volume = () => (
+  <Slider value={[40]} />
+);
+```
+
+The html-format file (`slider.ts`, copied with `--format html`) works the same way from a template:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Slider from './components/slider';
+
+mount(
+  html`<${Slider} value=${[40]} />`,
+  '#app',
+);
+```
+
+## Controlled and Uncontrolled
+
+Without `value`, the slider owns an internal signal seeded from the array you pass and writes every accepted move into it. Pass an accessor and the slider becomes controlled: drags and keys report through `onValueChange` without writing state, so a parent signal decides what sticks.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Slider from './components/slider';
+
+const volume = signal(40);
+
+const Controlled = () => (
+  <Slider
+    value={() => volume()}
+    onValueChange={(next) => volume(next[0])}
+  />
+);
+```
+
+The accessor must read a signal (or other reactive source) for updates to propagate; a plain array read never invalidates the rendered positions.
+
+## Multiple Thumbs
+
+The value array length is the thumb count: `[25, 75]` renders two thumbs and the range span stretches between them. A pointerdown grabs whichever thumb sits nearest the pointer, then drags it; `minStepsBetweenThumbs` clamps the dragged value so neighbors keep at least that many steps of separation.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Slider from './components/slider';
+
+const range = signal([25, 75]);
+
+const PriceRange = () => (
+  <Slider
+    value={() => range()}
+    min={0}
+    max={100}
+    minStepsBetweenThumbs={5}
+    onValueChange={(next) => range([...next])}
+  />
+);
+```
+
+With no `value` prop the slider renders the ref's fallback pair, two thumbs spanning `min` to `max`. The thumb count is fixed at mount: value updates move the thumbs but never add or remove them.
+
+## Keyboard
+
+Each thumb is focusable and steps on its own.
+
+| Key | Effect |
+|---|---|
+| `ArrowRight` / `ArrowUp` | `+step` |
+| `ArrowLeft` / `ArrowDown` | `-step` |
+| `PageUp` | `+10 * step` |
+| `PageDown` | `-10 * step` |
+| `Home` | Jump to `min` |
+| `End` | Jump to `max` |
+
+Every accepted keyboard change also fires `onValueCommit`, and values clamp to `min` and `max` after each move.
+
+## Divergences
+
+- Thumb count is fixed at mount; the ref's React version re-renders a new thumb list when the value array length changes.
+- The no-value fallback is the ref's own `[min, max]` pair, so a bare slider renders two thumbs rather than one.
+- `aria-valuetext` is not rendered (the ref does not set it).
+
+## Accessibility
+
+| Aspect | Value |
+|---|---|
+| Role | `slider` on each thumb span |
+| Values | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and `aria-orientation` on every thumb |
+| Focus | Thumbs carry `tabindex="0"` (`-1` while disabled) and the focus ring comes from the style layer |
+| Disabled | The root renders `data-disabled="true"` and thumbs render `aria-disabled` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the flex root with `touch-action: none`), `track` (the muted rail), `range` (the primary fill), and `thumb` (the knob, whose hover and focus rings are box shadows).
+
+```jsx
+import Slider from './components/slider';
+
+const Spaced = () => <Slider value={[30]} class="m-2" />;
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. Both strings are verbatim from the ref, including the `data-[orientation=vertical]` column layout and the `data-[disabled]` opacity.
+
+## Customizing
+
+The copied file is yours. `props.class` lands on the root next to `base`, and the `thumb` map restyles every knob at once. Positions arrive as inline styles (`left` for horizontal, `bottom` for vertical), so resizing or repositioning the thumb is an edit of the `thumbStyle` helper, not the style layer.

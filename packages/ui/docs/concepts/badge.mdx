@@ -1,0 +1,94 @@
+# Badge
+
+A small status descriptor styled byte-faithfully to shadcn's new-york-v4 Badge: six variants, an `aria-invalid` state, and anchor-aware hover styles, all baked into one owned file.
+
+## Install
+
+```bash
+bunx @hellajs/ui add badge
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. `variant` picks between `default`, `secondary`, `destructive`, `outline`, `ghost`, and `link`. The root is a `span` carrying `data-slot="badge"` and `data-variant`, and `aria-invalid` reflects the `ariaInvalid` prop.
+
+```jsx
+import Badge from './components/badge';
+
+const Status = () => (
+  <div class="flex gap-2">
+    <Badge>Default</Badge>
+    <Badge variant="secondary">Secondary</Badge>
+    <Badge variant="destructive">Destructive</Badge>
+    <Badge variant="outline">Outline</Badge>
+  </div>
+);
+```
+
+Inside an anchor, the hover styles activate: `default`, `secondary`, and `destructive` deepen their background, while `outline` and `ghost` pick up the accent surface. Wrap the badge in a link to make an interactive chip:
+
+```jsx
+import Badge from './components/badge';
+
+const FilterLink = () => (
+  <a href="#open" class="inline-flex">
+    <Badge variant="outline">12 open</Badge>
+  </a>
+);
+```
+
+The html-format file (`badge.ts`, copied with `--format html`) renders through a template instead of JSX; children sit between the component tags:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Badge from './components/badge';
+
+mount(
+  html`
+    <div class="flex gap-2">
+      <${Badge}>Default</${Badge}>
+      <${Badge} variant="destructive">Broken</${Badge}>
+      <${Badge} variant="outline">v2.0</${Badge}>
+    </div>
+  `,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-primary`, `rounded-full`), and the class array wraps in `cn()` so later tokens override earlier ones per utility group.
+
+```jsx
+import Badge from './components/badge';
+
+const Release = () => (
+  <Badge variant="secondary" class="uppercase">
+    Candidate
+  </Badge>
+);
+```
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Badge from './components/badge';
+
+mount(Badge({ variant: 'outline', class: 'uppercase' }), '#app');
+```
+
+## Customizing
+
+The copied file is yours. The `class` composition bakes `variants[props.variant ?? "default"]`; swap the member for any variant name above or edit the `variants` map in place: each entry carries the surface treatment, and the anchor-conditioned hover rules sit inside the same string (`[a&]:hover:bg-primary/90`). `props.class` lands last in the composition, so one-off classes from the call site always ride along. Icons compose too: an inline `svg` child scales to the badge's `size-3` icon slot automatically.

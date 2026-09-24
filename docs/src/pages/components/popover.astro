@@ -1,0 +1,37 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import PopoverTitle from "@ui/concepts/popover.mdx";
+
+const title = "Popover";
+const description = "Interactive Popover demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <PopoverTitle />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import Button from "../../components/ui/button";
+  import Popover, { PopoverContent, PopoverHeader, PopoverTitle, PopoverDescription } from "../../components/ui/popover";
+  import "../../components/ui/tokens.js";
+
+  const dimensions = (name: string) => html`
+    <${PopoverContent}>
+      <${PopoverHeader}>
+        <${PopoverTitle}>${name}</${PopoverTitle}>
+        <${PopoverDescription}>Escape or an outside press closes the top layer only.</${PopoverDescription}>
+      </${PopoverHeader}>
+      <p>Width 18rem, positioned against the trigger, flipping on viewport collision.</p>
+    </${PopoverContent}>
+  `;
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Popover} content=${dimensions("Width")}><${Button}>Width</${Button}></${Popover}>
+      <${Popover} content=${dimensions("Height")}><${Button} variant="outline">Height</${Button}></${Popover}>
+    </div>
+    <p class="demo-note">Clicking toggles a non-modal panel; open both and press Escape to see layered dismissal close one at a time.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

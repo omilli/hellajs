@@ -1,0 +1,104 @@
+# Toggle
+
+A pressed-state button styled to shadcn's Toggle: a button carrying `aria-pressed` and `data-state` (`on` / `off`) with the full variant and size maps from the ref. The module also exports `toggleVariants`, the class resolver the compose array uses, so call sites can build matching classes for neighboring markup.
+
+## Install
+
+```bash
+bunx @hellajs/ui add toggle
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Usage
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `pressed` | `boolean \| (() => boolean)` | Uncontrolled seed or controlled accessor (see below) |
+| `onPressedChange` | `(pressed: boolean) => void` | Fires on every click with the requested next value |
+| `variant` | `"default" \| "outline"` | Visual map from the ref (`default`) |
+| `size` | `"default" \| "sm" \| "lg"` | Size map from the ref (`default`) |
+| `disabled` | `boolean` | Blocks clicks and renders the disabled attribute |
+| `class` | `string` | Lands on the root next to the resolved classes |
+| `children` | node | The toggle's label content |
+
+```jsx
+import Toggle from './components/toggle';
+
+const Toolbar = () => (
+  <Toggle variant="outline">B</Toggle>
+);
+```
+
+The html-format file (`toggle.ts`, copied with `--format html`) works the same way from a template:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Toggle from './components/toggle';
+
+mount(
+  html`<${Toggle} variant="outline">B</${Toggle}>`,
+  '#app',
+);
+```
+
+## Controlled and Uncontrolled
+
+Without `pressed`, the root owns a signal seeded by a boolean `pressed` prop and flips it on click. Pass an accessor and the toggle becomes controlled: clicks turn into `onPressedChange` requests without writing state, so a parent signal that ignores the request keeps the toggle unchanged.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Toggle from './components/toggle';
+
+const muted = signal(false);
+
+const Controlled = () => (
+  <Toggle pressed={() => muted()} onPressedChange={(next) => muted(next)}>
+    Mute
+  </Toggle>
+);
+```
+
+## Accessibility
+
+The root is a `button` element, so Space and Enter activate it through native activation and it participates in tab order.
+
+| Aspect | Value |
+|---|---|
+| Role | Native button (no ARIA role needed) |
+| State | `aria-pressed` is `true` or `false`; `data-state` is `on` or `off` |
+| Keyboard | Space and Enter toggle; the button is disabled for pointer and keyboard while `disabled` |
+| Labeling | The button's text content names the toggle |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the shared button chrome, including the pressed palette and focus ring), `variants` (`default`, `outline`), and `sizes` (`default`, `sm`, `lg`), mirroring the ref's cva maps.
+
+```jsx
+import Toggle from './components/toggle';
+
+const Toggled = () => (
+  <Toggle variant="outline" class="rounded-full">
+    Round
+  </Toggle>
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and the class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. Both variant maps are verbatim from the ref, including the `data-[state=on]` palette and the `[&_svg]` sizing rules.
+
+## Customizing
+
+The copied file is yours. `props.class` lands last in the compose array; edit the `variants` or `sizes` maps to restyle every toggle at once. `toggleVariants({ variant, size, class })` resolves the same string the component renders, which keeps neighboring markup (a toolbar frame, a tooltip trigger) visually in sync.

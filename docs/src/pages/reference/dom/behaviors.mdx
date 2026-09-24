@@ -1,6 +1,6 @@
 ---
 title: behaviors
-description: Headless DOM behavior functions: trapFocus, onEscape, onOutside, and rovingTabIndex as pure dispose-handle wiring over real DOM nodes.
+description: "Headless DOM behavior functions as pure dispose-handle wiring over real DOM nodes: focus trap, escape and outside dismissal, roving tabindex, anchor positioning, hover intent, menu typeahead, pointer drag, and layered dismissal."
 layout: ../../../layouts/MainLayout.astro
 ---
 
@@ -8,6 +8,12 @@ import TrapfocusContent from '@dom/api/trapfocus.mdx'
 import OnescapeContent from '@dom/api/onescape.mdx'
 import OnoutsideContent from '@dom/api/onoutside.mdx'
 import RovingtabindexContent from '@dom/api/rovingtabindex.mdx'
+import AnchorpositionContent from '@dom/api/anchorposition.mdx'
+import ComputeanchorpositionContent from '@dom/api/computeanchorposition.mdx'
+import HoverintentContent from '@dom/api/hoverintent.mdx'
+import MenutypeaheadContent from '@dom/api/menutypeahead.mdx'
+import OndragContent from '@dom/api/ondrag.mdx'
+import LayerdismissalContent from '@dom/api/layerdismissal.mdx'
 
 <TrapfocusContent />
 
@@ -22,3 +28,27 @@ import RovingtabindexContent from '@dom/api/rovingtabindex.mdx'
 <div class="my-8 border-t border-gray-700"></div>
 
 <RovingtabindexContent />
+
+<div class="my-8 border-t border-gray-700"></div>
+
+<AnchorpositionContent />
+
+<div class="my-8 border-t border-gray-700"></div>
+
+<ComputeanchorpositionContent />
+
+<div class="my-8 border-t border-gray-700"></div>
+
+<HoverintentContent />
+
+<div class="my-8 border-t border-gray-700"></div>
+
+<MenutypeaheadContent />
+
+<div class="my-8 border-t border-gray-700"></div>
+
+<OndragContent />
+
+<div class="my-8 border-t border-gray-700"></div>
+
+<LayerdismissalContent />

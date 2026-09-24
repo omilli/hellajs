@@ -1,0 +1,28 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import DirectionContent from "@ui/concepts/direction.mdx";
+
+const title = "Direction";
+const description = "Interactive Direction demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <DirectionContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import DirectionProvider from "../../components/ui/direction";
+  import "../../components/ui/tokens.js";
+
+  const dir = signal("ltr");
+  const flip = () => dir(dir() === "ltr" ? "rtl" : "ltr");
+  mount(html`<div class="demo-stack">
+    <button class="w-fit rounded-md border px-2 py-1 text-xs" onclick=${flip}>Flip direction (${() => dir()})</button>
+    <${DirectionProvider} dir="${() => dir()}">
+      <p style="border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem">This paragraph flips its inline direction with the wrapper's dir attribute; the wrapper itself stays out of layout.</p>
+    </${DirectionProvider}>
+  </div>`, document.getElementById("demo")!);
+</script>

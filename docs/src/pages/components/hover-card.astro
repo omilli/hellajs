@@ -1,0 +1,30 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import HoverCardContent from "@ui/concepts/hover-card.mdx";
+
+const title = "Hover Card";
+const description = "Interactive Hover Card demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <HoverCardContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import HoverCard from "../../components/ui/hover-card";
+  import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <${HoverCard} content=${html`
+      <div class="demo-stack">
+        <strong>@hella</strong>
+        <p>Reactive UI primitives for the web: signals, surgical DOM updates, and a copy-paste component registry.</p>
+      </div>
+    `}>
+      <a href="#profile" on:click=${(e: Event) => e.preventDefault()}>@hella</a>
+    <${HoverCard}>
+    <p class="demo-note">Hovering opens the anchored preview after a short delay; moving the pointer into the card keeps it open, and focus opens it from the keyboard.</p>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -71,7 +71,7 @@
   | `bundle/esbuild-build.ts` | `buildBundle` + `buildIndividualModules` + inline import-extension / minified-path rewriting |
   | `bundle/optimize.ts` | `applyTerser` (bunx terser) + `fixMinifiedImports` (4-pass regex) |
   | `bundle/declarations.ts` | `buildDeclarations` (bunx tsc) + `copyDeclarationFiles` |
-  | `bundle/registry.ts` | `compileRegistry` (ui-only): canonical registry files per style spliced with their conventional style module through the vite-mirror babel transform via `applyStyleVariant` → `dist/registry/<name>/{css,tailwind}`, verbatim theme/cn copies, shared dep modules alongside tailwind output, `.d.ts` via tsc over staged generated sources (the splice typecheck gate; also the canonicals' only typecheck). |
+  | `bundle/registry.ts` | `compileRegistry` (ui-only): canonical registry files per style spliced with their conventional style module through the vite-mirror babel transform via `applyStyleVariant` → `dist/registry/<name>/{css,tailwind}`, verbatim theme/cn copies, shared dep modules alongside tailwind output (canonical-carrying component deps skipped: self-contained, compiled at their own dist paths), `.d.ts` via tsc over staged generated sources (the splice typecheck gate; also the canonicals' only typecheck). |
     | `bundle/cache.ts` | `calculateFileHash` + `isCacheValid` + `cleanCache` + `updateCache`. Hash set: package.json + tsconfig + `lib/**` + `registry/**` (every source dir a build step reads must join — memory 153: untracked packages have constant git status, so only hash-set membership invalidates). |
   | `bundle/validate.ts` | `validateBuildArtifacts` |
   | `bundle/metrics.ts` | `calculateFileMetrics` + `calculateMetrics` → `dist/sizes.json` |

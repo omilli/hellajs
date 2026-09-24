@@ -1,0 +1,42 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import MessageScrollerContent from "@ui/concepts/message-scroller.mdx";
+
+const title = "Message Scroller";
+const description = "Interactive Message Scroller demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <MessageScrollerContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import { MessageScroller, MessageScrollerItem } from "../../components/ui/message-scroller";
+  import { Bubble } from "../../components/ui/bubble";
+  import "../../components/ui/tokens.js";
+
+  const messages = signal(["First message", "Second message", "Third message"]);
+  let counter = 3;
+
+  const frame = html`
+    <div style="height:16rem; display:flex; flex-direction:column; gap:0.5rem">
+      <${MessageScroller} style="flex:1; min-height:0">
+        ${() => messages().map((text) => html`
+          <${MessageScrollerItem}>
+            <${Bubble} variant="${text.startsWith("You") ? "default" : "outline"}">${text}</${Bubble}>
+          </${MessageScrollerItem}>
+        `)}
+      </${MessageScroller}>
+      <button class="demo-button" id="scroller-send">Add a message</button>
+    </div>
+  `;
+
+  mount(frame, document.getElementById("demo")!);
+  document.getElementById("scroller-send")!.addEventListener("click", () => {
+    counter += 1;
+    messages([...messages(), counter % 2 === 0 ? `You: message ${counter}` : `Message ${counter}`]);
+  });
+</script>

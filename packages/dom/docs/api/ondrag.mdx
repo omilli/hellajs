@@ -1,0 +1,77 @@
+# onDrag
+
+Tracks a pointer drag on an element and reports cumulative deltas from the drag start, returning the dispose handle that removes all pointer listeners.
+
+## API
+
+```typescript
+function onDrag(
+  el: HTMLElement,
+  handlers: DragHandlers
+): () => void
+```
+
+```typescript
+interface DragHandlers {
+  onStart?: (event: PointerEvent) => void;
+  onMove: (delta: { dx: number; dy: number; event: PointerEvent }) => void;
+  onEnd?: () => void;
+}
+```
+
+- `el`: Element receiving the pointer events.
+- `handlers`: `onStart` fires once on primary-button pointerdown; `onMove` fires per pointermove with deltas accumulated from the drag start; `onEnd` fires once when the drag ends.
+- **Returns**: Dispose handle. Calling it removes all five pointer listeners.
+
+## Basic Usage
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { onDrag } from "@hellajs/dom";
+
+const offset = signal(0);
+let disposeDrag: (() => void) | undefined;
+
+const Thumb = () => (
+  <div
+    class="thumb"
+    style="touch-action: none"
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      disposeDrag = onDrag(node, {
+        onMove: ({ dx }) => offset(dx),
+        onEnd: () => console.log("drag ended at", offset())
+      });
+    }}
+    hook:beforeDestroy={() => disposeDrag?.()}
+  />
+);
+
+mount(<Thumb />, "#app");
+// Dragging the thumb reports cumulative distance from the press point
+```
+
+## Key Concepts
+
+### Cumulative Deltas From the Drag Start
+
+`dx` and `dy` measure the pointer's total distance from where the drag began, not per-move increments: moving to `+5` then `+8` reports `5` and then `8`. Consumers own all value math, such as clamping a slider thumb or measuring a drawer swipe.
+
+### Capture Is Best-Effort
+
+A drag start calls `el.setPointerCapture()` when the environment provides it, so moves outside the element keep reporting in real browsers. Environments without pointer capture (test DOMs) still work when moves land on the element.
+
+### Start Guards
+
+A drag begins only on a primary-button press (button `0`) and never on a `[disabled]` descendant of the press target. The drag ends on `pointerup`, `pointercancel`, or `lostpointercapture`, whichever arrives first, and `onEnd` fires exactly once.
+
+## Important Considerations
+
+### Touch Needs touch-action: none
+
+The wiring never touches styles. Give the draggable element `touch-action: none` (the style module carries it in registry components), or touch drags scroll the page instead.
+
+### Input Validation
+
+`onDrag()` throws when `el` or `handlers` is `null` or `undefined`, or when `handlers.onMove` is missing: `[dom] onDrag: el is required`, `[dom] onDrag: handlers is required`, `[dom] onDrag: onMove is required`.

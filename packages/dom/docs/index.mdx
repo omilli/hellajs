@@ -68,6 +68,12 @@ mount(Counter, "#app");
 - **[onEscape](/reference/dom/behaviors)**: Call a handler on Escape keydown at a target
 - **[onOutside](/reference/dom/behaviors)**: Call a handler on document pointerdown outside resolved targets
 - **[rovingTabIndex](/reference/dom/behaviors)**: Arrow-key focus movement with a roving tabindex over a container's items
+- **[anchorPosition](/reference/dom/behaviors)**: Pin a floating element to an anchor across scroll and resize, with flip and shift-clamp
+- **[computeAnchorPosition](/reference/dom/behaviors)**: Pure placement math over plain rects: coordinates, post-flip placement, width
+- **[hoverIntent](/reference/dom/behaviors)**: Open and close overlays on hover or focus delay, with a shared skip-delay window
+- **[menuTypeahead](/reference/dom/behaviors)**: Buffer printable keystrokes into a menu search and select the first match
+- **[onDrag](/reference/dom/behaviors)**: Track a pointer drag and report cumulative deltas from the start
+- **[layerDismissal](/reference/dom/behaviors)**: Dismiss stacked overlays one layer at a time on Escape or outside press
 
 ### Concepts
 
@@ -79,7 +85,7 @@ mount(Counter, "#app");
 - **[Reactive Refs](/learn/concepts/reactive-refs)**: $ref and $collection for existing DOM elements
 - **[Custom Elements](/learn/concepts/custom-elements)**: Web Components with reactive props
 - **[Hydration](/learn/concepts/hydration)**: Attach reactivity to server-rendered HTML in place
-- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, escape and outside wiring, and roving tabindex as pure dispose-handle functions
+- **[Headless Behaviors](/learn/concepts/headless-behaviors)**: Focus traps, anchoring, hover intent, typeahead, drag, and layered dismissal as pure dispose-handle functions
 
 ### Patterns
 

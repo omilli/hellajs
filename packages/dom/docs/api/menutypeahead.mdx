@@ -1,0 +1,75 @@
+# menuTypeahead
+
+Wireable typeahead search for menu items: printable keystrokes buffer into a query and the first matching item is selected, returning the dispose handle that removes the listener and clears the buffer timer.
+
+## API
+
+```typescript
+function menuTypeahead(
+  container: ParentNode,
+  resolveItems: () => { node: HTMLElement; text: string }[],
+  onSelect: (item: { node: HTMLElement; text: string }) => void
+): () => void
+```
+
+- `container`: Element receiving the menu's keydown events.
+- `resolveItems`: Getter returning the current searchable items. Re-invoked on every keystroke, so dynamically rendered menus stay live.
+- `onSelect`: Called with the first matching item.
+- **Returns**: Dispose handle. Calling it removes the keydown listener and clears the buffer timer.
+
+## Basic Usage
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { menuTypeahead } from "@hellajs/dom";
+
+let disposeTypeahead: (() => void) | undefined;
+
+const collectItems = (menu: HTMLElement) =>
+  Array.from(menu.querySelectorAll<HTMLElement>("[data-menu-item]")).map((node) => ({
+    node,
+    text: node.textContent ?? ""
+  }));
+
+const Menu = () => (
+  <div
+    role="menu"
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      disposeTypeahead = menuTypeahead(node, () => collectItems(node), (item) => item.node.focus());
+    }}
+    hook:beforeDestroy={() => disposeTypeahead?.()}
+  >
+    <button role="menuitem" data-menu-item>Duplicate</button>
+    <button role="menuitem" data-menu-item>Rename</button>
+    <button role="menuitem" data-menu-item>Delete</button>
+  </div>
+);
+
+mount(<Menu />, "#app");
+// Typing "re" selects Rename
+```
+
+## Key Concepts
+
+### Buffering and the 500ms Reset
+
+Consecutive keystrokes accumulate into one query: typing `r`, `e` searches `"re"`, not two single-letter searches. The buffer clears 500ms after the last keystroke, so a pause starts a fresh query. Matching is case-insensitive.
+
+### startsWith First, Then Substring Wrap-Around
+
+The query matches items whose text starts with it first, scanning from the first item. When nothing starts with the query, a substring pass scans from the item after the last selection and wraps around the end, so repeated presses walk every match.
+
+### Modifier and Non-Printable Keys Never Match
+
+Keys with ctrl, meta, or alt held never touch the buffer, and neither do non-printable keys such as arrows, Enter, or Escape. Arrow-key navigation and typeahead compose without interference.
+
+## Important Considerations
+
+### Dispose With the Feature
+
+The keydown listener rides the container. Call the dispose handle when the menu closes or unmounts; the handle also clears a pending buffer timer.
+
+### Input Validation
+
+`menuTypeahead()` throws when `container`, `resolveItems`, or `onSelect` is `null` or `undefined`: `[dom] menuTypeahead: container is required`, `[dom] menuTypeahead: resolveItems is required`, `[dom] menuTypeahead: onSelect is required`.

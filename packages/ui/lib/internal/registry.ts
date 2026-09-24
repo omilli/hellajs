@@ -25,11 +25,14 @@ export interface ResolvedEntry {
  * the shared delta-free fields; the style slot contributes its own extras on
  * top. Component entries (those with shared files) own a style module named
  * `<name>-<style>.ts` by convention. Style-scoped shared entries (theme, cn)
- * keep everything in their slot. The cycle guard covers the whole traversal.
+ * keep everything in their slot. Diamond fan-out (two dependencies sharing a
+ * sub-dependency) resolves the shared entry once; only a name revisited while
+ * still on the resolution path is a cycle.
  * @param manifest Parsed registry manifest.
  * @param name Component name to resolve.
  * @param style Registry style variant.
- * @param seen Names visited on this resolution path. Cycle guard.
+ * @param seen Names resolved anywhere in this traversal. Dedupe guard.
+ * @param path Names on the current resolution path. Cycle guard.
  * @returns The resolved copy plans, dependency entries appended after their dependents.
  * @throws {Error} When the name is unknown, the style is unavailable for the component, or a dependency cycle exists.
  * @internal
@@ -39,11 +42,14 @@ export function resolveEntry(
   name: string,
   style: UiStyle,
   seen: Set<string> = new Set(),
+  path: Set<string> = new Set(),
 ): ResolvedEntry[] {
-  if (seen.has(name)) {
+  if (path.has(name)) {
     throw new Error(`[ui] resolveEntry: registry dependency cycle at "${name}"`);
   }
+  if (seen.has(name)) return [];
   seen.add(name);
+  path.add(name);
   const entry = manifest.entries[name];
   if (entry === undefined) {
     throw new Error(`[ui] resolveEntry: component "${name}" not found in registry`);
@@ -62,7 +68,8 @@ export function resolveEntry(
   while (i < regDeps.length) {
     const dep = regDeps[i]!;
     i++;
-    plans.push(...resolveEntry(manifest, dep, style, seen));
+    plans.push(...resolveEntry(manifest, dep, style, seen, path));
   }
+  path.delete(name);
   return plans;
 }

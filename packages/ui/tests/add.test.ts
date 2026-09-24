@@ -88,6 +88,44 @@ describe("addComponent", () => {
     expect(existsSync(join(componentsDir, "tokens.js"))).toBe(false);
   });
 
+  test("css add of a static component pulls the tokens theme and no tailwind artifacts", () => {
+    addComponent(["badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label"], { dir: root });
+    for (const name of ["badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label"]) {
+      expect(existsSync(join(componentsDir, `${name}.tsx`))).toBe(true);
+    }
+    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "cn.ts"))).toBe(false);
+    expect(existsSync(join(componentsDir, "theme.css"))).toBe(false);
+  });
+
+  test("tailwind add of a static component pulls theme.css and cn, never tokens.js", () => {
+    addComponent(["badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label"], { dir: root, style: "tailwind" });
+    for (const name of ["badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label"]) {
+      expect(existsSync(join(componentsDir, `${name}.tsx`))).toBe(true);
+    }
+    expect(existsSync(join(componentsDir, "theme.css"))).toBe(true);
+    expect(existsSync(join(componentsDir, "cn.ts"))).toBe(true);
+    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(false);
+  });
+
+  test("css add of input-group recursively copies its component dependencies and the theme", () => {
+    addComponent(["input-group"], { dir: root });
+    for (const name of ["input-group", "input", "textarea", "button"]) {
+      expect(existsSync(join(componentsDir, `${name}.tsx`))).toBe(true);
+    }
+    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "cn.ts"))).toBe(false);
+    expect(existsSync(join(componentsDir, "theme.css"))).toBe(false);
+  });
+
+  test("css add of button-group recursively copies separator, field copies label and separator", () => {
+    addComponent(["button-group", "field"], { dir: root });
+    for (const name of ["button-group", "separator", "field", "label"]) {
+      expect(existsSync(join(componentsDir, `${name}.tsx`))).toBe(true);
+    }
+    expect(existsSync(join(componentsDir, "textarea.tsx"))).toBe(false);
+  });
+
   test("existing files are skipped with a warning until overwrite", () => {
     addComponent(["button"], { dir: root });
     const copied = join(componentsDir, "button.tsx");

@@ -1,0 +1,186 @@
+# Calendar
+
+A month-grid calendar styled to shadcn's Calendar, built on a hand-rolled date engine instead of react-day-picker and date-fns: the grid, week rows, adjacent-month spillover, and range state are all computed from local `Date` fields in the copied file. One month renders at a time with single, multiple, or range selection, roving keyboard focus over the grid, and previous/next month navigation. There is no importable package surface: `add` copies one editable file.
+
+## Install
+
+```bash
+bunx @hellajs/ui add calendar
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/` (plus the `button` entry it derives its day-button chrome from).
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Usage
+
+The default mode is single selection. Click a day (or press Enter on it) and the calendar reports the picked date through `onSelect`:
+
+```jsx
+import { signal } from '@hellajs/core';
+import Calendar from './components/calendar';
+
+const picked = signal(undefined);
+
+const Picker = () => (
+  <Calendar
+    defaultMonth={new Date(2025, 2, 1)}
+    onSelect={(date) => picked(date)}
+  />
+);
+```
+
+The html-format file (`calendar.ts`, copied with `--format html`) works the same way from a template:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Calendar from './components/calendar';
+
+mount(
+  html`<${Calendar}
+    defaultMonth=${new Date(2025, 2, 1)}
+    onSelect=${(date) => console.log(date)}
+  />`,
+  '#app',
+);
+```
+
+### Calendar
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `mode` | `"single" \| "multiple" \| "range"` | Selection behavior; defaults to `"single"` |
+| `selected` | `Date` \| `Date[]` \| `{ from?, to? }` | Initial selection in the mode's shape; selection is uncontrolled after mount |
+| `onSelect` | `(selected) => void` | Reports every selection change in the mode's shape |
+| `month` | `() => Date` | Controlled visible-month accessor; wins over internal navigation on every change |
+| `onMonthChange` | `(month: Date) => void` | Fires on user navigation (buttons, arrows, page keys) |
+| `defaultMonth` | `Date` | Initial visible month; defaults to the current month |
+| `disabled` | `(date: Date) => boolean` | Predicate blocking selection and keyboard activation; adjacent-month days are always disabled |
+| `showOutsideDays` | `boolean` | Renders adjacent-month days; defaults to `true`, hidden text when `false` |
+| `fixedWeeks` | `boolean` | Always renders six week rows so navigation never resizes the grid |
+| `weekStartsOn` | `0..6` | First day of the week; `0` = Sunday (default) through `6` = Saturday |
+| `hideNavigation` | `boolean` | Omits the previous/next buttons |
+| `classNames` | `Partial<Record<key, string>>` | Per-part class hook overrides (the ref's `day-picker` hooks) |
+| `class` | `string` | Lands on the root next to the component class |
+
+### CalendarDayButton
+
+The ref's manual-composition day part is exported for standalone composition. State flags take plain booleans or reactive accessors, so a composed calendar drives them live while a direct call passes static values.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `day` | `Date` | The day rendered; also emitted as `data-day` (locale string, per the ref) |
+| `selectedSingle` | `boolean \| (() => boolean)` | Selected outside a range span; renders `data-selected-single` and `aria-selected` |
+| `rangeStart` / `rangeEnd` / `rangeMiddle` | `boolean \| (() => boolean)` | Range span flags; render the ref's `data-range-*` attributes |
+| `disabled` | `boolean \| (() => boolean)` | Renders `aria-disabled` and blocks pointer interaction styling |
+| `focused` | `boolean \| (() => boolean)` | Roving-focus flag driving `tabindex` 0/-1 |
+| `today` | `boolean` | Renders `aria-current="date"` |
+| `class` | `string` | Lands next to the day-button class |
+| `onclick` / `onpointerenter` / `onpointerleave` | `(event) => void` | Interaction hooks the composed calendar wires for selection and hover preview |
+
+## Selection Modes
+
+`mode` picks the selection shape. `onSelect` mirrors the shape back exactly.
+
+| Mode | `selected` shape | Behavior |
+|---|---|---|
+| `single` | `Date` | Click selects; clicking another day replaces it. Re-clicking the selected day keeps it |
+| `multiple` | `Date[]` | Click toggles membership; order is stable, new days append |
+| `range` | `{ from?, to? }` | First click sets `from`. Second click sets `to`, reordering automatically when the click lands before `from`. Third click resets and starts a new span |
+
+```jsx
+import Calendar from './components/calendar';
+
+const Stay = () => (
+  <Calendar
+    mode="range"
+    defaultMonth={new Date(2025, 2, 1)}
+    onSelect={({ from, to }) => console.log(from, to)}
+  />
+);
+```
+
+While `from` dangles, hovering a day previews the span: the hovered day renders `data-range-end` and the days between render `data-range-middle`, so the ref's range styling responds before the second click.
+
+## Recipes
+
+Block out days with a predicate; disabled days render `data-disabled` and `aria-disabled`, and clicks on them report nothing:
+
+```jsx
+import Calendar from './components/calendar';
+
+const Bookings = () => (
+  <Calendar
+    defaultMonth={new Date(2025, 2, 1)}
+    disabled={(date) => date.getDay() === 0 || date.getDay() === 6}
+  />
+);
+```
+
+Drive the visible month from your own state by passing `month` as an accessor: the view snaps back to it on every change, while `onMonthChange` still reports what the user asked for:
+
+```jsx
+import { signal } from '@hellajs/core';
+import Calendar from './components/calendar';
+
+const month = signal(new Date(2025, 0, 1));
+
+const Controlled = () => (
+  <Calendar
+    month={() => month()}
+    onMonthChange={(next) => console.log('user navigated to', next)}
+  />
+);
+```
+
+## Scope
+
+The port covers the observable surface of the ref's single-month calendar; the intentionally absent pieces match the registry's zero-dependency rule:
+
+- `numberOfMonths` beyond one, `fromDate`/`toDate` navigation bounds, custom `formatters`, week numbers, and the dropdown caption layouts are not implemented; the caption is always the `label` layout.
+- Selection is uncontrolled: `selected` sets the initial state and `onSelect` reports changes; there is no controlled selection accessor (the visible month is the one controlled prop).
+- All date math runs on local `Date` fields with no timezone conversion, and labels are fixed to `en-US` (`March 2025` captions, `Sun`-style weekday headers) so rendering is deterministic across hosts.
+- The ref's rtl navigation-button selectors are dropped; the port emits no `rdp-*` classes for them to target.
+- The outside-day `aria-selected` color rule from the ref folds into the base outside color: adjacent-month days are always disabled here, so the extra state never differs.
+
+## Accessibility
+
+The grid is a `role="grid"` table: weekday headers are column headers, cells are `role="gridcell"`, and each day button carries `aria-selected`, `aria-disabled`, and `aria-current="date"` for today.
+
+| Key | Behavior |
+|---|---|
+| Arrow keys | Move focus day to day, across week boundaries (up/down by seven days) and across month edges, changing the visible month when the target spills out |
+| `PageUp` / `PageDown` | Move focus to the same day one month back or forward |
+| `Home` / `End` | Move focus to the first or last day of the current week |
+| `Enter` / `Space` | Select the focused day (or start/reorder/reset a range) |
+
+Exactly one day button is a tab stop at a time (roving `tabindex`); it lands on today when the visible month shows it, else the first day of the month.
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the root with its `--cell-size` custom property), `months`, `month`, `monthCaption`, `captionLabel`, `nav`, `navButton` (the ghost icon-class buttons), `icon`, `monthGrid`, `weekdays`, `weekday`, `week`, `day`, and `dayButton`. The state hooks (today, outside, disabled, hidden, and the range edges) are data-attribute selectors registered in the same layer after the part classes, together with the focused-day ring under the `group/day` cell and the card/popover ancestor transparency.
+
+```jsx
+import Calendar from './components/calendar';
+
+const Bordered = () => (
+  <Calendar class="rounded-lg border" defaultMonth={new Date(2025, 2, 1)} />
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The strings carry the ref's classes verbatim, with the state hooks folded into the day cell's string as `data-[...]` conditioned utilities and the ghost button tokens the day button inherits pre-merged where the ref's `cn()` resolves a conflict.
+
+## Customizing
+
+The copied file is yours. The `--cell-size` custom property on the root sets the nav button square and the caption height in one place, and the date engine sits in small pure functions (`daysInMonth`, `addMonths`, `buildMonth`) at the top of the file when you need to extend it. The `data-slot` attributes (`calendar`, `calendar-months`, `calendar-month`, `calendar-caption`, `calendar-caption-label`, `calendar-nav`, `calendar-previous`, `calendar-next`, `calendar-grid`, `calendar-weekdays`, `calendar-weekday`, `calendar-week`, `calendar-day`, `calendar-day-button`) are stable hooks for user CSS.

@@ -64,15 +64,25 @@ Copied source imports `@hellajs/core` and `@hellajs/dom` as regular packages; `a
 
 ## Components
 
-The five components are styled byte-faithfully to shadcn's new-york-v4: same structure, same variants, same class strings, same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor.
+Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Each is styled byte-faithfully: same structure, same variants, same class strings (tailwind flavor) or their 1:1 layered translations (css flavor), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor.
 
-| Component | Structure | Variants / sizes |
-|---|---|---|
-| `button` | one root, `data-slot`/`data-variant`/`data-size` | 6 variants (`default`, `destructive`, `outline`, `secondary`, `ghost`, `link`); 8 sizes (`default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`); `ariaInvalid` |
-| `input` | one root | none - `base` + `focus` + `invalid` states; `ariaInvalid` |
-| `card` | `Card` + `CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`, `CardFooter` | none - one class per part |
-| `dialog` | `Dialog` + `DialogOverlay`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, `DialogClose` | none - enter/exit animations, wired titles, close button |
-| `tabs` | `Tabs` + `TabsList`, `TabsTrigger`, `TabsContent` | `variant`: `default` (pill) or `line`; `orientation`: horizontal or vertical |
+| Family | Components |
+|---|---|
+| Core | `button`, `input`, `card`, `dialog`, `tabs` |
+| Statics | `badge`, `alert`, `kbd`, `separator`, `skeleton`, `spinner`, `empty`, `label` |
+| Forms and data | `textarea`, `native-select`, `table`, `aspect-ratio`, `avatar`, `progress`, `input-otp`, `form` |
+| Composites | `button-group`, `input-group`, `field`, `pagination`, `item`, `marker`, `direction` |
+| Chat | `bubble`, `message`, `message-scroller`, `attachment` |
+| Disclosure | `collapsible`, `accordion` |
+| Selection | `checkbox`, `radio-group`, `switch`, `toggle`, `toggle-group` |
+| Sliders and panes | `slider`, `resizable` |
+| Anchored surfaces | `tooltip`, `hover-card`, `popover` |
+| Menus and navigation | `dropdown-menu`, `context-menu`, `menubar`, `navigation-menu`, `breadcrumb` |
+| Select and command | `select`, `combobox`, `command` |
+| Dialog variants | `alert-dialog`, `sheet`, `drawer` |
+| Feedback and focus | `sonner`, `scroll-area` |
+| Calendar | `calendar` |
+| Layout shells | `sidebar` |
 
 Each copied canonical carries marker regions the CLI splices at `add` time: exactly one `@hella:styles` (the style module's declarations land there) and one `@hella:compose` per styled part (the live class array). The markers never ship - they are consumed by the copy step. Style modules export `base` plus one lowerCamel export per styled part (`header`, `title`, ...); `variants`/`sizes` maps appear only where a component actually has them.
 

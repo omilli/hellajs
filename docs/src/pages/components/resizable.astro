@@ -1,0 +1,37 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import ResizableContent from "@ui/concepts/resizable.mdx";
+
+const title = "Resizable";
+const description = "Interactive Resizable demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <ResizableContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import Resizable, { ResizableHandle, ResizablePanel } from "../../components/ui/resizable";
+  import "../../components/ui/tokens.js";
+
+  const sizes = signal("50 / 50");
+  const panelStyle = "display:flex;align-items:center;justify-content:center;height:100%;padding:1rem;overflow:hidden;";
+
+  mount(html`<div class="demo-stack">
+    <div style="height:12rem;">
+      <${Resizable} direction="horizontal" onLayout=${(next: number[]) => sizes(next.map((n) => Math.round(n)).join(" / "))}>
+        <${ResizablePanel} defaultSize=${50} minSize=${25}>
+          <div style=${panelStyle}>Sidebar</div>
+        </${ResizablePanel}>
+        <${ResizableHandle} withHandle />
+        <${ResizablePanel} defaultSize=${50}>
+          <div style=${panelStyle}>Editor</div>
+        </${ResizablePanel}>
+      </${Resizable}>
+    </div>
+    <p class="demo-row">Sizes: ${() => sizes()}</p>
+  </div>`, document.getElementById("demo")!);
+</script>

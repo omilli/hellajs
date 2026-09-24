@@ -1,0 +1,201 @@
+# Input OTP
+
+The segmented one-time-code input styled to shadcn's Input OTP, built on the hidden-input technique instead of the `input-otp` package: one visually transparent input owns focus, value, and selection, while the slots are pure mirrors of its state. Typing, IME composition, deletion, arrow navigation, and clipboard handling stay fully native, so there is no keyboard simulation to drift from platform behavior.
+
+## Install
+
+```bash
+bunx @hellajs/ui add input-otp
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## Usage
+
+You compose the slots yourself: group them, place the separator between groups, and give every slot its zero-based `index`. The root owns the state and wires the slots after mount, so a slot renders whatever its index holds:
+
+```jsx
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from './components/input-otp';
+
+const Verify = () => (
+  <InputOTP
+    length={6}
+    onComplete={(code) => console.log('verifying', code)}
+  >
+    <InputOTPGroup>
+      <InputOTPSlot index={0} />
+      <InputOTPSlot index={1} />
+      <InputOTPSlot index={2} />
+    </InputOTPGroup>
+    <InputOTPSeparator />
+    <InputOTPGroup>
+      <InputOTPSlot index={3} />
+      <InputOTPSlot index={4} />
+      <InputOTPSlot index={5} />
+    </InputOTPGroup>
+  </InputOTP>
+);
+```
+
+The html-format file (`input-otp.ts`, copied with `--format html`) composes the same way from a template; call the parts as direct functions inside the root's children:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import InputOTP from './components/input-otp';
+import { InputOTPGroup, InputOTPSeparator, InputOTPSlot } from './components/input-otp';
+
+mount(
+  html`<${InputOTP} length=${6}>
+    <${InputOTPGroup}>
+      <${InputOTPSlot} index=${0} />
+      <${InputOTPSlot} index=${1} />
+      <${InputOTPSlot} index=${2} />
+    <//>
+    <${InputOTPSeparator} />
+    <${InputOTPGroup}>
+      <${InputOTPSlot} index=${3} />
+      <${InputOTPSlot} index=${4} />
+      <${InputOTPSlot} index=${5} />
+    <//>
+  <//>`,
+  '#app',
+);
+```
+
+### InputOTP
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `length` | `number` | Slot count; fixed after mount. Defaults to `6` |
+| `value` | `string \| (() => string)` | The code. A static string seeds the internal state; an accessor makes it controlled, so edits report through `onChange` only |
+| `onChange` | `(value: string) => void` | Reports every accepted value change: typing, paste, and deletion |
+| `onComplete` | `(value: string) => void` | Fires once per transition to a full code |
+| `pattern` | `RegExp` | Whole-value gate: an edit whose result fails the test is rejected and the previous value stands. The source lands on the input's `pattern` attribute |
+| `autoFocus` | `boolean` | Focuses the hidden input on mount |
+| `disabled` | `boolean` | Disables the hidden input, blocks edits, and dims the group |
+| `class` | `string` | Lands on the root next to the component class |
+| `children` | slots and groups | The user-composed layout; the root renders them under the transparent input |
+
+### InputOTPGroup
+
+A `flex items-center` wrapper for related slots. Takes `children` and an optional `class`.
+
+### InputOTPSlot
+
+A state mirror for one position, not an input. The root drives its character text, `data-active` marker, and fake caret after mount, so the slot only carries `index` (plus an optional `class`).
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `index` | `number` | The position this slot mirrors |
+| `class` | `string` | Lands next to the slot class |
+
+### InputOTPSeparator
+
+The dash divider between groups (`role="separator"` wrapping the minus glyph). Takes an optional `class`; the root's `gap-2` provides the spacing.
+
+## The Hidden Input Technique
+
+One real `<input>` spans the whole component (inline styles make it transparent and caret-free), so the browser owns everything textual: printable keys insert at the selection, IME composition drafts and commits work untouched, Backspace and Delete behave natively, and paste flows through the clipboard pipeline. The component only listens:
+
+- `input` events sync the value signal from the element and report through `onChange`, clipped to `length`.
+- `selectionchange` remaps the native caret onto the slot it sits in: a collapsed caret becomes a one-character selection covering that slot, which is why Backspace clears the active slot and the arrows move the highlight exactly one slot per press.
+- `focus` places the selection on the next empty slot (the last filled slot when the code is full), `blur` clears the active marker.
+- `paste` inserts the clipboard text at the selection, clips to `length`, and runs the same pattern gate as typing.
+
+Slots read `(value, focused, selection)` signals, so `data-active` marks the caret slot and the blinking bar (the ref's `animate-caret-blink` caret) renders only on an active empty slot.
+
+## Recipes
+
+Restrict the code to digits by passing a whole-value `RegExp`; a rejected edit leaves the previous code standing:
+
+```jsx
+import { InputOTP, InputOTPGroup, InputOTPSlot } from './components/input-otp';
+
+const Digits = () => (
+  <InputOTP length={4} pattern={/^\d+$/}>
+    <InputOTPGroup>
+      <InputOTPSlot index={0} />
+      <InputOTPSlot index={1} />
+      <InputOTPSlot index={2} />
+      <InputOTPSlot index={3} />
+    </InputOTPGroup>
+  </InputOTP>
+);
+```
+
+Drive the code from your own state by passing `value` as an accessor; writes from outside render straight into the slots, while user edits report through `onChange`:
+
+```jsx
+import { signal } from '@hellajs/core';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from './components/input-otp';
+
+const code = signal('');
+
+const Controlled = () => (
+  <InputOTP length={6} value={() => code()} onChange={(next) => code(next)}>
+    <InputOTPGroup>
+      <InputOTPSlot index={0} />
+      <InputOTPSlot index={1} />
+      <InputOTPSlot index={2} />
+      <InputOTPSlot index={3} />
+      <InputOTPSlot index={4} />
+      <InputOTPSlot index={5} />
+    </InputOTPGroup>
+  </InputOTP>
+);
+```
+
+## Scope
+
+The port covers the observable surface of the ref; the intentionally absent pieces match the zero-dependency rule:
+
+- There is no React context. The root wires its descendant slots (by `data-index`) after mount, keeping the ref's composition shape without a provider.
+- `containerClassName`, `maxLength`, `placeholder`, `pasteTransformer`, `pushPasswordManagerStrategy`, and the `render` prop are not ported: `length` replaces `maxLength`, `class` lands on the root, and layout is user composition.
+- The package's password-manager badge space, autofill style injection, and `data-input-otp-mss`/`-mse` debug attributes are dropped. The css flavor folds the selection and autofill transparency into the control class; the tailwind flavor keeps only the inline hiding, so drag-selecting the invisible text can flash a selection highlight there.
+- Click-to-slot caret calibration is approximate (the package squeezes the invisible text with letter-spacing hacks). Focus always lands on the target slot, and keyboard navigation is exact.
+- A slot carries no `data-filled` attribute: the ref exposes only the character, the fake caret, and the active flag, and a filled slot is simply one that renders a character.
+
+## Accessibility
+
+The hidden input carries `autocomplete="one-time-code"` and `inputmode="numeric"`, so mobile keyboards open the digit layout and password managers offer SMS codes.
+
+| Key | Behavior |
+|---|---|
+| Printable keys | Insert at the caret (subject to `pattern`); the caret slot advances |
+| `Backspace` | Clears the active slot, or the selection when a range is marked, and moves the highlight back |
+| Arrow keys | Move the active slot one position left or right |
+| `Home` / `End` | Move to the first slot or the next empty slot (the last slot when full) |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the root), `control` (the hidden input's disabled cursor and selection transparency), `group`, `slot` (with the `data-active`, `aria-invalid`, first/last rounding, and `.dark` hooks as attribute selectors), `caretWrap`, and `caret` (the hand-rolled caret-blink keyframes).
+
+```jsx
+import InputOTP from './components/input-otp';
+
+const Wide = () => <InputOTP length={6} class="gap-3" />;
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The strings carry the ref's classes verbatim, including the `data-[active=true]`, `aria-invalid:`, and `dark:` conditioned utilities and the `animate-caret-blink` caret bar (provided by `tw-animate-css`, which `theme.css` imports).
+
+## Customizing
+
+The copied file is yours. The slot size lives in the slot class (`h-9 w-9` in the tailwind string, `2.25rem` in the css map) and the state hooks are plain attribute selectors, so resizing or re-theming is a one-place edit. The `data-slot` attributes (`input-otp`, `input-otp-group`, `input-otp-slot`, `input-otp-separator`) plus the input's `data-input-otp` and each slot's `data-index` are stable hooks for user CSS.

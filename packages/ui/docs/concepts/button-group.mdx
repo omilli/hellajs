@@ -1,0 +1,94 @@
+# Button Group
+
+A flex container that joins buttons, inputs, and text into a single visual control, styled byte-faithfully to shadcn's new-york-v4 ButtonGroup. The group rounds and de-borders the inner edges of its children so a row (or column) of separate elements reads as one widget.
+
+## Install
+
+```bash
+bunx @hellajs/ui add button-group
+```
+
+`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. The group declares `separator` as a registry dependency, so the add command copies `separator` into your project alongside it; compose the group with your own `button`, `input`, or `native-select` copies the same way.
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
+| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
+
+## CSS Style
+
+The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The group is caller-composed: `ButtonGroup` renders the `role="group"` wrapper and you place buttons, separators, or `ButtonGroupText` labels inside it.
+
+```jsx
+import Button from './components/button';
+import ButtonGroup, { ButtonGroupSeparator, ButtonGroupText } from './components/button-group';
+
+const Actions = () => (
+  <ButtonGroup>
+    <Button variant="outline">Copy</Button>
+    <ButtonGroupSeparator />
+    <Button variant="outline">Paste</Button>
+  </ButtonGroup>
+);
+```
+
+`orientation="vertical"` stacks the children and moves the joined edges to top and bottom. `ButtonGroupText` renders the muted label plate shadcn uses for prefix text inside a group:
+
+```jsx
+import Button from './components/button';
+import ButtonGroup, { ButtonGroupText } from './components/button-group';
+
+const Labeled = () => (
+  <ButtonGroup>
+    <ButtonGroupText>https://</ButtonGroupText>
+    <Button variant="outline">hellajs.com</Button>
+  </ButtonGroup>
+);
+```
+
+The html-format file (`button-group.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import ButtonGroup, { ButtonGroupSeparator } from './components/button-group';
+import Button from './components/button';
+
+mount(
+  html`<${ButtonGroup}>
+    <${Button} variant="outline">Left</${Button}>
+    <${ButtonGroupSeparator} />
+    <${Button} variant="outline">Right</${Button}>
+  </${ButtonGroup}>`,
+  '#app',
+);
+```
+
+## Tailwind Style
+
+The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the `[&>*:not(:first-child)]:rounded-l-none` edge-joining selectors and the separator's `m-0!` override, and the class arrays wrap in `cn()`.
+
+```jsx
+import Button from './components/button';
+import ButtonGroup from './components/button-group';
+
+const Stacked = () => (
+  <ButtonGroup orientation="vertical">
+    <Button variant="outline">Top</Button>
+    <Button variant="outline">Bottom</Button>
+  </ButtonGroup>
+);
+```
+
+## Composition Notes
+
+There is no slot machinery and no child injection: the group renders its children as-is, which is the documented composition contract for every hella composite. Upstream's `asChild` prop (a Radix `Slot`) has no equivalent here; render the element you want directly. `ButtonGroupSeparator` re-states the separator markup inline rather than importing it, so the copied file stays self-contained.
+
+## Customizing
+
+The copied file is yours. The css style module exports `base` (the group: flex, fit width, focus z-lift, and the select/input accommodation selectors), `orientation` (horizontal and vertical edge-joining maps), `text` (the label plate), and `separatorBase` plus `separator` (the inherited separator declarations and the self-stretch overrides). Respace a group through a `class` override such as `gap-2`, or restyle `ButtonGroupText` by editing its map.

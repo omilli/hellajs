@@ -60,7 +60,7 @@ describe("cli e2e", () => {
   test("list prints the registry entry names", async () => {
     const [exit, stdout] = await runCli(["list"], root);
     expect(exit).toBe(0);
-    expect(stdout).toBe("button\ncard\ncn\ndialog\ninput\ntabs\ntheme\n");
+    expect(stdout).toBe("accordion\nalert\nalert-dialog\naspect-ratio\nattachment\navatar\nbadge\nbreadcrumb\nbubble\nbutton\nbutton-group\ncalendar\ncard\ncheckbox\ncn\ncollapsible\ncombobox\ncommand\ncontext-menu\ndialog\ndirection\ndrawer\ndropdown-menu\nempty\nfield\nform\nhover-card\ninput\ninput-group\ninput-otp\nitem\nkbd\nlabel\nmarker\nmenubar\nmessage\nmessage-scroller\nnative-select\nnavigation-menu\npagination\npopover\nprogress\nradio-group\nresizable\nscroll-area\nselect\nseparator\nsheet\nsidebar\nskeleton\nslider\nsonner\nspinner\nswitch\ntable\ntabs\ntextarea\ntheme\ntoggle\ntoggle-group\ntooltip\n");
   });
 
   test("unknown command exits 1", async () => {

@@ -1,0 +1,73 @@
+# anchorPosition
+
+Positions an element as a fixed overlay anchored to another element and keeps it placed across scroll and resize, returning the dispose handle that removes the listeners.
+
+## API
+
+```typescript
+function anchorPosition(
+  anchor: Element,
+  floating: HTMLElement,
+  options?: AnchorPositionOptions
+): () => void
+```
+
+- `anchor`: Element the floating element anchors to.
+- `floating`: Element positioned against the anchor.
+- `options`: `placement` (default `"bottom"`), `offset` gap in px (default `0`), `matchAnchorWidth` stretch, `dir` (defaults to the anchor's computed `direction`), and `onUpdate`, called after each reposition with the final placement.
+- **Returns**: Dispose handle. Calling it removes the window scroll and resize listeners.
+
+## Basic Usage
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { anchorPosition } from "@hellajs/dom";
+
+let disposeAnchor: (() => void) | undefined;
+
+const Picker = () => (
+  <span>
+    <button
+      hook:afterMount={(node) => {
+        if (!(node instanceof HTMLElement)) return;
+        const panel = node.nextElementSibling as HTMLElement;
+        disposeAnchor = anchorPosition(node, panel, {
+          placement: "bottom-start",
+          matchAnchorWidth: true
+        });
+      }}
+      hook:beforeDestroy={() => disposeAnchor?.()}
+    >
+      Options
+    </button>
+    <div class="menu-panel">Menu content</div>
+  </span>
+);
+
+mount(<Picker />, "#app");
+// The panel sits below the button at the start edge and tracks it on scroll
+```
+
+## Key Concepts
+
+### Placement, Flip, and Shift
+
+`placement` is a side (`top`, `bottom`, `left`, `right`) plus an optional alignment (`-start` or `-end`): twelve values, matching the shadcn `side`/`align` pair. When the floating element does not fit on the requested side it flips to the opposite side, then both axes shift to clamp inside the viewport. `onUpdate` receives the final placement after every reposition, so menus can re-check flip-dependent details such as arrow direction.
+
+### Width Matching
+
+`matchAnchorWidth: true` stretches the floating element to the anchor's width each reposition. Select-like menus use this so the popup aligns with its trigger.
+
+### Live Measurement
+
+The anchor rect is re-measured with `getBoundingClientRect()` on every reposition, so the overlay tracks a moving anchor. The floating element's size comes from `offsetWidth`/`offsetHeight`, which CSS transforms never skew. `dir` is read once from the anchor's computed `direction` at wiring time.
+
+## Important Considerations
+
+### Dispose With the Feature
+
+The listeners sit on `window`, so they outlive the elements. Call the dispose handle in the same path that closes or unmounts the UI, or the overlay keeps repositioning after removal.
+
+### All Math Is Pure
+
+The coordinates come from [`computeAnchorPosition`](/reference/dom/behaviors), a pure function over plain rects. Test placement logic without a DOM by calling it directly.

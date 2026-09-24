@@ -1,0 +1,57 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import FormContent from "@ui/concepts/form.mdx";
+
+const title = "Form";
+const description = "Signals-native form demo running the CLI-vendored css-flavor source the same `add` command installs, with the controller, validators, and explicit-state parts.";
+---
+
+<MainLayout frontmatter={{ title, description }}>
+  <div class="demo-frame dark" id="demo"></div>
+  <FormContent />
+</MainLayout>
+
+<script>
+  import { html, mount } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import { createForm, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "../../components/ui/form";
+  import Button from "../../components/ui/button";
+  import Input from "../../components/ui/input";
+  import "../../components/ui/tokens.js";
+
+  const saved = signal("");
+  const form = createForm(
+    { email: "", name: "" },
+    {
+      validators: {
+        email: (v) => (v.includes("@") ? null : "Enter a valid email"),
+        name: (v) => (v.length > 0 ? null : "Required"),
+      },
+    },
+  );
+
+  mount(html`<div class="demo-stack">
+    <form
+      class="demo-stack"
+      onsubmit="${form.handleSubmit((values) => saved(values.email))}"
+    >
+      <${FormItem} error="${() => form.errors().email != null}">
+        <${FormLabel} for="demo-email" error="${() => form.errors().email != null}">Email</${FormLabel}>
+        <${FormControl} describedBy="demo-email-msg" invalid="${() => form.errors().email != null}">
+          <${Input} id="demo-email" type="email" placeholder="ada@lovelace.dev" value="${() => form.values.email()}" oninput="${(v) => form.setField("email", v)}" />
+        </${FormControl}>
+        <${FormDescription} id="demo-email-msg">We only use this for sign-in.</${FormDescription}>
+        <${FormMessage} errors="${() => (form.errors().email ? [form.errors().email!] : [])}" />
+      </${FormItem}>
+      <${FormItem} error="${() => form.errors().name != null}">
+        <${FormLabel} for="demo-name" error="${() => form.errors().name != null}">Display name</${FormLabel}>
+        <${FormControl} invalid="${() => form.errors().name != null}">
+          <${Input} id="demo-name" placeholder="Ada Lovelace" value="${() => form.values.name()}" oninput="${(v) => form.setField("name", v)}" />
+        </${FormControl}>
+        <${FormMessage} errors="${() => (form.errors().name ? [form.errors().name!] : [])}" />
+      </${FormItem}>
+      <${Button}>Save</${Button}>
+      <p class="demo-note">${() => (saved() ? `Saved ${saved()}` : "Submit with an empty field to see the validation messages.")}</p>
+    </form>
+  </div>`, document.getElementById("demo")!);
+</script>

@@ -20,6 +20,12 @@ export { trapFocus } from "./trapFocus";
 export { onEscape } from "./onEscape";
 export { onOutside } from "./onOutside";
 export { rovingTabIndex } from "./rovingTabIndex";
+export { anchorPosition } from "./anchorPosition";
+export { computeAnchorPosition } from "./computeAnchorPosition";
+export { hoverIntent } from "./hoverIntent";
+export { menuTypeahead } from "./menuTypeahead";
+export { onDrag } from "./onDrag";
+export { layerDismissal } from "./layerDismissal";
 
 export type * from "./types/nodes";
 export type * from "./types/attributes";
