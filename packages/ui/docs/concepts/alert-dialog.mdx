@@ -23,7 +23,7 @@ bunx @hellajs/ui add theme
 
 ## No Outside Dismissal
 
-Alert dialogs demand a deliberate answer, so the panel has no outside-click dismissal at all: there is no `closeOnOutside` prop, and pointerdowns on the overlay or the page behind it do nothing. Escape closes (suppressible with `closeOnEscape`), and the Action and Cancel buttons close through your own wiring. Radix's AlertDialog makes the same choice; this is the one deliberate divergence from the [Dialog](/components/dialog) surface.
+Alert dialogs demand a deliberate answer, so the panel has no outside-click dismissal at all: there is no `closeOnOutside` prop, and pointerdowns on the overlay or the page behind it do nothing. Escape closes (suppressible with `closeOnEscape`), and the Action and Cancel buttons close through your own wiring. Radix's AlertDialog makes the same choice; this is the one deliberate divergence from the [Dialog](/ui/dialog) surface.
 
 ```jsx
 import { signal } from '@hellajs/core';

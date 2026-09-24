@@ -2,7 +2,7 @@
 @plugin "@tailwindcss/typography";
 @plugin "daisyui";
 
-/* Registry styles inject as `@layer hella` (the components pages' inline demo
+/* Registry styles inject as `@layer hella` (the ui pages' inline demo
    scripts); this statement appends hella after tailwind's theme/base/components
    order. Cascade layers trump specificity, so registry class rules sit above
    preflight and daisyUI regardless of injection order. */
@@ -123,7 +123,7 @@ body:has(#sidebar-drawer:checked) .sidebar-close {
   rotate: 180deg;
 }
 
-/* Component demo harness (the `docs/src/pages/components/<name>.astro` demo
+/* Component demo harness (the `docs/src/pages/ui/<name>.astro` demo
    frames). Unlayered by design: layered rules lose to unlayered author CSS by
    construction, and the harness must override the registry's hella layer the
    same way the retired per-demo shell did. Scoped to .demo-frame so nothing

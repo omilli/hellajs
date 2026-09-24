@@ -3,6 +3,9 @@
 ## 2026-09-24
 * **Update**: Renumber: worker-allocated IDs 172-184 (ui-shadcn-components merge) collided with main-tree entries 172-180 allocated in parallel — renumbered to 181-193
 * **Creation**: Added concept [184](entries/184.md) (type: decision).
+* **Creation**: Added concept [194](entries/194.md) (type: correction).
+* **Creation**: Added concept [195](entries/195.md) (type: decision).
+* **Deprecation**: Archived [190](archive/190-ui-component-doc-links.md) → superseded by [194](entries/194-link-sibling-ui-component-docs.md).
 
 ## 2026-09-23
 * **Note**: main-tree parallel allocations, uncommitted operator state:

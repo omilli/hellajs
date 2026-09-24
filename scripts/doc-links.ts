@@ -14,7 +14,7 @@ import { logger, packagesDir, pluginsDir, projectRoot } from "./utils/index.js";
  * public and must not satisfy a doc link.
  *
  * 2. Page-existence check — fail if an internal site URL (any markdown link or `href`
- * under `/learn`, `/components`, `/reference`, `/plugins`) resolves to no `.mdx`/`.astro`
+ * under `/learn`, `/ui`, `/reference`, `/plugins`, or the retired `/components` tripwire) resolves to no `.mdx`/`.astro`
  * page under `docs/src/pages/`. Catches link rot the export-name check cannot see: renamed or
  * deleted pages (`/learn/patterns/data` after the file became `resource.mdx`),
  * wrong slugs (`css-vars` vs `cssvars`, `ForEach` vs `foreach`), dropped wrappers
@@ -284,14 +284,17 @@ function urlPath(url: string): string {
 }
 
 /**
- * Whether a URL is an internal docs-site URL (under `/learn`, `/components`,
- * `/reference`, or `/plugins`). Relative paths, external URLs, and other roots
+ * Whether a URL is an internal docs-site URL (under `/learn`, `/ui`,
+ * `/reference`, `/plugins`, or the retired `/components`). The `components`
+ * alternative is a tripwire, not a live section: a stale `/components/…` link
+ * stays classified internal, resolves to no page, and fails the guard.
+ * Relative paths, external URLs, and other roots
  * (`/@hellajs/…` JSDoc links) are not site pages.
  * @param url The link target
  * @returns True if the URL targets the docs site
  */
 function isSiteUrl(url: string): boolean {
-  return /^\/(?:learn|components|reference|plugins)(?:\/|$)/.test(urlPath(url));
+  return /^\/(?:learn|ui|reference|plugins|components)(?:\/|$)/.test(urlPath(url));
 }
 
 /**

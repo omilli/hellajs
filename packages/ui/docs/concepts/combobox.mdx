@@ -59,6 +59,8 @@ The default filter is a case-insensitive substring match over item labels (falli
 Pass `filter` to replace the default entirely - it receives the full item list and the live query:
 
 ```jsx
+import Combobox from './components/combobox';
+
 const startsWith = (items, query) =>
   query ? items.filter((item) => item.value.startsWith(query)) : items;
 

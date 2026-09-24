@@ -457,7 +457,7 @@ function checkWrappers(): Finding[] {
 
 /**
  * Check 5 — nav/index registration: pages ↔ nav.ts agree both ways (learn,
- * reference, components, and plugins sections); learn content
+ * reference, plugins, and ui sections); learn content
  * pages also appear in their enumeration page.
  * @returns Findings
  */
@@ -469,18 +469,17 @@ function checkRegistration(): Finding[] {
     return findings;
   }
 
-  // Flatten nav entries, scoped per section: learn labels, reference slugs, plugin names.
+  // Flatten nav entries, scoped per section: learn labels, reference slugs, plugin names, ui slugs.
   const referenceIdx = nav.indexOf("reference:");
   const pluginsIdx = nav.indexOf("plugins:");
-  const componentsIdx = nav.indexOf("components:");
-  const learnSlice = nav.slice(0, componentsIdx === -1 ? (referenceIdx === -1 ? undefined : referenceIdx) : componentsIdx);
+  const uiIdx = nav.indexOf("ui:");
+  const learnSlice = nav.slice(0, referenceIdx === -1 ? undefined : referenceIdx);
   const learnSlugs = new Set<string>();
   for (const m of learnSlice.matchAll(/"([^"]+)"/g)) learnSlugs.add(m[1]!.toLowerCase());
 
-  const componentSlugs = new Set<string>();
-  if (componentsIdx !== -1) {
-    const compSlice = nav.slice(componentsIdx, referenceIdx === -1 ? undefined : referenceIdx);
-    for (const m of compSlice.matchAll(/"([^"]+)"/g)) componentSlugs.add(m[1]!.toLowerCase());
+  const uiSlugs = new Set<string>();
+  if (uiIdx !== -1) {
+    for (const m of nav.slice(uiIdx).matchAll(/"([^"]+)"/g)) uiSlugs.add(m[1]!.toLowerCase());
   }
 
   const pluginSlugs = new Set<string>();
@@ -498,13 +497,13 @@ function checkRegistration(): Finding[] {
     }
   }
   if (pluginsIdx !== -1) {
-    for (const slug of nav.slice(pluginsIdx).matchAll(/"([^"]+)"/g)) pluginSlugs.add(slug[1]!.toLowerCase());
+    for (const slug of nav.slice(pluginsIdx, uiIdx === -1 ? undefined : uiIdx).matchAll(/"([^"]+)"/g)) pluginSlugs.add(slug[1]!.toLowerCase());
   }
 
   const learnIndex = readFileOrNull(path.join(docsPagesDir, "learn", "index.mdx")) ?? "";
   const patternsIndex = readFileOrNull(path.join(docsPagesDir, "learn", "patterns", "index.mdx")) ?? "";
 
-  const registered = { learn: new Set<string>(), reference: new Set<string>(), plugins: new Set<string>(), components: new Set<string>() };
+  const registered = { learn: new Set<string>(), reference: new Set<string>(), plugins: new Set<string>(), ui: new Set<string>() };
   for (const file of collectFiles(docsPagesDir, [".mdx", ".astro"])) {
     const rel = path.relative(docsPagesDir, file).replace(/\.(mdx|astro)$/, "");
     if (rel === "index" || rel.endsWith("/index")) continue;
@@ -529,9 +528,9 @@ function checkRegistration(): Finding[] {
       if (entry === undefined || !entry.has(slug)) {
         findings.push({ file, message: `page not registered in nav.ts (${rel})` });
       }
-    } else if (section === "components") {
-      registered.components.add(rel);
-      if (!componentSlugs.has(slug.toLowerCase())) {
+    } else if (section === "ui") {
+      registered.ui.add(rel);
+      if (!uiSlugs.has(slug.toLowerCase())) {
         findings.push({ file, message: `page not registered in nav.ts (${rel})` });
       }
     } else if (section === "plugins") {
@@ -557,9 +556,9 @@ function checkRegistration(): Finding[] {
       }
     }
   }
-  for (const slug of componentSlugs) {
-    if (!registered.components.has(`components/${slug}`)) {
-      findings.push({ file: navFile, message: `nav.ts components entry "${slug}" matches no page` });
+  for (const slug of uiSlugs) {
+    if (!registered.ui.has(`ui/${slug}`)) {
+      findings.push({ file: navFile, message: `nav.ts ui entry "${slug}" matches no page` });
     }
   }
   for (const slug of pluginSlugs) {

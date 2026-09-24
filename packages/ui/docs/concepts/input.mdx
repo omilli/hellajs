@@ -47,6 +47,8 @@ const EmailField = () => {
 `value` accepts a plain string or a bare [`signal`](/reference/core/signal). A signal keeps the field in sync after mount, and `oninput` receives the typed string on every input event. `ariaInvalid` drives the invalid state - the destructive border and ring shadcn applies to failed validation - and the input carries `data-slot="input"` for targeting:
 
 ```jsx
+import Input from './components/input';
+
 <Input placeholder="Required field" ariaInvalid={submitted && email === ''} />
 ```
 

@@ -45,7 +45,6 @@ export const navigation = {
       ],
     }
   ],
-  components: ["Button", "Input", "Card", "Dialog", "Tabs", "Badge", "Alert", "Kbd", "Separator", "Skeleton", "Spinner", "Empty", "Label", "Textarea", "Native-Select", "Aspect-Ratio", "Avatar", "Progress", "Table", "Button-Group", "Input-Group", "Field", "Pagination", "Item", "Marker", "Direction", "Bubble", "Message", "Message-Scroller", "Attachment", "Collapsible", "Accordion", "Checkbox", "Radio-Group", "Switch", "Toggle", "Toggle-Group", "Slider", "Resizable", "Tooltip", "Hover-Card", "Popover", "Dropdown-Menu", "Context-Menu", "Menubar", "Navigation-Menu", "Breadcrumb", "Select", "Combobox", "Command", "Alert-Dialog", "Sheet", "Drawer", "Sonner", "Scroll-Area", "Calendar", "Input-Otp", "Form", "Sidebar"],
   reference: [
     { core: ["signal", "signalArray", "signalMap", "signalSet", "computed", "effect", "batch", "scope", "untracked", "flush"] },
     {
@@ -79,4 +78,5 @@ export const navigation = {
     { ssr: ["ssr", "doc"] },
   ],
   plugins: ["babel", "rollup", "vite", "astro"],
+  ui: ["Accordion","Alert","Alert-Dialog","Aspect-Ratio","Attachment","Avatar","Badge","Breadcrumb","Bubble","Button","Button-Group","Calendar","Card","Checkbox","Collapsible","Combobox","Command","Context-Menu","Dialog","Direction","Drawer","Dropdown-Menu","Empty","Field","Form","Hover-Card","Input","Input-Group","Input-Otp","Item","Kbd","Label","Marker","Menubar","Message","Message-Scroller","Native-Select","Navigation-Menu","Pagination","Popover","Progress","Radio-Group","Resizable","Scroll-Area","Select","Separator","Sheet","Sidebar","Skeleton","Slider","Sonner","Spinner","Switch","Table","Tabs","Textarea","Toggle","Toggle-Group","Tooltip"],
 } as const;

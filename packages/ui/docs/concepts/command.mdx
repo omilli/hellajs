@@ -60,6 +60,8 @@ The default filter scores every item case-insensitively against its label, value
 Pass `filter` to replace the default entirely - it receives the full item list and the live query and returns the items to render, ranked:
 
 ```jsx
+import Command from './components/command';
+
 const startsWith = (items, query) =>
   query ? items.filter((item) => item.value.toLowerCase().startsWith(query.toLowerCase())) : items;
 
@@ -68,7 +70,7 @@ const PrefixPalette = () => (
 );
 ```
 
-Ranking re-renders the list per keystroke: unlike the [Combobox](/components/combobox), which hides non-matching options in place, the command re-renders its ranked order, so item elements are not stable across queries.
+Ranking re-renders the list per keystroke: unlike the [Combobox](/ui/combobox), which hides non-matching options in place, the command re-renders its ranked order, so item elements are not stable across queries.
 
 ## Keyboard
 
@@ -159,7 +161,7 @@ const Palette = () => (
 );
 ```
 
-The dialog surface is duplicated inside the command file under `hella-command-dialog` labels, so the palette works without copying the dialog entry; the entry's `dialog` registry dependency exists so standalone dialogs are one `add` away. Escape and an outside press run `onClose`; the panel holds mounted under `data-state="closed"` until its exit animation ends, matching the [Dialog](/components/dialog) lifecycle.
+The dialog surface is duplicated inside the command file under `hella-command-dialog` labels, so the palette works without copying the dialog entry; the entry's `dialog` registry dependency exists so standalone dialogs are one `add` away. Escape and an outside press run `onClose`; the panel holds mounted under `data-state="closed"` until its exit animation ends, matching the [Dialog](/ui/dialog) lifecycle.
 
 ## Divergences from the upstream reference
 
