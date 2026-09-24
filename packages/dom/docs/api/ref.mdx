@@ -5,9 +5,14 @@ Reactive reference to a single DOM element with chainable methods for bindings, 
 ## API
 
 ```typescript
+// Find the first element matching a CSS selector
 function $ref<T extends Element = Element>(selector: string): DomRef<T>
+
+// Wrap an element you already hold
+function $ref<T extends Element = Element>(element: T): DomRef<T>
 ```
 - `selector`: A CSS selector string to find the first matching element.
+- `element`: An element to wrap directly. Operations apply immediately.
 - **Returns**: A reactive reference with `.bind()`, `.on()`, and `.hooks()` methods.
 
 For multiple elements with auto-watching, see [`$collection`](/reference/dom/$collection).
@@ -128,7 +133,29 @@ Available hooks: `beforeMount`, `afterMount`, `beforeUpdate`, `afterUpdate`, `be
 
 If the element is already mounted, `afterMount` hooks execute immediately.
 
+### Wrapping an Element Directly
+
+Pass an element instead of a selector when you already hold a reference. Operations apply immediately, no watching is started.
+
+```js
+import { signal } from "@hellajs/core";
+import { $ref } from "@hellajs/dom";
+
+const count = signal(0);
+
+const button = document.createElement("button");
+document.body.appendChild(button);
+
+$ref(button)
+  .bind(() => `Count: ${count()}`)
+  .on("click", () => count(count() + 1));
+```
+
 ## Important Considerations
+
+### Detached Elements
+
+When the passed element is detached (not in the document yet), `bind` and `on` still apply immediately. `afterMount` waits until the element is inserted into a mounted container, and never fires for elements inserted outside one.
 
 ### Single Element Only
 
@@ -160,7 +187,7 @@ ref.hooks({ afterMount: () => {} });
 
 ### Auto-Watching Missing Elements
 
-When an element doesn't exist, `$ref` automatically watches for it. Operations are queued and applied when the element appears.
+When a selector matches no element, `$ref` automatically watches for a matching element. Operations are queued and applied when it appears. An element passed directly is always resolved, so it never starts watching.
 
 ```js
 const ref = $ref(".not-in-yet");

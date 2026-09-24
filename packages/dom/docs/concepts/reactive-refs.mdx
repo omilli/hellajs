@@ -30,6 +30,17 @@ $ref(".node")
 
 `$ref` automatically watches for elements that don't exist yet. Operations queue and apply once when the first matching element appears, then watching stops. `$collection` watches continuously, applying queued operations to any new matching elements added later.
 
+`$ref` also accepts an element directly. Operations apply immediately with no watching.
+
+```js
+import { $ref } from "@hellajs/dom";
+
+const node = document.querySelector(".counter");
+if (node) {
+  $ref(node).on("click", () => console.log("clicked"));
+}
+```
+
 When binding a primitive value to form elements (INPUT, TEXTAREA, SELECT), `.value` is used instead of `.textContent`.
 
 Attribute bindings follow the same value rules as template props: `true` renders a bare attribute, `false` removes it, arrays join with spaces, and `style` objects serialize to kebab-case declarations.

@@ -1,19 +1,30 @@
 import type { DomWrapper, HellaPrimitive, HellaProps, ElementHooks, DomRef } from "./types/nodes";
 import type { DOMEventMap } from "./types/attributes";
 import { createReactive } from "./internal/reactive";
+import { isString } from "./internal/core";
 import { multiSelectors, ensureRefObserver } from "./internal/selectors";
 import { mountQueue, processMountQueue } from "./internal/queue";
 
 /**
- * Creates a reactive reference to a single DOM element.
- * Operations queue automatically if element doesn't exist and apply when it appears.
+ * Creates a reactive reference to a single DOM element found by CSS selector.
+ * Operations queue automatically if the element doesn't exist and apply when it appears.
  * Use $collection for multiple elements with continuous watching.
  *
  * @param selector CSS selector string
  * @returns DomRef with bind/on/hooks chainable methods
  */
-export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
-  let targetNode = document.querySelector<T>(selector);
+export function $ref<T extends Element = Element>(selector: string): DomRef<T>;
+/**
+ * Creates a reactive reference to a DOM element already in hand.
+ * Operations apply immediately; no selector watching is started.
+ * Use $collection for multiple elements with continuous watching.
+ *
+ * @param element The element to wrap
+ * @returns DomRef with bind/on/hooks chainable methods
+ */
+export function $ref<T extends Element = Element>(element: T): DomRef<T>;
+export function $ref<T extends Element = Element>(target: string | T): DomRef<T> {
+  let targetNode: T | null = isString(target) ? document.querySelector<T>(target) : target;
   let wrapper = targetNode ? createReactive(targetNode) : null;
   const queuedOps: Array<(wrapper: DomWrapper<T>) => void> = [];
   let isWatching = false;
@@ -27,8 +38,9 @@ export function $ref<T extends Element = Element>(selector: string): DomRef<T> {
   };
 
   const startWatching = () => {
-    if (isWatching || targetNode) return;
+    if (isWatching || targetNode || !isString(target)) return;
     isWatching = true;
+    const selector = target;
 
     const processNode = (nodes: Element[]) => {
       if (nodes.length === 0) return;

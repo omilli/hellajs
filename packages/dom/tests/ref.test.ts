@@ -277,6 +277,69 @@ describe("dom", () => {
       expect(second.getAttribute("data-test")).toBeNull();
     });
 
+    test("wraps a passed element without selector watching", () => {
+      const el = document.createElement("button");
+
+      const ref = $ref(el);
+      ref.bind({ "data-test": "value" });
+
+      expect(ref()).toBe(el);
+      expect(ref.node).toBe(el);
+      expect(el.getAttribute("data-test")).toBe("value");
+      expect(multiSelectors.size).toBe(0);
+    });
+
+    test("element input applies bind, on, and hooks immediately", () => {
+      const el = document.createElement("button");
+      document.body.appendChild(el);
+
+      const clickHandler = mock(() => { });
+      const mountHandler = mock(() => { });
+
+      $ref(el)
+        .bind("Hello")
+        .on("click", clickHandler)
+        .hooks({ afterMount: mountHandler });
+
+      expect(el.textContent).toBe("Hello");
+
+      el.dispatchEvent(new Event("click"));
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+
+      expect(mountHandler).toHaveBeenCalledTimes(1);
+    });
+
+    test("null element input is a safe no-op", () => {
+      const ref = $ref(null as unknown as Element);
+
+      expect(ref()).toBeNull();
+
+      ref.bind("test");
+      ref.on("click", () => { });
+      ref.hooks({ afterMount: () => { } });
+
+      expect(multiSelectors.size).toBe(0);
+    });
+
+    test("afterMount on a detached element defers until insertion into a mount container", async () => {
+      const mountHandler = mock(() => { });
+      const el = document.createElement("div");
+      el.className = "detached-ref";
+
+      $ref(el)
+        .hooks({ afterMount: mountHandler })
+        .bind({ "data-test": "value" });
+
+      expect(el.getAttribute("data-test")).toBe("value");
+      expect(mountHandler).toHaveBeenCalledTimes(0);
+
+      mount(html`<p>host</p>`);
+      document.getElementById("app")!.appendChild(el);
+      await delay(10);
+
+      expect(mountHandler).toHaveBeenCalledTimes(1);
+    });
+
     test("refObserver cleans a bound element removed inside a stateless wrapper", async () => {
       const clickHandler = mock(() => { });
       $ref(".wrapped-clean").on("click", clickHandler);
