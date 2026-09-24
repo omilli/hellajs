@@ -13,7 +13,7 @@ Decision index — jump to the section for the decision you are making; do not s
 | Where does a new symbol/file live? | §Canonical paths, §File-placement decision tree |
 | Shape of a new/changed signature? | §Signature-shape decision tree |
 | Canonical example to pattern-match? | §Canonical examples |
-| Import, type, loop, memory, condition, guard, or error question? | §Code Rules (subsection per topic) |
+| Import, template, type, loop, memory, condition, guard, or error question? | §Code Rules (subsection per topic) |
 | Naming a variable/function/type/file? | §Naming Conventions |
 | How large may a function/file be? | §File and Function Size |
 | JSDoc shape, `@internal`? | §JSDoc (visibility rules in §Code Rules → Types) |
@@ -128,6 +128,10 @@ import { value } from "./internal/module";
 - Separate `import type` for all type-only imports — never inline `type` in a value import
 - Import only what each file uses
 - No external runtime dependencies. Exceptions: type-only imports from `.d.ts`-only packages declared as an intentional `dependency` (types erase at compile time, zero bundle weight — `import type * as CSS from "csstype"` in `packages/css/lib/types.d.ts` is canonical); a package whose published artifact is a CLI may declare a real runtime dependency its `lib/` imports (`@hellajs/ui`'s `esbuild` for add-time type-stripping — the CLI needs it at user runtime, so it cannot be a devDep; the bundle externals rule keeps the JS API external in `dist`)
+
+### Templates
+
+- html`` dynamic components close only as `</${Component}>` (interpolated) or self-closing `<${Component} prop=${v} />` — the bare short form `<//>` is not a tag (the template tokenizer matches `\w-` names only, `packages/dom/lib/internal/template.ts`), so `//>` leaks into the DOM as literal text
 
 ### Types
 
@@ -360,6 +364,9 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 - [ ] `import type` separated; never inline
 - [ ] Double quotes; semicolons always
 - [ ] No external runtime dependency (type-only from `.d.ts`-only packages excepted)
+
+**Templates**
+- [ ] `html` dynamic components closed by `</${Component}>` or self-closing `<${Component} />`; no `<//>` short form
 
 **Types**
 - [ ] `interface` for object shapes; `type` for unions/mapped/conditional

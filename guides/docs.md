@@ -19,6 +19,7 @@ Decision index — jump to the section for the decision you are making. This gui
 | Callable namespace member (`ssr.async`)? | §API Section → Callable Namespaces |
 | Language tag for a code block? | §Code Examples → Language Tags |
 | Both JSX and html in one example? | §Example Syntax (JSX Default) → Never Mix in One Block |
+| Closing a dynamic component in an html block? | §Example Syntax (JSX Default) → Dynamic Component Closes |
 | Import style? | §Code Examples → Import Style |
 | Example code style (attribute values, prop types, children type, css layout)? | §Code Examples → Example Code Style |
 | Cross-reference link format? | §Cross-References |
@@ -613,6 +614,20 @@ onError(() => <div class="error">Something went wrong</div>);
 onError(() => html`<div class="error">Something went wrong</div>`);
 ```
 
+### Dynamic Component Closes
+
+In an `html` tagged-literal block, close a dynamic component with the interpolated form `</${Component}>`, or self-close a childless component (`<${Component} prop=${v} />`). The bare short form `<//>` never parses as a tag — the template tokenizer matches `\w-` names only, so `//>` lands in the rendered DOM as literal text.
+
+```js
+// ❌ bare short form — `<//>` is not a tag; `//>` leaks into the DOM
+mount(html`<${Button}>Save<//>`, "#app");
+```
+
+```js
+// ✅ interpolated closer
+mount(html`<${Button}>Save</${Button}>`, "#app");
+```
+
 ## Cross-References
 
 ### Link Format
@@ -749,6 +764,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 **Code examples**
 - [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
 - [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`) or build-free-runtime recipe blocks (§Example Syntax (JSX Default)); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
+- [ ] `html` blocks close dynamic components with `</${Component}>` (childless: self-closing `<${Component} />`); never the `<//>` short form — audit-enforced (§Example Syntax (JSX Default) → Dynamic Component Closes)
 - [ ] Attribute values written directly, never function-wrapped — function-wrapping only in `html`-method docs; `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
 - [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `bun lint:structure` skips them (§Code Examples → Example Code Style)
 - [ ] No `unknown` annotation on any `children` prop — always `HellaChildren` from `@hellajs/dom`; enforced by `bun lint:structure` (`children??: unknown` banned) (§Code Examples → Example Code Style)

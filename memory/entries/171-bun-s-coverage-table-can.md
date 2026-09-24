@@ -4,7 +4,7 @@ title: "Bun's coverage table can mark a dist line covered that never executes â€
 description: "A bundle line absent from bun's uncovered-lines cell may still be dead â€” verify with a pre-throw process.stdout.write probe before building contracts on the table's line set."
 tags: [testing, coverage]
 timestamp: 2026-09-18
-last_confirmed: 2026-09-18
+last_confirmed: 2026-09-19
 triggers: [phantom-covered-line, coverage-uncovered-set, sourcemap-attribution, dist-bundle-coverage, pre-throw-probe]
 ---
 # Why
