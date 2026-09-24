@@ -6,6 +6,8 @@
 * **Creation**: Added concept [194](entries/194.md) (type: correction).
 * **Creation**: Added concept [195](entries/195.md) (type: decision).
 * **Deprecation**: Archived [190](archive/190-ui-component-doc-links.md) → superseded by [194](entries/194-link-sibling-ui-component-docs.md).
+* **refresh**: Entry 150 refreshed: <//> reintroduction in command/input-otp demo pages + input-otp doc re-eradicated; ban now guard-enforced via scripts/short-close.ts in lint:guards
+* **correction**: Entry 150: short-close guard removed same day on user call - script deemed overkill; close-form enforcement stays prose + memory, do not re-propose
 
 ## 2026-09-23
 * **Note**: main-tree parallel allocations, uncommitted operator state:
