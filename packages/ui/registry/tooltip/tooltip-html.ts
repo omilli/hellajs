@@ -3,6 +3,8 @@ import { anchorPosition, hoverIntent, html, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const content: string;
 // @hella:end
 
 type AnchorSide = "top" | "bottom" | "left" | "right";

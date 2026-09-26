@@ -2,6 +2,20 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const actions: string;
+declare const base: string;
+declare const content: string;
+declare const description: string;
+declare const footer: string;
+declare const group: string;
+declare const header: string;
+declare const media: string;
+declare const mediaVariants: Record<string, string>;
+declare const separator: string;
+declare const separatorBase: string;
+declare const sizes: Record<string, string>;
+declare const title: string;
+declare const variants: Record<string, string>;
 // @hella:end
 
 interface ItemGroupProps {

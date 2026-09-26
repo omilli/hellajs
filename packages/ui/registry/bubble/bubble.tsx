@@ -1,6 +1,13 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const bubble: string;
+declare const content: string;
+declare const reactions: string;
+declare const reactionsAligns: Record<string, string>;
+declare const reactionsSides: Record<string, string>;
+declare const variants: Record<string, string>;
 // @hella:end
 
 interface BubbleGroupProps {

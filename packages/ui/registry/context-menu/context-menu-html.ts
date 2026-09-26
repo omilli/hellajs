@@ -3,6 +3,21 @@ import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@he
 import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const checkItem: string;
+declare const chevron: string;
+declare const content: string;
+declare const group: string;
+declare const icon: string;
+declare const indicator: string;
+declare const item: string;
+declare const label: string;
+declare const radioIcon: string;
+declare const radioItem: string;
+declare const separator: string;
+declare const shortcut: string;
+declare const subContent: string;
+declare const subTrigger: string;
 // @hella:end
 
 type AnchorSide = "top" | "bottom" | "left" | "right";

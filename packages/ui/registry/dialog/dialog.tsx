@@ -1,8 +1,15 @@
 import { effect, signal } from "@hellajs/core";
 import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChild, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const close: string;
+declare const content: string;
+declare const description: string;
+declare const footer: string;
+declare const header: string;
+declare const title: string;
 // @hella:end
 
 /** Accessibility state shared by the animated dialog parts. */

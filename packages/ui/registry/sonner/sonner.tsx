@@ -4,6 +4,15 @@ import { $ref, ForEach, onDrag, Portal } from "@hellajs/dom";
 import type { HellaChild } from "@hellajs/dom";
 
 // @hella:styles
+declare const actionButton: string;
+declare const base: string;
+declare const close: string;
+declare const content: string;
+declare const description: string;
+declare const icon: string;
+declare const item: string;
+declare const title: string;
+declare const toasterPositions: Record<string, string>;
 // @hella:end
 
 /** Semantic toast flavor; a toast without one renders `data-type="default"` with no icon. */
@@ -63,8 +72,8 @@ const SWIPE_DISMISS_RATIO = 0.45;
 // copy/paste module carries one queue per app. The instance nonce scopes the
 // per-toast $ref selectors to this copy when several compiled flavors of the
 // same source coexist (a page running css- and tailwind-flavored copies).
-let toastInstanceCount = 0;
-const INSTANCE = `t${++toastInstanceCount}`;
+// Nonce prefixing this copy's toast ids and $ref selectors (module-scoped).
+const INSTANCE = "t1";
 
 const toasts = signal<ToastRecord[]>([]);
 let nextId = 0;

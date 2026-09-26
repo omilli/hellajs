@@ -336,8 +336,8 @@ const SWIPE_DISMISS_RATIO = 0.45;
 // copy/paste module carries one queue per app. The instance nonce scopes the
 // per-toast $ref selectors to this copy when several compiled flavors of the
 // same source coexist (a page running css- and tailwind-flavored copies).
-let toastInstanceCount = 0;
-const INSTANCE = `t${++toastInstanceCount}`;
+// Nonce prefixing this copy's toast ids and $ref selectors (module-scoped).
+const INSTANCE = "t1";
 
 const toasts = signal<ToastRecord[]>([]);
 let nextId = 0;

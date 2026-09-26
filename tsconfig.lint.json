@@ -89,6 +89,7 @@
     "packages/*/tests/**/*.ts",
     "packages/ui/bin/**/*.js",
     "packages/ui/registry/**/*.ts",
+    "packages/ui/registry/**/*.tsx",
     "packages/ui/registry/**/*.js",
     "plugins/*/src/**/*.mjs",
     "plugins/*/tests/**/*.ts",
@@ -100,7 +101,6 @@
   ],
   "exclude": [
     "**/dist/**",
-    "**/node_modules/**",
-    "packages/ui/registry/**/*-html.ts"
+    "**/node_modules/**"
   ]
 }

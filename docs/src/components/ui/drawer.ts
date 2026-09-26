@@ -316,7 +316,7 @@ export function DrawerContent(props: DrawerContentProps): HellaNode {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
-  let direction = props.direction ?? "bottom";
+  const direction = props.direction ?? "bottom";
   let dragging = false;
   let panelSize = 0;
   // Signed displacement (px, positive toward dismissal) + timestamp of the

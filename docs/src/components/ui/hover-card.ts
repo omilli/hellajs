@@ -131,8 +131,6 @@ interface HoverCardProps {
   class?: string;
 }
 
-let hoverCardCount = 0;
-
 export default function HoverCard(props: HoverCardProps): HellaNode {
   const internal = signal(false);
   const isOpen = (): boolean => (props.open !== undefined ? props.open() : internal());
@@ -141,7 +139,6 @@ export default function HoverCard(props: HoverCardProps): HellaNode {
     props.onOpenChange?.(next);
   };
 
-  const contentId = `hella-hover-card-content-${++hoverCardCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
   // before this watcher starts the exit (reading open() in the template
   // would flash the subtree away one evaluation early).

@@ -3,6 +3,12 @@ import type { Signal } from "@hellajs/core";
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const badge: string;
+declare const base: string;
+declare const fallback: string;
+declare const group: string;
+declare const groupCount: string;
+declare const image: string;
 // @hella:end
 
 interface AvatarProps {

@@ -1,6 +1,10 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const description: string;
+declare const title: string;
+declare const variants: Record<string, string>;
 // @hella:end
 
 interface AlertProps {

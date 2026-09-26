@@ -3,6 +3,18 @@ import { html, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const chevron: string;
+declare const content: string;
+declare const contentAnchor: string;
+declare const diamond: string;
+declare const indicator: string;
+declare const item: string;
+declare const link: string;
+declare const list: string;
+declare const trigger: string;
+declare const viewport: string;
+declare const viewportWrapper: string;
 // @hella:end
 
 /** Document-level activation event: triggers carrying a `value` announce clicks so the root's store and its appended viewport follow without context. */

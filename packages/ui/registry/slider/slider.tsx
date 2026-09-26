@@ -2,6 +2,10 @@ import { signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const range: string;
+declare const thumb: string;
+declare const track: string;
 // @hella:end
 
 interface SliderProps {
@@ -167,7 +171,7 @@ export default function Slider(props: SliderProps): JSX.Element {
           tabindex={props.disabled ? -1 : 0}
           aria-valuemin={min}
           aria-valuemax={max}
-          aria-valuenow={() => values()[index]}
+          aria-valuenow={() => values()[index] as number}
           aria-orientation={orientation}
           aria-disabled={props.disabled ? "true" : undefined}
           style={() => thumbStyle(index)}

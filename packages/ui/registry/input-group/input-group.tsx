@@ -1,6 +1,22 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const addon: string;
+declare const addonAlign: Record<string, string>;
+declare const base: string;
+declare const buttonBase: string;
+declare const buttonSizes: Record<string, string>;
+declare const buttonVariants: Record<string, string>;
+declare const inputBase: string;
+declare const inputControl: string;
+declare const inputFocus: string;
+declare const inputInvalid: string;
+declare const sizes: Record<string, string>;
+declare const text: string;
+declare const textareaBase: string;
+declare const textareaControl: string;
+declare const textareaFocus: string;
+declare const textareaInvalid: string;
 // @hella:end
 
 interface InputGroupProps {

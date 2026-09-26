@@ -2,6 +2,10 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const content: string;
+declare const icon: string;
+declare const variants: Record<string, string>;
 // @hella:end
 
 interface MarkerProps {

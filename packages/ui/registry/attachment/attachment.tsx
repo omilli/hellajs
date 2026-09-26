@@ -1,6 +1,20 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const actions: string;
+declare const base: string;
+declare const buttonBase: string;
+declare const buttonSizes: Record<string, string>;
+declare const buttonVariants: Record<string, string>;
+declare const content: string;
+declare const description: string;
+declare const group: string;
+declare const media: string;
+declare const mediaVariants: Record<string, string>;
+declare const orientations: Record<string, string>;
+declare const sizes: Record<string, string>;
+declare const title: string;
+declare const trigger: string;
 // @hella:end
 
 type AttachmentState = "idle" | "uploading" | "processing" | "error" | "done";

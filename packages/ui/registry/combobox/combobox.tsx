@@ -3,6 +3,34 @@ import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/
 import type { HellaChildren, Placement } from "@hellajs/dom";
 
 // @hella:styles
+declare const addon: string;
+declare const base: string;
+declare const buttonBase: string;
+declare const buttonGhost: string;
+declare const buttonSizeIconXs: string;
+declare const chip: string;
+declare const chipRemoveExtra: string;
+declare const chips: string;
+declare const chipsInput: string;
+declare const content: string;
+declare const empty: string;
+declare const group: string;
+declare const icon: string;
+declare const input: string;
+declare const inputControl: string;
+declare const inputFocus: string;
+declare const inputInvalid: string;
+declare const item: string;
+declare const itemIndicator: string;
+declare const label: string;
+declare const list: string;
+declare const separator: string;
+declare const sizeIconXs: string;
+declare const trigger: string;
+declare const triggerExtra: string;
+declare const triggerIcon: string;
+declare const value: string;
+declare const xIcon: string;
 // @hella:end
 
 type AnchorSide = "top" | "bottom" | "left" | "right";

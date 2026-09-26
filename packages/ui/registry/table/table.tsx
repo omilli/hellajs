@@ -1,6 +1,15 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const body: string;
+declare const caption: string;
+declare const cell: string;
+declare const container: string;
+declare const footer: string;
+declare const head: string;
+declare const header: string;
+declare const row: string;
 // @hella:end
 
 interface TableProps {

@@ -1,6 +1,8 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const group: string;
 // @hella:end
 
 interface KbdProps {

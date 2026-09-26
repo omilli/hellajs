@@ -2,6 +2,12 @@ import { effect, signal } from "@hellajs/core";
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const caret: string;
+declare const caretWrap: string;
+declare const control: string;
+declare const group: string;
+declare const slot: string;
 // @hella:end
 
 interface InputOTPProps {
@@ -56,8 +62,8 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
       return;
     }
     const text = input.value;
-    let start = input.selectionStart;
-    let end = input.selectionEnd;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
     let dir = input.selectionDirection ?? "forward";
     let mappedStart = -1;
     let mappedEnd = -1;

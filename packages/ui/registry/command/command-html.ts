@@ -3,6 +3,24 @@ import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const dialogClose: string;
+declare const dialogDescription: string;
+declare const dialogHeader: string;
+declare const dialogOverlay: string;
+declare const dialogPanel: string;
+declare const dialogTitle: string;
+declare const empty: string;
+declare const group: string;
+declare const groupHeading: string;
+declare const icon: string;
+declare const input: string;
+declare const inputWrapper: string;
+declare const item: string;
+declare const list: string;
+declare const palette: string;
+declare const separator: string;
+declare const shortcut: string;
 // @hella:end
 
 export interface CommandItemData {

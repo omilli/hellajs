@@ -1,6 +1,8 @@
-import type { HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const focus: string;
+declare const invalid: string;
 // @hella:end
 
 interface TextareaProps {

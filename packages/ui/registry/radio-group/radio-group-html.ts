@@ -3,6 +3,11 @@ import { signal } from "@hellajs/core";
 import type { HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const icon: string;
+declare const indicator: string;
+declare const item: string;
+declare const row: string;
 // @hella:end
 
 interface RadioGroupItem {

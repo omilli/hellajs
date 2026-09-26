@@ -1,6 +1,8 @@
 import { signal } from "@hellajs/core";
 
 // @hella:styles
+declare const base: string;
+declare const thumb: string;
 // @hella:end
 
 interface SwitchProps {

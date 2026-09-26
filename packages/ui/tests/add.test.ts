@@ -28,7 +28,7 @@ describe("addComponent", () => {
     addComponent(["button"], { dir: root });
     const button = readFileSync(join(componentsDir, "button.tsx"), "utf8");
     expect(button.includes("@hella:")).toBe(false);
-    expect(button.startsWith('import type { HellaChildren, HellaNode } from "@hellajs/dom";')).toBe(true);
+    expect(button.startsWith('import type { HellaChildren } from "@hellajs/dom";')).toBe(true);
     expect(button).toContain('import { style } from "@hellajs/css";');
     expect(button).toContain("const base = style(");
     expect(button).toContain('layer: "hella"');
@@ -134,7 +134,7 @@ describe("addComponent", () => {
     expect(readFileSync(copied, "utf8")).toBe("// sentinel");
     expect(warnings.join("\n")).toContain("skipped");
     addComponent(["button"], { dir: root, overwrite: true });
-    expect(readFileSync(copied, "utf8").startsWith('import type { HellaChildren, HellaNode } from "@hellajs/dom";')).toBe(true);
+    expect(readFileSync(copied, "utf8").startsWith('import type { HellaChildren } from "@hellajs/dom";')).toBe(true);
   });
 
   test("tailwind add of theme demands tw-animate-css in the peer diff", () => {

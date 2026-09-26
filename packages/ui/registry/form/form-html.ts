@@ -4,6 +4,10 @@ import type { Signal } from "@hellajs/core";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const description: string;
+declare const label: string;
+declare const message: string;
 // @hella:end
 
 /** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
@@ -16,7 +20,7 @@ interface FormOptions<T> {
 }
 
 /** Signals controller createForm returns; the form parts read it through explicit props (no context). */
-interface FormController<T extends Record<string, any>> {
+interface FormController<T extends object> {
   /** One writable signal per field. */
   values: { [K in keyof T]: Signal<T[K]> };
   /** Current validation messages keyed by field. */
@@ -38,7 +42,7 @@ interface FormController<T extends Record<string, any>> {
 }
 
 /** Signals-native form controller replacing react-hook-form's provider: values, errors, touched, and dirty are plain signals, validators run on blur, on setField after touch, and on submit. */
-export function createForm<T extends Record<string, any>>(initial: T, options?: FormOptions<T>): FormController<T> {
+export function createForm<T extends object>(initial: T, options?: FormOptions<T>): FormController<T> {
   const keys = Object.keys(initial) as (keyof T)[];
   const values = {} as { [K in keyof T]: Signal<T[K]> };
   for (const key of keys) values[key] = signal(initial[key]);

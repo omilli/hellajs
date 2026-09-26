@@ -2,6 +2,16 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const content: string;
+declare const ellipsis: string;
+declare const hiddenUntilSm: string;
+declare const linkBase: string;
+declare const linkSizes: Record<string, string>;
+declare const linkVariants: Record<string, string>;
+declare const next: string;
+declare const previous: string;
+declare const srOnly: string;
 // @hella:end
 
 interface PaginationProps {

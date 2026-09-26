@@ -1,6 +1,11 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const orientation: Record<string, string>;
+declare const separator: string;
+declare const separatorBase: string;
+declare const text: string;
 // @hella:end
 
 interface ButtonGroupProps {

@@ -3,6 +3,16 @@ import { html, onEscape, Portal, trapFocus } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const buttonBase: string;
+declare const buttonSizes: Record<string, string>;
+declare const buttonVariants: Record<string, string>;
+declare const content: string;
+declare const description: string;
+declare const footer: string;
+declare const header: string;
+declare const media: string;
+declare const title: string;
 // @hella:end
 
 /** Accessibility state shared by the animated dialog parts. */

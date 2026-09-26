@@ -3,6 +3,10 @@ import { signal } from "@hellajs/core";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const scrollbar: string;
+declare const thumb: string;
+declare const viewport: string;
 // @hella:end
 
 interface ScrollBarProps {

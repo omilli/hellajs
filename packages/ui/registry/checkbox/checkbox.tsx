@@ -1,6 +1,9 @@
 import { signal } from "@hellajs/core";
 
 // @hella:styles
+declare const base: string;
+declare const icon: string;
+declare const indicator: string;
 // @hella:end
 
 interface CheckboxProps {

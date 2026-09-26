@@ -2,6 +2,13 @@ import { signal } from "@hellajs/core";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const content: string;
+declare const contentInner: string;
+declare const header: string;
+declare const icon: string;
+declare const item: string;
+declare const trigger: string;
 // @hella:end
 
 export interface AccordionEntry {

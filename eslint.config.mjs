@@ -13,8 +13,6 @@ export default tseslint.config(
 			"**/.astro/**",
 			"**/coverage/**",
 			"packages/ui/tests/.tmp/**",
-			"packages/ui/registry/**/*.tsx",
-			"packages/ui/registry/**/*-html.ts",
 			"docs/**",
 			".agents/**",
 			".doc-snippets/**",

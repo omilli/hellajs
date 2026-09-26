@@ -143,8 +143,8 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
       return;
     }
     const text = input.value;
-    let start = input.selectionStart;
-    let end = input.selectionEnd;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
     let dir = input.selectionDirection ?? "forward";
     let mappedStart = -1;
     let mappedEnd = -1;

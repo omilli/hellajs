@@ -1,6 +1,13 @@
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const action: string;
+declare const base: string;
+declare const content: string;
+declare const description: string;
+declare const footer: string;
+declare const header: string;
+declare const title: string;
 // @hella:end
 
 interface CardPartProps {

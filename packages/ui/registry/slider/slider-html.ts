@@ -3,6 +3,10 @@ import { signal } from "@hellajs/core";
 import type { HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const range: string;
+declare const thumb: string;
+declare const track: string;
 // @hella:end
 
 interface SliderProps {

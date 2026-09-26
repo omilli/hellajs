@@ -3,6 +3,10 @@ import { onDrag } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const grip: string;
+declare const handle: string;
+declare const icon: string;
 // @hella:end
 
 interface ResizablePanelGroupProps {

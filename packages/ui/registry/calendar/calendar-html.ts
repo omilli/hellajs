@@ -3,6 +3,20 @@ import { ForEach, html } from "@hellajs/dom";
 import type { HellaChild, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const captionLabel: string;
+declare const day: string;
+declare const dayButton: string;
+declare const icon: string;
+declare const month: string;
+declare const monthCaption: string;
+declare const monthGrid: string;
+declare const months: string;
+declare const nav: string;
+declare const navButton: string;
+declare const week: string;
+declare const weekday: string;
+declare const weekdays: string;
 // @hella:end
 
 /** Selection mode: one date, a set of dates, or a from/to span. */

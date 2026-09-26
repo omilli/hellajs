@@ -1,8 +1,13 @@
 import { signal } from "@hellajs/core";
 import { rovingTabIndex } from "@hellajs/dom";
-import type { HellaChild, HellaNode } from "@hellajs/dom";
+import type { HellaChild } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const content: string;
+declare const list: string;
+declare const trigger: string;
+declare const variants: Record<string, string>;
 // @hella:end
 
 export interface TabsItem {

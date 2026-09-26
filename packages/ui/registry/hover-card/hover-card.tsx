@@ -3,6 +3,8 @@ import { anchorPosition, hoverIntent, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, Placement } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const content: string;
 // @hella:end
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -100,8 +102,6 @@ interface HoverCardProps {
   class?: string;
 }
 
-let hoverCardCount = 0;
-
 export default function HoverCard(props: HoverCardProps): JSX.Element {
   const internal = signal(false);
   const isOpen = (): boolean => (props.open !== undefined ? props.open() : internal());
@@ -110,7 +110,6 @@ export default function HoverCard(props: HoverCardProps): JSX.Element {
     props.onOpenChange?.(next);
   };
 
-  const contentId = `hella-hover-card-content-${++hoverCardCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
   // before this watcher starts the exit (reading open() in the template
   // would flash the subtree away one evaluation early).

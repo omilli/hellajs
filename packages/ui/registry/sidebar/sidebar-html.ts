@@ -3,6 +3,55 @@ import { anchorPosition, hoverIntent, html, onEscape, onOutside, Portal, trapFoc
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const container: string;
+declare const containerInset: string;
+declare const containerPlain: string;
+declare const containerSides: Record<string, string>;
+declare const content: string;
+declare const footer: string;
+declare const gap: string;
+declare const gapInset: string;
+declare const gapPlain: string;
+declare const group: string;
+declare const groupAction: string;
+declare const groupContent: string;
+declare const groupLabel: string;
+declare const header: string;
+declare const inner: string;
+declare const input: string;
+declare const inputBase: string;
+declare const inputFocus: string;
+declare const inputInvalid: string;
+declare const inset: string;
+declare const menu: string;
+declare const menuAction: string;
+declare const menuActionHover: string;
+declare const menuBadge: string;
+declare const menuButton: string;
+declare const menuButtonSizes: Record<string, string>;
+declare const menuButtonVariants: Record<string, string>;
+declare const menuItem: string;
+declare const menuSkeleton: string;
+declare const menuSub: string;
+declare const menuSubButton: string;
+declare const menuSubItem: string;
+declare const menuSubSizes: Record<string, string>;
+declare const mobile: string;
+declare const mobileInner: string;
+declare const mobileSides: Record<string, string>;
+declare const none: string;
+declare const overlay: string;
+declare const rail: string;
+declare const separator: string;
+declare const separatorBase: string;
+declare const sidebar: string;
+declare const skeletonBase: string;
+declare const skeletonIcon: string;
+declare const skeletonText: string;
+declare const tooltipBase: string;
+declare const tooltipContent: string;
+declare const trigger: string;
 // @hella:end
 
 /**

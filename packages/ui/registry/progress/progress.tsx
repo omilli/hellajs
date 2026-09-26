@@ -1,6 +1,7 @@
-import type { HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const indicator: string;
 // @hella:end
 
 type ProgressValue = number | null | undefined;

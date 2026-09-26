@@ -1,4 +1,5 @@
 // @hella:styles
+declare const base: string;
 // @hella:end
 
 interface SpinnerProps {

@@ -2,6 +2,22 @@ import { html } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const content: string;
+declare const description: string;
+declare const error: string;
+declare const errorList: string;
+declare const group: string;
+declare const label: string;
+declare const legend: string;
+declare const legendVariants: Record<string, string>;
+declare const orientation: Record<string, string>;
+declare const separator: string;
+declare const separatorBase: string;
+declare const separatorContent: string;
+declare const separatorRule: string;
+declare const set: string;
+declare const title: string;
 // @hella:end
 
 interface FieldSetProps {

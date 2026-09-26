@@ -2,6 +2,13 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const focus: string;
+declare const icon: string;
+declare const invalid: string;
+declare const optgroup: string;
+declare const option: string;
+declare const wrapper: string;
 // @hella:end
 
 interface NativeSelectProps {

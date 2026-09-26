@@ -2,6 +2,9 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const sizes: Record<string, string>;
+declare const variants: Record<string, string>;
 // @hella:end
 
 interface ButtonProps {

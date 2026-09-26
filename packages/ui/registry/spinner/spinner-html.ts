@@ -2,6 +2,7 @@ import { html } from "@hellajs/dom";
 import type { HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
 // @hella:end
 
 interface SpinnerProps {

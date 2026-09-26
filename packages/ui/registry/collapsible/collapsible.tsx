@@ -2,6 +2,11 @@ import { signal } from "@hellajs/core";
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const content: string;
+declare const contentInner: string;
+declare const icon: string;
+declare const trigger: string;
 // @hella:end
 
 interface CollapsibleProps {

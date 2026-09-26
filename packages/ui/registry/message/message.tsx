@@ -1,6 +1,12 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const avatar: string;
+declare const base: string;
+declare const content: string;
+declare const footer: string;
+declare const group: string;
+declare const header: string;
 // @hella:end
 
 interface MessageGroupProps {

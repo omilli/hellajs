@@ -2,6 +2,7 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
 // @hella:end
 
 interface SeparatorProps {

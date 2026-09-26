@@ -2,6 +2,9 @@ import { signal } from "@hellajs/core";
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const sizes: Record<string, string>;
+declare const variants: Record<string, string>;
 // @hella:end
 
 interface ToggleProps {

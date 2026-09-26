@@ -4,6 +4,15 @@ import type { Signal } from "@hellajs/core";
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const buttonBase: string;
+declare const buttonSizes: Record<string, string>;
+declare const buttonVariants: Record<string, string>;
+declare const content: string;
+declare const item: string;
+declare const overlay: string;
+declare const srOnly: string;
+declare const viewport: string;
 // @hella:end
 
 interface MessageScrollerProviderProps {

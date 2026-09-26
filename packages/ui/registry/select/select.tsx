@@ -3,6 +3,18 @@ import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/
 import type { HellaChildren, Placement } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const chevron: string;
+declare const content: string;
+declare const group: string;
+declare const icon: string;
+declare const indicator: string;
+declare const item: string;
+declare const label: string;
+declare const scrollButton: string;
+declare const separator: string;
+declare const value: string;
+declare const viewport: string;
 // @hella:end
 
 type AnchorSide = "top" | "bottom" | "left" | "right";

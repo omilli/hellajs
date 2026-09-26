@@ -2,6 +2,15 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const ellipsis: string;
+declare const ellipsisIcon: string;
+declare const item: string;
+declare const link: string;
+declare const list: string;
+declare const page: string;
+declare const separator: string;
+declare const srOnly: string;
 // @hella:end
 
 interface BreadcrumbProps {

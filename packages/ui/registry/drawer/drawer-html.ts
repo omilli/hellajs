@@ -4,6 +4,14 @@ import { html, onDrag, onEscape, onOutside, Portal, trapFocus } from "@hellajs/d
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
+declare const close: string;
+declare const content: string;
+declare const contentDirections: Record<string, string>;
+declare const description: string;
+declare const footer: string;
+declare const header: string;
+declare const title: string;
 // @hella:end
 
 /** Accessibility state shared by the animated drawer parts. */
@@ -142,7 +150,7 @@ export function DrawerContent(props: DrawerContentProps): HellaNode {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
-  let direction = props.direction ?? "bottom";
+  const direction = props.direction ?? "bottom";
   let dragging = false;
   let panelSize = 0;
   // Signed displacement (px, positive toward dismissal) + timestamp of the
