@@ -3,10 +3,9 @@ type: decision
 title: Package AGENTS.md files are already at author-density - compress drift, not prose
 description: The 8 package AGENTS.md files (ui joined after the original density pass) are already at author-density; blanket prose cuts would cut facts. Compression passes yield drift sweeps, not size.
 tags: [agent-config, arch]
-timestamp: 2026-09-26
+timestamp: 2026-09-27
 last_confirmed: 2026-09-26
 triggers: [agents-compression, file-map-drift, anchor-sweep, package-agents-density]
-supersedes: 115
 ---
 # Why
 

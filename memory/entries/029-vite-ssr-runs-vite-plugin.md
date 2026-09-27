@@ -52,5 +52,5 @@ The server entry exports a `render()` (not a top-level `Bun.serve`; current exam
   `@hellajs/ssr` only because root `node_modules/@hellajs` lacks the `ssr` symlink (partial install;
   the lockfile lists `packages/ssr`) — environmental, not a source change.
 - Depends on the fixes in memory 028 (ssr array-children) and, for the pre-rewrite router example,
-  027 (router re-resolution); composes with memory 018 (router SSR), 197 (SSR readiness; supersedes
-  005), 032/033 (staged-Suspense streaming; carries 015's model).
+  027 (router re-resolution); composes with memory 018 (router SSR), 197 (SSR readiness),
+  032/033 (staged-Suspense streaming; carries 015's model).

@@ -39,17 +39,17 @@ Write only if ALL hold: verified this session against source, a passing check, o
 
 `memory.ts add` allocates the next id and writes the template (`--fix` for `type: correction`); fill frontmatter+body in template order. Triggers/tags/description live in the concept file only. After any write/edit: `memory.ts rebuild`. Write commands (`add`, `supersede`, `log`) append to `log.md`. Forgetting rebuild is the one remaining failure mode — it closes every write.
 
-## Step 4 — Supersede on contradiction (one-in-one-out)
+## Step 4 — Supersede on refutation (one-in-one-out)
 
-New concept retires an active one → `memory.ts supersede <old> <new>`: moves old to `archive/`, sets `supersedes:` on the new, logs, rebuilds. Location is the retire signal; no status field. Never leave two active concepts that disagree.
+Supersede is for refutation or reversal — the old claim is false, or the decision/ritual it records is now undone. Concept unchanged but evidence drifted (stale line refs, renamed symbols, thinner citations) → Step 5 in-place edit, never supersede: archive holds refuted beliefs worth not re-deriving, not stale copies of live ones. `memory.ts supersede <old> <new>`: moves old to `archive/`, sets `supersedes:` on the new, logs, rebuilds. Location is the retire signal; no status field. Never leave two active concepts that disagree.
 
 ## Step 5 — Refresh on staleness
 
-`memory.ts stale` lists concepts with `last_confirmed` older than 180 days (pass a count to override). Each: re-verify against current source before trusting. Still true → bump `last_confirmed` + `timestamp`, `rebuild`. False → Step 4 + act on the new truth. Loading is the trigger for spot refreshes; the bulk path is `bun memory [--start-id=<n>] [--limit=<n>]` — one fresh instance per active entry in ID order from the beginning (`--limit` default 10, `0` = no cap; `--start-id` resumes a sweep), each running exactly this step scoped to one entry per instance: still true → bump, false → supersede, blocked → operator gate.
+`memory.ts stale` lists concepts with `last_confirmed` older than 180 days (pass a count to override). Each: re-verify against current source before trusting. Still true → bump `last_confirmed`, edit drifted evidence/citations in place (bump `timestamp` too when the body changed), `rebuild`. False or reversed → Step 4 + act on the new truth. Loading is the trigger for spot refreshes; the bulk path is `bun memory [--start-id=<n>] [--limit=<n>]` — one fresh instance per active entry in ID order from the beginning (`--limit` default 10, `0` = no cap; `--start-id` resumes a sweep), each running exactly this step scoped to one entry per instance: still true or drifted → in-place edit + bump, false/reversed → supersede, blocked → operator gate.
 
 ## Step 6 — Prune archive orphans
 
-Archive serves only the supersession narrative (an active concept's `supersedes:` → one read hop). After a chain settles: `memory.ts prune` (dry-run lists orphans) → `prune --apply` deletes them. `--apply` is deletion — dry-run first, apply only with intent.
+Archive holds refuted/reversed concepts only (Step 4 gate) and serves only the supersession narrative (an active concept's `supersedes:` → one read hop). Lifetime is reference-based, never time-based — a file dies when no active concept names it, however old. `memory.ts prune` (dry-run lists orphans) → `prune --apply` deletes them; `bun memory` sweeps end with an automatic prune (chains settling in a sweep never linger), manual prune covers chains settling outside one. `--apply` is deletion — dry-run first when pruning by hand.
 
 ## Self-check
 

@@ -4,7 +4,7 @@ title: "bun -e children reading Bun.stdin.stream() never exit while the parent h
 description: "A bun child whose stdin pipe stays open hangs forever reading Bun.stdin.stream(); use process.stdin.once(\"data\") plus an explicit process.exit(0)."
 tags: [arch, bun, spawn, daemon]
 timestamp: 2026-09-11
-last_confirmed: 2026-09-26
+last_confirmed: 2026-09-27
 triggers: [supervised-child, bun-spawn-stdin, stdin-pipe-open, echo-child-script]
 ---
 # Why
@@ -18,3 +18,4 @@ Verified 2026-09-11 building `scripts/remote/probe.ts` (remote-control daemon se
 - Working form: child `'process.stdin.once("data", (chunk) => { console.log("E:" + chunk.toString().trim()); process.exit(0); })'` exits with code 0 under the same held-open pipe.
 - `bun remote --probe` passed only after this switch (first run failed with `no exited frame with code 0 within 15000ms`).
 - Contrast: with an EOF-ing parent (`echo ping | bun -e ...`) the `Bun.stdin.stream()` form exits fine — the hang needs the open pipe, which is exactly the supervision case.
+- Drift note 2026-09-27: the remote daemon script set that motivated this was removed (`bun remote` nuke); the bun behavior fact stands, and the held-open-pipe supervision case is still live wherever children read stdin under `Bun.spawn({ stdin: "pipe" })` parents.

@@ -1,5 +1,5 @@
-import { relative } from "node:path";
-import { logger, projectRoot } from "../utils/index.js";
+import { join, relative } from "node:path";
+import { execCommand, logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
 import type { Relay } from "../agent/relay.js";
 import { classifyOutcome, deriveQueue, idValue, snapshotEntry } from "./queue.js";
@@ -57,8 +57,8 @@ function buildVerifyPrompt(entry: MemoryEntry): string {
     `Entry: ${entry.file}`,
     "Do not verify, write, or refresh any other entry you happen to read. Do not act on code-level implications of a false claim: record the corrected fact; code changes are a separate decision.",
     "Re-verify every factual claim against the current source, tests, and docs — open the files the entry cites or names. Then take exactly one action:",
-    '- Still accurate: bump `last_confirmed` in the entry frontmatter to today (bump `timestamp` too only if you also edit the body), run `bun .agents/skills/memory/memory.ts rebuild`, and log the refresh via `bun .agents/skills/memory/memory.ts log "<what you re-verified>" --label Refresh`.',
-    "- False or misleading: author the corrected concept (`bun .agents/skills/memory/memory.ts add`, `--fix` for a correction type; fill in frontmatter + body per the skill's Step 3), then `bun .agents/skills/memory/memory.ts supersede <old-id> <new-id>`.",
+    "- Still accurate (including concept-preserving drift — stale line refs, renamed symbols, thin citations): edit the drifted evidence in place, bump `last_confirmed` in the entry frontmatter to today, bump `timestamp` too when the body changed, run `bun .agents/skills/memory/memory.ts rebuild`, and log the refresh via `bun .agents/skills/memory/memory.ts log \"<what you re-verified>\" --label Refresh`.",
+    "- False or reversed (the old claim itself is wrong, or the decision/ritual it records is undone): author the corrected concept (`bun .agents/skills/memory/memory.ts add`, `--fix` for a correction type; fill in frontmatter + body per the skill's Step 3), then `bun .agents/skills/memory/memory.ts supersede <old-id> <new-id>`. Concept-unchanged drift never takes this path — supersede archives refuted beliefs, not stale copies.",
     "- Cannot verify (the entry's subject is gone, the evidence is ambiguous, or retiring it is a load-bearing fork): write nothing and state exactly what blocked you.",
     "ask_user_question dialogs are relayed to a human operator at the terminal: use the tool for any load-bearing fork.",
     "If you would hand back or are blocked, stop and report exactly that.",
@@ -209,6 +209,28 @@ function printSummary(records: EntryRecord[], halted: boolean): void {
 }
 
 /**
+ * Prune archive orphans at sweep end: supersession chains settle when the
+ * sweep's instances supersede entries, so this is where orphaned archive
+ * files appear. Delegates to the memory CLI's `prune --apply` — the KB write
+ * side stays single-sourced there; the runner only triggers it. Runs even
+ * after a halt (reference-based and mechanical — chains from the entries
+ * already processed may have settled). A prune failure rejects upward: the
+ * KB is in an unexpected state and the run must fail.
+ */
+async function pruneArchiveOrphans(): Promise<void> {
+  const result = await execCommand(
+    "bun",
+    [join(projectRoot, ".agents", "skills", "memory", "memory.ts"), "prune", "--apply"],
+    { cwd: projectRoot },
+  );
+  for (const line of result.stdout.trim().split("\n")) {
+    if (line !== "") {
+      logger.info(`  ${line}`);
+    }
+  }
+}
+
+/**
  * The next chunk start when the cap may leave entries unchecked: one past
  * the last queued entry's ID. Null when the run is uncapped or the queue
  * fell short of the cap (nothing known remains).
@@ -235,8 +257,9 @@ function nextStartId(queue: MemoryEntry[], limit: number): number | null {
  * The runner never verifies and never writes KB content — instances do. Its
  * only signals are the entry file's before/after state and the operator
  * gate (retry / accept / skip / halt) when no action landed. `--dry-run`
- * prints the queue without spawning. Exit code is 0 only when every
- * attempted entry ended verified, superseded, or accepted.
+ * prints the queue without spawning. The sweep ends with an archive orphan
+ * prune (the settle point for this run's supersession chains). Exit code is
+ * 0 only when every attempted entry ended verified, superseded, or accepted.
  *
  * @param options Start floor, cap, model, thinking level, dry-run flag.
  * @returns Process exit code.
@@ -256,7 +279,7 @@ export async function runMemory(options: RunMemoryOptions): Promise<number> {
   }
   if (options.dryRun) {
     logger.info(`memory · dry run · ${queue.length} entry(s), no instances spawned`);
-    logger.info("  actions: still true → bump last_confirmed + rebuild · false → author corrected concept + supersede · blocked → operator gate");
+    logger.info("  actions: still true or drifted → in-place edit + bump dates + rebuild · false/reversed → author corrected concept + supersede · blocked → operator gate");
     for (const entry of queue) {
       logger.info(`  ${entry.id}  last_confirmed=${entry.lastConfirmed}  ${relative(projectRoot, entry.file)}`);
     }
@@ -281,6 +304,7 @@ export async function runMemory(options: RunMemoryOptions): Promise<number> {
     }
   }
   printSummary(records, halted);
+  await pruneArchiveOrphans();
   const resume = halted ? null : nextStartId(queue, options.limit);
   if (resume !== null) {
     logger.info(`next chunk: bun memory --start-id=${resume}`);

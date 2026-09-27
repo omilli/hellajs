@@ -30,4 +30,4 @@ Recall this before: editing attribute/child reactivity, debugging "why doesn't m
 - `packages/dom/lib/html.ts` `cloneWithValues` — runtime `html` interpolates raw values; cannot inspect/wrap.
 - Tests: `bun test plugins/babel/tests` 225 pass (8 new compile-shape cases incl. component/prefix exclusion); `bun coverage dom` 339 pass (3 new runtime tests: reactive array attribute, reactive call attribute, re-filter on update), coverage 98.88% funcs / 98.03% lines, lint green.
 - Docs reconciled: `plugins/babel/AGENTS.md` "Auto-wrap" bullet; `packages/dom/docs/concepts/templates.mdx` Array Attributes; `packages/dom/dom-comparison.md:79` ("at the runtime level" + "the compiler erases this distinction") reconciled with `:35`.
-- Related: memory 005 (`html`/babel AST is the DOM-free SSR seam — does not cover the reactivity discriminator), memory 010 (SSR text-node coalescing — unrelated). Neither covers attribute reactivity.
+- Related: memory 197 (`html`/babel AST is the DOM-free SSR seam — does not cover the reactivity discriminator), memory 010 (SSR text-node coalescing — unrelated). Neither covers attribute reactivity.

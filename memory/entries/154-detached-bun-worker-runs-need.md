@@ -3,13 +3,13 @@ type: decision
 title: Detached `bun worker` runs need a FIFO stdin — `/dev/null` wedges operator dialogs forever
 description: Launch unattended `bun worker` runs with stdin on a held-open FIFO so relayed dialogs and failure gates can be answered later; `/dev/null` stdin wedges the run forever.
 tags: [worker, orchestration]
-timestamp: 2026-09-18
+timestamp: 2026-09-27
 last_confirmed: 2026-09-27
 triggers: [worker-unattended, dialog-stdin, bun-worker-detach, operator-gate]
 ---
 # Why
 
-The runner relays every pi `ask_user_question` and orchestrator gate to stdin (`TerminalRelay.startStdin` reads line-by-line; a line answers the pending dialog — select dialogs accept leading integers, exact option strings are the safe contract). A run launched `nohup bun worker … &` from a non-interactive shell gets `/dev/null` stdin: the first load-bearing fork (foreign failure, plan gap, failure gate) blocks forever with no way to answer — `/proc/<pid>/fd/0` confirmed `/dev/null` on a wedged run. Recovery is kill + relaunch with a writable channel: `mkfifo /tmp/wfifo && (sleep infinity > /tmp/wfifo &) && nohup bun worker <set> < /tmp/wfifo > log 2>&1 &` — the keeper holds the write end so the reader never sees EOF, and any later shell answers with `printf '<option>\n' > /tmp/wfifo`. Ticks are durable across the restart; the fresh instance resumes at the first unticked task. (For phone-side operation `bun remote` renders the same gates as panel cards.)
+The runner relays every pi `ask_user_question` and orchestrator gate to stdin (`TerminalRelay.startStdin` reads line-by-line; a line answers the pending dialog — select dialogs accept leading integers, exact option strings are the safe contract). A run launched `nohup bun worker … &` from a non-interactive shell gets `/dev/null` stdin: the first load-bearing fork (foreign failure, plan gap, failure gate) blocks forever with no way to answer — `/proc/<pid>/fd/0` confirmed `/dev/null` on a wedged run. Recovery is kill + relaunch with a writable channel: `mkfifo /tmp/wfifo && (sleep infinity > /tmp/wfifo &) && nohup bun worker <set> < /tmp/wfifo > log 2>&1 &` — the keeper holds the write end so the reader never sees EOF, and any later shell answers with `printf '<option>\n' > /tmp/wfifo`. Ticks are durable across the restart; the fresh instance resumes at the first unticked task.
 
 # Evidence
 

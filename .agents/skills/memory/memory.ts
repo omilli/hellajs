@@ -489,11 +489,31 @@ function cmdStale(days: number): number {
   return 0;
 }
 
+/**
+ * Archive ids still referenced by active concepts: frontmatter `supersedes`
+ * links plus any 3-digit id token in an active entry's title, description, or
+ * body — prose cross-references ("memory 005", "015's model") keep their
+ * target alive, not just successor links. Citation-shaped false positives
+ * (line refs, counts) only ever keep a file longer — the safe direction.
+ *
+ * @param active Active concept rows.
+ * @returns Every archive id an active entry still names.
+ */
+function referencedIds(active: Row[]): Set<string> {
+  const ref = new Set(active.filter((r) => r.supersedes !== "").map((r) => r.supersedes));
+  for (const r of active) {
+    for (const match of `${r.title ?? ""} ${r.description ?? ""} ${r.body}`.matchAll(/\b\d{3}\b/g)) {
+      ref.add(match[0]);
+    }
+  }
+  return ref;
+}
+
 /** Print store counts: active/archive/orphans, by type, by tag, oldest active. */
 function cmdStats(): number {
   const active = loadDir(entriesDir());
   const archived = loadDir(archiveDir());
-  const ref = new Set(active.filter((r) => r.supersedes !== "").map((r) => r.supersedes));
+  const ref = referencedIds(active);
   const orphans = archived.filter((r) => !ref.has(r.id));
   console.log(`active: ${active.length}`);
   console.log(`archive: ${archived.length}`);
@@ -552,7 +572,7 @@ function cmdSupersede(oldId: string, newId: string): number {
 function cmdPrune(apply: boolean): number {
   const active = loadDir(entriesDir());
   const archived = loadDir(archiveDir());
-  const ref = new Set(active.filter((r) => r.supersedes !== "").map((r) => r.supersedes));
+  const ref = referencedIds(active);
   const orphans = archived.filter((r) => !ref.has(r.id));
   if (orphans.length === 0) {
     console.log("no orphaned archive entries");
