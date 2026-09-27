@@ -4,7 +4,7 @@ title: "Zero new doc-snippets findings" is an error-set attribution, not a count
 description: "'Zero new doc-snippets findings' is an error-SET attribution, not a count diff — Complete-Code byte parity structurally emits TS2451 redeclares; verify by re-running pre-edit and diffing per-doc sets."
 tags: [docs, toolchain, doc-snippets, tutorials]
 timestamp: 2026-09-03
-last_confirmed: 2026-09-03
+last_confirmed: 2026-09-26
 triggers: [doc-snippets-delta, new-snippet-errors, tutorial-findings-attribution, complete-code-redeclare]
 ---
 

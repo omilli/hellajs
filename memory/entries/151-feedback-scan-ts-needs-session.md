@@ -4,7 +4,7 @@ title: feedback scan.ts needs a session file path when run from a worktree cwd
 description: "feedback scan.ts fails with a no-session-dir error inside ../hellajs-wt worktrees; pass the session file path explicitly or report friction in lieu of the mechanical scan."
 tags: [tooling, workers]
 timestamp: 2026-09-18
-last_confirmed: 2026-09-18
+last_confirmed: 2026-09-27
 triggers: [worktree-feedback-scan, worker-completion-pipeline, session-dir-resolve]
 ---
 # Why

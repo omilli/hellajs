@@ -4,7 +4,7 @@ title: Hook props type element optional while runtime always passes it
 description: dom hook props use ElementHook = (node?: Element) => void, so docs examples must keep element?. narrowing even though runHooks never passes undefined.
 tags: [dom, types, docs]
 timestamp: 2026-09-09
-last_confirmed: 2026-09-09
+last_confirmed: 2026-09-26
 triggers: [hook-mdx, element-hook-typing, doc-snippets-strict]
 ---
 # Why

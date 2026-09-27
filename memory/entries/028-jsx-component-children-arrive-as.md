@@ -4,7 +4,7 @@ title: "JSX component children arrive as an array (`children: [child]`); html\`\
 description: babel compiles JSX component children as arrays while html`` yields a single child — ssr's walkers must branch on Array.isArray or they silently drop the array (empty staged template; fixed).
 tags: [arch, ssr, dom, jsx, babel, contract]
 timestamp: 2026-07-28
-last_confirmed: 2026-07-28
+last_confirmed: 2026-09-26
 triggers: [ssr-component-children, jsx-array-children, suspense-streaming, ssr-walker, html-vs-jsx]
 ---
 

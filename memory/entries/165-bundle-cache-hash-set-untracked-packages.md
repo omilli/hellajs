@@ -4,7 +4,7 @@ title: "Bundle cache invalidation is content hashes + git status — an untracke
 description: "Bundle-cache invalidation is hashes (getAllSourceFiles) + git status; untracked packages have constant status, so every source dir a build reads must join the hash set — registry/** since Unit 4."
 tags: [tooling, build, cache, worktrees]
 timestamp: 2026-09-16
-last_confirmed: 2026-09-16
+last_confirmed: 2026-09-27
 triggers: [build-cache-invalidation, getallsourcefiles, untracked-package-cache, stale-dist-registry, bundle-cache-hash-set]
 ---
 

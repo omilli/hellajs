@@ -4,7 +4,7 @@ title: Mutually-referencing timer/listener closures under prefer-const resolve a
 description: Mutually-referencing timer/listener closures flag prefer-const in every ordering — hoist `let onAbort!` and remove via `.finally` on the awaited promise, mirroring raceAbort.
 tags: [arch, code]
 timestamp: 2026-09-15
-last_confirmed: 2026-09-15
+last_confirmed: 2026-09-26
 triggers: [prefer-const, setTimeout, addEventListener, raceAbort, retry-delay]
 ---
 # Why

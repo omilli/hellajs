@@ -4,7 +4,7 @@ title: commitlint scope hook crashes on commits that delete a workspace director
 description: "commitlint.config.ts reads every packages/*/package.json at hook time — workspace-deleting commits crash it (ENOENT); restore the file unstaged or drop the leftover dir, commit, re-delete."
 tags: [tooling, git]
 timestamp: 2026-09-18
-last_confirmed: 2026-09-18
+last_confirmed: 2026-09-27
 triggers: [commitlint-enoent, commit-msg-hook-crash, delete-workspace-commit, cherry-pick-rejected, conventional-commit-hook, does-not-match-index]
 ---
 # Why

@@ -3,8 +3,8 @@ type: decision
 title: "Zero-runtime invariant scopes @hellajs/ssr's bundle IMPORTS, not the shipped HTML content — inline scripts in streamed HTML are not a conflict"
 description: The zero-runtime invariant scopes @hellajs/ssr's bundle imports, not the streamed HTML content — no stance bars <script> in shipped output, so React-style inline swap snippets violate nothing.
 tags: [arch, ssr, streaming, hydration, contract]
-timestamp: 2026-07-12
-last_confirmed: 2026-07-28
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [ssr-zero-runtime, inline-script, streaming-html, suspense-swap, zero-runtime-scope]
 ---
 # Why
@@ -14,6 +14,6 @@ A streaming-SSR design session initially framed an inline swap `<script>` (the R
 # Evidence
 
 - `packages/ssr/AGENTS.md` Non-obvious behaviors: "Zero runtime imports. `lib/` has only `import type` from `@hellajs/dom` (erased). Adding a runtime `@hellajs/*` import violates the package's core invariant." — scoped to `lib/` *imports*.
-- `packages/ssr/ssr-comparison.md` §2/§3: "Zero runtime imports… the only import is `import type…` erased at compile time"; §3 frames zero-runtime as zero runtime *dependencies* + bundle size (~1.15 KB).
+- `packages/ssr/ssr-comparison.md` §2/§3: "Zero runtime imports… the only import is `import type…` erased at compile time"; §3 frames zero-runtime as zero runtime *dependencies* + bundle footprint (no runtime deps, type-only peer; the old ~1.15 KB figure has since left the doc).
 - `rg -n -i "inline|<script|swap|suspense|stream|runtime.*markup"` across `packages/ssr`, `packages/dom/lib`, both AGENTS.md → no stance against scripts/inline content in shipped HTML.
-- Confirmed 2026-07-12 during the streaming-SSR design session (`plans/ssr/code/streaming/design.md`).
+- Re-confirmed 2026-09-26: `ssr.stream` now emits its own inline `<script>$hs(id)</script>` swap scripts first-party (`packages/ssr/AGENTS.md`, `lib/ssrStream.ts` `$hs` bootstrap) — first-party inline scripts in shipped HTML, unconflicted. Confirmed 2026-07-12 during the streaming-SSR design session (`plans/ssr/code/streaming/design.md`).

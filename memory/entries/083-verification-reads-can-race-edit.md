@@ -4,7 +4,7 @@ title: Verification reads can race edit flushes — a check contradicting a just
 description: When a read/rg/wc immediately follows successful edits and contradicts them, re-run the check with a fresh command before concluding failure or "fixing" anything.
 tags: [tooling, verification]
 timestamp: 2026-09-05
-last_confirmed: 2026-09-05
+last_confirmed: 2026-09-26
 triggers: [stale-read-race, verification-false-fail, edit-flush-race, rg-race]
 ---
 # Why

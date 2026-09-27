@@ -4,7 +4,7 @@ title: "Dead mid-flight sibling unit in a shared worktree: revert its partial re
 description: "A dead unit's partial registry.json entry reds the enumerated test lists for later units; revert surgically (entry block, registry files, AGENTS row, variants block, dist) so it re-runs from its plan."
 tags: [ui, worker, worktree, registry, triage, dead-run]
 timestamp: 2026-09-23
-last_confirmed: 2026-09-23
+last_confirmed: 2026-09-27
 triggers: [dead-worker, mid-flight-unit, red-baseline, enumerated-lists, registry-partial-state, unit-20-carousel]
 ---
 # Why

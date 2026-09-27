@@ -4,7 +4,7 @@ title: "Green happy-dom CSS asserts do not prove browser-valid CSS — invalid s
 description: Green happy-dom CSS asserts do not prove browser validity — invalid structures parse to silent empty rules in BOTH engines; happy-dom diverges from Chrome on at-rule support and cssText serialization.
 tags: [testing, css, happydom, cssom]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-18
+last_confirmed: 2026-09-26
 triggers: [happydom-css-text, invalid-css-masked, at-rule-assert, cssom-serialization, unknown-property-drop]
 ---
 

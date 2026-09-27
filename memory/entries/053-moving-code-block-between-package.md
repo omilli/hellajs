@@ -3,8 +3,8 @@ type: decision
 title: Moving a code block between package docs breaks doc-snippets on BOTH ends — make moved blocks self-sufficient and re-check the source doc's remaining import coverage
 description: doc-snippets models each doc as ONE module (imports hoisted, blocks nested-scoped) — a moved block can strand references in the source doc and type-collide in the target; make blocks self-sufficient.
 tags: [docs, toolchain, doc-snippets]
-timestamp: 2026-08-26
-last_confirmed: 2026-08-26
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [doc-section-move, snippet-relocation, doc-snippets-failure, doc-split, ts2552-after-move]
 ---
 
@@ -19,4 +19,4 @@ Consequence for section moves: a moved block silently carried two dependencies t
 
 # Evidence
 
-u8 docs split (2026-08-26): after moving `### Route Metadata` from packages/router/docs/api/router.mdx to concepts/route-hooks.mdx, `bun doc-snippets` failed with `packages_router_docs_api_router_mdx.ts(82,20) TS2552: Cannot find name 'route'` and `(125,39) TS2552: Cannot find name 'navigate'` — fixed by widening the Basic Usage block's import to `{ router, route, navigate }`; the moved block got its own `import` + `const checkAuth = () => true; const currentView = signal("")` preamble. Both failures were invisible until the audit tool ran; `bun lint:structure`/`lint:guards` stay green through them, so run `bun doc-snippets` after any doc block move, not just after edits.
+u8 docs split (2026-08-26): after moving `### Route Metadata` from packages/router/docs/api/router.mdx to concepts/route-hooks.mdx, `bun doc-snippets` failed with `packages_router_docs_api_router_mdx.ts(82,20) TS2552: Cannot find name 'route'` and `(125,39) TS2552: Cannot find name 'navigate'` — fixed by widening the Basic Usage block's import to `{ router, route, navigate }`; the moved block got its own `import` + `const checkAuth = () => true; const currentView = signal("")` preamble. (route-hooks.mdx has since folded into concepts/routing.mdx; that section's block now leans on the doc's earlier `currentView` declaration under nested scoping.) Both failures were invisible until the audit tool ran; `bun lint:structure`/`lint:guards` stay green through them, so run `bun doc-snippets` after any doc block move, not just after edits.

@@ -4,7 +4,7 @@ title: Close dynamic html-template component tags with `</${Component}>` — `</
 description: In runtime html`` templates the only valid dynamic-component close is the interpolated `</${Component}>` form; the `<//>` short form is not a tag and leaks literal `//>` text into the render.
 tags: [dom, html-templates]
 timestamp: 2026-09-24
-last_confirmed: 2026-09-24
+last_confirmed: 2026-09-27
 triggers: [html-close-form, dynamic-component-tag, template-parser, component-syntax]
 ---
 # Why

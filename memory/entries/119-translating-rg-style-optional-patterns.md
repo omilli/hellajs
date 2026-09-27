@@ -4,7 +4,7 @@ title: Translating rg-style optional-? patterns into TS regex literals — one e
 description: In a TS regex literal `\??` is escape+quantifier (optional `?`); writing `\?\?` narrows the guard to the two-`?` form — green but blind, caught only by a seeded-violation probe.
 tags: [toolchain, guards, regex]
 timestamp: 2026-09-08
-last_confirmed: 2026-09-08
+last_confirmed: 2026-09-26
 triggers: [regex-literal-escape, seeded-violation-probe, guard-pattern-translation, optional-question-mark]
 ---
 # Why

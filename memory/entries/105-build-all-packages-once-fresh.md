@@ -4,7 +4,7 @@ title: Build all packages once in a fresh component worktree before any scoped b
 description: A fresh worktree has no packages/*/dist and `bun bundle <pkg>` skips dependency packages, so scoped builds fail on unresolved @hellajs/* modules until root `bun bundle` runs once.
 tags: [worktrees, build, verification]
 timestamp: 2026-09-20
-last_confirmed: 2026-09-20
+last_confirmed: 2026-09-26
 triggers: [worktree-bundle-deps, scoped-bundle-fresh-worktree, baseline-red-missing-dist, bundle-store-tsc-2307]
 ---
 

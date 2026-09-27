@@ -4,7 +4,7 @@ title: lint:structure's Complete-Code parity check is LIVE (m flag fixed) with a
 description: lint:structure's Complete-Code parity check is LIVE with a single-file fallback for one-fence tutorials — bun lint:structure is the parity oracle; 087's manual-replica workaround is retired.
 tags: [docs, toolchain, tutorials, lint-guards]
 timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+last_confirmed: 2026-09-26
 triggers: [complete-code-parity, lint-structure-parity, tutorial-lockstep, single-file-tutorial]
 supersedes: 087
 ---

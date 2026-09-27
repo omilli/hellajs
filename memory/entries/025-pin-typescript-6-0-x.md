@@ -3,8 +3,8 @@ type: decision
 title: "Pin typescript to ~6.0.x (tilde, not caret); cap below 6.1.0 — never bump to TS 7 until typescript-eslint ships TS 7 support"
 description: typescript is pinned ~6.0.x (tilde, not caret) — typescript-eslint peer-caps below 6.1.0 and TS 7 moved the classic JS API to ./unstable/*, so a caret or bump silently breaks bun lint's ESLint.
 tags: [toolchain, deps, lint]
-timestamp: 2026-07-28
-last_confirmed: 2026-07-28
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [typescript-version, dep-bump, typescript-eslint, lint-gate]
 ---
 # Why
@@ -17,7 +17,7 @@ A naive "bump typescript to latest" destroys the repo's single verification gate
 - **TS 6.0.x is the ceiling.** It still ships the classic API (`tsserver` bin present in the resolved package) and keeps `bun lint` green. `~6.0.3` = `>=6.0.3 <6.1.0`, exactly matching the typescript-eslint peer cap.
 - **Tilde, not caret.** `^6.0.3` would admit `6.1.x`, and a later `bun install` could silently pull it past the cap and break `bun lint`. Tilde forecloses that footgun. It also matches the examples' pre-existing `~` convention.
 
-Bundling is unaffected (esbuild has its own TS parser); only `tsc` (still runs as the Go/native binary) and the type-aware ESLint step are at stake. The published `packages/*` declare no `typescript` field (they inherit the root private peer), so this pin is tooling-only — no consumer contract, no changeset.
+Bundling is unaffected (esbuild has its own TS parser); only `tsc` (still the plain Node JS compiler under the pin — the Go/native compiler *is* TS 7) and the type-aware ESLint step are at stake. The published `packages/*` declare no `typescript` field (they inherit the root private peer), so this pin is tooling-only — no consumer contract, no changeset.
 
 # Evidence
 
@@ -25,4 +25,4 @@ Bundling is unaffected (esbuild has its own TS parser); only `tsc` (still runs a
 - `npm view typescript@7.0.2 exports` → `"."` → `./lib/version.cjs`; full API under `./unstable/*`.
 - `eslint.config.mjs` line ~25: `parserOptions: { projectService: { defaultProject: "tsconfig.lint.json" }, tsconfigRootDir: import.meta.dirname }`.
 - Passing gate under the pin: `bun lint` (`tsc -p tsconfig.lint.json --noEmit && eslint .`) → exit 0 with `typescript@6.0.3` resolved.
-- Pin applied to: `package.json` (root, private peerDep), `plugins/{babel,rollup,vite}/package.json`, `examples/{blog,todo,theme-switcher}/package.json` — all `~6.0.3`. `packages/*` have no `typescript` field (inherit root).
+- Pin applied to: `package.json` (root, private peerDep), `plugins/{babel,rollup,vite}/package.json`, `examples/{blog,todo,theme-switcher,ssr-routing,ssr-streaming}/package.json` — all `~6.0.3`. `packages/*` have no `typescript` field (inherit root).

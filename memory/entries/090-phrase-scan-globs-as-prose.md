@@ -4,7 +4,7 @@ title: "Phrase scan globs as prose in JSDoc, never as glob literals"
 description: A `*/` inside a `/** */` JSDoc block (glob literals contain it) terminates the comment early and the parser error points after the culprit — phrase scan globs as prose in scripts/ JSDoc.
 tags: [scripts, guards, jsdoc]
 timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+last_confirmed: 2026-09-26
 triggers: [jsdoc-glob, scan-scope-comment, guard-script, unexpected-star]
 ---
 # Why

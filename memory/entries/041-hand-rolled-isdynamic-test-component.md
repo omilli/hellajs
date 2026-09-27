@@ -4,7 +4,7 @@ title: A hand-rolled isDynamic test component used as `<${Dyn}>` in an html`` te
 description: A hand-rolled isDynamic component used as <${Dyn}> in html`` must be a props-callable FACTORY — cloneWithValues invokes Dyn(mergedProps) at build time; a bare (parent) => … fn throws.
 tags: [testing, dom, html-template, isdynamic]
 timestamp: 2026-08-21
-last_confirmed: 2026-08-21
+last_confirmed: 2026-09-26
 triggers: [isdynamic-test-component, html-dynamic-component-factory, appendchild-is-not-a-function, cloneWithValues-props-call]
 ---
 

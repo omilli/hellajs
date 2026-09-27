@@ -4,7 +4,7 @@ title: Vite import.meta.glob resolves relative patterns against the module path,
 description: In .astro frontmatter and script blocks, a relative glob pattern must count hops from the file's own directory; a wrong hop compiles silently to an empty object, never an error.
 tags: [astro, vite, docs-site]
 timestamp: 2026-09-17
-last_confirmed: 2026-09-17
+last_confirmed: 2026-09-27
 triggers: [import-meta-glob, astro-component, demo-glob, docs-site, empty-object]
 ---
 # Why

@@ -4,7 +4,7 @@ title: "In a dirty worktree the pre-change baseline is the session-read file, no
 description: In a dirty worktree the pre-change baseline is the session-read file, not HEAD — write back the pre-edit content, bundle, test, restore; never `git checkout --` a file with uncommitted user changes.
 tags: [workflow, testing]
 timestamp: 2026-08-30
-last_confirmed: 2026-09-19
+last_confirmed: 2026-09-26
 triggers: [coverage-baseline, pre-change-baseline, dirty-worktree]
 ---
 

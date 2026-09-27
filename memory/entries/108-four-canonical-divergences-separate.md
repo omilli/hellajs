@@ -3,8 +3,8 @@ type: decision
 title: "Four canonical divergences separate runtime html`` output from compiled output: static flags, empty fields, joined string children, root-text fragment wrap"
 description: "Runtime html`` vs compiled deep-equal only after a projection: drop static flags and empty props/children, coalesce adjacent string children, unwrap single-string `$` fragments."
 tags: [arch, dom, babel, contract]
-timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [html-parity-projection, compiled-vs-runtime-shape, root-text-fragment-wrap, static-children-join, canonical-projection]
 ---
 # Why
@@ -20,6 +20,6 @@ Attribute mixed-content parts are NOT a fifth divergence — both sides concaten
 
 # Evidence
 
-- `plugins/babel/tests/parity.test.ts` `canonical()`: the projection implementing exactly these four normalizations; test.each over the 10-entry corpus (malformed recovery set + well-formed controls + slot-bearing void) deep-equals the projected runtime and compiled results, green under `bun test plugins/babel/tests` (256/0).
+- `plugins/babel/tests/parity.test.ts` `canonical()`: the projection implementing exactly these four normalizations; test.each over the 10-entry corpus (malformed recovery set + well-formed controls + slot-bearing void) deep-equals the projected runtime and compiled results, green under `bun test plugins/babel/tests` (246/0).
 - Compiled join probe (2026-09-06): `transformJSX("const n = html\`<div>a</span>b</div>\`;")` → `{ tag: "div", children: ["ab"], static: true }`; runtime same template → `children: ["a", "b"]`.
 - Runtime root-text wrap: `packages/dom/tests/html.test.ts` "root-level string wraps in fragment"; compiled `html\`<div>a</div>b\`` → `children: [{div}, "b"]` bare string (probe).

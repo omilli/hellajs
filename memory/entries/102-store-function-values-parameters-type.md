@@ -4,7 +4,7 @@ title: Store function values with parameters type as Signal — the mapped funct
 description: Param-taking function values fall through store's Store function row (strict contravariance) and type as Signal<fn> while the runtime preserves them — use zero-param fns in tests/docs or cast.
 tags: [store, types, contract]
 timestamp: 2026-09-08
-last_confirmed: 2026-09-08
+last_confirmed: 2026-09-26
 triggers: [store-function-typing, signal-fn-row, strict-contravariance, param-function-preserved, store-test-authoring]
 ---
 

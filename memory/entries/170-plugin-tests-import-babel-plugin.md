@@ -4,7 +4,7 @@ title: Plugin tests import babel plugin modules — never pass string plugin nam
 description: String plugin names in babel options resolve from process.cwd(); bun hoists workspace deps only under plugins/<p>/node_modules, so root-invoked tests fail — import the module.
 tags: [plugins, testing, bun]
 timestamp: 2026-09-18
-last_confirmed: 2026-09-18
+last_confirmed: 2026-09-27
 triggers: [cannot-find-module-plugin-syntax-jsx, babel-string-plugin-name, cwd-plugin-resolution, parse-sync-plugin-string, module-types-declaration]
 ---
 # Why

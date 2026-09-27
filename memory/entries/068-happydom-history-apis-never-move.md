@@ -3,8 +3,8 @@ type: decision
 title: "HappyDOM history APIs never move window.location.pathname off \"blank\" — popstate/back-forward simulations must first set window.location.href to a real URL"
 description: HappyDOM pushState AND replaceState are pathname no-ops while the document URL is about:blank — assign window.location.href a real URL first; a real '/' URL also changes what router() init matches.
 tags: [testing, router, happydom, env]
-timestamp: 2026-08-31
-last_confirmed: 2026-08-31
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [popstate-test, hashchange-test, happydom-pathname, history-simulation]
 ---
 # Why
@@ -13,4 +13,4 @@ Same root cause as 019 (about:blank document URL) but a different actionable sur
 
 # Evidence
 
-Probed 2026-08-31 in the 07-popstate-scroll run: bare `GlobalRegistrator.register()` + `history.replaceState({}, "", "/")` + `pushState(null, "", "/about")` → `window.location.pathname` stays `"blank"` after each (same under the `bun test` preload). Failed cycle: scroll.test.ts "custom scroll fn receives null on push and the saved position on back" received `backTo === "blank"`; fixed by the href beforeEach pattern → `bun coverage router` 234 pass / 0 fail. guards.test.ts:259-291 is the original href-pattern precedent.
+Probed 2026-08-31 in the 07-popstate-scroll run: bare `GlobalRegistrator.register()` + `history.replaceState({}, "", "/")` + `pushState(null, "", "/about")` → `window.location.pathname` stays `"blank"` after each (same under the `bun test` preload). Failed cycle: scroll.test.ts "custom scroll fn receives null on push and the saved position on back" received `backTo === "blank"`; fixed by the href beforeEach pattern → `bun coverage router` 234 pass / 0 fail. the href pattern now lives centralized in tests/helpers.ts `setupRouterEnv` (was guards.test.ts:259-291, the original precedent).

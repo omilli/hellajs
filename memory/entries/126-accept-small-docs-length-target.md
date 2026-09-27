@@ -4,7 +4,7 @@ title: "Accept small docs length-target overages via operator amendment — neve
 description: When sanctioned trims cannot reach a plan's line-count DoD, surface the gap and accept a residual few-line overage by operator amendment — never force example-block cuts the plan forbids.
 tags: [docs, plans, contract]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [docs-length-target, trim-arithmetic, plan-line-dod, overage-acceptance]
 ---
 

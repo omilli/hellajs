@@ -3,8 +3,8 @@ type: decision
 title: Core guard predicates narrow by assignability, not typeof-kind — they cannot replace typeof-narrowing on function-typed unions; escapes are the explicit signature cast and the `in` operator
 description: Core guards narrow by assignability, not typeof-kind — on value|function unions isFunction keeps both arms (contravariance); escape via the signature cast, or `in` for function-vs-spec-object unions.
 tags: [arch, core, types]
-timestamp: 2026-09-01
-last_confirmed: 2026-09-01
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [guard-narrowing, isfunction-conversion, typeof-ban-conversion, union-discriminator]
 ---
 # Why
@@ -20,4 +20,4 @@ Distinct from memory 037 (isFunction as the RUNTIME reactivity discriminator —
 
 # Evidence
 
-Verified 2026-09-01, plans/core/code/type-guards units 03–04. `isObject(handler)` in events.ts → TS2339 `Property 'handler' does not exist on type 'EventListener | DirectListenerSpec'` (packages/dom/lib/internal/events.ts:90,91); same for `!isFunction` (negation also breaks aliased-predicate narrowing). `"handler" in handler` probe compiled clean. `isFunction(updater)`-style conversions in resource → TS2322/TS2345 at cache.ts:189, retry.ts:32,35, polling.ts:60,79, resource.ts:428; fixed by casts, `bun coverage resource` and `bun coverage dom` exit 0 (252/402 pass). Source: packages/core/lib/internal/utils.ts (`isFunction` predicate), guides/code.md §Type guards carries the rule text.
+Verified 2026-09-01, plans/core/code/type-guards units 03–04: `isObject(handler)`/`!isFunction` in dom's setDirectHandler → TS2339 (negation also breaks aliased-predicate narrowing); raw `isFunction(updater)`-style conversions in resource → TS2322/TS2345; fixed by casts, `bun coverage resource` and `bun coverage dom` exit 0 (252/402 pass). Re-verified 2026-09-26 against current tree — claim holds; paths moved: packages/core/lib/internal/utils.ts:6 (`isFunction` predicate); cast escapes at packages/resource/lib/resourceCache.ts:186, internal/retry.ts:32,35, internal/polling.ts:57,75, resource.ts:431 (cache.ts → resourceCache.ts, retry/polling → internal/); `"handler" in handler` at packages/dom/lib/internal/events.ts:88; guides/code.md §Type guards now states the narrowing rule + `in` escape verbatim; eslint typeof ban exempts `packages/ssr/lib/**` (resolve.ts/walk.ts still raw typeof).

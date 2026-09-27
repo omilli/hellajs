@@ -4,7 +4,7 @@ title: "HellaNode marker properties are bare words (raw/static/componentScope/pl
 description: HellaNode marker properties are bare words (raw/static/componentScope/...); __SLOT_N__ and __fragment__ are parser STRING tokens whose __ is collision resistance — kept on purpose, do not 'fix' them.
 tags: [arch, dom, ssr, naming, contract]
 timestamp: 2026-07-17
-last_confirmed: 2026-07-28
+last_confirmed: 2026-09-26
 triggers: [underscore-marker, hella-node-fields, slot-token, fragment-token, componentscope, marker-rename]
 ---
 # Why

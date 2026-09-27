@@ -4,7 +4,7 @@ title: "Docs conventions the guide does not rule on — prose-prefixed ⚠️ ca
 description: "Prose-prefixed ⚠️ callouts and multi-sentence concept intros are accepted repo-wide docs forms the guide doesn't rule on — audit-docs must not flag them per-package."
 tags: [docs, conventions, audit]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [docs-convention-gap, prose-warning-callout, concept-intro-length, audit-docs-gap, alert-box-rule]
 ---
 

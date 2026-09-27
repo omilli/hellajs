@@ -4,7 +4,7 @@ title: "The per-module dist build's specifier fixup rewrites `from \"./x\"` shap
 description: esbuild-build.ts's specifier fixup is content-blind — it rewrites `from "./x"` shapes inside string literals, and only the per-module path runs it, so embedded import text must carry final `.js`.
 tags: [tooling, bundling, imports]
 timestamp: 2026-09-17
-last_confirmed: 2026-09-17
+last_confirmed: 2026-09-27
 triggers: [import-string-literal, dist-shape-divergence, specifier-fixup, codegen-constant]
 ---
 # Why

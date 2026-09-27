@@ -4,7 +4,7 @@ title: "bun:test's expect(promise).rejects.toThrow() must be awaited — an unaw
 description: bun:test's expect(...).rejects.toThrow() returns a Promise — without await it silently false-passes and leaves the rejection path uncovered; always await .rejects/.resolves matchers.
 tags: [testing, bun-test, async, coverage]
 timestamp: 2026-07-12
-last_confirmed: 2026-07-28
+last_confirmed: 2026-09-26
 triggers: [rejects-matcher, unresolved-promise-assertion, bun-test-async, coverage-drop-rejection, false-pass]
 ---
 

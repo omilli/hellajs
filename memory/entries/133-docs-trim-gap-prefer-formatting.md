@@ -4,7 +4,7 @@ title: "When a docs-trim delta's levers fall short of its DoD line cap, prefer f
 description: Operator fork resolution for plan-arithmetic gaps in length-capped doc examples: compress legal formatting first; only cut demo content when formatting cannot close the gap.
 tags: [plan, docs]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [doD-line-cap-gap, example-length-trim, plan-arithmetic-shortfall, docs-trim-fork]
 ---
 

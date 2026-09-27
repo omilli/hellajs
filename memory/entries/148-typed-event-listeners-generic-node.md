@@ -3,8 +3,8 @@ type: decision
 title: Typed event listeners on generic Node/ParentNode targets fail TS2345 — only document/window have keyed event maps; type the closure (event: Event) and narrow once
 description: Generic Node/ParentNode addEventListener exposes only the string→EventListener overload, rejecting (e: KeyboardEvent) => void (TS2345); use (event: Event) + one top-of-closure cast.
 tags: [typescript, dom, events, packages]
-timestamp: 2026-09-11
-last_confirmed: 2026-09-11
+timestamp: 2026-09-27
+last_confirmed: 2026-09-27
 triggers: [ts2345-eventlistener, typed-keydown-listener, addeventlistener-overload, node-target-listener, keyboard-event-cast]
 ---
 
@@ -17,5 +17,5 @@ Fix pattern for listeners attached to caller-supplied generic targets: type the 
 # Evidence
 
 - Red: `bun bundle primitives` → `onEscape.ts(23,38): error TS2345: Argument of type '(event: KeyboardEvent) => void' is not assignable to parameter of type 'EventListener'` (+ same for rovingTabIndex container listener), while `trapFocus`/`onOutside` on `document` passed untouched.
-- Green: `packages/primitives/lib/onEscape.ts` (`onKeyDown = (event: Event): void => { if ((event as KeyboardEvent).key === "Escape") handler(); }`) and `lib/rovingTabIndex.ts` (`const key = (event as KeyboardEvent).key;`) — `bun bundle primitives` + `bun coverage primitives` exit 0.
+- Green: `packages/dom/lib/onEscape.ts` (`onKeyDown = (event: Event): void => { if ((event as KeyboardEvent).key === "Escape") handler(); }`) and `packages/dom/lib/rovingTabIndex.ts` (`const key = (event as KeyboardEvent).key;`) — `bun bundle dom` + `bun coverage dom` exit 0. (Files originally landed in a `primitives` package, since folded into `dom`; the Red command below ran as `bun bundle primitives` at the time.)
 - Precedent: `packages/dom/lib/internal/events.ts` `setDirectHandler` — `element.addEventListener(type, wrappedHandler, options)` with `wrappedHandler = (event: Event) => { ... }`.

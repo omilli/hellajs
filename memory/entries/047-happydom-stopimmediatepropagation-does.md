@@ -4,7 +4,7 @@ title: HappyDOM stopImmediatePropagation() does NOT set cancelBubble — delegat
 description: HappyDOM quirk — stopImmediatePropagation() does NOT set cancelBubble (the DOM spec aliases both stop methods to it), so delegated-walk stop tests must call both stop methods as a real browser would.
 tags: [testing, dom, events, happydom]
 timestamp: 2026-08-21
-last_confirmed: 2026-08-21
+last_confirmed: 2026-09-26
 triggers: [happydom-stopimmediate, cancelbubble, delegated-walk-stop, stoppropagation-test]
 ---
 

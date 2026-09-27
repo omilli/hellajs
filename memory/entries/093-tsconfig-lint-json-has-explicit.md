@@ -3,8 +3,8 @@ type: decision
 title: tsconfig.lint.json has an explicit include list — a new .ts outside its globs silently skips bun lint's typecheck gate
 description: "tsc in `bun lint` checks only tsconfig.lint.json's include globs — a new .ts under .agents/ (or any uncovered path) passes lint untypechecked; add its path to include or the gate is vacuous."
 tags: [tooling, lint, config]
-timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [tsconfig-include, agents-ts-script, lint-typecheck-skip, new-skill-script]
 ---
 # Why
@@ -13,7 +13,7 @@ The include list is allow-by-glob: `packages/*/lib|tests`, `plugins/*/src|tests|
 
 # Evidence
 
-- `tsconfig.lint.json` `include` array (10 globs; `".agents/skills/memory/memory.ts"` appended 2026-09-06, plan `plans/root/config/memory-optimization/02-bun-port-migration.md` port task).
+- `tsconfig.lint.json` `include` array (14 entries; `".agents/skills/memory/memory.ts"` appended 2026-09-06, plan `plans/root/config/memory-optimization/02-bun-port-migration.md` port task; `.agents/skills/feedback/scripts/scan.ts` also explicitly enumerated — still no `.agents/**` glob).
 - `package.json` `"lint": "tsc -p tsconfig.lint.json --noEmit && eslint . && bun lint:guards"` — the tsc stage is project-scoped, not tree-wide.
 - `eslint.config.mjs` global `ignores: [".agents/**", ...]`.
 - Post-include `bun lint` exit 0 with `memory.ts` typechecked under `strict` + `noUncheckedIndexedAccess`.

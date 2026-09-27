@@ -4,7 +4,7 @@ title: Babel kebab-cases aria-/data-prefixed camelCase props at every JSX call s
 description: Never name a component prop `ariaFoo`/`dataFoo`; babel rewrites it to the "aria-foo" key at JSX call sites, so camelCase reads come back undefined in the jsx flavor while html keeps working.
 tags: [babel, jsx, registry]
 timestamp: 2026-09-18
-last_confirmed: 2026-09-18
+last_confirmed: 2026-09-27
 triggers: [component-props, aria-attribute, jsx-canonical, registry-composition, flavor-parity]
 ---
 # Why

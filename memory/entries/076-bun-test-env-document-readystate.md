@@ -4,7 +4,7 @@ title: "bun test env document.readyState is \"interactive\" (HappyDOM under util
 description: bun test's readyState is 'interactive' and never advances — gates must not assume 'complete'; tests drive gated branches by shadowing readyState (defineProperty) plus manual readystatechange.
 tags: [testing, happydom, hydration, dom]
 timestamp: 2026-09-02
-last_confirmed: 2026-09-02
+last_confirmed: 2026-09-26
 triggers: [readystate-shadow, readystate-gate, happydom-preload-env, defer-gate-testing]
 ---
 

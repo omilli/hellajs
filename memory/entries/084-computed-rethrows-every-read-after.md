@@ -3,8 +3,8 @@ type: decision
 title: "Computed rethrows on every read after a throw; an effect whose first run throws self-disposes before the error propagates"
 description: Core throw contracts — a throwing computed stays DIRTY so every read re-executes and rethrows (never a silent undefined cache); a first-run-throwing effect disposes itself (no immortal flush-aborter).
 tags: [core, contract]
-timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [computed-throw, effect-error, error-contract]
 ---
 
@@ -17,4 +17,4 @@ Before these landed, a computed that threw served a silent `undefined` from its 
 - `packages/core/lib/internal/execution.ts` `executeComputed` — catch arm re-marks `rf = WRITABLE | COMPUTED | DIRTY` before rethrowing; DIRTY forces re-execution on every later read, so no error state or stale `cbc` is ever served. A dependency change that recomputes successfully clears DIRTY and resumes normal caching.
 - `packages/core/lib/effect.ts` first-run path — catch calls `disposeEffect(effectState)` then `throw error` (runs before the finally restores context; `disposeEffect` reads no global context).
 - Tests green in `bun coverage core` (exit 0, 2026-09-06): `packages/core/tests/computed.test.ts` "rethrows on every read until a dependency changes", "a previously successful computed that starts throwing rethrows instead of returning its stale cache"; `packages/core/tests/effects.test.ts` "disposes an effect whose first run throws".
-- Contracts + rationale: `plans/core/code/audit-findings/01-computed-rethrow.md`, `02-effect-first-run-dispose.md`.
+- Rationale comments in both sources: execution.ts catch ("without re-marking it, later reads skip re-execution and serve the stale cache") and effect.ts catch ("it must leave no subscribed state").

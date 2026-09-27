@@ -4,7 +4,7 @@ title: "Registry jsx canonicals compile children to `[...props.children]` — re
 description: The babel jsx transform emits a spread at the child slot, so a child-carrying canonical crashes with TypeError when rendered bare; html-format canonicals bind function slots and are undefined-safe.
 tags: [arch, ui, registry, contract]
 timestamp: 2026-09-19
-last_confirmed: 2026-09-19
+last_confirmed: 2026-09-27
 triggers: [registry-canonical-children, jsx-children-spread, rendervariant-children, ui-static-components]
 ---
 # Why

@@ -3,8 +3,8 @@ type: decision
 title: "Core perf model — SIGNAL_DEPS effects run DIRTY-direct without flush validation; endTracking prunes ALL stale links; read path returns the sbc local"
 description: SIGNAL_DEPS effects run DIRTY-direct without flush validation (batch-cancel re-runs them once, pinned); endTracking must LOOP removeLink or spurious subscriptions survive; reads return the sbc local.
 tags: [arch, core, performance, reactive-graph]
-timestamp: 2026-08-30
-last_confirmed: 2026-08-30
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [core-perf, signal-deps-flag, dirty-direct, effect-validation, endtracking-prune, batch-cancel]
 ---
 
@@ -22,7 +22,7 @@ Also measured: `arguments.length` beats rest-param for signal arity checks under
 
 # Evidence
 
-- `packages/core/lib/internal/tracking.ts` (endTracking loop), `propagation.ts` (DIRTY-direct), `links.ts` (SIGNAL_DEPS clear + COMPUTED GC), `scheduler.ts` (constant flag store + gated walk), `queue.ts` (flush inlined beside queue state), `signal.ts` (return sbc).
+- `packages/core/lib/internal/tracking.ts` (endTracking loop), `scheduler.ts` (DIRTY-direct propagateChange, constant flag store + gated walk, flush inlined beside queue state), `links.ts` (SIGNAL_DEPS clear + COMPUTED GC), `packages/core/lib/signal.ts` (return sbc).
 - Fix probe (pre-fix output "BUG: still subscribed to C"): effect reading A,B,C then only A still ran on C/B writes.
 - `bun coverage core` 92 pass; full-repo `bun coverage` 1803 pass / 0 fail.
 - Bench medians (5 runs each, baseline → final): read 180→136ns, write+1sub 3910→3440ns, un-batched 10040→7750ns, batched 7180→6080ns; diamond/simple-computed/create flat (computed paths intentionally untouched).

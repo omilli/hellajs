@@ -4,7 +4,7 @@ title: "HappyDOM window.location.pathname is 'blank' (about:blank) and history.r
 description: HappyDOM quirk — pathname is the literal 'blank'; replaceState cannot move it. setupRouterEnv now seeds a real URL, so router() init matches whenever '/' is configured — isolate init firings.
 tags: [testing, router, happydom, env]
 timestamp: 2026-09-15
-last_confirmed: 2026-09-15
+last_confirmed: 2026-09-26
 triggers: [happydom-location, router-test-init, blank-pathname, notfound-call-count]
 ---
 # Why

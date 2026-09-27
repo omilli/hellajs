@@ -4,7 +4,7 @@ title: GC canaries over signal-held values must commit the superseded slot — c
 description: "A writable signal's sbv keeps the superseded value until a read commits it; with no live subscriber, closures referencing the signal pin the old value — clear reactive sources while subscribers live."
 tags: [testing, core, memory-leak, gc]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [weakref-gc-test, signal-value-pin, gc-canary-flake, lazy-sbv-commit]
 ---
 # Why

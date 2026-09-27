@@ -4,7 +4,7 @@ title: "Compiled html`` mixed-attribute interpolation emits `+` concatenation, n
 description: Compiled html`` folds mixed-attribute parts into `+` concatenation — runtime parity is clone-time concatenation (concatParts); judging from the parser layer alone yields a false parity model.
 tags: [arch, dom, babel, contract]
 timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+last_confirmed: 2026-09-26
 triggers: [mixed-attr-concatenation, compiled-html-parity, attr-parts-array, babel-builder-concat]
 ---
 # Why

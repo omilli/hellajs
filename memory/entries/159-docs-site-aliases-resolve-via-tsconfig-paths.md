@@ -4,7 +4,7 @@ title: "Docs-site package aliases resolve via docs/tsconfig.json paths, not astr
 description: "Site import aliases (e.g. @ui/*) need entries in BOTH docs/astro.config.mjs resolve.alias and docs/tsconfig.json paths; astro.config alone fails the build with a Rolldown resolve error."
 tags: [toolchain, docs-site, astro, vite-alias, tsconfig-paths]
 timestamp: 2026-09-17
-last_confirmed: 2026-09-17
+last_confirmed: 2026-09-27
 triggers: [astro-alias, site-alias, rolldown-resolve, tsconfig-paths, new-package-docs-wrapper, add-site-alias]
 ---
 # Why

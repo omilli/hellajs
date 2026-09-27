@@ -4,7 +4,7 @@ title: delay() is one microtask hop (Promise.resolve) — insufficient for multi
 description: delay() is ONE microtask hop (Promise.resolve) — insufficient for multi-hop chains (.then().catch(), generator yields, GC settling); use delay(0) (macrotask) or delay(N), never a double delay().
 tags: [testing, async, timing]
 timestamp: 2026-08-31
-last_confirmed: 2026-08-31
+last_confirmed: 2026-09-26
 triggers: [delay-insufficient, microtask-drain, async-test-timing, macrotask-flush, delay-zero]
 ---
 

@@ -4,7 +4,7 @@ title: Docs length-trim line savings come only from whole-line removals
 description: Package-doc mdx prose is single-line-per-paragraph, so within-paragraph compression moves wc -l by zero; plan length-trim savings only from removed tables, bullet lists, or whole paragraphs.
 tags: [docs, planning]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [length-trim, docs-audit, plan-estimate]
 ---
 # Why

@@ -4,7 +4,7 @@ title: "Html canonicals host reactive Portal children under an element root — 
 description: A root-level reactive expression in an html`` template (no element root) silently renders nothing; wrap the portal in a display:contents element (direction precedent).
 tags: [arch, ui, registry, contract]
 timestamp: 2026-09-19
-last_confirmed: 2026-09-19
+last_confirmed: 2026-09-27
 triggers: [html-template-root, reactive-portal-child, display-contents-wrapper, navigation-menu-content]
 ---
 # Why

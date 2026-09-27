@@ -4,7 +4,7 @@ title: "Reference nav order mirrors each package's docs/index.mdx API list — u
 description: Reference nav order mirrors each package's docs/index.mdx '### API' list exactly — usefulness order (primary API first, reset*/cleanup last), low-level tier at the bottom of dom.
 tags: [docs, nav]
 timestamp: 2026-08-27
-last_confirmed: 2026-08-27
+last_confirmed: 2026-09-26
 triggers: [reference-nav, nav-order, new-reference-page, package-index-mdx]
 ---
 

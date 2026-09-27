@@ -4,7 +4,7 @@ title: Detached `bun worker` runs need a FIFO stdin — `/dev/null` wedges opera
 description: Launch unattended `bun worker` runs with stdin on a held-open FIFO so relayed dialogs and failure gates can be answered later; `/dev/null` stdin wedges the run forever.
 tags: [worker, orchestration]
 timestamp: 2026-09-18
-last_confirmed: 2026-09-18
+last_confirmed: 2026-09-27
 triggers: [worker-unattended, dialog-stdin, bun-worker-detach, operator-gate]
 ---
 # Why

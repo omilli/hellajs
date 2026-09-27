@@ -4,7 +4,7 @@ title: "doc-snippets resets .doc-snippets/ — never stage scratch files there"
 description: "bun doc-snippets wipes and re-emits into .doc-snippets/; scratch logs staged inside vanish on the next run — keep baseline/captured logs outside that directory."
 tags: [docs, doc-snippets, toolchain]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [doc-snippets-scratch, baseline-log-capture, guard-output-log]
 ---
 

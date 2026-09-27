@@ -4,7 +4,7 @@ title: "Worktree docs-site builds need bun bundle + no docs/node_modules/@hellaj
 description: Fresh worktrees ship no packages/*/dist, and a docs-local bun install copies dist-less file: deps over the root symlinks — bun bundle, remove docs/node_modules/@hellajs, then build.
 tags: [worktree, docs, build]
 timestamp: 2025-09-24
-last_confirmed: 2025-09-24
+last_confirmed: 2026-09-26
 triggers: [worktree-docs-build, astro-build, file-dep-shadow]
 ---
 # Why

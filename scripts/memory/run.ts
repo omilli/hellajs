@@ -2,11 +2,8 @@ import { relative } from "node:path";
 import { logger, projectRoot } from "../utils/index.js";
 import { dialogHook, driveAgent, installSigint, makeRelay } from "../agent/driver.js";
 import type { Relay } from "../agent/relay.js";
-import { classifyOutcome, deriveQueue, snapshotEntry } from "./queue.js";
+import { classifyOutcome, deriveQueue, idValue, snapshotEntry } from "./queue.js";
 import type { EntryOutcome, MemoryEntry } from "./queue.js";
-
-/** Default staleness cutoff in days (`memory.ts stale` parity). */
-export const DEFAULT_STALE_DAYS = 180;
 
 /** Default model pattern for verification instances (`--model` overrides). */
 const DEFAULT_MEMORY_MODEL = "glm-5.3-flash";
@@ -14,10 +11,14 @@ const DEFAULT_MEMORY_MODEL = "glm-5.3-flash";
 /** Default thinking level for verification instances (`--thinking` overrides). */
 const DEFAULT_MEMORY_THINKING = "max";
 
+/** Default entries per run (`--limit` overrides; `--limit=0` = no cap). */
+const DEFAULT_MEMORY_LIMIT = 10;
+
 /** Options for one full memory verification run. */
 export interface RunMemoryOptions {
-  all: boolean;
-  days: number;
+  /** Skip entries with a lower numeric ID (`--start-id`). */
+  startId?: number;
+  /** Entries per run; default 10, 0 = no cap. */
   limit?: number;
   model?: string;
   thinking?: string;
@@ -208,10 +209,28 @@ function printSummary(records: EntryRecord[], halted: boolean): void {
 }
 
 /**
- * Run the verification pipeline over the KB: derive the queue (stale-only
- * by default, oldest first), then drive one fresh pi instance per entry,
- * each verifying the entry against the current source tree and taking the
- * memory skill's Step 5 action.
+ * The next chunk start when the cap may leave entries unchecked: one past
+ * the last queued entry's ID. Null when the run is uncapped or the queue
+ * fell short of the cap (nothing known remains).
+ *
+ * @param queue The queued entries in execution order.
+ * @param limit The effective cap (0 = no cap).
+ * @returns The next `--start-id` value, or null when the sweep is complete.
+ */
+function nextStartId(queue: MemoryEntry[], limit: number): number | null {
+  if (limit === 0 || queue.length < limit) {
+    return null;
+  }
+  const last = queue[queue.length - 1];
+  return last === undefined ? null : idValue(last.id) + 1;
+}
+
+/**
+ * Run the verification pipeline over the KB: derive the queue (every active
+ * entry in ID order, floored by `startId`, capped by `limit` — default 10),
+ * then drive one fresh pi instance per entry, each verifying the entry
+ * against the current source tree and taking the memory skill's Step 5
+ * action.
  *
  * The runner never verifies and never writes KB content — instances do. Its
  * only signals are the entry file's before/after state and the operator
@@ -219,15 +238,20 @@ function printSummary(records: EntryRecord[], halted: boolean): void {
  * prints the queue without spawning. Exit code is 0 only when every
  * attempted entry ended verified, superseded, or accepted.
  *
- * @param options Queue options, model, thinking level, dry-run flag.
+ * @param options Start floor, cap, model, thinking level, dry-run flag.
  * @returns Process exit code.
  */
 export async function runMemory(options: RunMemoryOptions): Promise<number> {
   options.model ??= DEFAULT_MEMORY_MODEL;
   options.thinking ??= DEFAULT_MEMORY_THINKING;
-  const queue = deriveQueue({ all: options.all, days: options.days, limit: options.limit });
+  options.limit ??= DEFAULT_MEMORY_LIMIT;
+  const queue = deriveQueue({ startId: options.startId, limit: options.limit });
   if (queue.length === 0) {
-    logger.info(options.all ? "no active entries — nothing to verify" : `no entries older than ${options.days} days — nothing to verify`);
+    logger.info(
+      options.startId === undefined
+        ? "no active entries — nothing to verify"
+        : `no active entries with ID >= ${options.startId} — nothing to verify`,
+    );
     return 0;
   }
   if (options.dryRun) {
@@ -236,13 +260,17 @@ export async function runMemory(options: RunMemoryOptions): Promise<number> {
     for (const entry of queue) {
       logger.info(`  ${entry.id}  last_confirmed=${entry.lastConfirmed}  ${relative(projectRoot, entry.file)}`);
     }
+    const resume = nextStartId(queue, options.limit);
+    if (resume !== null) {
+      logger.info(`  next chunk: --start-id=${resume}`);
+    }
     return 0;
   }
   const relay = makeRelay();
   relay.start();
   installSigint();
   logger.info(
-    `memory · ${queue.length} entry(s), oldest first · fresh instance per entry (Ctrl-C aborts the current one)`,
+    `memory · ${queue.length} entry(s), ID order from ${queue[0]?.id} · fresh instance per entry (Ctrl-C aborts the current one)`,
   );
   const records: EntryRecord[] = [];
   let halted = false;
@@ -253,6 +281,10 @@ export async function runMemory(options: RunMemoryOptions): Promise<number> {
     }
   }
   printSummary(records, halted);
+  const resume = halted ? null : nextStartId(queue, options.limit);
+  if (resume !== null) {
+    logger.info(`next chunk: bun memory --start-id=${resume}`);
+  }
   const complete =
     !halted &&
     records.every((record: EntryRecord): boolean => record.status === "verified" || record.status === "superseded" || record.status === "accepted");

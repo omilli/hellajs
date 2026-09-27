@@ -4,7 +4,7 @@ title: "Docs-site daisyUI/Tailwind classes used only in imported package-docs/ex
 description: daisyUI/Tailwind classes used only in imported MDX are tree-shaken (v4 scans only the docs/ root) — fix with @source lines in global.css, stylesheet-relative, ending in a recursive file tail.
 tags: [docs, build, css, tailwind]
 timestamp: 2026-08-27
-last_confirmed: 2026-08-27
+last_confirmed: 2026-09-26
 triggers: [docs-css-missing, tailwind-source, daisyui-class-dropped, imported-mdx-styles]
 ---
 

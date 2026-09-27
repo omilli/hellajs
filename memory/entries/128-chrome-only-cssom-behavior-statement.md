@@ -4,7 +4,7 @@ title: "Chrome-only CSSOM behavior (statement inserts, index rebasing) is verifi
 description: When happy-dom rejects the insert (049), pin client-side placement/rebase by stubbing globalThis.document with an accepting fake sheet — the real upsertRule/shiftIndexesUp/removeRule flow runs.
 tags: [testing, css, cssom]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [cssom-stub-probe, statement-insert, happydom-rejects-insert, chrome-only-cssom, index-rebase-verify]
 ---
 

@@ -4,7 +4,7 @@ title: Compiled-registry component tests must resetDom() from the bare "@hellajs
 description: resetTestState resets only the /bundle instance; compiled registry components run on the bare "@hellajs/dom" instance, so beforeEach needs the bare resetDom() too or shared clocks prime across tests.
 tags: [testing, dom, ui-registry]
 timestamp: 2026-09-19
-last_confirmed: 2026-09-19
+last_confirmed: 2026-09-27
 triggers: [registry-component-test, hover-intent-test, layer-dismissal-test, cross-test-state-priming]
 ---
 # Why

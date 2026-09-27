@@ -3,8 +3,8 @@ type: correction
 title: "Torn git index after a failed nested git commit — phantom hash + mass staged deletions, files intact on disk: rm the index file and reset; plain `git reset` fails"
 description: A failed nested git commit can tear the index (phantom hash, mass staged deletions, files intact) — diagnose with git ls-tree, recover by rm-ing the index file then git reset -q; plain reset fails.
 tags: [process, git, tooling]
-timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [torn-index, error-building-trees, phantom-hash]
 ---
 
@@ -19,4 +19,4 @@ After recovery, re-run or complete the interrupted script step manually — a sc
 
 # Evidence
 
-Session 2026-08-30 (worktree `hellajs-shadow-dom`, commit `d0106c42`): hook output interleaved `error: invalid object 100644 ef0fa669… for 'README.md'` / `Error building trees` with `Auto-committed CLAUDE.md and instruction file updates`; `git status --porcelain` then showed 736 `D` + 12 `RD` entries with every file present on disk; the index file measured 3,898 bytes; `git reset -q` failed `unable to read ef0fa669`; `rm` + `git reset -q` restored a clean status (3 `M` + 1 `??`); `git fsck --no-dangling` clean afterwards. Follow-up mirror commit `6d4d6d2f` completed the hook's interrupted work. (The mirror auto-commit hook that produced this incident was removed 2026-09-06 — `plans/root/config/remove-llm-mirror-sync.md`; the recovery procedure is mechanism-independent.)
+Session 2026-08-30 (worktree `hellajs-shadow-dom`, commit `d0106c42`): hook output interleaved `error: invalid object 100644 ef0fa669… for 'README.md'` / `Error building trees` with `Auto-committed CLAUDE.md and instruction file updates`; `git status --porcelain` then showed 736 `D` + 12 `RD` entries with every file present on disk; the index file measured 3,898 bytes; `git reset -q` failed `unable to read ef0fa669`; `rm` + `git reset -q` restored a clean status (3 `M` + 1 `??`); `git fsck --no-dangling` clean afterwards. Follow-up mirror commit `6d4d6d2f` completed the hook's interrupted work. (The mirror auto-commit hook that produced this incident was removed 2026-09-06 — verified 2026-09-26: `.git/hooks/` holds only the commitlint `commit-msg` hook, `core.hooksPath` unset; the recovery procedure is mechanism-independent.)

@@ -3,8 +3,8 @@ type: decision
 title: Reactive getters returning a bare isDynamic RenderFn are unsupported by ssr/hydrate (marker-free adoption limit)
 description: "Historical (pre-013): a reactive child resolving to a bare isDynamic RenderFn was stringified by ssr and unadoptable by hydrate; use the component as a direct child or wrap it in a HellaNode."
 tags: [arch, ssr, hydration, contract]
-timestamp: 2026-07-11
-last_confirmed: 2026-07-28
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [isdynamic-reactive-getter, ssr-walkchild, marker-free-adoption, hydrate-mounteractiveat]
 ---
 
@@ -25,4 +25,4 @@ This is an instance of the broader marker-free adoption limit (entry 010 is the 
 - `packages/ssr/lib/ssr.ts` `walkChild`: a non-dynamic function child resolves via `resolveValue`; an isDynamic `RenderFn` result has no `tag`, so it is stringified, not rendered.
 - `packages/dom/lib/internal/render.ts:198-215` (`appendToParent`): the mount path's `Proxy`-parent branch is the ONLY path that renders a bare isDynamic return correctly, and it requires a live DOM parent.
 - `packages/dom/lib/internal/hydrate.ts` `mountReactiveAt`: no isDynamic-resolved branch; `resolveNode` mis-handles the fn.
-- Traced 2026-07-11 during the hydration-audit (`plans/dom/code/hydration-audit/hydrate-correctness.md`, C1 revised from a Code fix to a contract doc-note). Documented as a gotcha in `packages/ssr/AGENTS.md` Non-obvious behaviors + `packages/dom/AGENTS.md` `## hydrate`.
+- Traced 2026-07-11 during the hydration-audit (plan set `plans/dom/code/hydration-audit/`, since cleaned post-merge; C1 revised from a Code fix to a contract doc-note). Verified 2026-09-26: the rework updated the docs to describe the supported path, not a gotcha — `packages/ssr/AGENTS.md` (isDynamic dispatch incl. "a reactive child that resolves to one"; "renders its items, not the function source") + `packages/dom/AGENTS.md` `## hydrate` (`adoptReactiveRegion`, isDynamic-resolved `Proxy` branch safe because `clearRenderedNodes` runs first).

@@ -3,8 +3,8 @@ type: decision
 title: "Vite SSR runs vite-plugin-hellajs on the server entry — ssrLoadModule('/src/server.tsx') transforms server-side JSX to HellaNode; a configureServer middleware streams the SSR HTML"
 description: vite-plugin-hellajs transforms the Vite SSR pipeline too — ssrLoadModule of a .tsx server entry yields HellaNode JSX; a configureServer middleware streams it, dodging Bun's React JSX runtime.
 tags: [arch, ssr, dom, jsx, vite, plugin]
-timestamp: 2026-09-09
-last_confirmed: 2026-09-09
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [vite-ssr, jsx-server-entry, ssrloadmodule, vite-plugin-server, configure-server-ssr]
 ---
 
@@ -24,7 +24,7 @@ both entries to showcase the plugin/SSR-build path), and it's the foundation any
 JSX-server-entry or meta-framework SSR would build on.
 
 Recall this when building an SSR app with a JSX server entry, or wiring `vite-plugin-hellajs` for SSR.
-The server entry exports a `render(url)` (not a top-level `Bun.serve`), and the dev/prod split is:
+The server entry exports a `render()` (not a top-level `Bun.serve`; current example is a single Dashboard page, so it takes no URL), and the dev/prod split is:
 `npm run dev` (Vite dev server + the middleware) for streaming; `vite build` (client) +
 `vite build --ssr` (server) for production.
 
@@ -38,13 +38,19 @@ The server entry exports a `render(url)` (not a top-level `Bun.serve`), and the 
   `/@`-prefixed, `/src`-prefixed, `/node_modules`-prefixed, and file-extension URLs to Vite; for app
   routes does `const { render } = await server.ssrLoadModule('/src/server.tsx'); const stream =
   render(url); res.writeHead(200, …); for await (const chunk of stream) res.write(chunk); res.end();`.
-- `examples/ssr-streaming/src/server.tsx` — `export function render(urlString): ReadableStream<string>`
-  builds prefix/suffix, `router({ routes, url, notFound })`, `ssrStream(<App/>)`, and pumps
-  prefix → body chunks → suffix into one `ReadableStream`.
-- `examples/ssr-streaming/src/client.tsx` — `router({ routes, notFound })` (no `url`) +
-  `hydrate(<App/>, '#app').flush()`; one client entry works because `hydrate` swaps staged
-  `<template>`s (β, memory 015).
-- Runtime: `curl -s localhost:5173/users/1` streams prefix + `<style>` + `<p>Loading…</p>` fallback +
-  `<template id="hs0">…<h1>User 1</h1>…</template>`. `cd examples/ssr-streaming && bunx tsc --noEmit` → exit 0.
-- Depends on the fixes in memory 027 (router re-resolution) + 028 (ssr array-children) to work
-  end-to-end; composes with memory 018 (router SSR), 005 (SSR readiness), 015 (streaming β).
+- `examples/ssr-streaming/src/server.tsx` (rewritten from the pre-v2 router example) —
+  `export function render(): ReadableStream<string>`, no argument and no router; returns
+  `doc({ lang, mount: '#app', head: { title, meta, styles: [styles], scripts: [{ type: 'module',
+  src: '/src/client.tsx' }] }, body: ssr.stream(<Dashboard />) })` — the `doc` stream overload
+  assembles shell → streamed body chunks → closing tags.
+- `examples/ssr-streaming/src/client.tsx` — no router; `hydrate(<Dashboard />, '#app')` with no
+  `.flush()` (afterMount fires automatically during hydrate); staged `<template>` swaps happen
+  inside hydrate (β model now carried by memories 032/033).
+- Historically confirmed empirically (2026-09-09, pre-rewrite router example): the dev middleware's
+  `ssrLoadModule` produced HellaNode-derived HTML (`<!--[-->…<!--]-->` markers + `<template>`
+  staging), not a React error. Current tree: `bunx tsc --noEmit` in the example fails TS2307 on
+  `@hellajs/ssr` only because root `node_modules/@hellajs` lacks the `ssr` symlink (partial install;
+  the lockfile lists `packages/ssr`) — environmental, not a source change.
+- Depends on the fixes in memory 028 (ssr array-children) and, for the pre-rewrite router example,
+  027 (router re-resolution); composes with memory 018 (router SSR), 197 (SSR readiness; supersedes
+  005), 032/033 (staged-Suspense streaming; carries 015's model).

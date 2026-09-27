@@ -3,8 +3,8 @@ type: correction
 title: hydrate() tests must pass the SAME node instance ssr() rendered — a second template call leaks a server-realm component effect into mock counts
 description: hydrate() tests must pass the SAME node instance ssr() rendered — hoist one html`` call; a second call runs component() twice and the ssr-pass effect re-fires forever, reading as a phantom leak.
 tags: [testing, dom, ssr, hydration]
-timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [hydrate-test-authoring, ssr-hydrate-same-node, phantom-effect-leak]
 ---
 # Why
@@ -13,4 +13,4 @@ triggers: [hydrate-test-authoring, ssr-hydrate-same-node, phantom-effect-leak]
 
 # Evidence
 
-Verified 2026-09-06 during the component-static-scope fix run: the hydrate scenario test failed with "Expected 2, Received 3" when the template was called twice (assert after hydrate passed at 2; one extra fire after `count(1)` — exactly one leaked instance); switching to a single hoisted `view` instance drove the same assertions green (`bun coverage dom`, packages/dom/tests/component.test.ts "wires the scope when hydrate adopts a static root"). Note this does NOT affect production SSR (server and client are separate realms; the server instance is garbage with the server process) — it is a same-realm test-authoring hazard.
+Verified 2026-09-06 during the component-static-scope fix run: the hydrate scenario test failed with "Expected 2, Received 3" when the template was called twice (assert after hydrate passed at 2; one extra fire after `count(1)` — exactly one leaked instance); switching to a single hoisted `view` instance drove the same assertions green (`bun coverage dom`, packages/dom/tests/component-scope-hydrate.test.ts "wires the scope when hydrate adopts a static root"). Note this does NOT affect production SSR (server and client are separate realms; the server instance is garbage with the server process) — it is a same-realm test-authoring hazard.

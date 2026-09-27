@@ -3,8 +3,8 @@ type: decision
 title: "ssrStream flushes staged <Suspense> swaps concurrently in completion order — hydrate resolves staged templates by getElementById (id, not document position), so order-independent emission needs no reorder buffer"
 description: ssrStream drains staged Suspense swaps concurrently in completion order; safe because hydrate resolves templates by getElementById id, not position — no reorder buffer needed.
 tags: [arch, ssr, streaming, suspense, hydration]
-timestamp: 2026-09-01
-last_confirmed: 2026-09-01
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [ssrstream-swap-collection, concurrent-suspense-streaming, completion-order-streaming, hydrate-template-id-lookup]
 ---
 
@@ -26,4 +26,4 @@ Refines **memory 033** (the progressive streaming model): 033 records the inline
 - `packages/dom/lib/internal/hydrate.ts` → `swapSuspenseStage`: `document.getElementById(n.nodeValue)` (id-based template lookup — the fact that makes order-independent emission safe; no reorder buffer needed).
 - `packages/ssr/tests/ssr-stream.test.ts`: "concurrent swaps: a slow region above a fast one does not hold the fast region's `<template>` back (completion order)" — fails under the prior sequential drain; "concurrent swaps: a rejecting region is skipped (fallback + sentinel remain) while the healthy sibling still streams" (per-drain isolation).
 - Verification 2026-09-01: `bun coverage ssr` 196 pass / 0 fail, 100.00% funcs / 100.00% lines, exit 0.
-- Companion: `examples/ssr-streaming` (3-card dashboard) demonstrates concurrent streaming; docs in `packages/ssr/docs/api/ssr-stream.mdx` §"In-Order Streaming" + `packages/ssr/AGENTS.md` (`lib/ssrStream.ts` row + `suspense` bullet).
+- Companion: `examples/ssr-streaming` (3-card dashboard) demonstrates concurrent streaming; docs in `packages/ssr/docs/api/ssr.mdx` §"In-Order Streaming" (the old `api/ssr-stream.mdx` page was folded into `ssr.mdx` when `ssrStream` became the `ssr.stream` member) + `packages/ssr/AGENTS.md` (`lib/ssrStream.ts` row + `suspense` bullet).

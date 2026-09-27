@@ -4,7 +4,7 @@ title: A braced switch-case with its own const in dom's coverage-instrumented bu
 description: A braced switch-case with its own const leaves the closing brace counted uncovered under istanbul — check the uncovered bundle line (sed) before writing a test; use an unbraced case + hoisted let.
 tags: [testing, coverage, istanbul, dom]
 timestamp: 2026-08-21
-last_confirmed: 2026-08-21
+last_confirmed: 2026-09-26
 triggers: [uncovered-closing-brace, braced-switch-case-coverage, istanbul-case-block, phantom-uncovered-line]
 ---
 

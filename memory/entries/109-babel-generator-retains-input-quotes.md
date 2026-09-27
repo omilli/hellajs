@@ -4,7 +4,7 @@ title: "Babel generator retains input quote style: exact-form asserts on transfo
 description: "plugins/babel exact-form `toBe(normalize(output))` asserts: literals carried from the input keep their original quote character; only newly generated nodes use babel's default double quotes."
 tags: [babel, testing, exact-form-asserts]
 timestamp: 2026-09-08
-last_confirmed: 2026-09-08
+last_confirmed: 2026-09-26
 triggers: [exact-form-transform-assert, quote-style-mismatch, normalize-to-be, unshifted-import-quotes]
 ---
 # TL;DR

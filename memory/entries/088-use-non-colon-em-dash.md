@@ -4,7 +4,7 @@ title: Use non-colon em-dash rewrites inside wrapper frontmatter descriptions
 description: "Unquoted YAML `description:` values cannot contain a colon-space pair, so the em-dash rewrite conventions' colon branch is unavailable there; use semicolon, parentheses, comma, or restructure instead."
 tags: [docs, guides]
 timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+last_confirmed: 2026-09-26
 triggers: [em-dash-rewrite, typography-rule, frontmatter-description, wrapper-page]
 ---
 # Why

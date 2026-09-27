@@ -3,8 +3,8 @@ type: decision
 title: "ssr public API consolidated for the v2 major — `ssr` callable namespace (`ssr.async`/`ssr.stream`) + type-overloaded `doc`; ssrAsync/ssrStream/docStream names deleted, no aliases"
 description: "The v2 major collapses @hellajs/ssr to `ssr` (callable namespace: ssr.async/ssr.stream) plus type-overloaded `doc` — ssrAsync/ssrStream/docStream deleted, no transitional aliases."
 tags: [arch, ssr, api, breaking-change, streaming]
-timestamp: 2026-08-22
-last_confirmed: 2026-08-22
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [ssr-namespace, ssr-async-member, ssr-stream-member, doc-overload, api-consolidation, ssrasync-deleted, ssrstream-deleted, docstream-deleted]
 ---
 
@@ -14,8 +14,8 @@ One serialization pass, three timing strategies — the timing belongs to one na
 
 # Evidence
 
-- `packages/ssr/lib/ssr.ts` — `SsrFn` interface (call signature + `async`/`stream` members, full contracts on the members) + `export const ssr: SsrFn = Object.assign(ssrImpl, { async: ssrAsync, stream: ssrStream })`.
+- `packages/ssr/lib/ssr.ts` — `SsrFn` interface (call signature + `async`/`stream` members, full contracts on the members) + `export const ssr: SsrFn = Object.assign(ssrImpl, { async: ssrAsync, stream: ssrStream, head: ssrHead })` (`head` added post-consolidation — the namespace now also carries a `ssr.head()` head-bag factory, impl in `lib/ssrHead.ts`; does not alter the consolidation decision).
 - `packages/ssr/lib/doc.ts` — overload pair + `parseMount` moved in (single caller); stream body preserves memory 044's held-reader cancel propagation byte-for-byte; `lib/docStream.ts` deleted, `DocStreamOptions` deleted from `lib/types.d.ts` (`DocOptions.body: string | ReadableStream<string>`).
-- Barrel `packages/ssr/lib/index.ts` = `{ ssr, doc }` + `export type *`. Docs: `ssr.mdx` carries `### async`/`### stream` under `## API` (guides/docs.md §Multi-Method Exports; anchors `#async`/`#stream`); `doc.mdx` documents both overloads; nav `["ssr", "doc"]`.
+- Barrel `packages/ssr/lib/index.ts` = `{ ssr, doc }` + `export type *`. Docs: `docs/api/ssr.mdx` carries `### async`/`### stream` (plus `### head`) under `## API` (guides/docs.md §Multi-Method Exports; anchors `#async`/`#stream`); `docs/api/doc.mdx` documents both overloads; nav `["ssr", "doc"]`.
 - doc-links guard needed NO rule change — non-identifier display names (`ssr.async`, `ssr.stream`) are skipped at the identifier check (`scripts/doc-links.ts`), and self-named anchors (`[stream](…#stream)`) skip via `isMemberAnchor`.
 - Verified: `bun coverage ssr` exit 0 (159 pass, 100%), `bun coverage dom` exit 0 (357 pass), `bun test plugins/astro/tests` exit 0 (astro's server.mjs calls plain `ssr(node)` — unaffected), `examples/ssr-streaming` `bun run build:ssr` exit 0.

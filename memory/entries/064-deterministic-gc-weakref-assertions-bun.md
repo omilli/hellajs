@@ -4,7 +4,7 @@ title: Deterministic GC/WeakRef assertions in bun — drop refs, await delay(0) 
 description: "Deterministic bun WeakRef/GC tests: drop refs, await delay(0), then Bun.gc(true) at least twice; deref only after the accessing function returns (suspended activations retain their closure graph)."
 tags: [testing, resource, memory-leak]
 timestamp: 2026-08-30
-last_confirmed: 2026-08-30
+last_confirmed: 2026-09-26
 triggers: [weakref-gc-test, bun-gc-flake, macrotask-flush, resource-graph-pin]
 ---
 # Why

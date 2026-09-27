@@ -4,7 +4,7 @@ title: Bare `bun audit` invokes bun's builtin and shadows package scripts - the 
 description: bun's builtin `audit` subcommand wins over a same-named package.json script, so the package audit runner must stay `bun audits`.
 tags: [scripts, cli]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [rename-audits, bun-audit-builtin, script-shadowing, audits-runner]
 ---
 

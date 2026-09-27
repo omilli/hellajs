@@ -4,7 +4,7 @@ title: "consumeRegion captured `next` AFTER removeChild → null (fixed: capture
 description: "Fixed: consumeRegion captured next AFTER removeChild (detached nextSibling is null per spec), corrupting hydration whenever a region had a following sibling; the fix captures next before removal."
 tags: [arch, dom, hydration]
 timestamp: 2026-07-17
-last_confirmed: 2026-07-28
+last_confirmed: 2026-09-26
 triggers: [consumeRegion, hydrate-region-adoption, nextSibling-after-remove, region-sibling-misalign]
 ---
 # Why

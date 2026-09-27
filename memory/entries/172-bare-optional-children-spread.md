@@ -4,7 +4,7 @@ title: "Bare optional children crash: babel compiles `{props.children}` to `[...
 description: "Registry canonicals with optional children must render `{() => props.children}` — the transform's bare-member spread crashes on undefined, unlike the silently-dropping compound-child failure."
 tags: [ui, registry, babel]
 timestamp: 2026-09-19
-last_confirmed: 2026-09-19
+last_confirmed: 2026-09-27
 triggers: [optional-children, jsx-child-slot, props-children-spread, registry-canonical, children-spread-crash]
 ---
 # Why

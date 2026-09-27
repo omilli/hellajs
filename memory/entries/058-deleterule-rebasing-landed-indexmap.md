@@ -3,8 +3,8 @@ type: correction
 title: deleteRule rebasing landed — indexMap stored indexes stay exact after every removal; per-id hosted sheets are an architectural choice, not a staleness containment
 description: deleteRule rebasing landed — rebaseIndexes decrements same-sheet indexMap entries above each removal, so multi-rule removeCss and interleaved removals are exact; per-id sheets are a choice now.
 tags: [arch, css]
-timestamp: 2026-08-30
-last_confirmed: 2026-08-30
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [removeRule-rebase, removeCss-rule-leak, sheet-indexmap, hosted-sheets-per-id]
 supersedes: 057
 ---
@@ -21,5 +21,5 @@ Consequence for the containment decision: hosted sheets being one `<style>` per 
 # Evidence
 
 - Source: `packages/css/lib/internal/sheet.ts` — `rebaseIndexes` co-located after `mapKey`; `removeRule` (rebase inside the delete try); `upsertRule` update path (`shifted` flag; `if (shifted) rebaseIndexes(qid, existing)` first statement of the rejected-insert catch).
-- Tests: `css.test.ts` multi-rule + interleaved exact-form removal, `cssvars-remove.test.ts` sequential scoped-bucket removal, `style-host.test.ts` hosted multi-rule-then-single-rule in one host — all four fail against the pre-fix bundle (152 pass / 4 fail), pass post-fix (`bun coverage css` 156 / 0, exit 0).
-- Plan: `plans/css/code/sheet-internals/remove-rule-stale-index.md` — every DoD ticked with cited evidence, including the baseline coverage arithmetic (pre-fix 99.80% = 1 uncovered line; post-fix 99.61% = {guard, warn}).
+- Tests: `css.test.ts` multi-rule removal ("removeCss removes every rule of a multi-rule brace-containing text"), `vars-remove.test.ts` sequential scoped-bucket removal ("removing an earlier scoped bucket leaves later buckets exactly removable"), `style-host.test.ts` re-add-then-second-removal plus hosted multi-rule-then-single-rule in one host — the four exactness tests failed against the pre-fix bundle (152 pass / 4 fail at fix time, then `bun coverage css` 156 / 0, exit 0); re-verified 2026-09-26: 52 pass / 0 fail across the three files.
+- Plan: `plans/css/code/sheet-internals/remove-rule-stale-index.md` (transient plans/ artifact, never committed — since removed) recorded the baseline coverage arithmetic: pre-fix 99.80% = 1 uncovered line; post-fix 99.61% = {guard, warn}.

@@ -3,8 +3,8 @@ type: decision
 title: Run empirical package checks as `bun -e` from packages/<pkg> — @hellajs/* subpath imports do not resolve from /tmp scratch files
 description: Run empirical package probes as `cd packages/<pkg> && bun -e '…'` — @hellajs/* subpath imports resolve only via node_modules walk-up from inside the repo; scratch files outside fail.
 tags: [toolchain, workspaces, testing]
-timestamp: 2026-08-27
-last_confirmed: 2026-08-27
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [empirical-probe, scratch-script, subpath-import, bun-e]
 ---
 
@@ -17,4 +17,4 @@ Root `node_modules/@hellajs/*` symlinks (→ `packages/*`) resolve only through 
 Verified 2026-08-27 during the dom behavior-gaps investigation:
 - Failing form: `bun /tmp/svg-public.ts` → `error: Cannot find module '@hellajs/dom/bundle' from '/tmp/svg-public.ts'` (Bun v1.3.3).
 - Working form: `cd packages/dom && bun -e 'import { GlobalRegistrator } from "@happy-dom/global-registrator"; GlobalRegistrator.register(); const { html, mount } = await import("@hellajs/dom/bundle"); …'` → resolves, runs, and produced the probe result (`svg ctor: HTMLUnknownElement`) that grounded plan unit `plans/dom/code/behavior-gaps/01-svg-namespace.md`.
-- Related but distinct: memory 026 covers `examples/` resolving `@hellajs/*` via root symlinks and warns against `bun add` there; this entry covers ad-hoc probe scripts, where the failure mode is module resolution from outside the repo tree.
+- Related but distinct: memory 199 (successor to archived 026) covers `examples/` declaring no `@hellajs/*` deps — resolution via root symlinks, never `bun add`; this entry covers ad-hoc probe scripts, where the failure mode is module resolution from outside the repo tree.

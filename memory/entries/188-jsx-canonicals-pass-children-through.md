@@ -4,7 +4,7 @@ title: "Jsx canonicals pass children through as the bare member `{props.children
 description: The babel transform spreads bare member children but WRAPS identifier bindings into a nested array (`children: [binding]`), which appendToParent silently skips - a bound passthrough renders nothing.
 tags: [arch, ui, registry, contract]
 timestamp: 2026-09-19
-last_confirmed: 2026-09-19
+last_confirmed: 2026-09-27
 triggers: [jsx-children-passthrough, canonical-children-binding, nested-array-children, appendtoparent-skip]
 ---
 # Why

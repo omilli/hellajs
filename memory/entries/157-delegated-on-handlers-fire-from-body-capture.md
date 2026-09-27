@@ -4,7 +4,7 @@ title: "Delegated `on:` handlers fire from a body capture listener, so event.cur
 description: "Delegated `on:` handlers run from a body capture listener, so e.currentTarget is not the target element — extract event data from e.target; only direct `e:` handlers may use currentTarget."
 tags: [arch, dom, registry, events]
 timestamp: 2026-09-17
-last_confirmed: 2026-09-17
+last_confirmed: 2026-09-27
 triggers: [delegated-handler-currenttarget, e-target-extraction, body-capture-listener, on-prefix-delegation, registry-component-handlers]
 ---
 # Why

@@ -4,7 +4,7 @@ title: bun:test toEqual uses NoInfer — asserting a runtime shape wider than a 
 description: "toEqual/toBe use NoInfer over the received value's static type — assert runtime-widened shapes through a widened reference or a received-value cast."
 tags: [tests, store, types]
 timestamp: 2026-09-08
-last_confirmed: 2026-09-08
+last_confirmed: 2026-09-26
 triggers: [toequal-noinfer, stale-ref-assertions, auto-add-widening, ts-expect-error-rot]
 ---
 # Why

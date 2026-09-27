@@ -4,7 +4,7 @@ title: "A matchMedia stub must expose `matches` as a live getter — components 
 description: "Components read query.matches inside the change handler, not the event object; a `{ matches: snapshot }` stub freezes at creation. Build stubs with `get matches() { return state; }`."
 tags: [ui, tests, matchMedia, stub, happydom]
 timestamp: 2026-09-23
-last_confirmed: 2026-09-23
+last_confirmed: 2026-09-27
 triggers: [matchmedia-stub, mobile-detection, media-flip-test, query-matches-frozen, stub-getter]
 ---
 # Why

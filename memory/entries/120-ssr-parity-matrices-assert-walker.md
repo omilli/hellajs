@@ -4,7 +4,7 @@ title: "ssr parity matrices assert walker-to-walker equality, not correctness â€
 description: parityCases/streamAsyncParityCases compare ssr.async/ssr.stream output to ssr output â€” all-three-walkers-wrong regressions pass them; pair each new shape with a sync exact `toBe` test.
 tags: [testing, ssr, coverage, parity]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [paritycases-entry, walker-parity-test, ssr-parity-matrix, new-child-shape-coverage]
 ---
 # Why

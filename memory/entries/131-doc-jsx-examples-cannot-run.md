@@ -1,10 +1,10 @@
 ---
 type: decision
 title: "Doc JSX examples cannot run verbatim under bun -e: cut the JSX tail, close and invoke"
-description: "Root tsconfig jsx:react-jsx makes bun import react/jsx-dev-runtime for JSX snippets; mdx verification harnesses rewrite imports to lib, cut at `return (`, close and invoke."
+description: "Bun's transpiler injects react/jsx-dev-runtime for any JSX input (react not installed), so mdx verification harnesses rewrite imports to lib, cut at `return (`, close and invoke."
 tags: [toolchain, docs, verification]
-timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [doc-example-extraction, bun-e-jsx, mdx-verify-harness, reactive-example]
 ---
 
@@ -12,7 +12,7 @@ triggers: [doc-example-extraction, bun-e-jsx, mdx-verify-harness, reactive-examp
 
 Docs-verification DoDs (`plans/…/audit/docs/*`) require extracted mdx code blocks to run via `bun -e` against `./lib/index.ts`. Two structural facts block a verbatim run of JSX-bearing blocks:
 
-1. Root `tsconfig.json` sets `"jsx": "react-jsx"`, and bun's transpiler honors it for any `.tsx`/JSX input — including ad-hoc probe files, which never pass through the hella babel plugin. The transform injects `react/jsx-dev-runtime`, which is not installed, and the probe dies before executing anything.
+1. Bun's transpiler injects `react/jsx-dev-runtime` for any `.tsx`/JSX input — including ad-hoc probe files, which never pass through the hella babel plugin — regardless of tsconfig: root `tsconfig.json` and `tsconfig.base.json` (which packages extend) set `"jsx": "preserve"` (only `plugins/*` use `react-jsx`), yet the probe still dies with `Cannot find module 'react/jsx-dev-runtime'`, which is not installed anywhere in the workspace.
 2. The block's imports (`@hellajs/css`, `@hellajs/core`) resolve through workspace links to package `dist/`, which fresh worktrees may not have built (css dist absent in `plans-css-audit-docs` at seed).
 
 Working harness shape (verified): extract the fenced block verbatim; rewrite import lines to `await import('./lib/index.ts')` and sibling `await import('../core/lib/index.ts')`; cut at `  return (`; append `return <bound-var>;\n};` then invoke the component and log the bound values plus `cssText()`. The JSX markup is irrelevant to registration-contract assertions (class string, rule text), so dropping it loses no verification surface.

@@ -4,7 +4,7 @@ title: "HappyDOM hydrate/swap tests must assert full container.textContent (or s
 description: Hydrate/swap tests must assert full container.textContent — a targeted querySelector('#x').textContent stays green while [object Promise] sits right beside the matched node.
 tags: [testing, ssr, dom, hydration, suspense]
 timestamp: 2026-07-30
-last_confirmed: 2026-07-30
+last_confirmed: 2026-09-26
 triggers: [happydom-hydrate-test, object-promise-stringification, hydrate-test-assertion, stray-text-node, swap-test-coverage]
 ---
 # Why

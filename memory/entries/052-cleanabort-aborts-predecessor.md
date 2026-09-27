@@ -4,7 +4,7 @@ title: cleanAbort aborts the predecessor controller on every transition — a se
 description: cleanAbort aborts the predecessor controller on every assignment, clearing its timer — a settled request's stale timer can never kill a later request; enumerate transitions before asserting Breaks.
 tags: [resource, arch]
 timestamp: 2026-08-25
-last_confirmed: 2026-08-30
+last_confirmed: 2026-09-26
 triggers: [cleanAbort, abort-wiring, wireRequestControls, stale-timer]
 ---
 # Why

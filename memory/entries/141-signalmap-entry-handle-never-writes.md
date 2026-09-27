@@ -4,7 +4,7 @@ title: SignalMap entry(k) returns a computed whose call ignores write arguments 
 description: Store Map `entry(k)(v)` is never an applying write — the handle is a core computed that drops the argument (writable containers included); only `nodeAt(i)` returns a writable handle.
 tags: [contract, testing]
 timestamp: 2026-09-15
-last_confirmed: 2026-09-15
+last_confirmed: 2026-09-26
 triggers: [signalmap-entry-handle, entry-write-test, collection-guard-audit, readonly-forwarding]
 ---
 # Why

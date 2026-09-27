@@ -4,7 +4,7 @@ title: "Converting a doc fence js → jsx moves it into doc-snippets' strict tie
 description: doc-snippets checks jsx/tsx/ts fences strictly but js fences loosely (checkJs false); converting a fence js to jsx silently promotes it, so untyped params and js-family names start failing strict.
 tags: [docs, toolchain, doc-snippets]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [js-to-jsx-fence-conversion, html-template-sweep, doc-snippets-implicit-any, fence-language-tag-change]
 ---
 

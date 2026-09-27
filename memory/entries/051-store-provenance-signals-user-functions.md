@@ -4,7 +4,7 @@ title: Store provenance — signals and user functions are shape-indistinguishab
 description: In store, signals and preserved user functions are shape-indistinguishable — key provenance must consult the non-enumerable settableRegistry, never isFunction(initial[key]).
 tags: [arch, store, composition]
 timestamp: 2026-08-25
-last_confirmed: 2026-09-08
+last_confirmed: 2026-09-26
 triggers: [store-provenance, settable-keys-registry, composed-store-updates, snapshot-discriminator]
 ---
 # Why

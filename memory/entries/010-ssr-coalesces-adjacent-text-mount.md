@@ -4,7 +4,7 @@ title: "ssr() coalesces adjacent text; mount() separates it — the serializatio
 description: "Historical (pre-013): marker-free ssr() coalesced reactive+static adjacent text into one node where mount() separates them, breaking hydration outside element-bounded structure."
 tags: [arch, ssr, contract, hydration]
 timestamp: 2026-07-10
-last_confirmed: 2026-07-28
+last_confirmed: 2026-09-26
 triggers: [ssr-coalescing, serialization-contract, ssr-mount-mismatch, hydration-text, adjacent-text]
 ---
 

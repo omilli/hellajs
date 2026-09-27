@@ -3,8 +3,8 @@ type: decision
 title: html`` templates type as `HellaNode | (() => HellaNode)` — ssr/ssr.async/ssr.stream calls need the `as HellaNode` cast while hydrate() accepts the union uncast
 description: html`` types as HellaNode | (() => HellaNode) — ssr/ssr.async/ssr.stream params are plain HellaNode, so append `as HellaNode`; hydrate() widens its param and takes the same expression uncast.
 tags: [testing, ssr, dom, types]
-timestamp: 2026-09-01
-last_confirmed: 2026-09-01
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [ssr-test-cast, html-return-union, as-hellanode, ts2345-ssr]
 ---
 
@@ -14,4 +14,4 @@ triggers: [ssr-test-cast, html-return-union, as-hellanode, ts2345-ssr]
 
 # Evidence
 
-Two tsc errors in unit 02 (Lazy server render), both fixed by appending the cast: `packages/ssr/tests/hydrate-integration.test.ts:96` TS2345 on `ssr.async(html`<${App} />`)` and `packages/dom/tests/hydrate-foreach.test.ts:170` TS2322 on `resolveLoader(() => html`…`)` — gate green after `as HellaNode` on each (bun coverage ssr 173 pass / dom 402 pass, 2026-09-01). Every pre-existing test in `packages/ssr/tests/` already writes `ssr(html`…` as HellaNode)`; the convention exists precisely for this union. The `ComponentReturn` union itself is declared at `packages/dom/lib/types/nodes.d.ts:134`.
+Two tsc errors in unit 02 (Lazy server render), both fixed by appending the cast: `packages/ssr/tests/hydrate-integration.test.ts:96` TS2345 on `ssr.async(html`<${App} />`)` and `packages/dom/tests/hydrate-foreach.test.ts:170` TS2322 on `resolveLoader(() => html`…`)` — gate green after `as HellaNode` on each (bun coverage ssr 173 pass / dom 402 pass, 2026-09-01). Every pre-existing test in `packages/ssr/tests/` already writes `ssr(html`…` as HellaNode)`; the convention exists precisely for this union. The `ComponentReturn` union itself is declared at `packages/dom/lib/types/nodes.d.ts:140`.

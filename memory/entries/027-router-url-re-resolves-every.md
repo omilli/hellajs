@@ -4,7 +4,7 @@ title: "router({ url }) re-resolves on every call — the `!route().handler` ini
 description: "router() init's !route().handler guard skipped the path update for 2nd+ router({ url }) calls, freezing the first SSR request's route — fixed: an explicit url ALWAYS re-resolves."
 tags: [arch, ssr, router, isomorphic]
 timestamp: 2026-07-28
-last_confirmed: 2026-07-28
+last_confirmed: 2026-09-26
 triggers: [router-ssr, router-url-option, per-request-ssr, router-init-guard]
 ---
 # Why

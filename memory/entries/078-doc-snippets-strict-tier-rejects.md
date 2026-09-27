@@ -4,7 +4,7 @@ title: "doc-snippets strict tier rejects widened literals — inline object lite
 description: doc-snippets' strict tier rejects widened literals — a const intermediate widens object literals and signal('sm') to string against narrow unions; inline the literal or annotate the signal generic.
 tags: [docs, toolchain, doc-snippets]
 timestamp: 2026-08-30
-last_confirmed: 2026-08-30
+last_confirmed: 2026-09-26
 triggers: [doc-snippets-widening, cva-doc-example, ts2322-prop-literal, variant-doc-snippet]
 ---
 

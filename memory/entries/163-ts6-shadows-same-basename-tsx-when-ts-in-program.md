@@ -3,8 +3,8 @@ type: correction
 title: "TS 6 program builder shadows same-basename .tsx when a same-basename .ts is in the program — never pair <name>.tsx + <name>.ts in one directory; ui registry html flavor files are <name>-html.ts"
 description: TS 6 admits only one same-basename supported-extension file per directory — .ts wins, .tsx silently vanishes (vacuous typecheck). Registry html-flavor files are named <name>-html.ts.
 tags: [arch, ui, tsconfig, typecheck]
-timestamp: 2026-09-16
-last_confirmed: 2026-09-16
+timestamp: 2026-09-27
+last_confirmed: 2026-09-27
 triggers: [same-basename-shadow, tsx-invisible, registry-layout, include-glob, vacuous-typecheck]
 ---
 # Why
@@ -17,4 +17,4 @@ What breaks if ignored: any future registry entry (or example/plugin layout) pai
 
 - Probe (this session, TS 6.0.3): `bunx tsc -p <cfg> --noEmit --listFiles` — full `tsconfig.lint.json` with `packages/ui/registry/**/*.ts` + `**/*.tsx` + `**/*.js` lines listed only `registry/button/css/button.ts`; `["packages/ui/registry/**/*.tsx"]` alone listed `button.tsx`; `["packages/ui/registry/**/*"]` and `include: ["packages/ui/registry"]` listed only the `.ts`.
 - Fix + gate: `registry.json` files arrays → `["button.tsx", "button-html.ts"]`; `bun coverage ui` exit 0 (22 pass) with BOTH files in the program (`--listFiles` shows both).
-- Plan note: `plans/ui/code/hellajs-ui/03-ui-registry-button.md` (top marker `[x]`, rename recorded); layout gotcha codified in `packages/ui/AGENTS.md` §Registry.
+- Layout gotcha codified in `packages/ui/AGENTS.md` §Registry (html-flavor bullet + Lint wiring bullet); `matchesFormat` verified at `packages/ui/lib/addComponent.ts` (`.tsx` → jsx, `-html.ts` → html). Probe re-confirmed 2026-09-27 on TS 6.0.3 (original plan note `plans/ui/code/hellajs-ui/03-ui-registry-button.md` since cleaned up post-merge).

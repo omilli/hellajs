@@ -3,8 +3,8 @@ type: decision
 title: "Tailwind v4 verified on var-shorthand arbitrary values incl. opacity modifiers — bg-(--primary)/90 compiles to color-mix with fallback; registry tailwind variants keep modifiers"
 description: tailwindcss 4.1.18 probe: v4 var shorthands (bg-(--primary)) generate; the /90 opacity modifier lowers to a color-mix chain behind @supports. Keep modifiers in registry tailwind class strings.
 tags: [arch, ui, css, tailwind]
-timestamp: 2026-09-16
-last_confirmed: 2026-09-16
+timestamp: 2026-09-27
+last_confirmed: 2026-09-27
 triggers: [tailwind-v4-verify, opacity-modifier, var-shorthand, arbitrary-value, tokens-sheet]
 ---
 # Why
@@ -16,4 +16,4 @@ What breaks if ignored: nothing in HellaJS runtime code — this only governs th
 # Evidence
 
 - Probe (this session): `compile()` JS API of `/home/milli/dev/hellajs/docs/node_modules/tailwindcss` (4.1.18) with `@source inline(...)` over the 22 candidate utilities used by Button — all FOUND, `color-mix` present; emitted rule for `bg-(--primary)/90`: `background-color: var(--primary)` plus `@supports (color: color-mix(in lab, red, red)) { background-color: color-mix(in oklab, var(--primary) 90%, transparent) }`.
-- Consumed by `packages/ui/registry/button/tailwind/button.tsx` + `button-html.ts`; bounded open marked RESOLVED in `plans/ui/code/hellajs-ui/03-ui-registry-button.md`.
+- Consumed by `packages/ui/registry/button/button.tsx` + `button-html.ts` (flat registry layout; the tailwind class map lives in `button-tailwind.ts`, spliced via `@hella:styles`). Class strings use theme tokens (`bg-primary`) bridged by `registry/theme/theme.css` (`--color-primary: var(--primary)`) — same custom properties as the css variants. Re-probed 2026-09-27 on the same 4.1.18 install: identical lowering. Bounded-open plan file (`plans/ui/code/hellajs-ui/03-ui-registry-button.md`) since removed.

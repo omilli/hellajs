@@ -4,7 +4,7 @@ title: Core documents input-validation throws on factory JSDoc only - lib .d.ts 
 description: Core keeps every input-validation @throws on the factory declaration; its .d.ts carry none (store/resource do put @throws on interface methods) - container-callable throws document at the factory.
 tags: [core, docs, jsdoc]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [core-throws-jsdoc, dts-throws-placement, factory-jsdoc-validation, container-callable-throws]
 ---
 

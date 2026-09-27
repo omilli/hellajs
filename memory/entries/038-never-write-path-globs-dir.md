@@ -4,7 +4,7 @@ title: Never write path globs (dir/*.ext) inside JSDoc block comments — the gl
 description: A glob like `examples/*/tutorial.mdx` or `docs/**/*.mdx` inside a docstring embeds the comment terminator and breaks parsing; reword to prose (e.g. "the tutorial.mdx inside each examples/<name>/").
 tags: [toolchain, scripts, docs]
 timestamp: 2026-08-20
-last_confirmed: 2026-08-20
+last_confirmed: 2026-09-26
 triggers: [jsdoc-glob, block-comment-terminator, guard-script-docstring, scripts-docstring-edit]
 ---
 # Why

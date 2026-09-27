@@ -4,7 +4,7 @@ title: Identity-changing wrap hooks need pre-wrapped reconcile diffs and const-c
 description: "Identity-changing wrap hooks need both reconcile passes keying on pre-wrapped forms, and container wrappers must capture the pre-wrap reference (const), never the reassigned binding."
 tags: [arch, core, store, collections]
 timestamp: 2026-09-22
-last_confirmed: 2026-09-22
+last_confirmed: 2026-09-26
 triggers: [collection-wrap-hook, signalSet-reconcile, container-middleware-wrapper, closure-reassignment-recursion, wrap-identity]
 ---
 # Why

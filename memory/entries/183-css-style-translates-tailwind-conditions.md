@@ -4,7 +4,7 @@ title: "css style() translates tailwind conditions with &-first keys only: `&:is
 description: Tailwind conditions translate with &-first keys only: dark:/group-*/peer-* become &:is(...) chains, [a&]:hover becomes &:is(a):hover, md: becomes a nested @media key.
 tags: [arch, ui, css, contract]
 timestamp: 2026-09-19
-last_confirmed: 2026-09-19
+last_confirmed: 2026-09-27
 triggers: [css-flavor-translation, ancestor-selector, peer-disabled, media-query-nesting, registry-style-module]
 ---
 # Why

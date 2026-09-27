@@ -4,7 +4,7 @@ title: "doc-snippets' signature-only skip is a PER-LINE regex — a line-initial
 description: isExecutableBlock judges per line; a line-initial `<P extends ...>` or a bare `=` on a continuation line flips the whole block into strict checking — wrap offending tokens onto a shielded line.
 tags: [docs, toolchain, doc-snippets]
 timestamp: 2026-09-15
-last_confirmed: 2026-09-15
+last_confirmed: 2026-09-26
 triggers: [doc-snippets-skip, type-block-transcription, ts2391-doc-snippets, generic-call-signature, api-type-block]
 ---
 

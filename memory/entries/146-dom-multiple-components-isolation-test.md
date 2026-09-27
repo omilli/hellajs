@@ -4,7 +4,7 @@ title: dom 'multiple components isolation' test (component-scope.test.ts) is fla
 description: dom's 'multiple components isolation' test (component-scope.test.ts, 'dom > component scope') failed once full-suite-only, passing isolated and on re-run — known flake, re-run before investigating.
 tags: [testing, dom, flaky]
 timestamp: 2026-09-16
-last_confirmed: 2026-09-16
+last_confirmed: 2026-09-26
 triggers: [flaky-test, full-coverage-failure, dom-component-isolation]
 supersedes: 008
 ---

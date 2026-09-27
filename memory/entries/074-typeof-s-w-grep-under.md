@@ -4,7 +4,7 @@ title: A `typeof\s+\w+` grep under-counts raw typeof sites — member-expression
 description: A `typeof\s+\w+` grep under-counts typeof sites (member/cast operands invisible) — discover with a bare `rg -n typeof` sweep; eslint's no-restricted-syntax selector is the ground truth.
 tags: [arch, discovery, tooling]
 timestamp: 2026-09-01
-last_confirmed: 2026-09-01
+last_confirmed: 2026-09-26
 triggers: [typeof-site-discovery, guard-conversion-audit, no-restricted-syntax-ban, conversion-plan-citations]
 ---
 # Why

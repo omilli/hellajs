@@ -4,7 +4,7 @@ title: SSR + hydration use explicit <!--[-->…<!--]--> comment markers (marker-
 description: ssr() wraps every dynamic region in Vue-style comment markers and hydrate adopts regions by reading them — the marker-free cursor-walk design is reverted (see 010/012 for the bugs it carried).
 tags: [arch, ssr, hydration, dom]
 timestamp: 2026-07-11
-last_confirmed: 2026-07-28
+last_confirmed: 2026-09-26
 triggers: [ssr-markers, hydrate-marker-reader, marker-free-walk-reverted, hydration-contract]
 supersedes: 009
 ---

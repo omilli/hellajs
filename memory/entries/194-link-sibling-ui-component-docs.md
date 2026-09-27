@@ -4,7 +4,7 @@ title: Link sibling ui component docs through /ui/<name>, never /learn/concepts/
 description: In packages/ui concept mdx, sibling-component cross-references resolve only as /ui/<name> (the demo astro pages); /learn/concepts/<name> is core concepts only and fails bun doc-links.
 tags: [docs, ui, links]
 timestamp: 2025-09-24
-last_confirmed: 2025-09-24
+last_confirmed: 2026-09-26
 triggers: [concept-page-crossref, component-doc-link, doc-links-guard]
 supersedes: 190
 ---

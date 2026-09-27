@@ -4,7 +4,7 @@ title: "ssr.stream is pull-driven — the producer advances one chunk per pull; 
 description: ssrStream enqueues only inside pull() — after reading a gating chunk (sentinel, Lazy region-open), await delay(0) so the NEXT pull runs the gated step, or cancel/release/assert races it.
 tags: [testing, ssr, streaming, bun-test, coverage]
 timestamp: 2026-09-01
-last_confirmed: 2026-09-01
+last_confirmed: 2026-09-26
 triggers: [ssrstream-cancel-test, suspense-staged-swap, pull-driven-timing, streaming-test-tick, coverage-uncovered-cancel]
 ---
 

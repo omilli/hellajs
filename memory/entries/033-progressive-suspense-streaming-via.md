@@ -4,7 +4,7 @@ title: Progressive <Suspense> streaming via inline $hs swap scripts (React/Solid
 description: ssrStream emits a one-time $hs bootstrap plus per-template inline swap scripts that reveal content on arrival (React $RC parity); hydrate still runs once; supersedes 015's no-inline-script framing.
 tags: [arch, ssr, streaming, suspense, hydration, dom]
 timestamp: 2026-09-02
-last_confirmed: 2026-09-02
+last_confirmed: 2026-09-26
 triggers: [progressive-suspense-streaming, inline-swap-script, hs-bootstrap, suspense-progressive-reveal, alpha-beta-superseded]
 supersedes: 015
 ---

@@ -1,15 +1,15 @@
 ---
 type: decision
 title: "html`` dynamic-component closers match nearest open dynamic node, never by slot index — open and close markers are distinct expressions"
-description: "html`` open `<${C}>` and close `</${C}>` markers are separate expressions (slots 0 and 2), so closer matching by __SLOT_N__ identity never matches; close the nearest open dynamic component."
+description: "html`` open `<${C}>` and close `</${C}>` markers are separate expressions (slots 0 and 1), so closer matching by __SLOT_N__ identity never matches; close the nearest open dynamic component."
 tags: [arch, dom, babel, contract]
-timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [dynamic-component-closer, slot-marker-identity, html-close-semantics, ancestor-match-closer, parser-stack-machine]
 ---
 # Why
 
-`html\`<${Portal} to="#t">x</${Portal}>\`` interleaves to `<__SLOT_0__ to="#t">x</__SLOT_2__>` — the open and its closer are DIFFERENT slot markers. A stack machine that closes by matching the closer's marker name against the open's tag (the natural port of named-tag ancestor matching) silently ignores every dynamic closer: nodes stay open, later siblings nest inside the wrong component, and slot indices shift downstream. Verified empirically: marker-identity matching broke dom `portal.test.ts` (multiple portals) and both `hydrate-selective` tests; the pre-fix blind pop "worked" only because closers were name-agnostic.
+`html\`<${Portal} to="#t">x</${Portal}>\`` interleaves to `<__SLOT_0__ to="#t">x</__SLOT_1__>` — the open and its closer are DIFFERENT slot markers. A stack machine that closes by matching the closer's marker name against the open's tag (the natural port of named-tag ancestor matching) silently ignores every dynamic closer: nodes stay open, later siblings nest inside the wrong component, and slot indices shift downstream. Verified empirically: marker-identity matching broke dom `portal.test.ts` (multiple portals) and both `hydrate-selective` tests; the pre-fix blind pop "worked" only because closers were name-agnostic.
 
 Correct rule (both parsers, `plugins/babel/src/parsers/html.mjs` + `packages/dom/lib/internal/template.ts`): a closer matching `/^__SLOT_\d+__$/` closes the nearest open dynamic component on the stack (plugin: node tag matches the slot pattern; runtime: `"dynamicComponent" in open`); named closers match by tag; anything unmatched is stray and dropped.
 

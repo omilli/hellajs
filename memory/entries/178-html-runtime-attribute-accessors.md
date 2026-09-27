@@ -4,7 +4,7 @@ title: "html-runtime attribute accessors must return strings (or undefined), nev
 description: "In html-format canonicals, a reactive attribute accessor returning raw `false` drops the attribute; return \"true\"/\"false\" strings to render it, matching the jsx flavor's data-* stringification.",
 tags: [dom, registry]
 timestamp: 2026-09-22
-last_confirmed: 2026-09-22
+last_confirmed: 2026-09-27
 triggers: [html-canonical, reactive-attribute, registry-component]
 ---
 # Why

@@ -3,8 +3,8 @@ type: decision
 title: "tsc type-probes pass --ignoreConfig and --jsx preserve — @hellajs/* exports no jsx-runtime subpath and TS 6 rejects files-on-CLI beside a tsconfig"
 description: "tsc type-probes: `bunx tsc --ignoreConfig --noEmit --strict --jsx preserve ...` — react-jsx fails (no jsx-runtime export); omitting --ignoreConfig fails TS5112 under TS 6."
 tags: [tooling, types, probes, dom]
-timestamp: 2026-07-29
-last_confirmed: 2026-07-29
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [tsc-probe, type-probe, ignoreConfig, jsx-runtime, assignability-check]
 ---
 
@@ -20,6 +20,10 @@ Verifying a published type's assignability with a throwaway probe needs flags th
 - Passing probe files on the CLI without `--ignoreConfig` → TS5112 under the pinned
   TypeScript 6.0.x (memory 025): a `tsconfig.json` is present but not loaded when files
   are specified.
+
+The probe file must import something from `@hellajs/dom` (e.g. `mount`) — the global
+JSX namespace lives in dom's types, so a probe importing only `@hellajs/core` fails with
+TS7026 (`no interface 'JSX.IntrinsicElements'`).
 
 Probe shape that compiles all JSX children forms (components + intrinsics — intrinsic
 children have no declared prop, so `ElementChildrenAttribute.children: {}` accepts

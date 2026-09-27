@@ -4,7 +4,7 @@ title: Comparison-doc competitor research falls back to npm registry tarballs wh
 description: When Bundlephoria/WebFetch fails, ground competitor claims in npm registry tarballs (dist.tarball URLs) — the exact shipped code, more authoritative than docs pages.
 tags: [tooling, research, comparison]
 timestamp: 2026-08-21
-last_confirmed: 2026-08-21
+last_confirmed: 2026-09-26
 triggers: [competitor-research, comparison-doc, bundlephobia-failed, web-fetch-failed]
 ---
 

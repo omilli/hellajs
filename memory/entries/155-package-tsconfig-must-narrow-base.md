@@ -4,7 +4,7 @@ title: "A package tsconfig must not narrow the base `types` array — the per-pa
 description: Overriding `types` in a package tsconfig drops base's `["node", "bun"]` and breaks `buildDeclarations` with TS2591 on `node:` imports; keep package tsconfigs extends+rootDir+include.
 tags: [arch, tooling, typescript]
 timestamp: 2026-09-17
-last_confirmed: 2026-09-17
+last_confirmed: 2026-09-27
 triggers: [ts2591-node-types, package-tsconfig-shape, declaration-build, types-array-override]
 ---
 # Why

@@ -4,7 +4,7 @@ title: "A relative import in a doc block silently skips doc-snippets strict chec
 description: doc-snippets' EXTERNAL_IMPORT_RE treats any non-@hellajs specifier (including relative './styles') as external and skips the whole block; dropping the import re-enables strict coverage.
 tags: [docs, guards, doc-snippets]
 timestamp: 2026-10-08
-last_confirmed: 2026-10-08
+last_confirmed: 2026-09-26
 triggers: [doc-snippets-skip, relative-import-doc-block, block-count-delta, import-style-enforcement]
 ---
 

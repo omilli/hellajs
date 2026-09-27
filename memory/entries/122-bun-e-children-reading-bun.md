@@ -4,7 +4,7 @@ title: "bun -e children reading Bun.stdin.stream() never exit while the parent h
 description: "A bun child whose stdin pipe stays open hangs forever reading Bun.stdin.stream(); use process.stdin.once(\"data\") plus an explicit process.exit(0)."
 tags: [arch, bun, spawn, daemon]
 timestamp: 2026-09-11
-last_confirmed: 2026-09-11
+last_confirmed: 2026-09-26
 triggers: [supervised-child, bun-spawn-stdin, stdin-pipe-open, echo-child-script]
 ---
 # Why

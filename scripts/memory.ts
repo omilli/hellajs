@@ -1,11 +1,10 @@
 import { logger } from "./utils/index.js";
 import { isThinkingLevel } from "./agent/rpc.js";
-import { DEFAULT_STALE_DAYS, runMemory } from "./memory/run.js";
+import { runMemory } from "./memory/run.js";
 
 /** Parsed CLI configuration. */
 interface MemoryArgs {
-  all: boolean;
-  days?: number;
+  startId?: number;
   limit?: number;
   model?: string;
   thinking?: string;
@@ -19,12 +18,8 @@ interface MemoryArgs {
  * @returns The parsed configuration.
  */
 function parseArgs(argv: string[]): MemoryArgs {
-  const args: MemoryArgs = { all: false, dryRun: false };
+  const args: MemoryArgs = { dryRun: false };
   for (const arg of argv) {
-    if (arg === "--all") {
-      args.all = true;
-      continue;
-    }
     if (arg === "--dry-run") {
       args.dryRun = true;
       continue;
@@ -45,33 +40,28 @@ function parseArgs(argv: string[]): MemoryArgs {
         throw new Error("invalid --thinking (expected off|minimal|low|medium|high|xhigh|max)");
       }
       args.thinking = value;
-    } else if (key === "--days") {
-      args.days = parseCount(value, "--days", false);
+    } else if (key === "--start-id") {
+      args.startId = parseCount(value, "--start-id");
     } else if (key === "--limit") {
-      args.limit = parseCount(value, "--limit", true);
+      args.limit = parseCount(value, "--limit");
     } else {
       throw new Error(`unknown flag "${key}"`);
     }
-  }
-  if (args.all && args.days !== undefined) {
-    throw new Error("--all and --days are mutually exclusive (--all already skips the staleness filter)");
   }
   return args;
 }
 
 /**
- * Parse a count flag value: a non-negative integer, or positive when the
- * flag semantics exclude zero.
+ * Parse a count flag value: a non-negative integer.
  *
  * @param value Raw flag value.
  * @param flag Flag name, for the error message.
- * @param positive True when zero is invalid.
  * @returns The parsed count.
  */
-function parseCount(value: string, flag: string, positive: boolean): number {
+function parseCount(value: string, flag: string): number {
   const n = Number(value);
-  if (!Number.isInteger(n) || (positive ? n < 1 : n < 0)) {
-    throw new Error(`invalid ${flag} (expected a${positive ? " positive" : " non-negative"} integer, got "${value}")`);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new Error(`invalid ${flag} (expected a non-negative integer, got "${value}")`);
   }
   return n;
 }
@@ -82,8 +72,7 @@ async function main(): Promise<void> {
     const args = parseArgs(process.argv.slice(2));
     process.exit(
       await runMemory({
-        all: args.all,
-        days: args.days ?? DEFAULT_STALE_DAYS,
+        startId: args.startId,
         limit: args.limit,
         model: args.model,
         thinking: args.thinking,

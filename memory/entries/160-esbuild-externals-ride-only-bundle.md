@@ -4,7 +4,7 @@ title: esbuild externals ride only the bundle build — the per-module build tra
 description: "externalFlags (peerDeps + dependencies) feeds only buildWithEsbuild; the per-module build passes no --bundle, so --external errors there — and its transpile preserves external imports verbatim anyway."
 tags: [scripts, bundling]
 timestamp: 2026-09-17
-last_confirmed: 2026-09-17
+last_confirmed: 2026-09-27
 triggers: [esbuild-external, per-module-build, runtime-dependency, dist-externals]
 ---
 # Why

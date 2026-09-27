@@ -4,7 +4,7 @@ title: "Ticking plan DoD lines: fall back to python by-index after one exact-mat
 description: "After one failed edit-tool oldText match on a plan DoD line, switch to a python heredoc rewriting lines by index with startswith asserts; do not retry reconstructed strings."
 tags: [worker, tools]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [plan-tick, edit-tool-match, backslash-pattern, worker-completion]
 ---
 # Why

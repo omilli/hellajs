@@ -4,7 +4,7 @@ title: "Module cycles in lib/ break via module-init registration (setMountNode /
 description: "A value-import cycle between internal modules is broken by registering the needed fns at module init (setMountNode pattern); a type-only back-edge is acceptable since it erases at compile."
 tags: [arch, dom]
 timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+last_confirmed: 2026-09-26
 triggers: [module-split, import-cycle, setmountnode-pattern, registration-cycle-break, internal-module-split, type-only-import]
 ---
 

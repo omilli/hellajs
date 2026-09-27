@@ -4,7 +4,7 @@ title: "$-prefixed headings anchor to the $-stripped slug — link with #snapsho
 description: "github-slugger and the repo's headingSlug both drop `$` (non-word punctuation), so a heading `### $snapshot` anchors to `#snapshot`; a `#$snapshot` fragment never resolves."
 tags: [docs, tooling, anchors]
 timestamp: 2026-09-08
-last_confirmed: 2026-09-08
+last_confirmed: 2026-09-26
 triggers: [dollar-heading-anchor, slugger-strips-dollar, anchor-fragment, doc-structure-slug, dollar-prefix-api]
 ---
 

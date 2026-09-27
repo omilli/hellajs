@@ -4,7 +4,7 @@ title: "TS 6 tsc refuses explicit file args when a tsconfig.json is discoverable
 description: "bunx tsc <files...> under TS 6 exits TS5112 when a discoverable tsconfig.json sits above any arg — add --ignoreConfig to the flags for file-args invocations."
 tags: [tooling, tsc, scripts]
 timestamp: 2026-09-16
-last_confirmed: 2026-09-16
+last_confirmed: 2026-09-27
 triggers: [ts5112, tsc-explicit-files, ignoreconfig, tsc-cli-flags, declaration-emission-cli]
 ---
 

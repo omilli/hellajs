@@ -4,7 +4,7 @@ title: "Bun.Glob requires ** as a full path segment — bunfig coveragePathIgnor
 description: In bunfig coveragePathIgnorePatterns, a `**.js` last segment matches nothing (Bun.Glob needs `**` alone per segment); the `!`-negation entry doubles as the coverage-table row whitelist.
 tags: [testing, tooling, bun]
 timestamp: 2026-09-16
-last_confirmed: 2026-09-16
+last_confirmed: 2026-09-27
 triggers: [coverage-table-rows, bunfig-ignore-glob, bun-glob-segment, missing-coverage-row]
 ---
 # Why

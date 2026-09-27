@@ -4,7 +4,7 @@ title: "doc-snippets scratch is per-run — concurrent invocations are safe; nev
 description: doc-snippets scratch is per-run (run-<pid>-<suffix>/ dirs, dead runs pruned) — concurrent invocations are safe; never flatten it back to a shared dir (that wipe caused the ENOENT crash).
 tags: [toolchain, doc-snippets]
 timestamp: 2026-09-05
-last_confirmed: 2026-09-05
+last_confirmed: 2026-09-26
 triggers: [doc-snippets-crash, enoent-dot-doc-snippets, concurrent-audit-runs, doc-snippets-layout]
 ---
 

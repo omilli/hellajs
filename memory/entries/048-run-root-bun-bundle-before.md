@@ -4,7 +4,7 @@ title: "Run root `bun bundle` before building/measuring any example after a ref 
 description: Examples bundle against gitignored packages/*/dist, which SURVIVES git checkout — run root `bun bundle` in each checkout before building/measuring an example, or you measure the previous ref's dist.
 tags: [arch, examples, build, workspaces]
 timestamp: 2026-07-29
-last_confirmed: 2026-07-29
+last_confirmed: 2026-09-26
 triggers: [examples-dist, bench-ab, ref-switch-build, stale-dist]
 ---
 # Why

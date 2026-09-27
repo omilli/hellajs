@@ -4,7 +4,7 @@ title: Prototype-method spies cast to the native type at the assignment site, ne
 description: Cast the spy to the native method type at the prototype-assignment site, never on the declaration — a declaration-site cast erases `.mock` and fails tsc on every `.mock.calls` read.
 tags: [tests, contract]
 timestamp: 2026-09-15
-last_confirmed: 2026-09-15
+last_confirmed: 2026-09-26
 triggers: [prototype-spy, addEventListener, mock-calls, AbortSignal, call-through]
 ---
 # Why

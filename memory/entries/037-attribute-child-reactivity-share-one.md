@@ -4,7 +4,7 @@ title: "Attribute and child reactivity share ONE runtime discriminator — isFun
 description: isFunction(value) is the ONE runtime discriminator for attribute AND child reactivity; babel's maybeReactive wraps call-containing expressions (never components); runtime html`` cannot wrap.
 tags: [arch, dom, babel, contract]
 timestamp: 2026-08-09
-last_confirmed: 2026-08-09
+last_confirmed: 2026-09-26
 triggers: [attribute-reactivity, isfunction-reactivity-gate, maybereactive-application, runtime-html-cannot-wrap, signal-ref-vs-called]
 ---
 # Why

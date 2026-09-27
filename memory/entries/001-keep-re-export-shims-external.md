@@ -3,8 +3,8 @@ type: decision
 title: Keep re-export shims for external peer deps - they dedupe esbuild bundle imports
 description: Re-export shims for external peer deps are esbuild import dedup choke points (externals are never cross-file merged, minified or not) — deleting one as pure indirection multiplies bundle imports.
 tags: [arch, bundling, dom]
-timestamp: 2026-07-11
-last_confirmed: 2026-07-28
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [delete-shim, re-export-barrel, esbuild-external, bundle-imports]
 ---
 # Why
@@ -18,4 +18,4 @@ Verified empirically 2026-06-29 via a minimal esbuild repro (3 consumer files, `
 - no shim, `--minify`: 3 `from"@hellajs/core"` lines in output
 - single-statement shim: 1 line
 
-Real artifact: `packages/dom/dist/bundle.js:6-17` shows the current shim emitting one `import { ... } from "@hellajs/core"` line into the bundle. Shim source: `packages/dom/lib/internal/core.ts`.
+Real artifact: `packages/dom/dist/bundle.js` (bundle head, `import { ... } from "@hellajs/core"` attributed to the shim) shows the current shim emitting exactly one import line despite 11 `lib/` consumer files importing through it; `bundle.min.js` likewise carries one occurrence. Shim source: `packages/dom/lib/internal/core.ts`. Re-verified against the current tree 2026-09-26.

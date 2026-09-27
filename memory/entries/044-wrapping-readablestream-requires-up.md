@@ -4,7 +4,7 @@ title: Wrapping a ReadableStream requires an up-front getReader() — for-await 
 description: A ReadableStream wrapper must getReader() before start() and drain via a read-loop — for-await locks the source; propagate cancel via reader.cancel(reason) or it throws 'ReadableStream is locked'.
 tags: [arch, ssr, streaming, contract]
 timestamp: 2026-08-21
-last_confirmed: 2026-08-21
+last_confirmed: 2026-09-26
 triggers: [readablestream-wrapper, stream-cancel-propagation, for-await-stream-lock, docstream-cancel]
 ---
 

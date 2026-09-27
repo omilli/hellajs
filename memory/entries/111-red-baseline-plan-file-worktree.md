@@ -4,7 +4,7 @@ title: "A red baseline on plan-file worktree re-entry is attributed per-failure 
 description: The baseline-red stop rule targets inherited/foreign red; on re-entry, red from an interrupted instance's unticked edits of this unit's own contract is completed, not reverted.
 tags: [plan-loop, worker, worktree]
 timestamp: 2026-08-09
-last_confirmed: 2026-08-09
+last_confirmed: 2026-09-26
 triggers: [red-baseline-reentry, interrupted-unit-resume, unticked-partial-work, worktree-continue-from-unticked]
 ---
 # Why

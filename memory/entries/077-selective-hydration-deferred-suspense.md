@@ -3,8 +3,8 @@ type: decision
 title: "Selective hydration — deferred Suspense regions adopt on stage arrival with positional event replay (closes memory 033's interactivity gap); gate readyState === \"loading\", MutationObserver-driven adoption, zero ssr coupling"
 description: Selective hydration — under readyState === 'loading' a template-missing Suspense region defers and a MutationObserver adopts it on stage arrival (zero ssr coupling), events replaying positionally.
 tags: [arch, dom, ssr, streaming, suspense, hydration]
-timestamp: 2026-09-02
-last_confirmed: 2026-09-02
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [selective-hydration, deferred-suspense-region, event-replay, mid-stream-hydrate, hydrate-defer-gate]
 ---
 
@@ -20,8 +20,8 @@ Design decisions (each rejected an alternative):
 
 # Evidence
 
-- `packages/dom/lib/internal/hydrate.ts` — the whole mechanism: `deferredRegions`/`replayQueue` registries (:180-183), `REPLAY_EVENT_TYPES` = {click, mousedown, mouseup, keydown, change} (:177), `deferSuspenseRegion` (:198), `startDeferredRegionWatch` (observer + body capture listeners + `readystatechange`→`drainWhenComplete`, :220-226), `bufferReplayEvent` (`isReplaying` guard, untrusted-target drop, :249-), `recheckDeferredRegions` (adopt arms: template present → `swapSuspenseStage`+`adoptRegion`; already `$hs`-swapped → adopt directly; replay loop with positional mapping, :283-347), `drainDeferredRegions` (stageMissing degrade, :355-363), defer gate `document.readyState === "loading"` (:651), reset clearing (:56-57).
-- `packages/dom/lib/hydrate.ts:80` — attach wires `if (hasDeferredRegions()) startDeferredRegionWatch(container)`.
+- `packages/dom/lib/internal/deferred.ts` — the whole mechanism (extracted from `internal/hydrate.ts`; walker-coupled fns injected via `setDeferredAdopters` cycle break): `deferredRegions`/`replayQueue` registries (:59, :62), `REPLAY_EVENT_TYPES` = {click, mousedown, mouseup, keydown, change} (:56), `deferSuspenseRegion` (:79), `startDeferredRegionWatch` (observer + body capture listeners + `readystatechange`→`drainWhenComplete`, :99-121), `bufferReplayEvent` (`isReplaying` guard, untrusted-target drop, :130-), `recheckDeferredRegions` (adopt arms: template present → `swapSuspenseStage`+`adoptRegion`; already `$hs`-swapped → adopt directly; replay loop with positional mapping, :164-229), `drainDeferredRegions` (stageMissing degrade, :236-244), reset clearing (`resetDeferredState`, :254). The defer gate `document.readyState === "loading"` sits in `internal/hydrate.ts:512`.
+- `packages/dom/lib/hydrate.ts:63` — attach wires `if (hasDeferredRegions()) startDeferredRegionWatch(container)`.
 - `packages/dom/lib/internal/reset.ts` — reset path clears the registry/observer/listener (JSDoc updated).
 - `packages/dom/tests/hydrate-selective.test.ts` — deferral, reactive adoption, replay (once, positional, dropped-target), outside-region immediacy, dead-stream degrade, back-compat sync adopt, independent two-region ordering; `readyState` shadowing per memory 076.
 - Green per plan: `bun coverage dom` 413 pass / 0 fail, `bun coverage ssr` 196 pass (guards repo-wide green).

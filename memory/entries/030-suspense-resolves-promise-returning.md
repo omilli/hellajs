@@ -3,8 +3,8 @@ type: decision
 title: "<Suspense> resolves Promise-returning children on client fresh-mount (universal boundary) — one-shot, errors bubble, resource + reactive child for reactive"
 description: <Suspense> fresh-mount resolves thenable children one-shot (fallback then swap; errors bubble to boundaries; NOT reactive — resource is not Suspense-aware); test both html`` and JSX child shapes.
 tags: [arch, dom, suspense, streaming, contract]
-timestamp: 2026-08-21
-last_confirmed: 2026-08-21
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [suspense-client-async, suspense-fresh-mount, suspense-reactive-resuspend, suspense-error-bubble]
 ---
 
@@ -25,6 +25,6 @@ The hydrate path also gained a `stageMissing` degradation (2026-08-21): a seen s
 
 - `packages/dom/lib/Suspense.ts` fresh-mount branch — **unwraps a length-1 JSX array first** (`const child = Array.isArray(props.children) && props.children.length === 1 ? props.children[0] : props.children;`) then `isFunction`-then-suspend, `.then` swap, `.catch` `dispatchError` with `resolveErrorConfig`. `internal/state.ts` `suspenseCleanup` slot; `internal/cleanup.ts` `clean()` chain.
 - `bun coverage dom`: 328 pass / 0 fail, 98.88% funcs / 98.04% lines; `bun lint` exit 0; blast-radius `bun coverage ssr` 134 pass / 0 fail.
-- Tests: `packages/dom/tests/hydrate-suspense.test.ts` (8 fresh-mount tests — incl. the JSX-array regression `component(Suspense, { children: [() => Promise.resolve(...)] })` matching the example's exact babel output; the other 7: fallback→swap, sync-node, no-fallback, reject→boundary, reject→no-boundary, cancel-resolve, cancel-reject).
+- Tests: `packages/dom/tests/hydrate-suspense.test.ts` (10 fresh-mount tests — incl. the JSX-array regression `component(Suspense, { children: [() => Promise.resolve(...)] })` matching the example's exact babel output; the other 9: fallback→swap, sync-node, no-fallback, reject→boundary, reject→no-boundary, cancel-resolve, cancel-reject, sync JSX-array mount, multiple-JSX-children document order).
 - `resource` non-Suspense-aware: `packages/resource/lib/resource.ts` (loading/error/data signals, no throw/suspend/boundary).
 - Plan: `plans/dom/code/suspense-client-async/suspense-client-async.md` (every DoD ticked).

@@ -11,7 +11,7 @@ const ENTRIES_DIR = join(MEMORY_ROOT, "entries");
 /** Retired concepts (`memory/archive/`); the supersede sink. */
 const ARCHIVE_DIR = join(MEMORY_ROOT, "archive");
 
-/** Frontmatter line for the staleness surface (`memory.ts stale` parity). */
+/** Frontmatter line read for the queue display; entries without it are skipped. */
 const LAST_CONFIRMED_LINE = /^last_confirmed:\s*(\d{4}-\d{2}-\d{2})\s*$/;
 
 /** Frontmatter line for the concept title (quote-stripped on read). */
@@ -36,12 +36,10 @@ export interface MemoryEntry {
 
 /** Queue derivation options. */
 export interface QueueOptions {
-  /** Skip the staleness filter and queue every active entry. */
-  all: boolean;
-  /** Staleness cutoff in days (`last_confirmed` older than this queues the entry). */
-  days: number;
-  /** Cap the queue to the first N entries (after oldest-first sorting). */
-  limit?: number;
+  /** Skip entries whose numeric ID is lower than this (`--start-id`). */
+  startId?: number;
+  /** Cap the queue to the first N entries after ID sorting; 0 = no cap. */
+  limit: number;
 }
 
 /** Post-run outcome of one entry, classified from the before/after file state. */
@@ -53,8 +51,8 @@ export type EntryOutcome =
 
 /**
  * Read one entry file's frontmatter into a queue record; null when
- * `last_confirmed` is missing or malformed (warned — `memory.ts stale`
- * skips such entries too, so the runner and the staleness surface agree).
+ * `last_confirmed` is missing or malformed (warned — the dry-run queue
+ * reports it, so entries without it stay unverifiable by the runner).
  *
  * @param file Absolute entry file path.
  * @param name Filename, for the warning.
@@ -116,32 +114,18 @@ function isCalendarDate(value: string): boolean {
   return date.getFullYear() === y && date.getMonth() === m && date.getDate() === d;
 }
 
-/**
- * Check whether a date is older than the staleness cutoff (`memory.ts
- * stale` semantics: strict `last_confirmed < local midnight of today − days`).
- *
- * @param lastConfirmed The entry's `last_confirmed` date.
- * @param days The cutoff in days.
- * @returns True when the entry is stale.
- */
-function isStale(lastConfirmed: string, days: number): boolean {
-  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(lastConfirmed);
-  if (parts === null) {
-    return false;
-  }
-  const confirmed = new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]));
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() - days);
-  return confirmed < cutoff;
+/** Numeric value of an entry ID (`007` → 7; non-numeric stems count as 0). */
+export function idValue(id: string): number {
+  const n = Number(id);
+  return Number.isInteger(n) ? n : 0;
 }
 
 /**
- * Derive the verification queue: active entries, oldest `last_confirmed`
- * first (tie-break filename), stale-filtered unless `all`, capped by
- * `limit`. Read-only — the runner never writes KB content.
+ * Derive the verification queue: every active entry, numeric ID ascending
+ * (tie-break filename), floored by `startId`, capped by `limit`. Read-only —
+ * the runner never writes KB content.
  *
- * @param options Staleness filter, widening, and cap.
+ * @param options Start floor and cap.
  * @returns The queue in execution order.
  */
 export function deriveQueue(options: QueueOptions): MemoryEntry[] {
@@ -154,14 +138,15 @@ export function deriveQueue(options: QueueOptions): MemoryEntry[] {
     if (entry === null) {
       continue;
     }
-    if (options.all || isStale(entry.lastConfirmed, options.days)) {
+    if (options.startId === undefined || idValue(entry.id) >= options.startId) {
       entries.push(entry);
     }
   }
-  entries.sort((a: MemoryEntry, b: MemoryEntry): number =>
-    a.lastConfirmed < b.lastConfirmed ? -1 : a.lastConfirmed > b.lastConfirmed ? 1 : a.stem < b.stem ? -1 : a.stem > b.stem ? 1 : 0,
-  );
-  return options.limit === undefined ? entries : entries.slice(0, options.limit);
+  entries.sort((a: MemoryEntry, b: MemoryEntry): number => {
+    const byId = idValue(a.id) - idValue(b.id);
+    return byId !== 0 ? byId : a.stem < b.stem ? -1 : a.stem > b.stem ? 1 : 0;
+  });
+  return options.limit === 0 ? entries : entries.slice(0, options.limit);
 }
 
 /**

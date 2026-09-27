@@ -3,8 +3,8 @@ type: decision
 title: resource() never auto-fetches at creation — initialData seeds state, it does not suppress a fetch
 description: resource() never auto-fetches at creation — fetch fires only via explicit .fetch()/invalidate() or the refetchOnKeyChange effect; initialData only seeds data(), suppressing nothing.
 tags: [arch, resource, ssr, contract]
-timestamp: 2026-09-01
-last_confirmed: 2026-09-01
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [resource-initialdata, ssr-data-seeding, no-auto-fetch, doc-data-payload]
 ---
 
@@ -32,10 +32,10 @@ auto-fetches and is pre-seeded — not "initialData prevents a refetch". A reade
   `if (refetchOnKeyChange)` (the `cleanupEffect = effect(...)` block); `run()` (async function) has
   no initialData/`rawData` check before the request-initiation phase. Read 2026-09-01 during unit
   03 (`doc({ data })` data-serialization).
-- `packages/resource/docs/api/resource.mdx:429` — "By default, resources don't auto-fetch on
+- `packages/resource/docs/api/resource.mdx:370` — "By default, resources don't auto-fetch on
   creation. Call `.fetch()` explicitly, or set `refetchOnKeyChange: true` for automatic fetching
   when key dependencies change."
-- `packages/resource/docs/api/resource.mdx:136` — `isLoading`: "Only true when there's no data at
+- `packages/resource/docs/api/resource.mdx:132` — `isLoading`: "Only true when there's no data at
   all (not even `initialData`)."
 - Applied in `packages/ssr/docs/patterns/ssr.mdx` ("Ship server data to the client") and
   `packages/ssr/docs/api/doc.mdx` ("The `data` payload script") — phrased as the server's fetch

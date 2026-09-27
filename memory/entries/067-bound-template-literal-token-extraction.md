@@ -4,7 +4,7 @@ title: Bound template-literal token extraction per segment — `infer` slots cro
 description: Template-literal ${infer Param} slots cross `/` segment boundaries in pattern types and produce bogus keys — extract params per `/`-separated segment so every infer slot is bounded within one segment.
 tags: [types, router, pattern-grammar]
 timestamp: 2026-08-31
-last_confirmed: 2026-08-31
+last_confirmed: 2026-09-26
 triggers: [extractparams, pattern-token-typing, template-literal-infer, optional-param-types]
 ---
 

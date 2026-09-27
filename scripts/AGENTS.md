@@ -138,12 +138,12 @@ Entry `audits.ts` → `run.ts` (section derivation from the package dir, set-dir
 
 ## Memory runner pipeline (`scripts/memory/`, one concern per file)
 
-Entry `memory.ts` → `queue.ts` (read-only KB listing: `memory/entries/*.md`, `last_confirmed`/`title` frontmatter parse, staleness filter mirroring `memory.ts stale` semantics, oldest-first order, pre-run content snapshot + post-run outcome classification: unchanged / refreshed / superseded-with-successor / removed) → `run.ts` (per-entry instance loop over the shared `../agent/` concern: `/skill:memory` prompt scoping the skill's Step 5 refresh to one entry — still true → bump dates + rebuild, false → author corrected concept + supersede, blocked → write nothing; outcome signal = the entry file's before/after state; unchanged/removed → operator gate retry / accept / skip / halt; dry-run mode; summary + exit code). The runner never verifies and never writes KB content — instances do; an empty queue exits 0 ("nothing to verify"). No worktree machinery, no plan files — verification is read-assess + KB-write in the main tree.
+Entry `memory.ts` → `queue.ts` (read-only KB listing: `memory/entries/*.md`, `last_confirmed`/`title` frontmatter parse, numeric-ID ascending order with `--start-id` floor and `--limit` cap (default 10, `0` = no cap), pre-run content snapshot + post-run outcome classification: unchanged / refreshed / superseded-with-successor / removed) → `run.ts` (per-entry instance loop over the shared `../agent/` concern: `/skill:memory` prompt scoping the skill's Step 5 refresh to one entry — still true → bump dates + rebuild, false → author corrected concept + supersede, blocked → write nothing; outcome signal = the entry file's before/after state; unchanged/removed → operator gate retry / accept / skip / halt; dry-run mode; summary + exit code). The runner never verifies and never writes KB content — instances do; an empty queue exits 0 ("nothing to verify"). No worktree machinery, no plan files — verification is read-assess + KB-write in the main tree.
 
 | File | Concern |
 |---|---|
 | `memory.ts` | Thin entry: args → run → report → exit |
-| `memory/queue.ts` | KB entry listing, staleness filter, outcome classification; read-only |
+| `memory/queue.ts` | KB entry listing (ID order, `--start-id` floor, `--limit` cap), outcome classification; read-only |
 | `memory/run.ts` | Per-entry instance loop, operator gate, dry-run, summary |
 
   ## Remote daemon pipeline (`scripts/remote/`, one concern per file)

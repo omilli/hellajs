@@ -4,7 +4,7 @@ title: "cssText() asserts verify emission, not split outcomes — split correctn
 description: cssText() asserts verify emission only — the collector joins pre-split injectedMap keys, so a corrupted rule split stays green; anchor split correctness on sheet cssRules counts, never the collector.
 tags: [testing, css]
 timestamp: 2026-09-02
-last_confirmed: 2026-09-02
+last_confirmed: 2026-09-26
 triggers: [csstext-assert, rule-split-test, registerText-split, green-non-covering-test]
 ---
 

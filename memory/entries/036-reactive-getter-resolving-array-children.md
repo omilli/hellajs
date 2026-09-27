@@ -4,7 +4,7 @@ title: "A reactive getter resolving to an ARRAY of children (e.g. `items.map(t =
 description: ssr's resolved-value classification must walk getter-returned HellaNode arrays element-by-element (distinct from 028's direct-child arrays) — else .map() children SSR to [object Object] (fixed).
 tags: [arch, ssr, dom, contract]
 timestamp: 2026-08-09
-last_confirmed: 2026-08-09
+last_confirmed: 2026-09-26
 triggers: [ssr-resolved-array-getter, object-object-ssr, walkchild-resolved-classification, map-idiom-ssr]
 ---
 

@@ -4,7 +4,7 @@ title: Single-line vars() calls are legal in docs; the multiline rule and its gu
 description: guides/docs.md's multiline rule ("one property per line") and lint:structure's INLINE_CSS_OBJECT_RE scope to css()/style() calls only; vars() may compress to one line when an example needs the space.
 tags: [docs, guards]
 timestamp: 2026-09-10
-last_confirmed: 2026-09-10
+last_confirmed: 2026-09-26
 triggers: [docs-example-length, single-line-vars, inline-css-guard]
 ---
 

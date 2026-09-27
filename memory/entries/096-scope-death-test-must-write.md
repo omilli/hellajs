@@ -4,7 +4,7 @@ title: "A scope-death test must write the signal TWICE before removal — subscr
 description: Scope-death tests need a SECOND pre-removal write: the body effect runs before the swap disposes the scope, so expect(N+1) after one write passes even on dead wiring.
 tags: [testing, dom, core, effects]
 timestamp: 2026-09-06
-last_confirmed: 2026-09-06
+last_confirmed: 2026-09-26
 triggers: [scope-death-test, effect-subscription-order, mock-frozen-after-swap, component-scope-test, disposal-order-flush]
 ---
 

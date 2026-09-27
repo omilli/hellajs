@@ -4,7 +4,7 @@ title: "afterMount + descendant isMounted fire synchronously at the end of mount
 description: afterMount and descendant isMounted fire synchronously at the end of mount()/hydrate() via an internal flush(); the observer only catches later additions; addHook immediate-fires on mounted nodes.
 tags: [arch, dom, lifecycle, contract]
 timestamp: 2026-07-31
-last_confirmed: 2026-07-31
+last_confirmed: 2026-09-26
 triggers: [aftermount-timing, mount-handle-flush, processmountqueue, hydrate-lifecycle]
 ---
 # Why

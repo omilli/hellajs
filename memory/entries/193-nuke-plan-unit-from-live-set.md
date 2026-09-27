@@ -4,7 +4,7 @@ title: "Nuking a plan unit from a live set: delete plan file + refs in BOTH tree
 description: "User-directed unit deletion: edit the main-tree set folder (drop file, index/depgraph/counts, depends_on, orphaned refs), then mirror deletions and amended files into the worktree's carried copies."
 tags: [plans, worker, worktree, set-structure]
 timestamp: 2026-09-23
-last_confirmed: 2026-09-23
+last_confirmed: 2026-09-27
 triggers: [nuke-unit, drop-plan-unit, delete-plan-file, set-restructure, carousel-removal]
 ---
 # Why

@@ -3,8 +3,8 @@ type: decision
 title: "hydrateNode tag comparison is exact-case for foreign-namespace elements — SVG/MathML parsers keep authored tag case, so uppercase-folding false-mismatches every camelCase tag"
 description: Parsers keep authored tag case inside SVG/MathML — hydrate tag comparison must be exact-case for non-HTML namespaces (tagMatches) or camelCase tags false-mismatch; creation needs createElementNS.
 tags: [dom, hydrate, svg]
-timestamp: 2026-08-30
-last_confirmed: 2026-08-30
+timestamp: 2026-09-26
+last_confirmed: 2026-09-26
 triggers: [hydrate-tag-compare, svg-namespace, tagmatches, foreign-namespace]
 ---
 
@@ -22,4 +22,4 @@ The namespace-threading architecture is documented in packages/dom/AGENTS.md (`m
 - HappyDOM probe (bun -e, GlobalRegistrator): `createElementNS(SVG_NS, t)` → SVGSVGElement / SVGClipPathElement / SVGLinearGradientElement / SVGCircleElement / SVGRectElement / SVGTextElement / SVGForeignObjectElement; `createElementNS(MATHML_NS, …)` → generic `Element` with the MathML ns (no MathMLElement class — assert `namespaceURI`, never a MathML constructor). `innerHTML = "<svg><clipPath …>"` → tagName `"clipPath"`, SVG ns — case preserved through the parser, not just createElementNS.
 - Pre-fix: `bun test packages/dom/tests/svg.test.ts` → 8/8 fail (`HTMLUnknownElement` constructors; hydrate test captured 1 `[dom] hydrate mismatch` warning via `suppressWarn`). Post-fix: 9/9 pass, 0 warnings, `bun coverage dom` exit 0 (373 pass / 0 fail).
 - tsc failure that surfaced the Element-only typing: `packages/dom/lib/internal/render.ts(25,25): error TS2339: Property 'localName' does not exist on type 'Node'` (same for `namespaceURI`) — fixed by casting to `Element` inside `childNamespaceOf`.
-- Source: `tagMatches` + both call sites in `packages/dom/lib/internal/hydrate.ts`; `childNamespaceOf`/`HTML_NS`/ns-aware `mountNode` creation in `packages/dom/lib/internal/render.ts`; regression tests in `packages/dom/tests/svg.test.ts`.
+- Source: `tagMatches` + its three call sites (`hydrateNode`'s static fast-path and mismatch check, `adoptReactiveRegion`'s positional pairing) in `packages/dom/lib/internal/hydrate.ts`; `childNamespaceOf`/`HTML_NS`/ns-aware `mountNode` creation in `packages/dom/lib/internal/render.ts`; regression tests in `packages/dom/tests/svg.test.ts`.

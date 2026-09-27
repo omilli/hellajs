@@ -4,7 +4,7 @@ title: "In ui-shadcn-components plan deltas, the pinned refs govern when delta p
 description: Plan unit deltas may enumerate variants or props that differ from refs/shadcn/*.tsx; the refs are the verbatim source of truth and the operator confirmed refs win, with deviations noted.
 tags: [contract, ui, registry, planning]
 timestamp: 2026-09-19
-last_confirmed: 2026-09-19
+last_confirmed: 2026-09-27
 triggers: [plan-delta-conflict, shadcn-refs, variant-enumeration, registry-unit]
 ---
 # Why
