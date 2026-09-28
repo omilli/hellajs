@@ -2,26 +2,7 @@
 
 A composite shell styled to shadcn's Sidebar: a provider that owns the open and mobile state, a collapsible desktop panel with three variants, a mobile sheet past `769px`, and a menu part family (buttons, actions, badges, submenus, skeletons) for the content. Twenty-three parts compose the anatomy; the caller threads the provider's state into each part explicitly.
 
-## Install
-
-```bash
-bunx @hellajs/ui add sidebar
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface. The entry mirrors shadcn's dependency graph, so `add sidebar` also copies `button`, `input`, `separator`, `skeleton`, `sheet`, and `tooltip` unless they are present already.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## Composition
+## Usage
 
 `SidebarProvider` owns the state and hands it to a children function; every other part receives what it needs as explicit props. This is the divergence from the reference: hella has no context primitive, so the provider's threaded state object (`open`, `setOpen`, `mobile`, `openMobile`, `setOpenMobile`, `onToggle`) replaces `useSidebar()`.
 
@@ -141,14 +122,6 @@ const ItemWithAction = () => (
 
 `SidebarInput` renders the search input (`h-8`, `bg-background`) with the input entry's class maps inlined.
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as plain arrays; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer. The module registers the sidebar palette through `vars()` (the table above) and forks the variant, collapsible, and side behavior through attribute selectors over the `data-variant`, `data-collapsible`, `data-side`, and `data-state` attributes the parts emit - the same nesting-free lexicon every translated entry uses, with `peer-*` conditions expressed as sibling selectors (for example `[data-sidebar='menu-button']:hover ~ [data-slot='sidebar-menu-badge']`). The `showOnHover` fade keys on the `data-show-on-hover` attribute the action renders.
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css` (which already declares the full `--sidebar-*` set for `:root` and `.dark`), and the copied strings are shadcn's literal utilities verbatim, including the `group-data-[collapsible=icon]` and `peer-data-[size=sm]/menu-button` named selectors. Each part's class array wraps in `cn()`.
-
-## Customizing
-
-The copied file is yours. Widths live in the two inline `style` strings; the collapse durations live in the `gap` and `container` transition maps (200ms linear, per the reference); the mobile slide pair follows the sheet entry's 500ms in / 300ms out. Variant geometry (floating and inset padding, borders, the inset margins on `SidebarInset`) forks through `data-variant` - restyle one variant by editing its branch, not the others.
+The module exports `base` (the wrapper flexing the panel and the content), `sidebar` (the panel, hidden below `48rem`) with `none` (the fixed-width column for the `"none"` mode), `gap` with its `gapPlain`/`gapInset` variant hooks (the width-animated spacer), `container` with its `containerSides`/`containerPlain`/`containerInset` variants and `inner` (the fixed panel frame and its column), `overlay`, `mobile`/`mobileSides`/`mobileInner` (the mobile sheet), `trigger`, `rail`, `inset`, `header`, `footer`, `separator`, `content`, and the menu family: `group`, `groupLabel`, `groupAction`, `groupContent`, `menu`, `menuItem`, `menuButton` with its `menuButtonVariants`/`menuButtonSizes`, `menuAction` with `menuActionHover`, `menuBadge`, `menuSkeleton`, `menuSub`, `menuSubItem`, `menuSubButton`, `input`, and the `tooltipBase`/`tooltipContent` hover-label pair. The css flavor composes classes as plain arrays with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, registers the sidebar palette through `vars()` (the table above), and forks the variant, collapsible, and side behavior through attribute selectors over the `data-variant`, `data-collapsible`, `data-side`, and `data-state` attributes the parts emit, with `peer-*` conditions expressed as sibling selectors (for example `[data-sidebar='menu-button']:hover ~ [data-slot='sidebar-menu-badge']`) and the `showOnHover` fade keyed on the `data-show-on-hover` attribute. The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css` (which already declares the full `--sidebar-*` set for `:root` and `.dark`), the copied strings are shadcn's literal utilities verbatim including the `group-data-[collapsible=icon]` and `peer-data-[size=sm]/menu-button` named selectors, and each part's class array wraps in `cn()`. The copied file is yours: widths live in the two inline `style` strings, the collapse durations in the `gap` and `container` transition maps (200ms linear, per the reference), the mobile slide pair follows the sheet entry's 500ms in / 300ms out, and variant geometry (floating and inset padding, borders, the `SidebarInset` margins) forks through `data-variant` - restyle one variant by editing its branch, not the others. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

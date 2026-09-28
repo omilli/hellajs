@@ -2,28 +2,9 @@
 
 A navigation landmark for paged content styled byte-faithfully to shadcn's new-york-v4 Pagination: a centered `nav` wrapping a list of links, with previous/next controls, an ellipsis overflow marker, and an active-page state rendered through the button visual vocabulary.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add pagination
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. The entry declares `button` as a registry dependency, so the add command copies it into your project alongside the links reuse its base, variant, and size declarations inline.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. Compose the parts by hand: `Pagination` is the landmark, `PaginationContent` the list, `PaginationItem` one list entry, and `PaginationLink` an anchor styled like the button's ghost (inactive) or outline (active) variant.
+Compose the parts by hand: `Pagination` is the landmark, `PaginationContent` the list, `PaginationItem` one list entry, and `PaginationLink` an anchor styled like the button's ghost (inactive) or outline (active) variant:
 
 ```jsx
 import Pagination, { PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from './components/pagination';
@@ -47,7 +28,9 @@ const Pages = () => (
 );
 ```
 
-`isActive` drives `aria-current="page"`, `data-active`, and the outline treatment. There is no router coupling: `href` is an optional passthrough and `onclick` replaces navigation for signal-driven paging.
+## Without a Router
+
+`isActive` drives `aria-current="page"`, `data-active`, and the outline treatment. There is no router coupling: `href` is an optional passthrough and `onclick` replaces navigation for signal-driven paging:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -67,38 +50,6 @@ const Pages = () => (
 );
 ```
 
-The html-format file (`pagination.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form:
+## Styling
 
-```js
-import { html, mount } from '@hellajs/dom';
-import Pagination, { PaginationContent, PaginationItem, PaginationLink } from './components/pagination';
-
-mount(
-  html`<${Pagination}>
-    <${PaginationContent}>
-      <${PaginationItem}><${PaginationLink} href="?page=1">1</${PaginationLink}></${PaginationItem}>
-    </${PaginationContent}>
-  </${Pagination}>`,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the `size-9` icon-hit-area default on links and the `hidden sm:block` responsive labels on Previous and Next, and the class arrays wrap in `cn()`.
-
-```jsx
-import Pagination, { PaginationContent, PaginationItem, PaginationLink } from './components/pagination';
-
-const Compact = () => (
-  <Pagination class="py-4">
-    <PaginationContent>
-      <PaginationItem><PaginationLink size="sm" href="?page=1">1</PaginationLink></PaginationItem>
-    </PaginationContent>
-  </Pagination>
-);
-```
-
-## Customizing
-
-The copied file is yours. The css style module exports `base` and `content` (the landmark and list layout), `linkBase`, `linkVariants`, and `linkSizes` (the inline duplication of the button vocabulary, all eight sizes), `previous` and `next` (the edge paddings), `hiddenUntilSm` and `srOnly` (the responsive label and the screen-reader rule the css flavor needs since no utilities exist), and `ellipsis`. Restrict link sizes to your design by trimming the `linkSizes` map.
+The css style module exports `base` and `content` (the landmark and list layout), `linkBase`, `linkVariants`, and `linkSizes` (the inline duplication of the button vocabulary, all eight sizes), `previous` and `next` (the edge paddings), `hiddenUntilSm` and `srOnly` (the responsive label and the screen-reader rule the css flavor needs since no utilities exist), and `ellipsis`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim, including the `size-9` icon-hit-area default on links and the `hidden sm:block` responsive labels on Previous and Next, wrapped in `cn()`. Restrict link sizes to your design by trimming the `linkSizes` map. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

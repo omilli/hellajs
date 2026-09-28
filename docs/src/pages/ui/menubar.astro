@@ -1,23 +1,133 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import MenubarTitle from "@ui/concepts/menubar.mdx";
 
 const title = "Menubar";
 const description = "Interactive Menubar demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Menubar from './components/menubar';
+import {
+  MenubarMenu,
+  MenubarItem,
+  MenubarLabel,
+  MenubarSeparator,
+  MenubarSub,
+} from './components/menubar';
+
+const Bar = () => (
+  <Menubar>
+    <MenubarMenu
+      value="file"
+      content={
+        <>
+          <MenubarLabel>File</MenubarLabel>
+          <MenubarItem shortcut="⌘N">New Window</MenubarItem>
+          <MenubarItem>Open Recent</MenubarItem>
+          <MenubarSub
+            content={
+              <>
+                <MenubarItem>Export as PDF</MenubarItem>
+                <MenubarItem>Export as HTML</MenubarItem>
+              </>
+            }
+          >
+            Export
+          </MenubarSub>
+          <MenubarSeparator />
+          <MenubarItem destructive>Close</MenubarItem>
+        </>
+      }
+    >
+      File
+    </MenubarMenu>
+    <MenubarMenu
+      value="edit"
+      content={
+        <>
+          <MenubarItem shortcut="⌘Z">Undo</MenubarItem>
+          <MenubarItem shortcut="⌘C">Copy</MenubarItem>
+          <MenubarItem shortcut="⌘V">Paste</MenubarItem>
+        </>
+      }
+    >
+      Edit
+    </MenubarMenu>
+    <MenubarMenu
+      value="view"
+      content={
+        <>
+          <MenubarItem>Zoom In</MenubarItem>
+          <MenubarItem>Zoom Out</MenubarItem>
+        </>
+      }
+    >
+      View
+    </MenubarMenu>
+  </Menubar>
+);`;
+
+const selectionCode = `import { signal } from '@hellajs/core';
+import Menubar from './components/menubar';
+import {
+  MenubarMenu,
+  MenubarCheckboxItem,
+  MenubarRadioGroup,
+  MenubarSeparator,
+} from './components/menubar';
+
+const bold = signal(false);
+const size = signal('medium');
+
+const Format = () => (
+  <Menubar>
+    <MenubarMenu
+      value="format"
+      content={
+        <>
+          <MenubarCheckboxItem
+            checked={() => bold()}
+            onCheckedChange={(next) => bold(next)}
+          >
+            Bold
+          </MenubarCheckboxItem>
+          <MenubarSeparator />
+          <MenubarRadioGroup
+            items={[
+              { value: 'small', label: 'Small' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'large', label: 'Large' },
+            ]}
+            value={() => size()}
+            onValueChange={(next) => size(next)}
+          />
+        </>
+      }
+    >
+      Format
+    </MenubarMenu>
+  </Menubar>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="menubar" />
   <MenubarTitle />
+  <h2>Examples</h2>
+  <Demo id="demo-selection" title="Selection state" code={selectionCode} note="The checkbox takes a checked accessor and the radio group is items-driven, the same explicit-state props as the dropdown-menu entry." />
 </MainLayout>
 
 <script>
+  import { signal } from "@hellajs/core";
   import { html, mount } from "@hellajs/dom";
-  import Menubar from "../../components/ui/menubar";
-  import {
-    MenubarMenu,
+  import Menubar, {
+    MenubarCheckboxItem,
     MenubarItem,
     MenubarLabel,
+    MenubarMenu,
+    MenubarRadioGroup,
     MenubarSeparator,
     MenubarSub,
   } from "../../components/ui/menubar";
@@ -53,4 +163,26 @@ const description = "Interactive Menubar demo running the CLI-vendored css-flavo
     </div>
     <p class="demo-note">Click or press ArrowDown to open; arrows switch menus while one is open, Escape returns focus to its trigger, Tab closes all.</p>
   </div>`, document.getElementById("demo")!);
+
+  const bold = signal(false);
+  const size = signal("medium");
+
+  const formatItems = html`
+    <${MenubarCheckboxItem} checked=${bold} onCheckedChange=${(next: boolean) => bold(next)}>Bold</${MenubarCheckboxItem}>
+    <${MenubarSeparator}></${MenubarSeparator}>
+    <${MenubarRadioGroup} items=${[
+      { value: "small", label: "Small" },
+      { value: "medium", label: "Medium" },
+      { value: "large", label: "Large" },
+    ]} value=${size} onValueChange=${(next: string) => size(next)}></${MenubarRadioGroup}>
+  `;
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Menubar}>
+        <${MenubarMenu} value=${"format"} content=${formatItems}>Format</${MenubarMenu}>
+      </${Menubar}>
+    </div>
+    <p class="demo-note">The checkbox takes a checked accessor and the radio group is items-driven, the same explicit-state props as the dropdown-menu entry.</p>
+  </div>`, document.getElementById("demo-selection")!);
 </script>

@@ -2,28 +2,9 @@
 
 A styled native `select` styled byte-faithfully to shadcn's new-york-v4 NativeSelect: the real element (full keyboard and mobile behavior for free) inside a relative wrapper with an inlined chevron-down icon, plus thin passthroughs for `option` and `optgroup`.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add native-select
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. Options are authored by the caller as plain native children; the component never models them as props. The `class` prop merges onto the `select` element, `size` toggles the compact `data-size="sm"` treatment, and the wrapper dims via `:has(select:disabled)` when the control is disabled.
+Options are authored by the caller as plain native children; the component never models them as props. `value` accepts a plain string or a bare signal and binds as the select's value property, `onchange` receives the extracted `e.target.value` string, and the wrapper dims via `:has(select:disabled)` when the control is disabled:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -36,21 +17,6 @@ const Picker = () => (
     <option value="eu">EU Central</option>
     <option value="us">US East</option>
     <option value="ap" disabled>AP South (coming soon)</option>
-  </NativeSelect>
-);
-```
-
-`value` accepts a plain string or a bare signal and binds as the select's value property; `onchange` receives the extracted `e.target.value` string. Group options with the optgroup passthrough, which carries the same `bg-[Canvas]` styling:
-
-```jsx
-import NativeSelect, { NativeSelectOptGroup, NativeSelectOption } from './components/native-select';
-
-const Grouped = () => (
-  <NativeSelect ariaLabel="Plan">
-    <NativeSelectOptGroup label="Standard">
-      <NativeSelectOption value="basic">Basic</NativeSelectOption>
-      <NativeSelectOption value="plus">Plus</NativeSelectOption>
-    </NativeSelectOptGroup>
   </NativeSelect>
 );
 ```
@@ -72,28 +38,23 @@ mount(
 );
 ```
 
-## Tailwind Style
+## Groups
 
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim (the `has-[select:disabled]:opacity-50` wrapper condition, `data-[size=sm]:h-8` compaction, and the `dark:hover:bg-input/50` form), and the class array wraps in `cn()`.
+Group options with the optgroup passthrough, which carries the same `bg-[Canvas]` styling:
 
 ```jsx
-import NativeSelect from './components/native-select';
+import NativeSelect, { NativeSelectOptGroup, NativeSelectOption } from './components/native-select';
 
-const Compact = () => (
-  <NativeSelect size="sm" ariaLabel="Compact select">
-    <option value="a">Option A</option>
-    <option value="b">Option B</option>
+const Grouped = () => (
+  <NativeSelect ariaLabel="Plan">
+    <NativeSelectOptGroup label="Standard">
+      <NativeSelectOption value="basic">Basic</NativeSelectOption>
+      <NativeSelectOption value="plus">Plus</NativeSelectOption>
+    </NativeSelectOptGroup>
   </NativeSelect>
 );
 ```
 
-```js
-import { html, mount } from '@hellajs/dom';
-import NativeSelect from './components/native-select';
+## Styling
 
-mount(html`<${NativeSelect} size="sm"><option value="a">A</option></${NativeSelect}>`, '#app');
-```
-
-## Customizing
-
-The copied file is yours. The css style module exports `wrapper`, `base`, `focus`, `invalid`, `icon`, `option`, and `optgroup` maps; the wrapper takes no `class` merge (shadcn keeps user classes on the select), the icon is positioned against the wrapper's right edge, and the chevron path data is inlined so the entry stays dependency-free. Replace the `path` `d` attribute to swap the glyph.
+The style module exports `wrapper`, `base`, `focus`, `invalid`, `icon`, `option`, and `optgroup` maps; the select's compose bakes its classes plus `props.class` (shadcn keeps user classes on the select, so the wrapper takes no merge). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim (the `has-[select:disabled]:opacity-50` wrapper condition, `data-[size=sm]:h-8` compaction, and the `dark:hover:bg-input/50` form) wrapped in `cn()`. The icon is positioned against the wrapper's right edge, and the chevron path data is inlined so the entry stays dependency-free; replace the `path` `d` attribute to swap the glyph. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

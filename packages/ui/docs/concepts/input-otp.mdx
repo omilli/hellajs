@@ -2,25 +2,6 @@
 
 The segmented one-time-code input styled to shadcn's Input OTP, built on the hidden-input technique instead of the `input-otp` package: one visually transparent input owns focus, value, and selection, while the slots are pure mirrors of its state. Typing, IME composition, deletion, arrow navigation, and clipboard handling stay fully native, so there is no keyboard simulation to drift from platform behavior.
 
-## Install
-
-```bash
-bunx @hellajs/ui add input-otp
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
 ## Usage
 
 You compose the slots yourself: group them, place the separator between groups, and give every slot its zero-based `index`. The root owns the state and wires the slots after mount, so a slot renders whatever its index holds:
@@ -53,7 +34,7 @@ const Verify = () => (
 );
 ```
 
-The html-format file (`input-otp.ts`, copied with `--format html`) composes the same way from a template; call the parts as direct functions inside the root's children:
+The html-format file (`input-otp.ts`, copied with `--format html`) composes the same way from a template; children sit between the part tags:
 
 ```js
 import { html, mount } from '@hellajs/dom';
@@ -182,20 +163,6 @@ The hidden input carries `autocomplete="one-time-code"` and `inputmode="numeric"
 | Arrow keys | Move the active slot one position left or right |
 | `Home` / `End` | Move to the first slot or the next empty slot (the last slot when full) |
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the root), `control` (the hidden input's disabled cursor and selection transparency), `group`, `slot` (with the `data-active`, `aria-invalid`, first/last rounding, and `.dark` hooks as attribute selectors), `caretWrap`, and `caret` (the hand-rolled caret-blink keyframes).
-
-```jsx
-import InputOTP from './components/input-otp';
-
-const Wide = () => <InputOTP length={6} class="gap-3" />;
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The strings carry the ref's classes verbatim, including the `data-[active=true]`, `aria-invalid:`, and `dark:` conditioned utilities and the `animate-caret-blink` caret bar (provided by `tw-animate-css`, which `theme.css` imports).
-
-## Customizing
-
-The copied file is yours. The slot size lives in the slot class (`h-9 w-9` in the tailwind string, `2.25rem` in the css map) and the state hooks are plain attribute selectors, so resizing or re-theming is a one-place edit. The `data-slot` attributes (`input-otp`, `input-otp-group`, `input-otp-slot`, `input-otp-separator`) plus the input's `data-input-otp` and each slot's `data-index` are stable hooks for user CSS.
+The style module exports `base` (the root), `control` (the hidden input's disabled cursor and selection transparency), `group`, `slot`, `caretWrap`, and `caret` (the hand-rolled caret-blink keyframes); each part's compose bakes its class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, with the slot's `data-active`, `aria-invalid`, first/last rounding, and `.dark` hooks as attribute selectors; the tailwind flavor carries the ref's classes verbatim (including the `data-[active=true]`, `aria-invalid:`, and `dark:` conditioned utilities and the `animate-caret-blink` caret bar provided by `tw-animate-css`) wrapped in `cn()`. The slot size lives in the slot class (`h-9 w-9` in the tailwind string, `2.25rem` in the css map), so resizing is a one-place edit, and the `data-slot` attributes (`input-otp`, `input-otp-group`, `input-otp-slot`, `input-otp-separator`) plus the input's `data-input-otp` and each slot's `data-index` are stable hooks for user CSS. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

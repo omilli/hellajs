@@ -1,40 +1,112 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ContextMenuTitle from "@ui/concepts/context-menu.mdx";
 
 const title = "Context Menu";
 const description = "Interactive Context Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import ContextMenu from './components/context-menu';
+import { ContextMenuItem } from './components/context-menu';
+
+const Canvas = () => (
+  <ContextMenu
+    content={
+      <>
+        <ContextMenuItem onclick={() => console.log('cut')}>Cut</ContextMenuItem>
+        <ContextMenuItem shortcut="⌘C">Copy</ContextMenuItem>
+      </>
+    }
+  >
+    Right-click this zone
+  </ContextMenu>
+);`;
+
+const subsetCode = `import { signal } from '@hellajs/core';
+import ContextMenu from './components/context-menu';
+import {
+  ContextMenuItem,
+  ContextMenuCheckboxItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+} from './components/context-menu';
+
+const locked = signal(false);
+
+const File = () => (
+  <ContextMenu
+    content={
+      <>
+        <ContextMenuItem>Rename</ContextMenuItem>
+        <ContextMenuCheckboxItem
+          checked={() => locked()}
+          onCheckedChange={(next) => locked(next)}
+        >
+          Locked
+        </ContextMenuCheckboxItem>
+        <ContextMenuSeparator />
+        <ContextMenuSub content={<ContextMenuItem>Compress</ContextMenuItem>}>
+          Archive
+        </ContextMenuSub>
+        <ContextMenuItem destructive disabled={locked()}>
+          Delete
+        </ContextMenuItem>
+      </>
+    }
+  >
+    file-card
+  </ContextMenu>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="context-menu" />
   <ContextMenuTitle />
+  <h2>Examples</h2>
+  <Demo id="demo-subset" title="Selection and submenu" code={subsetCode} note="One surface over a destructive action, a checkbox toggle, and a submenu." />
 </MainLayout>
 
 <script>
+  import { signal } from "@hellajs/core";
   import { html, mount } from "@hellajs/dom";
   import ContextMenu, {
+    ContextMenuCheckboxItem,
     ContextMenuItem,
-    ContextMenuLabel,
     ContextMenuSeparator,
     ContextMenuSub,
   } from "../../components/ui/context-menu";
   import "../../components/ui/tokens.js";
 
+  const zone = (label: string) => html`
+    <div style="padding: 2rem 3rem; border: 1px dashed var(--border); border-radius: 0.5rem; cursor: context-menu;">${label}</div>
+  `;
+
   const canvasItems = html`
-    <${ContextMenuLabel}>Canvas</${ContextMenuLabel}>
-    <${ContextMenuItem} shortcut=${"⌘D"}>Duplicate</${ContextMenuItem}>
-    <${ContextMenuSub} content=${html`<${ContextMenuItem}>Bring to Front</${ContextMenuItem}><${ContextMenuItem}>Send to Back</${ContextMenuItem}>`}>
-      Arrange
-    </${ContextMenuSub}>
+    <${ContextMenuItem} onclick=${() => console.log("cut")}>Cut</${ContextMenuItem}>
+    <${ContextMenuItem} shortcut=${"⌘C"}>Copy</${ContextMenuItem}>
+  `;
+
+  mount(html`<div class="demo-stack">
+    <${ContextMenu} content=${canvasItems}>${zone("Right-click this zone")}</${ContextMenu}>
+    <p class="demo-note">The menu opens at the pointer coordinates; Escape pops one layer, an outside press dismisses it.</p>
+  </div>`, document.getElementById("demo")!);
+
+  const locked = signal(false);
+
+  const fileItems = html`
+    <${ContextMenuItem}>Rename</${ContextMenuItem}>
+    <${ContextMenuCheckboxItem} checked=${locked} onCheckedChange=${(next: boolean) => locked(next)}>Locked</${ContextMenuCheckboxItem}>
     <${ContextMenuSeparator}></${ContextMenuSeparator}>
+    <${ContextMenuSub} content=${html`<${ContextMenuItem}>Compress</${ContextMenuItem}>`}>
+      Archive
+    </${ContextMenuSub}>
     <${ContextMenuItem} destructive=${true}>Delete</${ContextMenuItem}>
   `;
 
   mount(html`<div class="demo-stack">
-    <${ContextMenu} content=${canvasItems}>
-      <div style="padding: 2rem 3rem; border: 1px dashed var(--border); border-radius: 0.5rem; cursor: context-menu;">Right-click this zone</div>
-    </${ContextMenu}>
-    <p class="demo-note">The menu opens at the pointer coordinates; Escape pops one layer, an outside press dismisses it.</p>
-  </div>`, document.getElementById("demo")!);
+    <${ContextMenu} content=${fileItems}>${zone("Right-click file-card")}</${ContextMenu}>
+    <p class="demo-note">One surface over a destructive action, a checkbox toggle, and a submenu; activating any item closes the whole menu.</p>
+  </div>`, document.getElementById("demo-subset")!);
 </script>

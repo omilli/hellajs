@@ -1,14 +1,59 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import DialogContent from "@ui/concepts/dialog.mdx";
 
 const title = "Dialog";
 const description = "Interactive Dialog demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Dialog from './components/dialog';
+
+const DeleteAccount = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Dialog open={isOpen} onClose={close} title="Delete account" description="This permanently removes your account and all of its data.">
+      <p>This action cannot be undone. All of your projects will be lost.</p>
+      <button on:click={close}>Cancel</button>
+      <button on:click={close}>Delete</button>
+    </Dialog>
+  );
+};`;
+
+const lockedCode = `import { signal } from '@hellajs/core';
+import Dialog from './components/dialog';
+
+const ConfirmShipment = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Dialog
+      open={isOpen}
+      onClose={close}
+      title="Confirm shipment"
+      description="Escape and outside presses are ignored; choose an action."
+      closeOnEscape={false}
+      closeOnOutside={false}
+      showCloseButton={false}
+    >
+      <p>Only the buttons in this panel can close it.</p>
+      <button on:click={close}>Cancel</button>
+      <button on:click={close}>Confirm</button>
+    </Dialog>
+  );
+};`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="dialog" />
   <DialogContent />
+  <h2>Examples</h2>
+  <Demo id="demo-locked" title="Locked dismissal" code={lockedCode} note="Escape, outside presses, and the X button are wired off; only the panel's own buttons close it." />
 </MainLayout>
 
 <script>
@@ -30,4 +75,16 @@ const description = "Interactive Dialog demo running the CLI-vendored css-flavor
       </div>
     </${Dialog}>
   </div>`, document.getElementById("demo")!);
+
+  const locked = signal(false);
+  mount(html`<div class="demo-stack">
+    <${Button} variant="outline" onclick=${() => locked(true)}>Confirm shipment</${Button}>
+    <${Dialog} open=${locked} onClose=${() => locked(false)} title="Confirm shipment" description="Escape and outside presses are ignored; choose an action." closeOnEscape=${false} closeOnOutside=${false} showCloseButton=${false}>
+      <p>Only the buttons in this panel can close it.</p>
+      <div class="demo-row">
+        <${Button} variant="outline" onclick=${() => locked(false)}>Cancel</${Button}>
+        <${Button} onclick=${() => locked(false)}>Confirm</${Button}>
+      </div>
+    </${Dialog}>
+  </div>`, document.getElementById("demo-locked")!);
 </script>

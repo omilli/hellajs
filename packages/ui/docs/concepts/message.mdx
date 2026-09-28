@@ -2,28 +2,9 @@
 
 Chat message rows styled byte-faithfully to shadcn's new-york-v4 Message: a group stack plus six parts covering the row itself, the avatar well, the content column, and the header and footer meta rows, all presentational.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add message
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. Message is presentational, so the entry declares no component dependencies beyond the theme.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules.
+Pair `MessageContent` with the `bubble` entry's `Bubble` to get the message surface itself; the avatar well takes any small element (an image, an initial).
 
 ```jsx
 import { Bubble } from './components/bubble';
@@ -43,11 +24,9 @@ const Row = () => (
 );
 ```
 
-`align="end"` on `Message` flips the row with `flex-row-reverse`, pushes the content column to the inline end, and right-aligns the footer, so sent messages mirror received ones without extra classes on the parts.
+## End Alignment
 
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the named-group selectors such as `group-has-data-[slot=message-footer]/message:-translate-y-8` and the class arrays wrap in `cn()`.
+`align="end"` on `Message` flips the row with `flex-row-reverse`, pushes the content column to the inline end, and right-aligns the footer, so sent messages mirror received ones without extra classes on the parts:
 
 ```jsx
 import { Message, MessageContent } from './components/message';
@@ -61,8 +40,8 @@ const Sent = () => (
 
 ## Composition Notes
 
-The parts coordinate through data attributes rather than context. A footer lifts the avatar 2rem, a ghost-variant bubble (from the bubble entry) removes the header and footer side padding, and end alignment slides every direct content child to the inline end; all three conditions read `data-slot`/`data-align`/`data-variant` ancestors, so the wiring survives re-ordering parts. Pair `MessageContent` with the `bubble` entry's `Bubble` to get the message surface itself.
+The parts coordinate through data attributes rather than context. A footer lifts the avatar 2rem, a ghost-variant bubble (from the bubble entry) removes the header and footer side padding, and end alignment slides every direct content child to the inline end; all three conditions read `data-slot`/`data-align`/`data-variant` ancestors, so the wiring survives re-ordering parts.
 
-## Customizing
+## Styling
 
-The copied file is yours. The style modules export `group`, `base`, `avatar`, `content`, `header`, and `footer`; the ancestor-conditioned rules (footer lift, ghost padding, end-alignment shifts) register as raw attribute selectors at the bottom of the css module.
+The style module exports `group`, `base`, `avatar`, `content`, `header`, and `footer`; each part's compose bakes its own class plus `props.class` last, and every part renders its `data-slot`. The ancestor-conditioned rules (footer lift, ghost padding, end-alignment shifts) register as raw attribute selectors at the bottom of the css module; the tailwind flavor carries shadcn's literal utilities, named-group selectors such as `group-has-data-[slot=message-footer]/message:-translate-y-8` included, wrapped in `cn()`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

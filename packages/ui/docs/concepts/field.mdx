@@ -2,28 +2,9 @@
 
 A form-field composition kit styled byte-faithfully to shadcn's new-york-v4 Field: ten parts covering the set, legend, group, field row, content stack, label, title, description, separator, and error, wired so disabled and invalid state on the field propagates to its label and title through stable attribute selectors.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add field
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. The entry declares `label` and `separator` as registry dependencies, so the add command copies both into your project alongside it.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. Compose the parts by hand; there is no context object and no schema prop.
+Compose the parts by hand; there is no context object and no schema prop:
 
 ```jsx
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel, FieldTitle } from './components/field';
@@ -43,7 +24,9 @@ const Profile = () => (
 );
 ```
 
-`orientation` on `Field` switches the layout: `vertical` (default) stacks, `horizontal` aligns the label beside the control, and `responsive` uses a container query so fields laid out inside a `FieldGroup` go horizontal only when the group is at least 28rem wide.
+## Orientation
+
+`orientation` on `Field` switches the layout: `vertical` (default) stacks, `horizontal` aligns the label beside the control, and `responsive` uses a container query so fields laid out inside a `FieldGroup` go horizontal only when the group is at least 28rem wide:
 
 ```jsx
 import { Field, FieldContent, FieldDescription, FieldLabel } from './components/field';
@@ -62,40 +45,14 @@ const Terms = () => (
 );
 ```
 
+## Disabled, Invalid, and Error State
+
 Pass `disabled` or `invalid` to `Field` and it renders `data-disabled="true"` / `data-invalid="true"`: labels and titles fade to half opacity and the field text turns destructive, without touching the children. `FieldError` renders children or derives content from its `errors` array: a single message renders as text, several render as a deduplicated list, and an empty error renders hidden rather than removed so both formats keep one DOM shape.
-
-The html-format file (`field.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import { Field, FieldLabel, FieldTitle } from './components/field';
-
-mount(
-  html`<${Field}>
-    <${FieldLabel}><${FieldTitle}>Name</${FieldTitle}></${FieldLabel}>
-  </${Field}>`,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the named-group selectors such as `group-data-[disabled=true]/field:opacity-50` and the container-query variant `@md/field-group:flex-row`, and the class arrays wrap in `cn()`.
-
-```jsx
-import { Field, FieldLabel } from './components/field';
-
-const Row = () => (
-  <Field orientation="horizontal" class="max-w-md">
-    <FieldLabel for="email">Email</FieldLabel>
-  </Field>
-);
-```
 
 ## Composition Notes
 
 `FieldLabel` wraps a full `label` element (it takes `for` like the standalone label copy) and re-states the label declarations inline so the field entry stays self-contained. `FieldTitle` carries `data-slot="field-label"` exactly as the ref does, which is what lets one disabled-state selector cover both parts. `FieldSet` and `FieldLegend` wrap the native `fieldset` and `legend` elements for grouping related fields, and `FieldSeparator` draws a rule with optional centered text.
 
-## Customizing
+## Styling
 
-The copied file is yours. The css style module exports `set`, `legend` plus `legendVariants`, `group`, `base`, `orientation` (vertical, horizontal, and responsive maps with the container query), `content`, `label`, `title`, `description`, `separator` with `separatorBase`, `separatorRule`, and `separatorContent`, and `error` plus `errorList`. Retune the responsive breakpoint by editing the `@container` key inside the responsive map.
+The css style module exports `set`, `legend` plus `legendVariants`, `group`, `base`, `orientation` (vertical, horizontal, and responsive maps with the container query), `content`, `label`, `title`, `description`, `separator` with `separatorBase`, `separatorRule`, and `separatorContent`, and `error` plus `errorList`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim, including the named-group selectors such as `group-data-[disabled=true]/field:opacity-50` and the container-query variant `@md/field-group:flex-row`, wrapped in `cn()`. Retune the responsive breakpoint by editing the `@container` key inside the responsive map. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

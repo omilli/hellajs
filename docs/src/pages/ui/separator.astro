@@ -1,14 +1,47 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import SeparatorContent from "@ui/concepts/separator.mdx";
 
 const title = "Separator";
 const description = "Interactive Separator demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Separator from './components/separator';
+
+const Settings = () => (
+  <div class="flex flex-col gap-4">
+    <div>
+      <h3 class="text-lg font-medium">Profile</h3>
+      <p class="text-sm text-muted-foreground">Your public profile details.</p>
+    </div>
+    <Separator />
+    <div>
+      <h3 class="text-lg font-medium">Security</h3>
+      <p class="text-sm text-muted-foreground">Sessions and two-factor settings.</p>
+    </div>
+  </div>
+);`;
+
+const verticalCode = `import Separator from './components/separator';
+
+const Row = () => (
+  <div class="flex h-8 items-center gap-3 text-sm">
+    <span>Import</span>
+    <Separator orientation="vertical" />
+    <span>Export</span>
+    <Separator orientation="vertical" />
+    <span>Delete</span>
+  </div>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="separator" />
   <SeparatorContent />
+  <h2>Examples</h2>
+  <Demo id="demo-vertical" title="Vertical orientation" code={verticalCode} note="A vertical separator stretches through a bounded-height flex row." />
 </MainLayout>
 
 <script>
@@ -26,13 +59,13 @@ const description = "Interactive Separator demo running the CLI-vendored css-fla
       <h3 class="text-lg font-medium">Security</h3>
       <p class="text-sm text-muted-foreground">Sessions and two-factor settings.</p>
     </div>
-    <${Separator} class="my-2" />
-    <div class="flex h-8 items-center gap-3 text-sm">
-      <span>Import</span>
-      <${Separator} orientation="vertical" />
-      <span>Export</span>
-      <${Separator} orientation="vertical" />
-      <span>Delete</span>
-    </div>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="flex h-8 items-center gap-3 text-sm">
+    <span>Import</span>
+    <${Separator} orientation="vertical" />
+    <span>Export</span>
+    <${Separator} orientation="vertical" />
+    <span>Delete</span>
+  </div>`, document.getElementById("demo-vertical")!);
 </script>

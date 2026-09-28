@@ -1,14 +1,44 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import SkeletonContent from "@ui/concepts/skeleton.mdx";
 
 const title = "Skeleton";
 const description = "Interactive Skeleton demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Skeleton from './components/skeleton';
+
+const Profile = () => (
+  <div class="flex flex-col gap-4">
+    <div class="flex items-center gap-4">
+      <Skeleton class="size-12 rounded-full" />
+      <div class="flex flex-col gap-2">
+        <Skeleton class="h-4 w-32" />
+        <Skeleton class="h-4 w-24" />
+      </div>
+    </div>
+    <div class="flex flex-col gap-2">
+      <Skeleton class="h-4 w-full" />
+      <Skeleton class="h-4 w-full" />
+      <Skeleton class="h-4 w-2/3" />
+    </div>
+  </div>
+);`;
+
+const blockCode = `import Skeleton from './components/skeleton';
+
+const Block = () => (
+  <Skeleton class="h-32 w-full" />
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="skeleton" />
   <SkeletonContent />
+  <h2>Examples</h2>
+  <Demo id="demo-block" title="Block placeholder" code={blockCode} note="The element has no intrinsic size: height and width come from the call site." />
 </MainLayout>
 
 <script>
@@ -30,4 +60,6 @@ const description = "Interactive Skeleton demo running the CLI-vendored css-flav
       <${Skeleton} class="h-4 w-2/3" />
     </div>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<${Skeleton} class="h-32 w-full" />`, document.getElementById("demo-block")!);
 </script>

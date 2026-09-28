@@ -1,30 +1,71 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import CollapsibleContent from "@ui/concepts/collapsible.mdx";
 
 const title = "Collapsible";
 const description = "Interactive Collapsible demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Collapsible from './components/collapsible';
+
+const open = signal(false);
+
+const Faq = () => (
+  <Collapsible
+    open={() => open()}
+    onOpenChange={(next) => open(next)}
+    trigger="What ships in the box?"
+    content="One editable file per component, a theme entry, and no runtime dependency."
+  />
+);`;
+
+const partsCode = `import { signal } from '@hellajs/core';
+import { CollapsibleContent, CollapsibleTrigger } from './components/collapsible';
+
+const open = signal(true);
+
+const Custom = () => (
+  <div>
+    <CollapsibleTrigger active={() => open()} onToggle={() => open(!open())} controls="region">
+      Custom trigger
+    </CollapsibleTrigger>
+    <CollapsibleContent id="region" active={() => open()}>Custom body</CollapsibleContent>
+  </div>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="collapsible" />
   <CollapsibleContent />
+  <h2>Examples</h2>
+  <Demo id="demo-parts" title="Manual parts" code={partsCode} note="The exported parts take the state explicitly; the composed root derives the region id and threads it for you." />
 </MainLayout>
 
 <script>
   import { html, mount } from "@hellajs/dom";
-  import Collapsible from "../../components/ui/collapsible";
+  import { signal } from "@hellajs/core";
+  import Collapsible, { CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
   import "../../components/ui/tokens.js";
 
+  const open = signal(false);
   mount(html`<div class="demo-stack">
     <${Collapsible}
-      defaultOpen
+      open=${() => open()}
+      onOpenChange=${(next: boolean) => open(next)}
       trigger="What ships in the box?"
       content=${html`<p class="demo-note">One editable file per component, a theme entry, and no runtime dependency.</p>`}
     />
-    <${Collapsible}
-      trigger="Can I edit the copied source?"
-      content=${html`<p class="demo-note">Yes. The file lands in your project and the style declarations ride inside it.</p>`}
-    />
+    <p class="demo-note">The region is ${() => (open() ? "open" : "closed")}; the parent signal is the single source of truth.</p>
   </div>`, document.getElementById("demo")!);
+
+  const customOpen = signal(true);
+  mount(html`<div class="demo-stack">
+    <${CollapsibleTrigger} active=${() => customOpen()} onToggle=${() => customOpen(!customOpen())} controls="manual-region">Can I edit the copied source?</${CollapsibleTrigger}>
+    <${CollapsibleContent} id="manual-region" active=${() => customOpen()}>
+      <p class="demo-note">Yes. The file lands in your project and the style declarations ride inside it.</p>
+    </${CollapsibleContent}>
+  </div>`, document.getElementById("demo-parts")!);
 </script>

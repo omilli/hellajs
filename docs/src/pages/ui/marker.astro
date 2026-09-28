@@ -1,14 +1,36 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import MarkerContent from "@ui/concepts/marker.mdx";
 
 const title = "Marker";
 const description = "Interactive Marker demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const separatorCode = `import Marker, { MarkerContent } from './components/marker';
+
+const Ruled = () => (
+  <Marker variant="separator">
+    <MarkerContent>Chapter 4</MarkerContent>
+  </Marker>
+);`;
+
+const borderCode = `import Marker, { MarkerContent } from './components/marker';
+
+const Footer = () => (
+  <Marker variant="border">
+    <MarkerContent>End of list</MarkerContent>
+  </Marker>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="marker" />
   <MarkerContent />
+  <h2>Examples</h2>
+  <Demo id="demo-separator" title="Rule variant" code={separatorCode} note="The separator variant adds flex-filling rules before and after the content." />
+  <Demo id="demo-border" title="Border variant" code={borderCode} note="The border variant adds a bottom border - built for end-of-list captions." />
 </MainLayout>
 
 <script>
@@ -16,16 +38,16 @@ const description = "Interactive Marker demo running the CLI-vendored css-flavor
   import Marker, { MarkerContent, MarkerIcon } from "../../components/ui/marker";
   import "../../components/ui/tokens.js";
 
-  mount(html`<div class="demo-stack">
-    <${Marker}>
-      <${MarkerIcon}>✳</${MarkerIcon}>
-      <${MarkerContent}>Synced 12 entries just now</${MarkerContent}>
-    </${Marker}>
-    <${Marker} variant="separator">
-      <${MarkerContent}>Chapter 4</${MarkerContent}>
-    </${Marker}>
-    <${Marker} variant="border">
-      <${MarkerContent}>End of the list</${MarkerContent}>
-    </${Marker}>
-  </div>`, document.getElementById("demo")!);
+  mount(html`<${Marker}>
+    <${MarkerIcon}>✳</${MarkerIcon}>
+    <${MarkerContent}>Synced 12 entries just now</${MarkerContent}>
+  </${Marker}>`, document.getElementById("demo")!);
+
+  mount(html`<${Marker} variant="separator">
+    <${MarkerContent}>Chapter 4</${MarkerContent}>
+  </${Marker}>`, document.getElementById("demo-separator")!);
+
+  mount(html`<${Marker} variant="border">
+    <${MarkerContent}>End of list</${MarkerContent}>
+  </${Marker}>`, document.getElementById("demo-border")!);
 </script>

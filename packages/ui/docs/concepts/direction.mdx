@@ -2,34 +2,9 @@
 
 A text-direction wrapper styled after shadcn's new-york-v4 DirectionProvider, reworked for hella's no-context architecture: it renders a `dir` attribute on a layout-neutral node, and that attribute is the mechanism every directional behavior reads.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add direction
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## Why a DOM Node
-
-Upstream is a context-only provider: it emits no markup and broadcasts the direction through React context. Hella has no context primitive, and the dom behavior layer reads `getComputedStyle(anchor).direction` when it needs to flip anchoring and flow for right-to-left locales. The wrapper exists so that read has something to find: the rendered `dir` attribute IS the broadcast, visible to every descendant behavior without any subscription wiring.
-
-The node stays out of layout through `display: contents`, so wrapping children changes nothing about rendering; the div carries no visual styles of its own.
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer. Wrap the subtrees that should flip, or the whole application:
+Wrap the subtrees that should flip, or the whole application:
 
 ```jsx
 import DirectionProvider from './components/direction';
@@ -42,7 +17,15 @@ const App = () => (
 );
 ```
 
-Nest providers to flip a subtree against its parent; each wrapper scopes its own `dir` attribute.
+## Why a DOM Node
+
+Upstream is a context-only provider: it emits no markup and broadcasts the direction through React context. Hella has no context primitive, and the dom behavior layer reads `getComputedStyle(anchor).direction` when it needs to flip anchoring and flow for right-to-left locales. The wrapper exists so that read has something to find: the rendered `dir` attribute IS the broadcast, visible to every descendant behavior without any subscription wiring.
+
+The node stays out of layout through `display: contents`, so wrapping children changes nothing about rendering; the div carries no visual styles of its own.
+
+## Nesting
+
+Nest providers to flip a subtree against its parent; each wrapper scopes its own `dir` attribute:
 
 ```jsx
 import DirectionProvider from './components/direction';
@@ -57,34 +40,6 @@ const Mixed = () => (
 );
 ```
 
-The html-format file (`direction.ts`, copied with `--format html`) renders through a template; children sit between the wrapper tags exactly like the jsx form:
+## Styling
 
-```js
-import { html, mount } from '@hellajs/dom';
-import DirectionProvider from './components/direction';
-
-mount(
-  html`<${DirectionProvider} dir="rtl">
-    <p>النص العربي</p>
-  </${DirectionProvider}>`,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the wrapper's single class is the literal `contents` utility, and the class arrays wrap in `cn()`.
-
-```jsx
-import DirectionProvider from './components/direction';
-
-const Neutral = () => (
-  <DirectionProvider dir="rtl" class="my-scope">
-    <p>النص العربي</p>
-  </DirectionProvider>
-);
-```
-
-## Customizing
-
-The copied file is yours. Both style modules export a single `base` (`display: contents`); there is deliberately nothing else to tune. If you need the wrapper to participate in layout after all, drop `base` from the compose array and set your own classes.
+Both flavors export a single `base` (`display: contents`); there is deliberately nothing else to tune. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer; the tailwind flavor's single class is the literal `contents` utility wrapped in `cn()`. If you need the wrapper to participate in layout after all, drop `base` from the compose array and set your own classes. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

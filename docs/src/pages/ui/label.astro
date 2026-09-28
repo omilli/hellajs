@@ -1,14 +1,37 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import LabelContent from "@ui/concepts/label.mdx";
 
 const title = "Label";
 const description = "Interactive Label demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Label from './components/label';
+
+const Name = () => (
+  <div class="flex flex-col gap-2">
+    <Label for="demo-name">Project name</Label>
+    <input id="demo-name" placeholder="acme-site" />
+  </div>
+);`;
+
+const disabledGroupCode = `import Label from './components/label';
+
+const Fieldset = () => (
+  <div class="group flex flex-col gap-2" data-disabled="true">
+    <Label for="demo-region">Region</Label>
+    <input id="demo-region" value="eu-central-1" disabled />
+  </div>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="label" />
   <LabelContent />
+  <h2>Examples</h2>
+  <Demo id="demo-disabled" title="Disabled group" code={disabledGroupCode} note="Inside .group[data-disabled=true] the caption dims and drops pointer events; no props needed." />
 </MainLayout>
 
 <script>
@@ -16,14 +39,13 @@ const description = "Interactive Label demo running the CLI-vendored css-flavor 
   import Label from "../../components/ui/label";
   import "../../components/ui/tokens.js";
 
-  mount(html`<div class="demo-stack">
-    <div class="flex flex-col gap-2">
-      <${Label} for="demo-name">Project name</${Label}>
-      <input id="demo-name" placeholder="acme-site" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" />
-    </div>
-    <div class="flex items-center gap-3">
-      <${Label} for="demo-region">Region</${Label}>
-      <input id="demo-region" value="eu-central-1" class="flex h-9 w-40 rounded-md border border-input bg-transparent px-3 text-sm" />
-    </div>
+  mount(html`<div class="flex flex-col gap-2">
+    <${Label} for="demo-name">Project name</${Label}>
+    <input id="demo-name" placeholder="acme-site" class="flex h-9 w-full max-w-xs rounded-md border border-input bg-transparent px-3 text-sm" />
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="group flex flex-col gap-2" data-disabled="true">
+    <${Label} for="demo-region">Region</${Label}>
+    <input id="demo-region" value="eu-central-1" disabled class="flex h-9 w-full max-w-xs rounded-md border border-input bg-transparent px-3 text-sm opacity-50" />
+  </div>`, document.getElementById("demo-disabled")!);
 </script>

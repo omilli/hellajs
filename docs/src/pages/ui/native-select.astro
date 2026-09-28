@@ -1,14 +1,46 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import NativeSelectContent from "@ui/concepts/native-select.mdx";
 
 const title = "Native Select";
 const description = "Interactive NativeSelect demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import NativeSelect from './components/native-select';
+
+const Picker = () => {
+  const region = signal('eu');
+
+  return (
+    <div class="flex items-center gap-3">
+      <NativeSelect value={region} onchange={(v) => region(v)} ariaLabel="Region">
+        <option value="eu">EU Central</option>
+        <option value="us">US East</option>
+        <option value="ap" disabled>AP South (coming soon)</option>
+      </NativeSelect>
+      <p class="demo-note">Echoing: {() => region()}</p>
+    </div>
+  );
+};`;
+
+const compactCode = `import NativeSelect from './components/native-select';
+
+const Compact = () => (
+  <NativeSelect size="sm" ariaLabel="Compact select">
+    <option value="a">Compact option A</option>
+    <option value="b">Compact option B</option>
+  </NativeSelect>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="native-select" />
   <NativeSelectContent />
+  <h2>Examples</h2>
+  <Demo id="demo-compact" title="Compact size" code={compactCode} note='size="sm" toggles the data-size treatment on the wrapper.' />
 </MainLayout>
 
 <script>
@@ -18,18 +50,17 @@ const description = "Interactive NativeSelect demo running the CLI-vendored css-
   import "../../components/ui/tokens.js";
 
   const region = signal("eu");
-  mount(html`<div class="demo-stack">
-    <div class="flex items-center gap-3">
-      <${NativeSelect} value=${() => region()} onchange=${(v) => region(v)} aria-label="Region">
-        <option value="eu">EU Central</option>
-        <option value="us">US East</option>
-        <option value="ap" disabled>AP South (coming soon)</option>
-      </${NativeSelect}>
-      <p class="demo-note">Echoing: ${() => region()}</p>
-    </div>
-    <${NativeSelect} size="sm" aria-label="Compact select">
-      <option value="a">Compact option A</option>
-      <option value="b">Compact option B</option>
+  mount(html`<div class="flex items-center gap-3">
+    <${NativeSelect} value=${() => region()} onchange=${(v) => region(v)} ariaLabel="Region">
+      <option value="eu">EU Central</option>
+      <option value="us">US East</option>
+      <option value="ap" disabled>AP South (coming soon)</option>
     </${NativeSelect}>
+    <p class="demo-note">Echoing: ${() => region()}</p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<${NativeSelect} size="sm" ariaLabel="Compact select">
+    <option value="a">Compact option A</option>
+    <option value="b">Compact option B</option>
+  </${NativeSelect}>`, document.getElementById("demo-compact")!);
 </script>

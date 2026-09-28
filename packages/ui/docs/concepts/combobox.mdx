@@ -2,30 +2,9 @@
 
 A filterable listbox styled to shadcn's Combobox: the input owns a query signal, the panel anchors to the input wrapper, and typing narrows the options case-insensitively; Enter commits the active option, and `multiple` mode toggles values into removable chips.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add combobox
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-The combobox copies its input-group shell inline (the entry never cross-imports), and wires its positioning, dismissal, and typeahead from the copied file using `@hellajs/dom` behavior functions.
-
-## Composing a Combobox
-
-The composed `Combobox` takes its options as data and renders the input shell plus the portaled panel. Focusing the input opens the panel; typing filters it.
+The composed `Combobox` takes its options as data and renders the input shell plus the portaled panel. Focusing the input opens the panel; typing filters it. The copied file carries its input-group shell inline (the entry never cross-imports) and wires its positioning, dismissal, and typeahead from the `@hellajs/dom` behavior functions.
 
 ```jsx
 import Combobox from './components/combobox';
@@ -51,6 +30,20 @@ const FruitPicker = () => (
 | `filter` | - | Replaces the default case-insensitive substring filter |
 | `showClear` | - | Renders the panel's clear affordance while a value is selected (single mode) |
 | `class` | - | Extra classes on the input wrapper |
+
+The html-format file (`combobox.ts`, copied with `--format html`) renders through a template instead of JSX; the combobox mounts as a reactive child of whatever wraps it, with the items interpolated as data:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Combobox from './components/combobox';
+
+mount(
+  html`
+    <${Combobox} items=${fruits} placeholder="Search fruit" />
+  `,
+  '#app',
+);
+```
 
 ## Filtering
 
@@ -133,36 +126,6 @@ const Manual = () => {
 - **No hidden form control.** Like the select, the combobox submits nothing by itself. Pair it with `native-select` (or a hidden input of your own) when a form needs the value.
 - **`useComboboxAnchor` is gone.** The upstream hook returns a ref for the anchor; hella's composed root wires the anchor to the wrapper, and manual compositions pass `anchor={() => wrapperNode}` explicitly.
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base`, `input`, `inputFocus`, `inputInvalid`, and `inputControl` (the duplicated input-group shell under `hella-combobox` labels), `addon` (the trailing addon row), `buttonBase`, `buttonGhost`, `buttonSizeIconXs`, and `sizeIconXs` (the ghost icon-xs button pieces shared by the toggle, clear, and chip remove), `content` (the popover surface with the anchor-width sizing, ring, side-keyed keyframes at the copied 100ms budget, and the nested input-group overrides), `list` (the scrolling option container with its `data-empty` padding drop), `item` (the option row with the `data-highlighted` ring), `itemIndicator` and `icon` (the check slot and icon sizes), `label`, `separator`, `empty`, `chips`, `chip`, `chipsInput`, `trigger`, and `triggerIcon`, plus the small `triggerExtra`, `chipRemoveExtra`, and `xIcon` state helpers. `group` and `value` are empty.
-
-```jsx
-import Combobox from './components/combobox';
-
-const Wide = () => (
-  <Combobox items={fruits} multiple placeholder="Pick several" class="w-72" />
-);
-```
-
-The html-format file (`combobox.ts`, copied with `--format html`) renders through a template instead of JSX; the combobox mounts as a reactive child of whatever wraps it:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Combobox from './components/combobox';
-
-mount(
-  html`
-    <${Combobox} items=${fruits} multiple placeholder="Pick several" />
-  `,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`w-(--anchor-width)`, `min-w-[calc(var(--anchor-width)+--spacing(7))]`, `data-highlighted:bg-accent`, the `data-[side=…]` slide variants, the `group-data-empty/combobox-content:flex` empty reveal, and the input-group shell strings duplicated under the entry), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The enter and exit motion relies on the `tw-animate-css` utilities the theme's tailwind entry depends on.
-
-## Customizing
-
-The copied file is yours. Option rows restyle in `item`; the panel surface in `content` (its anchor-width sizing, ring, and animations live there). The empty text is the `ComboboxEmpty` children inside the composed root - edit the string or replace it. The dismissal surface is the `layerDismissal` wiring; hold the panel open against Escape and outside presses by composing `ComboboxContent` without `onDismiss`.
+The module exports `base`, `input`, `inputFocus`, `inputInvalid`, and `inputControl` (the duplicated input-group shell under `hella-combobox` labels), `addon` (the trailing addon row), `buttonBase`, `buttonGhost`, `buttonSizeIconXs`, and `sizeIconXs` (the ghost icon-xs button pieces shared by the toggle, clear, and chip remove), `content` (the popover surface with the anchor-width sizing, ring, side-keyed keyframes at the copied 100ms budget, and the nested input-group overrides), `list` (the scrolling option container with its `data-empty` padding drop), `item` (the option row with the `data-highlighted` ring), `itemIndicator` and `icon` (the check slot and icon sizes), `label`, `separator`, `empty`, `chips`, `chip`, `chipsInput`, `trigger`, and `triggerIcon`, plus the small `triggerExtra`, `chipRemoveExtra`, and `xIcon` state helpers; `group` and `value` are empty. The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; the tailwind flavor uses shadcn's literal utilities verbatim (`w-(--anchor-width)`, `min-w-[calc(var(--anchor-width)+--spacing(7))]`, `data-highlighted:bg-accent`, the `data-[side=…]` slide variants, the `group-data-empty/combobox-content:flex` empty reveal, and the input-group shell strings duplicated under the entry) wrapped in `cn()` so later tokens override earlier ones per utility group, with the enter and exit motion carried by `tw-animate-css`. Option rows restyle in `item`; the panel surface in `content` (its anchor-width sizing, ring, and animations live there); the empty text is the `ComboboxEmpty` children inside the composed root, so edit the string or replace it there. Hold the panel open against Escape and outside presses by composing `ComboboxContent` without `onDismiss`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

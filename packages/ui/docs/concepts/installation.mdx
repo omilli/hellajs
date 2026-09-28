@@ -1,0 +1,62 @@
+# Installation
+
+`@hellajs/ui` installs through its CLI: initialize once, add components by name, and every copy lands as editable project source. There is no package to install and no importable component surface.
+
+## Initialize a Project
+
+```bash
+bunx @hellajs/ui init
+bunx @hellajs/ui add button
+```
+
+`init` writes `hella.ui.json` to the project root (style and format defaults) and adds the shared `theme` entry; `add` copies the component into `src/components/`. From then on `add` reads the saved config for its defaults, so the style and format choices are one-time decisions.
+
+Any package runner works; the package itself never becomes a runtime dependency:
+
+```bash
+# Bun
+bunx @hellajs/ui add dialog
+# npm
+npx @hellajs/ui add dialog
+# pnpm
+pnpm dlx @hellajs/ui add dialog
+```
+
+## What Lands on Disk
+
+Each component copies as one editable file per format into `componentsDir`:
+
+| Format | Source | Copied as |
+|---|---|---|
+| jsx (`--format jsx`, default) | `button.tsx` | `button.tsx` |
+| html (`--format html`) | `button-html.ts` | `button.ts` |
+
+The rename is deliberate: `import Button from './components/button'` resolves in both formats.
+
+The copied file carries everything it needs: markup, props, and the style declarations for the chosen style, spliced in at copy time. It never imports the registry, `@hellajs/ui`, or any file the CLI did not copy beside it. Editing the file is the supported customization path: change the markup, add a prop, retune the style declarations. Nothing upstream can drift out from under you, because nothing upstream exists at runtime.
+
+## Styles and Formats
+
+| Flavor | `--format jsx` | `--format html` |
+|---|---|---|
+| `--style css` (default) | [`style`](/reference/css/style) maps, class array | same declarations in a runtime template |
+| `--style tailwind` | utility-string maps, `cn(...)` | same, in a runtime template |
+
+Both formats receive the same style declarations; only the markup carrier differs. JSX compiles through the HellaJS babel plugin, wrapped as [`vite-plugin-hellajs`](/plugins/vite); the html format renders through the runtime `html` tagged template.
+
+By default the copied files stay TypeScript. `--lang js` strips types at copy time; the flag is documented on the [CLI](/ui/cli) page.
+
+## The Theme Entry
+
+Every project adds its theme entry once, then every component reads the same properties:
+
+```bash
+bunx @hellajs/ui add theme
+```
+
+| Style | Extra peers | Theme artifact |
+|---|---|---|
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by [`cssText`](/reference/css/csstext) for SSR |
+| tailwind | `clsx`, `tailwind-merge`, `tw-animate-css` | `theme.css` plus `cn.ts` |
+
+Restyling the palette, dark mode, and the override contract live on [Theming](/ui/theming). Every flag of `init`, `add`, and `list` is documented on [CLI](/ui/cli).

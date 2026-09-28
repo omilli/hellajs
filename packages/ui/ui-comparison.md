@@ -28,7 +28,7 @@ HellaJS ui applies the copy/paste distribution model to its own framework-neutra
 - The npm artifact is a CLI: `bin/hellajs-ui.js` runs `main` from `lib/main.ts`, which dispatches `init`, `add`, and `list`; there is no importable component export (`lib/index.ts` exports config, resolution, and transform functions, not components).
 - The registry is a manifest plus canonical source files shipped inside the package (`lib/loadRegistry.ts` reads `registry/registry.json`). Component entries declare shared files and per-style slots; style modules (`<name>-<style>.ts`) are splice sources, never copied.
 - `add` resolves the component plus its registry dependencies recursively with a cycle guard (`lib/internal/registry.ts`), checks the target project for the npm packages the copied source imports (`lib/internal/peers.ts`), then copies and transforms the files (`lib/internal/copy.ts`): the style module body splices into the canonical's `@hella:styles` marker region, and tailwind additionally wraps the class array in `cn(...)` with an injected helper import (`lib/internal/transform.ts`).
-- The copied file is standalone: it imports only the framework peers the CLI copied or checked, never the registry or `@hellajs/ui` (`docs/concepts/copy-paste-model.mdx`).
+- The copied file is standalone: it imports only the framework peers the CLI copied or checked, never the registry or `@hellajs/ui` (`docs/concepts/cli.mdx`).
 
 ### shadcn/ui
 

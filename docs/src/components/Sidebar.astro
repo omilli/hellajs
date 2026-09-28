@@ -19,6 +19,17 @@ const getSection = (path: string) => {
   return null;
 };
 
+// Directories that hold real pages. A nav group prefixes its children only
+// when its folder URL is one of these (learn/concepts); otherwise the group
+// renders as a pure heading and children keep the section root (ui's flat
+// component pages).
+const pageDirs = new Set(
+  allDocs.map((doc) => {
+    const parts = (doc.url ?? "").split("/").filter(Boolean);
+    return `/${parts.slice(0, -1).join("/")}`;
+  }),
+);
+
 const transformNav = (nav: any, basePath = ""): NavNode[] => {
   if (!Array.isArray(nav)) return [];
 
@@ -46,9 +57,10 @@ const transformNav = (nav: any, basePath = ""): NavNode[] => {
       const url = `${basePath}/${folderName.toLowerCase()}`;
       const doc = allDocs.find((d) => d.url === url);
       const title = doc?.frontmatter?.title || folderName.replace(/-/g, " ");
+      const childBase = pageDirs.has(url) ? url : basePath;
       return {
         title,
-        children: transformNav(children, url),
+        children: transformNav(children, childBase),
       };
     }
 

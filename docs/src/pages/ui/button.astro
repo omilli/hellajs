@@ -1,14 +1,61 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ButtonContent from "@ui/concepts/button.mdx";
 
 const title = "Button";
 const description = "Interactive Button demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Button from './components/button';
+
+const Actions = () => {
+  const clicks = signal(0);
+
+  return (
+    <div class="flex flex-col gap-4">
+      <Button onclick={() => clicks(clicks() + 1)}>
+        {() => 'Save changes (' + clicks() + ')'}
+      </Button>
+      <div class="flex flex-wrap gap-2">
+        <Button>Default</Button>
+        <Button variant="secondary">Secondary</Button>
+        <Button variant="destructive">Destructive</Button>
+        <Button variant="outline">Outline</Button>
+        <Button variant="ghost">Ghost</Button>
+        <Button variant="link">Link</Button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <Button size="xs">Extra small</Button>
+        <Button size="sm">Small</Button>
+        <Button size="lg">Large</Button>
+        <Button size="icon" aria-label="Add">+</Button>
+      </div>
+    </div>
+  );
+};`;
+
+const invalidCode = `import Button from './components/button';
+
+<Button ariaInvalid onclick={retry}>Retry submit</Button>`;
+
+const overrideCode = `import Button from './components/button';
+
+const Deploy = () => (
+  <Button variant="outline" size="lg" class="w-full">
+    Deploy to production
+  </Button>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="button" />
   <ButtonContent />
+  <h2>Examples</h2>
+  <Demo id="demo-invalid" title="Invalid state" code={invalidCode} note="ariaInvalid reads the destructive token for the border and focus ring." />
+  <Demo id="demo-override" title="Call-site override" code={overrideCode} note="props.class lands last in the composition, so the call-site width wins." />
 </MainLayout>
 
 <script>
@@ -35,4 +82,8 @@ const description = "Interactive Button demo running the CLI-vendored css-flavor
       <${Button} size="icon" aria-label="Add">+</${Button}>
     </div>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<${Button} ariaInvalid=${true}>Retry submit</${Button}>`, document.getElementById("demo-invalid")!);
+
+  mount(html`<${Button} variant="outline" size="lg" class="w-full">Deploy to production</${Button}>`, document.getElementById("demo-override")!);
 </script>

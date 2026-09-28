@@ -2,30 +2,9 @@
 
 A listbox select styled to shadcn's Select: the trigger button opens an anchored, width-matched listbox; arrows rove the options, typing jumps to a match, and Enter commits the highlighted value; Escape and an outside press dismiss it.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add select
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-The select wires its positioning, dismissal, and typeahead from the copied file using `@hellajs/dom` behavior functions.
-
-## Composing a Select
-
-The composed `Select` takes its options as data and renders the trigger plus the portaled listbox. The selected label replaces the placeholder in the trigger; `data-state` and `aria-expanded` track the open state for styling and assistive tech.
+The composed `Select` takes its options as data and renders the trigger plus the portaled listbox. The selected label replaces the placeholder in the trigger; `data-state` and `aria-expanded` track the open state for styling and assistive tech. The copied file wires its positioning, dismissal, and typeahead from the `@hellajs/dom` behavior functions.
 
 ```jsx
 import Select from './components/select';
@@ -50,6 +29,20 @@ const FruitPicker = () => (
 | `size` | `"default"` | Trigger height; `"sm"` renders the compact `data-size="sm"` variant |
 | `clearable` | - | Renders an inline clear affordance on the trigger while a value is selected |
 | `class` | - | Extra classes on the trigger button |
+
+The html-format file (`select.ts`, copied with `--format html`) renders through a template instead of JSX; the select mounts as a reactive child of whatever wraps it, with the items interpolated as data:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import Select from './components/select';
+
+mount(
+  html`
+    <${Select} items=${fruits} placeholder="Pick a fruit" />
+  `,
+  '#app',
+);
+```
 
 ## Keyboard and Dismissal
 
@@ -121,36 +114,6 @@ const Manual = () => {
 - **No `item-aligned` position mode.** The upstream content defaults to overlaying the trigger; hella always anchors below (or flipped) with matched width, like the popper mode.
 - **Labels are props, not context.** `SelectItem` takes its label as a prop and reports selection through `onselect`; there is no controlled-context `value` plumbing to reach into.
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the bordered trigger control with focus ring, invalid, disabled, and placeholder states), `content` (the popover surface with the side-keyed enter and exit keyframes and the per-side popper translate), `viewport` (the padded option container), `item` (the option row with the focus highlight ring, disabled state, and trailing-span layout), `indicator` (the absolutely positioned check slot), `icon` and `chevron` (the inline icon sizes), `label` and `separator` (grouping affordances), and `scrollButton` (the edge scroll rows). `value` and `group` are empty; the trigger styles its value span from outside. The copied budget is 150ms both ways.
-
-```jsx
-import Select from './components/select';
-
-const Compact = () => (
-  <Select items={fruits} size="sm" placeholder="Small" class="w-48" />
-);
-```
-
-The html-format file (`select.ts`, copied with `--format html`) renders through a template instead of JSX; the select mounts as a reactive child of whatever wraps it:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Select from './components/select';
-
-mount(
-  html`
-    <${Select} items=${fruits} placeholder="Pick a fruit" />
-  `,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`data-[placeholder]:text-muted-foreground`, `data-[size=sm]:h-8`, the `data-[state=open]:animate-in` set, the `data-[side=…]` slide variants, and the `[&_svg]` sizing hooks), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The enter and exit motion relies on the `tw-animate-css` utilities the theme's tailwind entry depends on.
-
-## Customizing
-
-The copied file is yours. Option rows restyle in `item`; the panel surface in `content` (its `min-w-[8rem]` floor and side animations live there). The trigger's width comes from `w-fit` - widen it with `props.class` (`w-48`, `w-full`) or rewrite the token. The dismissal surface is the `layerDismissal` wiring; hold the listbox open against Escape and outside presses by composing `SelectContent` without `onDismiss`.
+The module exports `base` (the bordered trigger control with focus ring, invalid, disabled, and placeholder states), `content` (the popover surface with the side-keyed enter and exit keyframes and the per-side popper translate), `viewport` (the padded option container), `item` (the option row with the focus highlight ring, disabled state, and trailing-span layout), `indicator` (the absolutely positioned check slot), `icon` and `chevron` (the inline icon sizes), `label` and `separator` (grouping affordances), and `scrollButton` (the edge scroll rows); `value` and `group` are empty, and the trigger styles its value span from outside. The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; the tailwind flavor uses shadcn's literal utilities verbatim (`data-[placeholder]:text-muted-foreground`, `data-[size=sm]:h-8`, the `data-[state=open]:animate-in` set, the `data-[side=…]` slide variants, and the `[&_svg]` sizing hooks) wrapped in `cn()` so later tokens override earlier ones per utility group, with the enter and exit motion carried by `tw-animate-css` at the copied 150ms budget. Option rows restyle in `item`; the panel surface in `content` (its `min-w-[8rem]` floor and side animations live there); the trigger's width comes from `w-fit`, widened with `props.class` (`w-48`, `w-full`) or a rewritten token. Hold the listbox open against Escape and outside presses by composing `SelectContent` without `onDismiss`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

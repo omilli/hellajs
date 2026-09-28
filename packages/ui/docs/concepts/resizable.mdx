@@ -2,25 +2,6 @@
 
 Flex panels with drag handles styled to shadcn's Resizable: a group div lays panels out in a row or column, each handle moves the boundary between its two neighboring panels, and the sizes live in a percentage `signal` on the group. The component reimplements the react-resizable-panels behavior over `@hellajs/dom`'s [`onDrag`](/reference/dom/behaviors) wiring, with the group as the single owner: it discovers its panels and handles in the DOM at mount, seeds the layout from each panel's `defaultSize`, and mirrors the signal onto every panel's `flex-grow`.
 
-## Install
-
-```bash
-bunx @hellajs/ui add resizable
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
 ## Usage
 
 Compose the three exports: `ResizablePanelGroup` (the default), `ResizablePanel`, and `ResizableHandle`. Place one handle between each pair of panels you want to separate.
@@ -37,22 +18,6 @@ const Shell = () => (
     <ResizableHandle withHandle />
     <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
   </ResizablePanelGroup>
-);
-```
-
-The html-format file (`resizable.ts`, copied with `--format html`) works the same way from a template:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Resizable, { ResizableHandle, ResizablePanel } from './components/resizable';
-
-mount(
-  html`<${Resizable} direction="horizontal">
-    <${ResizablePanel} defaultSize=${50}>Sidebar</${ResizablePanel}>
-    <${ResizableHandle} withHandle />
-    <${ResizablePanel} defaultSize=${50}>Editor</${ResizablePanel}>
-  </${Resizable}>`,
-  '#app',
 );
 ```
 
@@ -125,26 +90,6 @@ The upstream library supports layout features this port leaves out; they stay ou
 | Orientation | `aria-orientation` on the group and every handle, set from `direction` at mount |
 | Disabled | `aria-disabled` and `data-disabled` on the handle |
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the flex group), `handle` (the divider, its wide hover strip, and the horizontal rotation for the grip), `grip` (the bordered chip), and `icon` (the glyph size). Panels render no class of their own: the group drives their `flex-grow` inline.
-
-```jsx
-import ResizablePanelGroup, { ResizableHandle, ResizablePanel } from './components/resizable';
-
-const Bordered = () => (
-  <ResizablePanelGroup class="rounded-lg border">
-    <ResizablePanel defaultSize={50}>Left</ResizablePanel>
-    <ResizableHandle withHandle />
-    <ResizablePanel defaultSize={50}>Right</ResizablePanel>
-  </ResizablePanelGroup>
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The strings are verbatim from the ref, including the `aria-[orientation=horizontal]` divider flip and the `[&[aria-orientation=horizontal]>div]:rotate-90` grip turn.
-
-## Customizing
-
-The copied file is yours. The group's `resizePair` function owns the pair math, so changing the keyboard step (5 percent) or the percentage rounding is a one-place edit, and the `handle` map restyles every divider at once.
+The module exports `base` (the flex group), `handle` (the divider, its wide hover strip, and the horizontal rotation for the grip), `grip` (the bordered chip), and `icon` (the glyph size); panels render no class of their own, the group drives their `flex-grow` inline. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor keeps the ref's strings verbatim, including the `aria-[orientation=horizontal]` divider flip and the `[&[aria-orientation=horizontal]>div]:rotate-90` grip turn, with every part's class array wrapped in `cn()`. The group's `resizePair` function owns the pair math, so changing the keyboard step (5 percent) or the percentage rounding is a one-place edit, and the `handle` map restyles every divider at once. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

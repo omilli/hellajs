@@ -1,14 +1,50 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import SelectTitle from "@ui/concepts/select.mdx";
 
 const title = "Select";
 const description = "Interactive Select demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Select from './components/select';
+
+const fruits = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'blueberry', label: 'Blueberry' },
+  { value: 'canteloupe', label: 'Canteloupe' },
+  { value: 'date', label: 'Date', disabled: true },
+];
+
+const FruitPicker = () => (
+  <Select
+    items={fruits}
+    placeholder="Pick a fruit"
+    onValueChange={(value) => console.log(value)}
+  />
+);`;
+
+const compactCode = `import Select from './components/select';
+
+const Compact = () => (
+  <Select
+    items={fruits}
+    size="sm"
+    clearable
+    placeholder="Compact"
+    class="w-48"
+  />
+);
+
+// fruits: the same item array as the hero example`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="select" />
   <SelectTitle />
+  <h2>Examples</h2>
+  <Demo id="demo-compact" title="Compact and clearable" code={compactCode} note="The sm size renders the compact trigger height; once a value is selected, the clear affordance appears inside the trigger." />
 </MainLayout>
 
 <script>
@@ -26,8 +62,14 @@ const description = "Interactive Select demo running the CLI-vendored css-flavor
   mount(html`<div class="demo-stack">
     <div class="demo-row">
       <${Select} items=${fruits} placeholder="Pick a fruit" />
-      <${Select} items=${fruits} size="sm" placeholder="Compact" />
     </div>
-    <p class="demo-note">Arrow keys rove the options, typing jumps to a match, and Enter commits. The listbox stretches to the trigger's width; the disabled option is skipped.</p>
+    <p class="demo-note">The listbox stretches to the trigger's width and flips on viewport collision; arrows rove the options, typing jumps to a match, Enter commits, and the disabled option is skipped.</p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Select} items=${fruits} size="sm" clearable placeholder="Compact" class="w-48" />
+    </div>
+    <p class="demo-note">Select a value and the clear affordance appears inside the trigger; clearing reports the empty string through onValueChange.</p>
+  </div>`, document.getElementById("demo-compact")!);
 </script>

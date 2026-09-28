@@ -2,28 +2,9 @@
 
 A user portrait with a graceful fallback: a rounded relative wrapper stacking an image and a fallback initial, plus a status badge, a overlapping group, and a group count. Structure and class strings match shadcn's new-york-v4 Avatar; the image/fallback swap is reimplemented over signals instead of Radix.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add avatar
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. There is no context object. The image owns its load state and the fallback reads it through one explicit signal you pass to both parts: `AvatarImage` hides its `img` while the signal reads false and flips it on the native `load`/`error` events, and `AvatarFallback` hides while the same signal reads true. Both parts stay mounted (the swap is attribute-driven, not conditional rendering), so a broken URL that fires `error` drops the image back out and the initial returns.
+There is no context object. The image owns its load state and the fallback reads it through one explicit signal you pass to both parts: `AvatarImage` hides its `img` while the signal reads false and flips it on the native `load`/`error` events, and `AvatarFallback` hides while the same signal reads true. Both parts stay mounted (the swap is attribute-driven, not conditional rendering), so a broken URL that fires `error` drops the image back out and the initial returns:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -39,18 +20,9 @@ const Portrait = () => (
 );
 ```
 
-`size` sets `data-size` (`sm`, `default`, `lg`); the root, fallback, and badge read it through group selectors, so one prop rescales the whole stack. The badge pins to the bottom-right corner:
+An `AvatarImage` without a shared signal still hides itself until its own load resolves; pass the signal only when a sibling fallback must react.
 
-```jsx
-import Avatar, { AvatarBadge, AvatarFallback } from './components/avatar';
-
-const Statused = () => (
-  <Avatar size="lg">
-    <AvatarFallback>M</AvatarFallback>
-    <AvatarBadge />
-  </Avatar>
-);
-```
+## Groups
 
 Groups overlap their avatars with a negative offset and a background ring; the count chip picks up the group's size:
 
@@ -66,45 +38,21 @@ const Team = () => (
 );
 ```
 
-The html-format file (`avatar.ts`, copied with `--format html`) renders through a template; the shared signal and event wiring work identically, with events on the direct `e:` prefix:
+## Sizes and Badge
 
-```js
-import { html, mount } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
-import Avatar, { AvatarFallback, AvatarImage } from './components/avatar';
-
-const loaded = signal(false);
-mount(
-  html`<${Avatar}>
-    <${AvatarImage} src="/milli.png" alt="Milli" loaded=${loaded} />
-    <${AvatarFallback} loaded=${loaded}>M</${AvatarFallback}>
-  </${Avatar}>`,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the named-group conditions (`group-data-[size=sm]/avatar:text-xs`, `*:data-[slot=avatar]:ring-2`, and the `group-has-data-[size=lg]/avatar-group:size-10` count scaling), and the class arrays wrap in `cn()`.
+`size` sets `data-size` (`sm`, `default`, `lg`); the root, fallback, and badge read it through group selectors, so one prop rescales the whole stack. The badge pins to the bottom-right corner:
 
 ```jsx
-import Avatar, { AvatarFallback, AvatarImage } from './components/avatar';
+import Avatar, { AvatarBadge, AvatarFallback } from './components/avatar';
 
-const Small = () => (
-  <Avatar size="sm">
-    <AvatarImage src="/milli.png" alt="Milli" />
+const Statused = () => (
+  <Avatar size="lg">
     <AvatarFallback>M</AvatarFallback>
+    <AvatarBadge />
   </Avatar>
 );
 ```
 
-```js
-import { html, mount } from '@hellajs/dom';
-import Avatar, { AvatarGroup, AvatarGroupCount } from './components/avatar';
+## Styling
 
-mount(html`<${AvatarGroup}><${AvatarGroupCount}>+9</${AvatarGroupCount}></${AvatarGroup}>`, '#app');
-```
-
-## Customizing
-
-The copied file is yours. The css style module exports `base`, `image`, `fallback`, `badge`, `group`, and `groupCount` maps; the size conditions compile to `[data-slot='avatar'][data-size=…]` and `:has()` ancestor selectors matching the tailwind group forms. An `AvatarImage` without a shared signal still hides itself until its own load resolves; pass the signal only when a sibling fallback must react.
+The style module exports `base`, `image`, `fallback`, `badge`, `group`, and `groupCount` maps; each part's compose bakes its own class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the size conditions compile to `[data-slot='avatar'][data-size=…]` and `:has()` ancestor selectors. The tailwind flavor carries shadcn's literal utilities verbatim, including the named-group conditions (`group-data-[size=sm]/avatar:text-xs`, `*:data-[slot=avatar]:ring-2`, and the `group-has-data-[size=lg]/avatar-group:size-10` count scaling) wrapped in `cn()`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

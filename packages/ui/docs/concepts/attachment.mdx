@@ -2,28 +2,38 @@
 
 Upload and file chips styled byte-faithfully to shadcn's new-york-v4 Attachment: a nine-part composition carrying upload state through `data-state`, with an inline loading spinner while uploading and an error glyph on error, over a scroll-snapping group.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add attachment
+`Attachment` renders `data-state` from its `state` prop: `idle` (dashed border), `uploading`, `processing`, `error` (destructive border and description tint), or `done` (the default). The state drives every descendant condition through attribute selectors, so one prop moves the whole chip. `size` picks `default`, `sm`, or `xs` and `orientation` lays the chip out `horizontal` (the default) or `vertical`; both flow to the media and content parts through attribute selectors, so the chip rescales as one unit.
+
+```jsx
+import {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentMedia,
+  AttachmentTitle,
+} from './components/attachment';
+
+const File = () => (
+  <Attachment state="done" size="sm">
+    <AttachmentMedia state="done" />
+    <AttachmentContent>
+      <AttachmentTitle>design.png</AttachmentTitle>
+      <AttachmentDescription>Ready</AttachmentDescription>
+    </AttachmentContent>
+    <AttachmentActions>
+      <AttachmentAction onclick={() => console.log('remove')}>x</AttachmentAction>
+    </AttachmentActions>
+  </Attachment>
+);
 ```
 
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. The entry declares `button` as a registry dependency, so the add command copies the button source alongside it.
+## Status Wiring
 
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## Status wiring
-
-`Attachment` renders `data-state` from its `state` prop: `idle` (dashed border), `uploading`, `processing`, `error` (destructive border and description tint), or `done` (the default). The state drives every descendant condition through attribute selectors, so one prop moves the whole chip. `AttachmentMedia` takes the same `state` value: with no authored children it inlines the loading spinner while uploading and the error glyph on error.
+With no authored children, `AttachmentMedia` inlines the loading spinner while uploading and the error glyph on error, so a reactive `state` signal animates the whole lifecycle from one value:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -55,43 +65,12 @@ const Upload = () => (
 );
 ```
 
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules.
-
-`size` picks `default`, `sm`, or `xs` and `orientation` lays the chip out `horizontal` (the default) or `vertical`; both flow to the media and content parts through attribute selectors, so the chip rescales as one unit.
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the named-group selectors such as `group-data-[state=error]/attachment:text-destructive` and the class arrays wrap in `cn()`.
-
-```jsx
-import { Attachment, AttachmentGroup } from './components/attachment';
-
-const Stack = () => (
-  <AttachmentGroup>
-    <Attachment state="done" size="sm">
-      <AttachmentMedia state="done" />
-      <AttachmentContent>
-        <AttachmentTitle>design.png</AttachmentTitle>
-      </AttachmentContent>
-    </Attachment>
-    <Attachment state="idle" size="sm">
-      <AttachmentMedia state="idle" />
-      <AttachmentContent>
-        <AttachmentTitle>Add file</AttachmentTitle>
-      </AttachmentContent>
-    </Attachment>
-  </AttachmentGroup>
-);
-```
-
 `AttachmentGroup` scroll-snaps its chips horizontally; `AttachmentTrigger` stretches an invisible button over the chip for open interactions, and `AttachmentAction` renders a real button (ghost, `icon-xs` by default) for remove/retry actions.
 
 ## Composition Notes
 
 The `AttachmentMedia` icon variants (`icon` and `image`) restyle authored children: `image` dims until the state reads `done` or `idle` and object-fits its `img` children square. Upstream's `asChild` slot rendering (AttachmentTrigger) is dropped: hella has no Radix Slot, so render the element you want directly. The media's error glyph uses the `octagon-x` icon where upstream's demo reaches for a circle-alert outside the component set; swap the path data if your project carries its own icon.
 
-## Customizing
+## Styling
 
-The copied file is yours. The style modules export `base`, `sizes`, `orientations`, `media` plus `mediaVariants`, `content`, `title`, `description`, `actions`, `trigger`, `group`, and the duplicated button declarations (`buttonBase`, `buttonVariants`, `buttonSizes`); the ancestor-conditioned rules register as raw attribute selectors at the bottom of the css module.
+The style module exports `base`, `sizes`, `orientations`, `media` plus `mediaVariants`, `content`, `title`, `description`, `actions`, `trigger`, `group`, and the duplicated button declarations (`buttonBase`, `buttonVariants`, `buttonSizes`); the state-conditioned rules register as raw attribute selectors at the bottom of the css module, and the tailwind flavor carries named-group selectors such as `group-data-[state=error]/attachment:text-destructive` verbatim in `cn()`-wrapped strings. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

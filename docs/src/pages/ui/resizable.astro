@@ -1,14 +1,41 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ResizableContent from "@ui/concepts/resizable.mdx";
 
 const title = "Resizable";
 const description = "Interactive Resizable demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import ResizablePanelGroup, { ResizableHandle, ResizablePanel } from './components/resizable';
+
+const Shell = () => (
+  <ResizablePanelGroup direction="horizontal">
+    <ResizablePanel defaultSize={50} minSize={25}>Sidebar</ResizablePanel>
+    <ResizableHandle withHandle />
+    <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
+  </ResizablePanelGroup>
+);`;
+
+const clampedCode = `import ResizablePanelGroup, { ResizableHandle, ResizablePanel } from './components/resizable';
+
+const Clamped = () => (
+  <ResizablePanelGroup direction="horizontal">
+    <ResizablePanel defaultSize={50} minSize={25} maxSize={75}>
+      Sidebar
+    </ResizablePanel>
+    <ResizableHandle />
+    <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
+  </ResizablePanelGroup>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="resizable" />
   <ResizableContent />
+  <h2>Examples</h2>
+  <Demo id="demo-clamped" title="Clamped panels" code={clampedCode} note="The first panel clamps between 25 and 75 percent: a drag that runs out of room stops at the boundary instead of pushing the other panel." />
 </MainLayout>
 
 <script>
@@ -34,4 +61,18 @@ const description = "Interactive Resizable demo running the CLI-vendored css-fla
     </div>
     <p class="demo-row">Sizes: ${() => sizes()}</p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-stack">
+    <div style="height:12rem;">
+      <${Resizable} direction="horizontal">
+        <${ResizablePanel} defaultSize=${50} minSize=${25} maxSize=${75}>
+          <div style=${panelStyle}>Sidebar</div>
+        </${ResizablePanel}>
+        <${ResizableHandle} />
+        <${ResizablePanel} defaultSize=${50}>
+          <div style=${panelStyle}>Editor</div>
+        </${ResizablePanel}>
+      </${Resizable}>
+    </div>
+  </div>`, document.getElementById("demo-clamped")!);
 </script>

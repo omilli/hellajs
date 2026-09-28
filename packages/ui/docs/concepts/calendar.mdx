@@ -2,25 +2,6 @@
 
 A month-grid calendar styled to shadcn's Calendar, built on a hand-rolled date engine instead of react-day-picker and date-fns: the grid, week rows, adjacent-month spillover, and range state are all computed from local `Date` fields in the copied file. One month renders at a time with single, multiple, or range selection, roving keyboard focus over the grid, and previous/next month navigation. There is no importable package surface: `add` copies one editable file.
 
-## Install
-
-```bash
-bunx @hellajs/ui add calendar
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/` (plus the `button` entry it derives its day-button chrome from).
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
 ## Usage
 
 The default mode is single selection. Click a day (or press Enter on it) and the calendar reports the picked date through `onSelect`:
@@ -36,21 +17,6 @@ const Picker = () => (
     defaultMonth={new Date(2025, 2, 1)}
     onSelect={(date) => picked(date)}
   />
-);
-```
-
-The html-format file (`calendar.ts`, copied with `--format html`) works the same way from a template:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Calendar from './components/calendar';
-
-mount(
-  html`<${Calendar}
-    defaultMonth=${new Date(2025, 2, 1)}
-    onSelect=${(date) => console.log(date)}
-  />`,
-  '#app',
 );
 ```
 
@@ -165,22 +131,6 @@ The grid is a `role="grid"` table: weekday headers are column headers, cells are
 
 Exactly one day button is a tab stop at a time (roving `tabindex`); it lands on today when the visible month shows it, else the first day of the month.
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the root with its `--cell-size` custom property), `months`, `month`, `monthCaption`, `captionLabel`, `nav`, `navButton` (the ghost icon-class buttons), `icon`, `monthGrid`, `weekdays`, `weekday`, `week`, `day`, and `dayButton`. The state hooks (today, outside, disabled, hidden, and the range edges) are data-attribute selectors registered in the same layer after the part classes, together with the focused-day ring under the `group/day` cell and the card/popover ancestor transparency.
-
-```jsx
-import Calendar from './components/calendar';
-
-const Bordered = () => (
-  <Calendar class="rounded-lg border" defaultMonth={new Date(2025, 2, 1)} />
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The strings carry the ref's classes verbatim, with the state hooks folded into the day cell's string as `data-[...]` conditioned utilities and the ghost button tokens the day button inherits pre-merged where the ref's `cn()` resolves a conflict.
-
-## Customizing
-
-The copied file is yours. The `--cell-size` custom property on the root sets the nav button square and the caption height in one place, and the date engine sits in small pure functions (`daysInMonth`, `addMonths`, `buildMonth`) at the top of the file when you need to extend it. The `data-slot` attributes (`calendar`, `calendar-months`, `calendar-month`, `calendar-caption`, `calendar-caption-label`, `calendar-nav`, `calendar-previous`, `calendar-next`, `calendar-grid`, `calendar-weekdays`, `calendar-weekday`, `calendar-week`, `calendar-day`, `calendar-day-button`) are stable hooks for user CSS.
+The module exports `base` (the root with its `--cell-size` custom property), `months`, `month`, `monthCaption`, `captionLabel`, `nav`, `navButton` (the ghost icon-class buttons), `icon`, `monthGrid`, `weekdays`, `weekday`, `week`, `day`, and `dayButton`. The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; the state hooks (today, outside, disabled, hidden, and the range edges) are data-attribute selectors registered in the same layer after the part classes, next to the focused-day ring under the `group/day` cell and the card/popover ancestor transparency. The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group, and the strings carry the ref's classes verbatim with the state hooks folded into the day cell as `data-[...]` conditioned utilities and the ghost button tokens pre-merged where the ref's `cn()` resolves a conflict. The copied file is yours: `--cell-size` sets the nav button square and the caption height in one place, the date engine sits in small pure functions (`daysInMonth`, `addMonths`, `buildMonth`) at the top of the file when you need to extend it, and the `data-slot` attributes (`calendar`, `calendar-months`, `calendar-month`, `calendar-caption`, `calendar-caption-label`, `calendar-nav`, `calendar-previous`, `calendar-next`, `calendar-grid`, `calendar-weekdays`, `calendar-weekday`, `calendar-week`, `calendar-day`, `calendar-day-button`) are stable hooks for user CSS. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

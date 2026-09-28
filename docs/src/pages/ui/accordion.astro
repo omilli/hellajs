@@ -1,14 +1,58 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import AccordionContent from "@ui/concepts/accordion.mdx";
 
 const title = "Accordion";
 const description = "Interactive Accordion demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Accordion from './components/accordion';
+
+const Faq = () => (
+  <Accordion
+    type="single"
+    collapsible
+    defaultValue="shipping"
+    items={[
+      { value: 'shipping', trigger: 'How fast is shipping?', content: 'Two business days, everywhere we deliver.' },
+      { value: 'returns', trigger: 'What is the return window?', content: 'Thirty days from delivery.' },
+    ]}
+  />
+);`;
+
+const multipleCode = `import Accordion from './components/accordion';
+
+const Specs = () => (
+  <Accordion
+    type="multiple"
+    items={[
+      { value: 'size', trigger: 'Size', content: '12 x 8 x 3 centimeters.' },
+      { value: 'weight', trigger: 'Weight', content: '240 grams with the cable.' },
+    ]}
+  />
+);`;
+
+const disabledCode = `import Accordion from './components/accordion';
+
+const Plans = () => (
+  <Accordion
+    type="single"
+    items={[
+      { value: 'starter', trigger: 'Starter', content: 'Free for personal projects.' },
+      { value: 'enterprise', trigger: 'Enterprise', content: 'Contact sales to upgrade.', disabled: true },
+    ]}
+  />
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="accordion" />
   <AccordionContent />
+  <h2>Examples</h2>
+  <Demo id="demo-multiple" title="Multiple" code={multipleCode} />
+  <Demo id="demo-disabled" title="Disabled" code={disabledCode} note="The disabled row ignores activation in every mode." />
 </MainLayout>
 
 <script>
@@ -20,12 +64,17 @@ const description = "Interactive Accordion demo running the CLI-vendored css-fla
     { value: "shipping", trigger: "How fast is shipping?", content: html`<p class="demo-note">Two business days, everywhere we deliver.</p>` },
     { value: "returns", trigger: "What is the return window?", content: html`<p class="demo-note">Thirty days from delivery, no questions asked.</p>` },
   ];
+  mount(html`<${Accordion} type="single" collapsible defaultValue="shipping" items=${faq} />`, document.getElementById("demo")!);
+
   const specs = [
     { value: "size", trigger: "Size", content: html`<p class="demo-note">12 x 8 x 3 centimeters.</p>` },
     { value: "weight", trigger: "Weight", content: html`<p class="demo-note">240 grams with the cable.</p>` },
   ];
-  mount(html`<div class="demo-stack">
-    <${Accordion} type="single" collapsible defaultValue="shipping" items=${faq} />
-    <${Accordion} type="multiple" items=${specs} />
-  </div>`, document.getElementById("demo")!);
+  mount(html`<${Accordion} type="multiple" items=${specs} />`, document.getElementById("demo-multiple")!);
+
+  const plans = [
+    { value: "starter", trigger: "Starter", content: html`<p class="demo-note">Free for personal projects.</p>` },
+    { value: "enterprise", trigger: "Enterprise", content: html`<p class="demo-note">Contact sales to upgrade.</p>`, disabled: true },
+  ];
+  mount(html`<${Accordion} type="single" items=${plans} />`, document.getElementById("demo-disabled")!);
 </script>

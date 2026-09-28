@@ -1,14 +1,44 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import TextareaContent from "@ui/concepts/textarea.mdx";
 
 const title = "Textarea";
 const description = "Interactive Textarea demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Textarea from './components/textarea';
+
+const Bio = () => {
+  const bio = signal('');
+
+  return (
+    <div class="flex flex-col gap-2">
+      <Textarea
+        value={bio}
+        oninput={(v) => bio(v)}
+        placeholder="Tell us about yourself"
+        rows={4}
+      />
+      <p class="demo-note">{() => bio().length + ' characters'}</p>
+    </div>
+  );
+};`;
+
+const invalidCode = `import Textarea from './components/textarea';
+
+const Review = () => (
+  <Textarea placeholder="Required field" ariaInvalid />
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="textarea" />
   <TextareaContent />
+  <h2>Examples</h2>
+  <Demo id="demo-invalid" title="Invalid state" code={invalidCode} note="ariaInvalid recolors the border and, once focused, the ring, matching Input." />
 </MainLayout>
 
 <script>
@@ -18,11 +48,10 @@ const description = "Interactive Textarea demo running the CLI-vendored css-flav
   import "../../components/ui/tokens.js";
 
   const bio = signal("");
-  mount(html`<div class="demo-stack">
-    <div class="flex flex-col gap-2">
-      <${Textarea} value=${() => bio()} oninput=${(v) => bio(v)} placeholder="Tell us about yourself" rows=${4} aria-label="Biography" />
-      <p class="demo-note">${() => bio().length} characters</p>
-    </div>
-    <${Textarea} placeholder="Required field" ariaInvalid=${true} aria-label="Invalid textarea example" />
+  mount(html`<div class="flex flex-col gap-2">
+    <${Textarea} value=${() => bio()} oninput=${(v) => bio(v)} placeholder="Tell us about yourself" rows=${4} ariaLabel="Biography" />
+    <p class="demo-note">${() => bio().length} characters</p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<${Textarea} placeholder="Required field" ariaInvalid=${true} ariaLabel="Invalid textarea example" />`, document.getElementById("demo-invalid")!);
 </script>

@@ -1,14 +1,44 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import TabsContent from "@ui/concepts/tabs.mdx";
 
 const title = "Tabs";
 const description = "Interactive Tabs demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Tabs from './components/tabs';
+
+const Account = () => (
+  <Tabs
+    items={[
+      { id: 'account', label: 'Account', content: 'Change your name, email, and profile details.' },
+      { id: 'password', label: 'Password', content: 'Set a new password. Minimum eight characters.' },
+      { id: 'notifications', label: 'Notifications', content: 'Choose which alerts you receive by email.' },
+    ]}
+  />
+);`;
+
+const lineCode = `import Tabs from './components/tabs';
+
+const Workspace = () => (
+  <Tabs
+    variant="line"
+    initialId="activity"
+    items={[
+      { id: 'overview', label: 'Overview', content: 'A summary of your workspace activity this week.' },
+      { id: 'activity', label: 'Activity', content: 'Recent edits, comments, and mentions.' },
+    ]}
+  />
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="tabs" />
   <TabsContent />
+  <h2>Examples</h2>
+  <Demo id="demo-line" title="Line variant" code={lineCode} note="initialId opens the Activity tab; the line variant draws the active underline." />
 </MainLayout>
 
 <script>
@@ -21,12 +51,11 @@ const description = "Interactive Tabs demo running the CLI-vendored css-flavor s
     { id: "password", label: "Password", content: html`<p>Set a new password. Minimum eight characters.</p>` },
     { id: "notifications", label: "Notifications", content: html`<p>Choose which alerts you receive by email.</p>` },
   ];
+  mount(html`<${Tabs} items=${account} />`, document.getElementById("demo")!);
+
   const line = [
     { id: "overview", label: "Overview", content: html`<p>A summary of your workspace activity this week.</p>` },
     { id: "activity", label: "Activity", content: html`<p>Recent edits, comments, and mentions.</p>` },
   ];
-  mount(html`<div class="demo-stack">
-    <${Tabs} items=${account} />
-    <${Tabs} items=${line} variant="line" />
-  </div>`, document.getElementById("demo")!);
+  mount(html`<${Tabs} items=${line} variant="line" initialId="activity" />`, document.getElementById("demo-line")!);
 </script>

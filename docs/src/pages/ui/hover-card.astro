@@ -1,19 +1,81 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import HoverCardContent from "@ui/concepts/hover-card.mdx";
 
 const title = "Hover Card";
 const description = "Interactive Hover Card demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import HoverCard from './components/hover-card';
+
+const Profile = () => (
+  <HoverCard
+    content={
+      <div>
+        <strong>@hella</strong>
+        <p>Reactive UI primitives for the web: signals, surgical DOM updates, and a copy-paste component registry.</p>
+      </div>
+    }
+  >
+    <a href="#profile" on:click={(e) => e.preventDefault()}>@hella</a>
+  </HoverCard>
+);`;
+
+const manualCode = `import { signal } from '@hellajs/core';
+import { hoverIntent, Portal } from '@hellajs/dom';
+import { HoverCardContent, HoverCardTrigger } from './components/hover-card';
+
+const Manual = () => {
+  const open = signal(false);
+  const state = () => (open() ? 'open' : 'closed');
+  let trigger;
+
+  return (
+    <>
+      <HoverCardTrigger
+        hook:afterMount={(node) => {
+          trigger = node;
+          hoverIntent(node, {
+            onOpen: () => open(true),
+            onClose: () => open(false),
+            openDelay: 200,
+            closeDelay: 300,
+          });
+        }}
+      >
+        <a href="#release" on:click={(e) => e.preventDefault()}>Release notes</a>
+      </HoverCardTrigger>
+      {() => open() && (
+        <Portal to="body">
+          <HoverCardContent
+            state={state}
+            anchor={() => trigger}
+            onOpen={() => open(true)}
+            onClose={() => open(false)}
+          >
+            <p>Moving into the card re-arms the open state, so it stays open under the pointer.</p>
+          </HoverCardContent>
+        </Portal>
+      )}
+    </>
+  );
+};`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="hover-card" />
   <HoverCardContent />
+  <h2>Examples</h2>
+  <Demo id="demo-manual" title="Manual parts" code={manualCode} note="The content's own onOpen re-arms the open state the moment the pointer enters, cancelling the trigger's pending close." />
 </MainLayout>
 
 <script>
-  import { html, mount } from "@hellajs/dom";
-  import HoverCard from "../../components/ui/hover-card";
+  import { html, mount, Portal } from "@hellajs/dom";
+  import { signal } from "@hellajs/core";
+  import { hoverIntent } from "@hellajs/dom";
+  import HoverCard, { HoverCardContent, HoverCardTrigger } from "../../components/ui/hover-card";
   import "../../components/ui/tokens.js";
 
   mount(html`<div class="demo-stack">
@@ -27,4 +89,34 @@ const description = "Interactive Hover Card demo running the CLI-vendored css-fl
     <${HoverCard}>
     <p class="demo-note">Hovering opens the anchored preview after a short delay; moving the pointer into the card keeps it open, and focus opens it from the keyboard.</p>
   </div>`, document.getElementById("demo")!);
+
+  const manualOpen = signal(false);
+  const manualState = (): "open" | "closed" => (manualOpen() ? "open" : "closed");
+  let manualTrigger: Element | undefined;
+
+  mount(html`<div class="demo-stack">
+    <${HoverCardTrigger}
+      hook:afterMount=${(node: Element) => {
+        manualTrigger = node;
+        hoverIntent(node, {
+          onOpen: () => manualOpen(true),
+          onClose: () => manualOpen(false),
+          openDelay: 200,
+          closeDelay: 300,
+        });
+      }}
+    >
+      <a href="#release" on:click=${(e: Event) => e.preventDefault()}>Release notes</a>
+    </${HoverCardTrigger}>
+    ${() => manualOpen() && Portal({
+      to: "body",
+      children: [HoverCardContent({
+        state: manualState,
+        anchor: () => manualTrigger,
+        onOpen: () => manualOpen(true),
+        onClose: () => manualOpen(false),
+        children: html`<p>Moving into the card re-arms the open state, so it stays open under the pointer.</p>`,
+      })],
+    })}
+  </div>`, document.getElementById("demo-manual")!);
 </script>

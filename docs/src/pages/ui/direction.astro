@@ -1,14 +1,30 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import DirectionContent from "@ui/concepts/direction.mdx";
 
 const title = "Direction";
 const description = "Interactive Direction demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const nestedCode = `import DirectionProvider from './components/direction';
+
+const Mixed = () => (
+  <DirectionProvider dir="rtl">
+    <p>النص العربي</p>
+    <DirectionProvider dir="ltr">
+      <p>English inline</p>
+    </DirectionProvider>
+  </DirectionProvider>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="direction" />
   <DirectionContent />
+  <h2>Examples</h2>
+  <Demo id="demo-nested" title="Nested providers" code={nestedCode} note="Each wrapper scopes its own dir attribute, so a subtree can flip against its parent." />
 </MainLayout>
 
 <script>
@@ -20,9 +36,16 @@ const description = "Interactive Direction demo running the CLI-vendored css-fla
   const dir = signal("ltr");
   const flip = () => dir(dir() === "ltr" ? "rtl" : "ltr");
   mount(html`<div class="demo-stack">
-    <button class="w-fit rounded-md border px-2 py-1 text-xs" onclick=${flip}>Flip direction (${() => dir()})</button>
+    <button class="w-fit rounded-md border px-2 py-1 text-xs" on:click="${flip}">Flip direction (${() => dir()})</button>
     <${DirectionProvider} dir="${() => dir()}">
       <p style="border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem">This paragraph flips its inline direction with the wrapper's dir attribute; the wrapper itself stays out of layout.</p>
     </${DirectionProvider}>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<${DirectionProvider} dir="rtl">
+    <p style="border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem">النص العربي</p>
+    <${DirectionProvider} dir="ltr">
+      <p style="border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem">English inline</p>
+    </${DirectionProvider}>
+  </${DirectionProvider}>`, document.getElementById("demo-nested")!);
 </script>

@@ -1,44 +1,119 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import FieldContent from "@ui/concepts/field.mdx";
 
 const title = "Field";
 const description = "Interactive Field demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const stateCode = `import { Field, FieldError, FieldLabel, FieldTitle } from './components/field';
+import Checkbox from './components/checkbox';
+import Input from './components/input';
+
+const States = () => (
+  <div class="flex flex-col gap-4">
+    <Field disabled>
+      <FieldLabel for="terms">
+        <FieldTitle>Accept terms</FieldTitle>
+      </FieldLabel>
+      <Checkbox id="terms" disabled />
+    </Field>
+    <Field invalid>
+      <FieldLabel for="email">
+        <FieldTitle>Work email</FieldTitle>
+      </FieldLabel>
+      <Input id="email" ariaInvalid placeholder="ada@lovelace.dev" />
+      <FieldError errors={[{ message: 'Enter a valid email.' }]} />
+    </Field>
+  </div>
+);`;
+
+const responsiveCode = `import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel, FieldTitle } from './components/field';
+import Checkbox from './components/checkbox';
+
+const Settings = () => (
+  <FieldGroup>
+    <Field orientation="responsive">
+      <Checkbox id="updates" />
+      <FieldLabel for="updates">
+        <FieldTitle>Product updates</FieldTitle>
+        <FieldContent>
+          <FieldDescription>News about features and releases, once a month.</FieldDescription>
+        </FieldContent>
+      </FieldLabel>
+    </Field>
+  </FieldGroup>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="field" />
   <FieldContent />
+  <h2>Examples</h2>
+  <Demo id="demo-state" title="Disabled and invalid propagation" code={stateCode} note="disabled fades the label and title, invalid turns the field text destructive - neither touches the children's props." />
+  <Demo id="demo-responsive" title="Responsive orientation" code={responsiveCode} note="Inside a FieldGroup the responsive orientation goes horizontal once the group is at least 28rem wide." />
 </MainLayout>
 
 <script>
   import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldTitle } from "../../components/ui/field";
+  import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet, FieldTitle } from "../../components/ui/field";
+  import Checkbox from "../../components/ui/checkbox";
   import Input from "../../components/ui/input";
   import "../../components/ui/tokens.js";
 
-  const name = signal("");
-  const errors = () => (name() === "" ? [{ message: "A display name is required." }] : []);
-  mount(html`<div class="demo-stack">
+  mount(html`<${FieldSet}>
+    <${FieldLegend}>Profile</${FieldLegend}>
     <${FieldGroup}>
       <${Field}>
         <${FieldLabel} for="demo-name">
           <${FieldTitle}>Display name</${FieldTitle}>
           <${FieldContent}>
             <${FieldDescription}>Shown on your public profile.</${FieldDescription}>
-          </${FieldContent}></${FieldLabel}>
-        <${Input} id="demo-name" placeholder="Ada Lovelace" value="${() => name()}" oninput="${(v) => name(v)}" />
-        <${FieldError} errors="${errors}" />
+          </${FieldContent}>
+        </${FieldLabel}>
+        <${Input} id="demo-name" placeholder="Ada Lovelace" />
+        <${FieldError} errors="${[{ message: "A display name is required." }]}" />
       </${Field}>
-      <${Field} orientation="horizontal">
-        <${FieldLabel} for="demo-terms">
-          <${FieldTitle}>Accept terms</${FieldTitle}>
+      <${FieldSeparator} />
+      <${Field}>
+        <${FieldLabel} for="demo-email">
+          <${FieldTitle}>Email</${FieldTitle}>
           <${FieldContent}>
-            <${FieldDescription}>You agree to the house rules.</${FieldDescription}>
-          </${FieldContent}></${FieldLabel}>
-        <input id="demo-terms" type="checkbox" style="width:1rem" />
+            <${FieldDescription}>We only use this for sign-in.</${FieldDescription}>
+          </${FieldContent}>
+        </${FieldLabel}>
+        <${Input} id="demo-email" type="email" placeholder="ada@lovelace.dev" />
       </${Field}>
     </${FieldGroup}>
-  </div>`, document.getElementById("demo")!);
+  </${FieldSet}>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-stack">
+    <${Field} disabled>
+      <${FieldLabel} for="demo-terms">
+        <${FieldTitle}>Accept terms</${FieldTitle}>
+      </${FieldLabel}>
+      <${Checkbox} id="demo-terms" disabled />
+    </${Field}>
+    <${Field} invalid>
+      <${FieldLabel} for="demo-email-state">
+        <${FieldTitle}>Work email</${FieldTitle}>
+      </${FieldLabel}>
+      <${Input} id="demo-email-state" ariaInvalid=${true} placeholder="ada@lovelace.dev" />
+      <${FieldError} errors="${[{ message: "Enter a valid email." }]}" />
+    </${Field}>
+  </div>`, document.getElementById("demo-state")!);
+
+  mount(html`<${FieldGroup}>
+    <${Field} orientation="responsive">
+      <${Checkbox} id="demo-updates" />
+      <${FieldLabel} for="demo-updates">
+        <${FieldTitle}>Product updates</${FieldTitle}>
+        <${FieldContent}>
+          <${FieldDescription}>News about features and releases, once a month.</${FieldDescription}>
+        </${FieldContent}>
+      </${FieldLabel}>
+    </${Field}>
+  </${FieldGroup}>`, document.getElementById("demo-responsive")!);
 </script>

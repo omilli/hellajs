@@ -1,14 +1,68 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import InputOtpContent from "@ui/concepts/input-otp.mdx";
 
 const title = "Input OTP";
 const description = "Interactive Input OTP demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import InputOTP, { InputOTPGroup, InputOTPSeparator, InputOTPSlot } from './components/input-otp';
+
+const Verify = () => {
+  const code = signal('');
+  const mask = (value: string) =>
+    (value + '_'.repeat(6)).slice(0, 6).split('').join(' ');
+
+  return (
+    <div class="demo-stack">
+      <InputOTP
+        length={6}
+        value={() => code()}
+        onChange={(next) => code(next)}
+        onComplete={(next) => console.log('complete:', next)}
+      >
+        <InputOTPGroup>
+          <InputOTPSlot index={0} />
+          <InputOTPSlot index={1} />
+          <InputOTPSlot index={2} />
+        </InputOTPGroup>
+        <InputOTPSeparator />
+        <InputOTPGroup>
+          <InputOTPSlot index={3} />
+          <InputOTPSlot index={4} />
+          <InputOTPSlot index={5} />
+        </InputOTPGroup>
+      </InputOTP>
+      <p class="demo-note">
+        One hidden input owns the keyboard, so typing, backspace, arrows, and
+        paste all behave natively. The code so far: {() => mask(code())}
+      </p>
+    </div>
+  );
+};`;
+
+const digitsCode = `import InputOTP, { InputOTPGroup, InputOTPSlot } from './components/input-otp';
+
+const Digits = () => (
+  <InputOTP length={4} pattern={/^\\d+$/}>
+    <InputOTPGroup>
+      <InputOTPSlot index={0} />
+      <InputOTPSlot index={1} />
+      <InputOTPSlot index={2} />
+      <InputOTPSlot index={3} />
+    </InputOTPGroup>
+  </InputOTP>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="input-otp" />
   <InputOtpContent />
+  <h2>Examples</h2>
+  <Demo id="demo-digits" title="Digit pattern" code={digitsCode} note="A whole-value RegExp rejects any edit that fails it; the previous code stands." />
 </MainLayout>
 
 <script>
@@ -49,4 +103,13 @@ const description = "Interactive Input OTP demo running the CLI-vendored css-fla
       The code so far: ${() => mask(code())} . Focus lands on the next empty slot and the caret slot blinks.
     </p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<${InputOTP} length=${4} pattern=${/^\d+$/}>
+    <${InputOTPGroup}>
+      <${InputOTPSlot} index=${0} />
+      <${InputOTPSlot} index=${1} />
+      <${InputOTPSlot} index=${2} />
+      <${InputOTPSlot} index=${3} />
+    </${InputOTPGroup}>
+  </${InputOTP}>`, document.getElementById("demo-digits")!);
 </script>

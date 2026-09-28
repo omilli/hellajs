@@ -2,25 +2,6 @@
 
 A single-selection control styled to shadcn's RadioGroup: a `role="radiogroup"` root that renders one labeled row per entry, with arrow-key focus movement shared through the same [roving tabindex](/reference/dom/behaviors) model Tabs uses. Each row is a `label` wrapping a `role="radio"` button and the entry's label text, so clicking the text selects the control.
 
-## Install
-
-```bash
-bunx @hellajs/ui add radio-group
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
 ## Usage
 
 The composed root takes an items array, not children slots:
@@ -48,21 +29,18 @@ const Plan = () => (
 );
 ```
 
-The html-format file (`radio-group.ts`, copied with `--format html`) works the same way from a template:
+The html-format file (`radio-group.ts`, copied with `--format html`) works the same way from a template; build the items array once and pass it in:
 
 ```js
 import { html, mount } from '@hellajs/dom';
 import RadioGroup from './components/radio-group';
 
-mount(
-  html`<${RadioGroup}
-    items=${[
-      { value: 'free', label: 'Free' },
-      { value: 'pro', label: 'Pro' },
-    ]}
-  />`,
-  '#app',
-);
+const items = [
+  { value: 'free', label: 'Free' },
+  { value: 'pro', label: 'Pro' },
+];
+
+mount(html`<main><${RadioGroup} items=${items} /></main>`, '#app');
 ```
 
 ## Controlled and Uncontrolled
@@ -113,6 +91,8 @@ const Custom = () => (
 );
 ```
 
+The row wrapper and the `name` prop's deferred native inputs are this port's two divergences from the Radix ref: selection state, focus movement, and labeling are fully equivalent, while form submission wiring remains a caller concern.
+
 ## Accessibility
 
 | Aspect | Value |
@@ -123,20 +103,6 @@ const Custom = () => (
 | Tab | Roving tabindex: `0` on the selected item, `-1` on the rest; the first item receives tab focus when nothing is selected |
 | Labeling | Each row is a `label` wrapping its button, so the entry text names and activates the control |
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the grid root), `item` (the circle button with focus ring and disabled styling), `indicator` (the centered icon slot), `icon` (the filled dot), and `row` (the flex label wrapper this port adds to pair labels without context).
-
-```jsx
-import RadioGroup from './components/radio-group';
-
-const Wide = () => <RadioGroup class="gap-4" items={[{ value: 'a', label: 'A' }]} />;
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. Item classes are verbatim from the ref, including the `focus-visible` ring and `dark:` variants.
-
-## Customizing
-
-The copied file is yours. `props.class` lands on the root next to `base`; edit the `item` map to restyle every radio at once. The composed root's row wrapper and the `name` prop's lack of hidden native inputs are the two documented divergences from the Radix ref: selection state, focus movement, and labeling are fully equivalent, while form submission wiring remains a caller concern.
+Both flavors export the same names from the copied file: `base` (the grid root), `item` (the circle button with focus ring and disabled styling), `indicator` (the centered icon slot), `icon` (the filled dot), and `row` (the flex label wrapper this port adds to pair labels without context). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()`, verbatim from the ref including the `focus-visible` ring and `dark:` variants. To restyle every radio at once, edit the `item` map; `props.class` lands on the root next to `base`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

@@ -1,14 +1,42 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import CheckboxContent from "@ui/concepts/checkbox.mdx";
 
 const title = "Checkbox";
 const description = "Interactive Checkbox demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Checkbox from './components/checkbox';
+
+const subscribed = signal(false);
+
+const Settings = () => (
+  <label>
+    <Checkbox
+      checked={() => subscribed()}
+      onCheckedChange={(next) => subscribed(next)}
+    />
+    Subscribe
+  </label>
+);`;
+
+const indeterminateCode = `import Checkbox from './components/checkbox';
+
+const Notifications = () => (
+  <label>
+    <Checkbox indeterminate /> Notify participants
+  </label>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="checkbox" />
   <CheckboxContent />
+  <h2>Examples</h2>
+  <Demo id="demo-indeterminate" title="Indeterminate" code={indeterminateCode} note="The icon is the check glyph in both rows; only aria-checked and data-state separate mixed from checked. Clicking the mixed box reports true and clears it." />
 </MainLayout>
 
 <script>
@@ -25,8 +53,11 @@ const description = "Interactive Checkbox demo running the CLI-vendored css-flav
         onCheckedChange=${(next: boolean) => subscribed(next)}
       /> Subscribe (${() => (subscribed() ? "on" : "off")})
     </label>
-    <label class="demo-row"><${Checkbox} defaultChecked /> Email receipts</label>
-    <label class="demo-row"><${Checkbox} disabled /> Disabled option</label>
-    <label class="demo-row"><${Checkbox} indeterminate /> Partial selection</label>
+    <p class="demo-note">Clicks request the flip; the parent signal decides. The check icon shows whenever the box is checked or indeterminate.</p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-stack">
+    <label class="demo-row"><${Checkbox} indeterminate /> Notify participants</label>
+    <label class="demo-row"><${Checkbox} defaultChecked /> Email receipts</label>
+  </div>`, document.getElementById("demo-indeterminate")!);
 </script>

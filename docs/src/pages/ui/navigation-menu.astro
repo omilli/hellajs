@@ -1,28 +1,117 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import NavigationMenuTitle from "@ui/concepts/navigation-menu.mdx";
 
 const title = "Navigation Menu";
 const description = "Interactive Navigation Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import NavigationMenu from './components/navigation-menu';
+import {
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
+  NavigationMenuLink,
+  NavigationMenuViewport,
+  NavigationMenuIndicator,
+} from './components/navigation-menu';
+
+const value = signal('');
+const toggle = (id) => value(value() === id ? '' : id);
+
+const trigger = (id, label) => (
+  <NavigationMenuTrigger
+    value={id}
+    active={() => value() === id}
+    onActivate={() => toggle(id)}
+  >
+    {label}
+  </NavigationMenuTrigger>
+);
+
+const Nav = () => (
+  <NavigationMenu onValueChange={(next) => value(next)}>
+    <NavigationMenuList>
+      <NavigationMenuItem>
+        {trigger('learn', 'Learn')}
+        <NavigationMenuContent active={() => value() === 'learn'}>
+          <NavigationMenuLink href="#intro">Introduction</NavigationMenuLink>
+          <NavigationMenuLink href="#themes">Themes and Tokens</NavigationMenuLink>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+      <NavigationMenuItem>
+        {trigger('reference', 'Reference')}
+        <NavigationMenuContent active={() => value() === 'reference'}>
+          <NavigationMenuLink href="#components">Components</NavigationMenuLink>
+          <NavigationMenuLink href="#behaviors">Headless Behaviors</NavigationMenuLink>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+    </NavigationMenuList>
+    <NavigationMenuViewport active={() => value() !== ''} />
+    <NavigationMenuIndicator active={() => value() !== ''} />
+  </NavigationMenu>
+);`;
+
+const activeLinksCode = `import { signal } from '@hellajs/core';
+import NavigationMenu from './components/navigation-menu';
+import {
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
+  NavigationMenuLink,
+  NavigationMenuViewport,
+  NavigationMenuIndicator,
+} from './components/navigation-menu';
+
+const value = signal('');
+
+const Resources = () => (
+  <NavigationMenu onValueChange={(next) => value(next)}>
+    <NavigationMenuList>
+      <NavigationMenuItem>
+        <NavigationMenuTrigger
+          value="resources"
+          active={() => value() === 'resources'}
+          onActivate={() => value(value() === 'resources' ? '' : 'resources')}
+        >
+          Resources
+        </NavigationMenuTrigger>
+        <NavigationMenuContent active={() => value() === 'resources'}>
+          <NavigationMenuLink href="#guide" active>Guide</NavigationMenuLink>
+          <NavigationMenuLink href="#api">API Reference</NavigationMenuLink>
+          <NavigationMenuLink href="#examples">Examples</NavigationMenuLink>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+    </NavigationMenuList>
+    <NavigationMenuViewport active={() => value() !== ''} />
+    <NavigationMenuIndicator active={() => value() !== ''} />
+  </NavigationMenu>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="navigation-menu" />
   <NavigationMenuTitle />
+  <h2>Examples</h2>
+  <Demo id="demo-active-links" title="Active links" code={activeLinksCode} note="The active link renders data-active and its accent styles; the indicator and viewport follow the trigger through the same announcement stream." />
 </MainLayout>
 
 <script>
   import { signal } from "@hellajs/core";
   import { html, mount } from "@hellajs/dom";
-  import NavigationMenu from "../../components/ui/navigation-menu";
-  import {
-    NavigationMenuList,
-    NavigationMenuItem,
-    NavigationMenuTrigger,
+  import NavigationMenu, {
     NavigationMenuContent,
-    NavigationMenuLink,
-    NavigationMenuViewport,
+    NavigationMenuItem,
     NavigationMenuIndicator,
+    NavigationMenuLink,
+    NavigationMenuList,
+    NavigationMenuTrigger,
+    NavigationMenuViewport,
   } from "../../components/ui/navigation-menu";
   import "../../components/ui/tokens.js";
 
@@ -58,4 +147,26 @@ const description = "Interactive Navigation Menu demo running the CLI-vendored c
     </div>
     <p class="demo-note">Click a trigger to open its panel in the shared viewport; the indicator slides under the active trigger; click again to close.</p>
   </div>`, document.getElementById("demo")!);
+
+  const linkValue = signal("");
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${NavigationMenu} onValueChange=${(next: string) => linkValue(next)}>
+        <${NavigationMenuList}>
+          <${NavigationMenuItem}>
+            <${NavigationMenuTrigger} value=${"resources"} active=${() => linkValue() === "resources"} onActivate=${() => linkValue(linkValue() === "resources" ? "" : "resources")}>Resources</${NavigationMenuTrigger}>
+            <${NavigationMenuContent} active=${() => linkValue() === "resources"}>
+              <${NavigationMenuLink} href=${"#guide"} active=${true}>Guide</${NavigationMenuLink}>
+              <${NavigationMenuLink} href=${"#api"}>API Reference</${NavigationMenuLink}>
+              <${NavigationMenuLink} href=${"#examples"}>Examples</${NavigationMenuLink}>
+            </${NavigationMenuContent}>
+          </${NavigationMenuItem}>
+        </${NavigationMenuList}>
+        <${NavigationMenuViewport} active=${() => linkValue() !== ""} />
+        <${NavigationMenuIndicator} active=${() => linkValue() !== ""} />
+      </${NavigationMenu}>
+    </div>
+    <p class="demo-note">The active link renders data-active and its accent styles; the indicator and viewport follow the trigger through the same announcement stream.</p>
+  </div>`, document.getElementById("demo-active-links")!);
 </script>

@@ -1,42 +1,132 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import DropdownMenuTitle from "@ui/concepts/dropdown-menu.mdx";
 
 const title = "Dropdown Menu";
 const description = "Interactive Dropdown Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import DropdownMenu from './components/dropdown-menu';
+import {
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuSeparator,
+} from './components/dropdown-menu';
+
+const bold = signal(false);
+const size = signal('medium');
+
+const Format = () => (
+  <DropdownMenu
+    content={
+      <>
+        <DropdownMenuLabel>Formatting</DropdownMenuLabel>
+        <DropdownMenuCheckboxItem
+          checked={() => bold()}
+          onCheckedChange={(next) => bold(next)}
+        >
+          Bold
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup
+          items={[
+            { value: 'small', label: 'Small' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'large', label: 'Large' },
+          ]}
+          value={() => size()}
+          onValueChange={(next) => size(next)}
+        />
+      </>
+    }
+  >
+    Format
+  </DropdownMenu>
+);`;
+
+const submenuCode = `import DropdownMenu from './components/dropdown-menu';
+import { DropdownMenuItem, DropdownMenuSub } from './components/dropdown-menu';
+
+const More = () => (
+  <DropdownMenu
+    content={
+      <>
+        <DropdownMenuItem>Save</DropdownMenuItem>
+        <DropdownMenuSub
+          content={
+            <>
+              <DropdownMenuItem>Export as PDF</DropdownMenuItem>
+              <DropdownMenuItem>Export as HTML</DropdownMenuItem>
+            </>
+          }
+        >
+          Export
+        </DropdownMenuSub>
+      </>
+    }
+  >
+    File
+  </DropdownMenu>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="dropdown-menu" />
   <DropdownMenuTitle />
+  <h2>Examples</h2>
+  <Demo id="demo-submenu" title="Submenu nesting" code={submenuCode} note="Hover or ArrowRight enters the sub; Escape pops one layer at a time and an outside press closes the sub before the parent." />
 </MainLayout>
 
 <script>
+  import { signal } from "@hellajs/core";
   import { html, mount } from "@hellajs/dom";
   import Button from "../../components/ui/button";
   import DropdownMenu, {
+    DropdownMenuCheckboxItem,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuRadioGroup,
     DropdownMenuSeparator,
     DropdownMenuSub,
   } from "../../components/ui/dropdown-menu";
   import "../../components/ui/tokens.js";
 
+  const bold = signal(false);
+  const size = signal("medium");
+
+  const formatItems = html`
+    <${DropdownMenuLabel}>Formatting</${DropdownMenuLabel}>
+    <${DropdownMenuCheckboxItem} checked=${bold} onCheckedChange=${(next: boolean) => bold(next)}>Bold</${DropdownMenuCheckboxItem}>
+    <${DropdownMenuSeparator}></${DropdownMenuSeparator}>
+    <${DropdownMenuRadioGroup} items=${[
+      { value: "small", label: "Small" },
+      { value: "medium", label: "Medium" },
+      { value: "large", label: "Large" },
+    ]} value=${size} onValueChange=${(next: string) => size(next)}></${DropdownMenuRadioGroup}>
+  `;
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${DropdownMenu} content=${formatItems}><${Button} variant="outline">Format</${Button}></${DropdownMenu}>
+    </div>
+    <p class="demo-note">The checkbox toggles through its accessor and the radio group keeps selection external; activating any item closes the whole menu.</p>
+  </div>`, document.getElementById("demo")!);
+
   const fileItems = html`
-    <${DropdownMenuLabel}>File</${DropdownMenuLabel}>
-    <${DropdownMenuItem} shortcut=${"⌘N"}>New Window</${DropdownMenuItem}>
-    <${DropdownMenuItem}>Open Recent</${DropdownMenuItem}>
+    <${DropdownMenuItem}>Save</${DropdownMenuItem}>
     <${DropdownMenuSub} content=${html`<${DropdownMenuItem}>Export as PDF</${DropdownMenuItem}><${DropdownMenuItem}>Export as HTML</${DropdownMenuItem}>`}>
       Export
     </${DropdownMenuSub}>
-    <${DropdownMenuSeparator}></${DropdownMenuSeparator}>
-    <${DropdownMenuItem} destructive=${true}>Delete</${DropdownMenuItem}>
   `;
 
   mount(html`<div class="demo-stack">
     <div class="demo-row">
       <${DropdownMenu} content=${fileItems}><${Button} variant="outline">File</${Button}></${DropdownMenu}>
     </div>
-    <p class="demo-note">Click or press ArrowDown to open; arrows rove, Enter activates, Escape pops one layer, Tab closes all.</p>
-  </div>`, document.getElementById("demo")!);
+    <p class="demo-note">Hover or ArrowRight enters the sub; Escape pops one layer at a time and an outside press closes the sub before the parent.</p>
+  </div>`, document.getElementById("demo-submenu")!);
 </script>

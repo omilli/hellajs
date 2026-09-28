@@ -2,25 +2,6 @@
 
 A custom-scrollbar container styled to shadcn's ScrollArea: a `relative` root wraps a real scrolling viewport plus an absolutely positioned `ScrollBar` whose thumb is sized and positioned from the live scroll geometry. The component keeps native scrolling underneath the custom chrome instead of reimplementing Radix's virtual viewport: wheel, touch, and keyboard scrolling stay native, and the thumb is pure chrome on top. Thumb sizing and dragging ride [`onDrag`](/reference/dom/behaviors) from `@hellajs/dom`.
 
-## Install
-
-```bash
-bunx @hellajs/ui add scroll-area
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
 ## Usage
 
 Give the root an explicit height (and width when needed): the viewport fills it with `size-full`, so an unbounded root has nothing to scroll.
@@ -39,22 +20,6 @@ const Feed = () => (
 );
 ```
 
-The html-format file (`scroll-area.ts`, copied with `--format html`) works the same way from a template:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import ScrollArea from './components/scroll-area';
-
-mount(
-  html`<${ScrollArea} class="h-72 w-96 rounded-md border">
-    <div class="p-4">Long content here</div>
-  </${ScrollArea}>`,
-  '#app',
-);
-```
-
-### ScrollArea
-
 | Prop | Type | Behavior |
 |---|---|---|
 | `children` | any | Rendered inside the viewport's content wrapper |
@@ -68,6 +33,20 @@ mount(
 | `orientation` | `"vertical" \| "horizontal"` | Axis the bar tracks and drags (default `"vertical"`) |
 | `observe` | `(target, onGrow) => () => void` | Injectable content watcher for a bar composed standalone |
 | `class` | `string` | Lands on the bar next to the component class |
+
+The html-format file (`scroll-area.ts`, copied with `--format html`) works the same way from a template:
+
+```js
+import { html, mount } from '@hellajs/dom';
+import ScrollArea from './components/scroll-area';
+
+mount(
+  html`<${ScrollArea} class="h-72 w-96 rounded-md border">
+    <div class="p-4">Long content here</div>
+  </${ScrollArea}>`,
+  '#app',
+);
+```
 
 ## Both Axes
 
@@ -105,24 +84,6 @@ The ref's Radix primitive renders a fully virtual viewport; this port keeps a re
 | Pointer | The thumb is pointer-only chrome; drags never move keyboard focus |
 | Announcements | Live regions are not synthesized; content remains plain DOM read in document order |
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the relative root), `viewport` (the native scroller with the hidden-scrollbar declarations), `scrollbar` (the oriented bar with its positioning), and `thumb` (the `bg-border` pill). Thumb length and offset are inline styles, not classes.
-
-```jsx
-import ScrollArea from './components/scroll-area';
-
-const Tinted = () => (
-  <ScrollArea class="h-72 rounded-lg border">
-    <div class="p-4">Content</div>
-  </ScrollArea>
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. The strings carry the ref's classes verbatim, with the positioning and scrollbar-hide utilities appended per the divergence above.
-
-## Customizing
-
-The copied file is yours. The thumb's `bg-border` comes from the `thumb` style export, and the 20px minimum lives in `measure` at the top of the file; retune either there. The `data-slot` attributes (`scroll-area`, `scroll-area-viewport`, `scroll-area-content`, `scroll-area-scrollbar`, `scroll-area-thumb`, `scroll-area-corner`) are stable hooks for user CSS.
+The module exports `base` (the relative root), `viewport` (the native scroller with the hidden-scrollbar declarations), `scrollbar` (the oriented bar with its positioning), and `thumb` (the `bg-border` pill); thumb length and offset are inline styles, not classes. The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group, and the strings carry the ref's classes verbatim with the positioning and scrollbar-hide utilities appended per the divergence above. The thumb's `bg-border` comes from the `thumb` style export, and the 20px minimum lives in `measure` at the top of the file; retune either there. The `data-slot` attributes (`scroll-area`, `scroll-area-viewport`, `scroll-area-content`, `scroll-area-scrollbar`, `scroll-area-thumb`, `scroll-area-corner`) are stable hooks for user CSS. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

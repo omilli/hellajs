@@ -1,14 +1,56 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ToggleGroupContent from "@ui/concepts/toggle-group.mdx";
 
 const title = "Toggle Group";
 const description = "Interactive Toggle Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import ToggleGroup from './components/toggle-group';
+
+const view = signal('week');
+
+const Picker = () => (
+  <ToggleGroup
+    type="single"
+    items={[
+      { value: 'day', label: 'Day' },
+      { value: 'week', label: 'Week' },
+      { value: 'month', label: 'Month' },
+    ]}
+    value={() => view()}
+    onValueChange={(next) => view(next)}
+  />
+);`;
+
+const multipleCode = `import { signal } from '@hellajs/core';
+import ToggleGroup from './components/toggle-group';
+
+const formats = signal(['bold']);
+
+const Formats = () => (
+  <ToggleGroup
+    type="multiple"
+    variant="outline"
+    items={[
+      { value: 'bold', label: 'B' },
+      { value: 'italic', label: 'I' },
+      { value: 'underline', label: 'U' },
+    ]}
+    values={() => formats()}
+    onValueChange={(next) => formats(next)}
+  />
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="toggle-group" />
   <ToggleGroupContent />
+  <h2>Examples</h2>
+  <Demo id="demo-multiple" title="Multiple" code={multipleCode} note="Multiple mode toggles set membership; the roving arrows move focus while clicks do the selecting." />
 </MainLayout>
 
 <script>
@@ -18,7 +60,6 @@ const description = "Interactive Toggle Group demo running the CLI-vendored css-
   import "../../components/ui/tokens.js";
 
   const view = signal("week");
-  const formats = signal(["bold"]);
   mount(html`<div class="demo-stack">
     <${ToggleGroup}
       type="single"
@@ -30,7 +71,11 @@ const description = "Interactive Toggle Group demo running the CLI-vendored css-
       value=${() => view()}
       onValueChange=${(next: string) => view(next)}
     />
-    <p class="demo-note">View: ${() => view() || "none"}</p>
+    <p class="demo-note">View: ${() => view() || "none"}. Single mode keeps one active value; clicking the active item deselects it and reports an empty string.</p>
+  </div>`, document.getElementById("demo")!);
+
+  const formats = signal(["bold"]);
+  mount(html`<div class="demo-stack">
     <${ToggleGroup}
       type="multiple"
       variant="outline"
@@ -42,6 +87,6 @@ const description = "Interactive Toggle Group demo running the CLI-vendored css-
       values=${() => formats()}
       onValueChange=${(next: string[]) => formats(next)}
     />
-    <p class="demo-note">Formats: ${() => formats().join(", ") || "none"}</p>
-  </div>`, document.getElementById("demo")!);
+    <p class="demo-note">Formats: ${() => formats().join(", ") || "none"}.</p>
+  </div>`, document.getElementById("demo-multiple")!);
 </script>

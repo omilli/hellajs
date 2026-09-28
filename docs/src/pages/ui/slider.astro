@@ -1,14 +1,52 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import SliderContent from "@ui/concepts/slider.mdx";
 
 const title = "Slider";
 const description = "Interactive Slider demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Slider from './components/slider';
+
+const volume = signal(40);
+
+const Volume = () => (
+  <label>
+    Volume: {volume()}%
+    <Slider value={() => volume()} onValueChange={(next) => volume(next[0])} />
+  </label>
+);`;
+
+const thumbsCode = `import { signal } from '@hellajs/core';
+import Slider from './components/slider';
+
+const range = signal([25, 75]);
+
+const PriceRange = () => (
+  <label>
+    Price range: {range()[0]} to {range()[1]}
+    <Slider
+      value={() => range()}
+      minStepsBetweenThumbs={5}
+      onValueChange={(next) => range([...next])}
+    />
+  </label>
+);`;
+
+const verticalCode = `import Slider from './components/slider';
+
+const Vertical = () => <Slider value={[60]} orientation="vertical" />;`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="slider" />
   <SliderContent />
+  <h2>Examples</h2>
+  <Demo id="demo-thumbs" title="Multiple thumbs" code={thumbsCode} note="The value array length is the thumb count; minStepsBetweenThumbs keeps the two thumbs at least five steps apart." />
+  <Demo id="demo-vertical" title="Vertical" code={verticalCode} note="The orientation prop flips the layout axis and the value mapping; positions arrive as bottom instead of left." />
 </MainLayout>
 
 <script>
@@ -18,8 +56,6 @@ const description = "Interactive Slider demo running the CLI-vendored css-flavor
   import "../../components/ui/tokens.js";
 
   const volume = signal(40);
-  const range = signal([25, 75]);
-
   mount(html`<div class="demo-stack">
     <label class="demo-row">
       Volume: ${() => volume()}%
@@ -28,6 +64,11 @@ const description = "Interactive Slider demo running the CLI-vendored css-flavor
         onValueChange=${(next: number[]) => volume(next[0] ?? 0)}
       />
     </label>
+    <p class="demo-note">One value, one thumb: drag the knob or focus it and use the arrow keys; every accepted move reports through onValueChange.</p>
+  </div>`, document.getElementById("demo")!);
+
+  const range = signal([25, 75]);
+  mount(html`<div class="demo-stack">
     <label class="demo-row">
       Price range: ${() => range()[0]} to ${() => range()[1]}
       <${Slider}
@@ -36,12 +77,11 @@ const description = "Interactive Slider demo running the CLI-vendored css-flavor
         onValueChange=${(next: number[]) => range([...next])}
       />
     </label>
-    <label class="demo-row">
-      Vertical:
-      <${Slider}
-        value=${[60]}
-        orientation="vertical"
-      />
-    </label>
-  </div>`, document.getElementById("demo")!);
+  </div>`, document.getElementById("demo-thumbs")!);
+
+  mount(html`<div class="demo-stack">
+    <div style="height:10rem;display:flex;align-items:center;">
+      <${Slider} value=${[60]} orientation="vertical" />
+    </div>
+  </div>`, document.getElementById("demo-vertical")!);
 </script>

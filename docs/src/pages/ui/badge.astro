@@ -1,14 +1,40 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import BadgeContent from "@ui/concepts/badge.mdx";
 
 const title = "Badge";
 const description = "Interactive Badge demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Badge from './components/badge';
+
+const Status = () => (
+  <div class="flex flex-wrap gap-2">
+    <Badge>Default</Badge>
+    <Badge variant="secondary">Secondary</Badge>
+    <Badge variant="destructive">Destructive</Badge>
+    <Badge variant="outline">Outline</Badge>
+    <Badge variant="ghost">Ghost</Badge>
+    <Badge variant="link">Link</Badge>
+  </div>
+);`;
+
+const anchorCode = `import Badge from './components/badge';
+
+const FilterLink = () => (
+  <a href="#open" class="inline-flex">
+    <Badge variant="outline">12 open</Badge>
+  </a>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="badge" />
   <BadgeContent />
+  <h2>Examples</h2>
+  <Demo id="demo-anchor" title="Anchor hover" code={anchorCode} note="Inside an anchor the hover styles activate: outline picks up the accent surface." />
 </MainLayout>
 
 <script>
@@ -16,19 +42,16 @@ const description = "Interactive Badge demo running the CLI-vendored css-flavor 
   import Badge from "../../components/ui/badge";
   import "../../components/ui/tokens.js";
 
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${Badge}>Default</${Badge}>
-      <${Badge} variant="secondary">Secondary</${Badge}>
-      <${Badge} variant="destructive">Destructive</${Badge}>
-      <${Badge} variant="outline">Outline</${Badge}>
-      <${Badge} variant="ghost">Ghost</${Badge}>
-      <${Badge} variant="link">Link</${Badge}>
-    </div>
-    <div class="demo-row">
-      <${Badge}>Deployed <span class="ml-1">v2.4</span></${Badge}>
-      <${Badge} variant="secondary">128 open</${Badge}>
-      <${Badge} variant="outline">beta</${Badge}>
-    </div>
+  mount(html`<div class="demo-row">
+    <${Badge}>Default</${Badge}>
+    <${Badge} variant="secondary">Secondary</${Badge}>
+    <${Badge} variant="destructive">Destructive</${Badge}>
+    <${Badge} variant="outline">Outline</${Badge}>
+    <${Badge} variant="ghost">Ghost</${Badge}>
+    <${Badge} variant="link">Link</${Badge}>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<a href="#open" class="inline-flex">
+    <${Badge} variant="outline">12 open</${Badge}>
+  </a>`, document.getElementById("demo-anchor")!);
 </script>

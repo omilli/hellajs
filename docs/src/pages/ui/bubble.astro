@@ -1,14 +1,45 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import BubbleContent from "@ui/concepts/bubble.mdx";
 
 const title = "Bubble";
 const description = "Interactive Bubble demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { Bubble, BubbleContent, BubbleGroup } from './components/bubble';
+
+const Variants = () => (
+  <BubbleGroup>
+    <Bubble><BubbleContent>Default</BubbleContent></Bubble>
+    <Bubble variant="secondary"><BubbleContent>Secondary</BubbleContent></Bubble>
+    <Bubble variant="muted"><BubbleContent>Muted</BubbleContent></Bubble>
+    <Bubble variant="tinted"><BubbleContent>Tinted</BubbleContent></Bubble>
+    <Bubble variant="outline"><BubbleContent>Outline</BubbleContent></Bubble>
+    <Bubble variant="ghost"><BubbleContent>Ghost</BubbleContent></Bubble>
+    <Bubble variant="destructive"><BubbleContent>Destructive</BubbleContent></Bubble>
+  </BubbleGroup>
+);`;
+
+const reactionsCode = `import { Bubble, BubbleContent, BubbleReactions } from './components/bubble';
+
+const Reacted = () => (
+  <Bubble variant="muted">
+    <BubbleContent>Shipping the demo today.</BubbleContent>
+    <BubbleReactions side="bottom" align="end">
+      <button>👍 3</button>
+      <button>🎉 1</button>
+    </BubbleReactions>
+  </Bubble>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="bubble" />
   <BubbleContent />
+  <h2>Examples</h2>
+  <Demo id="demo-reactions" title="Floating reactions" code={reactionsCode} note="The chip row floats against its bubble; side and align pick the corner." />
 </MainLayout>
 
 <script>
@@ -18,19 +49,21 @@ const description = "Interactive Bubble demo running the CLI-vendored css-flavor
 
   mount(html`<div class="demo-stack">
     <${BubbleGroup}>
-      <${Bubble} variant="outline">
-        <${BubbleContent}>How does the auto-stick scroller know I am at the bottom?</${BubbleContent}>
-      </${Bubble}>
-      <${Bubble} align="end">
-        <${BubbleContent}>A scroll listener watches the distance to the bottom.</${BubbleContent}>
-      </${Bubble}>
-      <${Bubble} variant="muted">
-        <${BubbleContent}>Shipping the demo today.</${BubbleContent}>
-        <${BubbleReactions}>
-          <button>👍 3</button>
-          <button>🎉 1</button>
-        </${BubbleReactions}>
-      </${Bubble}>
+      <${Bubble}><${BubbleContent}>Default</${BubbleContent}></${Bubble}>
+      <${Bubble} variant="secondary"><${BubbleContent}>Secondary</${BubbleContent}></${Bubble}>
+      <${Bubble} variant="muted"><${BubbleContent}>Muted</${BubbleContent}></${Bubble}>
+      <${Bubble} variant="tinted"><${BubbleContent}>Tinted</${BubbleContent}></${Bubble}>
+      <${Bubble} variant="outline"><${BubbleContent}>Outline</${BubbleContent}></${Bubble}>
+      <${Bubble} variant="ghost"><${BubbleContent}>Ghost</${BubbleContent}></${Bubble}>
+      <${Bubble} variant="destructive"><${BubbleContent}>Destructive</${BubbleContent}></${Bubble}>
     </${BubbleGroup}>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<${Bubble} variant="muted">
+    <${BubbleContent}>Shipping the demo today.</${BubbleContent}>
+    <${BubbleReactions} side="bottom" align="end">
+      <button>👍 3</button>
+      <button>🎉 1</button>
+    </${BubbleReactions}>
+  </${Bubble}>`, document.getElementById("demo-reactions")!);
 </script>

@@ -2,28 +2,9 @@
 
 A multi-line text input styled byte-faithfully to shadcn's new-york-v4 Textarea: the semantic `textarea` element with auto-sizing via `field-sizing: content`, a `min-h-16` floor, and the same focus, disabled, and invalid treatments as Input.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add textarea
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The root carries `data-slot="textarea"`, and `value` binds as the element's value property, so a controlled textarea reads and writes like Input.
+The root carries `data-slot="textarea"`, and `value` accepts a plain string or a bare signal, binding as the element's value property so a controlled textarea reads and writes like Input. Typed input flows back through `oninput`, which receives the extracted `e.target.value` string rather than the event:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -32,20 +13,7 @@ import Textarea from './components/textarea';
 const bio = signal('');
 
 const Profile = () => (
-  <Textarea value={bio} placeholder="Tell us about yourself" rows={4} />
-);
-```
-
-The value accepts a plain string or a bare signal; writing the signal updates the property after mount. Typed input flows back through `oninput`, which receives the extracted `e.target.value` string rather than the event:
-
-```jsx
-import { signal } from '@hellajs/core';
-import Textarea from './components/textarea';
-
-const notes = signal('');
-
-const Editor = () => (
-  <Textarea value={notes} oninput={(v) => notes(v)} ariaLabel="Notes" />
+  <Textarea value={bio} oninput={(v) => bio(v)} placeholder="Tell us about yourself" rows={4} />
 );
 ```
 
@@ -63,25 +31,18 @@ mount(
 );
 ```
 
-## Tailwind Style
+## Invalid State
 
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied string carries shadcn's literal utilities verbatim (including `field-sizing-content`, `md:text-sm`, and the `dark:bg-input/30` form), and the class array wraps in `cn()`.
+The invalid ring follows the Input lexicon: `aria-invalid` recolors the border and, once focused, the ring. Pass the attribute form shadcn uses, and the treatment applies with no extra wiring:
 
 ```jsx
 import Textarea from './components/textarea';
 
-const Feedback = () => (
-  <Textarea placeholder="Leave feedback" class="min-h-32" ariaInvalid={false} />
+const Review = () => (
+  <Textarea placeholder="Required field" ariaInvalid />
 );
 ```
 
-```js
-import { html, mount } from '@hellajs/dom';
-import Textarea from './components/textarea';
+## Styling
 
-mount(html`<${Textarea} placeholder="Leave feedback" />`, '#app');
-```
-
-## Customizing
-
-The copied file is yours. The css style module exports `base`, `focus`, and `invalid` maps (the invalid ring follows the Input lexicon: `aria-invalid` recolors the border and, once focused, the ring), and the compose bakes all three plus `props.class`. The auto-sizing comes from `field-sizing: content` with the `min-height` floor; cap growth with a `max-h` utility or a `class` override.
+The style module exports `base`, `focus`, and `invalid` maps; the compose bakes all three plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim (including `field-sizing-content`, `md:text-sm`, and the `dark:bg-input/30` form) wrapped in `cn()`, so a call-site `class` lands last. Auto-sizing comes from `field-sizing: content` with the `min-height` floor; cap growth with a `max-h` utility or a `class` override. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

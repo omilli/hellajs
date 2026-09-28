@@ -1,14 +1,129 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import FormContent from "@ui/concepts/form.mdx";
 
 const title = "Form";
 const description = "Signals-native form demo running the CLI-vendored css-flavor source the same `add` command installs, with the controller, validators, and explicit-state parts.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import { createForm, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from './components/form';
+import Button from './components/button';
+import Input from './components/input';
+
+const saved = signal('');
+
+const form = createForm(
+  { email: '', name: '' },
+  {
+    validators: {
+      email: (v) => (v.includes('@') ? null : 'Enter a valid email'),
+      name: (v) => (v.length > 0 ? null : 'Required'),
+    },
+  },
+);
+
+const Profile = () => (
+  <form on:submit={form.handleSubmit((values) => saved(values.email))}>
+    <FormItem error={form.errors().email != null}>
+      <FormLabel for="email" error={form.errors().email != null}>Email</FormLabel>
+      <FormControl describedBy="email-msg" invalid={form.errors().email != null}>
+        <Input
+          id="email"
+          type="email"
+          placeholder="ada@lovelace.dev"
+          value={form.values.email}
+          oninput={(v) => form.setField('email', v)}
+        />
+      </FormControl>
+      <FormDescription id="email-msg">We only use this for sign-in.</FormDescription>
+      <FormMessage errors={form.errors().email ? [form.errors().email!] : []} />
+    </FormItem>
+    <FormItem error={form.errors().name != null}>
+      <FormLabel for="name" error={form.errors().name != null}>Display name</FormLabel>
+      <FormControl invalid={form.errors().name != null}>
+        <Input
+          id="name"
+          placeholder="Ada Lovelace"
+          value={form.values.name}
+          oninput={(v) => form.setField('name', v)}
+        />
+      </FormControl>
+      <FormMessage errors={form.errors().name ? [form.errors().name!] : []} />
+    </FormItem>
+    <Button>Save</Button>
+  </form>
+);`;
+
+const blurCode = `import { createForm, FormControl, FormItem, FormLabel, FormMessage } from './components/form';
+import Input from './components/input';
+
+const blurForm = createForm(
+  { email: '' },
+  { validators: { email: (v) => (v.includes('@') ? null : 'Invalid email') } },
+);
+
+const OnBlur = () => (
+  <div on:focusout={() => blurForm.blur('email')}>
+    <FormItem error={blurForm.errors().email != null}>
+      <FormLabel for="blur-email">Email</FormLabel>
+      <FormControl invalid={blurForm.errors().email != null}>
+        <Input
+          id="blur-email"
+          placeholder="Leave the field to validate"
+          value={blurForm.values.email}
+          oninput={(v) => blurForm.setField('email', v)}
+        />
+      </FormControl>
+      <FormMessage errors={blurForm.errors().email ? [blurForm.errors().email!] : []} />
+    </FormItem>
+  </div>
+);`;
+
+const resetCode = `import { createForm, FormControl, FormItem, FormLabel, FormMessage } from './components/form';
+import Button from './components/button';
+import Input from './components/input';
+
+const resetForm = createForm(
+  { email: 'ada@lovelace.dev' },
+  { validators: { email: (v) => (v.includes('@') ? null : 'Invalid email') } },
+);
+
+const Resettable = () => (
+  <form on:submit={resetForm.handleSubmit(() => {})} class="flex flex-col gap-2">
+    <FormItem error={resetForm.errors().email != null}>
+      <FormLabel for="reset-email">Email</FormLabel>
+      <FormControl invalid={resetForm.errors().email != null}>
+        <Input
+          id="reset-email"
+          value={resetForm.values.email}
+          oninput={(v) => resetForm.setField('email', v)}
+        />
+      </FormControl>
+      <FormMessage errors={resetForm.errors().email ? [resetForm.errors().email!] : []} />
+    </FormItem>
+    <div class="flex gap-2">
+      <Button>Save</Button>
+      <button
+        type="button"
+        class="w-fit rounded-md border px-2 py-1 text-xs"
+        on:click={() => resetForm.reset()}
+      >
+        Reset
+      </button>
+    </div>
+  </form>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="form" />
   <FormContent />
+  <h2>Examples</h2>
+  <Demo id="demo-blur" title="Blur validation" code={blurCode} note="A bubbling focusout handler calls blur(key): leaving the field validates it without a submit." />
+  <Demo id="demo-reset" title="Reset" code={resetCode} note="reset() restores every field to its initial value and clears errors, touched, and dirty." />
 </MainLayout>
 
 <script>
@@ -30,28 +145,63 @@ const description = "Signals-native form demo running the CLI-vendored css-flavo
     },
   );
 
-  mount(html`<div class="demo-stack">
-    <form
-      class="demo-stack"
-      onsubmit="${form.handleSubmit((values) => saved(values.email))}"
-    >
-      <${FormItem} error="${() => form.errors().email != null}">
-        <${FormLabel} for="demo-email" error="${() => form.errors().email != null}">Email</${FormLabel}>
-        <${FormControl} describedBy="demo-email-msg" invalid="${() => form.errors().email != null}">
-          <${Input} id="demo-email" type="email" placeholder="ada@lovelace.dev" value="${() => form.values.email()}" oninput="${(v) => form.setField("email", v)}" />
-        </${FormControl}>
-        <${FormDescription} id="demo-email-msg">We only use this for sign-in.</${FormDescription}>
-        <${FormMessage} errors="${() => (form.errors().email ? [form.errors().email!] : [])}" />
-      </${FormItem}>
-      <${FormItem} error="${() => form.errors().name != null}">
-        <${FormLabel} for="demo-name" error="${() => form.errors().name != null}">Display name</${FormLabel}>
-        <${FormControl} invalid="${() => form.errors().name != null}">
-          <${Input} id="demo-name" placeholder="Ada Lovelace" value="${() => form.values.name()}" oninput="${(v) => form.setField("name", v)}" />
-        </${FormControl}>
-        <${FormMessage} errors="${() => (form.errors().name ? [form.errors().name!] : [])}" />
-      </${FormItem}>
+  mount(html`<form
+    class="demo-stack"
+    on:submit="${form.handleSubmit((values) => saved(values.email))}"
+  >
+    <${FormItem} error="${() => form.errors().email != null}">
+      <${FormLabel} for="demo-email" error="${() => form.errors().email != null}">Email</${FormLabel}>
+      <${FormControl} describedBy="demo-email-msg" invalid="${() => form.errors().email != null}">
+        <${Input} id="demo-email" type="email" placeholder="ada@lovelace.dev" value="${() => form.values.email()}" oninput="${(v) => form.setField("email", v)}" />
+      </${FormControl}>
+      <${FormDescription} id="demo-email-msg">We only use this for sign-in.</${FormDescription}>
+      <${FormMessage} errors="${() => (form.errors().email ? [form.errors().email!] : [])}" />
+    </${FormItem}>
+    <${FormItem} error="${() => form.errors().name != null}">
+      <${FormLabel} for="demo-name" error="${() => form.errors().name != null}">Display name</${FormLabel}>
+      <${FormControl} invalid="${() => form.errors().name != null}">
+        <${Input} id="demo-name" placeholder="Ada Lovelace" value="${() => form.values.name()}" oninput="${(v) => form.setField("name", v)}" />
+      </${FormControl}>
+      <${FormMessage} errors="${() => (form.errors().name ? [form.errors().name!] : [])}" />
+    </${FormItem}>
+    <${Button}>Save</${Button}>
+    <p class="demo-note">${() => (saved() ? `Saved ${saved()}` : "Submit with an empty field to see the validation messages.")}</p>
+  </form>`, document.getElementById("demo")!);
+
+  const blurForm = createForm(
+    { email: "" },
+    { validators: { email: (v) => (v.includes("@") ? null : "Invalid email") } },
+  );
+  mount(html`<div on:focusout="${() => blurForm.blur("email")}">
+    <${FormItem} error="${() => blurForm.errors().email != null}">
+      <${FormLabel} for="demo-blur-email">Email</${FormLabel}>
+      <${FormControl} invalid="${() => blurForm.errors().email != null}">
+        <${Input} id="demo-blur-email" placeholder="Leave the field to validate" value="${() => blurForm.values.email()}" oninput="${(v) => blurForm.setField("email", v)}" />
+      </${FormControl}>
+      <${FormMessage} errors="${() => (blurForm.errors().email ? [blurForm.errors().email!] : [])}" />
+    </${FormItem}>
+    <p class="demo-note">${() => (blurForm.errors().email ? `Marked touched, validated: ${blurForm.errors().email}` : "Focus the field, type an invalid email, then leave it.")}</p>
+  </div>`, document.getElementById("demo-blur")!);
+
+  const resetForm = createForm(
+    { email: "ada@lovelace.dev" },
+    { validators: { email: (v) => (v.includes("@") ? null : "Invalid email") } },
+  );
+  mount(html`<form
+    class="demo-stack"
+    on:submit="${resetForm.handleSubmit(() => {})}"
+  >
+    <${FormItem} error="${() => resetForm.errors().email != null}">
+      <${FormLabel} for="demo-reset-email">Email</${FormLabel}>
+      <${FormControl} invalid="${() => resetForm.errors().email != null}">
+        <${Input} id="demo-reset-email" value="${() => resetForm.values.email()}" oninput="${(v) => resetForm.setField("email", v)}" />
+      </${FormControl}>
+      <${FormMessage} errors="${() => (resetForm.errors().email ? [resetForm.errors().email!] : [])}" />
+    </${FormItem}>
+    <div class="flex gap-2">
       <${Button}>Save</${Button}>
-      <p class="demo-note">${() => (saved() ? `Saved ${saved()}` : "Submit with an empty field to see the validation messages.")}</p>
-    </form>
-  </div>`, document.getElementById("demo")!);
+      <button type="button" class="w-fit rounded-md border px-2 py-1 text-xs" on:click="${() => resetForm.reset()}">Reset</button>
+    </div>
+    <p class="demo-note">Value now: ${() => resetForm.values.email()} . Edit, submit into an error, then reset.</p>
+  </form>`, document.getElementById("demo-reset")!);
 </script>

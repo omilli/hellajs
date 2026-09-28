@@ -1,0 +1,64 @@
+---
+import { codeToHtml } from "shiki";
+
+interface Props {
+  id: string;
+  title: string;
+  code: string;
+  lang?: string;
+  note?: string;
+}
+
+const { id, title, code, lang = "tsx", note } = Astro.props;
+const highlighted = await codeToHtml(code, { lang, theme: "github-dark" });
+---
+
+<section class="demo-card">
+  <h3>{title}</h3>
+  {note && <p class="demo-card-note">{note}</p>}
+  <div class="demo-frame dark" id={id}></div>
+  <details class="view-code">
+    <summary>View Code</summary>
+    <div class="install-code" set:html={highlighted} />
+  </details>
+</section>
+
+<style is:global>
+  .demo-card {
+    margin-block: 1.5rem;
+  }
+  .demo-card h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+  .demo-card-note {
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+  .view-code {
+    margin-top: 0.5rem;
+    border: 1px solid var(--color-slate-700);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .view-code summary {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    cursor: pointer;
+    user-select: none;
+  }
+  .view-code[open] summary {
+    border-bottom: 1px solid var(--color-slate-700);
+  }
+  .view-code .install-code pre {
+    padding: 1rem;
+    border: 0;
+    border-radius: 0;
+    margin: 0;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+</style>

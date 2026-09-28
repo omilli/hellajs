@@ -2,32 +2,7 @@
 
 An auto-sticking chat scroll container styled byte-faithfully to shadcn's new-york-v4 MessageScroller: a viewport that pins to the bottom while new content arrives, flips to a jump-to-end button when you scroll away, and hands its state to you explicitly instead of hiding it behind a provider.
 
-## Install
-
-```bash
-bunx @hellajs/ui add message-scroller
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. The entry declares `button` as a registry dependency, so the add command copies the button source alongside it.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## The auto-stick contract
-
-The viewport owns an `atBottom` signal (true on mount). A scroll listener compares `scrollHeight - scrollTop - clientHeight` against `threshold` (default 80px) and flips the signal; a `ResizeObserver` on the content watches growth and scrolls back to the bottom while the state reads true. The jump button renders whenever the state reads false and hides while it reads true, driven by `data-active`.
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules.
+## Usage
 
 ```jsx
 import { MessageScroller, MessageScrollerItem } from './components/message-scroller';
@@ -42,19 +17,9 @@ const Chat = () => (
 
 The composed root owns the state: it wraps your children in the viewport and content stack and renders the jump button (`showScrollButton={false}` opts out).
 
-## Tailwind Style
+## The auto-stick contract
 
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the transition states such as `data-[active=false]:scale-95` and the class arrays wrap in `cn()`.
-
-```jsx
-import { MessageScroller } from './components/message-scroller';
-
-const Pane = () => (
-  <MessageScroller class="h-96">
-    <MessageScrollerItem>First message</MessageScrollerItem>
-  </MessageScroller>
-);
-```
+The viewport owns an `atBottom` signal (true on mount). A scroll listener compares `scrollHeight - scrollTop - clientHeight` against `threshold` (default 80px) and flips the signal; a `ResizeObserver` on the content watches growth and scrolls back to the bottom while the state reads true. The jump button renders whenever the state reads false and hides while it reads true, driven by `data-active`.
 
 ## Manual composition
 
@@ -87,6 +52,6 @@ const Manual = () => (
 - The `scroll-fade-b`, `scrollbar-*`, and `shimmer`-style tokens that upstream fills through scrollbar and animation plugins stay verbatim in the tailwind flavor but carry no declarations in the vendored theme; the css flavor omits them.
 - The `observe` prop (viewport and root) swaps the content watcher for testing in environments whose `ResizeObserver` never delivers; production code keeps the real observer.
 
-## Customizing
+## Styling
 
-The copied file is yours. The style modules export `base`, `viewport`, `content`, `item`, `button` plus `buttonBase`, `buttonVariants`, and `buttonSizes` (the duplicated button declarations), and `srOnly`; the direction and rtl state rules register as raw attribute selectors at the bottom of the css module.
+The style module exports `base`, `viewport`, `content`, `item`, `buttonBase` plus `buttonVariants` and `buttonSizes` (the duplicated button declarations), the `overlay` well behind the button, and `srOnly`; the direction and rtl state rules register as raw attribute selectors at the bottom of the css module, and the tailwind flavor carries the transition states such as `data-[active=false]:scale-95` verbatim in `cn()`-wrapped strings. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

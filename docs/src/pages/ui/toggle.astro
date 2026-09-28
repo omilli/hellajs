@@ -1,20 +1,50 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ToggleContent from "@ui/concepts/toggle.mdx";
 
 const title = "Toggle";
 const description = "Interactive Toggle demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Toggle from './components/toggle';
+
+const bold = signal(false);
+
+const Toolbar = () => (
+  <div class="flex gap-2">
+    <Toggle pressed={() => bold()} onPressedChange={(next) => bold(next)}>Bold</Toggle>
+    <Toggle variant="outline">Italic</Toggle>
+    <Toggle size="sm">Strike</Toggle>
+    <Toggle size="lg" variant="outline">Underline</Toggle>
+  </div>
+);`;
+
+const neighborCode = `import Toggle, { toggleVariants } from './components/toggle';
+
+const Toolbar = () => (
+  <div class="flex items-center gap-2">
+    <Toggle variant="outline" size="sm">Pin</Toggle>
+    <button type="button" class={toggleVariants({ variant: 'outline', size: 'sm' })}>
+      Neighbor
+    </button>
+  </div>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="toggle" />
   <ToggleContent />
+  <h2>Examples</h2>
+  <Demo id="demo-neighbor" title="Neighboring markup" code={neighborCode} note="toggleVariants resolves the same class string the component renders, so a plain button matches it exactly." />
 </MainLayout>
 
 <script>
   import { html, mount } from "@hellajs/dom";
   import { signal } from "@hellajs/core";
-  import Toggle from "../../components/ui/toggle";
+  import Toggle, { toggleVariants } from "../../components/ui/toggle";
   import "../../components/ui/tokens.js";
 
   const bold = signal(false);
@@ -23,12 +53,16 @@ const description = "Interactive Toggle demo running the CLI-vendored css-flavor
       <${Toggle}
         pressed=${() => bold()}
         onPressedChange=${(next: boolean) => bold(next)}
-       
       >Bold</${Toggle}>
       <${Toggle} variant="outline">Italic</${Toggle}>
       <${Toggle} size="sm">Strike</${Toggle}>
       <${Toggle} size="lg" variant="outline">Underline</${Toggle}>
     </div>
-    <p class="demo-note">Bold is ${() => (bold() ? "on" : "off")}.</p>
+    <p class="demo-note">Bold is ${() => (bold() ? "on" : "off")}: aria-pressed flips and the accent palette rides data-state.</p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-row">
+    <${Toggle} variant="outline" size="sm">Pin</${Toggle}>
+    <button type="button" class=${toggleVariants({ variant: "outline", size: "sm" })}>Neighbor</button>
+  </div>`, document.getElementById("demo-neighbor")!);
 </script>

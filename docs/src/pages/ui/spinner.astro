@@ -1,14 +1,47 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import SpinnerContent from "@ui/concepts/spinner.mdx";
 
 const title = "Spinner";
 const description = "Interactive Spinner demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Spinner from './components/spinner';
+
+const Sizes = () => (
+  <div class="flex flex-col gap-4 text-muted-foreground">
+    <div class="flex items-center gap-2">
+      <Spinner class="size-3" />
+      <span class="text-sm">Small</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <Spinner />
+      <span class="text-sm">Default</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <Spinner class="size-6" />
+      <span class="text-sm">Large</span>
+    </div>
+  </div>
+);`;
+
+const busyCode = `import Spinner from './components/spinner';
+
+const Saving = () => (
+  <button type="button" disabled class="inline-flex items-center gap-2">
+    <Spinner />
+    Saving...
+  </button>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="spinner" />
   <SpinnerContent />
+  <h2>Examples</h2>
+  <Demo id="demo-busy" title="Busy action" code={busyCode} note="role=status and aria-label=Loading announce the wait; the disabled button stops repeat clicks." />
 </MainLayout>
 
 <script>
@@ -17,19 +50,22 @@ const description = "Interactive Spinner demo running the CLI-vendored css-flavo
   import "../../components/ui/tokens.js";
 
   mount(html`<div class="demo-stack">
-    <div class="demo-row items-center">
+    <div class="demo-row items-center text-muted-foreground">
+      <${Spinner} class="size-3" />
+      <span class="text-sm">Small</span>
+    </div>
+    <div class="demo-row items-center text-muted-foreground">
       <${Spinner} />
-      <span class="text-sm text-muted-foreground">Default size</span>
+      <span class="text-sm">Default</span>
     </div>
-    <div class="demo-row items-center">
+    <div class="demo-row items-center text-muted-foreground">
       <${Spinner} class="size-6" />
-      <span class="text-sm text-muted-foreground">Large</span>
-    </div>
-    <div class="demo-row items-center">
-      <button type="button" disabled class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50">
-        <${Spinner} class="size-4" />
-        Saving...
-      </button>
+      <span class="text-sm">Large</span>
     </div>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<button type="button" disabled class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50">
+    <${Spinner} />
+    Saving...
+  </button>`, document.getElementById("demo-busy")!);
 </script>

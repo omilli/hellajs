@@ -1,14 +1,39 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import PaginationContent from "@ui/concepts/pagination.mdx";
 
 const title = "Pagination";
 const description = "Interactive Pagination demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const anchorCode = `import Pagination, { PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from './components/pagination';
+
+const pages = [1, 2, 3, 4, 5];
+const current = 2;
+
+const Pages = () => (
+  <Pagination>
+    <PaginationContent>
+      <PaginationItem><PaginationPrevious href={\`?page=\${Math.max(1, current - 1)}\`} /></PaginationItem>
+      {pages.map((page) => (
+        <PaginationItem key={page}>
+          <PaginationLink href={\`?page=\${page}\`} isActive={page === current}>{page}</PaginationLink>
+        </PaginationItem>
+      ))}
+      <PaginationItem><PaginationEllipsis /></PaginationItem>
+      <PaginationItem><PaginationNext href={\`?page=\${Math.min(5, current + 1)}\`} /></PaginationItem>
+    </PaginationContent>
+  </Pagination>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="pagination" />
   <PaginationContent />
+  <h2>Examples</h2>
+  <Demo id="demo-anchor" title="Anchor paging" code={anchorCode} note="Plain hrefs keep the landmark a real navigation element; isActive renders aria-current and the outline treatment." />
 </MainLayout>
 
 <script>
@@ -20,18 +45,30 @@ const description = "Interactive Pagination demo running the CLI-vendored css-fl
   const page = signal(2);
   const pages = [1, 2, 3, 4, 5];
   const go = (p) => page(p);
-  const link = (p) => html`<${PaginationItem}>
-    <${PaginationLink} onclick="${() => go(p)}" isActive=${page() === p}>${p}</${PaginationLink}>
-  </${PaginationItem}>`;
+  const landmark = () => html`<${Pagination}>
+    <${PaginationContent}>
+      <${PaginationItem}><${PaginationPrevious} onclick="${() => go(Math.max(1, page() - 1))}" /></${PaginationItem}>
+      ${pages.map((p) => html`<${PaginationItem}>
+        <${PaginationLink} onclick="${() => go(p)}" isActive=${page() === p}>${p}</${PaginationLink}>
+      </${PaginationItem}>`)}
+      <${PaginationItem}><${PaginationEllipsis} /></${PaginationItem}>
+      <${PaginationItem}><${PaginationNext} onclick="${() => go(Math.min(5, page() + 1))}" /></${PaginationItem}>
+    </${PaginationContent}>
+  </${Pagination}>`;
   mount(html`<div class="demo-stack">
-    <${Pagination}>
-      <${PaginationContent}>
-        <${PaginationItem}><${PaginationPrevious} onclick="${() => go(Math.max(1, page() - 1))}" /></${PaginationItem}>
-        ${() => pages.map(link)}
-        <${PaginationItem}><${PaginationEllipsis} /></${PaginationItem}>
-        <${PaginationItem}><${PaginationNext} onclick="${() => go(Math.min(5, page() + 1))}" /></${PaginationItem}>
-      </${PaginationContent}>
-    </${Pagination}>
-    <p style="text-align:center">Page ${() => page()} of 5, driven by the links' onclick.</p>
+    ${() => landmark()}
+    <p class="demo-note">Page ${() => page()} of 5, driven by the links' onclick - no router.</p>
   </div>`, document.getElementById("demo")!);
+
+  const anchor = (p, active) => html`<${PaginationItem}>
+    <${PaginationLink} href="?page=${p}" isActive=${p === active}>${p}</${PaginationLink}>
+  </${PaginationItem}>`;
+  mount(html`<${Pagination}>
+    <${PaginationContent}>
+      <${PaginationItem}><${PaginationPrevious} href="?page=1" /></${PaginationItem}>
+      ${[1, 2, 3, 4, 5].map((p) => anchor(p, 2))}
+      <${PaginationItem}><${PaginationEllipsis} /></${PaginationItem}>
+      <${PaginationItem}><${PaginationNext} href="?page=3" /></${PaginationItem}>
+    </${PaginationContent}>
+  </${Pagination}>`, document.getElementById("demo-anchor")!);
 </script>

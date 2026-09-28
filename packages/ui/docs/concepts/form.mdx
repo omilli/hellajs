@@ -2,40 +2,9 @@
 
 A signals-native form controller with shadcn's form part surface: `createForm` owns values, errors, touched, and dirty as plain signals, and five parts (`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`) compose each field row around it.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add form
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. The entry declares `label` as a registry dependency, so the add command copies it into your project alongside form; the form label restates the label declarations itself, so the entry stays self-contained.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## The Controller
-
-`createForm(initial, options)` seeds one writable signal per field and returns the controller that every part reads through explicit props. Validators are per-field functions that receive the field value and the full values snapshot and return the message string, or null when the value is clean. A field without a validator is always clean.
-
-| Call | Validator behavior |
-|------|--------------------|
-| `blur(key)` | Marks the field touched, then validates it. |
-| `setField(key, value)` | Writes the value and retracks dirty, then revalidates the field only when it is already touched. |
-| `validate()` | Validates every field, writes the error map, and returns true when no messages remain. |
-| `handleSubmit(onValid)` | Validates all and marks all touched, then calls `onValid(values)` only when clean; the optional event argument is preventDefaulted. |
-| `reset()` | Restores every field to its initial value and clears errors, touched, and dirty. |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer. One `createForm` call drives the whole row: field state flows into each part as explicit props, and the message re-renders as validation runs.
+One `createForm` call drives the whole row: field state flows into each part as explicit props, and the message re-renders as validation runs. Submit with an invalid email marks the field touched and flips the message on; submit again after fixing the value and `onValid` receives the values snapshot:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -51,7 +20,7 @@ const form = createForm(
 );
 
 const Profile = () => (
-  <form onsubmit={form.handleSubmit((values) => saved(values.email))}>
+  <form on:submit={form.handleSubmit((values) => saved(values.email))}>
     <FormItem error={form.errors().email != null}>
       <FormLabel for="email" error={form.errors().email != null}>Email</FormLabel>
       <FormControl describedBy="email-msg" invalid={form.errors().email != null}>
@@ -69,9 +38,7 @@ const Profile = () => (
 );
 ```
 
-Submit with an invalid email marks the field touched and flips the message on; submit again after fixing the value and `onValid` receives the values snapshot. `blur(key)` needs the control's own blur event, so wire it where your composition allows (a raw `input` element with the `e:blur` prefix, or a bubbling `e:focusout` handler on a wrapper).
-
-The html-format file (`form.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form:
+`blur(key)` needs the control's own blur event, and the vendored controls forward only their declared props, so wire it where your composition allows (a raw `input` element with the `e:blur` prefix, or a bubbling `e:focusout` handler on a wrapper). The html-format file (`form.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form, and reactive props are arrow-wrapped in the attribute:
 
 ```js
 import { html, mount } from '@hellajs/dom';
@@ -95,32 +62,26 @@ mount(
 );
 ```
 
-## Tailwind Style
+## The Controller
 
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, and the class arrays wrap in `cn()`. The controller wiring is identical in both flavors.
+`createForm(initial, options)` seeds one writable signal per field and returns the controller that every part reads through explicit props. Validators are per-field functions that receive the field value and the full values snapshot and return the message string, or null when the value is clean. A field without a validator is always clean.
 
-```jsx
-import { createForm, FormItem, FormLabel, FormMessage } from './components/form';
-
-const form = createForm({ email: '' });
-
-const Row = () => (
-  <FormItem class="max-w-md">
-    <FormLabel for="email" required>Email</FormLabel>
-    <FormMessage errors={form.errors().email ? [form.errors().email!] : []} />
-  </FormItem>
-);
-```
+| Call | Validator behavior |
+|------|--------------------|
+| `blur(key)` | Marks the field touched, then validates it. |
+| `setField(key, value)` | Writes the value and retracks dirty, then revalidates the field only when it is already touched. |
+| `validate()` | Validates every field, writes the error map, and returns true when no messages remain. |
+| `handleSubmit(onValid)` | Validates all and marks all touched, then calls `onValid(values)` only when clean; the optional event argument is preventDefaulted. |
+| `reset()` | Restores every field to its initial value and clears errors, touched, and dirty. |
 
 ## Composition Notes
 
-`FormItem` renders the `grid gap-2` row and carries `data-error` for the container-level error hook. `FormLabel` restates the label declarations inline, adds `data-required` and the ref's `data-[error=true]:text-destructive` hook, and renders `aria-invalid` while the error flag is set. `FormControl` is the passthrough slot around the control itself: with no Slot primitive, it renders a wrapper carrying `aria-invalid` and the `aria-describedby` target you pass as `describedBy`. `FormDescription` carries the id that target points at, and `FormMessage` renders the first error with `role="alert"` and hides (rather than unmounts) when there is nothing to show, so both formats keep one DOM shape.
+`FormItem` renders the `grid gap-2` row and carries `data-error` for the container-level error hook. `FormLabel` restates the label declarations inline, adds `data-required` for a `required` label and the ref's `data-[error=true]:text-destructive` hook, and renders `aria-invalid` while the error flag is set. `FormControl` is the passthrough slot around the control itself: with no Slot primitive, it renders a wrapper carrying `aria-invalid` and the `aria-describedby` target you pass as `describedBy`. `FormDescription` carries the id that target points at, and `FormMessage` renders the first error with `role="alert"` and hides (rather than unmounts) when there is nothing to show, so both formats keep one DOM shape.
 
 <div role="alert" class="alert alert-info alert-soft">
   <span>shadcn's form is a react-hook-form `FormProvider` with `useFormField` reading a `FormField` context. HellaJS has no context primitive, so the provider and the per-field hook disappear: the `createForm` controller holds the state, and every part takes its state as an explicit prop. This is the same divergence the other composed entries made.</span>
 </div>
 
-## Customizing
+## Styling
 
-The copied file is yours. The css style module exports `base`, `label` (the label declarations plus the error hook), `description`, and `message`. Retune the row spacing by editing the `gap` inside the `base` map, or restyle the error text inside `message`.
-
+The style module exports `base`, `label` (the label declarations plus the error hook), `description`, and `message`; each compose bakes its class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim wrapped in `cn()`, and the controller wiring is identical in both flavors. Retune the row spacing by editing the `gap` inside the `base` map, or restyle the error text inside `message`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

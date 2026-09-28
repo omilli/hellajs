@@ -1,0 +1,71 @@
+# CLI
+
+The `@hellajs/ui` package is its own CLI: three commands move registry source into your project, and flags override the saved config per call.
+
+## Commands
+
+```bash
+bunx @hellajs/ui init
+bunx @hellajs/ui add button
+bunx @hellajs/ui list
+```
+
+| Command | Behavior |
+|---|---|
+| `init` | Writes `hella.ui.json` to the project root and adds the shared `theme` entry for the configured style |
+| `add <name>...` | Resolves each entry recursively, runs the peer check, and copies the format-matched files into `componentsDir` |
+| `list` | Prints every entry name in the registry |
+
+| Flag | Applies to | Behavior |
+|---|---|---|
+| `--style css\|tailwind` | `add` | Registry style to copy; defaults to the saved value |
+| `--format jsx\|html` | `add` | Source format to copy; defaults to the saved value |
+| `--lang js\|ts` | `add` | Output language; `ts` (default) copies verbatim, `js` strips types |
+| `--dir <path>` | `init`, `add` | Target project root; the process cwd when absent |
+| `--overwrite` | `add` | Replaces existing files instead of skipping them with a warning |
+| `--force` | `init` | Rewrites an existing `hella.ui.json` |
+
+## Project Config
+
+```json
+{
+  "componentsDir": "src/components",
+  "style": "css",
+  "format": "jsx",
+  "lang": "ts"
+}
+```
+
+`init` writes these defaults when the file is absent and keeps an existing file otherwise; `--force` rewrites it. `add` reads the saved values as its defaults, and the per-call flags override them.
+
+`--lang js` also retargets the copied names: `button.tsx` becomes `button.jsx`, and `button.ts` and `cn.ts` become `.js`, while `tokens.js` and `theme.css` pass through unchanged. The output is plain JavaScript with the same declarations and markup. **Plain JavaScript** covers when to skip the flag entirely: Bun and Deno run TypeScript natively, so only no-build browser pages and JS-only toolchains need it.
+
+## Dependency Resolution
+
+Resolution is recursive: `add button` also copies every entry `button` depends on. Each dependency resolves from its own registry folder, a shared dependency resolves once, and a dependency cycle fails the add. The css style brings `tokens.js` along; the tailwind style brings `theme.css` and `cn.ts`.
+
+## Style Splicing
+
+The canonical source carries marker regions the CLI consumes at copy time (and strips from the output): exactly one `// @hella:styles` region, where the style module's declarations land, and one `// @hella:compose` region per styled part, holding that part's live class array; multi-part components like Card carry seven. Each region closes with `// @hella:end`. The splice produces a different body per style:
+
+- **css** splices [`style`](/reference/css/style) maps into the styles region and keeps every compose array in its `class` attribute; dom joins plain arrays there, and the maps emit under the `hella` cascade layer.
+- **tailwind** splices plain utility strings into the styles region, wraps every compose array in `cn(...)`, and injects `import { cn } from "./cn.js";` so the helper import resolves next to the copied file.
+
+Style modules export `base` plus one lowerCamel export per styled part (`header`, `title`, `close`); `variants`/`sizes` string maps appear only where a component actually has them (Button's variant and size sets, TabsList's pill/line).
+
+## Peer Checking
+
+Copied source imports packages as regular dependencies of your project. `add` reads your `package.json` and prints an install hint naming exactly what is missing:
+
+| What you add | Extra packages the copies import |
+|---|---|
+| Any component, css style | `@hellajs/css` |
+| Any component, tailwind style | `clsx`, `tailwind-merge`, `tw-animate-css` |
+
+Every component entry declares `@hellajs/core` and `@hellajs/dom` as base peers; `add` checks them in your `package.json` alongside the style's extras.
+
+## The cn Helper
+
+Tailwind adds copy `cn.ts`: a one-function helper that joins classes with `clsx` and resolves conflicts with `tailwind-merge`. Both packages land in your project's dependencies; the peer check names any that are missing. Conflict resolution is the override mechanism: a utility in `props.class` wins over the same utility group baked into the component.
+
+css projects have no `cn`: the class array composes statically, and precedence between registry CSS and your own is the cascade layer's job (see [Theming](/ui/theming)). For joining class fragments in your own code, [`cx`](/reference/css/cx) is the css-package joiner, and [`cva`](/reference/css/cva) layers typed variant recipes over it.

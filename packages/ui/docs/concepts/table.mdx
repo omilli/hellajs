@@ -2,28 +2,9 @@
 
 Native table elements styled byte-faithfully to shadcn's new-york-v4 Table: seven semantic parts (`thead`, `tbody`, `tfoot`, `tr`, `th`, `td`, `caption`) wrapped in an overflow container so wide tables scroll horizontally instead of breaking the page.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add table
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. Compose the parts by hand; there is no context object and no schema prop. `Table` renders the overflow container (`data-slot="table-container"`) around the `table` element and takes the user's `class` on the table itself. The parts carry shadcn's structural selectors: header rows get bottom borders, the last body row drops its border, and footer rows keep theirs unless last.
+Compose the parts by hand; there is no context object and no schema prop. `Table` renders the overflow container (`data-slot="table-container"`) around the `table` element and takes the user's `class` on the table itself. The parts carry shadcn's structural selectors: header rows get bottom borders, the last body row drops its border, and footer rows keep theirs unless last:
 
 ```jsx
 import Table, { TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './components/table';
@@ -56,7 +37,9 @@ const Invoices = () => (
 );
 ```
 
-`TableHead` and `TableCell` pass `colSpan` through for merged cells, and rows pick up the hover and selected treatments from the ref (`data-state="selected"` tints the row):
+## Merged Cells
+
+`TableHead` and `TableCell` pass `colSpan` through for merged cells, so a summary row can span its neighbors:
 
 ```jsx
 import { TableBody, TableCell, TableHead, TableRow } from './components/table';
@@ -71,47 +54,6 @@ const Summary = () => (
 );
 ```
 
-The html-format file (`table.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form:
+## Styling
 
-```js
-import { html, mount } from '@hellajs/dom';
-import Table, { TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/table';
-
-mount(
-  html`<${Table}>
-    <${TableHeader}><${TableRow}>
-      <${TableHead}>Invoice</${TableHead}><${TableHead}>Amount</${TableHead}>
-    </${TableRow}></${TableHeader}>
-    <${TableBody}><${TableRow}>
-      <${TableCell}>INV001</${TableCell}><${TableCell}>$250.00</${TableCell}>
-    </${TableRow}></${TableBody}>
-  </${Table}>`,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim (including the `[&_tr]:border-b`, `[&:has([role=checkbox])]:pr-0`, and `has-aria-expanded:bg-muted/50` structural selectors), and the class arrays wrap in `cn()`.
-
-```jsx
-import Table, { TableBody, TableCell, TableHeader, TableRow } from './components/table';
-
-const Dense = () => (
-  <Table class="text-xs">
-    <TableHeader><TableRow><TableHead>Name</TableHead></TableRow></TableHeader>
-    <TableBody><TableRow><TableCell>Ada</TableCell></TableRow></TableBody>
-  </Table>
-);
-```
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Table from './components/table';
-
-mount(html`<${Table}><tr><td>Cell</td></tr></${Table}>`, '#app');
-```
-
-## Customizing
-
-The copied file is yours. The css style module exports `container`, `base`, `header`, `body`, `footer`, `row`, `head`, `cell`, and `caption` maps; the row's hover and selected tints compile to `:hover`, `:has([aria-expanded='true'])`, and `[data-state='selected']` keys. Part props are deliberately `children`, `class`, plus `colSpan` where the element supports it; anything else stays native attributes you set directly.
+The style module exports `container`, `base`, `header`, `body`, `footer`, `row`, `head`, `cell`, and `caption` maps; each part's compose bakes its own class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the row map carries `:hover`, `:has([aria-expanded='true'])`, and `[data-state='selected']` keys, so the hover tint is automatic and attribute-level state like `data-state` is yours to set on the rendered elements (the parts pass through only `children`, `class`, plus `colSpan`). The tailwind flavor carries shadcn's literal utilities verbatim (including the `[&_tr]:border-b` and `[&:has([role=checkbox])]:pr-0` structural selectors) wrapped in `cn()`. Part props are deliberately `children`, `class`, plus `colSpan` where the element supports it; anything else stays native attributes you set directly. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

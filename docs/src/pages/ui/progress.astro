@@ -1,14 +1,43 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ProgressContent from "@ui/concepts/progress.mdx";
 
 const title = "Progress";
 const description = "Interactive Progress demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Progress from './components/progress';
+
+const Upload = () => {
+  const uploaded = signal(40);
+  const step = () => uploaded(uploaded() >= 100 ? 0 : uploaded() + 20);
+
+  return (
+    <div class="flex flex-col gap-2">
+      <Progress value={uploaded} />
+      <button class="w-fit rounded-md border px-2 py-1 text-xs" on:click={step}>
+        Advance upload ({() => uploaded()}%)
+      </button>
+    </div>
+  );
+};`;
+
+const indeterminateCode = `import { signal } from '@hellajs/core';
+import Progress from './components/progress';
+
+const scanning = signal(null);
+
+const Scanner = () => <Progress value={() => scanning()} />;`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="progress" />
   <ProgressContent />
+  <h2>Examples</h2>
+  <Demo id="demo-indeterminate" title="Indeterminate" code={indeterminateCode} note="A null value drives the indeterminate sweep; 100 and above report complete." />
 </MainLayout>
 
 <script>
@@ -18,13 +47,12 @@ const description = "Interactive Progress demo running the CLI-vendored css-flav
   import "../../components/ui/tokens.js";
 
   const uploaded = signal(40);
-  const scanning = signal(null);
   const step = () => uploaded(uploaded() >= 100 ? 0 : uploaded() + 20);
-  mount(html`<div class="demo-stack">
-    <div class="flex flex-col gap-2">
-      <${Progress} value=${() => uploaded()} />
-      <button class="w-fit rounded-md border px-2 py-1 text-xs" onclick=${step}>Advance upload (${() => uploaded()}%)</button>
-    </div>
-    <${Progress} value=${() => scanning()} aria-label="Indeterminate scan" />
+  mount(html`<div class="flex flex-col gap-2">
+    <${Progress} value=${() => uploaded()} />
+    <button class="w-fit rounded-md border px-2 py-1 text-xs" on:click=${step}>Advance upload (${() => uploaded()}%)</button>
   </div>`, document.getElementById("demo")!);
+
+  const scanning = signal(null);
+  mount(html`<${Progress} value=${() => scanning()} />`, document.getElementById("demo-indeterminate")!);
 </script>

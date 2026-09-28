@@ -1,21 +1,71 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import DrawerContent from "@ui/concepts/drawer.mdx";
 
 const title = "Drawer";
 const description = "Interactive Drawer demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Drawer from './components/drawer';
+
+const Notifications = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <Drawer open={isOpen} onClose={close} title="Notifications" description="Three unread digests. Drag down to dismiss.">
+      <p>The whole panel is the drag surface; buttons inside it still click normally.</p>
+      <button on:click={close}>Mark all read</button>
+    </Drawer>
+  );
+};`;
+
+const manualCode = `import { signal } from '@hellajs/core';
+import { Portal } from '@hellajs/dom';
+import Drawer, { DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerOverlay, DrawerTitle } from './components/drawer';
+
+const Manual = () => {
+  const isOpen = signal(false);
+  const state = () => (isOpen() ? 'open' : 'closed');
+  const dragFraction = signal(0);
+
+  return (
+    <>
+      <button on:click={() => isOpen(true)}>Open</button>
+      {() => isOpen() && (
+        <Portal to="body">
+          <DrawerOverlay state={state} fraction={dragFraction} />
+          <DrawerContent state={state} fraction={dragFraction} labelledBy="drawer-manual-title" onClose={() => isOpen(false)}>
+            <DrawerHeader>
+              <DrawerTitle id="drawer-manual-title">Cart</DrawerTitle>
+              <DrawerDescription>Three items reserved for you.</DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter>
+              <DrawerClose onClose={() => isOpen(false)} />
+            </DrawerFooter>
+          </DrawerContent>
+        </Portal>
+      )}
+    </>
+  );
+};`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="drawer" />
   <DrawerContent />
+  <h2>Examples</h2>
+  <Demo id="demo-manual" title="Manual parts" code={manualCode} note="The overlay and panel share one drag-fraction signal, so the overlay keeps fading while you drag; release past 25% of the panel or flick to dismiss." />
 </MainLayout>
 
 <script>
-  import { html, mount } from "@hellajs/dom";
+  import { html, mount, Portal } from "@hellajs/dom";
   import { signal } from "@hellajs/core";
   import Button from "../../components/ui/button";
-  import Drawer from "../../components/ui/drawer";
+  import Drawer, { DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerOverlay, DrawerTitle } from "../../components/ui/drawer";
   import "../../components/ui/tokens.js";
 
   const open = signal(false);
@@ -27,4 +77,35 @@ const description = "Interactive Drawer demo running the CLI-vendored css-flavor
       <${Button} variant="outline" onclick=${() => open(false)}>Mark all read</${Button}>
     </${Drawer}>
   </div>`, document.getElementById("demo")!);
+
+  const manualOpen = signal(false);
+  const manualState = (): "open" | "closed" => (manualOpen() ? "open" : "closed");
+  const manualFraction = signal(0);
+
+  mount(html`<div class="demo-stack">
+    <${Button} variant="outline" onclick=${() => manualOpen(!manualOpen())}>Open cart</${Button}>
+    ${() => manualOpen() && Portal({
+      to: "body",
+      children: [
+        DrawerOverlay({ state: manualState, fraction: manualFraction }),
+        DrawerContent({
+          state: manualState,
+          fraction: manualFraction,
+          labelledBy: "drawer-demo-manual-title",
+          describedBy: "drawer-demo-manual-description",
+          onClose: () => manualOpen(false),
+          children: html`
+            <${DrawerHeader}>
+              <${DrawerTitle} id="drawer-demo-manual-title">Cart</${DrawerTitle}>
+              <${DrawerDescription} id="drawer-demo-manual-description">Three items reserved for you.</${DrawerDescription}>
+            </${DrawerHeader}>
+            <p>Drag it down: both parts read the same fraction signal, the overlay fades with the distance, and the X in the footer is the explicit close.</p>
+            <${DrawerFooter}>
+              <${DrawerClose} onClose=${() => manualOpen(false)} />
+            </${DrawerFooter}>
+          `,
+        }),
+      ],
+    })}
+  </div>`, document.getElementById("demo-manual")!);
 </script>

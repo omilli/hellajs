@@ -2,28 +2,9 @@
 
 A determinate or indeterminate progress bar styled byte-faithfully to shadcn's new-york-v4 Progress: a `role="progressbar"` track with a primary-colored indicator whose translate drives the fill.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add progress
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The value accepts a number or a bare signal; the indicator's inline transform is `translateX(-{100 - value}%)`, so 0 hides the fill and 100 fills the track. Aria values follow the same number: `aria-valuenow` mirrors the value between the fixed 0 to 100 min and max.
+The value accepts a number or a bare signal; the indicator's inline transform is `translateX(-{100 - value}%)`, so 0 hides the fill and 100 fills the track. Aria values follow the same number: `aria-valuenow` mirrors the value between the fixed 0 to 100 min and max:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -32,17 +13,6 @@ import Progress from './components/progress';
 const uploaded = signal(40);
 
 const Upload = () => <Progress value={uploaded} />;
-```
-
-A null value (or a reactive reading one) drives the indeterminate state: the root and indicator carry `data-state="indeterminate"`, `aria-valuenow` drops from the DOM, and the css flavor animates the indicator with a hand-rolled keyframe (tailwind keeps the ref's static form, since the ref defines no animation utility). Values of 100 and above report `data-state="complete"`.
-
-```jsx
-import { signal } from '@hellajs/core';
-import Progress from './components/progress';
-
-const scanning = signal(null);
-
-const Scanner = () => <Progress value={() => scanning()} />;
 ```
 
 The html-format file (`progress.ts`, copied with `--format html`) renders through a template; the reactive value expression is arrow-wrapped exactly like the jsx form:
@@ -56,23 +26,19 @@ const uploaded = signal(65);
 mount(html`<${Progress} value="${() => uploaded()}" />`, '#app');
 ```
 
-## Tailwind Style
+## Indeterminate
 
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim (`bg-primary/20` track, `transition-all` indicator), the value stays in the inline transform, and the class arrays wrap in `cn()`.
+A null value (or a reactive reading one) drives the indeterminate state: the root and indicator carry `data-state="indeterminate"`, `aria-valuenow` drops from the DOM, and the css flavor animates the indicator with a hand-rolled keyframe (tailwind keeps the ref's static form, since the ref defines no animation utility). Values of 100 and above report `data-state="complete"`:
 
 ```jsx
+import { signal } from '@hellajs/core';
 import Progress from './components/progress';
 
-const Half = () => <Progress value={50} class="my-progress" />;
+const scanning = signal(null);
+
+const Scanner = () => <Progress value={() => scanning()} />;
 ```
 
-```js
-import { html, mount } from '@hellajs/dom';
-import Progress from './components/progress';
+## Styling
 
-mount(html`<${Progress} value=${50} />`, '#app');
-```
-
-## Customizing
-
-The copied file is yours. The css style module exports `base` (the track: height, rounding, and the 20 percent primary tint) and `indicator` (the fill, its transition, and the indeterminate keyframe gated on the indicator's own `data-state`). Rescale the bar through a `class` override, or retime the sweep by editing the `animation` declaration.
+The style module exports `base` (the track: height, rounding, and the 20 percent primary tint) and `indicator` (the fill, its transition, and the indeterminate keyframe gated on the indicator's own `data-state`); each compose bakes its class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim (`bg-primary/20` track, `transition-all` indicator) wrapped in `cn()`, with the value staying in the inline transform. Rescale the bar through a `class` override, or retime the sweep by editing the `animation` declaration. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

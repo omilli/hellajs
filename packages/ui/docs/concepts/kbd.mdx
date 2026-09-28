@@ -2,37 +2,26 @@
 
 A keyboard-key chip styled byte-faithfully to shadcn's new-york-v4 Kbd: a `Kbd` element for single keys and a `KbdGroup` for sequences, both rendering the semantic `kbd` tag.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add kbd
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. Both parts take `{ children?, class? }`; the root carries `data-slot="kbd"`, the group `data-slot="kbd-group"`, and both render the `kbd` element for browser and assistive-tech semantics.
+Both parts take `{ children?, class? }`; the root carries `data-slot="kbd"`, the group `data-slot="kbd-group"`, and both render the `kbd` element for browser and assistive-tech semantics.
 
 ```jsx
-import Kbd, { KbdGroup } from './components/kbd';
+import Kbd from './components/kbd';
 
 const Shortcut = () => (
   <span class="flex items-center gap-2 text-sm">
     Save changes <Kbd>⌘S</Kbd>
   </span>
 );
+```
+
+## Grouped Sequences
+
+`KbdGroup` lays a run of keys out as one sequence with a shared gap:
+
+```jsx
+import Kbd, { KbdGroup } from './components/kbd';
 
 const Sequence = () => (
   <KbdGroup>
@@ -42,6 +31,8 @@ const Sequence = () => (
   </KbdGroup>
 );
 ```
+
+## Tooltip Inverse
 
 Inside a tooltip with `data-slot="tooltip-content"`, the key chip flips to a translucent inverse surface so it stays readable on the tooltip's dark background; nothing extra to wire:
 
@@ -55,46 +46,6 @@ const Hint = () => (
 );
 ```
 
-The html-format file (`kbd.ts`, copied with `--format html`) renders through a template instead of JSX; children sit between the component tags:
+## Styling
 
-```js
-import { html, mount } from '@hellajs/dom';
-import Kbd, { KbdGroup } from './components/kbd';
-
-mount(
-  html`
-    <span class="flex items-center gap-2 text-sm">
-      Save changes <${Kbd}>⌘S</${Kbd}>
-    </span>
-  `,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-muted`, `rounded-sm`), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group.
-
-```jsx
-import Kbd from './components/kbd';
-
-const Key = () => (
-  <Kbd class="w-8 justify-center">esc</Kbd>
-);
-```
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Kbd, { KbdGroup } from './components/kbd';
-
-mount(
-  KbdGroup({
-    children: [Kbd({ children: 'ctrl' }), Kbd({ children: 'K' })],
-  }),
-  '#app',
-);
-```
-
-## Customizing
-
-The copied file is yours. The style module exports `base` (the key chip) and `group` (the sequence wrapper); each part's compose bakes its own class plus `props.class`. An inline `svg` child scales to the chip's `size-3` icon slot automatically, so icon fonts and lucide paths drop in without extra classes.
+The style module exports `base` (the key chip) and `group` (the sequence wrapper); each part's compose bakes its own class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities (`bg-muted`, `rounded-sm`) in `cn()` so later tokens override earlier ones per utility group. The tooltip inverse is a selector on `base` keyed to `[data-slot='tooltip-content']`, and an inline `svg` child scales to the chip's `size-3` icon slot automatically, so icon fonts and lucide paths drop in without extra classes. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

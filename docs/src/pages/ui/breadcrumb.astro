@@ -1,30 +1,118 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import BreadcrumbTitle from "@ui/concepts/breadcrumb.mdx";
 
 const title = "Breadcrumb";
 const description = "Interactive Breadcrumb demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Breadcrumb from './components/breadcrumb';
+import {
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from './components/breadcrumb';
+
+const Trail = () => (
+  <Breadcrumb>
+    <BreadcrumbList>
+      <BreadcrumbItem>
+        <BreadcrumbLink href="/">Home</BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <BreadcrumbLink href="/ui">UI</BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
+      </BreadcrumbItem>
+    </BreadcrumbList>
+  </Breadcrumb>
+);`;
+
+const collapsedCode = `import Breadcrumb from './components/breadcrumb';
+import {
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from './components/breadcrumb';
+import DropdownMenu from './components/dropdown-menu';
+import { DropdownMenuItem } from './components/dropdown-menu';
+
+const Collapsed = () => (
+  <Breadcrumb>
+    <BreadcrumbList>
+      <BreadcrumbItem>
+        <BreadcrumbLink href="/">Home</BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <DropdownMenu
+          content={
+            <>
+              <DropdownMenuItem>Components</DropdownMenuItem>
+              <DropdownMenuItem>Labels</DropdownMenuItem>
+            </>
+          }
+        >
+          <BreadcrumbEllipsis />
+        </DropdownMenu>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <BreadcrumbLink href="/docs">Docs</BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
+      </BreadcrumbItem>
+    </BreadcrumbList>
+  </Breadcrumb>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="breadcrumb" />
   <BreadcrumbTitle />
+  <h2>Examples</h2>
+  <Demo id="demo-collapsed" title="Collapsed segments" code={collapsedCode} note="The ellipsis hosts a DropdownMenu holding the hidden levels; the trail ends on the current page." />
 </MainLayout>
 
 <script>
   import { html, mount } from "@hellajs/dom";
-  import Breadcrumb from "../../components/ui/breadcrumb";
-  import {
-    BreadcrumbList,
+  import Breadcrumb, {
+    BreadcrumbEllipsis,
     BreadcrumbItem,
     BreadcrumbLink,
-    BreadcrumbSeparator,
+    BreadcrumbList,
     BreadcrumbPage,
-    BreadcrumbEllipsis,
+    BreadcrumbSeparator,
   } from "../../components/ui/breadcrumb";
-  import DropdownMenu from "../../components/ui/dropdown-menu";
-  import { DropdownMenuItem } from "../../components/ui/dropdown-menu";
+  import DropdownMenu, { DropdownMenuItem } from "../../components/ui/dropdown-menu";
   import "../../components/ui/tokens.js";
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Breadcrumb}>
+        <${BreadcrumbList}>
+          <${BreadcrumbItem}><${BreadcrumbLink} href=${"#home"}>Home</${BreadcrumbLink}></${BreadcrumbItem}>
+          <${BreadcrumbSeparator}></${BreadcrumbSeparator}>
+          <${BreadcrumbItem}><${BreadcrumbLink} href=${"#ui"}>UI</${BreadcrumbLink}></${BreadcrumbItem}>
+          <${BreadcrumbSeparator}></${BreadcrumbSeparator}>
+          <${BreadcrumbItem}><${BreadcrumbPage}>Breadcrumb</${BreadcrumbPage}></${BreadcrumbItem}>
+        </${BreadcrumbList}>
+      </${Breadcrumb}>
+    </div>
+    <p class="demo-note">The current page is marked for assistive tech; separators are presentation-only and hidden from the accessibility tree.</p>
+  </div>`, document.getElementById("demo")!);
 
   const overflowItems = html`
     <${DropdownMenuItem}>Components</${DropdownMenuItem}>
@@ -48,5 +136,5 @@ const description = "Interactive Breadcrumb demo running the CLI-vendored css-fl
       </${Breadcrumb}>
     </div>
     <p class="demo-note">The ellipsis hosts a DropdownMenu holding the hidden levels; the trail ends on the current page.</p>
-  </div>`, document.getElementById("demo")!);
+  </div>`, document.getElementById("demo-collapsed")!);
 </script>

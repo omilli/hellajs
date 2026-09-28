@@ -1,41 +1,63 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import AvatarContent from "@ui/concepts/avatar.mdx";
 
 const title = "Avatar";
 const description = "Interactive Avatar demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Avatar, { AvatarFallback, AvatarImage } from './components/avatar';
+
+const Portrait = () => {
+  const loaded = signal(false);
+
+  return (
+    <Avatar>
+      <AvatarImage src="/missing-avatar.png" alt="Broken image" loaded={loaded} />
+      <AvatarFallback loaded={loaded}>M</AvatarFallback>
+    </Avatar>
+  );
+};`;
+
+const groupCode = `import Avatar, { AvatarFallback, AvatarGroup, AvatarGroupCount } from './components/avatar';
+
+const Team = () => (
+  <AvatarGroup>
+    <Avatar><AvatarFallback>M</AvatarFallback></Avatar>
+    <Avatar><AvatarFallback>J</AvatarFallback></Avatar>
+    <Avatar><AvatarFallback>A</AvatarFallback></Avatar>
+    <AvatarGroupCount>+5</AvatarGroupCount>
+  </AvatarGroup>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="avatar" />
   <AvatarContent />
+  <h2>Examples</h2>
+  <Demo id="demo-group" title="Group with count" code={groupCode} note="A missing src fires error, so the initial returns; the group overlaps with a count chip." />
 </MainLayout>
 
 <script>
   import { html, mount } from "@hellajs/dom";
   import { signal } from "@hellajs/core";
-  import Avatar, { AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from "../../components/ui/avatar";
+  import Avatar, { AvatarFallback, AvatarImage } from "../../components/ui/avatar";
   import "../../components/ui/tokens.js";
 
   // A missing src fires `error`: the image drops out and the initial returns.
   const loaded = signal(false);
-  mount(html`<div class="demo-stack">
-    <div class="flex items-center gap-3">
-      <${Avatar}>
-        <${AvatarImage} src="/missing-avatar.png" alt="Broken image" loaded=${loaded} />
-        <${AvatarFallback} loaded=${loaded}>M</${AvatarFallback}>
-      </${Avatar}>
-      <${Avatar} size="lg">
-        <${AvatarFallback}>M</${AvatarFallback}>
-        <${AvatarBadge} />
-      </${Avatar}>
-      <${Avatar} size="sm"><${AvatarFallback}>M</${AvatarFallback}></${Avatar}>
-    </div>
-    <${AvatarGroup}>
-      <${Avatar}><${AvatarFallback}>M</${AvatarFallback}></${Avatar}>
-      <${Avatar}><${AvatarFallback}>J</${AvatarFallback}></${Avatar}>
-      <${Avatar}><${AvatarFallback}>A</${AvatarFallback}></${Avatar}>
-      <${AvatarGroupCount}>+5</${AvatarGroupCount}>
-    </${AvatarGroup}>
-  </div>`, document.getElementById("demo")!);
+  mount(html`<${Avatar}>
+    <${AvatarImage} src="/missing-avatar.png" alt="Broken image" loaded=${loaded} />
+    <${AvatarFallback} loaded=${loaded}>M</${AvatarFallback}>
+  </${Avatar}>`, document.getElementById("demo")!);
+
+  mount(html`<${AvatarGroup}>
+    <${Avatar}><${AvatarFallback}>M</${AvatarFallback}></${Avatar}>
+    <${Avatar}><${AvatarFallback}>J</${AvatarFallback}></${Avatar}>
+    <${Avatar}><${AvatarFallback}>A</${AvatarFallback}></${Avatar}>
+    <${AvatarGroupCount}>+5</${AvatarGroupCount}>
+  </${AvatarGroup}>`, document.getElementById("demo-group")!);
 </script>

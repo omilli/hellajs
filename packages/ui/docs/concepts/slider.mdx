@@ -2,25 +2,6 @@
 
 A pointer and keyboard value control styled to shadcn's Slider: a track span, a range span, and one thumb span per value. The component reimplements the Radix slider behavior over `@hellajs/dom`'s [`onDrag`](/reference/dom/behaviors) wiring: pointerdown selects the nearest thumb, pointer movement maps track position to a stepped value, and keyboard arrows nudge the focused thumb. Values live in a signal, and the thumbs plus range render their positions as reactive inline styles.
 
-## Install
-
-```bash
-bunx @hellajs/ui add slider
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
 ## Usage
 
 | Prop | Type | Behavior |
@@ -41,18 +22,6 @@ import Slider from './components/slider';
 
 const Volume = () => (
   <Slider value={[40]} />
-);
-```
-
-The html-format file (`slider.ts`, copied with `--format html`) works the same way from a template:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Slider from './components/slider';
-
-mount(
-  html`<${Slider} value=${[40]} />`,
-  '#app',
 );
 ```
 
@@ -129,20 +98,6 @@ Every accepted keyboard change also fires `onValueCommit`, and values clamp to `
 | Focus | Thumbs carry `tabindex="0"` (`-1` while disabled) and the focus ring comes from the style layer |
 | Disabled | The root renders `data-disabled="true"` and thumbs render `aria-disabled` |
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The module exports `base` (the flex root with `touch-action: none`), `track` (the muted rail), `range` (the primary fill), and `thumb` (the knob, whose hover and focus rings are box shadows).
-
-```jsx
-import Slider from './components/slider';
-
-const Spaced = () => <Slider value={[30]} class="m-2" />;
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, and every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group. Both strings are verbatim from the ref, including the `data-[orientation=vertical]` column layout and the `data-[disabled]` opacity.
-
-## Customizing
-
-The copied file is yours. `props.class` lands on the root next to `base`, and the `thumb` map restyles every knob at once. Positions arrive as inline styles (`left` for horizontal, `bottom` for vertical), so resizing or repositioning the thumb is an edit of the `thumbStyle` helper, not the style layer.
+The module exports `base` (the flex root with `touch-action: none`), `track` (the muted rail), `range` (the primary fill), and `thumb` (the knob, whose hover and focus rings are box shadows). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor keeps the ref's strings verbatim, including the `data-[orientation=vertical]` column layout and the `data-[disabled]` opacity, with every part's class array wrapped in `cn()` so a call-site `class` overrides earlier tokens per utility group. `props.class` lands on the root next to `base`, the `thumb` map restyles every knob at once, and repositioning or resizing the thumb is an edit of the `thumbStyle` helper rather than the style layer, since positions arrive as inline styles (`left` for horizontal, `bottom` for vertical). Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

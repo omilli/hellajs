@@ -1,14 +1,58 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import SonnerContent from "@ui/concepts/sonner.mdx";
 
 const title = "Sonner";
 const description = "Interactive Sonner toast demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Toaster, { toast } from './components/sonner';
+
+const Toasts = () => (
+  <>
+    <Toaster richColors />
+    <div>
+      <button on:click={() => toast('Saved', { description: 'Your work is safe.', type: 'success' })}>Success</button>
+      <button on:click={() => toast('Something broke.', { type: 'error' })}>Error</button>
+      <button
+        on:click={() =>
+          toast.promise(upload(), {
+            loading: 'Uploading',
+            success: (name) => \`Uploaded \${name}\`,
+            error: 'Upload failed',
+          })
+        }
+      >Promise toast</button>
+      <button on:click={() => toast('Deleted', { action: { label: 'Undo', onclick: () => toast('Restored.', { type: 'success' }) } })}>Action toast</button>
+      <button on:click={() => toast.dismiss()}>Dismiss all</button>
+    </div>
+  </>
+);`;
+
+const queueCode = `import { toast } from './components/sonner';
+
+const Burst = () => (
+  <button
+    on:click={() => {
+      let n = 0;
+      const tick = () => {
+        n += 1;
+        toast(\`Background job \${n}\`, { description: \`Entry \${n} of 5\` });
+        if (n < 5) setTimeout(tick, 500);
+      };
+      tick();
+    }}
+  >Run five jobs</button>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="sonner" />
   <SonnerContent />
+  <h2>Examples</h2>
+  <Demo id="demo-queue" title="Queue semantics" code={queueCode} note="One Toaster owns the module-level queue: past the visible cap of three, each new toast retires the oldest immediately, and the cards behind the front shrink per depth." />
 </MainLayout>
 
 <script>
@@ -42,10 +86,25 @@ const description = "Interactive Sonner toast demo running the CLI-vendored css-
       <${Button} onclick=${() => toast("New version available.", { type: "info" })}>Info</${Button}>
     </div>
     <div class="demo-row">
-      <${Button} variant="outline" onclick=${() => toast("Deleted", { action: { label: "Undo", onclick: () => toast("Restored.", { type: "success" }) } }) }}>Action toast</${Button}>
+      <${Button} variant="outline" onclick=${() => toast("Deleted", { action: { label: "Undo", onclick: () => toast("Restored.", { type: "success" }) } }) }>Action toast</${Button}>
       <${Button} variant="outline" onclick=${firePromise}>${() => (pending() ? "Uploading…" : "Promise toast")}</${Button}>
       <${Button} variant="outline" onclick=${() => toast.dismiss()}>Dismiss all</${Button}>
     </div>
     <p class="demo-note">Toasts stack bottom-right (three visible, older ones shrink and retire), pause their countdown on hover, and swipe away past 45% of the toast width. The X button appears on hover.</p>
   </div>`, document.getElementById("demo")!);
+
+  const burst = () => {
+    let n = 0;
+    const tick = () => {
+      n += 1;
+      toast(`Background job ${n}`, { description: `Entry ${n} of 5` });
+      if (n < 5) setTimeout(tick, 500);
+    };
+    tick();
+  };
+
+  mount(html`<div class="demo-stack">
+    <${Button} variant="outline" onclick=${burst}>Run five jobs</${Button}>
+    <p class="demo-note">Five toasts enter one shared queue (portaled beside the hero stack above): the first three stay, every later arrival retires the oldest, and the survivors shrink one depth step each.</p>
+  </div>`, document.getElementById("demo-queue")!);
 </script>

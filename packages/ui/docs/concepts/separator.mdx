@@ -2,28 +2,9 @@
 
 A divider styled byte-faithfully to shadcn's new-york-v4 Separator: one thin line with `orientation` switching between horizontal and vertical, exposed through `role="separator"` and matching `data-orientation` and `aria-orientation` attributes.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add separator
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. `orientation` picks between `horizontal` (the default: 1px tall, full width) and `vertical` (full height, 1px wide); both attributes key off the rendered `data-orientation` value, so no reactive rewiring is needed when the prop differs per instance.
+`orientation` picks between `horizontal` (the default: 1px tall, full width) and `vertical` (full height, 1px wide); both attributes key off the rendered `data-orientation` value, so no reactive rewiring is needed when the prop differs per instance.
 
 ```jsx
 import Separator from './components/separator';
@@ -39,6 +20,8 @@ const Settings = () => (
 );
 ```
 
+## Vertical Orientation
+
 A vertical separator needs a bounded-height flex row to stretch into:
 
 ```jsx
@@ -53,47 +36,6 @@ const Row = () => (
 );
 ```
 
-The html-format file (`separator.ts`, copied with `--format html`) renders through a template instead of JSX:
+## Styling
 
-```js
-import { html, mount } from '@hellajs/dom';
-import Separator from './components/separator';
-
-mount(
-  html`
-    <div class="flex h-8 items-center gap-3">
-      <span>Import</span>
-      <${Separator} orientation="vertical" />
-      <span>Export</span>
-    </div>
-  `,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied string uses shadcn's literal utilities verbatim (`bg-border` plus the four `data-[orientation=*]` sizing utilities), and the class array wraps in `cn()` so later tokens override earlier ones per utility group.
-
-```jsx
-import Separator from './components/separator';
-
-const Menu = () => (
-  <div class="flex h-6 items-center gap-2">
-    <button type="button">Cut</button>
-    <Separator orientation="vertical" />
-    <button type="button">Copy</button>
-  </div>
-);
-```
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Separator from './components/separator';
-
-mount(Separator({ class: 'my-4' }), '#app');
-```
-
-## Customizing
-
-The copied file is yours. The style module exports a single `base` carrying both orientation treatments keyed to `[data-orientation]`; the compose bakes `base` plus `props.class`. The line reads the `--border` token, so it follows your theme in light and dark mode without per-instance styling.
+The style module exports a single `base` carrying both orientation treatments keyed to `[data-orientation]`; the compose bakes `base` plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor uses shadcn's literal utilities verbatim (`bg-border` plus the four `data-[orientation=*]` sizing utilities) wrapped in `cn()`. The line reads the `--border` token, so it follows your theme in light and dark mode without per-instance styling. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

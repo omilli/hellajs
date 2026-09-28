@@ -1,14 +1,50 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ComboboxTitle from "@ui/concepts/combobox.mdx";
 
 const title = "Combobox";
 const description = "Interactive Combobox demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Combobox from './components/combobox';
+
+const fruits = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'blueberry', label: 'Blueberry' },
+  { value: 'canteloupe', label: 'Canteloupe' },
+  { value: 'date', label: 'Date' },
+];
+
+const FruitPicker = () => (
+  <Combobox
+    items={fruits}
+    placeholder="Search fruit"
+    onValueChange={(value) => console.log(value)}
+  />
+);`;
+
+const multipleCode = `import Combobox from './components/combobox';
+
+const PickSeveral = () => (
+  <Combobox
+    items={fruits}
+    multiple
+    showClear
+    placeholder="Pick several"
+    onValueChange={(values) => console.log(values)}
+  />
+);
+
+// fruits: the same item array as the hero example`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="combobox" />
   <ComboboxTitle />
+  <h2>Examples</h2>
+  <Demo id="demo-multiple" title="Multiple selection" code={multipleCode} note="Enter toggles the active value in or out of the array and the panel stays open; each selection renders as a removable chip, and the clear affordance wipes the whole selection." />
 </MainLayout>
 
 <script>
@@ -26,8 +62,14 @@ const description = "Interactive Combobox demo running the CLI-vendored css-flav
   mount(html`<div class="demo-stack">
     <div class="demo-row">
       <${Combobox} items=${fruits} placeholder="Search fruit" />
-      <${Combobox} items=${fruits} multiple placeholder="Pick several" />
     </div>
-    <p class="demo-note">Typing filters case-insensitively and Enter commits the active option. The multiple picker toggles values into removable chips and stays open.</p>
+    <p class="demo-note">Typing narrows the options case-insensitively while they hide in place; arrows move the active option and Enter commits it, closing the panel and clearing the query.</p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-stack">
+    <div class="demo-row">
+      <${Combobox} items=${fruits} multiple showClear placeholder="Pick several" />
+    </div>
+    <p class="demo-note">Enter toggles values in and out of the array while the panel stays open; chips remove their own value, and the clear affordance wipes the whole selection.</p>
+  </div>`, document.getElementById("demo-multiple")!);
 </script>

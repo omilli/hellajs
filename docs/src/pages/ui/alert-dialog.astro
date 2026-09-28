@@ -1,21 +1,76 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import AlertDialogContent from "@ui/concepts/alert-dialog.mdx";
 
 const title = "Alert Dialog";
 const description = "Interactive AlertDialog demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import AlertDialog, { AlertDialogAction, AlertDialogCancel, AlertDialogFooter } from './components/alert-dialog';
+
+const DeleteProject = () => {
+  const isOpen = signal(false);
+  const close = () => isOpen(false);
+
+  return (
+    <AlertDialog open={isOpen} onClose={close} title="Delete project" description="This removes every deployment attached to it. This action cannot be undone.">
+      <AlertDialogFooter>
+        <AlertDialogCancel onClose={close}>Cancel</AlertDialogCancel>
+        <AlertDialogAction variant="destructive" onClose={close}>Delete</AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialog>
+  );
+};`;
+
+const manualCode = `import { signal } from '@hellajs/core';
+import { Portal } from '@hellajs/dom';
+import { AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogOverlay, AlertDialogTitle } from './components/alert-dialog';
+
+const Manual = () => {
+  const isOpen = signal(false);
+  const state = () => (isOpen() ? 'open' : 'closed');
+
+  return (
+    <>
+      <button on:click={() => isOpen(true)}>Delete</button>
+      {() => isOpen() && (
+        <Portal to="body">
+          <AlertDialogOverlay state={state} />
+          <AlertDialogContent state={state} labelledBy="alert-manual-title" describedBy="alert-manual-description" onClose={() => isOpen(false)}>
+            <AlertDialogHeader>
+              <AlertDialogMedia>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+              </AlertDialogMedia>
+              <AlertDialogTitle id="alert-manual-title">Remove this project?</AlertDialogTitle>
+              <AlertDialogDescription id="alert-manual-description">Deployments attached to it stop immediately.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClose={() => isOpen(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClose={() => isOpen(false)}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </Portal>
+      )}
+    </>
+  );
+};`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="alert-dialog" />
   <AlertDialogContent />
+  <h2>Examples</h2>
+  <Demo id="demo-manual" title="Manual parts" code={manualCode} note="The overlay and panel take the state accessor; the panel's labelledBy and describedBy point at the title and description ids you assign." />
 </MainLayout>
 
 <script>
-  import { html, mount } from "@hellajs/dom";
+  import { html, mount, Portal } from "@hellajs/dom";
   import { signal } from "@hellajs/core";
   import Button from "../../components/ui/button";
-  import AlertDialog, { AlertDialogAction, AlertDialogCancel, AlertDialogFooter } from "../../components/ui/alert-dialog";
+  import AlertDialog, { AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogOverlay, AlertDialogTitle } from "../../components/ui/alert-dialog";
   import "../../components/ui/tokens.js";
 
   const open = signal(false);
@@ -29,4 +84,37 @@ const description = "Interactive AlertDialog demo running the CLI-vendored css-f
       </${AlertDialogFooter}>
     </${AlertDialog}>
   </div>`, document.getElementById("demo")!);
+
+  const manualOpen = signal(false);
+  const manualState = (): "open" | "closed" => (manualOpen() ? "open" : "closed");
+
+  mount(html`<div class="demo-stack">
+    <${Button} variant="outline" onclick=${() => manualOpen(!manualOpen())}>Delete</${Button}>
+    <p class="demo-note">The same panel composed from the exported parts: overlay and content portaled by hand, both fed the state accessor, the media slot carrying the icon.</p>
+    ${() => manualOpen() && Portal({
+      to: "body",
+      children: [
+        AlertDialogOverlay({ state: manualState }),
+        AlertDialogContent({
+          state: manualState,
+          labelledBy: "alert-demo-manual-title",
+          describedBy: "alert-demo-manual-description",
+          onClose: () => manualOpen(false),
+          children: html`
+            <${AlertDialogHeader}>
+              <${AlertDialogMedia}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+              </${AlertDialogMedia}>
+              <${AlertDialogTitle} id="alert-demo-manual-title">Remove this project?</${AlertDialogTitle}>
+              <${AlertDialogDescription} id="alert-demo-manual-description">Deployments attached to it stop immediately.</${AlertDialogDescription}>
+            </${AlertDialogHeader}>
+            <${AlertDialogFooter}>
+              <${AlertDialogCancel} onClose=${() => manualOpen(false)}>Cancel</${AlertDialogCancel}>
+              <${AlertDialogAction} onClose=${() => manualOpen(false)}>Continue</${AlertDialogAction}>
+            </${AlertDialogFooter}>
+          `,
+        }),
+      ],
+    })}
+  </div>`, document.getElementById("demo-manual")!);
 </script>

@@ -1,14 +1,44 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ScrollAreaContent from "@ui/concepts/scroll-area.mdx";
 
 const title = "Scroll Area";
 const description = "Interactive Scroll Area demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import ScrollArea from './components/scroll-area';
+
+const Feed = () => (
+  <ScrollArea class="h-56 w-72 rounded-md border">
+    <div class="p-3">
+      {Array.from({ length: 40 }, (_, i) => (
+        <div key={i} class="border-b border-b-border/60 py-1 text-sm">Item {i + 1}</div>
+      ))}
+    </div>
+  </ScrollArea>
+);`;
+
+const bothAxesCode = `import ScrollArea, { ScrollBar } from './components/scroll-area';
+
+const Cols = () => (
+  <ScrollArea class="h-56 w-72 rounded-md border">
+    <div class="flex w-max gap-3 p-3">
+      {Array.from({ length: 12 }, (_, i) => (
+        <div key={i} class="flex h-40 min-w-24 items-center justify-center rounded-md border text-sm">Column {i + 1}</div>
+      ))}
+    </div>
+    <ScrollBar orientation="horizontal" />
+  </ScrollArea>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="scroll-area" />
   <ScrollAreaContent />
+  <h2>Examples</h2>
+  <Demo id="demo-both-axes" title="Both axes" code={bothAxesCode} note="The horizontal bar composes as a child: it anchors to the relative root, so it never scrolls with the content, and each bar measures and drags its own axis." />
 </MainLayout>
 
 <script>
@@ -20,21 +50,24 @@ const description = "Interactive Scroll Area demo running the CLI-vendored css-f
     { length: 40 },
     (_, i) => html`<div class="border-b border-b-border/60 py-1 text-sm">Item ${i + 1}</div>`,
   );
+
+  mount(html`<div class="demo-stack">
+    <${ScrollArea} class="h-56 w-72 rounded-md border">
+      <div class="p-3">${rows}</div>
+    </${ScrollArea}>
+    <p class="demo-note">The pane scrolls natively (wheel, touch, keyboard) under the custom thumb: drag the thumb and the content follows, and the bar stays rendered with a full-length thumb even when the content fits.</p>
+  </div>`, document.getElementById("demo")!);
+
   const cols = Array.from(
     { length: 12 },
     (_, i) => html`<div class="flex h-40 min-w-24 items-center justify-center rounded-md border text-sm">Column ${i + 1}</div>`,
   );
 
   mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${ScrollArea} class="h-56 w-72 rounded-md border">
-        <div class="p-3">${rows}</div>
-      </${ScrollArea}>
-      <${ScrollArea} class="h-56 w-72 rounded-md border">
-        <div class="flex w-max gap-3 p-3">${cols}</div>
-        <${ScrollBar} orientation="horizontal" />
-      </${ScrollArea}>
-    </div>
-    <p class="demo-note">Both panes scroll natively (wheel, touch, keyboard) under the custom thumbs: the left one is vertical-only, the right one composes a horizontal bar as a child for both axes. Drag a thumb and the content follows.</p>
-  </div>`, document.getElementById("demo")!);
+    <${ScrollArea} class="h-56 w-72 rounded-md border">
+      <div class="flex w-max gap-3 p-3">${cols}</div>
+      <${ScrollBar} orientation="horizontal" />
+    </${ScrollArea}>
+    <p class="demo-note">Wide content scrolls horizontally under the composed bar; at the intersection the corner placeholder lands where the two tracks meet.</p>
+  </div>`, document.getElementById("demo-both-axes")!);
 </script>

@@ -1,14 +1,46 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import ButtonGroupContent from "@ui/concepts/button-group.mdx";
 
 const title = "Button Group";
 const description = "Interactive Button Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const plateCode = `import { signal } from '@hellajs/core';
+import Button from './components/button';
+import ButtonGroup, { ButtonGroupText } from './components/button-group';
+import Input from './components/input';
+
+const url = signal('hellajs.com');
+
+const Labeled = () => (
+  <ButtonGroup>
+    <ButtonGroupText>https://</ButtonGroupText>
+    <Input value={url} oninput={(v) => url(v)} />
+    <Button variant="outline">Open</Button>
+  </ButtonGroup>
+);`;
+
+const verticalCode = `import Button from './components/button';
+import ButtonGroup from './components/button-group';
+
+const Stacked = () => (
+  <ButtonGroup orientation="vertical">
+    <Button variant="outline">Top</Button>
+    <Button variant="outline">Middle</Button>
+    <Button variant="outline">Bottom</Button>
+  </ButtonGroup>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="button-group" />
   <ButtonGroupContent />
+  <h2>Examples</h2>
+  <Demo id="demo-plate" title="Text plate" code={plateCode} note="ButtonGroupText renders the muted prefix plate; compose it with your own input copy." />
+  <Demo id="demo-vertical" title="Vertical orientation" code={verticalCode} note="orientation moves the joined edges to top and bottom." />
 </MainLayout>
 
 <script>
@@ -19,8 +51,7 @@ const description = "Interactive Button Group demo running the CLI-vendored css-
   import Input from "../../components/ui/input";
   import "../../components/ui/tokens.js";
 
-  const label = signal("hellajs.com");
-  mount(html`<div class="demo-stack">
+  mount(html`<div class="demo-row">
     <${ButtonGroup}>
       <${Button} variant="outline">Copy</${Button}>
       <${ButtonGroupSeparator} />
@@ -28,15 +59,18 @@ const description = "Interactive Button Group demo running the CLI-vendored css-
       <${ButtonGroupSeparator} />
       <${Button} variant="outline">Cut</${Button}>
     </${ButtonGroup}>
-    <${ButtonGroup}>
-      <${ButtonGroupText}>https://</${ButtonGroupText}>
-      <${Input} value="${() => label()}" oninput="${(v) => label(v)}" />
-      <${Button} variant="outline">Open</${Button}>
-    </${ButtonGroup}>
-    <${ButtonGroup} orientation="vertical">
-      <${Button} variant="outline">Top</${Button}>
-      <${Button} variant="outline">Middle</${Button}>
-      <${Button} variant="outline">Bottom</${Button}>
-    </${ButtonGroup}>
   </div>`, document.getElementById("demo")!);
+
+  const url = signal("hellajs.com");
+  mount(html`<${ButtonGroup}>
+    <${ButtonGroupText}>https://</${ButtonGroupText}>
+    <${Input} value="${() => url()}" oninput="${(v) => url(v)}" />
+    <${Button} variant="outline">Open</${Button}>
+  </${ButtonGroup}>`, document.getElementById("demo-plate")!);
+
+  mount(html`<${ButtonGroup} orientation="vertical">
+    <${Button} variant="outline">Top</${Button}>
+    <${Button} variant="outline">Middle</${Button}>
+    <${Button} variant="outline">Bottom</${Button}>
+  </${ButtonGroup}>`, document.getElementById("demo-vertical")!);
 </script>

@@ -3,7 +3,7 @@ type: decision
 title: Close dynamic html-template component tags with `</${Component}>` — `<//>` parses as text
 description: In runtime html`` templates the only valid dynamic-component close is the interpolated `</${Component}>` form; the `<//>` short form is not a tag and leaks literal `//>` text into the render.
 tags: [dom, html-templates]
-timestamp: 2026-09-24
+timestamp: 2026-09-27
 last_confirmed: 2026-09-27
 triggers: [html-close-form, dynamic-component-tag, template-parser, component-syntax]
 ---
@@ -13,4 +13,4 @@ triggers: [html-close-form, dynamic-component-tag, template-parser, component-sy
 
 # Evidence
 
-Probe under happy-dom (`bun --preload utils/happydom.js`), Unit 14 session: `<${Inner} label="a">x<//>` rendered `<span> x//&gt;</span>` (stray text) while `<${Inner} label="b">y</${Inner}>` rendered clean; nested dynamic tags, thunk children, and self-closing forms all verified. Source: `packages/dom/lib/internal/template.ts` `TOKEN_REGEX` + the `isSlotCloser` stack walk; `packages/dom/docs/concepts/components.mdx` §Component Syntax documents `</${MyComponent}>`. Reintroduction sweep 2026-09-24: repo `rg '<//>'` found exactly 7 stray lines (`command.astro:45`, `input-otp.astro:38,44,45`, `input-otp.mdx:69,75,76`), all rewritten to the interpolated closer; `bun coverage ui` green after (2755 tests, repo-wide tsc + guards).
+Probe under happy-dom (`bun --preload utils/happydom.js`), Unit 14 session: `<${Inner} label="a">x<//>` rendered `<span> x//&gt;</span>` (stray text) while `<${Inner} label="b">y</${Inner}>` rendered clean; nested dynamic tags, thunk children, and self-closing forms all verified. Source: `packages/dom/lib/internal/template.ts` `TOKEN_REGEX` + the `isSlotCloser` stack walk; `packages/dom/docs/concepts/components.mdx` §Component Syntax documents `</${MyComponent}>`. Reintroduction sweep 2026-09-24: repo `rg '<//>'` found exactly 7 stray lines (`command.astro:45`, `input-otp.astro:38,44,45`, `input-otp.mdx:69,75,76`), all rewritten to the interpolated closer; `bun coverage ui` green after (2755 tests, repo-wide tsc + guards). Third reintroduction 2026-09-27 (shadcn-page-format worktree, unit 09): a worker authored the interpolated variant `<//${Component}>` in tooltip/hover-card/popover.astro from memory — same text-branch failure, but INVISIBLE to the prior sweep pattern: `rg '<//>'` does not match `<//${Comp}>` (no `>` after `//`). Sweep pattern is `rg '<//'` over `docs/src/pages/**/*.astro` + `packages/ui/docs/concepts/*.mdx`. The docs build stays silent on every variant: astro/esbuild only parse the `<script>` JS, and the malformed closer is template text inside a string literal, so a green `(cd docs && bun run build)` proves nothing about close forms.

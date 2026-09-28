@@ -2,39 +2,7 @@
 
 A drag-dismissable panel styled to shadcn's Drawer (vaul): an overlay plus a panel that mounts on one of the four screen edges, follows the pointer while dragged, and dismisses on release past a distance or velocity threshold. The caller owns an `open` signal and an `onClose` callback; the component wires everything else around them.
 
-## Install
-
-```bash
-bunx @hellajs/ui add drawer
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file; both are remembered in `hella.ui.json` once `bunx @hellajs/ui init` has run. The component copies as one editable file into `src/components/`; there is no importable package surface. The drag physics ride on [`onDrag`](/reference/dom/behaviors) from `@hellajs/dom`.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## Drag Physics
-
-The whole panel is a drag surface (the grip handle at the top of a bottom drawer included). Pointerdown starts the drag; the panel's transform follows the pointer live along its dismissal axis, and the overlay's opacity fades in proportion to how far the panel has traveled. Two thresholds decide the release:
-
-| Threshold | Value | Meaning |
-|---|---|---|
-| Distance | 25% of the panel size along the dismissal axis | Released past this fraction of the way out dismisses |
-| Velocity | 500px/s toward the edge at release | A flick dismisses no matter how short the drag |
-
-Below both thresholds the panel springs back: the `data-dragging` attribute drops, the transform transition restores, and the cleared transform animates to identity. Above either one the panel receives its off-edge transform, `onClose` fires, and the exit slide unmounts the panel (a 300ms fallback budget covers environments where `transitionend` never fires).
-
-<div role="alert" class="alert alert-info alert-soft">
-  <span>Interactive elements opt out of the drag: pointerdowns on buttons, links, inputs, or anything marked `data-no-drag` never move the panel.</span>
-</div>
+## Usage
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -65,6 +33,43 @@ Props beyond `open` and `onClose`:
 | `closeOnOutside` | `true` | Pointerdown outside the panel (the overlay included) calls `onClose` |
 
 Escape and outside pointerdown route through the same `onClose`; the focus trap stays armed the whole time the drawer rests open. Unlike the sheet, the drawer has no built-in close button: dragging is the primary dismissal, and `DrawerClose` ships for compositions that want an explicit X.
+
+The html-format file (`drawer.ts`, copied with `--format html`) renders through a template instead of JSX; the drawer mounts as a reactive child of whatever wraps it:
+
+```js
+import { signal } from '@hellajs/core';
+import { html, mount } from '@hellajs/dom';
+import Drawer from './components/drawer';
+
+const isOpen = signal(false);
+const close = () => isOpen(false);
+
+mount(
+  html`
+    <main>
+      <${Drawer} open=${isOpen} onClose=${close} title="Confirm order">
+        <p>Two items, 84.00 total.</p>
+      </${Drawer}>
+    </main>
+  `,
+  '#app',
+);
+```
+
+## Drag Physics
+
+The whole panel is a drag surface (the grip handle at the top of a bottom drawer included), and the drag physics ride on [`onDrag`](/reference/dom/behaviors) from `@hellajs/dom`. Pointerdown starts the drag; the panel's transform follows the pointer live along its dismissal axis, and the overlay's opacity fades in proportion to how far the panel has traveled. Two thresholds decide the release:
+
+| Threshold | Value | Meaning |
+|---|---|---|
+| Distance | 25% of the panel size along the dismissal axis | Released past this fraction of the way out dismisses |
+| Velocity | 500px/s toward the edge at release | A flick dismisses no matter how short the drag |
+
+Below both thresholds the panel springs back: the `data-dragging` attribute drops, the transform transition restores, and the cleared transform animates to identity. Above either one the panel receives its off-edge transform, `onClose` fires, and the exit slide unmounts the panel (a 300ms fallback budget covers environments where `transitionend` never fires).
+
+<div role="alert" class="alert alert-info alert-soft">
+  <span>Interactive elements opt out of the drag: pointerdowns on buttons, links, inputs, or anything marked `data-no-drag` never move the panel.</span>
+</div>
 
 ## Direction and Divergences
 
@@ -113,91 +118,6 @@ const Manual = () => {
 
 `DrawerTrigger` is a bare button: wire its click to your own signal write. `DrawerClose` is the X button with its `sr-only` "Close" label. `DrawerPortal` wraps children in a `Portal to="body"` when a manual composition wants the named part for symmetry.
 
-## CSS Style
+## Styling
 
-The css flavor composes classes as a plain array in each part's `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer. The module exports `base` (the overlay), `content` (the panel frame plus the transform transition), `contentDirections` (the per-edge geometry), `close`, `header`, `footer`, `title`, and `description`; the handle look registers as a raw attribute selector under the same layer, after the part classes. The overlay fades are hand-rolled `@keyframes`; the panel animates through its transform transition instead of keyframes, exactly the mechanism the drag drives.
-
-```jsx
-import { signal } from '@hellajs/core';
-import Drawer, { DrawerFooter } from './components/drawer';
-
-const Checkout = () => {
-  const isOpen = signal(false);
-  const close = () => isOpen(false);
-
-  return (
-    <Drawer open={isOpen} onClose={close} title="Confirm order" class="max-h-[60vh]">
-      <p>Two items, 84.00 total.</p>
-      <DrawerFooter>
-        <button on:click={close}>Place order</button>
-      </DrawerFooter>
-    </Drawer>
-  );
-};
-```
-
-The html-format file (`drawer.ts`, copied with `--format html`) renders through a template instead of JSX:
-
-```js
-import { signal } from '@hellajs/core';
-import { html, mount } from '@hellajs/dom';
-import Drawer from './components/drawer';
-
-const isOpen = signal(false);
-const close = () => isOpen(false);
-
-mount(
-  html`
-    <main>
-      <${Drawer} open=${isOpen} onClose=${close} title="Confirm order">
-        <p>Two items, 84.00 total.</p>
-      <${Drawer}>
-    </main>
-  `,
-  '#app',
-);
-```
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`data-[vaul-drawer-direction]` geometry, the grip handle's `group-data` visibility), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group.
-
-```jsx
-import { signal } from '@hellajs/core';
-import Drawer from './components/drawer';
-
-const QuickAdd = () => {
-  const isOpen = signal(false);
-  const close = () => isOpen(false);
-
-  return (
-    <Drawer open={isOpen} onClose={close} direction="right" title="Quick add">
-      <p>Search the catalog.</p>
-    </Drawer>
-  );
-};
-```
-
-```js
-import { signal } from '@hellajs/core';
-import { html, mount } from '@hellajs/dom';
-import Drawer from './components/drawer';
-
-const isOpen = signal(false);
-const close = () => isOpen(false);
-
-mount(
-  html`
-    <main>
-      <${Drawer} open=${isOpen} onClose=${close} direction="right" title="Quick add">
-        <p>Search the catalog.</p>
-      <${Drawer}>
-    </main>
-  `,
-  '#app',
-);
-```
-
-## Customizing
-
-The copied file is yours. The thresholds live as named constants at the top of the file (`DISMISS_DISTANCE` at 0.25, `DISMISS_VELOCITY` at 500); retune them there and the docs here become the only stale artifact. The class composition bakes `content` plus the direction class into the panel; `props.class` lands last, so one-off classes from the call site always ride along. Side geometry lives in the `contentDirections` map.
+The module exports `base` (the overlay), `content` (the panel frame plus the transform transition), `contentDirections` (the per-edge geometry), `close`, `header`, `footer`, `title`, and `description`; the handle look registers as a raw attribute selector under the same layer, after the part classes. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; the overlay fades are hand-rolled `@keyframes`, while the panel animates through its transform transition instead of keyframes, exactly the mechanism the drag drives. The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`data-[vaul-drawer-direction]` geometry, the grip handle's `group-data` visibility), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The thresholds live as named constants at the top of the file (`DISMISS_DISTANCE` at 0.25, `DISMISS_VELOCITY` at 500); retune them there and the docs here become the only stale artifact. `props.class` lands last in the panel composition, so one-off classes from the call site always ride along. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

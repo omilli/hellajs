@@ -2,28 +2,9 @@
 
 Chat message bubbles styled byte-faithfully to shadcn's new-york-v4 Bubble: a group stack, a variant-carrying bubble with asymmetric content corners, the content shell, and floating reaction chips, all presentational with no runtime beyond `cn`-style class composition.
 
-## Install
+## Usage
 
-```bash
-bunx @hellajs/ui add bubble
-```
-
-`--style css|tailwind` picks the flavor (css is the default) and `--format jsx|html` picks the canonical file. Bubble is presentational, so the entry declares no component dependencies beyond the theme.
-
-Every project adds its theme entry once, then every component reads the same properties:
-
-```bash
-bunx @hellajs/ui add theme
-```
-
-| Style | Extra peers | Theme artifact |
-|---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by `cssText()` for SSR |
-| tailwind | `clsx`, `tailwind-merge` | `theme.css` plus `cn.ts` |
-
-## CSS Style
-
-The css flavor composes classes as a plain array in the `class` attribute; declarations live in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules.
+`variant` switches the bubble surface: `default` (primary fill), `secondary`, `muted`, `tinted` (primary-tinted in light and dark), `outline`, `ghost` (borderless, padding-free), and `destructive`. `align="end"` floats the bubble to the inline end, and the same shift applies automatically to any bubble inside an end-aligned message row.
 
 ```jsx
 import { Bubble, BubbleContent, BubbleGroup } from './components/bubble';
@@ -37,22 +18,6 @@ const Thread = () => (
       <BubbleContent>A ResizeObserver watches the content and scrolls while you are at the bottom.</BubbleContent>
     </Bubble>
   </BubbleGroup>
-);
-```
-
-`variant` switches the bubble surface: `default` (primary fill), `secondary`, `muted`, `tinted` (primary-tinted in light and dark), `outline`, `ghost` (borderless, padding-free), and `destructive`. `align="end"` floats the bubble to the inline end, and the same shift applies automatically to any bubble inside an end-aligned message row.
-
-## Tailwind Style
-
-The tailwind flavor never touches `@hellajs/css`: the copied strings carry shadcn's literal utilities verbatim, including the child selectors such as `*:data-[slot=bubble-content]:bg-primary` and the dark variants, and the class arrays wrap in `cn()`.
-
-```jsx
-import { Bubble, BubbleContent } from './components/bubble';
-
-const Reply = () => (
-  <Bubble variant="ghost" align="end">
-    <BubbleContent>Sounds good.</BubbleContent>
-  </Bubble>
 );
 ```
 
@@ -80,6 +45,6 @@ const Reacted = () => (
 
 All four exports are presentational. Upstream's `asChild` slot rendering (BubbleContent) is dropped: hella has no Radix Slot, so render the element you want directly and pass its classes through `class`. The bubble's content hover styles key on `:is(button, a)`, so an anchor or button as the content keeps the interactive affordances.
 
-## Customizing
+## Styling
 
-The copied file is yours. The style modules export `base` (group), `bubble` plus `variants` (the seven bubble surfaces), `content`, and `reactions` plus `reactionsSides` and `reactionsAligns`. Retune the 80% max width on the `bubble` map to widen the column.
+The style module exports `base` (group), `bubble` plus `variants` (the seven bubble surfaces), `content`, and `reactions` plus `reactionsSides` and `reactionsAligns`; the bubble's compose bakes `variants[props.variant]` and `props.class` lands last. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities, child selectors such as `*:data-[slot=bubble-content]:bg-primary` included, in `cn()`. Retune the 80% max width on the `bubble` map to widen the column. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

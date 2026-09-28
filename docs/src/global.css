@@ -168,5 +168,5 @@ body:has(#sidebar-drawer:checked) .sidebar-close {
 }
 
 .demo-note {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }

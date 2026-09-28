@@ -319,7 +319,7 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 
 ### Rules
 
-- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`. **UI-section page** (`docs/src/pages/ui/{name}.astro`): a self-contained `.astro` page — frontmatter imports `MainLayout` + `@ui/concepts/{name}.mdx`; the body renders the empty demo frame (`<div class="demo-frame dark" id="demo"></div>`) and the package-doc content tag, and a page-level `<script>` composes the vendored components through the `<${Component}>` embedded-tag syntax and `mount`s into `#demo` — the frame and script are sanctioned structural content alongside the package-doc component tag, not prose.
+- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`. **UI-section page** (`docs/src/pages/ui/{name}.astro`): a self-contained `.astro` page — frontmatter imports `MainLayout`, `InstallSection`, `Demo`, and `@ui/concepts/{name}.mdx`; the body renders, in order, the hero demo frame (`<div class="demo-frame dark" id="demo"></div>`), `<InstallSection entry="{name}" />` (site-generated Installation tabs), the package-doc content tag, an `Examples` h2, and `<Demo>` cards (titled demo frames with collapsible View Code); one page-level `<script>` composes the vendored components through the `<${Component}>` embedded-tag syntax and `mount`s into the hero frame and every Demo card's frame id — the frames, InstallSection/Demo tags, and script are sanctioned structural content alongside the package-doc component tag, not prose. Each demo demonstrates one distinct behavior the package doc documents, none twice; 2-4 live demos per page (hero + 1-3 cards). Wire page scripts and Demo `code` to hella's event contract: native-element events use the `on:` prefix (`e:` for direct handlers); a plain `on*` attribute is a reactive prop, invoked once at mount and never on the event. Component props use the registry's declared names (`ariaLabel`, not `aria-label`): vendored parts forward declared props only.
 - **Component name**: PascalCase from the file name (`signal.mdx` → `SignalContent`). **No content** between the import and the component tag.
 - A wrapper MAY import and render multiple package docs, separated by `<div class="...border-t..."></div>`, when the site joins related content under one URL — concepts from different packages, or sibling exports within one package (dom's `/reference/dom/behaviors` joins its behavior-function api docs) — each import still follows the alias + PascalCase rules, and the wrapper still carries zero prose.
 
@@ -593,7 +593,7 @@ try {
 
 JSX is the only example syntax in every package, `dom` included. Write every example as JSX.
 
-The `html` tagged-literal syntax appears in docs whose subject is the `html` method itself (`packages/dom/docs/api/html.mdx`) and in recipe blocks targeting a build-free runtime: server entries pairing `router({ url })` with `ssr`, where no build plugin transpiles JSX. Those blocks keep the `js` language tag (§Language Tags unchanged). Mixing the two syntaxes in one fenced block stays banned (§Never Mix in One Block unchanged).
+The `html` tagged-literal syntax appears in docs whose subject is the `html` method itself (`packages/dom/docs/api/html.mdx`) and in recipe blocks targeting a build-free runtime: server entries pairing `router({ url })` with `ssr`, and ui concept docs' html-format usage fences (the copied `<name>.ts` is consumed from templates with no JSX build step), where no build plugin transpiles JSX. Those blocks keep the `js` language tag (§Language Tags unchanged). Mixing the two syntaxes in one fenced block stays banned (§Never Mix in One Block unchanged).
 
 ### Never Mix in One Block
 
@@ -750,7 +750,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 **Frontmatter**
 - [ ] Package docs (`packages/*/docs/**/*.mdx`) have no frontmatter
 - [ ] Website wrappers (`docs/src/pages/**/*.mdx`) carry `title`, `description`, `layout`
-- [ ] UI-section pages (`docs/src/pages/ui/*.astro`) import `MainLayout` + `@ui/concepts/<name>.mdx`, render the `#demo` demo frame, and carry the inline demo `<script>` (§Rules)
+- [ ] UI-section pages (`docs/src/pages/ui/*.astro`) follow the page contract: hero demo frame, `<InstallSection>` tag, package-doc tag, `Examples` h2, `<Demo>` cards, and one inline `<script>` mounting every frame, wired with `on:`-prefixed native-element events and registry-declared prop names (§Rules)
 - [ ] Site-authored content pages (no package-doc import) carry complete frontmatter and are registered in `nav.ts` + their enumeration index
 
 **Structure (Function & Prefix docs)**
@@ -763,7 +763,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 
 **Code examples**
 - [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
-- [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`) or build-free-runtime recipe blocks (§Example Syntax (JSX Default)); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
+- [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`), build-free-runtime recipe blocks, or ui html-format usage fences (§Example Syntax (JSX Default)); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
 - [ ] `html` blocks close dynamic components with `</${Component}>` (childless: self-closing `<${Component} />`); never the `<//>` short form — audit-enforced (§Example Syntax (JSX Default) → Dynamic Component Closes)
 - [ ] Attribute values written directly, never function-wrapped — function-wrapping only in `html`-method docs; `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
 - [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `bun lint:structure` skips them (§Code Examples → Example Code Style)

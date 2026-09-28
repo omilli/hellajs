@@ -1,14 +1,74 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import SidebarContent from "@ui/concepts/sidebar.mdx";
 
 const title = "Sidebar";
 const description = "Interactive Sidebar demo running the CLI-vendored css-flavor source the same `add` command installs, with the provider-owned open and mobile state and the full menu part family.";
+
+const heroCode = `import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarSeparator, SidebarTrigger } from './components/sidebar';
+
+const Shell = () => (
+  <SidebarProvider>
+    {({ open, mobile, openMobile, setOpenMobile, onToggle }) => (
+      <>
+        <Sidebar open={open} mobile={mobile} openMobile={openMobile} onOpenMobileChange={setOpenMobile} collapsible="icon">
+          <SidebarHeader>Acme Inc</SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Application</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton active tooltip="Home" open={open} mobile={mobile}>Home</SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Search" open={open} mobile={mobile}>Search</SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarSeparator />
+          <SidebarFooter>Ctrl+B toggles</SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <SidebarTrigger onToggle={onToggle} />
+          <main>Page content stretches beside the panel.</main>
+        </SidebarInset>
+      </>
+    )}
+  </SidebarProvider>
+);`;
+
+const menuCode = `import { SidebarMenu, SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarMenuSkeleton, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from './components/sidebar';
+
+const Items = () => (
+  <SidebarMenu>
+    <SidebarMenuItem>
+      <SidebarMenuButton active>Inbox</SidebarMenuButton>
+      <SidebarMenuBadge>3</SidebarMenuBadge>
+      <SidebarMenuAction showOnHover onclick={() => console.log('configure')}>Configure</SidebarMenuAction>
+      <SidebarMenuSub>
+        <SidebarMenuSubItem>
+          <SidebarMenuSubButton active href="/settings">Settings</SidebarMenuSubButton>
+        </SidebarMenuSubItem>
+      </SidebarMenuSub>
+    </SidebarMenuItem>
+    <SidebarMenuItem>
+      <SidebarMenuSkeleton showIcon />
+    </SidebarMenuItem>
+  </SidebarMenu>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="sidebar" />
   <SidebarContent />
+  <h2>Examples</h2>
+  <Demo id="demo-menu" title="Menu composition" code={menuCode} note="A badge, a hover-revealed action, sub-navigation, and a loading skeleton compose onto plain menu items; every part carries its data-slot and data-sidebar hooks." />
 </MainLayout>
 
 <script>
@@ -23,14 +83,21 @@ const description = "Interactive Sidebar demo running the CLI-vendored css-flavo
     SidebarHeader,
     SidebarInset,
     SidebarMenu,
+    SidebarMenuAction,
+    SidebarMenuBadge,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarMenuSkeleton,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
     SidebarProvider,
     SidebarSeparator,
     SidebarTrigger,
   } from "../../components/ui/sidebar";
   import "../../components/ui/tokens.js";
 
+  // Hero: the layout shell with provider-owned collapsible state.
   mount(html`
     <${SidebarProvider}>
       ${(state) => html`
@@ -63,4 +130,24 @@ const description = "Interactive Sidebar demo running the CLI-vendored css-flavo
       `}
     </${SidebarProvider}>
   `, document.getElementById("demo")!);
+
+  // Menu composition: badge, hover action, sub-navigation, skeleton.
+  mount(html`<div class="demo-stack">
+    <${SidebarMenu}>
+      <${SidebarMenuItem}>
+        <${SidebarMenuButton} active>Inbox</${SidebarMenuButton}>
+        <${SidebarMenuBadge}>3</${SidebarMenuBadge}>
+        <${SidebarMenuAction} showOnHover onclick=${() => console.log("configure")}>Configure</${SidebarMenuAction}>
+        <${SidebarMenuSub}>
+          <${SidebarMenuSubItem}>
+            <${SidebarMenuSubButton} active href="#settings">Settings</${SidebarMenuSubButton}>
+          </${SidebarMenuSubItem}>
+        </${SidebarMenuSub}>
+      </${SidebarMenuItem}>
+      <${SidebarMenuItem}>
+        <${SidebarMenuSkeleton} showIcon />
+      </${SidebarMenuItem}>
+    </${SidebarMenu}>
+    <p class="demo-note">The action fades in on item hover from md up; the skeleton picks a random width per mount.</p>
+  </div>`, document.getElementById("demo-menu")!);
 </script>

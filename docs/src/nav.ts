@@ -78,5 +78,8 @@ export const navigation = {
     { ssr: ["ssr", "doc"] },
   ],
   plugins: ["babel", "rollup", "vite", "astro"],
-  ui: ["Accordion","Alert","Alert-Dialog","Aspect-Ratio","Attachment","Avatar","Badge","Breadcrumb","Bubble","Button","Button-Group","Calendar","Card","Checkbox","Collapsible","Combobox","Command","Context-Menu","Dialog","Direction","Drawer","Dropdown-Menu","Empty","Field","Form","Hover-Card","Input","Input-Group","Input-Otp","Item","Kbd","Label","Marker","Menubar","Message","Message-Scroller","Native-Select","Navigation-Menu","Pagination","Popover","Progress","Radio-Group","Resizable","Scroll-Area","Select","Separator","Sheet","Sidebar","Skeleton","Slider","Sonner","Spinner","Switch","Table","Tabs","Textarea","Toggle","Toggle-Group","Tooltip"],
+  ui: [
+    { Config: ["Installation", "Theming", "CLI"] },
+    { Components: ["Accordion","Alert","Alert-Dialog","Aspect-Ratio","Attachment","Avatar","Badge","Breadcrumb","Bubble","Button","Button-Group","Calendar","Card","Checkbox","Collapsible","Combobox","Command","Context-Menu","Dialog","Direction","Drawer","Dropdown-Menu","Empty","Field","Form","Hover-Card","Input","Input-Group","Input-Otp","Item","Kbd","Label","Marker","Menubar","Message","Message-Scroller","Native-Select","Navigation-Menu","Pagination","Popover","Progress","Radio-Group","Resizable","Scroll-Area","Select","Separator","Sheet","Sidebar","Skeleton","Slider","Sonner","Spinner","Switch","Table","Tabs","Textarea","Toggle","Toggle-Group","Tooltip"] },
+  ],
 } as const;

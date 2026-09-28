@@ -7,7 +7,7 @@ const { frontmatter = {}, title: pageTitle } = Astro.props;
 const title = frontmatter.title || pageTitle;
 ---
 
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -15,7 +15,7 @@ const title = frontmatter.title || pageTitle;
     <meta name="generator" content={Astro.generator} />
     <title>{title} | HellaJS</title>
   </head>
-  <body>
+  <body class="dark">
     <Navbar />
     <Sidebar>
       <div class="pt-16 pb-16 lg:pb-0">
@@ -117,8 +117,8 @@ const title = frontmatter.title || pageTitle;
           .map(
             (heading) => `
           <li>
-            <a 
-              href="#${heading.slug}" 
+            <a
+              href="#${heading.slug}"
               class="text-sm block"
               style="margin-left: ${(heading.depth - 2) * 1}rem;"
             >

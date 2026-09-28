@@ -1,14 +1,49 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import RadioGroupContent from "@ui/concepts/radio-group.mdx";
 
 const title = "Radio Group";
 const description = "Interactive Radio Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import RadioGroup from './components/radio-group';
+
+const plan = signal('pro');
+
+const Pricing = () => (
+  <RadioGroup
+    items={[
+      { value: 'free', label: 'Free' },
+      { value: 'pro', label: 'Pro' },
+      { value: 'team', label: 'Team', disabled: true },
+    ]}
+    value={() => plan()}
+    onValueChange={(next) => plan(next)}
+  />
+);`;
+
+const horizontalCode = `import RadioGroup from './components/radio-group';
+
+const Theme = () => (
+  <RadioGroup
+    orientation="horizontal"
+    items={[
+      { value: 'dark', label: 'Dark' },
+      { value: 'light', label: 'Light' },
+      { value: 'system', label: 'System' },
+    ]}
+  />
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="radio-group" />
   <RadioGroupContent />
+  <h2>Examples</h2>
+  <Demo id="demo-horizontal" title="Horizontal orientation" code={horizontalCode} note="aria-orientation moves to the root and the arrow keys scope to Left and Right." />
 </MainLayout>
 
 <script>
@@ -28,12 +63,17 @@ const description = "Interactive Radio Group demo running the CLI-vendored css-f
       value=${() => plan()}
       onValueChange=${(next: string) => plan(next)}
     />
-    <p class="demo-note">Selected plan: ${() => plan()}</p>
+    <p class="demo-note">Selected plan: ${() => plan()}. Arrow keys move focus and select, Home and End jump, and the disabled row is skipped.</p>
+  </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-stack">
     <${RadioGroup}
+      orientation="horizontal"
       items=${[
         { value: "dark", label: "Dark" },
         { value: "light", label: "Light" },
+        { value: "system", label: "System" },
       ]}
     />
-  </div>`, document.getElementById("demo")!);
+  </div>`, document.getElementById("demo-horizontal")!);
 </script>

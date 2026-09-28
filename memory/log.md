@@ -62,6 +62,8 @@
 * **Creation**: Added concept [005](entries/005-no-repo-remote-phone-control.md) (type: decision): remote daemon + web relay removed deliberately — external tooling if phone control is ever wanted
 * **Refresh**: Entries 122/154/206 refreshed after the remote nuke: dropped `bun remote` panel parenthetical (154), re-measured the relay consumer surface at five files (206), noted the daemon removal as drift context (122)
 * **Creation**: Added concept [011](entries/011.md) (type: decision).
+* **Update**: Added concept 221 (type: correction): fn children passed INTO a component stringify instead of rendering (plain-element parents or wrapper getters for dynamic lists); vendored component props are consumed as statically as their templates read them
+* **Creation**: Added concept [115](entries/115.md) (type: decision).
 
 ## 2026-09-26
 * **Refresh**: entry 194 (ui sibling-doc links via /ui/<name>): re-verified docs/src/pages/ui/*.astro registration, /learn/concepts core-only scope, /ui/ crossrefs in command/alert-dialog mdx, /components tripwire + .mdx/.astro resolution in scripts/doc-links.ts, nav.ts ui array, and bun doc-links green

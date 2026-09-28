@@ -1,14 +1,39 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import SwitchContent from "@ui/concepts/switch.mdx";
 
 const title = "Switch";
 const description = "Interactive Switch demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import { signal } from '@hellajs/core';
+import Switch from './components/switch';
+
+const airplane = signal(false);
+
+const Settings = () => (
+  <label>
+    <Switch checked={() => airplane()} onCheckedChange={(next) => airplane(next)} />
+    Airplane mode
+  </label>
+);`;
+
+const disabledCode = `import Switch from './components/switch';
+
+const Managed = () => (
+  <label>
+    <Switch defaultChecked disabled /> Managed by policy
+  </label>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="switch" />
   <SwitchContent />
+  <h2>Examples</h2>
+  <Demo id="demo-disabled" title="Disabled" code={disabledCode} note="The disabled attribute blocks pointer and keyboard activation; Space falls through." />
 </MainLayout>
 
 <script>
@@ -25,7 +50,10 @@ const description = "Interactive Switch demo running the CLI-vendored css-flavor
         onCheckedChange=${(next: boolean) => airplane(next)}
       /> Airplane mode (${() => (airplane() ? "on" : "off")})
     </label>
-    <label class="demo-row"><${Switch} defaultChecked /> Notifications</label>
-    <label class="demo-row"><${Switch} disabled /> Managed by policy</label>
+    <p class="demo-note">The thumb slides through pure CSS: the style layer reads the root's data-state and translates the knob.</p>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-stack">
+    <label class="demo-row"><${Switch} defaultChecked disabled /> Managed by policy</label>
+  </div>`, document.getElementById("demo-disabled")!);
 </script>

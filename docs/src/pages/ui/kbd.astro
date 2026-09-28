@@ -1,14 +1,44 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
+import InstallSection from "../../components/InstallSection.astro";
+import Demo from "../../components/Demo.astro";
 import KbdContent from "@ui/concepts/kbd.mdx";
 
 const title = "Kbd";
 const description = "Interactive Kbd demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+
+const heroCode = `import Kbd from './components/kbd';
+
+const Shortcuts = () => (
+  <div class="flex flex-col gap-2 text-sm">
+    <span class="flex items-center gap-2">Save changes <Kbd>⌘S</Kbd></span>
+    <span class="flex items-center gap-2">Dismiss <Kbd>esc</Kbd></span>
+  </div>
+);`;
+
+const groupCode = `import Kbd, { KbdGroup } from './components/kbd';
+
+const Sequences = () => (
+  <div class="flex flex-col gap-2 text-sm">
+    <KbdGroup>
+      <Kbd>ctrl</Kbd>
+      <Kbd>shift</Kbd>
+      <Kbd>P</Kbd>
+    </KbdGroup>
+    <KbdGroup>
+      <Kbd>⌘</Kbd>
+      <Kbd>B</Kbd>
+    </KbdGroup>
+  </div>
+);`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <div class="demo-frame dark" id="demo"></div>
+  <InstallSection entry="kbd" />
   <KbdContent />
+  <h2>Examples</h2>
+  <Demo id="demo-group" title="Grouped sequences" code={groupCode} />
 </MainLayout>
 
 <script>
@@ -21,15 +51,19 @@ const description = "Interactive Kbd demo running the CLI-vendored css-flavor so
       Save changes <${Kbd}>⌘S</${Kbd}>
     </div>
     <div class="demo-row items-center text-sm">
-      Open the command palette
-      <${KbdGroup}>
-        <${Kbd}>ctrl</${Kbd}>
-        <${Kbd}>shift</${Kbd}>
-        <${Kbd}>P</${Kbd}>
-      </${KbdGroup}>
-    </div>
-    <div class="demo-row items-center text-sm">
-      Toggle sidebar <${Kbd}>⌘</${Kbd}><${Kbd}>B</${Kbd}>
+      Dismiss <${Kbd}>esc</${Kbd}>
     </div>
   </div>`, document.getElementById("demo")!);
+
+  mount(html`<div class="demo-stack">
+    <${KbdGroup}>
+      <${Kbd}>ctrl</${Kbd}>
+      <${Kbd}>shift</${Kbd}>
+      <${Kbd}>P</${Kbd}>
+    </${KbdGroup}>
+    <${KbdGroup}>
+      <${Kbd}>⌘</${Kbd}>
+      <${Kbd}>B</${Kbd}>
+    </${KbdGroup}>
+  </div>`, document.getElementById("demo-group")!);
 </script>
