@@ -7,46 +7,26 @@ import AccordionContent from "@ui/concepts/accordion.mdx";
 const title = "Accordion";
 const description = "Interactive Accordion demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Accordion from './components/accordion';
-
-const Faq = () => (
-  <Accordion
-    type="single"
-    collapsible
-    open="shipping"
-    items={[
-      { value: 'shipping', trigger: 'How fast is shipping?', content: 'Two business days, everywhere we deliver.' },
-      { value: 'returns', trigger: 'What is the return window?', content: 'Thirty days from delivery.' },
-    ]}
-  />
-);`;
-
-const multipleCode = `import Accordion from './components/accordion';
-
-const Specs = () => (
-  <Accordion
+const multipleCode = `<Accordion
     type="multiple"
     items={[
       { value: 'size', trigger: 'Size', content: '12 x 8 x 3 centimeters.' },
       { value: 'weight', trigger: 'Weight', content: '240 grams with the cable.' },
     ]}
-  />
-);`;
+  />`;
 
-const disabledCode = `import Accordion from './components/accordion';
-
-const Plans = () => (
-  <Accordion
+const disabledCode = `<Accordion
     type="single"
     items={[
       { value: 'starter', trigger: 'Starter', content: 'Free for personal projects.' },
       { value: 'enterprise', trigger: 'Enterprise', content: 'Contact sales to upgrade.', disabled: true },
     ]}
-  />
-);`;
+  />`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Accordion</h1>
+  <p>Each row is an item whose trigger toggles its content region. Animations use a measurement-free grid, so content height is never explicitly measured.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="accordion" />
   <AccordionContent />

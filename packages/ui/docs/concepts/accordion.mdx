@@ -1,29 +1,8 @@
-# Accordion
-
-Stacked disclosure items styled to shadcn's Accordion: each row is a bordered item whose trigger toggles a grid-animated content region. You describe the accordion as data (`items`), the root owns the open-value set in a signal, and the single and multiple modes enforce Radix's open/close rules without a context primitive. The expand and collapse animate through a measurement-free grid technique, so content height is never measured.
-
 ## Usage
 
+### jsx
+
 ```jsx
-import Accordion from './components/accordion';
-
-const Faq = () => (
-  <Accordion
-    type="single"
-    collapsible
-    open="shipping"
-    items={[
-      { value: 'shipping', trigger: 'How fast is shipping?', content: 'Two business days, everywhere we deliver.' },
-      { value: 'returns', trigger: 'What is the return window?', content: 'Thirty days from delivery.' },
-    ]}
-  />
-);
-```
-
-The html-format file (`accordion.ts`, copied with `--format html`) works the same way from a template; build the items array once and pass it in:
-
-```js
-import { html, mount } from '@hellajs/dom';
 import Accordion from './components/accordion';
 
 const items = [
@@ -31,8 +10,38 @@ const items = [
   { value: 'returns', trigger: 'What is the return window?', content: 'Thirty days from delivery.' },
 ];
 
-mount(html`<main><${Accordion} items=${items} type="single" collapsible /></main>`, '#app');
+const Faq = () => (
+  <Accordion
+    type="single"
+    collapsible
+    open="shipping"
+    items={items}
+  />
+);
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Accordion}
+    type="single"
+    collapsible
+    open="shipping"
+    items=${items}
+  />
+</main>`
+```
+
+## Type
+
+| Props | Open-click behavior | Open-item-click behavior |
+|---|---|---|
+| `type="single"` (default) | Closes the previous item, opens the clicked one | Does nothing unless `collapsible` is set |
+| `type="single" collapsible` | Same swap | Closes the item, leaving none open |
+| `type="multiple"` | Opens it alongside the rest | Closes it |
+
 
 ## Items
 
@@ -45,23 +54,45 @@ Each entry in the `items` array is one accordion row:
 | `content` | `HellaChildren` | Body node rendered inside the row's content region |
 | `disabled` | `boolean` | Blocks activation: `aria-disabled` plus the native `disabled` attribute and the ref's pointer/opacity styles |
 
-Three props tune the rest. `type` picks `"single"` (the default: at most one item open) or `"multiple"` (free toggling); `collapsible` lets a `single` accordion close its last open item; and `open` seeds the open set, as one value for `single` or a list for `multiple`. Nothing opens until asked: an accordion without `open` starts fully closed.
-
-## Type and Collapsible Rules
-
-The root holds the open values in a `Set` and gates every toggle through the mode rules:
-
-| Props | Open-click behavior | Open-item-click behavior |
-|---|---|---|
-| `type="single"` (default) | Closes the previous item, opens the clicked one | Does nothing unless `collapsible` is set |
-| `type="single" collapsible` | Same swap | Closes the item, leaving none open |
-| `type="multiple"` | Opens it alongside the rest | Closes it |
-
-Disabled items never enter the toggle path, so they ignore activation in every mode. `data-state` on the item, trigger, and content mirrors the set on every flip, and the trigger's `aria-expanded`, `aria-controls`, and the content region's `aria-labelledby` pair through the generated ids.
-
 ## Manual Parts
 
-`AccordionItem`, `AccordionTrigger`, and `AccordionContent` ship beside the default root for custom composition. hella has no context primitive, so state is explicit: the item takes an `active` accessor for its `data-state`, the trigger takes `active`, an `onToggle` callback, a `controls` id, and an `id` to receive the content's `aria-labelledby`, and the content takes `active` plus the matching `id` and `labelledBy`. That is the documented divergence from shadcn's context-wired composition: the root threads these for you when you pass `items`, and manual composition threads them yourself.
+`AccordionItem`, `AccordionTrigger`, and `AccordionContent` ship beside the default root for custom composition; state is explicit.
+
+### AccordionItem
+
+The row wrapper: a `div` carrying the value and open state, styled by the `item` map.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `string` | Rendered as `data-value` on the row |
+| `active` | `() => boolean` | Accessor driving the row's `data-state` (`open` / `closed`) |
+| `children` | `HellaChild[]` | The trigger and content pair |
+
+### AccordionTrigger
+
+The header row: an `h3` wrapping the toggle button, with the chevron icon appended after the children.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `active` | `() => boolean` | Drives `aria-expanded` (`true` / `false`) and the button's `data-state` |
+| `onToggle` | `() => void` | Click callback |
+| `controls` | `string` | Paired content's `id`, rendered as `aria-controls` |
+| `id` | `string` | Button id; the paired content's `aria-labelledby` points at it |
+| `disabled` | `boolean` | Native `disabled` attribute plus `aria-disabled`, blocking activation |
+| `children` | `HellaChildren` | Label node rendered inside the button |
+
+### AccordionContent
+
+The body region: a `role="region"` div whose inner wrapper carries the collapse animation.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `active` | `() => boolean` | Drives `data-state` on the region and the inner wrapper the animation keys off |
+| `id` | `string` | Region id; the paired trigger's `aria-controls` points at it |
+| `labelledBy` | `string` | Paired trigger's `id`, rendered as `aria-labelledby` |
+| `children` | `HellaChildren` | Body node rendered inside the region |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -69,12 +100,14 @@ import { AccordionContent, AccordionItem, AccordionTrigger } from './components/
 
 const open = signal(true);
 
+const toggle = () => open(!open());
+
 const Custom = () => (
   <AccordionItem value="solo" active={open}>
     <AccordionTrigger
       id="solo-trigger"
       active={open}
-      onToggle={() => open(!open())}
+      onToggle={toggle}
       controls="solo-content"
     >
       Custom trigger
@@ -85,11 +118,3 @@ const Custom = () => (
   </AccordionItem>
 );
 ```
-
-## Animation
-
-shadcn animates its content through Radix's measured-height keyframes (`--radix-accordion-content-height`). This port animates the same 200ms window through a measurement-free grid technique instead: the content wrapper is a grid whose rows flip between `0fr` and `1fr` on `data-state`, and an inner wrapper carries `overflow: hidden` with a `min-height: 0`. The inner mirrors the region's `data-state` so its bottom padding rides the same window, `0` closed and the ref's `1rem` open: a static padding would floor the collapsing row at its own height and reserve dead space under every closed item. Opacity rides the same transition. The divergence is invisible to callers; content stays mounted when closed (the grid collapses it), so reactive bodies keep rendering while hidden.
-
-## Styling
-
-Both flavors export the same names from the copied file: `item`, `header`, `trigger`, `icon`, and the animation pair `content` plus `contentInner`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()` so a `class` prop from the call site lands last. The grid animation keys off the content region's `data-state` (mirrored onto the inner for the padding flip), so restyling it means editing the `content` and `contentInner` maps in your copied file. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

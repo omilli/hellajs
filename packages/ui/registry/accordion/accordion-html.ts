@@ -3,6 +3,7 @@ import { signal } from "@hellajs/core";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
+declare const base: string;
 declare const content: string;
 declare const contentInner: string;
 declare const header: string;
@@ -181,7 +182,7 @@ export default function Accordion(props: AccordionProps): HellaNode {
       data-slot="accordion"
       class="${
         // @hella:compose
-        [props.class]
+        [base, props.class]
         // @hella:end
       }"
     >
