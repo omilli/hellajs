@@ -1419,7 +1419,7 @@ export interface AccordionVariantProps {
   items: AccordionEntryVariant[];
   type?: "single" | "multiple";
   collapsible?: boolean;
-  defaultValue?: string | string[];
+  open?: string | string[];
   class?: string;
 }
 

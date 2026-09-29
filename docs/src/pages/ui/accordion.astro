@@ -13,7 +13,7 @@ const Faq = () => (
   <Accordion
     type="single"
     collapsible
-    defaultValue="shipping"
+    open="shipping"
     items={[
       { value: 'shipping', trigger: 'How fast is shipping?', content: 'Two business days, everywhere we deliver.' },
       { value: 'returns', trigger: 'What is the return window?', content: 'Thirty days from delivery.' },
@@ -64,7 +64,7 @@ const Plans = () => (
     { value: "shipping", trigger: "How fast is shipping?", content: html`<p class="demo-note">Two business days, everywhere we deliver.</p>` },
     { value: "returns", trigger: "What is the return window?", content: html`<p class="demo-note">Thirty days from delivery, no questions asked.</p>` },
   ];
-  mount(html`<${Accordion} type="single" collapsible defaultValue="shipping" items=${faq} />`, document.getElementById("demo")!);
+  mount(html`<${Accordion} type="single" collapsible open="shipping" items=${faq} />`, document.getElementById("demo")!);
 
   const specs = [
     { value: "size", trigger: "Size", content: html`<p class="demo-note">12 x 8 x 3 centimeters.</p>` },

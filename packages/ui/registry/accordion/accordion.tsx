@@ -24,7 +24,7 @@ interface AccordionProps {
   type?: "single" | "multiple";
   collapsible?: boolean;
   /** Open values on mount; a single string or a list for `multiple`. */
-  defaultValue?: string | string[];
+  open?: string | string[];
   class?: string;
 }
 
@@ -153,11 +153,11 @@ export function AccordionContent(props: AccordionContentProps): JSX.Element {
 
 export default function Accordion(props: AccordionProps): JSX.Element {
   const type = props.type ?? "single";
-  const seed = props.defaultValue === undefined
+  const seed = props.open === undefined
     ? []
-    : Array.isArray(props.defaultValue)
-      ? props.defaultValue
-      : [props.defaultValue];
+    : Array.isArray(props.open)
+      ? props.open
+      : [props.open];
   // Single mode keeps at most one value open: a multi-value seed clamps to the first.
   const open = signal<Set<string>>(new Set(type === "single" ? seed.slice(0, 1) : seed));
 

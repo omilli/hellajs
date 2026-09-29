@@ -11,7 +11,7 @@ const Faq = () => (
   <Accordion
     type="single"
     collapsible
-    defaultValue="shipping"
+    open="shipping"
     items={[
       { value: 'shipping', trigger: 'How fast is shipping?', content: 'Two business days, everywhere we deliver.' },
       { value: 'returns', trigger: 'What is the return window?', content: 'Thirty days from delivery.' },
@@ -40,12 +40,12 @@ Each entry in the `items` array is one accordion row:
 
 | Field | Type | Behavior |
 |---|---|---|
-| `value` | `string` | Stable identity: keys the item's `data-value`, the generated `hella-accordion-trigger-<value>` and `hella-accordion-content-<value>` id pair, and the `defaultValue` lookup |
+| `value` | `string` | Stable identity: keys the item's `data-value`, the generated `hella-accordion-trigger-<value>` and `hella-accordion-content-<value>` id pair, and the `open` lookup |
 | `trigger` | `HellaChildren` | Label node rendered inside the row's trigger button |
 | `content` | `HellaChildren` | Body node rendered inside the row's content region |
 | `disabled` | `boolean` | Blocks activation: `aria-disabled` plus the native `disabled` attribute and the ref's pointer/opacity styles |
 
-Three props tune the rest. `type` picks `"single"` (the default: at most one item open) or `"multiple"` (free toggling); `collapsible` lets a `single` accordion close its last open item; and `defaultValue` seeds the open set, as one value for `single` or a list for `multiple`. Nothing opens until asked: an accordion without `defaultValue` starts fully closed.
+Three props tune the rest. `type` picks `"single"` (the default: at most one item open) or `"multiple"` (free toggling); `collapsible` lets a `single` accordion close its last open item; and `open` seeds the open set, as one value for `single` or a list for `multiple`. Nothing opens until asked: an accordion without `open` starts fully closed.
 
 ## Type and Collapsible Rules
 

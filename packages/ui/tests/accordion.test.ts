@@ -44,8 +44,8 @@ function openIndexes(states: (HTMLElement | Element)[]): number[] {
 }
 
 describe("accordion", () => {
-  test.each(accordionVariants)("$format/$style opens only the defaultValue items with the id cycle intact", (variant) => {
-    const { itemEls, triggers, contents } = mountAccordion(variant, { items, defaultValue: "beta" });
+  test.each(accordionVariants)("$format/$style opens only the open-seeded items with the id cycle intact", (variant) => {
+    const { itemEls, triggers, contents } = mountAccordion(variant, { items, open: "beta" });
     expect(openIndexes(itemEls)).toEqual([1]);
     expect(openIndexes(triggers)).toEqual([1]);
     expect(openIndexes(contents)).toEqual([1]);
@@ -59,13 +59,13 @@ describe("accordion", () => {
     expect(contents[1]!.textContent).toContain("Beta body");
   });
 
-  test.each(accordionVariants)("$format/$style clamps a multi-value defaultValue to the first item in single type", (variant) => {
-    const { itemEls } = mountAccordion(variant, { items, defaultValue: ["beta", "gamma"] });
+  test.each(accordionVariants)("$format/$style clamps a multi-value open seed to the first item in single type", (variant) => {
+    const { itemEls } = mountAccordion(variant, { items, open: ["beta", "gamma"] });
     expect(openIndexes(itemEls)).toEqual([1]);
   });
 
   test.each(accordionVariants)("$format/$style swaps the open item in single type and refuses the last close without collapsible", (variant) => {
-    const { itemEls, triggers } = mountAccordion(variant, { items, defaultValue: "beta" });
+    const { itemEls, triggers } = mountAccordion(variant, { items, open: "beta" });
     triggers[2]!.dispatchEvent(new Event("click"));
     expect(openIndexes(itemEls)).toEqual([2]);
     expect(triggers[2]!.getAttribute("aria-expanded")).toBe("true");
@@ -75,7 +75,7 @@ describe("accordion", () => {
   });
 
   test.each(accordionVariants)("$format/$style closes the open item in single type when collapsible", (variant) => {
-    const { itemEls, triggers } = mountAccordion(variant, { items, defaultValue: "beta", collapsible: true });
+    const { itemEls, triggers } = mountAccordion(variant, { items, open: "beta", collapsible: true });
     expect(openIndexes(itemEls)).toEqual([1]);
     triggers[1]!.dispatchEvent(new Event("click"));
     expect(openIndexes(itemEls)).toEqual([]);
@@ -83,7 +83,7 @@ describe("accordion", () => {
   });
 
   test.each(accordionVariants)("$format/$style keeps N items open and closable independently in multiple type", (variant) => {
-    const { itemEls, triggers, contents } = mountAccordion(variant, { items, type: "multiple", defaultValue: ["beta"] });
+    const { itemEls, triggers, contents } = mountAccordion(variant, { items, type: "multiple", open: ["beta"] });
     triggers[0]!.dispatchEvent(new Event("click"));
     triggers[2]!.dispatchEvent(new Event("click"));
     expect(openIndexes(itemEls)).toEqual([0, 1, 2]);
@@ -109,7 +109,7 @@ describe("accordion", () => {
   });
 
   test.each(accordionVariants)("$format/$style keeps closed content mounted under data-state=closed for the grid collapse", (variant) => {
-    const { triggers, contents } = mountAccordion(variant, { items, defaultValue: "beta" });
+    const { triggers, contents } = mountAccordion(variant, { items, open: "beta" });
     expect(contents[1]!.getAttribute("data-state")).toBe("open");
     triggers[2]!.dispatchEvent(new Event("click"));
     // The closed pair stays mounted under data-state=closed (grid collapse, no unmount);
@@ -122,7 +122,7 @@ describe("accordion", () => {
   });
 
   test.each(accordionVariants)("$format/$style mirrors data-state onto the content inner so closed padding floors at zero", (variant) => {
-    const { contents } = mountAccordion(variant, { items, defaultValue: "beta" });
+    const { contents } = mountAccordion(variant, { items, open: "beta" });
     // A static padding-bottom on the collapsing grid item floors the 0fr row at its own
     // height, reserving dead space under closed items; the inner mirrors data-state so
     // its padding transitions to 0 instead.
@@ -140,7 +140,7 @@ describe("accordion", () => {
   });
 
   test.each(accordionVariants)("$format/$style carries per-item data-state and the chevron rotate wiring", (variant) => {
-    const { itemEls, triggers } = mountAccordion(variant, { items, defaultValue: "alpha" });
+    const { itemEls, triggers } = mountAccordion(variant, { items, open: "alpha" });
     expect(itemEls.map((item) => item.getAttribute("data-value"))).toEqual(["alpha", "beta", "gamma"]);
     expect(itemEls[0]!.getAttribute("data-state")).toBe("open");
     expect(itemEls[1]!.getAttribute("data-state")).toBe("closed");
