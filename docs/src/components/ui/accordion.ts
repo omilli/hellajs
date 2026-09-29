@@ -57,12 +57,6 @@ const icon = style({
   width: "1rem",
 }, { label: "hella-accordion-icon", layer: "hella" });
 
-// The ref's animate-accordion-up/down keyframes animate a measured height
-// custom property; this port animates the same 200ms window through the
-// measurement-free grid-rows technique instead (both flavors). The inner
-// mirrors data-state so its padding flips with the rows: a static
-// padding-bottom floors the collapsing item's box, reserving dead space
-// under every closed item (the 0fr row cannot shrink past it).
 const content = style({
   display: "grid",
   fontSize: "0.875rem",
