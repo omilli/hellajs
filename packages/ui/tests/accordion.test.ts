@@ -121,6 +121,24 @@ describe("accordion", () => {
     expect(contents[2]!.getAttribute("data-state")).toBe("open");
   });
 
+  test.each(accordionVariants)("$format/$style mirrors data-state onto the content inner so closed padding floors at zero", (variant) => {
+    const { contents } = mountAccordion(variant, { items, defaultValue: "beta" });
+    // A static padding-bottom on the collapsing grid item floors the 0fr row at its own
+    // height, reserving dead space under closed items; the inner mirrors data-state so
+    // its padding transitions to 0 instead.
+    const inners = contents.map((content) => content.firstElementChild!);
+    expect(inners[1]!.getAttribute("data-state")).toBe("open");
+    expect(inners[0]!.getAttribute("data-state")).toBe("closed");
+    expect(inners[2]!.getAttribute("data-state")).toBe("closed");
+    const tokens = classTokens(inners[0]!);
+    if (variant.style === "tailwind") {
+      expect(tokens).toContain("pb-0");
+      expect(tokens).toContain("data-[state=open]:pb-4");
+    } else {
+      expect(tokens.some((token) => token.startsWith("h-hella-accordion-content-inner"))).toBe(true);
+    }
+  });
+
   test.each(accordionVariants)("$format/$style carries per-item data-state and the chevron rotate wiring", (variant) => {
     const { itemEls, triggers } = mountAccordion(variant, { items, defaultValue: "alpha" });
     expect(itemEls.map((item) => item.getAttribute("data-value"))).toEqual(["alpha", "beta", "gamma"]);

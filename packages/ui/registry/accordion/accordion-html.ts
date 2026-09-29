@@ -131,6 +131,7 @@ export function AccordionContent(props: AccordionContentProps): HellaNode {
         // @hella:end
       }"
     ><div
+        data-state="${() => (props.active?.() ? "open" : "closed")}"
         class="${
           // @hella:compose
           [contentInner]

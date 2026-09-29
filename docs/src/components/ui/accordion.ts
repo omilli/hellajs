@@ -59,7 +59,10 @@ const icon = style({
 
 // The ref's animate-accordion-up/down keyframes animate a measured height
 // custom property; this port animates the same 200ms window through the
-// measurement-free grid-rows technique instead (both flavors).
+// measurement-free grid-rows technique instead (both flavors). The inner
+// mirrors data-state so its padding flips with the rows: a static
+// padding-bottom floors the collapsing item's box, reserving dead space
+// under every closed item (the 0fr row cannot shrink past it).
 const content = style({
   display: "grid",
   fontSize: "0.875rem",
@@ -76,8 +79,12 @@ const content = style({
 const contentInner = style({
   minHeight: "0",
   overflow: "hidden",
-  paddingBottom: "1rem",
+  paddingBottom: "0",
   paddingTop: "0",
+  transition: "padding-bottom 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+  "&[data-state='open']": {
+    paddingBottom: "1rem",
+  },
 }, { label: "hella-accordion-content-inner", layer: "hella" });
 
 export interface AccordionEntry {
@@ -189,6 +196,7 @@ export function AccordionContent(props: AccordionContentProps): HellaNode {
         [content, props.class]
       }"
     ><div
+        data-state="${() => (props.active?.() ? "open" : "closed")}"
         class="${
           [contentInner]
         }"

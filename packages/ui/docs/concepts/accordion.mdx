@@ -70,16 +70,16 @@ import { AccordionContent, AccordionItem, AccordionTrigger } from './components/
 const open = signal(true);
 
 const Custom = () => (
-  <AccordionItem value="solo" active={() => open()}>
+  <AccordionItem value="solo" active={open}>
     <AccordionTrigger
       id="solo-trigger"
-      active={() => open()}
+      active={open}
       onToggle={() => open(!open())}
       controls="solo-content"
     >
       Custom trigger
     </AccordionTrigger>
-    <AccordionContent id="solo-content" labelledBy="solo-trigger" active={() => open()}>
+    <AccordionContent id="solo-content" labelledBy="solo-trigger" active={open}>
       Custom body
     </AccordionContent>
   </AccordionItem>
@@ -88,8 +88,8 @@ const Custom = () => (
 
 ## Animation
 
-shadcn animates its content through Radix's measured-height keyframes (`--radix-accordion-content-height`). This port animates the same 200ms window through a measurement-free grid technique instead: the content wrapper is a grid whose rows flip between `0fr` and `1fr` on `data-state`, and an inner wrapper carries `overflow: hidden` with a `min-height: 0` and the ref's `pt-0 pb-4` padding. Opacity rides the same transition. The divergence is invisible to callers; content stays mounted when closed (the grid collapses it), so reactive bodies keep rendering while hidden.
+shadcn animates its content through Radix's measured-height keyframes (`--radix-accordion-content-height`). This port animates the same 200ms window through a measurement-free grid technique instead: the content wrapper is a grid whose rows flip between `0fr` and `1fr` on `data-state`, and an inner wrapper carries `overflow: hidden` with a `min-height: 0`. The inner mirrors the region's `data-state` so its bottom padding rides the same window, `0` closed and the ref's `1rem` open: a static padding would floor the collapsing row at its own height and reserve dead space under every closed item. Opacity rides the same transition. The divergence is invisible to callers; content stays mounted when closed (the grid collapses it), so reactive bodies keep rendering while hidden.
 
 ## Styling
 
-Both flavors export the same names from the copied file: `base`, `item`, `header`, `trigger`, `icon`, and the animation pair `content` plus `contentInner`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()` so a `class` prop from the call site lands last. The grid animation keys off the content region's `data-state` alone, so restyling it means editing the `content` and `contentInner` maps in your copied file. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+Both flavors export the same names from the copied file: `base`, `item`, `header`, `trigger`, `icon`, and the animation pair `content` plus `contentInner`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()` so a `class` prop from the call site lands last. The grid animation keys off the content region's `data-state` (mirrored onto the inner for the padding flip), so restyling it means editing the `content` and `contentInner` maps in your copied file. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

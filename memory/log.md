@@ -1,5 +1,8 @@
 # Memory Update Log
 
+## 2026-09-29
+* **Creation**: Added concept [123](entries/123.md) (type: decision).
+
 ## 2026-09-27
 * **Creation**: Added concept [210](entries/210.md) (type: correction).
 * **Deprecation**: Archived [147](archive/147-adding-new-packages-workspace-requires.md) → superseded by [210](entries/210-adding-new-packages-workspace-requires.md).

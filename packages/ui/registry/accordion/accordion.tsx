@@ -140,6 +140,7 @@ export function AccordionContent(props: AccordionContentProps): JSX.Element {
       }
     >
       <div
+        data-state={props.active?.() ? "open" : "closed"}
         class={
           // @hella:compose
           [contentInner]
