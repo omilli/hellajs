@@ -146,7 +146,9 @@ export function AccordionContent(props: AccordionContentProps): JSX.Element {
           [contentInner]
           // @hella:end
         }
-      >{props.children}</div>
+      >
+        {props.children}
+      </div>
     </div>
   );
 }

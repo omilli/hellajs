@@ -145,7 +145,9 @@ export function AccordionContent(props: AccordionContentProps): HellaNode {
           [contentInner]
           // @hella:end
         }"
-      >${() => props.children}</div>
+      >
+        ${() => props.children}
+      </div>
     </div>
   ` as HellaNode;
 }
