@@ -14,8 +14,6 @@ const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 // The trigger zone is a bare pass-through span (verbatim from the ref).
-const base = "";
-
 const content = style({
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
@@ -47,8 +45,6 @@ const content = style({
     animation: `${out} 150ms ease-in both`,
   },
 }, { label: "hella-context-menu-content", layer: "hella" });
-
-const group = "";
 
 const item = style({
   alignItems: "center",
@@ -480,7 +476,7 @@ export function ContextMenuTrigger(props: ContextMenuTriggerProps): HellaNode {
     <span
       data-slot="context-menu-trigger"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >${() => props.children}</span>
   ` as HellaNode;
@@ -576,7 +572,7 @@ export function ContextMenuGroup(props: ContextMenuPartProps): HellaNode {
     <div
       data-slot="context-menu-group"
       class="${
-        [group, props.class]
+        [props.class]
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -677,7 +673,7 @@ export function ContextMenuRadioGroup(props: ContextMenuRadioGroupProps): HellaN
     <div
       data-slot="context-menu-radio-group"
       class="${
-        [group, props.class]
+        [props.class]
       }"
     >${() => props.children}${(props.items ?? []).map((entry) => ContextMenuRadioItem({
       value: entry.value,
@@ -1060,7 +1056,7 @@ export default function ContextMenu(props: ContextMenuProps): HellaNode {
       aria-haspopup="menu"
       tabindex="-1"
       class="${
-        [base, props.class]
+        [props.class]
       }"
       on:contextmenu="${(e: Event) => {
         e.preventDefault();

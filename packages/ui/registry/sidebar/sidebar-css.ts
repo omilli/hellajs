@@ -739,8 +739,6 @@ export const menuSubSizes = {
   }, { label: "hella-sidebar-menu-sub-md", layer: "hella" }),
 };
 
-export const tooltipBase = "";
-
 export const tooltipContent = style({
   backgroundColor: "var(--foreground)",
   borderRadius: "calc(var(--radius) * 0.8)",

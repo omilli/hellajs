@@ -14,7 +14,6 @@ declare const chips: string;
 declare const chipsInput: string;
 declare const content: string;
 declare const empty: string;
-declare const group: string;
 declare const icon: string;
 declare const input: string;
 declare const inputControl: string;
@@ -29,7 +28,6 @@ declare const sizeIconXs: string;
 declare const trigger: string;
 declare const triggerExtra: string;
 declare const triggerIcon: string;
-declare const value: string;
 declare const xIcon: string;
 // @hella:end
 
@@ -158,7 +156,7 @@ export function ComboboxValue(props: ComboboxValueProps): HellaNode {
       data-slot="combobox-value"
       class="${
         // @hella:compose
-        [value, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => {
@@ -228,7 +226,7 @@ export function ComboboxGroup(props: ComboboxGroupProps): HellaNode {
       data-slot="combobox-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</div>

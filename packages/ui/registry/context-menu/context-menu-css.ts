@@ -10,8 +10,6 @@ const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 // The trigger zone is a bare pass-through span (verbatim from the ref).
-export const base = "";
-
 export const content = style({
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
@@ -43,8 +41,6 @@ export const content = style({
     animation: `${out} 150ms ease-in both`,
   },
 }, { label: "hella-context-menu-content", layer: "hella" });
-
-export const group = "";
 
 export const item = style({
   alignItems: "center",

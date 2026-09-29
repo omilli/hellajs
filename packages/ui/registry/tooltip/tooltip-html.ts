@@ -3,7 +3,6 @@ import { anchorPosition, hoverIntent, html, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 
 // @hella:styles
-declare const base: string;
 declare const content: string;
 // @hella:end
 
@@ -29,7 +28,7 @@ export function TooltipProvider(props: TooltipProviderProps): HellaNode {
       data-slot="tooltip-provider"
       class="${
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</div>
@@ -50,7 +49,7 @@ export function TooltipTrigger(props: TooltipTriggerProps): HellaNode {
       aria-describedby="${props.describedBy}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</span>
@@ -166,7 +165,7 @@ export default function Tooltip(props: TooltipProps): HellaNode {
       aria-describedby="${contentId}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {

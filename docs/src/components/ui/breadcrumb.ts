@@ -3,8 +3,6 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = "";
-
 const list = style({
   alignItems: "center",
   color: "var(--muted-foreground)",
@@ -82,7 +80,7 @@ export default function Breadcrumb(props: BreadcrumbProps): HellaNode {
       aria-label="breadcrumb"
       data-slot="breadcrumb"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >${() => props.children}</nav>
   ` as HellaNode;

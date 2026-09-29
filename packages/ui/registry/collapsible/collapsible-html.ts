@@ -3,7 +3,6 @@ import { signal } from "@hellajs/core";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
-declare const base: string;
 declare const content: string;
 declare const contentInner: string;
 declare const icon: string;
@@ -111,7 +110,7 @@ export default function Collapsible(props: CollapsibleProps): HellaNode {
       data-state="${() => (active() ? "open" : "closed")}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }"
     >

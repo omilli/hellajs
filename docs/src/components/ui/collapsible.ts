@@ -4,8 +4,6 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = "";
-
 const trigger = style({
   "&[data-state='open'] > svg": {
     rotate: "180deg",
@@ -133,7 +131,7 @@ export default function Collapsible(props: CollapsibleProps): HellaNode {
       data-slot="collapsible"
       data-state="${() => (active() ? "open" : "closed")}"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >
       ${CollapsibleTrigger({

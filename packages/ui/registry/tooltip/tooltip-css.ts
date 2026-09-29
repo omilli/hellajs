@@ -9,8 +9,6 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-export const base = "";
-
 export const content = style({
   backgroundColor: "var(--foreground)",
   borderRadius: "calc(var(--radius) * 0.8)",

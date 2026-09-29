@@ -1,5 +1,3 @@
-export const base = "";
-
 export const trigger = "[&[data-state=open]>svg]:rotate-180";
 
 export const icon = "pointer-events-none size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200";

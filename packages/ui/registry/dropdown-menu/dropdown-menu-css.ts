@@ -96,8 +96,6 @@ export const content = style({
   },
 }, { label: "hella-dropdown-menu-content", layer: "hella" });
 
-export const group = "";
-
 export const item = style({
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",

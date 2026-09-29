@@ -13,8 +13,6 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const base = "";
-
 const content = style({
   backgroundColor: "var(--foreground)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -65,7 +63,7 @@ export function TooltipProvider(props: TooltipProviderProps): HellaNode {
     <div
       data-slot="tooltip-provider"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -84,7 +82,7 @@ export function TooltipTrigger(props: TooltipTriggerProps): HellaNode {
       data-slot="tooltip-trigger"
       aria-describedby="${props.describedBy}"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >${() => props.children}</span>
   ` as HellaNode;
@@ -196,7 +194,7 @@ export default function Tooltip(props: TooltipProps): HellaNode {
       data-slot="tooltip-trigger"
       aria-describedby="${contentId}"
       class="${
-        [base, props.class]
+        [props.class]
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;

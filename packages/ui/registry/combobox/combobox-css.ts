@@ -390,8 +390,6 @@ export const xIcon = style({
   pointerEvents: "none",
 }, { label: "hella-combobox-x-icon", layer: "hella" });
 
-export const group = "";
-
 export const label = style({
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
@@ -428,8 +426,6 @@ export const separator = style({
   marginBlock: "0.25rem",
   marginInline: "-0.25rem",
 }, { label: "hella-combobox-separator", layer: "hella" });
-
-export const value = "";
 
 export const chips = style({
   alignItems: "center",

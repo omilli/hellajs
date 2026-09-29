@@ -25,8 +25,6 @@ const base = style({
   padding: "0.25rem",
 }, { label: "hella-menubar-base", layer: "hella" });
 
-const menu = "";
-
 const trigger = style({
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
@@ -77,8 +75,6 @@ const content = style({
     animation: `${out} 150ms ease-in both`,
   },
 }, { label: "hella-menubar-content", layer: "hella" });
-
-const group = "";
 
 const item = style({
   alignItems: "center",
@@ -613,7 +609,7 @@ export function MenubarGroup(props: MenubarPartProps): HellaNode {
     <div
       data-slot="menubar-group"
       class="${
-        [group, props.class]
+        [props.class]
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -714,7 +710,7 @@ export function MenubarRadioGroup(props: MenubarRadioGroupProps): HellaNode {
     <div
       data-slot="menubar-radio-group"
       class="${
-        [group, props.class]
+        [props.class]
       }"
     >${() => props.children}${(props.items ?? []).map((entry) => MenubarRadioItem({
       value: entry.value,
@@ -1109,7 +1105,7 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
       data-slot="menubar-menu"
       data-value="${props.value}"
       class="${
-        [menu, props.class]
+        [props.class]
       }"
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node.querySelector("[data-slot='menubar-trigger']") ?? undefined;

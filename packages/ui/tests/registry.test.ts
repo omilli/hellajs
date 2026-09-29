@@ -36,6 +36,12 @@ function readEntryFile(entryName: string, file: string): string {
   return readFileSync(join(registryDir, entryName, file), "utf8");
 }
 
+/** Whether text binds `binding` as a non-empty export or non-empty top-level map entry. */
+function bindsNonEmpty(text: string, binding: string): boolean {
+  return new RegExp(`^export const ${binding} = ".+";$`, "m").test(text)
+    || new RegExp(`^  ${binding}: ".+"[,;]?$`, "m").test(text);
+}
+
 describe("registry", () => {
   test("manifest carries the full catalog: 61 entries", () => {
     expect(Object.keys(manifest.entries).length).toBe(61);
@@ -77,18 +83,42 @@ describe("registry", () => {
     }
   });
 
-  test("every component style slot owns its conventional style module binding base plus lowerCamel parts", () => {
+  test("every component style slot owns its conventional style module with lowerCamel bindings", () => {
     for (const [name, entry] of Object.entries(manifest.entries)) {
       for (const style of Object.keys(entry.styles ?? {}) as UiStyle[]) {
         const styleFile = styleModuleOf(name, entry, style);
         if (styleFile === undefined) continue;
         const text = readEntryFile(name, styleFile);
-        expect(text).toContain("export const base =");
         const names = [...text.matchAll(/export const ([A-Za-z0-9]+)/g)].map(([, symbol]) => symbol!);
-        expect(names).toContain("base");
         for (const symbol of names) expect(symbol).toMatch(/^[a-z][a-zA-Z0-9]*$/);
       }
     }
+  });
+
+  test("an empty binding in one flavor bridges to a non-empty sibling binding in the other", () => {
+    const unbridged: string[] = [];
+    for (const [name, entry] of Object.entries(manifest.entries)) {
+      for (const style of Object.keys(entry.styles ?? {}) as UiStyle[]) {
+        const styleFile = styleModuleOf(name, entry, style);
+        if (styleFile === undefined) continue;
+        const text = readEntryFile(name, styleFile);
+        // 2-space indentation anchors top-level map entries; nested declarations (tabs' `content: ""` inside `&::after`) stay out.
+        const empties = [
+          ...[...text.matchAll(/^export const (\w+) = "";$/gm)].map(([, symbol]) => symbol!),
+          ...[...text.matchAll(/^ {2}(\w+): "",$/gm)].map(([, symbol]) => symbol!),
+        ];
+        if (empties.length === 0) continue;
+        const siblingStyle: UiStyle = style === "css" ? "tailwind" : "css";
+        const sibling = styleModuleOf(name, entry, siblingStyle);
+        for (const binding of empties) {
+          const bridged = sibling !== undefined
+            && existsSync(join(registryDir, name, sibling))
+            && bindsNonEmpty(readEntryFile(name, sibling), binding);
+          if (!bridged) unbridged.push(`${name}/${styleFile}: "${binding}"`);
+        }
+      }
+    }
+    expect(unbridged).toEqual([]);
   });
 
   test("per-style registryDependencies reference declared entries", () => {

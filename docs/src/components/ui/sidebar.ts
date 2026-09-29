@@ -743,8 +743,6 @@ const menuSubSizes = {
   }, { label: "hella-sidebar-menu-sub-md", layer: "hella" }),
 };
 
-const tooltipBase = "";
-
 const tooltipContent = style({
   backgroundColor: "var(--foreground)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -1530,9 +1528,6 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): HellaNode {
     <span
       data-slot="sidebar-menu-tooltip"
       aria-describedby="${tooltipId}"
-      class="${
-        [tooltipBase]
-      }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
         triggerNode = node;

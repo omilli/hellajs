@@ -4,8 +4,6 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = "";
-
 const item = style({
   borderBottom: "1px solid var(--border)",
   "&:last-child": {
@@ -202,7 +200,9 @@ export function AccordionContent(props: AccordionContentProps): HellaNode {
         class="${
           [contentInner]
         }"
-      >${() => props.children}</div>
+      >
+        ${() => props.children}
+      </div>
     </div>
   ` as HellaNode;
 }
@@ -236,7 +236,7 @@ export default function Accordion(props: AccordionProps): HellaNode {
     <div
       data-slot="accordion"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >
       ${props.items.map((entry) => AccordionItem({

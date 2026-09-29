@@ -44,15 +44,11 @@ export const itemIndicator = "pointer-events-none absolute right-2 flex size-4 i
 
 export const icon = "pointer-events-none size-4 pointer-coarse:size-5";
 
-export const group = "";
-
 export const label = "px-2 py-1.5 text-xs text-muted-foreground pointer-coarse:px-3 pointer-coarse:py-2 pointer-coarse:text-sm";
 
 export const empty = "hidden w-full justify-center py-2 text-center text-sm text-muted-foreground group-data-empty/combobox-content:flex";
 
 export const separator = "-mx-1 my-1 h-px bg-border";
-
-export const value = "";
 
 export const chips = "flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40";
 

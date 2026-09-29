@@ -7,12 +7,10 @@ declare const base: string;
 declare const checkItem: string;
 declare const chevron: string;
 declare const content: string;
-declare const group: string;
 declare const icon: string;
 declare const indicator: string;
 declare const item: string;
 declare const label: string;
-declare const menu: string;
 declare const radioIcon: string;
 declare const radioItem: string;
 declare const separator: string;
@@ -338,7 +336,7 @@ export function MenubarGroup(props: MenubarPartProps): HellaNode {
       data-slot="menubar-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</div>
@@ -447,7 +445,7 @@ export function MenubarRadioGroup(props: MenubarRadioGroupProps): HellaNode {
       data-slot="menubar-radio-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}${(props.items ?? []).map((entry) => MenubarRadioItem({
@@ -860,7 +858,7 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
       data-value="${props.value}"
       class="${
         // @hella:compose
-        [menu, props.class]
+        [props.class]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {

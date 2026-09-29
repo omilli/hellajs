@@ -84,7 +84,7 @@ Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted.
 | Calendar | `calendar` |
 | Layout shells | `sidebar` |
 
-Each copied canonical carries marker regions the CLI splices at `add` time: exactly one `@hella:styles` (the style module's declarations land there) and one `@hella:compose` per styled part (the live class array). The markers never ship - they are consumed by the copy step. Style modules export `base` plus one lowerCamel export per styled part (`header`, `title`, ...); `variants`/`sizes` maps appear only where a component actually has them.
+Each copied canonical carries marker regions the CLI splices at `add` time: exactly one `@hella:styles` (the style module's declarations land there) and one `@hella:compose` per styled part (the live class array). The markers never ship - they are consumed by the copy step. Style modules export one lowerCamel binding per styled part that carries classes (`header`, `title`, ...); a part with no classes gets no binding, and an empty-string export appears only as a css/tailwind flavor bridge (an empty binding in one flavor mirrors a live binding in the other). `variants`/`sizes` maps appear only where a component actually has them.
 
 ## License
 

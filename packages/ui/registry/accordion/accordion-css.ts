@@ -1,7 +1,5 @@
 import { style } from "@hellajs/css";
 
-export const base = "";
-
 export const item = style({
   borderBottom: "1px solid var(--border)",
   "&:last-child": {

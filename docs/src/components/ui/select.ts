@@ -80,8 +80,6 @@ const base = style({
   },
 }, { label: "hella-select-trigger", layer: "hella" });
 
-const value = "";
-
 const content = style({
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
@@ -131,8 +129,6 @@ const viewport = style({
   scrollPaddingBlock: "0.25rem",
   width: "100%",
 }, { label: "hella-select-viewport", layer: "hella" });
-
-const group = "";
 
 const item = style({
   alignItems: "center",
@@ -484,7 +480,7 @@ export function SelectValue(props: SelectValueProps): HellaNode {
         return v === undefined || v === "" ? "" : undefined;
       }}"
       class="${
-        [value, props.class]
+        [props.class]
       }"
     >${() => {
       const v = current();
@@ -640,7 +636,7 @@ export function SelectGroup(props: SelectPartProps): HellaNode {
     <div
       data-slot="select-group"
       class="${
-        [group, props.class]
+        [props.class]
       }"
     >${() => props.children}</div>
   ` as HellaNode;

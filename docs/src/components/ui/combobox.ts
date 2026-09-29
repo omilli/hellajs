@@ -394,8 +394,6 @@ const xIcon = style({
   pointerEvents: "none",
 }, { label: "hella-combobox-x-icon", layer: "hella" });
 
-const group = "";
-
 const label = style({
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
@@ -432,8 +430,6 @@ const separator = style({
   marginBlock: "0.25rem",
   marginInline: "-0.25rem",
 }, { label: "hella-combobox-separator", layer: "hella" });
-
-const value = "";
 
 const chips = style({
   alignItems: "center",
@@ -630,7 +626,7 @@ export function ComboboxValue(props: ComboboxValueProps): HellaNode {
     <span
       data-slot="combobox-value"
       class="${
-        [value, props.class]
+        [props.class]
       }"
     >${() => {
       const v = current();
@@ -694,7 +690,7 @@ export function ComboboxGroup(props: ComboboxGroupProps): HellaNode {
     <div
       data-slot="combobox-group"
       class="${
-        [group, props.class]
+        [props.class]
       }"
     >${() => props.children}</div>
   ` as HellaNode;

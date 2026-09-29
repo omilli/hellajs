@@ -7,7 +7,6 @@ declare const base: string;
 declare const checkItem: string;
 declare const chevron: string;
 declare const content: string;
-declare const group: string;
 declare const icon: string;
 declare const indicator: string;
 declare const item: string;
@@ -330,7 +329,7 @@ export function DropdownMenuGroup(props: DropdownMenuPartProps): HellaNode {
       data-slot="dropdown-menu-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</div>
@@ -439,7 +438,7 @@ export function DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps): Hell
       data-slot="dropdown-menu-radio-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}${(props.items ?? []).map((entry) => DropdownMenuRadioItem({

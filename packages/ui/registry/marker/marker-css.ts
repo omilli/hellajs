@@ -22,8 +22,7 @@ export const base = style({
   },
 }, { label: "hella-marker", layer: "hella" });
 
-export const variants = {
-  default: "",
+export const variants: Record<string, string> = {
   separator: style({
     "&::before": {
       backgroundColor: "var(--border)",

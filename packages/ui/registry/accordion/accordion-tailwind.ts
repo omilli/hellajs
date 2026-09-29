@@ -1,5 +1,3 @@
-export const base = "";
-
 export const item = "border-b last:border-b-0";
 
 export const header = "flex";

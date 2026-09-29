@@ -1,7 +1,6 @@
 import type { HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
-declare const base: string;
 declare const ellipsis: string;
 declare const ellipsisIcon: string;
 declare const item: string;
@@ -24,7 +23,7 @@ export default function Breadcrumb(props: BreadcrumbProps): JSX.Element {
       data-slot="breadcrumb"
       class={
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }
     >

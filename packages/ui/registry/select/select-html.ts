@@ -6,14 +6,12 @@ import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/d
 declare const base: string;
 declare const chevron: string;
 declare const content: string;
-declare const group: string;
 declare const icon: string;
 declare const indicator: string;
 declare const item: string;
 declare const label: string;
 declare const scrollButton: string;
 declare const separator: string;
-declare const value: string;
 declare const viewport: string;
 // @hella:end
 
@@ -291,7 +289,7 @@ export function SelectValue(props: SelectValueProps): HellaNode {
       }}"
       class="${
         // @hella:compose
-        [value, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => {
@@ -457,7 +455,7 @@ export function SelectGroup(props: SelectPartProps): HellaNode {
       data-slot="select-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</div>

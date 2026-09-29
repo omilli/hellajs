@@ -3,11 +3,9 @@ import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/
 import type { HellaChildren, Placement } from "@hellajs/dom";
 
 // @hella:styles
-declare const base: string;
 declare const checkItem: string;
 declare const chevron: string;
 declare const content: string;
-declare const group: string;
 declare const icon: string;
 declare const indicator: string;
 declare const item: string;
@@ -227,7 +225,7 @@ export function ContextMenuTrigger(props: ContextMenuTriggerProps): JSX.Element 
       data-slot="context-menu-trigger"
       class={
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }
     >
@@ -331,7 +329,7 @@ export function ContextMenuGroup(props: ContextMenuPartProps): JSX.Element {
       data-slot="context-menu-group"
       class={
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }
     >
@@ -450,7 +448,7 @@ export function ContextMenuRadioGroup(props: ContextMenuRadioGroupProps): JSX.El
       data-slot="context-menu-radio-group"
       class={
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }
     >
@@ -874,7 +872,7 @@ export default function ContextMenu(props: ContextMenuProps): JSX.Element {
       tabindex="-1"
       class={
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }
       on:contextmenu={(e) => {

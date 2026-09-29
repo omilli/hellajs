@@ -13,8 +13,6 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const base = "";
-
 const content = style({
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
@@ -77,7 +75,7 @@ export function PopoverAnchor(props: PopoverAnchorProps): HellaNode {
     <span
       data-slot="popover-anchor"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >${() => props.children}</span>
   ` as HellaNode;
@@ -95,7 +93,7 @@ export function PopoverTrigger(props: PopoverTriggerProps): HellaNode {
       type="button"
       data-slot="popover-trigger"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >${() => props.children}</button>
   ` as HellaNode;
@@ -280,7 +278,7 @@ export default function Popover(props: PopoverProps): HellaNode {
       aria-expanded="${() => (isOpen() ? "true" : "false")}"
       aria-controls="${contentId}"
       class="${
-        [base, props.class]
+        [props.class]
       }"
       on:click="${() => toggle()}"
       hook:afterMount="${(node: Element) => {

@@ -2,6 +2,8 @@
 
 ## 2026-09-29
 * **Creation**: Added concept [123](entries/123.md) (type: decision).
+* **Creation**: Added concept [190](entries/190.md) (type: decision).
+* **Creation**: Added concept [222](entries/222.md) (type: decision).
 
 ## 2026-09-27
 * **Creation**: Added concept [210](entries/210.md) (type: correction).

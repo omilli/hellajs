@@ -3,11 +3,9 @@ import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@he
 import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 
 // @hella:styles
-declare const base: string;
 declare const checkItem: string;
 declare const chevron: string;
 declare const content: string;
-declare const group: string;
 declare const icon: string;
 declare const indicator: string;
 declare const item: string;
@@ -218,7 +216,7 @@ export function ContextMenuTrigger(props: ContextMenuTriggerProps): HellaNode {
       data-slot="context-menu-trigger"
       class="${
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</span>
@@ -318,7 +316,7 @@ export function ContextMenuGroup(props: ContextMenuPartProps): HellaNode {
       data-slot="context-menu-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</div>
@@ -427,7 +425,7 @@ export function ContextMenuRadioGroup(props: ContextMenuRadioGroupProps): HellaN
       data-slot="context-menu-radio-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}${(props.items ?? []).map((entry) => ContextMenuRadioItem({
@@ -828,7 +826,7 @@ export default function ContextMenu(props: ContextMenuProps): HellaNode {
       tabindex="-1"
       class="${
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }"
       on:contextmenu="${(e: Event) => {

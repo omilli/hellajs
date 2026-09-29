@@ -7,7 +7,6 @@ declare const base: string;
 declare const checkItem: string;
 declare const chevron: string;
 declare const content: string;
-declare const group: string;
 declare const icon: string;
 declare const indicator: string;
 declare const item: string;
@@ -343,7 +342,7 @@ export function DropdownMenuGroup(props: DropdownMenuPartProps): JSX.Element {
       data-slot="dropdown-menu-group"
       class={
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }
     >
@@ -462,7 +461,7 @@ export function DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps): JSX.
       data-slot="dropdown-menu-radio-group"
       class={
         // @hella:compose
-        [group, props.class]
+        [props.class]
         // @hella:end
       }
     >

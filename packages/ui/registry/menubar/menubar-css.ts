@@ -21,8 +21,6 @@ export const base = style({
   padding: "0.25rem",
 }, { label: "hella-menubar-base", layer: "hella" });
 
-export const menu = "";
-
 export const trigger = style({
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
@@ -73,8 +71,6 @@ export const content = style({
     animation: `${out} 150ms ease-in both`,
   },
 }, { label: "hella-menubar-content", layer: "hella" });
-
-export const group = "";
 
 export const item = style({
   alignItems: "center",

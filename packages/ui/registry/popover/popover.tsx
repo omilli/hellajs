@@ -3,7 +3,6 @@ import { anchorPosition, layerDismissal, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, Placement } from "@hellajs/dom";
 
 // @hella:styles
-declare const base: string;
 declare const content: string;
 declare const description: string;
 declare const header: string;
@@ -28,7 +27,7 @@ export function PopoverAnchor(props: PopoverAnchorProps): JSX.Element {
       data-slot="popover-anchor"
       class={
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }
     >
@@ -50,7 +49,7 @@ export function PopoverTrigger(props: PopoverTriggerProps): JSX.Element {
       data-slot="popover-trigger"
       class={
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }
     >
@@ -256,7 +255,7 @@ export default function Popover(props: PopoverProps): JSX.Element {
       aria-controls={contentId}
       class={
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }
       on:click={() => toggle()}

@@ -1,7 +1,5 @@
 import { style } from "@hellajs/css";
 
-export const base = "";
-
 export const trigger = style({
   "&[data-state='open'] > svg": {
     rotate: "180deg",

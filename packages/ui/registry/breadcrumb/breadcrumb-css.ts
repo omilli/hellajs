@@ -1,7 +1,5 @@
 import { style } from "@hellajs/css";
 
-export const base = "";
-
 export const list = style({
   alignItems: "center",
   color: "var(--muted-foreground)",

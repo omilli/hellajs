@@ -25,8 +25,7 @@ const base = style({
   },
 }, { label: "hella-marker", layer: "hella" });
 
-const variants = {
-  default: "",
+const variants: Record<string, string> = {
   separator: style({
     "&::before": {
       backgroundColor: "var(--border)",

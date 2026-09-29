@@ -2,7 +2,6 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
-declare const base: string;
 declare const ellipsis: string;
 declare const ellipsisIcon: string;
 declare const item: string;
@@ -25,7 +24,7 @@ export default function Breadcrumb(props: BreadcrumbProps): HellaNode {
       data-slot="breadcrumb"
       class="${
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }"
     >${() => props.children}</nav>

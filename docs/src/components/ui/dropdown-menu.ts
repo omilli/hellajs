@@ -100,8 +100,6 @@ const content = style({
   },
 }, { label: "hella-dropdown-menu-content", layer: "hella" });
 
-const group = "";
-
 const item = style({
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
@@ -642,7 +640,7 @@ export function DropdownMenuGroup(props: DropdownMenuPartProps): HellaNode {
     <div
       data-slot="dropdown-menu-group"
       class="${
-        [group, props.class]
+        [props.class]
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -743,7 +741,7 @@ export function DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps): Hell
     <div
       data-slot="dropdown-menu-radio-group"
       class="${
-        [group, props.class]
+        [props.class]
       }"
     >${() => props.children}${(props.items ?? []).map((entry) => DropdownMenuRadioItem({
       value: entry.value,

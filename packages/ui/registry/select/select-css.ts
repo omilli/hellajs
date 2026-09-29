@@ -76,8 +76,6 @@ export const base = style({
   },
 }, { label: "hella-select-trigger", layer: "hella" });
 
-export const value = "";
-
 export const content = style({
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
@@ -127,8 +125,6 @@ export const viewport = style({
   scrollPaddingBlock: "0.25rem",
   width: "100%",
 }, { label: "hella-select-viewport", layer: "hella" });
-
-export const group = "";
 
 export const item = style({
   alignItems: "center",

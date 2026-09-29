@@ -49,7 +49,6 @@ declare const sidebar: string;
 declare const skeletonBase: string;
 declare const skeletonIcon: string;
 declare const skeletonText: string;
-declare const tooltipBase: string;
 declare const tooltipContent: string;
 declare const trigger: string;
 // @hella:end
@@ -680,11 +679,6 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): HellaNode {
     <span
       data-slot="sidebar-menu-tooltip"
       aria-describedby="${tooltipId}"
-      class="${
-        // @hella:compose
-        [tooltipBase]
-        // @hella:end
-      }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
         triggerNode = node;

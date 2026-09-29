@@ -13,8 +13,6 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const base = "";
-
 const content = style({
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
@@ -61,7 +59,7 @@ export function HoverCardTrigger(props: HoverCardTriggerProps): HellaNode {
     <span
       data-slot="hover-card-trigger"
       class="${
-        [base, props.class]
+        [props.class]
       }"
     >${() => props.children}</span>
   ` as HellaNode;
@@ -204,7 +202,7 @@ export default function HoverCard(props: HoverCardProps): HellaNode {
     <span
       data-slot="hover-card-trigger"
       class="${
-        [base, props.class]
+        [props.class]
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;

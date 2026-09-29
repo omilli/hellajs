@@ -3,7 +3,6 @@ import { anchorPosition, hoverIntent, Portal } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, Placement } from "@hellajs/dom";
 
 // @hella:styles
-declare const base: string;
 declare const content: string;
 // @hella:end
 
@@ -25,7 +24,7 @@ export function HoverCardTrigger(props: HoverCardTriggerProps): JSX.Element {
       data-slot="hover-card-trigger"
       class={
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }
     >
@@ -177,7 +176,7 @@ export default function HoverCard(props: HoverCardProps): JSX.Element {
       data-slot="hover-card-trigger"
       class={
         // @hella:compose
-        [base, props.class]
+        [props.class]
         // @hella:end
       }
       hook:afterMount={(node) => {
