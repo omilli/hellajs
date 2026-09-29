@@ -29,7 +29,7 @@
   | router | Reactive routing: nested routes, parameter inheritance, lifecycle hooks, History API. Resolution: redirects → nested → flat → notFound. |
   | store | Deeply reactive state: plain objects auto-convert to granular signals/stores with TS inference; `$snapshot` / `$update` / `$cleanup` / `$subscribe`. |
   | ssr | Pure HTML stringifier: HellaNode AST → HTML, zero runtime imports (mirrors dom's `renderProp` rules). `resource` no-ops on the server. |
-  | ui | Copy/paste component registry + CLI: `bunx @hellajs/ui add <name>` copies one canonical component file per format (jsx/html) with the style module spliced in (css: `style()` maps under `@layer hella`; tailwind: string maps wrapped in `cn(…)`); split theme (`tokens.js` / `theme.css`); compiles to `dist/registry` for tests/demos; no importable component surface. |
+  | ui | Copy/paste component registry + CLI: `bunx @hellajs/ui add <name>` copies one canonical component file per format (jsx/html) with the style module spliced in (css: `style()` maps under `@layer hella`; tailwind: class strings inlined into `cn(…)` at the element, keyed maps kept); split theme (`tokens.js` / `theme.css`); compiles to `dist/registry` for tests/demos; no importable component surface. |
 
   ## Plugins
 

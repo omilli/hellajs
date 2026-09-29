@@ -27,7 +27,7 @@ HellaJS ui applies the copy/paste distribution model to its own framework-neutra
 
 - The npm artifact is a CLI: `bin/hellajs-ui.js` runs `main` from `lib/main.ts`, which dispatches `init`, `add`, and `list`; there is no importable component export (`lib/index.ts` exports config, resolution, and transform functions, not components).
 - The registry is a manifest plus canonical source files shipped inside the package (`lib/loadRegistry.ts` reads `registry/registry.json`). Component entries declare shared files and per-style slots; style modules (`<name>-<style>.ts`) are splice sources, never copied.
-- `add` resolves the component plus its registry dependencies recursively with a cycle guard (`lib/internal/registry.ts`), checks the target project for the npm packages the copied source imports (`lib/internal/peers.ts`), then copies and transforms the files (`lib/internal/copy.ts`): the style module body splices into the canonical's `@hella:styles` marker region, and tailwind additionally wraps the class array in `cn(...)` with an injected helper import (`lib/internal/transform.ts`).
+- `add` resolves the component plus its registry dependencies recursively with a cycle guard (`lib/internal/registry.ts`), checks the target project for the npm packages the copied source imports (`lib/internal/peers.ts`), then copies and transforms the files (`lib/internal/copy.ts`): keyed maps and outside-referenced strings from the style module splice into the canonical's `@hella:styles` marker region, and tailwind additionally transposes each part's static class string inline at its element, wraps the class array in `cn(...)`, and injects the helper import (`lib/internal/transform.ts`).
 - The copied file is standalone: it imports only the framework peers the CLI copied or checked, never the registry or `@hellajs/ui` (`docs/concepts/cli.mdx`).
 
 ### shadcn/ui
@@ -72,9 +72,9 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 ### HellaJS ui
 
 - The css flavor splices `style()` maps into the copied file; every declaration emits under the `hella` cascade layer via the style `layer` option (`registry/button/button-css.ts`). Class composition is a plain array in the `class` attribute, joined by dom's renderProp.
-- The tailwind flavor splices plain utility-string maps and wraps the compose array in `cn(...)`, injecting the `cn` import (`registry/button/button-tailwind.ts`, `lib/internal/transform.ts`).
+- The tailwind flavor transposes each part's static class string inline at its element inside `cn(...)`; keyed variant/size maps and outside-referenced strings stay at the top of the file, and the `cn` import injects (`registry/button/button-tailwind.ts`, `lib/internal/transform.ts`).
 - Theming is split by flavor: css projects get `tokens.js`, a `vars()` sheet collected by `cssText()` for SSR; tailwind projects get `theme.css`, shadcn's own new-york-v4 theme (the `@theme inline` block, `:root`/`.dark` palettes, `@layer base` reset, and a `tw-animate-css` import) with zero JavaScript beyond the copied utilities. Both artifacts carry the same component-consumed token values and both sit in or under the `hella` layer (`registry/theme/`).
-- Component styling is byte-faithful to shadcn's new-york-v4: the tailwind modules carry shadcn's class strings verbatim (full Button variant/size set, Dialog enter/exit `animate-in`/`animate-out` utilities), and the css flavor translates the same declarations 1:1 into layered `style()` maps with hand-rolled keyframes (`registry/button/*`, `registry/dialog/dialog-css.ts`).
+- Component styling is byte-faithful to shadcn's new-york-v4: the tailwind modules carry shadcn's class strings verbatim, emitted inline at each element rather than as file-level consts (full Button variant/size set, Dialog enter/exit `animate-in`/`animate-out` utilities), and the css flavor translates the same declarations 1:1 into layered `style()` maps with hand-rolled keyframes (`registry/button/*`, `registry/dialog/dialog-css.ts`).
 
 ### shadcn/ui
 

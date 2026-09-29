@@ -55,25 +55,24 @@ describe("applyStyleVariant", () => {
     ].join("\n"));
   });
 
-  test("tailwind pass wraps the compose array in cn and injects the cn import", () => {
+  test("tailwind pass wraps the compose array in cn, inlines string consts, and injects the cn import", () => {
     const out = applyStyleVariant(canonical, tailwindModule, "tailwind");
     expect(out).toBe([
       "import { html } from \"@hellajs/dom\";",
       "import { cn } from \"./cn.js\";",
-      "",
-      "const base = \"x-base\";",
       "",
       "interface P { class?: string }",
       "",
       "export default function X(p: P) {",
       "  return html`<p class=\"${",
       "    cn(",
-      "      base,",
+      "      \"x-base\",",
       "      p.class,",
       "    )",
       "  }\"></p>`;",
       "}",
     ].join("\n"));
+    expect(out.includes("const base")).toBe(false);
     expect(out.includes("@hella:")).toBe(false);
     expect(out.includes("@hellajs/css")).toBe(false);
   });
@@ -91,7 +90,7 @@ describe("applyStyleVariant", () => {
       "  }\"></p>`;",
       "}",
     ].join("\n");
-    expect(applyStyleVariant(single, tailwindModule, "tailwind")).toContain("cn(base, p.class)");
+    expect(applyStyleVariant(single, tailwindModule, "tailwind")).toContain("cn(\"x-base\", p.class)");
   });
 
   test("an unclosed section in the canonical throws", () => {
@@ -181,8 +180,8 @@ describe("applyStyleVariant", () => {
       "}",
     ].join("\n");
     const out = applyStyleVariant(multi, tailwindModule, "tailwind");
-    expect(out).toContain("cn(base, a.class)");
-    expect(out).toContain("cn(base, b.class)");
+    expect(out).toContain("cn(\"x-base\", a.class)");
+    expect(out).toContain("cn(\"x-base\", b.class)");
     expect(out.split('import { cn } from "./cn.js";').length - 1).toBe(1);
   });
 
@@ -265,10 +264,154 @@ describe("applyStyleVariant", () => {
     ].join("\n");
     expect(applyStyleVariant(indented, tailwindModule, "tailwind")).toBe([
       "import { cn } from \"./cn.js\";",
-      "const base = \"x-base\";",
       "function X() {",
       "  return html`<p class=\"${",
-      "    cn(base)",
+      "    cn(\"x-base\")",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n"));
+  });
+
+  test("tailwind pass keeps an object map in styles while inlining its string sibling", () => {
+    const mixedModule = [
+      "export const base = \"x-base\";",
+      "",
+      "export const variants = {",
+      "  default: \"x-default\",",
+      "};",
+      "",
+    ].join("\n");
+    const lookup = [
+      "import { html } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    // @hella:compose",
+      "    [",
+      "      base,",
+      "      variants[props.variant ?? \"default\"],",
+      "      p.class,",
+      "    ]",
+      "    // @hella:end",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n");
+    expect(applyStyleVariant(lookup, mixedModule, "tailwind")).toBe([
+      "import { html } from \"@hellajs/dom\";",
+      "import { cn } from \"./cn.js\";",
+      "",
+      "const variants = {",
+      "  default: \"x-default\",",
+      "};",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    cn(",
+      "      \"x-base\",",
+      "      variants[props.variant ?? \"default\"],",
+      "      p.class,",
+      "    )",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n"));
+  });
+
+  test("tailwind pass keeps a string const referenced outside the marker regions", () => {
+    const referencing = [
+      "import { helper } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "const wrapper = (cls: string) => helper(base, cls);",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    // @hella:compose",
+      "    [",
+      "      base,",
+      "      p.class,",
+      "    ]",
+      "    // @hella:end",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n");
+    expect(applyStyleVariant(referencing, tailwindModule, "tailwind")).toBe([
+      "import { helper } from \"@hellajs/dom\";",
+      "import { cn } from \"./cn.js\";",
+      "",
+      "const base = \"x-base\";",
+      "",
+      "const wrapper = (cls: string) => helper(base, cls);",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    cn(",
+      "      base,",
+      "      p.class,",
+      "    )",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n"));
+  });
+
+  test("a string-only module leaves no styles residue or blank-line runs", () => {
+    const multiRegion = [
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "export function A() {",
+      "  return html`<p class=\"${",
+      "    // @hella:compose",
+      "    [base, a.class]",
+      "    // @hella:end",
+      "  }\">...</p>`;",
+      "}",
+      "",
+      "export function B() {",
+      "  return html`<i class=\"${",
+      "    // @hella:compose",
+      "    [base, b.class]",
+      "    // @hella:end",
+      "  }\">...</i>`;",
+      "}",
+    ].join("\n");
+    const out = applyStyleVariant(multiRegion, tailwindModule, "tailwind");
+    expect(out.includes("const ")).toBe(false);
+    expect(/\n{3,}/.test(out)).toBe(false);
+  });
+
+  test("a comment above a dropped string const drops with it and a comment above a kept map stays", () => {
+    const documented = [
+      "/** Base classes. */",
+      "export const base = \"x-base\";",
+      "",
+      "/** Variant map. */",
+      "export const variants = {",
+      "  default: \"x-default\",",
+      "};",
+      "",
+    ].join("\n");
+    expect(applyStyleVariant(canonical, documented, "tailwind")).toBe([
+      "import { html } from \"@hellajs/dom\";",
+      "import { cn } from \"./cn.js\";",
+      "",
+      "/** Variant map. */",
+      "const variants = {",
+      "  default: \"x-default\",",
+      "};",
+      "",
+      "interface P { class?: string }",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    cn(",
+      "      \"x-base\",",
+      "      p.class,",
+      "    )",
       "  }\"></p>`;",
       "}",
     ].join("\n"));

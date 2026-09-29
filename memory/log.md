@@ -4,6 +4,8 @@
 * **Creation**: Added concept [123](entries/123.md) (type: decision).
 * **Creation**: Added concept [190](entries/190.md) (type: decision).
 * **Creation**: Added concept [222](entries/222.md) (type: decision).
+* **Creation**: Added concept [223](entries/223.md) (type: decision).
+* **Update**: 223: gen-install-sources per-entry-only fact captured during tailwind-inline-classes unit
 
 ## 2026-09-27
 * **Creation**: Added concept [210](entries/210.md) (type: correction).

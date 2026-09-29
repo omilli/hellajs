@@ -40,7 +40,7 @@ The copied file carries everything it needs: markup, props, and the style declar
 | Flavor | `--format jsx` | `--format html` |
 |---|---|---|
 | `--style css` (default) | [`style`](/reference/css/style) maps, class array | same declarations in a runtime template |
-| `--style tailwind` | utility-string maps, `cn(...)` | same, in a runtime template |
+| `--style tailwind` | utility strings inline at the element, `cn(...)`, keyed maps on top | same, in a runtime template |
 
 Both formats receive the same style declarations; only the markup carrier differs. JSX compiles through the HellaJS babel plugin, wrapped as [`vite-plugin-hellajs`](/plugins/vite); the html format renders through the runtime `html` tagged template.
 

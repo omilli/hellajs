@@ -12,6 +12,12 @@ const EXPORT_PREFIX = "export ";
 // the per-module and flattened bundle builds.
 const CN_IMPORT = 'import { cn } from "./cn.js";';
 const REQUIRED_SECTIONS = ["styles", "compose"] as const;
+// Inline-candidate shape: a single-line `const NAME = "…";` declaration.
+// Anything else (template literal, concatenation, multi-line) fails the full-line
+// match and stays verbatim in the styles region.
+const STRING_DECL_REGEX = /^const ([A-Za-z_$][\w$]*) = ("[^"]*");$/;
+const OBJECT_DECL_REGEX = /^const ([A-Za-z_$][\w$]*) = \{$/;
+const COMMENT_LINE_REGEX = /^(\/\/|\/\*|\*)/;
 
 /**
  * One marker-delimited region of a canonical file: the section name and the
@@ -131,6 +137,126 @@ function parseStyleModule(text: string): string[] {
 }
 
 /**
+ * One classified block of a style module body: contiguous preceding comment
+ * lines plus the declaration's lines. String declarations carry the declared
+ * name and quoted literal for the tailwind inline transpose; object and other
+ * blocks splice into the styles region verbatim.
+ */
+type DeclBlock = { lines: string[]; kind: "other" }
+  | { lines: string[]; kind: "string"; name: string; literal: string }
+  | { lines: string[]; kind: "object" };
+
+/**
+ * Splits a style module body into classified blocks: a block is a declaration
+ * plus its contiguous preceding comment lines. A string declaration (`const
+ * NAME = "…";`, single line) becomes an inline candidate; an object
+ * declaration (`const NAME = {` through the trimmed `};` line) and any other
+ * line (package import, blank) are kept for the styles region.
+ * @param body Style module body lines, export prefixes already stripped.
+ * @returns Blocks in order of appearance.
+ */
+function classifyDecls(body: string[]): DeclBlock[] {
+  const blocks: DeclBlock[] = [];
+  let comments: string[] = [];
+  let i = 0;
+  const len = body.length;
+  while (i < len) {
+    const line = body[i++]!;
+    const trimmed = line.trim();
+    if (trimmed === "") {
+      blocks.push({ lines: [line], kind: "other" });
+      continue;
+    }
+    if (COMMENT_LINE_REGEX.test(trimmed)) {
+      comments.push(line);
+      continue;
+    }
+    const stringDecl = STRING_DECL_REGEX.exec(line);
+    if (stringDecl !== null) {
+      blocks.push({ lines: [...comments, line], kind: "string", name: stringDecl[1]!, literal: stringDecl[2]! });
+    } else if (OBJECT_DECL_REGEX.test(line)) {
+      const lines = [...comments, line];
+      while (i < len) {
+        const inner = body[i++]!;
+        lines.push(inner);
+        if (inner.trim() === "};") break;
+      }
+      blocks.push({ lines, kind: "object" });
+    } else {
+      blocks.push({ lines: [...comments, line], kind: "other" });
+    }
+    comments = [];
+  }
+  if (comments.length > 0) blocks.push({ lines: comments, kind: "other" });
+  return blocks;
+}
+
+/**
+ * Splits classified blocks into kept styles-region lines and the string
+ * literals safe to transpose: a string declaration is inlineable only when
+ * its name has zero symbol references in the canonical's lines outside the
+ * marker regions. The reference pattern mirrors the compose-side guard —
+ * matches preceded by a word character, `$`, `.`, quote, or hyphen, or
+ * followed by a word character, `$`, or hyphen (`data-slot="card-header"`,
+ * `legendVariants`) are compound tokens or string content, not the symbol; comments count (conservative by design), so
+ * a genuine outside reference keeps its declaration and today's output.
+ * @param blocks Classified style-module blocks.
+ * @param outsideLines Canonical lines outside every marker region.
+ * @returns Styles-region splice lines plus name → quoted literal per inlineable string.
+ */
+function inlineStringDecls(blocks: DeclBlock[], outsideLines: string[]): { styles: string[]; literals: Map<string, string> } {
+  const styles: string[] = [];
+  const literals = new Map<string, string>();
+  let i = 0;
+  const bLen = blocks.length;
+  while (i < bLen) {
+    const block = blocks[i++]!;
+    if (block.kind === "string") {
+      let referenced = false;
+      const ref = new RegExp(`(?<![\\w$."'-])${block.name}(?![\\w$-])`);
+      let r = 0;
+      const rLen = outsideLines.length;
+      while (r < rLen && !referenced) {
+        if (ref.test(outsideLines[r++]!)) referenced = true;
+      }
+      if (!referenced) {
+        literals.set(block.name, block.literal);
+        continue;
+      }
+    }
+    let l = 0;
+    const lLen = block.lines.length;
+    while (l < lLen) styles.push(block.lines[l++]!);
+  }
+  return { styles, literals };
+}
+
+/**
+ * Replaces every word-boundary occurrence of an inlineable string's name in
+ * the compose-region lines with its quoted literal — one member occurrence per
+ * match site: the lookbehind excludes property access (`props.size`), longer
+ * identifiers (`legendVariants`), and quoted text, so only genuine array
+ * members and ternary operands transpose (semantics-preserving either way).
+ * Trailing commas and indentation are preserved — replacement spans only the
+ * identifier.
+ * @param body Compose-region body lines, already cn-wrapped.
+ * @param literals Inlineable name → quoted literal map.
+ * @returns The transposed body lines.
+ */
+function inlineComposeMembers(body: string[], literals: Map<string, string>): string[] {
+  if (literals.size === 0) return body;
+  const names = Array.from(literals.keys());
+  const pattern = new RegExp(`(?<![\\w$."'])(${names.join("|")})(?![\\w$])`, "g");
+  const inlined: string[] = [];
+  let i = 0;
+  const len = body.length;
+  while (i < len) {
+    inlined.push(body[i++]!.replace(pattern, (name) => literals.get(name)!));
+  }
+  return inlined;
+}
+
+/**
  * Wraps a compose region's plain class array in a `cn(…)` call for the
  * tailwind flavor: the array's opening `[` becomes `cn(` and the closing `]`
  * becomes `)`. Single-line and multi-line arrays both keep their interior
@@ -175,7 +301,10 @@ function wrapComposeWithCn(body: string[]): string[] {
  * imports + declarations, `export ` prefixes stripped) is spliced into the
  * `@hella:styles` region, marker lines are removed, and every `@hella:compose`
  * region keeps its plain-array body for `css` while `tailwind` wraps each in
- * `cn(…)` and injects the shared `cn` import after the file's last import.
+ * `cn(…)`, transposes inlineable string declarations into the compose members
+ * (keyed maps and outside-referenced declarations stay in the styles region),
+ * collapses blank-line runs left by emptied regions, and injects the shared
+ * `cn` import after the file's last import.
  * Multi-part components carry one compose region per styled part; `styles`
  * stays unique. Deterministic — the same inputs always produce the same text.
  * @param source Canonical file text with an `@hella:styles` region and one or more `@hella:compose` regions.
@@ -210,6 +339,20 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
     }
   }
   const moduleBody = parseStyleModule(styleModuleText);
+  let stylesBody = moduleBody;
+  let literals = new Map<string, string>();
+  if (style === "tailwind") {
+    const outside: string[] = [];
+    let b = 0;
+    const bLen = blocks.length;
+    while (b < bLen) {
+      const block = blocks[b++]!;
+      if (block.kind === "line") outside.push(block.text);
+    }
+    const inlined = inlineStringDecls(classifyDecls(moduleBody), outside);
+    stylesBody = inlined.styles;
+    literals = inlined.literals;
+  }
   const out: string[] = [];
   let j = 0;
   const outLen = blocks.length;
@@ -221,11 +364,11 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
     }
     if (block.name === "styles") {
       let s = 0;
-      const moduleLen = moduleBody.length;
-      while (s < moduleLen) out.push(moduleBody[s++]!);
+      const moduleLen = stylesBody.length;
+      while (s < moduleLen) out.push(stylesBody[s++]!);
       continue;
     }
-    const compose = style === "css" ? block.body : wrapComposeWithCn(block.body);
+    const compose = style === "css" ? block.body : inlineComposeMembers(wrapComposeWithCn(block.body), literals);
     let c = 0;
     const composeLen = compose.length;
     while (c < composeLen) out.push(compose[c++]!);
@@ -239,5 +382,6 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
     }
     out.splice(lastImport + 1, 0, CN_IMPORT);
   }
-  return out.join("\n");
+  const text = out.join("\n");
+  return style === "tailwind" ? text.replace(/\n{3,}/g, "\n\n") : text;
 }
