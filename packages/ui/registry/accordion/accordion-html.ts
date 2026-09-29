@@ -81,7 +81,8 @@ export function AccordionTrigger(props: AccordionTriggerProps): HellaNode {
         [header]
         // @hella:end
       }"
-    ><button
+    >
+      <button
         type="button"
         data-slot="accordion-trigger"
         id="${props.id}"
@@ -96,7 +97,9 @@ export function AccordionTrigger(props: AccordionTriggerProps): HellaNode {
           // @hella:end
         }"
         e:click="${() => props.onToggle?.()}"
-      >${() => props.children}<svg
+      >
+        ${() => props.children}
+        <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
           height="24"
@@ -113,7 +116,11 @@ export function AccordionTrigger(props: AccordionTriggerProps): HellaNode {
             [icon]
             // @hella:end
           }"
-        ><path d="m6 9 6 6 6-6" /></svg></button></h3>
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+    </h3>
   ` as HellaNode;
 }
 
@@ -130,14 +137,16 @@ export function AccordionContent(props: AccordionContentProps): HellaNode {
         [content, props.class]
         // @hella:end
       }"
-    ><div
+    >
+      <div
         data-state="${() => (props.active?.() ? "open" : "closed")}"
         class="${
           // @hella:compose
           [contentInner]
           // @hella:end
         }"
-      >${() => props.children}</div></div>
+      >${() => props.children}</div>
+    </div>
   ` as HellaNode;
 }
 
@@ -176,25 +185,25 @@ export default function Accordion(props: AccordionProps): HellaNode {
       }"
     >
       ${props.items.map((entry) => AccordionItem({
-    value: entry.value,
-    active: () => isOpen(entry.value),
-    children: [
-      AccordionTrigger({
-        id: `${TRIGGER_ID}${entry.value}`,
+        value: entry.value,
         active: () => isOpen(entry.value),
-        onToggle: () => toggle(entry.value, entry.disabled),
-        controls: `${CONTENT_ID}${entry.value}`,
-        disabled: entry.disabled,
-        children: entry.trigger,
-      }),
-      AccordionContent({
-        id: `${CONTENT_ID}${entry.value}`,
-        labelledBy: `${TRIGGER_ID}${entry.value}`,
-        active: () => isOpen(entry.value),
-        children: entry.content,
-      }),
-    ],
-  }))}
+        children: [
+          AccordionTrigger({
+            id: `${TRIGGER_ID}${entry.value}`,
+            active: () => isOpen(entry.value),
+            onToggle: () => toggle(entry.value, entry.disabled),
+            controls: `${CONTENT_ID}${entry.value}`,
+            disabled: entry.disabled,
+            children: entry.trigger,
+          }),
+          AccordionContent({
+            id: `${CONTENT_ID}${entry.value}`,
+            labelledBy: `${TRIGGER_ID}${entry.value}`,
+            active: () => isOpen(entry.value),
+            children: entry.content,
+          }),
+        ],
+      }))}
     </div>
   ` as HellaNode;
 }

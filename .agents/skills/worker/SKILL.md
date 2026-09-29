@@ -42,7 +42,7 @@ Plan-file runs execute in an isolated worktree — the main tree routinely holds
 
 **Inside the worktree** (`../hellajs-wt/<slug>/`): every remaining step executes there — paths, edits, and verification address the worktree (`cd ../hellajs-wt/<slug> && bun coverage <pkg>`); ticks land on the worktree's unit copy. Never commit inside (staging permitted — `diff` needs it); never edit the set's `index.md`.
 
-**Bootstrap (fresh cut).** A worktree ships no gitignored `dist/` outputs: build a package's dependency dists before its own (`bun bundle core dom css` before `bun bundle ui` — the registry `.d.ts` typecheck resolves `@hellajs/*` through built dists), and workspaces owning their own `node_modules` (`docs/`) need their own `bun install` before build commands. Do this before the baseline run.
+**Bootstrap (fresh cut).** A worktree ships no gitignored `dist/` outputs: build a package's dependency dists before its own — one invocation per package, `bun bundle core && bun bundle dom && bun bundle css` before `bun bundle ui` (the bundle script takes a single positional package; extra names are silently ignored — the registry `.d.ts` typecheck resolves `@hellajs/*` through built dists), and workspaces owning their own `node_modules` (`docs/`) need their own `bun install` before build commands. Do this before the baseline run.
 
 ## Step 2 — Establish a green baseline, then execute per type
 
