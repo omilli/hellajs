@@ -34,4 +34,5 @@ vars({
   border: "oklch(1 0 0 / 10%)",
   input: "oklch(1 0 0 / 15%)",
   ring: "oklch(0.556 0 0)",
+  radius: "0.625rem",
 }, { layer: "hella" });
