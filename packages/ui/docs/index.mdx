@@ -1,11 +1,12 @@
 ## ui
 
-Copy/paste component registry: `bunx @hellajs/ui add <name>` copies owned, editable component source into your project; the npm artifact IS the CLI, and there is no importable component surface.
+Copy/paste component registry: `npx @hellajs/ui add <name>` copies owned, editable component source into your project; the npm artifact IS the CLI, and there is no importable component surface.
 
 ### Installation
 
 ```bash
-bunx @hellajs/ui init
+npx @hellajs/ui init
+# bunx @hellajs/ui init
 ```
 
 No install step is required; run the CLI through your package runner. `init` writes `hella.ui.json` (style and format defaults) and adds the shared `theme` entry; `add` copies components into `src/components/`.
@@ -13,7 +14,8 @@ No install step is required; run the CLI through your package runner. `init` wri
 ### Example
 
 ```bash
-bunx @hellajs/ui add button
+npx @hellajs/ui add button
+# bunx @hellajs/ui add button
 ```
 
 ```jsx

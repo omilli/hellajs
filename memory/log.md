@@ -4,6 +4,7 @@
 * **Creation**: Added concept [225](entries/225.md) (type: decision).
 * **Creation**: Added concept [226](entries/226.md) (type: decision).
 * **renumber**: Renumber: merged 224-registry-formatting-slot-adjacency renumbered to 227 (ID collision with main-tree 224-verify-ui-registry-part-interfaces during the component-docs-modernization merge).
+* **Creation**: Added concept [228](entries/228.md) (type: decision).
 
 ## 2026-09-29
 * **Creation**: Added concept [123](entries/123.md) (type: decision).

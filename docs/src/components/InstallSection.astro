@@ -35,7 +35,7 @@ for (const [key, code] of Object.entries(sources)) {
 }
 
 const commandBlock = await codeToHtml(
-  `bunx @hellajs/ui add ${entry}\n# npx @hellajs/ui add ${entry}\n# pnpm dlx @hellajs/ui add ${entry}`,
+  `npx @hellajs/ui add ${entry}\n# bunx @hellajs/ui add ${entry}\n# pnpm dlx @hellajs/ui add ${entry}`,
   { lang: "bash", theme: "github-dark" },
 );
 ---

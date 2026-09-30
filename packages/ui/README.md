@@ -1,6 +1,6 @@
 # @hellajs/ui
 
-Copy/paste component registry for HellaJS: `bunx @hellajs/ui add button` copies owned, editable component source into your project. There is nothing to import from the package and no dist to depend on; the npm artifact IS the CLI.
+Copy/paste component registry for HellaJS: `npx @hellajs/ui add button` copies owned, editable component source into your project. There is nothing to import from the package and no dist to depend on; the npm artifact IS the CLI.
 
 [![NPM Version](https://img.shields.io/npm/v/@hellajs/ui?color=orange)](https://www.npmjs.com/package/@hellajs/ui)
 ![Gzipped Size](https://img.shields.io/bundlephobia/minzip/@hellajs/ui)
@@ -17,7 +17,8 @@ Copy/paste component registry for HellaJS: `bunx @hellajs/ui add button` copies 
 No install step is required; run the CLI through your package runner:
 
 ```bash
-bunx @hellajs/ui init
+npx @hellajs/ui init
+# bunx @hellajs/ui init
 ```
 
 `init` writes `hella.ui.json` to the project root and adds the shared `theme` entry to your components directory:
@@ -43,13 +44,13 @@ Components reference the palette with `var(--*)` literals (css) or shadcn's lite
 
 ```bash
 # add a component using your configured style and format
-bunx @hellajs/ui add button
+npx @hellajs/ui add button
 
 # override the style and format for a single add
-bunx @hellajs/ui add button --style tailwind --format html
+npx @hellajs/ui add button --style tailwind --format html
 
 # list every component in the registry
-bunx @hellajs/ui list
+npx @hellajs/ui list
 ```
 
 | Flag | Applies to | Meaning |

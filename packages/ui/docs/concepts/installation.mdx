@@ -5,8 +5,10 @@
 ## Initialize a Project
 
 ```bash
-bunx @hellajs/ui init
-bunx @hellajs/ui add button
+npx @hellajs/ui init
+# bunx @hellajs/ui init
+npx @hellajs/ui add button
+# bunx @hellajs/ui add button
 ```
 
 `init` writes `hella.ui.json` to the project root (style and format defaults) and adds the shared `theme` entry; `add` copies the component into `src/components/`. From then on `add` reads the saved config for its defaults, so the style and format choices are one-time decisions.
@@ -14,10 +16,10 @@ bunx @hellajs/ui add button
 Any package runner works; the package itself never becomes a runtime dependency:
 
 ```bash
-# Bun
-bunx @hellajs/ui add dialog
 # npm
 npx @hellajs/ui add dialog
+# Bun
+bunx @hellajs/ui add dialog
 # pnpm
 pnpm dlx @hellajs/ui add dialog
 ```
@@ -51,7 +53,8 @@ By default the copied files stay TypeScript. `--lang js` strips types at copy ti
 Every project adds its theme entry once, then every component reads the same properties:
 
 ```bash
-bunx @hellajs/ui add theme
+npx @hellajs/ui add theme
+# bunx @hellajs/ui add theme
 ```
 
 | Style | Extra peers | Theme artifact |

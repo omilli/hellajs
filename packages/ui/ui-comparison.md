@@ -161,9 +161,9 @@ HellaJS ui's override contract is the strongest story for css projects: preceden
 The whole workflow is three commands:
 
 ```bash
-bunx @hellajs/ui init
-bunx @hellajs/ui add button
-bunx @hellajs/ui list
+npx @hellajs/ui init
+npx @hellajs/ui add button
+npx @hellajs/ui list
 ```
 
 A copied button is used like any local component, with variant and size props baked into the owned file:
