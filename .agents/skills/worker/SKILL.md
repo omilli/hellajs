@@ -34,7 +34,7 @@ Parse the scope block. **Surface: yes** → Code + Tests + Docs tasks must all e
 
 Plan-file runs execute in an isolated worktree — the main tree routinely holds unrelated in-flight units that must never leak into execution or baseline, and rollback of a component is then just `clean`. Inline plans skip this step, run in-tree.
 
-**Slug.** Orchestrated runs receive it in the prompt. Standalone whole-set sessions derive it from the Step 0 partition: set slug (set folder path, `-`-joined) + the component's first unit stem.
+**Slug.** Orchestrated runs receive it in the prompt. Standalone sessions: one component → set slug (set folder path, `-`-joined) + the component's first unit stem; the whole set in one worktree → the plain set slug, never a component stem — `bun merge` resolves a whole-set-slug carrier as one entry, but a component-shaped slug holding multi-component delivered ticks is an ambiguous anomaly it excludes (merge it manually).
 
 **Re-enter before provisioning.** Check `bun .agents/skills/worker/scripts/worktree.mjs list` / `… status <slug>`: an existing worktree with that slug, a recorded baseline, and this set's plan folder carried → re-enter and continue — ticks in its unit copies are durable progress, never redone. Key on the slug (under split mode several worktrees carry the full set folder). Never provision a duplicate — `new` refuses on collision by design.
 
