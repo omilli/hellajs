@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, SsrMeta } from "@hellajs/dom";
 import { serializeProp, escapeHtml, VOID } from "./serialize";
-import { resolveAsync } from "./resolve";
+import { resolveAsync, resolveAsyncDeep } from "./resolve";
 import { hoistHeadAsync } from "./head";
 import type { HeadOptions } from "../types";
 
@@ -113,7 +113,7 @@ async function* walkChildGen(child: HellaChild, pending?: PendingSwap[], head?: 
       const meta = (child as DynamicFn).ssr;
       if (meta) yield* renderDynamicGen(meta, pending, head);               // user-authored isDynamic fn with no ssr → empty region
     } else {
-      const resolved = await resolveAsync(child);                      // reactive — resolve, await if Promise, classify
+      const resolved = await resolveAsyncDeep(child);                 // reactive — deep-resolve fn chains (awaiting each hop), then classify (parity with dom resolveDeep)
       if (typeof resolved === "function" && (resolved as DynamicFn).isDynamic) {
         const meta = (resolved as DynamicFn).ssr;                      // reactive getter returning an isDynamic component
         if (meta) yield* renderDynamicGen(meta, pending, head);

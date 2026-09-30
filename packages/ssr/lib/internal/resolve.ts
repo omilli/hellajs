@@ -8,6 +8,30 @@ export function resolveValue(value: unknown): unknown {
 
 /**
  * @internal
+ * Structural shape of an isDynamic component function — mirrors dom's `RenderFn` without a runtime import.
+ */
+interface DynamicFn {
+  isDynamic?: true;
+}
+
+/**
+ * @internal
+ * Resolves a value by repeatedly calling plain (non-`isDynamic`) functions until a non-function
+ * or an `isDynamic` render function remains — reactive child chains (`() => () => nodes`, a
+ * component slot forwarding `${() => props.children}`) classify by their final value, matching
+ * dom's `resolveDeep`. A self-referential getter loops forever, the same user bug as a
+ * self-referencing computed.
+ */
+export function resolveDeep(value: unknown): unknown {
+  let current = value;
+  while (typeof current === "function" && !(current as DynamicFn).isDynamic) {
+    current = (current as () => unknown)();
+  }
+  return current;
+}
+
+/**
+ * @internal
  * True for thenables — a reactive getter may resolve to a Promise that the async walker awaits;
  * the sync walker warns on one (it cannot await) instead.
  */
@@ -28,4 +52,18 @@ export const SYNC_PROMISE_WARN = "[ssr] Promise value under sync ssr - use ssr.a
 export async function resolveAsync(value: unknown): Promise<unknown> {
   const resolved = resolveValue(value);
   return isPromise(resolved) ? await resolved : resolved;
+}
+
+/**
+ * @internal
+ * Async counterpart to `resolveDeep`: calls each plain (non-`isDynamic`) function hop, awaiting
+ * any Promise it returns before continuing the chain. Stops at the first non-function or
+ * `isDynamic` render function.
+ */
+export async function resolveAsyncDeep(value: unknown): Promise<unknown> {
+  let current = value;
+  while (typeof current === "function" && !(current as DynamicFn).isDynamic) {
+    current = await resolveAsync(current);
+  }
+  return current;
 }

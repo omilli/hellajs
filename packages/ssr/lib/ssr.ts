@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, SsrMeta } from "@hellajs/dom";
 import { serializeProp, escapeHtml, VOID } from "./internal/serialize";
-import { resolveValue, isPromise, SYNC_PROMISE_WARN } from "./internal/resolve";
+import { resolveValue, resolveDeep, isPromise, SYNC_PROMISE_WARN } from "./internal/resolve";
 import { assertNode } from "./internal/assert";
 import { hoistHead } from "./internal/head";
 import { MARK_OPEN, MARK_CLOSE } from "./internal/walk";
@@ -66,7 +66,7 @@ function walkChild(child: HellaChild, options?: SsrOptions): string {
       const meta = (child as DynamicFn).ssr;
       body = meta ? renderDynamic(meta, options) : "";       // no ssr meta (user-authored isDynamic fn) — empty region, parity with walkChildGen
     } else {
-      const resolved = resolveValue(child);                            // reactive — resolve + classify
+      const resolved = resolveDeep(child);                            // reactive — deep-resolve fn chains, then classify (parity with dom resolveDeep)
       if (typeof resolved === "function" && (resolved as DynamicFn).isDynamic) {
         const meta = (resolved as DynamicFn).ssr;                      // reactive getter returning an isDynamic component — dispatch on its descriptor
         body = meta ? renderDynamic(meta, options) : "";

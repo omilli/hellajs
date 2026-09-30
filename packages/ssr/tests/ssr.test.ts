@@ -4,7 +4,7 @@ import { suppressConsole } from "@utils/test-helpers.js";
 import { html, ForEach, Transition, Portal, Lazy, component } from "@hellajs/dom/bundle";
 import { ssr } from "@hellajs/ssr/bundle";
 import type { HellaNode } from "@hellajs/dom";
-import { headParityCases, unknownKindNode } from "./helpers";
+import { headParityCases, unknownKindNode, SlotBox } from "./helpers";
 
 describe("ssr", () => {
   test("renders static node to exact HTML", () => {
@@ -49,6 +49,24 @@ describe("ssr", () => {
     // byte-identical to the ForEach case above (no per-item markers — one region pair wraps the array).
     const node = html`<ul>${() => [1, 2, 3].map((n) => html`<li>${n}</li>`)}</ul>` as HellaNode;
     expect(ssr(node)).toBe("<ul><!--[--><li>1</li><li>2</li><li>3</li><!--]--></ul>");
+  });
+
+  test("renders a function child's resolved nodes through a component child slot", () => {
+    // The vendored html-flavor codegen interpolates `${() => props.children}`; the walker must
+    // deep-resolve the chain before classifying, never emit the getter's source text.
+    const node = html`<ul><${SlotBox}>${() => [1, 2, 3].map((n) => html`<li>${n}</li>`)}</${SlotBox}></ul>` as HellaNode;
+    expect(ssr(node)).toBe("<ul><div><!--[--><li>1</li><li>2</li><li>3</li><!--]--></div></ul>");
+  });
+
+  test("deep-resolves chained plain function children to their final value", () => {
+    const node = html`<p><${SlotBox}>${() => () => html`<b>deep</b>`}</${SlotBox}></p>` as HellaNode;
+    expect(ssr(node)).toBe("<p><div><!--[--><b>deep</b><!--]--></div></p>");
+  });
+
+  test("deep-resolves a chained plain function returning text", () => {
+    const text = signal("txt");
+    const node = html`<p>${() => () => text()}</p>` as HellaNode;
+    expect(ssr(node)).toBe("<p><!--[-->txt<!--]--></p>");
   });
 
   test("renders Transition child in a marker region when show is true", () => {

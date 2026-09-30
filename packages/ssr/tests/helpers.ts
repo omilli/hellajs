@@ -19,6 +19,10 @@ const bareDynamicFn = (() => {
   return fn;
 })();
 
+/** The vendored-component codegen shape: children re-interpolated through a runtime html template. */
+export const SlotBox = (props: { children?: unknown }): HellaNode =>
+  html`<div>${() => props.children}</div>` as HellaNode;
+
 /** Parity node cases — inputs every walker (`ssr`/`ssr.async`/`ssr.stream`) must render byte-identically. */
 export const parityCases: { name: string; node: HellaNode }[] = [
   { name: "falsy child (false)", node: html`<div>${false}</div>` as HellaNode },
@@ -28,6 +32,7 @@ export const parityCases: { name: string; node: HellaNode }[] = [
   { name: "fragment child among siblings", node: html`<div>a${html`<b></b><c></c>`}d</div>` as HellaNode },
   { name: "reactive child resolving to an element", node: html`<div>${signal(html`<b></b>` as HellaNode)}</div>` as HellaNode },
   { name: "reactive getter returning an array of nodes", node: html`<ul>${() => [1, 2, 3].map((n) => html`<li>${n}</li>`)}</ul>` as HellaNode },
+  { name: "reactive getter through a component child slot", node: html`<ul><${SlotBox}>${() => [1, 2].map((n) => html`<li>${n}</li>`)}</${SlotBox}></ul>` as HellaNode },
   { name: "reactive child resolving to a non-HellaNode object", node: html`<div>${signal({ notag: true } as unknown as HellaNode)}</div>` as HellaNode },
   { name: "reactive getter returning an isDynamic component", node: html`<div>${() => ForEach({ each: signal([1, 2, 3]), use: (n: number) => html`<li>${n}</li>` })}</div>` as HellaNode },
   { name: "isDynamic function without ssr meta (empty region)", node: html`<div>${bareDynamicFn}</div>` as HellaNode },
