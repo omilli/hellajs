@@ -78,6 +78,44 @@ describe("anchorPosition", () => {
     dispose();
   });
 
+  test("measures the floating box after pinning the matched width", () => {
+    const anchor = document.createElement("button");
+    const floating = document.createElement("div");
+    document.body.append(anchor, floating);
+    Object.assign(anchor, { getBoundingClientRect: () => ({ top: 100, left: 100, width: 50, height: 20 }) });
+    // Layout-true width: the intrinsic first layout is wider than the viewport
+    // (the combobox/select first-open misplacement), then follows the pin.
+    Object.defineProperty(floating, "offsetWidth", {
+      configurable: true,
+      get: () => (floating.style.width === "" ? 450 : Number.parseFloat(floating.style.width))
+    });
+    Object.defineProperty(floating, "offsetHeight", { configurable: true, value: 40 });
+
+    const dispose = anchorPosition(anchor, floating, { placement: "bottom-start", matchAnchorWidth: true });
+    expect(floating.style.left).toBe("100px");
+    expect(floating.style.width).toBe("50px");
+    dispose();
+  });
+
+  test("measures the floating box after taking it out of flow", () => {
+    const anchor = document.createElement("button");
+    const floating = document.createElement("div");
+    document.body.append(anchor, floating);
+    Object.assign(anchor, { getBoundingClientRect: () => ({ top: 100, left: 100, width: 50, height: 20 }) });
+    // Layout-true width: an in-flow first layout stretches to the containing
+    // block (the context/dropdown first-open misplacement), then shrinks to
+    // fit once fixed.
+    Object.defineProperty(floating, "offsetWidth", {
+      configurable: true,
+      get: () => (floating.style.position === "fixed" ? 60 : 450)
+    });
+    Object.defineProperty(floating, "offsetHeight", { configurable: true, value: 40 });
+
+    const dispose = anchorPosition(anchor, floating, { placement: "bottom-start" });
+    expect(floating.style.left).toBe("100px");
+    dispose();
+  });
+
   test("dispose removes the window listeners", () => {
     const anchor = document.createElement("button");
     const floating = document.createElement("div");

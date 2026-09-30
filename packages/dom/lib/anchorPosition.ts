@@ -5,7 +5,9 @@ import type { AnchorPositionOptions } from "./types/behaviors";
  * Positions `floating` as a fixed overlay anchored to `anchor` and keeps it
  * placed while the page scrolls or resizes. Measures the anchor rect live per
  * reposition (`getBoundingClientRect()`); the floating size comes from
- * `offsetWidth`/`offsetHeight` so CSS transforms never skew the math. All
+ * `offsetWidth`/`offsetHeight` so CSS transforms never skew the math. With
+ * `matchAnchorWidth`, the width is applied before the floating box is measured,
+ * so the first positioning pass sees the final width. All
  * placement math delegates to the pure `computeAnchorPosition`.
  *
  * ```ts
@@ -26,13 +28,19 @@ export function anchorPosition(anchor: Element, floating: HTMLElement, options?:
   }
   const dir = options?.dir ?? (getComputedStyle(anchor).direction === "rtl" ? "rtl" : "ltr");
   const reposition = (): void => {
+    const anchorRect = anchor.getBoundingClientRect();
+    // Pin the matched width and take the floating out of flow before
+    // measuring: the placement math reads the floating box this pass is about
+    // to resize/reposition, so a pre-pin measure (e.g. a viewport-wide
+    // intrinsic first layout) clamps x against a stale width.
+    if (options?.matchAnchorWidth === true) floating.style.width = `${anchorRect.width}px`;
+    floating.style.position = "fixed";
     const result = computeAnchorPosition(
-      anchor.getBoundingClientRect(),
+      anchorRect,
       { width: floating.offsetWidth, height: floating.offsetHeight },
       { width: window.innerWidth, height: window.innerHeight },
       { ...options, dir }
     );
-    floating.style.position = "fixed";
     floating.style.left = `${result.x}px`;
     floating.style.top = `${result.y}px`;
     if (options?.matchAnchorWidth === true) floating.style.width = `${result.width}px`;
