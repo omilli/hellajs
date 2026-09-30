@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, isString, isNumber, isObject, objectLoop } from "./core";
-import { renderProp, toText, resolveValue, chainScopes, wireFragmentScope } from "./utils";
+import { renderProp, toText, resolveDeep, chainScopes, wireFragmentScope } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
@@ -108,11 +108,19 @@ export function resolveNode(value: HellaChild | HellaChild[], parent?: Node, ns?
     if ("raw" in value) return rawToFragment((value as { raw: string }).raw);
   }
   if (isFunction(value)) {
-    const textNode = document.createTextNode("");
-    registry.addEffect(parent || textNode, () =>
-      textNode.textContent = toText(value())
+    // A reactive child is a region, not text: deep-resolve, then swap nodes or text ahead of a
+    // persistent anchor. The anchor rides a detached carrier fragment so the effect's first
+    // (synchronous) run inserts into it before the caller mounts the returned fragment — later
+    // runs find the live parent, and a removed region bails on the anchor-parent null check.
+    const anchor = document.createTextNode("");
+    const carrier = document.createDocumentFragment();
+    carrier.appendChild(anchor);
+    const effectNode = parent || anchor;
+    const renderedNodes: Node[] = [];
+    registry.addEffect(effectNode, () =>
+      runReactiveChild(anchor, renderedNodes, value, effectNode, undefined, ns)
     );
-    return textNode;
+    return carrier;
   }
   return document.createTextNode(toText(value));
 }
@@ -282,56 +290,9 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
 
       const renderedNodes: Node[] = [];
 
-      registry.addEffect(parent, () => {
-        const actualParent = anchor.parentNode as HellaElement;
-        if (!actualParent) return;
-
-        try {
-          const resolved = resolveValue(child);
-
-          clearRenderedNodes(renderedNodes, actualParent);
-
-          if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
-            const proxyParent = new Proxy(actualParent as Element, {
-              get(target, prop) {
-                if (prop === "appendChild") {
-                  return (node: Node) => {
-                    renderedNodes.push(node);
-                    return target.insertBefore(node, anchor);
-                  };
-                }
-                const val = (target as unknown as Record<string, unknown>)[prop as string];
-                return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
-              }
-            });
-            (resolved as RenderFn)(proxyParent as HellaElement);
-            return;
-          }
-
-          const newNode = resolveNode(resolved as HellaChild, parent, childNs);
-
-          if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
-            let fragChild: ChildNode | null;
-            while ((fragChild = newNode.firstChild)) {
-              renderedNodes.push(fragChild);
-              actualParent.insertBefore(fragChild, anchor);
-            }
-          } else {
-            renderedNodes.push(newNode);
-            actualParent.insertBefore(newNode, anchor);
-          }
-        } catch (e) {
-          const config = getBoundaryConfig(currentBoundary);
-          const fallback = dispatchError(toError(e), { phase: "mount", element: actualParent, config });
-          if (fallback) {
-            clearRenderedNodes(renderedNodes, actualParent);
-
-            const fbNode = mountNode(fallback);
-            renderedNodes.push(fbNode);
-            actualParent.insertBefore(fbNode, anchor);
-          }
-        }
-      });
+      registry.addEffect(parent, () =>
+        runReactiveChild(anchor, renderedNodes, child, parent, currentBoundary, childNs)
+      );
 
       continue;
     }
@@ -352,5 +313,83 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
       parent.appendChild(document.createTextNode(String(child)));
     }
     // booleans, null, undefined render nothing
+  }
+}
+
+/**
+ * Shared effect body for every reactive child region — direct element children and
+ * children-array entries alike: deep-resolves the child, clears the previous run's nodes, and
+ * mounts the classified value at the region anchor. A resolved `isDynamic` render function
+ * dispatches against a proxy parent whose appends are tracked and inserted before the anchor;
+ * node-valued results mount ahead of it; text settles INTO the anchor — the anchor doubles as
+ * the persistent text node, so text regions keep their DOM node identity across updates. On
+ * the effect's first (synchronous) run the anchor may still sit in `resolveNode`'s detached
+ * carrier fragment — insertion then targets that fragment, and later runs find the live parent.
+ * @param anchor The persistent empty text node marking the region's position
+ * @param renderedNodes The region's live node list — cleared and refilled every run
+ * @param child The unresolved function child
+ * @param parent The effect-registration node, and registration parent for nested regions
+ * @param currentBoundary The nearest error boundary element, or undefined when unknown
+ * @param ns The namespace URI inherited at the insertion site
+ */
+function runReactiveChild(anchor: Node, renderedNodes: Node[], child: unknown, parent: Node, currentBoundary: Element | undefined, ns?: string): void {
+  const actualParent = anchor.parentNode as HellaElement;
+  if (!actualParent) return;
+
+  try {
+    const resolved = resolveDeep(child);
+
+    clearRenderedNodes(renderedNodes, actualParent);
+
+    if (isFunction(resolved) && (resolved as RenderFn).isDynamic) {
+      anchor.textContent = "";
+      const proxyParent = new Proxy(actualParent as Element, {
+        get(target, prop) {
+          if (prop === "appendChild") {
+            return (node: Node) => {
+              renderedNodes.push(node);
+              return target.insertBefore(node, anchor);
+            };
+          }
+          const val = (target as unknown as Record<string, unknown>)[prop as string];
+          return isFunction(val) ? (val as (...args: unknown[]) => unknown).bind(target) : val;
+        }
+      });
+      (resolved as RenderFn)(proxyParent as HellaElement);
+      return;
+    }
+
+    if (
+      Array.isArray(resolved) ||
+      (isObject(resolved) && ((resolved as HellaNode).tag !== undefined || "raw" in resolved))
+    ) {
+      anchor.textContent = "";
+      const newNode = resolveNode(resolved as HellaChild, parent, ns);
+
+      if (newNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+        let fragChild: ChildNode | null;
+        while ((fragChild = newNode.firstChild)) {
+          renderedNodes.push(fragChild);
+          actualParent.insertBefore(fragChild, anchor);
+        }
+      } else {
+        renderedNodes.push(newNode);
+        actualParent.insertBefore(newNode, anchor);
+      }
+      return;
+    }
+
+    anchor.textContent = toText(resolved);
+  } catch (e) {
+    const config = getBoundaryConfig(currentBoundary);
+    const fallback = dispatchError(toError(e), { phase: "mount", element: actualParent, config });
+    if (fallback) {
+      clearRenderedNodes(renderedNodes, actualParent);
+      anchor.textContent = "";
+
+      const fbNode = mountNode(fallback);
+      renderedNodes.push(fbNode);
+      actualParent.insertBefore(fbNode, anchor);
+    }
   }
 }

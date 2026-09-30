@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, isObject, isNull, objectLoop } from "./core";
-import { renderProp, resolveValue, isHellaNode, chainScopes, wireFragmentScope } from "./utils";
+import { renderProp, resolveDeep, isHellaNode, chainScopes, wireFragmentScope } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
@@ -186,7 +186,7 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
     const actualParent = anchor.parentNode;
     if (!actualParent) return;
     try {
-      const resolved = resolveValue(child);
+      const resolved = resolveDeep(child);
       const isDyn = isFunction(resolved) && (resolved as RenderFn).isDynamic;
       if (firstRun && !isDyn) {
         firstRun = false;
@@ -195,7 +195,7 @@ function adoptReactiveRegion(parent: HellaElement, child: HellaChild, anchor: No
         // effects and handlers register (a bare adopt leaves the region inert
         // whenever the closure reads no top-level signal — e.g. a list whose
         // signal reads live inside per-item prop getters). Text regions and
-        // count/tag mismatches keep the bare adopt; resolveValue already
+        // count/tag mismatches keep the bare adopt; resolveDeep already
         // registered the closure's own dependencies.
         if (Array.isArray(resolved) && resolved.length === renderedNodes.length) {
           let pairable = true;

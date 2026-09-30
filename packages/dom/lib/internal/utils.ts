@@ -1,6 +1,6 @@
 import { isFunction, isPlainObject, isObject, isFalsy } from "./core";
 import { getState } from "./state";
-import type { HellaNode, HellaElement } from "../types/nodes";
+import type { HellaNode, HellaElement, RenderFn } from "../types/nodes";
 
 /**
  * @internal
@@ -146,4 +146,21 @@ export function wireFragmentScope(start: Node | null, bound: Node | null, scope:
  */
 export function resolveValue(value: unknown): unknown {
   return isFunction(value) ? value() : value;
+}
+
+/**
+ * @internal
+ * Resolves a value by repeatedly calling plain (non-`isDynamic`) functions until a non-function
+ * or an `isDynamic` render function remains — reactive child chains (`() => () => nodes`, a
+ * component slot forwarding `${() => props.children}`) classify by their final value. A
+ * self-referential getter loops forever, the same user bug as a self-referencing computed.
+ * @param value The value to resolve
+ * @returns The chain-final non-function value, or the `isDynamic` function that stopped the chain
+ */
+export function resolveDeep(value: unknown): unknown {
+  let current = value;
+  while (isFunction(current) && !(current as RenderFn).isDynamic) {
+    current = (current as () => unknown)();
+  }
+  return current;
 }
