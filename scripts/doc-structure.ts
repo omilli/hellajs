@@ -3,11 +3,12 @@ import path from "node:path";
 import { logger, packagesDir, projectRoot } from "./utils/index.js";
 
 /**
- * Guard (`bun lint:structure`): six structural checks over the docs surfaces.
+ * Guard (`bun lint:structure`): seven structural checks over the docs surfaces.
  * Catches the classes of defect that shipped before it existed — an unclosed code
  * fence that mangled every block after it, Complete-Code drift between a tutorial
  * and the app it documents, broken `#`-anchors, pages unreachable from the nav,
- * wrappers carrying content against the zero-content rule, and doc-example
+ * wrappers carrying content against the zero-content rule, table delimiter rows
+ * that disagree with their header and render the table as prose, and doc-example
  * constructs the conventions ban.
  *
  * 1. Fence parity — every `.mdx` under each package's `docs/`, every
@@ -55,6 +56,12 @@ import { logger, packagesDir, projectRoot } from "./utils/index.js";
  *    audit-enforced — which docs count as "explicitly about the html method" is
  *    a judgment boundary.
  *
+ * 7. Table delimiter parity — outside code fences, a header row starting with
+ *    `|` whose next line is a delimiter row must match its cell count (an
+ *    escaped `\|` does not split a cell). GFM refuses the whole table on a
+ *    mismatch, rendering it as prose; data-row width deviations render
+ *    survivably and stay unchecked.
+ *
  * No package scoping; scans every package, example, and site page.
  */
 
@@ -87,6 +94,21 @@ const BLOCKQUOTE_WARN_RE = /^> ⚠️/;
 const JSX_FENCE_RE = /^```(jsx|tsx)\b/;
 const WRAPPED_ATTR_RE = /(class|style|title|href|id)=\{\(\) =>/;
 const INLINE_CSS_OBJECT_RE = /(css|style)\(\{[^}\n]*\}\)/;
+const TABLE_DELIM_RE = /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?$/;
+
+/**
+ * Counts the cells in a table row: trims, strips one leading and one trailing
+ * `|`, then splits on unescaped pipes (an escaped `\|` is cell content, not a
+ * divider).
+ * @param row The raw table row line
+ * @returns The number of cells the row declares
+ */
+function countCells(row: string): number {
+  let inner = row.trim();
+  if (inner.startsWith("|")) inner = inner.slice(1);
+  if (inner.endsWith("|")) inner = inner.slice(0, -1);
+  return inner.split(/(?<!\\)\|/).length;
+}
 
 /** Alias prefix → the directory it resolves to under the repo root. */
 const ALIAS_DIRS: Record<string, string> = {
@@ -615,6 +637,43 @@ function checkExampleConventions(corpus: string[]): Finding[] {
   return findings;
 }
 
+/**
+ * Check 7 — table delimiter parity: outside code fences, a header row starting
+ * with `|` whose next line is a delimiter row must declare the same cell count
+ * (an escaped `\|` does not split a cell). GFM refuses the whole table on a
+ * mismatch, rendering it as prose. Detection anchors on the delimiter-shaped
+ * second row, so prose starting with `|` cannot false-positive; data-row width
+ * deviations render survivably under GFM and stay unchecked.
+ * @param corpus Every mdx file in scope
+ * @returns Findings (one per mismatched delimiter row)
+ */
+function checkTableParity(corpus: string[]): Finding[] {
+  const findings: Finding[] = [];
+  for (const file of corpus) {
+    const content = readFileOrNull(file);
+    if (content === null) continue;
+    const lines = content.split("\n");
+    let inFence = false;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]!;
+      if (FENCE_RE.test(line)) {
+        inFence = !inFence;
+        continue;
+      }
+      const trimmed = line.trim();
+      if (inFence || !trimmed.startsWith("|") || i >= lines.length - 1) continue;
+      const delimiter = lines[i + 1]!.trim();
+      if (!TABLE_DELIM_RE.test(delimiter)) continue;
+      const headerCells = countCells(trimmed);
+      const delimiterCells = countCells(delimiter);
+      if (headerCells !== delimiterCells) {
+        findings.push({ file, message: `line ${i + 2}: table delimiter row carries ${delimiterCells} cells against header's ${headerCells} — GFM refuses the table, rendering it as prose` });
+      }
+    }
+  }
+  return findings;
+}
+
 async function main(): Promise<void> {
   try {
     const corpus = collectMdxCorpus();
@@ -625,6 +684,7 @@ async function main(): Promise<void> {
       ...checkWrappers(),
       ...checkRegistration(),
       ...checkExampleConventions(corpus),
+      ...checkTableParity(corpus),
     ];
 
     for (const f of findings) {
@@ -632,7 +692,7 @@ async function main(): Promise<void> {
     }
 
     if (findings.length === 0) {
-      logger.success(`Docs structure clean (${corpus.length} mdx files, 6 checks)`);
+      logger.success(`Docs structure clean (${corpus.length} mdx files, 7 checks)`);
       process.exit(0);
     }
     logger.error(`${findings.length} structure finding(s)`);

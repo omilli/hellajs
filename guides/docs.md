@@ -674,6 +674,7 @@ Use for structured data: error categories/status enums, hook timing reference, o
 - Tables supplement text explanations — don't use them as a replacement.
 - Always include header row.
 - Keep columns narrow enough for readable rendering.
+- Delimiter row cell count must match the header row (escaped `\|` does not split a cell); GFM refuses the whole table otherwise. Enforced by `bun lint:structure`.
 
 ## Alert Boxes
 
