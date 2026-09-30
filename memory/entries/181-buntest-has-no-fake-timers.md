@@ -3,8 +3,8 @@ type: decision
 title: bun:test has no fake timers; time-dependent tests use real small delays plus the Date.now mock closure
 description: Plans citing a jest-style fake-timer/setSystemTime tick pattern are wrong for bun test; the guide's sanctioned tools are real-time `delay(N)` waits and the Date.now mock closure.
 tags: [testing, bun]
-timestamp: 2026-09-27
-last_confirmed: 2026-09-27
+timestamp: 2026-09-30
+last_confirmed: 2026-09-30
 triggers: [fake-timers, hover-intent, delay-test, skip-delay, timer-test]
 ---
 # Why
@@ -13,4 +13,4 @@ triggers: [fake-timers, hover-intent, delay-test, skip-delay, timer-test]
 
 # Evidence
 
-`guides/tests.md` §Mock Patterns (Date.now closure) and §Async Tests (`delay(N)` real-time waits) are the guide's only time patterns — no fake-timer section exists (grep). Empirical: `bun -e` with `Date.now` mocked showed a 5ms real `setTimeout` still firing on the real clock while `Date.now()` stayed frozen. Applied in `packages/dom/tests/hoverintent.test.ts` (8 passing tests, skip-delay window driven by `now += 100` / `now += 600`); found when unit 01 of plans/ui/code/ui-shadcn-components cited a nonexistent "setSystemTime/tick pattern per existing tests guide". Re-confirmed 2026-09-19 while executing unit 15 of the same set (which again cited fake timers): `Object.keys(jest)` exposes `useFakeTimers` but NO `advanceTimersByTime`/`runAllTimers`, so the fake clock cannot be advanced — injected short durations plus real `delay` waits remain the only pattern (sonner duration tests).
+`guides/tests.md` §Mock Patterns (Date.now closure) and §Async Tests (`delay(N)` real-time waits) are the guide's only time patterns — no fake-timer section exists (grep). Empirical: `bun -e` with `Date.now` mocked showed a 5ms real `setTimeout` still firing on the real clock while `Date.now()` stayed frozen. Applied in `packages/dom/tests/hoverintent.test.ts` (8 passing tests, skip-delay window driven by `now += 100` / `now += 600`); found when unit 01 of plans/ui/code/ui-shadcn-components cited a nonexistent "setSystemTime/tick pattern per existing tests guide". Re-confirmed 2026-09-19 while executing unit 15 of the same set (which again cited fake timers): `Object.keys(jest)` exposes `useFakeTimers` but NO `advanceTimersByTime`/`runAllTimers`, so the fake clock cannot be advanced — injected short durations plus real `delay` waits remain the only pattern (sonner duration tests). Same closure shape re-verified on `performance.now` 2026-09-30 (packages/dom/tests/onswipe.test.ts velocity tests): the reassignment `performance.now = () => now` in `beforeEach` + original restored in `afterEach` drives a source that reads `performance.now()` per sample; 13 pass / 0 fail.
