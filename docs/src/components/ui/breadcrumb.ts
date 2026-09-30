@@ -11,7 +11,10 @@ const list = style({
   fontSize: "0.875rem",
   gap: "0.375rem",
   lineHeight: "1.25rem",
+  listStyle: "none",
+  margin: "0",
   overflowWrap: "break-word",
+  padding: "0",
   "@media (min-width: 40rem)": {
     "&": {
       gap: "0.625rem",
