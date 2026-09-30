@@ -5,6 +5,9 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 import { style } from "@hellajs/css";
 
 const trigger = style({
+  alignItems: "center",
+  display: "inline-flex",
+  gap: "0.5rem",
   "&[data-state='open'] > svg": {
     rotate: "180deg",
   },

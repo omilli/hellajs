@@ -1,6 +1,9 @@
 import { style } from "@hellajs/css";
 
 export const trigger = style({
+  alignItems: "center",
+  display: "inline-flex",
+  gap: "0.5rem",
   "&[data-state='open'] > svg": {
     rotate: "180deg",
   },
