@@ -59,7 +59,7 @@ npx @hellajs/ui add theme
 
 | Style | Extra peers | Theme artifact |
 |---|---|---|
-| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by [`cssText`](/reference/css/csstext) for SSR |
+| css (default) | `@hellajs/css` | `tokens.js`, a [`vars`](/reference/css/vars) sheet collected by [`cssText`](/reference/css/csstext) for SSR; `themeMode: "dark"` swaps in the dark-only `tokens.dark.js` |
 | tailwind | `clsx`, `tailwind-merge`, `tw-animate-css` | `theme.css` plus `cn.ts` |
 
 Restyling the palette, dark mode, and the override contract live on [Theming](/ui/theming). Every flag of `init`, `add`, and `list` is documented on [CLI](/ui/cli).

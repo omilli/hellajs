@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
-import { cpSync, existsSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { listComponents, main, readConfig } from "@hellajs/ui/bundle";
 
@@ -27,6 +27,7 @@ describe("main", () => {
     await expect(main(["bogus"])).rejects.toThrow('[ui] main: unknown command "bogus"');
     await expect(main(["bogus"])).rejects.toThrow("--style css|tailwind");
     await expect(main(["bogus"])).rejects.toThrow("--lang js|ts");
+    await expect(main(["bogus"])).rejects.toThrow("--theme-mode light|dark");
   });
 
   test("lists registry components and exits clean", async () => {
@@ -36,14 +37,30 @@ describe("main", () => {
 
   test("init writes defaults and theme tokens, warns and keeps an existing config, and --force rewrites it", async () => {
     expect(await main(["init", "--dir", root])).toBe(0);
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", themeMode: "light", lang: "ts" });
     expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
     writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ style: "tailwind" }));
     await main(["init", "--dir", root]);
     expect(warnings.join("\n")).toContain("[ui] initProject: hella.ui.json already exists");
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "tailwind", format: "jsx", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "tailwind", format: "jsx", themeMode: "light", lang: "ts" });
     expect(await main(["init", "--force", "--dir", root])).toBe(0);
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", themeMode: "light", lang: "ts" });
+  });
+
+  test("--theme-mode parses in space-value form for init and add, and a value-less flag errors", async () => {
+    expect(await main(["init", "--theme-mode", "dark", "--dir", root])).toBe(0);
+    expect(readConfig(root).themeMode).toBe("dark");
+    rmSync(join(componentsDir, "tokens.js"));
+    writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ themeMode: "light" }));
+    expect(await main(["add", "theme", "--theme-mode", "dark", "--dir", root])).toBe(0);
+    expect(readFileSync(join(componentsDir, "tokens.js"), "utf8")).toBe(
+      readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.dark.js"), "utf8"),
+    );
+    await expect(main(["add", "--theme-mode"])).rejects.toThrow("[ui] main: flag --theme-mode requires a value");
+    rmSync(join(root, "hella.ui.json"), { force: true });
+    await expect(main(["init", "--theme-mode", "bogus", "--dir", root]))
+      .rejects.toThrow('[ui] initProject: themeMode must be light or dark, received "bogus"');
+    expect(existsSync(join(root, "hella.ui.json"))).toBe(false);
   });
 
   test("add dispatches html format with lang js into button.js and theme.css, and --overwrite repeats clean", async () => {

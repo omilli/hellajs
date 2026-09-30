@@ -27,9 +27,13 @@ npx @hellajs/ui init
 {
   "componentsDir": "src/components",
   "style": "css",
-  "format": "jsx"
+  "format": "jsx",
+  "themeMode": "light",
+  "lang": "ts"
 }
 ```
+
+`themeMode` selects the theme palette: dark-only projects set `"themeMode": "dark"` (or pass `--theme-mode dark`) to copy a dark-only `tokens.js` with no `.dark` class remap.
 
 ### Two styles, one override contract
 
@@ -57,6 +61,7 @@ npx @hellajs/ui list
 |---|---|---|
 | `--style css\|tailwind` | `add` | Registry style to copy. |
 | `--format jsx\|html` | `add` | Source format: `.tsx` for JSX, `*-html.ts` (copied as `<name>.ts`) for runtime `html` templates. |
+| `--theme-mode light\|dark` | `init`, `add` | Theme palette: `dark` copies the dark-only tokens sheet (css style only). |
 | `--dir <path>` | `add`, `init` | Target project root; defaults to the current directory. |
 | `--overwrite` | `add` | Replace existing files instead of skipping them. |
 | `--force` | `init` | Rewrite an existing `hella.ui.json` with defaults. |
@@ -65,7 +70,7 @@ Copied source imports `@hellajs/core` and `@hellajs/dom` as regular packages; `a
 
 ## Components
 
-Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Each is styled byte-faithfully: same structure, same variants, same class strings (tailwind flavor) or their 1:1 layered translations (css flavor), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor.
+Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Each is styled byte-faithfully: same structure, same variants, same class strings (tailwind flavor) or their 1:1 layered translations (css flavor), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
 
 | Family | Components |
 |---|---|

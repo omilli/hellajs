@@ -22,6 +22,7 @@ interface RegistryStyleSlot {
   files?: string[];
   deps?: string[];
   registryDependencies?: string[];
+  darkFiles?: Record<string, string>;
 }
 
 interface RegistryEntry {
@@ -210,6 +211,9 @@ export async function compileRegistry(packageInfo: PackageInfo): Promise<void> {
         }
         for (const file of slot.files ?? []) {
           await compileFile(path.join(registryDir, name, file), outBase, outDir, stageDir, null, styleName);
+        }
+        for (const source of Object.values(slot.darkFiles ?? {})) {
+          await compileFile(path.join(registryDir, name, source), outBase, outDir, stageDir, null, styleName);
         }
         for (const dep of slot.registryDependencies ?? []) {
           await compileDependency(dep, styleName, manifest, registryDir, outBase, outDir, stageDir);

@@ -1,16 +1,16 @@
-import { describe, test, expect } from "bun:test";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { loadRegistry } from "@hellajs/ui/bundle";
+import { addComponent, loadRegistry } from "@hellajs/ui/bundle";
 import type { RegistryEntry, UiStyle } from "@hellajs/ui";
 
 const registryDir = join(import.meta.dir, "..", "registry");
 const manifest = loadRegistry();
 
-/** Shared and per-style files of an entry at a style slot. */
+/** Shared, per-style, and dark-substitution files of an entry at a style slot. */
 function filesAt(entry: RegistryEntry, style: UiStyle): string[] {
   const styled = entry.styles?.[style];
-  return [...(entry.files ?? []), ...(styled?.files ?? [])];
+  return [...(entry.files ?? []), ...(styled?.files ?? []), ...Object.values(styled?.darkFiles ?? {})];
 }
 
 /** The conventionally named style module of an entry at a style, when it has canonicals. */
@@ -43,6 +43,25 @@ function bindsNonEmpty(text: string, binding: string): boolean {
 }
 
 describe("registry", () => {
+  const darkRoot = join(import.meta.dir, ".tmp", "registry-dark");
+  const darkComponentsDir = join(darkRoot, "src", "components");
+  let originalWarn: typeof console.warn;
+  let warnings: string[];
+
+  beforeEach(() => {
+    rmSync(darkRoot, { recursive: true, force: true });
+    mkdirSync(darkRoot, { recursive: true });
+    cpSync(join(import.meta.dir, "fixtures", "empty-app", "package.json"), join(darkRoot, "package.json"));
+    originalWarn = console.warn;
+    warnings = [];
+    console.warn = mock((...args: unknown[]) => { warnings.push(args.join(" ")); }) as typeof console.warn;
+  });
+
+  afterEach(() => {
+    console.warn = originalWarn;
+    rmSync(darkRoot, { recursive: true, force: true });
+  });
+
   test("manifest carries the full catalog: 61 entries", () => {
     expect(Object.keys(manifest.entries).length).toBe(61);
   });
@@ -131,6 +150,14 @@ describe("registry", () => {
     }
   });
 
+  test("a dark themeMode copies the mapped dark source in place of the target file through the resolved entry", () => {
+    addComponent(["theme"], { dir: darkRoot, themeMode: "dark" });
+    expect(existsSync(join(darkComponentsDir, "tokens.dark.js"))).toBe(false);
+    expect(readFileSync(join(darkComponentsDir, "tokens.js"), "utf8")).toBe(
+      readFileSync(join(registryDir, "theme", "tokens.dark.js"), "utf8"),
+    );
+  });
+
   test("registry dependency graph forms no cycles", () => {
     const visiting = new Set<string>();
     const done = new Set<string>();
@@ -152,9 +179,11 @@ describe("registry", () => {
     const theme = manifest.entries.theme!;
     expect(Object.keys(theme.styles!).sort()).toEqual(["css", "tailwind"]);
     expect(theme.styles!.css!.files).toEqual(["tokens.js"]);
+    expect(theme.styles!.css!.darkFiles).toEqual({ "tokens.js": "tokens.dark.js" });
     expect(theme.styles!.tailwind!.files).toEqual(["theme.css"]);
     expect(theme.styles!.tailwind!.deps).toEqual(["tw-animate-css"]);
     expect(existsSync(join(registryDir, "theme", "tokens.js"))).toBe(true);
+    expect(existsSync(join(registryDir, "theme", "tokens.dark.js"))).toBe(true);
     expect(existsSync(join(registryDir, "theme", "theme.css"))).toBe(true);
 
     const cn = manifest.entries.cn!;

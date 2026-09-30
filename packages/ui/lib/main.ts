@@ -1,7 +1,7 @@
 import { addComponent } from "./addComponent";
 import { initProject } from "./initProject";
 import { listComponents } from "./listComponents";
-import type { UiFormat, UiLang, UiStyle } from "./types";
+import type { UiFormat, UiLang, UiStyle, UiThemeMode } from "./types";
 
 /** Parsed command line: positional words plus recognized flag values. */
 interface ParsedArgs {
@@ -12,6 +12,7 @@ interface ParsedArgs {
   style?: string;
   format?: string;
   lang?: string;
+  themeMode?: string;
 }
 
 /** Command and flag overview printed when a command is missing or unknown. */
@@ -26,6 +27,7 @@ Options:
   --style css|tailwind   registry style to copy on add
   --format jsx|html      source format to copy on add
   --lang js|ts           output language to copy on add (default ts)
+  --theme-mode light|dark  dark-default tokens sheet (css style only)
   --dir <path>           target project root
   --overwrite            replace existing files on add
   --force                rewrite an existing hella.ui.json on init`;
@@ -44,7 +46,7 @@ function parseArgs(args: string[]): ParsedArgs {
       parsed.overwrite = true;
     } else if (arg === "--force") {
       parsed.force = true;
-    } else if (arg === "--dir" || arg === "--style" || arg === "--format" || arg === "--lang") {
+    } else if (arg === "--dir" || arg === "--style" || arg === "--format" || arg === "--lang" || arg === "--theme-mode") {
       const value = args[i];
       i++;
       if (value === undefined) {
@@ -53,6 +55,7 @@ function parseArgs(args: string[]): ParsedArgs {
       if (arg === "--dir") parsed.dir = value;
       else if (arg === "--style") parsed.style = value;
       else if (arg === "--format") parsed.format = value;
+      else if (arg === "--theme-mode") parsed.themeMode = value;
       else parsed.lang = value;
     } else if (arg.startsWith("--")) {
       throw new Error(`[ui] main: unknown flag "${arg}"`);
@@ -76,7 +79,7 @@ export async function main(argv: string[]): Promise<number> {
   const [command = "", ...args] = argv;
   if (command === "init") {
     const parsed = parseArgs(args);
-    initProject({ dir: parsed.dir, force: parsed.force });
+    initProject({ dir: parsed.dir, force: parsed.force, themeMode: parsed.themeMode as UiThemeMode });
     return 0;
   }
   if (command === "add") {
@@ -87,6 +90,7 @@ export async function main(argv: string[]): Promise<number> {
       style: parsed.style as UiStyle,
       format: parsed.format as UiFormat,
       lang: parsed.lang as UiLang,
+      themeMode: parsed.themeMode as UiThemeMode,
     });
     return 0;
   }

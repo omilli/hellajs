@@ -5,9 +5,11 @@ import type { RegistryManifest, UiStyle } from "../types";
 /**
  * One component's resolved copy plan at a style: the shared files unioned
  * with the style slot's own files, the unioned runtime deps, the registry
- * folder holding them, and the conventionally named style module
+ * folder holding them, the conventionally named style module
  * (`<name>-<style>.ts`) for component entries — spliced at copy time, never
- * copied as a file.
+ * copied as a file — and the slot's darkFiles substitution when the slot
+ * declares one (dark themeMode copies the mapped source in place of the
+ * target file).
  * @internal
  */
 export interface ResolvedEntry {
@@ -16,6 +18,8 @@ export interface ResolvedEntry {
   files: string[];
   deps: string[];
   styleFile?: string;
+  /** Dark-default source files keyed by the target file they replace, threaded from the style slot; present only when the slot declares one. */
+  darkFiles?: Record<string, string>;
 }
 
 /**
@@ -63,6 +67,7 @@ export function resolveEntry(
   const regDeps = styled?.registryDependencies ?? [];
   const resolved: ResolvedEntry = { name, baseDir: join(REGISTRY_DIR, name), files, deps };
   if ((entry.files ?? []).length > 0) resolved.styleFile = `${name}-${style}.ts`;
+  if (styled?.darkFiles !== undefined) resolved.darkFiles = styled.darkFiles;
   const plans: ResolvedEntry[] = [resolved];
   let i = 0;
   while (i < regDeps.length) {

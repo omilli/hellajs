@@ -13,7 +13,7 @@ describe("docs vendoring drift", () => {
     cpSync(join(import.meta.dir, "fixtures", "empty-app"), root, { recursive: true });
     writeFileSync(
       join(root, "hella.ui.json"),
-      JSON.stringify({ componentsDir: "src/components/ui", style: "css", format: "html" }),
+      JSON.stringify({ componentsDir: "src/components/ui", style: "css", format: "html", themeMode: "dark" }),
     );
   });
 

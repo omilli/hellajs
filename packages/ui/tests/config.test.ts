@@ -16,7 +16,7 @@ describe("readConfig", () => {
   });
 
   test("falls back to defaults when hella.ui.json is absent", () => {
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", themeMode: "light", lang: "ts" });
   });
 
   test("reads overrides from hella.ui.json when present", () => {
@@ -24,7 +24,18 @@ describe("readConfig", () => {
       join(root, "hella.ui.json"),
       JSON.stringify({ componentsDir: "app/ui", style: "tailwind", format: "html" }),
     );
-    expect(readConfig(root)).toEqual({ componentsDir: "app/ui", style: "tailwind", format: "html", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "app/ui", style: "tailwind", format: "html", themeMode: "light", lang: "ts" });
+  });
+
+  test("round-trips a dark themeMode from hella.ui.json", () => {
+    writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ themeMode: "dark" }));
+    expect(readConfig(root).themeMode).toBe("dark");
+  });
+
+  test("throws the themeMode contract for an invalid themeMode", () => {
+    writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ themeMode: "midnight" }));
+    expect(() => readConfig(root))
+      .toThrow('[ui] readConfig: themeMode must be light or dark, received "midnight"');
   });
 
   test("throws the two-style contract for an invalid style", () => {

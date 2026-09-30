@@ -206,3 +206,8 @@ OKF v0.1 bundle. Active concepts in `entries/`; retired in `archive/` (not liste
 * [226-registry-source-comments-surface-built — Registry source comments surface in built ui pages; scope upstream-scrub greps to the mdx tree](entries/226-registry-source-comments-surface-built.md) · `triggers: component-docs, built-page-grep, install-sources, upstream-scrub`
 * [227-registry-formatting-slot-adjacency — Registry canonical formatting: adjacent html slots stay adjacent; JSX text children stay single-line](entries/227-registry-formatting-slot-adjacency.md) · `triggers: registry-canonical, html-template, jsx-formatting, style-module, add-output`
 * [228-user-facing-hellajs-ui-install — User-facing @hellajs/ui install commands lead with npx; bunx and pnpm dlx follow as commented alternatives](entries/228-user-facing-hellajs-ui-install.md) · `triggers: ui-docs, install-command, cli-docs, package-runner, registry-docs`
+<<<<<<< HEAD
+=======
+* [230-verify-ui-registry-overlay-positioning — Verify ui registry overlay positioning in a real browser, not the coverage gate](entries/230-verify-ui-registry-overlay-positioning.md) · `triggers: registry-positioning, overlay-off-screen, happydom-zero-rects`
+* [231-docs-vendored-tokens-js-canonical — Docs vendored tokens.js is canonical dark via `themeMode: "dark"` config — no hand divergence, drift guard keeps it exact](entries/231-docs-vendored-tokens-js-canonical.md) · `triggers: tokens-js-drift, add-dir-docs, dark-default-demos, theme-mode-config, drift-guard-byte-match`
+>>>>>>> cfa56dcd (feat(ui): add themeMode dark for dark-default tokens from the registry)

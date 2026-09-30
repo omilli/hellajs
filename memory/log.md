@@ -5,6 +5,13 @@
 * **Creation**: Added concept [226](entries/226.md) (type: decision).
 * **renumber**: Renumber: merged 224-registry-formatting-slot-adjacency renumbered to 227 (ID collision with main-tree 224-verify-ui-registry-part-interfaces during the component-docs-modernization merge).
 * **Creation**: Added concept [228](entries/228.md) (type: decision).
+<<<<<<< HEAD
+=======
+* **Creation**: Added concept [229](entries/229.md) (type: decision).
+* **Creation**: Added concept [230](entries/230.md) (type: decision).
+* **Creation**: Added concept [231](entries/231.md) (type: decision).
+* **Deprecation**: Archived [229](archive/229-docs-tokens-js-deliberately-divergent.md) → superseded by [231](entries/231.md).
+>>>>>>> cfa56dcd (feat(ui): add themeMode dark for dark-default tokens from the registry)
 
 ## 2026-09-29
 * **Creation**: Added concept [123](entries/123.md) (type: decision).

@@ -146,7 +146,7 @@ describe("plain-js delivery", () => {
 
   test("lang defaults to ts in readConfig", () => {
     const root = fixture("config-default");
-    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", lang: "ts" });
+    expect(readConfig(root)).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", themeMode: "light", lang: "ts" });
   });
 
   test("hella.ui.json lang override reaches addComponent", () => {

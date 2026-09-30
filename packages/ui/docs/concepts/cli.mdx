@@ -12,7 +12,7 @@ npx @hellajs/ui list
 
 | Command | Behavior |
 |---|---|
-| `init` | Writes `hella.ui.json` to the project root and adds the shared `theme` entry for the configured style |
+| `init` | Writes `hella.ui.json` (including `themeMode` when `--theme-mode` passes) to the project root and adds the shared `theme` entry for the configured style |
 | `add <name>...` | Resolves each entry recursively, runs the peer check, and copies the format-matched files into `componentsDir` |
 | `list` | Prints every entry name in the registry |
 
@@ -21,6 +21,7 @@ npx @hellajs/ui list
 | `--style css\|tailwind` | `add` | Registry style to copy; defaults to the saved value |
 | `--format jsx\|html` | `add` | Source format to copy; defaults to the saved value |
 | `--lang js\|ts` | `add` | Output language; `ts` (default) copies verbatim, `js` strips types |
+| `--theme-mode light\|dark` | `init`, `add` | Theme palette for the theme entry; defaults to the saved value; `dark` copies the dark-only tokens sheet (css style only) |
 | `--dir <path>` | `init`, `add` | Target project root; the process cwd when absent |
 | `--overwrite` | `add` | Replaces existing files instead of skipping them with a warning |
 | `--force` | `init` | Rewrites an existing `hella.ui.json` |
@@ -32,6 +33,7 @@ npx @hellajs/ui list
   "componentsDir": "src/components",
   "style": "css",
   "format": "jsx",
+  "themeMode": "light",
   "lang": "ts"
 }
 ```

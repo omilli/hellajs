@@ -25,6 +25,7 @@ describe("compile", () => {
     }
     expectArtifact("button", "tailwind", "cn.js");
     expectArtifact("theme", "tokens.js");
+    expectArtifact("theme", "tokens.dark.js");
     expectArtifact("theme", "theme.css");
     expectArtifact("cn", "cn.js");
   });
@@ -81,6 +82,9 @@ describe("compile", () => {
   test("copies theme tokens and stylesheet verbatim", () => {
     expect(readArtifact("theme", "tokens.js")).toBe(
       readFileSync(join(sourceRegistry, "theme", "tokens.js"), "utf8"),
+    );
+    expect(readArtifact("theme", "tokens.dark.js")).toBe(
+      readFileSync(join(sourceRegistry, "theme", "tokens.dark.js"), "utf8"),
     );
     expect(readArtifact("theme", "theme.css")).toBe(
       readFileSync(join(sourceRegistry, "theme", "theme.css"), "utf8"),

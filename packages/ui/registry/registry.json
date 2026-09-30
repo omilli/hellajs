@@ -4,6 +4,7 @@
       "styles": {
         "css": {
           "files": ["tokens.js"],
+          "darkFiles": { "tokens.js": "tokens.dark.js" },
           "deps": ["@hellajs/css"],
           "registryDependencies": []
         },

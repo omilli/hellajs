@@ -16,7 +16,7 @@ const highlighted = await codeToHtml(code, { lang, theme: "github-dark" });
 <section class="demo-card">
   <h3>{title}</h3>
   {note && <p class="demo-card-note">{note}</p>}
-  <div class="demo-frame dark" id={id}></div>
+  <div class="demo-frame" id={id}></div>
   <details class="view-code">
     <summary>View Code</summary>
     <div class="install-code" set:html={highlighted} />

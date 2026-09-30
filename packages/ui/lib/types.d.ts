@@ -7,6 +7,9 @@ export type UiFormat = "jsx" | "html";
 /** Output language copied on `add`: `ts` copies TypeScript source verbatim, `js` strips types at copy time for plain JavaScript. */
 export type UiLang = "js" | "ts";
 
+/** Theme palette copied for the `theme` entry's css style: `light` registers the light palette plus the `.dark` remap, `dark` copies the dark-only sheet. */
+export type UiThemeMode = "light" | "dark";
+
 export interface UiConfig {
   /** Project folder copied component source lands in. Default "src/components". */
   componentsDir: string;
@@ -14,6 +17,8 @@ export interface UiConfig {
   style: UiStyle;
   /** Source format copied on `add` when the command passes none. Default "jsx". */
   format: UiFormat;
+  /** Theme palette copied for the theme entry. Default "light". */
+  themeMode: UiThemeMode;
   /** Output language copied on `add` when the command passes none. Default "ts". */
   lang: UiLang;
 }
@@ -27,6 +32,8 @@ export interface AddOptions {
   style?: UiStyle;
   /** Source format; overrides hella.ui.json. */
   format?: UiFormat;
+  /** Theme palette for the theme entry; overrides hella.ui.json. */
+  themeMode?: UiThemeMode;
   /** Output language; overrides hella.ui.json. */
   lang?: UiLang;
 }
@@ -36,11 +43,15 @@ export interface InitOptions {
   dir?: string;
   /** Rewrite an existing hella.ui.json with defaults. Default false. */
   force?: boolean;
+  /** Theme palette written to hella.ui.json and used for the theme entry. */
+  themeMode?: UiThemeMode;
 }
 
 export interface RegistryStyleFiles {
   /** Files copied for this style, resolved relative to `registry/<name>/`. */
   files: string[];
+  /** Dark-default source files keyed by the target file they replace: when the resolved themeMode is "dark", the mapped source is copied in place of the target file, keeping the target filename. */
+  darkFiles?: Record<string, string>;
   /** Extra npm packages the copied source imports at runtime, beyond the entry's shared `deps`. */
   deps: string[];
   /** Registry entries this style also requires. */

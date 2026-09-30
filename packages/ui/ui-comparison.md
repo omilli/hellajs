@@ -13,7 +13,7 @@ A ground-up comparison based on the actual source code of `@hellajs/ui` v2. Ever
 | Styling approach | Two flavors: `@hellajs/css` layered maps or plain Tailwind strings, spliced at copy time (`lib/internal/transform.ts`) | Tailwind v4 + CSS variables | Unstyled, bring your own CSS | Panda CSS recipes |
 | Behavior primitives | `hook:` wiring to `@hellajs/dom` behaviors, no querySelector (`registry/dialog/dialog.tsx`) | Radix UI or Base UI or React Aria (`--base` choice) | Its own headless primitives are the product | Ark UI (headless machines) |
 | Framework | Framework-agnostic source: JSX and runtime `html` formats (`lib/types.d.ts`) | React primary; other frameworks via ports | React only | React, Vue, Solid via Ark UI |
-| Theming | Split theme: `tokens.js` (css) or `theme.css` (tailwind), both under `@layer hella` | CSS variables + Tailwind theme | None (unstyled) | Panda CSS presets and themes |
+| Theming | Split theme: `tokens.js` (css) or `theme.css` (tailwind), both under `@layer hella`, plus a dark-default `tokens.dark.js` sheet selected by `themeMode` (`registry/theme/`) | CSS variables + Tailwind theme | None (unstyled) | Panda CSS presets and themes |
 | Catalog | 59 components + theme + cn: full shadcn new-york-v4 parity minus chart (`registry/registry.json`) | 50+ components, blocks, charts | 30+ headless components | 40+ components |
 | Config file | `hella.ui.json` (`lib/internal/config.ts`) | `components.json` | none needed | `park-ui.json` |
 
@@ -73,7 +73,7 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 
 - The css flavor splices `style()` maps into the copied file; every declaration emits under the `hella` cascade layer via the style `layer` option (`registry/button/button-css.ts`). Class composition is a plain array in the `class` attribute, joined by dom's renderProp.
 - The tailwind flavor transposes each part's static class string inline at its element inside `cn(...)`; keyed variant/size maps and outside-referenced strings stay at the top of the file, and the `cn` import injects (`registry/button/button-tailwind.ts`, `lib/internal/transform.ts`).
-- Theming is split by flavor: css projects get `tokens.js`, a `vars()` sheet collected by `cssText()` for SSR; tailwind projects get `theme.css`, shadcn's own new-york-v4 theme (the `@theme inline` block, `:root`/`.dark` palettes, `@layer base` reset, and a `tw-animate-css` import) with zero JavaScript beyond the copied utilities. Both artifacts carry the same component-consumed token values and both sit in or under the `hella` layer (`registry/theme/`).
+- Theming is split by flavor: css projects get `tokens.js`, a `vars()` sheet collected by `cssText()` for SSR; tailwind projects get `theme.css`, shadcn's own new-york-v4 theme (the `@theme inline` block, `:root`/`.dark` palettes, `@layer base` reset, and a `tw-animate-css` import) with zero JavaScript beyond the copied utilities. Both artifacts carry the same component-consumed token values and both sit in or under the `hella` layer (`registry/theme/`). A `themeMode: "dark"` config (or `--theme-mode dark`) swaps the css flavor's sheet for `tokens.dark.js`, which registers the `.dark` remap values on `:root` with no class remap - the same token names, dark by default (`registry/theme/tokens.dark.js`).
 - Component styling is byte-faithful to shadcn's new-york-v4: the tailwind modules carry shadcn's class strings verbatim, emitted inline at each element rather than as file-level consts (full Button variant/size set, Dialog enter/exit `animate-in`/`animate-out` utilities), and the css flavor translates the same declarations 1:1 into layered `style()` maps with hand-rolled keyframes (`registry/button/*`, `registry/dialog/dialog-css.ts`).
 
 ### shadcn/ui
@@ -140,7 +140,7 @@ HellaJS ui's override contract is the strongest story for css projects: preceden
 | Two markup formats per component | yes: jsx and runtime `html` templates (`lib/types.d.ts`) | no (React JSX) | no (React JSX) | React, Vue, Solid variants |
 | Two styling flavors per component | yes: css and tailwind, spliced per choice (`lib/internal/transform.ts`) | one styling system (Tailwind + CSS vars) | unstyled | one styling system (Panda CSS) |
 | Missing-file overwrite handling | skip with warning, or `--overwrite` (`lib/internal/copy.ts`) | `--overwrite`, `--diff` | n/a | overwrite prompts |
-| Dark mode | both palettes remap under the `.dark` class (`registry/theme/`) | CSS variables + class strategy | bring your own | Panda theme presets |
+| Dark mode | both palettes remap under the `.dark` class, or the dark-only `tokens.dark.js` sheet via `themeMode: "dark"` (`registry/theme/`) | CSS variables + class strategy | bring your own | Panda theme presets |
 | SSR-friendly styling | css flavor collects through `cssText()` (`registry/theme/tokens.js`) | Tailwind build output (static CSS) | n/a | Panda static extraction |
 | Enter/exit animations | Dialog ships both flavors: hand-rolled keyframes (css) or `tw-animate-css` utilities (tailwind) (`registry/dialog/dialog-css.ts`) | `tw-animate-css` utilities | bring your own | Panda canned animations |
 | Component catalog | 59 components, new-york-v4 parity minus chart | 50+ components, blocks, charts | 30+ headless components | 40+ components |

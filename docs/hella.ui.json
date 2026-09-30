@@ -1,5 +1,6 @@
 {
   "componentsDir": "src/components/ui",
   "style": "css",
-  "format": "html"
+  "format": "html",
+  "themeMode": "dark"
 }

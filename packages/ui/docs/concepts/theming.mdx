@@ -4,7 +4,7 @@ One palette maintained in two artifact flavors, both emitted under the `hella` c
 
 ## Two Artifacts, One Palette
 
-css projects theme through `tokens.js`, copied by `init`: a [`vars`](/reference/css/vars) sheet that registers the light palette as custom properties on `:root` and remaps the same properties under `.dark`. Import it once in the app entry, before any styled component mounts; server rendering collects it through [`cssText`](/reference/css/csstext) like every other `@hellajs/css` registration.
+css projects theme through `tokens.js`, copied by `init`: a [`vars`](/reference/css/vars) sheet that registers the light palette as custom properties on `:root` and remaps the same properties under `.dark`. A `themeMode: "dark"` config (or `--theme-mode dark` on `init`/`add`) copies `tokens.dark.js` instead: the dark palette alone, registered on `:root` with no remap. Import it once in the app entry, before any styled component mounts; server rendering collects it through [`cssText`](/reference/css/csstext) like every other `@hellajs/css` registration.
 
 ```jsx
 import './components/tokens.js';
@@ -55,8 +55,15 @@ const toggleTheme = () => {
 };
 ```
 
+Apps that never toggle can drop the class entirely: `themeMode: "dark"` in `hella.ui.json`, or `--theme-mode dark` on `init`/`add`, copies `tokens.dark.js` - a dark-only sheet that registers the dark palette on `:root` with no `.dark` remap. The class contract stays the default for togglable apps:
+
+```bash
+npx @hellajs/ui init --theme-mode dark
+# bunx @hellajs/ui init --theme-mode dark
+```
+
 ## Tailwind Utilities Read the Same Vars
 
 The tailwind flavor's `theme.css` is shadcn's own new-york-v4 theme (chart tokens excluded): the `@custom-variant dark` definition, the full `@theme inline` block mapping every palette token including the sidebar set and the radius scale onto Tailwind color and radius utilities, the `:root` and `.dark` palettes, and the `@layer base` reset. It imports `tw-animate-css`, which the Dialog's `animate-in` / `animate-out` utilities require - `init` names it in the peer check for tailwind projects. Utilities then read the palette directly: `bg-primary`, `text-foreground`, `rounded-md` (the theme maps `--radius-md` onto `calc(var(--radius) * 0.8)`). Opacity modifiers compose through `color-mix`, so `hover:bg-primary/90` in the copied button works without extra configuration. This is why the two flavors can share one set of token names while only the tailwind flavor ships utilities.
 
-The css flavor's `tokens.js` carries the same palette values in its narrower shape: the eighteen tokens the components consume (`background` through `ring`, plus `radius`) as a [`vars`](/reference/css/vars) sheet, with the `.dark` remaps under the `hella` layer. Sidebar and chart tokens are excluded - the css flavor ships only what its components read.
+The css flavor's `tokens.js` carries the same palette values in its narrower shape: the eighteen tokens the components consume (`background` through `ring`, plus `radius`) as a [`vars`](/reference/css/vars) sheet, with the `.dark` remaps under the `hella` layer. Its dark-default sibling `tokens.dark.js` carries the `.dark` remap values as the only palette, so a `themeMode: "dark"` project reads the identical token names from `:root`. Sidebar and chart tokens are excluded - the css flavor ships only what its components read.
