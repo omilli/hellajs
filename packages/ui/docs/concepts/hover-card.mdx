@@ -39,15 +39,15 @@ html`<main>
 | `content` | - | The panel children, portaled into `document.body` while open |
 | `class` | - | Extra classes on the trigger span |
 
-The composed `HoverCard` wraps its children in the trigger span. It opens 200ms after the pointer rests on the trigger and closes 300ms after it leaves. Moving the pointer from the trigger into the panel keeps it open: the content carries a second [`hoverIntent`](/reference/dom/behaviors) with zero delays that re-arms the open state the moment the pointer enters, cancelling the trigger's pending close. Leaving the content closes it immediately; returning to the trigger cancels that close in turn, so crossing between the two regions in either direction never flickers.
+The composed `HoverCard` wraps its children in the trigger span. It opens 200ms after the pointer rests on the trigger and closes 300ms after it leaves. Moving the pointer from the trigger into the panel keeps it open: the content carries a second [`hoverIntent`](/reference/dom/hoverintent) with zero delays that re-arms the open state the moment the pointer enters, cancelling the trigger's pending close. Leaving the content closes it immediately; returning to the trigger cancels that close in turn, so crossing between the two regions in either direction never flickers.
 
 ## Manual Parts
 
-Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire both regions' hover through [`hoverIntent`](/reference/dom/behaviors).
+Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire both regions' hover through [`hoverIntent`](/reference/dom/hoverintent).
 
 ### HoverCardTrigger
 
-The manual trigger span; the composed `HoverCard` renders the same shape wired to [`hoverIntent`](/reference/dom/behaviors) with the 200ms/300ms delays and focus parity.
+The manual trigger span; the composed `HoverCard` renders the same shape wired to [`hoverIntent`](/reference/dom/hoverintent) with the 200ms/300ms delays and focus parity.
 
 | Prop | Type | Behavior |
 |---|---|---|
@@ -55,7 +55,7 @@ The manual trigger span; the composed `HoverCard` renders the same shape wired t
 
 ### HoverCardContent
 
-The panel `div` carrying `data-slot="hover-card-content"`, positioned through [`anchorPosition`](/reference/dom/behaviors) at a 4px offset. When both callbacks are given, hovering the content re-arms the open state with zero delays - the keep-open contract.
+The panel `div` carrying `data-slot="hover-card-content"`, positioned through [`anchorPosition`](/reference/dom/anchorposition) at a 4px offset. When both callbacks are given, hovering the content re-arms the open state with zero delays - the keep-open contract.
 
 | Prop | Type | Behavior |
 |---|---|---|
@@ -68,7 +68,7 @@ The panel `div` carrying `data-slot="hover-card-content"`, positioned through [`
 | `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
 | `children` | `HellaChildren` | The panel body |
 
-Every part also takes a `class` string, landing last in its style composition. [`anchorPosition`](/reference/dom/behaviors) fixes the coordinates against the trigger, flips on viewport collision, and repositions on scroll and resize.
+Every part also takes a `class` string, landing last in its style composition. [`anchorPosition`](/reference/dom/anchorposition) fixes the coordinates against the trigger, flips on viewport collision, and repositions on scroll and resize.
 
 ```jsx
 import { signal } from '@hellajs/core';

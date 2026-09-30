@@ -1,0 +1,83 @@
+# onPinch
+
+Tracks a two-pointer pinch on an element and reports scale and translation deltas, returning the dispose handle that removes all pointer listeners.
+
+## API
+
+```typescript
+function onPinch(
+  el: HTMLElement,
+  handlers: PinchHandlers
+): () => void
+```
+
+```typescript
+interface PinchState {
+  scale: number;
+  dx: number;
+  dy: number;
+}
+
+interface PinchHandlers {
+  onStart?: (event: PointerEvent) => void;
+  onMove: (state: PinchState) => void;
+  onEnd?: () => void;
+}
+```
+
+- `el`: Element receiving the pointer events.
+- `handlers`: `onStart` fires once when the second pointer lands; `onMove` fires per tracked-pointer move with scale and centroid deltas from the gesture start; `onEnd` fires once when either tracked pointer ends.
+- **Returns**: Dispose handle. Calling it removes all five pointer listeners.
+
+## Basic Usage
+
+```jsx
+import { mount } from "@hellajs/dom";
+import { onPinch } from "@hellajs/dom";
+
+let disposePinch: (() => void) | undefined;
+
+const Image = () => (
+  <img
+    src="photo.jpg"
+    style="touch-action: none"
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      disposePinch = onPinch(node, {
+        onMove: ({ scale, dx, dy }) => {
+          node.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+        },
+        onEnd: () => console.log("pinch ended")
+      });
+    }}
+    hook:beforeDestroy={() => disposePinch?.()}
+  />
+);
+
+mount(<Image />, "#app");
+// Spreading two fingers scales the image; moving the pair translates it
+```
+
+## Key Concepts
+
+### Scale and Pan From the Baseline Pair
+
+The gesture starts when the second pointer lands, and the baseline is the pair's distance and centroid at that moment. Each tracked move reports `scale` as the current two-pointer distance over the baseline distance (spreading reads above 1, pinching below 1) and `dx`/`dy` as the centroid's offset from the baseline centroid, so one callback drives zoom and pan together. Consumers own all transform math, such as clamping the scale range or snapping the transform back on end.
+
+### The First Two Pointers Win
+
+A third concurrent pointer is ignored: only the first two primary-button presses join the tracked pair. When either tracked pointer ends (`pointerup`, `pointercancel`, or `lostpointercapture`), `onEnd` fires once and the wiring resets: the remaining pointer stays tracked, and a fresh second pointer starts a new gesture with a fresh baseline.
+
+### Pointer Guards and Capture
+
+A pointer joins the pair only on a primary-button press (button `0`) and never on a `[disabled]` descendant of the press target. Each accepted pointer is captured with `el.setPointerCapture()` when the environment provides it, so moves outside the element keep reporting.
+
+## Important Considerations
+
+### Touch Needs touch-action: none
+
+The wiring never touches styles. Give the pinchable element `touch-action: none` (the style module carries it in registry components), or two-finger touches scroll or zoom the page instead.
+
+### Input Validation
+
+`onPinch()` throws when `el` or `handlers` is `null` or `undefined`, or when `handlers.onMove` is missing: `[dom] onPinch: el is required`, `[dom] onPinch: handlers is required`, `[dom] onPinch: onMove is required`.

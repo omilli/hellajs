@@ -43,9 +43,9 @@ html`<main>
 
 ## Dismissal and Positioning
 
-Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus and popovers dismiss one layer at a time. Activating an item closes every open menu layer; the items fire that through a document-level activation event, which is also how Enter and Space close from the keyboard. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
+Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus and popovers dismiss one layer at a time. Activating an item closes every open menu layer; the items fire that through a document-level activation event, which is also how Enter and Space close from the keyboard. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
 
-The panel positions through [`anchorPosition`](/reference/dom/behaviors): fixed coordinates against the trigger, flipping on viewport collision, repositioning on scroll and resize. The menu is non-modal: there is no focus trap, and focus moves to the first activatable item on open.
+The panel positions through [`anchorPosition`](/reference/dom/anchorposition): fixed coordinates against the trigger, flipping on viewport collision, repositioning on scroll and resize. The menu is non-modal: there is no focus trap, and focus moves to the first activatable item on open.
 
 ## Manual Parts
 
@@ -190,7 +190,7 @@ The `role="menu"` sub-surface, anchored against its sub-trigger (right, start al
 | `onPointerEnter` | `() => void` | Pointer entering the content cancels the trigger's pending close |
 | `children` | `HellaChildren` | The sub-surface items |
 
-The sub-content registers its own [`layerDismissal`](/reference/dom/behaviors) layer, so Escape pops one level at a time and an outside press closes the sub before the parent.
+The sub-content registers its own [`layerDismissal`](/reference/dom/layerdismissal) layer, so Escape pops one level at a time and an outside press closes the sub before the parent.
 
 Every part also takes a `class` string, landing last in its style composition.
 

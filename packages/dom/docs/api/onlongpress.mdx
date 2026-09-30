@@ -1,0 +1,80 @@
+# onLongPress
+
+Fires a handler after a timed press on an element and cancels on drift or early release, returning the dispose handle that removes the pointer listeners.
+
+## API
+
+```typescript
+function onLongPress(
+  el: HTMLElement,
+  handler: (event: PointerEvent) => void,
+  options?: LongPressOptions
+): () => void
+```
+
+```typescript
+interface LongPressOptions {
+  /** Hold time in ms before the press fires. Default 500. */
+  duration?: number;
+  /** Pointer drift in px tolerated before the press cancels. Default 8. */
+  tolerance?: number;
+}
+```
+
+- `el`: Element receiving the pointer events.
+- `handler`: Fired once when the press outlives `duration`, receiving the originating `pointerdown` event.
+- `options`: `duration` is the hold time in ms before the press fires (default 500); `tolerance` is the pointer drift in px the press may wander before cancelling (default 8).
+- **Returns**: Dispose handle. Calling it removes the pointer listeners and clears a pending timer.
+
+## Basic Usage
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { onLongPress } from "@hellajs/dom";
+
+const at = signal({ x: 0, y: 0 });
+let disposePress: (() => void) | undefined;
+
+const Tile = () => (
+  <div
+    class="tile"
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      disposePress = onLongPress(node, (event) => {
+        at({ x: event.clientX, y: event.clientY });
+      }, {
+        duration: 400
+      });
+    }}
+    hook:beforeDestroy={() => disposePress?.()}
+  />
+);
+
+mount(<Tile />, "#app");
+// Holding the tile for 400ms reports the press point; a drift past 8px or an early release cancels
+```
+
+## Key Concepts
+
+### A Timed Hold, Not a Press State Machine
+
+The wiring is one timer per press: a primary-button `pointerdown` starts it, and on expiry the handler fires once with the originating `pointerdown` event, so context menus can position at the press point. A new press starts a fresh timer; there is no persisted state between presses. CSS `:active` keeps ownership of the immediate pressed look, the same division as every other behavior: this wiring covers only the hold.
+
+### Drift Tolerance Cancels Strays
+
+Pointer moves are measured from the press point, and once the pointer wanders beyond `tolerance` px the press cancels and never fires. A finger tremor stays inside the default 8px and keeps the timer alive. A scrolling touch that starts on the element drifts out almost immediately, so a long press on scrollable content cancels instead of firing mid-scroll.
+
+### Start Guards
+
+The timer starts only on a primary-button press (button `0`) and never when the press lands on a `[disabled]` descendant of the target. `pointerup` or `pointercancel` before expiry cancels, so the handler never fires after the pointer has left the surface.
+
+## Important Considerations
+
+### No touch-action Requirement
+
+Unlike [`onDrag`](/reference/dom/ondrag), the wiring never moves content, so it needs no `touch-action: none`: a scrolling touch drifts past the tolerance and cancels the press, which is exactly the intended interaction with native scrolling.
+
+### Input Validation
+
+`onLongPress()` throws when `el` or `handler` is `null` or `undefined`: `[dom] onLongPress: el is required`, `[dom] onLongPress: handler is required`.

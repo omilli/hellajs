@@ -221,7 +221,7 @@ HellaJS's DOM-tree-walking boundary lookup is unique: errors find their boundary
 
 ### Headless behavior functions
 
-Dom also ships the headless wiring layer as ten dependency-free functions: `trapFocus`, `onEscape`, `onOutside`, `rovingTabIndex`, `anchorPosition`, `computeAnchorPosition`, `hoverIntent`, `menuTypeahead`, `onDrag`, and `layerDismissal` (`lib/trapFocus.ts`, `lib/onEscape.ts`, `lib/onOutside.ts`, `lib/rovingTabIndex.ts`, `lib/anchorPosition.ts`, `lib/computeAnchorPosition.ts`, `lib/hoverIntent.ts`, `lib/menuTypeahead.ts`, `lib/onDrag.ts`, `lib/layerDismissal.ts`). The React-ecosystem headless libraries keep the same behaviors internal to their components:
+Dom also ships the headless wiring layer as fourteen dependency-free functions: `trapFocus`, `onEscape`, `onOutside`, `rovingTabIndex`, `anchorPosition`, `computeAnchorPosition`, `hoverIntent`, `menuTypeahead`, `onDrag`, `onSwipe`, `onPinch`, `onLongPress`, `onDoubleTap`, and `layerDismissal` (`lib/trapFocus.ts`, `lib/onEscape.ts`, `lib/onOutside.ts`, `lib/rovingTabIndex.ts`, `lib/anchorPosition.ts`, `lib/computeAnchorPosition.ts`, `lib/hoverIntent.ts`, `lib/menuTypeahead.ts`, `lib/onDrag.ts`, `lib/onSwipe.ts`, `lib/onPinch.ts`, `lib/onLongPress.ts`, `lib/onDoubleTap.ts`, `lib/layerDismissal.ts`). The React-ecosystem headless libraries keep the same behaviors internal to their components:
 
 | Behavior | HellaJS dom | Radix Primitives | Base UI | Zag |
 |---|---|---|---|---|

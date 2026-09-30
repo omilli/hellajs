@@ -13,6 +13,7 @@
 * **Deprecation**: Archived [221](archive/221-reactive-getter-passed-as-child.md) → superseded by [232](entries/232.md).
 * **Creation**: Added concept [233](entries/233.md) (type: decision).
 * **Renumber**: Renumbered 233-import-meta-url-docs-site to 234 on merge — ID collided with in-flight 233-hoist-indexed-access-tuple-casts
+* **Renumber**: Renumbered 233-narrow-map-iterator-destructuring to 235 on merge — ID collided with in-flight 233-hoist-indexed-access-tuple-casts
 
 ## 2026-09-29
 * **Creation**: Added concept [123](entries/123.md) (type: decision).

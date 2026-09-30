@@ -52,7 +52,7 @@ mount(App, '#app');
 
 ## Behaviors
 
-Ten headless wiring functions ship flat on the barrel. Each takes real DOM nodes and returns a dispose handle; state stays in caller signals.
+Fourteen headless wiring functions ship flat on the barrel. Each takes real DOM nodes and returns a dispose handle; state stays in caller signals.
 
 - **trapFocus**: Trap Tab/Shift+Tab inside a container
 - **onEscape**: Call a handler on Escape keydown
@@ -63,6 +63,10 @@ Ten headless wiring functions ship flat on the barrel. Each takes real DOM nodes
 - **hoverIntent**: Open and close overlays on hover or focus delay
 - **menuTypeahead**: Buffer keystrokes into a menu search
 - **onDrag**: Track a pointer drag and report cumulative deltas
+- **onSwipe**: Track a pointer swipe with commit and cancel
+- **onPinch**: Track a two-pointer pinch
+- **onLongPress**: Fire a handler after a timed press
+- **onDoubleTap**: Fire on a second tap within a window
 - **layerDismissal**: Dismiss stacked overlays one layer at a time
 
 See [Headless Behaviors](https://hellajs.com/learn/concepts/headless-behaviors).

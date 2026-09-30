@@ -25,6 +25,10 @@ export { computeAnchorPosition } from "./computeAnchorPosition";
 export { hoverIntent } from "./hoverIntent";
 export { menuTypeahead } from "./menuTypeahead";
 export { onDrag } from "./onDrag";
+export { onSwipe } from "./onSwipe";
+export { onPinch } from "./onPinch";
+export { onLongPress } from "./onLongPress";
+export { onDoubleTap } from "./onDoubleTap";
 export { layerDismissal } from "./layerDismissal";
 
 export type * from "./types/nodes";

@@ -74,4 +74,4 @@ const Upload = () => (
 | Swipe | Horizontal drag follows the pointer (`data-dragging` suspends transitions); release past 45% of the toast width dismisses, under it springs back |
 | Close | An X button appears on hover and on keyboard focus |
 
-Buttons inside a toast (action, close) never start a swipe: the drag ignores pointerdowns on interactive elements, the same rule the drawer uses. The swipe-dismiss physics ride on [`onDrag`](/reference/dom/behaviors) from `@hellajs/dom`. Every card carries `data-type`, `data-depth`, `data-removed`, and `data-dragging`, so user CSS can key off the same state, and the thresholds live as named constants at the top of the copied file.
+Buttons inside a toast (action, close) never start a swipe: the drag ignores pointerdowns on interactive elements, the same rule the drawer uses. The swipe-dismiss physics ride on [`onDrag`](/reference/dom/ondrag) from `@hellajs/dom`. Every card carries `data-type`, `data-depth`, `data-removed`, and `data-dragging`, so user CSS can key off the same state, and the thresholds live as named constants at the top of the copied file.

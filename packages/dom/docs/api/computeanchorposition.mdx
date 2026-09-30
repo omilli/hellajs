@@ -1,6 +1,6 @@
 # computeAnchorPosition
 
-Computes fixed-position coordinates for a floating rect against an anchor rect: pure math with no DOM access, and the seam [`anchorPosition`](/reference/dom/behaviors) delegates to.
+Computes fixed-position coordinates for a floating rect against an anchor rect: pure math with no DOM access, and the seam [`anchorPosition`](/reference/dom/anchorposition) delegates to.
 
 ## API
 
@@ -56,7 +56,7 @@ const result = computeAnchorPosition(
 
 ### Pure Rect Math, No DOM
 
-The function reads no DOM: plain rect objects in, coordinates out. Test environments with stubbed rects (HappyDOM returns all zeros) and server code can both compute placements. Call it directly to predict where [`anchorPosition`](/reference/dom/behaviors) will place an overlay.
+The function reads no DOM: plain rect objects in, coordinates out. Test environments with stubbed rects (HappyDOM returns all zeros) and server code can both compute placements. Call it directly to predict where [`anchorPosition`](/reference/dom/anchorposition) will place an overlay.
 
 ### Flip, Then Shift
 

@@ -56,9 +56,9 @@ Each entry in the `items` array is one option row:
 
 The trigger opens on click and on ArrowDown/ArrowUp. Inside the listbox, arrows rove the options with wrap, Home and End jump to the edges, Enter and Space commit the highlighted option, and Tab closes. Typing buffers a typeahead query (reset after 500ms) and highlights the first match: prefix matches win, then a wrapping substring scan. The highlighted option carries `data-highlighted`; the selected option carries `aria-selected="true"`, `data-state="checked"`, and the check icon, and scrolls into view on open.
 
-Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the listbox close it, and focus returns to the trigger. Closing starts the exit - the listbox stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
+Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the listbox close it, and focus returns to the trigger. Closing starts the exit - the listbox stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
 
-The panel positions itself through [`anchorPosition`](/reference/dom/behaviors) with `matchAnchorWidth`: the listbox always anchors below the trigger (flipped on viewport collision) and stretches to its width. Scroll buttons render at the listbox edges; they repeat-scroll while hovered and hide at their scroll bounds.
+The panel positions itself through [`anchorPosition`](/reference/dom/anchorposition) with `matchAnchorWidth`: the listbox always anchors below the trigger (flipped on viewport collision) and stretches to its width. Scroll buttons render at the listbox edges; they repeat-scroll while hovered and hide at their scroll bounds.
 
 The clear affordance is pointer-only: it lives inside the trigger button, so it cannot take keyboard focus without nesting interactive content. Keyboard users clear by re-running the composed flow (the empty string is a valid `onValueChange` report) or by pairing with `native-select`.
 

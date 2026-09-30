@@ -33,15 +33,15 @@ html`<main>
 | `align` | `"center"` | Alignment along the trigger's edge |
 | `class` | - | Extra classes on the trigger span |
 
-The composed `Tooltip` wraps its children in the trigger span. Hovering starts the open timer; leaving starts the close timer; focusing the trigger follows the same path for keyboard users. Adjacent triggers share a 500ms skip window through [`hoverIntent`](/reference/dom/behaviors): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again - after 500ms without any tooltip open, the full delay applies.
+The composed `Tooltip` wraps its children in the trigger span. Hovering starts the open timer; leaving starts the close timer; focusing the trigger follows the same path for keyboard users. Adjacent triggers share a 500ms skip window through [`hoverIntent`](/reference/dom/hoverintent): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again - after 500ms without any tooltip open, the full delay applies.
 
 ## Manual Parts
 
-Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire the trigger's hover with [`hoverIntent`](/reference/dom/behaviors).
+Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire the trigger's hover with [`hoverIntent`](/reference/dom/hoverintent).
 
 ### TooltipTrigger
 
-The manual trigger span carrying `aria-describedby`; the composed `Tooltip` renders the same shape wired to [`hoverIntent`](/reference/dom/behaviors).
+The manual trigger span carrying `aria-describedby`; the composed `Tooltip` renders the same shape wired to [`hoverIntent`](/reference/dom/hoverintent).
 
 | Prop | Type | Behavior |
 |---|---|---|
@@ -50,7 +50,7 @@ The manual trigger span carrying `aria-describedby`; the composed `Tooltip` rend
 
 ### TooltipContent
 
-The `role="tooltip"` label carrying `data-slot="tooltip-content"`, positioned through [`anchorPosition`](/reference/dom/behaviors) (fixed coordinates against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize).
+The `role="tooltip"` label carrying `data-slot="tooltip-content"`, positioned through [`anchorPosition`](/reference/dom/anchorposition) (fixed coordinates against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize).
 
 | Prop | Type | Behavior |
 |---|---|---|

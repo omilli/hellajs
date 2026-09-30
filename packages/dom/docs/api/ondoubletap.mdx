@@ -1,0 +1,82 @@
+# onDoubleTap
+
+Fires a handler when a second tap lands within a window and optionally reports a lone tap after the window expires, returning the dispose handle that removes the pointer listeners.
+
+## API
+
+```typescript
+function onDoubleTap(
+  el: HTMLElement,
+  options: DoubleTapOptions
+): () => void
+```
+
+```typescript
+interface DoubleTapOptions {
+  /** Fired when a second tap's pointerup lands within `interval` of the first. */
+  onDoubleTap: (event: PointerEvent) => void;
+  /** Fires once when no second tap arrives within `interval`. Opt-in. */
+  onSingleTap?: (event: PointerEvent) => void;
+  /** Max ms between the two taps' pointerup events. Default 250. */
+  interval?: number;
+}
+```
+
+- `el`: Element receiving the pointer events.
+- `options`: `onDoubleTap` fires once when a second tap's `pointerup` lands within `interval` of the first, receiving the second tap's event; `onSingleTap` fires once per expired window with the first tap's event, and without it a lone tap costs nothing; `interval` is the max ms between the two taps' `pointerup` events (default 250).
+- **Returns**: Dispose handle. Calling it removes the pointer listeners and clears a pending timer.
+
+## Basic Usage
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { onDoubleTap } from "@hellajs/dom";
+
+const zoomed = signal(false);
+const toggleZoom = (event: PointerEvent) => zoomed(!zoomed());
+const selectAt = (event: PointerEvent) => console.log("select at", event.clientX, event.clientY);
+let disposeTaps: (() => void) | undefined;
+
+const Photo = () => (
+  <img
+    src="/photo.jpg"
+    alt="Gallery"
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      disposeTaps = onDoubleTap(node, {
+        onDoubleTap: (event) => toggleZoom(event),
+        onSingleTap: (event) => selectAt(event)
+      });
+    }}
+    hook:beforeDestroy={() => disposeTaps?.()}
+  />
+);
+
+mount(<Photo />, "#app");
+// A second tap within 250ms toggles the zoom; a lone tap logs the selection point
+```
+
+## Key Concepts
+
+### A Tap Is a Clean Press and Release
+
+A tap starts on a primary-button `pointerdown` (button `0`) not on a `[disabled]` descendant, and completes only when its `pointerup` lands within 8px of the press point. A pointer that drifts further is a drag, not a tap, and `pointercancel` voids the in-flight press; neither leaves a pending single tap behind.
+
+### Doubles First, Singles Only When Asked
+
+The wiring is one timer per element: the first qualifying tap arms an `interval` window, and a second tap inside the window clears the timer and fires `onDoubleTap` once with the second tap's event. Without `onSingleTap`, a lone tap pays nothing and fires nothing. With it, the expired window fires `onSingleTap` once with the stored first tap's event, so tap-to-select and tap-to-zoom can share one wiring. Two quick taps never also produce a single.
+
+### No Shared State Between Elements
+
+The timer and the pending tap live per wiring instance, so double-tapping one element cannot consume another element's window. There is no module-level clock to reset.
+
+## Important Considerations
+
+### Touch Devices Add Native Double-Tap Zoom
+
+Browsers may fold a fast two-tap sequence on touch into page zoom before the wiring sees both taps. The wiring never touches styles, so give tappable elements `touch-action: manipulation` to keep both taps reporting.
+
+### Input Validation
+
+`onDoubleTap()` throws when `el`, `options`, or `options.onDoubleTap` is `null` or `undefined`: `[dom] onDoubleTap: el is required`, `[dom] onDoubleTap: options is required`, `[dom] onDoubleTap: onDoubleTap is required`.

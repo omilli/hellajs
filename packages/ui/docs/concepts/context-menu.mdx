@@ -43,9 +43,9 @@ html`<main>
 
 ## Dismissal and Positioning
 
-Coordinate anchoring: opening plants a zero-size fixed anchor node at the pointer position (`data-slot="context-menu-anchor"` in the document body) and positions the surface against it through [`anchorPosition`](/reference/dom/behaviors) on the `bottom-start` placement, so the menu's top-left corner sits at the click point with the same collision flipping and scroll or resize repositioning as every anchored overlay. Reopening moves the anchor; closing removes it and restores focus to the trigger zone.
+Coordinate anchoring: opening plants a zero-size fixed anchor node at the pointer position (`data-slot="context-menu-anchor"` in the document body) and positions the surface against it through [`anchorPosition`](/reference/dom/anchorposition) on the `bottom-start` placement, so the menu's top-left corner sits at the click point with the same collision flipping and scroll or resize repositioning as every anchored overlay. Reopening moves the anchor; closing removes it and restores focus to the trigger zone.
 
-Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus dismiss one layer at a time. Activating an item closes every open menu layer through a document-level activation event, which is also how Enter and Space close from the keyboard. Focus moves to the first activatable item on open; the menu is non-modal, with no focus trap.
+Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus dismiss one layer at a time. Activating an item closes every open menu layer through a document-level activation event, which is also how Enter and Space close from the keyboard. Focus moves to the first activatable item on open; the menu is non-modal, with no focus trap.
 
 ## Manual Parts
 

@@ -1,0 +1,102 @@
+# onSwipe
+
+Tracks a pointer swipe on an element and commits or cancels the gesture on release by distance and velocity, returning the dispose handle that removes all pointer listeners.
+
+## API
+
+```typescript
+function onSwipe(
+  el: HTMLElement,
+  handlers: SwipeHandlers,
+  options?: SwipeOptions
+): () => void
+```
+
+```typescript
+interface SwipeState {
+  dx: number;
+  dy: number;
+  event: PointerEvent;
+}
+
+interface SwipeCommit {
+  direction: "left" | "right" | "up" | "down";
+  dx: number;
+  dy: number;
+}
+
+interface SwipeHandlers {
+  onStart?: (event: PointerEvent) => void;
+  onMove: (state: SwipeState) => void;
+  onCommit?: (info: SwipeCommit) => void;
+  onCancel?: () => void;
+}
+
+interface SwipeOptions {
+  /** Dominant-axis px distance that commits on release. Default 50. */
+  threshold?: number;
+  /** Release velocity floor in px/ms that commits below threshold. Default 0.5. */
+  velocity?: number;
+}
+```
+
+- `el`: Element receiving the pointer events.
+- `handlers`: `onStart` fires once on primary-button pointerdown; `onMove` fires per pointermove with deltas accumulated from the swipe start; `onCommit` fires once on release when the gesture committed; `onCancel` fires once on any other release.
+- `options`: `threshold` is the dominant-axis px distance that commits on release (default 50); `velocity` is the release velocity floor in px/ms that commits below threshold (default 0.5).
+- **Returns**: Dispose handle. Calling it removes all five pointer listeners.
+
+## Basic Usage
+
+```jsx
+import { signal } from "@hellajs/core";
+import { mount } from "@hellajs/dom";
+import { onSwipe } from "@hellajs/dom";
+
+const offset = signal(0);
+let disposeSwipe: (() => void) | undefined;
+
+const Drawer = () => (
+  <div
+    class="drawer"
+    style="touch-action: none"
+    hook:afterMount={(node) => {
+      if (!(node instanceof HTMLElement)) return;
+      disposeSwipe = onSwipe(node, {
+        onMove: ({ dx }) => offset(dx),
+        onCommit: ({ direction }) => {
+          if (direction === "left") offset(0);
+        },
+        onCancel: () => offset(0)
+      });
+    }}
+    hook:beforeDestroy={() => disposeSwipe?.()}
+  />
+);
+
+mount(<Drawer />, "#app");
+// A release past 50px on one axis, or a fast fling, commits with its direction; anything else cancels
+```
+
+## Key Concepts
+
+### Commit by Distance or Velocity
+
+On release the swipe commits when either condition holds: the dominant axis traveled at least `threshold` px, or its release velocity reached the `velocity` floor. The floor catches fast short flings that never cross the distance threshold; a slow drag that reaches neither condition cancels instead. Move samples older than 100ms leave the velocity window, so a pause before release does not carry stale speed into the decision.
+
+### The Dominant Axis Picks the Direction
+
+The larger of `|dx|` and `|dy|` is the dominant axis, and the sign of that axis's total picks the direction: positive horizontal is `"right"`, positive vertical is `"down"`. A diagonal swipe at 45 degrees resolves as horizontal. `onCommit` receives the direction plus the full `{ dx, dy }` totals so the consumer can animate from the final position.
+
+### Built on onDrag
+
+`onSwipe` composes [`onDrag`](/reference/dom/ondrag), so the same guards apply: a swipe starts only on a primary-button press, never on a `[disabled]` descendant, and the pointer is captured when the environment provides it. Move deltas are cumulative from the press point, exactly as `onDrag` reports them.
+
+## Important Considerations
+
+### Touch Needs touch-action: none
+
+The wiring never touches styles. Give the swipeable element `touch-action: none` (the style module carries it in registry components), or touch swipes scroll the page instead.
+
+### Input Validation
+
+`onSwipe()` throws when `el` or `handlers` is `null` or `undefined`, or when `handlers.onMove` is missing: `[dom] onSwipe: el is required`, `[dom] onSwipe: handlers is required`, `[dom] onSwipe: onMove is required`.

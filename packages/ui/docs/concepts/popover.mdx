@@ -33,7 +33,7 @@ html`<main>
 | `content` | - | The panel children, portaled into `document.body` while open |
 | `class` | - | Extra classes on the trigger button |
 
-Clicking toggles; the trigger carries `data-state` and `aria-expanded` so styling and assistive tech track the open state. Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the panel ask the top layer to close. The popover is non-modal - no focus trap, and focus moves to the panel on open. Closing keeps the panel mounted under `data-state="closed"` until its exit animation ends, with the dismissal wiring down while it leaves.
+Clicking toggles; the trigger carries `data-state` and `aria-expanded` so styling and assistive tech track the open state. Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close. The popover is non-modal - no focus trap, and focus moves to the panel on open. Closing keeps the panel mounted under `data-state="closed"` until its exit animation ends, with the dismissal wiring down while it leaves.
 
 ## Manual Parts
 
@@ -49,7 +49,7 @@ The manual trigger button; the composed `Popover` renders the same shape wired t
 
 ### PopoverContent
 
-The `role="dialog"` panel carrying `tabindex="-1"` for the focus-on-open contract, positioned through [`anchorPosition`](/reference/dom/behaviors) (fixed coordinates against the anchor, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/dom/behaviors) (Escape and outside pointerdown close only the top layer, so popovers stack cleanly). Composing it without `onDismiss` holds the panel open by never installing that wiring.
+The `role="dialog"` panel carrying `tabindex="-1"` for the focus-on-open contract, positioned through [`anchorPosition`](/reference/dom/anchorposition) (fixed coordinates against the anchor, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/dom/layerdismissal) (Escape and outside pointerdown close only the top layer, so popovers stack cleanly). Composing it without `onDismiss` holds the panel open by never installing that wiring.
 
 | Prop | Type | Behavior |
 |---|---|---|

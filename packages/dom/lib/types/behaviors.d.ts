@@ -61,3 +61,73 @@ export interface DragHandlers {
   /** Fired once on pointerup, pointercancel, or lostpointercapture. */
   onEnd?: () => void;
 }
+
+export interface SwipeState {
+  /** Horizontal distance from the swipe start. */
+  dx: number;
+  /** Vertical distance from the swipe start. */
+  dy: number;
+  /** The pointermove event that produced the deltas. */
+  event: PointerEvent;
+}
+
+export interface SwipeCommit {
+  /** Dominant axis and sign of the released swipe. */
+  direction: "left" | "right" | "up" | "down";
+  /** Total horizontal distance from the swipe start. */
+  dx: number;
+  /** Total vertical distance from the swipe start. */
+  dy: number;
+}
+
+export interface SwipeHandlers {
+  /** Fired once on primary-button pointerdown, before the first move. */
+  onStart?: (event: PointerEvent) => void;
+  /** Fired per pointermove while swiping, with deltas accumulated from the swipe start. */
+  onMove: (state: SwipeState) => void;
+  /** Fired once on release when the dominant axis crosses the threshold or its release velocity crosses the floor. */
+  onCommit?: (info: SwipeCommit) => void;
+  /** Fired once on a release meeting neither commit condition. */
+  onCancel?: () => void;
+}
+
+export interface SwipeOptions {
+  /** Dominant-axis px distance that commits on release. Default 50. */
+  threshold?: number;
+  /** Release velocity floor in px/ms that commits below threshold. Default 0.5. */
+  velocity?: number;
+}
+
+export interface PinchState {
+  /** Current two-pointer distance over the baseline distance. */
+  scale: number;
+  /** Horizontal centroid delta from the gesture start. */
+  dx: number;
+  /** Vertical centroid delta from the gesture start. */
+  dy: number;
+}
+
+export interface PinchHandlers {
+  /** Fired once when the second pointer lands, before the first move. */
+  onStart?: (event: PointerEvent) => void;
+  /** Fired per tracked-pointer move while pinching, with scale and centroid deltas from the gesture start. */
+  onMove: (state: PinchState) => void;
+  /** Fired once when either tracked pointer ends. */
+  onEnd?: () => void;
+}
+
+export interface LongPressOptions {
+  /** Hold time in ms before the press fires. Default 500. */
+  duration?: number;
+  /** Pointer drift in px tolerated before the press cancels. Default 8. */
+  tolerance?: number;
+}
+
+export interface DoubleTapOptions {
+  /** Fired when a second tap's pointerup lands within `interval` of the first. */
+  onDoubleTap: (event: PointerEvent) => void;
+  /** Fires once when no second tap arrives within `interval`. Opt-in. */
+  onSingleTap?: (event: PointerEvent) => void;
+  /** Max ms between the two taps' pointerup events. Default 250. */
+  interval?: number;
+}
