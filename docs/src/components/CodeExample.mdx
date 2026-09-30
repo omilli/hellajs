@@ -3,9 +3,10 @@ import { signal } from '@hellajs/core';
 
 const Counter = () => {
   const count = signal(0);
+  const increment = () => count(count() + 1);
   
   return (
-    <button on:click={() => count(count() + 1)}>
+    <button on:click={increment}>
       {count}
     </button>
   );
