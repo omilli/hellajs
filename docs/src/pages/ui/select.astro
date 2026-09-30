@@ -7,39 +7,18 @@ import SelectTitle from "@ui/concepts/select.mdx";
 const title = "Select";
 const description = "Interactive Select demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Select from './components/select';
-
-const fruits = [
-  { value: 'apple', label: 'Apple' },
-  { value: 'blueberry', label: 'Blueberry' },
-  { value: 'canteloupe', label: 'Canteloupe' },
-  { value: 'date', label: 'Date', disabled: true },
-];
-
-const FruitPicker = () => (
-  <Select
-    items={fruits}
-    placeholder="Pick a fruit"
-    onValueChange={(value) => console.log(value)}
-  />
-);`;
-
-const compactCode = `import Select from './components/select';
-
-const Compact = () => (
-  <Select
-    items={fruits}
-    size="sm"
-    clearable
-    placeholder="Compact"
-    class="w-48"
-  />
-);
-
-// fruits: the same item array as the hero example`;
+const compactCode = `<Select
+  items={fruits}
+  size="sm"
+  clearable
+  placeholder="Compact"
+  class="w-48"
+/>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Select</h1>
+  <p>A listbox select: the trigger button opens an anchored, width-matched listbox; arrows rove the options, typing jumps to a match, and Enter commits the highlighted value; Escape and an outside press dismiss it.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="select" />
   <SelectTitle />

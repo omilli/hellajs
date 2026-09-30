@@ -1,10 +1,8 @@
-# Skeleton
-
-A loading placeholder styled byte-faithfully to shadcn's new-york-v4 Skeleton: one `div` with the muted accent surface and a slow pulse animation, sized entirely through your own classes.
-
 ## Usage
 
-The element has no intrinsic size, so `h-*` and `w-*` classes come from you; stack a few strips to stand in for text. The root carries `data-slot="skeleton"`, and the pulse ships as a css-flavor keyframe so the tailwind flavor's `animate-pulse` has a faithful translation with no utility framework required.
+The element has no intrinsic size, so `h-*` and `w-*` classes come from you; stack a few strips to stand in for text. The root carries `data-slot="skeleton"`:
+
+### jsx
 
 ```jsx
 import Skeleton from './components/skeleton';
@@ -16,6 +14,17 @@ const Card = () => (
     <Skeleton class="h-4 w-full" />
   </div>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<div class="flex flex-col gap-2">
+  <${Skeleton} class="h-4 w-2/3" />
+  <${Skeleton} class="h-4 w-full" />
+  <${Skeleton} class="h-4 w-full" />
+</div>`
 ```
 
 ## Composed Placeholders
@@ -35,7 +44,3 @@ const Profile = () => (
   </div>
 );
 ```
-
-## Styling
-
-The css style module exports a single `base` holding the accent surface, the radius, and the pulse `animation` (declared through a hashed `keyframes()` name); the compose bakes `base` plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor uses shadcn's literal utilities verbatim (`animate-pulse rounded-md bg-accent`) wrapped in `cn()`. Pass `rounded-full` (tailwind) or `border-radius` in your own sheet to reshape the block; the pulse keeps running either way. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

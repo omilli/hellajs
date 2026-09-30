@@ -7,63 +7,38 @@ import HoverCardContent from "@ui/concepts/hover-card.mdx";
 const title = "Hover Card";
 const description = "Interactive Hover Card demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import HoverCard from './components/hover-card';
-
-const Profile = () => (
-  <HoverCard
-    content={
-      <div>
-        <strong>@hella</strong>
-        <p>Reactive UI primitives for the web: signals, surgical DOM updates, and a copy-paste component registry.</p>
-      </div>
-    }
+const manualCode = `<>
+  <HoverCardTrigger
+    hook:afterMount={(node) => {
+      trigger = node;
+      hoverIntent(node, {
+        onOpen: () => open(true),
+        onClose: () => open(false),
+        openDelay: 200,
+        closeDelay: 300,
+      });
+    }}
   >
-    <a href="#profile" on:click={(e) => e.preventDefault()}>@hella</a>
-  </HoverCard>
-);`;
-
-const manualCode = `import { signal } from '@hellajs/core';
-import { hoverIntent, Portal } from '@hellajs/dom';
-import { HoverCardContent, HoverCardTrigger } from './components/hover-card';
-
-const Manual = () => {
-  const open = signal(false);
-  const state = () => (open() ? 'open' : 'closed');
-  let trigger;
-
-  return (
-    <>
-      <HoverCardTrigger
-        hook:afterMount={(node) => {
-          trigger = node;
-          hoverIntent(node, {
-            onOpen: () => open(true),
-            onClose: () => open(false),
-            openDelay: 200,
-            closeDelay: 300,
-          });
-        }}
+    <a href="#release" on:click={(e) => e.preventDefault()}>Release notes</a>
+  </HoverCardTrigger>
+  {() => open() && (
+    <Portal to="body">
+      <HoverCardContent
+        state={state}
+        anchor={() => trigger}
+        onOpen={() => open(true)}
+        onClose={() => open(false)}
       >
-        <a href="#release" on:click={(e) => e.preventDefault()}>Release notes</a>
-      </HoverCardTrigger>
-      {() => open() && (
-        <Portal to="body">
-          <HoverCardContent
-            state={state}
-            anchor={() => trigger}
-            onOpen={() => open(true)}
-            onClose={() => open(false)}
-          >
-            <p>Moving into the card re-arms the open state, so it stays open under the pointer.</p>
-          </HoverCardContent>
-        </Portal>
-      )}
-    </>
-  );
-};`;
+        <p>Moving into the card re-arms the open state, so it stays open under the pointer.</p>
+      </HoverCardContent>
+    </Portal>
+  )}
+</>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Hover Card</h1>
+  <p>A rich preview card: hovering the trigger opens an anchored panel, moving the pointer into the panel keeps it open, and focus follows the same open and close path a pointer takes.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="hover-card" />
   <HoverCardContent />

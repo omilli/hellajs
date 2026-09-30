@@ -7,33 +7,19 @@ import ScrollAreaContent from "@ui/concepts/scroll-area.mdx";
 const title = "Scroll Area";
 const description = "Interactive Scroll Area demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import ScrollArea from './components/scroll-area';
-
-const Feed = () => (
-  <ScrollArea class="h-56 w-72 rounded-md border">
-    <div class="p-3">
-      {Array.from({ length: 40 }, (_, i) => (
-        <div key={i} class="border-b border-b-border/60 py-1 text-sm">Item {i + 1}</div>
-      ))}
-    </div>
-  </ScrollArea>
-);`;
-
-const bothAxesCode = `import ScrollArea, { ScrollBar } from './components/scroll-area';
-
-const Cols = () => (
-  <ScrollArea class="h-56 w-72 rounded-md border">
-    <div class="flex w-max gap-3 p-3">
-      {Array.from({ length: 12 }, (_, i) => (
-        <div key={i} class="flex h-40 min-w-24 items-center justify-center rounded-md border text-sm">Column {i + 1}</div>
-      ))}
-    </div>
-    <ScrollBar orientation="horizontal" />
-  </ScrollArea>
-);`;
+const bothAxesCode = `<ScrollArea class="h-56 w-72 rounded-md border">
+  <div class="flex w-max gap-3 p-3">
+    {Array.from({ length: 12 }, (_, i) => (
+      <div key={i} class="flex h-40 min-w-24 items-center justify-center rounded-md border text-sm">Column {i + 1}</div>
+    ))}
+  </div>
+  <ScrollBar orientation="horizontal" />
+</ScrollArea>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Scroll Area</h1>
+  <p>A custom-scrollbar container: a relative root wraps a real scrolling viewport plus an absolutely positioned ScrollBar whose thumb is sized and positioned from the live scroll geometry, so native scrolling stays underneath and the thumb is pure chrome.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="scroll-area" />
   <ScrollAreaContent />

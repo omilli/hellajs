@@ -1,10 +1,8 @@
-# Field
-
-A form-field composition kit styled byte-faithfully to shadcn's new-york-v4 Field: ten parts covering the set, legend, group, field row, content stack, label, title, description, separator, and error, wired so disabled and invalid state on the field propagates to its label and title through stable attribute selectors.
-
 ## Usage
 
 Compose the parts by hand; there is no context object and no schema prop:
+
+### jsx
 
 ```jsx
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel, FieldTitle } from './components/field';
@@ -22,6 +20,24 @@ const Profile = () => (
     <FieldError errors={[{ message: 'Required' }]} />
   </Field>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Field}>
+    <${FieldLabel} for="name">
+      <${FieldTitle}>Name</${FieldTitle}>
+      <${FieldContent}>
+        <${FieldDescription}>Shown on your public profile.</${FieldDescription}>
+      </${FieldContent}>
+    </${FieldLabel}>
+    <${Input} id="name" placeholder="Ada Lovelace" />
+    <${FieldError} errors=${[{ message: 'Required' }]} />
+  </${Field}>
+</main>`
 ```
 
 ## Orientation
@@ -49,10 +65,83 @@ const Terms = () => (
 
 Pass `disabled` or `invalid` to `Field` and it renders `data-disabled="true"` / `data-invalid="true"`: labels and titles fade to half opacity and the field text turns destructive, without touching the children. `FieldError` renders children or derives content from its `errors` array: a single message renders as text, several render as a deduplicated list, and an empty error renders hidden rather than removed so both formats keep one DOM shape.
 
-## Composition Notes
+## Manual Parts
 
-`FieldLabel` wraps a full `label` element (it takes `for` like the standalone label copy) and re-states the label declarations inline so the field entry stays self-contained. `FieldTitle` carries `data-slot="field-label"` exactly as the ref does, which is what lets one disabled-state selector cover both parts. `FieldSet` and `FieldLegend` wrap the native `fieldset` and `legend` elements for grouping related fields, and `FieldSeparator` draws a rule with optional centered text.
+`FieldSet`, `FieldLegend`, `FieldGroup`, `FieldContent`, `FieldLabel`, `FieldTitle`, `FieldDescription`, `FieldSeparator`, and `FieldError` ship beside the default `Field` row for custom composition.
 
-## Styling
+### FieldSet
 
-The css style module exports `set`, `legend` plus `legendVariants`, `group`, `base`, `orientation` (vertical, horizontal, and responsive maps with the container query), `content`, `label`, `title`, `description`, `separator` with `separatorBase`, `separatorRule`, and `separatorContent`, and `error` plus `errorList`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim, including the named-group selectors such as `group-data-[disabled=true]/field:opacity-50` and the container-query variant `@md/field-group:flex-row`, wrapped in `cn()`. Retune the responsive breakpoint by editing the `@container` key inside the responsive map. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+The group container: the native `fieldset` element wrapping related fields.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The grouped fields |
+
+### FieldLegend
+
+The group's caption: the native `legend` element; `variant="label"` renders it with label styling.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `variant` | `"legend" \| "label"` | Caption treatment (default `"legend"`) |
+| `children` | `HellaChildren` | Caption node |
+
+### FieldGroup
+
+The flex row container that lays stacked or responsive fields out together.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The fields in the group |
+
+### FieldContent
+
+The description stack beside the title inside `FieldLabel`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Description nodes |
+
+### FieldLabel
+
+The full `label` element wrapping title and content; takes `for` like the standalone label copy.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `for` | `string` | The labeled control's `id`, rendered as the `for` attribute |
+| `children` | `HellaChildren` | Title and content nodes |
+
+### FieldTitle
+
+The label's heading line: a `div` carrying the same `data-slot="field-label"` as `FieldLabel`, which is what lets one disabled-state selector cover both parts.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title node |
+
+### FieldDescription
+
+The supporting line: a `p` carrying `data-slot="field-description"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Description node |
+
+### FieldSeparator
+
+A rule between fields with optional centered text.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Optional text centered on the rule; its presence flips the wrapper's `data-content` |
+
+### FieldError
+
+The message row: a `role="alert"` div that renders children or derives text from `errors`, hidden when there is nothing to show.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `errors` | `Array<{ message?: string } \| undefined>` | Messages to derive text from: one renders as text, several as a deduplicated list |
+| `children` | `HellaChildren` | Explicit message content, rendered instead of the derived text |
+
+Every part also takes a `class` string, landing last in its style composition.

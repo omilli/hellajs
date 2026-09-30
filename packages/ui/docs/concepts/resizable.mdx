@@ -1,10 +1,8 @@
-# Resizable
-
-Flex panels with drag handles styled to shadcn's Resizable: a group div lays panels out in a row or column, each handle moves the boundary between its two neighboring panels, and the sizes live in a percentage `signal` on the group. The component reimplements the react-resizable-panels behavior over `@hellajs/dom`'s [`onDrag`](/reference/dom/behaviors) wiring, with the group as the single owner: it discovers its panels and handles in the DOM at mount, seeds the layout from each panel's `defaultSize`, and mirrors the signal onto every panel's `flex-grow`.
-
 ## Usage
 
 Compose the three exports: `ResizablePanelGroup` (the default), `ResizablePanel`, and `ResizableHandle`. Place one handle between each pair of panels you want to separate.
+
+### jsx
 
 ```jsx
 import ResizablePanelGroup, {
@@ -19,6 +17,19 @@ const Shell = () => (
     <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
   </ResizablePanelGroup>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${ResizablePanelGroup} direction="horizontal">
+    <${ResizablePanel} defaultSize=${50}>Sidebar</${ResizablePanel}>
+    <${ResizableHandle} withHandle />
+    <${ResizablePanel} defaultSize=${50}>Editor</${ResizablePanel}>
+  </${ResizablePanelGroup}>
+</main>`
 ```
 
 ### ResizablePanelGroup
@@ -44,7 +55,7 @@ const Shell = () => (
 
 | Prop | Type | Behavior |
 |---|---|---|
-| `withHandle` | `boolean` | Renders the grip icon chip (the grip-vertical glyph's path data, inlined per the ref) centered on the divider |
+| `withHandle` | `boolean` | Renders the grip icon chip centered on the divider |
 | `disabled` | `boolean` | Blocks drags and keys, renders `aria-disabled` and `data-disabled` |
 | `class` | `string` | Lands on the handle next to the component class |
 
@@ -75,9 +86,9 @@ Each handle is focusable (`role="separator"`, `tabindex="0"`) and moves its pair
 
 ## Divergences
 
-The upstream library supports layout features this port leaves out; they stay out of scope rather than approximated:
+Some panel-group layout features are absent; they stay out of scope rather than approximated:
 
-- Resizes only move the handle's adjacent pair. Upstream cascades a single handle drag across every panel in the group so later panels absorb the remainder.
+- Resizes only move the handle's adjacent pair; a drag never cascades across the remaining panels in the group.
 - No `onCollapse`, `onExpand`, or collapse API.
 - No persisted layouts and no controlled size props: the group is uncontrolled and `onLayout` is the only observation point.
 
@@ -89,7 +100,3 @@ The upstream library supports layout features this port leaves out; they stay ou
 | Focus | Handles carry `tabindex="0"` (`-1` while disabled) with the focus ring from the style layer |
 | Orientation | `aria-orientation` on the group and every handle, set from `direction` at mount |
 | Disabled | `aria-disabled` and `data-disabled` on the handle |
-
-## Styling
-
-The module exports `base` (the flex group), `handle` (the divider, its wide hover strip, and the horizontal rotation for the grip), `grip` (the bordered chip), and `icon` (the glyph size); panels render no class of their own, the group drives their `flex-grow` inline. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor keeps the ref's strings verbatim, including the `aria-[orientation=horizontal]` divider flip and the `[&[aria-orientation=horizontal]>div]:rotate-90` grip turn, with every part's class array wrapped in `cn()`. The group's `resizePair` function owns the pair math, so changing the keyboard step (5 percent) or the percentage rounding is a one-place edit, and the `handle` map restyles every divider at once. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

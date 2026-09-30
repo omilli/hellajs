@@ -1,10 +1,8 @@
-# Kbd
-
-A keyboard-key chip styled byte-faithfully to shadcn's new-york-v4 Kbd: a `Kbd` element for single keys and a `KbdGroup` for sequences, both rendering the semantic `kbd` tag.
-
 ## Usage
 
-Both parts take `{ children?, class? }`; the root carries `data-slot="kbd"`, the group `data-slot="kbd-group"`, and both render the `kbd` element for browser and assistive-tech semantics.
+The root renders the semantic `kbd` element carrying `data-slot="kbd"`, so browser and assistive-tech semantics come free:
+
+### jsx
 
 ```jsx
 import Kbd from './components/kbd';
@@ -14,6 +12,17 @@ const Shortcut = () => (
     Save changes <Kbd>⌘S</Kbd>
   </span>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <span class="flex items-center gap-2 text-sm">
+    Save changes <${Kbd}>⌘S</${Kbd}>
+  </span>
+</main>`
 ```
 
 ## Grouped Sequences
@@ -46,6 +55,16 @@ const Hint = () => (
 );
 ```
 
-## Styling
+## Manual Parts
 
-The style module exports `base` (the key chip) and `group` (the sequence wrapper); each part's compose bakes its own class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities (`bg-muted`, `rounded-sm`) in `cn()` so later tokens override earlier ones per utility group. The tooltip inverse is a selector on `base` keyed to `[data-slot='tooltip-content']`, and an inline `svg` child scales to the chip's `size-3` icon slot automatically, so icon fonts and lucide paths drop in without extra classes. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+`KbdGroup` ships beside the default root for custom composition.
+
+### KbdGroup
+
+The sequence wrapper: a `kbd` element carrying `data-slot="kbd-group"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The run of key chips |
+
+Every part also takes a `class` string, landing last in its style composition.

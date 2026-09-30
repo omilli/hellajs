@@ -1,8 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: fade in/out for the overlay,
-// fade composed with one slide pair per side for the panel's enter/exit
-// (slide-in-from-*/slide-out-to-* utilities under the copied durations).
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 const slideInTop = keyframes({ from: { opacity: "0", transform: "translateY(-100%)" } });
@@ -133,8 +130,6 @@ export const close = style({
     height: "1rem",
     width: "1rem",
   },
-  // The copied `sr-only` span: tailwind ships the utility, the css flavor
-  // carries the same hiding recipe on the close part.
   "& span": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",

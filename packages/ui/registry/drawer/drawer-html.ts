@@ -67,7 +67,7 @@ export function DrawerOverlay(props: DrawerOverlayProps): HellaNode {
         [base, props.class]
         // @hella:end
       }"
-    ></div>
+    />
   ` as HellaNode;
 }
 
@@ -89,7 +89,23 @@ export function DrawerClose(props: DrawerCloseProps): HellaNode {
         // @hella:end
       }"
       e:click="${() => props.onClose?.()}"
-    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg><span class="sr-only">Close</span></button>
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </svg>
+      <span class="sr-only">Close</span>
+    </button>
   ` as HellaNode;
 }
 
@@ -269,7 +285,7 @@ export function DrawerContent(props: DrawerContentProps): HellaNode {
         while (teardown.length) teardown.pop()!();
       }}"
     >
-      <div data-slot="drawer-handle" class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"></div>
+      <div data-slot="drawer-handle" class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
       ${() => props.children}
     </div>
   ` as HellaNode;

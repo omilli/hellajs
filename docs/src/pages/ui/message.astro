@@ -7,46 +7,19 @@ import MessageContent from "@ui/concepts/message.mdx";
 const title = "Message";
 const description = "Interactive Message demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { Bubble } from './components/bubble';
-import { Message, MessageAvatar, MessageContent, MessageFooter, MessageHeader, MessageGroup } from './components/message';
-
-const Thread = () => (
-  <MessageGroup>
-    <Message>
-      <MessageAvatar><span>Ad</span></MessageAvatar>
-      <MessageContent>
-        <MessageHeader>Ada</MessageHeader>
-        <Bubble variant="outline">How does the scroller pin to the bottom?</Bubble>
-        <MessageFooter>2 minutes ago</MessageFooter>
-      </MessageContent>
-    </Message>
-    <Message>
-      <MessageAvatar><span>Gr</span></MessageAvatar>
-      <MessageContent>
-        <MessageHeader>Grace</MessageHeader>
-        <Bubble variant="outline">A scroll listener watches the distance to the bottom.</Bubble>
-        <MessageFooter>A minute ago</MessageFooter>
-      </MessageContent>
-    </Message>
-  </MessageGroup>
-);`;
-
-const endCode = `import { Bubble } from './components/bubble';
-import { Message, MessageAvatar, MessageContent, MessageFooter, MessageHeader } from './components/message';
-
-const Sent = () => (
-  <Message align="end">
-    <MessageAvatar><span>You</span></MessageAvatar>
-    <MessageContent>
-      <MessageHeader>You</MessageHeader>
-      <Bubble>On my way.</Bubble>
-      <MessageFooter>Just now</MessageFooter>
-    </MessageContent>
-  </Message>
-);`;
+const endCode = `<Message align="end">
+  <MessageAvatar><span>You</span></MessageAvatar>
+  <MessageContent>
+    <MessageHeader>You</MessageHeader>
+    <Bubble>On my way.</Bubble>
+    <MessageFooter>Just now</MessageFooter>
+  </MessageContent>
+</Message>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Message</h1>
+  <p>A chat row built from six presentational parts: the row, the avatar well, the content column, and the header and footer meta rows.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="message" />
   <MessageContent />

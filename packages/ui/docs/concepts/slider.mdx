@@ -1,7 +1,3 @@
-# Slider
-
-A pointer and keyboard value control styled to shadcn's Slider: a track span, a range span, and one thumb span per value. The component reimplements the Radix slider behavior over `@hellajs/dom`'s [`onDrag`](/reference/dom/behaviors) wiring: pointerdown selects the nearest thumb, pointer movement maps track position to a stepped value, and keyboard arrows nudge the focused thumb. Values live in a signal, and the thumbs plus range render their positions as reactive inline styles.
-
 ## Usage
 
 | Prop | Type | Behavior |
@@ -17,6 +13,8 @@ A pointer and keyboard value control styled to shadcn's Slider: a track span, a 
 | `minStepsBetweenThumbs` | `number` | Minimum step gap enforced between neighboring thumbs |
 | `class` | `string` | Lands on the root next to the component class |
 
+### jsx
+
 ```jsx
 import Slider from './components/slider';
 
@@ -24,6 +22,17 @@ const Volume = () => (
   <Slider value={[40]} />
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Slider} value=${[40]} />
+</main>`
+```
+
+The track is a span, the range a second span, and each value one thumb span; pointerdown selects the nearest thumb, pointer movement maps track position to a stepped value through [`onDrag`](/reference/dom/behaviors), and values render as reactive inline styles.
 
 ## Controlled and Uncontrolled
 
@@ -66,7 +75,7 @@ const PriceRange = () => (
 );
 ```
 
-With no `value` prop the slider renders the ref's fallback pair, two thumbs spanning `min` to `max`. The thumb count is fixed at mount: value updates move the thumbs but never add or remove them.
+With no `value` prop the slider renders a fallback pair spanning `min` to `max`. The thumb count is fixed at mount: value updates move the thumbs but never add or remove them.
 
 ## Keyboard
 
@@ -83,11 +92,13 @@ Each thumb is focusable and steps on its own.
 
 Every accepted keyboard change also fires `onValueCommit`, and values clamp to `min` and `max` after each move.
 
-## Divergences
+## Intentionally Absent
 
-- Thumb count is fixed at mount; the ref's React version re-renders a new thumb list when the value array length changes.
-- The no-value fallback is the ref's own `[min, max]` pair, so a bare slider renders two thumbs rather than one.
-- `aria-valuetext` is not rendered (the ref does not set it).
+Some pieces common to this component family are absent by design; they stay out rather than approximated:
+
+- Thumb count is fixed at mount; a value array whose length changes mid-flight does not add or remove thumbs.
+- The no-value fallback is the `[min, max]` pair, so a bare slider renders two thumbs rather than one.
+- `aria-valuetext` is not rendered.
 
 ## Accessibility
 
@@ -97,7 +108,3 @@ Every accepted keyboard change also fires `onValueCommit`, and values clamp to `
 | Values | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, and `aria-orientation` on every thumb |
 | Focus | Thumbs carry `tabindex="0"` (`-1` while disabled) and the focus ring comes from the style layer |
 | Disabled | The root renders `data-disabled="true"` and thumbs render `aria-disabled` |
-
-## Styling
-
-The module exports `base` (the flex root with `touch-action: none`), `track` (the muted rail), `range` (the primary fill), and `thumb` (the knob, whose hover and focus rings are box shadows). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor keeps the ref's strings verbatim, including the `data-[orientation=vertical]` column layout and the `data-[disabled]` opacity, with every part's class array wrapped in `cn()` so a call-site `class` overrides earlier tokens per utility group. `props.class` lands on the root next to `base`, the `thumb` map restyles every knob at once, and repositioning or resizing the thumb is an edit of the `thumbStyle` helper rather than the style layer, since positions arrive as inline styles (`left` for horizontal, `bottom` for vertical). Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

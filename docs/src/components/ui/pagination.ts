@@ -244,7 +244,10 @@ interface PaginationItemProps {
 
 export function PaginationItem(props: PaginationItemProps): HellaNode {
   return html`
-    <li data-slot="pagination-item" class="${props.class}">${() => props.children}</li>
+    <li
+      data-slot="pagination-item"
+      class="${props.class}"
+    >${() => props.children}</li>
   ` as HellaNode;
 }
 
@@ -303,7 +306,22 @@ export function PaginationPrevious(props: PaginationNavProps): HellaNode {
         ]
       }"
       e:click="${() => props.onclick?.()}"
-    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg><span class="${hiddenUntilSm}">Previous</span></a>
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+      <span class="${hiddenUntilSm}">Previous</span>
+    </a>
   ` as HellaNode;
 }
 
@@ -325,7 +343,22 @@ export function PaginationNext(props: PaginationNavProps): HellaNode {
         ]
       }"
       e:click="${() => props.onclick?.()}"
-    ><span class="${hiddenUntilSm}">Next</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></a>
+    >
+      <span class="${hiddenUntilSm}">Next</span>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m9 18 6-6-6-6" />
+      </svg>
+    </a>
   ` as HellaNode;
 }
 
@@ -341,6 +374,24 @@ export function PaginationEllipsis(props: PaginationEllipsisProps): HellaNode {
       class="${
         [ellipsis, props.class]
       }"
-    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg><span class="${srOnly}">More pages</span></span>
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="size-4"
+      >
+        <circle cx="12" cy="12" r="1" />
+        <circle cx="19" cy="12" r="1" />
+        <circle cx="5" cy="12" r="1" />
+      </svg>
+      <span class="${srOnly}">More pages</span>
+    </span>
   ` as HellaNode;
 }

@@ -4,16 +4,12 @@ import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/d
 
 import { keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: the enter composes fade +
-// zoom(95%) with the side's slide direction (named by the data-side value
-// that applies it), the exit is fade + zoom without slide.
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-// The trigger zone is a bare pass-through span (verbatim from the ref).
 const content = style({
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
@@ -427,7 +423,9 @@ const checkIcon = (): HellaNode =>
     class="${
       [icon]
     }"
-  ><path d="M20 6 9 17l-5-5" /></svg>` as HellaNode;
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>` as HellaNode;
 
 /** The circle icon (refs/icons/circle.svg), created per call so reactive swaps never share nodes between clones. */
 const circleIcon = (): HellaNode =>
@@ -445,7 +443,9 @@ const circleIcon = (): HellaNode =>
     class="${
       [radioIcon]
     }"
-  ><circle cx="12" cy="12" r="10" /></svg>` as HellaNode;
+  >
+    <circle cx="12" cy="12" r="10" />
+  </svg>` as HellaNode;
 
 /** The chevron-right icon (refs/icons/chevron-right.svg), created per call so reactive swaps never share nodes between clones. */
 const chevronIcon = (): HellaNode =>
@@ -463,7 +463,9 @@ const chevronIcon = (): HellaNode =>
     class="${
       [chevron]
     }"
-  ><path d="m9 18 6-6-6-6" /></svg>` as HellaNode;
+  >
+    <path d="m9 18 6-6-6-6" />
+  </svg>` as HellaNode;
 
 interface ContextMenuTriggerProps {
   children?: HellaChildren;
@@ -607,7 +609,9 @@ export function ContextMenuItem(props: ContextMenuItemProps): HellaNode {
         props.onclick?.();
         closeAllMenus();
       }}"
-    >${() => props.children}${() => (props.shortcut !== undefined ? ContextMenuShortcut({ children: props.shortcut }) : null)}</div>
+    >
+      ${() => props.children}${() => (props.shortcut !== undefined ? ContextMenuShortcut({ children: props.shortcut }) : null)}
+    </div>
   ` as HellaNode;
 }
 
@@ -644,12 +648,17 @@ export function ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps): He
         [checkItem, props.class]
       }"
       on:click="${() => toggle()}"
-    ><span
+    >
+      <span
         data-slot="context-menu-indicator"
         class="${
           [indicator]
         }"
-      >${() => (checked() ? checkIcon() : null)}</span>${() => props.children}</div>
+      >
+        ${() => (checked() ? checkIcon() : null)}
+      </span>
+      ${() => props.children}
+    </div>
   ` as HellaNode;
 }
 
@@ -675,13 +684,15 @@ export function ContextMenuRadioGroup(props: ContextMenuRadioGroupProps): HellaN
       class="${
         [props.class]
       }"
-    >${() => props.children}${(props.items ?? []).map((entry) => ContextMenuRadioItem({
-      value: entry.value,
-      checked: () => current() === entry.value,
-      disabled: entry.disabled,
-      onSelect: () => select(entry.value),
-      children: entry.label,
-    }))}</div>
+    >
+      ${() => props.children}${(props.items ?? []).map((entry) => ContextMenuRadioItem({
+        value: entry.value,
+        checked: () => current() === entry.value,
+        disabled: entry.disabled,
+        onSelect: () => select(entry.value),
+        children: entry.label,
+      }))}
+    </div>
   ` as HellaNode;
 }
 
@@ -716,12 +727,17 @@ export function ContextMenuRadioItem(props: ContextMenuRadioItemProps): HellaNod
         props.onSelect?.();
         closeAllMenus();
       }}"
-    ><span
+    >
+      <span
         data-slot="context-menu-indicator"
         class="${
           [indicator]
         }"
-      >${() => (checked() ? circleIcon() : null)}</span>${() => props.children}</div>
+      >
+        ${() => (checked() ? circleIcon() : null)}
+      </span>
+      ${() => props.children}
+    </div>
   ` as HellaNode;
 }
 
@@ -751,7 +767,7 @@ export function ContextMenuSeparator(props: ContextMenuPartProps): HellaNode {
       class="${
         [separator, props.class]
       }"
-    ></div>
+    />
   ` as HellaNode;
 }
 
@@ -819,7 +835,9 @@ export function ContextMenuSubTrigger(props: ContextMenuSubTriggerProps): HellaN
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}${chevronIcon()}</div>
+    >
+      ${() => props.children}${chevronIcon()}
+    </div>
   ` as HellaNode;
 }
 
@@ -975,25 +993,27 @@ export function ContextMenuSub(props: ContextMenuSubProps): HellaNode {
         if (openTimer !== null) clearTimeout(openTimer);
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}"
-    >${() => props.children}${chevronIcon()}${() => s.visible() && Portal({
-      to: "body",
-      children: [
-        ContextMenuSubContent({
-          state: s.state,
-          anchor: () => triggerNode,
-          onDismiss: () => s.setOpen(false),
-          onExited: s.finishExit,
-          onArrowLeft: () => s.setOpen(false),
-          onPointerEnter: () => {
-            if (closeTimer !== null) {
-              clearTimeout(closeTimer);
-              closeTimer = null;
-            }
-          },
-          children: props.content,
-        }) as HellaChild,
-      ],
-    })}</div>
+    >
+      ${() => props.children}${chevronIcon()}${() => s.visible() && Portal({
+        to: "body",
+        children: [
+          ContextMenuSubContent({
+            state: s.state,
+            anchor: () => triggerNode,
+            onDismiss: () => s.setOpen(false),
+            onExited: s.finishExit,
+            onArrowLeft: () => s.setOpen(false),
+            onPointerEnter: () => {
+              if (closeTimer !== null) {
+                clearTimeout(closeTimer);
+                closeTimer = null;
+              }
+            },
+            children: props.content,
+          }) as HellaChild,
+        ],
+      })}
+    </div>
   ` as HellaNode;
 }
 
@@ -1065,18 +1085,20 @@ export default function ContextMenu(props: ContextMenuProps): HellaNode {
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}"
-    >${() => props.children}${() => s.visible() && Portal({
-      to: "body",
-      children: [
-        ContextMenuContent({
-          state: s.state,
-          id: contentId,
-          anchor: () => anchorNode,
-          onDismiss: () => s.setOpen(false),
-          onExited: s.finishExit,
-          children: props.content,
-        }) as HellaChild,
-      ],
-    })}</span>
+    >
+      ${() => props.children}${() => s.visible() && Portal({
+        to: "body",
+        children: [
+          ContextMenuContent({
+            state: s.state,
+            id: contentId,
+            anchor: () => anchorNode,
+            onDismiss: () => s.setOpen(false),
+            onExited: s.finishExit,
+            children: props.content,
+          }) as HellaChild,
+        ],
+      })}
+    </span>
   ` as HellaNode;
 }

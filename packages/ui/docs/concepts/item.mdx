@@ -1,10 +1,8 @@
-# Item
-
-A flexible list-row composition kit styled byte-faithfully to shadcn's new-york-v4 Item: ten parts covering the group, separator, row, media slot, content stack, title, description, actions, header, and footer, built for settings lists, result rows, and media objects.
-
 ## Usage
 
 Compose the parts by hand; there is no context object and no schema prop:
+
+### jsx
 
 ```jsx
 import Item, { ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from './components/item';
@@ -26,10 +24,29 @@ const Results = () => (
   </ItemGroup>
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${ItemGroup}>
+    <${Item}>
+      <${ItemMedia} variant="icon">A</${ItemMedia}>
+      <${ItemContent}>
+        <${ItemTitle}>Archive</${ItemTitle}>
+        <${ItemDescription}>Move the report to long-term storage.</${ItemDescription}>
+      </${ItemContent}>
+      <${ItemActions}><${Button} size="sm" variant="outline">Run</${Button}></${ItemActions}>
+    </${Item}>
+    <${ItemSeparator} />
+  </${ItemGroup}>
+</main>`
+```
 
 ## Variants and Sizes
 
-`variant` picks the row treatment (`default` transparent, `outline` bordered, `muted` tinted) and `size` its padding (`default` or `sm`). `ItemMedia` takes `icon` or `image` variants for its own sizing box:
+`variant` picks the row treatment (`default` transparent, `outline` bordered, `muted` tinted) and `size` its padding (`default` or `sm`):
 
 ```jsx
 import Item, { ItemContent, ItemTitle } from './components/item';
@@ -67,10 +84,88 @@ const Picker = () => (
 );
 ```
 
-## Composition Notes
+## Manual Parts
 
-`ItemHeader` and `ItemFooter` render full-width (`basis-full`) rows that break out of the flex-wrap flow, matching the ref's layout for titled sections. The row is self-contained: the separator markup is re-stated inline rather than imported, and anchors inside an item pick up the underline and hover rules from the row's own selectors.
+`ItemGroup`, `ItemSeparator`, `ItemMedia`, `ItemContent`, `ItemTitle`, `ItemDescription`, `ItemActions`, `ItemHeader`, and `ItemFooter` ship beside the default `Item` row for custom composition.
 
-## Styling
+### Item
 
-The css style module exports `group`, `separatorBase` plus `separator`, `base`, `variants` and `sizes` (the row treatments), `media` plus `mediaVariants`, `content`, `title`, `description`, `actions`, `header`, and `footer`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim, including the media's `group-has-[[data-slot=item-description]]/item:self-start` shift and the link hover treatment `[a]:hover:bg-accent/50` inherited from the ref, wrapped in `cn()`. The description clamps to two lines through the `-webkit-line-clamp` keys; raise the clamp there if your copy needs more room. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+The list row: carries `data-variant`, `data-size`, and the selection attributes the styles key off.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `variant` | `"default" \| "outline" \| "muted"` | Row treatment (default `"default"`) |
+| `size` | `"default" \| "sm"` | Row padding (default `"default"`) |
+| `selected` | `boolean \| (() => boolean)` | Renders `data-selected` and `aria-selected`; an accessor keeps it reactive |
+| `children` | `HellaChildren` | Media, content, and action nodes |
+
+### ItemGroup
+
+The list container: a `role="list"` wrapper for related rows.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Rows and separators |
+
+### ItemSeparator
+
+The rule between rows: a `role="separator"` div. Takes an optional `class`.
+
+### ItemMedia
+
+The leading sizing box before the content stack; `variant="icon"` or `"image"` picks its sizing.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `variant` | `"default" \| "icon" \| "image"` | Media sizing (default `"default"`) |
+| `children` | `HellaChildren` | Icon or image node |
+
+### ItemContent
+
+The title and description stack.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title and description nodes |
+
+### ItemTitle
+
+The row heading: a `div` carrying `data-slot="item-title"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title node |
+
+### ItemDescription
+
+The supporting line: a `p` clamped to two lines.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Description node |
+
+### ItemActions
+
+The trailing action slot.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Action nodes, typically buttons |
+
+### ItemHeader
+
+A full-width row that breaks out of the flex-wrap flow, for titled sections.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Header nodes |
+
+### ItemFooter
+
+A full-width row that breaks out of the flex-wrap flow, for footer content.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Footer nodes |
+
+Every part also takes a `class` string, landing last in its style composition. Anchors inside a row pick up its underline and hover treatment from the row's own selectors.

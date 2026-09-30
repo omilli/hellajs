@@ -145,7 +145,9 @@ const checkIcon = (): HellaNode =>
       [icon]
       // @hella:end
     }"
-  ><path d="M20 6 9 17l-5-5" /></svg>` as HellaNode;
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>` as HellaNode;
 
 /** The chevron-down icon (refs/icons/chevron-down.svg), created per call so reactive swaps never share nodes between clones. */
 const chevronDownIcon = (): HellaNode =>
@@ -165,7 +167,9 @@ const chevronDownIcon = (): HellaNode =>
       [chevron]
       // @hella:end
     }"
-  ><path d="m6 9 6 6 6-6" /></svg>` as HellaNode;
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>` as HellaNode;
 
 /** The chevron-up icon (refs/icons/chevron-up.svg), created per call so reactive swaps never share nodes between clones. */
 const chevronUpIcon = (): HellaNode =>
@@ -185,7 +189,9 @@ const chevronUpIcon = (): HellaNode =>
       [icon]
       // @hella:end
     }"
-  ><path d="m18 15-6-6-6 6" /></svg>` as HellaNode;
+  >
+    <path d="m18 15-6-6-6 6" />
+  </svg>` as HellaNode;
 
 /** The clear icon (refs/icons/x.svg), created per call so reactive swaps never share nodes between clones. */
 const clearIcon = (): HellaNode =>
@@ -205,7 +211,10 @@ const clearIcon = (): HellaNode =>
       [icon]
       // @hella:end
     }"
-  ><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>` as HellaNode;
+  >
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>` as HellaNode;
 
 interface SelectTriggerProps {
   id?: string;
@@ -257,15 +266,17 @@ export function SelectTrigger(props: SelectTriggerProps): HellaNode {
         e.preventDefault();
         props.onOpen?.();
       }}"
-    >${() => props.children}${() => (props.clearable && props.hasValue?.() ? html`<span
-      data-slot="select-clear"
-      role="button"
-      aria-label="Clear"
-      on:click="${(e: Event) => {
-        e.stopPropagation();
-        props.onClear?.();
-      }}"
-    >${clearIcon()}</span>` as HellaChild : null)}${chevronDownIcon()}</button>
+    >
+      ${() => props.children}${() => (props.clearable && props.hasValue?.() ? html`<span
+        data-slot="select-clear"
+        role="button"
+        aria-label="Clear"
+        on:click="${(e: Event) => {
+          e.stopPropagation();
+          props.onClear?.();
+        }}"
+      >${clearIcon()}</span>` as HellaChild : null)}${chevronDownIcon()}
+    </button>
   ` as HellaNode;
 }
 
@@ -423,7 +434,9 @@ export function SelectContent(props: SelectContentProps): HellaNode {
           [scrollButton]
           // @hella:end
         }"
-      >${chevronUpIcon()}</div>
+      >
+        ${chevronUpIcon()}
+      </div>
       <div
         data-slot="select-viewport"
         class="${
@@ -431,7 +444,9 @@ export function SelectContent(props: SelectContentProps): HellaNode {
           [viewport]
           // @hella:end
         }"
-      >${() => props.children}</div>
+      >
+        ${() => props.children}
+      </div>
       <div
         data-slot="select-scroll-down-button"
         class="${
@@ -439,7 +454,9 @@ export function SelectContent(props: SelectContentProps): HellaNode {
           [scrollButton]
           // @hella:end
         }"
-      >${chevronDownIcon()}</div>
+      >
+        ${chevronDownIcon()}
+      </div>
     </div>
   ` as HellaNode;
 }
@@ -505,7 +522,9 @@ export function SelectItem(props: SelectItemProps): HellaNode {
           [indicator]
           // @hella:end
         }"
-      >${() => (selected() ? checkIcon() : null)}</span>
+      >
+        ${() => (selected() ? checkIcon() : null)}
+      </span>
       ${() => props.label}
     </div>
   ` as HellaNode;
@@ -539,7 +558,7 @@ export function SelectSeparator(props: SelectPartProps): HellaNode {
         [separator, props.class]
         // @hella:end
       }"
-    ></div>
+    />
   ` as HellaNode;
 }
 
@@ -636,38 +655,40 @@ export default function Select(props: SelectProps): HellaNode {
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}"
-    >${SelectValue({ placeholder: props.placeholder, value: () => currentLabel() }) as HellaChild}${() => (props.clearable && current() !== "" ? html`<span
-      data-slot="select-clear"
-      role="button"
-      aria-label="Clear"
-      on:click="${(e: Event) => {
-        e.stopPropagation();
-        select("");
-      }}"
-    >${clearIcon()}</span>` as HellaChild : null)}${chevronDownIcon()}${() => s.visible() && Portal({
-      to: "body",
-      children: [
-        SelectContent({
-          state: s.state,
-          id: contentId,
-          anchor: () => triggerNode,
-          onDismiss: () => s.setOpen(false),
-          onExited: s.finishExit,
-          onClose: () => s.setOpen(false),
-          children: (props.items ?? []).map((entry) =>
-            SelectItem({
-              value: entry.value,
-              label: entry.label,
-              disabled: entry.disabled,
-              selected: () => current() === entry.value,
-              onselect: () => {
-                select(entry.value);
-                s.setOpen(false);
-              },
-            }) as HellaChild,
-          ),
-        }) as HellaChild,
-      ],
-    })}</button>
+    >
+      ${SelectValue({ placeholder: props.placeholder, value: () => currentLabel() }) as HellaChild}${() => (props.clearable && current() !== "" ? html`<span
+        data-slot="select-clear"
+        role="button"
+        aria-label="Clear"
+        on:click="${(e: Event) => {
+          e.stopPropagation();
+          select("");
+        }}"
+      >${clearIcon()}</span>` as HellaChild : null)}${chevronDownIcon()}${() => s.visible() && Portal({
+        to: "body",
+        children: [
+          SelectContent({
+            state: s.state,
+            id: contentId,
+            anchor: () => triggerNode,
+            onDismiss: () => s.setOpen(false),
+            onExited: s.finishExit,
+            onClose: () => s.setOpen(false),
+            children: (props.items ?? []).map((entry) =>
+              SelectItem({
+                value: entry.value,
+                label: entry.label,
+                disabled: entry.disabled,
+                selected: () => current() === entry.value,
+                onselect: () => {
+                  select(entry.value);
+                  s.setOpen(false);
+                },
+              }) as HellaChild,
+            ),
+          }) as HellaChild,
+        ],
+    })}
+    </button>
   ` as HellaNode;
 }

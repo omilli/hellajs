@@ -7,29 +7,12 @@ import InputContent from "@ui/concepts/input.mdx";
 const title = "Input";
 const description = "Interactive Input demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import Input from './components/input';
-
-const EmailField = () => {
-  const email = signal('');
-
-  return (
-    <Input
-      type="email"
-      placeholder="you@example.com"
-      ariaLabel="Email address"
-      value={email}
-      oninput={(v) => email(v)}
-    />
-  );
-};`;
-
-const invalidCode = `import Input from './components/input';
-
-<Input placeholder="Required field" ariaInvalid={submitted && email === ''} />`;
+const invalidCode = `<Input placeholder="Required field" ariaInvalid={submitted && email === ''} />`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Input</h1>
+  <p>A single-line form field: one base look, a focus ring, and an invalid state, reading and writing its value reactively.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="input" />
   <InputContent />

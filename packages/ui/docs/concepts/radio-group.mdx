@@ -1,7 +1,3 @@
-# Radio Group
-
-A single-selection control styled to shadcn's RadioGroup: a `role="radiogroup"` root that renders one labeled row per entry, with arrow-key focus movement shared through the same [roving tabindex](/reference/dom/behaviors) model Tabs uses. Each row is a `label` wrapping a `role="radio"` button and the entry's label text, so clicking the text selects the control.
-
 ## Usage
 
 The composed root takes an items array, not children slots:
@@ -15,32 +11,37 @@ The composed root takes an items array, not children slots:
 | `orientation` | `"horizontal" \| "vertical"` | Renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus |
 | `class` | `string` | Lands on the root next to the component class |
 
+### jsx
+
 ```jsx
 import RadioGroup from './components/radio-group';
 
-const Plan = () => (
-  <RadioGroup
-    items={[
-      { value: 'free', label: 'Free' },
-      { value: 'pro', label: 'Pro' },
-      { value: 'team', label: 'Team' },
-    ]}
-  />
-);
-```
-
-The html-format file (`radio-group.ts`, copied with `--format html`) works the same way from a template; build the items array once and pass it in:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import RadioGroup from './components/radio-group';
-
-const items = [
-  { value: 'free', label: 'Free' },
-  { value: 'pro', label: 'Pro' },
+const items = [{
+    value: 'free',
+    label: 'Free'
+  }, {
+    value: 'pro',
+    label: 'Pro'
+  }, {
+    value: 'team',
+    label: 'Team'
+  },
 ];
 
-mount(html`<main><${RadioGroup} items=${items} /></main>`, '#app');
+const Plan = () => (
+  <RadioGroup items={items} />
+);
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${RadioGroup}
+    items=${items}
+  />
+</main>`
 ```
 
 ## Controlled and Uncontrolled
@@ -67,7 +68,21 @@ const Controlled = () => (
 
 ## Manual Parts
 
-`RadioGroupItem` ships beside the default root for custom composition. hella has no context primitive, so state is explicit: the part takes a `checked` accessor (boolean or function) that drives `aria-checked`, `data-state`, and the indicator icon, plus an `onSelect` callback. Selection, keyboard movement, and label pairing are yours to thread.
+`RadioGroupItem` ships beside the default root for custom composition. hella has no context primitive, so state is explicit: selection, keyboard movement, and label pairing are yours to thread.
+
+### RadioGroupItem
+
+The circle button: a `role="radio"` control whose checked state drives `aria-checked`, `data-state`, and the indicator icon.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `string` | The entry's identity, rendered as `data-value` on the button |
+| `checked` | `boolean \| (() => boolean)` | Static read or reactive accessor driving `aria-checked` and `data-state` |
+| `onSelect` | `() => void` | Click callback requesting selection |
+| `disabled` | `boolean` | Native `disabled` attribute plus the disabled styling |
+| `name` | `string` | Rendered on the button; hidden native inputs for form submission are not rendered |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -91,7 +106,7 @@ const Custom = () => (
 );
 ```
 
-The row wrapper and the `name` prop's deferred native inputs are this port's two divergences from the Radix ref: selection state, focus movement, and labeling are fully equivalent, while form submission wiring remains a caller concern.
+Form submission wiring remains a caller concern: `name` threads onto every item button, but the hidden native inputs that would submit the selection are not rendered.
 
 ## Accessibility
 
@@ -102,7 +117,3 @@ The row wrapper and the `name` prop's deferred native inputs are this port's two
 | Keyboard | Arrow keys move focus and select (wrapping at both ends); Home and End jump; disabled items are skipped |
 | Tab | Roving tabindex: `0` on the selected item, `-1` on the rest; the first item receives tab focus when nothing is selected |
 | Labeling | Each row is a `label` wrapping its button, so the entry text names and activates the control |
-
-## Styling
-
-Both flavors export the same names from the copied file: `base` (the grid root), `item` (the circle button with focus ring and disabled styling), `indicator` (the centered icon slot), `icon` (the filled dot), and `row` (the flex label wrapper this port adds to pair labels without context). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()`, verbatim from the ref including the `focus-visible` ring and `dark:` variants. To restyle every radio at once, edit the `item` map; `props.class` lands on the root next to `base`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

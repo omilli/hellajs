@@ -230,11 +230,6 @@ const errorList = style({
   marginLeft: "1rem",
 }, { label: "hella-field-error-list", layer: "hella" });
 
-// State the class-scoped style() nesting cannot express: the named-group
-// conditions (field disabled/invalid state, field-group outline variant,
-// horizontal-orientation group-has) and the [data-variant=legend] sibling
-// combinator register as raw attribute selectors in the same layer, after
-// the part classes.
 css({
   "@layer hella": {
     "[data-slot='field'][data-disabled='true'] [data-slot='field-label']": {

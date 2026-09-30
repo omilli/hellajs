@@ -1,8 +1,5 @@
 import { css, keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: fade in/out for the overlay. The
-// panel itself transitions through transform (vaul parity) rather than
-// animate-in/out keyframes.
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 
@@ -105,8 +102,6 @@ export const close = style({
     height: "1rem",
     width: "1rem",
   },
-  // The copied `sr-only` span: tailwind ships the utility, the css flavor
-  // carries the same hiding recipe on the close part.
   "& span": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",
@@ -120,10 +115,6 @@ export const close = style({
   },
 }, { label: "hella-drawer-close", layer: "hella" });
 
-// The handle grip zone: tailwind carries the copied utility string, the css
-// flavor restyles it here. Ancestor-attribute conditions cannot restate
-// self-based at class scope, so these register as raw attribute selectors in
-// the same layer, after the part classes (the Tabs precedent).
 css({
   "@layer hella": {
     "[data-slot='drawer-content'] [data-slot='drawer-handle']": {

@@ -60,8 +60,6 @@ const icon = style({
   width: "0.5rem",
 }, { label: "hella-radio-group-icon", layer: "hella" });
 
-// The composed root wraps every item in a label row so the label text selects
-// the control (no-context divergence: the ref's label pairing is user markup).
 const row = style({
   alignItems: "center",
   display: "flex",
@@ -111,7 +109,9 @@ const circleIcon = (): HellaNode =>
     class="${
       [icon]
     }"
-  ><circle cx="12" cy="12" r="10" /></svg>` as HellaNode;
+  >
+    <circle cx="12" cy="12" r="10" />
+  </svg>` as HellaNode;
 
 export function RadioGroupItem(props: RadioGroupItemProps): HellaNode {
   const checked = (): boolean =>
@@ -131,12 +131,16 @@ export function RadioGroupItem(props: RadioGroupItemProps): HellaNode {
         [item, props.class]
       }"
       e:click="${() => props.onSelect?.()}"
-    ><span
+    >
+      <span
         data-slot="radio-group-indicator"
         class="${
           [indicator]
         }"
-      >${() => (checked() ? circleIcon() : null)}</span></button>
+      >
+        ${() => (checked() ? circleIcon() : null)}
+      </span>
+    </button>
   ` as HellaNode;
 }
 
@@ -205,21 +209,28 @@ export default function RadioGroup(props: RadioGroupProps): HellaNode {
         group = null;
       }}"
     >
-      ${props.items.map((entry) => html`<label
+      ${props.items.map((entry) => html`
+        <label
           data-slot="radio-group-row"
           class="${
             [row]
           }"
-        >${RadioGroupItem({
-          value: entry.value,
-          name: props.name,
-          checked: () => current() === entry.value,
-          onSelect: () => {
-            if (entry.disabled) return;
-            select(entry.value);
-          },
-          disabled: entry.disabled,
-        })}<span>${entry.label}</span></label>`)}
+        >
+          ${RadioGroupItem({
+            value: entry.value,
+            name: props.name,
+            checked: () => current() === entry.value,
+            onSelect: () => {
+              if (entry.disabled) return;
+              select(entry.value);
+            },
+            disabled: entry.disabled,
+          })}
+          <span>
+            ${entry.label}
+          </span>
+        </label>
+      `)}
     </div>
   ` as HellaNode;
 }

@@ -7,28 +7,14 @@ import SwitchContent from "@ui/concepts/switch.mdx";
 const title = "Switch";
 const description = "Interactive Switch demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import Switch from './components/switch';
-
-const airplane = signal(false);
-
-const Settings = () => (
-  <label>
-    <Switch checked={() => airplane()} onCheckedChange={(next) => airplane(next)} />
-    Airplane mode
-  </label>
-);`;
-
-const disabledCode = `import Switch from './components/switch';
-
-const Managed = () => (
-  <label>
-    <Switch defaultChecked disabled /> Managed by policy
-  </label>
-);`;
+const disabledCode = `<label>
+  <Switch defaultChecked disabled /> Managed by policy
+</label>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Switch</h1>
+  <p>An on/off control: a switch-role button whose thumb slides through pure CSS, rendering aria-checked and data-state on root and thumb.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="switch" />
   <SwitchContent />

@@ -1,10 +1,8 @@
-# Textarea
-
-A multi-line text input styled byte-faithfully to shadcn's new-york-v4 Textarea: the semantic `textarea` element with auto-sizing via `field-sizing: content`, a `min-h-16` floor, and the same focus, disabled, and invalid treatments as Input.
-
 ## Usage
 
-The root carries `data-slot="textarea"`, and `value` accepts a plain string or a bare signal, binding as the element's value property so a controlled textarea reads and writes like Input. Typed input flows back through `oninput`, which receives the extracted `e.target.value` string rather than the event:
+The root carries `data-slot="textarea"`, and `value` accepts a plain string or a bare signal, binding as the element's value property so a controlled textarea reads and writes like Input. Typed input flows back through `oninput`, which receives the extracted `e.target.value` string rather than the event. Auto-sizing comes from `field-sizing: content` with a `min-height` floor; cap growth with a `max-h` class override.
+
+### jsx
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -16,24 +14,22 @@ const Profile = () => (
   <Textarea value={bio} oninput={(v) => bio(v)} placeholder="Tell us about yourself" rows={4} />
 );
 ```
+### html
 
-The html-format file (`textarea.ts`, copied with `--format html`) renders through a template instead of JSX; events use the direct `e:` prefix with the same value-extraction rule:
+The html-format (`--format html`) works the same way.
 
 ```js
-import { html, mount } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
-import Textarea from './components/textarea';
-
-const bio = signal('');
-mount(
-  html`<${Textarea} value="${bio}" e:input="${(e) => bio(e.target.value)}" />`,
-  '#app',
-);
+html`<${Textarea}
+  value=${bio}
+  oninput=${(v) => bio(v)}
+  placeholder="Tell us about yourself"
+  rows=${4}
+/>`
 ```
 
 ## Invalid State
 
-The invalid ring follows the Input lexicon: `aria-invalid` recolors the border and, once focused, the ring. Pass the attribute form shadcn uses, and the treatment applies with no extra wiring:
+The invalid ring follows the Input lexicon: `aria-invalid` recolors the border and, once focused, the ring. Pass `ariaInvalid` and the treatment applies with no extra wiring:
 
 ```jsx
 import Textarea from './components/textarea';
@@ -42,7 +38,3 @@ const Review = () => (
   <Textarea placeholder="Required field" ariaInvalid />
 );
 ```
-
-## Styling
-
-The style module exports `base`, `focus`, and `invalid` maps; the compose bakes all three plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim (including `field-sizing-content`, `md:text-sm`, and the `dark:bg-input/30` form) wrapped in `cn()`, so a call-site `class` lands last. Auto-sizing comes from `field-sizing: content` with the `min-height` floor; cap growth with a `max-h` utility or a `class` override. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

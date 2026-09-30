@@ -1,7 +1,5 @@
 import { css, keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: the enter slide references the
-// ol's per-position `--enter-offset`, the loader spins like the spinner part.
 const enter = keyframes({
   from: { opacity: "0", transform: "translateY(var(--enter-offset, 100%))" },
 });
@@ -22,11 +20,6 @@ export const base = style({
   zIndex: "100",
 }, { label: "hella-sonner-base", layer: "hella" });
 
-// The queue renders newest first, so bottom edges reverse the column (newest
-// pinned at the bottom edge) and top edges keep it; each group pins to its
-// edge with flex-start. The alignment half of each entry comes from the
-// horizontal half of the position name, and the stack/enter variables read
-// per position group.
 export const toasterPositions = {
   "top-left": style({
     alignItems: "flex-start",
@@ -242,8 +235,6 @@ export const close = style({
     height: "1rem",
     width: "1rem",
   },
-  // The copied `sr-only` span: tailwind ships the utility, the css flavor
-  // carries the same hiding recipe on the close part.
   "& span": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",
@@ -262,10 +253,6 @@ export const close = style({
   },
 }, { label: "hella-sonner-close", layer: "hella" });
 
-// The close button reveals on the toast's hover: an ancestor-conditioned
-// state cannot restate itself at class scope, so it registers as a raw
-// attribute selector in the same layer, after the part classes (the
-// drawer-handle precedent).
 css({
   "@layer hella": {
     "[data-slot='sonner-toast']:hover [data-slot='sonner-close']": {

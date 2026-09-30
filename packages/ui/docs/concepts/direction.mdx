@@ -1,10 +1,8 @@
-# Direction
-
-A text-direction wrapper styled after shadcn's new-york-v4 DirectionProvider, reworked for hella's no-context architecture: it renders a `dir` attribute on a layout-neutral node, and that attribute is the mechanism every directional behavior reads.
-
 ## Usage
 
 Wrap the subtrees that should flip, or the whole application:
+
+### jsx
 
 ```jsx
 import DirectionProvider from './components/direction';
@@ -16,10 +14,21 @@ const App = () => (
   </DirectionProvider>
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${DirectionProvider} dir="rtl">
+    <${Button} variant="outline">مرحبا</${Button}>
+  </${DirectionProvider}>
+</main>`
+```
 
 ## Why a DOM Node
 
-Upstream is a context-only provider: it emits no markup and broadcasts the direction through React context. Hella has no context primitive, and the dom behavior layer reads `getComputedStyle(anchor).direction` when it needs to flip anchoring and flow for right-to-left locales. The wrapper exists so that read has something to find: the rendered `dir` attribute IS the broadcast, visible to every descendant behavior without any subscription wiring.
+The wrapper renders a `dir` attribute on a layout-neutral node, and that attribute is the mechanism every directional behavior reads. Hella has no context primitive, and the dom behavior layer reads `getComputedStyle(anchor).direction` when it needs to flip anchoring and flow for right-to-left locales. The wrapper exists so that read has something to find: the rendered `dir` attribute IS the broadcast, visible to every descendant behavior without any subscription wiring.
 
 The node stays out of layout through `display: contents`, so wrapping children changes nothing about rendering; the div carries no visual styles of its own.
 
@@ -39,7 +48,3 @@ const Mixed = () => (
   </DirectionProvider>
 );
 ```
-
-## Styling
-
-Both flavors export a single `base` (`display: contents`); there is deliberately nothing else to tune. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer; the tailwind flavor's single class is the literal `contents` utility wrapped in `cn()`. If you need the wrapper to participate in layout after all, drop `base` from the compose array and set your own classes. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

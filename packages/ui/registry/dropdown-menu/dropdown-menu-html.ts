@@ -163,7 +163,9 @@ const checkIcon = (): HellaNode =>
       [icon]
       // @hella:end
     }"
-  ><path d="M20 6 9 17l-5-5" /></svg>` as HellaNode;
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>` as HellaNode;
 
 /** The circle icon (refs/icons/circle.svg), created per call so reactive swaps never share nodes between clones. */
 const circleIcon = (): HellaNode =>
@@ -183,7 +185,9 @@ const circleIcon = (): HellaNode =>
       [radioIcon]
       // @hella:end
     }"
-  ><circle cx="12" cy="12" r="10" /></svg>` as HellaNode;
+  >
+    <circle cx="12" cy="12" r="10" />
+  </svg>` as HellaNode;
 
 /** The chevron-right icon (refs/icons/chevron-right.svg), created per call so reactive swaps never share nodes between clones. */
 const chevronIcon = (): HellaNode =>
@@ -203,7 +207,9 @@ const chevronIcon = (): HellaNode =>
       [chevron]
       // @hella:end
     }"
-  ><path d="m9 18 6-6-6-6" /></svg>` as HellaNode;
+  >
+    <path d="m9 18 6-6-6-6" />
+  </svg>` as HellaNode;
 
 interface DropdownMenuTriggerProps {
   children?: HellaChildren;
@@ -367,7 +373,9 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): HellaNode {
         props.onclick?.();
         closeAllMenus();
       }}"
-    >${() => props.children}${() => (props.shortcut !== undefined ? DropdownMenuShortcut({ children: props.shortcut }) : null)}</div>
+    >
+      ${() => props.children}${() => (props.shortcut !== undefined ? DropdownMenuShortcut({ children: props.shortcut }) : null)}
+    </div>
   ` as HellaNode;
 }
 
@@ -406,14 +414,19 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): 
         // @hella:end
       }"
       on:click="${() => toggle()}"
-    ><span
+    >
+      <span
         data-slot="dropdown-menu-indicator"
         class="${
           // @hella:compose
           [indicator]
           // @hella:end
         }"
-      >${() => (checked() ? checkIcon() : null)}</span>${() => props.children}</div>
+      >
+        ${() => (checked() ? checkIcon() : null)}
+      </span>
+      ${() => props.children}
+    </div>
   ` as HellaNode;
 }
 
@@ -441,13 +454,15 @@ export function DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps): Hell
         [props.class]
         // @hella:end
       }"
-    >${() => props.children}${(props.items ?? []).map((entry) => DropdownMenuRadioItem({
-      value: entry.value,
-      checked: () => current() === entry.value,
-      disabled: entry.disabled,
-      onSelect: () => select(entry.value),
-      children: entry.label,
-    }))}</div>
+    >
+      ${() => props.children}${(props.items ?? []).map((entry) => DropdownMenuRadioItem({
+        value: entry.value,
+        checked: () => current() === entry.value,
+        disabled: entry.disabled,
+        onSelect: () => select(entry.value),
+        children: entry.label,
+      }))}
+    </div>
   ` as HellaNode;
 }
 
@@ -484,14 +499,19 @@ export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps): HellaN
         props.onSelect?.();
         closeAllMenus();
       }}"
-    ><span
+    >
+      <span
         data-slot="dropdown-menu-indicator"
         class="${
           // @hella:compose
           [indicator]
           // @hella:end
         }"
-      >${() => (checked() ? circleIcon() : null)}</span>${() => props.children}</div>
+      >
+        ${() => (checked() ? circleIcon() : null)}
+      </span>
+      ${() => props.children}
+    </div>
   ` as HellaNode;
 }
 
@@ -525,7 +545,7 @@ export function DropdownMenuSeparator(props: DropdownMenuPartProps): HellaNode {
         [separator, props.class]
         // @hella:end
       }"
-    ></div>
+    />
   ` as HellaNode;
 }
 
@@ -597,7 +617,9 @@ export function DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps): Hell
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}${chevronIcon()}</div>
+    >
+      ${() => props.children}${chevronIcon()}
+    </div>
   ` as HellaNode;
 }
 
@@ -758,25 +780,27 @@ export function DropdownMenuSub(props: DropdownMenuSubProps): HellaNode {
         if (openTimer !== null) clearTimeout(openTimer);
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}"
-    >${() => props.children}${chevronIcon()}${() => s.visible() && Portal({
-      to: "body",
-      children: [
-        DropdownMenuSubContent({
-          state: s.state,
-          anchor: () => triggerNode,
-          onDismiss: () => s.setOpen(false),
-          onExited: s.finishExit,
-          onArrowLeft: () => s.setOpen(false),
-          onPointerEnter: () => {
-            if (closeTimer !== null) {
-              clearTimeout(closeTimer);
-              closeTimer = null;
-            }
-          },
-          children: props.content,
-        }) as HellaChild,
-      ],
-    })}</div>
+    >
+      ${() => props.children}${chevronIcon()}${() => s.visible() && Portal({
+        to: "body",
+        children: [
+          DropdownMenuSubContent({
+            state: s.state,
+            anchor: () => triggerNode,
+            onDismiss: () => s.setOpen(false),
+            onExited: s.finishExit,
+            onArrowLeft: () => s.setOpen(false),
+            onPointerEnter: () => {
+              if (closeTimer !== null) {
+                clearTimeout(closeTimer);
+                closeTimer = null;
+              }
+            },
+            children: props.content,
+          }) as HellaChild,
+        ],
+      })}
+    </div>
   ` as HellaNode;
 }
 
@@ -829,18 +853,20 @@ export default function DropdownMenu(props: DropdownMenuProps): HellaNode {
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}"
-    >${() => props.children}${() => s.visible() && Portal({
-      to: "body",
-      children: [
-        DropdownMenuContent({
-          state: s.state,
-          id: contentId,
-          anchor: () => triggerNode,
-          onDismiss: () => s.setOpen(false),
-          onExited: s.finishExit,
-          children: props.content,
-        }) as HellaChild,
-      ],
-    })}</button>
+    >
+      ${() => props.children}${() => s.visible() && Portal({
+        to: "body",
+        children: [
+          DropdownMenuContent({
+            state: s.state,
+            id: contentId,
+            anchor: () => triggerNode,
+            onDismiss: () => s.setOpen(false),
+            onExited: s.finishExit,
+            children: props.content,
+          }) as HellaChild,
+        ],
+      })}
+    </button>
   ` as HellaNode;
 }

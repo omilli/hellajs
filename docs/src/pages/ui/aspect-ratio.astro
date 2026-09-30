@@ -7,35 +7,23 @@ import AspectRatioContent from "@ui/concepts/aspect-ratio.mdx";
 const title = "Aspect Ratio";
 const description = "Interactive AspectRatio demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import AspectRatio from './components/aspect-ratio';
-
-const Hero = () => (
-  <AspectRatio ratio={16 / 9} class="bg-muted rounded-lg overflow-hidden">
+const ratiosCode = `<div class="flex gap-3">
+  <AspectRatio ratio={1} class="w-32 bg-muted rounded-lg overflow-hidden">
     <div class="flex size-full items-center justify-center text-sm text-muted-foreground">
-      16 / 9
+      1 / 1
     </div>
   </AspectRatio>
-);`;
-
-const ratiosCode = `import AspectRatio from './components/aspect-ratio';
-
-const Ratios = () => (
-  <div class="flex gap-3">
-    <AspectRatio ratio={1} class="w-32 bg-muted rounded-lg overflow-hidden">
-      <div class="flex size-full items-center justify-center text-sm text-muted-foreground">
-        1 / 1
-      </div>
-    </AspectRatio>
-    <AspectRatio ratio={4 / 3} class="flex-1 bg-muted rounded-lg overflow-hidden">
-      <div class="flex size-full items-center justify-center text-sm text-muted-foreground">
-        4 / 3
-      </div>
-    </AspectRatio>
-  </div>
-);`;
+  <AspectRatio ratio={4 / 3} class="flex-1 bg-muted rounded-lg overflow-hidden">
+    <div class="flex size-full items-center justify-center text-sm text-muted-foreground">
+      4 / 3
+    </div>
+  </AspectRatio>
+</div>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Aspect Ratio</h1>
+  <p>A fixed-ratio container for media: one wrapper div whose inline aspect-ratio style locks the box shape while children stretch to fill it.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="aspect-ratio" />
   <AspectRatioContent />

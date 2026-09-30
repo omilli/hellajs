@@ -1,10 +1,8 @@
-# Button
-
-An interactive trigger styled byte-faithfully to shadcn's new-york-v4 Button: six variants, eight sizes, an `aria-invalid` state, and `onclick` wiring through dom's delegated event system, all baked into one owned file.
-
 ## Usage
 
-`variant` picks between `default`, `destructive`, `outline`, `secondary`, `ghost`, and `link`; `size` between `default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, and `icon-lg`. The root carries `data-slot="button"`, `data-variant`, and `data-size`, and `aria-invalid` reflects the `ariaInvalid` prop.
+`variant` picks between `default`, `destructive`, `outline`, `secondary`, `ghost`, and `link`; `size` between `default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, and `icon-lg`. The root carries `data-slot="button"`, `data-variant`, and `data-size`, and `aria-invalid` reflects the `ariaInvalid` prop:
+
+### jsx
 
 ```jsx
 import Button from './components/button';
@@ -18,17 +16,30 @@ const Actions = () => (
   </div>
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<div class="flex gap-2">
+  <${Button} onclick=${() => console.log('saved')}>Save</${Button}>
+  <${Button} variant="outline">Cancel</${Button}>
+  <${Button} variant="destructive" size="sm">Delete</${Button}>
+  <${Button} size="icon" aria-label="Add">+</${Button}>
+</div>`
+```
 
 ## Invalid State
 
-`ariaInvalid` styles the destructive ring state shadcn applies to form-adjacent buttons: pass it and the border and focus ring read the destructive token.
+`ariaInvalid` styles the border and focus ring with the destructive token, the treatment form-adjacent buttons get on failed validation:
 
 ```jsx
+import { signal } from '@hellajs/core';
 import Button from './components/button';
 
-<Button ariaInvalid={hasError} onclick={retry}>Retry submit</Button>
+const hasError = signal(true);
+
+const Retry = () => (
+  <Button ariaInvalid={hasError()} onclick={() => hasError(false)}>Retry submit</Button>
+);
 ```
-
-## Styling
-
-The style module exports `base`, `variants`, and `sizes`; the `class` composition bakes `variants.default` and `sizes.default`, and `props.class` lands last, so one-off classes from the call site always ride along. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities (`bg-primary`, `rounded-md`) in `cn()` so later tokens override earlier ones per utility group. To add or retune a variant or size, edit the `variants` and `sizes` maps in your copied file. The focus ring is shadcn's copied look - a 3px ring plus border color under `:focus-visible` - so an `outline-none` reset is part of the base, not a bug to undo. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

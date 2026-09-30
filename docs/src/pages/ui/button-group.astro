@@ -7,34 +7,22 @@ import ButtonGroupContent from "@ui/concepts/button-group.mdx";
 const title = "Button Group";
 const description = "Interactive Button Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const plateCode = `import { signal } from '@hellajs/core';
-import Button from './components/button';
-import ButtonGroup, { ButtonGroupText } from './components/button-group';
-import Input from './components/input';
+const plateCode = `<ButtonGroup>
+  <ButtonGroupText>https://</ButtonGroupText>
+  <Input value={url} oninput={(v) => url(v)} />
+  <Button variant="outline">Open</Button>
+</ButtonGroup>`;
 
-const url = signal('hellajs.com');
-
-const Labeled = () => (
-  <ButtonGroup>
-    <ButtonGroupText>https://</ButtonGroupText>
-    <Input value={url} oninput={(v) => url(v)} />
-    <Button variant="outline">Open</Button>
-  </ButtonGroup>
-);`;
-
-const verticalCode = `import Button from './components/button';
-import ButtonGroup from './components/button-group';
-
-const Stacked = () => (
-  <ButtonGroup orientation="vertical">
-    <Button variant="outline">Top</Button>
-    <Button variant="outline">Middle</Button>
-    <Button variant="outline">Bottom</Button>
-  </ButtonGroup>
-);`;
+const verticalCode = `<ButtonGroup orientation="vertical">
+  <Button variant="outline">Top</Button>
+  <Button variant="outline">Middle</Button>
+  <Button variant="outline">Bottom</Button>
+</ButtonGroup>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Button Group</h1>
+  <p>A flex container that joins buttons, inputs, and text into one visual control: inner edges are rounded and de-bordered so a row or column of separate elements reads as a single widget.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="button-group" />
   <ButtonGroupContent />

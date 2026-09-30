@@ -28,6 +28,8 @@ export default function Spinner(props: SpinnerProps): HellaNode {
         [base, props.class]
         // @hella:end
       }"
-    ><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   ` as HellaNode;
 }

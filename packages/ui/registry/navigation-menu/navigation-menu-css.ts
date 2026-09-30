@@ -1,7 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: the viewport's enter composes fade
-// + zoom from 90%, its exit fade + zoom to 95%; the indicator fades only.
 const in90 = keyframes({ from: { opacity: "0", transform: "scale(0.9)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 const fadeIn = keyframes({ from: { opacity: "0" } });
@@ -72,7 +70,6 @@ export const trigger = style({
   "&[data-state='open']:focus": {
     backgroundColor: "var(--accent)",
   },
-  // group-data-[state=open]:rotate-180 - the group is the trigger itself.
   "&[data-state='open'] svg": {
     transform: "rotate(180deg)",
   },
@@ -87,10 +84,6 @@ export const chevron = style({
   width: "0.75rem",
 }, { label: "hella-navigation-menu-chevron", layer: "hella" });
 
-// Contents always portal into the shared viewport slot, so the ref's
-// data-[motion=…] and group-data-[viewport=false]/navigation-menu variants
-// never match here and are left untranslated; the link-focus suppressions
-// and the md:absolute placement are the reachable remainder.
 export const content = style({
   left: "0",
   padding: "0.5rem",
@@ -166,9 +159,6 @@ export const viewportWrapper = style({
   zIndex: "50",
 }, { label: "hella-navigation-menu-viewport-wrapper", layer: "hella" });
 
-// Layout-neutral host for the portaled panel (the direction entry's
-// display:contents wrapper precedent - the html template needs an element to
-// carry the reactive portal child).
 export const contentAnchor = style({
   display: "contents",
 }, { label: "hella-navigation-menu-content-anchor", layer: "hella" });

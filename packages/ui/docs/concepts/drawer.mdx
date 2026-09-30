@@ -1,28 +1,33 @@
-# Drawer
-
-A drag-dismissable panel styled to shadcn's Drawer (vaul): an overlay plus a panel that mounts on one of the four screen edges, follows the pointer while dragged, and dismisses on release past a distance or velocity threshold. The caller owns an `open` signal and an `onClose` callback; the component wires everything else around them.
-
 ## Usage
+
+A drag-dismissable panel mounting on one of the four screen edges: the caller owns an `open` accessor and an `onClose` callback, the panel follows the pointer while dragged, and release past a distance or velocity threshold dismisses it.
+
+### jsx
 
 ```jsx
 import { signal } from '@hellajs/core';
 import Drawer from './components/drawer';
 
-const Notifications = () => {
-  const isOpen = signal(false);
-  const close = () => isOpen(false);
+const isOpen = signal(false);
+const close = () => isOpen(false);
 
-  return (
-    <Drawer open={isOpen} onClose={close} title="Notifications" description="Drag down to dismiss.">
-      <p>Three unread digests.</p>
-    </Drawer>
-  );
-};
+const Notifications = () => (
+  <Drawer open={isOpen} onClose={close} title="Notifications" description="Drag down to dismiss.">
+    <p>Three unread digests.</p>
+  </Drawer>
+);
 ```
+### html
 
-Opening portals the overlay and panel into `document.body` with `data-state="open"` and `data-vaul-drawer-direction`; the enter slide runs through the same transform transition the drag uses. While leaving, the dismissal wirings are down: the exit runs unwired and repeat `onClose` calls are no-ops.
+The html-format (`--format html`) works the same way.
 
-Props beyond `open` and `onClose`:
+```js
+html`<main>
+  <${Drawer} open=${isOpen} onClose=${close} direction="left" title="Filters">
+    <p>Three facets selected.</p>
+  </${Drawer}>
+</main>`
+```
 
 | Prop | Default | Behavior |
 |---|---|---|
@@ -32,92 +37,150 @@ Props beyond `open` and `onClose`:
 | `closeOnEscape` | `true` | Escape keydown while the panel is open calls `onClose` |
 | `closeOnOutside` | `true` | Pointerdown outside the panel (the overlay included) calls `onClose` |
 
-Escape and outside pointerdown route through the same `onClose`; the focus trap stays armed the whole time the drawer rests open. Unlike the sheet, the drawer has no built-in close button: dragging is the primary dismissal, and `DrawerClose` ships for compositions that want an explicit X.
+Opening portals the overlay and panel into `document.body` under `data-state="open"`; closing keeps the panel mounted until its exit slide ends, with the dismissal wirings down while it leaves. Escape and outside pointerdown route through the same `onClose`, and the focus trap stays armed the whole time the drawer rests open.
 
-The html-format file (`drawer.ts`, copied with `--format html`) renders through a template instead of JSX; the drawer mounts as a reactive child of whatever wraps it:
+## Drag Dismissal
 
-```js
-import { signal } from '@hellajs/core';
-import { html, mount } from '@hellajs/dom';
-import Drawer from './components/drawer';
-
-const isOpen = signal(false);
-const close = () => isOpen(false);
-
-mount(
-  html`
-    <main>
-      <${Drawer} open=${isOpen} onClose=${close} title="Confirm order">
-        <p>Two items, 84.00 total.</p>
-      </${Drawer}>
-    </main>
-  `,
-  '#app',
-);
-```
-
-## Drag Physics
-
-The whole panel is a drag surface (the grip handle at the top of a bottom drawer included), and the drag physics ride on [`onDrag`](/reference/dom/behaviors) from `@hellajs/dom`. Pointerdown starts the drag; the panel's transform follows the pointer live along its dismissal axis, and the overlay's opacity fades in proportion to how far the panel has traveled. Two thresholds decide the release:
+The whole panel is a drag surface (the grip handle at the top of a bottom drawer included): the panel's transform follows the pointer live along its dismissal axis, and the overlay's opacity fades in proportion to how far the panel has traveled. Release dismisses past either threshold:
 
 | Threshold | Value | Meaning |
 |---|---|---|
 | Distance | 25% of the panel size along the dismissal axis | Released past this fraction of the way out dismisses |
 | Velocity | 500px/s toward the edge at release | A flick dismisses no matter how short the drag |
 
-Below both thresholds the panel springs back: the `data-dragging` attribute drops, the transform transition restores, and the cleared transform animates to identity. Above either one the panel receives its off-edge transform, `onClose` fires, and the exit slide unmounts the panel (a 300ms fallback budget covers environments where `transitionend` never fires).
+Below both thresholds the panel springs back through the restored transform transition - the same transition carrying the enter and exit slides, so open, close, and drag all move through one mechanism. Above either one the panel receives its off-edge transform, `onClose` fires, and the panel unmounts when the exit slide ends.
 
 <div role="alert" class="alert alert-info alert-soft">
   <span>Interactive elements opt out of the drag: pointerdowns on buttons, links, inputs, or anything marked `data-no-drag` never move the panel.</span>
 </div>
 
-## Direction and Divergences
+## Direction
 
-`direction` mirrors vaul's `Drawer.Root` prop, flattened onto the content the way hella flattens every context API (no provider, the caller passes values). The four directions translate the shadcn reference verbatim: `"bottom"` gets the grip handle, top margin, rounded top corners, and top border; `"top"` mirrors it below; `"left"` / `"right"` take the 75%-width side treatment with `sm:max-w-sm`.
+`direction` picks the edge the panel mounts on and carries both the geometry and the slide direction:
 
-Two deliberate divergences from the reference file, both consequences of reimplementing vaul's behavior over hella primitives:
+| Direction | Geometry |
+|---|---|
+| `"bottom"` (default) | Grip handle, top margin, rounded top corners, top border |
+| `"top"` | Mirrors the bottom treatment: rounded bottom corners, bottom border |
+| `"left"` / `"right"` | Full-height side panel, three-quarters wide capped at 24rem from wide screens up |
 
-- The content string adds `data-[dragging]:transition-none` (tailwind flavor) so the pointer-follow is instant and the spring-back animates; vaul toggles the same transition inline. The css flavor carries the parallel rule under `[data-dragging='true']`.
-- The grip handle carries a `data-slot="drawer-handle"` attribute so the css flavor can style it through the content part's selectors; the reference's bare div only carries utility classes.
+## Manual Parts
 
-## Structure Parts
+Nine named parts ship beside the default `Drawer` for custom composition: `DrawerTrigger`, `DrawerClose`, `DrawerPortal`, `DrawerOverlay`, `DrawerContent`, `DrawerHeader`, `DrawerFooter`, `DrawerTitle`, and `DrawerDescription`. State is explicit - portal the overlay and panel yourself, hand both a `state` accessor, and share one drag-fraction signal between the overlay and the content so the overlay keeps fading with the drag.
 
-Nine named parts ship beside the default `Drawer`: `DrawerTrigger`, `DrawerClose`, `DrawerPortal`, `DrawerOverlay`, `DrawerContent`, `DrawerHeader`, `DrawerFooter`, `DrawerTitle`, and `DrawerDescription`, each carrying its `data-slot` and class compose. hella has no Radix-style context primitive, so manual composition passes state explicitly: portal the overlay and panel yourself, hand both a `state` accessor, and share one drag-fraction signal between the overlay and the content so the overlay keeps fading with the drag.
+### DrawerTrigger
+
+A bare button; wire its click to your own signal write.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The trigger label |
+
+### DrawerClose
+
+The X button with its `sr-only` "Close" label - the default panel renders no close button of its own, so dragging is the primary dismissal and this part adds an explicit one.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives the button's `data-state` |
+| `onClose` | `() => void` | Click callback |
+
+### DrawerPortal
+
+Wraps children in a `Portal to="body"` for compositions that want the named part.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The portaled nodes |
+
+### DrawerOverlay
+
+The screen-covering backdrop `div` carrying `data-slot="drawer-overlay"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives the overlay's `data-state` and its enter/exit fade |
+| `fraction` | `Signal<number>` | Drag fraction (0 to 1 toward dismissal) driving the proportional fade while the panel is dragged |
+
+### DrawerContent
+
+The `role="dialog"` panel carrying `data-slot="drawer-content"` and the grip handle: focus trap plus escape and outside dismissal while open, whole-panel drag along the dismissal axis, torn down the moment the exit starts.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle; `closed` tears the dismissal wirings down |
+| `direction` | `"top" \| "right" \| "bottom" \| "left"` | Sets `data-vaul-drawer-direction`, the dismissal axis, and the per-edge geometry (default `"bottom"`) |
+| `fraction` | `Signal<number>` | The shared drag fraction; the overlay fades proportionally when both parts receive the same signal |
+| `labelledBy` | `string` | Rendered as the panel's `aria-labelledby` |
+| `describedBy` | `string` | Rendered as the panel's `aria-describedby` |
+| `closeOnEscape` | `boolean` | Escape keydown calls `onClose` (default `true`) |
+| `closeOnOutside` | `boolean` | Outside pointerdown calls `onClose` (default `true`) |
+| `onClose` | `() => void` | Dismissal callback - drag release, escape, and outside pointerdown all fire it |
+| `onExited` | `() => void` | Called when the exit slide ends under `data-state="closed"` |
+| `children` | `HellaChildren` | The panel body |
+
+### DrawerHeader
+
+The top grouping `div` carrying `data-slot="drawer-header"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title and description nodes |
+
+### DrawerFooter
+
+The bottom grouping `div` carrying `data-slot="drawer-footer"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Action nodes, typically buttons |
+
+### DrawerTitle
+
+The heading: an `h2` carrying `data-slot="drawer-title"` whose `id` the panel's `aria-labelledby` points at.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `id` | `string` | Rendered as the heading's `id` |
+| `children` | `HellaChildren` | The title text |
+
+### DrawerDescription
+
+The supporting line: a `p` carrying `data-slot="drawer-description"` whose `id` the panel's `aria-describedby` points at.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `id` | `string` | Rendered as the paragraph's `id` |
+| `children` | `HellaChildren` | The description text |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ```jsx
 import { signal } from '@hellajs/core';
 import { Portal } from '@hellajs/dom';
 import Drawer, { DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerOverlay, DrawerTitle } from './components/drawer';
 
-const Manual = () => {
-  const isOpen = signal(false);
-  const state = () => (isOpen() ? 'open' : 'closed');
-  const dragFraction = signal(0);
+const isOpen = signal(false);
+const state = () => (isOpen() ? 'open' : 'closed');
+const dragFraction = signal(0);
 
-  return (
-    <>
-      <button on:click={() => isOpen(true)}>Open</button>
-      {() => isOpen() && (
-        <Portal to="body">
-          <DrawerOverlay state={state} fraction={dragFraction} />
-          <DrawerContent state={state} fraction={dragFraction} labelledBy="drawer-manual-title" onClose={() => isOpen(false)}>
-            <DrawerHeader>
-              <DrawerTitle id="drawer-manual-title">Cart</DrawerTitle>
-              <DrawerDescription>Three items reserved for you.</DrawerDescription>
-            </DrawerHeader>
-            <DrawerFooter>
-              <DrawerClose onClose={() => isOpen(false)} />
-            </DrawerFooter>
-          </DrawerContent>
-        </Portal>
-      )}
-    </>
-  );
-};
+const Manual = () => (
+  <>
+    <button on:click={() => isOpen(true)}>Open</button>
+    {() => isOpen() && (
+      <Portal to="body">
+        <DrawerOverlay state={state} fraction={dragFraction} />
+        <DrawerContent state={state} fraction={dragFraction} labelledBy="drawer-manual-title" onClose={() => isOpen(false)}>
+          <DrawerHeader>
+            <DrawerTitle id="drawer-manual-title">Cart</DrawerTitle>
+            <DrawerDescription>Three items reserved for you.</DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter>
+            <DrawerClose onClose={() => isOpen(false)} />
+          </DrawerFooter>
+        </DrawerContent>
+      </Portal>
+    )}
+  </>
+);
 ```
-
-`DrawerTrigger` is a bare button: wire its click to your own signal write. `DrawerClose` is the X button with its `sr-only` "Close" label. `DrawerPortal` wraps children in a `Portal to="body"` when a manual composition wants the named part for symmetry.
-
-## Styling
-
-The module exports `base` (the overlay), `content` (the panel frame plus the transform transition), `contentDirections` (the per-edge geometry), `close`, `header`, `footer`, `title`, and `description`; the handle look registers as a raw attribute selector under the same layer, after the part classes. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; the overlay fades are hand-rolled `@keyframes`, while the panel animates through its transform transition instead of keyframes, exactly the mechanism the drag drives. The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`data-[vaul-drawer-direction]` geometry, the grip handle's `group-data` visibility), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. The thresholds live as named constants at the top of the file (`DISMISS_DISTANCE` at 0.25, `DISMISS_VELOCITY` at 500); retune them there and the docs here become the only stale artifact. `props.class` lands last in the panel composition, so one-off classes from the call site always ride along. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

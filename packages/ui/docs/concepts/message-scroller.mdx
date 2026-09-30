@@ -1,8 +1,8 @@
-# Message Scroller
-
-An auto-sticking chat scroll container styled byte-faithfully to shadcn's new-york-v4 MessageScroller: a viewport that pins to the bottom while new content arrives, flips to a jump-to-end button when you scroll away, and hands its state to you explicitly instead of hiding it behind a provider.
-
 ## Usage
+
+The composed root wraps your children in the viewport and content stack and renders the jump button (`showScrollButton={false}` opts out); it owns the state.
+
+### jsx
 
 ```jsx
 import { MessageScroller, MessageScrollerItem } from './components/message-scroller';
@@ -14,8 +14,18 @@ const Chat = () => (
   </MessageScroller>
 );
 ```
+### html
 
-The composed root owns the state: it wraps your children in the viewport and content stack and renders the jump button (`showScrollButton={false}` opts out).
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${MessageScroller} class="h-96">
+    <${MessageScrollerItem}>First message</${MessageScrollerItem}>
+    <${MessageScrollerItem}>Second message</${MessageScrollerItem}>
+  </${MessageScroller}>
+</main>`
+```
 
 ## The auto-stick contract
 
@@ -45,13 +55,79 @@ const Manual = () => (
 
 `threshold` widens or tightens the at-bottom band, and `scrollToBottom` overrides the scroll action for both the auto-stick and the button.
 
-## Divergences from upstream
+## Intentionally Absent
+
+Some pieces common to this component family are absent by design; they stay out rather than approximated:
 
 - `MessageScrollerProvider` renders children only; hella has no context, so state lives on signals you own.
-- `MessageScrollerItem` drops upstream's per-item `scrollAnchor` prop; pinning is viewport-level through the content observer.
-- The `scroll-fade-b`, `scrollbar-*`, and `shimmer`-style tokens that upstream fills through scrollbar and animation plugins stay verbatim in the tailwind flavor but carry no declarations in the vendored theme; the css flavor omits them.
+- `MessageScrollerItem` carries no per-item scroll anchor; pinning is viewport-level through the content observer.
+- The `scroll-fade-b`, `scrollbar-*`, and `shimmer`-style tokens that scrollbar and animation plugins would fill stay verbatim in the tailwind flavor but carry no declarations in the vendored theme; the css flavor omits them.
 - The `observe` prop (viewport and root) swaps the content watcher for testing in environments whose `ResizeObserver` never delivers; production code keeps the real observer.
 
-## Styling
+## Manual Parts
 
-The style module exports `base`, `viewport`, `content`, `item`, `buttonBase` plus `buttonVariants` and `buttonSizes` (the duplicated button declarations), the `overlay` well behind the button, and `srOnly`; the direction and rtl state rules register as raw attribute selectors at the bottom of the css module, and the tailwind flavor carries the transition states such as `data-[active=false]:scale-95` verbatim in `cn()`-wrapped strings. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+All six exports are named; the composed root wraps the rest, and manual composition hands the same state to the viewport and button explicitly.
+
+### MessageScroller
+
+The composed root: it adopts or owns the at-bottom signal, wraps the children in the viewport and content stack, and renders the jump button.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `atBottom` | `Signal<boolean>` | Shared state; the root owns an internal signal when absent |
+| `showScrollButton` | `boolean` | Set `false` to omit the jump button |
+| `threshold` | `number` | Distance in px from the bottom still counted as at-bottom (default `80`) |
+| `scrollToBottom` | `() => void` | Overrides the scroll action for auto-stick and the button |
+| `observe` | `(target: Element, onGrow: () => void) => () => void` | Swaps the content watcher; defaults to a `ResizeObserver` |
+| `children` | `HellaChildren` | The message items |
+
+### MessageScrollerViewport
+
+The scroll container: a `div` carrying `data-slot="message-scroller-viewport"` whose passive scroll listener and content watcher drive the shared state.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `atBottom` | `Signal<boolean>` | Shared state; the viewport owns an internal signal when absent |
+| `threshold` | `number` | At-bottom band in px (default `80`) |
+| `scrollToBottom` | `() => void` | Overrides the auto-stick scroll action |
+| `observe` | `(target: Element, onGrow: () => void) => () => void` | Swaps the content watcher, attached to the content stack |
+| `children` | `HellaChildren` | The content stack |
+
+### MessageScrollerContent
+
+The content stack: a `div` carrying `data-slot="message-scroller-content"` that the growth watcher observes.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The items |
+
+### MessageScrollerItem
+
+One message row: a `div` carrying `data-slot="message-scroller-item"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The message node |
+
+### MessageScrollerButton
+
+The jump button: rendered while the shared state reads false and hidden while true through `data-active`; `direction="start"` inverts the visibility semantics for jump-to-start placements.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `atBottom` | `Signal<boolean>` | Drives `data-active`; the default scroll action writes it back to true |
+| `direction` | `"start" \| "end"` | Which end the button jumps to (default `"end"`), rendered as `data-direction` |
+| `variant` / `size` | button variant and size maps | The duplicated button declarations (defaults `"secondary"` / `"icon-sm"`) |
+| `scrollToBottom` | `() => void` | Overrides the default jump action |
+| `onclick` | `() => void` | A full replacement for the default click behavior |
+| `children` | `HellaChildren` | Optional custom content; the default is the arrow icon plus a screen-reader label |
+
+### MessageScrollerProvider
+
+A passthrough kept for API parity: renders `children` only; hella has no context, so state lives on signals you own.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The composed shell |
+
+Every part also takes a `class` string, landing last in its style composition.

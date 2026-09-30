@@ -1,10 +1,8 @@
-# Aspect Ratio
-
-A fixed-ratio container for media: one wrapper `div` whose inline `aspect-ratio` style locks the box shape while children stretch to fill it, carrying shadcn's new-york-v4 `data-slot="aspect-ratio"` root.
-
 ## Usage
 
-The wrapper carries `aspect-ratio: <ratio>` plus `width: 100%` inline (the ratio is a prop, so it cannot live in a stylesheet). The component diverges from Radix's padding-bottom technique deliberately: the CSS `aspect-ratio` property is the modern equivalent, needs no inner absolute wrapper, and keeps the ratio readable in one style declaration. Children render as-is, so images should bring `size-full` and an object-fit utility to cover the frame:
+The wrapper carries `aspect-ratio: <ratio>` plus `width: 100%` inline (the ratio is a prop, so it cannot live in a stylesheet). Children render as-is, so images should bring `size-full` and an object-fit utility to cover the frame:
+
+### jsx
 
 ```jsx
 import AspectRatio from './components/aspect-ratio';
@@ -14,6 +12,17 @@ const Hero = () => (
     <img src="/hero.png" alt="Product hero" class="size-full object-cover" />
   </AspectRatio>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${AspectRatio} ratio=${16 / 9} class="bg-muted rounded-lg overflow-hidden">
+    <img src="/hero.png" alt="Product hero" class="size-full object-cover" />
+  </${AspectRatio}>
+</main>`
 ```
 
 ## Default Ratio
@@ -29,7 +38,3 @@ const Square = () => (
   </AspectRatio>
 );
 ```
-
-## Styling
-
-The style module exports a single `base` map (`position: relative`, the Radix-root technique this entry keeps); the compose bakes `base` plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor keeps the ratio inline (a prop value, not a utility) and wraps the class array in `cn()` so author utilities can add rounding, cropping, or a background. Everything visual about the frame comes from your `class` prop. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

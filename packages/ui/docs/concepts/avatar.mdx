@@ -1,10 +1,8 @@
-# Avatar
-
-A user portrait with a graceful fallback: a rounded relative wrapper stacking an image and a fallback initial, plus a status badge, a overlapping group, and a group count. Structure and class strings match shadcn's new-york-v4 Avatar; the image/fallback swap is reimplemented over signals instead of Radix.
-
 ## Usage
 
-There is no context object. The image owns its load state and the fallback reads it through one explicit signal you pass to both parts: `AvatarImage` hides its `img` while the signal reads false and flips it on the native `load`/`error` events, and `AvatarFallback` hides while the same signal reads true. Both parts stay mounted (the swap is attribute-driven, not conditional rendering), so a broken URL that fires `error` drops the image back out and the initial returns:
+The image owns its load state and the fallback reads it through one explicit signal you pass to both parts: `AvatarImage` hides its `img` while the signal reads false and flips it on the native `load`/`error` events, and `AvatarFallback` hides while the same signal reads true. Both parts stay mounted (the swap is attribute-driven, not conditional rendering), so a broken URL that fires `error` drops the image back out and the initial returns:
+
+### jsx
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -19,12 +17,24 @@ const Portrait = () => (
   </Avatar>
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Avatar}>
+    <${AvatarImage} src="/milli.png" alt="Milli" loaded=${loaded} />
+    <${AvatarFallback} loaded=${loaded}>M</${AvatarFallback}>
+  </${Avatar}>
+</main>`
+```
 
 An `AvatarImage` without a shared signal still hides itself until its own load resolves; pass the signal only when a sibling fallback must react.
 
 ## Groups
 
-Groups overlap their avatars with a negative offset and a background ring; the count chip picks up the group's size:
+`AvatarGroup` overlaps its avatars with a negative offset and a background ring; `AvatarGroupCount` picks up the group's size:
 
 ```jsx
 import Avatar, { AvatarFallback, AvatarGroup, AvatarGroupCount } from './components/avatar';
@@ -38,7 +48,7 @@ const Team = () => (
 );
 ```
 
-## Sizes and Badge
+## Sizes
 
 `size` sets `data-size` (`sm`, `default`, `lg`); the root, fallback, and badge read it through group selectors, so one prop rescales the whole stack. The badge pins to the bottom-right corner:
 
@@ -53,6 +63,51 @@ const Statused = () => (
 );
 ```
 
-## Styling
+## Manual Parts
 
-The style module exports `base`, `image`, `fallback`, `badge`, `group`, and `groupCount` maps; each part's compose bakes its own class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the size conditions compile to `[data-slot='avatar'][data-size=…]` and `:has()` ancestor selectors. The tailwind flavor carries shadcn's literal utilities verbatim, including the named-group conditions (`group-data-[size=sm]/avatar:text-xs`, `*:data-[slot=avatar]:ring-2`, and the `group-has-data-[size=lg]/avatar-group:size-10` count scaling) wrapped in `cn()`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+`AvatarImage`, `AvatarFallback`, `AvatarBadge`, `AvatarGroup`, and `AvatarGroupCount` ship beside the default root for custom composition.
+
+### AvatarImage
+
+The portrait: an `img` carrying `data-slot="avatar-image"`, hidden until its load state resolves.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `src` | `string` | Image URL |
+| `alt` | `string` | Alternative text |
+| `loaded` | `Signal<boolean>` | Shared load state: flipped to `true` on the native `load` event, back to `false` on `error`; defaults to a private signal |
+
+### AvatarFallback
+
+The initial: a `span` carrying `data-slot="avatar-fallback"`, hidden while the shared signal reads true.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `loaded` | `() => boolean` | The image's shared signal; hides the fallback while it reads true |
+| `children` | `HellaChildren` | Fallback node, typically an initial |
+
+### AvatarBadge
+
+The status dot: a `span` carrying `data-slot="avatar-badge"`, pinned to the bottom-right corner.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Content inside the badge |
+
+### AvatarGroup
+
+The overlapping row: a `div` carrying `data-slot="avatar-group"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The stacked avatars and count chip |
+
+### AvatarGroupCount
+
+The count chip: a `div` carrying `data-slot="avatar-group-count"`, scaled by the group's `data-size`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Count label, e.g. `+5` |
+
+Every part also takes a `class` string, landing last in its style composition.

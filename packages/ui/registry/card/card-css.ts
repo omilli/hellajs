@@ -54,10 +54,6 @@ export const footer = style({
   paddingInline: "1.5rem",
 }, { label: "hella-card-footer", layer: "hella" });
 
-// The `[.border-b]` / `[.border-t]` arbitrary variants match an ancestor or
-// previous sibling carrying the class - ancestor/sibling selectors the
-// class-scoped style() nesting cannot express, so they register as raw
-// attribute selectors inside the same layer.
 css({
   "@layer hella": {
     ".border-b [data-slot='card-header'], .border-b ~ [data-slot='card-header']": {

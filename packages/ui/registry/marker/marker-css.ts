@@ -67,9 +67,6 @@ export const content = style({
   },
 }, { label: "hella-marker-content", layer: "hella" });
 
-// State the class-scoped style() nesting cannot express: the named-group
-// data-variant condition on the marker root registers as a raw attribute
-// selector in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='marker'][data-variant='separator'] [data-slot='marker-content']": {

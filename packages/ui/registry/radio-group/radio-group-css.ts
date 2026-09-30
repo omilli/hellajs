@@ -56,8 +56,6 @@ export const icon = style({
   width: "0.5rem",
 }, { label: "hella-radio-group-icon", layer: "hella" });
 
-// The composed root wraps every item in a label row so the label text selects
-// the control (no-context divergence: the ref's label pairing is user markup).
 export const row = style({
   alignItems: "center",
   display: "flex",

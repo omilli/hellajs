@@ -1,10 +1,8 @@
-# Card
-
-A panel surface styled to shadcn's seven-part Card: a default `Card` plus named `CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`, and `CardFooter` parts, each carrying its `data-slot` and composable in any arrangement.
-
 ## Usage
 
-Every part takes `{ children?, class? }`, and the header automatically switches to a two-column grid when a `CardAction` is present.
+Every part takes `{ children?, class? }`, and the header automatically switches to a two-column grid when a `CardAction` is present:
+
+### jsx
 
 ```jsx
 import Card, { CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/card';
@@ -28,31 +26,74 @@ const ProfileCard = () => (
   </Card>
 );
 ```
+### html
 
-The html-format file (`card.ts`, copied with `--format html`) renders through a template instead of JSX; each part is a plain function call:
+The html-format (`--format html`) works the same way.
 
 ```js
-import { html, mount } from '@hellajs/dom';
-import Card, { CardContent, CardDescription, CardHeader, CardTitle } from './components/card';
-
-mount(
-  html`
-    <main>
-      <${Card} class="w-80">
-        ${CardHeader({
-          children: [
-            CardTitle({ children: 'Ada Lovelace' }),
-            CardDescription({ children: 'Wrote the first program.' }),
-          ],
-        })}
-        ${CardContent({ children: html`<p>Published notes on the Analytical Engine in 1843.</p>` })}
-      </${Card}>
-    </main>
-  `,
-  '#app',
-);
+html`<main>
+  <${Card} class="w-80">
+    <${CardHeader}>
+      <${CardTitle}>Ada Lovelace</${CardTitle}>
+      <${CardDescription}>Wrote the first program.</${CardDescription}>
+    </${CardHeader}>
+    <${CardContent}>
+      <p>Published notes on the Analytical Engine in 1843.</p>
+    </${CardContent}>
+  </${Card}>
+</main>`
 ```
 
-## Styling
+## Manual Parts
 
-The style module exports one class per part (`base`, `header`, `title`, `description`, `action`, `content`, `footer`), and each part's compose bakes its own class plus `props.class`, which lands last. Every part renders its `data-slot` (`card`, `card-header`, `card-title`, `card-description`, `card-action`, `card-content`, `card-footer`), so one-off overrides can also target parts through the `[data-slot]` attribute selectors. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities (`bg-card`, `rounded-xl`) in `cn()` so later tokens override earlier ones per utility group. Edit any map in place to restyle that part everywhere. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+`CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`, and `CardFooter` ship beside the default root for custom composition.
+
+### CardHeader
+
+The top row: a `div` carrying `data-slot="card-header"`, switching to a two-column grid when a `CardAction` joins its children.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title, description, and optional action nodes |
+
+### CardTitle
+
+The heading: a `div` carrying `data-slot="card-title"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title node |
+
+### CardDescription
+
+The supporting line: a `div` carrying `data-slot="card-description"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Description node |
+
+### CardAction
+
+The header's side slot: a `div` carrying `data-slot="card-action"`, aligned opposite the title.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Action nodes, typically buttons |
+
+### CardContent
+
+The body: a `div` carrying `data-slot="card-content"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Body nodes |
+
+### CardFooter
+
+The bottom row: a `div` carrying `data-slot="card-footer"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Footer nodes |
+
+Every part also takes a `class` string, landing last in its style composition.

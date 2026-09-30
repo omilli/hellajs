@@ -1,15 +1,11 @@
 import { keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: the enter composes fade +
-// zoom(95%) with the side's slide direction (named by the data-side value
-// that applies it), the exit is fade + zoom without slide.
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-// The trigger zone is a bare pass-through span (verbatim from the ref).
 export const content = style({
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",

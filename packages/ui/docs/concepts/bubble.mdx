@@ -1,10 +1,8 @@
-# Bubble
-
-Chat message bubbles styled byte-faithfully to shadcn's new-york-v4 Bubble: a group stack, a variant-carrying bubble with asymmetric content corners, the content shell, and floating reaction chips, all presentational with no runtime beyond `cn`-style class composition.
-
 ## Usage
 
 `variant` switches the bubble surface: `default` (primary fill), `secondary`, `muted`, `tinted` (primary-tinted in light and dark), `outline`, `ghost` (borderless, padding-free), and `destructive`. `align="end"` floats the bubble to the inline end, and the same shift applies automatically to any bubble inside an end-aligned message row.
+
+### jsx
 
 ```jsx
 import { Bubble, BubbleContent, BubbleGroup } from './components/bubble';
@@ -19,6 +17,22 @@ const Thread = () => (
     </Bubble>
   </BubbleGroup>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${BubbleGroup}>
+    <${Bubble} variant="outline">
+      <${BubbleContent}>How does the scroller pin to the bottom?</${BubbleContent}>
+    </${Bubble}>
+    <${Bubble} align="end">
+      <${BubbleContent}>A ResizeObserver watches the content and scrolls while you are at the bottom.</${BubbleContent}>
+    </${Bubble}>
+  </${BubbleGroup}>
+</main>`
 ```
 
 ## Reactions
@@ -43,8 +57,46 @@ const Reacted = () => (
 
 ## Composition Notes
 
-All four exports are presentational. Upstream's `asChild` slot rendering (BubbleContent) is dropped: hella has no Radix Slot, so render the element you want directly and pass its classes through `class`. The bubble's content hover styles key on `:is(button, a)`, so an anchor or button as the content keeps the interactive affordances.
+All four exports are presentational. `BubbleContent` renders the element or node you hand it as is; there is no slot-rendering indirection, so render the element you want directly and pass its classes through `class`. The bubble's content hover styles key on `:is(button, a)`, so an anchor or button as the content keeps the interactive affordances.
 
-## Styling
+## Manual Parts
 
-The style module exports `base` (group), `bubble` plus `variants` (the seven bubble surfaces), `content`, and `reactions` plus `reactionsSides` and `reactionsAligns`; the bubble's compose bakes `variants[props.variant]` and `props.class` lands last. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities, child selectors such as `*:data-[slot=bubble-content]:bg-primary` included, in `cn()`. Retune the 80% max width on the `bubble` map to widen the column. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+All four exports are named; compose them by hand in any shape.
+
+### BubbleGroup
+
+The stack: a `div` carrying `data-slot="bubble-group"` that spaces its bubbles vertically.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The bubbles |
+
+### Bubble
+
+The bubble: a `div` carrying `data-variant` and `data-align`; end alignment floats it to the inline end.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `variant` | `"default" \| "secondary" \| "muted" \| "tinted" \| "outline" \| "ghost" \| "destructive"` | The bubble surface (default `"default"`) |
+| `align` | `"start" \| "end"` | `"end"` floats the bubble to the inline end (default `"start"`); bubbles inside an end-aligned message row inherit the shift |
+| `children` | `HellaChildren` | The content shell and reaction chips |
+
+### BubbleContent
+
+The content shell: a `div` carrying `data-slot="bubble-content"` with the asymmetric corners.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Message text or interactive nodes; hover styles key on `:is(button, a)` |
+
+### BubbleReactions
+
+The floating chip row positioned against its bubble, carrying `data-side` and `data-align`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `side` | `"top" \| "bottom"` | Pins the chips above or below (default `"bottom"`) |
+| `align` | `"start" \| "end"` | Picks the corner (default `"end"`) |
+| `children` | `HellaChildren` | The chips, typically buttons (the `has-[button]` rule unpads them) |
+
+Every part also takes a `class` string, landing last in its style composition.

@@ -1,10 +1,8 @@
-# Input
-
-A single-line form field styled to shadcn's new-york-v4 Input: one base look, a focus ring, and an invalid state, reading and writing its value reactively in one owned file per format.
-
 ## Usage
 
 `value` accepts a plain string or a bare [`signal`](/reference/core/signal). A signal keeps the field in sync after mount, and `oninput` receives the typed string on every input event. The input carries `data-slot="input"` for targeting.
+
+### jsx
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -24,29 +22,32 @@ const EmailField = () => {
   );
 };
 ```
+### html
 
-The html-format file (`input.ts`, copied with `--format html`) renders through a template instead of JSX; the element is a plain function call:
+The html-format (`--format html`) works the same way.
 
 ```js
-import { html, mount } from '@hellajs/dom';
-import Input from './components/input';
-
-mount(
-  html`<form>${Input({ type: 'email', placeholder: 'you@example.com' })}</form>`,
-  '#app',
-);
+html`<${Input}
+  type="email"
+  placeholder="you@example.com"
+  ariaLabel="Email address"
+  value=${email}
+  oninput=${(v) => email(v)}
+/>`
 ```
 
 ## Invalid State
 
-`ariaInvalid` drives the invalid state: the destructive border and ring shadcn applies to failed validation.
+`ariaInvalid` drives the invalid state: the destructive border and ring on failed validation.
 
 ```jsx
+import { signal } from '@hellajs/core';
 import Input from './components/input';
 
-<Input placeholder="Required field" ariaInvalid={submitted && email === ''} />
+const email = signal('');
+const submitted = signal(true);
+
+const Required = () => (
+  <Input placeholder="Required field" ariaInvalid={submitted() && email() === ''} />
+);
 ```
-
-## Styling
-
-shadcn's Input has no variants or sizes: the style module exports `base`, `focus`, and `invalid`, and the composition bakes all three in that order. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities (`dark:bg-input/30`, `focus-visible:ring-[3px]`) in `cn()` so a `class` prop from the call site lands last. Edit any of the three maps in place; focus styling is shadcn's ring (a 3px ring plus border color under `:focus-visible`), not an outline. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

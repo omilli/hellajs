@@ -41,7 +41,9 @@ const chevronIcon = (): HellaNode =>
       [chevron]
       // @hella:end
     }"
-  ><path d="m6 9 6 6 6-6" /></svg>` as HellaNode;
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>` as HellaNode;
 
 interface NavigationMenuListProps {
   children?: HellaChildren;
@@ -110,7 +112,9 @@ export function NavigationMenuTrigger(props: NavigationMenuTriggerProps): HellaN
         props.onActivate?.();
         if (props.value !== undefined) document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id: props.value, open } }));
       }}"
-    >${() => props.children}${chevronIcon()}</button>
+    >
+      ${() => props.children}${chevronIcon()}
+    </button>
   ` as HellaNode;
 }
 
@@ -194,7 +198,8 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): HellaN
           }}"
         >${() => props.children}</div>` as HellaChild,
       ],
-    })}</div>
+    })}
+    </div>
   ` as HellaNode;
 }
 
@@ -238,7 +243,8 @@ export function NavigationMenuViewport(props: NavigationMenuViewportProps): Hell
         [viewportWrapper, props.class]
         // @hella:end
       }"
-    ><div
+    >
+      <div
         data-slot="navigation-menu-viewport"
         id="${props.id}"
         data-state="${() => (active() ? "open" : "closed")}"
@@ -247,7 +253,7 @@ export function NavigationMenuViewport(props: NavigationMenuViewportProps): Hell
           [viewport]
           // @hella:end
         }"
-      ></div>
+      />
     </div>
   ` as HellaNode;
 }
@@ -323,13 +329,14 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): He
         while (wirings.length) wirings.pop()!();
         node = undefined;
       }}"
-    ><div
+    >
+      <div
         class="${
           // @hella:compose
           [diamond]
           // @hella:end
         }"
-      ></div>
+      />
     </div>
   ` as HellaNode;
 }
@@ -377,6 +384,8 @@ export default function NavigationMenu(props: NavigationMenuProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (wirings.length) wirings.pop()!();
       }}"
-    >${() => props.children}${() => (props.viewport === false ? null : NavigationMenuViewport({ active: () => active() !== "" }))}</div>
+    >
+      ${() => props.children}${() => (props.viewport === false ? null : NavigationMenuViewport({ active: () => active() !== "" }))}
+    </div>
   ` as HellaNode;
 }

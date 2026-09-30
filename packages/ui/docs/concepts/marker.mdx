@@ -1,10 +1,8 @@
-# Marker
-
-A labeled divider row styled byte-faithfully to shadcn's new-york-v4 Marker: a full-width strip that presents a short label, with optional rule pseudo-elements or a bottom border, built for timeline captions, empty-state annotations, and section leads.
-
 ## Usage
 
 `Marker` renders the strip, `MarkerIcon` an optional leading icon box, and `MarkerContent` the label:
+
+### jsx
 
 ```jsx
 import Marker, { MarkerContent, MarkerIcon } from './components/marker';
@@ -15,6 +13,18 @@ const Caption = () => (
     <MarkerContent>Migrated 12 entries</MarkerContent>
   </Marker>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Marker}>
+    <${MarkerIcon}>X</${MarkerIcon}>
+    <${MarkerContent}>Migrated 12 entries</${MarkerContent}>
+  </${Marker}>
+</main>`
 ```
 
 ## Variants
@@ -31,6 +41,33 @@ const Ruled = () => (
 );
 ```
 
-## Styling
+## Manual Parts
 
-The css style module exports `base` (the strip layout and link treatment), `variants` (the separator pseudo-element rules and the border treatment; the map carries no `default` key, mirroring the classless ref variant), `icon`, and `content` plus the raw marker-variant selector that centers content between the rules. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim, including the `before:`/`after:` rule pseudo-element utilities and the `wrap-break-word` label treatment, wrapped in `cn()`. Restyle the rules by editing the `&::before` and `&::after` keys inside the separator variant map. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+`MarkerIcon` and `MarkerContent` ship beside the default strip for custom composition.
+
+### Marker
+
+The labeled divider strip: carries `data-variant` for the treatment selectors.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `variant` | `"default" \| "separator" \| "border"` | Strip treatment (default `"default"`) |
+| `children` | `HellaChildren` | Icon and content nodes |
+
+### MarkerIcon
+
+The leading icon box: an `aria-hidden` span, sized by the style layer.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Icon node or glyph |
+
+### MarkerContent
+
+The label: a `span` centered by the separator variant's selectors.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Label text |
+
+Every part also takes a `class` string, landing last in its style composition.

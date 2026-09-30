@@ -1,10 +1,8 @@
-# Sonner
-
-An opinionated toast queue styled to shadcn's Sonner wrapper: `toast()` calls stack as cards on a screen edge, auto-dismiss on a pausable countdown, and swipe away past a distance threshold. Zero dependencies: no `sonner` package and no `next-themes` underneath. The entry is the registry's first non-component export: one copied file carries both the `Toaster` component and the `toast` queue API, and the queue lives as a module-level singleton in that file: one copy/paste module owns one queue per app.
-
 ## Usage
 
-Mount one `<Toaster />` high in the app (it portals the stack into `document.body`), then call `toast()` from anywhere that imports the same copied module.
+An opinionated toast queue: `toast()` calls stack as cards on a screen edge, auto-dismiss on a pausable countdown, and swipe away past a distance threshold. The queue lives as a module-level singleton in the copied file - one copy/paste module owns one queue per app. Mount one `<Toaster />` high in the app (it portals the stack into `document.body`), then call `toast()` from anywhere that imports the same copied module.
+
+### jsx
 
 ```jsx
 import Toaster, { toast } from './components/sonner';
@@ -16,6 +14,16 @@ const App = () => (
   </>
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Toaster} position=${'bottom-right'} />
+  <button e:click=${() => toast('Saved')}>Save</button>
+</main>`
+```
 
 `toast(message, options)` returns a `{ id, dismiss() }` handle:
 
@@ -26,14 +34,16 @@ const App = () => (
 | `action` | - | `{ label, onclick }` rendered as a button; firing it also dismisses the toast |
 | `duration` | `4000` | Milliseconds before auto-dismiss; `Infinity` sticks |
 
-The countdown pauses while the pointer hovers the toast and resumes from the frozen remainder on leave. `toast.dismiss(id)` retires one toast; blanket `toast.dismiss()` retires everything.
+The countdown pauses while the pointer hovers the toast and resumes from the frozen remainder on leave. `toast.dismiss(id)` retires one toast; blanket `toast.dismiss()` retires everything. The Toaster itself takes `position` (six screen edges, `"bottom-right"` default) and `richColors` (tints the whole card per flavor; without it the card stays neutral and only the icon carries the hue).
 
-### Promise toasts
+## Promise Toasts
 
 `toast.promise(promise, messages)` shows a sticky loading toast with a spinning loader, then swaps the flavor and message on settle:
 
 ```jsx
 import Toaster, { toast } from './components/sonner';
+
+const upload = () => new Promise<string>((resolve) => resolve('report.pdf'));
 
 const Upload = () => (
   <>
@@ -53,21 +63,7 @@ const Upload = () => (
 
 `success` and `error` take a string or a function of the settled value. The loading phase never auto-dismisses; the settled phase arms the normal duration. Dismissing before settle keeps the toast retired: a late settle never revives it.
 
-The html-format file (`sonner.ts`, copied with `--format html`) renders through a template instead of JSX; same exports, same queue, with the event wired through the `e:` attribute prefix:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Toaster, { toast } from './components/sonner';
-
-mount(html`
-  <main>
-    <${Toaster} position=${'bottom-right'} />
-    <button e:click=${() => toast('Saved')}>Save</button>
-  </main>
-`, '#app');
-```
-
-## Queue semantics
+## Queue Semantics
 
 | Behavior | Contract |
 |---|---|
@@ -78,21 +74,4 @@ mount(html`
 | Swipe | Horizontal drag follows the pointer (`data-dragging` suspends transitions); release past 45% of the toast width dismisses, under it springs back |
 | Close | An X button appears on hover and on keyboard focus |
 
-Buttons inside a toast (action, close) never start a swipe: the drag ignores pointerdowns on interactive elements, the same rule the drawer uses. The swipe-dismiss physics ride on [`onDrag`](/reference/dom/behaviors) from `@hellajs/dom`.
-
-## Styling
-
-The styling is authored to sonner's observable design, not class-verbatim: the base card reads the theme tokens the shadcn reference maps (`--popover`, `--popover-foreground`, `--border`, `--radius`), while the per-type hues are sonner's own fixed palette (green/red/amber/blue): the shadcn token set has no success/warning/info pair, so rich colors are the one deliberate non-token surface. Icons are Lucide paths from the vendored reference set; the promise loader spins through its `data-type` rule. `richColors` on the Toaster tints the whole card per flavor (light and dark variants); without it the card stays neutral and only the icon carries the hue:
-
-```jsx
-import Toaster, { toast } from './components/sonner';
-
-const Rich = () => (
-  <>
-    <Toaster richColors position="top-center" />
-    <button on:click={() => toast('Deployed', { type: 'success' })}>Deploy</button>
-  </>
-);
-```
-
-Both flavors set `data-type`, `data-depth`, `data-removed`, and `data-dragging` attributes, so user CSS can key off the same state. The copied file is yours: the behavioral constants live at its top (`VISIBLE_CAP` at 3, `EXIT_MS` at 200, `DEFAULT_DURATION` at 4000, `SWIPE_DISMISS_RATIO` at 0.45); retune them there and the docs here become the only stale artifact. The queue is module state by design: two copies of the file in one bundle carry two independent queues. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+Buttons inside a toast (action, close) never start a swipe: the drag ignores pointerdowns on interactive elements, the same rule the drawer uses. The swipe-dismiss physics ride on [`onDrag`](/reference/dom/behaviors) from `@hellajs/dom`. Every card carries `data-type`, `data-depth`, `data-removed`, and `data-dragging`, so user CSS can key off the same state, and the thresholds live as named constants at the top of the copied file.

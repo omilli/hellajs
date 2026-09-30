@@ -1,18 +1,11 @@
 import { css, keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: the enter composes fade +
-// zoom(95%) with the side's slide direction (named by the data-side value
-// that applies it), the exit is fade + zoom without slide. The ref keys the
-// motion on data-open/data-closed; the runtime vocabulary is data-state.
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-// Input-group composition duplicated per the self-contained rule - the
-// wrapper IS an InputGroup (the ref renders ComboboxInput over one), so the
-// same declarations ship under hella-combobox labels.
 export const base = style({
   alignItems: "center",
   border: "1px solid var(--input)",
@@ -493,9 +486,6 @@ export const chipsInput = style({
   outlineStyle: "none",
 }, { label: "hella-combobox-chips-input", layer: "hella" });
 
-// State the class-scoped style() nesting cannot express: the named-group
-// condition hiding the trigger chevron button while a clear button renders
-// registers as a raw selector in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='input-group']:has([data-slot='combobox-clear']) [data-slot='combobox-trigger']": {

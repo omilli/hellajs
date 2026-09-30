@@ -16,9 +16,6 @@ export const icon = style({
   width: "1rem",
 }, { label: "hella-collapsible-icon", layer: "hella" });
 
-// The shadcn accordion keyframes collapse/expand by animating a measured
-// height custom property; this port animates the same 200ms window through
-// the measurement-free grid-rows technique instead (both flavors).
 export const content = style({
   display: "grid",
   gridTemplateRows: "0fr",

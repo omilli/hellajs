@@ -7,39 +7,20 @@ import EmptyContentPage from "@ui/concepts/empty.mdx";
 const title = "Empty";
 const description = "Interactive Empty demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Empty, { EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
-
-const NoResults = () => (
-  <Empty>
-    <EmptyHeader>
-      <EmptyMedia variant="icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-      </EmptyMedia>
-      <EmptyTitle>No results found</EmptyTitle>
-      <EmptyDescription>Try a different keyword or clear your filters.</EmptyDescription>
-    </EmptyHeader>
-    <EmptyContent>
-      <p>Queries match against file names and contents.</p>
-    </EmptyContent>
-  </Empty>
-);`;
-
-const plainMediaCode = `import Empty, { EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
-
-const NoNotifications = () => (
-  <Empty>
-    <EmptyHeader>
-      <EmptyMedia class="text-muted-foreground [&>svg]:size-10">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
-      </EmptyMedia>
-      <EmptyTitle>No notifications</EmptyTitle>
-    </EmptyHeader>
-    <EmptyContent>You are all caught up.</EmptyContent>
-  </Empty>
-);`;
+const plainMediaCode = `<Empty>
+  <EmptyHeader>
+    <EmptyMedia class="text-muted-foreground [&>svg]:size-10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0" /><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" /></svg>
+    </EmptyMedia>
+    <EmptyTitle>No notifications</EmptyTitle>
+  </EmptyHeader>
+  <EmptyContent>You are all caught up.</EmptyContent>
+</Empty>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Empty</h1>
+  <p>An empty-state surface composed of a root plus header, media, title, description, and content parts, each carrying its data-slot and composable in any arrangement.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="empty" />
   <EmptyContentPage />

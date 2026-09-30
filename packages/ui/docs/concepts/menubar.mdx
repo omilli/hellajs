@@ -1,10 +1,8 @@
-# Menubar
-
-A horizontal menu bar styled to shadcn's Menubar: the bar holds one open menu at a time, triggers open on click or ArrowDown, arrows move between triggers and between open menus, and Escape closes and returns focus to the trigger.
-
 ## Usage
 
 The `Menubar` root renders the `role="menubar"` bar and owns which menu is open: an internal value signal holding the open menu's id, or the controlled `value` accessor with `onValueChange` reporting every flip. Each `MenubarMenu` wrapper owns one menu: it renders the trigger button and portals its `content` under the bar, and takes a `value` id that names it in the bar's store.
+
+### jsx
 
 ```jsx
 import Menubar from './components/menubar';
@@ -34,46 +32,195 @@ const Bar = () => (
   </Menubar>
 );
 ```
+### html
 
-| Root prop | Default | Behavior |
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Menubar}>
+    <${MenubarMenu} value=${"file"} content=${html`<${MenubarItem}>Open</${MenubarItem}>`}>File</${MenubarMenu}>
+  </${Menubar}>
+</main>`
+```
+
+| Root prop | Type | Behavior |
 |---|---|---|
-| `value` | internal signal | Controlled id of the open menu ("" when closed); when given, the bar never writes its internal signal |
-| `onValueChange` | - | Reports every open and close flip |
-| `children` | - | The `MenubarMenu` wrappers |
-| `class` | - | Extra classes on the bar |
+| `value` | `() => string` | Controlled id of the open menu ("" when closed); when given, the bar never writes its internal signal |
+| `onValueChange` | `(value: string) => void` | Reports every open and close flip |
+| `children` | `HellaChildren` | The `MenubarMenu` wrappers |
+| `class` | `string` | Extra classes on the bar |
 
-| Menu prop | Default | Behavior |
+| Menu prop | Type | Behavior |
 |---|---|---|
-| `value` | generated | This menu's id in the bar's store |
-| `open` | internal signal | Controlled open accessor for manual wiring without the bar |
-| `onOpenChange` | - | Reports this menu's flips |
-| `children` | - | The trigger label |
-| `content` | - | The menu items, portaled into `document.body` while open |
+| `value` | `string` | This menu's id in the bar's store (generated when omitted) |
+| `open` | `() => boolean` | Controlled open accessor for manual wiring without the bar |
+| `onOpenChange` | `(open: boolean) => void` | Reports this menu's flips |
+| `children` | `HellaChildren` | The trigger label |
+| `content` | `HellaChildren` | The menu items, portaled into `document.body` while open |
 
-There is no Radix-style context: the bar and its menus coordinate through a document-level announcement. Opening a menu announces its id, siblings close on a foreign announcement (the second trigger click closes the first menu), and the bar mirrors the announcement into its value store.
+The bar and its menus coordinate through a document-level announcement: opening a menu announces its id, siblings close on a foreign announcement (the second trigger click closes the first menu), and the bar mirrors the announcement into its value store.
 
 The content anchors against its trigger (bottom, start aligned, 8px gap, -4px cross-axis shift) and dismisses through [`layerDismissal`](/reference/dom/behaviors): Escape and an outside pointerdown close the top layer, item activation closes every open layer, and focus returns to the trigger.
 
-The html-format file (`menubar.ts`, copied with `--format html`) renders through a template instead of JSX:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import Menubar from './components/menubar';
-import { MenubarMenu, MenubarItem } from './components/menubar';
-
-mount(
-  html`
-    <${Menubar}>
-      <${MenubarMenu} value=${"file"} content=${html`<${MenubarItem}>Open</${MenubarItem}>`}>File</${MenubarMenu}>
-    </${Menubar}>
-  `,
-  '#app',
-);
-```
-
-## Structure Parts
+## Manual Parts
 
 Fourteen named parts ship beside the default `Menubar`: `MenubarMenu`, `MenubarTrigger`, `MenubarGroup`, `MenubarContent`, `MenubarItem`, `MenubarCheckboxItem`, `MenubarRadioGroup`, `MenubarRadioItem`, `MenubarLabel`, `MenubarSeparator`, `MenubarShortcut`, `MenubarSub`, `MenubarSubTrigger`, and `MenubarSubContent`. The item parts take the same explicit-state props as their dropdown-menu counterparts: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal with hover-intent timing.
+
+### MenubarMenu
+
+One menu: the trigger button plus its portaled content, named in the bar's store by its `value`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `string` | This menu's id in the bar's store (generated when omitted) |
+| `open` | `() => boolean` | Controlled open accessor for manual wiring without the bar |
+| `onOpenChange` | `(open: boolean) => void` | Reports this menu's flips |
+| `children` | `HellaChildren` | The trigger label |
+| `content` | `HellaChildren` | The menu items, portaled while open |
+
+### MenubarTrigger
+
+The menu button inside the bar, accent-highlighted while its menu is open.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The trigger label |
+
+### MenubarContent
+
+The `role="menu"` surface with the full keyboard model, anchored against its trigger.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle; `closed` tears the wirings down |
+| `id` | `string` | Menu id |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | Anchor placement (default `"bottom"`) |
+| `align` | `"start" \| "center" \| "end"` | Cross-axis alignment (default `"start"`) |
+| `sideOffset` | `number` | Gap between the anchor and the content edge, in px (default 8) |
+| `alignOffset` | `number` | Cross-axis shift applied after positioning, in px (default -4) |
+| `anchor` | `() => Element \| undefined` | Resolves the element the content anchors to; positioning is skipped when undefined |
+| `onDismiss` | `() => void` | Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer |
+| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
+| `onArrow` | `(direction: "left" \| "right") => void` | Both horizontal arrows report outward (bar open-then-move) when the focused item is not a sub-trigger |
+| `children` | `HellaChildren` | The menu items |
+
+### MenubarGroup
+
+A passthrough grouping `div`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The grouped items |
+
+### MenubarItem
+
+A `role="menuitem"` row; activation closes every open layer.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `onclick` | `() => void` | Click callback, fired before the close-all activation event |
+| `destructive` | `boolean` | Renders the destructive `data-variant` treatment |
+| `inset` | `boolean` | Renders `data-inset="true"` for the indented alignment |
+| `disabled` | `boolean` | `data-disabled` plus `aria-disabled`; blocks `onclick` and the close |
+| `shortcut` | `string` | Shortcut text rendered as a trailing `MenubarShortcut` span |
+| `children` | `HellaChildren` | The row's label |
+
+### MenubarCheckboxItem
+
+A `role="menuitemcheckbox"` row with the check indicator.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `checked` | `boolean \| (() => boolean)` | A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange` |
+| `onCheckedChange` | `(checked: boolean) => void` | Reports every requested flip, then closes every open layer |
+| `disabled` | `boolean` | Blocks toggling; renders the disabled states |
+| `children` | `HellaChildren` | The row's label |
+
+### MenubarRadioGroup
+
+A group rendering one radio item per entry.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `items` | `{ value, label?, disabled? }[]` | One `MenubarRadioItem` per entry |
+| `value` | `() => string` | Controlled selected value; when given, the group never writes its internal signal and `onValueChange` reports the requested selection |
+| `onValueChange` | `(value: string) => void` | Reports every requested selection |
+| `children` | `HellaChildren` | Static group content rendered alongside the items |
+
+### MenubarRadioItem
+
+A `role="menuitemradio"` row with the circle indicator.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `string` | This row's value in its group |
+| `checked` | `boolean \| (() => boolean)` | A boolean reads statically; an accessor keeps the row reactive against its owning group |
+| `onSelect` | `() => void` | Called on click when the row is enabled |
+| `disabled` | `boolean` | Blocks selection |
+| `children` | `HellaChildren` | The row's label |
+
+### MenubarLabel
+
+A section label.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `inset` | `boolean` | Renders the indented alignment |
+| `children` | `HellaChildren` | The label text |
+
+### MenubarSeparator
+
+A hairline between groups.
+
+### MenubarShortcut
+
+The trailing key-hint span inside a row.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The hint text |
+
+### MenubarSub
+
+A sub-trigger plus its portaled sub-content; open state owned here with hover-intent timing.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `content` | `HellaChildren` | The sub-surface items |
+| `children` | `HellaChildren` | The sub-trigger label |
+
+### MenubarSubTrigger
+
+The manual sub-trigger row (chevron, `aria-haspopup`).
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives `aria-expanded` and `data-state`; the composed `MenubarSub` wires it |
+| `onOpen` | `() => void` | Called on click and hover intent to open the submenu |
+| `inset` | `boolean` | Renders the indented alignment |
+| `children` | `HellaChildren` | The sub-trigger label |
+
+### MenubarSubContent
+
+The `role="menu"` sub-surface, anchored against its sub-trigger.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | Anchor placement |
+| `align` | `"start" \| "center" \| "end"` | Cross-axis alignment |
+| `sideOffset` | `number` | Gap between the anchor and the content edge, in px |
+| `anchor` | `() => Element \| undefined` | Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined |
+| `onDismiss` | `() => void` | Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer |
+| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
+| `onArrowLeft` | `() => void` | ArrowLeft closes the submenu |
+| `onPointerEnter` | `() => void` | Pointer entering the content cancels the trigger's pending close |
+| `children` | `HellaChildren` | The sub-surface items |
+
+Every part also takes a `class` string, landing last in its style composition.
+
+Checkbox and radio state in the bar, one composition:
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -121,7 +268,7 @@ const Format = () => (
 
 Menus keep their own open state, so a menu also composes standalone through `MenubarMenu` with explicit `open` and `onOpenChange` props, and the item parts wire manually exactly as in the dropdown-menu entry.
 
-### Keyboard Interaction
+## Keyboard Interaction
 
 | Key | Behavior |
 |---|---|
@@ -133,7 +280,3 @@ Menus keep their own open state, so a menu also composes standalone through `Men
 | `Escape` | Closes the top layer and returns focus to its trigger |
 | `Tab` | Closes every open layer |
 | printable keys | Typeahead: selects the first item starting with the buffered keys |
-
-## Styling
-
-The module exports `base` (the 2.25rem bordered bar), `trigger` (the accent-highlighted menu button with its open state), `content` and `subContent` (the popover surface with enter and exit keyframes composed from fade, a 95% zoom, and the side's slide direction), `item`, `checkItem`, and `radioItem` (focus-highlighted rows with destructive, inset, and disabled selectors), `indicator`, `icon`, and `radioIcon` (the selection indicators), plus `label`, `separator`, `shortcut`, `subTrigger`, and `chevron`. The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; the tailwind flavor uses shadcn's literal utilities verbatim (`data-[state=open]:bg-accent`, `data-[variant=destructive]:text-destructive`, the `data-[side=…]` slide variants, and the `[&_svg]` icon sizing rules) wrapped in `cn()` so later tokens override earlier ones per utility group, with the enter and exit motion carried by `tw-animate-css`. The copied budget is 150ms both ways. The bar's look is `base` and the trigger's look is `trigger` - restyle either in your copied file. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

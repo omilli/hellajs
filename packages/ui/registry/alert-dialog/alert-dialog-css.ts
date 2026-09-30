@@ -1,7 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: fade in/out for the overlay,
-// fade+zoom(95%) composed into the content's enter/exit keyframes.
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 const zoomIn = keyframes({ from: { opacity: "0", transform: "scale(0.95)" } });
@@ -125,8 +123,6 @@ export const media = style({
   },
 }, { label: "hella-alert-dialog-media", layer: "hella" });
 
-// The Action/Cancel buttons compose the button look; declarations duplicated
-// from the button module (self-contained entries, no cross-imports).
 export const buttonBase = style({
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",

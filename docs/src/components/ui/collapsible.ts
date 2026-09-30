@@ -20,9 +20,6 @@ const icon = style({
   width: "1rem",
 }, { label: "hella-collapsible-icon", layer: "hella" });
 
-// The shadcn accordion keyframes collapse/expand by animating a measured
-// height custom property; this port animates the same 200ms window through
-// the measurement-free grid-rows technique instead (both flavors).
 const content = style({
   display: "grid",
   gridTemplateRows: "0fr",
@@ -78,7 +75,9 @@ export function CollapsibleTrigger(props: CollapsibleTriggerProps): HellaNode {
         [trigger, props.class]
       }"
       e:click="${() => props.onToggle?.()}"
-    >${() => props.children}<svg
+    >
+      ${() => props.children}
+      <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
         height="24"
@@ -93,7 +92,10 @@ export function CollapsibleTrigger(props: CollapsibleTriggerProps): HellaNode {
         class="${
           [icon]
         }"
-      ><path d="m6 9 6 6 6-6" /></svg></button>
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </button>
   ` as HellaNode;
 }
 
@@ -107,11 +109,15 @@ export function CollapsibleContent(props: CollapsibleContentProps): HellaNode {
       class="${
         [content, props.class]
       }"
-    ><div
+    >
+      <div
         class="${
           [contentInner]
         }"
-      >${() => props.children}</div></div>
+      >
+        ${() => props.children}
+      </div>
+    </div>
   ` as HellaNode;
 }
 

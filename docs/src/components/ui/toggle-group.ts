@@ -4,10 +4,6 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-// The root's gap and shadow conditions key on the ref's spacing prop, which
-// this port pins to the ref default 0 (data-spacing="0", --gap: 0): gap
-// resolves to 0 and data-[spacing=default] can never match, so neither has a
-// css-flavor branch.
 const base = style({
   alignItems: "center",
   borderRadius: "var(--radius)",
@@ -50,9 +46,6 @@ const sizes = {
   }, { label: "hella-toggle-group-size-lg", layer: "hella" }),
 };
 
-// The item extras land after the variant maps (registration order resolves
-// their cascade conflicts), and data-[spacing=0] matches the pinned default,
-// so its branches are unconditional here.
 const item = style({
   minWidth: "0",
   paddingInline: "0.75rem",

@@ -1,7 +1,3 @@
-# Checkbox
-
-A checked-state control styled to shadcn's Checkbox: a button carrying `role="checkbox"` whose state lives in a signal. The root renders the `aria-checked` and `data-state` attributes and shows the check icon inside its indicator whenever the box is checked or indeterminate.
-
 ## Usage
 
 | Prop | Type | Behavior |
@@ -14,14 +10,35 @@ A checked-state control styled to shadcn's Checkbox: a button carrying `role="ch
 | `id` | `string` | Rendered on the button for label pairing |
 | `class` | `string` | Lands on the root next to the component class |
 
+### jsx
+
 ```jsx
 import Checkbox from './components/checkbox';
 
 const Settings = () => (
-  <label>
-    <Checkbox id="notifications" /> Email notifications
-  </label>
+  <div class="flex flex-col gap-2">
+    <label>
+      <Checkbox id="notifications" /> Email notifications
+    </label>
+    <label>
+      <Checkbox id="analytics" disabled /> Share analytics
+    </label>
+  </div>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<div class="flex flex-col gap-2">
+  <label>
+    <${Checkbox} id="notifications" /> Email notifications
+  </label>
+  <label>
+    <${Checkbox} id="analytics" disabled /> Share analytics
+  </label>
+</div>`
 ```
 
 ## Controlled and Uncontrolled
@@ -45,7 +62,7 @@ const Controlled = () => (
 );
 ```
 
-`indeterminate` follows the same shape: a boolean seeds it, an accessor controls it. Clicking a mixed box reports `true` and clears an uncontrolled mixed state; a controlled mixed state clears only when the parent says so. The icon stays the check glyph in every state, matching the ref: only `aria-checked` and `data-state` distinguish mixed from checked.
+`indeterminate` follows the same shape: a boolean seeds it, an accessor controls it. Clicking a mixed box reports `true` and clears an uncontrolled mixed state; a controlled mixed state clears only when the parent says so. The icon stays the check glyph in every state: only `aria-checked` and `data-state` distinguish mixed from checked.
 
 ## Accessibility
 
@@ -58,6 +75,4 @@ The root is a `button` element, so Space toggles it through native activation an
 | Keyboard | Space toggles; the button is disabled for pointer and keyboard while `disabled` |
 | Labeling | Pair with a `label` element or `aria-labelledby` through the `id` prop |
 
-## Styling
-
-Both flavors export the same names from the copied file: `base` (the root button, including the focus ring and checked palette), `indicator` (the grid-centered icon slot), and `icon` (the check glyph size). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()` and keys the checked palette off the root's own `data-state` (`data-[state=checked]:bg-primary`). To restyle every checkbox at once, edit the `indicator` and `icon` maps; `props.class` lands on the root next to `base`. The indicator element stays mounted in every state; only the icon inside it appears and disappears, so adding a transition on the indicator survives state flips. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+The indicator element stays mounted in every state; only the icon inside it appears and disappears, so a transition on the indicator survives state flips.

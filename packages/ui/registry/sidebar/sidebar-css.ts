@@ -1,8 +1,5 @@
 import { css, keyframes, style, vars } from "@hellajs/css";
 
-// The sidebar palette the tailwind flavor reads from theme.css; tokens.js
-// carries no sidebar colors, so the css flavor registers them here (same
-// values as theme.css, same vars()/`.dark` shape as tokens.js).
 vars({
   sidebar: "oklch(0.985 0 0)",
   "sidebar-foreground": "oklch(0.145 0 0)",
@@ -29,20 +26,13 @@ css({
   },
 });
 
-// The `--sidebar-width` (16rem) and `--sidebar-width-icon` (3rem) constants
-// live on the provider wrapper's inline style; the mobile sheet overrides
-// `--sidebar-width` to 18rem on its panel. Widths are runtime values, not
-// palette.
 
-// tw-animate-css equivalents for the mobile sheet, hand-rolled (the sheet
-// entry's lexicon): overlay fade plus one slide pair per side.
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 const slideInLeft = keyframes({ from: { opacity: "0", transform: "translateX(-100%)" } });
 const slideOutLeft = keyframes({ to: { opacity: "0", transform: "translateX(-100%)" } });
 const slideInRight = keyframes({ from: { opacity: "0", transform: "translateX(100%)" } });
 const slideOutRight = keyframes({ to: { opacity: "0", transform: "translateX(100%)" } });
-// The icon-mode tooltip label: fade composed with the right-side slide-in.
 const tooltipInRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 
 export const base = style({
@@ -77,8 +67,6 @@ export const gap = style({
   width: "var(--sidebar-width)",
 }, { label: "hella-sidebar-gap", layer: "hella" });
 
-// The icon-mode width forks are ancestor-conditioned (data-collapsible on the
-// sidebar root); the rules live in the raw block below, the maps stay empty.
 export const gapPlain = "";
 
 export const gapInset = "";
@@ -146,8 +134,6 @@ export const mobile = style({
   "& > button": {
     display: "none",
   },
-  // The sr-only sheet header pair (title + description): tailwind ships the
-  // utility, the css flavor carries the same hiding recipe.
   "& h2, & p": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",
@@ -247,8 +233,6 @@ export const trigger = style({
   "&:is(.dark *):hover": {
     backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
   },
-  // The copied `sr-only` span: tailwind ships the utility, the css flavor
-  // carries the same hiding recipe on the trigger part.
   "& span": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",
@@ -464,7 +448,6 @@ export const groupAction = style({
   "&:focus-visible": {
     boxShadow: "0 0 0 2px var(--sidebar-ring)",
   },
-  // Increases the hit area of the button on mobile; the md variant drops it.
   "&::after": {
     inset: "-0.5rem",
     position: "absolute",
@@ -598,7 +581,6 @@ export const menuAction = style({
   "&:focus-visible": {
     boxShadow: "0 0 0 2px var(--sidebar-ring)",
   },
-  // Increases the hit area of the button on mobile; the md variant drops it.
   "&::after": {
     inset: "-0.5rem",
     position: "absolute",
@@ -610,9 +592,6 @@ export const menuAction = style({
   },
 }, { label: "hella-sidebar-menu-action", layer: "hella" });
 
-// The showOnHover rules are ancestor- and media-conditioned (item hover and
-// focus-within, the md-only fade); they key on the data-show-on-hover marker
-// the canonical emits, in the raw block below.
 export const menuActionHover = "";
 
 export const menuBadge = style({
@@ -756,17 +735,12 @@ export const tooltipContent = style({
   },
 }, { label: "hella-sidebar-tooltip-content", layer: "hella" });
 
-// Ancestor-, sibling-, and media-conditioned rules (tailwind's group-*/peer-*/
-// has-*/arbitrary variants): attribute selectors over the data-* state the
-// canonical emits, inside the same hella layer after the style() calls.
 css({
   "@layer hella": {
-    // wrapper: has-data-[variant=inset]:bg-sidebar
     "[data-slot='sidebar-wrapper']:has([data-variant='inset'])": {
       background: "var(--sidebar)",
     },
 
-    // gap: icon-mode width per variant, offcanvas collapse, side rotation
     "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-gap']": {
       width: "var(--sidebar-width-icon)",
     },
@@ -780,8 +754,6 @@ css({
       rotate: "180deg",
     },
 
-    // container: offcanvas side offsets, icon-mode width per variant, side
-    // borders, floating/inset padding
     "[data-side='left'][data-collapsible='offcanvas'] [data-slot='sidebar-container']": {
       left: "calc(var(--sidebar-width) * -1)",
     },
@@ -804,15 +776,12 @@ css({
       padding: "0.5rem",
     },
 
-    // inner: floating variant frame
     "[data-variant='floating'] [data-slot='sidebar-inner']": {
       border: "1px solid var(--sidebar-border)",
       borderRadius: "0.5rem",
       boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
     },
 
-    // inset: md-only peer geometry against the sidebar root; menu action
-    // showOnHover: hidden at md unless revealed (one media block)
     "@media (min-width: 48rem)": {
       "[data-slot='sidebar'][data-variant='inset'] ~ [data-slot='sidebar-inset']": {
         borderRadius: "calc(var(--radius) * 1.4)",
@@ -828,8 +797,6 @@ css({
       },
     },
 
-    // rail: side positioning, cursors, offcanvas shifts (the offcanvas
-    // cursor overrides land after the side rules by cascade order)
     "[data-side='left'] [data-slot='sidebar-rail']": {
       cursor: "w-resize",
       right: "-1rem",
@@ -860,12 +827,10 @@ css({
       left: "-0.5rem",
     },
 
-    // content: icon-mode clipping
     "[data-collapsible='icon'] [data-slot='sidebar-content']": {
       overflow: "hidden",
     },
 
-    // group label/action: icon-mode suppression
     "[data-collapsible='icon'] [data-slot='sidebar-group-label']": {
       marginTop: "-2rem",
       opacity: "0",
@@ -874,7 +839,6 @@ css({
       display: "none",
     },
 
-    // menu button: icon-mode square, item-has-action padding
     "[data-collapsible='icon'] [data-sidebar='menu-button']": {
       height: "2rem",
       padding: "0.5rem",
@@ -887,7 +851,6 @@ css({
       paddingRight: "2rem",
     },
 
-    // menu action: peer-hover color, per-size tops, icon-mode suppression
     "[data-sidebar='menu-button']:hover ~ [data-sidebar='menu-action']": {
       color: "var(--sidebar-accent-foreground)",
     },
@@ -904,8 +867,6 @@ css({
       display: "none",
     },
 
-    // menu action showOnHover: fade in on item hover/focus-within/open,
-    // hidden at md otherwise (keys on the canonical's data-show-on-hover)
     "[data-slot='sidebar-menu-item']:focus-within [data-sidebar='menu-action'][data-show-on-hover='true'], [data-slot='sidebar-menu-item']:hover [data-sidebar='menu-action'][data-show-on-hover='true']": {
       opacity: "1",
     },
@@ -916,7 +877,6 @@ css({
       opacity: "1",
     },
 
-    // menu badge: peer-hover/active color, per-size tops, icon-mode suppression
     "[data-sidebar='menu-button']:hover ~ [data-slot='sidebar-menu-badge']": {
       color: "var(--sidebar-accent-foreground)",
     },
@@ -936,7 +896,6 @@ css({
       display: "none",
     },
 
-    // sub menu: icon-mode suppression
     "[data-collapsible='icon'] [data-slot='sidebar-menu-sub']": {
       display: "none",
     },

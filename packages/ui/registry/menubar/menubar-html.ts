@@ -169,7 +169,9 @@ const checkIcon = (): HellaNode =>
       [icon]
       // @hella:end
     }"
-  ><path d="M20 6 9 17l-5-5" /></svg>` as HellaNode;
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>` as HellaNode;
 
 /** The circle icon (refs/icons/circle.svg), created per call so reactive swaps never share nodes between clones. */
 const circleIcon = (): HellaNode =>
@@ -189,7 +191,9 @@ const circleIcon = (): HellaNode =>
       [radioIcon]
       // @hella:end
     }"
-  ><circle cx="12" cy="12" r="10" /></svg>` as HellaNode;
+  >
+    <circle cx="12" cy="12" r="10" />
+  </svg>` as HellaNode;
 
 /** The chevron-right icon (refs/icons/chevron-right.svg), created per call so reactive swaps never share nodes between clones. */
 const chevronIcon = (): HellaNode =>
@@ -209,7 +213,9 @@ const chevronIcon = (): HellaNode =>
       [chevron]
       // @hella:end
     }"
-  ><path d="m9 18 6-6-6-6" /></svg>` as HellaNode;
+  >
+    <path d="m9 18 6-6-6-6" />
+  </svg>` as HellaNode;
 
 interface MenubarTriggerProps {
   children?: HellaChildren;
@@ -374,7 +380,9 @@ export function MenubarItem(props: MenubarItemProps): HellaNode {
         props.onclick?.();
         closeAllMenus();
       }}"
-    >${() => props.children}${() => (props.shortcut !== undefined ? MenubarShortcut({ children: props.shortcut }) : null)}</div>
+    >
+      ${() => props.children}${() => (props.shortcut !== undefined ? MenubarShortcut({ children: props.shortcut }) : null)}
+    </div>
   ` as HellaNode;
 }
 
@@ -413,14 +421,19 @@ export function MenubarCheckboxItem(props: MenubarCheckboxItemProps): HellaNode 
         // @hella:end
       }"
       on:click="${() => toggle()}"
-    ><span
+    >
+      <span
         data-slot="menubar-indicator"
         class="${
           // @hella:compose
           [indicator]
           // @hella:end
         }"
-      >${() => (checked() ? checkIcon() : null)}</span>${() => props.children}</div>
+      >
+        ${() => (checked() ? checkIcon() : null)}
+      </span>
+      ${() => props.children}
+    </div>
   ` as HellaNode;
 }
 
@@ -448,13 +461,15 @@ export function MenubarRadioGroup(props: MenubarRadioGroupProps): HellaNode {
         [props.class]
         // @hella:end
       }"
-    >${() => props.children}${(props.items ?? []).map((entry) => MenubarRadioItem({
-      value: entry.value,
-      checked: () => current() === entry.value,
-      disabled: entry.disabled,
-      onSelect: () => select(entry.value),
-      children: entry.label,
-    }))}</div>
+    >
+      ${() => props.children}${(props.items ?? []).map((entry) => MenubarRadioItem({
+        value: entry.value,
+        checked: () => current() === entry.value,
+        disabled: entry.disabled,
+        onSelect: () => select(entry.value),
+        children: entry.label,
+      }))}
+    </div>
   ` as HellaNode;
 }
 
@@ -491,14 +506,19 @@ export function MenubarRadioItem(props: MenubarRadioItemProps): HellaNode {
         props.onSelect?.();
         closeAllMenus();
       }}"
-    ><span
+    >
+      <span
         data-slot="menubar-indicator"
         class="${
           // @hella:compose
           [indicator]
           // @hella:end
         }"
-      >${() => (checked() ? circleIcon() : null)}</span>${() => props.children}</div>
+      >
+        ${() => (checked() ? circleIcon() : null)}
+      </span>
+      ${() => props.children}
+    </div>
   ` as HellaNode;
 }
 
@@ -532,7 +552,7 @@ export function MenubarSeparator(props: MenubarPartProps): HellaNode {
         [separator, props.class]
         // @hella:end
       }"
-    ></div>
+    />
   ` as HellaNode;
 }
 
@@ -604,7 +624,9 @@ export function MenubarSubTrigger(props: MenubarSubTriggerProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}${chevronIcon()}</div>
+    >
+      ${() => props.children}${chevronIcon()}
+    </div>
   ` as HellaNode;
 }
 
@@ -765,25 +787,27 @@ export function MenubarSub(props: MenubarSubProps): HellaNode {
         if (openTimer !== null) clearTimeout(openTimer);
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}"
-    >${() => props.children}${chevronIcon()}${() => s.visible() && Portal({
-      to: "body",
-      children: [
-        MenubarSubContent({
-          state: s.state,
-          anchor: () => triggerNode,
-          onDismiss: () => s.setOpen(false),
-          onExited: s.finishExit,
-          onArrowLeft: () => s.setOpen(false),
-          onPointerEnter: () => {
-            if (closeTimer !== null) {
-              clearTimeout(closeTimer);
-              closeTimer = null;
-            }
-          },
-          children: props.content,
-        }) as HellaChild,
-      ],
-    })}</div>
+    >
+      ${() => props.children}${chevronIcon()}${() => s.visible() && Portal({
+        to: "body",
+        children: [
+          MenubarSubContent({
+            state: s.state,
+            anchor: () => triggerNode,
+            onDismiss: () => s.setOpen(false),
+            onExited: s.finishExit,
+            onArrowLeft: () => s.setOpen(false),
+            onPointerEnter: () => {
+              if (closeTimer !== null) {
+                clearTimeout(closeTimer);
+                closeTimer = null;
+              }
+            },
+            children: props.content,
+          }) as HellaChild,
+        ],
+      })}
+    </div>
   ` as HellaNode;
 }
 
@@ -869,7 +893,8 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (wirings.length) wirings.pop()!();
       }}"
-    ><button
+    >
+      <button
         type="button"
         data-slot="menubar-trigger"
         data-state="${() => s.state()}"
@@ -888,7 +913,10 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
             s.setOpen(true);
           }
         }}"
-      >${() => props.children}</button>${() => s.visible() && Portal({
+      >
+        ${() => props.children}
+      </button>
+      ${() => s.visible() && Portal({
         to: "body",
         children: [
           MenubarContent({
@@ -901,7 +929,8 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
             children: props.content,
           }) as HellaChild,
         ],
-      })}</div>
+      })}
+    </div>
   ` as HellaNode;
 }
 

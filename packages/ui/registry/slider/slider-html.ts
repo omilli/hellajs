@@ -130,7 +130,7 @@ export default function Slider(props: SliderProps): HellaNode {
         [thumb]
         // @hella:end
       }"
-    ></span>` as HellaNode;
+    />` as HellaNode;
 
   return html`
     <span
@@ -181,16 +181,25 @@ export default function Slider(props: SliderProps): HellaNode {
         while (wirings.length) wirings.pop()!();
       }}"
     >
-      <span data-slot="slider-track" data-orientation="${orientation}" class="${
-        // @hella:compose
-        [track]
-        // @hella:end
-      }">
-        <span data-slot="slider-range" data-orientation="${orientation}" style="${rangeStyle}" class="${
+      <span
+        data-slot="slider-track"
+        data-orientation="${orientation}"
+        class="${
           // @hella:compose
-          [range]
+          [track]
           // @hella:end
-        }"></span>
+        }"
+      >
+        <span
+          data-slot="slider-range"
+          data-orientation="${orientation}"
+          style="${rangeStyle}"
+          class="${
+            // @hella:compose
+            [range]
+            // @hella:end
+          }"
+        />
       </span>
       ${Array.from({ length: thumbCount }, (_, index) => thumbNode(index))}
     </span>

@@ -7,93 +7,31 @@ import NavigationMenuTitle from "@ui/concepts/navigation-menu.mdx";
 const title = "Navigation Menu";
 const description = "Interactive Navigation Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import NavigationMenu from './components/navigation-menu';
-import {
-  NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuTrigger,
-  NavigationMenuContent,
-  NavigationMenuLink,
-  NavigationMenuViewport,
-  NavigationMenuIndicator,
-} from './components/navigation-menu';
-
-const value = signal('');
-const toggle = (id) => value(value() === id ? '' : id);
-
-const trigger = (id, label) => (
-  <NavigationMenuTrigger
-    value={id}
-    active={() => value() === id}
-    onActivate={() => toggle(id)}
-  >
-    {label}
-  </NavigationMenuTrigger>
-);
-
-const Nav = () => (
-  <NavigationMenu onValueChange={(next) => value(next)}>
-    <NavigationMenuList>
-      <NavigationMenuItem>
-        {trigger('learn', 'Learn')}
-        <NavigationMenuContent active={() => value() === 'learn'}>
-          <NavigationMenuLink href="#intro">Introduction</NavigationMenuLink>
-          <NavigationMenuLink href="#themes">Themes and Tokens</NavigationMenuLink>
-        </NavigationMenuContent>
-      </NavigationMenuItem>
-      <NavigationMenuItem>
-        {trigger('reference', 'Reference')}
-        <NavigationMenuContent active={() => value() === 'reference'}>
-          <NavigationMenuLink href="#components">Components</NavigationMenuLink>
-          <NavigationMenuLink href="#behaviors">Headless Behaviors</NavigationMenuLink>
-        </NavigationMenuContent>
-      </NavigationMenuItem>
-    </NavigationMenuList>
-    <NavigationMenuViewport active={() => value() !== ''} />
-    <NavigationMenuIndicator active={() => value() !== ''} />
-  </NavigationMenu>
-);`;
-
-const activeLinksCode = `import { signal } from '@hellajs/core';
-import NavigationMenu from './components/navigation-menu';
-import {
-  NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuTrigger,
-  NavigationMenuContent,
-  NavigationMenuLink,
-  NavigationMenuViewport,
-  NavigationMenuIndicator,
-} from './components/navigation-menu';
-
-const value = signal('');
-
-const Resources = () => (
-  <NavigationMenu onValueChange={(next) => value(next)}>
-    <NavigationMenuList>
-      <NavigationMenuItem>
-        <NavigationMenuTrigger
-          value="resources"
-          active={() => value() === 'resources'}
-          onActivate={() => value(value() === 'resources' ? '' : 'resources')}
-        >
-          Resources
-        </NavigationMenuTrigger>
-        <NavigationMenuContent active={() => value() === 'resources'}>
-          <NavigationMenuLink href="#guide" active>Guide</NavigationMenuLink>
-          <NavigationMenuLink href="#api">API Reference</NavigationMenuLink>
-          <NavigationMenuLink href="#examples">Examples</NavigationMenuLink>
-        </NavigationMenuContent>
-      </NavigationMenuItem>
-    </NavigationMenuList>
-    <NavigationMenuViewport active={() => value() !== ''} />
-    <NavigationMenuIndicator active={() => value() !== ''} />
-  </NavigationMenu>
-);`;
+const activeLinksCode = `<NavigationMenu onValueChange={(next) => value(next)}>
+  <NavigationMenuList>
+    <NavigationMenuItem>
+      <NavigationMenuTrigger
+        value="resources"
+        active={() => value() === 'resources'}
+        onActivate={() => value(value() === 'resources' ? '' : 'resources')}
+      >
+        Resources
+      </NavigationMenuTrigger>
+      <NavigationMenuContent active={() => value() === 'resources'}>
+        <NavigationMenuLink href="#guide" active>Guide</NavigationMenuLink>
+        <NavigationMenuLink href="#api">API Reference</NavigationMenuLink>
+        <NavigationMenuLink href="#examples">Examples</NavigationMenuLink>
+      </NavigationMenuContent>
+    </NavigationMenuItem>
+  </NavigationMenuList>
+  <NavigationMenuViewport active={() => value() !== ''} />
+  <NavigationMenuIndicator active={() => value() !== ''} />
+</NavigationMenu>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Navigation Menu</h1>
+  <p>A horizontal navigation surface: triggers open content panels into a shared viewport slot under the bar, an indicator slides under the active trigger, and links carry the active accent styles.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="navigation-menu" />
   <NavigationMenuTitle />

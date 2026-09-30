@@ -4,19 +4,12 @@ import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/d
 
 import { css, keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: the enter composes fade +
-// zoom(95%) with the side's slide direction (named by the data-side value
-// that applies it), the exit is fade + zoom without slide. The ref keys the
-// motion on data-open/data-closed; the runtime vocabulary is data-state.
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
 const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) scale(0.95)" } });
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-// Input-group composition duplicated per the self-contained rule - the
-// wrapper IS an InputGroup (the ref renders ComboboxInput over one), so the
-// same declarations ship under hella-combobox labels.
 const base = style({
   alignItems: "center",
   border: "1px solid var(--input)",
@@ -497,9 +490,6 @@ const chipsInput = style({
   outlineStyle: "none",
 }, { label: "hella-combobox-chips-input", layer: "hella" });
 
-// State the class-scoped style() nesting cannot express: the named-group
-// condition hiding the trigger chevron button while a clear button renders
-// registers as a raw selector in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='input-group']:has([data-slot='combobox-clear']) [data-slot='combobox-trigger']": {
@@ -573,7 +563,9 @@ const checkIcon = (): HellaNode =>
     class="${
       [icon]
     }"
-  ><path d="M20 6 9 17l-5-5" /></svg>` as HellaNode;
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>` as HellaNode;
 
 /** The chevron-down icon (refs/icons/chevron-down.svg), created per call so reactive swaps never share nodes between clones. */
 const chevronDownIcon = (): HellaNode =>
@@ -592,7 +584,9 @@ const chevronDownIcon = (): HellaNode =>
     class="${
       [triggerIcon]
     }"
-  ><path d="m6 9 6 6 6-6" /></svg>` as HellaNode;
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>` as HellaNode;
 
 /** The clear icon (refs/icons/x.svg), created per call so reactive swaps never share nodes between clones. */
 const clearIcon = (): HellaNode =>
@@ -610,7 +604,10 @@ const clearIcon = (): HellaNode =>
     class="${
       [xIcon]
     }"
-  ><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>` as HellaNode;
+  >
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>` as HellaNode;
 
 interface ComboboxValueProps {
   /** The displayed selection. A string reads statically; an accessor keeps it reactive; an array joins with ", ". */
@@ -653,7 +650,9 @@ export function ComboboxTrigger(props: ComboboxTriggerProps): HellaNode {
         [trigger, props.class]
       }"
       on:click="${() => props.onclick?.()}"
-    >${() => props.children}${chevronDownIcon()}</button>
+    >
+      ${() => props.children}${chevronDownIcon()}
+    </button>
   ` as HellaNode;
 }
 
@@ -720,7 +719,10 @@ interface ComboboxCollectionProps {
 /** Passthrough wrapper grouping items rendered from external data. */
 export function ComboboxCollection(props: ComboboxCollectionProps): HellaNode {
   return html`
-    <div data-slot="combobox-collection" class="${props.class}">${() => props.children}</div>
+    <div
+      data-slot="combobox-collection"
+      class="${props.class}"
+    >${() => props.children}</div>
   ` as HellaNode;
 }
 
@@ -753,7 +755,7 @@ export function ComboboxSeparator(props: ComboboxSeparatorProps): HellaNode {
       class="${
         [separator, props.class]
       }"
-    ></div>
+    />
   ` as HellaNode;
 }
 
@@ -803,12 +805,17 @@ export function ComboboxItem(props: ComboboxItemProps): HellaNode {
         if (props.disabled) return;
         props.onselect?.();
       }}"
-    >${() => props.children ?? props.label}<span
+    >
+      ${() => props.children ?? props.label}
+      <span
         data-slot="combobox-item-indicator"
         class="${
           [itemIndicator]
         }"
-      >${() => (selected() ? checkIcon() : null)}</span></div>
+      >
+        ${() => (selected() ? checkIcon() : null)}
+      </span>
+    </div>
   ` as HellaNode;
 }
 
@@ -849,18 +856,20 @@ export function ComboboxList(props: ComboboxListProps): HellaNode {
       class="${
         [list, props.class]
       }"
-    >${(props.items ?? []).map((entry) =>
-      ComboboxItem({
-        value: entry.value,
-        label: entry.label,
-        disabled: entry.disabled,
-        id: (props.id ?? "") + "-opt-" + (props.items ?? []).indexOf(entry),
-        selected: () => props.selected?.(entry.value) ?? false,
-        highlighted: () => props.active?.() === entry.value,
-        hidden: () => !matches().includes(entry),
-        onselect: () => props.onselect?.(entry.value),
-      }) as HellaChild,
-    )}${() => props.children}</div>
+    >
+      ${(props.items ?? []).map((entry) =>
+        ComboboxItem({
+          value: entry.value,
+          label: entry.label,
+          disabled: entry.disabled,
+          id: (props.id ?? "") + "-opt-" + (props.items ?? []).indexOf(entry),
+          selected: () => props.selected?.(entry.value) ?? false,
+          highlighted: () => props.active?.() === entry.value,
+          hidden: () => !matches().includes(entry),
+          onselect: () => props.onselect?.(entry.value),
+        }) as HellaChild,
+      )}${() => props.children}
+    </div>
   ` as HellaNode;
 }
 
@@ -943,27 +952,28 @@ export function ComboboxInput(props: ComboboxInputProps): HellaNode {
           if (target.closest("button")) return;
           target.closest('[data-slot="input-group"]')?.querySelector("input")?.focus();
         }}"
-      >${() => (props.showTrigger ? html`<button
-            type="button"
-            data-slot="combobox-trigger"
-            aria-label="Toggle"
-            disabled="${props.disabled}"
-            class="${
-              [buttonBase, buttonGhost, buttonSizeIconXs, sizeIconXs, triggerExtra]
-            }"
-            on:click="${() => props.onToggle?.()}"
-          >${chevronDownIcon()}</button>` as HellaChild : null)}${() => (props.showClear ? html`<button
-            type="button"
-            data-slot="combobox-clear"
-            aria-label="Clear"
-            disabled="${props.disabled}"
-            class="${
-              [buttonBase, buttonGhost, buttonSizeIconXs, sizeIconXs]
-            }"
-            on:click="${() => props.onClear?.()}"
-          >${clearIcon()}</button>` as HellaChild : null)}</div>
-      ${() => props.portal?.()}
-      ${() => props.children}
+      >
+        ${() => (props.showTrigger ? html`<button
+          type="button"
+          data-slot="combobox-trigger"
+          aria-label="Toggle"
+          disabled="${props.disabled}"
+          class="${
+            [buttonBase, buttonGhost, buttonSizeIconXs, sizeIconXs, triggerExtra]
+          }"
+          on:click="${() => props.onToggle?.()}"
+        >${chevronDownIcon()}</button>` as HellaChild : null)}${() => (props.showClear ? html`<button
+          type="button"
+          data-slot="combobox-clear"
+          aria-label="Clear"
+          disabled="${props.disabled}"
+          class="${
+            [buttonBase, buttonGhost, buttonSizeIconXs, sizeIconXs]
+          }"
+          on:click="${() => props.onClear?.()}"
+        >${clearIcon()}</button>` as HellaChild : null)}
+      </div>
+      ${() => props.portal?.()}${() => props.children}
     </div>
   ` as HellaNode;
 }
@@ -996,7 +1006,11 @@ export function ComboboxChips(props: ComboboxChipsProps): HellaNode {
         disposeWire?.();
         disposeWire = undefined;
       }}"
-    >${() => props.chips?.()}${() => props.children}${() => props.portal?.()}</div>
+    >
+      ${() => props.chips?.()}
+      ${() => props.children}
+      ${() => props.portal?.()}
+    </div>
   ` as HellaNode;
 }
 
@@ -1019,16 +1033,18 @@ export function ComboboxChip(props: ComboboxChipProps): HellaNode {
       class="${
         [chip, props.class]
       }"
-    >${() => props.children}${() => (props.showRemove !== false ? html`<button
-          type="button"
-          data-slot="combobox-chip-remove"
-          aria-label="Remove"
-          disabled="${props.disabled}"
-          class="${
-            [buttonBase, buttonGhost, buttonSizeIconXs, sizeIconXs, chipRemoveExtra]
-          }"
-          on:click="${() => props.onRemove?.()}"
-        >${clearIcon()}</button>` as HellaChild : null)}</div>
+    >
+      ${() => props.children}${() => (props.showRemove !== false ? html`<button
+        type="button"
+        data-slot="combobox-chip-remove"
+        aria-label="Remove"
+        disabled="${props.disabled}"
+        class="${
+          [buttonBase, buttonGhost, buttonSizeIconXs, sizeIconXs, chipRemoveExtra]
+        }"
+        on:click="${() => props.onRemove?.()}"
+      >${clearIcon()}</button>` as HellaChild : null)}
+    </div>
   ` as HellaNode;
 }
 

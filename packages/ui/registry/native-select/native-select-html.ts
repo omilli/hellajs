@@ -56,7 +56,9 @@ export default function NativeSelect(props: NativeSelectProps): HellaNode {
           // @hella:end
         }"
         e:change="${(e: Event) => props.onchange?.((e.target as HTMLSelectElement).value)}"
-      >${() => props.children}</select>
+      >
+        ${() => props.children}
+      </select>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -74,7 +76,9 @@ export default function NativeSelect(props: NativeSelectProps): HellaNode {
           [icon]
           // @hella:end
         }"
-      ><path d="m6 9 6 6 6-6"></path></svg>
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
     </div>
   ` as HellaNode;
 }

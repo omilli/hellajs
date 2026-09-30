@@ -1,10 +1,8 @@
-# Button Group
-
-A flex container that joins buttons, inputs, and text into a single visual control, styled byte-faithfully to shadcn's new-york-v4 ButtonGroup. The group rounds and de-borders the inner edges of its children so a row (or column) of separate elements reads as one widget.
-
 ## Usage
 
-The group is caller-composed: `ButtonGroup` renders the `role="group"` wrapper and you place buttons, separators, or `ButtonGroupText` labels inside it. There is no slot machinery and no child injection: the group renders its children as-is.
+The group is caller-composed: `ButtonGroup` renders the `role="group"` wrapper and you place buttons, separators, or `ButtonGroupText` labels inside it. There is no slot machinery: render the element you want directly as a child.
+
+### jsx
 
 ```jsx
 import Button from './components/button';
@@ -18,26 +16,16 @@ const Actions = () => (
   </ButtonGroup>
 );
 ```
+### html
 
-## Text Plates
+The html-format (`--format html`) works the same way.
 
-`ButtonGroupText` renders the muted label plate shadcn uses for prefix text inside a group. Compose it with your own `input` or `native-select` copy the same way:
-
-```jsx
-import { signal } from '@hellajs/core';
-import Button from './components/button';
-import ButtonGroup, { ButtonGroupText } from './components/button-group';
-import Input from './components/input';
-
-const url = signal('hellajs.com');
-
-const Labeled = () => (
-  <ButtonGroup>
-    <ButtonGroupText>https://</ButtonGroupText>
-    <Input value={url} oninput={(v) => url(v)} />
-    <Button variant="outline">Open</Button>
-  </ButtonGroup>
-);
+```js
+html`<${ButtonGroup}>
+  <${Button} variant="outline">Copy</${Button}>
+  <${ButtonGroupSeparator} />
+  <${Button} variant="outline">Paste</${Button}>
+</${ButtonGroup}>`
 ```
 
 ## Vertical Orientation
@@ -57,10 +45,41 @@ const Stacked = () => (
 );
 ```
 
-## Composition Notes
+## Manual Parts
 
-Upstream's `asChild` prop (a Radix `Slot`) has no equivalent here; render the element you want directly. `ButtonGroupSeparator` re-states the separator markup inline rather than importing it, so the copied file stays self-contained.
+`ButtonGroupText` and `ButtonGroupSeparator` ship beside the default root for custom composition.
 
-## Styling
+### ButtonGroupText
 
-The css style module exports `base` (the group: flex, fit width, focus z-lift, and the select/input accommodation selectors), `orientation` (horizontal and vertical edge-joining maps), `text` (the label plate), and `separatorBase` plus `separator` (the inherited separator declarations and the self-stretch overrides). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim, including the `[&>*:not(:first-child)]:rounded-l-none` edge-joining selectors and the separator's `m-0!` override, wrapped in `cn()`. Respace a group through a `class` override such as `gap-2`, or restyle `ButtonGroupText` by editing its map. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+The muted label plate for prefix text inside a group.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Label node rendered inside the plate |
+
+### ButtonGroupSeparator
+
+The divider between joined children: a `role="separator"` div whose markup is restated inline so the copied file stays self-contained.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `orientation` | `"horizontal" \| "vertical"` | Sets the divider's `data-orientation` and `aria-orientation` (default `vertical`) |
+
+Every part also takes a `class` string, landing last in its style composition.
+
+```jsx
+import { signal } from '@hellajs/core';
+import Button from './components/button';
+import ButtonGroup, { ButtonGroupText } from './components/button-group';
+import Input from './components/input';
+
+const url = signal('hellajs.com');
+
+const Labeled = () => (
+  <ButtonGroup>
+    <ButtonGroupText>https://</ButtonGroupText>
+    <Input value={url} oninput={(v) => url(v)} />
+    <Button variant="outline">Open</Button>
+  </ButtonGroup>
+);
+```

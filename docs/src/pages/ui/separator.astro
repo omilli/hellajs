@@ -7,36 +7,18 @@ import SeparatorContent from "@ui/concepts/separator.mdx";
 const title = "Separator";
 const description = "Interactive Separator demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Separator from './components/separator';
-
-const Settings = () => (
-  <div class="flex flex-col gap-4">
-    <div>
-      <h3 class="text-lg font-medium">Profile</h3>
-      <p class="text-sm text-muted-foreground">Your public profile details.</p>
-    </div>
-    <Separator />
-    <div>
-      <h3 class="text-lg font-medium">Security</h3>
-      <p class="text-sm text-muted-foreground">Sessions and two-factor settings.</p>
-    </div>
-  </div>
-);`;
-
-const verticalCode = `import Separator from './components/separator';
-
-const Row = () => (
-  <div class="flex h-8 items-center gap-3 text-sm">
-    <span>Import</span>
-    <Separator orientation="vertical" />
-    <span>Export</span>
-    <Separator orientation="vertical" />
-    <span>Delete</span>
-  </div>
-);`;
+const verticalCode = `<div class="flex h-8 items-center gap-3 text-sm">
+  <span>Import</span>
+  <Separator orientation="vertical" />
+  <span>Export</span>
+  <Separator orientation="vertical" />
+  <span>Delete</span>
+</div>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Separator</h1>
+  <p>A divider: one thin line with orientation switching between horizontal and vertical, exposed through a separator role and matching orientation attributes.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="separator" />
   <SeparatorContent />

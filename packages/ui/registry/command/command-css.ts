@@ -1,7 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: fade in/out for the overlay,
-// fade+zoom(95%) composed into the panel's enter/exit keyframes.
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 const zoomIn = keyframes({ from: { opacity: "0", transform: "scale(0.95)" } });
@@ -140,9 +138,6 @@ export const shortcut = style({
   marginLeft: "auto",
 }, { label: "hella-command-shortcut", layer: "hella" });
 
-// The palette scoping the CommandDialog root applies: the copied
-// `[&_[cmdk-*]]` overrides translated against this entry's data-slots,
-// registered after the part maps so equal-specificity overrides resolve.
 export const palette = style({
   "& [data-slot='command-input-wrapper']": {
     height: "3rem",
@@ -175,9 +170,6 @@ export const palette = style({
   },
 }, { label: "hella-command-palette", layer: "hella" });
 
-// The composed Dialog surface, duplicated inline under this entry (registry
-// entries never cross-import): overlay, panel (the ref's overflow-hidden p-0
-// override composed in), sr-only header, title, description, and close.
 export const dialogOverlay = style({
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
@@ -274,7 +266,6 @@ export const dialogClose = style({
     height: "1rem",
     width: "1rem",
   },
-  // The copied `sr-only` span labeling the close button.
   "& span": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",

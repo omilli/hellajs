@@ -103,7 +103,14 @@ const gripIcon = (): HellaNode =>
     class="${
       [icon]
     }"
-  ><circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" /></svg>` as HellaNode;
+  >
+    <circle cx="9" cy="5" r="1" />
+    <circle cx="9" cy="12" r="1" />
+    <circle cx="9" cy="19" r="1" />
+    <circle cx="15" cy="5" r="1" />
+    <circle cx="15" cy="12" r="1" />
+    <circle cx="15" cy="19" r="1" />
+  </svg>` as HellaNode;
 
 export function ResizablePanel(props: ResizablePanelProps): HellaNode {
   const minSize = props.minSize ?? 0;
@@ -134,7 +141,8 @@ export function ResizableHandle(props: ResizableHandleProps): HellaNode {
       }"
     >${() => props.withHandle && html`<div class="${
         [grip]
-      }">${gripIcon()}</div>`}</div>
+      }">${gripIcon()}</div>`}
+    </div>
   ` as HellaNode;
 }
 

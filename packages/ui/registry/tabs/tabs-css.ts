@@ -103,10 +103,6 @@ export const content = style({
   outlineStyle: "none",
 }, { label: "hella-tabs-content", layer: "hella" });
 
-// Variant/orientation state the trigger carries itself (data-orientation,
-// data-variant): class-scoped nesting cannot restate them self-based at
-// higher precedence, so these register as raw attribute selectors in the
-// same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='tabs-trigger'][data-orientation='vertical']": {

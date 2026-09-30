@@ -1,10 +1,8 @@
-# Popover
-
-A click-toggled panel styled to shadcn's Popover: the trigger button opens an anchored, non-modal surface; Escape and an outside press dismiss it; stacked popovers dismiss one layer at a time, top first.
-
 ## Usage
 
-The composed `Popover` wraps its children in the trigger button and takes the panel through the `content` prop. Clicking toggles; the trigger carries `data-state` and `aria-expanded` so styling and assistive tech track the open state.
+A click-toggled panel: the trigger button opens an anchored, non-modal surface; Escape and an outside press dismiss it; stacked popovers dismiss one layer at a time, top first.
+
+### jsx
 
 ```jsx
 import Popover from './components/popover';
@@ -15,6 +13,17 @@ const Notifications = () => (
   </Popover>
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Popover} content=${html`<p>You are all caught up.</p>`}>
+    Notifications
+  </${Popover}>
+</main>`
+```
 
 | Prop | Default | Behavior |
 |---|---|---|
@@ -24,68 +33,103 @@ const Notifications = () => (
 | `content` | - | The panel children, portaled into `document.body` while open |
 | `class` | - | Extra classes on the trigger button |
 
-Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the panel ask the top layer to close. The popover is non-modal: there is no focus trap, and focus moves to the panel on open (upstream parity). Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
+Clicking toggles; the trigger carries `data-state` and `aria-expanded` so styling and assistive tech track the open state. Dismissal runs through [`layerDismissal`](/reference/dom/behaviors): Escape and a pointerdown outside the panel ask the top layer to close. The popover is non-modal - no focus trap, and focus moves to the panel on open. Closing keeps the panel mounted under `data-state="closed"` until its exit animation ends, with the dismissal wiring down while it leaves.
 
-## Structure Parts
+## Manual Parts
 
-Six named parts ship beside the default `Popover`: `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`, `PopoverHeader`, `PopoverTitle`, and `PopoverDescription`. hella has no Radix-style context, so manual composition passes state explicitly: portal the content yourself, hand it a `state` accessor and an `onDismiss` callback, and point its `anchor` at whatever should anchor it.
+Six named parts ship beside the default `Popover`: `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`, `PopoverHeader`, `PopoverTitle`, and `PopoverDescription`. State is explicit - portal the content yourself, hand it a `state` accessor and an `onDismiss` callback, and point its `anchor` at whatever should anchor it.
+
+### PopoverTrigger
+
+The manual trigger button; the composed `Popover` renders the same shape wired to toggle plus `aria-expanded`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The trigger label |
+
+### PopoverContent
+
+The `role="dialog"` panel carrying `tabindex="-1"` for the focus-on-open contract, positioned through [`anchorPosition`](/reference/dom/behaviors) (fixed coordinates against the anchor, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/dom/behaviors) (Escape and outside pointerdown close only the top layer, so popovers stack cleanly). Composing it without `onDismiss` holds the panel open by never installing that wiring.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle |
+| `id` | `string` | Panel id; the trigger's `aria-controls` points at it |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | Which side of the anchor the panel sits on (default `"bottom"`) |
+| `align` | `"start" \| "center" \| "end"` | Alignment along the anchor's edge (default `"center"`) |
+| `sideOffset` | `number` | Gap between the anchor and the panel edge, in px (default 4) |
+| `alignOffset` | `number` | Cross-axis shift applied after positioning, in px (default 0) |
+| `anchor` | `() => Element \| undefined` | Resolves the anchor element; positioning is skipped when undefined |
+| `onDismiss` | `() => void` | Escape and outside pointerdown fire this when the popover is the top layer |
+| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
+| `children` | `HellaChildren` | The panel body |
+
+### PopoverAnchor
+
+A bare anchor span for compositions where the trigger should not be the positioning target.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The anchor content |
+
+### PopoverHeader
+
+The top grouping `div` carrying `data-slot="popover-header"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title and description nodes |
+
+### PopoverTitle
+
+The heading `div` carrying `data-slot="popover-title"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The title text |
+
+### PopoverDescription
+
+The supporting line: a `p` carrying `data-slot="popover-description"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The description text |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ```jsx
 import { signal } from '@hellajs/core';
 import { Portal } from '@hellajs/dom';
 import { PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from './components/popover';
 
-const Manual = () => {
-  const open = signal(false);
-  const state = () => (open() ? 'open' : 'closed');
-  let button;
+const open = signal(false);
+const state = () => (open() ? 'open' : 'closed');
+let button;
 
-  return (
-    <>
-      <button
-        type="button"
-        hook:afterMount={(node) => { button = node; }}
-        on:click={() => open(!open())}
-      >
-        Open
-      </button>
-      {() => open() && (
-        <Portal to="body">
-          <PopoverContent
-            state={state}
-            anchor={() => button}
-            onDismiss={() => open(false)}
-          >
-            <PopoverHeader>
-              <PopoverTitle>Dimensions</PopoverTitle>
-              <PopoverDescription>Set the width and height.</PopoverDescription>
-            </PopoverHeader>
-          </PopoverContent>
-        </Portal>
-      )}
-    </>
-  );
-};
+const Manual = () => (
+  <>
+    <button
+      type="button"
+      hook:afterMount={(node) => { button = node; }}
+      on:click={() => open(!open())}
+    >
+      Open
+    </button>
+    {() => open() && (
+      <Portal to="body">
+        <PopoverContent
+          state={state}
+          anchor={() => button}
+          onDismiss={() => open(false)}
+        >
+          <PopoverHeader>
+            <PopoverTitle>Dimensions</PopoverTitle>
+            <PopoverDescription>Set the width and height.</PopoverDescription>
+          </PopoverHeader>
+        </PopoverContent>
+      </Portal>
+    )}
+  </>
+);
 ```
-
-`PopoverContent({ state, id, side, align, sideOffset, alignOffset, anchor, onDismiss, children, class })` renders the panel: `role="dialog"`, `tabindex="-1"` for the focus-on-open contract, `data-state`/`data-side`/`data-align` for the animation selectors. `PopoverAnchor` is a bare anchor span for compositions where the trigger should not be the positioning target.
-
-| Prop | Default | Behavior |
-|---|---|---|
-| `side` | `"bottom"` | Which side of the anchor the panel sits on |
-| `align` | `"center"` | Alignment along the anchor's edge |
-| `sideOffset` | `4` | Gap between the anchor and the panel edge, in px |
-| `alignOffset` | `0` | Cross-axis shift applied after positioning, in px |
-| `anchor` | - | Resolves the anchor element; positioning is skipped when undefined |
-| `onDismiss` | - | Escape and outside pointerdown fire this when the popover is the top layer |
-
-The wirings the content part installs when its props are present:
-
-| Wiring | Guarantee |
-|---|---|
-| [`anchorPosition`](/reference/dom/behaviors) | Fixed positioning against the anchor, collision flipping, repositioning on scroll and resize |
-| [`layerDismissal`](/reference/dom/behaviors) | Escape and outside pointerdown close only the top layer, so popovers stack cleanly |
-
-## Styling
-
-The module exports `content` (the popover surface at `18rem` wide with border, shadow, and enter and exit keyframes composed from fade, a 95% zoom, and the side's slide direction, on a 150ms budget both ways), plus `header`, `title`, and `description`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor uses shadcn's literal utilities (`bg-popover`, `w-72`, `shadow-md`, the `data-[state=open]:animate-in` set, the `data-[side=…]` slide variants, the `font-medium` / `text-muted-foreground` structure parts) wrapped in `cn()`, with the motion carried by `tw-animate-css`. The panel's look is the whole of `content`; restyle it there: the upstream width is the `width` declaration (css flavor) or the `w-72` token (tailwind flavor), `props.class` lands on the trigger button, and composing `PopoverContent` without `onDismiss` holds the panel open by never installing the `layerDismissal` wiring. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

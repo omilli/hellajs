@@ -5,9 +5,6 @@ import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: fade in/out for the overlay. The
-// panel itself transitions through transform (vaul parity) rather than
-// animate-in/out keyframes.
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 
@@ -110,8 +107,6 @@ const close = style({
     height: "1rem",
     width: "1rem",
   },
-  // The copied `sr-only` span: tailwind ships the utility, the css flavor
-  // carries the same hiding recipe on the close part.
   "& span": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",
@@ -125,10 +120,6 @@ const close = style({
   },
 }, { label: "hella-drawer-close", layer: "hella" });
 
-// The handle grip zone: tailwind carries the copied utility string, the css
-// flavor restyles it here. Ancestor-attribute conditions cannot restate
-// self-based at class scope, so these register as raw attribute selectors in
-// the same layer, after the part classes (the Tabs precedent).
 css({
   "@layer hella": {
     "[data-slot='drawer-content'] [data-slot='drawer-handle']": {
@@ -237,7 +228,7 @@ export function DrawerOverlay(props: DrawerOverlayProps): HellaNode {
       class="${
         [base, props.class]
       }"
-    ></div>
+    />
   ` as HellaNode;
 }
 
@@ -257,7 +248,23 @@ export function DrawerClose(props: DrawerCloseProps): HellaNode {
         [close, props.class]
       }"
       e:click="${() => props.onClose?.()}"
-    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg><span class="sr-only">Close</span></button>
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </svg>
+      <span class="sr-only">Close</span>
+    </button>
   ` as HellaNode;
 }
 
@@ -433,7 +440,7 @@ export function DrawerContent(props: DrawerContentProps): HellaNode {
         while (teardown.length) teardown.pop()!();
       }}"
     >
-      <div data-slot="drawer-handle" class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block"></div>
+      <div data-slot="drawer-handle" class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
       ${() => props.children}
     </div>
   ` as HellaNode;

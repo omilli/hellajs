@@ -7,47 +7,22 @@ import SonnerContent from "@ui/concepts/sonner.mdx";
 const title = "Sonner";
 const description = "Interactive Sonner toast demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Toaster, { toast } from './components/sonner';
-
-const Toasts = () => (
-  <>
-    <Toaster richColors />
-    <div>
-      <button on:click={() => toast('Saved', { description: 'Your work is safe.', type: 'success' })}>Success</button>
-      <button on:click={() => toast('Something broke.', { type: 'error' })}>Error</button>
-      <button
-        on:click={() =>
-          toast.promise(upload(), {
-            loading: 'Uploading',
-            success: (name) => \`Uploaded \${name}\`,
-            error: 'Upload failed',
-          })
-        }
-      >Promise toast</button>
-      <button on:click={() => toast('Deleted', { action: { label: 'Undo', onclick: () => toast('Restored.', { type: 'success' }) } })}>Action toast</button>
-      <button on:click={() => toast.dismiss()}>Dismiss all</button>
-    </div>
-  </>
-);`;
-
-const queueCode = `import { toast } from './components/sonner';
-
-const Burst = () => (
-  <button
-    on:click={() => {
-      let n = 0;
-      const tick = () => {
-        n += 1;
-        toast(\`Background job \${n}\`, { description: \`Entry \${n} of 5\` });
-        if (n < 5) setTimeout(tick, 500);
-      };
-      tick();
-    }}
-  >Run five jobs</button>
-);`;
+const queueCode = `<button
+  on:click={() => {
+    let n = 0;
+    const tick = () => {
+      n += 1;
+      toast(\`Background job \${n}\`, { description: \`Entry \${n} of 5\` });
+      if (n < 5) setTimeout(tick, 500);
+    };
+    tick();
+  }}
+>Run five jobs</button>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Sonner</h1>
+  <p>An opinionated toast queue: cards stack on a screen edge, auto-dismiss on a pausable countdown, and swipe away past a distance threshold, with `toast()` callable from anywhere importing the same copied module.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="sonner" />
   <SonnerContent />

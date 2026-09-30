@@ -1,25 +1,40 @@
-# Toggle
-
-A pressed-state button styled to shadcn's Toggle: a button carrying `aria-pressed` and `data-state` (`on` / `off`) with the full variant and size maps from the ref. The module also exports `toggleVariants`, the class resolver the compose array uses, so call sites can build matching classes for neighboring markup.
-
 ## Usage
 
 | Prop | Type | Behavior |
 |---|---|---|
 | `pressed` | `boolean \| (() => boolean)` | Uncontrolled seed or controlled accessor (see below) |
 | `onPressedChange` | `(pressed: boolean) => void` | Fires on every click with the requested next value |
-| `variant` | `"default" \| "outline"` | Visual map from the ref (`default`) |
-| `size` | `"default" \| "sm" \| "lg"` | Size map from the ref (`default`) |
+| `variant` | `"default" \| "outline"` | Visual variant (`default`) |
+| `size` | `"default" \| "sm" \| "lg"` | Control size (`default`) |
 | `disabled` | `boolean` | Blocks clicks and renders the disabled attribute |
 | `class` | `string` | Lands on the root next to the resolved classes |
 | `children` | node | The toggle's label content |
+
+### jsx
 
 ```jsx
 import Toggle from './components/toggle';
 
 const Toolbar = () => (
-  <Toggle variant="outline">B</Toggle>
+  <div class="flex gap-2">
+    <Toggle>Bold</Toggle>
+    <Toggle variant="outline">Italic</Toggle>
+    <Toggle size="sm">Strike</Toggle>
+    <Toggle size="lg" variant="outline">Underline</Toggle>
+  </div>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<div class="flex gap-2">
+  <${Toggle}>Bold</${Toggle}>
+  <${Toggle} variant="outline">Italic</${Toggle}>
+  <${Toggle} size="sm">Strike</${Toggle}>
+  <${Toggle} size="lg" variant="outline">Underline</${Toggle}>
+</div>`
 ```
 
 ## Controlled and Uncontrolled
@@ -39,6 +54,23 @@ const Controlled = () => (
 );
 ```
 
+## Neighboring Markup
+
+`toggleVariants({ variant, size, class })` resolves the same class string the component renders, so a plain button (a toolbar frame, a tooltip trigger) can match it exactly:
+
+```jsx
+import Toggle, { toggleVariants } from './components/toggle';
+
+const Toolbar = () => (
+  <div class="flex items-center gap-2">
+    <Toggle variant="outline" size="sm">Pin</Toggle>
+    <button type="button" class={toggleVariants({ variant: 'outline', size: 'sm' })}>
+      Neighbor
+    </button>
+  </div>
+);
+```
+
 ## Accessibility
 
 The root is a `button` element, so Space and Enter activate it through native activation and it participates in tab order.
@@ -49,7 +81,3 @@ The root is a `button` element, so Space and Enter activate it through native ac
 | State | `aria-pressed` is `true` or `false`; `data-state` is `on` or `off` |
 | Keyboard | Space and Enter toggle; the button is disabled for pointer and keyboard while `disabled` |
 | Labeling | The button's text content names the toggle |
-
-## Styling
-
-Both flavors export the same names from the copied file: `base` (the shared button chrome, including the pressed palette and focus ring), `variants` (`default`, `outline`), and `sizes` (`default`, `sm`, `lg`), mirroring the ref's cva maps, plus `toggleVariants({ variant, size, class })`, which resolves the same string the component renders and keeps neighboring markup (a toolbar frame, a tooltip trigger) visually in sync. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()`, verbatim from the ref including the `data-[state=on]` palette and the `[&_svg]` sizing rules. To add or retune a variant or size, edit the `variants` or `sizes` maps in your copied file; `props.class` lands last in the compose array. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

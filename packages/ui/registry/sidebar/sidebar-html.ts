@@ -216,7 +216,7 @@ export function Sidebar(props: SidebarProps): HellaNode {
               [gap, variantIsInset ? gapInset : gapPlain]
               // @hella:end
             }"
-          ></div>
+          />
           <div
             data-slot="sidebar-container"
             class="${
@@ -233,7 +233,9 @@ export function Sidebar(props: SidebarProps): HellaNode {
                 [inner]
                 // @hella:end
               }"
-            >${() => props.children}</div>
+            >
+              ${() => props.children}
+            </div>
           </div>
         </div>
       ` as HellaChild}
@@ -323,7 +325,7 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): () => HellaChild {
             [overlay]
             // @hella:end
           }"
-        ></div>
+        />
       ` as HellaChild,
       html`
           <div
@@ -359,15 +361,27 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): () => HellaChild {
               while (teardown.length) teardown.pop()!();
             }}"
           >
-            <h2 id="${titleId}" class="sr-only">Sidebar</h2>
-            <p id="${descriptionId}" class="sr-only">Displays the mobile sidebar.</p>
+            <h2
+              id="${titleId}"
+              class="sr-only"
+            >
+              Sidebar
+            </h2>
+            <p
+              id="${descriptionId}"
+              class="sr-only"
+            >
+              Displays the mobile sidebar.
+            </p>
             <div
               class="${
                 // @hella:compose
                 [mobileInner]
                 // @hella:end
               }"
-            >${() => props.children}</div>
+            >
+              ${() => props.children}
+            </div>
           </div>
         ` as HellaChild,
     ],
@@ -396,7 +410,24 @@ export function SidebarTrigger(props: SidebarTriggerProps): HellaNode {
         props.onclick?.();
         props.onToggle?.();
       }}"
-    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg><span class="sr-only">Toggle Sidebar</span></button>
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <rect width="18" height="18" x="3" y="3" rx="2" />
+        <path d="M9 3v18" />
+      </svg>
+      <span class="sr-only">Toggle Sidebar</span>
+    </button>
   ` as HellaNode;
 }
 
@@ -472,7 +503,7 @@ export function SidebarInput(props: SidebarInputProps): HellaNode {
         // @hella:end
       }"
       on:input="${(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}"
-    ></input>
+    />
   ` as HellaNode;
 }
 
@@ -693,32 +724,34 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (disposals.length) disposals.pop()!();
       }}"
-    >${button}${() => tooltipOpen() && Portal({
-      to: "body",
-      children: [
-        html`
-          <div
-            role="tooltip"
-            id="${tooltipId}"
-            data-slot="sidebar-tooltip-content"
-            data-state="${() => (tooltipOpen() ? "open" : "closed")}"
-            data-side="right"
-            data-align="center"
-            hidden="${() => (hidden() ? "" : undefined)}"
-            class="${
-              // @hella:compose
-              [tooltipContent]
-              // @hella:end
-            }"
-            hook:afterMount="${(node: Element) => {
-              if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
-              const anchor = triggerNode;
-              disposals.push(anchorPosition(anchor, node, { placement: "right" }));
-            }}"
-          >${() => props.tooltip}</div>
-        ` as HellaChild,
-      ],
-    })}</span>
+    >
+      ${button}${() => tooltipOpen() && Portal({
+        to: "body",
+        children: [
+          html`
+            <div
+              role="tooltip"
+              id="${tooltipId}"
+              data-slot="sidebar-tooltip-content"
+              data-state="${() => (tooltipOpen() ? "open" : "closed")}"
+              data-side="right"
+              data-align="center"
+              hidden="${() => (hidden() ? "" : undefined)}"
+              class="${
+                // @hella:compose
+                [tooltipContent]
+                // @hella:end
+              }"
+              hook:afterMount="${(node: Element) => {
+                if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
+                const anchor = triggerNode;
+                disposals.push(anchorPosition(anchor, node, { placement: "right" }));
+              }}"
+            >${() => props.tooltip}</div>
+          ` as HellaChild,
+        ],
+      })}
+    </span>
   ` as HellaNode;
 }
 
@@ -787,7 +820,7 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): HellaNode 
             [skeletonBase, skeletonIcon]
             // @hella:end
           }"
-        ></div>
+        />
       ` as HellaChild}
       <div
         data-sidebar="menu-skeleton-text"
@@ -797,7 +830,7 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): HellaNode 
           [skeletonBase, skeletonText]
           // @hella:end
         }"
-      ></div>
+      />
     </div>
   ` as HellaNode;
 }

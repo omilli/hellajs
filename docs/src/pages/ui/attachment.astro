@@ -7,77 +7,31 @@ import AttachmentContent from "@ui/concepts/attachment.mdx";
 const title = "Attachment";
 const description = "Interactive Attachment demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { Attachment, AttachmentAction, AttachmentActions, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle } from './components/attachment';
-
-const Files = () => (
-  <AttachmentGroup>
-    <Attachment state="done" size="sm">
-      <AttachmentMedia state="done" />
-      <AttachmentContent>
-        <AttachmentTitle>report.pdf</AttachmentTitle>
-        <AttachmentDescription>Uploaded</AttachmentDescription>
-      </AttachmentContent>
-      <AttachmentActions>
-        <AttachmentAction onclick={() => console.log('remove')}>x</AttachmentAction>
-      </AttachmentActions>
-    </Attachment>
-    <Attachment state="uploading" size="sm">
-      <AttachmentMedia state="uploading" />
-      <AttachmentContent>
-        <AttachmentTitle>photo.png</AttachmentTitle>
-        <AttachmentDescription>Uploading...</AttachmentDescription>
-      </AttachmentContent>
-      <AttachmentActions>
-        <AttachmentAction onclick={() => console.log('remove')}>x</AttachmentAction>
-      </AttachmentActions>
-    </Attachment>
-    <Attachment state="error" size="sm">
-      <AttachmentMedia state="error" />
-      <AttachmentContent>
-        <AttachmentTitle>archive.zip</AttachmentTitle>
-        <AttachmentDescription>Failed</AttachmentDescription>
-      </AttachmentContent>
-      <AttachmentActions>
-        <AttachmentAction onclick={() => console.log('retry')}>x</AttachmentAction>
-      </AttachmentActions>
-    </Attachment>
-    <Attachment state="idle" size="sm">
-      <AttachmentMedia state="idle" />
-      <AttachmentContent>
-        <AttachmentTitle>drop-file</AttachmentTitle>
-        <AttachmentDescription>Waiting</AttachmentDescription>
-      </AttachmentContent>
-    </Attachment>
-  </AttachmentGroup>
-);`;
-
-const sizesCode = `import { Attachment, AttachmentContent, AttachmentMedia, AttachmentTitle } from './components/attachment';
-
-const Sizes = () => (
-  <>
-    <Attachment state="done" size="xs">
-      <AttachmentMedia state="done" />
-      <AttachmentContent>
-        <AttachmentTitle>design-xs.png</AttachmentTitle>
-      </AttachmentContent>
-    </Attachment>
-    <Attachment state="done" size="sm">
-      <AttachmentMedia state="done" />
-      <AttachmentContent>
-        <AttachmentTitle>design-sm.png</AttachmentTitle>
-      </AttachmentContent>
-    </Attachment>
-    <Attachment state="done">
-      <AttachmentMedia state="done" />
-      <AttachmentContent>
-        <AttachmentTitle>design.png</AttachmentTitle>
-      </AttachmentContent>
-    </Attachment>
-  </>
-);`;
+const sizesCode = `<>
+  <Attachment state="done" size="xs">
+    <AttachmentMedia state="done" />
+    <AttachmentContent>
+      <AttachmentTitle>design-xs.png</AttachmentTitle>
+    </AttachmentContent>
+  </Attachment>
+  <Attachment state="done" size="sm">
+    <AttachmentMedia state="done" />
+    <AttachmentContent>
+      <AttachmentTitle>design-sm.png</AttachmentTitle>
+    </AttachmentContent>
+  </Attachment>
+  <Attachment state="done">
+    <AttachmentMedia state="done" />
+    <AttachmentContent>
+      <AttachmentTitle>design.png</AttachmentTitle>
+    </AttachmentContent>
+  </Attachment>
+</>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Attachment</h1>
+  <p>A file chip that carries its upload state through one `data-state` prop, with an inline loading spinner while uploading and an error glyph on error.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="attachment" />
   <AttachmentContent />

@@ -42,7 +42,8 @@ export default function Switch(props: SwitchProps): HellaNode {
         // @hella:end
       }"
       e:click="${() => toggle()}"
-    ><span
+    >
+      <span
         data-slot="switch-thumb"
         data-state="${() => (checked() ? "checked" : "unchecked")}"
         class="${
@@ -50,6 +51,7 @@ export default function Switch(props: SwitchProps): HellaNode {
           [thumb]
           // @hella:end
         }"
-      /></button>
+      />
+    </button>
   ` as HellaNode;
 }

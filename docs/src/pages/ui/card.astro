@@ -7,43 +7,20 @@ import CardContent from "@ui/concepts/card.mdx";
 const title = "Card";
 const description = "Interactive Card demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Card, { CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/card';
-import Button from './components/button';
-
-const NotificationsCard = () => (
-  <Card class="w-80">
-    <CardHeader>
-      <CardTitle>Notifications</CardTitle>
-      <CardDescription>You have three unread messages.</CardDescription>
-      <CardAction>
-        <Button size="sm" variant="outline">Mark all read</Button>
-      </CardAction>
-    </CardHeader>
-    <CardContent>
-      <p>Review your notification preferences and inbox rules.</p>
-    </CardContent>
-    <CardFooter>
-      <Button>Open settings</Button>
-    </CardFooter>
-  </Card>
-);`;
-
-const minimalCode = `import Card, { CardContent, CardDescription, CardHeader, CardTitle } from './components/card';
-
-const StatCard = () => (
-  <Card class="max-w-sm">
-    <CardHeader>
-      <CardTitle>Deploys</CardTitle>
-      <CardDescription>128 this week.</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <p>All regions green.</p>
-    </CardContent>
-  </Card>
-);`;
+const minimalCode = `<Card class="max-w-sm">
+  <CardHeader>
+    <CardTitle>Deploys</CardTitle>
+    <CardDescription>128 this week.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p>All regions green.</p>
+  </CardContent>
+</Card>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Card</h1>
+  <p>A panel surface composed of a root plus header, title, description, action, content, and footer parts, composable in any arrangement.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="card" />
   <CardContent />

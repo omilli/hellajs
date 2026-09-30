@@ -7,117 +7,49 @@ import FormContent from "@ui/concepts/form.mdx";
 const title = "Form";
 const description = "Signals-native form demo running the CLI-vendored css-flavor source the same `add` command installs, with the controller, validators, and explicit-state parts.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import { createForm, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from './components/form';
-import Button from './components/button';
-import Input from './components/input';
+const blurCode = `<div on:focusout={() => blurForm.blur('email')}>
+  <FormItem error={blurForm.errors().email != null}>
+    <FormLabel for="blur-email">Email</FormLabel>
+    <FormControl invalid={blurForm.errors().email != null}>
+      <Input
+        id="blur-email"
+        placeholder="Leave the field to validate"
+        value={blurForm.values.email}
+        oninput={(v) => blurForm.setField('email', v)}
+      />
+    </FormControl>
+    <FormMessage errors={blurForm.errors().email ? [blurForm.errors().email!] : []} />
+  </FormItem>
+</div>`;
 
-const saved = signal('');
-
-const form = createForm(
-  { email: '', name: '' },
-  {
-    validators: {
-      email: (v) => (v.includes('@') ? null : 'Enter a valid email'),
-      name: (v) => (v.length > 0 ? null : 'Required'),
-    },
-  },
-);
-
-const Profile = () => (
-  <form on:submit={form.handleSubmit((values) => saved(values.email))}>
-    <FormItem error={form.errors().email != null}>
-      <FormLabel for="email" error={form.errors().email != null}>Email</FormLabel>
-      <FormControl describedBy="email-msg" invalid={form.errors().email != null}>
-        <Input
-          id="email"
-          type="email"
-          placeholder="ada@lovelace.dev"
-          value={form.values.email}
-          oninput={(v) => form.setField('email', v)}
-        />
-      </FormControl>
-      <FormDescription id="email-msg">We only use this for sign-in.</FormDescription>
-      <FormMessage errors={form.errors().email ? [form.errors().email!] : []} />
-    </FormItem>
-    <FormItem error={form.errors().name != null}>
-      <FormLabel for="name" error={form.errors().name != null}>Display name</FormLabel>
-      <FormControl invalid={form.errors().name != null}>
-        <Input
-          id="name"
-          placeholder="Ada Lovelace"
-          value={form.values.name}
-          oninput={(v) => form.setField('name', v)}
-        />
-      </FormControl>
-      <FormMessage errors={form.errors().name ? [form.errors().name!] : []} />
-    </FormItem>
+const resetCode = `<form on:submit={resetForm.handleSubmit(() => {})} class="flex flex-col gap-2">
+  <FormItem error={resetForm.errors().email != null}>
+    <FormLabel for="reset-email">Email</FormLabel>
+    <FormControl invalid={resetForm.errors().email != null}>
+      <Input
+        id="reset-email"
+        value={resetForm.values.email}
+        oninput={(v) => resetForm.setField('email', v)}
+      />
+    </FormControl>
+    <FormMessage errors={resetForm.errors().email ? [resetForm.errors().email!] : []} />
+  </FormItem>
+  <div class="flex gap-2">
     <Button>Save</Button>
-  </form>
-);`;
-
-const blurCode = `import { createForm, FormControl, FormItem, FormLabel, FormMessage } from './components/form';
-import Input from './components/input';
-
-const blurForm = createForm(
-  { email: '' },
-  { validators: { email: (v) => (v.includes('@') ? null : 'Invalid email') } },
-);
-
-const OnBlur = () => (
-  <div on:focusout={() => blurForm.blur('email')}>
-    <FormItem error={blurForm.errors().email != null}>
-      <FormLabel for="blur-email">Email</FormLabel>
-      <FormControl invalid={blurForm.errors().email != null}>
-        <Input
-          id="blur-email"
-          placeholder="Leave the field to validate"
-          value={blurForm.values.email}
-          oninput={(v) => blurForm.setField('email', v)}
-        />
-      </FormControl>
-      <FormMessage errors={blurForm.errors().email ? [blurForm.errors().email!] : []} />
-    </FormItem>
+    <button
+      type="button"
+      class="w-fit rounded-md border px-2 py-1 text-xs"
+      on:click={() => resetForm.reset()}
+    >
+      Reset
+    </button>
   </div>
-);`;
-
-const resetCode = `import { createForm, FormControl, FormItem, FormLabel, FormMessage } from './components/form';
-import Button from './components/button';
-import Input from './components/input';
-
-const resetForm = createForm(
-  { email: 'ada@lovelace.dev' },
-  { validators: { email: (v) => (v.includes('@') ? null : 'Invalid email') } },
-);
-
-const Resettable = () => (
-  <form on:submit={resetForm.handleSubmit(() => {})} class="flex flex-col gap-2">
-    <FormItem error={resetForm.errors().email != null}>
-      <FormLabel for="reset-email">Email</FormLabel>
-      <FormControl invalid={resetForm.errors().email != null}>
-        <Input
-          id="reset-email"
-          value={resetForm.values.email}
-          oninput={(v) => resetForm.setField('email', v)}
-        />
-      </FormControl>
-      <FormMessage errors={resetForm.errors().email ? [resetForm.errors().email!] : []} />
-    </FormItem>
-    <div class="flex gap-2">
-      <Button>Save</Button>
-      <button
-        type="button"
-        class="w-fit rounded-md border px-2 py-1 text-xs"
-        on:click={() => resetForm.reset()}
-      >
-        Reset
-      </button>
-    </div>
-  </form>
-);`;
+</form>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Form</h1>
+  <p>A signals-native form controller: createForm owns values, errors, touched, and dirty as plain signals, and five parts compose each field row around it.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="form" />
   <FormContent />

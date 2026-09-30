@@ -1,10 +1,8 @@
-# Empty
-
-An empty-state surface styled byte-faithfully to shadcn's new-york-v4 Empty: a default `Empty` plus named `EmptyHeader`, `EmptyMedia`, `EmptyTitle`, `EmptyDescription`, and `EmptyContent` parts, each carrying its `data-slot` and composable in any arrangement.
-
 ## Usage
 
-Every part takes `{ children?, class? }`, and `EmptyMedia` adds a `variant` prop: `default` is a bare wrapper, while `icon` renders the rounded muted 2.5rem icon tile. The css flavor composes classes as plain arrays in each part's `class` attribute, declared in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules.
+Every part takes `{ children?, class? }`, and `EmptyMedia` adds a `variant` prop: `default` is a bare wrapper, while `icon` renders the rounded muted 2.5rem icon tile:
+
+### jsx
 
 ```jsx
 import Empty, { EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
@@ -24,27 +22,20 @@ const NoResults = () => (
   </Empty>
 );
 ```
+### html
 
-The html-format file (`empty.ts`, copied with `--format html`) renders through a template instead of JSX; each part is a plain function call:
+The html-format (`--format html`) works the same way.
 
 ```js
-import { html, mount } from '@hellajs/dom';
-import Empty, { EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
-
-mount(
-  html`
-    <${Empty}>
-      ${EmptyHeader({
-        children: [
-          EmptyMedia({ variant: 'icon' }),
-          EmptyTitle({ children: 'No results found' }),
-          EmptyDescription({ children: 'Try a different keyword or clear your filters.' }),
-        ],
-      })}
-    </${Empty}>
-  `,
-  '#app',
-);
+html`<${Empty}>
+  <${EmptyHeader}>
+    <${EmptyTitle}>No results found</${EmptyTitle}>
+    <${EmptyDescription}>Try a different keyword or clear your filters.</${EmptyDescription}>
+  </${EmptyHeader}>
+  <${EmptyContent}>
+    <p>Queries match against file names and contents.</p>
+  </${EmptyContent}>
+</${Empty}>`
 ```
 
 ## Media Variants
@@ -67,6 +58,49 @@ const NoAccess = () => (
 );
 ```
 
-## Styling
+## Manual Parts
 
-The style module exports one class per part (`base`, `header`, `media`, `title`, `description`, `content`) plus `mediaVariants` (the `default`/`icon` pair); each part's compose bakes its own class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities (`border-dashed`, `bg-muted`) in `cn()` so later tokens override earlier ones per utility group. Every part renders its `data-slot` (`empty`, `empty-header`, `empty-icon`, `empty-title`, `empty-description`, `empty-content`), so one-off overrides can also target parts through the `[data-slot]` attribute selectors; the root's dashed border comes up at the `md` breakpoint's larger padding automatically, and the surface itself stays transparent until you give it a border or background. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+`EmptyHeader`, `EmptyMedia`, `EmptyTitle`, `EmptyDescription`, and `EmptyContent` ship beside the default root for custom composition.
+
+### EmptyHeader
+
+The stacked top: a `div` carrying `data-slot="empty-header"`, centering its media, title, and description column.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Media, title, and description nodes |
+
+### EmptyMedia
+
+The media slot: a `div` carrying `data-slot="empty-icon"`, styled by its `variant`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `variant` | `"default" \| "icon"` | `default` stays a bare wrapper; `icon` renders the rounded muted 2.5rem icon tile |
+| `children` | `HellaChildren` | An svg, illustration, or avatar |
+
+### EmptyTitle
+
+The heading: a `div` carrying `data-slot="empty-title"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title node |
+
+### EmptyDescription
+
+The supporting line: a `div` carrying `data-slot="empty-description"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Description node |
+
+### EmptyContent
+
+The body: a `div` carrying `data-slot="empty-content"` below the header.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Body nodes |
+
+Every part also takes a `class` string, landing last in its style composition.

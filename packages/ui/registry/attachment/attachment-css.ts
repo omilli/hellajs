@@ -346,10 +346,6 @@ export const buttonSizes = {
   }, { label: "hella-attachment-action-size-icon-lg", layer: "hella" }),
 };
 
-// Attachment-conditioned state the parts carry from the root (size, orientation,
-// upload/error state): class-scoped nesting cannot restate ancestor conditions
-// self-based, so these register as raw attribute selectors in the same layer,
-// after the part classes.
 css({
   "@layer hella": {
     "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media']": {

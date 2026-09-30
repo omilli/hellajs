@@ -257,9 +257,6 @@ export const srOnly = style({
   width: "1px",
 }, { label: "hella-message-scroller-sr-only", layer: "hella" });
 
-// Direction/rtl state the button carries itself or from the document root:
-// class-scoped nesting cannot restate ancestor conditions self-based, so these
-// register as raw attribute selectors in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='message-scroller-button'][data-direction='start'] svg": {

@@ -4,8 +4,6 @@ import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: fade in/out for the overlay,
-// fade+zoom(95%) composed into the panel's enter/exit keyframes.
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 const zoomIn = keyframes({ from: { opacity: "0", transform: "scale(0.95)" } });
@@ -144,9 +142,6 @@ const shortcut = style({
   marginLeft: "auto",
 }, { label: "hella-command-shortcut", layer: "hella" });
 
-// The palette scoping the CommandDialog root applies: the copied
-// `[&_[cmdk-*]]` overrides translated against this entry's data-slots,
-// registered after the part maps so equal-specificity overrides resolve.
 const palette = style({
   "& [data-slot='command-input-wrapper']": {
     height: "3rem",
@@ -179,9 +174,6 @@ const palette = style({
   },
 }, { label: "hella-command-palette", layer: "hella" });
 
-// The composed Dialog surface, duplicated inline under this entry (registry
-// entries never cross-import): overlay, panel (the ref's overflow-hidden p-0
-// override composed in), sr-only header, title, description, and close.
 const dialogOverlay = style({
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
@@ -278,7 +270,6 @@ const dialogClose = style({
     height: "1rem",
     width: "1rem",
   },
-  // The copied `sr-only` span labeling the close button.
   "& span": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",
@@ -420,7 +411,9 @@ export function CommandList(props: CommandListProps): HellaNode {
       class="${
         [list, props.class]
       }"
-    >${() => props.body?.()}${() => props.children}</div>
+    >
+      ${() => props.body?.()}${() => props.children}
+    </div>
   ` as HellaNode;
 }
 
@@ -483,7 +476,7 @@ export function CommandSeparator(props: CommandSeparatorProps): HellaNode {
       class="${
         [separator, props.class]
       }"
-    ></div>
+    />
   ` as HellaNode;
 }
 
@@ -630,7 +623,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
             class="${
               [dialogOverlay]
             }"
-          ></div>
+          />
         `,
         html`
           <div
@@ -667,8 +660,16 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
                 [dialogHeader]
               }"
             >
-              ${props.title !== undefined ? html`<h2 id="${titleId}" data-slot="dialog-title" class="${dialogTitle}">${props.title}</h2>` : null}
-              ${props.description !== undefined ? html`<p id="${descriptionId}" data-slot="dialog-description" class="${dialogDescription}">${props.description}</p>` : null}
+              ${props.title !== undefined ? html`<h2
+                id="${titleId}"
+                data-slot="dialog-title"
+                class="${dialogTitle}"
+              >${props.title}</h2>` : null}
+              ${props.description !== undefined ? html`<p
+                id="${descriptionId}"
+                data-slot="dialog-description"
+                class="${dialogDescription}"
+              >${props.description}</p>` : null}
             </div>
             <button
               type="button"
@@ -679,7 +680,20 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
               }"
               e:click="${() => props.onClose()}"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
               <span class="sr-only">Close</span>
             </button>
             <div

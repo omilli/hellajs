@@ -7,28 +7,23 @@ import PaginationContent from "@ui/concepts/pagination.mdx";
 const title = "Pagination";
 const description = "Interactive Pagination demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const anchorCode = `import Pagination, { PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from './components/pagination';
-
-const pages = [1, 2, 3, 4, 5];
-const current = 2;
-
-const Pages = () => (
-  <Pagination>
-    <PaginationContent>
-      <PaginationItem><PaginationPrevious href={\`?page=\${Math.max(1, current - 1)}\`} /></PaginationItem>
-      {pages.map((page) => (
-        <PaginationItem key={page}>
-          <PaginationLink href={\`?page=\${page}\`} isActive={page === current}>{page}</PaginationLink>
-        </PaginationItem>
-      ))}
-      <PaginationItem><PaginationEllipsis /></PaginationItem>
-      <PaginationItem><PaginationNext href={\`?page=\${Math.min(5, current + 1)}\`} /></PaginationItem>
-    </PaginationContent>
-  </Pagination>
-);`;
+const anchorCode = `<Pagination>
+  <PaginationContent>
+    <PaginationItem><PaginationPrevious href={\`?page=1\`} /></PaginationItem>
+    {[1, 2, 3, 4, 5].map((page) => (
+      <PaginationItem key={page}>
+        <PaginationLink href={\`?page=\${page}\`} isActive={page === 2}>{page}</PaginationLink>
+      </PaginationItem>
+    ))}
+    <PaginationItem><PaginationEllipsis /></PaginationItem>
+    <PaginationItem><PaginationNext href={\`?page=3\`} /></PaginationItem>
+  </PaginationContent>
+</Pagination>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Pagination</h1>
+  <p>A navigation landmark for paged content: a centered nav wrapping a list of links, with previous/next controls, an ellipsis overflow marker, and an active-page state rendered through the button visual vocabulary.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="pagination" />
   <PaginationContent />

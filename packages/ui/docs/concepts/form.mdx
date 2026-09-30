@@ -1,10 +1,8 @@
-# Form
-
-A signals-native form controller with shadcn's form part surface: `createForm` owns values, errors, touched, and dirty as plain signals, and five parts (`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage`) compose each field row around it.
-
 ## Usage
 
 One `createForm` call drives the whole row: field state flows into each part as explicit props, and the message re-renders as validation runs. Submit with an invalid email marks the field touched and flips the message on; submit again after fixing the value and `onValid` receives the values snapshot:
+
+### jsx
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -37,29 +35,26 @@ const Profile = () => (
   </form>
 );
 ```
+### html
 
-`blur(key)` needs the control's own blur event, and the vendored controls forward only their declared props, so wire it where your composition allows (a raw `input` element with the `e:blur` prefix, or a bubbling `e:focusout` handler on a wrapper). The html-format file (`form.ts`, copied with `--format html`) renders through a template; children sit between the part tags exactly like the jsx form, and reactive props are arrow-wrapped in the attribute:
+The html-format (`--format html`) works the same way; build the controller with `createForm` and arrow-wrap reactive props in the attribute.
 
 ```js
-import { html, mount } from '@hellajs/dom';
-import { createForm, FormControl, FormItem, FormLabel, FormMessage } from './components/form';
-import Input from './components/input';
-
 const form = createForm(
   { email: '' },
   { validators: { email: (v) => (v.includes('@') ? null : 'Invalid email') } },
 );
 
-mount(
-  html`<${FormItem} error="${() => form.errors().email != null}">
+html`<main>
+  <${FormItem} error=${() => form.errors().email != null}>
     <${FormLabel} for="email">Email</${FormLabel}>
     <${FormControl} describedBy="email-msg">
-      <${Input} id="email" value="${() => form.values.email()}" oninput="${(v) => form.setField('email', v)}" />
+      <${Input} id="email" value=${() => form.values.email()} oninput=${(v) => form.setField('email', v)} />
     </${FormControl}>
-    <${FormMessage} errors="${() => (form.errors().email ? [form.errors().email!] : [])}" />
-  </${FormItem}>`,
-  '#app',
-);
+    <${FormDescription} id="email-msg">We only use this for sign-in.</${FormDescription}>
+    <${FormMessage} errors=${() => (form.errors().email ? [form.errors().email] : [])} />
+  </${FormItem}>
+</main>`
 ```
 
 ## The Controller
@@ -74,14 +69,56 @@ mount(
 | `handleSubmit(onValid)` | Validates all and marks all touched, then calls `onValid(values)` only when clean; the optional event argument is preventDefaulted. |
 | `reset()` | Restores every field to its initial value and clears errors, touched, and dirty. |
 
-## Composition Notes
+`blur(key)` needs the control's own blur event, and the vendored controls forward only their declared props, so wire it where your composition allows: a raw `input` element with the `e:blur` prefix, or a bubbling `e:focusout` handler on a wrapper.
 
-`FormItem` renders the `grid gap-2` row and carries `data-error` for the container-level error hook. `FormLabel` restates the label declarations inline, adds `data-required` for a `required` label and the ref's `data-[error=true]:text-destructive` hook, and renders `aria-invalid` while the error flag is set. `FormControl` is the passthrough slot around the control itself: with no Slot primitive, it renders a wrapper carrying `aria-invalid` and the `aria-describedby` target you pass as `describedBy`. `FormDescription` carries the id that target points at, and `FormMessage` renders the first error with `role="alert"` and hides (rather than unmounts) when there is nothing to show, so both formats keep one DOM shape.
+## Manual Parts
 
-<div role="alert" class="alert alert-info alert-soft">
-  <span>shadcn's form is a react-hook-form `FormProvider` with `useFormField` reading a `FormField` context. HellaJS has no context primitive, so the provider and the per-field hook disappear: the `createForm` controller holds the state, and every part takes its state as an explicit prop. This is the same divergence the other composed entries made.</span>
-</div>
+`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, and `FormMessage` compose each field row around one controller; every part takes its state as an explicit prop.
 
-## Styling
+### FormItem
 
-The style module exports `base`, `label` (the label declarations plus the error hook), `description`, and `message`; each compose bakes its class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim wrapped in `cn()`, and the controller wiring is identical in both flavors. Retune the row spacing by editing the `gap` inside the `base` map, or restyle the error text inside `message`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+The field row: a `div` carrying `data-error` as the container-level error hook.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `error` | `boolean \| (() => boolean)` | Renders `data-error="true"` / `"false"` for the row's error styling |
+| `children` | `HellaChildren` | The label, control, description, and message nodes |
+
+### FormLabel
+
+The field's label: renders `data-required` when `required` is set, plus `aria-invalid` and the destructive text hook while the error flag is set.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `for` | `string` | The labeled control's `id`, rendered as the `for` attribute |
+| `required` | `boolean` | Renders `data-required="true"` as the required-marker styling hook |
+| `error` | `boolean \| (() => boolean)` | Renders `data-error`, `aria-invalid`, and the destructive text hook while set |
+| `children` | `HellaChildren` | Label text |
+
+### FormControl
+
+The passthrough slot around the control itself: a wrapper carrying `aria-invalid` and the `aria-describedby` target you pass as `describedBy`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `invalid` | `boolean \| (() => boolean)` | Renders `aria-invalid="true"` on the wrapper |
+| `describedBy` | `string` | The description or message `id`, rendered as `aria-describedby` |
+| `children` | `HellaChildren` | The control node |
+
+### FormDescription
+
+The hint line: carries the `id` the control's `describedBy` points at.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `id` | `string` | The `id` a matching `FormControl` targets with `describedBy` |
+| `children` | `HellaChildren` | Hint text |
+
+### FormMessage
+
+The message: renders the first error with `role="alert"` and hides (rather than unmounts) when there is nothing to show, so both formats keep one DOM shape.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `errors` | `string[] \| (() => string[] \| undefined)` | Messages keyed to the field; the first one renders, and an accessor re-evaluates as validation runs |
+| `children` | `HellaChildren` | Fallback content rendered when there are no errors |

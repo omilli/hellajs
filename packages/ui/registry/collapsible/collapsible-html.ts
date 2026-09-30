@@ -50,7 +50,9 @@ export function CollapsibleTrigger(props: CollapsibleTriggerProps): HellaNode {
         // @hella:end
       }"
       e:click="${() => props.onToggle?.()}"
-    >${() => props.children}<svg
+    >
+      ${() => props.children}
+      <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
         height="24"
@@ -67,7 +69,10 @@ export function CollapsibleTrigger(props: CollapsibleTriggerProps): HellaNode {
           [icon]
           // @hella:end
         }"
-      ><path d="m6 9 6 6 6-6" /></svg></button>
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </button>
   ` as HellaNode;
 }
 
@@ -83,13 +88,17 @@ export function CollapsibleContent(props: CollapsibleContentProps): HellaNode {
         [content, props.class]
         // @hella:end
       }"
-    ><div
+    >
+      <div
         class="${
           // @hella:compose
           [contentInner]
           // @hella:end
         }"
-      >${() => props.children}</div></div>
+      >
+        ${() => props.children}
+      </div>
+    </div>
   ` as HellaNode;
 }
 

@@ -163,7 +163,7 @@ export function ScrollBar(props: ScrollBarProps): HellaNode {
         class="${
           [thumb]
         }"
-      ></div>
+      />
     </div>
   ` as HellaNode;
 }
@@ -194,10 +194,12 @@ export default function ScrollArea(props: ScrollAreaProps): HellaNode {
           [viewport]
         }"
       >
-        <div data-slot="scroll-area-content">${() => props.children}</div>
+        <div data-slot="scroll-area-content">
+          ${() => props.children}
+        </div>
       </div>
       ${ScrollBar({ observe: props.observe })}
-      <div data-slot="scroll-area-corner"></div>
+      <div data-slot="scroll-area-corner" />
     </div>
   ` as HellaNode;
 }

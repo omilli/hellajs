@@ -38,7 +38,9 @@ const checkIcon = (): HellaNode =>
       [icon]
       // @hella:end
     }"
-  ><path d="M20 6 9 17l-5-5" /></svg>` as HellaNode;
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>` as HellaNode;
 
 export default function Checkbox(props: CheckboxProps): HellaNode {
   const checkedAccessor = typeof props.checked === "function" ? props.checked : undefined;
@@ -77,13 +79,17 @@ export default function Checkbox(props: CheckboxProps): HellaNode {
         // @hella:end
       }"
       e:click="${() => toggle()}"
-    ><span
+    >
+      <span
         data-slot="checkbox-indicator"
         class="${
           // @hella:compose
           [indicator]
           // @hella:end
         }"
-      >${() => (state() === "unchecked" ? null : checkIcon())}</span></button>
+      >
+        ${() => (state() === "unchecked" ? null : checkIcon())}
+      </span>
+    </button>
   ` as HellaNode;
 }

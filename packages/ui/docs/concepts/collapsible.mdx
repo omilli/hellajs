@@ -1,10 +1,6 @@
-# Collapsible
-
-A disclosure region styled to shadcn's Collapsible: a trigger button and a content region whose open state lives in a signal. You hand the root a `trigger` and a `content` node and it wires the `data-state` attributes, `aria-expanded`, and the region id pairing between them. The show/hide animates through a measurement-free grid technique, so the content height can be anything, including reactive content that changes while open.
-
 ## Usage
 
-The composed root takes the two halves as props, not as children slots:
+The composed root takes the two halves as props, not as children slots; open content expands through a measurement-free grid (the region wrapper's rows flip between `0fr` and `1fr` on `data-state`), so any content height works, including reactive content that changes while open.
 
 | Prop | Type | Behavior |
 |---|---|---|
@@ -13,6 +9,8 @@ The composed root takes the two halves as props, not as children slots:
 | `open` | `() => boolean` | Controlled state. When given, the root never writes its internal signal and reports every requested flip through `onOpenChange` |
 | `defaultOpen` | `boolean` | Opens the region on mount (uncontrolled only) |
 | `onOpenChange` | `(open: boolean) => void` | Fires on every toggle with the requested state |
+
+### jsx
 
 ```jsx
 import Collapsible from './components/collapsible';
@@ -23,6 +21,18 @@ const Faq = () => (
     content="One editable file per component, a theme entry, and no runtime dependency."
   />
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Collapsible}
+    trigger="What ships in the box?"
+    content="One editable file per component, a theme entry, and no runtime dependency."
+  />
+</main>`
 ```
 
 ## Controlled and Uncontrolled
@@ -37,7 +47,7 @@ const open = signal(false);
 
 const Controlled = () => (
   <Collapsible
-    open={() => open()}
+    open={open}
     onOpenChange={(next) => open(next)}
     trigger="Synced with a parent signal"
     content="The parent signal is the single source of truth."
@@ -47,29 +57,44 @@ const Controlled = () => (
 
 ## Manual Parts
 
-`CollapsibleTrigger` and `CollapsibleContent` ship beside the default root for custom composition. hella has no context primitive, so state is explicit: each part takes an `active` accessor that drives `data-state` (and `aria-expanded` on the trigger), and the trigger takes an `onToggle` callback plus a `controls` id to pair with the region. That is the documented divergence from shadcn's context-wired composition: the wiring you get for free from the root is yours to thread when you compose the parts yourself. The composed root is a thin wrapper that derives the region id and threads state, so replacing it with the parts loses nothing.
+`CollapsibleTrigger` and `CollapsibleContent` ship beside the default root for custom composition; state is explicit. The composed root is a thin wrapper that derives the region id and threads state, so replacing it with the parts loses nothing.
+
+### CollapsibleTrigger
+
+The header row: a button whose `active` accessor drives `data-state` and `aria-expanded`, with the chevron icon appended after the children.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `active` | `() => boolean` | Drives `aria-expanded` (`true` / `false`) and the button's `data-state` (`open` / `closed`) |
+| `onToggle` | `() => void` | Click callback |
+| `controls` | `string` | Paired content's `id`, rendered as `aria-controls` |
+| `children` | `HellaChildren` | Label node rendered inside the button |
+
+### CollapsibleContent
+
+The body region: a `role="region"` div whose grid rows flip between `0fr` and `1fr` on `data-state`, with an inner wrapper carrying the overflow clip.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `active` | `() => boolean` | Drives the region's `data-state`, which the grid collapse keys off |
+| `id` | `string` | Region id; the paired trigger's `aria-controls` points at it |
+| `children` | `HellaChildren` | Body node rendered inside the region |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ```jsx
 import { signal } from '@hellajs/core';
 import { CollapsibleContent, CollapsibleTrigger } from './components/collapsible';
 
 const open = signal(false);
-const regionId = 'custom-region';
+const toggle = () => open(!open());
 
 const Custom = () => (
   <div>
-    <CollapsibleTrigger active={() => open()} onToggle={() => open(!open())} controls={regionId}>
+    <CollapsibleTrigger active={open} onToggle={toggle} controls="custom-region">
       Custom trigger
     </CollapsibleTrigger>
-    <CollapsibleContent id={regionId} active={() => open()}>Custom body</CollapsibleContent>
+    <CollapsibleContent id="custom-region" active={open}>Custom body</CollapsibleContent>
   </div>
 );
 ```
-
-## Animation
-
-shadcn animates its content through Radix's measured-height keyframes (`--radix-collapsible-content-height`). This port animates the same 200ms window through a measurement-free grid technique instead: the content wrapper is a grid whose rows flip between `0fr` and `1fr` on `data-state`, and an inner wrapper carries `overflow: hidden` with a `min-height: 0`. Opacity rides the same transition. The divergence is invisible to callers; it only means the technique works for any content height without JavaScript measurement.
-
-## Styling
-
-Both flavors export the same names from the copied file: `trigger` (the open-state chevron rotation), `icon` (chevron size, color, and transition), and the animation pair `content` plus `contentInner`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()` and reads the region's own `data-state` through variants (`data-[state=open]:grid-rows-[1fr]`). To restyle every collapsible at once, edit the `trigger`, `icon`, `content`, or `contentInner` maps in your copied file; `props.class` lands last in each composition. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

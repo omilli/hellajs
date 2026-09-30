@@ -1,10 +1,5 @@
 export const base = "pointer-events-none fixed inset-0 z-[100] flex list-none flex-col gap-3 p-4 group/toaster";
 
-// The queue renders newest first, so bottom edges reverse the column (newest
-// pinned at the bottom edge) and top edges keep it; each group pins to its
-// edge with flex-start. The alignment half of each entry comes from the
-// horizontal half of the position name, and the stack/enter variables read
-// per position group.
 export const toasterPositions = {
   "top-left": "flex-col justify-start items-start [--enter-offset:-100%] [--stack-offset:1.5rem] [--stack-origin:top]",
   "top-center": "flex-col justify-start items-center [--enter-offset:-100%] [--stack-offset:1.5rem] [--stack-origin:top]",

@@ -7,63 +7,26 @@ import SidebarContent from "@ui/concepts/sidebar.mdx";
 const title = "Sidebar";
 const description = "Interactive Sidebar demo running the CLI-vendored css-flavor source the same `add` command installs, with the provider-owned open and mobile state and the full menu part family.";
 
-const heroCode = `import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarSeparator, SidebarTrigger } from './components/sidebar';
-
-const Shell = () => (
-  <SidebarProvider>
-    {({ open, mobile, openMobile, setOpenMobile, onToggle }) => (
-      <>
-        <Sidebar open={open} mobile={mobile} openMobile={openMobile} onOpenMobileChange={setOpenMobile} collapsible="icon">
-          <SidebarHeader>Acme Inc</SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Application</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton active tooltip="Home" open={open} mobile={mobile}>Home</SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Search" open={open} mobile={mobile}>Search</SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarSeparator />
-          <SidebarFooter>Ctrl+B toggles</SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-          <SidebarTrigger onToggle={onToggle} />
-          <main>Page content stretches beside the panel.</main>
-        </SidebarInset>
-      </>
-    )}
-  </SidebarProvider>
-);`;
-
-const menuCode = `import { SidebarMenu, SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarMenuSkeleton, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from './components/sidebar';
-
-const Items = () => (
-  <SidebarMenu>
-    <SidebarMenuItem>
-      <SidebarMenuButton active>Inbox</SidebarMenuButton>
-      <SidebarMenuBadge>3</SidebarMenuBadge>
-      <SidebarMenuAction showOnHover onclick={() => console.log('configure')}>Configure</SidebarMenuAction>
-      <SidebarMenuSub>
-        <SidebarMenuSubItem>
-          <SidebarMenuSubButton active href="/settings">Settings</SidebarMenuSubButton>
-        </SidebarMenuSubItem>
-      </SidebarMenuSub>
-    </SidebarMenuItem>
-    <SidebarMenuItem>
-      <SidebarMenuSkeleton showIcon />
-    </SidebarMenuItem>
-  </SidebarMenu>
-);`;
+const menuCode = `<SidebarMenu>
+  <SidebarMenuItem>
+    <SidebarMenuButton active>Inbox</SidebarMenuButton>
+    <SidebarMenuBadge>3</SidebarMenuBadge>
+    <SidebarMenuAction showOnHover onclick={() => console.log('configure')}>Configure</SidebarMenuAction>
+    <SidebarMenuSub>
+      <SidebarMenuSubItem>
+        <SidebarMenuSubButton active href="/settings">Settings</SidebarMenuSubButton>
+      </SidebarMenuSubItem>
+    </SidebarMenuSub>
+  </SidebarMenuItem>
+  <SidebarMenuItem>
+    <SidebarMenuSkeleton showIcon />
+  </SidebarMenuItem>
+</SidebarMenu>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Sidebar</h1>
+  <p>A composite shell whose provider owns the open and mobile state: a collapsible desktop panel with three variants, a mobile sheet past 769px, and a full menu part family.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="sidebar" />
   <SidebarContent />

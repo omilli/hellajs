@@ -1,10 +1,8 @@
-# Navigation Menu
-
-A horizontal navigation surface styled to shadcn's NavigationMenu: triggers open content panels into a shared viewport slot under the bar, an indicator slides under the active trigger, and links carry the active accent styles.
-
 ## Usage
 
-There is no Radix-style context, so the state the upstream provider distributes threads through explicit props instead (the tabs precedent): each trigger and content takes its active state as an accessor, and the owner signal sits in your component.
+Each trigger and content takes its active state as an accessor, and the owner signal sits in your component:
+
+### jsx
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -42,39 +40,108 @@ const Nav = () => (
   </NavigationMenu>
 );
 ```
+### html
 
-| Root prop | Default | Behavior |
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${NavigationMenu}>
+    <${NavigationMenuList}>
+      <${NavigationMenuItem}>
+        <${NavigationMenuTrigger} value=${"learn"}>Learn</${NavigationMenuTrigger}>
+      </${NavigationMenuItem}>
+    </${NavigationMenuList}>
+  </${NavigationMenu}>
+</main>`
+```
+
+| Root prop | Type | Behavior |
 |---|---|---|
-| `value` | internal signal | Controlled id of the open panel ("" when closed), fed by trigger announcements |
-| `onValueChange` | - | Reports every store flip |
-| `viewport` | `true` | Renders the shared viewport slot as the last child; set `false` to render `NavigationMenuViewport` manually |
-| `children` | - | The list, viewport, and indicator |
-| `class` | - | Extra classes on the bar |
+| `value` | `() => string` | Controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given |
+| `onValueChange` | `(value: string) => void` | Reports every store flip |
+| `viewport` | `boolean` | Renders the shared viewport slot as the last child (default `true`); set `false` to render `NavigationMenuViewport` manually |
+| `children` | `HellaChildren` | The list, viewport, and indicator |
+| `class` | `string` | Extra classes on the bar |
 
 Triggers carrying a `value` announce clicks on a document-level event, so the root's store and the appended viewport follow without extra wiring: the store is a mirror, never a second state owner. Rendering the indicator with no `active` or `anchor` props joins the same announcement stream and follows the active trigger automatically.
 
-## Viewport and Indicator Divergence
+## Viewport and Indicator
 
-Upstream renders panels into a provider-owned viewport and animates its width and height through measurement. HellaJS keeps the shared slot but drops the provider: every `NavigationMenuContent` portals into the viewport slot (`[data-slot="navigation-menu-viewport"]`), the slot sits absolutely under the bar, and the panel's enter and exit are fade and zoom keyframes on the viewport's `data-state`. The indicator approximates upstream's spring with a 200ms transform and width transition: it measures the active trigger against the bar (on mount, on activation, and on resize) and translates under it.
+Every `NavigationMenuContent` portals into the viewport slot (`[data-slot="navigation-menu-viewport"]`), the slot sits absolutely under the bar, and the panel's enter and exit are fade and zoom keyframes on the viewport's `data-state`. The indicator measures the active trigger against the bar (on mount, on activation, and on resize) and translates under it with a 200ms transform and width transition.
 
 Closing runs through the same exit budget as the menus: a closed panel stays mounted under `data-state="closed"` until its `animationend` (or the 250ms fallback) unmounts it, so a trigger swap animates the outgoing panel before the viewport releases it.
 
 For a second navigation menu on the same page, render `NavigationMenuViewport` manually with `viewport={false}`, give the slot an `id`, and pass `#<id>` as each content's `viewport` selector so panels land in their own slot.
 
-## Structure Parts
+## Manual Parts
 
 Seven named parts ship beside the default `NavigationMenu`: `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink`, `NavigationMenuViewport`, and `NavigationMenuIndicator`.
 
-| Part | Props beyond `children`/`class` | Renders |
+### NavigationMenuList
+
+The bar: a `ul` row of items.
+
+| Prop | Type | Behavior |
 |---|---|---|
-| `NavigationMenuList` | - | The `ul` row of items |
-| `NavigationMenuItem` | - | A `li` slot for one trigger plus its content |
-| `NavigationMenuTrigger` | `value`, `active`, `onActivate` | The bar button with the rotating chevron and `data-state`/`aria-expanded` |
-| `NavigationMenuContent` | `active`, `viewport`, `onExited` | The panel; portals into the shared viewport slot while open |
-| `NavigationMenuLink` | `href`, `active` | The in-panel link; `active` renders `data-active="true"` and its accent styles |
-| `NavigationMenuViewport` | `active`, `id` | The absolute slot under the bar; `data-state` drives its enter and exit |
-| `NavigationMenuIndicator` | `active`, `anchor` | The underline diamond; measures the active trigger and transitions between positions |
+| `children` | `HellaChildren` | The `NavigationMenuItem` slots |
 
-## Styling
+### NavigationMenuItem
 
-The module exports `base` (the bar), `list` and `item` (the row and its slots), `trigger` (the accent states plus the open-state chevron rotation), `content` (panel placement with the `md:` absolute layout), `link` (hover, focus, and `data-active` accent states), `viewportWrapper` and `viewport` (the shared slot with its fade and zoom keyframes), and `indicator` with `diamond` (the measured underline). The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer; the tailwind flavor uses shadcn's literal utilities verbatim (`data-[state=open]:bg-accent/50`, `focus-visible:ring-[3px]`, the `group-data-[state=open]:rotate-180` chevron, and the `**:` link-focus suppressions) wrapped in `cn()`, with the indicator string appending `transition-[transform,width] duration-200`, the entry's documented spring approximation. The `data-[motion=…]` slide variants of the upstream string stay inert here: panels portal into the viewport, so no motion attribute is ever set. The viewport slot's look is `viewport` and the panel's look is `content` - restyle either in your copied file; hold the exit animation off by removing the keyframe rules from `viewport`, or move the panel inline by giving `NavigationMenuContent` a custom `viewport` selector that resolves anywhere in your document. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+One `li` slot for one trigger plus its content.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The trigger and content pair |
+
+### NavigationMenuTrigger
+
+The bar button with the rotating chevron.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `string` | This trigger's id in the root's open-value store; clicks announce it when no `onActivate` stands in |
+| `active` | `() => boolean` | Resolves the open state for `aria-expanded` and `data-state` |
+| `onActivate` | `() => void` | Click callback |
+| `children` | `HellaChildren` | The trigger label |
+
+### NavigationMenuContent
+
+The panel; portals into the shared viewport slot while open.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `active` | `() => boolean` | Resolves the open state; manual wiring threads it from the owning signal |
+| `viewport` | `string` | Portal target for the shared viewport slot; defaults to the first `[data-slot="navigation-menu-viewport"]` in the document |
+| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"`; entry animation ends are ignored |
+| `children` | `HellaChildren` | The panel content, typically `NavigationMenuLink` rows |
+
+### NavigationMenuLink
+
+The in-panel link.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `active` | `boolean` | Renders `data-active="true"` and its accent styles |
+| `href` | `string` | Passthrough anchor target |
+| `children` | `HellaChildren` | The link label |
+
+### NavigationMenuViewport
+
+The absolute slot under the bar; `data-state` drives its enter and exit.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `active` | `() => boolean` | Resolves the open state for the viewport's enter/exit `data-state`; the composed root wires its own store |
+| `id` | `string` | Anchors manual content wiring: give the slot an id and pass `#<id>` as each content's `viewport` selector |
+
+### NavigationMenuIndicator
+
+The underline diamond; measures the active trigger and transitions between positions.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `active` | `() => boolean` | Resolves the visible state (any panel open); manual wiring threads it from the owning signal |
+| `anchor` | `() => Element \| undefined` | Resolves the trigger the indicator sits under; defaults to the trigger announced by the activation stream |
+
+Every part also takes a `class` string, landing last in its style composition.

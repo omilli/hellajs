@@ -7,35 +7,29 @@ import InputGroupContent from "@ui/concepts/input-group.mdx";
 const title = "Input Group";
 const description = "Interactive Input Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const ringsCode = `import InputGroup, { InputGroupInput } from './components/input-group';
-
-const Rings = () => (
-  <div class="flex flex-col gap-4">
-    <InputGroup>
-      <InputGroupInput placeholder="Focus me - the whole group lights up" />
-    </InputGroup>
-    <InputGroup>
-      <InputGroupInput placeholder="Invalid value" ariaInvalid />
-    </InputGroup>
-  </div>
-);`;
-
-const columnCode = `import InputGroup, { InputGroupAddon, InputGroupButton, InputGroupTextarea, InputGroupText } from './components/input-group';
-
-const Comment = () => (
+const ringsCode = `<div class="flex flex-col gap-4">
   <InputGroup>
-    <InputGroupAddon align="block-start">
-      <InputGroupText>New comment</InputGroupText>
-    </InputGroupAddon>
-    <InputGroupTextarea placeholder="Write your reply" />
-    <InputGroupAddon align="block-end">
-      <InputGroupButton>Send</InputGroupButton>
-    </InputGroupAddon>
+    <InputGroupInput placeholder="Focus me - the whole group lights up" />
   </InputGroup>
-);`;
+  <InputGroup>
+    <InputGroupInput placeholder="Invalid value" ariaInvalid />
+  </InputGroup>
+</div>`;
+
+const columnCode = `<InputGroup>
+  <InputGroupAddon align="block-start">
+    <InputGroupText>New comment</InputGroupText>
+  </InputGroupAddon>
+  <InputGroupTextarea placeholder="Write your reply" />
+  <InputGroupAddon align="block-end">
+    <InputGroupButton>Send</InputGroupButton>
+  </InputGroupAddon>
+</InputGroup>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Input Group</h1>
+  <p>A wrapper that joins an input or textarea with buttons, text, and dropdowns under one border: the group owns the focus and invalid rings, while the control itself strips its own ring.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="input-group" />
   <InputGroupContent />

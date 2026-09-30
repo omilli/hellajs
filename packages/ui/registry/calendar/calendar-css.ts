@@ -220,11 +220,6 @@ export const dayButton = style({
   },
 }, { label: "hella-calendar-day-button", layer: "hella" });
 
-// State the day cell carries through data attributes (today/outside/disabled/
-// hidden/range), the focused-day ring under the `group/day` cell, the edge-cell
-// button radii, and the card/popover ancestor transparency: ancestor- or
-// attribute-conditioned selectors that cannot restyle self-based register as
-// raw attribute selectors in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='calendar-day'][data-today='true']": {

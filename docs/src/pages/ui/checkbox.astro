@@ -7,31 +7,17 @@ import CheckboxContent from "@ui/concepts/checkbox.mdx";
 const title = "Checkbox";
 const description = "Interactive Checkbox demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import Checkbox from './components/checkbox';
-
-const subscribed = signal(false);
-
-const Settings = () => (
-  <label>
-    <Checkbox
-      checked={() => subscribed()}
-      onCheckedChange={(next) => subscribed(next)}
-    />
-    Subscribe
-  </label>
-);`;
-
-const indeterminateCode = `import Checkbox from './components/checkbox';
-
-const Notifications = () => (
-  <label>
-    <Checkbox indeterminate /> Notify participants
-  </label>
-);`;
+const indeterminateCode = `<label>
+  <Checkbox indeterminate /> Notify participants
+</label>
+<label>
+  <Checkbox defaultChecked /> Email receipts
+</label>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Checkbox</h1>
+  <p>A checked-state control: a button carrying a checkbox role whose state lives in a signal, showing the check icon whenever the box is checked or indeterminate.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="checkbox" />
   <CheckboxContent />

@@ -7,39 +7,18 @@ import ComboboxTitle from "@ui/concepts/combobox.mdx";
 const title = "Combobox";
 const description = "Interactive Combobox demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Combobox from './components/combobox';
-
-const fruits = [
-  { value: 'apple', label: 'Apple' },
-  { value: 'blueberry', label: 'Blueberry' },
-  { value: 'canteloupe', label: 'Canteloupe' },
-  { value: 'date', label: 'Date' },
-];
-
-const FruitPicker = () => (
-  <Combobox
-    items={fruits}
-    placeholder="Search fruit"
-    onValueChange={(value) => console.log(value)}
-  />
-);`;
-
-const multipleCode = `import Combobox from './components/combobox';
-
-const PickSeveral = () => (
-  <Combobox
-    items={fruits}
-    multiple
-    showClear
-    placeholder="Pick several"
-    onValueChange={(values) => console.log(values)}
-  />
-);
-
-// fruits: the same item array as the hero example`;
+const multipleCode = `<Combobox
+  items={fruits}
+  multiple
+  showClear
+  placeholder="Pick several"
+  onValueChange={(values) => console.log(values)}
+/>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Combobox</h1>
+  <p>A filterable listbox: the input owns a query signal, the panel anchors to the input wrapper, and typing narrows the options case-insensitively; Enter commits the active option, and multiple mode toggles values into removable chips.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="combobox" />
   <ComboboxTitle />

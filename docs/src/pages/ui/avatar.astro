@@ -7,33 +7,17 @@ import AvatarContent from "@ui/concepts/avatar.mdx";
 const title = "Avatar";
 const description = "Interactive Avatar demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import Avatar, { AvatarFallback, AvatarImage } from './components/avatar';
-
-const Portrait = () => {
-  const loaded = signal(false);
-
-  return (
-    <Avatar>
-      <AvatarImage src="/missing-avatar.png" alt="Broken image" loaded={loaded} />
-      <AvatarFallback loaded={loaded}>M</AvatarFallback>
-    </Avatar>
-  );
-};`;
-
-const groupCode = `import Avatar, { AvatarFallback, AvatarGroup, AvatarGroupCount } from './components/avatar';
-
-const Team = () => (
-  <AvatarGroup>
-    <Avatar><AvatarFallback>M</AvatarFallback></Avatar>
-    <Avatar><AvatarFallback>J</AvatarFallback></Avatar>
-    <Avatar><AvatarFallback>A</AvatarFallback></Avatar>
-    <AvatarGroupCount>+5</AvatarGroupCount>
-  </AvatarGroup>
-);`;
+const groupCode = `<AvatarGroup>
+  <Avatar><AvatarFallback>M</AvatarFallback></Avatar>
+  <Avatar><AvatarFallback>J</AvatarFallback></Avatar>
+  <Avatar><AvatarFallback>A</AvatarFallback></Avatar>
+  <AvatarGroupCount>+5</AvatarGroupCount>
+</AvatarGroup>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Avatar</h1>
+  <p>A user portrait with a graceful fallback: a rounded relative wrapper stacking an image and a fallback initial, plus a status badge, an overlapping group, and a group count.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="avatar" />
   <AvatarContent />

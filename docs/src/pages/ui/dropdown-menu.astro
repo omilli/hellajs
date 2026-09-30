@@ -7,73 +7,30 @@ import DropdownMenuTitle from "@ui/concepts/dropdown-menu.mdx";
 const title = "Dropdown Menu";
 const description = "Interactive Dropdown Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import DropdownMenu from './components/dropdown-menu';
-import {
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuSeparator,
-} from './components/dropdown-menu';
-
-const bold = signal(false);
-const size = signal('medium');
-
-const Format = () => (
-  <DropdownMenu
-    content={
-      <>
-        <DropdownMenuLabel>Formatting</DropdownMenuLabel>
-        <DropdownMenuCheckboxItem
-          checked={() => bold()}
-          onCheckedChange={(next) => bold(next)}
-        >
-          Bold
-        </DropdownMenuCheckboxItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          items={[
-            { value: 'small', label: 'Small' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'large', label: 'Large' },
-          ]}
-          value={() => size()}
-          onValueChange={(next) => size(next)}
-        />
-      </>
-    }
-  >
-    Format
-  </DropdownMenu>
-);`;
-
-const submenuCode = `import DropdownMenu from './components/dropdown-menu';
-import { DropdownMenuItem, DropdownMenuSub } from './components/dropdown-menu';
-
-const More = () => (
-  <DropdownMenu
-    content={
-      <>
-        <DropdownMenuItem>Save</DropdownMenuItem>
-        <DropdownMenuSub
-          content={
-            <>
-              <DropdownMenuItem>Export as PDF</DropdownMenuItem>
-              <DropdownMenuItem>Export as HTML</DropdownMenuItem>
-            </>
-          }
-        >
-          Export
-        </DropdownMenuSub>
-      </>
-    }
-  >
-    File
-  </DropdownMenu>
-);`;
+const submenuCode = `<DropdownMenu
+  content={
+    <>
+      <DropdownMenuItem>Save</DropdownMenuItem>
+      <DropdownMenuSub
+        content={
+          <>
+            <DropdownMenuItem>Export as PDF</DropdownMenuItem>
+            <DropdownMenuItem>Export as HTML</DropdownMenuItem>
+          </>
+        }
+      >
+        Export
+      </DropdownMenuSub>
+    </>
+  }
+>
+  File
+</DropdownMenu>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Dropdown Menu</h1>
+  <p>A button-triggered menu: the trigger opens a portaled, anchored surface of items; checkbox and radio items select state; submenus open on hover or ArrowRight; Escape pops one layer at a time and item selection closes the whole menu.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="dropdown-menu" />
   <DropdownMenuTitle />

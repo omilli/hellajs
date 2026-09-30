@@ -7,52 +7,31 @@ import CommandTitle from "@ui/concepts/command.mdx";
 const title = "Command";
 const description = "Interactive Command demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Command from './components/command';
-
-const commands = [
-  { value: 'theme-light', label: 'Light theme', group: 'Theme', shortcut: '⌘1' },
-  { value: 'theme-dark', label: 'Dark theme', group: 'Theme', shortcut: '⌘2' },
-  { value: 'deploy', label: 'Deploy site', group: 'Actions', keywords: ['publish', 'ship'] },
-  { value: 'new-post', label: 'New post', group: 'Actions', shortcut: '⌘N' },
-];
-
-const Palette = () => (
-  <Command items={commands} onValueChange={(value) => console.log(value)} />
-);`;
-
-const paletteCode = `import { signal } from '@hellajs/core';
-import {
-  CommandDialog, CommandInput, CommandList,
-  CommandGroup, CommandItem, CommandShortcut,
-} from './components/command';
-
-const open = signal(false);
-
-const Palette = () => (
-  <CommandDialog
-    open={() => open()}
-    onClose={() => open(false)}
-    title="Command Palette"
-    description="Search for a command to run..."
-  >
-    <CommandInput placeholder="Type a command or search..." />
-    <CommandList>
-      <CommandGroup heading="Actions">
-        <CommandItem onSelect={() => open(false)}>
-          Reload theme
-          <CommandShortcut>⌘R</CommandShortcut>
-        </CommandItem>
-        <CommandItem onSelect={() => open(false)}>
-          Open settings
-          <CommandShortcut>⌘S</CommandShortcut>
-        </CommandItem>
-      </CommandGroup>
-    </CommandList>
-  </CommandDialog>
-);`;
+const paletteCode = `<CommandDialog
+  open={() => open()}
+  onClose={() => open(false)}
+  title="Command Palette"
+  description="Search for a command to run..."
+>
+  <CommandInput placeholder="Type a command or search..." />
+  <CommandList>
+    <CommandGroup heading="Actions">
+      <CommandItem onSelect={() => open(false)}>
+        Reload theme
+        <CommandShortcut>⌘R</CommandShortcut>
+      </CommandItem>
+      <CommandItem onSelect={() => open(false)}>
+        Open settings
+        <CommandShortcut>⌘S</CommandShortcut>
+      </CommandItem>
+    </CommandGroup>
+  </CommandList>
+</CommandDialog>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Command</h1>
+  <p>A command palette: the items-driven root owns the query signal and a scoring filter, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="command" />
   <CommandTitle />

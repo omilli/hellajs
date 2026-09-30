@@ -67,10 +67,6 @@ const footer = style({
   color: "var(--muted-foreground)",
 }, { label: "hella-message-footer", layer: "hella" });
 
-// Group-conditioned state the parts carry from their Message ancestors (footer
-// presence, a ghost-variant bubble, end alignment): class-scoped nesting cannot
-// restate ancestor conditions self-based, so these register as raw attribute
-// selectors in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='message']:has([data-slot='message-footer']) [data-slot='message-avatar']": {

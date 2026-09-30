@@ -1,10 +1,6 @@
-# Toggle Group
-
-A set of pressed-state buttons styled to shadcn's ToggleGroup: a `role="group"` root that renders one item button per entry, in single (one active value) or multiple (a set of active values) mode. Arrow keys move focus through the same [roving tabindex](/reference/dom/behaviors) model Tabs uses, while selection changes only on click. Items render joined into one segment strip, the ref's default spacing.
-
 ## Usage
 
-The composed root takes an items array, not children slots:
+The composed root takes an items array, not children slots; items render joined into one segment strip (`data-spacing="0"`, `--gap: 0`):
 
 | Prop | Type | Behavior |
 |---|---|---|
@@ -13,9 +9,13 @@ The composed root takes an items array, not children slots:
 | `value` | `() => string` | Controlled single selection |
 | `values` | `() => string[]` | Controlled multiple selection |
 | `onValueChange` | `(value: string \| string[]) => void` | Single reports the newly active value (`""` when deselected); multiple reports the full active array |
-| `variant` | `"default" \| "outline"` | Visual map from the ref (`default`) |
-| `size` | `"default" \| "sm" \| "lg"` | Size map from the ref (`default`) |
+| `variant` | `"default" \| "outline"` | Visual variant (`default`) |
+| `size` | `"default" \| "sm" \| "lg"` | Control size (`default`) |
 | `class` | `string` | Lands on the root next to the component class |
+
+The `data-[spacing=...]` classes ride along in both style modules, so relaxing the joined strip into spaced buttons is an edit of the copied file away.
+
+### jsx
 
 ```jsx
 import ToggleGroup from './components/toggle-group';
@@ -31,19 +31,17 @@ const Formats = () => (
   />
 );
 ```
+### html
 
-The html-format file (`toggle-group.ts`, copied with `--format html`) works the same way from a template; build the items array once and pass it in:
+The html-format (`--format html`) works the same way; build the items array once and pass it in.
 
 ```js
-import { html, mount } from '@hellajs/dom';
-import ToggleGroup from './components/toggle-group';
-
 const items = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
 ];
 
-mount(html`<main><${ToggleGroup} type="single" items=${items} /></main>`, '#app');
+html`<main><${ToggleGroup} type="single" items=${items} /></main>`
 ```
 
 ## Controlled and Uncontrolled
@@ -71,7 +69,23 @@ const Controlled = () => (
 
 ## Manual Parts
 
-`ToggleGroupItem` ships beside the default root for custom composition. The part takes a `pressed` accessor (boolean or function), an `onSelect` callback, and the `variant` / `size` to resolve; it renders the joined-segment classes and `data-variant` / `data-size` / `data-spacing` attributes the styles key off.
+`ToggleGroupItem` ships beside the default root for custom composition; it renders the joined-segment classes and the `data-variant` / `data-size` / `data-spacing` attributes the styles key off.
+
+### ToggleGroupItem
+
+One pressed-state button inside the group.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `string` | The item's value in the group |
+| `pressed` | `boolean \| (() => boolean)` | Pressed state: a boolean reads statically, an accessor keeps the manual part reactive; drives `aria-pressed` and `data-state` (`on` / `off`) |
+| `onSelect` | `() => void` | Click callback |
+| `variant` | `"default" \| "outline"` | Visual variant (default `"default"`) |
+| `size` | `"default" \| "sm" \| "lg"` | Control size (default `"default"`) |
+| `disabled` | `boolean` | Native `disabled` attribute |
+| `children` | `HellaChildren` | The item's label |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -91,20 +105,12 @@ const Custom = () => (
 );
 ```
 
-## Divergences
-
-The ref exposes a `spacing` prop that relaxes the joined segments into spaced buttons. This port pins the rendered output to the ref default (`data-spacing="0"`, `--gap: 0`): items render as one strip. The `data-[spacing=...]` classes ride along in both style modules, so restoring the prop is an edit of the copied file away. Group items also carry `aria-pressed` in both modes: each item is a toggle button, matching the Radix ref.
-
 ## Accessibility
 
 | Aspect | Value |
 |---|---|
-| Roles | `group` on the root; each item is a toggle button |
+| Roles | `group` on the root; each item is a toggle button carrying `aria-pressed` in both modes |
 | State | `aria-pressed` plus `data-state` (`on` / `off`) per item |
 | Keyboard | Arrow keys move focus (wrapping at both ends); Space and Enter toggle through native button activation; disabled items are skipped |
 | Tab | Roving tabindex: `0` on the first item, `-1` on the rest; selection never steals focus |
 | Labeling | Item text content names each button; icon-only items pair an `aria-label` through an edited copy of the file |
-
-## Styling
-
-Both flavors export the same names from the copied file: `base` (the group root), `variants` and `sizes` (the toggle maps, duplicated because entries never cross-import), and `item` (the joined-segment extras, registered after the maps so its radius and shadow resets win the cascade). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()`, verbatim from the ref including the `data-[spacing=0]` item conditions and the first/last rounding. To restyle every item at once, edit the `item` map; `props.class` lands on the root next to `base`. A variant tweak in the group file stays consistent with the standalone Toggle entry only if you mirror it there; the two files are intentionally independent. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

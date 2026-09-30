@@ -171,10 +171,6 @@ const footer = style({
   justifyContent: "space-between",
 }, { label: "hella-item-footer", layer: "hella" });
 
-// State the class-scoped style() nesting cannot express: the named-group
-// has() conditions on the item root (media's translate/self-start under an
-// item-description) register as raw attribute selectors in the same layer,
-// after the part classes.
 css({
   "@layer hella": {
     "[data-slot='item']:has([data-slot='item-description']) [data-slot='item-media']": {

@@ -136,8 +136,10 @@ Detailed explanation.
 
 ### Rules
 
-- **`# Title`**: Always present. Capitalized concept name (`# Routing`, `# State`, `# Styling`).
+- **`# Title`**: Always present. Capitalized concept name (`# Routing`, `# State`, `# Styling`). Exception: ui component concept docs consumed by a ui-section wrapper page omit the H1 — the wrapper page's `<h1>` is the page's only top-level heading and the doc opens at `## Usage`.
 - **`##` sections**: Free-form, organized by topic. Use descriptive section names.
+- **Usage subsections**: ui component concept docs structure `## Usage` as `### jsx` and `### html` subsections; the html subsection keeps the `js` language tag per §Example Syntax (JSX Default) and a one-line lead ("The html-format (`--format html`) works the same way.").
+- **Hella terms only**: ui component concept docs describe behavior in hella terms; upstream-catalog references (shadcn, Radix, "the ref") do not appear in component docs — catalog provenance lives in `packages/ui/README.md` and `ui-comparison.md`.
 - **Code examples**: Self-contained with imports on first example per page.
 - **Cross-references**: Link to API docs on first mention of each export.
 
@@ -319,7 +321,7 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 
 ### Rules
 
-- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`. **UI-section page** (`docs/src/pages/ui/{name}.astro`): a self-contained `.astro` page — frontmatter imports `MainLayout`, `InstallSection`, `Demo`, and `@ui/concepts/{name}.mdx`; the body renders, in order, the hero demo frame (`<div class="demo-frame dark" id="demo"></div>`), `<InstallSection entry="{name}" />` (site-generated Installation tabs), the package-doc content tag, an `Examples` h2, and `<Demo>` cards (titled demo frames with collapsible View Code); one page-level `<script>` composes the vendored components through the `<${Component}>` embedded-tag syntax and `mount`s into the hero frame and every Demo card's frame id — the frames, InstallSection/Demo tags, and script are sanctioned structural content alongside the package-doc component tag, not prose. Each demo demonstrates one distinct behavior the package doc documents, none twice; 2-4 live demos per page (hero + 1-3 cards). Wire page scripts and Demo `code` to hella's event contract: native-element events use the `on:` prefix (`e:` for direct handlers); a plain `on*` attribute is a reactive prop, invoked once at mount and never on the event. Component props use the registry's declared names (`ariaLabel`, not `aria-label`): vendored parts forward declared props only.
+- **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`. **UI-section page** (`docs/src/pages/ui/{name}.astro`): a self-contained `.astro` page — frontmatter imports `MainLayout`, `InstallSection`, `Demo`, and `@ui/concepts/{name}.mdx`; the body renders, in order, `<h1>{Name}</h1>` plus a one-sentence `<p>` description (the component's lead line, no upstream-catalog references), the hero demo frame (`<div class="demo-frame dark" id="demo"></div>`), `<InstallSection entry="{name}" />` (site-generated Installation tabs), the package-doc content tag, an `Examples` h2, and `<Demo>` cards (titled demo frames with collapsible View Code); one page-level `<script>` composes the vendored components through the `<${Component}>` embedded-tag syntax and `mount`s into the hero frame and every Demo card's frame id — the frames, InstallSection/Demo tags, and script are sanctioned structural content alongside the package-doc component tag, not prose. Each demo demonstrates one distinct behavior the package doc documents, none twice; 2-4 live demos per page (hero + 1-3 cards). Wire page scripts and Demo `code` to hella's event contract: native-element events use the `on:` prefix (`e:` for direct handlers); a plain `on*` attribute is a reactive prop, invoked once at mount and never on the event. Component props use the registry's declared names (`ariaLabel`, not `aria-label`): vendored parts forward declared props only.
 - **Component name**: PascalCase from the file name (`signal.mdx` → `SignalContent`). **No content** between the import and the component tag.
 - A wrapper MAY import and render multiple package docs, separated by `<div class="...border-t..."></div>`, when the site joins related content under one URL — concepts from different packages, or sibling exports within one package (dom's `/reference/dom/behaviors` joins its behavior-function api docs) — each import still follows the alias + PascalCase rules, and the wrapper still carries zero prose.
 
@@ -744,13 +746,13 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 
 **Location & template**
 - [ ] File at the right path per §File Locations & Naming; filename matches export name (API) or is lowercase-hyphenated (concepts/patterns)
-- [ ] Correct template from §Template Selection (Function / Prefix / Concept / Pattern / Index / Tutorial)
+- [ ] Correct template from §Template Selection (Function / Prefix / Concept / Pattern / Index / Tutorial); ui component concept docs hosted by a ui-section wrapper omit the H1 and open at `## Usage` (§Concept Docs → Rules)
 - [ ] Every new/extended section follows §Extending Existing Content
 
 **Frontmatter**
 - [ ] Package docs (`packages/*/docs/**/*.mdx`) have no frontmatter
 - [ ] Website wrappers (`docs/src/pages/**/*.mdx`) carry `title`, `description`, `layout`
-- [ ] UI-section pages (`docs/src/pages/ui/*.astro`) follow the page contract: hero demo frame, `<InstallSection>` tag, package-doc tag, `Examples` h2, `<Demo>` cards, and one inline `<script>` mounting every frame, wired with `on:`-prefixed native-element events and registry-declared prop names (§Rules)
+- [ ] UI-section pages (`docs/src/pages/ui/*.astro`) follow the page contract: `<h1>` + one-sentence `<p>` lead (no upstream-catalog references), hero demo frame, `<InstallSection>` tag, package-doc tag, `Examples` h2, `<Demo>` cards, and one inline `<script>` mounting every frame, wired with `on:`-prefixed native-element events and registry-declared prop names (§Rules)
 - [ ] Site-authored content pages (no package-doc import) carry complete frontmatter and are registered in `nav.ts` + their enumeration index
 
 **Structure (Function & Prefix docs)**
@@ -764,6 +766,8 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 **Code examples**
 - [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
 - [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`), build-free-runtime recipe blocks, or ui html-format usage fences (§Example Syntax (JSX Default)); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
+- [ ] ui component concept docs structure `## Usage` as `### jsx` and `### html` subsections, the html block tagged `js` with its one-line lead (§Concept Docs → Rules)
+- [ ] No upstream-catalog references (shadcn, Radix, "the ref") in component docs — provenance lives in `packages/ui/README.md` and `ui-comparison.md` (§Concept Docs → Rules)
 - [ ] `html` blocks close dynamic components with `</${Component}>` (childless: self-closing `<${Component} />`); never the `<//>` short form — audit-enforced (§Example Syntax (JSX Default) → Dynamic Component Closes)
 - [ ] Attribute values written directly, never function-wrapped — function-wrapping only in `html`-method docs; `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
 - [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `bun lint:structure` skips them (§Code Examples → Example Code Style)

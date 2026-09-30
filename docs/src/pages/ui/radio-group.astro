@@ -7,38 +7,19 @@ import RadioGroupContent from "@ui/concepts/radio-group.mdx";
 const title = "Radio Group";
 const description = "Interactive Radio Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import RadioGroup from './components/radio-group';
-
-const plan = signal('pro');
-
-const Pricing = () => (
-  <RadioGroup
-    items={[
-      { value: 'free', label: 'Free' },
-      { value: 'pro', label: 'Pro' },
-      { value: 'team', label: 'Team', disabled: true },
-    ]}
-    value={() => plan()}
-    onValueChange={(next) => plan(next)}
-  />
-);`;
-
-const horizontalCode = `import RadioGroup from './components/radio-group';
-
-const Theme = () => (
-  <RadioGroup
-    orientation="horizontal"
-    items={[
-      { value: 'dark', label: 'Dark' },
-      { value: 'light', label: 'Light' },
-      { value: 'system', label: 'System' },
-    ]}
-  />
-);`;
+const horizontalCode = `<RadioGroup
+  orientation="horizontal"
+  items={[
+    { value: 'dark', label: 'Dark' },
+    { value: 'light', label: 'Light' },
+    { value: 'system', label: 'System' },
+  ]}
+/>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Radio Group</h1>
+  <p>A single-selection control: a radiogroup root rendering one labeled row per entry, with arrow-key focus movement shared through roving tabindex.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="radio-group" />
   <RadioGroupContent />

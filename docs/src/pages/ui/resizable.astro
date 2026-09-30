@@ -7,30 +7,18 @@ import ResizableContent from "@ui/concepts/resizable.mdx";
 const title = "Resizable";
 const description = "Interactive Resizable demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import ResizablePanelGroup, { ResizableHandle, ResizablePanel } from './components/resizable';
-
-const Shell = () => (
-  <ResizablePanelGroup direction="horizontal">
-    <ResizablePanel defaultSize={50} minSize={25}>Sidebar</ResizablePanel>
-    <ResizableHandle withHandle />
-    <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
-  </ResizablePanelGroup>
-);`;
-
-const clampedCode = `import ResizablePanelGroup, { ResizableHandle, ResizablePanel } from './components/resizable';
-
-const Clamped = () => (
-  <ResizablePanelGroup direction="horizontal">
-    <ResizablePanel defaultSize={50} minSize={25} maxSize={75}>
-      Sidebar
-    </ResizablePanel>
-    <ResizableHandle />
-    <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
-  </ResizablePanelGroup>
-);`;
+const clampedCode = `<ResizablePanelGroup direction="horizontal">
+  <ResizablePanel defaultSize={50} minSize={25} maxSize={75}>
+    Sidebar
+  </ResizablePanel>
+  <ResizableHandle />
+  <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
+</ResizablePanelGroup>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Resizable</h1>
+  <p>Flex panels with drag handles: a group div lays panels out in a row or column, each handle moves the boundary between its two neighboring panels, and the sizes live in a percentage signal on the group.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="resizable" />
   <ResizableContent />

@@ -7,111 +7,38 @@ import MenubarTitle from "@ui/concepts/menubar.mdx";
 const title = "Menubar";
 const description = "Interactive Menubar demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Menubar from './components/menubar';
-import {
-  MenubarMenu,
-  MenubarItem,
-  MenubarLabel,
-  MenubarSeparator,
-  MenubarSub,
-} from './components/menubar';
-
-const Bar = () => (
-  <Menubar>
-    <MenubarMenu
-      value="file"
-      content={
-        <>
-          <MenubarLabel>File</MenubarLabel>
-          <MenubarItem shortcut="⌘N">New Window</MenubarItem>
-          <MenubarItem>Open Recent</MenubarItem>
-          <MenubarSub
-            content={
-              <>
-                <MenubarItem>Export as PDF</MenubarItem>
-                <MenubarItem>Export as HTML</MenubarItem>
-              </>
-            }
-          >
-            Export
-          </MenubarSub>
-          <MenubarSeparator />
-          <MenubarItem destructive>Close</MenubarItem>
-        </>
-      }
-    >
-      File
-    </MenubarMenu>
-    <MenubarMenu
-      value="edit"
-      content={
-        <>
-          <MenubarItem shortcut="⌘Z">Undo</MenubarItem>
-          <MenubarItem shortcut="⌘C">Copy</MenubarItem>
-          <MenubarItem shortcut="⌘V">Paste</MenubarItem>
-        </>
-      }
-    >
-      Edit
-    </MenubarMenu>
-    <MenubarMenu
-      value="view"
-      content={
-        <>
-          <MenubarItem>Zoom In</MenubarItem>
-          <MenubarItem>Zoom Out</MenubarItem>
-        </>
-      }
-    >
-      View
-    </MenubarMenu>
-  </Menubar>
-);`;
-
-const selectionCode = `import { signal } from '@hellajs/core';
-import Menubar from './components/menubar';
-import {
-  MenubarMenu,
-  MenubarCheckboxItem,
-  MenubarRadioGroup,
-  MenubarSeparator,
-} from './components/menubar';
-
-const bold = signal(false);
-const size = signal('medium');
-
-const Format = () => (
-  <Menubar>
-    <MenubarMenu
-      value="format"
-      content={
-        <>
-          <MenubarCheckboxItem
-            checked={() => bold()}
-            onCheckedChange={(next) => bold(next)}
-          >
-            Bold
-          </MenubarCheckboxItem>
-          <MenubarSeparator />
-          <MenubarRadioGroup
-            items={[
-              { value: 'small', label: 'Small' },
-              { value: 'medium', label: 'Medium' },
-              { value: 'large', label: 'Large' },
-            ]}
-            value={() => size()}
-            onValueChange={(next) => size(next)}
-          />
-        </>
-      }
-    >
-      Format
-    </MenubarMenu>
-  </Menubar>
-);`;
+const selectionCode = `<Menubar>
+  <MenubarMenu
+    value="format"
+    content={
+      <>
+        <MenubarCheckboxItem
+          checked={() => bold()}
+          onCheckedChange={(next) => bold(next)}
+        >
+          Bold
+        </MenubarCheckboxItem>
+        <MenubarSeparator />
+        <MenubarRadioGroup
+          items={[
+            { value: 'small', label: 'Small' },
+            { value: 'medium', label: 'Medium' },
+            { value: 'large', label: 'Large' },
+          ]}
+          value={() => size()}
+          onValueChange={(next) => size(next)}
+        />
+      </>
+    }
+  >
+    Format
+  </MenubarMenu>
+</Menubar>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Menubar</h1>
+  <p>A horizontal menu bar: the bar holds one open menu at a time, triggers open on click or ArrowDown, arrows move between triggers and between open menus, and Escape closes and returns focus to the trigger.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="menubar" />
   <MenubarTitle />

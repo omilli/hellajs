@@ -7,65 +7,30 @@ import PopoverTitle from "@ui/concepts/popover.mdx";
 const title = "Popover";
 const description = "Interactive Popover demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { Popover, PopoverDescription, PopoverHeader, PopoverTitle } from './components/popover';
-
-const Panel = ({ name }: { name: string }) => (
-  <Popover
-    content={
-      <>
-        <PopoverHeader>
-          <PopoverTitle>{name}</PopoverTitle>
-          <PopoverDescription>Escape or an outside press closes the top layer only.</PopoverDescription>
-        </PopoverHeader>
-        <p>Width 18rem, positioned against the trigger, flipping on viewport collision.</p>
-      </>
-    }
+const manualCode = `<>
+  <button
+    type="button"
+    hook:afterMount={(node) => { button = node; }}
+    on:click={() => open(!open())}
   >
-    <button type="button">{name}</button>
-  </Popover>
-);
-
-const Layered = () => (
-  <div>
-    <Panel name="Width" />
-    <Panel name="Height" />
-  </div>
-);`;
-
-const manualCode = `import { signal } from '@hellajs/core';
-import { Portal } from '@hellajs/dom';
-import { PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from './components/popover';
-
-const Manual = () => {
-  const open = signal(false);
-  const state = () => (open() ? 'open' : 'closed');
-  let button;
-
-  return (
-    <>
-      <button
-        type="button"
-        hook:afterMount={(node) => { button = node; }}
-        on:click={() => open(!open())}
-      >
-        Open
-      </button>
-      {() => open() && (
-        <Portal to="body">
-          <PopoverContent state={state} anchor={() => button} onDismiss={() => open(false)}>
-            <PopoverHeader>
-              <PopoverTitle>Dimensions</PopoverTitle>
-              <PopoverDescription>Set the width and height.</PopoverDescription>
-            </PopoverHeader>
-          </PopoverContent>
-        </Portal>
-      )}
-    </>
-  );
-};`;
+    Open
+  </button>
+  {() => open() && (
+    <Portal to="body">
+      <PopoverContent state={state} anchor={() => button} onDismiss={() => open(false)}>
+        <PopoverHeader>
+          <PopoverTitle>Dimensions</PopoverTitle>
+          <PopoverDescription>Set the width and height.</PopoverDescription>
+        </PopoverHeader>
+      </PopoverContent>
+    </Portal>
+  )}
+</>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Popover</h1>
+  <p>A click-toggled panel anchored to its trigger: Escape and an outside press dismiss it, and stacked popovers dismiss one layer at a time, top first.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="popover" />
   <PopoverTitle />

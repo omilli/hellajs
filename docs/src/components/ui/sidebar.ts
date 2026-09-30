@@ -4,9 +4,6 @@ import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, keyframes, style, vars } from "@hellajs/css";
 
-// The sidebar palette the tailwind flavor reads from theme.css; tokens.js
-// carries no sidebar colors, so the css flavor registers them here (same
-// values as theme.css, same vars()/`.dark` shape as tokens.js).
 vars({
   sidebar: "oklch(0.985 0 0)",
   "sidebar-foreground": "oklch(0.145 0 0)",
@@ -33,20 +30,13 @@ css({
   },
 });
 
-// The `--sidebar-width` (16rem) and `--sidebar-width-icon` (3rem) constants
-// live on the provider wrapper's inline style; the mobile sheet overrides
-// `--sidebar-width` to 18rem on its panel. Widths are runtime values, not
-// palette.
 
-// tw-animate-css equivalents for the mobile sheet, hand-rolled (the sheet
-// entry's lexicon): overlay fade plus one slide pair per side.
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 const slideInLeft = keyframes({ from: { opacity: "0", transform: "translateX(-100%)" } });
 const slideOutLeft = keyframes({ to: { opacity: "0", transform: "translateX(-100%)" } });
 const slideInRight = keyframes({ from: { opacity: "0", transform: "translateX(100%)" } });
 const slideOutRight = keyframes({ to: { opacity: "0", transform: "translateX(100%)" } });
-// The icon-mode tooltip label: fade composed with the right-side slide-in.
 const tooltipInRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 
 const base = style({
@@ -81,8 +71,6 @@ const gap = style({
   width: "var(--sidebar-width)",
 }, { label: "hella-sidebar-gap", layer: "hella" });
 
-// The icon-mode width forks are ancestor-conditioned (data-collapsible on the
-// sidebar root); the rules live in the raw block below, the maps stay empty.
 const gapPlain = "";
 
 const gapInset = "";
@@ -150,8 +138,6 @@ const mobile = style({
   "& > button": {
     display: "none",
   },
-  // The sr-only sheet header pair (title + description): tailwind ships the
-  // utility, the css flavor carries the same hiding recipe.
   "& h2, & p": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",
@@ -251,8 +237,6 @@ const trigger = style({
   "&:is(.dark *):hover": {
     backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
   },
-  // The copied `sr-only` span: tailwind ships the utility, the css flavor
-  // carries the same hiding recipe on the trigger part.
   "& span": {
     clip: "rect(0, 0, 0, 0)",
     borderWidth: "0",
@@ -468,7 +452,6 @@ const groupAction = style({
   "&:focus-visible": {
     boxShadow: "0 0 0 2px var(--sidebar-ring)",
   },
-  // Increases the hit area of the button on mobile; the md variant drops it.
   "&::after": {
     inset: "-0.5rem",
     position: "absolute",
@@ -602,7 +585,6 @@ const menuAction = style({
   "&:focus-visible": {
     boxShadow: "0 0 0 2px var(--sidebar-ring)",
   },
-  // Increases the hit area of the button on mobile; the md variant drops it.
   "&::after": {
     inset: "-0.5rem",
     position: "absolute",
@@ -614,9 +596,6 @@ const menuAction = style({
   },
 }, { label: "hella-sidebar-menu-action", layer: "hella" });
 
-// The showOnHover rules are ancestor- and media-conditioned (item hover and
-// focus-within, the md-only fade); they key on the data-show-on-hover marker
-// the canonical emits, in the raw block below.
 const menuActionHover = "";
 
 const menuBadge = style({
@@ -760,17 +739,12 @@ const tooltipContent = style({
   },
 }, { label: "hella-sidebar-tooltip-content", layer: "hella" });
 
-// Ancestor-, sibling-, and media-conditioned rules (tailwind's group-*/peer-*/
-// has-*/arbitrary variants): attribute selectors over the data-* state the
-// canonical emits, inside the same hella layer after the style() calls.
 css({
   "@layer hella": {
-    // wrapper: has-data-[variant=inset]:bg-sidebar
     "[data-slot='sidebar-wrapper']:has([data-variant='inset'])": {
       background: "var(--sidebar)",
     },
 
-    // gap: icon-mode width per variant, offcanvas collapse, side rotation
     "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-gap']": {
       width: "var(--sidebar-width-icon)",
     },
@@ -784,8 +758,6 @@ css({
       rotate: "180deg",
     },
 
-    // container: offcanvas side offsets, icon-mode width per variant, side
-    // borders, floating/inset padding
     "[data-side='left'][data-collapsible='offcanvas'] [data-slot='sidebar-container']": {
       left: "calc(var(--sidebar-width) * -1)",
     },
@@ -808,15 +780,12 @@ css({
       padding: "0.5rem",
     },
 
-    // inner: floating variant frame
     "[data-variant='floating'] [data-slot='sidebar-inner']": {
       border: "1px solid var(--sidebar-border)",
       borderRadius: "0.5rem",
       boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
     },
 
-    // inset: md-only peer geometry against the sidebar root; menu action
-    // showOnHover: hidden at md unless revealed (one media block)
     "@media (min-width: 48rem)": {
       "[data-slot='sidebar'][data-variant='inset'] ~ [data-slot='sidebar-inset']": {
         borderRadius: "calc(var(--radius) * 1.4)",
@@ -832,8 +801,6 @@ css({
       },
     },
 
-    // rail: side positioning, cursors, offcanvas shifts (the offcanvas
-    // cursor overrides land after the side rules by cascade order)
     "[data-side='left'] [data-slot='sidebar-rail']": {
       cursor: "w-resize",
       right: "-1rem",
@@ -864,12 +831,10 @@ css({
       left: "-0.5rem",
     },
 
-    // content: icon-mode clipping
     "[data-collapsible='icon'] [data-slot='sidebar-content']": {
       overflow: "hidden",
     },
 
-    // group label/action: icon-mode suppression
     "[data-collapsible='icon'] [data-slot='sidebar-group-label']": {
       marginTop: "-2rem",
       opacity: "0",
@@ -878,7 +843,6 @@ css({
       display: "none",
     },
 
-    // menu button: icon-mode square, item-has-action padding
     "[data-collapsible='icon'] [data-sidebar='menu-button']": {
       height: "2rem",
       padding: "0.5rem",
@@ -891,7 +855,6 @@ css({
       paddingRight: "2rem",
     },
 
-    // menu action: peer-hover color, per-size tops, icon-mode suppression
     "[data-sidebar='menu-button']:hover ~ [data-sidebar='menu-action']": {
       color: "var(--sidebar-accent-foreground)",
     },
@@ -908,8 +871,6 @@ css({
       display: "none",
     },
 
-    // menu action showOnHover: fade in on item hover/focus-within/open,
-    // hidden at md otherwise (keys on the canonical's data-show-on-hover)
     "[data-slot='sidebar-menu-item']:focus-within [data-sidebar='menu-action'][data-show-on-hover='true'], [data-slot='sidebar-menu-item']:hover [data-sidebar='menu-action'][data-show-on-hover='true']": {
       opacity: "1",
     },
@@ -920,7 +881,6 @@ css({
       opacity: "1",
     },
 
-    // menu badge: peer-hover/active color, per-size tops, icon-mode suppression
     "[data-sidebar='menu-button']:hover ~ [data-slot='sidebar-menu-badge']": {
       color: "var(--sidebar-accent-foreground)",
     },
@@ -940,7 +900,6 @@ css({
       display: "none",
     },
 
-    // sub menu: icon-mode suppression
     "[data-collapsible='icon'] [data-slot='sidebar-menu-sub']": {
       display: "none",
     },
@@ -1105,7 +1064,7 @@ export function Sidebar(props: SidebarProps): HellaNode {
             class="${
               [gap, variantIsInset ? gapInset : gapPlain]
             }"
-          ></div>
+          />
           <div
             data-slot="sidebar-container"
             class="${
@@ -1118,7 +1077,9 @@ export function Sidebar(props: SidebarProps): HellaNode {
               class="${
                 [inner]
               }"
-            >${() => props.children}</div>
+            >
+              ${() => props.children}
+            </div>
           </div>
         </div>
       ` as HellaChild}
@@ -1206,7 +1167,7 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): () => HellaChild {
           class="${
             [overlay]
           }"
-        ></div>
+        />
       ` as HellaChild,
       html`
           <div
@@ -1240,13 +1201,25 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): () => HellaChild {
               while (teardown.length) teardown.pop()!();
             }}"
           >
-            <h2 id="${titleId}" class="sr-only">Sidebar</h2>
-            <p id="${descriptionId}" class="sr-only">Displays the mobile sidebar.</p>
+            <h2
+              id="${titleId}"
+              class="sr-only"
+            >
+              Sidebar
+            </h2>
+            <p
+              id="${descriptionId}"
+              class="sr-only"
+            >
+              Displays the mobile sidebar.
+            </p>
             <div
               class="${
                 [mobileInner]
               }"
-            >${() => props.children}</div>
+            >
+              ${() => props.children}
+            </div>
           </div>
         ` as HellaChild,
     ],
@@ -1273,7 +1246,24 @@ export function SidebarTrigger(props: SidebarTriggerProps): HellaNode {
         props.onclick?.();
         props.onToggle?.();
       }}"
-    ><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg><span class="sr-only">Toggle Sidebar</span></button>
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <rect width="18" height="18" x="3" y="3" rx="2" />
+        <path d="M9 3v18" />
+      </svg>
+      <span class="sr-only">Toggle Sidebar</span>
+    </button>
   ` as HellaNode;
 }
 
@@ -1343,7 +1333,7 @@ export function SidebarInput(props: SidebarInputProps): HellaNode {
         [inputBase, inputFocus, inputInvalid, input, props.class]
       }"
       on:input="${(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}"
-    ></input>
+    />
   ` as HellaNode;
 }
 
@@ -1542,30 +1532,32 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (disposals.length) disposals.pop()!();
       }}"
-    >${button}${() => tooltipOpen() && Portal({
-      to: "body",
-      children: [
-        html`
-          <div
-            role="tooltip"
-            id="${tooltipId}"
-            data-slot="sidebar-tooltip-content"
-            data-state="${() => (tooltipOpen() ? "open" : "closed")}"
-            data-side="right"
-            data-align="center"
-            hidden="${() => (hidden() ? "" : undefined)}"
-            class="${
-              [tooltipContent]
-            }"
-            hook:afterMount="${(node: Element) => {
-              if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
-              const anchor = triggerNode;
-              disposals.push(anchorPosition(anchor, node, { placement: "right" }));
-            }}"
-          >${() => props.tooltip}</div>
-        ` as HellaChild,
-      ],
-    })}</span>
+    >
+      ${button}${() => tooltipOpen() && Portal({
+        to: "body",
+        children: [
+          html`
+            <div
+              role="tooltip"
+              id="${tooltipId}"
+              data-slot="sidebar-tooltip-content"
+              data-state="${() => (tooltipOpen() ? "open" : "closed")}"
+              data-side="right"
+              data-align="center"
+              hidden="${() => (hidden() ? "" : undefined)}"
+              class="${
+                [tooltipContent]
+              }"
+              hook:afterMount="${(node: Element) => {
+                if (!(node instanceof HTMLElement) || triggerNode === undefined) return;
+                const anchor = triggerNode;
+                disposals.push(anchorPosition(anchor, node, { placement: "right" }));
+              }}"
+            >${() => props.tooltip}</div>
+          ` as HellaChild,
+        ],
+      })}
+    </span>
   ` as HellaNode;
 }
 
@@ -1626,7 +1618,7 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): HellaNode 
           class="${
             [skeletonBase, skeletonIcon]
           }"
-        ></div>
+        />
       ` as HellaChild}
       <div
         data-sidebar="menu-skeleton-text"
@@ -1634,7 +1626,7 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): HellaNode 
         class="${
           [skeletonBase, skeletonText]
         }"
-      ></div>
+      />
     </div>
   ` as HellaNode;
 }

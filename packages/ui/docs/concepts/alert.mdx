@@ -1,10 +1,8 @@
-# Alert
-
-A callout that communicates user attention styled byte-faithfully to shadcn's new-york-v4 Alert: a default `Alert` plus named `AlertTitle` and `AlertDescription` parts, a `default` and `destructive` variant, and a grid that reserves an icon column whenever the first child is an `svg`.
-
 ## Usage
 
-`variant` picks between `default` and `destructive`. The root carries `data-slot="alert"` and `role="alert"`; icons are caller-provided children, and the grid switches to an icon column as soon as a direct `svg` child is present (`has-[>svg]` in the style maps).
+A callout carrying `role="alert"`: `variant` picks between `default` and `destructive`, and a direct `svg` child before the title occupies the reserved icon column, inheriting the current text color.
+
+### jsx
 
 ```jsx
 import Alert, { AlertDescription, AlertTitle } from './components/alert';
@@ -16,22 +14,17 @@ const Heads = () => (
   </Alert>
 );
 ```
+### html
 
-The html-format file (`alert.ts`, copied with `--format html`) renders through a template instead of JSX; each part is a plain function call:
+The html-format (`--format html`) works the same way.
 
 ```js
-import { html, mount } from '@hellajs/dom';
-import Alert, { AlertDescription, AlertTitle } from './components/alert';
-
-mount(
-  html`
-    <${Alert}>
-      ${AlertTitle({ children: 'Heads up!' })}
-      ${AlertDescription({ children: 'You can copy this alert into any project.' })}
-    </${Alert}>
-  `,
-  '#app',
-);
+html`<main>
+  <${Alert}>
+    <${AlertTitle}>Heads up!</${AlertTitle}>
+    <${AlertDescription}>You can copy this alert into any project.</${AlertDescription}>
+  </${Alert}>
+</main>`
 ```
 
 ## Destructive
@@ -52,6 +45,24 @@ const Failed = () => (
 );
 ```
 
-## Styling
+## Manual Parts
 
-The style module exports `base`, `variants` (the root's two surface treatments), `title`, and `description`; each part's compose bakes its own class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities (`bg-card`, `text-destructive`) in `cn()` so later tokens override earlier ones per utility group. Every part renders its `data-slot` (`alert`, `alert-title`, `alert-description`), so one-off overrides can also target parts through the `[data-slot]` attribute selectors, and an inline `svg` child placed before the title occupies the icon column and inherits the current text color automatically. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+`AlertTitle` and `AlertDescription` ship beside the default root for custom composition.
+
+### AlertTitle
+
+The bold heading: a `div` carrying `data-slot="alert-title"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title node |
+
+### AlertDescription
+
+The supporting line: a `div` carrying `data-slot="alert-description"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Description nodes, plain paragraphs included |
+
+Every part also takes a `class` string, landing last in its style composition.

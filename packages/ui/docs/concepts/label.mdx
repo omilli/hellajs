@@ -1,25 +1,37 @@
-# Label
-
-A form-field caption styled byte-faithfully to shadcn's new-york-v4 Label: the semantic `label` element with a `for` passthrough, plus the group- and peer-driven disabled styles shadcn applies in form layouts.
-
 ## Usage
 
 The root carries `data-slot="label"`, and `for` lands directly on the element so clicking the caption focuses the input without extra wiring.
 
+### jsx
+
 ```jsx
 import Label from './components/label';
 
-const Name = () => (
+const Fields = () => (
   <div class="flex flex-col gap-2">
     <Label for="name">Project name</Label>
     <input id="name" placeholder="acme-site" />
+    <Label for="region">Region</Label>
+    <input id="region" placeholder="eu-central-1" />
   </div>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<div class="flex flex-col gap-2">
+  <${Label} for="name">Project name</${Label}>
+  <input id="name" placeholder="acme-site" />
+  <${Label} for="region">Region</${Label}>
+  <input id="region" placeholder="eu-central-1" />
+</div>`
 ```
 
 ## Disabled States
 
-The disabled styles follow shadcn's form conventions: a label inside an element marked `.group` with `data-disabled="true"` dims and drops pointer events, and a label following a disabled `.peer` sibling shows the not-allowed cursor. Neither needs props; the ancestor and sibling states drive both:
+Two disabled states are style-driven and need no props: a label inside an element marked `.group` with `data-disabled="true"` dims and drops pointer events, and a label following a disabled `.peer` sibling shows the not-allowed cursor:
 
 ```jsx
 import Label from './components/label';
@@ -30,7 +42,3 @@ const Fieldset = () => (
   </div>
 );
 ```
-
-## Styling
-
-The css style module exports a single `base` carrying the layout, typography, and the two disabled-state selectors (ancestor `.group[data-disabled]` and sibling `.peer:disabled`); the compose bakes `base` plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor uses shadcn's literal utilities verbatim (including the `group-data-[disabled=true]:*` and `peer-disabled:*` forms) wrapped in `cn()`. The label reads no tokens beyond the palette, so it follows your theme's foreground automatically. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

@@ -4,8 +4,6 @@ import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
 
-// tw-animate-css equivalents, hand-rolled: the viewport's enter composes fade
-// + zoom from 90%, its exit fade + zoom to 95%; the indicator fades only.
 const in90 = keyframes({ from: { opacity: "0", transform: "scale(0.9)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 const fadeIn = keyframes({ from: { opacity: "0" } });
@@ -76,7 +74,6 @@ const trigger = style({
   "&[data-state='open']:focus": {
     backgroundColor: "var(--accent)",
   },
-  // group-data-[state=open]:rotate-180 - the group is the trigger itself.
   "&[data-state='open'] svg": {
     transform: "rotate(180deg)",
   },
@@ -91,10 +88,6 @@ const chevron = style({
   width: "0.75rem",
 }, { label: "hella-navigation-menu-chevron", layer: "hella" });
 
-// Contents always portal into the shared viewport slot, so the ref's
-// data-[motion=…] and group-data-[viewport=false]/navigation-menu variants
-// never match here and are left untranslated; the link-focus suppressions
-// and the md:absolute placement are the reachable remainder.
 const content = style({
   left: "0",
   padding: "0.5rem",
@@ -170,9 +163,6 @@ const viewportWrapper = style({
   zIndex: "50",
 }, { label: "hella-navigation-menu-viewport-wrapper", layer: "hella" });
 
-// Layout-neutral host for the portaled panel (the direction entry's
-// display:contents wrapper precedent - the html template needs an element to
-// carry the reactive portal child).
 const contentAnchor = style({
   display: "contents",
 }, { label: "hella-navigation-menu-content-anchor", layer: "hella" });
@@ -252,7 +242,9 @@ const chevronIcon = (): HellaNode =>
     class="${
       [chevron]
     }"
-  ><path d="m6 9 6 6 6-6" /></svg>` as HellaNode;
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>` as HellaNode;
 
 interface NavigationMenuListProps {
   children?: HellaChildren;
@@ -315,7 +307,9 @@ export function NavigationMenuTrigger(props: NavigationMenuTriggerProps): HellaN
         props.onActivate?.();
         if (props.value !== undefined) document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id: props.value, open } }));
       }}"
-    >${() => props.children}${chevronIcon()}</button>
+    >
+      ${() => props.children}${chevronIcon()}
+    </button>
   ` as HellaNode;
 }
 
@@ -395,7 +389,8 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): HellaN
           }}"
         >${() => props.children}</div>` as HellaChild,
       ],
-    })}</div>
+    })}
+    </div>
   ` as HellaNode;
 }
 
@@ -435,14 +430,15 @@ export function NavigationMenuViewport(props: NavigationMenuViewportProps): Hell
       class="${
         [viewportWrapper, props.class]
       }"
-    ><div
+    >
+      <div
         data-slot="navigation-menu-viewport"
         id="${props.id}"
         data-state="${() => (active() ? "open" : "closed")}"
         class="${
           [viewport]
         }"
-      ></div>
+      />
     </div>
   ` as HellaNode;
 }
@@ -516,11 +512,12 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): He
         while (wirings.length) wirings.pop()!();
         node = undefined;
       }}"
-    ><div
+    >
+      <div
         class="${
           [diamond]
         }"
-      ></div>
+      />
     </div>
   ` as HellaNode;
 }
@@ -566,6 +563,8 @@ export default function NavigationMenu(props: NavigationMenuProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (wirings.length) wirings.pop()!();
       }}"
-    >${() => props.children}${() => (props.viewport === false ? null : NavigationMenuViewport({ active: () => active() !== "" }))}</div>
+    >
+      ${() => props.children}${() => (props.viewport === false ? null : NavigationMenuViewport({ active: () => active() !== "" }))}
+    </div>
   ` as HellaNode;
 }

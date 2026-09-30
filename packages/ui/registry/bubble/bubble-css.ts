@@ -157,10 +157,6 @@ export const reactions = style({
   },
 }, { label: "hella-bubble-reactions", layer: "hella" });
 
-// Group-conditioned state the parts carry from their ancestors (Bubble inside an
-// end-aligned Message, Content inside an end-aligned Bubble): class-scoped
-// nesting cannot restate ancestor conditions self-based, so these register as
-// raw attribute selectors in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='message'][data-align='end'] [data-slot='bubble']": {

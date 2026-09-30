@@ -7,39 +7,21 @@ import CalendarContent from "@ui/concepts/calendar.mdx";
 const title = "Calendar";
 const description = "Interactive Calendar demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import Calendar from './components/calendar';
+const rangeCode = `<Calendar
+  mode="range"
+  defaultMonth={new Date(2025, 2, 1)}
+  onSelect={({ from, to }) => console.log(from, to)}
+/>`;
 
-const picked = signal(undefined);
-
-const Picker = () => (
-  <Calendar
-    defaultMonth={new Date(2025, 2, 1)}
-    onSelect={(date) => picked(date)}
-  />
-);`;
-
-const rangeCode = `import Calendar from './components/calendar';
-
-const Stay = () => (
-  <Calendar
-    mode="range"
-    defaultMonth={new Date(2025, 2, 1)}
-    onSelect={({ from, to }) => console.log(from, to)}
-  />
-);`;
-
-const disabledCode = `import Calendar from './components/calendar';
-
-const Bookings = () => (
-  <Calendar
-    defaultMonth={new Date(2025, 2, 1)}
-    disabled={(date) => date.getDay() === 0 || date.getDay() === 6}
-  />
-);`;
+const disabledCode = `<Calendar
+  defaultMonth={new Date(2025, 2, 1)}
+  disabled={(date) => date.getDay() === 0 || date.getDay() === 6}
+/>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Calendar</h1>
+  <p>A one-month day grid with single, multiple, or range selection, roving keyboard focus, and previous/next navigation, computed from local `Date` fields in the copied file.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="calendar" />
   <CalendarContent />

@@ -7,60 +7,33 @@ import ContextMenuTitle from "@ui/concepts/context-menu.mdx";
 const title = "Context Menu";
 const description = "Interactive Context Menu demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import ContextMenu from './components/context-menu';
-import { ContextMenuItem } from './components/context-menu';
-
-const Canvas = () => (
-  <ContextMenu
-    content={
-      <>
-        <ContextMenuItem onclick={() => console.log('cut')}>Cut</ContextMenuItem>
-        <ContextMenuItem shortcut="⌘C">Copy</ContextMenuItem>
-      </>
-    }
-  >
-    Right-click this zone
-  </ContextMenu>
-);`;
-
-const subsetCode = `import { signal } from '@hellajs/core';
-import ContextMenu from './components/context-menu';
-import {
-  ContextMenuItem,
-  ContextMenuCheckboxItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-} from './components/context-menu';
-
-const locked = signal(false);
-
-const File = () => (
-  <ContextMenu
-    content={
-      <>
-        <ContextMenuItem>Rename</ContextMenuItem>
-        <ContextMenuCheckboxItem
-          checked={() => locked()}
-          onCheckedChange={(next) => locked(next)}
-        >
-          Locked
-        </ContextMenuCheckboxItem>
-        <ContextMenuSeparator />
-        <ContextMenuSub content={<ContextMenuItem>Compress</ContextMenuItem>}>
-          Archive
-        </ContextMenuSub>
-        <ContextMenuItem destructive disabled={locked()}>
-          Delete
-        </ContextMenuItem>
-      </>
-    }
-  >
-    file-card
-  </ContextMenu>
-);`;
+const subsetCode = `<ContextMenu
+  content={
+    <>
+      <ContextMenuItem>Rename</ContextMenuItem>
+      <ContextMenuCheckboxItem
+        checked={() => locked()}
+        onCheckedChange={(next) => locked(next)}
+      >
+        Locked
+      </ContextMenuCheckboxItem>
+      <ContextMenuSeparator />
+      <ContextMenuSub content={<ContextMenuItem>Compress</ContextMenuItem>}>
+        Archive
+      </ContextMenuSub>
+      <ContextMenuItem destructive disabled={locked()}>
+        Delete
+      </ContextMenuItem>
+    </>
+  }
+>
+  file-card
+</ContextMenu>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Context Menu</h1>
+  <p>A right-click menu: long-pressing (right-clicking) a trigger zone opens a portaled surface of items anchored at the pointer coordinates; checkbox, radio, and submenu composition match the dropdown menu, and item selection closes the whole menu.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="context-menu" />
   <ContextMenuTitle />

@@ -7,42 +7,21 @@ import MessageScrollerContent from "@ui/concepts/message-scroller.mdx";
 const title = "Message Scroller";
 const description = "Interactive Message Scroller demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import { MessageScroller, MessageScrollerItem } from './components/message-scroller';
-import { Bubble } from './components/bubble';
-
-const messages = signal(['First message', 'Second message', 'Third message']);
-
-const Chat = () => (
-  <MessageScroller style="flex:1; min-height:0">
-    {messages().map((text) => (
-      <MessageScrollerItem>
-        <Bubble variant={text.startsWith('You') ? 'default' : 'outline'}>{text}</Bubble>
-      </MessageScrollerItem>
-    ))}
-  </MessageScroller>
-);`;
-
-const jumpCode = `import { signal } from '@hellajs/core';
-import { MessageScroller, MessageScrollerItem } from './components/message-scroller';
-
-const atBottom = signal(false);
-
-const History = () => (
-  <MessageScroller atBottom={atBottom} class="h-64">
-    <MessageScrollerItem>Older message one</MessageScrollerItem>
-    <MessageScrollerItem>Older message two</MessageScrollerItem>
-    <MessageScrollerItem>Older message three</MessageScrollerItem>
-    <MessageScrollerItem>Older message four</MessageScrollerItem>
-    <MessageScrollerItem>Older message five</MessageScrollerItem>
-    <MessageScrollerItem>Older message six</MessageScrollerItem>
-    <MessageScrollerItem>Older message seven</MessageScrollerItem>
-    <MessageScrollerItem>Newest message</MessageScrollerItem>
-  </MessageScroller>
-);`;
+const jumpCode = `<MessageScroller atBottom={atBottom} class="h-64">
+  <MessageScrollerItem>Older message one</MessageScrollerItem>
+  <MessageScrollerItem>Older message two</MessageScrollerItem>
+  <MessageScrollerItem>Older message three</MessageScrollerItem>
+  <MessageScrollerItem>Older message four</MessageScrollerItem>
+  <MessageScrollerItem>Older message five</MessageScrollerItem>
+  <MessageScrollerItem>Older message six</MessageScrollerItem>
+  <MessageScrollerItem>Older message seven</MessageScrollerItem>
+  <MessageScrollerItem>Newest message</MessageScrollerItem>
+</MessageScroller>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Message Scroller</h1>
+  <p>A chat viewport that pins to the bottom while new content arrives and flips to a jump-to-end button when you scroll away, with the state handed to you explicitly.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="message-scroller" />
   <MessageScrollerContent />

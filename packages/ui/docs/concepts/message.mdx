@@ -1,10 +1,8 @@
-# Message
-
-Chat message rows styled byte-faithfully to shadcn's new-york-v4 Message: a group stack plus six parts covering the row itself, the avatar well, the content column, and the header and footer meta rows, all presentational.
-
 ## Usage
 
 Pair `MessageContent` with the `bubble` entry's `Bubble` to get the message surface itself; the avatar well takes any small element (an image, an initial).
+
+### jsx
 
 ```jsx
 import { Bubble } from './components/bubble';
@@ -22,6 +20,22 @@ const Row = () => (
     </MessageContent>
   </Message>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Message}>
+    <${MessageAvatar}><img src="/ada.png" alt="Ada" /></${MessageAvatar}>
+    <${MessageContent}>
+      <${MessageHeader}>Ada Lovelace</${MessageHeader}>
+      <${Bubble} variant="outline">How does the scroller pin to the bottom?</${Bubble}>
+      <${MessageFooter}>2 minutes ago</${MessageFooter}>
+    </${MessageContent}>
+  </${Message}>
+</main>`
 ```
 
 ## End Alignment
@@ -42,6 +56,57 @@ const Sent = () => (
 
 The parts coordinate through data attributes rather than context. A footer lifts the avatar 2rem, a ghost-variant bubble (from the bubble entry) removes the header and footer side padding, and end alignment slides every direct content child to the inline end; all three conditions read `data-slot`/`data-align`/`data-variant` ancestors, so the wiring survives re-ordering parts.
 
-## Styling
+## Manual Parts
 
-The style module exports `group`, `base`, `avatar`, `content`, `header`, and `footer`; each part's compose bakes its own class plus `props.class` last, and every part renders its `data-slot`. The ancestor-conditioned rules (footer lift, ghost padding, end-alignment shifts) register as raw attribute selectors at the bottom of the css module; the tailwind flavor carries shadcn's literal utilities, named-group selectors such as `group-has-data-[slot=message-footer]/message:-translate-y-8` included, wrapped in `cn()`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+All six exports are named; each renders its `data-slot`, and the parts coordinate through data attributes rather than context.
+
+### MessageGroup
+
+The stack: a `div` carrying `data-slot="message-group"` that spaces its rows.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The message rows |
+
+### Message
+
+The row: a `div` carrying `data-align`, which the descendant conditions read.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `align` | `"start" \| "end"` | `"end"` flips the row with `flex-row-reverse`, slides the content children to the inline end, and right-aligns the footer |
+| `children` | `HellaChildren` | The avatar well and content column |
+
+### MessageAvatar
+
+The avatar well: a `div` carrying `data-slot="message-avatar"`; a footer in the row lifts it 2rem.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Any small element (an image, an initial) |
+
+### MessageContent
+
+The content column: a `div` carrying `data-slot="message-content"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Header, bubble, and footer nodes |
+
+### MessageHeader
+
+The header meta row: a `div` carrying `data-slot="message-header"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Sender name node |
+
+### MessageFooter
+
+The footer meta row: a `div` carrying `data-slot="message-footer"`, right-aligned on end-aligned rows.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Timestamp node |
+
+Every part also takes a `class` string, landing last in its style composition.

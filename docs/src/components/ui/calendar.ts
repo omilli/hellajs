@@ -224,11 +224,6 @@ const dayButton = style({
   },
 }, { label: "hella-calendar-day-button", layer: "hella" });
 
-// State the day cell carries through data attributes (today/outside/disabled/
-// hidden/range), the focused-day ring under the `group/day` cell, the edge-cell
-// button radii, and the card/popover ancestor transparency: ancestor- or
-// attribute-conditioned selectors that cannot restyle self-based register as
-// raw attribute selectors in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='calendar-day'][data-today='true']": {
@@ -495,7 +490,7 @@ const chevronLeftIcon = (): HellaNode =>
         [icon]
       }"
     >
-      <path d="m15 18-6-6 6-6"></path>
+      <path d="m15 18-6-6 6-6" />
     </svg>
   ` as HellaNode;
 
@@ -516,7 +511,7 @@ const chevronRightIcon = (): HellaNode =>
         [icon]
       }"
     >
-      <path d="m9 18 6-6-6-6"></path>
+      <path d="m9 18 6-6-6-6" />
     </svg>
   ` as HellaNode;
 
@@ -826,7 +821,9 @@ export default function Calendar(props: CalendarProps): HellaNode {
               class="${
                 [captionLabel, props.classNames?.caption_label]
               }"
-            >${() => monthLabel(view())}</div>
+            >
+              ${() => monthLabel(view())}
+            </div>
           </div>
           ${props.hideNavigation === true ? undefined : html`
             <nav
@@ -843,7 +840,9 @@ export default function Calendar(props: CalendarProps): HellaNode {
                   [navButton, props.classNames?.button_previous]
                 }"
                 on:click="${() => navMonth(-1)}"
-              >${chevronLeftIcon()}</button>
+              >
+                ${chevronLeftIcon()}
+              </button>
               <button
                 type="button"
                 data-slot="calendar-next"
@@ -852,7 +851,9 @@ export default function Calendar(props: CalendarProps): HellaNode {
                   [navButton, props.classNames?.button_next]
                 }"
                 on:click="${() => navMonth(1)}"
-              >${chevronRightIcon()}</button>
+              >
+                ${chevronRightIcon()}
+              </button>
             </nav>
           `}
           <table

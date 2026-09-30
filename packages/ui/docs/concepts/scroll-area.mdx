@@ -1,10 +1,14 @@
-# Scroll Area
-
-A custom-scrollbar container styled to shadcn's ScrollArea: a `relative` root wraps a real scrolling viewport plus an absolutely positioned `ScrollBar` whose thumb is sized and positioned from the live scroll geometry. The component keeps native scrolling underneath the custom chrome instead of reimplementing Radix's virtual viewport: wheel, touch, and keyboard scrolling stay native, and the thumb is pure chrome on top. Thumb sizing and dragging ride [`onDrag`](/reference/dom/behaviors) from `@hellajs/dom`.
-
 ## Usage
 
 Give the root an explicit height (and width when needed): the viewport fills it with `size-full`, so an unbounded root has nothing to scroll.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | any | Rendered inside the viewport's content wrapper |
+| `observe` | `(target, onGrow) => () => void` | Injectable content watcher forwarded to the internal vertical bar; defaults to a `ResizeObserver` on the content wrapper |
+| `class` | `string` | Lands on the root next to the component class |
+
+### jsx
 
 ```jsx
 import ScrollArea from './components/scroll-area';
@@ -19,12 +23,17 @@ const Feed = () => (
   </ScrollArea>
 );
 ```
+### html
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | any | Rendered inside the viewport's content wrapper |
-| `observe` | `(target, onGrow) => () => void` | Injectable content watcher forwarded to the internal vertical bar; defaults to a `ResizeObserver` on the content wrapper |
-| `class` | `string` | Lands on the root next to the component class |
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${ScrollArea} class="h-72 w-96 rounded-md border">
+    <div class="p-4">Long content here</div>
+  </${ScrollArea}>
+</main>`
+```
 
 ### ScrollBar
 
@@ -34,23 +43,9 @@ const Feed = () => (
 | `observe` | `(target, onGrow) => () => void` | Injectable content watcher for a bar composed standalone |
 | `class` | `string` | Lands on the bar next to the component class |
 
-The html-format file (`scroll-area.ts`, copied with `--format html`) works the same way from a template:
-
-```js
-import { html, mount } from '@hellajs/dom';
-import ScrollArea from './components/scroll-area';
-
-mount(
-  html`<${ScrollArea} class="h-72 w-96 rounded-md border">
-    <div class="p-4">Long content here</div>
-  </${ScrollArea}>`,
-  '#app',
-);
-```
-
 ## Both Axes
 
-`ScrollArea` renders the vertical bar itself (the ref's tree). For horizontal scrolling, compose a second `ScrollBar` as a child: it lands inside the viewport in the DOM, but its absolute positioning anchors it to the `relative` root, so it never scrolls with the content. Each bar measures and drags its own axis, and the root renders the ref's corner placeholder at the intersection.
+`ScrollArea` renders the vertical bar itself. For horizontal scrolling, compose a second `ScrollBar` as a child: it lands inside the viewport in the DOM, but its absolute positioning anchors it to the `relative` root, so it never scrolls with the content. Each bar measures and drags its own axis, and the root renders a corner placeholder at the intersection.
 
 ```jsx
 import ScrollArea, { ScrollBar } from './components/scroll-area';
@@ -67,14 +62,14 @@ const Sheet = () => (
 
 The bar measures the viewport and itself to place the thumb: thumb length is the `clientSize / scrollSize` ratio of the track with a 20px floor, and the position is the `scrollTop` (or `scrollLeft`) fraction of the remaining travel. Scroll events re-measure, and a `ResizeObserver` on the content wrapper re-measures when content grows or shrinks without a scroll. Dragging the thumb maps the pixel delta through the travel ratio: `scrollTop` moves by `delta / travel * maxScroll`, so a full-length drag crosses the whole content. Drags start from the scroll position at `pointerdown` and clamp to the scrollable range.
 
-## Native-Scroll Divergence
+## Native Scrolling
 
-The ref's Radix primitive renders a fully virtual viewport; this port keeps a real one. The divergence is deliberate and visible in the copied file:
+The viewport is a real scroller and the custom bar is pure chrome on top; the choice is deliberate and visible in the copied file:
 
-- The viewport is a real scroller (`overflow: scroll`) with the native scrollbar hidden (`scrollbar-width: none` plus a `::-webkit-scrollbar` rule in the css flavor; `overflow-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden` utilities in the tailwind flavor). Momentum, rubber-banding, and keyboard scrolling stay native.
-- The bar always renders, even when the content fits (a full-length thumb). Radix toggles its bars out when there is nothing to scroll; this port leaves the visibility decision to you.
-- The bar's absolute positioning (insets per orientation) rides the style layer: Radix applies it from its primitive internals, so the class strings here are the ref's verbatim orientation classes plus positioning utilities.
-- The corner is a structural placeholder (`data-slot="scroll-area-corner"`) like the ref's tree; the thumb tracks may touch at the intersection instead of reserving a gap.
+- The viewport scrolls natively (`overflow: scroll`) with the native scrollbar hidden, so momentum, rubber-banding, and keyboard scrolling stay native.
+- The bar always renders, even when the content fits (a full-length thumb); the visibility decision when nothing scrolls is left to you.
+- The bar's absolute positioning (insets per orientation) rides the style layer.
+- The corner is a structural placeholder (`data-slot="scroll-area-corner"`); the thumb tracks may touch at the intersection instead of reserving a gap.
 
 ## Accessibility
 
@@ -83,7 +78,3 @@ The ref's Radix primitive renders a fully virtual viewport; this port keeps a re
 | Keyboard scrolling | Stays native: the viewport is a real scroller, so focus plus arrow keys scroll without extra wiring |
 | Pointer | The thumb is pointer-only chrome; drags never move keyboard focus |
 | Announcements | Live regions are not synthesized; content remains plain DOM read in document order |
-
-## Styling
-
-The module exports `base` (the relative root), `viewport` (the native scroller with the hidden-scrollbar declarations), `scrollbar` (the oriented bar with its positioning), and `thumb` (the `bg-border` pill); thumb length and offset are inline styles, not classes. The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules. The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, every part's class array wraps in `cn()` so a `class` from the call site overrides earlier tokens per utility group, and the strings carry the ref's classes verbatim with the positioning and scrollbar-hide utilities appended per the divergence above. The thumb's `bg-border` comes from the `thumb` style export, and the 20px minimum lives in `measure` at the top of the file; retune either there. The `data-slot` attributes (`scroll-area`, `scroll-area-viewport`, `scroll-area-content`, `scroll-area-scrollbar`, `scroll-area-thumb`, `scroll-area-corner`) are stable hooks for user CSS. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

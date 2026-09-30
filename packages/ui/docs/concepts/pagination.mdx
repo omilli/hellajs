@@ -1,10 +1,8 @@
-# Pagination
-
-A navigation landmark for paged content styled byte-faithfully to shadcn's new-york-v4 Pagination: a centered `nav` wrapping a list of links, with previous/next controls, an ellipsis overflow marker, and an active-page state rendered through the button visual vocabulary.
-
 ## Usage
 
 Compose the parts by hand: `Pagination` is the landmark, `PaginationContent` the list, `PaginationItem` one list entry, and `PaginationLink` an anchor styled like the button's ghost (inactive) or outline (active) variant:
+
+### jsx
 
 ```jsx
 import Pagination, { PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from './components/pagination';
@@ -27,6 +25,20 @@ const Pages = () => (
   </Pagination>
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<${Pagination}>
+  <${PaginationContent}>
+    <${PaginationItem}><${PaginationPrevious} href=${"?page=1"} /></${PaginationItem}>
+    <${PaginationItem}><${PaginationLink} href=${"?page=2"} isActive=${true}>2</${PaginationLink}></${PaginationItem}>
+    <${PaginationItem}><${PaginationEllipsis} /></${PaginationItem}>
+    <${PaginationItem}><${PaginationNext} href=${"?page=3"} /></${PaginationItem}>
+  </${PaginationContent}>
+</${Pagination}>`
+```
 
 ## Without a Router
 
@@ -40,9 +52,9 @@ const page = signal(1);
 const Pages = () => (
   <Pagination>
     <PaginationContent>
-      {[1, 2, 3].map((p) => (
-        <PaginationItem key={p}>
-          <PaginationLink onclick={() => page(p)} isActive={page() === p}>{p}</PaginationLink>
+      {[1, 2, 3].map((num) => (
+        <PaginationItem key={num}>
+          <PaginationLink onclick={() => page(num)} isActive={page() === num}>{num}</PaginationLink>
         </PaginationItem>
       ))}
     </PaginationContent>
@@ -50,6 +62,60 @@ const Pages = () => (
 );
 ```
 
-## Styling
+## Manual Parts
 
-The css style module exports `base` and `content` (the landmark and list layout), `linkBase`, `linkVariants`, and `linkSizes` (the inline duplication of the button vocabulary, all eight sizes), `previous` and `next` (the edge paddings), `hiddenUntilSm` and `srOnly` (the responsive label and the screen-reader rule the css flavor needs since no utilities exist), and `ellipsis`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim, including the `size-9` icon-hit-area default on links and the `hidden sm:block` responsive labels on Previous and Next, wrapped in `cn()`. Restrict link sizes to your design by trimming the `linkSizes` map. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+Six named parts ship beside the default `Pagination`: `PaginationContent`, `PaginationItem`, `PaginationLink`, `PaginationPrevious`, `PaginationNext`, and `PaginationEllipsis`. The root renders the `role="navigation"` landmark with `aria-label="pagination"`.
+
+### PaginationContent
+
+The list: a `ul` wrapping one `PaginationItem` per entry.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The list items |
+
+### PaginationItem
+
+One list slot: an `li` holding a link, the ellipsis, or a nav control.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The entry's node |
+
+### PaginationLink
+
+The page anchor, styled through the button vocabulary: ghost inactive, outline active.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `isActive` | `boolean` | Renders `aria-current="page"` and `data-active`, and swaps the ghost variant for the outline one |
+| `href` | `string` | Optional passthrough anchor target; no router coupling |
+| `onclick` | `() => void` | Click callback, replacing navigation for signal-driven paging |
+| `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | Size map (default `"icon"`) |
+| `children` | `HellaChildren` | The page label |
+
+### PaginationPrevious
+
+The previous-page anchor: an `aria-label="Go to previous page"` link with the left chevron and a screen-reader-adjacent label hidden below the `sm` breakpoint.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `isActive` | `boolean` | Same swap as `PaginationLink` |
+| `href` | `string` | Optional passthrough anchor target |
+| `onclick` | `() => void` | Click callback |
+
+### PaginationNext
+
+The next-page anchor: an `aria-label="Go to next page"` link with the right chevron and the same responsive label treatment as `PaginationPrevious`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `isActive` | `boolean` | Same swap as `PaginationLink` |
+| `href` | `string` | Optional passthrough anchor target |
+| `onclick` | `() => void` | Click callback |
+
+### PaginationEllipsis
+
+The overflow marker: an `aria-hidden` span with the ellipsis icon and a screen-reader-only "More pages" label.
+
+Every part also takes a `class` string, landing last in its style composition.

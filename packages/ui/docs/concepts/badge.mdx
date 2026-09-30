@@ -1,10 +1,8 @@
-# Badge
-
-A small status descriptor styled byte-faithfully to shadcn's new-york-v4 Badge: six variants, an `aria-invalid` state, and anchor-aware hover styles, all baked into one owned file.
-
 ## Usage
 
-`variant` picks between `default`, `secondary`, `destructive`, `outline`, `ghost`, and `link`. The root is a `span` carrying `data-slot="badge"` and `data-variant`, and `aria-invalid` reflects the `ariaInvalid` prop.
+`variant` picks between `default`, `secondary`, `destructive`, `outline`, `ghost`, and `link`. The root is a `span` carrying `data-slot="badge"` and `data-variant`, and `aria-invalid` reflects the `ariaInvalid` prop:
+
+### jsx
 
 ```jsx
 import Badge from './components/badge';
@@ -17,6 +15,18 @@ const Status = () => (
     <Badge variant="outline">Outline</Badge>
   </div>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<div class="flex gap-2">
+  <${Badge}>Default</${Badge}>
+  <${Badge} variant="secondary">Secondary</${Badge}>
+  <${Badge} variant="destructive">Destructive</${Badge}>
+  <${Badge} variant="outline">Outline</${Badge}>
+</div>`
 ```
 
 ## Anchor-Aware Hover
@@ -32,7 +42,3 @@ const FilterLink = () => (
   </a>
 );
 ```
-
-## Styling
-
-The style module exports `base` and `variants`; the composition bakes `variants[props.variant ?? "default"]`, and `props.class` lands last, so one-off classes from the call site always ride along. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps shadcn's literal utilities (`bg-primary`, `rounded-full`) in `cn()` so later tokens override earlier ones per utility group. The anchor-conditioned hover rules live in the variant entries themselves (`&:is(a):hover` in the css style maps, `[a&]:hover:*` in the tailwind strings), and an inline `svg` child scales to the badge's `size-3` icon slot automatically. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

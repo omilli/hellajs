@@ -4,9 +4,6 @@ import type { HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-// The ref's size prop pins to "default" in this port (data-size="default"), so
-// the data-[size=sm] branches are tailwind-only: they can never match here and
-// have no css-flavor translation.
 const base = style({
   alignItems: "center",
   border: "1px solid transparent",
@@ -39,10 +36,6 @@ const base = style({
   },
 }, { label: "hella-switch", layer: "hella" });
 
-// The thumb's default size comes from the root's data-size="default" group
-// condition (ref: group-data-[size=default]/switch:size-4). ring-0 is a
-// tailwind ring-machinery width reset with no visual effect; the css flavor
-// omits it. The translate drives the whole state motion.
 const thumb = style({
   backgroundColor: "var(--background)",
   borderRadius: "9999px",
@@ -98,12 +91,14 @@ export default function Switch(props: SwitchProps): HellaNode {
         [base, props.class]
       }"
       e:click="${() => toggle()}"
-    ><span
+    >
+      <span
         data-slot="switch-thumb"
         data-state="${() => (checked() ? "checked" : "unchecked")}"
         class="${
           [thumb]
         }"
-      /></button>
+      />
+    </button>
   ` as HellaNode;
 }

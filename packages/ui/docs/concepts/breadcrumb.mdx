@@ -1,10 +1,8 @@
-# Breadcrumb
-
-A navigation trail styled to shadcn's Breadcrumb: an ordered list of items with separators, the current page marked for assistive tech, an ellipsis for collapsed segments, and dropdown composition for overflow.
-
 ## Usage
 
-`Breadcrumb` renders the labeled `nav`; `BreadcrumbList` is the ordered list; each `BreadcrumbItem` is one `li` slot holding a `BreadcrumbLink`, the `BreadcrumbPage`, an ellipsis, or a dropdown. `BreadcrumbSeparator` renders between items and inlines the chevron, accepting children to replace it.
+`Breadcrumb` renders the labeled `nav`; `BreadcrumbList` is the ordered list; each `BreadcrumbItem` is one `li` slot holding a `BreadcrumbLink`, the `BreadcrumbPage`, an ellipsis, or a dropdown. `BreadcrumbSeparator` renders between items and inlines the chevron, accepting children to replace it:
+
+### jsx
 
 ```jsx
 import Breadcrumb from './components/breadcrumb';
@@ -34,16 +32,74 @@ const Trail = () => (
   </Breadcrumb>
 );
 ```
+### html
 
-`BreadcrumbPage` renders `role="link"` with `aria-disabled="true"` and `aria-current="page"`: it marks where the reader is, not a link to click. Separators are `role="presentation"` and hidden from the accessibility tree, so screen readers announce the trail through the list semantics alone.
+The html-format (`--format html`) works the same way.
 
-Collapsed segments compose `BreadcrumbEllipsis` inside an item. The ellipsis inlines the more-horizontal icon plus a `sr-only` "More" label and carries `role="presentation"` with `aria-hidden="true"`.
+```js
+html`<main>
+  <${Breadcrumb}>
+    <${BreadcrumbList}>
+      <${BreadcrumbItem}><${BreadcrumbLink} href=${"/"}>Home</${BreadcrumbLink}></${BreadcrumbItem}>
+      <${BreadcrumbSeparator}></${BreadcrumbSeparator}>
+      <${BreadcrumbItem}><${BreadcrumbLink} href=${"/ui"}>UI</${BreadcrumbLink}></${BreadcrumbItem}>
+      <${BreadcrumbSeparator}></${BreadcrumbSeparator}>
+      <${BreadcrumbItem}><${BreadcrumbPage}>Breadcrumb</${BreadcrumbPage}></${BreadcrumbItem}>
+    </${BreadcrumbList}>
+  </${Breadcrumb}>
+</main>`
+```
 
-## Structure Parts
+## Manual Parts
 
-Six named parts ship beside the default `Breadcrumb`: `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbPage`, `BreadcrumbSeparator`, and `BreadcrumbEllipsis`. `BreadcrumbLink` takes an `href` passthrough (there is no router coupling), and every part takes `class` for one-off restyles.
+Six named parts ship beside the default `Breadcrumb`: `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbPage`, `BreadcrumbSeparator`, and `BreadcrumbEllipsis`. `BreadcrumbLink` takes an `href` passthrough (there is no router coupling), and `BreadcrumbPage` renders `role="link"` with `aria-disabled="true"` and `aria-current="page"`: it marks where the reader is, not a link to click. Separators are `role="presentation"` and hidden from the accessibility tree, so screen readers announce the trail through the list semantics alone.
 
-### Overflow with a Dropdown
+### BreadcrumbList
+
+The trail: an `ol` laid out as the wrapping flex row with the `sm:` gap step.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The trail's items and separators |
+
+### BreadcrumbItem
+
+One trail slot: an `li` holding a link, the current page, an ellipsis, or a dropdown.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The slot's node |
+
+### BreadcrumbLink
+
+One trail link: an `a` with the color transition on hover.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `href` | `string` | Passthrough anchor target; no router coupling |
+| `children` | `HellaChildren` | The segment label |
+
+### BreadcrumbPage
+
+The current segment: a `span` carrying `role="link"`, `aria-disabled="true"`, and `aria-current="page"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The current page's label |
+
+### BreadcrumbSeparator
+
+The between-items marker: an `li` carrying `role="presentation"` and `aria-hidden="true"`, inlining the chevron.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Replaces the inlined chevron when given |
+
+### BreadcrumbEllipsis
+
+The collapsed-segments marker: a `span` carrying `role="presentation"` and `aria-hidden="true"`, inlining the more-horizontal icon plus a screen-reader-only "More" label.
+
+## Overflow with a Dropdown
 
 When the trail hides middle segments, put a `DropdownMenu` inside a `BreadcrumbItem`: the ellipsis labels the trigger and the menu lists the hidden levels.
 
@@ -71,6 +127,4 @@ const Overflow = () => (
 
 The composed `DropdownMenu` owns its own open state, so the breadcrumb needs no extra wiring; the entry's registry dependency copies `dropdown-menu` (and its `button` dependency) alongside the trail.
 
-## Styling
-
-The module exports `list` (the wrapping flex row with the `sm:` gap step), `item`, `link` (the color transition on hover), `page` (the foreground weight and color), `separator` (sizing the chevron through its `svg` selector), `ellipsis` with `ellipsisIcon` (the 2.25rem hit area and 1rem icon), and `srOnly` (the visually hidden label); the upstream `nav` carries no classes of its own, so it has no binding. The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; the tailwind flavor uses shadcn's literal utilities verbatim (`text-muted-foreground`, `sm:gap-2.5`, `[&>svg]:size-3.5`) wrapped in `cn()` so later tokens override earlier ones per utility group. The trail's rhythm is `list`: swap the chevron by passing children to `BreadcrumbSeparator`, and restyle links through `link`. The html-format file (`breadcrumb.ts`, copied with `--format html`) renders the same parts through templates. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+Every part also takes a `class` string, landing last in its style composition.

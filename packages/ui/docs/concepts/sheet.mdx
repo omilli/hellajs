@@ -1,28 +1,33 @@
-# Sheet
-
-A side panel styled to shadcn's Sheet: an overlay plus a panel that slides in from one of the four screen edges with enter and exit animations, a built-in close button, and wired title and description. The caller owns an `open` signal and an `onClose` callback; the component wires everything else around them.
-
 ## Usage
+
+A side panel sliding in from one of the four screen edges: the caller owns an `open` accessor and an `onClose` callback, and the component wires the slide animations, close button, title, description, focus trap, and escape/outside dismissal around them.
+
+### jsx
 
 ```jsx
 import { signal } from '@hellajs/core';
 import Sheet from './components/sheet';
 
-const EditProfile = () => {
-  const isOpen = signal(false);
-  const close = () => isOpen(false);
+const isOpen = signal(false);
+const close = () => isOpen(false);
 
-  return (
-    <Sheet open={isOpen} onClose={close} side="right" title="Edit profile" description="Make changes to your profile here.">
-      <p>Press escape or the X to close.</p>
-    </Sheet>
-  );
-};
+const EditProfile = () => (
+  <Sheet open={isOpen} onClose={close} side="right" title="Edit profile" description="Make changes to your profile here.">
+    <p>Press escape or the X to close.</p>
+  </Sheet>
+);
 ```
+### html
 
-Opening portals the overlay and panel into `document.body` with `data-state="open"`, `data-side`, and the enter animation (500ms slide, 150ms overlay fade); flipping `open` false starts the exit (300ms slide) - the panel stays mounted under `data-state="closed"` until the exit animation ends (a 350ms fallback unmounts it if animations never run). While leaving, the dismissal wirings are down: the exit runs unwired and repeat `onClose` calls are no-ops.
+The html-format (`--format html`) works the same way.
 
-Props beyond `open` and `onClose`:
+```js
+html`<main>
+  <${Sheet} open=${isOpen} onClose=${close} side="top" title="Notifications">
+    <p>Three unread digests.</p>
+  </${Sheet}>
+</main>`
+```
 
 | Prop | Default | Behavior |
 |---|---|---|
@@ -33,78 +38,134 @@ Props beyond `open` and `onClose`:
 | `closeOnEscape` | `true` | Escape keydown while the panel is open calls `onClose` |
 | `closeOnOutside` | `true` | Pointerdown outside the panel (the overlay included) calls `onClose` |
 
-The title and description wiring is what screen readers announce: `role="dialog"` carries `aria-labelledby` and `aria-describedby` pointing at the generated ids, and a manual composition must pass `labelledBy`/`describedBy` itself. The parts render warn-less passthroughs; nothing forces you to include them, but the panel announces nothing without a labelled title.
-
-The html-format file (`sheet.ts`, copied with `--format html`) renders through a template instead of JSX; the sheet mounts as a reactive child of whatever wraps it:
-
-```js
-import { signal } from '@hellajs/core';
-import { html, mount } from '@hellajs/dom';
-import Sheet from './components/sheet';
-
-const isOpen = signal(false);
-const close = () => isOpen(false);
-
-mount(
-  html`
-    <main>
-      <${Sheet} open=${isOpen} onClose=${close} side="top" title="Notifications">
-        <p>Three unread digests.</p>
-      </${Sheet}>
-    </main>
-  `,
-  '#app',
-);
-```
+Opening portals the overlay and panel into `document.body` under `data-state="open"`; closing keeps the panel mounted under `data-state="closed"` until its exit slide ends, with the dismissal wirings down while it leaves. The panel carries `role="dialog"` with `aria-labelledby` and `aria-describedby` pointing at the generated title and description ids - the wiring screen readers announce.
 
 ## Sides
 
-`side` picks the edge the panel mounts on and carries both the geometry and the slide direction: the four variants mirror the shadcn reference verbatim.
+`side` picks the edge the panel mounts on and carries both the geometry and the slide direction:
 
 | Side | Geometry | Slide |
 |---|---|---|
-| `"right"` (default) | Full height, `w-3/4`, `sm:max-w-sm`, right border | In from the right, out to the right |
-| `"left"` | Full height, `w-3/4`, `sm:max-w-sm`, left border | In from the left, out to the left |
+| `"right"` (default) | Full height, three-quarters wide capped at 24rem from wide screens up, right border | In from the right, out to the right |
+| `"left"` | Full height, three-quarters wide capped at 24rem from wide screens up, left border | In from the left, out to the left |
 | `"top"` | Full width, auto height, bottom border | In from the top, out to the top |
 | `"bottom"` | Full width, auto height, top border | In from the bottom, out to the bottom |
 
-## Structure Parts
+## Manual Parts
 
-Nine named parts ship beside the default `Sheet`: `SheetTrigger`, `SheetClose`, `SheetPortal`, `SheetOverlay`, `SheetContent`, `SheetHeader`, `SheetFooter`, `SheetTitle`, and `SheetDescription`, each carrying its `data-slot` and class compose. hella has no Radix-style context primitive, so manual composition passes state explicitly: portal the overlay and panel yourself, and hand both a `state` accessor.
+Nine named parts ship beside the default `Sheet` for custom composition: `SheetTrigger`, `SheetClose`, `SheetPortal`, `SheetOverlay`, `SheetContent`, `SheetHeader`, `SheetFooter`, `SheetTitle`, and `SheetDescription`. State is explicit - portal the overlay and panel yourself and hand both a `state` accessor.
+
+### SheetTrigger
+
+A bare button; wire its click to your own signal write.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The trigger label |
+
+### SheetClose
+
+The X button with its `sr-only` "Close" label; `SheetContent` renders the same shape automatically unless `showCloseButton` is false.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives the button's `data-state` |
+| `onClose` | `() => void` | Click callback |
+
+### SheetPortal
+
+Wraps children in a `Portal to="body"` for compositions that want the named part.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The portaled nodes |
+
+### SheetOverlay
+
+The screen-covering backdrop `div` carrying `data-slot="sheet-overlay"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives the overlay's `data-state` and its enter/exit fade |
+
+### SheetContent
+
+The `role="dialog"` panel carrying `data-slot="sheet-content"`: focus trap plus escape and outside dismissal while open, torn down the moment the exit starts.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle; `closed` tears the dismissal wirings down |
+| `side` | `"top" \| "right" \| "bottom" \| "left"` | Sets `data-side`, the geometry, and the slide direction (default `"right"`) |
+| `labelledBy` | `string` | Rendered as the panel's `aria-labelledby` |
+| `describedBy` | `string` | Rendered as the panel's `aria-describedby` |
+| `showCloseButton` | `boolean` | Renders the X button in the panel's top-right corner (default `true`) |
+| `closeOnEscape` | `boolean` | Escape keydown calls `onClose` (default `true`) |
+| `closeOnOutside` | `boolean` | Outside pointerdown calls `onClose` (default `true`) |
+| `onClose` | `() => void` | Dismissal and close-button callback |
+| `onExited` | `() => void` | Called when the exit slide ends under `data-state="closed"` |
+| `children` | `HellaChildren` | The panel body |
+
+### SheetHeader
+
+The top grouping `div` carrying `data-slot="sheet-header"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Title and description nodes |
+
+### SheetFooter
+
+The bottom grouping `div` carrying `data-slot="sheet-footer"`.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | Action nodes, typically buttons |
+
+### SheetTitle
+
+The heading: an `h2` carrying `data-slot="sheet-title"` whose `id` the panel's `aria-labelledby` points at.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `id` | `string` | Rendered as the heading's `id` |
+| `children` | `HellaChildren` | The title text |
+
+### SheetDescription
+
+The supporting line: a `p` carrying `data-slot="sheet-description"` whose `id` the panel's `aria-describedby` points at.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `id` | `string` | Rendered as the paragraph's `id` |
+| `children` | `HellaChildren` | The description text |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ```jsx
 import { signal } from '@hellajs/core';
 import { Portal } from '@hellajs/dom';
 import Sheet, { SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetTitle } from './components/sheet';
 
-const Manual = () => {
-  const isOpen = signal(false);
-  const state = () => (isOpen() ? 'open' : 'closed');
+const isOpen = signal(false);
+const state = () => (isOpen() ? 'open' : 'closed');
 
-  return (
-    <>
-      <button on:click={() => isOpen(true)}>Open</button>
-      {() => isOpen() && (
-        <Portal to="body">
-          <SheetOverlay state={state} />
-          <SheetContent state={state} side="bottom" labelledBy="sheet-manual-title" onClose={() => isOpen(false)}>
-            <SheetHeader>
-              <SheetTitle id="sheet-manual-title">Cart</SheetTitle>
-              <SheetDescription>Three items reserved for you.</SheetDescription>
-            </SheetHeader>
-            <SheetFooter>
-              <SheetClose onClose={() => isOpen(false)} />
-            </SheetFooter>
-          </SheetContent>
-        </Portal>
-      )}
-    </>
-  );
-};
+const Manual = () => (
+  <>
+    <button on:click={() => isOpen(true)}>Open</button>
+    {() => isOpen() && (
+      <Portal to="body">
+        <SheetOverlay state={state} />
+        <SheetContent state={state} side="bottom" labelledBy="sheet-manual-title" onClose={() => isOpen(false)}>
+          <SheetHeader>
+            <SheetTitle id="sheet-manual-title">Cart</SheetTitle>
+            <SheetDescription>Three items reserved for you.</SheetDescription>
+          </SheetHeader>
+          <SheetFooter>
+            <SheetClose onClose={() => isOpen(false)} />
+          </SheetFooter>
+        </SheetContent>
+      </Portal>
+    )}
+  </>
+);
 ```
-
-`SheetTrigger` is a bare button: wire its click to your own signal write. `SheetClose` is the X button with its `sr-only` "Close" label; `SheetContent` renders the same shape automatically unless `showCloseButton` is false. `SheetPortal` wraps children in a `Portal to="body"` when a manual composition wants the named part for symmetry.
-
-## Styling
-
-The module exports `base` (the overlay), `content` (the panel frame), `contentSides` (the per-side geometry and slide animations), `close`, `header`, `footer`, `title`, and `description`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; each side's enter and exit is a hand-rolled `@keyframes` pair (fade composed with a 100% translate along the side's axis) applied under `[data-state='open']` (500ms) / `[data-state='closed']` (300ms) selectors, and the overlay fades in 150ms like the dialog's. The tailwind flavor never touches `@hellajs/css`: the palette comes from `theme.css`, the copied strings use shadcn's literal utilities verbatim (`bg-background`, `animate-in`, the four `slide-in-from-*` / `slide-out-to-*` side variants), and each part's class array wraps in `cn()` so later tokens override earlier ones per utility group. Side geometry lives in the `contentSides` map; edit the durations in the `animation` declarations, or restyle a side there without touching the others. `props.class` lands last in the panel composition, so one-off classes from the call site always ride along. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

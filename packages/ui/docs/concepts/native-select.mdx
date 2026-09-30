@@ -1,10 +1,8 @@
-# Native Select
-
-A styled native `select` styled byte-faithfully to shadcn's new-york-v4 NativeSelect: the real element (full keyboard and mobile behavior for free) inside a relative wrapper with an inlined chevron-down icon, plus thin passthroughs for `option` and `optgroup`.
-
 ## Usage
 
 Options are authored by the caller as plain native children; the component never models them as props. `value` accepts a plain string or a bare signal and binds as the select's value property, `onchange` receives the extracted `e.target.value` string, and the wrapper dims via `:has(select:disabled)` when the control is disabled:
+
+### jsx
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -20,41 +18,64 @@ const Picker = () => (
   </NativeSelect>
 );
 ```
+### html
 
-The html-format file (`native-select.ts`, copied with `--format html`) renders through a template; children sit between the component tags and events use the direct `e:` prefix:
+The html-format (`--format html`) works the same way.
 
 ```js
-import { html, mount } from '@hellajs/dom';
-import { signal } from '@hellajs/core';
-import NativeSelect from './components/native-select';
-
-const region = signal('eu');
-mount(
-  html`<${NativeSelect} value="${region}" e:change="${(e) => region(e.target.value)}">
-    <option value="eu">EU Central</option>
-    <option value="us">US East</option>
-  </${NativeSelect}>`,
-  '#app',
-);
+html`<${NativeSelect} value=${region} onchange=${(v) => region(v)} ariaLabel="Region">
+  <option value="eu">EU Central</option>
+  <option value="us">US East</option>
+  <option value="ap" disabled>AP South (coming soon)</option>
+</${NativeSelect}>`
 ```
 
-## Groups
+## Size
 
-Group options with the optgroup passthrough, which carries the same `bg-[Canvas]` styling:
+`size="sm"` toggles the compact treatment through `data-size="sm"` on the select, trimming the control's height:
 
 ```jsx
-import NativeSelect, { NativeSelectOptGroup, NativeSelectOption } from './components/native-select';
+import NativeSelect from './components/native-select';
 
-const Grouped = () => (
-  <NativeSelect ariaLabel="Plan">
-    <NativeSelectOptGroup label="Standard">
-      <NativeSelectOption value="basic">Basic</NativeSelectOption>
-      <NativeSelectOption value="plus">Plus</NativeSelectOption>
-    </NativeSelectOptGroup>
+const Compact = () => (
+  <NativeSelect size="sm" ariaLabel="Compact select">
+    <option value="a">Compact option A</option>
+    <option value="b">Compact option B</option>
   </NativeSelect>
 );
 ```
 
-## Styling
+## Manual Parts
 
-The style module exports `wrapper`, `base`, `focus`, `invalid`, `icon`, `option`, and `optgroup` maps; the select's compose bakes its classes plus `props.class` (shadcn keeps user classes on the select, so the wrapper takes no merge). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor carries shadcn's literal utilities verbatim (the `has-[select:disabled]:opacity-50` wrapper condition, `data-[size=sm]:h-8` compaction, and the `dark:hover:bg-input/50` form) wrapped in `cn()`. The icon is positioned against the wrapper's right edge, and the chevron path data is inlined so the entry stays dependency-free; replace the `path` `d` attribute to swap the glyph. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+`NativeSelectOption` and `NativeSelectOptGroup` ship beside the default root as styled passthroughs to their native elements; plain native `option` and `optgroup` children also render as-is.
+
+### NativeSelectOption
+
+A passthrough to a native `option`, carrying the option color treatment.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The option's label node |
+
+### NativeSelectOptGroup
+
+A passthrough to a native `optgroup`, carrying the same color treatment. It forwards only `children` and `class`: a group heading needs a plain native `optgroup` with its `label` attribute.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The grouped options |
+
+Every part also takes a `class` string, landing last in its style composition.
+
+```jsx
+import NativeSelect, { NativeSelectOption } from './components/native-select';
+
+const Grouped = () => (
+  <NativeSelect ariaLabel="Plan">
+    <optgroup label="Standard">
+      <NativeSelectOption value="basic">Basic</NativeSelectOption>
+      <NativeSelectOption value="plus">Plus</NativeSelectOption>
+    </optgroup>
+  </NativeSelect>
+);
+```

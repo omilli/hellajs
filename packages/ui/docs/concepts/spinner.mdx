@@ -1,10 +1,8 @@
-# Spinner
-
-An operation-in-progress indicator styled byte-faithfully to shadcn's new-york-v4 Spinner: the loader-circle glyph inlined as a fixed `svg`, spinning through a css animation and announcing itself with `role="status"` and `aria-label="Loading"`.
-
 ## Usage
 
-The glyph inherits `currentColor` and scales through your own size classes; the `role="status"` announcement needs no wiring. The spin ships as a css-flavor keyframe (1s linear, infinite) so the tailwind flavor's `animate-spin` has a faithful translation with no utility framework required.
+The glyph inherits `currentColor` and scales through your own size classes; the `role="status"` announcement needs no wiring. The spin is a 1s linear infinite css animation:
+
+### jsx
 
 ```jsx
 import Spinner from './components/spinner';
@@ -16,6 +14,17 @@ const Sizes = () => (
     <Spinner class="size-6" />
   </div>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<div class="flex items-center gap-4 text-muted-foreground">
+  <${Spinner} class="size-3" />
+  <${Spinner} />
+  <${Spinner} class="size-6" />
+</div>`
 ```
 
 ## Busy Actions
@@ -32,7 +41,3 @@ const Saving = () => (
   </button>
 );
 ```
-
-## Styling
-
-The css style module exports a single `base` holding the 1rem glyph box and the spin `animation` (declared through a hashed `keyframes()` name); the compose bakes `base` plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor uses shadcn's literal utilities verbatim (`size-4 animate-spin`) wrapped in `cn()`. The svg innards are fixed (the lucide loader-circle path), so restyling happens on the outside: size, color, and speed all come from your classes or a one-line `animation` edit. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

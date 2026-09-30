@@ -7,52 +7,28 @@ import SheetContent from "@ui/concepts/sheet.mdx";
 const title = "Sheet";
 const description = "Interactive Sheet demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import Sheet from './components/sheet';
-
-const EditProfile = () => {
-  const isOpen = signal(false);
-  const close = () => isOpen(false);
-
-  return (
-    <Sheet open={isOpen} onClose={close} side="right" title="Edit profile" description="Make changes to your profile here. Click save when you're done.">
-      <p>This panel slides in from the right edge with its geometry and slide variant from the side table.</p>
-      <button on:click={close}>Save changes</button>
-    </Sheet>
-  );
-};`;
-
-const manualCode = `import { signal } from '@hellajs/core';
-import { Portal } from '@hellajs/dom';
-import Sheet, { SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetTitle } from './components/sheet';
-
-const Manual = () => {
-  const isOpen = signal(false);
-  const state = () => (isOpen() ? 'open' : 'closed');
-
-  return (
-    <>
-      <button on:click={() => isOpen(true)}>Open</button>
-      {() => isOpen() && (
-        <Portal to="body">
-          <SheetOverlay state={state} />
-          <SheetContent state={state} side="bottom" labelledBy="sheet-manual-title" onClose={() => isOpen(false)}>
-            <SheetHeader>
-              <SheetTitle id="sheet-manual-title">Cart</SheetTitle>
-              <SheetDescription>Three items reserved for you.</SheetDescription>
-            </SheetHeader>
-            <SheetFooter>
-              <SheetClose onClose={() => isOpen(false)} />
-            </SheetFooter>
-          </SheetContent>
-        </Portal>
-      )}
-    </>
-  );
-};`;
+const manualCode = `<>
+  <button on:click={() => isOpen(true)}>Open</button>
+  {() => isOpen() && (
+    <Portal to="body">
+      <SheetOverlay state={state} />
+      <SheetContent state={state} side="bottom" labelledBy="sheet-manual-title" onClose={() => isOpen(false)}>
+        <SheetHeader>
+          <SheetTitle id="sheet-manual-title">Cart</SheetTitle>
+          <SheetDescription>Three items reserved for you.</SheetDescription>
+        </SheetHeader>
+        <SheetFooter>
+          <SheetClose onClose={() => isOpen(false)} />
+        </SheetFooter>
+      </SheetContent>
+    </Portal>
+  )}
+</>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Sheet</h1>
+  <p>A side panel sliding in from any screen edge with an overlay, a built-in X close button, and wired title and description - the caller owns the `open` signal, the component wires everything else.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="sheet" />
   <SheetContent />

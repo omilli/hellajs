@@ -1,7 +1,3 @@
-# Switch
-
-An on/off control styled to shadcn's Switch: a `role="switch"` button whose thumb slides through pure CSS. The root renders `aria-checked` and `data-state`; the thumb carries the same `data-state` and the style layer translates it into the track palette and the thumb translation.
-
 ## Usage
 
 | Prop | Type | Behavior |
@@ -11,14 +7,35 @@ An on/off control styled to shadcn's Switch: a `role="switch"` button whose thum
 | `disabled` | `boolean` | Blocks clicks and renders the disabled attribute |
 | `class` | `string` | Lands on the root next to the component class |
 
+### jsx
+
 ```jsx
 import Switch from './components/switch';
 
 const Settings = () => (
-  <label>
-    <Switch /> Airplane mode
-  </label>
+  <div class="flex flex-col gap-2">
+    <label>
+      <Switch /> Airplane mode
+    </label>
+    <label>
+      <Switch checked disabled /> Managed by policy
+    </label>
+  </div>
 );
+```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<div class="flex flex-col gap-2">
+  <label>
+    <${Switch} /> Airplane mode
+  </label>
+  <label>
+    <${Switch} checked disabled /> Managed by policy
+  </label>
+</div>`
 ```
 
 ## Controlled and Uncontrolled
@@ -39,9 +56,9 @@ const Controlled = () => (
 );
 ```
 
-## Divergences
+## Size
 
-The ref exposes a `size` prop (`default` and `sm`). This port pins the rendered output to the ref default: the root carries `data-size="default"` and the `sm` classes ride along in the tailwind module, where they can never match. Resizing a switch is an edit of the copied file away.
+There is no `size` prop: the root always carries `data-size="default"`, and the `sm` classes riding along in the tailwind module can never match. Resizing a switch means editing the copied file.
 
 ## Accessibility
 
@@ -53,7 +70,3 @@ The root is a `button` element, so Space toggles it through native activation an
 | State | `aria-checked` is `true` or `false`; `data-state` is `checked` or `unchecked` on both root and thumb |
 | Keyboard | Space toggles; the button is disabled for pointer and keyboard while `disabled` |
 | Labeling | Pair with a `label` element or `aria-labelledby` |
-
-## Styling
-
-Both flavors export the same names from the copied file: `base` (the track, including the size, palette, and focus ring) and `thumb` (the sliding knob, whose `translate` carries the whole state motion). The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the tailwind flavor wraps plain utility strings in `cn()`, verbatim from the ref including the named `group/switch` scoping that lets the thumb read the root's `data-size` and `data-state`. To restyle every switch's knob at once, edit the `thumb` map; because the thumb's motion is pure CSS keyed on `data-state`, changing the easing or distance is a one-line edit in the style module. `props.class` lands on the root next to `base`. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

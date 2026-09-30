@@ -294,31 +294,59 @@ function ToastItem(props: ToastItemProps): JSX.Element {
         const paths = ICON_PATHS[data().type];
         if (paths === undefined) return [];
         return [
-          <span data-slot="sonner-icon" data-type={data().type} class={
-            // @hella:compose
-            [icon]
-            // @hella:end
-          }>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4">{paths}</svg>
+          <span
+            data-slot="sonner-icon"
+            data-type={data().type}
+            class={
+              // @hella:compose
+              [icon]
+              // @hella:end
+            }
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-4"
+            >
+              {paths}
+            </svg>
           </span>,
         ];
       }}
-      <div data-slot="sonner-content" class={
-        // @hella:compose
-        [content]
-        // @hella:end
-      }>
-        <div data-slot="sonner-title" class={
+      <div
+        data-slot="sonner-content"
+        class={
           // @hella:compose
-          [title]
+          [content]
           // @hella:end
-        }>{() => data().message}</div>
-        {() => data().description === undefined ? [] : [
-          <div data-slot="sonner-description" class={
+        }
+      >
+        <div
+          data-slot="sonner-title"
+          class={
             // @hella:compose
-            [description]
+            [title]
             // @hella:end
-          }>{data().description}</div>,
+          }
+        >
+          {() => data().message}
+        </div>
+        {() => data().description === undefined ? [] : [
+          <div
+            data-slot="sonner-description"
+            class={
+              // @hella:compose
+              [description]
+              // @hella:end
+            }
+          >{data().description}</div>,
         ]}
       </div>
       {() => {
@@ -350,7 +378,21 @@ function ToastItem(props: ToastItemProps): JSX.Element {
         }
         on:click={() => markRemoved(data().id)}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="size-4"
+        >
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
         <span class="sr-only">Close</span>
       </button>
     </li>

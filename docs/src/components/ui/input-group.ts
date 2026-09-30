@@ -473,10 +473,6 @@ const textareaControl = style({
   },
 }, { label: "hella-input-group-textarea-control", layer: "hella" });
 
-// State the class-scoped style() nesting cannot express: the group's
-// data-disabled flag, the group-has-[>input] named-group conditions, and the
-// [.border-b]/[.border-t] ancestor-or-sibling arbitrary variants all register
-// as raw selectors in the same layer, after the part classes.
 css({
   "@layer hella": {
     "[data-slot='input-group'][data-disabled='true'] [data-slot='input-group-addon']": {

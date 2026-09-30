@@ -1,10 +1,8 @@
-# Command
-
-A command palette styled to shadcn's Command: the items-driven root owns the query signal and a cmdk-shaped scoring filter, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list; the named parts and the palette dialog compose manually with explicit state, like every hella component.
-
 ## Usage
 
-The default `Command` takes its items as data and renders the search input, the ranked groups, and the keyboard model. Typing filters; the first match starts active.
+The default `Command` takes its items as data and renders the search input, the ranked groups, and the keyboard model: the root owns the query signal, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list. Typing filters; the first match starts active.
+
+### jsx
 
 ```jsx
 import Command from './components/command';
@@ -19,32 +17,43 @@ const Palette = () => (
   <Command items={commands} onValueChange={(value) => console.log(value)} />
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Command}
+    items=${commands}
+  />
+</main>`
+```
 
 Items sharing a `group` render under one heading, in the order the groups first appear in the array; items without a `group` render above the groups. Each item renders its `label` and, when present, a right-aligned `CommandShortcut` hint.
 
-| Prop | Default | Behavior |
+| Prop | Type | Behavior |
 |---|---|---|
-| `items` | `[]` | `{ value, label, group?, keywords?, shortcut?, disabled?, onSelect? }[]` rendered as ranked groups |
-| `filter` | built-in scorer | Replaces the default filter; receives the full item list and the live query |
-| `loop` | `false` | Wraps arrow movement at the edges; the default clamps |
-| `value` | - | Controlled active value accessor. When given, the root never writes its internal cursor |
-| `onValueChange` | - | Reports the committed value on Enter; in controlled mode it also reports each requested arrow or Home/End move |
-| `class` | - | Extra classes on the root |
-| `children` | - | Extra chrome rendered below the list (footer hints, custom rows) |
+| `items` | `{ value, label, group?, keywords?, shortcut?, disabled?, onSelect? }[]` | Rendered as ranked groups; each entry is one row, tabled under Items |
+| `filter` | `(items, query) => CommandItemData[]` | Replaces the default scoring filter; receives the full item list and the live query and returns the items to render, ranked |
+| `loop` | `boolean` | Wraps arrow movement at the edges; the default clamps (default `false`) |
+| `value` | `() => string` | Controlled active value accessor. When given, the root never writes its internal cursor and `onValueChange` reports each requested move and selection |
+| `onValueChange` | `(value: string) => void` | Reports the committed value on Enter; in controlled mode it also reports each requested arrow or Home/End move |
+| `children` | `HellaChildren` | Extra chrome rendered below the list (footer hints, custom rows) |
+| `class` | `string` | Extra classes on the root |
 
-The html-format file (`command.ts`, copied with `--format html`) renders through a template instead of JSX; the command mounts as a reactive child of whatever wraps it, with the items interpolated as data:
+## Items
 
-```js
-import { html, mount } from '@hellajs/dom';
-import Command from './components/command';
+Each entry in the `items` array is one palette row:
 
-mount(
-  html`
-    <${Command} items=${commands} />
-  `,
-  '#app',
-);
-```
+| Field | Type | Behavior |
+|---|---|---|
+| `value` | `string` | Selection identity: reported through `onValueChange` on Enter and rendered as the row's `data-value` |
+| `label` | `string` | The row's text and its primary scoring target |
+| `group` | `string` | Groups rows under one heading, in first-appearance order; rows without a group render above the groups |
+| `keywords` | `string[]` | Extra scoring targets; every keyword that matches adds a fixed bonus |
+| `shortcut` | `string` | Right-aligned key hint rendered through `CommandShortcut` |
+| `disabled` | `boolean` | Arrows skip the row and Enter never commits it; renders `data-disabled` plus `aria-disabled` |
+| `onSelect` | `() => void` | Runs when Enter commits the row (alongside the root's `onValueChange`) |
 
 ## Filtering
 
@@ -77,9 +86,84 @@ The input keeps focus the whole time; the keydown model reads arrows, Home, End,
 
 Each cursor move scrolls the newly active item to the nearest edge of the list (`scrollIntoView` with `block: "nearest"`). The active item carries `data-selected="true"` plus `aria-selected`, and `data-disabled="true"` marks the items arrows skip.
 
-## Structure Parts
+## Manual Parts
 
-Eight named parts ship beside the default `Command`: `CommandInput`, `CommandList`, `CommandEmpty`, `CommandGroup`, `CommandSeparator`, `CommandItem`, `CommandShortcut`, and `CommandDialog`. hella has no cmdk-style context, so manual composition passes state explicitly: the input takes the query value and handlers, the group takes its heading, and each item takes an `active` accessor.
+Eight named parts ship beside the default `Command`: `CommandInput`, `CommandList`, `CommandEmpty`, `CommandGroup`, `CommandSeparator`, `CommandItem`, `CommandShortcut`, and `CommandDialog`. Manual composition passes state explicitly: the input takes the query value and handlers, the group takes its heading, and each item takes an `active` accessor - there is no context wiring a manually composed `CommandItem` into a shared filter or keyboard model.
+
+### CommandInput
+
+The search row: the search icon plus the text input.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `string \| (() => string)` | The query text; an accessor keeps it reactive |
+| `placeholder` | `string` | The input's placeholder text |
+| `onInput` | `(value: string) => void` | Query change callback (delegated input event) |
+| `onKeydown` | `(e: KeyboardEvent) => void` | Keydown handler owning the keyboard model |
+
+### CommandList
+
+The scrolling `role="listbox"` container.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `body` | `() => HellaChild \| HellaChild[]` | Reactive items body; a thunk so the composed root's re-ranked list re-renders through the slot |
+| `children` | `HellaChildren` | Static list chrome |
+
+### CommandEmpty
+
+The zero-match row.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The empty-state text |
+
+### CommandGroup
+
+One group: its heading plus children; `hidden` drops the whole group when every row scored zero.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `heading` | `string` | The group's heading text |
+| `hidden` | `boolean \| (() => boolean)` | Renders the `hidden` attribute when truthy |
+
+### CommandItem
+
+One `role="option"` row; activation runs `onSelect` on click.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `value` | `string` | Rendered as the row's `data-value`, read by the root's scroll wiring |
+| `active` | `() => boolean` | Drives `aria-selected` and the `data-selected` accent |
+| `onSelect` | `() => void` | Called on click and on Enter when the owning command commits |
+| `disabled` | `boolean` | `data-disabled` plus `aria-disabled`; skipped by arrows, unclickable |
+| `children` | `HellaChildren` | The row's label |
+
+### CommandShortcut
+
+The right-aligned key hint inside a row.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The hint text |
+
+### CommandSeparator
+
+A `role="separator"` rule between groups.
+
+### CommandDialog
+
+The palette wrapped in the dialog surface: the overlay, the portaled panel, the focus trap with focus restore, and escape plus outside-press dismissal. The `title` and `description` render inside a screen-reader-only header and wire `aria-labelledby` and `aria-describedby` on the panel.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `open` | `() => boolean` | Resolves the dialog state |
+| `onClose` | `() => void` | Escape and an outside press run it; the panel holds mounted under `data-state="closed"` until its exit animation ends |
+| `title` | `string` | Screen-reader-only heading, wired as `aria-labelledby` |
+| `description` | `string` | Screen-reader-only description, wired as `aria-describedby` |
+| `children` | `HellaChildren` | The palette (input, list, groups) |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -115,20 +199,7 @@ const Manual = () => (
 );
 ```
 
-`CommandInput({ value, placeholder, onInput, onKeydown, class })` renders the search icon plus the input; `CommandList({ body, children, class })` renders the scrolling listbox and takes the reactive items renderer through its `body` thunk; `CommandEmpty({ children, class })` renders the zero-match row; `CommandGroup({ heading, hidden, children, class })` renders its heading plus children; `CommandSeparator({ class })` renders a rule; `CommandItem({ value, disabled, active, onSelect, children, class })` renders one option and calls `onSelect` on click; `CommandShortcut({ children, class })` renders the right-aligned key hint.
-
-| Attribute | Where | Purpose |
-|---|---|---|
-| `role="listbox"` / `aria-label` | list | Options container semantics |
-| `role="option"` / `aria-selected` / `data-selected` | item | Active-row semantics and the accent state |
-| `data-disabled` / `aria-disabled` | item | Skipped by arrows, unclickable |
-| `data-value` | item | The raw item value, read by the root's scroll wiring |
-| `hidden` | group | Set when every item in the group scored zero |
-| `data-state` | dialog surface | The copied dialog open/closed state driving the enter/exit animations |
-
-## The palette dialog
-
-`CommandDialog({ open, onClose, title?, description?, children })` wraps the palette in the composed Dialog surface: the overlay, the portaled panel, the focus trap with focus restore, and escape plus outside-press dismissal. The `title` and `description` render inside a screen-reader-only header and wire `aria-labelledby` and `aria-describedby` on the panel.
+The dialog surface is duplicated inside the command file under `hella-command-dialog` labels, so the palette works without copying the dialog entry; the entry's `dialog` registry dependency exists so standalone dialogs are one `add` away.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -154,15 +225,11 @@ const Palette = () => (
 );
 ```
 
-The dialog surface is duplicated inside the command file under `hella-command-dialog` labels, so the palette works without copying the dialog entry; the entry's `dialog` registry dependency exists so standalone dialogs are one `add` away. Escape and an outside press run `onClose`; the panel holds mounted under `data-state="closed"` until its exit animation ends, matching the [Dialog](/ui/dialog) lifecycle.
-
-## Divergences from the upstream reference
-
-- **No cmdk context.** The composed root is items-driven, and the parts take explicit state props; there is no context wiring a manually composed `CommandItem` into a shared filter or keyboard model. Manual palettes own their query signal and pass `active` accessors.
-- **`onValueChange` commits.** cmdk reports every highlight change; hella's root reports the Enter commit, plus each requested move in controlled mode so the owner's `value` accessor stays the single source of truth.
-- **Ranked remounts.** cmdk reorders mounted items; hella re-renders the ranked list per query, so item elements carry no stable identity across keystrokes.
-- **The dialog surface is copied, not shared.** The palette dialog duplicates the dialog entry's surface under its own labels; the copied dialog files exist for standalone use, never as an import.
-
-## Styling
-
-The module exports `base`, `inputWrapper`, `icon`, `input`, `list`, `empty`, `group`, `groupHeading`, `separator`, `item`, and `shortcut` (the parts), `palette` (the dialog scoping overrides: the taller input, the roomier items, and the sibling-group spacing), and the dialog surface maps `dialogOverlay`, `dialogPanel`, `dialogHeader` (the screen-reader-only recipe), `dialogTitle`, `dialogDescription`, and `dialogClose`, all under `hella-command` labels, with `palette` registering after the part maps so its equal-specificity overrides resolve. The css flavor composes classes as a plain array in each part's `class` attribute, with declarations in [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins over the component's own rules; the tailwind flavor uses shadcn's literal utilities verbatim (`data-[selected=true]:bg-accent`, `data-[disabled=true]:opacity-50`, the `max-h-[300px]` list, and the upstream `[cmdk-*]` attribute selectors translated against this entry's `data-slot` attributes) wrapped in `cn()` so later tokens override earlier ones per utility group, with the palette dialog's enter and exit motion carried by `tw-animate-css`. Row styling lives in `item` (its `data-selected` accent and the `svg` sizing rules); the list surface in `list` (the 300px scroll budget); the dialog sizing in `dialogPanel` plus the `palette` scope. The default empty text is the `CommandEmpty` call inside the composed root's render body, so edit the string or compose the parts manually to replace it; the scoring weights live in the module-level constants of the filter, tuned there or replaced wholesale through the prop. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).
+| Attribute | Where | Purpose |
+|---|---|---|
+| `role="listbox"` / `aria-label` | list | Options container semantics |
+| `role="option"` / `aria-selected` / `data-selected` | item | Active-row semantics and the accent state |
+| `data-disabled` / `aria-disabled` | item | Skipped by arrows, unclickable |
+| `data-value` | item | The raw item value, read by the root's scroll wiring |
+| `hidden` | group | Set when every item in the group scored zero |
+| `data-state` | dialog surface | The copied dialog open/closed state driving the enter/exit animations |

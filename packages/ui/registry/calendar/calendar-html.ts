@@ -231,7 +231,7 @@ const chevronLeftIcon = (): HellaNode =>
         // @hella:end
       }"
     >
-      <path d="m15 18-6-6 6-6"></path>
+      <path d="m15 18-6-6 6-6" />
     </svg>
   ` as HellaNode;
 
@@ -254,7 +254,7 @@ const chevronRightIcon = (): HellaNode =>
         // @hella:end
       }"
     >
-      <path d="m9 18 6-6-6-6"></path>
+      <path d="m9 18 6-6-6-6" />
     </svg>
   ` as HellaNode;
 
@@ -578,7 +578,9 @@ export default function Calendar(props: CalendarProps): HellaNode {
                 [captionLabel, props.classNames?.caption_label]
                 // @hella:end
               }"
-            >${() => monthLabel(view())}</div>
+            >
+              ${() => monthLabel(view())}
+            </div>
           </div>
           ${props.hideNavigation === true ? undefined : html`
             <nav
@@ -599,7 +601,9 @@ export default function Calendar(props: CalendarProps): HellaNode {
                   // @hella:end
                 }"
                 on:click="${() => navMonth(-1)}"
-              >${chevronLeftIcon()}</button>
+              >
+                ${chevronLeftIcon()}
+              </button>
               <button
                 type="button"
                 data-slot="calendar-next"
@@ -610,7 +614,9 @@ export default function Calendar(props: CalendarProps): HellaNode {
                   // @hella:end
                 }"
                 on:click="${() => navMonth(1)}"
-              >${chevronRightIcon()}</button>
+              >
+                ${chevronRightIcon()}
+              </button>
             </nav>
           `}
           <table

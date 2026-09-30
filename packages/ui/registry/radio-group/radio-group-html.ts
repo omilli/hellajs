@@ -55,7 +55,9 @@ const circleIcon = (): HellaNode =>
       [icon]
       // @hella:end
     }"
-  ><circle cx="12" cy="12" r="10" /></svg>` as HellaNode;
+  >
+    <circle cx="12" cy="12" r="10" />
+  </svg>` as HellaNode;
 
 export function RadioGroupItem(props: RadioGroupItemProps): HellaNode {
   const checked = (): boolean =>
@@ -77,14 +79,18 @@ export function RadioGroupItem(props: RadioGroupItemProps): HellaNode {
         // @hella:end
       }"
       e:click="${() => props.onSelect?.()}"
-    ><span
+    >
+      <span
         data-slot="radio-group-indicator"
         class="${
           // @hella:compose
           [indicator]
           // @hella:end
         }"
-      >${() => (checked() ? circleIcon() : null)}</span></button>
+      >
+        ${() => (checked() ? circleIcon() : null)}
+      </span>
+    </button>
   ` as HellaNode;
 }
 
@@ -155,23 +161,30 @@ export default function RadioGroup(props: RadioGroupProps): HellaNode {
         group = null;
       }}"
     >
-      ${props.items.map((entry) => html`<label
+      ${props.items.map((entry) => html`
+        <label
           data-slot="radio-group-row"
           class="${
             // @hella:compose
             [row]
             // @hella:end
           }"
-        >${RadioGroupItem({
-          value: entry.value,
-          name: props.name,
-          checked: () => current() === entry.value,
-          onSelect: () => {
-            if (entry.disabled) return;
-            select(entry.value);
-          },
-          disabled: entry.disabled,
-        })}<span>${entry.label}</span></label>`)}
+        >
+          ${RadioGroupItem({
+            value: entry.value,
+            name: props.name,
+            checked: () => current() === entry.value,
+            onSelect: () => {
+              if (entry.disabled) return;
+              select(entry.value);
+            },
+            disabled: entry.disabled,
+          })}
+          <span>
+            ${entry.label}
+          </span>
+        </label>
+      `)}
     </div>
   ` as HellaNode;
 }

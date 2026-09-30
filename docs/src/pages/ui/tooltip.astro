@@ -7,56 +7,33 @@ import TooltipContent from "@ui/concepts/tooltip.mdx";
 const title = "Tooltip";
 const description = "Interactive Tooltip demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Tooltip from './components/tooltip';
-
-const Hints = () => (
-  <div>
-    <Tooltip content="Saves every pending change" delayDuration={100} side="top">
-      <button type="button">Hover: top</button>
-    </Tooltip>
-    <Tooltip content="Deploys the current branch" delayDuration={100} side="bottom" align="start">
-      <button type="button">Hover: bottom-start</button>
-    </Tooltip>
-  </div>
-);`;
-
-const manualCode = `import { signal } from '@hellajs/core';
-import { hoverIntent, Portal } from '@hellajs/dom';
-import { TooltipContent, TooltipTrigger } from './components/tooltip';
-
-const Manual = () => {
-  const open = signal(false);
-  const state = () => (open() ? 'open' : 'closed');
-  let trigger;
-
-  return (
-    <>
-      <TooltipTrigger
-        describedBy="manual-tooltip-content"
-        hook:afterMount={(node) => {
-          trigger = node;
-          hoverIntent(node, {
-            onOpen: () => open(true),
-            onClose: () => open(false),
-            openDelay: 300,
-          });
-        }}
-      >
-        <button type="button">Hover me</button>
-      </TooltipTrigger>
-      {() => open() && (
-        <Portal to="body">
-          <TooltipContent state={state} id="manual-tooltip-content" anchor={() => trigger}>
-            Wired by hand: state, anchor, and hover timing are all explicit.
-          </TooltipContent>
-        </Portal>
-      )}
-    </>
-  );
-};`;
+const manualCode = `<>
+  <TooltipTrigger
+    describedBy="manual-tooltip-content"
+    hook:afterMount={(node) => {
+      trigger = node;
+      hoverIntent(node, {
+        onOpen: () => open(true),
+        onClose: () => open(false),
+        openDelay: 300,
+      });
+    }}
+  >
+    <button type="button">Hover me</button>
+  </TooltipTrigger>
+  {() => open() && (
+    <Portal to="body">
+      <TooltipContent state={state} id="manual-tooltip-content" anchor={() => trigger}>
+        Wired by hand: state, anchor, and hover timing are all explicit.
+      </TooltipContent>
+    </Portal>
+  )}
+</>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Tooltip</h1>
+  <p>A hover-triggered label portaled beside its trigger: it opens after a hover delay, anchors with collision flipping, and focus opens it with the same path a pointer takes.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="tooltip" />
   <TooltipContent />

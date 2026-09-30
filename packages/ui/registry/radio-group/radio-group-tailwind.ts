@@ -6,6 +6,4 @@ export const indicator = "relative flex items-center justify-center";
 
 export const icon = "absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 fill-primary";
 
-// The composed root wraps every item in a label row so the label text selects
-// the control (no-context divergence: the ref's label pairing is user markup).
 export const row = "flex items-center gap-2";

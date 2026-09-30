@@ -7,33 +7,19 @@ import TabsContent from "@ui/concepts/tabs.mdx";
 const title = "Tabs";
 const description = "Interactive Tabs demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import Tabs from './components/tabs';
-
-const Account = () => (
-  <Tabs
-    items={[
-      { id: 'account', label: 'Account', content: 'Change your name, email, and profile details.' },
-      { id: 'password', label: 'Password', content: 'Set a new password. Minimum eight characters.' },
-      { id: 'notifications', label: 'Notifications', content: 'Choose which alerts you receive by email.' },
-    ]}
-  />
-);`;
-
-const lineCode = `import Tabs from './components/tabs';
-
-const Workspace = () => (
-  <Tabs
-    variant="line"
-    initialId="activity"
-    items={[
-      { id: 'overview', label: 'Overview', content: 'A summary of your workspace activity this week.' },
-      { id: 'activity', label: 'Activity', content: 'Recent edits, comments, and mentions.' },
-    ]}
-  />
-);`;
+const lineCode = `<Tabs
+  variant="line"
+  initialId="activity"
+  items={[
+    { id: 'overview', label: 'Overview', content: 'A summary of your workspace activity this week.' },
+    { id: 'activity', label: 'Activity', content: 'Recent edits, comments, and mentions.' },
+  ]}
+/>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Tabs</h1>
+  <p>A tablist and its panels with roving keyboard focus: arrow keys move focus and selection together, and the active tab's panel swaps in place.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="tabs" />
   <TabsContent />

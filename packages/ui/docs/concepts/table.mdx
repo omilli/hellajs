@@ -1,10 +1,8 @@
-# Table
-
-Native table elements styled byte-faithfully to shadcn's new-york-v4 Table: seven semantic parts (`thead`, `tbody`, `tfoot`, `tr`, `th`, `td`, `caption`) wrapped in an overflow container so wide tables scroll horizontally instead of breaking the page.
-
 ## Usage
 
-Compose the parts by hand; there is no context object and no schema prop. `Table` renders the overflow container (`data-slot="table-container"`) around the `table` element and takes the user's `class` on the table itself. The parts carry shadcn's structural selectors: header rows get bottom borders, the last body row drops its border, and footer rows keep theirs unless last:
+Compose the parts by hand; there is no context object and no schema prop. `Table` renders the overflow container (`data-slot="table-container"`) around the `table` element and takes the user's `class` on the table itself. The parts carry the structural selectors: header rows get bottom borders, the last body row drops its border, and footer rows keep theirs unless last.
+
+### jsx
 
 ```jsx
 import Table, { TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './components/table';
@@ -36,10 +34,97 @@ const Invoices = () => (
   </Table>
 );
 ```
+### html
+
+The html-format (`--format html`) works the same way.
+
+```js
+html`<main>
+  <${Table}>
+    <${TableCaption}>A list of your recent invoices.</${TableCaption}>
+    <${TableHeader}>
+      <${TableRow}>
+        <${TableHead}>Invoice</${TableHead}>
+        <${TableHead}>Status</${TableHead}>
+        <${TableHead}>Amount</${TableHead}>
+      </${TableRow}>
+    </${TableHeader}>
+    <${TableBody}>
+      <${TableRow}>
+        <${TableCell}>INV001</${TableCell}>
+        <${TableCell}>Paid</${TableCell}>
+        <${TableCell}>$250.00</${TableCell}>
+      </${TableRow}>
+    </${TableBody}>
+  </${Table}>
+</main>`
+```
+
+## Parts
+
+Seven semantic parts wrap the native table elements; each renders its `data-slot` and takes only `children`, `class`, plus `colSpan` where the element supports it, so anything else stays a native attribute you set directly.
+
+### TableHeader
+
+The `thead[data-slot="table-header"]` row group.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The head rows |
+
+### TableBody
+
+The `tbody[data-slot="table-body"]` row group.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The body rows |
+
+### TableFooter
+
+The `tfoot[data-slot="table-footer"]` row group.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The footer rows |
+
+### TableRow
+
+The `tr[data-slot="table-row"]` row.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The cells |
+
+### TableHead
+
+The `th[data-slot="table-head"]` header cell.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The label content |
+| `colSpan` | `number` | Rendered as the native attribute for merged cells |
+
+### TableCell
+
+The `td[data-slot="table-cell"]` body cell.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The cell content |
+| `colSpan` | `number` | Rendered as the native attribute for merged cells |
+
+### TableCaption
+
+The `caption[data-slot="table-caption"]` element.
+
+| Prop | Type | Behavior |
+|---|---|---|
+| `children` | `HellaChildren` | The caption text |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ## Merged Cells
-
-`TableHead` and `TableCell` pass `colSpan` through for merged cells, so a summary row can span its neighbors:
 
 ```jsx
 import { TableBody, TableCell, TableHead, TableRow } from './components/table';
@@ -53,7 +138,3 @@ const Summary = () => (
   </TableBody>
 );
 ```
-
-## Styling
-
-The style module exports `container`, `base`, `header`, `body`, `footer`, `row`, `head`, `cell`, and `caption` maps; each part's compose bakes its own class plus `props.class`. The css flavor composes [`style`](/reference/css/style) maps under the `hella` cascade layer, so unlayered author CSS always wins; the row map carries `:hover`, `:has([aria-expanded='true'])`, and `[data-state='selected']` keys, so the hover tint is automatic and attribute-level state like `data-state` is yours to set on the rendered elements (the parts pass through only `children`, `class`, plus `colSpan`). The tailwind flavor carries shadcn's literal utilities verbatim (including the `[&_tr]:border-b` and `[&:has([role=checkbox])]:pr-0` structural selectors) wrapped in `cn()`. Part props are deliberately `children`, `class`, plus `colSpan` where the element supports it; anything else stays native attributes you set directly. Flavor choice and theme setup: [Installation](/ui/installation). Tokens and the override contract: [Theming](/ui/theming).

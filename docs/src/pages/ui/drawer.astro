@@ -7,53 +7,28 @@ import DrawerContent from "@ui/concepts/drawer.mdx";
 const title = "Drawer";
 const description = "Interactive Drawer demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const heroCode = `import { signal } from '@hellajs/core';
-import Drawer from './components/drawer';
-
-const Notifications = () => {
-  const isOpen = signal(false);
-  const close = () => isOpen(false);
-
-  return (
-    <Drawer open={isOpen} onClose={close} title="Notifications" description="Three unread digests. Drag down to dismiss.">
-      <p>The whole panel is the drag surface; buttons inside it still click normally.</p>
-      <button on:click={close}>Mark all read</button>
-    </Drawer>
-  );
-};`;
-
-const manualCode = `import { signal } from '@hellajs/core';
-import { Portal } from '@hellajs/dom';
-import Drawer, { DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerOverlay, DrawerTitle } from './components/drawer';
-
-const Manual = () => {
-  const isOpen = signal(false);
-  const state = () => (isOpen() ? 'open' : 'closed');
-  const dragFraction = signal(0);
-
-  return (
-    <>
-      <button on:click={() => isOpen(true)}>Open</button>
-      {() => isOpen() && (
-        <Portal to="body">
-          <DrawerOverlay state={state} fraction={dragFraction} />
-          <DrawerContent state={state} fraction={dragFraction} labelledBy="drawer-manual-title" onClose={() => isOpen(false)}>
-            <DrawerHeader>
-              <DrawerTitle id="drawer-manual-title">Cart</DrawerTitle>
-              <DrawerDescription>Three items reserved for you.</DrawerDescription>
-            </DrawerHeader>
-            <DrawerFooter>
-              <DrawerClose onClose={() => isOpen(false)} />
-            </DrawerFooter>
-          </DrawerContent>
-        </Portal>
-      )}
-    </>
-  );
-};`;
+const manualCode = `<>
+  <button on:click={() => isOpen(true)}>Open</button>
+  {() => isOpen() && (
+    <Portal to="body">
+      <DrawerOverlay state={state} fraction={dragFraction} />
+      <DrawerContent state={state} fraction={dragFraction} labelledBy="drawer-manual-title" onClose={() => isOpen(false)}>
+        <DrawerHeader>
+          <DrawerTitle id="drawer-manual-title">Cart</DrawerTitle>
+          <DrawerDescription>Three items reserved for you.</DrawerDescription>
+        </DrawerHeader>
+        <DrawerFooter>
+          <DrawerClose onClose={() => isOpen(false)} />
+        </DrawerFooter>
+      </DrawerContent>
+    </Portal>
+  )}
+</>`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
+  <h1>Drawer</h1>
+  <p>A drag-dismissable panel mounting on any screen edge: the panel follows the pointer while dragged, the overlay fades with the distance, and release past a distance or velocity threshold dismisses it.</p>
   <div class="demo-frame dark" id="demo"></div>
   <InstallSection entry="drawer" />
   <DrawerContent />
