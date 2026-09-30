@@ -71,7 +71,7 @@ Mismatch = unticked box. Fix the implementation to match the contract, or — if
 
 ### Tick honestly
 
-Plan is a file → edit it: rewrite each `[ ]` to `[x]` inline with its evidence note. Inline plan → record ticks + evidence in the response.
+Plan is a file → edit it: rewrite each `[ ]` to `[x]` inline with its evidence note. The edit tool can fail to match byte-present oldText containing `[ ]` sequences — after one such failure, flip the boxes by index with a python heredoc asserting `count == 1` per line (memory 129); never retry reconstructed strings. Inline plan → record ticks + evidence in the response.
 
 Each tick: `[x]` + a short note citing evidence — command + exit status, or file + symbol anchor cross-checked (never line numbers). Example: `[x] \`bun coverage core\` exits 0 — verified`. **No note, no tick.** A DoD item phrased as a predicted result is untickable by construction — the trap list is `plan` Phase 3; a DoD violating it goes back to `plan`.
 
