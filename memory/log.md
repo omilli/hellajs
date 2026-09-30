@@ -11,6 +11,8 @@
 * **Deprecation**: Archived [229](archive/229-docs-tokens-js-deliberately-divergent.md) → superseded by [231](entries/231.md).
 * **Creation**: Added concept [232](entries/232.md) (type: correction).
 * **Deprecation**: Archived [221](archive/221-reactive-getter-passed-as-child.md) → superseded by [232](entries/232.md).
+* **Creation**: Added concept [233](entries/233.md) (type: decision).
+* **Renumber**: Renumbered 233-import-meta-url-docs-site to 234 on merge — ID collided with in-flight 233-hoist-indexed-access-tuple-casts
 
 ## 2026-09-29
 * **Creation**: Added concept [123](entries/123.md) (type: decision).

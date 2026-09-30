@@ -1,0 +1,27 @@
+import type { HellaChildren } from "@hellajs/dom";
+
+import { style } from "@hellajs/css";
+
+const base = style({
+  position: "relative",
+}, { label: "hella-aspect-ratio", layer: "hella" });
+
+interface AspectRatioProps {
+  ratio?: number;
+  children?: HellaChildren;
+  class?: string;
+}
+
+export default function AspectRatio(props: AspectRatioProps): JSX.Element {
+  return (
+    <div
+      data-slot="aspect-ratio"
+      style={{ aspectRatio: props.ratio ?? 1, width: "100%" }}
+      class={
+        [base, props.class]
+      }
+    >
+      {props.children}
+    </div>
+  );
+}

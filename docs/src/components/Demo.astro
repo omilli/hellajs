@@ -1,5 +1,5 @@
 ---
-import { codeToHtml } from "shiki";
+import { highlight } from "../utils/highlight";
 
 interface Props {
   id: string;
@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { id, title, code, lang = "tsx", note } = Astro.props;
-const highlighted = await codeToHtml(code, { lang, theme: "github-dark" });
+const highlighted = await highlight(code, lang);
 ---
 
 <section class="demo-card">

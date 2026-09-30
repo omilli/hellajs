@@ -23,5 +23,8 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# generator scratch (gen-install-sources)
+# generator scratch (install-sources)
 .tmp/
+
+# shiki disk cache (docs/src/utils/highlight.ts)
+.cache/
