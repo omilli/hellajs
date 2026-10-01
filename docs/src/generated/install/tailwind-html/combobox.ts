@@ -3,26 +3,6 @@ import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@he
 import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const input = "h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30";
-
-const addon = "flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4 order-last pr-3 has-[>button]:mr-[-0.45rem] has-[>kbd]:mr-[-0.35rem]";
-
-const trigger = "[&_svg:not([class*='size-'])]:size-4";
-
-const content = "group/combobox-content relative max-h-96 w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95";
-
-const list = "max-h-[min(calc(--spacing(96)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0";
-
-const item = "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
-
-const icon = "pointer-events-none size-4 pointer-coarse:size-5";
-
-const label = "px-2 py-1.5 text-xs text-muted-foreground pointer-coarse:px-3 pointer-coarse:py-2 pointer-coarse:text-sm";
-
-const empty = "hidden w-full justify-center py-2 text-center text-sm text-muted-foreground group-data-empty/combobox-content:flex";
-
-const chips = "flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40";
-
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";
 
@@ -86,7 +66,7 @@ const checkIcon = (): HellaNode =>
     stroke-linejoin="round"
     aria-hidden="true"
     class="${
-      cn(icon)
+      cn("pointer-events-none size-4 pointer-coarse:size-5")
     }"
   >
     <path d="M20 6 9 17l-5-5" />
@@ -172,7 +152,7 @@ export function ComboboxTrigger(props: ComboboxTriggerProps): HellaNode {
       data-slot="combobox-trigger"
       disabled="${props.disabled}"
       class="${
-        cn(trigger, props.class)
+        cn("[&_svg:not([class*='size-'])]:size-4", props.class)
       }"
       on:click="${() => props.onclick?.()}"
     >
@@ -230,7 +210,7 @@ export function ComboboxLabel(props: ComboboxLabelProps): HellaNode {
     <div
       data-slot="combobox-label"
       class="${
-        cn(label, props.class)
+        cn("px-2 py-1.5 text-xs text-muted-foreground pointer-coarse:px-3 pointer-coarse:py-2 pointer-coarse:text-sm", props.class)
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -262,7 +242,7 @@ export function ComboboxEmpty(props: ComboboxEmptyProps): HellaNode {
     <div
       data-slot="combobox-empty"
       class="${
-        cn(empty, props.class)
+        cn("hidden w-full justify-center py-2 text-center text-sm text-muted-foreground group-data-empty/combobox-content:flex", props.class)
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -324,7 +304,7 @@ export function ComboboxItem(props: ComboboxItemProps): HellaNode {
       aria-disabled="${props.disabled ? "true" : undefined}"
       style="${hiddenStyle}"
       class="${
-        cn(item, props.class)
+        cn("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
       }"
       on:click="${() => {
         if (props.disabled) return;
@@ -379,7 +359,7 @@ export function ComboboxList(props: ComboboxListProps): HellaNode {
       data-slot="combobox-list"
       data-empty="${() => (props.empty?.() ? "" : undefined)}"
       class="${
-        cn(list, props.class)
+        cn("max-h-[min(calc(--spacing(96)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0", props.class)
       }"
     >
       ${(props.items ?? []).map((entry) =>
@@ -459,7 +439,7 @@ export function ComboboxInput(props: ComboboxInputProps): HellaNode {
         disabled="${props.disabled}"
         value="${props.value}"
         class="${
-          cn(input, "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent")
+          cn("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent")
         }"
         on:input="${(e: Event) => props.onInput?.((e.target as HTMLInputElement).value)}"
         on:keydown="${(e: Event) => props.onKeydown?.(e as KeyboardEvent)}"
@@ -470,7 +450,7 @@ export function ComboboxInput(props: ComboboxInputProps): HellaNode {
         role="group"
         data-align="inline-end"
         class="${
-          cn(addon)
+          cn("flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4 order-last pr-3 has-[>button]:mr-[-0.45rem] has-[>kbd]:mr-[-0.35rem]")
         }"
         on:click="${(e: Event) => {
           const target = e.target as HTMLElement;
@@ -522,7 +502,7 @@ export function ComboboxChips(props: ComboboxChipsProps): HellaNode {
       data-slot="combobox-chips"
       data-disabled="${props.disabled ? "true" : undefined}"
       class="${
-        cn(chips, props.class)
+        cn("flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40", props.class)
       }"
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) disposeWire = props.wire?.(node);
@@ -658,7 +638,7 @@ export function ComboboxContent(props: ComboboxContentProps): HellaNode {
       data-chips="${props.chips ? "true" : undefined}"
       data-empty="${() => (props.empty?.() ? "" : undefined)}"
       class="${
-        cn(content, props.class)
+        cn("group/combobox-content relative max-h-96 w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", props.class)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
@@ -710,8 +690,8 @@ export default function Combobox(props: ComboboxProps): HellaNode {
   };
   const select = (next: string): void => {
     if (props.multiple) {
-      const list = selectedList();
-      const nextList = list.includes(next) ? list.filter((v) => v !== next) : [...list, next];
+      const currentList = selectedList();
+      const nextList = currentList.includes(next) ? currentList.filter((v) => v !== next) : [...currentList, next];
       if (props.value === undefined) internal(nextList);
       props.onValueChange?.(nextList);
       return;
@@ -734,16 +714,16 @@ export default function Combobox(props: ComboboxProps): HellaNode {
     return listId + "-opt-" + at;
   };
   const move = (delta: number): void => {
-    const list = matches().filter((entry) => !entry.disabled);
-    if (list.length === 0) return;
-    const at = list.findIndex((entry) => entry.value === activeValue());
-    const next = at === -1 ? (delta === 1 ? 0 : list.length - 1) : (at + delta + list.length) % list.length;
-    activeValue(list[next]!.value);
+    const enabled = matches().filter((entry) => !entry.disabled);
+    if (enabled.length === 0) return;
+    const at = enabled.findIndex((entry) => entry.value === activeValue());
+    const next = at === -1 ? (delta === 1 ? 0 : enabled.length - 1) : (at + delta + enabled.length) % enabled.length;
+    activeValue(enabled[next]!.value);
   };
   const openSelection = (): void => {
-    const list = matches().filter((entry) => !entry.disabled);
-    const selected = list.find((entry) => selectedList().includes(entry.value));
-    activeValue(selected ? selected.value : list[0]?.value);
+    const enabled = matches().filter((entry) => !entry.disabled);
+    const selected = enabled.find((entry) => selectedList().includes(entry.value));
+    activeValue(selected ? selected.value : enabled[0]?.value);
   };
   const setOpen = (next: boolean): void => {
     if (next && !s.isOpen()) openSelection();
@@ -768,7 +748,7 @@ export default function Combobox(props: ComboboxProps): HellaNode {
     }
     if (e.key === "Enter") {
       e.preventDefault();
-      const entry = matches().find((item) => item.value === activeValue());
+      const entry = matches().find((candidate) => candidate.value === activeValue());
       if (!entry || entry.disabled) return;
       commit(entry.value);
       return;
@@ -793,16 +773,16 @@ export default function Combobox(props: ComboboxProps): HellaNode {
     // input) and walks the visible options' stable ids.
     return menuTypeahead(node, () => {
       const entries: { node: HTMLElement; text: string }[] = [];
-      const list = matches();
+      const matched = matches();
       let i = 0;
-      while (i < list.length) {
-        const el = document.getElementById(optionIdOf(list[i]!.value));
-        if (el) entries.push({ node: el, text: list[i]!.label ?? list[i]!.value });
+      while (i < matched.length) {
+        const el = document.getElementById(optionIdOf(matched[i]!.value));
+        if (el) entries.push({ node: el, text: matched[i]!.label ?? matched[i]!.value });
         i++;
       }
       return entries;
-    }, (item) => {
-      const entry = (props.items ?? []).find((e) => optionIdOf(e.value) === item.node.id);
+    }, (record) => {
+      const entry = (props.items ?? []).find((e) => optionIdOf(e.value) === record.node.id);
       if (entry) activeValue(entry.value);
     });
   };

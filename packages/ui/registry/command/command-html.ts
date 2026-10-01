@@ -52,13 +52,13 @@ const scoreCandidate = (haystack: string, needle: string): number => {
   return MATCH_BASE - at + (boundaryStart(haystack, at) ? BOUNDARY_BONUS : 0);
 };
 
-const scoreItem = (item: CommandItemData, needle: string): number => {
+const scoreItem = (candidate: CommandItemData, needle: string): number => {
   let best = Math.max(
-    scoreCandidate(item.label.toLowerCase(), needle),
-    scoreCandidate(item.value.toLowerCase(), needle),
+    scoreCandidate(candidate.label.toLowerCase(), needle),
+    scoreCandidate(candidate.value.toLowerCase(), needle),
   );
   let hits = 0;
-  const keywords = item.keywords ?? [];
+  const keywords = candidate.keywords ?? [];
   let i = 0;
   while (i < keywords.length) {
     const score = scoreCandidate(keywords[i]!.toLowerCase(), needle);
@@ -495,18 +495,18 @@ export default function Command(props: CommandProps): HellaNode {
   };
 
   const select = (next: number): void => {
-    const item = ranked()[next];
-    if (item === undefined) return;
-    if (props.value !== undefined) props.onValueChange?.(item.value);
+    const entry = ranked()[next];
+    if (entry === undefined) return;
+    if (props.value !== undefined) props.onValueChange?.(entry.value);
     else activeIndex(next);
   };
 
   const step = (delta: number): void => {
-    const list = ranked();
-    const len = list.length;
+    const rankedList = ranked();
+    const len = rankedList.length;
     if (len === 0) return;
     const current = activeValue();
-    let at = current === undefined ? -1 : list.findIndex((entry) => entry.value === current);
+    let at = current === undefined ? -1 : rankedList.findIndex((entry) => entry.value === current);
     if (at === -1 && delta === -1) at = len;
     let hops = 0;
     let next = at;
@@ -517,7 +517,7 @@ export default function Command(props: CommandProps): HellaNode {
         if (next < 0 || next >= len) return;
       }
       hops++;
-      if (!list[next]!.disabled) {
+      if (!rankedList[next]!.disabled) {
         select(next);
         return;
       }
@@ -525,21 +525,21 @@ export default function Command(props: CommandProps): HellaNode {
   };
 
   const jump = (edge: "first" | "last"): void => {
-    const list = ranked();
+    const rankedList = ranked();
     if (props.value !== undefined) {
-      let i = edge === "first" ? 0 : list.length - 1;
-      while (i >= 0 && i < list.length) {
-        if (!list[i]!.disabled) {
-          props.onValueChange?.(list[i]!.value);
+      let i = edge === "first" ? 0 : rankedList.length - 1;
+      while (i >= 0 && i < rankedList.length) {
+        if (!rankedList[i]!.disabled) {
+          props.onValueChange?.(rankedList[i]!.value);
           return;
         }
         i = edge === "first" ? i + 1 : i - 1;
       }
       return;
     }
-    let i = edge === "first" ? 0 : list.length - 1;
-    while (i >= 0 && i < list.length) {
-      if (!list[i]!.disabled) {
+    let i = edge === "first" ? 0 : rankedList.length - 1;
+    while (i >= 0 && i < rankedList.length) {
+      if (!rankedList[i]!.disabled) {
         activeIndex(i);
         return;
       }
@@ -549,7 +549,7 @@ export default function Command(props: CommandProps): HellaNode {
 
   const commit = (): void => {
     const current = activeValue();
-    const entry = ranked().find((item) => item.value === current);
+    const entry = ranked().find((candidate) => candidate.value === current);
     if (entry === undefined || entry.disabled) return;
     entry.onSelect?.();
     props.onValueChange?.(entry.value);
@@ -618,15 +618,15 @@ export default function Command(props: CommandProps): HellaNode {
     });
 
   const renderBody = (): HellaChild | HellaChild[] => {
-    const list = ranked();
-    if (list.length === 0) return CommandEmpty({ children: "No results found." });
+    const rankedList = ranked();
+    if (rankedList.length === 0) return CommandEmpty({ children: "No results found." });
     const nodes: HellaChild[] = [];
     const groups = orderedGroups(items);
     let g = 0;
     const gLen = groups.length;
     while (g < gLen) {
       const key = groups[g]!;
-      const members = list.filter((entry) => (entry.group ?? "") === key);
+      const members = rankedList.filter((entry) => (entry.group ?? "") === key);
       if (key === "") {
         nodes.push(...members.map((entry) => renderItem(entry)));
       } else {

@@ -1,8 +1,6 @@
 import type { HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const srOnly = "sr-only";
-
 interface BreadcrumbProps {
   children?: HellaChildren;
   class?: string;
@@ -159,7 +157,7 @@ export function BreadcrumbEllipsis(props: BreadcrumbPartProps): JSX.Element {
         <circle cx="19" cy="12" r="1" />
         <circle cx="5" cy="12" r="1" />
       </svg>
-      <span class={srOnly}>More</span>
+      <span class="sr-only">More</span>
     </span>
   );
 }

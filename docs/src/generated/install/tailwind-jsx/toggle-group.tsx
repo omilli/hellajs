@@ -3,8 +3,6 @@ import { rovingTabIndex } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const base = "group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs";
-
 const variants = {
   default: "bg-transparent",
   outline:
@@ -16,8 +14,6 @@ const sizes = {
   sm: "h-8 min-w-8 px-1.5",
   lg: "h-10 min-w-10 px-2.5",
 };
-
-const item = "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10 data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l";
 
 interface ToggleGroupEntry {
   value: string;
@@ -57,7 +53,7 @@ interface ToggleGroupItemProps {
 const toggleVariants = (options?: {
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-}): string => [base, variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]].filter(Boolean).join(" ");
+}): string => ["group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs", variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]].filter(Boolean).join(" ");
 
 export function ToggleGroupItem(props: ToggleGroupItemProps): JSX.Element {
   const pressed = (): boolean =>
@@ -77,7 +73,7 @@ export function ToggleGroupItem(props: ToggleGroupItemProps): JSX.Element {
       data-state={pressed() ? "on" : "off"}
       disabled={props.disabled ? true : undefined}
       class={
-        cn(toggleVariants({ variant, size }), item, props.class)
+        cn(toggleVariants({ variant, size }), "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10 data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l", props.class)
       }
       on:click={() => props.onSelect?.()}
     >
@@ -122,7 +118,7 @@ export default function ToggleGroup(props: ToggleGroupProps): JSX.Element {
       data-spacing="0"
       style="--gap: 0"
       class={
-        cn(base, props.class)
+        cn("group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs", props.class)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;

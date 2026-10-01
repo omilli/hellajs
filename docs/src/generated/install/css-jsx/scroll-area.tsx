@@ -77,7 +77,7 @@ export function ScrollBar(props: ScrollBarProps): JSX.Element {
   const position = signal(0);
 
   let bar: HTMLElement | undefined;
-  let viewport: HTMLElement | undefined;
+  let viewportEl: HTMLElement | undefined;
   const teardown: (() => void)[] = [];
 
   const defaultObserve = (target: Element, onGrow: () => void): (() => void) => {
@@ -89,17 +89,17 @@ export function ScrollBar(props: ScrollBarProps): JSX.Element {
 
   const measure = (): void => {
     const trackEl = bar;
-    const view = viewport;
+    const view = viewportEl;
     if (!trackEl || !view) return;
     const track = vertical() ? trackEl.clientHeight : trackEl.clientWidth;
     const scrollSize = vertical() ? view.scrollHeight : view.scrollWidth;
     const clientSize = vertical() ? view.clientHeight : view.clientWidth;
     const maxScroll = scrollSize - clientSize;
     const ratio = scrollSize > 0 && clientSize > 0 ? Math.min(1, clientSize / scrollSize) : 1;
-    const thumb = Math.min(track, Math.max(20, ratio * track));
-    const travel = Math.max(0, track - thumb);
+    const thumbSize = Math.min(track, Math.max(20, ratio * track));
+    const travel = Math.max(0, track - thumbSize);
     const at = maxScroll > 0 ? (vertical() ? view.scrollTop : view.scrollLeft) / maxScroll : 0;
-    length(thumb);
+    length(thumbSize);
     position(Math.min(travel, Math.max(0, at * travel)));
   };
 
@@ -121,17 +121,17 @@ export function ScrollBar(props: ScrollBarProps): JSX.Element {
         const root = node.closest('[data-slot="scroll-area"]');
         const view = root?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]');
         if (!view) return;
-        viewport = view;
+        viewportEl = view;
         view.addEventListener("scroll", measure, { passive: true });
         teardown.push(() => view.removeEventListener("scroll", measure));
         const content = view.firstElementChild;
         if (content) teardown.push((props.observe ?? defaultObserve)(content, measure));
-        const thumb = node.querySelector<HTMLElement>("[data-slot='scroll-area-thumb']");
-        if (thumb) {
+        const thumbEl = node.querySelector<HTMLElement>("[data-slot='scroll-area-thumb']");
+        if (thumbEl) {
           let startScroll = 0;
           let span = 0;
           let maxScroll = 0;
-          teardown.push(onDrag(thumb, {
+          teardown.push(onDrag(thumbEl, {
             onStart: () => {
               const track = vertical() ? node.clientHeight : node.clientWidth;
               const scrollSize = vertical() ? view.scrollHeight : view.scrollWidth;
@@ -154,7 +154,7 @@ export function ScrollBar(props: ScrollBarProps): JSX.Element {
       hook:beforeDestroy={() => {
         while (teardown.length) teardown.pop()!();
         bar = undefined;
-        viewport = undefined;
+        viewportEl = undefined;
       }}
     >
       <div

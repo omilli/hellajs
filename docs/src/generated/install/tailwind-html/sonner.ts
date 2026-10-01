@@ -13,10 +13,6 @@ const toasterPositions = {
   "bottom-right": "flex-col-reverse justify-start items-end [--enter-offset:100%] [--stack-offset:-1.5rem] [--stack-origin:bottom]",
 };
 
-const description = "opacity-90";
-
-const icon = "inline-flex shrink-0 items-center [&>svg]:size-4 data-[type=success]:text-green-600 data-[type=error]:text-red-600 data-[type=warning]:text-amber-500 data-[type=info]:text-blue-500 dark:data-[type=success]:text-green-500 dark:data-[type=error]:text-red-500 dark:data-[type=warning]:text-amber-400 dark:data-[type=info]:text-blue-400 data-[type=loading]:[&>svg]:animate-spin";
-
 /** Semantic toast flavor; a toast without one renders `data-type="default"` with no icon. */
 type ToastType = "success" | "error" | "warning" | "info";
 
@@ -69,13 +65,6 @@ const DEFAULT_DURATION = 4000;
 
 /** Release fraction of the toast's width past which a horizontal swipe dismisses. */
 const SWIPE_DISMISS_RATIO = 0.45;
-
-// Module-level singleton: the file lands verbatim in user projects, so one
-// copy/paste module carries one queue per app. The instance nonce scopes the
-// per-toast $ref selectors to this copy when several compiled flavors of the
-// same source coexist (a page running css- and tailwind-flavored copies).
-// Nonce prefixing this copy's toast ids and $ref selectors (module-scoped).
-const INSTANCE = "t1";
 
 const toasts = signal<ToastRecord[]>([]);
 let nextId = 0;
@@ -215,7 +204,7 @@ function wireToast(record: ToastRecord): void {
   let dragOffset = 0;
   let toastWidth = 0;
   const teardown: (() => void)[] = [];
-  $ref(`[data-toast-id="${INSTANCE}-${record.id}"]`).hooks({
+  $ref(`[data-toast-id="${"t1"}-${record.id}"]`).hooks({
     afterMount: (element) => {
       // The li is an HTML element: direct property access is sound, and the
       // old instanceof guard's return arm was uncoverable.
@@ -278,7 +267,7 @@ function ToastItem(props: ToastItemProps): HellaNode {
   const depth = (): number => toasts().filter((entry) => !entry.data().removed).findIndex((entry) => entry.id === props.record.id);
   // Precomputed for the template: the runtime parser only substitutes pure
   // slot attribute values, never text-and-slot mixtures.
-  const toastId = `${INSTANCE}-${props.record.id}`;
+  const toastId = `${"t1"}-${props.record.id}`;
   return html`
     <li
       data-slot="sonner-toast"
@@ -300,7 +289,7 @@ function ToastItem(props: ToastItemProps): HellaNode {
             data-slot="sonner-icon"
             data-type="${data().type}"
             class="${
-              cn(icon)
+              cn("inline-flex shrink-0 items-center [&>svg]:size-4 data-[type=success]:text-green-600 data-[type=error]:text-red-600 data-[type=warning]:text-amber-500 data-[type=info]:text-blue-500 dark:data-[type=success]:text-green-500 dark:data-[type=error]:text-red-500 dark:data-[type=warning]:text-amber-400 dark:data-[type=info]:text-blue-400 data-[type=loading]:[&>svg]:animate-spin")
             }"
           >
             <svg
@@ -338,7 +327,7 @@ function ToastItem(props: ToastItemProps): HellaNode {
           <div
             data-slot="sonner-description"
             class="${
-              cn(description)
+              cn("opacity-90")
             }"
           >${data().description}</div>
         ` as HellaNode]}

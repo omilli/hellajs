@@ -367,7 +367,7 @@ export function SelectContent(props: SelectContentProps): HellaNode {
         if (props.onDismiss) {
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
         }
-        wirings.push(menuTypeahead(node, () => optionEntries(node), (item) => highlightOption(node, item.node)));
+        wirings.push(menuTypeahead(node, () => optionEntries(node), (entry) => highlightOption(node, entry.node)));
         const onKey = listKeyDown(node, props.onClose);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));

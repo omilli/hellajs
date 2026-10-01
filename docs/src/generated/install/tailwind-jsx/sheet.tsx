@@ -10,10 +10,6 @@ const contentSides = {
   bottom: "inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
 };
 
-const title = "font-semibold text-foreground";
-
-const description = "text-sm text-muted-foreground";
-
 /** Accessibility state shared by the animated sheet parts. */
 type SheetState = () => "open" | "closed";
 
@@ -234,7 +230,7 @@ export function SheetTitle(props: SheetTitleProps): JSX.Element {
       id={props.id}
       data-slot="sheet-title"
       class={
-        cn(title, props.class)
+        cn("font-semibold text-foreground", props.class)
       }
     >
       {props.children}
@@ -248,7 +244,7 @@ export function SheetDescription(props: SheetTitleProps): JSX.Element {
       id={props.id}
       data-slot="sheet-description"
       class={
-        cn(description, props.class)
+        cn("text-sm text-muted-foreground", props.class)
       }
     >
       {props.children}

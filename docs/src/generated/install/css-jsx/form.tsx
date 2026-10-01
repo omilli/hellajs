@@ -92,10 +92,10 @@ export function createForm<T extends object>(initial: T, options?: FormOptions<T
 
   const validateField = (key: keyof T): void => {
     const validator = options?.validators?.[key];
-    const message = validator ? validator(values[key](), snapshot()) : null;
+    const outcome = validator ? validator(values[key](), snapshot()) : null;
     const next = { ...errors() };
-    if (message == null) delete next[key];
-    else next[key] = message;
+    if (outcome == null) delete next[key];
+    else next[key] = outcome;
     errors(next);
   };
 
@@ -115,8 +115,8 @@ export function createForm<T extends object>(initial: T, options?: FormOptions<T
     const current = snapshot();
     for (const key of keys) {
       const validator = options?.validators?.[key];
-      const message = validator ? validator(values[key](), current) : null;
-      if (message != null) next[key] = message;
+      const outcome = validator ? validator(values[key](), current) : null;
+      if (outcome != null) next[key] = outcome;
     }
     errors(next);
     return Object.keys(next).length === 0;

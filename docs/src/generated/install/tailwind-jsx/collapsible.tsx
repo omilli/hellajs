@@ -2,10 +2,6 @@ import { signal } from "@hellajs/core";
 import type { HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const trigger = "inline-flex items-center gap-2 [&[data-state=open]>svg]:rotate-180";
-
-const content = "grid grid-rows-[0fr] opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100";
-
 interface CollapsibleProps {
   /** Controlled open state. When given, the root never writes its internal signal and `onOpenChange` reports the requested flip. */
   open?: () => boolean;
@@ -42,7 +38,7 @@ export function CollapsibleTrigger(props: CollapsibleTriggerProps): JSX.Element 
       aria-controls={props.controls}
       data-state={props.active?.() ? "open" : "closed"}
       class={
-        cn(trigger, props.class)
+        cn("inline-flex items-center gap-2 [&[data-state=open]>svg]:rotate-180", props.class)
       }
       on:click={() => props.onToggle?.()}
     >
@@ -77,7 +73,7 @@ export function CollapsibleContent(props: CollapsibleContentProps): JSX.Element 
       id={props.id}
       data-state={props.active?.() ? "open" : "closed"}
       class={
-        cn(content, props.class)
+        cn("grid grid-rows-[0fr] opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", props.class)
       }
     >
       <div

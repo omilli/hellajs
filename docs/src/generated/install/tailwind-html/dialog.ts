@@ -3,10 +3,6 @@ import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const title = "text-lg leading-none font-semibold";
-
-const description = "text-sm text-muted-foreground";
-
 /** Accessibility state shared by the animated dialog parts. */
 type DialogState = () => "open" | "closed";
 
@@ -178,7 +174,7 @@ export function DialogTitle(props: DialogTitleProps): HellaNode {
       id="${props.id}"
       data-slot="dialog-title"
       class="${
-        cn(title, props.class)
+        cn("text-lg leading-none font-semibold", props.class)
       }"
     >${() => props.children}</h2>
   ` as HellaNode;
@@ -190,7 +186,7 @@ export function DialogDescription(props: DialogTitleProps): HellaNode {
       id="${props.id}"
       data-slot="dialog-description"
       class="${
-        cn(description, props.class)
+        cn("text-sm text-muted-foreground", props.class)
       }"
     >${() => props.children}</p>
   ` as HellaNode;

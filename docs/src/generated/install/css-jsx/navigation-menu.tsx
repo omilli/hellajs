@@ -332,7 +332,7 @@ interface NavigationMenuContentProps {
 
 export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.Element {
   const active = (): boolean => props.active?.() ?? false;
-  const viewport = props.viewport ?? VIEWPORT_SELECTOR;
+  const portalTarget = props.viewport ?? VIEWPORT_SELECTOR;
   // `visible` alone gates the render so an open→closed flip never unmounts
   // before this watcher starts the exit; the panel stays mounted under
   // data-state="closed" until its animationend (or the copied duration
@@ -370,7 +370,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.El
       }
     >
       {() => visible() && (
-        <Portal to={viewport}>
+        <Portal to={portalTarget}>
           <div
             data-slot="navigation-menu-content"
             data-state={state()}
@@ -480,10 +480,10 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): JS
   // 200ms transform transition (upstream approximates its spring the same way).
   const measure = (): void => {
     if (!node) return;
-    const trigger = resolveTrigger();
+    const anchorEl = resolveTrigger();
     const root = node.closest("[data-slot='navigation-menu']");
-    if (!trigger || !root) return;
-    const t = trigger.getBoundingClientRect();
+    if (!anchorEl || !root) return;
+    const t = anchorEl.getBoundingClientRect();
     const r = root.getBoundingClientRect();
     node.style.width = `${t.width}px`;
     node.style.transform = `translateX(${t.left - r.left}px)`;

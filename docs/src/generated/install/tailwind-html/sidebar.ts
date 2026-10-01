@@ -3,25 +3,15 @@ import { anchorPosition, hoverIntent, html, onEscape, onOutside, Portal, trapFoc
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const sidebar = "group peer hidden text-sidebar-foreground md:block";
-
 const containerSides = {
   left: "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]",
   right: "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
 };
 
-const overlay = "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0";
-
-const mobile = "fixed z-50 flex flex-col gap-4 bg-sidebar p-0 text-sidebar-foreground shadow-lg transition ease-in-out [&>button]:hidden data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500";
-
 const mobileSides = {
   left: "inset-y-0 left-0 h-full w-(--sidebar-width) border-r sm:max-w-sm data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
   right: "inset-y-0 right-0 h-full w-(--sidebar-width) border-l sm:max-w-sm data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
 };
-
-const trigger = "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-7";
-
-const input = "h-8 w-full bg-background shadow-none";
 
 const menuButtonVariants = {
   default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -84,8 +74,8 @@ export function SidebarProvider(props: SidebarProviderProps): HellaNode {
   const setOpenMobile = (next: boolean): void => {
     sheetOpen(next);
   };
-  const mobile = (): boolean => viewport();
-  const onToggle = (): void => (mobile() ? setOpenMobile(!openMobile()) : setOpen(!open()));
+  const isMobile = (): boolean => viewport();
+  const onToggle = (): void => (isMobile() ? setOpenMobile(!openMobile()) : setOpen(!open()));
   const teardown: (() => void)[] = [];
 
   return html`
@@ -118,7 +108,7 @@ export function SidebarProvider(props: SidebarProviderProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
       }}"
-    >${props.children({ open, setOpen, mobile, openMobile, setOpenMobile, onToggle })}</div>
+    >${props.children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}</div>
   ` as HellaNode;
 }
 
@@ -186,7 +176,7 @@ export function Sidebar(props: SidebarProps): HellaNode {
           data-variant="${variant}"
           data-side="${side}"
           class="${
-            cn(sidebar)
+            cn("group peer hidden text-sidebar-foreground md:block")
           }"
         >
           <div
@@ -295,7 +285,7 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): () => HellaChild {
           data-slot="sidebar-overlay"
           data-state="${state}"
           class="${
-            cn(overlay)
+            cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0")
           }"
         />
       ` as HellaChild,
@@ -312,7 +302,7 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): () => HellaChild {
             aria-describedby="${descriptionId}"
             style="--sidebar-width: 18rem"
             class="${
-              cn(mobile, mobileSides[side])
+              cn("fixed z-50 flex flex-col gap-4 bg-sidebar p-0 text-sidebar-foreground shadow-lg transition ease-in-out [&>button]:hidden data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", mobileSides[side])
             }"
             hook:afterMount="${(node: Element) => {
               if (!(node instanceof HTMLElement)) return;
@@ -370,7 +360,7 @@ export function SidebarTrigger(props: SidebarTriggerProps): HellaNode {
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       class="${
-        cn(trigger, props.class)
+        cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-7", props.class)
       }"
       e:click="${() => {
         props.onclick?.();
@@ -460,7 +450,7 @@ export function SidebarInput(props: SidebarInputProps): HellaNode {
       aria-invalid="${props.ariaInvalid ? "true" : undefined}"
       value="${props.value}"
       class="${
-        cn("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", input, props.class)
+        cn("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", "h-8 w-full bg-background shadow-none", props.class)
       }"
       on:input="${(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}"
     />

@@ -798,8 +798,8 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
   };
   const select = (next: string): void => {
     if (props.multiple) {
-      const list = selectedList();
-      const nextList = list.includes(next) ? list.filter((v) => v !== next) : [...list, next];
+      const currentList = selectedList();
+      const nextList = currentList.includes(next) ? currentList.filter((v) => v !== next) : [...currentList, next];
       if (props.value === undefined) internal(nextList);
       props.onValueChange?.(nextList);
       return;
@@ -822,16 +822,16 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
     return `${listId}-opt-${at}`;
   };
   const move = (delta: number): void => {
-    const list = matches().filter((entry) => !entry.disabled);
-    if (list.length === 0) return;
-    const at = list.findIndex((entry) => entry.value === activeValue());
-    const next = at === -1 ? (delta === 1 ? 0 : list.length - 1) : (at + delta + list.length) % list.length;
-    activeValue(list[next]!.value);
+    const enabled = matches().filter((entry) => !entry.disabled);
+    if (enabled.length === 0) return;
+    const at = enabled.findIndex((entry) => entry.value === activeValue());
+    const next = at === -1 ? (delta === 1 ? 0 : enabled.length - 1) : (at + delta + enabled.length) % enabled.length;
+    activeValue(enabled[next]!.value);
   };
   const openSelection = (): void => {
-    const list = matches().filter((entry) => !entry.disabled);
-    const selected = list.find((entry) => selectedList().includes(entry.value));
-    activeValue(selected ? selected.value : list[0]?.value);
+    const enabled = matches().filter((entry) => !entry.disabled);
+    const selected = enabled.find((entry) => selectedList().includes(entry.value));
+    activeValue(selected ? selected.value : enabled[0]?.value);
   };
   const setOpen = (next: boolean): void => {
     if (next && !s.isOpen()) openSelection();
@@ -856,7 +856,7 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
     }
     if (e.key === "Enter") {
       e.preventDefault();
-      const entry = matches().find((item) => item.value === activeValue());
+      const entry = matches().find((candidate) => candidate.value === activeValue());
       if (!entry || entry.disabled) return;
       commit(entry.value);
       return;
@@ -881,16 +881,16 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
     // input) and walks the visible options' stable ids.
     return menuTypeahead(node, () => {
       const entries: { node: HTMLElement; text: string }[] = [];
-      const list = matches();
+      const matched = matches();
       let i = 0;
-      while (i < list.length) {
-        const el = document.getElementById(optionIdOf(list[i]!.value));
-        if (el) entries.push({ node: el, text: list[i]!.label ?? list[i]!.value });
+      while (i < matched.length) {
+        const el = document.getElementById(optionIdOf(matched[i]!.value));
+        if (el) entries.push({ node: el, text: matched[i]!.label ?? matched[i]!.value });
         i++;
       }
       return entries;
-    }, (item) => {
-      const entry = (props.items ?? []).find((e) => optionIdOf(e.value) === item.node.id);
+    }, (record) => {
+      const entry = (props.items ?? []).find((e) => optionIdOf(e.value) === record.node.id);
       if (entry) activeValue(entry.value);
     });
   };

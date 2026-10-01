@@ -954,8 +954,8 @@ export function SidebarProvider(props: SidebarProviderProps): JSX.Element {
   const setOpenMobile = (next: boolean): void => {
     sheetOpen(next);
   };
-  const mobile = (): boolean => viewport();
-  const onToggle = (): void => (mobile() ? setOpenMobile(!openMobile()) : setOpen(!open()));
+  const isMobile = (): boolean => viewport();
+  const onToggle = (): void => (isMobile() ? setOpenMobile(!openMobile()) : setOpen(!open()));
   const teardown: (() => void)[] = [];
 
   return (
@@ -989,7 +989,7 @@ export function SidebarProvider(props: SidebarProviderProps): JSX.Element {
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {props.children({ open, setOpen, mobile, openMobile, setOpenMobile, onToggle })}
+      {props.children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}
     </div>
   );
 }

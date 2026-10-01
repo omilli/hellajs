@@ -18,6 +18,23 @@ const REQUIRED_SECTIONS = ["styles", "compose"] as const;
 const STRING_DECL_REGEX = /^const ([A-Za-z_$][\w$]*) = ("[^"]*");$/;
 const OBJECT_DECL_REGEX = /^const ([A-Za-z_$][\w$]*) = \{$/;
 const COMMENT_LINE_REGEX = /^(\/\/|\/\*|\*)/;
+// Keyword-introduced local bindings of a candidate name: `const|let|var NAME`
+// declarations and `catch (NAME)` headers. Parameter lists classify through
+// matchKind's paren context instead of a pattern.
+const KEYWORD_BINDING_REGEX = /(?:^|[^\w$])(?:const|let|var)\s+$/;
+const CATCH_BINDING_REGEX = /catch\s*\($/;
+// Identifier characters that make an opening paren a call's argument list
+// rather than a parameter list (a name, closing bracket, or member access
+// directly before `(` means the parens hold arguments, never bindings).
+const CALL_CONTEXT_REGEX = /[\w$\]).]$/;
+// Punctuation that may directly precede a genuine reference (after skipping
+// spaces): operators, openers, and separators. A name preceded by a word
+// character across a space is prose (JSX text), not a symbol use.
+const REF_PRECEDERS = "([{,;:!&|?^%*=+<>~)]";
+// Punctuation that may directly follow a genuine reference (after skipping
+// spaces): member access, computed access, call, and operators. A name
+// followed by a word character is a longer identifier or prose.
+const REF_FOLLOWERS = ")]}.,;:?(*&|%!=<>+-/^~";
 
 /**
  * One marker-delimited region of a canonical file: the section name and the
@@ -192,43 +209,299 @@ function classifyDecls(body: string[]): DeclBlock[] {
 }
 
 /**
- * Splits classified blocks into kept styles-region lines and the string
- * literals safe to transpose: a string declaration is inlineable only when
- * its name has zero symbol references in the canonical's lines outside the
- * marker regions. The reference pattern mirrors the compose-side guard —
- * matches preceded by a word character, `$`, `.`, quote, or hyphen, or
- * followed by a word character, `$`, or hyphen (`data-slot="card-header"`,
- * `legendVariants`) are compound tokens or string content, not the symbol; comments count (conservative by design), so
- * a genuine outside reference keeps its declaration and today's output.
- * @param blocks Classified style-module blocks.
- * @param outsideLines Canonical lines outside every marker region.
- * @returns Styles-region splice lines plus name → quoted literal per inlineable string.
+ * One lexer frame of the code mask: each code frame owns a bracket stack, so
+ * a `}` always balances against its own frame and the `}` closing a `${…}`
+ * interpolation (empty stack) pops the interpolation itself; string and
+ * template frames consume their content opaquely.
  */
-function inlineStringDecls(blocks: DeclBlock[], outsideLines: string[]): { styles: string[]; literals: Map<string, string> } {
+type MaskFrame = { kind: "code"; brackets: string[] } | { kind: "string"; quote: string } | { kind: "template" };
+
+/**
+ * Marks which character offsets of a canonical's outside text are executable
+ * code, plus each code offset's innermost open bracket. Comments, string
+ * literals, and template-literal text mask off while `${…}` interpolations
+ * stay live, so a name visible to this mask is a symbol occurrence rather
+ * than string content. Quotes inside template text (HTML attribute values,
+ * prose) never open string frames — only backtick and `${` bounds do — and
+ * the lexer state carries across lines through the joined text. The bracket
+ * context distinguishes parameter lists from object literals: `, name:` is a
+ * typed parameter only inside parens, an object-literal member otherwise.
+ * @param text Outside-region text joined with newlines.
+ * @returns Per-character mask (true when the offset is code) and per-character
+ * bracket context (`(`, `[`, `{`, or empty).
+ */
+function codeMask(text: string): { mask: boolean[]; contexts: string[] } {
+  const mask = new Array<boolean>(text.length).fill(true);
+  const contexts = new Array<string>(text.length).fill("");
+  const stack: MaskFrame[] = [{ kind: "code", brackets: [] }];
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i]!;
+    const frame = stack[stack.length - 1]!;
+    if (frame.kind === "string") {
+      mask[i] = false;
+      if (ch === "\\") {
+        mask[i + 1] = false;
+        i += 2;
+        continue;
+      }
+      if (ch === frame.quote) stack.pop();
+      i++;
+      continue;
+    }
+    if (frame.kind === "template") {
+      mask[i] = false;
+      if (ch === "\\") {
+        mask[i + 1] = false;
+        i += 2;
+        continue;
+      }
+      if (ch === "`") {
+        stack.pop();
+        i++;
+        continue;
+      }
+      if (ch === "$" && text[i + 1] === "{") {
+        mask[i + 1] = false;
+        stack.push({ kind: "code", brackets: [] });
+        i += 2;
+        continue;
+      }
+      i++;
+      continue;
+    }
+    if (ch === "/" && text[i + 1] === "/") {
+      while (i < text.length && text[i] !== "\n") {
+        mask[i] = false;
+        i++;
+      }
+      continue;
+    }
+    if (ch === "/" && text[i + 1] === "*") {
+      while (i < text.length) {
+        mask[i] = false;
+        if (text[i] === "*" && text[i + 1] === "/") {
+          mask[i + 1] = false;
+          i += 2;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    if (ch === "'" || ch === "\"") {
+      mask[i] = false;
+      stack.push({ kind: "string", quote: ch });
+      i++;
+      continue;
+    }
+    if (ch === "`") {
+      mask[i] = false;
+      stack.push({ kind: "template" });
+      i++;
+      continue;
+    }
+    if (ch === "{" || ch === "(" || ch === "[") {
+      frame.brackets.push(ch);
+      i++;
+      continue;
+    }
+    if (ch === "}" || ch === ")" || ch === "]") {
+      if (ch === "}" && frame.brackets.length === 0 && stack.length > 1) {
+        stack.pop();
+        i++;
+        continue;
+      }
+      if (frame.brackets.length > 0) frame.brackets.pop();
+      i++;
+      continue;
+    }
+    contexts[i] = frame.brackets.length > 0 ? frame.brackets[frame.brackets.length - 1]! : "";
+    i++;
+  }
+  return { mask, contexts };
+}
+
+/** Position class of a candidate-name occurrence on a canonical line. */
+type NamePosition = "ref" | "noise" | "binding";
+
+/**
+ * Classifies a candidate-name occurrence on one line: keyword-introduced
+ * declarations (`const|let|var NAME`, `catch (NAME)`) and parameter-list
+ * positions bind a local — the conservative fallback — while JSX-tag and
+ * attribute-name and `?`/`:`-typed-member positions are structural noise, and
+ * every other code position is a substitutable reference. A parameter list is
+ * distinguished from a call's argument list by the token before the opening
+ * paren: an identifier or closing bracket means arguments, which never bind.
+ * @param line Line holding the match.
+ * @param start Match start offset within the line.
+ * @param end Match end offset within the line.
+ * @returns The position class.
+ */
+function matchKind(line: string, start: number, end: number, ctx: string): NamePosition {
+  if (line[start - 1] === "<") return "noise";
+  const before = line.slice(0, start);
+  if (KEYWORD_BINDING_REGEX.test(before) || CATCH_BINDING_REGEX.test(before)) return "binding";
+  let p = start - 1;
+  while (p >= 0 && /\s/.test(line[p]!)) p--;
+  const prev = p >= 0 ? line[p]! : "";
+  let q = end;
+  const lineLen = line.length;
+  while (q < lineLen && /\s/.test(line[q]!)) q++;
+  const next = q < lineLen ? line[q]! : "";
+  if (ctx === "(" && (prev === "(" || prev === ",") && (next === ")" || next === "," || next === ":" || next === "=")) {
+    const isCall = prev === "(" && (p === 0 ? false : CALL_CONTEXT_REGEX.test(line[p - 1]!));
+    if (!isCall) return "binding";
+  }
+  if ((next === "?" || next === ":") && (p === -1 || prev === "{" || prev === "," || prev === ";")) return "noise";
+  if (next === "=" && line[q + 1] !== "=" && line[q + 1] !== ">") return "noise";
+  if ((p === -1 || REF_PRECEDERS.includes(prev)) && (q >= lineLen || REF_FOLLOWERS.includes(next))) return "ref";
+  return "noise";
+}
+
+/**
+ * Reports whether a candidate name binds a local anywhere in the canonical's
+ * outside lines: comment lines and imports never hold symbols, masked offsets
+ * (string content, template text) are not code, and only positions matchKind
+ * classifies as bindings count. Any binding blocks the name's inline —
+ * genuine references substitute instead of blocking.
+ * @param name Candidate declaration name.
+ * @param lines Lines to scan.
+ * @param offsets Line start offsets within the joined text the mask was built from.
+ * @param mask Code-position mask from codeMask.
+ * @param skipFirst First line index to exclude (a candidate's own block), or -1.
+ * @param skipLast Last line index to exclude (inclusive), or -1.
+ * @returns True when a local binding of the name exists outside marker regions.
+ */
+function bindsLocal(name: string, lines: string[], offsets: number[], mask: boolean[], contexts: string[], skipFirst: number, skipLast: number): boolean {
+  const ref = new RegExp(`(?<![\\w$."'-])${name}(?![\\w$-])`, "g");
+  let i = 0;
+  const len = lines.length;
+  while (i < len) {
+    const line = lines[i]!;
+    const at = offsets[i]!;
+    const excluded = i >= skipFirst && i <= skipLast;
+    i++;
+    if (excluded || COMMENT_LINE_REGEX.test(line.trim()) || IMPORT_REGEX.test(line)) continue;
+    let match: RegExpExecArray | null;
+    while ((match = ref.exec(line)) !== null) {
+      const pos = at + match.index;
+      if (!mask[pos]) continue;
+      if (matchKind(line, match.index, match.index + name.length, contexts[pos]!) === "binding") return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Computes each line's start offset within the text formed by joining the
+ * lines with newlines — the coordinate space of codeMask's mask.
+ * @param lines Lines to index.
+ * @returns Start offset per line index.
+ */
+function lineOffsets(lines: string[]): number[] {
+  const offsets = new Array<number>(lines.length);
+  let at = 0;
+  let i = 0;
+  while (i < lines.length) {
+    offsets[i] = at;
+    at += lines[i]!.length + 1;
+    i++;
+  }
+  return offsets;
+}
+
+/**
+ * Substitutes inlineable literals into the canonical's outside lines: the
+ * `class={NAME}` and `class="${NAME}"` attribute forms collapse to the bare
+ * literal, and every remaining code-position reference transposes to the
+ * literal — re-masking after the collapse so offsets stay aligned. Comment
+ * and import lines stay untouched; no symbol can live there.
+ * @param lines Outside lines, dropped candidate lines already blanked.
+ * @param literals Inlineable name → quoted literal map.
+ * @returns The rewritten lines.
+ */
+function substituteLiterals(lines: string[], literals: Map<string, string>): string[] {
+  if (literals.size === 0) return lines;
+  const alts = Array.from(literals.keys()).join("|");
+  const collapse = new RegExp(`class=(?:\\{(${alts})\\}|"\\$\\{(${alts})\\}")`, "g");
+  const collapsed = lines.map((line) => {
+    if (line === "" || COMMENT_LINE_REGEX.test(line.trim()) || IMPORT_REGEX.test(line)) return line;
+    return line.replace(collapse, (attr, braces, quoted) => `class=${literals.get(braces ?? quoted)!}`);
+  });
+  const { mask, contexts } = codeMask(collapsed.join("\n"));
+  const offsets = lineOffsets(collapsed);
+  const ref = new RegExp(`(?<![\\w$."'-])(${alts})(?![\\w$-])`, "g");
+  return collapsed.map((line, i) => {
+    if (line === "" || COMMENT_LINE_REGEX.test(line.trim()) || IMPORT_REGEX.test(line)) return line;
+    const at = offsets[i]!;
+    return line.replace(ref, (name: string, matched: string, index: number): string => {
+      const pos = at + index;
+      return mask[pos] && matchKind(line, index, index + name.length, contexts[pos]!) === "ref" ? literals.get(name)! : name;
+    });
+  });
+}
+
+/**
+ * Splits classified blocks into kept styles-region lines and the string
+ * literals safe to transpose, and rewrites the canonical's outside lines to
+ * match. A string declaration is inlineable when no local binding of its name
+ * exists outside the marker regions — comments, imports, string content,
+ * property signatures, JSX tags, and attribute names never count (codeMask
+ * plus matchKind classify every occurrence), and genuine outside references
+ * resolve by substitution instead of keeping the declaration. Canonical-level
+ * string constants (runtime values like event names) join the same map and
+ * drop from the output with their preceding comments. A name with a local
+ * binding keeps the conservative fallback: declaration kept, references
+ * untouched.
+ * @param moduleBlocks Classified style-module blocks.
+ * @param outsideBlocks Classified canonical outside blocks.
+ * @param outsideLines Canonical lines outside every marker region.
+ * @param offsets Line start offsets within the joined outside text.
+ * @param mask Code-position mask over the joined outside text.
+ * @returns Styles-region splice lines, name → quoted literal per inlineable
+ * string, and the rewritten outside lines aligned 1:1 with outsideLines
+ * (dropped declarations blanked for the blank-line-run collapse).
+ */
+function inlineStringDecls(
+  moduleBlocks: DeclBlock[],
+  outsideBlocks: DeclBlock[],
+  outsideLines: string[],
+  offsets: number[],
+  mask: boolean[],
+  contexts: string[],
+): { styles: string[]; literals: Map<string, string>; outside: string[] } {
   const styles: string[] = [];
   const literals = new Map<string, string>();
   let i = 0;
-  const bLen = blocks.length;
+  const bLen = moduleBlocks.length;
   while (i < bLen) {
-    const block = blocks[i++]!;
-    if (block.kind === "string") {
-      let referenced = false;
-      const ref = new RegExp(`(?<![\\w$."'-])${block.name}(?![\\w$-])`);
-      let r = 0;
-      const rLen = outsideLines.length;
-      while (r < rLen && !referenced) {
-        if (ref.test(outsideLines[r++]!)) referenced = true;
-      }
-      if (!referenced) {
-        literals.set(block.name, block.literal);
-        continue;
-      }
+    const block = moduleBlocks[i++]!;
+    if (block.kind === "string" && !bindsLocal(block.name, outsideLines, offsets, mask, contexts, -1, -1)) {
+      literals.set(block.name, block.literal);
+      continue;
     }
     let l = 0;
     const lLen = block.lines.length;
     while (l < lLen) styles.push(block.lines[l++]!);
   }
-  return { styles, literals };
+  const dropped = new Array<boolean>(outsideLines.length).fill(false);
+  let at = 0;
+  let j = 0;
+  const oLen = outsideBlocks.length;
+  while (j < oLen) {
+    const block = outsideBlocks[j++]!;
+    const first = at;
+    const last = at + block.lines.length - 1;
+    at = last + 1;
+    if (block.kind === "string" && !bindsLocal(block.name, outsideLines, offsets, mask, contexts, first, last)) {
+      literals.set(block.name, block.literal);
+      let l = first;
+      while (l <= last) dropped[l++] = true;
+    }
+  }
+  const blanked = outsideLines.map((line, idx) => (dropped[idx] ? "" : line));
+  return { styles, literals, outside: substituteLiterals(blanked, literals) };
 }
 
 /**
@@ -301,10 +574,12 @@ function wrapComposeWithCn(body: string[]): string[] {
  * imports + declarations, `export ` prefixes stripped) is spliced into the
  * `@hella:styles` region, marker lines are removed, and every `@hella:compose`
  * region keeps its plain-array body for `css` while `tailwind` wraps each in
- * `cn(…)`, transposes inlineable string declarations into the compose members
- * (keyed maps and outside-referenced declarations stay in the styles region),
- * collapses blank-line runs left by emptied regions, and injects the shared
- * `cn` import after the file's last import.
+ * `cn(…)`, inlines every string declaration at its use sites — compose
+ * members, static class attributes, and outside references — dropping the
+ * declarations (only keyed maps stay in the styles region; a same-named local
+ * binding keeps the declaration as a conservative fallback), collapses
+ * blank-line runs left by emptied regions, and injects the shared `cn` import
+ * after the file's last import.
  * Multi-part components carry one compose region per styled part; `styles`
  * stays unique. Deterministic — the same inputs always produce the same text.
  * @param source Canonical file text with an `@hella:styles` region and one or more `@hella:compose` regions.
@@ -341,6 +616,7 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
   const moduleBody = parseStyleModule(styleModuleText);
   let stylesBody = moduleBody;
   let literals = new Map<string, string>();
+  let rewritten: string[] | undefined;
   if (style === "tailwind") {
     const outside: string[] = [];
     let b = 0;
@@ -349,17 +625,22 @@ export function applyStyleVariant(source: string, styleModuleText: string, style
       const block = blocks[b++]!;
       if (block.kind === "line") outside.push(block.text);
     }
-    const inlined = inlineStringDecls(classifyDecls(moduleBody), outside);
+    const offsets = lineOffsets(outside);
+    const { mask, contexts } = codeMask(outside.join("\n"));
+    const inlined = inlineStringDecls(classifyDecls(moduleBody), classifyDecls(outside), outside, offsets, mask, contexts);
     stylesBody = inlined.styles;
     literals = inlined.literals;
+    rewritten = inlined.outside;
   }
   const out: string[] = [];
   let j = 0;
   const outLen = blocks.length;
+  let lineIdx = 0;
   while (j < outLen) {
     const block = blocks[j++]!;
     if (block.kind === "line") {
-      out.push(block.text);
+      out.push(rewritten === undefined ? block.text : rewritten[lineIdx]!);
+      lineIdx++;
       continue;
     }
     if (block.name === "styles") {

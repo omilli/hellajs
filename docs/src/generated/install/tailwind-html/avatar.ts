@@ -4,8 +4,6 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const fallback = "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs";
-
 interface AvatarProps {
   children?: HellaChildren;
   size?: "default" | "sm" | "lg";
@@ -62,7 +60,7 @@ export function AvatarFallback(props: AvatarFallbackProps): HellaNode {
       data-slot="avatar-fallback"
       hidden="${() => Boolean(props.loaded?.())}"
       class="${
-        cn(fallback, props.class)
+        cn("flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs", props.class)
       }"
     >${() => props.children}</span>
   ` as HellaNode;

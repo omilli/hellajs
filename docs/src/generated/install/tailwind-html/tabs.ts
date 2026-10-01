@@ -8,8 +8,6 @@ const variants = {
   line: "gap-1 bg-transparent",
 };
 
-const content = "flex-1 outline-none";
-
 export interface TabsItem {
   id: string;
   label: string;
@@ -50,9 +48,6 @@ interface TabsContentProps {
   class?: string;
 }
 
-const TAB_ID = "hella-tabs-tab-";
-const PANEL_ID = "hella-tabs-panel-";
-
 export function TabsList(props: TabsListProps): HellaNode {
   const orientation = props.orientation ?? "horizontal";
   const variant = props.variant ?? "default";
@@ -76,9 +71,9 @@ export function TabsTrigger(props: TabsTriggerProps): HellaNode {
       type="button"
       role="tab"
       data-slot="tabs-trigger"
-      id="${props.id === undefined ? undefined : `${TAB_ID}${props.id}`}"
+      id="${props.id === undefined ? undefined : `${"hella-tabs-tab-"}${props.id}`}"
       aria-selected="${() => (props.active?.() ? "true" : "false")}"
-      aria-controls="${props.id === undefined ? undefined : `${PANEL_ID}${props.id}`}"
+      aria-controls="${props.id === undefined ? undefined : `${"hella-tabs-panel-"}${props.id}`}"
       data-state="${() => (props.active?.() ? "active" : "inactive")}"
       data-orientation="${props.orientation ?? "horizontal"}"
       data-variant="${props.listVariant ?? "default"}"
@@ -95,12 +90,12 @@ export function TabsContent(props: TabsContentProps): HellaNode {
     <div
       role="tabpanel"
       data-slot="tabs-content"
-      id="${props.id === undefined ? undefined : `${PANEL_ID}${props.id}`}"
-      aria-labelledby="${props.id === undefined ? undefined : `${TAB_ID}${props.id}`}"
+      id="${props.id === undefined ? undefined : `${"hella-tabs-panel-"}${props.id}`}"
+      aria-labelledby="${props.id === undefined ? undefined : `${"hella-tabs-tab-"}${props.id}`}"
       data-state="${() => (props.active?.() ? "active" : "inactive")}"
       hidden="${() => !props.active?.()}"
       class="${
-        cn(content, props.class)
+        cn("flex-1 outline-none", props.class)
       }"
     >${props.children}</div>
   ` as HellaNode;
@@ -115,7 +110,7 @@ export default function Tabs(props: TabsProps): HellaNode {
 
   const roveToSelection = (): void => {
     if (!tablist) return;
-    const current = `${TAB_ID}${selected()}`;
+    const current = `${"hella-tabs-tab-"}${selected()}`;
     let i = 0;
     const len = tablist.children.length;
     while (i < len) {
@@ -153,8 +148,8 @@ export default function Tabs(props: TabsProps): HellaNode {
         wirings.push(rovingTabIndex(tablist, { orientation }));
         const onFocusIn = (event: Event) => {
           const tab = event.target as HTMLElement;
-          if (tab.getAttribute("role") === "tab" && tab.id.startsWith(TAB_ID)) {
-            select(tab.id.slice(TAB_ID.length));
+          if (tab.getAttribute("role") === "tab" && tab.id.startsWith("hella-tabs-tab-")) {
+            select(tab.id.slice("hella-tabs-tab-".length));
           }
         };
         node.addEventListener("focusin", onFocusIn);

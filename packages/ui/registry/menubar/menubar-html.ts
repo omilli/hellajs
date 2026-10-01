@@ -306,7 +306,7 @@ export function MenubarContent(props: MenubarContentProps): HellaNode {
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (item) => item.node.focus()));
+        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
         const onArrow = props.onArrow;
         const onKey = menuKeyDown(onArrow ? { onArrowLeft: () => onArrow("left"), onArrowRight: () => onArrow("right") } : {})(node);
         node.addEventListener("keydown", onKey);
@@ -691,7 +691,7 @@ export function MenubarSubContent(props: MenubarSubContentProps): HellaNode {
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (item) => item.node.focus()));
+        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
         const onKey = menuKeyDown(props.onArrowLeft ? { onArrowLeft: props.onArrowLeft } : {})(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -968,13 +968,13 @@ export default function Menubar(props: MenubarProps): HellaNode {
   const onKeyDown = (event: Event): void => {
     const e = event as KeyboardEvent;
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    const trigger = document.activeElement?.closest?.("[data-slot='menubar-trigger']") as HTMLElement | null;
-    if (!trigger || trigger.getAttribute("data-state") === "open") return;
-    const bar = trigger.closest("[data-slot='menubar']");
+    const focused = document.activeElement?.closest?.("[data-slot='menubar-trigger']") as HTMLElement | null;
+    if (!focused || focused.getAttribute("data-state") === "open") return;
+    const bar = focused.closest("[data-slot='menubar']");
     if (!bar || bar !== barNode) return;
     const triggers = Array.from(bar.querySelectorAll("[data-slot='menubar-trigger']"));
     if (triggers.length === 0) return;
-    const current = triggers.indexOf(trigger);
+    const current = triggers.indexOf(focused);
     if (current === -1) return;
     e.preventDefault();
     const next = triggers[(current + (e.key === "ArrowRight" ? 1 : -1) + triggers.length) % triggers.length] as HTMLElement;

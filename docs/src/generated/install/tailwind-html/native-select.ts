@@ -2,10 +2,6 @@ import { html } from "@hellajs/dom";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const option = "bg-[Canvas] text-[CanvasText]";
-
-const optgroup = "bg-[Canvas] text-[CanvasText]";
-
 interface NativeSelectProps {
   children?: HellaChildren;
   value?: string | (() => string);
@@ -82,7 +78,7 @@ export function NativeSelectOption(props: NativeSelectOptionProps): HellaNode {
     <option
       data-slot="native-select-option"
       class="${
-        cn(option, props.class)
+        cn("bg-[Canvas] text-[CanvasText]", props.class)
       }"
     >${() => props.children}</option>
   ` as HellaNode;
@@ -93,7 +89,7 @@ export function NativeSelectOptGroup(props: NativeSelectOptionProps): HellaNode 
     <optgroup
       data-slot="native-select-optgroup"
       class="${
-        cn(optgroup, props.class)
+        cn("bg-[Canvas] text-[CanvasText]", props.class)
       }"
     >${() => props.children}</optgroup>
   ` as HellaNode;

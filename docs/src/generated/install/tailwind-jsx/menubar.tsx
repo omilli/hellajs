@@ -3,33 +3,14 @@ import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/
 import type { HellaChildren, Placement } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const trigger = "flex items-center rounded-sm px-2 py-1 text-sm font-medium outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground";
-
-const content = "z-50 min-w-[12rem] origin-(--radix-menubar-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95";
-
-const item = "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!";
-
-const icon = "size-4";
-
-const label = "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8";
-
-const shortcut = "ml-auto text-xs tracking-widest text-muted-foreground";
-
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";
 
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
-/** Document-level coordination events: opening a menu closes its bar siblings, and the bar mirrors which menu is open. */
-const OPEN_EVENT = "hella:menubar-open";
-const CLOSE_EVENT = "hella:menubar-close";
-
-/** Document-level activation event: item selection closes every open menu layer (Radix close-on-select). */
-const SELECT_EVENT = "hella:menu-select";
-
 const closeAllMenus = (): void => {
-  document.dispatchEvent(new CustomEvent(SELECT_EVENT));
+  document.dispatchEvent(new CustomEvent("hella:menu-select"));
 };
 
 interface MenuEntry {
@@ -160,7 +141,7 @@ const checkIcon = (): JSX.Element => (
     stroke-linejoin="round"
     aria-hidden="true"
     class={
-      cn(icon)
+      cn("size-4")
     }
   >
     <path d="M20 6 9 17l-5-5" />
@@ -222,7 +203,7 @@ export function MenubarTrigger(props: MenubarTriggerProps): JSX.Element {
       data-slot="menubar-trigger"
       aria-haspopup="menu"
       class={
-        cn(trigger, props.class)
+        cn("flex items-center rounded-sm px-2 py-1 text-sm font-medium outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", props.class)
       }
     >
       {() => props.children}
@@ -279,7 +260,7 @@ export function MenubarContent(props: MenubarContentProps): JSX.Element {
       data-side={side}
       data-align={align}
       class={
-        cn(content, props.class)
+        cn("z-50 min-w-[12rem] origin-(--radix-menubar-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", props.class)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
@@ -293,10 +274,10 @@ export function MenubarContent(props: MenubarContentProps): JSX.Element {
         if (props.onDismiss) {
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
           const onSelect = (): void => props.onDismiss?.();
-          document.addEventListener(SELECT_EVENT, onSelect);
-          wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
+          document.addEventListener("hella:menu-select", onSelect);
+          wirings.push(() => document.removeEventListener("hella:menu-select", onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (item) => item.node.focus()));
+        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
         const onArrow = props.onArrow;
         const onKey = menuKeyDown(onArrow ? { onArrowLeft: () => onArrow("left"), onArrowRight: () => onArrow("right") } : {})(node);
         node.addEventListener("keydown", onKey);
@@ -363,7 +344,7 @@ export function MenubarItem(props: MenubarItemProps): JSX.Element {
       data-disabled={props.disabled ? "true" : undefined}
       aria-disabled={props.disabled ? "true" : undefined}
       class={
-        cn(item, props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!", props.class)
       }
       on:click={() => {
         if (props.disabled) return;
@@ -519,7 +500,7 @@ export function MenubarLabel(props: MenubarLabelProps): JSX.Element {
       data-slot="menubar-label"
       data-inset={props.inset ? "true" : undefined}
       class={
-        cn(label, props.class)
+        cn("px-2 py-1.5 text-sm font-medium data-[inset]:pl-8", props.class)
       }
     >
       {() => props.children}
@@ -544,7 +525,7 @@ export function MenubarShortcut(props: MenubarPartProps): JSX.Element {
     <span
       data-slot="menubar-shortcut"
       class={
-        cn(shortcut, props.class)
+        cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
       }
     >
       {() => props.children}
@@ -668,10 +649,10 @@ export function MenubarSubContent(props: MenubarSubContentProps): JSX.Element {
           // level, an outside pointerdown closes the sub before the parent.
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
           const onSelect = (): void => props.onDismiss?.();
-          document.addEventListener(SELECT_EVENT, onSelect);
-          wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
+          document.addEventListener("hella:menu-select", onSelect);
+          wirings.push(() => document.removeEventListener("hella:menu-select", onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (item) => item.node.focus()));
+        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
         const onKey = menuKeyDown(props.onArrowLeft ? { onArrowLeft: props.onArrowLeft } : {})(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -818,10 +799,10 @@ export function MenubarMenu(props: MenubarMenuProps): JSX.Element {
   effect(() => {
     if (s.isOpen()) {
       wasOpen = true;
-      document.dispatchEvent(new CustomEvent(OPEN_EVENT, { detail: { id: menuId } }));
+      document.dispatchEvent(new CustomEvent("hella:menubar-open", { detail: { id: menuId } }));
     } else if (wasOpen) {
       wasOpen = false;
-      document.dispatchEvent(new CustomEvent(CLOSE_EVENT, { detail: { id: menuId } }));
+      document.dispatchEvent(new CustomEvent("hella:menubar-close", { detail: { id: menuId } }));
     }
   });
 
@@ -866,8 +847,8 @@ export function MenubarMenu(props: MenubarMenuProps): JSX.Element {
       }
       hook:afterMount={(node) => {
         if (node instanceof HTMLElement) triggerNode = node.querySelector("[data-slot='menubar-trigger']") ?? undefined;
-        document.addEventListener(OPEN_EVENT, onSiblingOpen);
-        wirings.push(() => document.removeEventListener(OPEN_EVENT, onSiblingOpen));
+        document.addEventListener("hella:menubar-open", onSiblingOpen);
+        wirings.push(() => document.removeEventListener("hella:menubar-open", onSiblingOpen));
       }}
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();
@@ -881,7 +862,7 @@ export function MenubarMenu(props: MenubarMenuProps): JSX.Element {
         aria-expanded={s.isOpen() ? "true" : "false"}
         aria-controls={contentId}
         class={
-          cn(trigger)
+          cn("flex items-center rounded-sm px-2 py-1 text-sm font-medium outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground")
         }
         on:click={() => s.setOpen(!s.isOpen())}
         on:keydown={(e) => {
@@ -944,13 +925,13 @@ export default function Menubar(props: MenubarProps): JSX.Element {
   const onKeyDown = (event: Event): void => {
     const e = event as KeyboardEvent;
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    const trigger = document.activeElement?.closest?.("[data-slot='menubar-trigger']") as HTMLElement | null;
-    if (!trigger || trigger.getAttribute("data-state") === "open") return;
-    const bar = trigger.closest("[data-slot='menubar']");
+    const focused = document.activeElement?.closest?.("[data-slot='menubar-trigger']") as HTMLElement | null;
+    if (!focused || focused.getAttribute("data-state") === "open") return;
+    const bar = focused.closest("[data-slot='menubar']");
     if (!bar || bar !== barNode) return;
     const triggers = Array.from(bar.querySelectorAll("[data-slot='menubar-trigger']"));
     if (triggers.length === 0) return;
-    const current = triggers.indexOf(trigger);
+    const current = triggers.indexOf(focused);
     if (current === -1) return;
     e.preventDefault();
     const next = triggers[(current + (e.key === "ArrowRight" ? 1 : -1) + triggers.length) % triggers.length] as HTMLElement;
@@ -969,11 +950,11 @@ export default function Menubar(props: MenubarProps): JSX.Element {
         barNode = node;
         node.addEventListener("keydown", onKeyDown);
         wirings.push(() => node.removeEventListener("keydown", onKeyDown));
-        document.addEventListener(OPEN_EVENT, onMenuOpen);
-        document.addEventListener(CLOSE_EVENT, onMenuClose);
+        document.addEventListener("hella:menubar-open", onMenuOpen);
+        document.addEventListener("hella:menubar-close", onMenuClose);
         wirings.push(() => {
-          document.removeEventListener(OPEN_EVENT, onMenuOpen);
-          document.removeEventListener(CLOSE_EVENT, onMenuClose);
+          document.removeEventListener("hella:menubar-open", onMenuOpen);
+          document.removeEventListener("hella:menubar-close", onMenuClose);
         });
       }}
       hook:beforeDestroy={() => {

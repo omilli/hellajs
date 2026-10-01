@@ -86,8 +86,8 @@ export function MessageScrollerViewport(props: MessageScrollerViewportProps): JS
         el = node;
         node.addEventListener("scroll", sync, { passive: true });
         teardown.push(() => node.removeEventListener("scroll", sync));
-        const content = node.firstElementChild;
-        if (content) teardown.push((props.observe ?? defaultObserve)(content, onGrow));
+        const inner = node.firstElementChild;
+        if (inner) teardown.push((props.observe ?? defaultObserve)(inner, onGrow));
         if (state()()) node.scrollTop = node.scrollHeight;
       }}
       hook:beforeDestroy={() => {

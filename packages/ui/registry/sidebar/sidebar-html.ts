@@ -98,8 +98,8 @@ export function SidebarProvider(props: SidebarProviderProps): HellaNode {
   const setOpenMobile = (next: boolean): void => {
     sheetOpen(next);
   };
-  const mobile = (): boolean => viewport();
-  const onToggle = (): void => (mobile() ? setOpenMobile(!openMobile()) : setOpen(!open()));
+  const isMobile = (): boolean => viewport();
+  const onToggle = (): void => (isMobile() ? setOpenMobile(!openMobile()) : setOpen(!open()));
   const teardown: (() => void)[] = [];
 
   return html`
@@ -134,7 +134,7 @@ export function SidebarProvider(props: SidebarProviderProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
       }}"
-    >${props.children({ open, setOpen, mobile, openMobile, setOpenMobile, onToggle })}</div>
+    >${props.children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}</div>
   ` as HellaNode;
 }
 

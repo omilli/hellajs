@@ -244,17 +244,17 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
         const input = node.querySelector<HTMLInputElement>("[data-input-otp]");
         if (!input) return;
         const stops: (() => void)[] = [];
-        for (const slot of Array.from(node.querySelectorAll<HTMLElement>("[data-slot='input-otp-slot'][data-index]"))) {
-          const index = Number(slot.getAttribute("data-index"));
-          const caretWrap = slot.querySelector<HTMLElement>(":scope > div");
+        for (const slotEl of Array.from(node.querySelectorAll<HTMLElement>("[data-slot='input-otp-slot'][data-index]"))) {
+          const index = Number(slotEl.getAttribute("data-index"));
+          const caretBox = slotEl.querySelector<HTMLElement>(":scope > div");
           const char = document.createTextNode("");
-          slot.insertBefore(char, slot.firstChild);
+          slotEl.insertBefore(char, slotEl.firstChild);
           stops.push(effect(() => {
             const ch = value()[index] ?? "";
             if (char.data !== ch) char.data = ch;
-            if (isActive(index)) slot.setAttribute("data-active", "true");
-            else slot.removeAttribute("data-active");
-            if (caretWrap) caretWrap.style.display = isActive(index) && ch === "" ? "" : "none";
+            if (isActive(index)) slotEl.setAttribute("data-active", "true");
+            else slotEl.removeAttribute("data-active");
+            if (caretBox) caretBox.style.display = isActive(index) && ch === "" ? "" : "none";
           }));
         }
         const onSelectionChange = () => syncSelection(input);

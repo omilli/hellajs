@@ -2,19 +2,6 @@ import { effect, signal, untracked } from "@hellajs/core";
 import { ForEach } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const months = "relative flex flex-col gap-4 md:flex-row";
-
-const month = "flex w-full flex-col gap-4";
-
-const nav = "absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1";
-
-const weekday = "flex-1 rounded-md text-[0.8rem] font-normal text-muted-foreground select-none";
-
-const week = "mt-2 flex w-full";
-
-/** The ref's day cell plus its state hooks, data-attribute driven: today/outside/disabled/hidden/range land as conditioned utilities on one static string (the ref's outside `aria-selected:` color rule folds into the base outside color). */
-const day = "group/day relative aspect-square h-full w-full p-0 text-center select-none [&:last-child[data-selected=true]_button]:rounded-r-md [&:first-child[data-selected=true]_button]:rounded-l-md data-[today=true]:rounded-md data-[today=true]:bg-accent data-[today=true]:text-accent-foreground data-[today=true]:data-[selected=true]:rounded-none data-[outside=true]:text-muted-foreground data-[disabled=true]:text-muted-foreground data-[disabled=true]:opacity-50 data-[hidden=true]:invisible data-[range-start=true]:rounded-l-md data-[range-start=true]:bg-accent data-[range-middle=true]:rounded-none data-[range-end=true]:rounded-r-md data-[range-end=true]:bg-accent";
-
 /** Selection mode: one date, a set of dates, or a from/to span. */
 type CalendarMode = "single" | "multiple" | "range";
 
@@ -52,7 +39,7 @@ interface CalendarProps {
   onSelect?: (selected: CalendarSelection) => void;
   /** Controlled visible-month accessor; when provided it snaps the view back on every change, winning over internal navigation. */
   month?: () => Date;
-  onMonthChange?: (month: Date) => void;
+  onMonthChange?: (anchor: Date) => void;
   /** Initial visible month; defaults to the current month. */
   defaultMonth?: Date;
   /** Predicate blocking selection and keyboard activation; outside days are always disabled. */
@@ -93,11 +80,8 @@ const WEEKDAY_COUNT = 7;
 
 const FIXED_WEEKS = 6;
 
-/** Fixed en-US labels keep caption/weekday text deterministic across hosts; all date math stays in local fields (no timezone conversion). */
-const LOCALE = "en-US";
-
-function daysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
+function daysInMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex + 1, 0).getDate();
 }
 
 function startOfMonth(date: Date): Date {
@@ -123,9 +107,9 @@ function isSameMonth(a: Date, b: Date): boolean {
 
 /** ISO `yyyy-mm-dd` key from local date fields; lexicographically ordered, so ranges compare as strings. */
 function dayKey(date: Date): string {
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
+  const paddedMonth = `${date.getMonth() + 1}`.padStart(2, "0");
+  const paddedDay = `${date.getDate()}`.padStart(2, "0");
+  return `${date.getFullYear()}-${paddedMonth}-${paddedDay}`;
 }
 
 function startOfWeek(date: Date, weekStartsOn: number): Date {
@@ -133,14 +117,14 @@ function startOfWeek(date: Date, weekStartsOn: number): Date {
 }
 
 function monthLabel(date: Date): string {
-  return date.toLocaleDateString(LOCALE, { month: "long", year: "numeric" });
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 function weekdayLabels(weekStartsOn: number): string[] {
   const labels: string[] = [];
   let i = 0;
   while (i < WEEKDAY_COUNT) {
-    labels.push(new Date(2024, 0, 7 + ((weekStartsOn + i) % WEEKDAY_COUNT)).toLocaleDateString(LOCALE, { weekday: "short" }));
+    labels.push(new Date(2024, 0, 7 + ((weekStartsOn + i) % WEEKDAY_COUNT)).toLocaleDateString("en-US", { weekday: "short" }));
     i++;
   }
   return labels;
@@ -156,10 +140,10 @@ interface CalendarCell {
   disabled: boolean;
 }
 
-function buildMonth(month: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined, epoch: number): CalendarCell[][] {
-  const monthStart = startOfMonth(month);
+function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined, epoch: number): CalendarCell[][] {
+  const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, weekStartsOn);
-  const days = daysInMonth(month.getFullYear(), month.getMonth());
+  const days = daysInMonth(anchor.getFullYear(), anchor.getMonth());
   const offset = (monthStart.getDay() - weekStartsOn + WEEKDAY_COUNT) % WEEKDAY_COUNT;
   const weeks = fixedWeeks ? FIXED_WEEKS : Math.ceil((offset + days) / WEEKDAY_COUNT);
   const today = new Date();
@@ -170,7 +154,7 @@ function buildMonth(month: Date, weekStartsOn: number, fixedWeeks: boolean, disa
     let d = 0;
     while (d < WEEKDAY_COUNT) {
       const date = addDays(gridStart, w * WEEKDAY_COUNT + d);
-      const outside = !isSameMonth(date, month);
+      const outside = !isSameMonth(date, anchor);
       row.push({
         id: `${epoch}:${dayKey(date)}`,
         key: dayKey(date),
@@ -313,7 +297,7 @@ function DayCell(props: DayCellProps): JSX.Element {
       data-range-middle={props.rangeMiddle() ? "true" : undefined}
       data-range-end={props.rangeEnd() ? "true" : undefined}
       class={
-        cn(day, props.class)
+        cn("group/day relative aspect-square h-full w-full p-0 text-center select-none [&:last-child[data-selected=true]_button]:rounded-r-md [&:first-child[data-selected=true]_button]:rounded-l-md data-[today=true]:rounded-md data-[today=true]:bg-accent data-[today=true]:text-accent-foreground data-[today=true]:data-[selected=true]:rounded-none data-[outside=true]:text-muted-foreground data-[disabled=true]:text-muted-foreground data-[disabled=true]:opacity-50 data-[hidden=true]:invisible data-[range-start=true]:rounded-l-md data-[range-start=true]:bg-accent data-[range-middle=true]:rounded-none data-[range-end=true]:rounded-r-md data-[range-end=true]:bg-accent", props.class)
       }
     >
       <CalendarDayButton
@@ -404,7 +388,7 @@ export default function Calendar(props: CalendarProps): JSX.Element {
   const isSelected = (date: Date): boolean => {
     const value = selection();
     if (mode === "single") return value !== undefined && isSameDay(value as Date, date);
-    if (mode === "multiple") return (value as Date[]).some((day) => isSameDay(day, date));
+    if (mode === "multiple") return (value as Date[]).some((dateValue) => isSameDay(dateValue, date));
     const range = (value as CalendarRange) ?? {};
     if (range.from === undefined) return false;
     if (range.to === undefined) return isSameDay(range.from, date);
@@ -438,7 +422,7 @@ export default function Calendar(props: CalendarProps): JSX.Element {
     if (mode === "single") {
       props.onSelect?.(value === undefined ? undefined : new Date(value as Date));
     } else if (mode === "multiple") {
-      props.onSelect?.((value as Date[]).map((day) => new Date(day)));
+      props.onSelect?.((value as Date[]).map((dateValue) => new Date(dateValue)));
     } else {
       const range = (value as CalendarRange) ?? {};
       props.onSelect?.({
@@ -454,7 +438,7 @@ export default function Calendar(props: CalendarProps): JSX.Element {
       selection(new Date(cell.date));
     } else if (mode === "multiple") {
       const current = selection() as Date[];
-      const at = current.findIndex((day) => isSameDay(day, cell.date));
+      const at = current.findIndex((date) => isSameDay(date, cell.date));
       selection(at === -1 ? [...current, new Date(cell.date)] : current.filter((_, i) => i !== at));
     } else {
       const range = (selection() as CalendarRange) ?? {};
@@ -529,13 +513,13 @@ export default function Calendar(props: CalendarProps): JSX.Element {
       <div
         data-slot="calendar-months"
         class={
-          cn(months, props.classNames?.months)
+          cn("relative flex flex-col gap-4 md:flex-row", props.classNames?.months)
         }
       >
         <div
           data-slot="calendar-month"
           class={
-            cn(month, props.classNames?.month)
+            cn("flex w-full flex-col gap-4", props.classNames?.month)
           }
         >
           <div
@@ -556,7 +540,7 @@ export default function Calendar(props: CalendarProps): JSX.Element {
             <nav
               data-slot="calendar-nav"
               class={
-                cn(nav, props.classNames?.nav)
+                cn("absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1", props.classNames?.nav)
               }
             >
               <button
@@ -603,10 +587,10 @@ export default function Calendar(props: CalendarProps): JSX.Element {
                 {weekdayLabels(weekStartsOn).map((label, index) => (
                   <th
                     scope="col"
-                    abbr={new Date(2024, 0, 7 + ((weekStartsOn + index) % WEEKDAY_COUNT)).toLocaleDateString(LOCALE, { weekday: "long" })}
+                    abbr={new Date(2024, 0, 7 + ((weekStartsOn + index) % WEEKDAY_COUNT)).toLocaleDateString("en-US", { weekday: "long" })}
                     data-slot="calendar-weekday"
                     class={
-                      cn(weekday, props.classNames?.weekday)
+                      cn("flex-1 rounded-md text-[0.8rem] font-normal text-muted-foreground select-none", props.classNames?.weekday)
                     }
                   >{label}</th>
                 ))}
@@ -618,7 +602,7 @@ export default function Calendar(props: CalendarProps): JSX.Element {
                   role="row"
                   data-slot="calendar-week"
                   class={
-                    cn(week, props.classNames?.week)
+                    cn("mt-2 flex w-full", props.classNames?.week)
                   }
                 >
                   <ForEach each={row} use={(cell: CalendarCell) => (

@@ -3,18 +3,6 @@ import { Portal } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const trigger = "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent/50 data-[state=open]:text-accent-foreground data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent";
-
-const viewport = "origin-top-center relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:zoom-in-90 md:w-[var(--radix-navigation-menu-viewport-width)]";
-
-const indicator = "top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:animate-in data-[state=visible]:fade-in transition-[transform,width] duration-200";
-
-/** Document-level activation event: triggers carrying a `value` announce clicks so the root's store and its appended viewport follow without context. */
-const ACTIVATE_EVENT = "hella:navigation-menu-activate";
-
-/** The default portal target every Content renders into: the first viewport slot in the document. */
-const VIEWPORT_SELECTOR = "[data-slot='navigation-menu-viewport']";
-
 /** The chevron-down icon (refs/icons/chevron-down.svg), created per call so reactive swaps never share nodes between clones. */
 const chevronIcon = (): JSX.Element => (
   <svg
@@ -92,14 +80,14 @@ export function NavigationMenuTrigger(props: NavigationMenuTriggerProps): JSX.El
       data-state={active() ? "open" : "closed"}
       aria-expanded={active() ? "true" : "false"}
       class={
-        cn(trigger, props.class)
+        cn("group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent/50 data-[state=open]:text-accent-foreground data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent", props.class)
       }
       on:click={() => {
         // The announce carries the requested state (computed before the owner
         // toggle runs), so the root's store mirrors instead of re-toggling.
         const open = !active();
         props.onActivate?.();
-        if (props.value !== undefined) document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id: props.value, open } }));
+        if (props.value !== undefined) document.dispatchEvent(new CustomEvent("hella:navigation-menu-activate", { detail: { id: props.value, open } }));
       }}
     >
       {() => props.children}
@@ -121,7 +109,7 @@ interface NavigationMenuContentProps {
 
 export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.Element {
   const active = (): boolean => props.active?.() ?? false;
-  const viewport = props.viewport ?? VIEWPORT_SELECTOR;
+  const portalTarget = props.viewport ?? "[data-slot='navigation-menu-viewport']";
   // `visible` alone gates the render so an open→closed flip never unmounts
   // before this watcher starts the exit; the panel stays mounted under
   // data-state="closed" until its animationend (or the copied duration
@@ -159,7 +147,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.El
       }
     >
       {() => visible() && (
-        <Portal to={viewport}>
+        <Portal to={portalTarget}>
           <div
             data-slot="navigation-menu-content"
             data-state={state()}
@@ -235,7 +223,7 @@ export function NavigationMenuViewport(props: NavigationMenuViewportProps): JSX.
         id={props.id}
         data-state={active() ? "open" : "closed"}
         class={
-          cn(viewport)
+          cn("origin-top-center relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:zoom-in-90 md:w-[var(--radix-navigation-menu-viewport-width)]")
         }
       />
     </div>
@@ -269,10 +257,10 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): JS
   // 200ms transform transition (upstream approximates its spring the same way).
   const measure = (): void => {
     if (!node) return;
-    const trigger = resolveTrigger();
+    const anchorEl = resolveTrigger();
     const root = node.closest("[data-slot='navigation-menu']");
-    if (!trigger || !root) return;
-    const t = trigger.getBoundingClientRect();
+    if (!anchorEl || !root) return;
+    const t = anchorEl.getBoundingClientRect();
     const r = root.getBoundingClientRect();
     node.style.width = `${t.width}px`;
     node.style.transform = `translateX(${t.left - r.left}px)`;
@@ -290,7 +278,7 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): JS
       data-slot="navigation-menu-indicator"
       data-state={visible() ? "visible" : "hidden"}
       class={
-        cn(indicator, props.class)
+        cn("top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:animate-in data-[state=visible]:fade-in transition-[transform,width] duration-200", props.class)
       }
       hook:afterMount={(mounted) => {
         if (!(mounted instanceof HTMLElement)) return;
@@ -301,8 +289,8 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): JS
           if (typeof detail?.id !== "string" || typeof detail?.open !== "boolean") return;
           activeId(detail.open ? detail.id : "");
         };
-        document.addEventListener(ACTIVATE_EVENT, onActivate);
-        wirings.push(() => document.removeEventListener(ACTIVATE_EVENT, onActivate));
+        document.addEventListener("hella:navigation-menu-activate", onActivate);
+        wirings.push(() => document.removeEventListener("hella:navigation-menu-activate", onActivate));
         const onResize = (): void => measure();
         window.addEventListener("resize", onResize);
         wirings.push(() => window.removeEventListener("resize", onResize));
@@ -356,8 +344,8 @@ export default function NavigationMenu(props: NavigationMenuProps): JSX.Element 
         cn("group/navigation-menu relative flex max-w-max flex-1 items-center justify-center", props.class)
       }
       hook:afterMount={() => {
-        document.addEventListener(ACTIVATE_EVENT, onActivate);
-        wirings.push(() => document.removeEventListener(ACTIVATE_EVENT, onActivate));
+        document.addEventListener("hella:navigation-menu-activate", onActivate);
+        wirings.push(() => document.removeEventListener("hella:navigation-menu-activate", onActivate));
       }}
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();

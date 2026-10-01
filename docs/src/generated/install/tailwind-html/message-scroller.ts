@@ -10,8 +10,6 @@ const base =
 const viewport =
   "size-full min-h-0 min-w-0 scroll-fade-b scrollbar-thin scrollbar-gutter-stable overflow-y-auto overscroll-contain contain-content data-autoscrolling:scrollbar-none data-pending-scroll:invisible";
 
-const content = "flex h-max min-h-full flex-col gap-8";
-
 const item =
   "min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]";
 
@@ -40,8 +38,6 @@ const buttonSizes = {
   "icon-sm": "size-8",
   "icon-lg": "size-10",
 };
-
-const srOnly = "sr-only";
 
 interface MessageScrollerProviderProps {
   children?: HellaChildren;
@@ -114,8 +110,8 @@ export function MessageScrollerViewport(props: MessageScrollerViewportProps): He
         el = node;
         node.addEventListener("scroll", sync, { passive: true });
         teardown.push(() => node.removeEventListener("scroll", sync));
-        const content = node.firstElementChild;
-        if (content) teardown.push((props.observe ?? defaultObserve)(content, onGrow));
+        const inner = node.firstElementChild;
+        if (inner) teardown.push((props.observe ?? defaultObserve)(inner, onGrow));
         if (state()()) node.scrollTop = node.scrollHeight;
       }}"
       hook:beforeDestroy="${() => {
@@ -136,7 +132,7 @@ export function MessageScrollerContent(props: MessageScrollerContentProps): Hell
     <div
       data-slot="message-scroller-content"
       class="${
-        cn(content, props.class)
+        cn("flex h-max min-h-full flex-col gap-8", props.class)
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -228,7 +224,7 @@ export function MessageScrollerButton(props: MessageScrollerButtonProps): HellaN
           <path d="M12 5v14" />
           <path d="m19 12-7 7-7-7" />
         </svg>`,
-      html`<span class="${srOnly}">${direction() === "end" ? "Scroll to end" : "Scroll to start"}</span>`,
+      html`<span class="sr-only">${direction() === "end" ? "Scroll to end" : "Scroll to start"}</span>`,
     ] as HellaChildren}</button>
   ` as HellaNode;
 }

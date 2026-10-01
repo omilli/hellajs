@@ -177,11 +177,11 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): JS
   });
 
   // Moves the handle between panel `prevIndex` and its right/bottom neighbor by
-  // `delta` percent of the group, clamped so both keep their min/max. `base` is
-  // the layout the delta applies to: the drag-start snapshot for pointer moves
-  // (onDrag reports cumulative deltas), the live layout for keyboard steps.
-  const resizePair = (base: number[], prevIndex: number, delta: number): void => {
-    const current = base;
+  // `delta` percent of the group, clamped so both keep their min/max. `layout`
+  // holds the sizes the delta applies to: the drag-start snapshot for pointer
+  // moves (onDrag reports cumulative deltas), the live layout for keyboard steps.
+  const resizePair = (layout: number[], prevIndex: number, delta: number): void => {
+    const current = layout;
     const nextIndex = prevIndex + 1;
     if (prevIndex < 0 || nextIndex >= current.length) return;
     const prev = current[prevIndex]!;
@@ -199,12 +199,12 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): JS
     props.onLayout?.(updated);
   };
 
-  const wireHandle = (group: HTMLElement, handle: HTMLElement, prevIndex: number): void => {
-    handle.setAttribute("aria-orientation", direction);
-    if (handle.getAttribute("aria-disabled") === "true") return;
+  const wireHandle = (group: HTMLElement, handleEl: HTMLElement, prevIndex: number): void => {
+    handleEl.setAttribute("aria-orientation", direction);
+    if (handleEl.getAttribute("aria-disabled") === "true") return;
     let groupSize = 0;
     let startSizes: number[] | null = null;
-    wirings.push(onDrag(handle, {
+    wirings.push(onDrag(handleEl, {
       onStart: () => {
         const rect = group.getBoundingClientRect();
         const size = direction === "horizontal" ? rect.width : rect.height;
@@ -228,8 +228,8 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): JS
       event.preventDefault();
       resizePair(sizes(), prevIndex, key === "ArrowRight" || key === "ArrowDown" ? 5 : -5);
     };
-    handle.addEventListener("keydown", onKeydown);
-    wirings.push(() => handle.removeEventListener("keydown", onKeydown));
+    handleEl.addEventListener("keydown", onKeydown);
+    wirings.push(() => handleEl.removeEventListener("keydown", onKeydown));
   };
 
   return (

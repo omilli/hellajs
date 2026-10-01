@@ -3,10 +3,6 @@ import { signal } from "@hellajs/core";
 import type { HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const item = "aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40";
-
-const icon = "absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 fill-primary";
-
 interface RadioGroupItem {
   value: string;
   label: string;
@@ -48,7 +44,7 @@ const circleIcon = (): HellaNode =>
     stroke-linejoin="round"
     aria-hidden="true"
     class="${
-      cn(icon)
+      cn("absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 fill-primary")
     }"
   >
     <circle cx="12" cy="12" r="10" />
@@ -69,7 +65,7 @@ export function RadioGroupItem(props: RadioGroupItemProps): HellaNode {
       data-state="${() => (checked() ? "checked" : "unchecked")}"
       disabled="${props.disabled ? true : undefined}"
       class="${
-        cn(item, props.class)
+        cn("aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40", props.class)
       }"
       e:click="${() => props.onSelect?.()}"
     >
@@ -135,10 +131,10 @@ export default function RadioGroup(props: RadioGroupProps): HellaNode {
           selector: "[role='radio']:not(:disabled)",
         }));
         const onFocusIn = (event: Event) => {
-          const item = event.target as HTMLElement;
-          if (item.getAttribute("role") !== "radio") return;
-          const value = item.getAttribute("value") ?? "";
-          if (item.hasAttribute("disabled")) return;
+          const radioEl = event.target as HTMLElement;
+          if (radioEl.getAttribute("role") !== "radio") return;
+          const value = radioEl.getAttribute("value") ?? "";
+          if (radioEl.hasAttribute("disabled")) return;
           select(value);
         };
         node.addEventListener("focusin", onFocusIn);

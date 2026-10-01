@@ -3,10 +3,6 @@ import { onEscape, Portal, trapFocus } from "@hellajs/dom";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const title = "text-lg font-semibold sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2";
-
-const description = "text-sm text-muted-foreground";
-
 const buttonVariants = {
   default: "bg-primary text-primary-foreground hover:bg-primary/90",
   destructive: "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
@@ -205,7 +201,7 @@ export function AlertDialogTitle(props: AlertDialogTitleProps): JSX.Element {
       id={props.id}
       data-slot="alert-dialog-title"
       class={
-        cn(title, props.class)
+        cn("text-lg font-semibold sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2", props.class)
       }
     >
       {props.children}
@@ -219,7 +215,7 @@ export function AlertDialogDescription(props: AlertDialogTitleProps): JSX.Elemen
       id={props.id}
       data-slot="alert-dialog-description"
       class={
-        cn(description, props.class)
+        cn("text-sm text-muted-foreground", props.class)
       }
     >
       {props.children}

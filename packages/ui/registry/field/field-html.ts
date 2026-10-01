@@ -220,8 +220,8 @@ interface FieldErrorProps {
 export function FieldError(props: FieldErrorProps): HellaNode {
   const unique = (): { message?: string }[] => {
     const seen = new Map<string | undefined, { message?: string } | undefined>();
-    for (const error of props.errors ?? []) seen.set(error?.message, error);
-    return [...seen.values()].filter((error) => error !== undefined);
+    for (const issue of props.errors ?? []) seen.set(issue?.message, issue);
+    return [...seen.values()].filter((issue) => issue !== undefined);
   };
   const hasChildren = (): boolean => {
     if (props.children == null) return false;

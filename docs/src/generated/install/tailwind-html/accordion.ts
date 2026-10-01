@@ -3,12 +3,6 @@ import { signal } from "@hellajs/core";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const item = "border-b last:border-b-0";
-
-const trigger = "flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180";
-
-const content = "grid grid-rows-[0fr] text-sm opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100";
-
 export interface AccordionEntry {
   value: string;
   trigger: HellaChildren;
@@ -51,9 +45,6 @@ interface AccordionContentProps {
   class?: string;
 }
 
-const TRIGGER_ID = "hella-accordion-trigger-";
-const CONTENT_ID = "hella-accordion-content-";
-
 export function AccordionItem(props: AccordionItemProps): HellaNode {
   return html`
     <div
@@ -61,7 +52,7 @@ export function AccordionItem(props: AccordionItemProps): HellaNode {
       data-value="${props.value}"
       data-state="${() => (props.active?.() ? "open" : "closed")}"
       class="${
-        cn(item, props.class)
+        cn("border-b last:border-b-0", props.class)
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -85,7 +76,7 @@ export function AccordionTrigger(props: AccordionTriggerProps): HellaNode {
         disabled="${props.disabled ? true : undefined}"
         data-state="${() => (props.active?.() ? "open" : "closed")}"
         class="${
-          cn(trigger, props.class)
+          cn("flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180", props.class)
         }"
         e:click="${() => props.onToggle?.()}"
       >
@@ -122,7 +113,7 @@ export function AccordionContent(props: AccordionContentProps): HellaNode {
       aria-labelledby="${props.labelledBy}"
       data-state="${() => (props.active?.() ? "open" : "closed")}"
       class="${
-        cn(content, props.class)
+        cn("grid grid-rows-[0fr] text-sm opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", props.class)
       }"
     >
       <div
@@ -174,16 +165,16 @@ export default function Accordion(props: AccordionProps): HellaNode {
         active: () => isOpen(entry.value),
         children: [
           AccordionTrigger({
-            id: `${TRIGGER_ID}${entry.value}`,
+            id: `${"hella-accordion-trigger-"}${entry.value}`,
             active: () => isOpen(entry.value),
             onToggle: () => toggle(entry.value, entry.disabled),
-            controls: `${CONTENT_ID}${entry.value}`,
+            controls: `${"hella-accordion-content-"}${entry.value}`,
             disabled: entry.disabled,
             children: entry.trigger,
           }),
           AccordionContent({
-            id: `${CONTENT_ID}${entry.value}`,
-            labelledBy: `${TRIGGER_ID}${entry.value}`,
+            id: `${"hella-accordion-content-"}${entry.value}`,
+            labelledBy: `${"hella-accordion-trigger-"}${entry.value}`,
             active: () => isOpen(entry.value),
             children: entry.content,
           }),

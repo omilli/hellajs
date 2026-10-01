@@ -3,12 +3,6 @@ import { effect, signal } from "@hellajs/core";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const base = "flex h-full w-full aria-[orientation=vertical]:flex-col";
-
-const handle = "relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-hidden aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:after:left-0 aria-[orientation=horizontal]:after:h-1 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2 [&[aria-orientation=horizontal]>div]:rotate-90";
-
-const grip = "z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-border";
-
 interface ResizablePanelGroupProps {
   direction?: "horizontal" | "vertical";
   /** Reports the panel sizes (percentages) after each drag or keyboard resize. The initial layout does not fire it. */
@@ -82,10 +76,10 @@ export function ResizableHandle(props: ResizableHandleProps): HellaNode {
       aria-disabled="${props.disabled ? "true" : undefined}"
       data-disabled="${props.disabled ? "true" : undefined}"
       class="${
-        cn(handle, props.class)
+        cn("relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-hidden aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:after:left-0 aria-[orientation=horizontal]:after:h-1 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2 [&[aria-orientation=horizontal]>div]:rotate-90", props.class)
       }"
     >${() => props.withHandle && html`<div class="${
-        cn(grip)
+        cn("z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-border")
       }">${gripIcon()}</div>`}
     </div>
   ` as HellaNode;
@@ -114,11 +108,11 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): He
   });
 
   // Moves the handle between panel `prevIndex` and its right/bottom neighbor by
-  // `delta` percent of the group, clamped so both keep their min/max. `base` is
-  // the layout the delta applies to: the drag-start snapshot for pointer moves
-  // (onDrag reports cumulative deltas), the live layout for keyboard steps.
-  const resizePair = (base: number[], prevIndex: number, delta: number): void => {
-    const current = base;
+  // `delta` percent of the group, clamped so both keep their min/max. `layout`
+  // holds the sizes the delta applies to: the drag-start snapshot for pointer
+  // moves (onDrag reports cumulative deltas), the live layout for keyboard steps.
+  const resizePair = (layout: number[], prevIndex: number, delta: number): void => {
+    const current = layout;
     const nextIndex = prevIndex + 1;
     if (prevIndex < 0 || nextIndex >= current.length) return;
     const prev = current[prevIndex]!;
@@ -136,12 +130,12 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): He
     props.onLayout?.(updated);
   };
 
-  const wireHandle = (group: HTMLElement, handle: HTMLElement, prevIndex: number): void => {
-    handle.setAttribute("aria-orientation", direction);
-    if (handle.getAttribute("aria-disabled") === "true") return;
+  const wireHandle = (group: HTMLElement, handleEl: HTMLElement, prevIndex: number): void => {
+    handleEl.setAttribute("aria-orientation", direction);
+    if (handleEl.getAttribute("aria-disabled") === "true") return;
     let groupSize = 0;
     let startSizes: number[] | null = null;
-    wirings.push(onDrag(handle, {
+    wirings.push(onDrag(handleEl, {
       onStart: () => {
         const rect = group.getBoundingClientRect();
         const size = direction === "horizontal" ? rect.width : rect.height;
@@ -165,8 +159,8 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): He
       event.preventDefault();
       resizePair(sizes(), prevIndex, key === "ArrowRight" || key === "ArrowDown" ? 5 : -5);
     };
-    handle.addEventListener("keydown", onKeydown);
-    wirings.push(() => handle.removeEventListener("keydown", onKeydown));
+    handleEl.addEventListener("keydown", onKeydown);
+    wirings.push(() => handleEl.removeEventListener("keydown", onKeydown));
   };
 
   return html`
@@ -174,7 +168,7 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): He
       data-slot="resizable-panel-group"
       aria-orientation="${direction}"
       class="${
-        cn(base, props.class)
+        cn("flex h-full w-full aria-[orientation=vertical]:flex-col", props.class)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;

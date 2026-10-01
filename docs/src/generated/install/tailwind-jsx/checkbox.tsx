@@ -1,8 +1,6 @@
 import { signal } from "@hellajs/core";
 import { cn } from "./cn.js";
 
-const icon = "size-3.5";
-
 interface CheckboxProps {
   /** Checked state. A boolean seeds the internal signal; an accessor makes the checkbox controlled — clicks then only report through `onCheckedChange`. */
   checked?: boolean | (() => boolean);
@@ -29,7 +27,7 @@ const checkIcon = (): JSX.Element => (
     stroke-linejoin="round"
     aria-hidden="true"
     class={
-      cn(icon)
+      cn("size-3.5")
     }
   >
     <path d="M20 6 9 17l-5-5" />

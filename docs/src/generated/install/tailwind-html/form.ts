@@ -4,10 +4,6 @@ import type { Signal } from "@hellajs/core";
 import type { HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const label = "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 data-[error=true]:text-destructive";
-
-const message = "text-sm text-destructive";
-
 /** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
 type FormValidator<T> = (value: T[keyof T], values: T) => string | null;
 
@@ -60,10 +56,10 @@ export function createForm<T extends object>(initial: T, options?: FormOptions<T
 
   const validateField = (key: keyof T): void => {
     const validator = options?.validators?.[key];
-    const message = validator ? validator(values[key](), snapshot()) : null;
+    const outcome = validator ? validator(values[key](), snapshot()) : null;
     const next = { ...errors() };
-    if (message == null) delete next[key];
-    else next[key] = message;
+    if (outcome == null) delete next[key];
+    else next[key] = outcome;
     errors(next);
   };
 
@@ -83,8 +79,8 @@ export function createForm<T extends object>(initial: T, options?: FormOptions<T
     const current = snapshot();
     for (const key of keys) {
       const validator = options?.validators?.[key];
-      const message = validator ? validator(values[key](), current) : null;
-      if (message != null) next[key] = message;
+      const outcome = validator ? validator(values[key](), current) : null;
+      if (outcome != null) next[key] = outcome;
     }
     errors(next);
     return Object.keys(next).length === 0;
@@ -150,7 +146,7 @@ export function FormLabel(props: FormLabelProps): HellaNode {
       aria-invalid="${invalid}"
       data-error="${errorFlag}"
       class="${
-        cn(label)
+        cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 data-[error=true]:text-destructive")
       }"
     >${() => props.children}</label>
   ` as HellaNode;
@@ -210,7 +206,7 @@ export function FormMessage(props: FormMessageProps): HellaNode {
       data-slot="form-message"
       hidden="${() => !hasContent()}"
       class="${
-        cn(message)
+        cn("text-sm text-destructive")
       }"
     >${() => {
         const list = messages();

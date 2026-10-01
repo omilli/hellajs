@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { addComponent, loadRegistry } from "@hellajs/ui/bundle";
+import { addComponent, applyStyleVariant, loadRegistry } from "@hellajs/ui/bundle";
 import type { RegistryEntry, UiStyle } from "@hellajs/ui";
 
 const registryDir = join(import.meta.dir, "..", "registry");
@@ -191,5 +191,45 @@ describe("registry", () => {
     expect(cn.styles!.tailwind!.files).toEqual(["cn.ts"]);
     expect(cn.styles!.tailwind!.deps).toEqual(["clsx", "tailwind-merge"]);
     expect(existsSync(join(registryDir, "cn", "cn.ts"))).toBe(true);
+  });
+
+  // Single-line `const NAME = "...";` declarations must never survive the
+  // tailwind splice: each class string transposes to its use site and each
+  // runtime constant to its references. Keyed object maps stay by design.
+  const stringDecl = /^const [A-Za-z_$][\w$]* = "[^"]*";$/;
+  const objectDecl = /^const [A-Za-z_$][\w$]* = \{$/;
+  const objectEnd = /^};$/;
+
+  /** Surviving single-line string declarations in the output's leading declaration region. */
+  function keptStringDecls(out: string): string[] {
+    const lines = out.split("\n");
+    const kept: string[] = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i++]!;
+      const trimmed = line.trim();
+      if (trimmed === "" || /^import\s/.test(trimmed) || /^(\/\/|\/\*|\*)/.test(trimmed)) continue;
+      if (stringDecl.test(trimmed)) {
+        kept.push(trimmed);
+        continue;
+      }
+      if (objectDecl.test(trimmed)) {
+        while (i < lines.length && !objectEnd.test(lines[i++]!.trim())) continue;
+        continue;
+      }
+      break;
+    }
+    return kept;
+  }
+
+  const sweepCases = Object.entries(manifest.entries).flatMap(([entryName, entry]) =>
+    (entry.files ?? [])
+      .filter((file) => file.endsWith(".tsx") || file.endsWith("-html.ts"))
+      .map((file) => [`${entryName}/${file}`, entryName, file] as const));
+
+  test.each(sweepCases)("%s tailwind add output inlines every string constant", (_label, entryName, file) => {
+    const canonical = readEntryFile(entryName, file);
+    const styleModule = readEntryFile(entryName, `${entryName}-tailwind.ts`);
+    expect(keptStringDecls(applyStyleVariant(canonical, styleModule, "tailwind"))).toEqual([]);
   });
 });

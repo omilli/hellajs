@@ -2,8 +2,6 @@ import { html } from "@hellajs/dom";
 import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const legend = "mb-3 font-medium";
-
 const legendVariants = {
   legend: "data-[variant=legend]:text-base",
   label: "data-[variant=label]:text-sm",
@@ -14,20 +12,6 @@ const orientation = {
   horizontal: "flex-row items-center [&>[data-slot=field-label]]:flex-auto has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
   responsive: "flex-col @md/field-group:flex-row @md/field-group:items-center [&>*]:w-full @md/field-group:[&>*]:w-auto [&>.sr-only]:w-auto @md/field-group:[&>[data-slot=field-label]]:flex-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
 };
-
-const label = "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-4 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5 dark:has-data-[state=checked]:bg-primary/10";
-
-const title = "flex w-fit items-center gap-2 text-sm leading-snug font-medium group-data-[disabled=true]/field:opacity-50";
-
-const separatorBase = "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px";
-
-const separatorRule = "absolute inset-0 top-1/2";
-
-const separatorContent = "relative mx-auto block w-fit bg-background px-2 text-muted-foreground";
-
-const error = "text-sm font-normal text-destructive";
-
-const errorList = "ml-4 flex list-disc flex-col gap-1";
 
 interface FieldSetProps {
   children?: HellaChildren;
@@ -58,7 +42,7 @@ export function FieldLegend(props: FieldLegendProps): HellaNode {
       data-variant="${props.variant ?? "legend"}"
       class="${
         cn(
-          legend,
+          "mb-3 font-medium",
           legendVariants[props.variant ?? "legend"],
           props.class,
         )
@@ -139,7 +123,7 @@ export function FieldLabel(props: FieldLabelProps): HellaNode {
       data-slot="field-label"
       for="${props.for}"
       class="${
-        cn(label, props.class)
+        cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-4 has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5 dark:has-data-[state=checked]:bg-primary/10", props.class)
       }"
     >${() => props.children}</label>
   ` as HellaNode;
@@ -155,7 +139,7 @@ export function FieldTitle(props: FieldTitleProps): HellaNode {
     <div
       data-slot="field-label"
       class="${
-        cn(title, props.class)
+        cn("flex w-fit items-center gap-2 text-sm leading-snug font-medium group-data-[disabled=true]/field:opacity-50", props.class)
       }"
     >${() => props.children}</div>
   ` as HellaNode;
@@ -195,9 +179,9 @@ export function FieldSeparator(props: FieldSeparatorProps): HellaNode {
         data-slot="field-separator-rule"
         data-orientation="horizontal"
         aria-orientation="horizontal"
-        class="${[separatorBase, separatorRule]}"
+        class="${["shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px", "absolute inset-0 top-1/2"]}"
       />${() => props.children
-        ? html`<span data-slot="field-separator-content" class="${[separatorContent]}">${() => props.children}</span>`
+        ? html`<span data-slot="field-separator-content" class="${["relative mx-auto block w-fit bg-background px-2 text-muted-foreground"]}">${() => props.children}</span>`
         : null}</div>
   ` as HellaNode;
 }
@@ -211,8 +195,8 @@ interface FieldErrorProps {
 export function FieldError(props: FieldErrorProps): HellaNode {
   const unique = (): { message?: string }[] => {
     const seen = new Map<string | undefined, { message?: string } | undefined>();
-    for (const error of props.errors ?? []) seen.set(error?.message, error);
-    return [...seen.values()].filter((error) => error !== undefined);
+    for (const issue of props.errors ?? []) seen.set(issue?.message, issue);
+    return [...seen.values()].filter((issue) => issue !== undefined);
   };
   const hasChildren = (): boolean => {
     if (props.children == null) return false;
@@ -226,7 +210,7 @@ export function FieldError(props: FieldErrorProps): HellaNode {
       data-slot="field-error"
       hidden="${() => !hasContent()}"
       class="${
-        cn(error, props.class)
+        cn("text-sm font-normal text-destructive", props.class)
       }"
     >${() => {
         if (props.children) {
@@ -235,7 +219,7 @@ export function FieldError(props: FieldErrorProps): HellaNode {
         const errors = unique();
         if (errors.length === 1) return errors[0]!.message;
         if (errors.length === 0) return null;
-        return html`<ul class="${errorList}">${errors.map((item) => item.message ? html`<li>${item.message}</li>` as HellaNode : null)}</ul>`;
+        return html`<ul class="ml-4 flex list-disc flex-col gap-1">${errors.map((item) => item.message ? html`<li>${item.message}</li>` as HellaNode : null)}</ul>`;
       }}</div>
   ` as HellaNode;
 }

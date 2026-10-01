@@ -3,14 +3,6 @@ import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/
 import type { HellaChildren, Placement } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const content = "relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95";
-
-const item = "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2";
-
-const icon = "size-4";
-
-const label = "px-2 py-1.5 text-xs text-muted-foreground";
-
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";
 
@@ -137,7 +129,7 @@ const checkIcon = (): JSX.Element => (
     stroke-linejoin="round"
     aria-hidden="true"
     class={
-      cn(icon)
+      cn("size-4")
     }
   >
     <path d="M20 6 9 17l-5-5" />
@@ -179,7 +171,7 @@ const chevronUpIcon = (): JSX.Element => (
     stroke-linejoin="round"
     aria-hidden="true"
     class={
-      cn(icon)
+      cn("size-4")
     }
   >
     <path d="m18 15-6-6-6 6" />
@@ -200,7 +192,7 @@ const clearIcon = (): JSX.Element => (
     stroke-linejoin="round"
     aria-hidden="true"
     class={
-      cn(icon)
+      cn("size-4")
     }
   >
     <path d="M18 6 6 18" />
@@ -352,7 +344,7 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
       data-side={side}
       data-align={align}
       class={
-        cn(content, props.class)
+        cn("relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", props.class)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
@@ -361,7 +353,7 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
         if (props.onDismiss) {
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
         }
-        wirings.push(menuTypeahead(node, () => optionEntries(node), (item) => highlightOption(node, item.node)));
+        wirings.push(menuTypeahead(node, () => optionEntries(node), (entry) => highlightOption(node, entry.node)));
         const onKey = listKeyDown(node, props.onClose);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -494,7 +486,7 @@ export function SelectItem(props: SelectItemProps): JSX.Element {
       data-disabled={props.disabled ? "true" : undefined}
       aria-disabled={props.disabled ? "true" : undefined}
       class={
-        cn(item, props.class)
+        cn("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2", props.class)
       }
       on:click={() => {
         if (props.disabled) return;
@@ -524,7 +516,7 @@ export function SelectLabel(props: SelectLabelProps): JSX.Element {
     <div
       data-slot="select-label"
       class={
-        cn(label, props.class)
+        cn("px-2 py-1.5 text-xs text-muted-foreground", props.class)
       }
     >
       {() => props.children}

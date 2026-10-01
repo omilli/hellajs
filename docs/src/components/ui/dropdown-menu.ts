@@ -606,7 +606,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps): HellaNode 
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (item) => item.node.focus()));
+        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
         const onKey = menuKeyDown(props.onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -966,7 +966,7 @@ export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): Hell
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (item) => item.node.focus()));
+        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
         const onKey = menuKeyDown(props.onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));

@@ -17,14 +17,6 @@ const linkSizes = {
   "icon-lg": "size-10",
 };
 
-const previous = "gap-1 px-2.5 sm:pl-2.5";
-
-const next = "gap-1 px-2.5 sm:pr-2.5";
-
-const hiddenUntilSm = "hidden sm:block";
-
-const srOnly = "sr-only";
-
 interface PaginationProps {
   children?: HellaChildren;
   class?: string;
@@ -128,7 +120,7 @@ export function PaginationPrevious(props: PaginationNavProps): JSX.Element {
           "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
           props.isActive ? linkVariants.outline : linkVariants.ghost,
           linkSizes.default,
-          previous,
+          "gap-1 px-2.5 sm:pl-2.5",
           props.class,
         )
       }
@@ -147,7 +139,7 @@ export function PaginationPrevious(props: PaginationNavProps): JSX.Element {
       >
         <path d="m15 18-6-6 6-6" />
       </svg>
-      <span class={hiddenUntilSm}>Previous</span>
+      <span class="hidden sm:block">Previous</span>
     </a>
   );
 }
@@ -165,13 +157,13 @@ export function PaginationNext(props: PaginationNavProps): JSX.Element {
           "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
           props.isActive ? linkVariants.outline : linkVariants.ghost,
           linkSizes.default,
-          next,
+          "gap-1 px-2.5 sm:pr-2.5",
           props.class,
         )
       }
       on:click={() => props.onclick?.()}
     >
-      <span class={hiddenUntilSm}>Next</span>
+      <span class="hidden sm:block">Next</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -218,7 +210,7 @@ export function PaginationEllipsis(props: PaginationEllipsisProps): JSX.Element 
         <circle cx="19" cy="12" r="1" />
         <circle cx="5" cy="12" r="1" />
       </svg>
-      <span class={srOnly}>More pages</span>
+      <span class="sr-only">More pages</span>
     </span>
   );
 }

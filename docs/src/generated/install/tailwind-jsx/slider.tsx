@@ -2,10 +2,6 @@ import { signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const track = "relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5";
-
-const thumb = "block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50";
-
 interface SliderProps {
   /** The thumb values. A static array seeds the internal signal; an accessor makes the slider controlled, so writes report through `onValueChange` only. */
   value?: number[] | (() => number[]);
@@ -115,9 +111,9 @@ export default function Slider(props: SliderProps): JSX.Element {
         wirings.push(onDrag(node, {
           onStart: (event) => {
             if (props.disabled) return;
-            const track = node.querySelector<HTMLElement>("[data-slot='slider-track']");
-            if (!track) return;
-            const rect = track.getBoundingClientRect();
+            const trackEl = node.querySelector<HTMLElement>("[data-slot='slider-track']");
+            if (!trackEl) return;
+            const rect = trackEl.getBoundingClientRect();
             const pointer = pointerValue(event.clientX, event.clientY, rect);
             if (Number.isNaN(pointer)) return;
             trackRect = rect;
@@ -150,7 +146,7 @@ export default function Slider(props: SliderProps): JSX.Element {
       }}
     >
       <span data-slot="slider-track" data-orientation={orientation} class={
-        cn(track)
+        cn("relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5")
       }>
         <span data-slot="slider-range" data-orientation={orientation} style={rangeStyle} class={
           cn("absolute bg-primary data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full")
@@ -177,7 +173,7 @@ export default function Slider(props: SliderProps): JSX.Element {
             props.onValueCommit?.(values());
           }}
           class={
-            cn(thumb)
+            cn("block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50")
           }
         />
       ))}

@@ -1,8 +1,6 @@
 import type { HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const caption = "mt-4 text-sm text-muted-foreground";
-
 interface TableProps {
   children?: HellaChildren;
   class?: string;
@@ -130,7 +128,7 @@ export function TableCaption(props: TablePartProps): JSX.Element {
     <caption
       data-slot="table-caption"
       class={
-        cn(caption, props.class)
+        cn("mt-4 text-sm text-muted-foreground", props.class)
       }
     >
       {props.children}

@@ -3,18 +3,6 @@ import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
 import type { HellaChild, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const input = "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50";
-
-const list = "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto";
-
-const group = "overflow-hidden p-1 text-foreground [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:py-1.5 [&_[data-slot='command-group-heading']]:text-xs [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground";
-
-const item = "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground";
-
-const shortcut = "ml-auto text-xs tracking-widest text-muted-foreground";
-
-const palette = "[&_[data-slot='command-input-wrapper']]:h-12 [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground [&_[data-slot='command-group']]:px-2 [&_[data-slot='command-group']:not([hidden])~[data-slot='command-group']]:pt-0 [&_[data-slot='command-input-wrapper']_svg]:h-5 [&_[data-slot='command-input-wrapper']_svg]:w-5 [&_[data-slot='command-input']]:h-12 [&_[data-slot='command-item']]:px-2 [&_[data-slot='command-item']]:py-3 [&_[data-slot='command-item']_svg]:h-5 [&_[data-slot='command-item']_svg]:w-5";
-
 export interface CommandItemData {
   value: string;
   label: string;
@@ -28,7 +16,6 @@ export interface CommandItemData {
 const MATCH_BASE = 1000;
 const BOUNDARY_BONUS = 500;
 const KEYWORD_BONUS = 100;
-const BOUNDARY_CHARS = " -_/.(";
 
 interface RankedItem {
   item: CommandItemData;
@@ -36,7 +23,7 @@ interface RankedItem {
 }
 
 const boundaryStart = (haystack: string, at: number): boolean =>
-  at === 0 || BOUNDARY_CHARS.includes(haystack.charAt(at - 1));
+  at === 0 || " -_/.(".includes(haystack.charAt(at - 1));
 
 const scoreCandidate = (haystack: string, needle: string): number => {
   const at = haystack.indexOf(needle);
@@ -44,13 +31,13 @@ const scoreCandidate = (haystack: string, needle: string): number => {
   return MATCH_BASE - at + (boundaryStart(haystack, at) ? BOUNDARY_BONUS : 0);
 };
 
-const scoreItem = (item: CommandItemData, needle: string): number => {
+const scoreItem = (candidate: CommandItemData, needle: string): number => {
   let best = Math.max(
-    scoreCandidate(item.label.toLowerCase(), needle),
-    scoreCandidate(item.value.toLowerCase(), needle),
+    scoreCandidate(candidate.label.toLowerCase(), needle),
+    scoreCandidate(candidate.value.toLowerCase(), needle),
   );
   let hits = 0;
-  const keywords = item.keywords ?? [];
+  const keywords = candidate.keywords ?? [];
   let i = 0;
   while (i < keywords.length) {
     const score = scoreCandidate(keywords[i]!.toLowerCase(), needle);
@@ -120,7 +107,7 @@ export function CommandInput(props: CommandInputProps): JSX.Element {
         autocomplete="off"
         spellcheck="false"
         class={
-          cn(input)
+          cn("flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50")
         }
         on:input={(e) => props.onInput?.((e.target as HTMLInputElement).value)}
         on:keydown={(e) => props.onKeydown?.(e as KeyboardEvent)}
@@ -143,7 +130,7 @@ export function CommandList(props: CommandListProps): JSX.Element {
       data-slot="command-list"
       aria-label="Suggestions"
       class={
-        cn(list, props.class)
+        cn("max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto", props.class)
       }
     >
       {() => props.body?.()}
@@ -185,7 +172,7 @@ export function CommandGroup(props: CommandGroupProps): JSX.Element {
       data-slot="command-group"
       hidden={isHidden}
       class={
-        cn(group, props.class)
+        cn("overflow-hidden p-1 text-foreground [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:py-1.5 [&_[data-slot='command-group-heading']]:text-xs [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground", props.class)
       }
     >
       {props.heading !== undefined && (
@@ -241,7 +228,7 @@ export function CommandItem(props: CommandItemProps): JSX.Element {
       data-selected={() => (props.active?.() ? "true" : undefined)}
       data-disabled={props.disabled ? "true" : undefined}
       class={
-        cn(item, props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", props.class)
       }
       on:click={() => {
         if (props.disabled) return;
@@ -263,7 +250,7 @@ export function CommandShortcut(props: CommandShortcutProps): JSX.Element {
     <span
       data-slot="command-shortcut"
       class={
-        cn(shortcut, props.class)
+        cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
       }
     >
       {() => props.children}
@@ -451,7 +438,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
             <div
               data-slot="command"
               class={
-                cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", palette)
+                cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", "[&_[data-slot='command-input-wrapper']]:h-12 [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground [&_[data-slot='command-group']]:px-2 [&_[data-slot='command-group']:not([hidden])~[data-slot='command-group']]:pt-0 [&_[data-slot='command-input-wrapper']_svg]:h-5 [&_[data-slot='command-input-wrapper']_svg]:w-5 [&_[data-slot='command-input']]:h-12 [&_[data-slot='command-item']]:px-2 [&_[data-slot='command-item']]:py-3 [&_[data-slot='command-item']_svg]:h-5 [&_[data-slot='command-item']_svg]:w-5")
               }
             >
               {() => props.children}
@@ -481,18 +468,18 @@ export default function Command(props: CommandProps): JSX.Element {
   };
 
   const select = (next: number): void => {
-    const item = ranked()[next];
-    if (item === undefined) return;
-    if (props.value !== undefined) props.onValueChange?.(item.value);
+    const entry = ranked()[next];
+    if (entry === undefined) return;
+    if (props.value !== undefined) props.onValueChange?.(entry.value);
     else activeIndex(next);
   };
 
   const step = (delta: number): void => {
-    const list = ranked();
-    const len = list.length;
+    const rankedList = ranked();
+    const len = rankedList.length;
     if (len === 0) return;
     const current = activeValue();
-    let at = current === undefined ? -1 : list.findIndex((entry) => entry.value === current);
+    let at = current === undefined ? -1 : rankedList.findIndex((entry) => entry.value === current);
     if (at === -1 && delta === -1) at = len;
     let hops = 0;
     let next = at;
@@ -503,7 +490,7 @@ export default function Command(props: CommandProps): JSX.Element {
         if (next < 0 || next >= len) return;
       }
       hops++;
-      if (!list[next]!.disabled) {
+      if (!rankedList[next]!.disabled) {
         select(next);
         return;
       }
@@ -511,21 +498,21 @@ export default function Command(props: CommandProps): JSX.Element {
   };
 
   const jump = (edge: "first" | "last"): void => {
-    const list = ranked();
+    const rankedList = ranked();
     if (props.value !== undefined) {
-      let i = edge === "first" ? 0 : list.length - 1;
-      while (i >= 0 && i < list.length) {
-        if (!list[i]!.disabled) {
-          props.onValueChange?.(list[i]!.value);
+      let i = edge === "first" ? 0 : rankedList.length - 1;
+      while (i >= 0 && i < rankedList.length) {
+        if (!rankedList[i]!.disabled) {
+          props.onValueChange?.(rankedList[i]!.value);
           return;
         }
         i = edge === "first" ? i + 1 : i - 1;
       }
       return;
     }
-    let i = edge === "first" ? 0 : list.length - 1;
-    while (i >= 0 && i < list.length) {
-      if (!list[i]!.disabled) {
+    let i = edge === "first" ? 0 : rankedList.length - 1;
+    while (i >= 0 && i < rankedList.length) {
+      if (!rankedList[i]!.disabled) {
         activeIndex(i);
         return;
       }
@@ -535,7 +522,7 @@ export default function Command(props: CommandProps): JSX.Element {
 
   const commit = (): void => {
     const current = activeValue();
-    const entry = ranked().find((item) => item.value === current);
+    const entry = ranked().find((candidate) => candidate.value === current);
     if (entry === undefined || entry.disabled) return;
     entry.onSelect?.();
     props.onValueChange?.(entry.value);
@@ -605,15 +592,15 @@ export default function Command(props: CommandProps): JSX.Element {
   );
 
   const renderBody = (): HellaChild | HellaChild[] => {
-    const list = ranked();
-    if (list.length === 0) return <CommandEmpty>No results found.</CommandEmpty>;
+    const rankedList = ranked();
+    if (rankedList.length === 0) return <CommandEmpty>No results found.</CommandEmpty>;
     const nodes: HellaChild[] = [];
     const groups = orderedGroups(items);
     let g = 0;
     const gLen = groups.length;
     while (g < gLen) {
       const key = groups[g]!;
-      const members = list.filter((entry) => (entry.group ?? "") === key);
+      const members = rankedList.filter((entry) => (entry.group ?? "") === key);
       if (key === "") {
         nodes.push(...members.map((entry) => renderItem(entry)));
       } else {

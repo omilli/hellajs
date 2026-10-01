@@ -317,7 +317,7 @@ interface CalendarProps {
   onSelect?: (selected: CalendarSelection) => void;
   /** Controlled visible-month accessor; when provided it snaps the view back on every change, winning over internal navigation. */
   month?: () => Date;
-  onMonthChange?: (month: Date) => void;
+  onMonthChange?: (anchor: Date) => void;
   /** Initial visible month; defaults to the current month. */
   defaultMonth?: Date;
   /** Predicate blocking selection and keyboard activation; outside days are always disabled. */
@@ -361,8 +361,8 @@ const FIXED_WEEKS = 6;
 /** Fixed en-US labels keep caption/weekday text deterministic across hosts; all date math stays in local fields (no timezone conversion). */
 const LOCALE = "en-US";
 
-function daysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
+function daysInMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex + 1, 0).getDate();
 }
 
 function startOfMonth(date: Date): Date {
@@ -388,9 +388,9 @@ function isSameMonth(a: Date, b: Date): boolean {
 
 /** ISO `yyyy-mm-dd` key from local date fields; lexicographically ordered, so ranges compare as strings. */
 function dayKey(date: Date): string {
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
+  const paddedMonth = `${date.getMonth() + 1}`.padStart(2, "0");
+  const paddedDay = `${date.getDate()}`.padStart(2, "0");
+  return `${date.getFullYear()}-${paddedMonth}-${paddedDay}`;
 }
 
 function startOfWeek(date: Date, weekStartsOn: number): Date {
@@ -421,10 +421,10 @@ interface CalendarCell {
   disabled: boolean;
 }
 
-function buildMonth(month: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined, epoch: number): CalendarCell[][] {
-  const monthStart = startOfMonth(month);
+function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined, epoch: number): CalendarCell[][] {
+  const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, weekStartsOn);
-  const days = daysInMonth(month.getFullYear(), month.getMonth());
+  const days = daysInMonth(anchor.getFullYear(), anchor.getMonth());
   const offset = (monthStart.getDay() - weekStartsOn + WEEKDAY_COUNT) % WEEKDAY_COUNT;
   const weeks = fixedWeeks ? FIXED_WEEKS : Math.ceil((offset + days) / WEEKDAY_COUNT);
   const today = new Date();
@@ -435,7 +435,7 @@ function buildMonth(month: Date, weekStartsOn: number, fixedWeeks: boolean, disa
     let d = 0;
     while (d < WEEKDAY_COUNT) {
       const date = addDays(gridStart, w * WEEKDAY_COUNT + d);
-      const outside = !isSameMonth(date, month);
+      const outside = !isSameMonth(date, anchor);
       row.push({
         id: `${epoch}:${dayKey(date)}`,
         key: dayKey(date),
@@ -674,7 +674,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
   const isSelected = (date: Date): boolean => {
     const value = selection();
     if (mode === "single") return value !== undefined && isSameDay(value as Date, date);
-    if (mode === "multiple") return (value as Date[]).some((day) => isSameDay(day, date));
+    if (mode === "multiple") return (value as Date[]).some((dateValue) => isSameDay(dateValue, date));
     const range = (value as CalendarRange) ?? {};
     if (range.from === undefined) return false;
     if (range.to === undefined) return isSameDay(range.from, date);
@@ -708,7 +708,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
     if (mode === "single") {
       props.onSelect?.(value === undefined ? undefined : new Date(value as Date));
     } else if (mode === "multiple") {
-      props.onSelect?.((value as Date[]).map((day) => new Date(day)));
+      props.onSelect?.((value as Date[]).map((dateValue) => new Date(dateValue)));
     } else {
       const range = (value as CalendarRange) ?? {};
       props.onSelect?.({
@@ -724,7 +724,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
       selection(new Date(cell.date));
     } else if (mode === "multiple") {
       const current = selection() as Date[];
-      const at = current.findIndex((day) => isSameDay(day, cell.date));
+      const at = current.findIndex((date) => isSameDay(date, cell.date));
       selection(at === -1 ? [...current, new Date(cell.date)] : current.filter((_, i) => i !== at));
     } else {
       const range = (selection() as CalendarRange) ?? {};

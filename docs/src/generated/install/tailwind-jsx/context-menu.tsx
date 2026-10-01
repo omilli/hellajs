@@ -3,27 +3,14 @@ import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/
 import type { HellaChildren, Placement } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-const content = "z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95";
-
-const item = "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!";
-
-const icon = "size-4";
-
-const label = "px-2 py-1.5 text-sm font-medium text-foreground data-[inset]:pl-8";
-
-const shortcut = "ml-auto text-xs tracking-widest text-muted-foreground";
-
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";
 
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
-/** Document-level activation event: item selection closes every open menu layer (Radix close-on-select). */
-const SELECT_EVENT = "hella:menu-select";
-
 const closeAllMenus = (): void => {
-  document.dispatchEvent(new CustomEvent(SELECT_EVENT));
+  document.dispatchEvent(new CustomEvent("hella:menu-select"));
 };
 
 interface MenuEntry {
@@ -153,7 +140,7 @@ const checkIcon = (): JSX.Element => (
     stroke-linejoin="round"
     aria-hidden="true"
     class={
-      cn(icon)
+      cn("size-4")
     }
   >
     <path d="M20 6 9 17l-5-5" />
@@ -265,7 +252,7 @@ export function ContextMenuContent(props: ContextMenuContentProps): JSX.Element 
       data-side={side}
       data-align={align}
       class={
-        cn(content, props.class)
+        cn("z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", props.class)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
@@ -274,10 +261,10 @@ export function ContextMenuContent(props: ContextMenuContentProps): JSX.Element 
         if (props.onDismiss) {
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
           const onSelect = (): void => props.onDismiss?.();
-          document.addEventListener(SELECT_EVENT, onSelect);
-          wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
+          document.addEventListener("hella:menu-select", onSelect);
+          wirings.push(() => document.removeEventListener("hella:menu-select", onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (item) => item.node.focus()));
+        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
         const onKey = menuKeyDown(props.onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -343,7 +330,7 @@ export function ContextMenuItem(props: ContextMenuItemProps): JSX.Element {
       data-disabled={props.disabled ? "true" : undefined}
       aria-disabled={props.disabled ? "true" : undefined}
       class={
-        cn(item, props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!", props.class)
       }
       on:click={() => {
         if (props.disabled) return;
@@ -499,7 +486,7 @@ export function ContextMenuLabel(props: ContextMenuLabelProps): JSX.Element {
       data-slot="context-menu-label"
       data-inset={props.inset ? "true" : undefined}
       class={
-        cn(label, props.class)
+        cn("px-2 py-1.5 text-sm font-medium text-foreground data-[inset]:pl-8", props.class)
       }
     >
       {() => props.children}
@@ -524,7 +511,7 @@ export function ContextMenuShortcut(props: ContextMenuPartProps): JSX.Element {
     <span
       data-slot="context-menu-shortcut"
       class={
-        cn(shortcut, props.class)
+        cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
       }
     >
       {() => props.children}
@@ -647,10 +634,10 @@ export function ContextMenuSubContent(props: ContextMenuSubContentProps): JSX.El
           // level, an outside pointerdown closes the sub before the parent.
           wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
           const onSelect = (): void => props.onDismiss?.();
-          document.addEventListener(SELECT_EVENT, onSelect);
-          wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
+          document.addEventListener("hella:menu-select", onSelect);
+          wirings.push(() => document.removeEventListener("hella:menu-select", onSelect));
         }
-        wirings.push(menuTypeahead(node, () => menuEntries(node), (item) => item.node.focus()));
+        wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
         const onKey = menuKeyDown(props.onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));

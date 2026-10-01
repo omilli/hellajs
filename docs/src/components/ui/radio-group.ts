@@ -194,10 +194,10 @@ export default function RadioGroup(props: RadioGroupProps): HellaNode {
           selector: "[role='radio']:not(:disabled)",
         }));
         const onFocusIn = (event: Event) => {
-          const item = event.target as HTMLElement;
-          if (item.getAttribute("role") !== "radio") return;
-          const value = item.getAttribute("value") ?? "";
-          if (item.hasAttribute("disabled")) return;
+          const radioEl = event.target as HTMLElement;
+          if (radioEl.getAttribute("role") !== "radio") return;
+          const value = radioEl.getAttribute("value") ?? "";
+          if (radioEl.hasAttribute("disabled")) return;
           select(value);
         };
         node.addEventListener("focusin", onFocusIn);

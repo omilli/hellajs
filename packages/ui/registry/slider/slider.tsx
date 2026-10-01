@@ -119,9 +119,9 @@ export default function Slider(props: SliderProps): JSX.Element {
         wirings.push(onDrag(node, {
           onStart: (event) => {
             if (props.disabled) return;
-            const track = node.querySelector<HTMLElement>("[data-slot='slider-track']");
-            if (!track) return;
-            const rect = track.getBoundingClientRect();
+            const trackEl = node.querySelector<HTMLElement>("[data-slot='slider-track']");
+            if (!trackEl) return;
+            const rect = trackEl.getBoundingClientRect();
             const pointer = pointerValue(event.clientX, event.clientY, rect);
             if (Number.isNaN(pointer)) return;
             trackRect = rect;

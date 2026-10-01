@@ -319,7 +319,7 @@ describe("applyStyleVariant", () => {
     ].join("\n"));
   });
 
-  test("tailwind pass keeps a string const referenced outside the marker regions", () => {
+  test("tailwind pass inlines a string const referenced outside the marker regions", () => {
     const referencing = [
       "import { helper } from \"@hellajs/dom\";",
       "",
@@ -343,19 +343,234 @@ describe("applyStyleVariant", () => {
       "import { helper } from \"@hellajs/dom\";",
       "import { cn } from \"./cn.js\";",
       "",
-      "const base = \"x-base\";",
-      "",
-      "const wrapper = (cls: string) => helper(base, cls);",
+      "const wrapper = (cls: string) => helper(\"x-base\", cls);",
       "",
       "export default function X(p: P) {",
       "  return html`<p class=\"${",
       "    cn(",
-      "      base,",
+      "      \"x-base\",",
       "      p.class,",
       "    )",
       "  }\"></p>`;",
       "}",
     ].join("\n"));
+  });
+
+  test("tailwind pass keeps a string const whose name binds a local outside the marker regions", () => {
+    const shadowed = [
+      "import { helper } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "export default function X(p: P) {",
+      "  const base = p.class ?? \"\";",
+      "  return html`<p class=\"${",
+      "    // @hella:compose",
+      "    [",
+      "      base,",
+      "      p.class,",
+      "    ]",
+      "    // @hella:end",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n");
+    const out = applyStyleVariant(shadowed, tailwindModule, "tailwind");
+    expect(out).toContain("const base = \"x-base\";");
+    expect(out).toContain("      base,");
+    expect(out).toContain("const base = p.class ?? \"\";");
+  });
+
+  test("a comment mentioning the const name stays verbatim while the const inlines", () => {
+    const commented = [
+      "import { html } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "// The base class resolves through cn below.",
+      "interface P { class?: string }",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    // @hella:compose",
+      "    [base, p.class]",
+      "    // @hella:end",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n");
+    const out = applyStyleVariant(commented, tailwindModule, "tailwind");
+    expect(out).toContain("// The base class resolves through cn below.");
+    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out.includes("const base")).toBe(false);
+  });
+
+  test("an interface member sharing the const name stays verbatim while the const inlines", () => {
+    const propTyped = [
+      "import { html } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "interface P {",
+      "  base?: string;",
+      "  class?: string;",
+      "}",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    // @hella:compose",
+      "    [base, p.class]",
+      "    // @hella:end",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n");
+    const out = applyStyleVariant(propTyped, tailwindModule, "tailwind");
+    expect(out).toContain("  base?: string;");
+    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out.includes("const base")).toBe(false);
+  });
+
+  test("a JSX tag sharing the const name stays verbatim while the const inlines", () => {
+    const tagged = [
+      "import { html } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<base class=\"${",
+      "    // @hella:compose",
+      "    [base, p.class]",
+      "    // @hella:end",
+      "  }\"></base>`;",
+      "}",
+    ].join("\n");
+    const out = applyStyleVariant(tagged, tailwindModule, "tailwind");
+    expect(out).toContain("<base class=\"${");
+    expect(out).toContain("</base>");
+    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out.includes("const base")).toBe(false);
+  });
+
+  test("string content sharing the const name stays verbatim while the const inlines", () => {
+    const quoted = [
+      "import { html } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "export default function X(p: P) {",
+      "  const label = \"the base class\";",
+      "  return html`<p title=\"${label}\" class=\"${",
+      "    // @hella:compose",
+      "    [base, p.class]",
+      "    // @hella:end",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n");
+    const out = applyStyleVariant(quoted, tailwindModule, "tailwind");
+    expect(out).toContain("title=\"${label}\"");
+    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out.includes("const base")).toBe(false);
+  });
+
+  test("an import line sharing the const name stays verbatim while the const inlines", () => {
+    const imported = [
+      "import { base } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    // @hella:compose",
+      "    [base, p.class]",
+      "    // @hella:end",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n");
+    const out = applyStyleVariant(imported, tailwindModule, "tailwind");
+    expect(out).toContain("import { base } from \"@hellajs/dom\";");
+    expect(out).toContain("cn(\"x-base\", p.class)");
+    expect(out.includes("const base")).toBe(false);
+  });
+
+  test("a static class attribute collapses to the literal in both flavors", () => {
+    const jsxAttr = [
+      "import type { HellaChildren } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "interface P { children?: HellaChildren }",
+      "",
+      "export default function X(p: P) {",
+      "  return (",
+      "    <>",
+      "      <span class={",
+      "        // @hella:compose",
+      "        [srOnly, p.class]",
+      "        // @hella:end",
+      "      }>{p.children}</span>",
+      "      <span class={srOnly}>{p.children}</span>",
+      "    </>",
+      "  );",
+      "}",
+    ].join("\n");
+    const srModule = [
+      "export const srOnly = \"sr-only\";",
+      "",
+    ].join("\n");
+    const jsxOut = applyStyleVariant(jsxAttr, srModule, "tailwind");
+    expect(jsxOut).toContain("<span class=\"sr-only\">");
+    expect(jsxOut.includes("srOnly")).toBe(false);
+    const htmlAttr = [
+      "import { html } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "export default function X() {",
+      "  return html`<span class=\"${",
+      "    // @hella:compose",
+      "    [srOnly]",
+      "    // @hella:end",
+      "  }\"><span class=\"${srOnly}\">More</span></span>` as HellaNode;",
+      "}",
+    ].join("\n");
+    const htmlOut = applyStyleVariant(htmlAttr, srModule, "tailwind");
+    expect(htmlOut).toContain("<span class=\"sr-only\">More</span>");
+    expect(htmlOut.includes("srOnly")).toBe(false);
+  });
+
+  test("a canonical-level runtime constant inlines at its references and drops with its comment", () => {
+    const runtime = [
+      "import { html } from \"@hellajs/dom\";",
+      "",
+      "// @hella:styles",
+      "// @hella:end",
+      "",
+      "/** Document-level activation event. */",
+      "const ACTIVATE_EVENT = \"x:activate\";",
+      "",
+      "export function fire() {",
+      "  dispatch(new CustomEvent(ACTIVATE_EVENT, { detail: true }));",
+      "}",
+      "",
+      "export default function X(p: P) {",
+      "  return html`<p class=\"${",
+      "    // @hella:compose",
+      "    [base, p.class]",
+      "    // @hella:end",
+      "  }\"></p>`;",
+      "}",
+    ].join("\n");
+    const out = applyStyleVariant(runtime, tailwindModule, "tailwind");
+    expect(out).toContain("new CustomEvent(\"x:activate\", { detail: true })");
+    expect(out.includes("ACTIVATE_EVENT")).toBe(false);
+    expect(out.includes("Document-level activation event")).toBe(false);
+    expect(out).toContain("cn(\"x-base\", p.class)");
   });
 
   test("a string-only module leaves no styles residue or blank-line runs", () => {
