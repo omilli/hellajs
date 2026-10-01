@@ -18,7 +18,7 @@ The html-format (`--format html`) works the same way.
 
 ```js
 html`<main>
-  <${Progress} value=${() => uploaded()} />
+  <${Progress} value=${uploaded} />
 </main>`
 ```
 
@@ -34,5 +34,5 @@ import Progress from './components/progress';
 
 const scanning = signal(null);
 
-const Scanner = () => <Progress value={() => scanning()} />;
+const Scanner = () => <Progress value={scanning} />;
 ```

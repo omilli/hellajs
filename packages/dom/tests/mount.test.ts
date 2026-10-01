@@ -98,7 +98,7 @@ describe("dom", () => {
 
       mount(html`
         <div>
-          <span id="nullable">${() => value()}</span>
+          <span id="nullable">${value}</span>
         </div>
       `);
 

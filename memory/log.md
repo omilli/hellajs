@@ -2,6 +2,8 @@
 
 ## 2026-10-01
 * **Merge**: Renumbered 235-canonical-twin-rename-count-assertions to 236 on merge of plans/ui/code/tailwind-inline-all-strings — 235 was already taken by narrow-map-iterator-destructuring
+* **Creation**: Added concept [237](entries/237.md) (type: decision).
+* **Update**: Added 237 (bare {fn} house style); refreshed 041 citation after eradicating {() => fn()} wrappers repo-wide
 
 ## 2026-09-30
 * **Creation**: Added concept [225](entries/225.md) (type: decision).

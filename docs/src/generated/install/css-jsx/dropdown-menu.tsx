@@ -723,7 +723,7 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): 
       class={
         [checkItem, props.class]
       }
-      on:click={() => toggle()}
+      on:click={toggle}
     >
       <span
         data-slot="dropdown-menu-indicator"

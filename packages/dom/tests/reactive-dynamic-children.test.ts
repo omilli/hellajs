@@ -24,7 +24,7 @@ describe("dom", () => {
 
       mount(html`
         <div id="host">
-          ${() => toggle()}
+          ${toggle}
         </div>
       `);
 
@@ -49,7 +49,7 @@ describe("dom", () => {
 
       mount(html`
         <div id="host">
-          ${() => toggle()}
+          ${toggle}
         </div>
       `);
 

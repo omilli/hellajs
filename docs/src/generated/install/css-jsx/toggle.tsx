@@ -131,7 +131,7 @@ export default function Toggle(props: ToggleProps): JSX.Element {
       class={
         [toggleVariants({ variant: props.variant, size: props.size }), props.class]
       }
-      on:click={() => toggle()}
+      on:click={toggle}
     >
       {props.children}
     </button>

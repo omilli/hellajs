@@ -61,7 +61,7 @@ const Controlled = () => (
       { value: 'day', label: 'Day' },
       { value: 'week', label: 'Week' },
     ]}
-    value={() => view()}
+    value={view}
     onValueChange={(next) => view(next)}
   />
 );
@@ -96,7 +96,7 @@ const active = signal(false);
 const Custom = () => (
   <ToggleGroupItem
     value="custom"
-    pressed={() => active()}
+    pressed={active}
     onSelect={() => active(!active())}
     variant="outline"
   >

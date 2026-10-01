@@ -250,7 +250,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps): HellaNode 
       tabindex="-1"
       id="${props.id}"
       data-slot="dropdown-menu-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${
@@ -378,7 +378,7 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): 
       class="${
         cn("relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
       }"
-      on:click="${() => toggle()}"
+      on:click="${toggle}"
     >
       <span
         data-slot="dropdown-menu-indicator"
@@ -531,7 +531,7 @@ export function DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps): Hell
       role="menuitem"
       tabindex="-1"
       data-slot="dropdown-menu-sub-trigger"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-inset="${props.inset ? "true" : undefined}"
       aria-haspopup="menu"
       aria-expanded="${() => (state() === "open" ? "true" : "false")}"
@@ -613,7 +613,7 @@ export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): Hell
       role="menu"
       tabindex="-1"
       data-slot="dropdown-menu-sub-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${

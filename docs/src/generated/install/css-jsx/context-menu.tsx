@@ -657,7 +657,7 @@ export function ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps): JS
       class={
         [checkItem, props.class]
       }
-      on:click={() => toggle()}
+      on:click={toggle}
     >
       <span
         data-slot="context-menu-indicator"

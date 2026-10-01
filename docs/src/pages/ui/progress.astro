@@ -7,7 +7,7 @@ import ProgressContent from "@ui/concepts/progress.mdx";
 const title = "Progress";
 const description = "Interactive Progress demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
-const indeterminateCode = `<Progress value={() => scanning()} />`;
+const indeterminateCode = `<Progress value={scanning} />`;
 ---
 
 <MainLayout frontmatter={{ title, description }}>
@@ -29,10 +29,10 @@ const indeterminateCode = `<Progress value={() => scanning()} />`;
   const uploaded = signal(40);
   const step = () => uploaded(uploaded() >= 100 ? 0 : uploaded() + 20);
   mount(html`<div class="flex flex-col gap-2">
-    <${Progress} value=${() => uploaded()} />
-    <button class="w-fit rounded-md border px-2 py-1 text-xs" on:click=${step}>Advance upload (${() => uploaded()}%)</button>
+    <${Progress} value=${uploaded} />
+    <button class="w-fit rounded-md border px-2 py-1 text-xs" on:click=${step}>Advance upload (${uploaded}%)</button>
   </div>`, document.getElementById("demo")!);
 
   const scanning = signal(null);
-  mount(html`<${Progress} value=${() => scanning()} />`, document.getElementById("demo-indeterminate")!);
+  mount(html`<${Progress} value=${scanning} />`, document.getElementById("demo-indeterminate")!);
 </script>

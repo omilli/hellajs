@@ -436,7 +436,7 @@ export function SelectTrigger(props: SelectTriggerProps): HellaNode {
       type="button"
       data-slot="select-trigger"
       data-size="${props.size ?? "default"}"
-      data-state="${() => state()}"
+      data-state="${state}"
       aria-haspopup="listbox"
       aria-expanded="${() => (state() === "open" ? "true" : "false")}"
       aria-controls="${props.ariaControls}"
@@ -539,7 +539,7 @@ export function SelectContent(props: SelectContentProps): HellaNode {
       tabindex="-1"
       id="${props.id}"
       data-slot="select-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${

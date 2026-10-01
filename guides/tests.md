@@ -254,6 +254,7 @@ expect(document.getElementById("test")?.textContent).toBe("value");
 ## Code Style
 
 - Semicolons always; arrow functions for inline helpers.
+- Zero-arg fn/signal bindings bare in mounted templates (`${toggle}`, `show=${visible}`) — never `${() => toggle()}` (guides/code.md §Code Rules → Templates); a wrapper only when it consumes a param or composes.
 - `unknown` only — never `any`. No AAA pattern — interleave setup, action, assertion.
 - `test.each()` for parameterized tests; intentionally invalid inputs via `@ts-expect-error` or a cast to the accepted type (`42 as unknown as number[]`) — match the file's existing idiom; an invalid input against an overloaded function casts to one concrete overload shape (`undefined as unknown as DocOptions & { body: string }`) — a bare options-type cast fails TS2769 before the runtime throw runs.
 
@@ -299,6 +300,7 @@ Run this when holding a Tests file (`*.test.ts` / `*.spec.ts`). Each item is a y
 - [ ] `async` only when it `await`s; structure is act → await → assert
 
 **Anti-patterns (none present)**
+- [ ] No `{() => fn()}` wrapper bindings — zero-arg fns/signals bind bare (`${fn}`, `{fn}`)
 - [ ] No `jest.fn` / `jest.spyOn` / `vi.fn` — `mock()` from `bun:test` (eslint-enforced)
 - [ ] No `any` (`unknown` only)
 - [ ] No invalid-input call against an overloaded function cast to the bare options type — cast to one concrete overload shape (TS2769 otherwise)

@@ -98,7 +98,7 @@ describe("dom", () => {
 
     test("hydrates an ssr'd svg region without mismatch warnings and wires reactivity", () => {
       const width = signal("24");
-      const App = () => html`<svg id="icon" width=${() => width()}><clipPath id="clip"><rect width="10" /></clipPath></svg>`;
+      const App = () => html`<svg id="icon" width=${width}><clipPath id="clip"><rect width="10" /></clipPath></svg>`;
       const container = ssrContainer(html`<${App} />`);
       const clipBefore = container.querySelector("#clip")!;
 

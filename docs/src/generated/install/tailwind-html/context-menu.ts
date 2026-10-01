@@ -243,7 +243,7 @@ export function ContextMenuContent(props: ContextMenuContentProps): HellaNode {
       tabindex="-1"
       id="${props.id}"
       data-slot="context-menu-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${
@@ -366,7 +366,7 @@ export function ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps): He
       class="${
         cn("relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
       }"
-      on:click="${() => toggle()}"
+      on:click="${toggle}"
     >
       <span
         data-slot="context-menu-indicator"
@@ -519,7 +519,7 @@ export function ContextMenuSubTrigger(props: ContextMenuSubTriggerProps): HellaN
       role="menuitem"
       tabindex="-1"
       data-slot="context-menu-sub-trigger"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-inset="${props.inset ? "true" : undefined}"
       aria-haspopup="menu"
       aria-expanded="${() => (state() === "open" ? "true" : "false")}"
@@ -600,7 +600,7 @@ export function ContextMenuSubContent(props: ContextMenuSubContentProps): HellaN
       role="menu"
       tabindex="-1"
       data-slot="context-menu-sub-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${

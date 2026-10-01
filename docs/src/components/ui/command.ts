@@ -619,7 +619,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
         html`
           <div
             data-slot="dialog-overlay"
-            data-state="${() => state()}"
+            data-state="${state}"
             class="${
               [dialogOverlay]
             }"
@@ -632,7 +632,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
             aria-modal="true"
             aria-labelledby="${titleId}"
             aria-describedby="${props.description === undefined ? undefined : descriptionId}"
-            data-state="${() => state()}"
+            data-state="${state}"
             class="${
               [dialogPanel]
             }"
@@ -674,7 +674,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
             <button
               type="button"
               data-slot="dialog-close"
-              data-state="${() => state()}"
+              data-state="${state}"
               class="${
                 [dialogClose]
               }"

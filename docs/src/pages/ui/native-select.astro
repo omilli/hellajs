@@ -31,12 +31,12 @@ const compactCode = `<NativeSelect size="sm" ariaLabel="Compact select">
 
   const region = signal("eu");
   mount(html`<div class="flex items-center gap-3">
-    <${NativeSelect} value=${() => region()} onchange=${(v) => region(v)} ariaLabel="Region">
+    <${NativeSelect} value=${region} onchange=${(v) => region(v)} ariaLabel="Region">
       <option value="eu">EU Central</option>
       <option value="us">US East</option>
       <option value="ap" disabled>AP South (coming soon)</option>
     </${NativeSelect}>
-    <p class="demo-note">Echoing: ${() => region()}</p>
+    <p class="demo-note">Echoing: ${region}</p>
   </div>`, document.getElementById("demo")!);
 
   mount(html`<${NativeSelect} size="sm" ariaLabel="Compact select">

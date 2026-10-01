@@ -158,7 +158,7 @@ describe("dom", () => {
 
     test("reactive call attribute updates on signal change", () => {
       const active = signal("primary");
-      mount(html`<div id="reactive-call" class=${() => active()}>x</div>`);
+      mount(html`<div id="reactive-call" class=${active}>x</div>`);
       expect(document.getElementById("reactive-call")?.className).toBe("primary");
 
       active("secondary");

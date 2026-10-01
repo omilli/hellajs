@@ -410,7 +410,7 @@ export function ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps): JS
         [checkItem, props.class]
         // @hella:end
       }
-      on:click={() => toggle()}
+      on:click={toggle}
     >
       <span
         data-slot="context-menu-indicator"

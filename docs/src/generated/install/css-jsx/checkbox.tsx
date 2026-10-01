@@ -121,7 +121,7 @@ export default function Checkbox(props: CheckboxProps): JSX.Element {
       class={
         [base, props.class]
       }
-      on:click={() => toggle()}
+      on:click={toggle}
     >
       <span
         data-slot="checkbox-indicator"

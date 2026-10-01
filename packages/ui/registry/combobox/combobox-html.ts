@@ -704,7 +704,7 @@ export function ComboboxContent(props: ComboboxContentProps): HellaNode {
   return html`
     <div
       data-slot="combobox-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       data-chips="${props.chips ? "true" : undefined}"

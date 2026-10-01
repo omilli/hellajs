@@ -41,10 +41,10 @@ const horizontalCode = `<RadioGroup
         { value: "pro", label: "Pro" },
         { value: "team", label: "Team", disabled: true },
       ]}
-      value=${() => plan()}
+      value=${plan}
       onValueChange=${(next: string) => plan(next)}
     />
-    <p class="demo-note">Selected plan: ${() => plan()}. Arrow keys move focus and select, Home and End jump, and the disabled row is skipped.</p>
+    <p class="demo-note">Selected plan: ${plan}. Arrow keys move focus and select, Home and End jump, and the disabled row is skipped.</p>
   </div>`, document.getElementById("demo")!);
 
   mount(html`<div class="demo-stack">

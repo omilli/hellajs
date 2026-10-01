@@ -80,7 +80,7 @@ export function TooltipContent(props: TooltipContentProps): HellaNode {
       role="tooltip"
       id="${props.id}"
       data-slot="tooltip-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${

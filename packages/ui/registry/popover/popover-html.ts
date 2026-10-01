@@ -97,7 +97,7 @@ export function PopoverContent(props: PopoverContentProps): HellaNode {
       tabindex="-1"
       id="${props.id}"
       data-slot="popover-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${
@@ -237,7 +237,7 @@ export default function Popover(props: PopoverProps): HellaNode {
     <button
       type="button"
       data-slot="popover-trigger"
-      data-state="${() => state()}"
+      data-state="${state}"
       aria-expanded="${() => (isOpen() ? "true" : "false")}"
       aria-controls="${contentId}"
       class="${
@@ -245,7 +245,7 @@ export default function Popover(props: PopoverProps): HellaNode {
         [props.class]
         // @hella:end
       }"
-      on:click="${() => toggle()}"
+      on:click="${toggle}"
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}"

@@ -35,7 +35,7 @@ const indeterminateCode = `<label>
   mount(html`<div class="demo-stack">
     <label class="demo-row">
       <${Checkbox}
-        checked=${() => subscribed()}
+        checked=${subscribed}
         onCheckedChange=${(next: boolean) => subscribed(next)}
       /> Subscribe (${() => (subscribed() ? "on" : "off")})
     </label>

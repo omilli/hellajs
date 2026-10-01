@@ -8,10 +8,10 @@ const title = "Collapsible";
 const description = "Interactive Collapsible demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
 const partsCode = `<div>
-  <CollapsibleTrigger active={() => open()} onToggle={() => open(!open())} controls="region">
+  <CollapsibleTrigger active={open} onToggle={() => open(!open())} controls="region">
     Custom trigger
   </CollapsibleTrigger>
-  <CollapsibleContent id="region" active={() => open()}>Custom body</CollapsibleContent>
+  <CollapsibleContent id="region" active={open}>Custom body</CollapsibleContent>
 </div>`;
 ---
 
@@ -34,7 +34,7 @@ const partsCode = `<div>
   const open = signal(false);
   mount(html`<div class="demo-stack">
     <${Collapsible}
-      open=${() => open()}
+      open=${open}
       onOpenChange=${(next: boolean) => open(next)}
       trigger="What ships in the box?"
       content=${html`<p class="demo-note">One editable file per component, a theme entry, and no runtime dependency.</p>`}
@@ -44,8 +44,8 @@ const partsCode = `<div>
 
   const customOpen = signal(true);
   mount(html`<div class="demo-stack">
-    <${CollapsibleTrigger} active=${() => customOpen()} onToggle=${() => customOpen(!customOpen())} controls="manual-region">Can I edit the copied source?</${CollapsibleTrigger}>
-    <${CollapsibleContent} id="manual-region" active=${() => customOpen()}>
+    <${CollapsibleTrigger} active=${customOpen} onToggle=${() => customOpen(!customOpen())} controls="manual-region">Can I edit the copied source?</${CollapsibleTrigger}>
+    <${CollapsibleContent} id="manual-region" active=${customOpen}>
       <p class="demo-note">Yes. The file lands in your project and the style declarations ride inside it.</p>
     </${CollapsibleContent}>
   </div>`, document.getElementById("demo-parts")!);

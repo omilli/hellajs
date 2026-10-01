@@ -35,7 +35,7 @@ const neighborCode = `<div class="flex items-center gap-2">
   mount(html`<div class="demo-stack">
     <div class="demo-row">
       <${Toggle}
-        pressed=${() => bold()}
+        pressed=${bold}
         onPressedChange=${(next: boolean) => bold(next)}
       >Bold</${Toggle}>
       <${Toggle} variant="outline">Italic</${Toggle}>

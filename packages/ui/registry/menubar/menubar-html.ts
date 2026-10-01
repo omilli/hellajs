@@ -283,7 +283,7 @@ export function MenubarContent(props: MenubarContentProps): HellaNode {
       tabindex="-1"
       id="${props.id}"
       data-slot="menubar-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${
@@ -420,7 +420,7 @@ export function MenubarCheckboxItem(props: MenubarCheckboxItemProps): HellaNode 
         [checkItem, props.class]
         // @hella:end
       }"
-      on:click="${() => toggle()}"
+      on:click="${toggle}"
     >
       <span
         data-slot="menubar-indicator"
@@ -587,7 +587,7 @@ export function MenubarSubTrigger(props: MenubarSubTriggerProps): HellaNode {
       role="menuitem"
       tabindex="-1"
       data-slot="menubar-sub-trigger"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-inset="${props.inset ? "true" : undefined}"
       aria-haspopup="menu"
       aria-expanded="${() => (state() === "open" ? "true" : "false")}"
@@ -671,7 +671,7 @@ export function MenubarSubContent(props: MenubarSubContentProps): HellaNode {
       role="menu"
       tabindex="-1"
       data-slot="menubar-sub-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${

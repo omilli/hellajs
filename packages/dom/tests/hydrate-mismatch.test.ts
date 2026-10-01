@@ -46,7 +46,7 @@ describe("dom", () => {
 
     test("re-renders a hydrated reactive region through the proxy path when it resolves to an isDynamic component", () => {
       const toggle = signal<(() => void) | null>(null);
-      const App = () => html`<div id="host">${() => toggle()}</div>`;
+      const App = () => html`<div id="host">${toggle}</div>`;
       const container = ssrContainer(html`<${App} />`);
       hydrate(html`<${App} />`, container);
 

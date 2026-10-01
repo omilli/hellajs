@@ -39,7 +39,7 @@ describe("dom", () => {
 
       mount(html`
         <div id="container" e:click=${clickHandler}>
-          ${() => count()}
+          ${count}
         </div>
       `);
 

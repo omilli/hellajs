@@ -52,7 +52,7 @@ const verticalCode = `<ButtonGroup orientation="vertical">
   const url = signal("hellajs.com");
   mount(html`<${ButtonGroup}>
     <${ButtonGroupText}>https://</${ButtonGroupText}>
-    <${Input} value="${() => url()}" oninput="${(v) => url(v)}" />
+    <${Input} value="${url}" oninput="${(v) => url(v)}" />
     <${Button} variant="outline">Open</${Button}>
   </${ButtonGroup}>`, document.getElementById("demo-plate")!);
 

@@ -28,7 +28,7 @@ const invalidCode = `<Input placeholder="Required field" ariaInvalid={submitted 
 
   const email = signal("");
   mount(html`<div class="demo-stack">
-    <${Input} value=${() => email()} oninput=${(v) => email(v)} placeholder="Email address" aria-label="Email address" />
+    <${Input} value=${email} oninput=${(v) => email(v)} placeholder="Email address" aria-label="Email address" />
     <p class="demo-note">Echoing: ${() => email() === "" ? "nothing yet" : email()}</p>
   </div>`, document.getElementById("demo")!);
 

@@ -13,7 +13,7 @@ const selectionCode = `<Menubar>
     content={
       <>
         <MenubarCheckboxItem
-          checked={() => bold()}
+          checked={bold}
           onCheckedChange={(next) => bold(next)}
         >
           Bold
@@ -25,7 +25,7 @@ const selectionCode = `<Menubar>
             { value: 'medium', label: 'Medium' },
             { value: 'large', label: 'Large' },
           ]}
-          value={() => size()}
+          value={size}
           onValueChange={(next) => size(next)}
         />
       </>

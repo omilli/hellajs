@@ -272,7 +272,7 @@ const Manual = () => {
     <div hook:afterMount={(node) => { wrapper = node; }}>
       <input
         role="combobox"
-        value={() => query()}
+        value={query}
         on:input={(event) => query(event.target.value)}
       />
       {() => (
@@ -282,7 +282,7 @@ const Manual = () => {
               items={fruits}
               query={query}
               selected={(value) => current() === value}
-              active={() => current()}
+              active={current}
               onselect={(value) => { current(value); query(''); }}
             />
           </ComboboxContent>

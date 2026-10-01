@@ -181,7 +181,7 @@ const fruits = [
 
 const Manual = () => (
   <div>
-    <CommandInput value={() => query()} onInput={(value) => query(value)} />
+    <CommandInput value={query} onInput={(value) => query(value)} />
     <CommandList>
       <CommandGroup heading="Fruits">
         {() => fruits.map((fruit) => (
@@ -211,7 +211,7 @@ import {
 const open = signal(false);
 
 const Palette = () => (
-  <CommandDialog open={() => open()} onClose={() => open(false)} title="Command Palette">
+  <CommandDialog open={open} onClose={() => open(false)} title="Command Palette">
     <CommandInput placeholder="Type a command or search..." />
     <CommandList>
       <CommandGroup heading="Actions">

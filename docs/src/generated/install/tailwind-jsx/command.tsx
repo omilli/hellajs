@@ -629,14 +629,14 @@ export default function Command(props: CommandProps): JSX.Element {
       }}
     >
       <CommandInput
-        value={() => query()}
+        value={query}
         onInput={(v) => {
           query(v);
           if (props.value === undefined) activeIndex(0);
         }}
         onKeydown={onKeydown}
       />
-      <CommandList body={() => renderBody()} />
+      <CommandList body={renderBody} />
       {() => props.children}
     </div>
   );

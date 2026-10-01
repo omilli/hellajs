@@ -8,7 +8,7 @@ const title = "Command";
 const description = "Interactive Command demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
 
 const paletteCode = `<CommandDialog
-  open={() => open()}
+  open={open}
   onClose={() => open(false)}
   title="Command Palette"
   description="Search for a command to run..."

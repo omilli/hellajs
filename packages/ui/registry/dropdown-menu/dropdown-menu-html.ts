@@ -277,7 +277,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps): HellaNode 
       tabindex="-1"
       id="${props.id}"
       data-slot="dropdown-menu-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${
@@ -413,7 +413,7 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): 
         [checkItem, props.class]
         // @hella:end
       }"
-      on:click="${() => toggle()}"
+      on:click="${toggle}"
     >
       <span
         data-slot="dropdown-menu-indicator"
@@ -580,7 +580,7 @@ export function DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps): Hell
       role="menuitem"
       tabindex="-1"
       data-slot="dropdown-menu-sub-trigger"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-inset="${props.inset ? "true" : undefined}"
       aria-haspopup="menu"
       aria-expanded="${() => (state() === "open" ? "true" : "false")}"
@@ -664,7 +664,7 @@ export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): Hell
       role="menu"
       tabindex="-1"
       data-slot="dropdown-menu-sub-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${

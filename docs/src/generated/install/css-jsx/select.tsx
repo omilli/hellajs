@@ -839,7 +839,7 @@ export default function Select(props: SelectProps): JSX.Element {
         if (node instanceof HTMLElement) triggerNode = node;
       }}
     >
-      <SelectValue placeholder={props.placeholder} value={() => currentLabel()} />
+      <SelectValue placeholder={props.placeholder} value={currentLabel} />
       {() => (props.clearable && current() !== "" ? (
         <span
           data-slot="select-clear"

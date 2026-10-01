@@ -95,7 +95,7 @@ const month = signal(new Date(2025, 0, 1));
 
 const Controlled = () => (
   <Calendar
-    month={() => month()}
+    month={month}
     onMonthChange={(next) => console.log('user navigated to', next)}
   />
 );

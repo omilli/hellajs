@@ -498,9 +498,10 @@ import { signal, computed } from '@hellajs/core';
 
 ### Example Code Style
 
-Four rules for how example code is written:
+Five rules for how example code is written:
 
-- **Attribute values written directly**: `class={active() ? "on" : "off"}`, never function-wrapped. Function-wrapping is the `html` runtime's getter contract and may appear only in `html`-method docs (verified: `plugins/babel/src/utils/reactive.mjs` `maybeReactive` auto-wraps call-containing expressions and passes top-level functions through — JSX examples never need it).
+- **Attribute values written directly**: `class={active() ? "on" : "off"}`, never function-wrapped (verified: `plugins/babel/src/utils/reactive.mjs` `maybeReactive` auto-wraps call-containing expressions and passes top-level functions through — JSX examples never need it).
+- **Zero-arg bindings bare**: `checked={enabled}`, `on:click={toggle}`, `data-state="${state}"` — never `checked={() => enabled()}`. Every runtime path calls function values with zero args, so the wrapper is a dead closure. A wrapper earns its tokens only by doing work — consuming a parameter (`oninput={(v) => url(v)}`), preserving a receiver (`() => obj.method()`), or composing (`class=${() => "btn " + variant()}`); mixed-string attribute values substitute statically and keep call syntax (`class="btn ${variant()}"` — the concat stringifies a bare function).
 - **Extracted prop types**: component examples extract multi-prop inline prop types to a named `type` declared above the component; never inline `{ a, children }: { a: string; children?: HellaChildren }`.
 - **`children` typed `HellaChildren`**: imported from `@hellajs/dom`, never a catch-all placeholder (the pre-convention examples lied about the contract).
 - **Multiline `css()` / `style()` calls**: always break across lines, one property per line — single-property calls included.
@@ -771,6 +772,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] No upstream-catalog references (shadcn, Radix, "the ref") in component docs — provenance lives in `packages/ui/README.md` and `ui-comparison.md` (§Concept Docs → Rules)
 - [ ] `html` blocks close dynamic components with `</${Component}>` (childless: self-closing `<${Component} />`); never the `<//>` short form — audit-enforced (§Example Syntax (JSX Default) → Dynamic Component Closes)
 - [ ] Attribute values written directly, never function-wrapped — function-wrapping only in `html`-method docs; `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
+- [ ] Zero-arg fn/signal bindings bare (`{fn}`, `="${fn}"`) — never `{() => fn()}`; wrappers only when they consume a param, preserve a receiver, or compose; mixed-string attribute values keep call syntax (§Code Examples → Example Code Style)
 - [ ] Multi-prop component prop types extracted to a named `type` declared above the component; audit-policed — inline multi-prop types are not mechanically detectable, so `bun lint:structure` skips them (§Code Examples → Example Code Style)
 - [ ] No `unknown` annotation on any `children` prop — always `HellaChildren` from `@hellajs/dom`; enforced by `bun lint:structure` (`children??: unknown` banned) (§Code Examples → Example Code Style)
 - [ ] `css()` / `style()` calls multiline, one property per line, single-property calls included; enforced by `bun lint:structure` (§Code Examples → Example Code Style)

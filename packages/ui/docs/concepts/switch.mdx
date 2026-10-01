@@ -50,7 +50,7 @@ const enabled = signal(false);
 
 const Controlled = () => (
   <label>
-    <Switch checked={() => enabled()} onCheckedChange={(next) => enabled(next)} />
+    <Switch checked={enabled} onCheckedChange={(next) => enabled(next)} />
     Enabled
   </label>
 );

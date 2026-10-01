@@ -132,6 +132,8 @@ import { value } from "./internal/module";
 ### Templates
 
 - html`` dynamic components close only as `</${Component}>` (interpolated) or self-closing `<${Component} prop=${v} />` — the bare short form `<//>` is not a tag (the template tokenizer matches `\w-` names only, `packages/dom/lib/internal/template.ts`), so `//>` leaks into the DOM as literal text
+- Zero-arg function and signal bindings are bare — `{fn}` (JSX prop, handler, child), `attr=${fn}` or `attr="${fn}"` (html`` full slot) — never `{() => fn()}`. Every consumption path calls function values with zero args (`resolveDeep` for children, the `mountNode` prop effect for props — `packages/dom/lib/internal/{utils,render}.ts`; ssr mirrors both), so the wrapper is a dead closure. Keep a wrapper only when it does work: consuming a parameter (`oninput={(v) => url(v)}` — a bare handler receives the event), preserving a receiver (`() => obj.method()`), or composing (`() => !open()`)
+- Mixed-string attribute values keep call syntax (`class="btn ${variant()}"`): the concat stringifies a bare function — bare bindings are full-slot only
 
 ### Types
 
@@ -367,6 +369,7 @@ Run this when holding a Code file (`.ts`/`.tsx`/`.mjs` under `lib/`, `scripts/`,
 
 **Templates**
 - [ ] `html` dynamic components closed by `</${Component}>` or self-closing `<${Component} />`; no `<//>` short form
+- [ ] Zero-arg fn/signal bindings bare (`{fn}`, `=${fn}`, `="${fn}"`) — no `{() => fn()}`; wrappers only when they consume a param, preserve a receiver, or compose; mixed-string attribute values keep call syntax
 
 **Types**
 - [ ] `interface` for object shapes; `type` for unions/mapped/conditional

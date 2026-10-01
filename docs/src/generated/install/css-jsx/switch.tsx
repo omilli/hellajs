@@ -88,7 +88,7 @@ export default function Switch(props: SwitchProps): JSX.Element {
       class={
         [base, props.class]
       }
-      on:click={() => toggle()}
+      on:click={toggle}
     >
       <span
         data-slot="switch-thumb"

@@ -215,7 +215,7 @@ const Format = () => (
       <>
         <DropdownMenuLabel>Formatting</DropdownMenuLabel>
         <DropdownMenuCheckboxItem
-          checked={() => bold()}
+          checked={bold}
           onCheckedChange={(next) => bold(next)}
         >
           Bold
@@ -227,7 +227,7 @@ const Format = () => (
             { value: 'medium', label: 'Medium' },
             { value: 'large', label: 'Large' },
           ]}
-          value={() => size()}
+          value={size}
           onValueChange={(next) => size(next)}
         />
       </>

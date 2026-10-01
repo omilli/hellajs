@@ -10,7 +10,7 @@ const description = "Interactive Slider demo running the CLI-vendored css-flavor
 const thumbsCode = `<label>
   Price range: {range()[0]} to {range()[1]}
   <Slider
-    value={() => range()}
+    value={range}
     minStepsBetweenThumbs={5}
     onValueChange={(next) => range([...next])}
   />
@@ -39,9 +39,9 @@ const verticalCode = `<Slider value={[60]} orientation="vertical" />`;
   const volume = signal(40);
   mount(html`<div class="demo-stack">
     <label class="demo-row">
-      Volume: ${() => volume()}%
+      Volume: ${volume}%
       <${Slider}
-        value=${() => volume()}
+        value=${volume}
         onValueChange=${(next: number[]) => volume(next[0] ?? 0)}
       />
     </label>
@@ -53,7 +53,7 @@ const verticalCode = `<Slider value={[60]} orientation="vertical" />`;
     <label class="demo-row">
       Price range: ${() => range()[0]} to ${() => range()[1]}
       <${Slider}
-        value=${() => range()}
+        value=${range}
         minStepsBetweenThumbs=${5}
         onValueChange=${(next: number[]) => range([...next])}
       />

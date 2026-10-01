@@ -51,8 +51,8 @@ const anchorCode = `<Pagination>
     </${PaginationContent}>
   </${Pagination}>`;
   mount(html`<div class="demo-stack">
-    ${() => landmark()}
-    <p class="demo-note">Page ${() => page()} of 5, driven by the links' onclick - no router.</p>
+    ${landmark}
+    <p class="demo-note">Page ${page} of 5, driven by the links' onclick - no router.</p>
   </div>`, document.getElementById("demo")!);
 
   const anchor = (p, active) => html`<${PaginationItem}>

@@ -15,7 +15,7 @@ const multipleCode = `<ToggleGroup
     { value: 'italic', label: 'I' },
     { value: 'underline', label: 'U' },
   ]}
-  values={() => formats()}
+  values={formats}
   onValueChange={(next) => formats(next)}
 />`;
 ---
@@ -45,7 +45,7 @@ const multipleCode = `<ToggleGroup
         { value: "week", label: "Week" },
         { value: "month", label: "Month" },
       ]}
-      value=${() => view()}
+      value=${view}
       onValueChange=${(next: string) => view(next)}
     />
     <p class="demo-note">View: ${() => view() || "none"}. Single mode keeps one active value; clicking the active item deselects it and reports an empty string.</p>
@@ -61,7 +61,7 @@ const multipleCode = `<ToggleGroup
         { value: "italic", label: "I" },
         { value: "underline", label: "U" },
       ]}
-      values=${() => formats()}
+      values=${formats}
       onValueChange=${(next: string[]) => formats(next)}
     />
     <p class="demo-note">Formats: ${() => formats().join(", ") || "none"}.</p>

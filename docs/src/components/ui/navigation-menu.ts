@@ -367,7 +367,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): HellaN
       children: [
         html`<div
           data-slot="navigation-menu-content"
-          data-state="${() => state()}"
+          data-state="${state}"
           class="${
             [content, props.class]
           }"

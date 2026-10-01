@@ -43,7 +43,7 @@ const digitsCode = `<InputOTP length={4} pattern={/^\\d+$/}>
     <div class="demo-row">
       <${InputOTP}
         length=${6}
-        value=${() => code()}
+        value=${code}
         onChange=${(next: string) => code(next)}
         onComplete=${(next: string) => console.log("complete:", next)}
       >

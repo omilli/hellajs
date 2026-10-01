@@ -60,7 +60,7 @@ const Controlled = () => (
       { value: 'free', label: 'Free' },
       { value: 'pro', label: 'Pro' },
     ]}
-    value={() => plan()}
+    value={plan}
     onValueChange={(next) => plan(next)}
   />
 );

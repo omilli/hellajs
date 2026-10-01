@@ -34,8 +34,8 @@ const nestedCode = `<DirectionProvider dir="rtl">
   const dir = signal("ltr");
   const flip = () => dir(dir() === "ltr" ? "rtl" : "ltr");
   mount(html`<div class="demo-stack">
-    <button class="w-fit rounded-md border px-2 py-1 text-xs" on:click="${flip}">Flip direction (${() => dir()})</button>
-    <${DirectionProvider} dir="${() => dir()}">
+    <button class="w-fit rounded-md border px-2 py-1 text-xs" on:click="${flip}">Flip direction (${dir})</button>
+    <${DirectionProvider} dir="${dir}">
       <p style="border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem">This paragraph flips its inline direction with the wrapper's dir attribute; the wrapper itself stays out of layout.</p>
     </${DirectionProvider}>
   </div>`, document.getElementById("demo")!);

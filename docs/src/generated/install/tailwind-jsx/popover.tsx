@@ -238,7 +238,7 @@ export default function Popover(props: PopoverProps): JSX.Element {
       class={
         cn(props.class)
       }
-      on:click={() => toggle()}
+      on:click={toggle}
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         triggerNode = node;

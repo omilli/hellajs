@@ -28,7 +28,7 @@ const invalidCode = `<Textarea placeholder="Required field" ariaInvalid />`;
 
   const bio = signal("");
   mount(html`<div class="flex flex-col gap-2">
-    <${Textarea} value=${() => bio()} oninput=${(v) => bio(v)} placeholder="Tell us about yourself" rows=${4} ariaLabel="Biography" />
+    <${Textarea} value=${bio} oninput=${(v) => bio(v)} placeholder="Tell us about yourself" rows=${4} ariaLabel="Biography" />
     <p class="demo-note">${() => bio().length} characters</p>
   </div>`, document.getElementById("demo")!);
 

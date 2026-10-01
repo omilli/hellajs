@@ -430,7 +430,7 @@ export function MenubarCheckboxItem(props: MenubarCheckboxItemProps): JSX.Elemen
         [checkItem, props.class]
         // @hella:end
       }
-      on:click={() => toggle()}
+      on:click={toggle}
     >
       <span
         data-slot="menubar-indicator"

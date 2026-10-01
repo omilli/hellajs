@@ -470,8 +470,8 @@ describe("babel", () => {
     });
 
     test("explicit arrow child is emitted verbatim (double-wrap guard)", () => {
-      const output = transformJSX("<div>{() => fn()}</div>");
-      expect(normalize(output)).toBe('({ tag: "div", children: [() => fn()] });');
+      const output = transformJSX("<div>{() => fn(1)}</div>");
+      expect(normalize(output)).toBe('({ tag: "div", children: [() => fn(1)] });');
     });
 
     test("regular prop with a call is wrapped", () => {

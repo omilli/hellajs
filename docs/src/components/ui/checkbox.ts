@@ -122,7 +122,7 @@ export default function Checkbox(props: CheckboxProps): HellaNode {
       class="${
         [base, props.class]
       }"
-      e:click="${() => toggle()}"
+      e:click="${toggle}"
     >
       <span
         data-slot="checkbox-indicator"

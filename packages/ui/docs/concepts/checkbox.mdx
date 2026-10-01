@@ -54,7 +54,7 @@ const subscribed = signal(false);
 const Controlled = () => (
   <label>
     <Checkbox
-      checked={() => subscribed()}
+      checked={subscribed}
       onCheckedChange={(next) => subscribed(next)}
     />
     Subscribe

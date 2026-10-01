@@ -55,7 +55,7 @@ export function HoverCardContent(props: HoverCardContentProps): HellaNode {
   return html`
     <div
       data-slot="hover-card-content"
-      data-state="${() => state()}"
+      data-state="${state}"
       data-side="${side}"
       data-align="${align}"
       class="${

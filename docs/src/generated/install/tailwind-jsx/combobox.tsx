@@ -837,7 +837,7 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
           query={query}
           filter={props.filter}
           selected={(v) => selectedList().includes(v)}
-          active={() => activeValue()}
+          active={activeValue}
           empty={() => matches().length === 0}
           onselect={(v) => commit(v)}
         >

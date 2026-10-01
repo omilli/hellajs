@@ -62,7 +62,7 @@ export default function Toggle(props: ToggleProps): HellaNode {
       class="${
         cn(toggleVariants({ variant: props.variant, size: props.size }), props.class)
       }"
-      e:click="${() => toggle()}"
+      e:click="${toggle}"
     >${() => props.children}</button>
   ` as HellaNode;
 }

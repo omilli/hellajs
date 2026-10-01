@@ -209,7 +209,7 @@ const File = () => (
       <>
         <ContextMenuItem>Rename</ContextMenuItem>
         <ContextMenuCheckboxItem
-          checked={() => locked()}
+          checked={locked}
           onCheckedChange={(next) => locked(next)}
         >
           Locked

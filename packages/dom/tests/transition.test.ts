@@ -249,7 +249,7 @@ describe("dom", () => {
 
       mount(html`
         <div id="container">
-          <${Transition} show=${() => visible()}>
+          <${Transition} show=${visible}>
             <span id="content">Visible</span>
           </${Transition}>
         </div>

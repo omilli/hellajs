@@ -288,7 +288,7 @@ import { ssr } from '@hellajs/ssr';
 const fetchName = () => fetch('/api/missing').then(r => r.json()).then(d => d.name);
 
 async function respond() {
-  const stream = ssr.stream(html`<p>${() => fetchName()}</p>`).pipeThrough(new TextEncoderStream());
+  const stream = ssr.stream(html`<p>${fetchName}</p>`).pipeThrough(new TextEncoderStream());
   try {
     for await (const chunk of stream) { /* write chunk to the response body */ }
   } catch (err) {
