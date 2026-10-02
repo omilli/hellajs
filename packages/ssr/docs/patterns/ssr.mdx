@@ -65,6 +65,23 @@ app.get('/', (req, res) => {
 app.listen(3000);
 ```
 
+### Hono handler
+
+Use `ssr` with Hono: the app is a fetch handler, so the same code serves under Bun, Node, Deno, workers, and edge runtimes unchanged.
+
+```js
+import { Hono } from 'hono';
+import { html } from '@hellajs/dom';
+import { ssr, doc } from '@hellajs/ssr';
+
+const app = new Hono();
+app.get('/', (c) => {
+  const body = ssr(html`<div><h1>Hello ${c.req.query('name') ?? 'World'}</h1></div>`);
+  return c.html(doc({ head: { title: 'Hello' }, body }));
+});
+export default app; // mount anywhere: Bun.serve({ fetch: app.fetch }), @hono/node-server, Deno, workers
+```
+
 ### Bind an existing node with $ref
 
 Enhance server-rendered HTML by binding an existing node into reactivity on the client.

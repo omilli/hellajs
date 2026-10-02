@@ -1,5 +1,9 @@
 # Memory Update Log
 
+## 2026-10-02
+* **Creation**: Added concept [238](entries/238.md) (type: decision).
+* **Renumber**: Renumber merged entry 238-identify-kill-stale-port-3000 to 239 (ID collision with operator in-flight 238-examples-root-workspace-members) during plans-ssr-docs-hono-node-servers merge
+
 ## 2026-10-01
 * **Merge**: Renumbered 235-canonical-twin-rename-count-assertions to 236 on merge of plans/ui/code/tailwind-inline-all-strings — 235 was already taken by narrow-map-iterator-destructuring
 * **Creation**: Added concept [237](entries/237.md) (type: decision).

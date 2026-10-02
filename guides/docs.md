@@ -278,7 +278,7 @@ Full runnable code matching the example app.
 - **Exercise blanks**: `/**/` marks a reader-filled blank (`const filter = /**/;`), legal alongside `//...` markers. `bun doc-snippets` skips blocks containing `/**/` (answers vary); every non-blank line must still be valid for the language tag, and the answer must appear in a later section or Complete Code.
 - **Code Explanation**: always after every code block — bullet list, bold backtick-wrapped API names linking to reference docs on first mention, factual tone.
 - **Alert boxes**: `<div role="alert" class="alert alert-error">` for critical warnings (mutation pitfalls, reactivity gotchas), followed by Good/Bad examples. No component imports — content docs live outside `docs/`.
-- **Dev server callout**: in the section where the app first becomes reachable, the actual run command + URL — Vite: `npm run dev` + `http://localhost:5173`; Bun-served SSR: the serve command (`bun src/server.js`) + its URL.
+- **Dev server callout**: in the section where the app first becomes reachable, the actual run command + URL — Vite: `npm run dev` + `http://localhost:5173`; Node-served SSR: the start command (`npm run dev` / `node --watch src/server.js`) + its URL.
 - **What You'll Learn**: bold concept labels + brief descriptions, linked to reference docs on first mention. **Project Setup**: always `### Installation` (npm commands) + `### Configuration` (vite config, tsconfig).
 - **Next Steps**: 3 links + one-line closing sentence. **Complete Code**: every source file under `examples/{name}/src/` appears identically (ambient shims like `vite-env.d.ts` may be omitted); single-file apps one block, multi-file one `### `src/...`` heading + block per file; configs appear in Project Setup.
 
@@ -783,7 +783,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] Blocks 5–30 lines; `//…` context markers for longer
 
 **Tutorials**
-- [ ] Dev-server callout: run command + served URL in the section where the app first becomes reachable (Vite `npm run dev` → `http://localhost:5173`; Bun-served → serve command + its URL)
+- [ ] Dev-server callout: run command + served URL in the section where the app first becomes reachable (Vite `npm run dev` → `http://localhost:5173`; Node-served SSR → start command + its URL)
 - [ ] Exercise blanks are `/**/` only, remaining lines valid for the language tag, answers appear in a later section or Complete Code (doc-snippets skips `/**/` blocks)
 
 **Accuracy**

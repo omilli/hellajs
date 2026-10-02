@@ -11,23 +11,24 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`css`](/reference/css/css)**: Register styles on both platforms, collected by [`cssText`](/reference/css/csstext) for `doc()` to emit
 - **[`mount`](/reference/dom/mount)**: Mount a reactive island into an empty slot the server left open
 
-This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders the shell and `Bun.build` bundles the client at startup: one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
+This example runs on [Node](https://nodejs.org) with [Hono](https://hono.dev): `@hono/node-server` serves the shell and esbuild bundles the client at startup: one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
 
 ## Project Setup
 
 ### Installation
 
-Create a project folder and install the packages. This tutorial requires [Bun](https://bun.sh) for the server.
+Create a project folder and install the packages. This tutorial requires [Node](https://nodejs.org) 20 or later for the server.
 
 ```bash
 mkdir ssr-islands && cd ssr-islands
-bun init -y
-bun add @hellajs/core @hellajs/dom @hellajs/ssr @hellajs/css
+npm init -y
+npm install @hellajs/core @hellajs/dom @hellajs/css @hellajs/ssr
+npm install -D hono @hono/node-server esbuild
 ```
 
 ### Configuration
 
-`package.json` marks the project as an ES module and adds a single `start` script. `Bun.build` handles the client bundle at server startup, so there is no `build` script and no second tool.
+`package.json` marks the project as an ES module and adds the run scripts. esbuild handles the client bundle at server startup, so there is no `build` script and no second tool.
 
 ```json
 {
@@ -36,7 +37,8 @@ bun add @hellajs/core @hellajs/dom @hellajs/ssr @hellajs/css
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "bun src/server.js"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
   }
 }
 ```
@@ -90,49 +92,51 @@ export const App = () => html`
 
 ## Server Rendering
 
-The server stringifies the template with [`ssr`](/reference/ssr/ssr) and wraps it into a full document with [`doc`](/reference/ssr/doc). It imports the collected `styles` from `app.js` and passes them to `doc()`'s `styles` to emit a single `<style>` tag. `Bun.build` bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
+The server stringifies the template with [`ssr`](/reference/ssr/ssr) and wraps it into a full document with [`doc`](/reference/ssr/doc). It imports the collected `styles` from `app.js` and passes them to `doc()`'s `styles` to emit a single `<style>` tag. A [Hono](https://hono.dev) app serves the document, and esbuild bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
 
 Create `src/server.js`:
 
 ```js
 // src/server.js
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { build } from 'esbuild';
 import { ssr, doc } from '@hellajs/ssr';
 import { App, styles } from './app.js';
 
-const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
-if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
-const client = await build.outputs[0].text();
 
-Bun.serve({
-  port: 3000,
-  fetch(req) {
-    const { pathname } = new URL(req.url);
+// Bundle the client once at startup. esbuild resolves the bare `@hellajs/*`
+// specifiers the browser can't; the bundle is held in memory, so there is no
+// separate build step and no dist/.
+const result = await build({ entryPoints: ['src/client.js'], bundle: true, write: false, format: 'esm' });
+const client = result.outputFiles[0].text;
 
-    if (pathname === '/client.js') {
-      return new Response(client, {
-        headers: { 'content-type': 'text/javascript' },
-      });
-    }
+const app = new Hono();
 
-    const page = doc({
-      head: {
-        title: 'SSR Islands',
-        styles: [styles],
-        scripts: [{ src: '/client.js', type: 'module' }],
-      },
-      body: ssr(App()),
-    });
+// Serve the in-memory client bundle.
+app.get('/client.js', (c) => c.body(client, 200, { 'content-type': 'text/javascript; charset=utf-8' }));
 
-    return new Response(page, { headers: { 'content-type': 'text/html' } });
+app.get('*', (c) => c.html(doc({
+  head: {
+    title: 'SSR Islands',
+    styles: [styles],
+    scripts: [{ src: '/client.js', type: 'module' }],
   },
-});
+  // `ssr()` walks the template to an HTML string; `doc()` wraps it into a full
+  // document and injects the stylesheet and the client script.
+  body: ssr(App()),
+})));
+
+serve({ fetch: app.fetch, port: 3000 });
 ```
 
 **Code Explanation**
 
 - **`import { App, styles } from './app.js'`**: Pulls the template and the collected CSS text from the shared module
 - **[`ssr`](/reference/ssr/ssr)`(App())`**: Walks the template AST to an HTML string. `App()` runs server-side; `html` parsing is DOM-free
-- **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory; no `dist/` to manage. Edit the client and restart to re-bundle
+- **`build({ entryPoints, bundle, write: false, format: 'esm' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory; no `dist/` to manage. Edit the client and restart to re-bundle
+- **`app.get(path, handler)`**: Registers a Hono route. `/client.js` serves the in-memory bundle; the catch-all renders the document
+- **[`serve`](https://hono.dev/docs/getting-started/nodejs)`({ fetch: app.fetch, port: 3000 })`**: Runs the Hono app on Node's HTTP server
 - **[`doc`](/reference/ssr/doc)`({ head, body })`**: Assembles a full document. `styles` joins into one `<style>` tag; `scripts` emits each tag
 
 ## Client Enhancement
@@ -181,10 +185,10 @@ mount(Counter, 'body'); // replaceChildren destroys the server HTML
 
 ## Run the App
 
-Start the server. It bundles the client at startup and serves both the rendered HTML and the client bundle.
+Start the dev server. It bundles the client at startup and serves both the rendered HTML and the client bundle.
 
 ```bash
-bun src/server.js
+npm run dev
 ```
 
 The server renders at `http://localhost:3000`. The initial HTML contains the server-rendered shell with an empty slot:
@@ -247,42 +251,36 @@ export const App = () => html`
 ### `src/server.js`
 
 ```js
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { build } from 'esbuild';
 import { ssr, doc } from '@hellajs/ssr';
 import { App, styles } from './app.js';
 
 
-// Bundle the client once at startup. Bun's native bundler resolves the bare
-// `@hellajs/*` specifiers the browser can't; no separate build step, no dist/.
-const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
-if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
-const client = await build.outputs[0].text();
+// Bundle the client once at startup. esbuild resolves the bare `@hellajs/*`
+// specifiers the browser can't; the bundle is held in memory, so there is no
+// separate build step and no dist/.
+const result = await build({ entryPoints: ['src/client.js'], bundle: true, write: false, format: 'esm' });
+const client = result.outputFiles[0].text;
 
-Bun.serve({
-  port: 3000,
-  fetch(req) {
-    const { pathname } = new URL(req.url);
+const app = new Hono();
 
-    // Serve the in-memory client bundle.
-    if (pathname === '/client.js') {
-      return new Response(client, {
-        headers: { 'content-type': 'text/javascript' },
-      });
-    }
+// Serve the in-memory client bundle.
+app.get('/client.js', (c) => c.body(client, 200, { 'content-type': 'text/javascript; charset=utf-8' }));
 
-    // `ssr()` walks the template to an HTML string; `doc()` wraps it into a full
-    // document and injects the stylesheet and the client script.
-    const page = doc({
-      head: {
-        title: 'SSR Islands',
-        styles: [styles],
-        scripts: [{ src: '/client.js', type: 'module' }],
-      },
-      body: ssr(App()),
-    });
-
-    return new Response(page, { headers: { 'content-type': 'text/html' } });
+app.get('*', (c) => c.html(doc({
+  head: {
+    title: 'SSR Islands',
+    styles: [styles],
+    scripts: [{ src: '/client.js', type: 'module' }],
   },
-});
+  // `ssr()` walks the template to an HTML string; `doc()` wraps it into a full
+  // document and injects the stylesheet and the client script.
+  body: ssr(App()),
+})));
+
+serve({ fetch: app.fetch, port: 3000 });
 ```
 ### `src/client.js`
 

@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "bun src/server.js"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
   },
   "dependencies": {
     "@hellajs/core": "workspace:*",
@@ -12,5 +13,9 @@
     "@hellajs/dom": "workspace:*",
     "@hellajs/ssr": "workspace:*"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@hono/node-server": "^2.1.3",
+    "esbuild": "^0.28.2",
+    "hono": "^4.13.12"
+  }
 }

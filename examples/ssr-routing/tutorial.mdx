@@ -12,23 +12,24 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`vars`](/reference/css/vars)** + **[`cssText`](/reference/css/csstext)**: vars registers custom properties and css registers rules (both platforms), and cssText collects them into one `<style>` through `doc()`
 - **[`hydrate`](/reference/dom/hydrate)**: Re-bind the server-rendered tree in place (no flash, no rebuild)
 
-This example runs entirely on [Bun](https://bun.sh): `Bun.serve` renders each request and `Bun.build` bundles the client at startup: one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
+This example runs on [Node](https://nodejs.org) with [Hono](https://hono.dev): `@hono/node-server` serves every request and esbuild bundles the client at startup: one runtime, one command, no separate build step. The [`html`](/reference/dom/html) tag parses templates at runtime, so no compile-time plugin is needed.
 
 ## Project Setup
 
 ### Installation
 
-Create a project folder and install the packages. This tutorial requires [Bun](https://bun.sh) for the server.
+Create a project folder and install the packages. This tutorial requires [Node](https://nodejs.org) 20 or later for the server.
 
 ```bash
 mkdir ssr-routing && cd ssr-routing
-bun init -y
-bun add @hellajs/core @hellajs/dom @hellajs/router @hellajs/ssr @hellajs/css
+npm init -y
+npm install @hellajs/core @hellajs/dom @hellajs/router @hellajs/ssr @hellajs/css
+npm install -D hono @hono/node-server esbuild
 ```
 
 ### Configuration
 
-`package.json` marks the project as an ES module and adds a single `start` script. `Bun.build` handles the client bundle at server startup, so there is no `build` script and no second tool. The source is plain JavaScript; no `tsconfig.json` is needed.
+`package.json` marks the project as an ES module and adds the run scripts. esbuild handles the client bundle at server startup, so there is no `build` script and no second tool.
 
 ```json
 {
@@ -37,10 +38,8 @@ bun add @hellajs/core @hellajs/dom @hellajs/router @hellajs/ssr @hellajs/css
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "bun src/server.js"
-  },
-  "devDependencies": {
-    "typescript": "~6.0.3"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
   }
 }
 ```
@@ -147,48 +146,61 @@ export const stylesheet = cssText();
 
 The server resolves the request URL with [`router`](/reference/router/router)`({ url })`, stringifies the tree with [`ssr`](/reference/ssr/ssr), and wraps it into a full document with [`doc`](/reference/ssr/doc). Pass the request URL via the `url` option; there is no `window` on the server. Resolution is synchronous, so `currentView` already holds the matched view when `ssr` walks the tree.
 
-`Bun.build` bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
+A [Hono](https://hono.dev) app serves the document, and esbuild bundles the client once at startup, resolving the bare `@hellajs/*` specifiers the browser can't.
 
 Create `src/server.js`:
 
 ```js
 // src/server.js
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { build } from 'esbuild';
 import { html } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 import { routes, App, notFound } from './app.js';
 import { stylesheet } from './theme.js';
 
-const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
-if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
-const client = await build.outputs[0].text();
 
-Bun.serve({
-  port: 3000,
-  fetch(req) {
-    const { pathname, search } = new URL(req.url);
+// Bundle the client once at startup. esbuild resolves the bare `@hellajs/*`
+// specifiers the browser can't; the bundle is held in memory, so there is no
+// separate build step and no dist/.
+const result = await build({ entryPoints: ['src/client.js'], bundle: true, write: false, format: 'esm' });
+const client = result.outputFiles[0].text;
 
-    if (pathname === '/client.js') {
-      return new Response(client, { headers: { 'content-type': 'text/javascript' } });
-    }
+const app = new Hono();
 
-    router({ routes, url: pathname + search, notFound });
+// Serve the in-memory client bundle.
+app.get('/client.js', (c) => c.body(client, 200, { 'content-type': 'text/javascript; charset=utf-8' }));
 
-    const body = `<div id="app">${ssr(html`<${App} />`)}</div>`;
+// One catch-all: Hono never routes. `@hellajs/router` matches the request URL
+// against the shared route map, on the server and on the client alike.
+app.get('*', (c) => {
+  const { pathname, search } = new URL(c.req.url);
 
-    const page = doc({
-      lang: 'en',
-      head: {
-        title: 'SSR Routing',
-        styles: [stylesheet],
-        scripts: [{ src: '/client.js', type: 'module' }],
-      },
-      body,
-    });
+  // url overrides window.location (there is none on the server); router init
+  // is synchronous, so currentView holds the matched view before ssr walks the
+  // tree. The whole block is synchronous (no await between router and ssr), so
+  // no second request can interleave and overwrite the router's module-level
+  // signals mid-render.
+  router({ routes, url: pathname + search, notFound });
 
-    return new Response(page, { headers: { 'content-type': 'text/html' } });
-  },
+  // Wrap the output so the client has an #app container to hydrate into:
+  // hydrate('#app') adopts the existing nodes instead of rebuilding them.
+  const body = `<div id="app">${ssr(html`<${App} />`)}</div>`;
+
+  return c.html(doc({
+    lang: 'en',
+    head: {
+      title: 'SSR Routing',
+      styles: [stylesheet],
+      scripts: [{ src: '/client.js', type: 'module' }],
+    },
+    body,
+  }));
 });
+
+serve({ fetch: app.fetch, port: 3000 });
 ```
 
 **Code Explanation**
@@ -197,7 +209,9 @@ Bun.serve({
 - **`router()` → `ssr()` with no `await` between them**: One synchronous block. No second request can interleave and overwrite the router's signals mid-render: synchronous `ssr` is concurrency-safe, so you do not need a router instance per request
 - **`` `<div id="app">${ssr(…)}</div>` ``**: [`hydrate`](/reference/dom/hydrate)`('#app')` needs a container to adopt. `doc()` places `body` verbatim, so wrap the output in `<div id="app">`
 - **[`doc`](/reference/ssr/doc)`({ head, body })`**: `styles` emits `stylesheet` as one `<style>` tag; `scripts` emits the client tag
-- **`Bun.build({ entrypoints, target: 'browser' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory; no `dist/` to manage
+- **`build({ entryPoints, bundle, write: false, format: 'esm' })`**: Bundles `src/client.js` once at startup, resolving the bare specifiers. Held in memory; no `dist/` to manage. Edit the client and restart to re-bundle
+- **`app.get(path, handler)`**: Registers a Hono route. `/client.js` serves the in-memory bundle; the single catch-all renders the document for every other path
+- **[`serve`](https://hono.dev/docs/getting-started/nodejs)`({ fetch: app.fetch, port: 3000 })`**: Runs the Hono app on Node's HTTP server
 
 ## Client Hydration
 
@@ -224,13 +238,13 @@ hydrate(html`<${App} />`, '#app');
 
 ## Run the App
 
-Start the server. It bundles the client at startup and serves both the rendered HTML and the client bundle.
+Start the dev server. It bundles the client at startup and serves both the rendered HTML and the client bundle.
 
 ```bash
-bun src/server.js
+npm run dev
 ```
 
-Visit `http://localhost:3000`. The server renders the matched route for each request; view-source shows the full HTML:
+The server renders at `http://localhost:3000`. Each request renders the matched route; view-source shows the full HTML:
 
 ```bash
 curl -s localhost:3000/users/1
@@ -332,53 +346,55 @@ export const stylesheet = cssText();
 ### `src/server.js`
 
 ```js
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { build } from 'esbuild';
 import { html } from '@hellajs/dom';
 import { router } from '@hellajs/router';
 import { ssr, doc } from '@hellajs/ssr';
 import { routes, App, notFound } from './app.js';
 import { stylesheet } from './theme.js';
 
-// Bundle the client once at startup. Bun's native bundler resolves the bare
-// `@hellajs/*` specifiers the browser can't; no separate build step, no dist/.
-const build = await Bun.build({ entrypoints: ['src/client.js'], target: 'browser' });
-if (!build.success) throw new Error(`client build failed:\n${build.logs}`);
-const client = await build.outputs[0].text();
 
-Bun.serve({
-  port: 3000,
-  fetch(req) {
-    const { pathname, search } = new URL(req.url);
+// Bundle the client once at startup. esbuild resolves the bare `@hellajs/*`
+// specifiers the browser can't; the bundle is held in memory, so there is no
+// separate build step and no dist/.
+const result = await build({ entryPoints: ['src/client.js'], bundle: true, write: false, format: 'esm' });
+const client = result.outputFiles[0].text;
 
-    if (pathname === '/client.js') {
-      return new Response(client, {
-        headers: { 'content-type': 'text/javascript' },
-      });
-    }
+const app = new Hono();
 
-    // url overrides window.location (there is none on the server); router init
-    // is synchronous, so currentView holds the matched view before ssr walks the
-    // tree. The whole block is synchronous (no await between router and ssr), so
-    // no second request can interleave and overwrite the router's module-level
-    // signals mid-render.
-    router({ routes, url: pathname + search, notFound });
+// Serve the in-memory client bundle.
+app.get('/client.js', (c) => c.body(client, 200, { 'content-type': 'text/javascript; charset=utf-8' }));
 
-    // Wrap the output so the client has an #app container to hydrate into:
-    // hydrate('#app') adopts the existing nodes instead of rebuilding them.
-    const body = `<div id="app">${ssr(html`<${App} />`)}</div>`;
+// One catch-all: Hono never routes. `@hellajs/router` matches the request URL
+// against the shared route map, on the server and on the client alike.
+app.get('*', (c) => {
+  const { pathname, search } = new URL(c.req.url);
 
-    const page = doc({
-      lang: 'en',
-      head: {
-        title: 'SSR Routing',
-        styles: [stylesheet],
-        scripts: [{ src: '/client.js', type: 'module' }],
-      },
-      body,
-    });
+  // url overrides window.location (there is none on the server); router init
+  // is synchronous, so currentView holds the matched view before ssr walks the
+  // tree. The whole block is synchronous (no await between router and ssr), so
+  // no second request can interleave and overwrite the router's module-level
+  // signals mid-render.
+  router({ routes, url: pathname + search, notFound });
 
-    return new Response(page, { headers: { 'content-type': 'text/html' } });
-  },
+  // Wrap the output so the client has an #app container to hydrate into:
+  // hydrate('#app') adopts the existing nodes instead of rebuilding them.
+  const body = `<div id="app">${ssr(html`<${App} />`)}</div>`;
+
+  return c.html(doc({
+    lang: 'en',
+    head: {
+      title: 'SSR Routing',
+      styles: [stylesheet],
+      scripts: [{ src: '/client.js', type: 'module' }],
+    },
+    body,
+  }));
 });
+
+serve({ fetch: app.fetch, port: 3000 });
 ```
 ### `src/client.js`
 
