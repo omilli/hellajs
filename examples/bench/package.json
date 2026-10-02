@@ -24,6 +24,8 @@
     "rollup-plugin-minify-template-literals": "^1.1.7"
   },
   "dependencies": {
+    "@hellajs/core": "workspace:*",
+    "@hellajs/dom": "workspace:*",
     "@rollup/plugin-typescript": "^12.3.0"
   }
 }

@@ -10,7 +10,13 @@
   },
   "devDependencies": {
     "typescript": "~6.0.3",
-    "vite": "^7.0.0",
-    "vite-plugin-hellajs": "^0.8.9"
+    "vite": "^7.0.0"
+  },
+  "dependencies": {
+    "@hellajs/core": "workspace:*",
+    "@hellajs/css": "workspace:*",
+    "@hellajs/dom": "workspace:*",
+    "@hellajs/ssr": "workspace:*",
+    "vite-plugin-hellajs": "workspace:*"
   }
 }

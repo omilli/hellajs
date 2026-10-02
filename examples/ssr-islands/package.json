@@ -5,5 +5,12 @@
   "type": "module",
   "scripts": {
     "start": "bun src/server.js"
-  }
+  },
+  "dependencies": {
+    "@hellajs/core": "workspace:*",
+    "@hellajs/css": "workspace:*",
+    "@hellajs/dom": "workspace:*",
+    "@hellajs/ssr": "workspace:*"
+  },
+  "devDependencies": {}
 }

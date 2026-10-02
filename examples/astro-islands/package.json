@@ -10,5 +10,12 @@
   },
   "devDependencies": {
     "astro": "^7.0.0"
+  },
+  "dependencies": {
+    "@hellajs/core": "workspace:*",
+    "@hellajs/css": "workspace:*",
+    "@hellajs/dom": "workspace:*",
+    "@hellajs/ssr": "workspace:*",
+    "astro-plugin-hellajs": "workspace:*"
   }
 }
