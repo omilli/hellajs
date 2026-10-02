@@ -10,6 +10,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`hydrate`](/reference/dom/hydrate)**: Adopt server-rendered HTML in place on the client
 - **[`html`](/reference/dom/html)**: Build client-only islands from tagged templates in plain `.ts` files
 - **[`$ref`](/reference/dom/$ref)**: Bind reactive state to DOM nodes Astro rendered outside any island
+- **[`style`](/reference/css/style)**: Scope island styles under content-hashed classes and collect the registered CSS for the page head with [`cssText`](/reference/css/csstext)
 
 We'll start with a server-rendered island, then add the two client-only modes step by step so you can see what each directive changes.
 
@@ -22,7 +23,7 @@ Create a project folder and install Astro with the HellaJS integration.
 ```bash
 mkdir astro-islands && cd astro-islands
 npm init -y
-npm install astro astro-plugin-hellajs @hellajs/core @hellajs/dom
+npm install astro astro-plugin-hellajs @hellajs/core @hellajs/dom @hellajs/css
 ```
 
 ### Configuration
@@ -54,7 +55,6 @@ export default defineConfig({
 `package.json` marks the project as an ES module and wires the Astro scripts.
 
 ```json
-// package.json
 {
   "name": "astro-islands",
   "private": true,
@@ -64,6 +64,12 @@ export default defineConfig({
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview"
+  },
+  "dependencies": {
+    "@hellajs/core": "^1.0.11",
+    "@hellajs/css": "^1.1.1",
+    "@hellajs/dom": "^1.4.2",
+    "astro-plugin-hellajs": "^0.1.0"
   },
   "devDependencies": {
     "astro": "^7.0.0"
@@ -132,13 +138,14 @@ Create `src/components/MouseTracker.ts`. Note the `.ts` extension: the Vite plug
 // src/components/MouseTracker.ts
 import { signal } from "@hellajs/core";
 import { html } from "@hellajs/dom";
+import { tracker } from "../theme";
 
 export default function MouseTracker() {
   const pointerX = signal(0);
   const pointerY = signal(0);
 
   return html`
-    <div on:mousemove=${(event: MouseEvent) => {
+    <div class=${tracker} on:mousemove=${(event: MouseEvent) => {
       pointerX(event.clientX);
       pointerY(event.clientY);
     }}>
@@ -192,6 +199,7 @@ Create `src/components/NameSync.ts`:
 // src/components/NameSync.ts
 import { signal } from "@hellajs/core";
 import { $ref, html } from "@hellajs/dom";
+import { note } from "../theme";
 
 export default function NameSync() {
   const name = signal("World");
@@ -203,7 +211,7 @@ export default function NameSync() {
   $ref("#greeting").bind(() => `Hello, ${name()}!`);
 
   return html`
-    <p>Typing in the input above updates the greeting through a $ref binding.</p>
+    <p class=${note}>Typing in the input above updates the greeting through a $ref binding.</p>
   `;
 }
 ```
@@ -229,6 +237,110 @@ export default function NameSync() {
 <NameSync client:load />
 ```
 
+## Styling Islands with `css` and `style`
+
+None of the islands carry styles yet. The integration has no CSS handling to configure: [`css`](/reference/css/css) and [`style`](/reference/css/style) register their rules on both the server and the client, so one theme module covers every island mode. Create `src/theme.ts`:
+
+```ts
+// src/theme.ts
+import { css, style, cssText } from "@hellajs/css";
+
+// css() registers global rules, style() scoped ones, on both platforms. The
+// page imports `styles` below and inlines it into <head> server-side, so
+// server-rendered markup is styled at first paint; client islands import the
+// same module and re-register the same hashed rules on hydration.
+css({
+  body: {
+    fontFamily: "system-ui, sans-serif",
+    maxWidth: "42rem",
+    margin: "2rem auto",
+    padding: "0 1rem",
+  },
+  "#name-input": {
+    padding: "0.375rem 0.625rem",
+    fontSize: "1rem",
+    borderRadius: "0.375rem",
+    border: "1px solid #d1d5db",
+  },
+  "#greeting": {
+    fontSize: "1.25rem",
+    fontWeight: "600",
+  },
+});
+
+export const counterBtn = style({
+  padding: "0.5rem 1.25rem",
+  fontSize: "1rem",
+  cursor: "pointer",
+  borderRadius: "0.375rem",
+  border: "1px solid #2563eb",
+  backgroundColor: "#eff6ff",
+}, { label: "counter-btn" });
+
+export const tracker = style({
+  marginTop: "1rem",
+  padding: "1rem",
+  minHeight: "3rem",
+  border: "1px dashed #9ca3af",
+  borderRadius: "0.375rem",
+}, { label: "tracker" });
+
+export const note = style({
+  color: "#6b7280",
+}, { label: "note" });
+
+// Collected after the registrations above, in first-registration order.
+export const styles = cssText();
+```
+
+**Code Explanation**
+
+- **[`css`](/reference/css/css)`({...})`**: Registers global rules. The `#name-input` and `#greeting` selectors reach HTML that Astro itself rendered, outside any island
+- **[`style`](/reference/css/style)`({...}, { label: ... })`**: Returns a content-hashed class scoped to the rules. The hash is computed from the rule text, so the server and the client always produce the same class name
+- **[`cssText`](/reference/css/csstext)`()`**: Collects everything registered above into one string. It peeks, never drains: repeated calls return the same text, and the client re-registers the same rules on hydration
+
+Wire the counter to its class; the other two islands take theirs the same way:
+
+```tsx
+// src/components/Counter.tsx
+import { signal } from "@hellajs/core";
+import { counterBtn } from "../theme";
+
+export default function Counter({ initial = 0 }: { initial?: number }) {
+  const count = signal(initial);
+  return <button class={counterBtn} on:click={() => count(count() + 1)}>{count()}</button>;
+}
+```
+
+**Code Explanation**
+
+- **`class={counterBtn}`**: The hashed class name `style()` returned. `MouseTracker` applies `tracker` to its box and `NameSync` applies `note` to its paragraph
+- **`import { counterBtn } from "../theme"`**: Importing the theme from an island also runs its registrations on the client, so `client:only` islands have their rules injected when they load
+
+Finally, inline the collected CSS so server-rendered markup is styled at first paint:
+
+```astro
+// src/pages/index.astro
+---
+//... existing imports
+import { styles } from '../theme';
+---
+<!-- ... -->
+<head>
+  <meta charset="utf-8" />
+  <title>Astro Islands</title>
+  <style is:inline set:html={styles} />
+</head>
+```
+
+**Code Explanation**
+
+- **Frontmatter runs server-side**: Importing `styles` registers the theme in the server's module scope, and `cssText()` collects it during the static build
+- **`is:inline`**: Tells Astro to emit the `<style>` tag verbatim instead of bundling and scoping it
+- **`set:html={styles}`**: Injects the collected rule text as the tag's content
+
+With the embed in place, the counter button, the input, and the greeting are styled in the HTML Astro ships. The two `client:only` islands inject the same rules themselves when they load, and the hashed class names match on both sides without any coordination.
+
 ## Next Steps
 
 - **[SSR Islands tutorial](/learn/tutorials/ssr-islands)**: Render a static shell with `ssr()` and mount islands without Astro
@@ -244,14 +356,16 @@ One page can mix all three modes: pick `client:load` when the first paint needs 
 ```astro
 // src/pages/index.astro
 ---
-import Counter from '../components/Counter.tsx';
-import MouseTracker from '../components/MouseTracker.ts';
-import NameSync from '../components/NameSync.ts';
+import Counter from '../components/Counter';
+import MouseTracker from '../components/MouseTracker';
+import NameSync from '../components/NameSync';
+import { styles } from '../theme';
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Astro Islands</title>
+    <style is:inline set:html={styles} />
   </head>
   <body>
     <h1>Astro Islands</h1>
@@ -273,15 +387,70 @@ import NameSync from '../components/NameSync.ts';
 </html>
 ```
 
+### `src/theme.ts`
+
+```ts
+// src/theme.ts
+import { css, style, cssText } from "@hellajs/css";
+
+// css() registers global rules, style() scoped ones, on both platforms. The
+// page imports `styles` below and inlines it into <head> server-side, so
+// server-rendered markup is styled at first paint; client islands import the
+// same module and re-register the same hashed rules on hydration.
+css({
+  body: {
+    fontFamily: "system-ui, sans-serif",
+    maxWidth: "42rem",
+    margin: "2rem auto",
+    padding: "0 1rem",
+  },
+  "#name-input": {
+    padding: "0.375rem 0.625rem",
+    fontSize: "1rem",
+    borderRadius: "0.375rem",
+    border: "1px solid #d1d5db",
+  },
+  "#greeting": {
+    fontSize: "1.25rem",
+    fontWeight: "600",
+  },
+});
+
+export const counterBtn = style({
+  padding: "0.5rem 1.25rem",
+  fontSize: "1rem",
+  cursor: "pointer",
+  borderRadius: "0.375rem",
+  border: "1px solid #2563eb",
+  backgroundColor: "#eff6ff",
+}, { label: "counter-btn" });
+
+export const tracker = style({
+  marginTop: "1rem",
+  padding: "1rem",
+  minHeight: "3rem",
+  border: "1px dashed #9ca3af",
+  borderRadius: "0.375rem",
+}, { label: "tracker" });
+
+export const note = style({
+  color: "#6b7280",
+}, { label: "note" });
+
+// Collected after the registrations above, in first-registration order.
+export const styles = cssText();
+```
+
 ### `src/components/Counter.tsx`
 
 ```tsx
 // src/components/Counter.tsx
 import { signal } from "@hellajs/core";
+import { counterBtn } from "../theme";
 
 export default function Counter({ initial = 0 }: { initial?: number }) {
   const count = signal(initial);
-  return <button on:click={() => count(count() + 1)}>{count()}</button>;
+  return <button class={counterBtn} on:click={() => count(count() + 1)}>{count()}</button>;
 }
 ```
 
@@ -291,13 +460,14 @@ export default function Counter({ initial = 0 }: { initial?: number }) {
 // src/components/MouseTracker.ts
 import { signal } from "@hellajs/core";
 import { html } from "@hellajs/dom";
+import { tracker } from "../theme";
 
 export default function MouseTracker() {
   const pointerX = signal(0);
   const pointerY = signal(0);
 
   return html`
-    <div on:mousemove=${(event: MouseEvent) => {
+    <div class=${tracker} on:mousemove=${(event: MouseEvent) => {
       pointerX(event.clientX);
       pointerY(event.clientY);
     }}>
@@ -313,6 +483,7 @@ export default function MouseTracker() {
 // src/components/NameSync.ts
 import { signal } from "@hellajs/core";
 import { $ref, html } from "@hellajs/dom";
+import { note } from "../theme";
 
 export default function NameSync() {
   const name = signal("World");
@@ -324,7 +495,7 @@ export default function NameSync() {
   $ref("#greeting").bind(() => `Hello, ${name()}!`);
 
   return html`
-    <p>Typing in the input above updates the greeting through a $ref binding.</p>
+    <p class=${note}>Typing in the input above updates the greeting through a $ref binding.</p>
   `;
 }
 ```

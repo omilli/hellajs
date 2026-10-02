@@ -47,6 +47,21 @@ The server renders the component to HTML with `<!--[-->…<!--]-->` markers; the
 
 A complete walkthrough lives in the [Astro Islands tutorial](https://hellajs.com/learn/tutorials/astro-islands).
 
+## Styling
+
+The integration performs no CSS handling, and needs none: [`@hellajs/css`](https://hellajs.com/reference/css/css) registers `css()` and `style()` rules on both the server and the client. Collect what registered with [`cssText`](https://hellajs.com/reference/css/csstext) and inline it once in your page so server-rendered HTML is styled at first paint:
+
+```astro
+---
+import { styles } from '../theme';
+---
+<head>
+  <style is:inline set:html={styles} />
+</head>
+```
+
+`client:only` islands import the same theme module and inject their rules themselves when they load; hashed class names match on both sides.
+
 ## Exclusive use
 
 This integration wires `vite-plugin-hellajs`, which transforms **all** `.jsx`/`.tsx`/`.js`/`.ts` (excluding `node_modules`). It assumes HellaJS is the project's only JSX framework; mixing React/Solid/etc. in the same project is unsupported.

@@ -2,11 +2,13 @@
 import Counter from '../components/Counter';
 import MouseTracker from '../components/MouseTracker';
 import NameSync from '../components/NameSync';
+import { styles } from '../theme';
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Astro Islands</title>
+    <style is:inline set:html={styles} />
   </head>
   <body>
     <h1>Astro Islands</h1>
