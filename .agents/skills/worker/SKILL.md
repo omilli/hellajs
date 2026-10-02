@@ -42,7 +42,7 @@ Plan-file runs execute in an isolated worktree — the main tree routinely holds
 
 **Inside the worktree** (`../hellajs-wt/<slug>/`): every remaining step executes there — paths, edits, and verification address the worktree (`cd ../hellajs-wt/<slug> && bun coverage <pkg>`); ticks land on the worktree's unit copy. Never commit inside (staging permitted — `diff` needs it); never edit the set's `index.md`.
 
-**Bootstrap (fresh cut).** A worktree ships no gitignored `dist/` outputs: build a package's dependency dists before its own — one invocation per package, `bun bundle core && bun bundle dom && bun bundle css` before `bun bundle ui` (the bundle script takes a single positional package; extra names are silently ignored — the registry `.d.ts` typecheck resolves `@hellajs/*` through built dists), and workspaces owning their own `node_modules` (`docs/`) need their own `bun install` before build commands. Do this before the baseline run.
+**Bootstrap (fresh cut).** A worktree ships no gitignored `dist/` outputs: build a package's dependency dists before its own — one invocation per package, `bun bundle core && bun bundle dom && bun bundle css` before `bun bundle ui` (the bundle script takes a single positional package; extra names are silently ignored — the registry `.d.ts` typecheck resolves `@hellajs/*` through built dists), and workspaces owning their own `node_modules` (`docs/`) need their own `bun install` before build commands. A package scaffolded after the cut has no `node_modules` at all (the seed's install predates its package.json) — re-run `bun install` once after scaffolding, and keep the resulting bun.lock hunks that record the new package's own workspace entry: that is component delta, never seed drift to restore. Do this before the baseline run.
 
 ## Step 2 — Establish a green baseline, then execute per type
 
@@ -71,7 +71,7 @@ Mismatch = unticked box. Fix the implementation to match the contract, or — if
 
 ### Tick honestly
 
-Plan is a file → edit it: rewrite each `[ ]` to `[x]` inline with its evidence note. The edit tool can fail to match byte-present oldText containing `[ ]` sequences — after one such failure, flip the boxes by index with a python heredoc asserting `count == 1` per line (memory 129); never retry reconstructed strings. Inline plan → record ticks + evidence in the response.
+Plan is a file → edit it: rewrite each `[ ]` to `[x]` inline with its evidence note. The edit tool can fail to match byte-present oldText containing `[ ]` sequences or escape-heavy markdown (e.g. `html\`\`` backslash-backtick runs) — after one such failure, apply the flips/replacements by index with a python heredoc asserting `count == 1` per replacement (memory 129); never retry reconstructed strings, and re-verify file state after any reported-partial edit call. Inline plan → record ticks + evidence in the response.
 
 Each tick: `[x]` + a short note citing evidence — command + exit status, or file + symbol anchor cross-checked (never line numbers). Example: `[x] \`bun coverage core\` exits 0 — verified`. **No note, no tick.** A DoD item phrased as a predicted result is untickable by construction — the trap list is `plan` Phase 3; a DoD violating it goes back to `plan`.
 
