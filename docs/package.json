@@ -11,10 +11,6 @@
   "dependencies": {
     "@astrojs/mdx": "7.0.5",
     "@fontsource-variable/mulish": "^5.2.8",
-    "@hellajs/core": "file:../packages/core",
-    "@hellajs/css": "file:../packages/css",
-    "@hellajs/dom": "file:../packages/dom",
-    "@hellajs/ssr": "file:../packages/ssr",
     "@iconify-json/ph": "^1.2.2",
     "@iconify-json/simple-icons": "^1.2.67",
     "@iconify/iconify": "^3.1.1",
@@ -27,8 +23,5 @@
     "shiki": "^4.0.2",
     "tailwindcss": "^4.1.18",
     "typeit": "^8.8.7"
-  },
-  "overrides": {
-    "@hellajs/ssr": "file:../packages/ssr"
   }
 }

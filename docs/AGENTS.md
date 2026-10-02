@@ -1,6 +1,6 @@
 <docs-site-instructions>
 
-  Astro static docs site (`@hellajs/docs`, `docs/`). Independent package — **not** a root bun workspace (root workspaces are `packages/*` + `plugins/*`), with its own `bun.lock` + `package.json`, built by `astro` (never root `bun bundle`/`coverage`/`clean`, which ignore it). A thin presentation layer: page wrappers under `src/pages/` import the real content from `packages/*/docs/` via Vite aliases. Editing a wrapper changes layout/frontmatter only — visible prose lives in the package doc.
+  Astro static docs site (`@hellajs/docs`, `docs/`). Independent package — **not** a root bun workspace (root workspaces are `packages/*` + `plugins/*`), with its own `bun.lock` + `package.json`, built by `astro` (never root `bun bundle`/`coverage`/`clean`, which ignore it). A thin presentation layer: page wrappers under `src/pages/` import the real content from `packages/*/docs/` via Vite aliases. Editing a wrapper changes layout/frontmatter only — visible prose lives in the package doc. `package.json` declares no `@hellajs/*`: runtime imports (vendored `src/components/ui/` files, astro inline `<script>`s) resolve via root `node_modules` walk-up — `docs/node_modules` holds no `@hellajs` and `docs/bun.lock` has zero `@hellajs` entries; keep it that way (never add `@hellajs/*` deps or overrides, never `bun add` into `docs/`). The ui `add` sync prints a `checkPeers` warning naming the undeclared `@hellajs/*` peers — warn-only, expected, do not "fix" by declaring them.
 
   ## Architecture
 

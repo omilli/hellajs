@@ -12,12 +12,5 @@
     "esbuild": "^0.28.2",
     "hono": "^4.13.12",
     "typescript": "~6.0.3"
-  },
-  "dependencies": {
-    "@hellajs/core": "workspace:*",
-    "@hellajs/css": "workspace:*",
-    "@hellajs/dom": "workspace:*",
-    "@hellajs/router": "workspace:*",
-    "@hellajs/ssr": "workspace:*"
   }
 }

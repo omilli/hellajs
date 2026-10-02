@@ -1,8 +1,14 @@
 # Memory Update Log
 
 ## 2026-10-02
-* **Creation**: Added concept [238](entries/238.md) (type: decision).
+* **Creation**: Added concept [238](entries/238.md) (type: correction).
 * **Renumber**: Renumber merged entry 238-identify-kill-stale-port-3000 to 239 (ID collision with operator in-flight 238-examples-root-workspace-members) during plans-ssr-docs-hono-node-servers merge
+* **Deprecation**: Archived [199](archive/199-examples-declare-no-hellajs-deps.md) → superseded by [238](entries/238.md).
+* **Creation**: Added concept [240](entries/240-examples-standalone-zero-deps.md) (type: correction).
+* **Deprecation**: Archived [238](archive/238-examples-root-workspace-members.md) → superseded by [240](entries/240-examples-standalone-zero-deps.md).
+* **Deprecation**: Archived [212](archive/212-docs-site-hellajs-runtime-imports.md) → superseded by [241](entries/241-docs-declares-zero-hellajs-deps.md).
+* **Creation**: Added concept [190](entries/190.md) (type: correction).
+* **Renumber**: Renumber the add-allocated template 190 to 241 - 190 was a never-filled template just deleted (committed empty in 2f9346f0); ID reuse would make the log ambiguous
 
 ## 2026-10-01
 * **Merge**: Renumbered 235-canonical-twin-rename-count-assertions to 236 on merge of plans/ui/code/tailwind-inline-all-strings — 235 was already taken by narrow-map-iterator-destructuring
