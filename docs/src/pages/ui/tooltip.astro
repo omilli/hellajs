@@ -3,90 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import TooltipContent from "@ui/concepts/tooltip.mdx";
+import TooltipDemo, { TooltipManualDemo } from "../../demos/tooltip-demo";
+import demoSource from "../../demos/tooltip-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/tooltip.css", "utf8");
 
 const title = "Tooltip";
-const description = "Interactive Tooltip demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Tooltip demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const manualCode = `<>
-  <TooltipTrigger
-    describedBy="manual-tooltip-content"
-    hook:afterMount={(node) => {
-      trigger = node;
-      hoverIntent(node, {
-        onOpen: () => open(true),
-        onClose: () => open(false),
-        openDelay: 300,
-      });
-    }}
-  >
-    <button type="button">Hover me</button>
-  </TooltipTrigger>
-  {() => open() && (
-    <Portal to="body">
-      <TooltipContent state={state} id="manual-tooltip-content" anchor={() => trigger}>
-        Wired by hand: state, anchor, and hover timing are all explicit.
-      </TooltipContent>
-    </Portal>
-  )}
-</>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Tooltip</h1>
   <p>A hover-triggered label portaled beside its trigger: it opens after a hover delay, anchors with collision flipping, and focus opens it with the same path a pointer takes.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "TooltipDemo", { withImports: true })} note="Hovering opens a portal-mounted, anchor-positioned label; moving between the two buttons skips the delay. Focus opens either one from the keyboard.">
+    <TooltipDemo client:load />
+  </Demo>
   <InstallSection entry="tooltip" />
   <TooltipContent />
   <h2>Examples</h2>
-  <Demo id="demo-manual" title="Manual parts" code={manualCode} note="No composed root to thread state: hoverIntent drives the signal, the portal mounts the label, and anchorPosition pins it to the trigger." />
+  <Demo id="demo-manual" title="Manual parts" code={demoCode(demoSource, "TooltipManualDemo")} note="No composed root to thread state: hoverIntent drives the signal, the portal mounts the label, and anchorPosition pins it to the trigger.">
+    <TooltipManualDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount, Portal } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import { hoverIntent } from "@hellajs/dom";
-  import Button from "../../components/ui/button";
-  import Tooltip, { TooltipContent, TooltipTrigger } from "../../components/ui/tooltip";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${Tooltip} content="Saves every pending change" delayDuration=${100} side=${"top"}>
-        <${Button}>Hover: top</${Button}>
-      <${Tooltip}>
-      <${Tooltip} content="Deploys the current branch" delayDuration=${100} side=${"bottom"} align=${"start"}>
-        <${Button} variant="outline">Hover: bottom-start</${Button}>
-      <${Tooltip}>
-    </div>
-    <p class="demo-note">Hovering opens a portal-mounted, anchor-positioned label; moving between the two buttons skips the delay. Focus opens either one from the keyboard.</p>
-  </div>`, document.getElementById("demo")!);
-
-  const manualOpen = signal(false);
-  const manualState = (): "open" | "closed" => (manualOpen() ? "open" : "closed");
-  let manualTrigger: Element | undefined;
-
-  mount(html`<div class="demo-stack">
-    <${TooltipTrigger}
-      describedBy="manual-tooltip-content"
-      hook:afterMount=${(node: Element) => {
-        manualTrigger = node;
-        hoverIntent(node, {
-          onOpen: () => manualOpen(true),
-          onClose: () => manualOpen(false),
-          openDelay: 300,
-        });
-      }}
-    >
-      <${Button}>Hover me</${Button}>
-    </${TooltipTrigger}>
-    ${() => manualOpen() && Portal({
-      to: "body",
-      children: [TooltipContent({
-        state: manualState,
-        id: "manual-tooltip-content",
-        anchor: () => manualTrigger,
-        children: html`<p>Wired by hand: state, anchor, and hover timing are all explicit.</p>`,
-      })],
-    })}
-  </div>`, document.getElementById("demo-manual")!);
-</script>

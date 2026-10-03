@@ -3,50 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import ToggleContent from "@ui/concepts/toggle.mdx";
+import ToggleDemo, { ToggleNeighborDemo } from "../../demos/toggle-demo";
+import demoSource from "../../demos/toggle-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/toggle.css", "utf8");
 
 const title = "Toggle";
-const description = "Interactive Toggle demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Toggle demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const neighborCode = `<div class="flex items-center gap-2">
-  <Toggle variant="outline" size="sm">Pin</Toggle>
-  <button type="button" class={toggleVariants({ variant: 'outline', size: 'sm' })}>
-    Neighbor
-  </button>
-</div>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Toggle</h1>
   <p>A pressed-state button: aria-pressed and data-state drive the look, with variant and size maps plus a toggleVariants resolver for neighboring markup.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ToggleDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <ToggleDemo client:load />
+  </Demo>
   <InstallSection entry="toggle" />
   <ToggleContent />
   <h2>Examples</h2>
-  <Demo id="demo-neighbor" title="Neighboring markup" code={neighborCode} note="toggleVariants resolves the same class string the component renders, so a plain button matches it exactly." />
+  <Demo id="demo-neighbor" title="Neighboring markup" code={demoCode(demoSource, "ToggleNeighborDemo")} note="toggleVariants resolves the same class string the component renders, so a plain button matches it exactly.">
+    <ToggleNeighborDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Toggle, { toggleVariants } from "../../components/ui/toggle";
-  import "../../components/ui/tokens.js";
-
-  const bold = signal(false);
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${Toggle}
-        pressed=${bold}
-        onPressedChange=${(next: boolean) => bold(next)}
-      >Bold</${Toggle}>
-      <${Toggle} variant="outline">Italic</${Toggle}>
-      <${Toggle} size="sm">Strike</${Toggle}>
-      <${Toggle} size="lg" variant="outline">Underline</${Toggle}>
-    </div>
-    <p class="demo-note">Bold is ${() => (bold() ? "on" : "off")}: aria-pressed flips and the accent palette rides data-state.</p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<div class="demo-row">
-    <${Toggle} variant="outline" size="sm">Pin</${Toggle}>
-    <button type="button" class=${toggleVariants({ variant: "outline", size: "sm" })}>Neighbor</button>
-  </div>`, document.getElementById("demo-neighbor")!);
-</script>

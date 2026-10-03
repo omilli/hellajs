@@ -3,83 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import SheetContent from "@ui/concepts/sheet.mdx";
+import SheetDemo, { SheetManualDemo } from "../../demos/sheet-demo";
+import demoSource from "../../demos/sheet-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/sheet.css", "utf8");
 
 const title = "Sheet";
-const description = "Interactive Sheet demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Sheet demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const manualCode = `<>
-  <button on:click={() => isOpen(true)}>Open</button>
-  {() => isOpen() && (
-    <Portal to="body">
-      <SheetOverlay state={state} />
-      <SheetContent state={state} side="bottom" labelledBy="sheet-manual-title" onClose={() => isOpen(false)}>
-        <SheetHeader>
-          <SheetTitle id="sheet-manual-title">Cart</SheetTitle>
-          <SheetDescription>Three items reserved for you.</SheetDescription>
-        </SheetHeader>
-        <SheetFooter>
-          <SheetClose onClose={() => isOpen(false)} />
-        </SheetFooter>
-      </SheetContent>
-    </Portal>
-  )}
-</>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Sheet</h1>
   <p>A side panel sliding in from any screen edge with an overlay, a built-in X close button, and wired title and description - the caller owns the `open` signal, the component wires everything else.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SheetDemo", { withImports: true })} note="Slides in from the right with wired title and description, an X close button, escape and outside dismissal, and a focus trap.">
+    <SheetDemo client:load />
+  </Demo>
   <InstallSection entry="sheet" />
   <SheetContent />
   <h2>Examples</h2>
-  <Demo id="demo-manual" title="Manual parts" code={manualCode} note="The bottom side composed from the exported parts: overlay and panel portaled by hand, both fed the state accessor, the X close calling your onClose." />
+  <Demo id="demo-manual" title="Manual parts" code={demoCode(demoSource, "SheetManualDemo")} note="The bottom side composed from the exported parts: overlay and panel portaled by hand, both fed the state accessor, the X close calling your onClose.">
+    <SheetManualDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount, Portal } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Button from "../../components/ui/button";
-  import Sheet, { SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetOverlay, SheetTitle } from "../../components/ui/sheet";
-  import "../../components/ui/tokens.js";
-
-  const open = signal(false);
-  mount(html`<div class="demo-stack">
-    <${Button} variant="outline" onclick=${() => open(true)}>Open right sheet</${Button}>
-    <p class="demo-note">Slides in from the right with wired title and description, an X close button, escape and outside dismissal, and a focus trap.</p>
-    <${Sheet} open=${open} onClose=${() => open(false)} side="right" title="Edit profile" description="Make changes to your profile here. Click save when you're done.">
-      <p>This panel slides in from the right edge with its geometry and slide variant from the side table.</p>
-      <${Button} onclick=${() => open(false)}>Save changes</${Button}>
-    </${Sheet}>
-  </div>`, document.getElementById("demo")!);
-
-  const manualOpen = signal(false);
-  const manualState = (): "open" | "closed" => (manualOpen() ? "open" : "closed");
-
-  mount(html`<div class="demo-stack">
-    <${Button} variant="outline" onclick=${() => manualOpen(!manualOpen())}>Open cart</${Button}>
-    ${() => manualOpen() && Portal({
-      to: "body",
-      children: [
-        SheetOverlay({ state: manualState }),
-        SheetContent({
-          state: manualState,
-          side: "bottom",
-          labelledBy: "sheet-demo-manual-title",
-          describedBy: "sheet-demo-manual-description",
-          onClose: () => manualOpen(false),
-          children: html`
-            <${SheetHeader}>
-              <${SheetTitle} id="sheet-demo-manual-title">Cart</${SheetTitle}>
-              <${SheetDescription} id="sheet-demo-manual-description">Three items reserved for you.</${SheetDescription}>
-            </${SheetHeader}>
-            <p>The bottom side from the manual composition: the panel carries its own exit animation, and the X close in the footer calls your onClose.</p>
-            <${SheetFooter}>
-              <${SheetClose} onClose=${() => manualOpen(false)} />
-            </${SheetFooter}>
-          `,
-        }),
-      ],
-    })}
-  </div>`, document.getElementById("demo-manual")!);
-</script>

@@ -3,52 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import ComboboxTitle from "@ui/concepts/combobox.mdx";
+import ComboboxDemo, { ComboboxMultipleDemo } from "../../demos/combobox-demo";
+import demoSource from "../../demos/combobox-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/combobox.css", "utf8");
 
 const title = "Combobox";
-const description = "Interactive Combobox demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Combobox demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const multipleCode = `<Combobox
-  items={fruits}
-  multiple
-  showClear
-  placeholder="Pick several"
-  onValueChange={(values) => console.log(values)}
-/>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Combobox</h1>
   <p>A filterable listbox: the input owns a query signal, the panel anchors to the input wrapper, and typing narrows the options case-insensitively; Enter commits the active option, and multiple mode toggles values into removable chips.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ComboboxDemo", { withImports: true })} note="Typing narrows the options case-insensitively while they hide in place; arrows move the active option and Enter commits it, closing the panel and clearing the query.">
+    <ComboboxDemo client:load />
+  </Demo>
   <InstallSection entry="combobox" />
   <ComboboxTitle />
   <h2>Examples</h2>
-  <Demo id="demo-multiple" title="Multiple selection" code={multipleCode} note="Enter toggles the active value in or out of the array and the panel stays open; each selection renders as a removable chip, and the clear affordance wipes the whole selection." />
+  <Demo id="demo-multiple" title="Multiple selection" code={demoCode(demoSource, "ComboboxMultipleDemo")} note="Enter toggles the active value in or out of the array and the panel stays open; each selection renders as a removable chip, and the clear affordance wipes the whole selection.">
+    <ComboboxMultipleDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Combobox from "../../components/ui/combobox";
-  import "../../components/ui/tokens.js";
-
-  const fruits = [
-    { value: "apple", label: "Apple" },
-    { value: "blueberry", label: "Blueberry" },
-    { value: "canteloupe", label: "Canteloupe" },
-    { value: "date", label: "Date" },
-  ];
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${Combobox} items=${fruits} placeholder="Search fruit" />
-    </div>
-    <p class="demo-note">Typing narrows the options case-insensitively while they hide in place; arrows move the active option and Enter commits it, closing the panel and clearing the query.</p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${Combobox} items=${fruits} multiple showClear placeholder="Pick several" />
-    </div>
-    <p class="demo-note">Enter toggles values in and out of the array while the panel stays open; chips remove their own value, and the clear affordance wipes the whole selection.</p>
-  </div>`, document.getElementById("demo-multiple")!);
-</script>

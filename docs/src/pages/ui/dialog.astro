@@ -3,64 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import DialogContent from "@ui/concepts/dialog.mdx";
+import DialogDemo, { DialogLockedDemo } from "../../demos/dialog-demo";
+import demoSource from "../../demos/dialog-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/dialog.css", "utf8");
 
 const title = "Dialog";
-const description = "Interactive Dialog demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Dialog demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const lockedCode = `<Dialog
-  open={isOpen}
-  onClose={close}
-  title="Confirm shipment"
-  description="Escape and outside presses are ignored; choose an action."
-  closeOnEscape={false}
-  closeOnOutside={false}
-  showCloseButton={false}
->
-  <p>Only the buttons in this panel can close it.</p>
-  <button on:click={close}>Cancel</button>
-  <button on:click={close}>Confirm</button>
-</Dialog>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Dialog</h1>
   <p>A modal overlay plus centered panel: the caller owns the `open` signal while the component wires the title, description, X close button, focus trap, and escape/outside dismissal around it.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "DialogDemo", { withImports: true })} note="Opens a portal-mounted dialog with wired title and description, an X close button, and enter/exit animations.">
+    <DialogDemo client:load />
+  </Demo>
   <InstallSection entry="dialog" />
   <DialogContent />
   <h2>Examples</h2>
-  <Demo id="demo-locked" title="Locked dismissal" code={lockedCode} note="Escape, outside presses, and the X button are wired off; only the panel's own buttons close it." />
+  <Demo id="demo-locked" title="Locked dismissal" code={demoCode(demoSource, "DialogLockedDemo")} note="Escape, outside presses, and the X button are wired off; only the panel's own buttons close it.">
+    <DialogLockedDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Button from "../../components/ui/button";
-  import Dialog from "../../components/ui/dialog";
-  import "../../components/ui/tokens.js";
-
-  const open = signal(false);
-  mount(html`<div class="demo-stack">
-    <${Button} variant="destructive" onclick=${() => open(true)}>Delete account</${Button}>
-    <p class="demo-note">Opens a portal-mounted dialog with wired title and description, an X close button, and enter/exit animations.</p>
-    <${Dialog} open=${open} onClose=${() => open(false)} title="Delete account" description="This permanently removes your account and all of its data.">
-      <p>This action cannot be undone. All of your projects will be lost.</p>
-      <div class="demo-row">
-        <${Button} variant="outline" onclick=${() => open(false)}>Cancel</${Button}>
-        <${Button} variant="destructive" onclick=${() => open(false)}>Delete</${Button}>
-      </div>
-    </${Dialog}>
-  </div>`, document.getElementById("demo")!);
-
-  const locked = signal(false);
-  mount(html`<div class="demo-stack">
-    <${Button} variant="outline" onclick=${() => locked(true)}>Confirm shipment</${Button}>
-    <${Dialog} open=${locked} onClose=${() => locked(false)} title="Confirm shipment" description="Escape and outside presses are ignored; choose an action." closeOnEscape=${false} closeOnOutside=${false} showCloseButton=${false}>
-      <p>Only the buttons in this panel can close it.</p>
-      <div class="demo-row">
-        <${Button} variant="outline" onclick=${() => locked(false)}>Cancel</${Button}>
-        <${Button} onclick=${() => locked(false)}>Confirm</${Button}>
-      </div>
-    </${Dialog}>
-  </div>`, document.getElementById("demo-locked")!);
-</script>

@@ -3,52 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import SelectTitle from "@ui/concepts/select.mdx";
+import SelectDemo, { SelectCompactDemo } from "../../demos/select-demo";
+import demoSource from "../../demos/select-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/select.css", "utf8");
 
 const title = "Select";
-const description = "Interactive Select demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Select demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const compactCode = `<Select
-  items={fruits}
-  size="sm"
-  clearable
-  placeholder="Compact"
-  class="w-48"
-/>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Select</h1>
   <p>A listbox select: the trigger button opens an anchored, width-matched listbox; arrows rove the options, typing jumps to a match, and Enter commits the highlighted value; Escape and an outside press dismiss it.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SelectDemo", { withImports: true })} note="The listbox stretches to the trigger's width and flips on viewport collision; arrows rove the options, typing jumps to a match, Enter commits, and the disabled option is skipped.">
+    <SelectDemo client:load />
+  </Demo>
   <InstallSection entry="select" />
   <SelectTitle />
   <h2>Examples</h2>
-  <Demo id="demo-compact" title="Compact and clearable" code={compactCode} note="The sm size renders the compact trigger height; once a value is selected, the clear affordance appears inside the trigger." />
+  <Demo id="demo-compact" title="Compact and clearable" code={demoCode(demoSource, "SelectCompactDemo")} note="The sm size renders the compact trigger height; once a value is selected, the clear affordance appears inside the trigger, and clearing reports the empty string through onValueChange.">
+    <SelectCompactDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Select from "../../components/ui/select";
-  import "../../components/ui/tokens.js";
-
-  const fruits = [
-    { value: "apple", label: "Apple" },
-    { value: "blueberry", label: "Blueberry" },
-    { value: "canteloupe", label: "Canteloupe" },
-    { value: "date", label: "Date", disabled: true },
-  ];
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${Select} items=${fruits} placeholder="Pick a fruit" />
-    </div>
-    <p class="demo-note">The listbox stretches to the trigger's width and flips on viewport collision; arrows rove the options, typing jumps to a match, Enter commits, and the disabled option is skipped.</p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${Select} items=${fruits} size="sm" clearable placeholder="Compact" class="w-48" />
-    </div>
-    <p class="demo-note">Select a value and the clear affordance appears inside the trigger; clearing reports the empty string through onValueChange.</p>
-  </div>`, document.getElementById("demo-compact")!);
-</script>

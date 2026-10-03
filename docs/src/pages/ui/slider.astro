@@ -3,66 +3,31 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import SliderContent from "@ui/concepts/slider.mdx";
+import SliderDemo, { SliderThumbsDemo, SliderVerticalDemo } from "../../demos/slider-demo";
+import demoSource from "../../demos/slider-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/slider.css", "utf8");
 
 const title = "Slider";
-const description = "Interactive Slider demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Slider demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const thumbsCode = `<label>
-  Price range: {range()[0]} to {range()[1]}
-  <Slider
-    value={range}
-    minStepsBetweenThumbs={5}
-    onValueChange={(next) => range([...next])}
-  />
-</label>`;
-
-const verticalCode = `<Slider value={[60]} orientation="vertical" />`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Slider</h1>
   <p>A pointer and keyboard value control: a track span and range span with one thumb span per value, positions arriving as reactive inline styles.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SliderDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <SliderDemo client:load />
+  </Demo>
   <InstallSection entry="slider" />
   <SliderContent />
   <h2>Examples</h2>
-  <Demo id="demo-thumbs" title="Multiple thumbs" code={thumbsCode} note="The value array length is the thumb count; minStepsBetweenThumbs keeps the two thumbs at least five steps apart." />
-  <Demo id="demo-vertical" title="Vertical" code={verticalCode} note="The orientation prop flips the layout axis and the value mapping; positions arrive as bottom instead of left." />
+  <Demo id="demo-thumbs" title="Multiple thumbs" code={demoCode(demoSource, "SliderThumbsDemo")} note="The value array length is the thumb count; minStepsBetweenThumbs keeps the two thumbs at least five steps apart.">
+    <SliderThumbsDemo client:load />
+  </Demo>
+  <Demo id="demo-vertical" title="Vertical" code={demoCode(demoSource, "SliderVerticalDemo")} note="The orientation prop flips the layout axis and the value mapping; positions arrive as bottom instead of left.">
+    <SliderVerticalDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Slider from "../../components/ui/slider";
-  import "../../components/ui/tokens.js";
-
-  const volume = signal(40);
-  mount(html`<div class="demo-stack">
-    <label class="demo-row">
-      Volume: ${volume}%
-      <${Slider}
-        value=${volume}
-        onValueChange=${(next: number[]) => volume(next[0] ?? 0)}
-      />
-    </label>
-    <p class="demo-note">One value, one thumb: drag the knob or focus it and use the arrow keys; every accepted move reports through onValueChange.</p>
-  </div>`, document.getElementById("demo")!);
-
-  const range = signal([25, 75]);
-  mount(html`<div class="demo-stack">
-    <label class="demo-row">
-      Price range: ${() => range()[0]} to ${() => range()[1]}
-      <${Slider}
-        value=${range}
-        minStepsBetweenThumbs=${5}
-        onValueChange=${(next: number[]) => range([...next])}
-      />
-    </label>
-  </div>`, document.getElementById("demo-thumbs")!);
-
-  mount(html`<div class="demo-stack">
-    <div style="height:10rem;display:flex;align-items:center;">
-      <${Slider} value=${[60]} orientation="vertical" />
-    </div>
-  </div>`, document.getElementById("demo-vertical")!);
-</script>

@@ -1,0 +1,69 @@
+import { style } from "@hellajs/css";
+import ScrollArea, { ScrollBar } from "@registry/scroll-area/css/scroll-area.js";
+
+const stack = style({
+  alignItems: "center",
+  display: "flex",
+  flexDirection: "column",
+  gap: "1rem",
+});
+
+const pane = style({
+  border: "1px solid var(--border)",
+  borderRadius: "calc(var(--radius) - 2px)",
+  height: "14rem",
+  width: "18rem",
+}, { label: "demo-pane" });
+
+const pad = style({
+  padding: "0.75rem",
+}, { label: "demo-pad" });
+
+const itemRow = style({
+  borderBottom: "1px solid color-mix(in oklab, var(--border) 60%, transparent)",
+  fontSize: "0.875rem",
+  padding: "0.25rem 0",
+}, { label: "demo-item-row" });
+
+const colRow = style({
+  alignItems: "center",
+  border: "1px solid var(--border)",
+  borderRadius: "calc(var(--radius) - 2px)",
+  display: "flex",
+  fontSize: "0.875rem",
+  height: "10rem",
+  justifyContent: "center",
+  minWidth: "6rem",
+}, { label: "demo-col-row" });
+
+const colStrip = style({
+  display: "flex",
+  gap: "0.75rem",
+  padding: "0.75rem",
+  width: "max-content",
+}, { label: "demo-col-strip" });
+
+const rows = Array.from({ length: 40 }, (_, i) => <div class={itemRow}>Item {i + 1}</div>);
+
+const cols = Array.from({ length: 12 }, (_, i) => <div class={colRow}>Column {i + 1}</div>);
+
+export default function ScrollAreaDemo() {
+  return (
+    <div class={stack}>
+      <ScrollArea class={pane}>
+        <div class={pad}>{rows}</div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+export function ScrollAreaBothAxesDemo() {
+  return (
+    <div class={stack}>
+      <ScrollArea class={pane}>
+        <div class={colStrip}>{cols}</div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
+  );
+}

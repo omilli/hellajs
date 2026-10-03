@@ -3,68 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import ItemContent from "@ui/concepts/item.mdx";
+import ItemDemo, { ItemSelectionDemo } from "../../demos/item-demo";
+import demoSource from "../../demos/item-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/item.css", "utf8");
 
 const title = "Item";
-const description = "Interactive Item demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Item demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const selectionCode = `<div on:click={(e) => {
-  const row = e.target.closest('[data-slot="item"]');
-  if (row) active([...row.parentElement.children].indexOf(row));
-}}>
-  <ItemGroup>
-    {['Alpha', 'Beta'].map((label, i) => (
-      <Item key={label} selected={() => active() === i}>
-        <ItemContent><ItemTitle>{label}</ItemTitle></ItemContent>
-      </Item>
-    ))}
-  </ItemGroup>
-</div>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Item</h1>
   <p>A flexible list-row composition kit: ten parts covering the group, separator, row, media slot, content stack, title, description, actions, header, and footer, built for settings lists, result rows, and media objects.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ItemDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <ItemDemo client:load />
+  </Demo>
   <InstallSection entry="item" />
   <ItemContent />
   <h2>Examples</h2>
-  <Demo id="demo-selection" title="Reactive selection" code={selectionCode} note="Rows carry no click wiring; a delegated on:click on the wrapper flips the signal and selected drives data-selected and aria-selected." />
+  <Demo id="demo-selection" title="Reactive selection" code={demoCode(demoSource, "ItemSelectionDemo")} note="Click a row; rows carry no click wiring - a delegated on:click on the wrapper flips the signal and selected drives data-selected and aria-selected.">
+    <ItemSelectionDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "../../components/ui/item";
-  import Button from "../../components/ui/button";
-  import "../../components/ui/tokens.js";
-
-  const row = (title, copy) => html`<${Item}>
-    <${ItemMedia} variant="icon">${title[0]}</${ItemMedia}>
-    <${ItemContent}>
-      <${ItemTitle}>${title}</${ItemTitle}>
-      <${ItemDescription}>${copy}</${ItemDescription}>
-    </${ItemContent}>
-    <${ItemActions}><${Button} size="sm" variant="outline">Run</${Button}></${ItemActions}>
-  </${Item}>`;
-  mount(html`<${ItemGroup}>
-    ${row("Archive", "Move the report to long-term storage.")}
-    <${ItemSeparator} />
-    ${row("Export", "Download a CSV of every entry.")}
-    <${ItemSeparator} />
-    ${row("Share", "Invite two teammates to collaborate.")}
-  </${ItemGroup}>`, document.getElementById("demo")!);
-
-  const active = signal(0);
-  const option = (label, i) => html`<${Item} selected=${() => active() === i}>
-    <${ItemContent}><${ItemTitle}>${label}</${ItemTitle}></${ItemContent}>
-  </${Item}>`;
-  mount(html`<div on:click="${(e) => {
-    const row = e.target.closest('[data-slot="item"]');
-    if (row) active([...row.parentElement.children].indexOf(row));
-  }}">
-    <${ItemGroup}>
-      ${["Alpha", "Beta", "Gamma"].map((label, i) => option(label, i))}
-    </${ItemGroup}>
-    <p class="demo-note">Click a row - selection drives data-selected and aria-selected.</p>
-  </div>`, document.getElementById("demo-selection")!);
-</script>

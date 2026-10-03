@@ -3,86 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import AttachmentContent from "@ui/concepts/attachment.mdx";
+import AttachmentDemo, { AttachmentSizesDemo } from "../../demos/attachment-demo";
+import demoSource from "../../demos/attachment-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/attachment.css", "utf8");
 
 const title = "Attachment";
-const description = "Interactive Attachment demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Attachment demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const sizesCode = `<>
-  <Attachment state="done" size="xs">
-    <AttachmentMedia state="done" />
-    <AttachmentContent>
-      <AttachmentTitle>design-xs.png</AttachmentTitle>
-    </AttachmentContent>
-  </Attachment>
-  <Attachment state="done" size="sm">
-    <AttachmentMedia state="done" />
-    <AttachmentContent>
-      <AttachmentTitle>design-sm.png</AttachmentTitle>
-    </AttachmentContent>
-  </Attachment>
-  <Attachment state="done">
-    <AttachmentMedia state="done" />
-    <AttachmentContent>
-      <AttachmentTitle>design.png</AttachmentTitle>
-    </AttachmentContent>
-  </Attachment>
-</>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Attachment</h1>
   <p>A file chip that carries its upload state through one `data-state` prop, with an inline loading spinner while uploading and an error glyph on error.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "AttachmentDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <AttachmentDemo client:load />
+  </Demo>
   <InstallSection entry="attachment" />
   <AttachmentContent />
   <h2>Examples</h2>
-  <Demo id="demo-sizes" title="Sizes" code={sizesCode} note="Size flows to the media and content parts through attribute selectors, so the chip rescales as one unit." />
+  <Demo id="demo-sizes" title="Sizes" code={demoCode(demoSource, "AttachmentSizesDemo")} note="Size flows to the media and content parts through attribute selectors, so the chip rescales as one unit.">
+    <AttachmentSizesDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import {
-    Attachment,
-    AttachmentAction,
-    AttachmentActions,
-    AttachmentContent,
-    AttachmentDescription,
-    AttachmentGroup,
-    AttachmentMedia,
-    AttachmentTitle,
-  } from "../../components/ui/attachment";
-  import "../../components/ui/tokens.js";
-
-  const chip = (name, note, state) => html`<${Attachment} state="${state}" size="sm">
-    <${AttachmentMedia} state="${state}" />
-    <${AttachmentContent}>
-      <${AttachmentTitle}>${name}</${AttachmentTitle}>
-      <${AttachmentDescription}>${note}</${AttachmentDescription}>
-    </${AttachmentContent}>
-    <${AttachmentActions}>
-      <${AttachmentAction} onclick="${() => alert(`Remove ${name}`)}">x</${AttachmentAction}>
-    </${AttachmentActions}>
-  </${Attachment}>`;
-
-  mount(html`<div class="demo-stack">
-    <${AttachmentGroup}>
-      ${chip("report.pdf", "Uploaded", "done")}
-      ${chip("photo.png", "Uploading...", "uploading")}
-      ${chip("archive.zip", "Failed", "error")}
-      ${chip("drop-file", "Waiting", "idle")}
-    </${AttachmentGroup}>
-  </div>`, document.getElementById("demo")!);
-
-  const sized = (name, size) => html`<${Attachment} state="done" size="${size}">
-    <${AttachmentMedia} state="done" />
-    <${AttachmentContent}>
-      <${AttachmentTitle}>${name}</${AttachmentTitle}>
-    </${AttachmentContent}>
-  </${Attachment}>`;
-
-  mount(html`<div class="demo-stack">
-    ${sized("design-xs.png", "xs")}
-    ${sized("design-sm.png", "sm")}
-    ${sized("design.png", "default")}
-  </div>`, document.getElementById("demo-sizes")!);
-</script>

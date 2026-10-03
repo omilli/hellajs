@@ -3,76 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import MessageScrollerContent from "@ui/concepts/message-scroller.mdx";
+import MessageScrollerDemo, { MessageScrollerJumpDemo } from "../../demos/message-scroller-demo";
+import demoSource from "../../demos/message-scroller-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/message-scroller.css", "utf8");
 
 const title = "Message Scroller";
-const description = "Interactive Message Scroller demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Message Scroller demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const jumpCode = `<MessageScroller atBottom={atBottom} class="h-64">
-  <MessageScrollerItem>Older message one</MessageScrollerItem>
-  <MessageScrollerItem>Older message two</MessageScrollerItem>
-  <MessageScrollerItem>Older message three</MessageScrollerItem>
-  <MessageScrollerItem>Older message four</MessageScrollerItem>
-  <MessageScrollerItem>Older message five</MessageScrollerItem>
-  <MessageScrollerItem>Older message six</MessageScrollerItem>
-  <MessageScrollerItem>Older message seven</MessageScrollerItem>
-  <MessageScrollerItem>Newest message</MessageScrollerItem>
-</MessageScroller>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Message Scroller</h1>
   <p>A chat viewport that pins to the bottom while new content arrives and flips to a jump-to-end button when you scroll away, with the state handed to you explicitly.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "MessageScrollerDemo", { withImports: true })} note="Add messages and the viewport stays pinned to the newest bubble; the button row sits outside the scroller.">
+    <MessageScrollerDemo client:load />
+  </Demo>
   <InstallSection entry="message-scroller" />
   <MessageScrollerContent />
   <h2>Examples</h2>
-  <Demo id="demo-jump" title="Jump to end" code={jumpCode} note="Seeding the shared state as false shows the jump button immediately; clicking it scrolls to the end and writes the state back to true." />
+  <Demo id="demo-jump" title="Jump to end" code={demoCode(demoSource, "MessageScrollerJumpDemo")} note="Seeding the shared state as false shows the jump button immediately; clicking it scrolls to the end and writes the state back to true.">
+    <MessageScrollerJumpDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import { MessageScroller, MessageScrollerItem } from "../../components/ui/message-scroller";
-  import { Bubble } from "../../components/ui/bubble";
-  import "../../components/ui/tokens.js";
-
-  const messages = signal(["First message", "Second message", "Third message"]);
-  let counter = 3;
-
-  const send = () => {
-    counter += 1;
-    messages([...messages(), counter % 2 === 0 ? `You: message ${counter}` : `Message ${counter}`]);
-  };
-
-  const frame = html`
-    <div style="height:16rem; display:flex; flex-direction:column; gap:0.5rem">
-      <${MessageScroller} style="flex:1; min-height:0">
-        ${() => messages().map((text) => html`
-          <${MessageScrollerItem}>
-            <${Bubble} variant="${text.startsWith("You") ? "default" : "outline"}">${text}</${Bubble}>
-          </${MessageScrollerItem}>
-        `)}
-      </${MessageScroller}>
-      <button class="demo-button" on:click="${send}">Add a message</button>
-    </div>
-  `;
-
-  mount(frame, document.getElementById("demo")!);
-
-  const atBottom = signal(false);
-
-  mount(html`
-    <div style="height:16rem; display:flex; flex-direction:column">
-      <${MessageScroller} atBottom="${atBottom}" style="flex:1; min-height:0">
-        <${MessageScrollerItem}><${Bubble} variant="outline">Older message one</${Bubble}></${MessageScrollerItem}>
-        <${MessageScrollerItem}><${Bubble} variant="outline">Older message two</${Bubble}></${MessageScrollerItem}>
-        <${MessageScrollerItem}><${Bubble} variant="outline">Older message three</${Bubble}></${MessageScrollerItem}>
-        <${MessageScrollerItem}><${Bubble} variant="outline">Older message four</${Bubble}></${MessageScrollerItem}>
-        <${MessageScrollerItem}><${Bubble} variant="outline">Older message five</${Bubble}></${MessageScrollerItem}>
-        <${MessageScrollerItem}><${Bubble} variant="outline">Older message six</${Bubble}></${MessageScrollerItem}>
-        <${MessageScrollerItem}><${Bubble} variant="outline">Older message seven</${Bubble}></${MessageScrollerItem}>
-        <${MessageScrollerItem}><${Bubble} variant="outline">Newest message</${Bubble}></${MessageScrollerItem}>
-      </${MessageScroller}>
-    </div>
-  `, document.getElementById("demo-jump")!);
-</script>

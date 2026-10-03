@@ -11,6 +11,13 @@ const indexMap = new Map<string, number>();
 const sheets = new Map<string, CSSStyleSheet>();
 
 /**
+ * Style elements already drained of SSR-emitted rules. Adoption runs once
+ * per element: hydration repopulates it from client registrations instead
+ * of duplicating what the server shipped.
+ */
+const adoptedElements = new WeakSet<HTMLStyleElement>();
+
+/**
  * Stable serial per host node. Never reset: qualified registry keys derived
  * from it stay valid across resets, so a re-created hosted sheet reuses the
  * same key space instead of allocating new serials forever.
@@ -51,13 +58,44 @@ function sheetKey(id: string, host?: ParentNode): string {
 }
 
 /**
+ * Drains the braced rules a pre-existing (SSR-emitted) style element carries
+ * that the client's registration state does not know, once per element:
+ * without the drain, upsertRule's miss path would insert registrations
+ * blindly and duplicate every SSR rule inside the adopted element. Block-less
+ * statement rules stay — the client never re-emits them (a leading cascade
+ * layer-order statement is exactly what keeps `hella` declared after the
+ * linked stylesheet's layers once hydration re-inserts its `@layer` blocks;
+ * draining it re-declares `hella` first and hands the cascade back to
+ * preflight). Bottom-up deleteRule; a rule the platform rejects (exotic
+ * types, e.g. @layer in happy-dom) stays rather than aborting the drain —
+ * client registrations still repopulate around it.
+ */
+function adoptElementRules(el: HTMLStyleElement): void {
+  if (adoptedElements.has(el)) return;
+  adoptedElements.add(el);
+  const s = el.sheet as CSSStyleSheet | null;
+  if (!s) return;
+  let i = s.cssRules.length;
+  while (i--) {
+    if (!ruleIsBraced(s, i)) continue;
+    try {
+      s.deleteRule(i);
+    } catch {
+      // Undeleteable rule — skip; repopulation does not depend on it.
+    }
+  }
+}
+
+/**
  * Returns or creates the CSSStyleSheet for the given style element id.
  * With a host, skips the id lookup entirely (id collisions across hosts are
  * fine — the created <style> carries no id) and creates one <style> per id
  * inside the host, cached weakly by host. On the default path, creation
  * enforces the canonical document order (`hella-css` before `hella-vars`,
  * regardless of first-write order) so the cascade matches cssText()'s
- * css-side-then-vars emission.
+ * css-side-then-vars emission. A pre-existing element (SSR hydration) is
+ * adopted once: its braced rules drain (statements stay) so client
+ * registrations repopulate the same element without duplicates.
  */
 function getSheet(id: string, host?: ParentNode): CSSStyleSheet | undefined {
   if (!hasDocument()) return undefined;
@@ -82,7 +120,9 @@ function getSheet(id: string, host?: ParentNode): CSSStyleSheet | undefined {
   if (s) return s;
 
   let el = document.getElementById(id) as HTMLStyleElement | null;
-  if (!el) {
+  if (el) {
+    adoptElementRules(el);
+  } else {
     el = document.createElement("style");
     el.id = id;
     // hella-css slots before an existing hella-vars so cross-sheet cascade
@@ -131,6 +171,21 @@ function shiftIndexesUp(qid: string, insertedIndex: number): void {
 }
 
 /**
+ * Whether the rule at `index` is braced (a real rule) versus a block-less
+ * statement (`@import`, `@charset`, a layer-order `@layer a, b;`). cssText
+ * access throws on a rule the platform has invalidated; such a rule counts
+ * as braced — the placement-safe side for inserts and the drained side for
+ * adoption.
+ */
+function ruleIsBraced(s: CSSStyleSheet, index: number): boolean {
+  try {
+    return s.cssRules[index]!.cssText.includes("{");
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Insert position for a rule: block-less statements (@import, @charset)
  * land ahead of the first braced rule — the CSSOM rejects a statement placed
  * after any real rule (check-for-import-rule) — so they take the first braced
@@ -139,18 +194,10 @@ function shiftIndexesUp(qid: string, insertedIndex: number): void {
  */
 function resolveInsertIndex(s: CSSStyleSheet, cssText: string): number {
   if (cssText.includes("{")) return s.cssRules.length;
-  const rules = s.cssRules;
-  const len = rules.length;
+  const len = s.cssRules.length;
   let i = 0;
   while (i < len) {
-    let braced = true;
-    try {
-      braced = rules[i]!.cssText.includes("{");
-    } catch {
-      // cssText access throws on a rule the platform has invalidated; treat it
-      // as braced so the statement lands ahead of it (the placement-safe side).
-    }
-    if (braced) return i;
+    if (ruleIsBraced(s, i)) return i;
     i++;
   }
   return len;

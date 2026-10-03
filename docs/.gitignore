@@ -23,6 +23,9 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
+# per-page demo css (gen-demo-css)
+src/generated/pagecss/
+
 # generator scratch (install-sources)
 .tmp/
 

@@ -3,67 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import ToggleGroupContent from "@ui/concepts/toggle-group.mdx";
+import ToggleGroupDemo, { ToggleGroupMultipleDemo } from "../../demos/toggle-group-demo";
+import demoSource from "../../demos/toggle-group-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/toggle-group.css", "utf8");
 
 const title = "Toggle Group";
-const description = "Interactive Toggle Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Toggle Group demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const multipleCode = `<ToggleGroup
-  type="multiple"
-  variant="outline"
-  items={[
-    { value: 'bold', label: 'B' },
-    { value: 'italic', label: 'I' },
-    { value: 'underline', label: 'U' },
-  ]}
-  values={formats}
-  onValueChange={(next) => formats(next)}
-/>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Toggle Group</h1>
   <p>A set of pressed-state buttons: a role="group" root that renders one item button per entry, in single (one active value) or multiple (a set of active values) mode.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ToggleGroupDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <ToggleGroupDemo client:load />
+  </Demo>
   <InstallSection entry="toggle-group" />
   <ToggleGroupContent />
   <h2>Examples</h2>
-  <Demo id="demo-multiple" title="Multiple" code={multipleCode} note="Multiple mode toggles set membership; the roving arrows move focus while clicks do the selecting." />
+  <Demo id="demo-multiple" title="Multiple" code={demoCode(demoSource, "ToggleGroupMultipleDemo")} note="Multiple mode toggles set membership; the roving arrows move focus while clicks do the selecting.">
+    <ToggleGroupMultipleDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import ToggleGroup from "../../components/ui/toggle-group";
-  import "../../components/ui/tokens.js";
-
-  const view = signal("week");
-  mount(html`<div class="demo-stack">
-    <${ToggleGroup}
-      type="single"
-      items=${[
-        { value: "day", label: "Day" },
-        { value: "week", label: "Week" },
-        { value: "month", label: "Month" },
-      ]}
-      value=${view}
-      onValueChange=${(next: string) => view(next)}
-    />
-    <p class="demo-note">View: ${() => view() || "none"}. Single mode keeps one active value; clicking the active item deselects it and reports an empty string.</p>
-  </div>`, document.getElementById("demo")!);
-
-  const formats = signal(["bold"]);
-  mount(html`<div class="demo-stack">
-    <${ToggleGroup}
-      type="multiple"
-      variant="outline"
-      items=${[
-        { value: "bold", label: "B" },
-        { value: "italic", label: "I" },
-        { value: "underline", label: "U" },
-      ]}
-      values=${formats}
-      onValueChange=${(next: string[]) => formats(next)}
-    />
-    <p class="demo-note">Formats: ${() => formats().join(", ") || "none"}.</p>
-  </div>`, document.getElementById("demo-multiple")!);
-</script>

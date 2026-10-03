@@ -169,7 +169,7 @@ const body = ssr(page('Hello'));
 
 ### Styled output
 
-[`@hellajs/css`](/reference/css) registers styles on both platforms: [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` proxy on the server too. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag. `ssr` never imports `@hellajs/css`; the caller assembles both.
+[`@hellajs/css`](/reference/css) registers styles on both platforms: [`style`](/reference/css/style) returns its class and [`vars`](/reference/css/vars) its `var()` proxy on the server too. Collect the generated text with [`cssText`](/reference/css/csstext) and place it in a `<style>` tag carrying the `hella-css` id, so client hydration adopts the element instead of duplicating its rules. `ssr` never imports `@hellajs/css`; the caller assembles both.
 
 ```js
 import { html } from '@hellajs/dom';
@@ -181,7 +181,7 @@ const btn = style({ color: 'red' }, { label: 'btn' });
 // `cssText()` holds ".h-btn-…{color:red}"; on client and server alike
 
 const body = ssr(html`<button class=${btn}>Click</button>`);
-const page = `<style>${cssText()}</style><div id="app">${body}</div>`;
+const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</div>`;
 ```
 
 ## Key Concepts

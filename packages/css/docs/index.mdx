@@ -50,7 +50,7 @@ const Card = ({ title, children }: CardProps) => (
 );
 
 // On the server, cssText() collects every registration for one <style> embed
-const head = `<style>${cssText()}</style>`;
+const head = `<style id="hella-css">${cssText()}</style>`;
 ```
 
 ### API

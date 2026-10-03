@@ -4,10 +4,11 @@ import tailwindcss from "@tailwindcss/vite";
 import icon from "astro-icon";
 import mdx from '@astrojs/mdx';
 import pagefind from "astro-pagefind";
+import hellajs from "astro-plugin-hellajs";
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [icon(), mdx(), pagefind()],
+  integrations: [icon(), mdx(), pagefind(), hellajs()],
   vite: {
     plugins: [tailwindcss()],
     resolve: {
@@ -20,6 +21,7 @@ export default defineConfig({
         '@store/*': '../packages/store/docs/*',
         '@ssr/*': '../packages/ssr/docs/*',
         '@ui/*': '../packages/ui/docs/*',
+        '@registry/*': '../packages/ui/dist/registry/*',
         '@examples/*': '../examples/*'
       }
     }

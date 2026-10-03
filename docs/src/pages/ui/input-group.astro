@@ -3,64 +3,31 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import InputGroupContent from "@ui/concepts/input-group.mdx";
+import InputGroupDemo, { InputGroupColumnDemo, InputGroupRingsDemo } from "../../demos/input-group-demo";
+import demoSource from "../../demos/input-group-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/input-group.css", "utf8");
 
 const title = "Input Group";
-const description = "Interactive Input Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Input Group demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const ringsCode = `<div class="flex flex-col gap-4">
-  <InputGroup>
-    <InputGroupInput placeholder="Focus me - the whole group lights up" />
-  </InputGroup>
-  <InputGroup>
-    <InputGroupInput placeholder="Invalid value" ariaInvalid />
-  </InputGroup>
-</div>`;
-
-const columnCode = `<InputGroup>
-  <InputGroupAddon align="block-start">
-    <InputGroupText>New comment</InputGroupText>
-  </InputGroupAddon>
-  <InputGroupTextarea placeholder="Write your reply" />
-  <InputGroupAddon align="block-end">
-    <InputGroupButton>Send</InputGroupButton>
-  </InputGroupAddon>
-</InputGroup>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Input Group</h1>
   <p>A wrapper that joins an input or textarea with buttons, text, and dropdowns under one border: the group owns the focus and invalid rings, while the control itself strips its own ring.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "InputGroupDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <InputGroupDemo client:load />
+  </Demo>
   <InstallSection entry="input-group" />
   <InputGroupContent />
   <h2>Examples</h2>
-  <Demo id="demo-rings" title="Focus and invalid rings" code={ringsCode} note="The group owns both rings: focusing the control lights the composite up, and aria-invalid turns the border destructive." />
-  <Demo id="demo-column" title="Column composite" code={columnCode} note="Block alignments stack the group into a column around the control." />
+  <Demo id="demo-rings" title="Focus and invalid rings" code={demoCode(demoSource, "InputGroupRingsDemo")} note="The group owns both rings: focusing the control lights the composite up, and aria-invalid turns the border destructive.">
+    <InputGroupRingsDemo client:load />
+  </Demo>
+  <Demo id="demo-column" title="Column composite" code={demoCode(demoSource, "InputGroupColumnDemo")} note="Block alignments stack the group into a column around the control.">
+    <InputGroupColumnDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import InputGroup, { InputGroupAddon, InputGroupButton, InputGroupInput, InputGroupText, InputGroupTextarea } from "../../components/ui/input-group";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<${InputGroup}>
-    <${InputGroupAddon}><${InputGroupText}>Search</${InputGroupText}></${InputGroupAddon}>
-    <${InputGroupInput} placeholder="Enter query" />
-    <${InputGroupAddon} align="inline-end"><${InputGroupButton}>Go</${InputGroupButton}></${InputGroupAddon}>
-  </${InputGroup}>`, document.getElementById("demo")!);
-
-  mount(html`<div class="demo-stack">
-    <${InputGroup}>
-      <${InputGroupInput} placeholder="Focus me - the whole group lights up" />
-    </${InputGroup}>
-    <${InputGroup}>
-      <${InputGroupInput} placeholder="Invalid value" ariaInvalid=${true} />
-    </${InputGroup}>
-  </div>`, document.getElementById("demo-rings")!);
-
-  mount(html`<${InputGroup}>
-    <${InputGroupAddon} align="block-start"><${InputGroupText}>New comment</${InputGroupText}></${InputGroupAddon}>
-    <${InputGroupTextarea} placeholder="Write your reply" />
-    <${InputGroupAddon} align="block-end"><${InputGroupButton}>Send</${InputGroupButton}></${InputGroupAddon}>
-  </${InputGroup}>`, document.getElementById("demo-column")!);
-</script>

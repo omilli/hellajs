@@ -3,114 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import SidebarContent from "@ui/concepts/sidebar.mdx";
+import SidebarDemo, { SidebarMenuDemo } from "../../demos/sidebar-demo";
+import demoSource from "../../demos/sidebar-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/sidebar.css", "utf8");
 
 const title = "Sidebar";
-const description = "Interactive Sidebar demo running the CLI-vendored css-flavor source the same `add` command installs, with the provider-owned open and mobile state and the full menu part family.";
+const description = "Interactive Sidebar demo running the site's built registry source via an Astro island, with the provider-owned open and mobile state and the full menu part family.";
 
-const menuCode = `<SidebarMenu>
-  <SidebarMenuItem>
-    <SidebarMenuButton active>Inbox</SidebarMenuButton>
-    <SidebarMenuBadge>3</SidebarMenuBadge>
-    <SidebarMenuAction showOnHover onclick={() => console.log('configure')}>Configure</SidebarMenuAction>
-    <SidebarMenuSub>
-      <SidebarMenuSubItem>
-        <SidebarMenuSubButton active href="/settings">Settings</SidebarMenuSubButton>
-      </SidebarMenuSubItem>
-    </SidebarMenuSub>
-  </SidebarMenuItem>
-  <SidebarMenuItem>
-    <SidebarMenuSkeleton showIcon />
-  </SidebarMenuItem>
-</SidebarMenu>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Sidebar</h1>
   <p>A composite shell whose provider owns the open and mobile state: a collapsible desktop panel with three variants, a mobile sheet past 769px, and a full menu part family.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SidebarDemo", { withImports: true })} note="The panel collapses to icons on toggle; menu buttons show their tooltip while collapsed, and the shell switches to a sheet under 769px.">
+    <SidebarDemo client:load />
+  </Demo>
   <InstallSection entry="sidebar" />
   <SidebarContent />
   <h2>Examples</h2>
-  <Demo id="demo-menu" title="Menu composition" code={menuCode} note="A badge, a hover-revealed action, sub-navigation, and a loading skeleton compose onto plain menu items; every part carries its data-slot and data-sidebar hooks." />
+  <Demo id="demo-menu" title="Menu composition" code={demoCode(demoSource, "SidebarMenuDemo")} note="A badge, a hover-revealed action, sub-navigation, and a loading skeleton compose onto plain menu items; every part carries its data-slot and data-sidebar hooks. The action fades in on item hover from md up, and the skeleton picks a random width per mount.">
+    <SidebarMenuDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarInset,
-    SidebarMenu,
-    SidebarMenuAction,
-    SidebarMenuBadge,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarMenuSkeleton,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
-    SidebarProvider,
-    SidebarSeparator,
-    SidebarTrigger,
-  } from "../../components/ui/sidebar";
-  import "../../components/ui/tokens.js";
-
-  // Hero: the layout shell with provider-owned collapsible state.
-  mount(html`
-    <${SidebarProvider}>
-      ${(state) => html`
-        <div class="demo-stack">
-          <${Sidebar} open=${state.open} mobile=${state.mobile} openMobile=${state.openMobile} onOpenMobileChange=${state.setOpenMobile} collapsible="icon">
-            <${SidebarHeader}><span class="demo-note">Acme Inc</span></${SidebarHeader}>
-            <${SidebarContent}>
-              <${SidebarGroup}>
-                <${SidebarGroupLabel}>Application</${SidebarGroupLabel}>
-                <${SidebarGroupContent}>
-                  <${SidebarMenu}>
-                    <${SidebarMenuItem}>
-                      <${SidebarMenuButton} active tooltip="Home" open=${state.open} mobile=${state.mobile}>Home</${SidebarMenuButton}>
-                    </${SidebarMenuItem}>
-                    <${SidebarMenuItem}>
-                      <${SidebarMenuButton} tooltip="Search" open=${state.open} mobile=${state.mobile}>Search</${SidebarMenuButton}>
-                    </${SidebarMenuItem}>
-                  </${SidebarMenu}>
-                </${SidebarGroupContent}>
-              </${SidebarGroup}>
-            </${SidebarContent}>
-            <${SidebarSeparator} />
-            <${SidebarFooter}><span class="demo-note">Ctrl+B toggles</span></${SidebarFooter}>
-          </${Sidebar}>
-          <${SidebarInset}>
-            <${SidebarTrigger} onToggle=${state.onToggle} />
-            <p class="demo-note">The panel collapses to icons on toggle; menu buttons show their tooltip while collapsed, and the shell switches to a sheet under 769px.</p>
-          </${SidebarInset}>
-        </div>
-      `}
-    </${SidebarProvider}>
-  `, document.getElementById("demo")!);
-
-  // Menu composition: badge, hover action, sub-navigation, skeleton.
-  mount(html`<div class="demo-stack">
-    <${SidebarMenu}>
-      <${SidebarMenuItem}>
-        <${SidebarMenuButton} active>Inbox</${SidebarMenuButton}>
-        <${SidebarMenuBadge}>3</${SidebarMenuBadge}>
-        <${SidebarMenuAction} showOnHover onclick=${() => console.log("configure")}>Configure</${SidebarMenuAction}>
-        <${SidebarMenuSub}>
-          <${SidebarMenuSubItem}>
-            <${SidebarMenuSubButton} active href="#settings">Settings</${SidebarMenuSubButton}>
-          </${SidebarMenuSubItem}>
-        </${SidebarMenuSub}>
-      </${SidebarMenuItem}>
-      <${SidebarMenuItem}>
-        <${SidebarMenuSkeleton} showIcon />
-      </${SidebarMenuItem}>
-    </${SidebarMenu}>
-    <p class="demo-note">The action fades in on item hover from md up; the skeleton picks a random width per mount.</p>
-  </div>`, document.getElementById("demo-menu")!);
-</script>

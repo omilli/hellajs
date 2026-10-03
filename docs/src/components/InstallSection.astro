@@ -7,32 +7,29 @@ interface Props {
 
 const { entry } = Astro.props;
 
-// The three generated variants are real `add`-output files written by
-// `bun install-sources`; css-html is the site's vendored component file
-// itself, read via `?raw` — display and runtime are one artifact, with no
-// ui-package import anywhere in site code (the packages/ui/tests drift
-// guard pins vendored == fresh `add` output).
+// All four variants are real `add`-output files written by `bun
+// install-sources` — the Manual tab shows exactly what the CLI writes, as
+// real greppable files, with no ui-package import anywhere in site code.
 const cssJsx = import.meta.glob("../generated/install/css-jsx/*.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+const cssHtml = import.meta.glob("../generated/install/css-html/*.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const tailwindJsx = import.meta.glob("../generated/install/tailwind-jsx/*.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const tailwindHtml = import.meta.glob("../generated/install/tailwind-html/*.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
-const vendored = import.meta.glob("../components/ui/*.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 
 const sourceMaps: Record<string, Record<string, string>> = {
   "css-jsx": cssJsx,
-  "css-html": vendored,
+  "css-html": cssHtml,
   "tailwind-jsx": tailwindJsx,
   "tailwind-html": tailwindHtml,
 };
 const sourceKeys: Record<string, string> = {
   "css-jsx": `../generated/install/css-jsx/${entry}.tsx`,
-  "css-html": `/ui/${entry}.ts`,
+  "css-html": `../generated/install/css-html/${entry}.ts`,
   "tailwind-jsx": `../generated/install/tailwind-jsx/${entry}.tsx`,
   "tailwind-html": `../generated/install/tailwind-html/${entry}.ts`,
 };
 
-// Vite normalizes glob keys relative to this file — the vendored pattern's
-// `..` rejoin collapses (`docs/src/components/../components/ui/` → `ui/`),
-// so match by anchored suffix instead of assuming a literal key.
+// Vite normalizes glob keys relative to this file, so match by anchored
+// suffix instead of assuming a literal key.
 const sources: Record<string, string> = {};
 for (const [variant, key] of Object.entries(sourceKeys)) {
   const match = Object.entries(sourceMaps[variant]).find(([file]) => file.endsWith(key));

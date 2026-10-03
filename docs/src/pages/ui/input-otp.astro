@@ -3,75 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import InputOtpContent from "@ui/concepts/input-otp.mdx";
+import InputOtpDemo, { InputOtpDigitsDemo } from "../../demos/input-otp-demo";
+import demoSource from "../../demos/input-otp-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/input-otp.css", "utf8");
 
 const title = "Input OTP";
-const description = "Interactive Input OTP demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Input OTP demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const digitsCode = `<InputOTP length={4} pattern={/^\\d+$/}>
-  <InputOTPGroup>
-    <InputOTPSlot index={0} />
-    <InputOTPSlot index={1} />
-    <InputOTPSlot index={2} />
-    <InputOTPSlot index={3} />
-  </InputOTPGroup>
-</InputOTP>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Input OTP</h1>
   <p>The segmented one-time-code input: one visually transparent input owns focus, value, and selection, while the slots are pure mirrors of its state, so typing, IME composition, deletion, arrows, and paste stay fully native.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "InputOtpDemo", { withImports: true })} note="One hidden input owns the keyboard, so typing, backspace, arrows, and paste all behave natively. Focus lands on the next empty slot and the caret slot blinks.">
+    <InputOtpDemo client:load />
+  </Demo>
   <InstallSection entry="input-otp" />
   <InputOtpContent />
   <h2>Examples</h2>
-  <Demo id="demo-digits" title="Digit pattern" code={digitsCode} note="A whole-value RegExp rejects any edit that fails it; the previous code stands." />
+  <Demo id="demo-digits" title="Digit pattern" code={demoCode(demoSource, "InputOtpDigitsDemo")} note="A whole-value RegExp rejects any edit that fails it; the previous code stands.">
+    <InputOtpDigitsDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import InputOTP from "../../components/ui/input-otp";
-  import { InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "../../components/ui/input-otp";
-  import "../../components/ui/tokens.js";
-
-  const code = signal("");
-
-  const mask = (value: string): string =>
-    (value + "_".repeat(6)).slice(0, 6).split("").join(" ");
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${InputOTP}
-        length=${6}
-        value=${code}
-        onChange=${(next: string) => code(next)}
-        onComplete=${(next: string) => console.log("complete:", next)}
-      >
-        <${InputOTPGroup}>
-          <${InputOTPSlot} index=${0} />
-          <${InputOTPSlot} index=${1} />
-          <${InputOTPSlot} index=${2} />
-        </${InputOTPGroup}>
-        <${InputOTPSeparator} />
-        <${InputOTPGroup}>
-          <${InputOTPSlot} index=${3} />
-          <${InputOTPSlot} index=${4} />
-          <${InputOTPSlot} index=${5} />
-        </${InputOTPGroup}>
-      </${InputOTP}>
-    </div>
-    <p class="demo-note">
-      One hidden input owns the keyboard, so typing, backspace, arrows, and paste all behave natively.
-      The code so far: ${() => mask(code())} . Focus lands on the next empty slot and the caret slot blinks.
-    </p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<${InputOTP} length=${4} pattern=${/^\d+$/}>
-    <${InputOTPGroup}>
-      <${InputOTPSlot} index=${0} />
-      <${InputOTPSlot} index=${1} />
-      <${InputOTPSlot} index=${2} />
-      <${InputOTPSlot} index=${3} />
-    </${InputOTPGroup}>
-  </${InputOTP}>`, document.getElementById("demo-digits")!);
-</script>

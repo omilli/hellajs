@@ -3,45 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import TabsContent from "@ui/concepts/tabs.mdx";
+import TabsDemo, { TabsLineDemo } from "../../demos/tabs-demo";
+import demoSource from "../../demos/tabs-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/tabs.css", "utf8");
 
 const title = "Tabs";
-const description = "Interactive Tabs demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Tabs demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const lineCode = `<Tabs
-  variant="line"
-  initialId="activity"
-  items={[
-    { id: 'overview', label: 'Overview', content: 'A summary of your workspace activity this week.' },
-    { id: 'activity', label: 'Activity', content: 'Recent edits, comments, and mentions.' },
-  ]}
-/>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Tabs</h1>
   <p>A tablist and its panels with roving keyboard focus: arrow keys move focus and selection together, and the active tab's panel swaps in place.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "TabsDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <TabsDemo client:load />
+  </Demo>
   <InstallSection entry="tabs" />
   <TabsContent />
   <h2>Examples</h2>
-  <Demo id="demo-line" title="Line variant" code={lineCode} note="initialId opens the Activity tab; the line variant draws the active underline." />
+  <Demo id="demo-line" title="Line variant" code={demoCode(demoSource, "TabsLineDemo")} note="initialId opens the Activity tab; the line variant draws the active underline.">
+    <TabsLineDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Tabs from "../../components/ui/tabs";
-  import "../../components/ui/tokens.js";
-
-  const account = [
-    { id: "account", label: "Account", content: html`<p>Change your name, email, and profile details.</p>` },
-    { id: "password", label: "Password", content: html`<p>Set a new password. Minimum eight characters.</p>` },
-    { id: "notifications", label: "Notifications", content: html`<p>Choose which alerts you receive by email.</p>` },
-  ];
-  mount(html`<${Tabs} items=${account} />`, document.getElementById("demo")!);
-
-  const line = [
-    { id: "overview", label: "Overview", content: html`<p>A summary of your workspace activity this week.</p>` },
-    { id: "activity", label: "Activity", content: html`<p>Recent edits, comments, and mentions.</p>` },
-  ];
-  mount(html`<${Tabs} items=${line} variant="line" initialId="activity" />`, document.getElementById("demo-line")!);
-</script>

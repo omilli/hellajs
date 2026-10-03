@@ -3,34 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import TextareaContent from "@ui/concepts/textarea.mdx";
+import TextareaDemo, { TextareaInvalidDemo } from "../../demos/textarea-demo";
+import demoSource from "../../demos/textarea-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/textarea.css", "utf8");
 
 const title = "Textarea";
-const description = "Interactive Textarea demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Textarea demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const invalidCode = `<Textarea placeholder="Required field" ariaInvalid />`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Textarea</h1>
   <p>A multi-line text input: the semantic textarea element with auto-sizing via field-sizing: content, and the same focus, disabled, and invalid treatments as Input.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "TextareaDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <TextareaDemo client:load />
+  </Demo>
   <InstallSection entry="textarea" />
   <TextareaContent />
   <h2>Examples</h2>
-  <Demo id="demo-invalid" title="Invalid state" code={invalidCode} note="ariaInvalid recolors the border and, once focused, the ring, matching Input." />
+  <Demo id="demo-invalid" title="Invalid state" code={demoCode(demoSource, "TextareaInvalidDemo")} note="ariaInvalid recolors the border and, once focused, the ring, matching Input.">
+    <TextareaInvalidDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Textarea from "../../components/ui/textarea";
-  import "../../components/ui/tokens.js";
-
-  const bio = signal("");
-  mount(html`<div class="flex flex-col gap-2">
-    <${Textarea} value=${bio} oninput=${(v) => bio(v)} placeholder="Tell us about yourself" rows=${4} ariaLabel="Biography" />
-    <p class="demo-note">${() => bio().length} characters</p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<${Textarea} placeholder="Required field" ariaInvalid=${true} ariaLabel="Invalid textarea example" />`, document.getElementById("demo-invalid")!);
-</script>

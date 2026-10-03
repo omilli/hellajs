@@ -3,57 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import ScrollAreaContent from "@ui/concepts/scroll-area.mdx";
+import ScrollAreaDemo, { ScrollAreaBothAxesDemo } from "../../demos/scroll-area-demo";
+import demoSource from "../../demos/scroll-area-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/scroll-area.css", "utf8");
 
 const title = "Scroll Area";
-const description = "Interactive Scroll Area demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Scroll Area demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const bothAxesCode = `<ScrollArea class="h-56 w-72 rounded-md border">
-  <div class="flex w-max gap-3 p-3">
-    {Array.from({ length: 12 }, (_, i) => (
-      <div key={i} class="flex h-40 min-w-24 items-center justify-center rounded-md border text-sm">Column {i + 1}</div>
-    ))}
-  </div>
-  <ScrollBar orientation="horizontal" />
-</ScrollArea>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Scroll Area</h1>
   <p>A custom-scrollbar container: a relative root wraps a real scrolling viewport plus an absolutely positioned ScrollBar whose thumb is sized and positioned from the live scroll geometry, so native scrolling stays underneath and the thumb is pure chrome.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ScrollAreaDemo", { withImports: true })} note="The pane scrolls natively (wheel, touch, keyboard) under the custom thumb: drag the thumb and the content follows, and the bar stays rendered with a full-length thumb even when the content fits.">
+    <ScrollAreaDemo client:load />
+  </Demo>
   <InstallSection entry="scroll-area" />
   <ScrollAreaContent />
   <h2>Examples</h2>
-  <Demo id="demo-both-axes" title="Both axes" code={bothAxesCode} note="The horizontal bar composes as a child: it anchors to the relative root, so it never scrolls with the content, and each bar measures and drags its own axis." />
+  <Demo id="demo-both-axes" title="Both axes" code={demoCode(demoSource, "ScrollAreaBothAxesDemo")} note="The horizontal bar composes as a child: it anchors to the relative root, so it never scrolls with the content, and each bar measures and drags its own axis.">
+    <ScrollAreaBothAxesDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import ScrollArea, { ScrollBar } from "../../components/ui/scroll-area";
-  import "../../components/ui/tokens.js";
-
-  const rows = Array.from(
-    { length: 40 },
-    (_, i) => html`<div class="border-b border-b-border/60 py-1 text-sm">Item ${i + 1}</div>`,
-  );
-
-  mount(html`<div class="demo-stack">
-    <${ScrollArea} class="h-56 w-72 rounded-md border">
-      <div class="p-3">${rows}</div>
-    </${ScrollArea}>
-    <p class="demo-note">The pane scrolls natively (wheel, touch, keyboard) under the custom thumb: drag the thumb and the content follows, and the bar stays rendered with a full-length thumb even when the content fits.</p>
-  </div>`, document.getElementById("demo")!);
-
-  const cols = Array.from(
-    { length: 12 },
-    (_, i) => html`<div class="flex h-40 min-w-24 items-center justify-center rounded-md border text-sm">Column ${i + 1}</div>`,
-  );
-
-  mount(html`<div class="demo-stack">
-    <${ScrollArea} class="h-56 w-72 rounded-md border">
-      <div class="flex w-max gap-3 p-3">${cols}</div>
-      <${ScrollBar} orientation="horizontal" />
-    </${ScrollArea}>
-    <p class="demo-note">Wide content scrolls horizontally under the composed bar; at the intersection the corner placeholder lands where the two tracks meet.</p>
-  </div>`, document.getElementById("demo-both-axes")!);
-</script>

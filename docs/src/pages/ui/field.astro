@@ -3,108 +3,31 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import FieldContent from "@ui/concepts/field.mdx";
+import FieldDemo, { FieldResponsiveDemo, FieldStateDemo } from "../../demos/field-demo";
+import demoSource from "../../demos/field-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/field.css", "utf8");
 
 const title = "Field";
-const description = "Interactive Field demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Field demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const stateCode = `<div class="flex flex-col gap-4">
-  <Field disabled>
-    <FieldLabel for="terms">
-      <FieldTitle>Accept terms</FieldTitle>
-    </FieldLabel>
-    <Checkbox id="terms" disabled />
-  </Field>
-  <Field invalid>
-    <FieldLabel for="email">
-      <FieldTitle>Work email</FieldTitle>
-    </FieldLabel>
-    <Input id="email" ariaInvalid placeholder="ada@lovelace.dev" />
-    <FieldError errors={[{ message: 'Enter a valid email.' }]} />
-  </Field>
-</div>`;
-
-const responsiveCode = `<FieldGroup>
-  <Field orientation="responsive">
-    <Checkbox id="updates" />
-    <FieldLabel for="updates">
-      <FieldTitle>Product updates</FieldTitle>
-      <FieldContent>
-        <FieldDescription>News about features and releases, once a month.</FieldDescription>
-      </FieldContent>
-    </FieldLabel>
-  </Field>
-</FieldGroup>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Field</h1>
   <p>A form-field composition kit: ten parts covering the set, legend, group, field row, content stack, label, title, description, separator, and error, wired so disabled and invalid state on the field propagates to its label and title.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "FieldDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <FieldDemo client:load />
+  </Demo>
   <InstallSection entry="field" />
   <FieldContent />
   <h2>Examples</h2>
-  <Demo id="demo-state" title="Disabled and invalid propagation" code={stateCode} note="disabled fades the label and title, invalid turns the field text destructive - neither touches the children's props." />
-  <Demo id="demo-responsive" title="Responsive orientation" code={responsiveCode} note="Inside a FieldGroup the responsive orientation goes horizontal once the group is at least 28rem wide." />
+  <Demo id="demo-state" title="Disabled and invalid propagation" code={demoCode(demoSource, "FieldStateDemo")} note="disabled fades the label and title, invalid turns the field text destructive - neither touches the children's props.">
+    <FieldStateDemo client:load />
+  </Demo>
+  <Demo id="demo-responsive" title="Responsive orientation" code={demoCode(demoSource, "FieldResponsiveDemo")} note="Inside a FieldGroup the responsive orientation goes horizontal once the group is at least 28rem wide.">
+    <FieldResponsiveDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet, FieldTitle } from "../../components/ui/field";
-  import Checkbox from "../../components/ui/checkbox";
-  import Input from "../../components/ui/input";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<${FieldSet}>
-    <${FieldLegend}>Profile</${FieldLegend}>
-    <${FieldGroup}>
-      <${Field}>
-        <${FieldLabel} for="demo-name">
-          <${FieldTitle}>Display name</${FieldTitle}>
-          <${FieldContent}>
-            <${FieldDescription}>Shown on your public profile.</${FieldDescription}>
-          </${FieldContent}>
-        </${FieldLabel}>
-        <${Input} id="demo-name" placeholder="Ada Lovelace" />
-        <${FieldError} errors="${[{ message: "A display name is required." }]}" />
-      </${Field}>
-      <${FieldSeparator} />
-      <${Field}>
-        <${FieldLabel} for="demo-email">
-          <${FieldTitle}>Email</${FieldTitle}>
-          <${FieldContent}>
-            <${FieldDescription}>We only use this for sign-in.</${FieldDescription}>
-          </${FieldContent}>
-        </${FieldLabel}>
-        <${Input} id="demo-email" type="email" placeholder="ada@lovelace.dev" />
-      </${Field}>
-    </${FieldGroup}>
-  </${FieldSet}>`, document.getElementById("demo")!);
-
-  mount(html`<div class="demo-stack">
-    <${Field} disabled>
-      <${FieldLabel} for="demo-terms">
-        <${FieldTitle}>Accept terms</${FieldTitle}>
-      </${FieldLabel}>
-      <${Checkbox} id="demo-terms" disabled />
-    </${Field}>
-    <${Field} invalid>
-      <${FieldLabel} for="demo-email-state">
-        <${FieldTitle}>Work email</${FieldTitle}>
-      </${FieldLabel}>
-      <${Input} id="demo-email-state" ariaInvalid=${true} placeholder="ada@lovelace.dev" />
-      <${FieldError} errors="${[{ message: "Enter a valid email." }]}" />
-    </${Field}>
-  </div>`, document.getElementById("demo-state")!);
-
-  mount(html`<${FieldGroup}>
-    <${Field} orientation="responsive">
-      <${Checkbox} id="demo-updates" />
-      <${FieldLabel} for="demo-updates">
-        <${FieldTitle}>Product updates</${FieldTitle}>
-        <${FieldContent}>
-          <${FieldDescription}>News about features and releases, once a month.</${FieldDescription}>
-        </${FieldContent}>
-      </${FieldLabel}>
-    </${Field}>
-  </${FieldGroup}>`, document.getElementById("demo-responsive")!);
-</script>

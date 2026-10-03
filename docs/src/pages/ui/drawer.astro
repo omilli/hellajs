@@ -3,84 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import DrawerContent from "@ui/concepts/drawer.mdx";
+import DrawerDemo, { DrawerManualDemo } from "../../demos/drawer-demo";
+import demoSource from "../../demos/drawer-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/drawer.css", "utf8");
 
 const title = "Drawer";
-const description = "Interactive Drawer demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Drawer demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const manualCode = `<>
-  <button on:click={() => isOpen(true)}>Open</button>
-  {() => isOpen() && (
-    <Portal to="body">
-      <DrawerOverlay state={state} fraction={dragFraction} />
-      <DrawerContent state={state} fraction={dragFraction} labelledBy="drawer-manual-title" onClose={() => isOpen(false)}>
-        <DrawerHeader>
-          <DrawerTitle id="drawer-manual-title">Cart</DrawerTitle>
-          <DrawerDescription>Three items reserved for you.</DrawerDescription>
-        </DrawerHeader>
-        <DrawerFooter>
-          <DrawerClose onClose={() => isOpen(false)} />
-        </DrawerFooter>
-      </DrawerContent>
-    </Portal>
-  )}
-</>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Drawer</h1>
   <p>A drag-dismissable panel mounting on any screen edge: the panel follows the pointer while dragged, the overlay fades with the distance, and release past a distance or velocity threshold dismisses it.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "DrawerDemo", { withImports: true })} note="Slides up from the bottom edge with a grip handle. Drag the panel down: it follows the pointer, the overlay fades with the distance, and release past 25% of the panel height (or a 500px/s flick) dismisses.">
+    <DrawerDemo client:load />
+  </Demo>
   <InstallSection entry="drawer" />
   <DrawerContent />
   <h2>Examples</h2>
-  <Demo id="demo-manual" title="Manual parts" code={manualCode} note="The overlay and panel share one drag-fraction signal, so the overlay keeps fading while you drag; release past 25% of the panel or flick to dismiss." />
+  <Demo id="demo-manual" title="Manual parts" code={demoCode(demoSource, "DrawerManualDemo")} note="The overlay and panel share one drag-fraction signal, so the overlay keeps fading while you drag; release past 25% of the panel or flick to dismiss.">
+    <DrawerManualDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount, Portal } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Button from "../../components/ui/button";
-  import Drawer, { DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerOverlay, DrawerTitle } from "../../components/ui/drawer";
-  import "../../components/ui/tokens.js";
-
-  const open = signal(false);
-  mount(html`<div class="demo-stack">
-    <${Button} onclick=${() => open(true)}>Open bottom drawer</${Button}>
-    <p class="demo-note">Slides up from the bottom edge with a grip handle. Drag the panel down: it follows the pointer, the overlay fades with the distance, and release past 25% of the panel height (or a 500px/s flick) dismisses.</p>
-    <${Drawer} open=${open} onClose=${() => open(false)} title="Notifications" description="Three unread digests. Drag down to dismiss.">
-      <p>The whole panel is the drag surface; buttons inside it still click normally.</p>
-      <${Button} variant="outline" onclick=${() => open(false)}>Mark all read</${Button}>
-    </${Drawer}>
-  </div>`, document.getElementById("demo")!);
-
-  const manualOpen = signal(false);
-  const manualState = (): "open" | "closed" => (manualOpen() ? "open" : "closed");
-  const manualFraction = signal(0);
-
-  mount(html`<div class="demo-stack">
-    <${Button} variant="outline" onclick=${() => manualOpen(!manualOpen())}>Open cart</${Button}>
-    ${() => manualOpen() && Portal({
-      to: "body",
-      children: [
-        DrawerOverlay({ state: manualState, fraction: manualFraction }),
-        DrawerContent({
-          state: manualState,
-          fraction: manualFraction,
-          labelledBy: "drawer-demo-manual-title",
-          describedBy: "drawer-demo-manual-description",
-          onClose: () => manualOpen(false),
-          children: html`
-            <${DrawerHeader}>
-              <${DrawerTitle} id="drawer-demo-manual-title">Cart</${DrawerTitle}>
-              <${DrawerDescription} id="drawer-demo-manual-description">Three items reserved for you.</${DrawerDescription}>
-            </${DrawerHeader}>
-            <p>Drag it down: both parts read the same fraction signal, the overlay fades with the distance, and the X in the footer is the explicit close.</p>
-            <${DrawerFooter}>
-              <${DrawerClose} onClose=${() => manualOpen(false)} />
-            </${DrawerFooter}>
-          `,
-        }),
-      ],
-    })}
-  </div>`, document.getElementById("demo-manual")!);
-</script>

@@ -3,50 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import CollapsibleContent from "@ui/concepts/collapsible.mdx";
+import CollapsibleDemo, { CollapsibleManualDemo } from "../../demos/collapsible-demo";
+import demoSource from "../../demos/collapsible-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/collapsible.css", "utf8");
 
 const title = "Collapsible";
-const description = "Interactive Collapsible demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Collapsible demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const partsCode = `<div>
-  <CollapsibleTrigger active={open} onToggle={() => open(!open())} controls="region">
-    Custom trigger
-  </CollapsibleTrigger>
-  <CollapsibleContent id="region" active={open}>Custom body</CollapsibleContent>
-</div>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Collapsible</h1>
   <p>A disclosure region: a trigger button and a content region whose open state lives in a signal, animated through a measurement-free grid so any content height works.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "CollapsibleDemo", { withImports: true })} note="The parent signal is the single source of truth; the region label tracks it.">
+    <CollapsibleDemo client:load />
+  </Demo>
   <InstallSection entry="collapsible" />
   <CollapsibleContent />
   <h2>Examples</h2>
-  <Demo id="demo-parts" title="Manual parts" code={partsCode} note="The exported parts take the state explicitly; the composed root derives the region id and threads it for you." />
+  <Demo id="demo-parts" title="Manual parts" code={demoCode(demoSource, "CollapsibleManualDemo")} note="The exported parts take the state explicitly; the composed root derives the region id and threads it for you.">
+    <CollapsibleManualDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Collapsible, { CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
-  import "../../components/ui/tokens.js";
-
-  const open = signal(false);
-  mount(html`<div class="demo-stack">
-    <${Collapsible}
-      open=${open}
-      onOpenChange=${(next: boolean) => open(next)}
-      trigger="What ships in the box?"
-      content=${html`<p class="demo-note">One editable file per component, a theme entry, and no runtime dependency.</p>`}
-    />
-    <p class="demo-note">The region is ${() => (open() ? "open" : "closed")}; the parent signal is the single source of truth.</p>
-  </div>`, document.getElementById("demo")!);
-
-  const customOpen = signal(true);
-  mount(html`<div class="demo-stack">
-    <${CollapsibleTrigger} active=${customOpen} onToggle=${() => customOpen(!customOpen())} controls="manual-region">Can I edit the copied source?</${CollapsibleTrigger}>
-    <${CollapsibleContent} id="manual-region" active=${customOpen}>
-      <p class="demo-note">Yes. The file lands in your project and the style declarations ride inside it.</p>
-    </${CollapsibleContent}>
-  </div>`, document.getElementById("demo-parts")!);
-</script>

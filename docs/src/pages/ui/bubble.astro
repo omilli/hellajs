@@ -3,51 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import BubbleContent from "@ui/concepts/bubble.mdx";
+import BubbleDemo, { BubbleReactionsDemo } from "../../demos/bubble-demo";
+import demoSource from "../../demos/bubble-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/bubble.css", "utf8");
 
 const title = "Bubble";
-const description = "Interactive Bubble demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Bubble demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const reactionsCode = `<Bubble variant="muted">
-  <BubbleContent>Shipping the demo today.</BubbleContent>
-  <BubbleReactions side="bottom" align="end">
-    <button>👍 3</button>
-    <button>🎉 1</button>
-  </BubbleReactions>
-</Bubble>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Bubble</h1>
   <p>A chat bubble in seven surface variants with asymmetric content corners, a group stack, and floating reaction chips.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "BubbleDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <BubbleDemo client:load />
+  </Demo>
   <InstallSection entry="bubble" />
   <BubbleContent />
   <h2>Examples</h2>
-  <Demo id="demo-reactions" title="Floating reactions" code={reactionsCode} note="The chip row floats against its bubble; side and align pick the corner." />
+  <Demo id="demo-reactions" title="Floating reactions" code={demoCode(demoSource, "BubbleReactionsDemo")} note="The chip row floats against its bubble; side and align pick the corner.">
+    <BubbleReactionsDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { Bubble, BubbleContent, BubbleGroup, BubbleReactions } from "../../components/ui/bubble";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="demo-stack">
-    <${BubbleGroup}>
-      <${Bubble}><${BubbleContent}>Default</${BubbleContent}></${Bubble}>
-      <${Bubble} variant="secondary"><${BubbleContent}>Secondary</${BubbleContent}></${Bubble}>
-      <${Bubble} variant="muted"><${BubbleContent}>Muted</${BubbleContent}></${Bubble}>
-      <${Bubble} variant="tinted"><${BubbleContent}>Tinted</${BubbleContent}></${Bubble}>
-      <${Bubble} variant="outline"><${BubbleContent}>Outline</${BubbleContent}></${Bubble}>
-      <${Bubble} variant="ghost"><${BubbleContent}>Ghost</${BubbleContent}></${Bubble}>
-      <${Bubble} variant="destructive"><${BubbleContent}>Destructive</${BubbleContent}></${Bubble}>
-    </${BubbleGroup}>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<${Bubble} variant="muted">
-    <${BubbleContent}>Shipping the demo today.</${BubbleContent}>
-    <${BubbleReactions} side="bottom" align="end">
-      <button>👍 3</button>
-      <button>🎉 1</button>
-    </${BubbleReactions}>
-  </${Bubble}>`, document.getElementById("demo-reactions")!);
-</script>

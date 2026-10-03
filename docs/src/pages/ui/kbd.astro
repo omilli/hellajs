@@ -3,56 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import KbdContent from "@ui/concepts/kbd.mdx";
+import KbdDemo, { KbdGroupDemo } from "../../demos/kbd-demo";
+import demoSource from "../../demos/kbd-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/kbd.css", "utf8");
 
 const title = "Kbd";
-const description = "Interactive Kbd demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Kbd demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const groupCode = `<div class="flex flex-col gap-2 text-sm">
-  <KbdGroup>
-    <Kbd>ctrl</Kbd>
-    <Kbd>shift</Kbd>
-    <Kbd>P</Kbd>
-  </KbdGroup>
-  <KbdGroup>
-    <Kbd>⌘</Kbd>
-    <Kbd>B</Kbd>
-  </KbdGroup>
-</div>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Kbd</h1>
   <p>A keyboard-key chip: a Kbd element for single keys and a KbdGroup for sequences, both rendering the semantic kbd tag.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "KbdDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <KbdDemo client:load />
+  </Demo>
   <InstallSection entry="kbd" />
   <KbdContent />
   <h2>Examples</h2>
-  <Demo id="demo-group" title="Grouped sequences" code={groupCode} />
+  <Demo id="demo-group" title="Grouped sequences" code={demoCode(demoSource, "KbdGroupDemo")}>
+    <KbdGroupDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Kbd, { KbdGroup } from "../../components/ui/kbd";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row items-center text-sm">
-      Save changes <${Kbd}>⌘S</${Kbd}>
-    </div>
-    <div class="demo-row items-center text-sm">
-      Dismiss <${Kbd}>esc</${Kbd}>
-    </div>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<div class="demo-stack">
-    <${KbdGroup}>
-      <${Kbd}>ctrl</${Kbd}>
-      <${Kbd}>shift</${Kbd}>
-      <${Kbd}>P</${Kbd}>
-    </${KbdGroup}>
-    <${KbdGroup}>
-      <${Kbd}>⌘</${Kbd}>
-      <${Kbd}>B</${Kbd}>
-    </${KbdGroup}>
-  </div>`, document.getElementById("demo-group")!);
-</script>

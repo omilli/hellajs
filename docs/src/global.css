@@ -17,6 +17,11 @@
 @source "../../packages/*/docs/**/*";
 @source "../../examples/*/tutorial.mdx";
 
+/* The generated install sources display tailwind-flavor class strings as text;
+   excluded so oxide never compiles CSS for display-only markup like
+   `data-[direction=end]:bottom-4`. Path is stylesheet-relative (docs/src/). */
+@source not "./generated/**";
+
 @font-face {
   font-family: 'Mulish Variable';
   font-style: normal;

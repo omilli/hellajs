@@ -1,12 +1,12 @@
 ---
 title: UI
-description: "Copy-paste registry components installed on these very pages by the same `add` command readers run, with install and usage for both style flavors."
+description: "Copy-paste registry components running live on these pages from the registry's own build output, with install and usage for both style flavors."
 layout: ../../layouts/MainLayout.astro
 ---
 
 # UI
 
-`@hellajs/ui` ships a copy-paste registry: `npx @hellajs/ui add <name>` copies one editable file per component into your project. Every component ships in two style flavors (`css`, the default, styled with [`@hellajs/css`](/reference/css) under the `hella` cascade layer; `tailwind`, backed by `theme.css` and `cn.ts`) and two formats (`jsx` and `html`), with `hella.ui.json` remembering your defaults. The components running on these pages were installed by that same `add` command: the site vendors them into `src/components/ui/` (css flavor, html format, pure runtime, no compiler), byte-identical to what `add --format html` writes. Registry styles inject under the `hella` cascade layer, declared after the site's own layers so component rules win over the site's preflight. Install, theming, and CLI questions live in the sidebar's Config section: [Installation](/ui/installation), [Theming](/ui/theming), and [CLI](/ui/cli).
+`@hellajs/ui` ships a copy-paste registry: `npx @hellajs/ui add <name>` copies one editable file per component into your project. Every component ships in two style flavors (`css`, the default, styled with [`@hellajs/css`](/reference/css) under the `hella` cascade layer; `tailwind`, backed by `theme.css` and `cn.ts`) and two formats (`jsx` and `html`), with `hella.ui.json` remembering your defaults. The components running on these pages are the registry's own built output: the site imports the compiled css-flavor, jsx-format files that `add` copies into your project, so every demo runs exactly what you install. Registry styles inject under the `hella` cascade layer, declared after the site's own layers so component rules win over the site's preflight. Install, theming, and CLI questions live in the sidebar's Config section: [Installation](/ui/installation), [Theming](/ui/theming), and [CLI](/ui/cli).
 
 - [Button](/ui/button): the variant and size matrix with a click counter, the invalid ring, and a call-site class override.
 - [Input](/ui/input): a controlled input echoing its value, plus the invalid state.

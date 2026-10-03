@@ -39,6 +39,9 @@
       "@ui/*": [
         "../packages/ui/docs/*"
       ],
+      "@registry/*": [
+        "../packages/ui/dist/registry/*"
+      ],
       "@examples/*": [
         "../examples/*"
       ]

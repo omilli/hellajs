@@ -3,43 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import SwitchContent from "@ui/concepts/switch.mdx";
+import SwitchDemo, { SwitchDisabledDemo } from "../../demos/switch-demo";
+import demoSource from "../../demos/switch-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/switch.css", "utf8");
 
 const title = "Switch";
-const description = "Interactive Switch demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Switch demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const disabledCode = `<label>
-  <Switch defaultChecked disabled /> Managed by policy
-</label>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Switch</h1>
   <p>An on/off control: a switch-role button whose thumb slides through pure CSS, rendering aria-checked and data-state on root and thumb.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SwitchDemo", { withImports: true })} note="The thumb slides through pure CSS: the style layer reads the root's data-state and translates the knob.">
+    <SwitchDemo client:load />
+  </Demo>
   <InstallSection entry="switch" />
   <SwitchContent />
   <h2>Examples</h2>
-  <Demo id="demo-disabled" title="Disabled" code={disabledCode} note="The disabled attribute blocks pointer and keyboard activation; Space falls through." />
+  <Demo id="demo-disabled" title="Disabled" code={demoCode(demoSource, "SwitchDisabledDemo")} note="The disabled attribute blocks pointer and keyboard activation; Space falls through.">
+    <SwitchDisabledDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Switch from "../../components/ui/switch";
-  import "../../components/ui/tokens.js";
-
-  const airplane = signal(false);
-  mount(html`<div class="demo-stack">
-    <label class="demo-row">
-      <${Switch}
-        checked=${airplane}
-        onCheckedChange=${(next: boolean) => airplane(next)}
-      /> Airplane mode (${() => (airplane() ? "on" : "off")})
-    </label>
-    <p class="demo-note">The thumb slides through pure CSS: the style layer reads the root's data-state and translates the knob.</p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<div class="demo-stack">
-    <label class="demo-row"><${Switch} defaultChecked disabled /> Managed by policy</label>
-  </div>`, document.getElementById("demo-disabled")!);
-</script>

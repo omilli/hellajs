@@ -2,7 +2,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { transformSync } from "@babel/core";
 import babelHellaJS from "babel-plugin-hellajs";
-// @ts-expect-error @babel/preset-typescript ships no type declarations
 import presetTypeScript from "@babel/preset-typescript";
 import { applyStyleVariant } from "../../packages/ui/lib/internal/transform.js";
 import {

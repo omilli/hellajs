@@ -3,49 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import AspectRatioContent from "@ui/concepts/aspect-ratio.mdx";
+import AspectRatioDemo, { AspectRatioRatiosDemo } from "../../demos/aspect-ratio-demo";
+import demoSource from "../../demos/aspect-ratio-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/aspect-ratio.css", "utf8");
 
 const title = "Aspect Ratio";
-const description = "Interactive AspectRatio demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive AspectRatio demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const ratiosCode = `<div class="flex gap-3">
-  <AspectRatio ratio={1} class="w-32 bg-muted rounded-lg overflow-hidden">
-    <div class="flex size-full items-center justify-center text-sm text-muted-foreground">
-      1 / 1
-    </div>
-  </AspectRatio>
-  <AspectRatio ratio={4 / 3} class="flex-1 bg-muted rounded-lg overflow-hidden">
-    <div class="flex size-full items-center justify-center text-sm text-muted-foreground">
-      4 / 3
-    </div>
-  </AspectRatio>
-</div>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Aspect Ratio</h1>
   <p>A fixed-ratio container for media: one wrapper div whose inline aspect-ratio style locks the box shape while children stretch to fill it.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "AspectRatioDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <AspectRatioDemo client:load />
+  </Demo>
   <InstallSection entry="aspect-ratio" />
   <AspectRatioContent />
   <h2>Examples</h2>
-  <Demo id="demo-ratios" title="Other ratios" code={ratiosCode} note="Any number works; a bare AspectRatio defaults to a 1 / 1 square." />
+  <Demo id="demo-ratios" title="Other ratios" code={demoCode(demoSource, "AspectRatioRatiosDemo")} note="Any number works; a bare AspectRatio defaults to a 1 / 1 square.">
+    <AspectRatioRatiosDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import AspectRatio from "../../components/ui/aspect-ratio";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<${AspectRatio} ratio=${16 / 9} class="bg-muted rounded-lg overflow-hidden">
-    <div class="flex size-full items-center justify-center text-sm text-muted-foreground">16 / 9</div>
-  </${AspectRatio}>`, document.getElementById("demo")!);
-
-  mount(html`<div class="flex gap-3">
-    <${AspectRatio} ratio=${1} class="w-32 bg-muted rounded-lg overflow-hidden">
-      <div class="flex size-full items-center justify-center text-sm text-muted-foreground">1 / 1</div>
-    </${AspectRatio}>
-    <${AspectRatio} ratio=${4 / 3} class="flex-1 bg-muted rounded-lg overflow-hidden">
-      <div class="flex size-full items-center justify-center text-sm text-muted-foreground">4 / 3</div>
-    </${AspectRatio}>
-  </div>`, document.getElementById("demo-ratios")!);
-</script>

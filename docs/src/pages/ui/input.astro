@@ -3,34 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import InputContent from "@ui/concepts/input.mdx";
+import InputDemo, { InputInvalidDemo } from "../../demos/input-demo";
+import demoSource from "../../demos/input-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/input.css", "utf8");
 
 const title = "Input";
-const description = "Interactive Input demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Input demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const invalidCode = `<Input placeholder="Required field" ariaInvalid={submitted && email === ''} />`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Input</h1>
   <p>A single-line form field: one base look, a focus ring, and an invalid state, reading and writing its value reactively.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "InputDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <InputDemo client:load />
+  </Demo>
   <InstallSection entry="input" />
   <InputContent />
   <h2>Examples</h2>
-  <Demo id="demo-invalid" title="Invalid state" code={invalidCode} note="ariaInvalid draws the destructive border and ring for failed validation." />
+  <Demo id="demo-invalid" title="Invalid state" code={demoCode(demoSource, "InputInvalidDemo")} note="ariaInvalid draws the destructive border and ring for failed validation.">
+    <InputInvalidDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Input from "../../components/ui/input";
-  import "../../components/ui/tokens.js";
-
-  const email = signal("");
-  mount(html`<div class="demo-stack">
-    <${Input} value=${email} oninput=${(v) => email(v)} placeholder="Email address" aria-label="Email address" />
-    <p class="demo-note">Echoing: ${() => email() === "" ? "nothing yet" : email()}</p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<${Input} placeholder="Required field" ariaInvalid=${true} aria-label="Invalid input example" />`, document.getElementById("demo-invalid")!);
-</script>

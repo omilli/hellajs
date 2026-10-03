@@ -3,45 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import AlertContent from "@ui/concepts/alert.mdx";
+import AlertDemo, { AlertDestructiveDemo } from "../../demos/alert-demo";
+import demoSource from "../../demos/alert-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/alert.css", "utf8");
 
 const title = "Alert";
-const description = "Interactive Alert demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Alert demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const destructiveCode = `<Alert variant="destructive">
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
-  <AlertTitle>Deployment failed</AlertTitle>
-  <AlertDescription>The edge function timed out after 30 seconds. Check the logs, then retry.</AlertDescription>
-</Alert>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Alert</h1>
   <p>A callout with a default and destructive variant, named title and description parts, and a grid that reserves an icon column whenever the first child is an `svg`.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "AlertDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <AlertDemo client:load />
+  </Demo>
   <InstallSection entry="alert" />
   <AlertContent />
   <h2>Examples</h2>
-  <Demo id="demo-destructive" title="Destructive" code={destructiveCode} note="The destructive token colors the root, the title, and the description." />
+  <Demo id="demo-destructive" title="Destructive" code={demoCode(demoSource, "AlertDestructiveDemo")} note="The destructive token colors the root, the title, and the description.">
+    <AlertDestructiveDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Alert, { AlertDescription, AlertTitle } from "../../components/ui/alert";
-  import "../../components/ui/tokens.js";
-
-  const infoIcon = html`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>`;
-
-  mount(html`<${Alert}>
-    ${infoIcon}
-    <${AlertTitle}>Heads up!</${AlertTitle}>
-    <${AlertDescription}>You can copy this alert into any project with one add command.</${AlertDescription}>
-  </${Alert}>`, document.getElementById("demo")!);
-
-  const alertIcon = html`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>`;
-
-  mount(html`<${Alert} variant="destructive">
-    ${alertIcon}
-    <${AlertTitle}>Deployment failed</${AlertTitle}>
-    <${AlertDescription}>The edge function timed out after 30 seconds. Check the logs, then retry.</${AlertDescription}>
-  </${Alert}>`, document.getElementById("demo-destructive")!);
-</script>

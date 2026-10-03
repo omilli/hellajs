@@ -3,76 +3,29 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import CommandTitle from "@ui/concepts/command.mdx";
+import CommandDemo, { CommandPaletteDemo } from "../../demos/command-demo";
+import demoSource from "../../demos/command-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/command.css", "utf8");
 
 const title = "Command";
-const description = "Interactive Command demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Command demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const paletteCode = `<CommandDialog
-  open={open}
-  onClose={() => open(false)}
-  title="Command Palette"
-  description="Search for a command to run..."
->
-  <CommandInput placeholder="Type a command or search..." />
-  <CommandList>
-    <CommandGroup heading="Actions">
-      <CommandItem onSelect={() => open(false)}>
-        Reload theme
-        <CommandShortcut>⌘R</CommandShortcut>
-      </CommandItem>
-      <CommandItem onSelect={() => open(false)}>
-        Open settings
-        <CommandShortcut>⌘S</CommandShortcut>
-      </CommandItem>
-    </CommandGroup>
-  </CommandList>
-</CommandDialog>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Command</h1>
   <p>A command palette: the items-driven root owns the query signal and a scoring filter, ranks matches across labels, values, and keywords, and drives the active item over a flat ranked list.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "CommandDemo", { withImports: true })} note="Typing ranks matches across labels, values, and keywords: earlier starts, word-boundary starts, and keyword hits score higher; arrows move the accent row and Enter reports the active value.">
+    <CommandDemo client:load />
+  </Demo>
   <InstallSection entry="command" />
   <CommandTitle />
   <h2>Examples</h2>
-  <Demo id="demo-palette" title="Palette dialog" code={paletteCode} note="CommandDialog wraps the palette in the dialog surface: overlay, portal, focus trap with restore, and escape plus outside-press dismissal." />
+  <Demo id="demo-palette" title="Palette dialog" code={demoCode(demoSource, "CommandPaletteDemo")} note="CommandDialog wraps the palette in the dialog surface: overlay, portal, focus trap with restore, and escape plus outside-press dismissal.">
+    <CommandPaletteDemo client:load />
+  </Demo>
 </MainLayout>
 
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Button from "../../components/ui/button";
-  import Command, { CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem, CommandShortcut } from "../../components/ui/command";
-  import "../../components/ui/tokens.js";
-
-  const commands = [
-    { value: "theme-light", label: "Light theme", group: "Theme", shortcut: "⌘1" },
-    { value: "theme-dark", label: "Dark theme", group: "Theme", shortcut: "⌘2" },
-    { value: "deploy", label: "Deploy site", group: "Actions", keywords: ["publish", "ship"] },
-    { value: "new-post", label: "New post", group: "Actions", shortcut: "⌘N" },
-  ];
-
-  mount(html`<div class="demo-stack">
-    <${Command} items=${commands} />
-    <p class="demo-note">Typing ranks matches across labels, values, and keywords: earlier starts, word-boundary starts, and keyword hits score higher; arrows move the accent row and Enter reports the active value.</p>
-  </div>`, document.getElementById("demo")!);
-
-  const paletteOpen = signal(false);
-  const closePalette = () => paletteOpen(false);
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row">
-      <${Button} variant="outline" onclick=${() => paletteOpen(true)}>Open palette ⌘K</${Button}>
-    </div>
-    <${CommandDialog} open=${paletteOpen} onClose=${closePalette} title="Command Palette" description="Search for a command to run...">
-      <${CommandInput} placeholder="Type a command or search..." />
-      <${CommandList}>
-        <${CommandGroup} heading="Actions">
-          <${CommandItem} onSelect=${closePalette}>Reload theme<${CommandShortcut}>⌘R</${CommandShortcut}></${CommandItem}>
-          <${CommandItem} onSelect=${closePalette}>Open settings<${CommandShortcut}>⌘S</${CommandShortcut}></${CommandItem}>
-        </${CommandGroup}>
-      </${CommandList}>
-    </${CommandDialog}>
-  </div>`, document.getElementById("demo-palette")!);
-</script>

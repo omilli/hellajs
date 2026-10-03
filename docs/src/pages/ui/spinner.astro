@@ -3,48 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import SpinnerContent from "@ui/concepts/spinner.mdx";
+import SpinnerDemo, { SpinnerBusyDemo } from "../../demos/spinner-demo";
+import demoSource from "../../demos/spinner-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/spinner.css", "utf8");
 
 const title = "Spinner";
-const description = "Interactive Spinner demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Spinner demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const busyCode = `<button type="button" disabled class="inline-flex items-center gap-2">
-  <Spinner />
-  Saving...
-</button>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Spinner</h1>
   <p>An operation-in-progress indicator: the loader-circle glyph inlined as a fixed svg, spinning through a css animation and announcing itself to assistive tech.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SpinnerDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <SpinnerDemo client:load />
+  </Demo>
   <InstallSection entry="spinner" />
   <SpinnerContent />
   <h2>Examples</h2>
-  <Demo id="demo-busy" title="Busy action" code={busyCode} note="role=status and aria-label=Loading announce the wait; the disabled button stops repeat clicks." />
+  <Demo id="demo-busy" title="Busy action" code={demoCode(demoSource, "SpinnerBusyDemo")} note="role=status and aria-label=Loading announce the wait; the disabled button stops repeat clicks.">
+    <SpinnerBusyDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Spinner from "../../components/ui/spinner";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="demo-stack">
-    <div class="demo-row items-center text-muted-foreground">
-      <${Spinner} class="size-3" />
-      <span class="text-sm">Small</span>
-    </div>
-    <div class="demo-row items-center text-muted-foreground">
-      <${Spinner} />
-      <span class="text-sm">Default</span>
-    </div>
-    <div class="demo-row items-center text-muted-foreground">
-      <${Spinner} class="size-6" />
-      <span class="text-sm">Large</span>
-    </div>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<button type="button" disabled class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50">
-    <${Spinner} />
-    Saving...
-  </button>`, document.getElementById("demo-busy")!);
-</script>

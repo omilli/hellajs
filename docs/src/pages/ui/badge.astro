@@ -3,40 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import BadgeContent from "@ui/concepts/badge.mdx";
+import BadgeDemo, { BadgeAnchorDemo } from "../../demos/badge-demo";
+import demoSource from "../../demos/badge-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/badge.css", "utf8");
 
 const title = "Badge";
-const description = "Interactive Badge demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Badge demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const anchorCode = `<a href="#open" class="inline-flex">
-  <Badge variant="outline">12 open</Badge>
-</a>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Badge</h1>
   <p>A small status descriptor: six variants, an aria-invalid state, and anchor-aware hover styles.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "BadgeDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <BadgeDemo client:load />
+  </Demo>
   <InstallSection entry="badge" />
   <BadgeContent />
   <h2>Examples</h2>
-  <Demo id="demo-anchor" title="Anchor hover" code={anchorCode} note="Inside an anchor the hover styles activate: outline picks up the accent surface." />
+  <Demo id="demo-anchor" title="Anchor hover" code={demoCode(demoSource, "BadgeAnchorDemo")} note="Inside an anchor the hover styles activate: outline picks up the accent surface.">
+    <BadgeAnchorDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Badge from "../../components/ui/badge";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="demo-row">
-    <${Badge}>Default</${Badge}>
-    <${Badge} variant="secondary">Secondary</${Badge}>
-    <${Badge} variant="destructive">Destructive</${Badge}>
-    <${Badge} variant="outline">Outline</${Badge}>
-    <${Badge} variant="ghost">Ghost</${Badge}>
-    <${Badge} variant="link">Link</${Badge}>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<a href="#open" class="inline-flex">
-    <${Badge} variant="outline">12 open</${Badge}>
-  </a>`, document.getElementById("demo-anchor")!);
-</script>

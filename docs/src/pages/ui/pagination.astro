@@ -3,67 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import PaginationContent from "@ui/concepts/pagination.mdx";
+import PaginationDemo, { PaginationAnchorDemo } from "../../demos/pagination-demo";
+import demoSource from "../../demos/pagination-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/pagination.css", "utf8");
 
 const title = "Pagination";
-const description = "Interactive Pagination demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Pagination demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const anchorCode = `<Pagination>
-  <PaginationContent>
-    <PaginationItem><PaginationPrevious href={\`?page=1\`} /></PaginationItem>
-    {[1, 2, 3, 4, 5].map((page) => (
-      <PaginationItem key={page}>
-        <PaginationLink href={\`?page=\${page}\`} isActive={page === 2}>{page}</PaginationLink>
-      </PaginationItem>
-    ))}
-    <PaginationItem><PaginationEllipsis /></PaginationItem>
-    <PaginationItem><PaginationNext href={\`?page=3\`} /></PaginationItem>
-  </PaginationContent>
-</Pagination>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Pagination</h1>
   <p>A navigation landmark for paged content: a centered nav wrapping a list of links, with previous/next controls, an ellipsis overflow marker, and an active-page state rendered through the button visual vocabulary.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "PaginationDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <PaginationDemo client:load />
+  </Demo>
   <InstallSection entry="pagination" />
   <PaginationContent />
   <h2>Examples</h2>
-  <Demo id="demo-anchor" title="Anchor paging" code={anchorCode} note="Plain hrefs keep the landmark a real navigation element; isActive renders aria-current and the outline treatment." />
+  <Demo id="demo-anchor" title="Anchor paging" code={demoCode(demoSource, "PaginationAnchorDemo")} note="Plain hrefs keep the landmark a real navigation element; isActive renders aria-current and the outline treatment.">
+    <PaginationAnchorDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Pagination, { PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../../components/ui/pagination";
-  import "../../components/ui/tokens.js";
-
-  const page = signal(2);
-  const pages = [1, 2, 3, 4, 5];
-  const go = (p) => page(p);
-  const landmark = () => html`<${Pagination}>
-    <${PaginationContent}>
-      <${PaginationItem}><${PaginationPrevious} onclick="${() => go(Math.max(1, page() - 1))}" /></${PaginationItem}>
-      ${pages.map((p) => html`<${PaginationItem}>
-        <${PaginationLink} onclick="${() => go(p)}" isActive=${page() === p}>${p}</${PaginationLink}>
-      </${PaginationItem}>`)}
-      <${PaginationItem}><${PaginationEllipsis} /></${PaginationItem}>
-      <${PaginationItem}><${PaginationNext} onclick="${() => go(Math.min(5, page() + 1))}" /></${PaginationItem}>
-    </${PaginationContent}>
-  </${Pagination}>`;
-  mount(html`<div class="demo-stack">
-    ${landmark}
-    <p class="demo-note">Page ${page} of 5, driven by the links' onclick - no router.</p>
-  </div>`, document.getElementById("demo")!);
-
-  const anchor = (p, active) => html`<${PaginationItem}>
-    <${PaginationLink} href="?page=${p}" isActive=${p === active}>${p}</${PaginationLink}>
-  </${PaginationItem}>`;
-  mount(html`<${Pagination}>
-    <${PaginationContent}>
-      <${PaginationItem}><${PaginationPrevious} href="?page=1" /></${PaginationItem}>
-      ${[1, 2, 3, 4, 5].map((p) => anchor(p, 2))}
-      <${PaginationItem}><${PaginationEllipsis} /></${PaginationItem}>
-      <${PaginationItem}><${PaginationNext} href="?page=3" /></${PaginationItem}>
-    </${PaginationContent}>
-  </${Pagination}>`, document.getElementById("demo-anchor")!);
-</script>

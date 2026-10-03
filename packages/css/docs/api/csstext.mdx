@@ -19,7 +19,7 @@ const card = style({ background: 'white' }, { label: 'card' });
 const theme = vars({ color: { primary: '#3b82f6' } });
 const spin = keyframes({ from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } });
 
-const head = `<style>${cssText()}</style>`;
+const head = `<style id="hella-css">${cssText()}</style>`;
 // "body{margin:0px;font-family:system-ui,sans-serif}.h-card-…{background:white}"
 // + "@keyframes h-kf-…{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}"
 // + ":root{--color-primary:#3b82f6}"
@@ -43,8 +43,12 @@ Two style elements exist on the client (`hella-css` for rules, `hella-vars` for 
 
 Styles registered with a `host` (e.g. a shadow root) live in that host's own `<style>` elements, not `document.head`; `cssText()` never includes them, css side and vars side alike. The default SSR flow has no hosts, so the collector covers everything it needs.
 
+### Adopting the Server Tag on Hydration
+
+Emit the collected text through a tag carrying the `hella-css` id (as in [Basic Usage](#basic-usage)) and the client adopts it: the first registration after hydration finds the existing element, drains the braced rules the server shipped (the client's registration state does not know them; block-less statements such as a leading cascade-layer order declaration are preserved), and repopulates the same element from its own registrations. One `hella-css` element before and after hydration: no duplicate rules, no flash of unstyled content. The vars contribution trailing the collected text drains along with everything else and re-lands in the client's `hella-vars` element, restoring the two-element split.
+
 ## Important Considerations
 
-### Client Hydration Re-Injects
+### Hydration Duplicates Without the Id
 
-Embedding `cssText()` in server HTML and letting the client register the same styles on hydration produces duplicate rules in the DOM: accepted behavior. The class names agree (content-hashed), so styling is correct; the duplication is cosmetic and bounded by the number of styles.
+Embedding `cssText()` in server HTML through a tag with no `hella-css` id gives the client nothing to adopt: hydration registers the same styles into a fresh element, and the DOM carries both rule sets. The class names agree (content-hashed), so styling is correct; the duplication is cosmetic and bounded by the number of styles. Emit the tag with the id to get adoption instead.

@@ -3,54 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import CardContent from "@ui/concepts/card.mdx";
+import CardDemo, { CardMinimalDemo } from "../../demos/card-demo";
+import demoSource from "../../demos/card-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/card.css", "utf8");
 
 const title = "Card";
-const description = "Interactive Card demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Card demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const minimalCode = `<Card class="max-w-sm">
-  <CardHeader>
-    <CardTitle>Deploys</CardTitle>
-    <CardDescription>128 this week.</CardDescription>
-  </CardHeader>
-  <CardContent>
-    <p>All regions green.</p>
-  </CardContent>
-</Card>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Card</h1>
   <p>A panel surface composed of a root plus header, title, description, action, content, and footer parts, composable in any arrangement.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "CardDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <CardDemo client:load />
+  </Demo>
   <InstallSection entry="card" />
   <CardContent />
   <h2>Examples</h2>
-  <Demo id="demo-minimal" title="Minimal arrangement" code={minimalCode} note="Parts are optional: a card of header and content alone is a complete card." />
+  <Demo id="demo-minimal" title="Minimal arrangement" code={demoCode(demoSource, "CardMinimalDemo")} note="Parts are optional: a card of header and content alone is a complete card.">
+    <CardMinimalDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Button from "../../components/ui/button";
-  import Card, { CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="demo-stack">
-    <${Card} class="demo-card">
-      <${CardHeader}>
-        <${CardTitle}>Notifications</${CardTitle}>
-        <${CardDescription}>You have three unread messages waiting in your inbox.</${CardDescription}>
-        <${CardAction}><${Button} variant="outline" size="sm">Mark all read</${Button}></${CardAction}>
-      </${CardHeader}>
-      <${CardContent}><p>Review your notification preferences and inbox rules at any time from settings.</p></${CardContent}>
-      <${CardFooter}><${Button}>Open settings</${Button}></${CardFooter}>
-    </${Card}>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<${Card} class="demo-card">
-    <${CardHeader}>
-      <${CardTitle}>Deploys</${CardTitle}>
-      <${CardDescription}>128 this week.</${CardDescription}>
-    </${CardHeader}>
-    <${CardContent}><p>All regions green.</p></${CardContent}>
-  </${Card}>`, document.getElementById("demo-minimal")!);
-</script>

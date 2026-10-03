@@ -3,38 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import LabelContent from "@ui/concepts/label.mdx";
+import LabelDemo, { LabelDisabledDemo } from "../../demos/label-demo";
+import demoSource from "../../demos/label-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/label.css", "utf8");
 
 const title = "Label";
-const description = "Interactive Label demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Label demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const disabledGroupCode = `<div class="group flex flex-col gap-2" data-disabled="true">
-  <Label for="demo-region">Region</Label>
-  <input id="demo-region" value="eu-central-1" disabled />
-</div>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Label</h1>
   <p>A form-field caption: the semantic label element with a for passthrough, plus group- and peer-driven disabled styles.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "LabelDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <LabelDemo client:load />
+  </Demo>
   <InstallSection entry="label" />
   <LabelContent />
   <h2>Examples</h2>
-  <Demo id="demo-disabled" title="Disabled group" code={disabledGroupCode} note="Inside .group[data-disabled=true] the caption dims and drops pointer events; no props needed." />
+  <Demo id="demo-disabled" title="Disabled group" code={demoCode(demoSource, "LabelDisabledDemo")} note="Inside .group[data-disabled=true] the caption dims and drops pointer events; no props needed.">
+    <LabelDisabledDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Label from "../../components/ui/label";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="flex flex-col gap-2">
-    <${Label} for="demo-name">Project name</${Label}>
-    <input id="demo-name" placeholder="acme-site" class="flex h-9 w-full max-w-xs rounded-md border border-input bg-transparent px-3 text-sm" />
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<div class="group flex flex-col gap-2" data-disabled="true">
-    <${Label} for="demo-region">Region</${Label}>
-    <input id="demo-region" value="eu-central-1" disabled class="flex h-9 w-full max-w-xs rounded-md border border-input bg-transparent px-3 text-sm opacity-50" />
-  </div>`, document.getElementById("demo-disabled")!);
-</script>

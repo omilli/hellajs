@@ -3,62 +3,31 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import ButtonGroupContent from "@ui/concepts/button-group.mdx";
+import ButtonGroupDemo, { ButtonGroupPlateDemo, ButtonGroupVerticalDemo } from "../../demos/button-group-demo";
+import demoSource from "../../demos/button-group-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/button-group.css", "utf8");
 
 const title = "Button Group";
-const description = "Interactive Button Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Button Group demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const plateCode = `<ButtonGroup>
-  <ButtonGroupText>https://</ButtonGroupText>
-  <Input value={url} oninput={(v) => url(v)} />
-  <Button variant="outline">Open</Button>
-</ButtonGroup>`;
-
-const verticalCode = `<ButtonGroup orientation="vertical">
-  <Button variant="outline">Top</Button>
-  <Button variant="outline">Middle</Button>
-  <Button variant="outline">Bottom</Button>
-</ButtonGroup>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Button Group</h1>
   <p>A flex container that joins buttons, inputs, and text into one visual control: inner edges are rounded and de-bordered so a row or column of separate elements reads as a single widget.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ButtonGroupDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <ButtonGroupDemo client:load />
+  </Demo>
   <InstallSection entry="button-group" />
   <ButtonGroupContent />
   <h2>Examples</h2>
-  <Demo id="demo-plate" title="Text plate" code={plateCode} note="ButtonGroupText renders the muted prefix plate; compose it with your own input copy." />
-  <Demo id="demo-vertical" title="Vertical orientation" code={verticalCode} note="orientation moves the joined edges to top and bottom." />
+  <Demo id="demo-plate" title="Text plate" code={demoCode(demoSource, "ButtonGroupPlateDemo")} note="ButtonGroupText renders the muted prefix plate; compose it with your own input copy.">
+    <ButtonGroupPlateDemo client:load />
+  </Demo>
+  <Demo id="demo-vertical" title="Vertical orientation" code={demoCode(demoSource, "ButtonGroupVerticalDemo")} note="orientation moves the joined edges to top and bottom.">
+    <ButtonGroupVerticalDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import ButtonGroup, { ButtonGroupSeparator, ButtonGroupText } from "../../components/ui/button-group";
-  import Button from "../../components/ui/button";
-  import Input from "../../components/ui/input";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="demo-row">
-    <${ButtonGroup}>
-      <${Button} variant="outline">Copy</${Button}>
-      <${ButtonGroupSeparator} />
-      <${Button} variant="outline">Paste</${Button}>
-      <${ButtonGroupSeparator} />
-      <${Button} variant="outline">Cut</${Button}>
-    </${ButtonGroup}>
-  </div>`, document.getElementById("demo")!);
-
-  const url = signal("hellajs.com");
-  mount(html`<${ButtonGroup}>
-    <${ButtonGroupText}>https://</${ButtonGroupText}>
-    <${Input} value="${url}" oninput="${(v) => url(v)}" />
-    <${Button} variant="outline">Open</${Button}>
-  </${ButtonGroup}>`, document.getElementById("demo-plate")!);
-
-  mount(html`<${ButtonGroup} orientation="vertical">
-    <${Button} variant="outline">Top</${Button}>
-    <${Button} variant="outline">Middle</${Button}>
-    <${Button} variant="outline">Bottom</${Button}>
-  </${ButtonGroup}>`, document.getElementById("demo-vertical")!);
-</script>

@@ -1,12 +1,9 @@
 // Regenerates the install-source files the docs ui section's InstallSection
 // renders in its Manual tab. For each registry component it runs the PUBLIC
-// `addComponent` API once per generated variant (css-jsx, tailwind-jsx,
-// tailwind-html) inside a throwaway project and copies the canonical file
-// into `docs/src/generated/install/<variant>/` — the Manual tab shows what
-// `add` writes by construction, as real greppable files. The css-html
-// variant is NOT generated: it is the vendored
-// `docs/src/components/ui/<name>.ts`, read via `?raw` by the site — no
-// ui-package import anywhere in site code.
+// `addComponent` API once per generated variant (css-jsx, css-html,
+// tailwind-jsx, tailwind-html) inside a throwaway project and copies the
+// canonical file into `docs/src/generated/install/<variant>/` — the Manual
+// tab shows what `add` writes by construction, as real greppable files.
 // Usage: bun install-sources [entry ...]  (no args = all components)
 import { copyFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -16,6 +13,7 @@ import { ensureDir, logger, projectRoot, writeJson } from "./utils/index.js";
 /** Generated variants: style x format combos addComponent produces a canonical file for. */
 const variants = [
   { style: "css", format: "jsx", dir: "css-jsx", file: (name: string) => `${name}.tsx` },
+  { style: "css", format: "html", dir: "css-html", file: (name: string) => `${name}.ts` },
   { style: "tailwind", format: "jsx", dir: "tailwind-jsx", file: (name: string) => `${name}.tsx` },
   { style: "tailwind", format: "html", dir: "tailwind-html", file: (name: string) => `${name}.ts` },
 ] as const;

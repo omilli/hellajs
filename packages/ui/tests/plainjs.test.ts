@@ -6,7 +6,6 @@ import { addComponent, readConfig } from "@hellajs/ui/bundle";
 import ButtonTsHtml from "../dist/registry/button/css/button-html";
 import { transformSync } from "@babel/core";
 import babelHellaJS from "babel-plugin-hellajs";
-// @ts-expect-error @babel/preset-typescript ships no type declarations
 import presetTypeScript from "@babel/preset-typescript";
 import type { UiFormat, UiLang, UiStyle } from "@hellajs/ui";
 import type { ButtonVariantProps, ComponentVariant } from "./helpers/variants";

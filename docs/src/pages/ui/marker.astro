@@ -3,45 +3,31 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import MarkerContent from "@ui/concepts/marker.mdx";
+import MarkerDemo, { MarkerBorderDemo, MarkerSeparatorDemo } from "../../demos/marker-demo";
+import demoSource from "../../demos/marker-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/marker.css", "utf8");
 
 const title = "Marker";
-const description = "Interactive Marker demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Marker demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const separatorCode = `<Marker variant="separator">
-  <MarkerContent>Chapter 4</MarkerContent>
-</Marker>`;
-
-const borderCode = `<Marker variant="border">
-  <MarkerContent>End of list</MarkerContent>
-</Marker>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Marker</h1>
   <p>A labeled divider row: a full-width strip that presents a short label, with optional rule pseudo-elements or a bottom border, built for timeline captions, empty-state annotations, and section leads.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "MarkerDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <MarkerDemo client:load />
+  </Demo>
   <InstallSection entry="marker" />
   <MarkerContent />
   <h2>Examples</h2>
-  <Demo id="demo-separator" title="Rule variant" code={separatorCode} note="The separator variant adds flex-filling rules before and after the content." />
-  <Demo id="demo-border" title="Border variant" code={borderCode} note="The border variant adds a bottom border - built for end-of-list captions." />
+  <Demo id="demo-separator" title="Rule variant" code={demoCode(demoSource, "MarkerSeparatorDemo")} note="The separator variant adds flex-filling rules before and after the content.">
+    <MarkerSeparatorDemo client:load />
+  </Demo>
+  <Demo id="demo-border" title="Border variant" code={demoCode(demoSource, "MarkerBorderDemo")} note="The border variant adds a bottom border - built for end-of-list captions.">
+    <MarkerBorderDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Marker, { MarkerContent, MarkerIcon } from "../../components/ui/marker";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<${Marker}>
-    <${MarkerIcon}>✳</${MarkerIcon}>
-    <${MarkerContent}>Synced 12 entries just now</${MarkerContent}>
-  </${Marker}>`, document.getElementById("demo")!);
-
-  mount(html`<${Marker} variant="separator">
-    <${MarkerContent}>Chapter 4</${MarkerContent}>
-  </${Marker}>`, document.getElementById("demo-separator")!);
-
-  mount(html`<${Marker} variant="border">
-    <${MarkerContent}>End of list</${MarkerContent}>
-  </${Marker}>`, document.getElementById("demo-border")!);
-</script>

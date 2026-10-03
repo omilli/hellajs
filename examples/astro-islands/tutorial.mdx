@@ -297,7 +297,7 @@ export const styles = cssText();
 
 - **[`css`](/reference/css/css)`({...})`**: Registers global rules. The `#name-input` and `#greeting` selectors reach HTML that Astro itself rendered, outside any island
 - **[`style`](/reference/css/style)`({...}, { label: ... })`**: Returns a content-hashed class scoped to the rules. The hash is computed from the rule text, so the server and the client always produce the same class name
-- **[`cssText`](/reference/css/csstext)`()`**: Collects everything registered above into one string. It peeks, never drains: repeated calls return the same text, and the client re-registers the same rules on hydration
+- **[`cssText`](/reference/css/csstext)`()`**: Collects everything registered above into one string. It peeks, never drains: repeated calls return the same text. The tag carries the `hella-css` id, so client hydration adopts the element and repopulates it instead of duplicating its rules
 
 Wire the counter to its class; the other two islands take theirs the same way:
 
@@ -329,7 +329,7 @@ import { styles } from '../theme';
 <head>
   <meta charset="utf-8" />
   <title>Astro Islands</title>
-  <style is:inline set:html={styles} />
+  <style id="hella-css" is:inline set:html={styles} />
 </head>
 ```
 
@@ -365,7 +365,7 @@ import { styles } from '../theme';
   <head>
     <meta charset="utf-8" />
     <title>Astro Islands</title>
-    <style is:inline set:html={styles} />
+    <style id="hella-css" is:inline set:html={styles} />
   </head>
   <body>
     <h1>Astro Islands</h1>

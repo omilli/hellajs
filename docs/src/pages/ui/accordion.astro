@@ -3,58 +3,31 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import AccordionContent from "@ui/concepts/accordion.mdx";
+import AccordionDemo, { AccordionDisabledDemo, AccordionMultipleDemo } from "../../demos/accordion-demo";
+import demoSource from "../../demos/accordion-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/accordion.css", "utf8");
 
 const title = "Accordion";
-const description = "Interactive Accordion demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Accordion demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const multipleCode = `<Accordion
-    type="multiple"
-    items={[
-      { value: 'size', trigger: 'Size', content: '12 x 8 x 3 centimeters.' },
-      { value: 'weight', trigger: 'Weight', content: '240 grams with the cable.' },
-    ]}
-  />`;
-
-const disabledCode = `<Accordion
-    type="single"
-    items={[
-      { value: 'starter', trigger: 'Starter', content: 'Free for personal projects.' },
-      { value: 'enterprise', trigger: 'Enterprise', content: 'Contact sales to upgrade.', disabled: true },
-    ]}
-  />`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Accordion</h1>
   <p>Each row is an item whose trigger toggles its content region. Animations use a measurement-free grid, so content height is never explicitly measured.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "AccordionDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <AccordionDemo client:load />
+  </Demo>
   <InstallSection entry="accordion" />
   <AccordionContent />
   <h2>Examples</h2>
-  <Demo id="demo-multiple" title="Multiple" code={multipleCode} />
-  <Demo id="demo-disabled" title="Disabled" code={disabledCode} note="The disabled row ignores activation in every mode." />
+  <Demo id="demo-multiple" title="Multiple" code={demoCode(demoSource, "AccordionMultipleDemo")}>
+    <AccordionMultipleDemo client:load />
+  </Demo>
+  <Demo id="demo-disabled" title="Disabled" code={demoCode(demoSource, "AccordionDisabledDemo")} note="The disabled row ignores activation in every mode.">
+    <AccordionDisabledDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Accordion from "../../components/ui/accordion";
-  import "../../components/ui/tokens.js";
-
-  const faq = [
-    { value: "shipping", trigger: "How fast is shipping?", content: html`<p class="demo-note">Two business days, everywhere we deliver.</p>` },
-    { value: "returns", trigger: "What is the return window?", content: html`<p class="demo-note">Thirty days from delivery, no questions asked.</p>` },
-  ];
-  mount(html`<${Accordion} type="single" collapsible open="shipping" items=${faq} />`, document.getElementById("demo")!);
-
-  const specs = [
-    { value: "size", trigger: "Size", content: html`<p class="demo-note">12 x 8 x 3 centimeters.</p>` },
-    { value: "weight", trigger: "Weight", content: html`<p class="demo-note">240 grams with the cable.</p>` },
-  ];
-  mount(html`<${Accordion} type="multiple" items=${specs} />`, document.getElementById("demo-multiple")!);
-
-  const plans = [
-    { value: "starter", trigger: "Starter", content: html`<p class="demo-note">Free for personal projects.</p>` },
-    { value: "enterprise", trigger: "Enterprise", content: html`<p class="demo-note">Contact sales to upgrade.</p>`, disabled: true },
-  ];
-  mount(html`<${Accordion} type="single" items=${plans} />`, document.getElementById("demo-disabled")!);
-</script>

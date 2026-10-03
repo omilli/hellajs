@@ -3,51 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import SeparatorContent from "@ui/concepts/separator.mdx";
+import SeparatorDemo, { SeparatorVerticalDemo } from "../../demos/separator-demo";
+import demoSource from "../../demos/separator-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/separator.css", "utf8");
 
 const title = "Separator";
-const description = "Interactive Separator demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Separator demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const verticalCode = `<div class="flex h-8 items-center gap-3 text-sm">
-  <span>Import</span>
-  <Separator orientation="vertical" />
-  <span>Export</span>
-  <Separator orientation="vertical" />
-  <span>Delete</span>
-</div>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Separator</h1>
   <p>A divider: one thin line with orientation switching between horizontal and vertical, exposed through a separator role and matching orientation attributes.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SeparatorDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <SeparatorDemo client:load />
+  </Demo>
   <InstallSection entry="separator" />
   <SeparatorContent />
   <h2>Examples</h2>
-  <Demo id="demo-vertical" title="Vertical orientation" code={verticalCode} note="A vertical separator stretches through a bounded-height flex row." />
+  <Demo id="demo-vertical" title="Vertical orientation" code={demoCode(demoSource, "SeparatorVerticalDemo")} note="A vertical separator stretches through a bounded-height flex row.">
+    <SeparatorVerticalDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import Separator from "../../components/ui/separator";
-  import "../../components/ui/tokens.js";
-
-  mount(html`<div class="demo-stack">
-    <div>
-      <h3 class="text-lg font-medium">Profile</h3>
-      <p class="text-sm text-muted-foreground">Your public profile details.</p>
-    </div>
-    <${Separator} />
-    <div>
-      <h3 class="text-lg font-medium">Security</h3>
-      <p class="text-sm text-muted-foreground">Sessions and two-factor settings.</p>
-    </div>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<div class="flex h-8 items-center gap-3 text-sm">
-    <span>Import</span>
-    <${Separator} orientation="vertical" />
-    <span>Export</span>
-    <${Separator} orientation="vertical" />
-    <span>Delete</span>
-  </div>`, document.getElementById("demo-vertical")!);
-</script>

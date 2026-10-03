@@ -3,58 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import RadioGroupContent from "@ui/concepts/radio-group.mdx";
+import RadioGroupDemo, { RadioGroupHorizontalDemo } from "../../demos/radio-group-demo";
+import demoSource from "../../demos/radio-group-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/radio-group.css", "utf8");
 
 const title = "Radio Group";
-const description = "Interactive Radio Group demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Radio Group demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const horizontalCode = `<RadioGroup
-  orientation="horizontal"
-  items={[
-    { value: 'dark', label: 'Dark' },
-    { value: 'light', label: 'Light' },
-    { value: 'system', label: 'System' },
-  ]}
-/>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Radio Group</h1>
   <p>A single-selection control: a radiogroup root rendering one labeled row per entry, with arrow-key focus movement shared through roving tabindex.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "RadioGroupDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <RadioGroupDemo client:load />
+  </Demo>
   <InstallSection entry="radio-group" />
   <RadioGroupContent />
   <h2>Examples</h2>
-  <Demo id="demo-horizontal" title="Horizontal orientation" code={horizontalCode} note="aria-orientation moves to the root and the arrow keys scope to Left and Right." />
+  <Demo id="demo-horizontal" title="Horizontal orientation" code={demoCode(demoSource, "RadioGroupHorizontalDemo")} note="aria-orientation moves to the root and the arrow keys scope to Left and Right.">
+    <RadioGroupHorizontalDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import RadioGroup from "../../components/ui/radio-group";
-  import "../../components/ui/tokens.js";
-
-  const plan = signal("pro");
-  mount(html`<div class="demo-stack">
-    <${RadioGroup}
-      items=${[
-        { value: "free", label: "Free" },
-        { value: "pro", label: "Pro" },
-        { value: "team", label: "Team", disabled: true },
-      ]}
-      value=${plan}
-      onValueChange=${(next: string) => plan(next)}
-    />
-    <p class="demo-note">Selected plan: ${plan}. Arrow keys move focus and select, Home and End jump, and the disabled row is skipped.</p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<div class="demo-stack">
-    <${RadioGroup}
-      orientation="horizontal"
-      items=${[
-        { value: "dark", label: "Dark" },
-        { value: "light", label: "Light" },
-        { value: "system", label: "System" },
-      ]}
-    />
-  </div>`, document.getElementById("demo-horizontal")!);
-</script>

@@ -3,47 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import DirectionContent from "@ui/concepts/direction.mdx";
+import DirectionDemo, { DirectionNestedDemo } from "../../demos/direction-demo";
+import demoSource from "../../demos/direction-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/direction.css", "utf8");
 
 const title = "Direction";
-const description = "Interactive Direction demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Direction demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const nestedCode = `<DirectionProvider dir="rtl">
-  <p>النص العربي</p>
-  <DirectionProvider dir="ltr">
-    <p>English inline</p>
-  </DirectionProvider>
-</DirectionProvider>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Direction</h1>
   <p>A text-direction wrapper: it renders a dir attribute on a layout-neutral node, and that attribute is the mechanism every directional behavior reads.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "DirectionDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <DirectionDemo client:load />
+  </Demo>
   <InstallSection entry="direction" />
   <DirectionContent />
   <h2>Examples</h2>
-  <Demo id="demo-nested" title="Nested providers" code={nestedCode} note="Each wrapper scopes its own dir attribute, so a subtree can flip against its parent." />
+  <Demo id="demo-nested" title="Nested providers" code={demoCode(demoSource, "DirectionNestedDemo")} note="Each wrapper scopes its own dir attribute, so a subtree can flip against its parent.">
+    <DirectionNestedDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import DirectionProvider from "../../components/ui/direction";
-  import "../../components/ui/tokens.js";
-
-  const dir = signal("ltr");
-  const flip = () => dir(dir() === "ltr" ? "rtl" : "ltr");
-  mount(html`<div class="demo-stack">
-    <button class="w-fit rounded-md border px-2 py-1 text-xs" on:click="${flip}">Flip direction (${dir})</button>
-    <${DirectionProvider} dir="${dir}">
-      <p style="border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem">This paragraph flips its inline direction with the wrapper's dir attribute; the wrapper itself stays out of layout.</p>
-    </${DirectionProvider}>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<${DirectionProvider} dir="rtl">
-    <p style="border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem">النص العربي</p>
-    <${DirectionProvider} dir="ltr">
-      <p style="border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem">English inline</p>
-    </${DirectionProvider}>
-  </${DirectionProvider}>`, document.getElementById("demo-nested")!);
-</script>

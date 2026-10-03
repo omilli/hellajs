@@ -1,9 +1,10 @@
 ---
 import Navbar from "../components/Navbar.astro";
 import Sidebar from "../components/Sidebar.astro";
+import { LAYER_ORDER } from "../utils/layer-order";
 import "../global.css";
 
-const { frontmatter = {}, title: pageTitle } = Astro.props;
+const { frontmatter = {}, title: pageTitle, demoCss } = Astro.props;
 const title = frontmatter.title || pageTitle;
 ---
 
@@ -14,6 +15,7 @@ const title = frontmatter.title || pageTitle;
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>{title} | HellaJS</title>
+    {demoCss && <style id="hella-css" is:inline set:html={LAYER_ORDER + demoCss} />}
   </head>
   <body>
     <Navbar />

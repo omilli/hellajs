@@ -3,44 +3,28 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import NativeSelectContent from "@ui/concepts/native-select.mdx";
+import NativeSelectDemo, { NativeSelectCompactDemo } from "../../demos/native-select-demo";
+import demoSource from "../../demos/native-select-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/native-select.css", "utf8");
 
 const title = "Native Select";
-const description = "Interactive NativeSelect demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive NativeSelect demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const compactCode = `<NativeSelect size="sm" ariaLabel="Compact select">
-  <option value="a">Compact option A</option>
-  <option value="b">Compact option B</option>
-</NativeSelect>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Native Select</h1>
   <p>A styled native select: the real element (full keyboard and mobile behavior) inside a relative wrapper with an inlined chevron-down icon, plus thin passthroughs for option and optgroup.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "NativeSelectDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
+    <NativeSelectDemo client:load />
+  </Demo>
   <InstallSection entry="native-select" />
   <NativeSelectContent />
   <h2>Examples</h2>
-  <Demo id="demo-compact" title="Compact size" code={compactCode} note='size="sm" toggles the data-size treatment on the select.' />
+  <Demo id="demo-compact" title="Compact size" code={demoCode(demoSource, "NativeSelectCompactDemo")} note='size="sm" toggles the data-size treatment on the select.'>
+    <NativeSelectCompactDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import NativeSelect from "../../components/ui/native-select";
-  import "../../components/ui/tokens.js";
-
-  const region = signal("eu");
-  mount(html`<div class="flex items-center gap-3">
-    <${NativeSelect} value=${region} onchange=${(v) => region(v)} ariaLabel="Region">
-      <option value="eu">EU Central</option>
-      <option value="us">US East</option>
-      <option value="ap" disabled>AP South (coming soon)</option>
-    </${NativeSelect}>
-    <p class="demo-note">Echoing: ${region}</p>
-  </div>`, document.getElementById("demo")!);
-
-  mount(html`<${NativeSelect} size="sm" ariaLabel="Compact select">
-    <option value="a">Compact option A</option>
-    <option value="b">Compact option B</option>
-  </${NativeSelect}>`, document.getElementById("demo-compact")!);
-</script>

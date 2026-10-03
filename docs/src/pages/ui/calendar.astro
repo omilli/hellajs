@@ -3,78 +3,31 @@ import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
 import Demo from "../../components/Demo.astro";
 import CalendarContent from "@ui/concepts/calendar.mdx";
+import CalendarDemo, { CalendarDisabledDemo, CalendarRangeDemo } from "../../demos/calendar-demo";
+import demoSource from "../../demos/calendar-demo.tsx?raw";
+import { readFileSync } from "node:fs";
+import { demoCode } from "../../utils/demo-code";
+
+const demoCss = readFileSync("src/generated/pagecss/calendar.css", "utf8");
 
 const title = "Calendar";
-const description = "Interactive Calendar demo running the CLI-vendored css-flavor source the same `add` command installs, with install and per-style usage from the package docs.";
+const description = "Interactive Calendar demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
-const rangeCode = `<Calendar
-  mode="range"
-  defaultMonth={new Date(2025, 2, 1)}
-  onSelect={({ from, to }) => console.log(from, to)}
-/>`;
-
-const disabledCode = `<Calendar
-  defaultMonth={new Date(2025, 2, 1)}
-  disabled={(date) => date.getDay() === 0 || date.getDay() === 6}
-/>`;
 ---
 
-<MainLayout frontmatter={{ title, description }}>
+<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
   <h1>Calendar</h1>
   <p>A one-month day grid with single, multiple, or range selection, roving keyboard focus, and previous/next navigation, computed from local `Date` fields in the copied file.</p>
-  <div class="demo-frame" id="demo"></div>
+  <Demo id="demo" title="Playground" code={demoCode(demoSource, "CalendarDemo", { withImports: true })} note="Single selection: click a day or press Enter to pick it. The arrow keys rove focus across weeks and month edges, PageUp/PageDown jump a month, and Home/End jump the week.">
+    <CalendarDemo client:load />
+  </Demo>
   <InstallSection entry="calendar" />
   <CalendarContent />
   <h2>Examples</h2>
-  <Demo id="demo-range" title="Range selection" code={rangeCode} note="While the span dangles, hovering a day previews it: the hovered day renders data-range-end and the days between render data-range-middle." />
-  <Demo id="demo-disabled" title="Disabled days" code={disabledCode} note="The predicate blocks weekends: they render data-disabled and aria-disabled, and selecting them reports nothing." />
+  <Demo id="demo-range" title="Range selection" code={demoCode(demoSource, "CalendarRangeDemo")} note="While the span dangles, hovering a day previews it: the hovered day renders data-range-end and the days between render data-range-middle.">
+    <CalendarRangeDemo client:load />
+  </Demo>
+  <Demo id="demo-disabled" title="Disabled days" code={demoCode(demoSource, "CalendarDisabledDemo")} note="The predicate blocks weekends: they render data-disabled and aria-disabled, and selecting them reports nothing.">
+    <CalendarDisabledDemo client:load />
+  </Demo>
 </MainLayout>
-
-<script>
-  import { html, mount } from "@hellajs/dom";
-  import { signal } from "@hellajs/core";
-  import Calendar from "../../components/ui/calendar";
-  import "../../components/ui/tokens.js";
-
-  const format = (date?: Date): string =>
-    date ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
-
-  // Hero: single selection with roving keyboard focus.
-  const picked = signal<Date | undefined>(undefined);
-  mount(html`<div class="demo-stack">
-    <${Calendar}
-      defaultMonth=${new Date(2025, 2, 1)}
-      onSelect=${(date: Date) => picked(date)}
-    />
-    <p class="demo-note">
-      Single selection: click a day or press Enter to pick it${() => (picked() ? ", currently " + format(picked()) : "")}. The arrow keys rove focus across weeks and month edges, PageUp/PageDown jump a month, and Home/End jump the week.
-    </p>
-  </div>`, document.getElementById("demo")!);
-
-  // Range selection with hover preview.
-  const stay = signal<{ from?: Date; to?: Date }>({});
-  const stayLabel = (): string => {
-    const { from, to } = stay();
-    if (!from) return "Pick a check-in date";
-    return to ? `${format(from)} to ${format(to)}` : `${format(from)} to ...`;
-  };
-  mount(html`<div class="demo-stack">
-    <${Calendar}
-      mode="range"
-      defaultMonth=${new Date(2025, 2, 1)}
-      onSelect=${(range: { from?: Date; to?: Date }) => stay(range)}
-    />
-    <p class="demo-note">
-      Range mode: the first click sets the start, the second completes the span (reordered automatically when it lands before it), currently ${stayLabel}.
-    </p>
-  </div>`, document.getElementById("demo-range")!);
-
-  // Disabled days: weekend predicate.
-  mount(html`<div class="demo-stack">
-    <${Calendar}
-      defaultMonth=${new Date(2025, 2, 1)}
-      disabled=${(date: Date) => date.getDay() === 0 || date.getDay() === 6}
-    />
-    <p class="demo-note">A disabled predicate blocking weekends; keyboard activation skips them too.</p>
-  </div>`, document.getElementById("demo-disabled")!);
-</script>

@@ -1,5 +1,10 @@
 # Memory Update Log
 
+## 2026-10-03
+* **Creation**: Added concept [252](entries/252.md) (type: decision).
+* **Creation**: Added concept [253](entries/253.md) (type: decision).
+* **Update**: Renumber: parallel-writer ID collision — merged 242-247 → 248-253 (242/243 already allocated by in-flight writer)
+
 ## 2026-10-02
 * **Creation**: Added concept [238](entries/238.md) (type: correction).
 * **Renumber**: Renumber merged entry 238-identify-kill-stale-port-3000 to 239 (ID collision with operator in-flight 238-examples-root-workspace-members) during plans-ssr-docs-hono-node-servers merge
