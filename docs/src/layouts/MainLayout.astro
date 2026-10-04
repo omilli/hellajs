@@ -3,6 +3,7 @@ import Navbar from "../chrome/Navbar.astro";
 import DocsNav from "../chrome/DocsNav.astro";
 import SearchPalette from "../chrome/SearchPalette";
 import Toc from "../chrome/Toc.astro";
+import {tocRegex} from "../utils/toc-regex";
 import { cssText } from "@hellajs/css";
 import "../styles/preflight";
 import "../styles/global";
@@ -20,7 +21,7 @@ const title = frontmatter.title || pageTitle;
 // without an id are not linkable and are skipped.
 const content = await Astro.slots.render("default");
 const toc: { text: string; slug: string; depth: number }[] = Array.from(
-  content.matchAll(/<h([23])[^>]*?\sid="([^"]*)"[^>]*>([\s\S]*?)<\/h\1>/g),
+  content.matchAll(tocRegex),
   (m) => ({
     depth: Number(m[1]),
     slug: m[2],
@@ -36,19 +37,7 @@ const toc: { text: string; slug: string; depth: number }[] = Array.from(
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>{title} | HellaJS</title>
-    <!-- id="site-head", NOT "hella-css": the css runtime adopts and DRAINS
-         any #hella-css tag at first client registration (packages/css/lib/
-         internal/sheet.ts, adoptElementRules) — on pages whose first-registering
-         island is a demo island, the drain stripped this SSR text until the
-         site css re-registered, flashing an unstyled window. Under a foreign
-         id the runtime creates its own sheet alongside; registry styles
-         re-register there post-hydration (byte-identical rules, zero visual
-         difference) and this tag is never touched. The leading `@layer base,`
-         `hella;` statement pins the cascade-layer order (preflight port <
-         registry < unlayered site CSS) ahead of everything else — the
-         tailwind layer list it replaced died with the utility exit. -->
     <style
-      id="site-head"
       is:inline
       set:html={cssText() + (demoCss ?? "")}
     />
