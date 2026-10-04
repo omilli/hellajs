@@ -122,14 +122,16 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "removeVars",
         "removeKeyframes",
         "resetCss",
-        "resetVars"]
+        "resetVars"
+      ]
     },
     {
       store: [
         "store",
         "persiststore",
         "localstorageadaptor",
-        "sessionstorageadaptor"]
+        "sessionstorageadaptor"
+      ]
     },
     {
       router: [
@@ -137,31 +139,36 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "route",
         "navigate",
         "href",
-        "resetrouter"]
+        "resetrouter"
+      ]
     },
     {
       resource: [
         "resource",
         "resourcecache",
-        "resetresource"]
+        "resetresource"
+      ]
     },
     {
       ssr: [
         "ssr",
-        "doc"]
+        "doc"
+      ]
     },
   ],
   plugins: [
     "babel",
     "rollup",
     "vite",
-    "astro"],
+    "astro"
+  ],
   ui: [
     {
       Config: [
         "Installation",
         "Theming",
-        "CLI"]
+        "CLI"
+      ]
     },
     {
       Components: [
@@ -223,7 +230,8 @@ export const navigation: Record<NavSection, NavEntry[]> = {
         "Textarea",
         "Toggle",
         "Toggle-Group",
-        "Tooltip"]
+        "Tooltip"
+      ]
     },
   ],
 } as const;
