@@ -10,7 +10,7 @@ import "../styles/global";
 import "../styles/prose";
 import "../chrome/chrome-css";
 import "../global.css";
-const { frontmatter = {}, title: pageTitle, demoCss } = Astro.props;
+const { frontmatter = {}, title: pageTitle } = Astro.props;
 const title = frontmatter.title || pageTitle;
 
 // "On This Page" is server-rendered (site-foundation set contract: no
@@ -39,7 +39,7 @@ const toc: { text: string; slug: string; depth: number }[] = Array.from(
     <title>{title} | HellaJS</title>
     <style
       is:inline
-      set:html={cssText() + (demoCss ?? "")}
+      set:html={cssText()}
     />
   </head>
   <body>

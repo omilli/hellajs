@@ -3,9 +3,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "predev": "bun ../scripts/gen-demo-css.ts",
     "dev": "astro dev",
-    "prebuild": "bun ../scripts/gen-demo-css.ts",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
