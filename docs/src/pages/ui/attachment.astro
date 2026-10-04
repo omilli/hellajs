@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import AttachmentContent from "@ui/concepts/attachment.mdx";
 import AttachmentDemo, { AttachmentSizesDemo } from "../../demos/attachment-demo";
 import demoSource from "../../demos/attachment-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/attachment.css", "utf8");
 
 const title = "Attachment";
 const description = "Interactive Attachment demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Attachment</h1>
   <p>A file chip that carries its upload state through one `data-state` prop, with an inline loading spinner while uploading and an error glyph on error.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "AttachmentDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

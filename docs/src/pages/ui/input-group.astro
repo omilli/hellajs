@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import InputGroupContent from "@ui/concepts/input-group.mdx";
 import InputGroupDemo, { InputGroupColumnDemo, InputGroupRingsDemo } from "../../demos/input-group-demo";
 import demoSource from "../../demos/input-group-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/input-group.css", "utf8");
 
 const title = "Input Group";
 const description = "Interactive Input Group demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Input Group</h1>
   <p>A wrapper that joins an input or textarea with buttons, text, and dropdowns under one border: the group owns the focus and invalid rings, while the control itself strips its own ring.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "InputGroupDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

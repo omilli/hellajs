@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import ContextMenuTitle from "@ui/concepts/context-menu.mdx";
 import ContextMenuDemo, { ContextMenuSubsetDemo } from "../../demos/context-menu-demo";
 import demoSource from "../../demos/context-menu-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/context-menu.css", "utf8");
 
 const title = "Context Menu";
 const description = "Interactive Context Menu demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Context Menu</h1>
   <p>A right-click menu: long-pressing (right-clicking) a trigger zone opens a portaled surface of items anchored at the pointer coordinates; checkbox, radio, and submenu composition match the dropdown menu, and item selection closes the whole menu.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "ContextMenuDemo", { withImports: true })} note="The menu opens at the pointer coordinates; Escape pops one layer, an outside press dismisses it.">

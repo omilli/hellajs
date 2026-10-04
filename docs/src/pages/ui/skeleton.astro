@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import SkeletonContent from "@ui/concepts/skeleton.mdx";
 import SkeletonDemo, { SkeletonBlockDemo } from "../../demos/skeleton-demo";
 import demoSource from "../../demos/skeleton-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/skeleton.css", "utf8");
 
 const title = "Skeleton";
 const description = "Interactive Skeleton demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Skeleton</h1>
   <p>A loading placeholder: one div with the muted accent surface and a slow pulse animation, sized entirely through your own classes.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "SkeletonDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

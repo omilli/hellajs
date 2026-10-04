@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import InputContent from "@ui/concepts/input.mdx";
 import InputDemo, { InputInvalidDemo } from "../../demos/input-demo";
 import demoSource from "../../demos/input-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/input.css", "utf8");
 
 const title = "Input";
 const description = "Interactive Input demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Input</h1>
   <p>A single-line form field: one base look, a focus ring, and an invalid state, reading and writing its value reactively.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "InputDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

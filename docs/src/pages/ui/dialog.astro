@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import DialogContent from "@ui/concepts/dialog.mdx";
 import DialogDemo, { DialogLockedDemo } from "../../demos/dialog-demo";
 import demoSource from "../../demos/dialog-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/dialog.css", "utf8");
 
 const title = "Dialog";
 const description = "Interactive Dialog demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Dialog</h1>
   <p>A modal overlay plus centered panel: the caller owns the `open` signal while the component wires the title, description, X close button, focus trap, and escape/outside dismissal around it.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "DialogDemo", { withImports: true })} note="Opens a portal-mounted dialog with wired title and description, an X close button, and enter/exit animations.">

@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import MessageContent from "@ui/concepts/message.mdx";
 import MessageDemo, { MessageEndDemo } from "../../demos/message-demo";
 import demoSource from "../../demos/message-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/message.css", "utf8");
 
 const title = "Message";
 const description = "Interactive Message demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Message</h1>
   <p>A chat row built from six presentational parts: the row, the avatar well, the content column, and the header and footer meta rows.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "MessageDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import MessageScrollerContent from "@ui/concepts/message-scroller.mdx";
 import MessageScrollerDemo, { MessageScrollerJumpDemo } from "../../demos/message-scroller-demo";
 import demoSource from "../../demos/message-scroller-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/message-scroller.css", "utf8");
 
 const title = "Message Scroller";
 const description = "Interactive Message Scroller demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Message Scroller</h1>
   <p>A chat viewport that pins to the bottom while new content arrives and flips to a jump-to-end button when you scroll away, with the state handed to you explicitly.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "MessageScrollerDemo", { withImports: true })} note="Add messages and the viewport stays pinned to the newest bubble; the button row sits outside the scroller.">

@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import CollapsibleContent from "@ui/concepts/collapsible.mdx";
 import CollapsibleDemo, { CollapsibleManualDemo } from "../../demos/collapsible-demo";
 import demoSource from "../../demos/collapsible-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/collapsible.css", "utf8");
 
 const title = "Collapsible";
 const description = "Interactive Collapsible demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Collapsible</h1>
   <p>A disclosure region: a trigger button and a content region whose open state lives in a signal, animated through a measurement-free grid so any content height works.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "CollapsibleDemo", { withImports: true })} note="The parent signal is the single source of truth; the region label tracks it.">

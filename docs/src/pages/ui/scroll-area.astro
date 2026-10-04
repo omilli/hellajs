@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import ScrollAreaContent from "@ui/concepts/scroll-area.mdx";
 import ScrollAreaDemo, { ScrollAreaBothAxesDemo } from "../../demos/scroll-area-demo";
 import demoSource from "../../demos/scroll-area-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/scroll-area.css", "utf8");
 
 const title = "Scroll Area";
 const description = "Interactive Scroll Area demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Scroll Area</h1>
   <p>A custom-scrollbar container: a relative root wraps a real scrolling viewport plus an absolutely positioned ScrollBar whose thumb is sized and positioned from the live scroll geometry, so native scrolling stays underneath and the thumb is pure chrome.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "ScrollAreaDemo", { withImports: true })} note="The pane scrolls natively (wheel, touch, keyboard) under the custom thumb: drag the thumb and the content follows, and the bar stays rendered with a full-length thumb even when the content fits.">

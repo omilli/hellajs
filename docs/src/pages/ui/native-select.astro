@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import NativeSelectContent from "@ui/concepts/native-select.mdx";
 import NativeSelectDemo, { NativeSelectCompactDemo } from "../../demos/native-select-demo";
 import demoSource from "../../demos/native-select-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/native-select.css", "utf8");
 
 const title = "Native Select";
 const description = "Interactive NativeSelect demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Native Select</h1>
   <p>A styled native select: the real element (full keyboard and mobile behavior) inside a relative wrapper with an inlined chevron-down icon, plus thin passthroughs for option and optgroup.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "NativeSelectDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

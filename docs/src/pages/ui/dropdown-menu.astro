@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import DropdownMenuTitle from "@ui/concepts/dropdown-menu.mdx";
 import DropdownMenuDemo, { DropdownMenuSubmenuDemo } from "../../demos/dropdown-menu-demo";
 import demoSource from "../../demos/dropdown-menu-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/dropdown-menu.css", "utf8");
 
 const title = "Dropdown Menu";
 const description = "Interactive Dropdown Menu demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Dropdown Menu</h1>
   <p>A button-triggered menu: the trigger opens a portaled, anchored surface of items; checkbox and radio items select state; submenus open on hover or ArrowRight; Escape pops one layer at a time and item selection closes the whole menu.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "DropdownMenuDemo", { withImports: true })} note="The checkbox toggles through its accessor and the radio group keeps selection external; activating any item closes the whole menu.">

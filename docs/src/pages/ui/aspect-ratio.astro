@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import AspectRatioContent from "@ui/concepts/aspect-ratio.mdx";
 import AspectRatioDemo, { AspectRatioRatiosDemo } from "../../demos/aspect-ratio-demo";
 import demoSource from "../../demos/aspect-ratio-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/aspect-ratio.css", "utf8");
 
 const title = "Aspect Ratio";
 const description = "Interactive AspectRatio demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Aspect Ratio</h1>
   <p>A fixed-ratio container for media: one wrapper div whose inline aspect-ratio style locks the box shape while children stretch to fill it.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "AspectRatioDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import AvatarContent from "@ui/concepts/avatar.mdx";
 import AvatarDemo, { AvatarGroupDemo } from "../../demos/avatar-demo";
 import demoSource from "../../demos/avatar-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/avatar.css", "utf8");
 
 const title = "Avatar";
 const description = "Interactive Avatar demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Avatar</h1>
   <p>A user portrait with a graceful fallback: a rounded relative wrapper stacking an image and a fallback initial, plus a status badge, an overlapping group, and a group count.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "AvatarDemo", { withImports: true })} note="A missing src fires `error`: the image drops out and the initial returns.">

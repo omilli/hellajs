@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import SeparatorContent from "@ui/concepts/separator.mdx";
 import SeparatorDemo, { SeparatorVerticalDemo } from "../../demos/separator-demo";
 import demoSource from "../../demos/separator-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/separator.css", "utf8");
 
 const title = "Separator";
 const description = "Interactive Separator demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Separator</h1>
   <p>A divider: one thin line with orientation switching between horizontal and vertical, exposed through a separator role and matching orientation attributes.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "SeparatorDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

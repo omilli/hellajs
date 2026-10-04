@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import ComboboxTitle from "@ui/concepts/combobox.mdx";
 import ComboboxDemo, { ComboboxMultipleDemo } from "../../demos/combobox-demo";
 import demoSource from "../../demos/combobox-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/combobox.css", "utf8");
 
 const title = "Combobox";
 const description = "Interactive Combobox demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Combobox</h1>
   <p>A filterable listbox: the input owns a query signal, the panel anchors to the input wrapper, and typing narrows the options case-insensitively; Enter commits the active option, and multiple mode toggles values into removable chips.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "ComboboxDemo", { withImports: true })} note="Typing narrows the options case-insensitively while they hide in place; arrows move the active option and Enter commits it, closing the panel and clearing the query.">

@@ -36,8 +36,8 @@ const description =
     <!-- Same mechanism as MainLayout's site-head tag. The css registry is
          global to the build process, so whatever the layout imports itself
          is what cssText() deterministically contains — the same module set
-         as MainLayout (minus demoCss) keeps this page's head identical in
-         shape no matter which page the build rendered before it. -->
+         as MainLayout keeps this page's head identical in shape no matter
+         which page the build rendered before it. -->
     <style id="site-head" is:inline set:html={cssText()} />
   </head>
   <body>

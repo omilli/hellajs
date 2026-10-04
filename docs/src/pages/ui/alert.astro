@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import AlertContent from "@ui/concepts/alert.mdx";
 import AlertDemo, { AlertDestructiveDemo } from "../../demos/alert-demo";
 import demoSource from "../../demos/alert-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/alert.css", "utf8");
 
 const title = "Alert";
 const description = "Interactive Alert demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Alert</h1>
   <p>A callout with a default and destructive variant, named title and description parts, and a grid that reserves an icon column whenever the first child is an `svg`.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "AlertDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

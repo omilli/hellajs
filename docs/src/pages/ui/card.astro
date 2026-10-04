@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import CardContent from "@ui/concepts/card.mdx";
 import CardDemo, { CardMinimalDemo } from "../../demos/card-demo";
 import demoSource from "../../demos/card-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/card.css", "utf8");
 
 const title = "Card";
 const description = "Interactive Card demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Card</h1>
   <p>A panel surface composed of a root plus header, title, description, action, content, and footer parts, composable in any arrangement.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "CardDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">

@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import CheckboxContent from "@ui/concepts/checkbox.mdx";
 import CheckboxDemo, { CheckboxIndeterminateDemo } from "../../demos/checkbox-demo";
 import demoSource from "../../demos/checkbox-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/checkbox.css", "utf8");
 
 const title = "Checkbox";
 const description = "Interactive Checkbox demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Checkbox</h1>
   <p>A checked-state control: a button carrying a checkbox role whose state lives in a signal, showing the check icon whenever the box is checked or indeterminate.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "CheckboxDemo", { withImports: true })} note="Clicks request the flip; the parent signal decides.">

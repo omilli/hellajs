@@ -5,17 +5,14 @@ import Demo from "../../components/Demo.astro";
 import SheetContent from "@ui/concepts/sheet.mdx";
 import SheetDemo, { SheetManualDemo } from "../../demos/sheet-demo";
 import demoSource from "../../demos/sheet-demo.tsx?raw";
-import { readFileSync } from "node:fs";
 import { demoCode } from "../../utils/demo-code";
-
-const demoCss = readFileSync("src/generated/pagecss/sheet.css", "utf8");
 
 const title = "Sheet";
 const description = "Interactive Sheet demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 
 ---
 
-<MainLayout frontmatter={{ title, description }} demoCss={demoCss}>
+<MainLayout frontmatter={{ title, description }}>
   <h1>Sheet</h1>
   <p>A side panel sliding in from any screen edge with an overlay, a built-in X close button, and wired title and description - the caller owns the `open` signal, the component wires everything else.</p>
   <Demo id="demo" title="Playground" code={demoCode(demoSource, "SheetDemo", { withImports: true })} note="Slides in from the right with wired title and description, an X close button, escape and outside dismissal, and a focus trap.">
