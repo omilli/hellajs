@@ -1,24 +1,9 @@
 /**
  * Site preflight, base layer: a rule-for-rule port of tailwindcss's
  * preflight.css (source: https://github.com/tailwindlabs/tailwindcss/
- * blob/main/packages/tailwindcss/preflight.css) as a `css()` module,
- * replacing the hand-rolled survivors block global.css carried after the
- * utility exit. The survivors trimmed the sheet to what the site visibly
- * leaned on; this restores the full copy (form-control resets, table
- * collapse, [hidden], placeholder color, the datetime pseudo-elements).
- * One edit, forced by the medium: the `--theme(...)` build directives
- * resolve to their fallback chains — the default sans/mono stacks and
- * `normal` feature/variation settings, since no theme indirection exists
- * in plain CSS. The body wraps in `@layer base`: the layouts' site-head
- * tag opens with `@layer base, hella;`, so base ranks below both the
- * registry's hella layer and unlayered site CSS — the preflight can never
- * override the components it sits under. The survivors block's
- * site-specific tail moves with the conversion (html color-scheme +
- * scrollbar paint, body tokens fill + Mulish) and follows the copy — no
- * shared properties, order is documentation only. Consumed through
- * `cssText()` by both layouts, which import it first so its registration
- * leads the head deterministically; side-effect import, no exports.
+ * blob/main/packages/tailwindcss/preflight.css) as a `css()` module.
  */
+
 import { css } from "@hellajs/css";
 
 const SANS = [
@@ -209,20 +194,6 @@ css({
     // [hidden] stays hidden, beating any author display rule.
     "[hidden]:where(:not([hidden='until-found']))": {
       display: "none !important",
-    },
-
-    // Site overrides — the survivors block's site-specific tail. No shared
-    // properties with the copy above; dark color-scheme + scrollbar paint,
-    // body tokens fill + Mulish (tokens.ts vocabulary).
-    html: {
-      colorScheme: "dark",
-      scrollbarColor:
-        "color-mix(in oklab, var(--foreground) 20%, transparent) var(--base-100)",
-    },
-    body: {
-      backgroundColor: "var(--base-100)",
-      color: "var(--foreground)",
-      fontFamily: "var(--font-sans)",
-    },
+    }
   },
 });
