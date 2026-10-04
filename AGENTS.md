@@ -155,7 +155,7 @@
 
   ## Testing
 
-  Tests run under HappyDOM via preload (`utils/happydom.js`, in `bunfig.toml`); conventions (framework, imports, structure, anti-patterns, the checklist): `guides/tests.md`. Gate semantics and triage protocol (scoped runs, foreign failures, plugin exception, blind spots, measurement target): `guides/tests.md` §Triage & Gate Semantics.
+  Tests run under HappyDOM via preload (`utils/happydom.js`, in `bunfig.toml`); conventions (framework, imports, structure, anti-patterns, the checklist): `guides/tests.md`. Gate semantics and triage protocol (scoped runs, foreign failures, plugin exception, blind spots, measurement target): `guides/tests.md` §Triage & Gate Semantics. The preload applies only to `bun test` — a one-off DOM-dependent probe runs as a scratch `*.test.ts` under the package's `tests/` (deleted after), never `bun -e` (no preload, no resolvable happy-dom specifier).
 
   **NEVER verify with bare `bun test`** — `packages/` tests import `dist/` bundles and `bun test` never rebuilds them (silently stale). The single verification gate is `bun coverage <package>`. Mid-flight iteration only: `bun bundle <package> --quiet && bun test packages/<package>/tests[/<file>.test.ts]`. Never list standalone `bun lint` or `bun test` in a plan's DoD when `bun coverage` is present. `bun coverage`'s eslint stage covers only the mechanical subset (banned loops/guards in `packages/*/lib`, banned test APIs in `*.test.ts`); the rest of the guides' structural rules and anti-patterns are audit-enforced — a new file, file structure, or shared test helper gets the matching `audit-*` skill run as part of verification.
 
