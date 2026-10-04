@@ -2,102 +2,23 @@
    site-foundation set). The utility-framework toolchain is gone: prose
    typography lives in
    src/styles/prose.ts, chrome in src/chrome/chrome-css.ts, callouts in
-   src/styles/callouts.ts, tokens in src/styles/tokens.ts (all collected
+   src/styles/callouts.ts, tokens in src/styles/tokens.ts, the preflight
+   port in src/styles/preflight.ts (all collected
    into the layout head via cssText()). What remains here is plain CSS
-   only: the font face, the cascade-layer statement, the preflight
-   survivors (box-sizing, body paint, anchor/button resets — the old
-   utility preflight carried these; it exited with the toolchain), the
+   only: the font face, the cascade-layer statement, the
    component-demo harness, and the landing-page stopgap styles (the
    landing redesign is a separate deferred set; until it lands this block
    ports the retired utility markup's computed look onto the tokens). */
 
 @layer base, hella;
 
-/* Layer order: the preflight port lives in `base`, the registry + demo
-   pagecss inject into `hella`, and site-owned styles stay unlayered —
-   cascade layers rank below unlayered author CSS, so the reset can never
-   override the components it sits under. */
-@layer base {
-  /* Preflight survivors — the retired utility preflight carried these;
-     site styles and the registry modules were written against them.
-     Ported here rule-for-rule so the exit changes nothing visible. */
-  *,
-  ::before,
-  ::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    border: 0 solid;
-  }
-
-  html {
-    color-scheme: dark;
-    scrollbar-color: color-mix(in oklab, var(--foreground) 20%, transparent) var(--base-100);
-  }
-
-  body {
-    background-color: var(--base-100);
-    color: var(--foreground);
-    font-family: var(--font-sans);
-  }
-
-  /* Preflight reset these to inherit; content prose re-styles its own
-     links (src/styles/prose.ts), chrome links carry explicit colors. */
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-    color: inherit;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-size: inherit;
-    font-weight: inherit;
-  }
-
-  ol,
-  ul,
-  menu {
-    list-style: none;
-  }
-
-  img,
-  svg,
-  video,
-  canvas,
-  audio,
-  iframe,
-  embed,
-  object {
-    display: block;
-    vertical-align: middle;
-  }
-
-  img,
-  video {
-    max-width: 100%;
-    height: auto;
-  }
-
-  code,
-  kbd,
-  samp,
-  pre {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    font-size: 1em;
-  }
-}
+/* Layer order: the preflight port (src/styles/preflight.ts) lives in
+   `base`, the registry + demo pagecss inject into `hella`, and site-owned
+   styles stay unlayered — cascade layers rank below unlayered author CSS,
+   so the reset can never override the components it sits under. The
+   layout's site-head tag precedes this stylesheet and declares the same
+   order first, so it owns it; this statement re-declares the order for
+   this file's own reading. */
 
 @font-face {
   font-family: 'Mulish Variable';

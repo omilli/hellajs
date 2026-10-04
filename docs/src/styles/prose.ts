@@ -131,8 +131,9 @@ css({
         "1px solid color-mix(in oklab, var(--foreground) 20%, transparent)",
     },
 
-    // Tables: 0.875em body, 50%-mix head rule, 20%-mix row rules. Preflight's
-    // border-collapse goes away with tailwind, so collapse here explicitly.
+    // Tables: 0.875em body, 50%-mix head rule, 20%-mix row rules; collapse
+    // stated explicitly so the table reads right regardless of what the
+    // base-layer preflight carries.
     table: {
       tableLayout: "auto",
       width: "100%",
@@ -166,8 +167,8 @@ css({
       ":is(tbody, tfoot) td:last-child": { paddingInlineEnd: 0 },
     },
 
-    // Images: preflight carried max-width/height + block display; preflight
-    // exits with tailwind, so the block display ports here with it.
+    // Images: block display + media constraints restated (the preflight
+    // port carries them too; kept so prose stays self-sufficient).
     img: {
       display: "block",
       maxWidth: "100%",
