@@ -36,7 +36,7 @@ export const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-context-menu-content", layer: "hella" });
+}, { label: "context-menu-content" });
 
 export const item = style({
   alignItems: "center",
@@ -87,7 +87,7 @@ export const item = style({
   "&[data-variant='destructive'] svg": {
     color: "var(--destructive) !important",
   },
-}, { label: "hella-context-menu-item", layer: "hella" });
+}, { label: "context-menu-item" });
 
 export const checkItem = style({
   alignItems: "center",
@@ -120,7 +120,7 @@ export const checkItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-context-menu-check-item", layer: "hella" });
+}, { label: "context-menu-check-item" });
 
 export const radioItem = style({
   alignItems: "center",
@@ -153,7 +153,7 @@ export const radioItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-context-menu-radio-item", layer: "hella" });
+}, { label: "context-menu-radio-item" });
 
 export const indicator = style({
   alignItems: "center",
@@ -164,18 +164,18 @@ export const indicator = style({
   pointerEvents: "none",
   position: "absolute",
   width: "0.875rem",
-}, { label: "hella-context-menu-indicator", layer: "hella" });
+}, { label: "context-menu-indicator" });
 
 export const icon = style({
   height: "1rem",
   width: "1rem",
-}, { label: "hella-context-menu-icon", layer: "hella" });
+}, { label: "context-menu-icon" });
 
 export const radioIcon = style({
   fill: "currentColor",
   height: "0.5rem",
   width: "0.5rem",
-}, { label: "hella-context-menu-radio-icon", layer: "hella" });
+}, { label: "context-menu-radio-icon" });
 
 export const label = style({
   color: "var(--foreground)",
@@ -187,7 +187,7 @@ export const label = style({
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
-}, { label: "hella-context-menu-label", layer: "hella" });
+}, { label: "context-menu-label" });
 
 export const separator = style({
   backgroundColor: "var(--border)",
@@ -196,7 +196,7 @@ export const separator = style({
   marginLeft: "-0.25rem",
   marginRight: "-0.25rem",
   marginTop: "0.25rem",
-}, { label: "hella-context-menu-separator", layer: "hella" });
+}, { label: "context-menu-separator" });
 
 export const shortcut = style({
   color: "var(--muted-foreground)",
@@ -204,7 +204,7 @@ export const shortcut = style({
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "hella-context-menu-shortcut", layer: "hella" });
+}, { label: "context-menu-shortcut" });
 
 export const subTrigger = style({
   alignItems: "center",
@@ -241,11 +241,11 @@ export const subTrigger = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "hella-context-menu-sub-trigger", layer: "hella" });
+}, { label: "context-menu-sub-trigger" });
 
 export const chevron = style({
   marginLeft: "auto",
-}, { label: "hella-context-menu-chevron", layer: "hella" });
+}, { label: "context-menu-chevron" });
 
 export const subContent = style({
   backgroundColor: "var(--popover)",
@@ -275,4 +275,4 @@ export const subContent = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-context-menu-sub-content", layer: "hella" });
+}, { label: "context-menu-sub-content" });

@@ -20,7 +20,7 @@ const base = style({
   gap: "0.25rem",
   height: "2.25rem",
   padding: "0.25rem",
-}, { label: "hella-menubar-base", layer: "hella" });
+}, { label: "menubar-base" });
 
 const trigger = style({
   alignItems: "center",
@@ -41,7 +41,7 @@ const trigger = style({
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
   },
-}, { label: "hella-menubar-trigger", layer: "hella" });
+}, { label: "menubar-trigger" });
 
 const content = style({
   backgroundColor: "var(--popover)",
@@ -71,7 +71,7 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-menubar-content", layer: "hella" });
+}, { label: "menubar-content" });
 
 const item = style({
   alignItems: "center",
@@ -122,7 +122,7 @@ const item = style({
   "&[data-variant='destructive'] svg": {
     color: "var(--destructive) !important",
   },
-}, { label: "hella-menubar-item", layer: "hella" });
+}, { label: "menubar-item" });
 
 const checkItem = style({
   alignItems: "center",
@@ -155,7 +155,7 @@ const checkItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-menubar-check-item", layer: "hella" });
+}, { label: "menubar-check-item" });
 
 const radioItem = style({
   alignItems: "center",
@@ -188,7 +188,7 @@ const radioItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-menubar-radio-item", layer: "hella" });
+}, { label: "menubar-radio-item" });
 
 const indicator = style({
   alignItems: "center",
@@ -199,18 +199,18 @@ const indicator = style({
   pointerEvents: "none",
   position: "absolute",
   width: "0.875rem",
-}, { label: "hella-menubar-indicator", layer: "hella" });
+}, { label: "menubar-indicator" });
 
 const icon = style({
   height: "1rem",
   width: "1rem",
-}, { label: "hella-menubar-icon", layer: "hella" });
+}, { label: "menubar-icon" });
 
 const radioIcon = style({
   fill: "currentColor",
   height: "0.5rem",
   width: "0.5rem",
-}, { label: "hella-menubar-radio-icon", layer: "hella" });
+}, { label: "menubar-radio-icon" });
 
 const label = style({
   fontSize: "0.875rem",
@@ -221,7 +221,7 @@ const label = style({
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
-}, { label: "hella-menubar-label", layer: "hella" });
+}, { label: "menubar-label" });
 
 const separator = style({
   backgroundColor: "var(--border)",
@@ -230,7 +230,7 @@ const separator = style({
   marginLeft: "-0.25rem",
   marginRight: "-0.25rem",
   marginTop: "0.25rem",
-}, { label: "hella-menubar-separator", layer: "hella" });
+}, { label: "menubar-separator" });
 
 const shortcut = style({
   color: "var(--muted-foreground)",
@@ -238,7 +238,7 @@ const shortcut = style({
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "hella-menubar-shortcut", layer: "hella" });
+}, { label: "menubar-shortcut" });
 
 const subTrigger = style({
   alignItems: "center",
@@ -263,13 +263,13 @@ const subTrigger = style({
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
   },
-}, { label: "hella-menubar-sub-trigger", layer: "hella" });
+}, { label: "menubar-sub-trigger" });
 
 const chevron = style({
   height: "1rem",
   marginLeft: "auto",
   width: "1rem",
-}, { label: "hella-menubar-chevron", layer: "hella" });
+}, { label: "menubar-chevron" });
 
 const subContent = style({
   backgroundColor: "var(--popover)",
@@ -299,7 +299,7 @@ const subContent = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-menubar-sub-content", layer: "hella" });
+}, { label: "menubar-sub-content" });
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";

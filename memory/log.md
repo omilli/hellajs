@@ -10,6 +10,8 @@
 * **Creation**: Added concept [263](entries/263.md) (type: decision).
 * **Creation**: Added concept [264](entries/264.md) (type: decision).
 * **Creation**: Added concept [265](entries/265.md) (type: decision).
+* **Creation**: Added concept [264](entries/264.md) (type: decision).
+* **Merge**: Renumbered docs-site-token-precedence entry 264→266 on merge: main tree already had 264-astro-plugin-frontmatter-css-collection.
 
 ## 2026-10-03
 * **Creation**: Added concept [242](entries/242.md) (type: decision).

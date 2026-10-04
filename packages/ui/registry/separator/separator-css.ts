@@ -11,4 +11,4 @@ export const base = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "hella-separator", layer: "hella" });
+}, { label: "separator" });

@@ -30,8 +30,8 @@ describe("badge", () => {
     expect(tokens.at(-1)).toBe("my-badge");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(3);
-      expect(tokens[0]!.startsWith("h-hella-badge-")).toBe(true);
-      expect(tokens[1]!.startsWith("h-hella-badge-default-")).toBe(true);
+      expect(tokens[0]!.startsWith("badge-")).toBe(true);
+      expect(tokens[1]!.startsWith("badge-default-")).toBe(true);
     } else {
       for (const token of [...BASE_TOKENS, ...VARIANT_TOKENS.default!]) expect(tokens).toContain(token);
     }
@@ -43,7 +43,7 @@ describe("badge", () => {
       expect(badge.getAttribute("data-variant")).toBe(name);
       const classes = classTokens(badge);
       if (variant.style === "css") {
-        expect(classes[1]!.startsWith(`h-hella-badge-${name}-`)).toBe(true);
+        expect(classes[1]!.startsWith(`badge-${name}-`)).toBe(true);
       } else {
         for (const token of tokens!) expect(classes).toContain(token);
       }

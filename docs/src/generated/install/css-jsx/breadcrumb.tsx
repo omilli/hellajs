@@ -19,32 +19,32 @@ const list = style({
       gap: "0.625rem",
     },
   },
-}, { label: "hella-breadcrumb-list", layer: "hella" });
+}, { label: "breadcrumb-list" });
 
 const item = style({
   alignItems: "center",
   display: "inline-flex",
   gap: "0.375rem",
-}, { label: "hella-breadcrumb-item", layer: "hella" });
+}, { label: "breadcrumb-item" });
 
 const link = style({
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&:hover": {
     color: "var(--foreground)",
   },
-}, { label: "hella-breadcrumb-link", layer: "hella" });
+}, { label: "breadcrumb-link" });
 
 const page = style({
   color: "var(--foreground)",
   fontWeight: "400",
-}, { label: "hella-breadcrumb-page", layer: "hella" });
+}, { label: "breadcrumb-page" });
 
 const separator = style({
   "& svg": {
     height: "0.875rem",
     width: "0.875rem",
   },
-}, { label: "hella-breadcrumb-separator", layer: "hella" });
+}, { label: "breadcrumb-separator" });
 
 const ellipsis = style({
   alignItems: "center",
@@ -52,12 +52,12 @@ const ellipsis = style({
   height: "2.25rem",
   justifyContent: "center",
   width: "2.25rem",
-}, { label: "hella-breadcrumb-ellipsis", layer: "hella" });
+}, { label: "breadcrumb-ellipsis" });
 
 const ellipsisIcon = style({
   height: "1rem",
   width: "1rem",
-}, { label: "hella-breadcrumb-ellipsis-icon", layer: "hella" });
+}, { label: "breadcrumb-ellipsis-icon" });
 
 const srOnly = style({
   border: "0",
@@ -69,7 +69,7 @@ const srOnly = style({
   position: "absolute",
   whiteSpace: "nowrap",
   width: "1px",
-}, { label: "hella-breadcrumb-sr-only", layer: "hella" });
+}, { label: "breadcrumb-sr-only" });
 
 interface BreadcrumbProps {
   children?: HellaChildren;

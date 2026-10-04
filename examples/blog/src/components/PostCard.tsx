@@ -11,7 +11,7 @@ interface PostCardProps {
 }
 
 // Compose onto the shared card class; the returned class string carries both
-// ("h-card-… h-post-card-…"), each side keeping its own rule.
+// ("card-… post-card-…"), each side keeping its own rule.
 const postCard = style(card, {
   "&:hover": {
     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",

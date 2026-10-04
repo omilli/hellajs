@@ -30,7 +30,7 @@ export const base = style({
   "&:is(.dark *)[data-state='unchecked']": {
     backgroundColor: "color-mix(in oklab, var(--input) 80%, transparent)",
   },
-}, { label: "hella-switch", layer: "hella" });
+}, { label: "switch" });
 
 export const thumb = style({
   backgroundColor: "var(--background)",
@@ -52,4 +52,4 @@ export const thumb = style({
   "&:is(.dark *)[data-state='unchecked']": {
     backgroundColor: "var(--foreground)",
   },
-}, { label: "hella-switch-thumb", layer: "hella" });
+}, { label: "switch-thumb" });

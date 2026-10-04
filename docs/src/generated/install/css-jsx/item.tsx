@@ -5,7 +5,7 @@ import { css, style } from "@hellajs/css";
 const group = style({
   display: "flex",
   flexDirection: "column",
-}, { label: "hella-item-group", layer: "hella" });
+}, { label: "item-group" });
 
 const separatorBase = style({
   backgroundColor: "var(--border)",
@@ -18,11 +18,11 @@ const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "hella-item-separator", layer: "hella" });
+}, { label: "item-separator" });
 
 const separator = style({
   marginBlock: "0",
-}, { label: "hella-item-separator-override", layer: "hella" });
+}, { label: "item-separator-override" });
 
 const base = style({
   alignItems: "center",
@@ -44,30 +44,30 @@ const base = style({
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-item", layer: "hella" });
+}, { label: "item" });
 
 const variants = {
   default: style({
     backgroundColor: "transparent",
-  }, { label: "hella-item-default", layer: "hella" }),
+  }, { label: "item-default" }),
   outline: style({
     borderColor: "var(--border)",
-  }, { label: "hella-item-outline", layer: "hella" }),
+  }, { label: "item-outline" }),
   muted: style({
     backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
-  }, { label: "hella-item-muted", layer: "hella" }),
+  }, { label: "item-muted" }),
 };
 
 const sizes = {
   default: style({
     gap: "1rem",
     padding: "1rem",
-  }, { label: "hella-item-size-default", layer: "hella" }),
+  }, { label: "item-size-default" }),
   sm: style({
     gap: "0.625rem",
     paddingBlock: "0.75rem",
     paddingInline: "1rem",
-  }, { label: "hella-item-size-sm", layer: "hella" }),
+  }, { label: "item-size-sm" }),
 };
 
 const media = style({
@@ -79,12 +79,12 @@ const media = style({
   "& svg": {
     pointerEvents: "none",
   },
-}, { label: "hella-item-media", layer: "hella" });
+}, { label: "item-media" });
 
 const mediaVariants = {
   default: style({
     backgroundColor: "transparent",
-  }, { label: "hella-item-media-default", layer: "hella" }),
+  }, { label: "item-media-default" }),
   icon: style({
     backgroundColor: "var(--muted)",
     border: "1px solid var(--border)",
@@ -95,7 +95,7 @@ const mediaVariants = {
       height: "1rem",
       width: "1rem",
     },
-  }, { label: "hella-item-media-icon", layer: "hella" }),
+  }, { label: "item-media-icon" }),
   image: style({
     borderRadius: "calc(var(--radius) * 0.6)",
     height: "2.5rem",
@@ -106,7 +106,7 @@ const mediaVariants = {
       objectFit: "cover",
       width: "100%",
     },
-  }, { label: "hella-item-media-image", layer: "hella" }),
+  }, { label: "item-media-image" }),
 };
 
 const content = style({
@@ -117,7 +117,7 @@ const content = style({
   "& + [data-slot='item-content']": {
     flex: "none",
   },
-}, { label: "hella-item-content", layer: "hella" });
+}, { label: "item-content" });
 
 const title = style({
   alignItems: "center",
@@ -127,7 +127,7 @@ const title = style({
   gap: "0.5rem",
   lineHeight: "1.625",
   width: "fit-content",
-}, { label: "hella-item-title", layer: "hella" });
+}, { label: "item-title" });
 
 const description = style({
   color: "var(--muted-foreground)",
@@ -146,13 +146,13 @@ const description = style({
   "& > a:hover": {
     color: "var(--primary)",
   },
-}, { label: "hella-item-description", layer: "hella" });
+}, { label: "item-description" });
 
 const actions = style({
   alignItems: "center",
   display: "flex",
   gap: "0.5rem",
-}, { label: "hella-item-actions", layer: "hella" });
+}, { label: "item-actions" });
 
 const header = style({
   alignItems: "center",
@@ -160,7 +160,7 @@ const header = style({
   flexBasis: "100%",
   gap: "0.5rem",
   justifyContent: "space-between",
-}, { label: "hella-item-header", layer: "hella" });
+}, { label: "item-header" });
 
 const footer = style({
   alignItems: "center",
@@ -168,14 +168,12 @@ const footer = style({
   flexBasis: "100%",
   gap: "0.5rem",
   justifyContent: "space-between",
-}, { label: "hella-item-footer", layer: "hella" });
+}, { label: "item-footer" });
 
 css({
-  "@layer hella": {
-    "[data-slot='item']:has([data-slot='item-description']) [data-slot='item-media']": {
-      alignSelf: "flex-start",
-      transform: "translateY(0.125rem)",
-    },
+  "[data-slot='item']:has([data-slot='item-description']) [data-slot='item-media']": {
+    alignSelf: "flex-start",
+    transform: "translateY(0.125rem)",
   },
 });
 

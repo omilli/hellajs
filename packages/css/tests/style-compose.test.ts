@@ -18,7 +18,7 @@ describe("style composition", () => {
 
   test("an object base deep-merges into one class with the override winning", () => {
     const cls = style({ padding: "1rem", color: "red" }, { color: "blue" });
-    expect(cls).toMatch(/^h-[a-z0-9]+$/);
+    expect(cls).toMatch(/^[a-z]+$/);
     expect(getStylesheet("hella-css")).toBe(`.${cls}{padding:1rem;color:blue}`);
   });
 
@@ -63,7 +63,7 @@ describe("style composition", () => {
   test("a lone bag-shaped second argument still reads as the options bag", () => {
     const cls = style({ color: "red" }, { label: "x" });
 
-    expect(cls).toMatch(/^h-x-[a-z0-9]+$/);
+    expect(cls).toMatch(/^x-[a-z]+$/);
     expect(getStylesheet("hella-css")).toBe(`.${cls}{color:red}`);
   });
 });

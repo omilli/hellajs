@@ -77,7 +77,7 @@ describe("scroll-area", () => {
     expect(root.querySelector("[data-slot='scroll-area-corner']")).not.toBeNull();
     const viewTokens = classTokens(view);
     if (variant.style === "css") {
-      expect(viewTokens.some((token) => token.startsWith("h-hella-scroll-area-viewport"))).toBe(true);
+      expect(viewTokens.some((token) => token.startsWith("scroll-area-viewport"))).toBe(true);
     } else {
       expect(viewTokens).toContain("overflow-scroll");
       expect(viewTokens).toContain("[scrollbar-width:none]");

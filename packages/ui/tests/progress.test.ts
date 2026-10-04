@@ -45,7 +45,7 @@ describe("progress", () => {
     const tokens = classTokens(indicator);
     if (variant.style === "css") {
       expect(tokens).toHaveLength(1);
-      expect(tokens[0]!.startsWith("h-hella-progress-indicator-")).toBe(true);
+      expect(tokens[0]!.startsWith("progress-indicator-")).toBe(true);
     } else {
       expect(tokens).toContain("transition-all");
     }
@@ -73,7 +73,7 @@ describe("progress", () => {
     const root = renderVariant(variant, { class: "my-progress" });
     expect(classTokens(root).at(-1)).toBe("my-progress");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-progress-")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("progress-")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("bg-primary/20");
     }

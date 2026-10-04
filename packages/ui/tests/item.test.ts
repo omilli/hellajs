@@ -33,8 +33,8 @@ describe("item", () => {
     expect(muted.getAttribute("data-size")).toBe("sm");
     if (variant.style === "css") {
       const tokens = classTokens(muted);
-      expect(tokens.some((token) => token.startsWith("h-hella-item-muted"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("h-hella-item-size-sm"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("item-muted"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("item-size-sm"))).toBe(true);
     } else {
       const tokens = classTokens(muted);
       expect(tokens).toContain("bg-muted/50");
@@ -66,7 +66,7 @@ describe("item", () => {
     const icon = renderVariant(variant, { variant: "icon", children: ["x"] });
     expect(icon.getAttribute("data-variant")).toBe("icon");
     if (variant.style === "css") {
-      expect(classTokens(icon).some((token) => token.startsWith("h-hella-item-media-icon"))).toBe(true);
+      expect(classTokens(icon).some((token) => token.startsWith("item-media-icon"))).toBe(true);
     } else {
       expect(classTokens(icon)).toContain("size-8");
     }

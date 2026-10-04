@@ -195,7 +195,7 @@ describe("resizable", () => {
       expect(classTokens(handle)).toContain("after:-translate-x-1/2");
       expect(classTokens(handle)).toContain("[&[aria-orientation=horizontal]>div]:rotate-90");
     } else {
-      expect(classTokens(handle).some((token) => token.startsWith("h-hella-resizable-handle"))).toBe(true);
+      expect(classTokens(handle).some((token) => token.startsWith("resizable-handle"))).toBe(true);
     }
   });
 

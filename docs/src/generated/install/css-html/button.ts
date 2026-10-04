@@ -42,7 +42,7 @@ const base = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-button", layer: "hella" });
+}, { label: "button" });
 
 const variants = {
   default: style({
@@ -51,7 +51,7 @@ const variants = {
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "hella-button-default", layer: "hella" }),
+  }, { label: "button-default" }),
   destructive: style({
     backgroundColor: "var(--destructive)",
     color: "#fff",
@@ -67,7 +67,7 @@ const variants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "hella-button-destructive", layer: "hella" }),
+  }, { label: "button-destructive" }),
   outline: style({
     background: "var(--background)",
     border: "1px solid var(--border)",
@@ -83,14 +83,14 @@ const variants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "hella-button-outline", layer: "hella" }),
+  }, { label: "button-outline" }),
   secondary: style({
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "hella-button-secondary", layer: "hella" }),
+  }, { label: "button-secondary" }),
   ghost: style({
     "&:hover": {
       backgroundColor: "var(--accent)",
@@ -99,14 +99,14 @@ const variants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "hella-button-ghost", layer: "hella" }),
+  }, { label: "button-ghost" }),
   link: style({
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "hella-button-link", layer: "hella" }),
+  }, { label: "button-link" }),
 };
 
 const sizes = {
@@ -117,7 +117,7 @@ const sizes = {
     "&:has(> svg)": {
       paddingInline: "0.75rem",
     },
-  }, { label: "hella-button-size-default", layer: "hella" }),
+  }, { label: "button-size-default" }),
   xs: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
@@ -132,7 +132,7 @@ const sizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-button-size-xs", layer: "hella" }),
+  }, { label: "button-size-xs" }),
   sm: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
@@ -141,7 +141,7 @@ const sizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-button-size-sm", layer: "hella" }),
+  }, { label: "button-size-sm" }),
   lg: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "2.5rem",
@@ -149,11 +149,11 @@ const sizes = {
     "&:has(> svg)": {
       paddingInline: "1rem",
     },
-  }, { label: "hella-button-size-lg", layer: "hella" }),
+  }, { label: "button-size-lg" }),
   icon: style({
     height: "2.25rem",
     width: "2.25rem",
-  }, { label: "hella-button-size-icon", layer: "hella" }),
+  }, { label: "button-size-icon" }),
   "icon-xs": style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
@@ -162,15 +162,15 @@ const sizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-button-size-icon-xs", layer: "hella" }),
+  }, { label: "button-size-icon-xs" }),
   "icon-sm": style({
     height: "2rem",
     width: "2rem",
-  }, { label: "hella-button-size-icon-sm", layer: "hella" }),
+  }, { label: "button-size-icon-sm" }),
   "icon-lg": style({
     height: "2.5rem",
     width: "2.5rem",
-  }, { label: "hella-button-size-icon-lg", layer: "hella" }),
+  }, { label: "button-size-icon-lg" }),
 };
 
 interface ButtonProps {

@@ -39,8 +39,8 @@ npx @hellajs/ui init
 
 Every component copies in one of two styles:
 
-- **`css`** (default) composes classes through `@hellajs/css` scoped classes and themes through `tokens.js`, a `vars()` stylesheet that is server-safe by construction. Everything the registry emits lives in the `hella` cascade layer, so unlayered author CSS always wins: your own rules and utilities override the registry by construction, not by specificity fights.
-- **`tailwind`** composes classes through a shared `cn` helper (`clsx` + `tailwind-merge`, copied as `cn.ts`) and themes through `theme.css`, a plain CSS palette with zero JS and zero `@hellajs/css`. The same `hella` layer wraps the palette; utilities beat it because they are unlayered.
+- **`css`** (default) composes classes through `@hellajs/css` scoped classes and themes through `tokens.js`, a `vars()` stylesheet that is server-safe by construction. Everything the registry emits is plain unlayered CSS: your own rules and utilities override it through the normal cascade - later registration at equal specificity, higher specificity otherwise.
+- **`tailwind`** composes classes through a shared `cn` helper (`clsx` + `tailwind-merge`, copied as `cn.ts`) and themes through `theme.css`, a plain CSS palette with zero JS and zero `@hellajs/css`. Only the element reset sits in tailwind's `base` layer; utilities (and your own CSS) always outrank it.
 
 Components reference the palette with `var(--*)` literals (css) or shadcn's literal themed utilities like `bg-primary` (tailwind), so both styles read the same custom property names. Add the theme once per project (`init` does it) and import it in your app entry; the tailwind theme also requires `tw-animate-css` (the Dialog's animation utilities use it).
 
@@ -70,7 +70,7 @@ Copied source imports `@hellajs/core` and `@hellajs/dom` as regular packages; `a
 
 ## Components
 
-Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Each is styled byte-faithfully: same structure, same variants, same class strings (tailwind flavor) or their 1:1 layered translations (css flavor), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
+Fifty-nine components cover the full shadcn new-york-v4 catalog, chart excepted. Each is styled byte-faithfully: same structure, same variants, same class strings (tailwind flavor) or their 1:1 style-map translations (css flavor), same `@theme inline` palette, same enter/exit dialog animations. Dark mode is the `dark` class on `<html>` or any ancestor; dark-only projects copy the dark-default tokens sheet instead through `themeMode: "dark"`.
 
 | Family | Components |
 |---|---|

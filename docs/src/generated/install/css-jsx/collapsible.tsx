@@ -10,7 +10,7 @@ const trigger = style({
   "&[data-state='open'] > svg": {
     rotate: "180deg",
   },
-}, { label: "hella-collapsible-trigger", layer: "hella" });
+}, { label: "collapsible-trigger" });
 
 const icon = style({
   color: "var(--muted-foreground)",
@@ -20,7 +20,7 @@ const icon = style({
   translate: "0 0.125rem",
   transition: "rotate 200ms cubic-bezier(0.4, 0, 0.2, 1), translate 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
-}, { label: "hella-collapsible-icon", layer: "hella" });
+}, { label: "collapsible-icon" });
 
 const content = style({
   display: "grid",
@@ -31,12 +31,12 @@ const content = style({
     gridTemplateRows: "1fr",
     opacity: "1",
   },
-}, { label: "hella-collapsible-content", layer: "hella" });
+}, { label: "collapsible-content" });
 
 const contentInner = style({
   minHeight: "0",
   overflow: "hidden",
-}, { label: "hella-collapsible-content-inner", layer: "hella" });
+}, { label: "collapsible-content-inner" });
 
 interface CollapsibleProps {
   /** Controlled open state. When given, the root never writes its internal signal and `onOpenChange` reports the requested flip. */

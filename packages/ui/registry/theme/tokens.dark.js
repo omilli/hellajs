@@ -4,9 +4,9 @@
  * apps selecting this sheet are dark-only and never toggle. It is selected
  * through `themeMode: "dark"` in hella.ui.json or `--theme-mode dark` on
  * `init`/`add`; the default `tokens.js` keeps the light palette plus the
- * `.dark` class contract for togglable apps. Everything emits into the
- * `hella` cascade layer, so unlayered author CSS always wins over the
- * palette.
+ * `.dark` class contract for togglable apps. The sheet is plain `:root` CSS
+ * with no cascade wrapping, so your own overrides win the ordinary way:
+ * import order or specificity.
  *
  * Add this file once per project through `bunx @hellajs/ui add theme` and
  * import it in the app entry before any styled component mounts. There is no
@@ -35,4 +35,4 @@ vars({
   input: "oklch(1 0 0 / 15%)",
   ring: "oklch(0.556 0 0)",
   radius: "0.625rem",
-}, { layer: "hella" });
+});

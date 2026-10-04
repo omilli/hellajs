@@ -32,7 +32,7 @@ const base = style({
   "&:is(.dark *)[data-state='unchecked']": {
     backgroundColor: "color-mix(in oklab, var(--input) 80%, transparent)",
   },
-}, { label: "hella-switch", layer: "hella" });
+}, { label: "switch" });
 
 const thumb = style({
   backgroundColor: "var(--background)",
@@ -54,7 +54,7 @@ const thumb = style({
   "&:is(.dark *)[data-state='unchecked']": {
     backgroundColor: "var(--foreground)",
   },
-}, { label: "hella-switch-thumb", layer: "hella" });
+}, { label: "switch-thumb" });
 
 interface SwitchProps {
   /** Checked state. A boolean seeds the internal signal; an accessor makes the switch controlled — clicks then only report through `onCheckedChange`. */

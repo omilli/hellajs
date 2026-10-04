@@ -5,20 +5,10 @@
    src/styles/callouts.ts, tokens in src/styles/tokens.ts, the preflight
    port in src/styles/preflight.ts (all collected
    into the layout head via cssText()). What remains here is plain CSS
-   only: the font face, the cascade-layer statement, the
-   component-demo harness, and the landing-page stopgap styles (the
+   only: the font face, the component-demo harness, and the landing-page
+   stopgap styles (the
    landing redesign is a separate deferred set; until it lands this block
    ports the retired utility markup's computed look onto the tokens). */
-
-/*@layer base, hella;*/
-
-/* Layer order: the preflight port (src/styles/preflight.ts) lives in
-   `base`, the registry + demo pagecss inject into `hella`, and site-owned
-   styles stay unlayered — cascade layers rank below unlayered author CSS,
-   so the reset can never override the components it sits under. The
-   layout's site-head tag precedes this stylesheet and declares the same
-   order first, so it owns it; this statement re-declares the order for
-   this file's own reading. */
 
 @font-face {
   font-family: 'Mulish Variable';
@@ -387,11 +377,11 @@
 }
 
 /* Component demo harness (the `docs/src/pages/ui/<name>.astro` demo
-   frames). Unlayered by design: layered rules lose to unlayered author CSS by
-   construction, and the harness must override the registry's hella layer the
-   same way the retired per-demo shell did. Scoped to .demo-frame so nothing
-   leaks into site typography. Reads tokens.ts names (--base-50, --border,
-   --radius, --foreground, --muted-foreground). */
+   frames). Unlayered, same as every site sheet — the registry dropped its
+   cascade layer too, so nothing here competes across a layer boundary.
+   Scoped to .demo-frame so nothing leaks into site typography. Reads
+   tokens.ts names (--base-50, --border, --radius, --foreground,
+   --muted-foreground). */
 .demo-frame {
   background-color: var(--base-50);
   border: 1px solid var(--border);

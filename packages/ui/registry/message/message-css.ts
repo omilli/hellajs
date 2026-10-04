@@ -5,7 +5,7 @@ export const group = style({
   flexDirection: "column",
   minWidth: "0",
   gap: "0.5rem",
-}, { label: "hella-message-group", layer: "hella" });
+}, { label: "message-group" });
 
 export const base = style({
   position: "relative",
@@ -18,7 +18,7 @@ export const base = style({
   "&[data-align='end']": {
     flexDirection: "row-reverse",
   },
-}, { label: "hella-message", layer: "hella" });
+}, { label: "message" });
 
 export const avatar = style({
   display: "flex",
@@ -31,7 +31,7 @@ export const avatar = style({
   overflow: "hidden",
   borderRadius: "calc(infinity * 1px)",
   backgroundColor: "var(--muted)",
-}, { label: "hella-message-avatar", layer: "hella" });
+}, { label: "message-avatar" });
 
 export const content = style({
   display: "flex",
@@ -40,7 +40,7 @@ export const content = style({
   flexDirection: "column",
   gap: "0.625rem",
   overflowWrap: "break-word",
-}, { label: "hella-message-content", layer: "hella" });
+}, { label: "message-content" });
 
 export const header = style({
   display: "flex",
@@ -51,7 +51,7 @@ export const header = style({
   fontSize: "0.75rem",
   fontWeight: "500",
   color: "var(--muted-foreground)",
-}, { label: "hella-message-header", layer: "hella" });
+}, { label: "message-header" });
 
 export const footer = style({
   display: "flex",
@@ -62,24 +62,22 @@ export const footer = style({
   fontSize: "0.75rem",
   fontWeight: "500",
   color: "var(--muted-foreground)",
-}, { label: "hella-message-footer", layer: "hella" });
+}, { label: "message-footer" });
 
 css({
-  "@layer hella": {
-    "[data-slot='message']:has([data-slot='message-footer']) [data-slot='message-avatar']": {
-      transform: "translateY(-2rem)",
-    },
-    "[data-slot='message'][data-align='end'] [data-slot='message-content'] > [data-slot]": {
-      alignSelf: "flex-end",
-    },
-    "[data-slot='message']:has([data-variant='ghost']) [data-slot='message-header']": {
-      paddingInline: "0",
-    },
-    "[data-slot='message']:has([data-variant='ghost']) [data-slot='message-footer']": {
-      paddingInline: "0",
-    },
-    "[data-slot='message'][data-align='end'] [data-slot='message-footer']": {
-      justifyContent: "flex-end",
-    },
+  "[data-slot='message']:has([data-slot='message-footer']) [data-slot='message-avatar']": {
+    transform: "translateY(-2rem)",
+  },
+  "[data-slot='message'][data-align='end'] [data-slot='message-content'] > [data-slot]": {
+    alignSelf: "flex-end",
+  },
+  "[data-slot='message']:has([data-variant='ghost']) [data-slot='message-header']": {
+    paddingInline: "0",
+  },
+  "[data-slot='message']:has([data-variant='ghost']) [data-slot='message-footer']": {
+    paddingInline: "0",
+  },
+  "[data-slot='message'][data-align='end'] [data-slot='message-footer']": {
+    justifyContent: "flex-end",
   },
 });

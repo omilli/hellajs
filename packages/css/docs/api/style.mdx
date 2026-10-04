@@ -15,10 +15,10 @@ function style(base: string | StyleObject, override: StyleObject, options?: Styl
 - `base`: Class string or style object to compose onto
 - `override`: Style object contributing the new declarations
 - `options`: Optional configuration
-  - `label`: Readable segment embedded in the class name (`h-{label}-{hash}`), sanitized to `[a-zA-Z0-9-]`; a label empty after sanitization is treated as absent
+  - `label`: Readable segment embedded in the class name (`{label}-{hash}`), sanitized to `[a-zA-Z0-9-]`; a label empty after sanitization is treated as absent
   - `layer`: Cascade layer name the emitted rules wrap in (`@layer <name>`), interpolated verbatim. Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `@media` when both apply
   - `host`: Node the `<style>` element is created in; e.g. a `ShadowRoot` for web components. Defaults to `document.head`
-- **Returns**: The class name (`h-{label}-{hash}` / `h-{hash}`) for `class` attributes; the composed form prefixes a string base verbatim
+- **Returns**: The class name (`{label}-{hash}` / a bare letter-only hash) for `class` attributes; the composed form prefixes a string base verbatim
 
 ## Basic Usage
 
@@ -37,7 +37,7 @@ const card = style({
   // Responsive design inherits the class
   '@media (max-width: 768px)': { padding: '0.5rem' }
 }, { label: 'card' });
-// "h-card-gndrly"; client AND server
+// "card-cqknezd"; client AND server
 
 const Card = ({ title }: { title: string }) => (
   <div class={card}>
@@ -50,7 +50,7 @@ const Card = ({ title }: { title: string }) => (
 
 ### Content-Hashed Identity
 
-The class name is derived from the object's content: the same object always produces the same class, on every platform and every render. No user-chosen names to collide, no coordination between server and client: both derive `h-card-1ql06pj` independently and agree.
+The class name is derived from the object's content: the same object always produces the same class, on every platform and every render. No user-chosen names to collide, no coordination between server and client: both derive `card-cqknezd` independently and agree.
 
 ```jsx
 import { style } from '@hellajs/css';
@@ -70,7 +70,7 @@ On the client the rules are injected into the CSSOM. On the server the registrat
 import { style, cssText } from '@hellajs/css';
 
 const card = style({ background: 'white' }, { label: 'card' });
-// card === "h-card-…" on the server too
+// card === "card-…" on the server too
 
 const head = `<style>${cssText()}</style>`;
 ```
@@ -86,7 +86,7 @@ const card = style({ padding: '1rem' }, { label: 'card' });
 
 // String base: prefix verbatim, each side keeps its own rule
 const alert = style(card, { color: 'red' });
-// "h-card-… h-…"
+// "card-bcgbryh mgmyaqx"
 
 // Object base: deep-merge into ONE class; override wins,
 // nested objects merge, arrays replace

@@ -49,7 +49,7 @@ const page = doc({
   },
   body,
 });
-// <!DOCTYPE html><html lang="en"><head>…</head><body><div id="app"><div class="h-card-…">Hi</div></div></body></html>
+// <!DOCTYPE html><html lang="en"><head>…</head><body><div id="app"><div class="card-…">Hi</div></div></body></html>
 ```
 
 Pass an [`ssr.stream`](/reference/ssr/ssr#stream) body and the same options produce a streaming document: the client receives the shell immediately and each chunk as it renders, nothing collected.

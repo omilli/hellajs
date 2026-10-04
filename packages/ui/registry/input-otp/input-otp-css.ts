@@ -12,7 +12,7 @@ export const base = style({
   "&:has(:disabled)": {
     opacity: "0.5",
   },
-}, { label: "hella-input-otp", layer: "hella" });
+}, { label: "input-otp" });
 
 export const control = style({
   "&:disabled": {
@@ -22,12 +22,12 @@ export const control = style({
     backgroundColor: "transparent",
     color: "transparent",
   },
-}, { label: "hella-input-otp-input", layer: "hella" });
+}, { label: "input-otp-input" });
 
 export const group = style({
   alignItems: "center",
   display: "flex",
-}, { label: "hella-input-otp-group", layer: "hella" });
+}, { label: "input-otp-group" });
 
 export const slot = style({
   alignItems: "center",
@@ -69,7 +69,7 @@ export const slot = style({
   "&:is(.dark *)": {
     backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "hella-input-otp-slot", layer: "hella" });
+}, { label: "input-otp-slot" });
 
 export const caretWrap = style({
   alignItems: "center",
@@ -78,11 +78,11 @@ export const caretWrap = style({
   justifyContent: "center",
   pointerEvents: "none",
   position: "absolute",
-}, { label: "hella-input-otp-caret", layer: "hella" });
+}, { label: "input-otp-caret" });
 
 export const caret = style({
   animation: `${caretBlink} 1s ease-out infinite`,
   backgroundColor: "var(--foreground)",
   height: "1rem",
   width: "1px",
-}, { label: "hella-input-otp-caret-bar", layer: "hella" });
+}, { label: "input-otp-caret-bar" });

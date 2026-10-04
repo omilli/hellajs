@@ -23,7 +23,7 @@ describe("cva", () => {
       variants: { size: { sm: { fontSize: 12 }, lg: { fontSize: 16 } } },
     });
     const base = button();
-    expect(base).toMatch(/^h-base-[a-z0-9]+$/);
+    expect(base).toMatch(/^base-[a-z]+$/);
     expect(button({})).toBe(base);
     expect(getStylesheet("hella-css")).toBe(`.${base}{padding:1rem}`);
   });
@@ -31,7 +31,7 @@ describe("cva", () => {
   test("resolves only variant classes when the recipe has no base", () => {
     const recipe = cva({ variants: { size: { lg: { padding: "2rem" } } } });
     expect(recipe()).toBe("");
-    expect(recipe({ size: "lg" })).toMatch(/^h-size-lg-[a-z0-9]+$/);
+    expect(recipe({ size: "lg" })).toMatch(/^size-lg-[a-z]+$/);
   });
 
   test("joins selected variant classes in config order after the base", () => {
@@ -45,9 +45,9 @@ describe("cva", () => {
     });
     const resolved = button({ size: "lg", tone: "primary" });
     const [base, size, tone] = resolved.split(" ");
-    expect(base).toMatch(/^h-base-/);
-    expect(size).toMatch(/^h-size-lg-/);
-    expect(tone).toMatch(/^h-tone-primary-/);
+    expect(base).toMatch(/^base-/);
+    expect(size).toMatch(/^size-lg-/);
+    expect(tone).toMatch(/^tone-primary-/);
     expect(resolved.split(" ")).toHaveLength(3);
   });
 
@@ -56,7 +56,7 @@ describe("cva", () => {
       variants: { size: { sm: { fontSize: 12 }, lg: { fontSize: 16 } } },
       defaultVariants: { size: "sm" },
     });
-    expect(button()).toMatch(/^h-size-sm-[a-z0-9]+$/);
+    expect(button()).toMatch(/^size-sm-[a-z]+$/);
   });
 
   test("explicit selections override defaultVariants", () => {
@@ -64,7 +64,7 @@ describe("cva", () => {
       variants: { size: { sm: { fontSize: 12 }, lg: { fontSize: 16 } } },
       defaultVariants: { size: "sm" },
     });
-    expect(button({ size: "lg" })).toMatch(/^h-size-lg-[a-z0-9]+$/);
+    expect(button({ size: "lg" })).toMatch(/^size-lg-[a-z]+$/);
   });
 
   test("emits the compound class when every stated selection matches", () => {
@@ -80,9 +80,9 @@ describe("cva", () => {
     });
     const resolved = button({ size: "lg", tone: "danger" });
     const [sizeCls, toneCls, compoundCls] = resolved.split(" ");
-    expect(sizeCls).toMatch(/^h-size-lg-/);
-    expect(toneCls).toMatch(/^h-tone-danger-/);
-    expect(compoundCls).toMatch(/^h-size-lg-tone-danger-[a-z0-9]+$/);
+    expect(sizeCls).toMatch(/^size-lg-/);
+    expect(toneCls).toMatch(/^tone-danger-/);
+    expect(compoundCls).toMatch(/^size-lg-tone-danger-[a-z]+$/);
     expect(getStylesheet("hella-css")).toBe(
       `.${sizeCls}{font-size:16px}.${toneCls}{background:red}.${compoundCls}{font-weight:700}`
     );

@@ -47,7 +47,7 @@ describe("compile", () => {
     expect(readArtifact("cn", "cn.js")).toContain(`import { clsx } from "clsx";`);
   });
 
-  test("composes tailwind variants through cn and css variants through layered style", () => {
+  test("composes tailwind variants through cn and css variants through unlayered style", () => {
     const tailwindJsx = readArtifact("button", "tailwind", "button.js");
     const cssJsx = readArtifact("button", "css", "button.js");
     expect(tailwindJsx).toContain(
@@ -57,7 +57,7 @@ describe("compile", () => {
     expect(cssJsx).toContain(
       `class: [base, variants[props.variant ?? "default"], sizes[props.size ?? "default"], props.class]`,
     );
-    expect(cssJsx).toContain(`layer: "hella"`);
+    expect(cssJsx.includes('layer: "hella"')).toBe(false);
     expect(cssJsx).toContain("style(");
   });
 

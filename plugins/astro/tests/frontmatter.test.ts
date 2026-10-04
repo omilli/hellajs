@@ -55,10 +55,9 @@ describe("frontmatter extraction", () => {
       `  const card = style({ padding: "1rem", "&:hover": { color: "red" } });`,
       "<div class=${card}></div>",
     ));
-    expect(code).toContain(`const card = "h-`);
-    expect(css).toContain("padding: 1rem;");
-    expect(css).toContain(":hover {");
-    expect(css).toContain("color: red;");
+    expect(code).toMatch(/const card = "[a-z]+"/);
+    expect(css).toMatch(/\.[a-z]+ \{\n {2}padding: 1rem;\n\}/);
+    expect(css).toMatch(/:hover \{\n {2}color: red;\n\}/);
     expect(island).toBeNull();
   });
 
@@ -69,8 +68,7 @@ describe("frontmatter extraction", () => {
       "<main></main>",
     ));
     expect(code).toContain("void 0");
-    expect(css).toContain(".prose a {");
-    expect(css).toContain("text-decoration: underline;");
+    expect(css).toContain(".prose a {\n  text-decoration: underline;\n}");
   });
 
   test("folds a keyframes() call to its name literal and collects the rule", () => {
@@ -82,8 +80,8 @@ describe("frontmatter extraction", () => {
       ].join("\n"),
       "<div></div>",
     ));
-    expect(code).toContain(`const spin = "h-kf-`);
-    expect(css).toMatch(/@keyframes h-kf-[a-z0-9]+ \{\n {2}from \{\n {4}opacity: 0;\n {2}\}\n {2}to \{\n {4}opacity: 1;\n {2}\}\n\}/);
+    expect(code).toContain(`const spin = "kf-`);
+    expect(css).toMatch(/@keyframes kf-[a-z]+ \{\n {2}from \{\n {4}opacity: 0;\n {2}\}\n {2}to \{\n {4}opacity: 1;\n {2}\}\n\}/);
   });
 
   test("folds same-module const bindings: object merge, string base, and options bag", () => {
@@ -97,13 +95,11 @@ describe("frontmatter extraction", () => {
       ].join("\n"),
       "<div></div>",
     ));
-    expect(code).toMatch(/const merged = "h-[a-z0-9]+"/);
-    expect(code).toMatch(/const composed = "btn h-[a-z0-9]+"/);
-    expect(code).toMatch(/const labeled = "h-card-[a-z0-9]+"/);
-    expect(css).toContain("font-size: 14px;");
-    expect(css).toContain("color: blue;");
-    expect(css).toContain("color: red;");
-    expect(css).toMatch(/\.h-card-[a-z0-9]+ \{/);
+    expect(code).toMatch(/const merged = "[a-z]+"/);
+    expect(code).toMatch(/const composed = "btn [a-z]+"/);
+    expect(code).toMatch(/const labeled = "card-[a-z]+"/);
+    expect(css).toMatch(/\.[a-z]+ \{\n {2}font-size: 14px;\n {2}color: blue;\n\}/);
+    expect(css).toMatch(/\.[a-z]+ \{\n {2}color: red;\n\}/);
   });
 
   test("folds imports through a stubbed resolver: const objects and composed keyframes names", () => {
@@ -121,10 +117,10 @@ describe("frontmatter extraction", () => {
       "  const hero = style(base, { animation: `${spin} 1s linear` });",
       "<div></div>",
     ), { resolve, load });
-    expect(code).toMatch(/const hero = "h-[a-z0-9]+"/);
-    expect(island).toContain("@keyframes h-kf-");
-    expect(css).toContain("font-size: 14px;");
-    expect(css).toMatch(/animation: h-kf-[a-z0-9]+ 1s linear/);
+    expect(code).toMatch(/const hero = "[a-z]+"/);
+    expect(island).toContain("@keyframes kf-");
+    expect(css).toContain("font-size: 14px");
+    expect(css).toMatch(/animation: kf-[a-z]+ 1s linear/);
     expect(watched).toContain("/src/theme.ts");
   });
 
@@ -138,8 +134,8 @@ describe("frontmatter extraction", () => {
       ].join("\n"),
       "<div></div>",
     ));
-    expect(code).toMatch(/const mixed = "a b h-[a-z0-9]+"/);
-    expect(code).toMatch(/const variant = "h-base-[a-z0-9]+ h-size-sm-[a-z0-9]+ h-[a-z0-9]+"/);
+    expect(code).toMatch(/const mixed = "a b [a-z]+"/);
+    expect(code).toMatch(/const variant = "base-[a-z]+ size-sm-[a-z]+ [a-z]+"/);
   });
 
   test("collects imported top-level creator calls into the island tag and ignores their non-foldable calls and vars()", () => {
@@ -192,7 +188,7 @@ describe("frontmatter extraction", () => {
       "<Counter client:load initial={0} />",
     ), { resolve, load });
     expect(island).toContain("padding: 0.5rem;");
-    expect(island).toMatch(/\.h-counter-btn-[a-z0-9]+/);
+    expect(island).toMatch(/\.counter-btn-[a-z]+/);
     expect(css).toContain("margin: 2rem auto;");
     expect(watched).toContain("/src/components/Counter.tsx");
     expect(watched).toContain("/src/theme.ts");
@@ -239,7 +235,7 @@ describe("frontmatter extraction", () => {
       ``,
       "<div class=${style({ margin: 0 })}></div>",
     ));
-    expect(code).toMatch(/\$\{"h-[a-z0-9]+"\}/);
+    expect(code).toMatch(/\$\{"[a-z]+"\}/);
     expect(css).toContain("margin: 0px;");
     expect(island).toBeNull();
   });

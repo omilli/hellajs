@@ -46,7 +46,7 @@ describe("message-scroller", () => {
     expect(root.getAttribute("data-slot")).toBe("message-scroller-content");
     expect(root.textContent).toBe("x");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-message-scroller-content")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("message-scroller-content")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("gap-8");
     }
@@ -57,7 +57,7 @@ describe("message-scroller", () => {
     expect(root.getAttribute("data-slot")).toBe("message-scroller-item");
     expect(root.textContent).toBe("x");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-message-scroller-item")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("message-scroller-item")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("[content-visibility:auto]");
     }
@@ -75,8 +75,8 @@ describe("message-scroller", () => {
     expect(root.querySelector("span")!.textContent).toBe("Scroll to end");
     if (variant.style === "css") {
       const tokens = classTokens(root);
-      expect(tokens.some((token) => token.startsWith("h-hella-message-scroller-overlay"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("h-hella-message-scroller-button-secondary"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("message-scroller-overlay"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("message-scroller-button-secondary"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("data-[direction=end]:bottom-4");
     }

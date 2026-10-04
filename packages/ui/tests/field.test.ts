@@ -40,7 +40,7 @@ describe("field", () => {
     expect(horizontal.getAttribute("data-orientation")).toBe("horizontal");
     if (variant.style === "css") {
       const tokens = classTokens(horizontal);
-      expect(tokens.some((token) => token.startsWith("h-hella-field-horizontal"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("field-horizontal"))).toBe(true);
     } else {
       expect(classTokens(horizontal)).toContain("flex-row");
       expect(classTokens(horizontal)).toContain("has-[>[data-slot=field-content]]:items-start");
@@ -50,7 +50,7 @@ describe("field", () => {
   test.each(fieldVariants)("$part $format/$style renders the responsive orientation with the container query variant class", (variant) => {
     const root = renderVariant(variant, { orientation: "responsive", children: ["x"] });
     if (variant.style === "css") {
-      expect(classTokens(root).some((token) => token.startsWith("h-hella-field-responsive"))).toBe(true);
+      expect(classTokens(root).some((token) => token.startsWith("field-responsive"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("@md/field-group:flex-row");
     }
@@ -71,7 +71,7 @@ describe("field", () => {
     const label = renderVariant(variant, { variant: "label", children: ["x"] });
     expect(label.getAttribute("data-variant")).toBe("label");
     if (variant.style === "css") {
-      expect(classTokens(label).some((token) => token.startsWith("h-hella-field-legend-label"))).toBe(true);
+      expect(classTokens(label).some((token) => token.startsWith("field-legend-label"))).toBe(true);
     } else {
       expect(classTokens(label)).toContain("data-[variant=label]:text-sm");
     }
@@ -81,7 +81,7 @@ describe("field", () => {
     const root = renderVariant(variant, { children: ["x"] });
     expect(root.tagName).toBe("LABEL");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-field-label")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("field-label")).toBe(true);
     } else {
       const tokens = classTokens(root);
       expect(tokens).toContain("select-none");
@@ -110,7 +110,7 @@ describe("field", () => {
     expect(root.textContent).toBe("Required");
     expect(root.hasAttribute("hidden")).toBe(false);
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-field-error")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("field-error")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("text-destructive");
     }

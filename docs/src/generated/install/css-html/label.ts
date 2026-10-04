@@ -19,7 +19,7 @@ const base = style({
     cursor: "not-allowed",
     opacity: "0.5",
   },
-}, { label: "hella-label", layer: "hella" });
+}, { label: "label" });
 
 interface LabelProps {
   children?: HellaChildren;

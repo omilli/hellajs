@@ -7,7 +7,7 @@ import { style } from "@hellajs/css";
 const base = style({
   display: "grid",
   gap: "0.5rem",
-}, { label: "hella-form-item", layer: "hella" });
+}, { label: "form-item" });
 
 const label = style({
   alignItems: "center",
@@ -28,17 +28,17 @@ const label = style({
   "&[data-error='true']": {
     color: "var(--destructive)",
   },
-}, { label: "hella-form-label", layer: "hella" });
+}, { label: "form-label" });
 
 const description = style({
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
-}, { label: "hella-form-description", layer: "hella" });
+}, { label: "form-description" });
 
 const message = style({
   color: "var(--destructive)",
   fontSize: "0.875rem",
-}, { label: "hella-form-message", layer: "hella" });
+}, { label: "form-message" });
 
 /** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
 type FormValidator<T> = (value: T[keyof T], values: T) => string | null;

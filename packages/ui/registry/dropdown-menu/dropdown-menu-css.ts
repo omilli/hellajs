@@ -56,7 +56,7 @@ export const base = style({
   "&:is(.dark *):hover": {
     background: "color-mix(in oklab, var(--input) 50%, transparent)",
   },
-}, { label: "hella-dropdown-menu-base", layer: "hella" });
+}, { label: "dropdown-menu-base" });
 
 export const content = style({
   backgroundColor: "var(--popover)",
@@ -88,7 +88,7 @@ export const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-dropdown-menu-content", layer: "hella" });
+}, { label: "dropdown-menu-content" });
 
 export const item = style({
   alignItems: "center",
@@ -139,7 +139,7 @@ export const item = style({
   "&[data-variant='destructive'] svg": {
     color: "var(--destructive) !important",
   },
-}, { label: "hella-dropdown-menu-item", layer: "hella" });
+}, { label: "dropdown-menu-item" });
 
 export const checkItem = style({
   alignItems: "center",
@@ -172,7 +172,7 @@ export const checkItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-dropdown-menu-check-item", layer: "hella" });
+}, { label: "dropdown-menu-check-item" });
 
 export const radioItem = style({
   alignItems: "center",
@@ -205,7 +205,7 @@ export const radioItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-dropdown-menu-radio-item", layer: "hella" });
+}, { label: "dropdown-menu-radio-item" });
 
 export const indicator = style({
   alignItems: "center",
@@ -216,18 +216,18 @@ export const indicator = style({
   pointerEvents: "none",
   position: "absolute",
   width: "0.875rem",
-}, { label: "hella-dropdown-menu-indicator", layer: "hella" });
+}, { label: "dropdown-menu-indicator" });
 
 export const icon = style({
   height: "1rem",
   width: "1rem",
-}, { label: "hella-dropdown-menu-icon", layer: "hella" });
+}, { label: "dropdown-menu-icon" });
 
 export const radioIcon = style({
   fill: "currentColor",
   height: "0.5rem",
   width: "0.5rem",
-}, { label: "hella-dropdown-menu-radio-icon", layer: "hella" });
+}, { label: "dropdown-menu-radio-icon" });
 
 export const label = style({
   fontSize: "0.875rem",
@@ -238,7 +238,7 @@ export const label = style({
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
-}, { label: "hella-dropdown-menu-label", layer: "hella" });
+}, { label: "dropdown-menu-label" });
 
 export const separator = style({
   backgroundColor: "var(--border)",
@@ -247,7 +247,7 @@ export const separator = style({
   marginLeft: "-0.25rem",
   marginRight: "-0.25rem",
   marginTop: "0.25rem",
-}, { label: "hella-dropdown-menu-separator", layer: "hella" });
+}, { label: "dropdown-menu-separator" });
 
 export const shortcut = style({
   color: "var(--muted-foreground)",
@@ -255,7 +255,7 @@ export const shortcut = style({
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "hella-dropdown-menu-shortcut", layer: "hella" });
+}, { label: "dropdown-menu-shortcut" });
 
 export const subTrigger = style({
   alignItems: "center",
@@ -293,13 +293,13 @@ export const subTrigger = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "hella-dropdown-menu-sub-trigger", layer: "hella" });
+}, { label: "dropdown-menu-sub-trigger" });
 
 export const chevron = style({
   height: "1rem",
   marginLeft: "auto",
   width: "1rem",
-}, { label: "hella-dropdown-menu-chevron", layer: "hella" });
+}, { label: "dropdown-menu-chevron" });
 
 export const subContent = style({
   backgroundColor: "var(--popover)",
@@ -329,4 +329,4 @@ export const subContent = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-dropdown-menu-sub-content", layer: "hella" });
+}, { label: "dropdown-menu-sub-content" });

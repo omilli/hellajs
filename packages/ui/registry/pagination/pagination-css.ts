@@ -5,14 +5,14 @@ export const base = style({
   justifyContent: "center",
   marginInline: "auto",
   width: "100%",
-}, { label: "hella-pagination", layer: "hella" });
+}, { label: "pagination" });
 
 export const content = style({
   alignItems: "center",
   display: "flex",
   flexDirection: "row",
   gap: "0.25rem",
-}, { label: "hella-pagination-content", layer: "hella" });
+}, { label: "pagination-content" });
 
 export const linkBase = style({
   alignItems: "center",
@@ -53,7 +53,7 @@ export const linkBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-pagination-link", layer: "hella" });
+}, { label: "pagination-link" });
 
 export const linkVariants = {
   ghost: style({
@@ -64,7 +64,7 @@ export const linkVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "hella-pagination-link-ghost", layer: "hella" }),
+  }, { label: "pagination-link-ghost" }),
   outline: style({
     background: "var(--background)",
     border: "1px solid var(--border)",
@@ -80,7 +80,7 @@ export const linkVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "hella-pagination-link-outline", layer: "hella" }),
+  }, { label: "pagination-link-outline" }),
 };
 
 export const linkSizes = {
@@ -91,7 +91,7 @@ export const linkSizes = {
     "&:has(> svg)": {
       paddingInline: "0.75rem",
     },
-  }, { label: "hella-pagination-link-size-default", layer: "hella" }),
+  }, { label: "pagination-link-size-default" }),
   xs: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
@@ -106,7 +106,7 @@ export const linkSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-pagination-link-size-xs", layer: "hella" }),
+  }, { label: "pagination-link-size-xs" }),
   sm: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
@@ -115,7 +115,7 @@ export const linkSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-pagination-link-size-sm", layer: "hella" }),
+  }, { label: "pagination-link-size-sm" }),
   lg: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "2.5rem",
@@ -123,11 +123,11 @@ export const linkSizes = {
     "&:has(> svg)": {
       paddingInline: "1rem",
     },
-  }, { label: "hella-pagination-link-size-lg", layer: "hella" }),
+  }, { label: "pagination-link-size-lg" }),
   icon: style({
     height: "2.25rem",
     width: "2.25rem",
-  }, { label: "hella-pagination-link-size-icon", layer: "hella" }),
+  }, { label: "pagination-link-size-icon" }),
   "icon-xs": style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
@@ -136,15 +136,15 @@ export const linkSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-pagination-link-size-icon-xs", layer: "hella" }),
+  }, { label: "pagination-link-size-icon-xs" }),
   "icon-sm": style({
     height: "2rem",
     width: "2rem",
-  }, { label: "hella-pagination-link-size-icon-sm", layer: "hella" }),
+  }, { label: "pagination-link-size-icon-sm" }),
   "icon-lg": style({
     height: "2.5rem",
     width: "2.5rem",
-  }, { label: "hella-pagination-link-size-icon-lg", layer: "hella" }),
+  }, { label: "pagination-link-size-icon-lg" }),
 };
 
 export const previous = style({
@@ -155,7 +155,7 @@ export const previous = style({
       paddingLeft: "0.625rem",
     },
   },
-}, { label: "hella-pagination-previous", layer: "hella" });
+}, { label: "pagination-previous" });
 
 export const next = style({
   gap: "0.25rem",
@@ -165,7 +165,7 @@ export const next = style({
       paddingRight: "0.625rem",
     },
   },
-}, { label: "hella-pagination-next", layer: "hella" });
+}, { label: "pagination-next" });
 
 export const hiddenUntilSm = style({
   display: "none",
@@ -174,7 +174,7 @@ export const hiddenUntilSm = style({
       display: "block",
     },
   },
-}, { label: "hella-pagination-hidden-until-sm", layer: "hella" });
+}, { label: "pagination-hidden-until-sm" });
 
 export const srOnly = style({
   border: "0",
@@ -186,7 +186,7 @@ export const srOnly = style({
   position: "absolute",
   whiteSpace: "nowrap",
   width: "1px",
-}, { label: "hella-pagination-sr-only", layer: "hella" });
+}, { label: "pagination-sr-only" });
 
 export const ellipsis = style({
   alignItems: "center",
@@ -198,4 +198,4 @@ export const ellipsis = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-pagination-ellipsis", layer: "hella" });
+}, { label: "pagination-ellipsis" });

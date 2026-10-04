@@ -8,7 +8,7 @@ const wrapper = style({
   "&:has(select:disabled)": {
     opacity: "0.5",
   },
-}, { label: "hella-native-select-wrapper", layer: "hella" });
+}, { label: "native-select-wrapper" });
 
 const base = style({
   appearance: "none",
@@ -46,14 +46,14 @@ const base = style({
   "&:is(.dark *):hover": {
     background: "color-mix(in oklab, var(--input) 50%, transparent)",
   },
-}, { label: "hella-native-select", layer: "hella" });
+}, { label: "native-select" });
 
 const focus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-native-select-focus", layer: "hella" });
+}, { label: "native-select-focus" });
 
 const invalid = style({
   "&[aria-invalid='true']": {
@@ -65,7 +65,7 @@ const invalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-native-select-invalid", layer: "hella" });
+}, { label: "native-select-invalid" });
 
 const icon = style({
   color: "var(--muted-foreground)",
@@ -78,17 +78,17 @@ const icon = style({
   transform: "translateY(-50%)",
   userSelect: "none",
   width: "1rem",
-}, { label: "hella-native-select-icon", layer: "hella" });
+}, { label: "native-select-icon" });
 
 const option = style({
   backgroundColor: "Canvas",
   color: "CanvasText",
-}, { label: "hella-native-select-option", layer: "hella" });
+}, { label: "native-select-option" });
 
 const optgroup = style({
   backgroundColor: "Canvas",
   color: "CanvasText",
-}, { label: "hella-native-select-optgroup", layer: "hella" });
+}, { label: "native-select-optgroup" });
 
 interface NativeSelectProps {
   children?: HellaChildren;

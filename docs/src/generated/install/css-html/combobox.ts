@@ -47,7 +47,7 @@ const base = style({
   "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-combobox-wrapper", layer: "hella" });
+}, { label: "combobox-wrapper" });
 
 const input = style({
   background: "transparent",
@@ -93,14 +93,14 @@ const input = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "hella-combobox-input", layer: "hella" });
+}, { label: "combobox-input" });
 
 const inputFocus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-combobox-input-focus", layer: "hella" });
+}, { label: "combobox-input-focus" });
 
 const inputInvalid = style({
   "&[aria-invalid='true']": {
@@ -112,7 +112,7 @@ const inputInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-combobox-input-invalid", layer: "hella" });
+}, { label: "combobox-input-invalid" });
 
 const inputControl = style({
   background: "transparent",
@@ -126,7 +126,7 @@ const inputControl = style({
   "&:is(.dark *)": {
     background: "transparent",
   },
-}, { label: "hella-combobox-input-control", layer: "hella" });
+}, { label: "combobox-input-control" });
 
 const addon = style({
   alignItems: "center",
@@ -158,7 +158,7 @@ const addon = style({
   "&[data-disabled='true']": {
     opacity: "0.5",
   },
-}, { label: "hella-combobox-addon", layer: "hella" });
+}, { label: "combobox-addon" });
 
 const buttonBase = style({
   alignItems: "center",
@@ -199,7 +199,7 @@ const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-combobox-button", layer: "hella" });
+}, { label: "combobox-button" });
 
 const buttonGhost = style({
   "&:hover": {
@@ -209,7 +209,7 @@ const buttonGhost = style({
   "&:is(.dark *):hover": {
     backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
   },
-}, { label: "hella-combobox-button-ghost", layer: "hella" });
+}, { label: "combobox-button-ghost" });
 
 const buttonSizeIconXs = style({
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -219,7 +219,7 @@ const buttonSizeIconXs = style({
     height: "0.75rem",
     width: "0.75rem",
   },
-}, { label: "hella-combobox-button-size-icon-xs", layer: "hella" });
+}, { label: "combobox-button-size-icon-xs" });
 
 const sizeIconXs = style({
   alignItems: "center",
@@ -233,13 +233,13 @@ const sizeIconXs = style({
   "&:has(> svg)": {
     padding: "0",
   },
-}, { label: "hella-combobox-size-icon-xs", layer: "hella" });
+}, { label: "combobox-size-icon-xs" });
 
 const triggerExtra = style({
   "&[data-pressed]": {
     backgroundColor: "transparent",
   },
-}, { label: "hella-combobox-trigger-extra", layer: "hella" });
+}, { label: "combobox-trigger-extra" });
 
 const chipRemoveExtra = style({
   marginLeft: "-0.25rem",
@@ -247,21 +247,21 @@ const chipRemoveExtra = style({
   "&:hover": {
     opacity: "1",
   },
-}, { label: "hella-combobox-chip-remove-extra", layer: "hella" });
+}, { label: "combobox-chip-remove-extra" });
 
 const trigger = style({
   "& svg:not([class*='size-'])": {
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-combobox-trigger", layer: "hella" });
+}, { label: "combobox-trigger" });
 
 const triggerIcon = style({
   color: "var(--muted-foreground)",
   height: "1rem",
   pointerEvents: "none",
   width: "1rem",
-}, { label: "hella-combobox-trigger-icon", layer: "hella" });
+}, { label: "combobox-trigger-icon" });
 
 const content = style({
   backgroundColor: "var(--popover)",
@@ -314,7 +314,7 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 100ms ease-in both`,
   },
-}, { label: "hella-combobox-content", layer: "hella" });
+}, { label: "combobox-content" });
 
 const list = style({
   maxHeight: "min(calc(24rem - 2.25rem), calc(var(--available-height) - 2.25rem))",
@@ -324,7 +324,7 @@ const list = style({
   "&[data-empty]": {
     padding: "0",
   },
-}, { label: "hella-combobox-list", layer: "hella" });
+}, { label: "combobox-list" });
 
 const item = style({
   alignItems: "center",
@@ -358,7 +358,7 @@ const item = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-combobox-item", layer: "hella" });
+}, { label: "combobox-item" });
 
 const itemIndicator = style({
   alignItems: "center",
@@ -369,7 +369,7 @@ const itemIndicator = style({
   position: "absolute",
   right: "0.5rem",
   width: "1rem",
-}, { label: "hella-combobox-item-indicator", layer: "hella" });
+}, { label: "combobox-item-indicator" });
 
 const icon = style({
   height: "1rem",
@@ -381,11 +381,11 @@ const icon = style({
       width: "1.25rem",
     },
   },
-}, { label: "hella-combobox-icon", layer: "hella" });
+}, { label: "combobox-icon" });
 
 const xIcon = style({
   pointerEvents: "none",
-}, { label: "hella-combobox-x-icon", layer: "hella" });
+}, { label: "combobox-x-icon" });
 
 const label = style({
   color: "var(--muted-foreground)",
@@ -401,7 +401,7 @@ const label = style({
       paddingInline: "0.75rem",
     },
   },
-}, { label: "hella-combobox-label", layer: "hella" });
+}, { label: "combobox-label" });
 
 const empty = style({
   color: "var(--muted-foreground)",
@@ -415,14 +415,14 @@ const empty = style({
   "&:is([data-slot='combobox-content'][data-empty] *)": {
     display: "flex",
   },
-}, { label: "hella-combobox-empty", layer: "hella" });
+}, { label: "combobox-empty" });
 
 const separator = style({
   backgroundColor: "var(--border)",
   height: "1px",
   marginBlock: "0.25rem",
   marginInline: "-0.25rem",
-}, { label: "hella-combobox-separator", layer: "hella" });
+}, { label: "combobox-separator" });
 
 const chips = style({
   alignItems: "center",
@@ -458,7 +458,7 @@ const chips = style({
     borderColor: "color-mix(in oklab, var(--destructive) 50%, transparent)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-combobox-chips", layer: "hella" });
+}, { label: "combobox-chips" });
 
 const chip = style({
   alignItems: "center",
@@ -482,19 +482,17 @@ const chip = style({
   "&:has([data-slot='combobox-chip-remove'])": {
     paddingRight: "0",
   },
-}, { label: "hella-combobox-chip", layer: "hella" });
+}, { label: "combobox-chip" });
 
 const chipsInput = style({
   flex: "1 1 0%",
   minWidth: "4rem",
   outlineStyle: "none",
-}, { label: "hella-combobox-chips-input", layer: "hella" });
+}, { label: "combobox-chips-input" });
 
 css({
-  "@layer hella": {
-    "[data-slot='input-group']:has([data-slot='combobox-clear']) [data-slot='combobox-trigger']": {
-      display: "none",
-    },
+  "[data-slot='input-group']:has([data-slot='combobox-clear']) [data-slot='combobox-trigger']": {
+    display: "none",
   },
 });
 

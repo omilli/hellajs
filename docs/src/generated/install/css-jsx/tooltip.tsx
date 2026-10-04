@@ -37,7 +37,7 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-tooltip-content", layer: "hella" });
+}, { label: "tooltip-content" });
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";

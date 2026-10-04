@@ -5,11 +5,11 @@ export const item = style({
   "&:last-child": {
     borderBottom: "0",
   },
-}, { label: "hella-accordion-item", layer: "hella" });
+}, { label: "accordion-item" });
 
 export const header = style({
   display: "flex",
-}, { label: "hella-accordion-header", layer: "hella" });
+}, { label: "accordion-header" });
 
 export const trigger = style({
   alignItems: "flex-start",
@@ -39,7 +39,7 @@ export const trigger = style({
   "&[data-state='open'] > svg": {
     rotate: "180deg",
   },
-}, { label: "hella-accordion-trigger", layer: "hella" });
+}, { label: "accordion-trigger" });
 
 export const icon = style({
   color: "var(--muted-foreground)",
@@ -49,7 +49,7 @@ export const icon = style({
   translate: "0 0.125rem",
   transition: "rotate 200ms cubic-bezier(0.4, 0, 0.2, 1), translate 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
-}, { label: "hella-accordion-icon", layer: "hella" });
+}, { label: "accordion-icon" });
 
 export const content = style({
   display: "grid",
@@ -62,7 +62,7 @@ export const content = style({
     gridTemplateRows: "1fr",
     opacity: "1",
   },
-}, { label: "hella-accordion-content", layer: "hella" });
+}, { label: "accordion-content" });
 
 export const contentInner = style({
   minHeight: "0",
@@ -73,4 +73,4 @@ export const contentInner = style({
   "&[data-state='open']": {
     paddingBottom: "1rem",
   },
-}, { label: "hella-accordion-content-inner", layer: "hella" });
+}, { label: "accordion-content-inner" });

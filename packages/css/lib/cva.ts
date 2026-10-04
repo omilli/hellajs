@@ -129,7 +129,7 @@ function compoundLabel(compound: Record<string, unknown>): string {
  * order, then every matching `compoundVariants` entry contributes its own
  * class; fragments join with single spaces. Each variant value, breakpoint
  * selection, and compound generates its content-hashed class lazily on first
- * resolution (`h-{label}-{hash}`, the label derived from the selection) and
+ * resolution (`{label}-{hash}`, the label derived from the selection) and
  * registers through the shared reference-counted flow — only the CSS a render
  * actually resolves is ever generated, so [`cssText`](/reference/css/csstext)
  * collects exactly the critical CSS on the server. String values in `base`,

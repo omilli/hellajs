@@ -26,7 +26,7 @@ describe("bubble", () => {
     expect(root.getAttribute("data-align")).toBe("end");
     if (variant.style === "css") {
       const tokens = classTokens(root);
-      expect(tokens.some((token) => token.startsWith("h-hella-bubble-secondary"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("bubble-secondary"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("*:data-[slot=bubble-content]:bg-secondary");
     }
@@ -37,7 +37,7 @@ describe("bubble", () => {
       const root = renderVariant(variant, { variant: name as "default", children: ["x"] });
       expect(root.getAttribute("data-variant")).toBe(name);
       if (variant.style === "css") {
-        expect(classTokens(root).some((token) => token.startsWith(`h-hella-bubble-${name}`))).toBe(true);
+        expect(classTokens(root).some((token) => token.startsWith(`bubble-${name}`))).toBe(true);
       }
     }
   });
@@ -48,7 +48,7 @@ describe("bubble", () => {
     expect(root.getAttribute("data-slot")).toBe("bubble-group");
     expect(root.textContent).toBe("x");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-bubble-group")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("bubble-group")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("gap-2");
     }
@@ -59,7 +59,7 @@ describe("bubble", () => {
     expect(root.getAttribute("data-slot")).toBe("bubble-content");
     expect(root.textContent).toBe("hello");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-bubble-content")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("bubble-content")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("rounded-xl");
     }
@@ -72,8 +72,8 @@ describe("bubble", () => {
     expect(root.getAttribute("data-align")).toBe("end");
     if (variant.style === "css") {
       const tokens = classTokens(root);
-      expect(tokens.some((token) => token.startsWith("h-hella-bubble-reactions-bottom"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("h-hella-bubble-reactions-end"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("bubble-reactions-bottom"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("bubble-reactions-end"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("translate-y-3/4");
     }
@@ -85,8 +85,8 @@ describe("bubble", () => {
     expect(root.getAttribute("data-align")).toBe("start");
     if (variant.style === "css") {
       const tokens = classTokens(root);
-      expect(tokens.some((token) => token.startsWith("h-hella-bubble-reactions-top"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("h-hella-bubble-reactions-start"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("bubble-reactions-top"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("bubble-reactions-start"))).toBe(true);
     } else {
       const tokens = classTokens(root);
       expect(tokens).toContain("-translate-y-3/4");

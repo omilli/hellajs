@@ -29,8 +29,8 @@ describe("attachment", () => {
     const idle = renderVariant(variant, { state: "idle", children: ["x"] });
     const errored = renderVariant(variant, { state: "error", children: ["x"] });
     if (variant.style === "css") {
-      expect(classTokens(idle)[0]!.startsWith("h-hella-attachment")).toBe(true);
-      expect(classTokens(errored).some((token) => token.startsWith("h-hella-attachment-size"))).toBe(true);
+      expect(classTokens(idle)[0]!.startsWith("attachment")).toBe(true);
+      expect(classTokens(errored).some((token) => token.startsWith("attachment-size"))).toBe(true);
     } else {
       expect(classTokens(idle)).toContain("data-[state=idle]:border-dashed");
       expect(classTokens(errored)).toContain("data-[state=error]:border-destructive/30");
@@ -40,7 +40,7 @@ describe("attachment", () => {
   test.each(attachmentVariants)("$part $format/$style renders the size variants", (variant) => {
     const xs = renderVariant(variant, { size: "xs", children: ["x"] });
     if (variant.style === "css") {
-      expect(classTokens(xs).some((token) => token.startsWith("h-hella-attachment-size-xs"))).toBe(true);
+      expect(classTokens(xs).some((token) => token.startsWith("attachment-size-xs"))).toBe(true);
     } else {
       expect(classTokens(xs)).toContain("rounded-lg");
     }
@@ -52,7 +52,7 @@ describe("attachment", () => {
     expect(root.getAttribute("data-variant")).toBe("icon");
     expect(root.textContent).toBe("x");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-attachment-media")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("attachment-media")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("aspect-square");
     }
@@ -115,7 +115,7 @@ describe("attachment", () => {
     expect(root.getAttribute("data-slot")).toBe("attachment-group");
     expect(root.textContent).toBe("x");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-attachment-group")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("attachment-group")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("snap-x");
     }

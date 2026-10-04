@@ -28,7 +28,7 @@ describe("direction", () => {
     const root = renderVariant(variant, { children: variant.child!("x") });
     const tokens = classTokens(root);
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith("h-hella-direction-provider")).toBe(true);
+      expect(tokens[0]!.startsWith("direction-provider")).toBe(true);
     } else {
       expect(tokens).toContain("contents");
     }

@@ -38,7 +38,7 @@ const base = style({
   "&:is(.dark *)[aria-invalid='true']": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-badge", layer: "hella" });
+}, { label: "badge" });
 
 const variants = {
   default: style({
@@ -47,14 +47,14 @@ const variants = {
     "&:is(a):hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "hella-badge-default", layer: "hella" }),
+  }, { label: "badge-default" }),
   secondary: style({
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:is(a):hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 90%, transparent)",
     },
-  }, { label: "hella-badge-secondary", layer: "hella" }),
+  }, { label: "badge-secondary" }),
   destructive: style({
     backgroundColor: "var(--destructive)",
     color: "#fff",
@@ -70,7 +70,7 @@ const variants = {
     "&:is(a):hover": {
       backgroundColor: "color-mix(in oklab, var(--destructive) 90%, transparent)",
     },
-  }, { label: "hella-badge-destructive", layer: "hella" }),
+  }, { label: "badge-destructive" }),
   outline: style({
     borderColor: "var(--border)",
     color: "var(--foreground)",
@@ -78,20 +78,20 @@ const variants = {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
     },
-  }, { label: "hella-badge-outline", layer: "hella" }),
+  }, { label: "badge-outline" }),
   ghost: style({
     "&:is(a):hover": {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
     },
-  }, { label: "hella-badge-ghost", layer: "hella" }),
+  }, { label: "badge-ghost" }),
   link: style({
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:is(a):hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "hella-badge-link", layer: "hella" }),
+  }, { label: "badge-link" }),
 };
 
 interface BadgeProps {

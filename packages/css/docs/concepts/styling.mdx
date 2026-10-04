@@ -4,7 +4,7 @@ HellaJS styles components with CSS-in-JS: `style()` scopes declarations under a 
 
 ## Scoped Styles
 
-[`style`](/reference/css/style) takes a declarations-first object and returns a content-hashed class: `h-{label}-{hash}` with a label, `h-{hash}` without. The hash covers the object alone, so the same object always derives the same class, on every render and both platforms.
+[`style`](/reference/css/style) takes a declarations-first object and returns a content-hashed class: `{label}-{hash}` with a label, a bare letter-only hash without. The hash covers the object alone, so the same object always derives the same class, on every render and both platforms.
 
 ```jsx
 import { signal } from '@hellajs/core';
@@ -28,7 +28,7 @@ const Counter = () => {
       transform: 'translateY(-1px)'
     }
   }, { label: 'btn' });
-  // "h-btn-18z75t4"; identical on client and server
+  // "btn-nficjjz"; identical on client and server
 
   return (
     <div>
@@ -52,13 +52,13 @@ import { style } from '@hellajs/css';
 
 const card = style({ padding: '1rem', borderRadius: '0.5rem' }, { label: 'card' });
 const alert = style(card, { border: '1px solid red' });
-// "h-card-irxmls h-1vk88bm"; the alert class carries only the added declarations
+// "card-drokihk nfvrehe"; the alert class carries only the added declarations
 
 const denseCard = style(
   { padding: '1rem', borderRadius: '0.5rem' },
   { padding: '0.5rem' }
 );
-// One merged class; "h-…" with the override's padding
+// One merged class; "jptpugw" with the override's padding
 ```
 
 ## Global Styles
@@ -143,7 +143,7 @@ Property values in `style()` and `css()` objects are static; function values thr
 
 ## Keyframe Animations
 
-[`keyframes`](/reference/css/keyframes) registers a `@keyframes` rule and returns its content-hashed animation name (`h-kf-{hash}`), so hand-authored animation names cannot collide. Key order never matters: structurally equal definitions derive the same name.
+[`keyframes`](/reference/css/keyframes) registers a `@keyframes` rule and returns its content-hashed animation name (`kf-{hash}`), so hand-authored animation names cannot collide. Key order never matters: structurally equal definitions derive the same name.
 
 ```jsx
 import { keyframes, style } from '@hellajs/css';

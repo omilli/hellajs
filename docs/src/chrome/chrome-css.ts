@@ -21,9 +21,10 @@
  * whose skin ships with the registry command module it imports.
  *
  * Collected by the MainLayout head tag via `cssText()` (unit 08 mechanism);
- * imported for side effect by the layout, no exports. Unlayered: site
- * chrome outranks the registry's hella layer by cascade (layers rank below
- * unlayered author CSS) — notably the drawer-open close-icon rule beats
+ * imported for side effect by the layout, no exports. Unlayered like every
+ * site sheet - and the registry dropped its cascade layer too, so chrome
+ * beats registry rules by plain specificity - notably the
+ * drawer-open close-icon rule beats
  * the close icon's display:none base rule (site-owned since unit 10; the
  * `hidden` utility it replaced died with unit 11).
  * Rules nest like Sass (set-wide directive): `&` composes state/compound

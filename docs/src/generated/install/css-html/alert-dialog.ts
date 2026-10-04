@@ -20,7 +20,7 @@ const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "hella-alert-dialog-base", layer: "hella" });
+}, { label: "alert-dialog-base" });
 
 const content = style({
   background: "var(--background)",
@@ -52,7 +52,7 @@ const content = style({
       maxWidth: "32rem",
     },
   },
-}, { label: "hella-alert-dialog-content", layer: "hella" });
+}, { label: "alert-dialog-content" });
 
 const header = style({
   display: "grid",
@@ -73,7 +73,7 @@ const header = style({
       gridTemplateRows: "auto 1fr",
     },
   },
-}, { label: "hella-alert-dialog-header", layer: "hella" });
+}, { label: "alert-dialog-header" });
 
 const footer = style({
   display: "flex",
@@ -89,7 +89,7 @@ const footer = style({
       justifyContent: "flex-end",
     },
   },
-}, { label: "hella-alert-dialog-footer", layer: "hella" });
+}, { label: "alert-dialog-footer" });
 
 const title = style({
   fontSize: "1.125rem",
@@ -99,13 +99,13 @@ const title = style({
       gridColumnStart: "2",
     },
   },
-}, { label: "hella-alert-dialog-title", layer: "hella" });
+}, { label: "alert-dialog-title" });
 
 const description = style({
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "hella-alert-dialog-description", layer: "hella" });
+}, { label: "alert-dialog-description" });
 
 const media = style({
   alignItems: "center",
@@ -125,7 +125,7 @@ const media = style({
       gridRow: "span 2 / span 2",
     },
   },
-}, { label: "hella-alert-dialog-media", layer: "hella" });
+}, { label: "alert-dialog-media" });
 
 const buttonBase = style({
   alignItems: "center",
@@ -166,7 +166,7 @@ const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-alert-dialog-button", layer: "hella" });
+}, { label: "alert-dialog-button" });
 
 const buttonVariants = {
   default: style({
@@ -175,7 +175,7 @@ const buttonVariants = {
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "hella-alert-dialog-button-default", layer: "hella" }),
+  }, { label: "alert-dialog-button-default" }),
   destructive: style({
     backgroundColor: "var(--destructive)",
     color: "#fff",
@@ -191,7 +191,7 @@ const buttonVariants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "hella-alert-dialog-button-destructive", layer: "hella" }),
+  }, { label: "alert-dialog-button-destructive" }),
   outline: style({
     background: "var(--background)",
     border: "1px solid var(--border)",
@@ -207,14 +207,14 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "hella-alert-dialog-button-outline", layer: "hella" }),
+  }, { label: "alert-dialog-button-outline" }),
   secondary: style({
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "hella-alert-dialog-button-secondary", layer: "hella" }),
+  }, { label: "alert-dialog-button-secondary" }),
   ghost: style({
     "&:hover": {
       backgroundColor: "var(--accent)",
@@ -223,14 +223,14 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "hella-alert-dialog-button-ghost", layer: "hella" }),
+  }, { label: "alert-dialog-button-ghost" }),
   link: style({
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "hella-alert-dialog-button-link", layer: "hella" }),
+  }, { label: "alert-dialog-button-link" }),
 };
 
 const buttonSizes = {
@@ -241,7 +241,7 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.75rem",
     },
-  }, { label: "hella-alert-dialog-button-size-default", layer: "hella" }),
+  }, { label: "alert-dialog-button-size-default" }),
   xs: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
@@ -256,7 +256,7 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-alert-dialog-button-size-xs", layer: "hella" }),
+  }, { label: "alert-dialog-button-size-xs" }),
   sm: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
@@ -265,7 +265,7 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-alert-dialog-button-size-sm", layer: "hella" }),
+  }, { label: "alert-dialog-button-size-sm" }),
   lg: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "2.5rem",
@@ -273,11 +273,11 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "1rem",
     },
-  }, { label: "hella-alert-dialog-button-size-lg", layer: "hella" }),
+  }, { label: "alert-dialog-button-size-lg" }),
   icon: style({
     height: "2.25rem",
     width: "2.25rem",
-  }, { label: "hella-alert-dialog-button-size-icon", layer: "hella" }),
+  }, { label: "alert-dialog-button-size-icon" }),
   "icon-xs": style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
@@ -286,15 +286,15 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-alert-dialog-button-size-icon-xs", layer: "hella" }),
+  }, { label: "alert-dialog-button-size-icon-xs" }),
   "icon-sm": style({
     height: "2rem",
     width: "2rem",
-  }, { label: "hella-alert-dialog-button-size-icon-sm", layer: "hella" }),
+  }, { label: "alert-dialog-button-size-icon-sm" }),
   "icon-lg": style({
     height: "2.5rem",
     width: "2.5rem",
-  }, { label: "hella-alert-dialog-button-size-icon-lg", layer: "hella" }),
+  }, { label: "alert-dialog-button-size-icon-lg" }),
 };
 
 /** Accessibility state shared by the animated dialog parts. */

@@ -9,7 +9,7 @@ A ground-up comparison based on the actual source code of `@hellajs/css` v3. Eve
 | Dimension | HellaJS css | Emotion | Styled Components | vanilla-extract | Panda CSS |
 |---|---|---|---|---|---|
 | Styling approach | Runtime, object-only, surgical CSSOM | Runtime, string + object (stylis) | Runtime, tagged templates (stylis) | Build-time extraction, zero runtime | Build-time codegen, near-zero runtime |
-| Class names | Content-hashed (`style()` → `h-{label}-{hash}`), or global via `css()` | Auto-hashed (`css-…`) | Unique generated per component | Hashed local scopes | Atomic utilities + recipes, `@layer` |
+| Class names | Content-hashed (`style()` → `{label}-{hash}`), or global via `css()` | Auto-hashed (`css-…`) | Unique generated per component | Hashed local scopes | Atomic utilities + recipes, `@layer` |
 | Global by default | Yes: unnamed call, returns `""` | Separate `<Global>` API | Separate `createGlobalStyle` | Separate `globalStyle` | Utilities/recipes model |
 | Reactive CSS vars | First-class: `vars()` + signals | Theme context / props | Theme / props | `createTheme` (build-time, static) | Tokens (build-time, static) |
 | Memory model | Reference counting, DOM removal at zero | Inject-and-cache | Inject-and-cache (rendered components only) | N/A: static CSS artifact | N/A: static CSS artifact |
@@ -72,9 +72,9 @@ Bundle/byte-size numbers are intentionally excluded; they are point-in-time and 
 
 ## 4. Scoping Model
 
-HellaJS inverts the default of every competitor here. `css(obj)` with no options is a **global** call: the selector is the empty string, top-level keys are raw CSS selectors (`body`, `*`, `.card`, `nav a`, `@media (…)`), rules inject unwrapped, and the return value is `""` on both platforms (`lib/css.ts`). Scoping lives in `style(obj, { label })`: the declarations hash into a `h-{label}-{hash}` class (`h-{hash}` unlabeled), nested keys compose against it (`.h-card-… .child`, `.h-card-… span`), `&` substitutes it, conditional at-rules inherit it, and the function returns the class for `class` attributes (`lib/style.ts`, `lib/internal/identity.ts`). `cva()` layers typed variants over the same mechanism: each variant selection derives its own hashed class on first resolution (`lib/cva.ts`).
+HellaJS inverts the default of every competitor here. `css(obj)` with no options is a **global** call: the selector is the empty string, top-level keys are raw CSS selectors (`body`, `*`, `.card`, `nav a`, `@media (…)`), rules inject unwrapped, and the return value is `""` on both platforms (`lib/css.ts`). Scoping lives in `style(obj, { label })`: the declarations hash into a `{label}-{hash}` class (a bare letter-only hash unlabeled), nested keys compose against it (`.card-… .child`, `.card-… span`), `&` substitutes it, conditional at-rules inherit it, and the function returns the class for `class` attributes (`lib/style.ts`, `lib/internal/identity.ts`). `cva()` layers typed variants over the same mechanism: each variant selection derives its own hashed class on first resolution (`lib/cva.ts`).
 
-The class name is **content-hashed with a readable label**: `style(obj, { label: 'card' })` produces `.h-card-…`, legible in DevTools and deterministic across rebuilds, platforms, and renders (the hash covers the object alone; the label never participates, so the same object under two labels yields two classes with identical rule bodies, documented, not deduped, `lib/internal/identity.ts`). Collisions are impossible by construction (two different objects can never derive the same class), so there is no namespace-hygiene burden and no collision detection to need. The split makes the two authoring modes explicit: resets, `@font-face`, and `@layer` go through global `css()` calls (definitional at-rules never pick up a scope, `lib/css.ts`), component styles go through `style()`, and `keyframes()` gives animation definitions their own hashed `h-kf-{hash}` names (`lib/keyframes.ts`).
+The class name is **content-hashed with a readable label**: `style(obj, { label: 'card' })` produces `.card-…`, legible in DevTools and deterministic across rebuilds, platforms, and renders (the hash covers the object alone; the label never participates, so the same object under two labels yields two classes with identical rule bodies, documented, not deduped, `lib/internal/identity.ts`). The hash encodes as bijective base-26 letters, so every name is a valid CSS identifier on its own: no prefix needed, no leading-digit edge case. Collisions are impossible by construction (two different objects can never derive the same class), so there is no namespace-hygiene burden and no collision detection to need. The split makes the two authoring modes explicit: resets, `@font-face`, and `@layer` go through global `css()` calls (definitional at-rules never pick up a scope, `lib/css.ts`), component styles go through `style()`, and `keyframes()` gives animation definitions their own hashed `kf-{hash}` names (`lib/keyframes.ts`).
 
 `vars()` scopes independently of `css()`: variables default to `:root`, and `scoped: '.card'` / `prefix: 'app'` / `media: '(prefers-color-scheme: dark)'` resolve through a single options-resolution point (`resolveVarsOptions` in `lib/internal/vars.ts`). Multiple `vars()` calls targeting one scope+media bucket accumulate into a merged rule rather than overwriting each other (`scopedVarsRulesMap`, `lib/internal/vars.ts`); the same scope under different media conditions coexists as separate rules.
 
@@ -82,7 +82,7 @@ The class name is **content-hashed with a readable label**: `style(obj, { label:
 
 Emotion and Styled Components hash every class and route globals through a dedicated API (`<Global>`, `createGlobalStyle`). vanilla-extract hashes locally-scoped identifiers and exposes globals via `globalStyle`; `createTheme` scopes variables under a generated theme class. Panda emits atomic utilities and recipe classes under `@layer`, keyed by token paths rather than author-chosen names. None of the four lets the author request a readable class segment the way a `style()` label does, and none makes global styles the no-ceremony default; HellaJS's model is the closest of the group to writing plain CSS by hand.
 
-**Verdict:** For teams that want stylesheet output they can read and debug without source maps, labeled hashed classes deliver both halves at once: a readable `h-card-…` segment in DevTools and hash-guaranteed uniqueness with no collision surface to manage.
+**Verdict:** For teams that want stylesheet output they can read and debug without source maps, labeled hashed classes deliver both halves at once: a readable `card-…` segment in DevTools and hash-guaranteed uniqueness with no collision surface to manage.
 
 ---
 
@@ -139,7 +139,7 @@ HellaJS matches the build-time pair on compile-time CSS property validation with
 | Reference counting + DOM cleanup | Yes, rules, keyframes, and vars (`lib/removeCss.ts`, `lib/removeKeyframes.ts`, `lib/removeVars.ts`) | No | No | N/A (build-time) | N/A (build-time) |
 | Global styles as default mode | Yes (`lib/css.ts`) | Separate `<Global>` | Separate `createGlobalStyle` | Separate `globalStyle` | Utilities/recipes |
 | Shadow DOM / custom insertion point | Yes: per-call `host` on `css()` / `style()` / `vars()` (`lib/internal/sheet.ts`) | Via cache `insertionPoint` | Via `StyleSheetManager target` | No | No |
-| Readable class names | Labels on hashed classes: `h-card-…` (`lib/internal/identity.ts`) | No (hashed) | No (unique generated) | No (hashed) | No (atomic/token-keyed) |
+| Readable class names | Labels on hashed classes: `card-…` (`lib/internal/identity.ts`) | No (hashed) | No (unique generated) | No (hashed) | No (atomic/token-keyed) |
 | Scoped CSS-variable scopes | `:root` default, any selector, prefix (`lib/internal/vars.ts`) | Manual | Manual | `createTheme` class | Token scopes |
 | Bounded cache (LRU eviction) | Yes, 100 entries (`lib/internal/vars.ts`) | Unbounded cache | Unbounded cache | N/A | N/A |
 | Deterministic identity | Sorted-key hash + text identity (`lib/internal/shared.ts`, `lib/internal/injection.ts`) | `@emotion/hash` | Content-based | Build-time dedup | Build-time dedup |
@@ -154,8 +154,8 @@ HellaJS matches the build-time pair on compile-time CSS property validation with
 - **Signal-driven reactive CSS custom properties**: `flattenVars` detects function leaves in the same pass that resolves initial values, and one effect per object reference rewrites the declarations on signal change (`lib/vars.ts`, `lib/internal/reactive.ts`).
 - **Symmetrical reference counting with DOM cleanup at zero**: `removeCss()`/`removeStyle()`/`removeKeyframes()` re-derive text deterministically; `removeVars()` disposes effects and removes only the caller's keys from shared scopes (`lib/removeCss.ts`, `lib/removeStyle.ts`, `lib/removeKeyframes.ts`, `lib/removeVars.ts`, `lib/internal/vars.ts`).
 - **Unified registration, platform-independent returns**: `css()`/`style()`/`keyframes()`/`vars()` register rule text on both platforms (sheet writes are the only DOM-gated step) and return `""`/the class name/the animation name/the `var()` proxy everywhere; `cssText()` peeks the registration for the server's `<style>` (`lib/style.ts`, `lib/keyframes.ts`, `lib/vars.ts`, `lib/cssText.ts`).
-- **Content-hashed scoped classes**: `style(obj, { label })` derives `h-{label}-{hash}` from the object alone: deterministic across platforms and renders, no collisions by construction (`lib/internal/identity.ts`, `lib/style.ts`).
-- **Hashed keyframes with no hand-authored animation names**: `keyframes(obj)` derives `h-kf-{hash}` from the canonicalized step definitions: collision-free by construction, one rule per distinct animation regardless of key order, and the same name on client and server for `animation` shorthands (`lib/keyframes.ts`).
+- **Content-hashed scoped classes**: `style(obj, { label })` derives `{label}-{hash}` from the object alone: deterministic across platforms and renders, no collisions by construction (`lib/internal/identity.ts`, `lib/style.ts`).
+- **Hashed keyframes with no hand-authored animation names**: `keyframes(obj)` derives `kf-{hash}` from the canonicalized step definitions: collision-free by construction, one rule per distinct animation regardless of key order, and the same name on client and server for `animation` shorthands (`lib/keyframes.ts`).
 - **Runtime-lazy variant recipes**: `cva()` resolves typed variant props, per-recipe responsive `media`, and compounds to composed class strings, generating each selection's class on first resolution so uncalled variants ship no CSS (`lib/cva.ts`, `lib/internal/identity.ts`).
 - **Surgical CSSOM writes with no preprocessor**: `upsertRule` inserts per-rule via `insertRule` and skips no-op writes via an index map; the package parses no CSS strings at runtime (`lib/internal/sheet.ts`, `lib/css.ts`).
 - **LRU-bounded static-var cache with refCount-preserving eviction**: 100-entry cap, access-order promotion, and registry entries that survive cache eviction so re-registration joins outstanding counts (`lib/internal/vars.ts`, `lib/vars.ts`).
@@ -194,7 +194,7 @@ const card = style({
   borderRadius: '0.5rem',
   '&:hover': { opacity: 0.8 },
 }, { label: 'card' });
-// card === "h-card-…"
+// card === "card-…"
 
 dark(true);  // hella-vars rule rewrites to #1a1a1a when the effect flushes
 ```
@@ -211,7 +211,7 @@ What sets HellaJS apart (and no single competitor matches all of):
 
 1. **Signal-reactive CSS variables as a first-class primitive**: `vars()` flattens nested objects, detects functions in one pass, and creates effects that rewrite custom properties on dependency change, batch-scheduled with the rest of the app (`lib/vars.ts`).
 2. **Reference-counted DOM cleanup on both sides**: rules and vars track per-call counts and remove themselves from the stylesheet at zero, with partial-removal semantics on shared variable scopes (`lib/removeCss.ts`, `lib/removeVars.ts`, `lib/internal/vars.ts`).
-3. **Global-by-default with labeled hashed classes and no build step**: `css()` makes globals the no-ceremony default, `style(obj, { label: 'btn' })` produces the readable, collision-free `h-btn-…` class, and there is no bundler, plugin, or codegen to configure (`lib/css.ts`, `lib/internal/identity.ts`).
+3. **Global-by-default with labeled hashed classes and no build step**: `css()` makes globals the no-ceremony default, `style(obj, { label: 'btn' })` produces the readable, collision-free `btn-…` class, and there is no bundler, plugin, or codegen to configure (`lib/css.ts`, `lib/internal/identity.ts`).
 4. **No CSS preprocessor in the runtime**: a single object walk produces text and talks to the CSSOM directly; the only runtime dependency is `csstype`, which is types-only (`lib/css.ts`, `lib/types.d.ts`).
 5. **Unified server path**: registration runs identically without a DOM; `cssText()` exposes the generated CSS for SSR as one collector call rather than a pipeline (`lib/cssText.ts`, `lib/vars.ts`).
 

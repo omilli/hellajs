@@ -7,22 +7,22 @@ export const set = style({
   "&:has(> [data-slot='checkbox-group']), &:has(> [data-slot='radio-group'])": {
     gap: "0.75rem",
   },
-}, { label: "hella-field-set", layer: "hella" });
+}, { label: "field-set" });
 
 export const legend = style({
   fontWeight: "500",
   marginBottom: "0.75rem",
-}, { label: "hella-field-legend", layer: "hella" });
+}, { label: "field-legend" });
 
 export const legendVariants = {
   legend: style({
     fontSize: "1rem",
     lineHeight: "1.5rem",
-  }, { label: "hella-field-legend-legend", layer: "hella" }),
+  }, { label: "field-legend-legend" }),
   label: style({
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
-  }, { label: "hella-field-legend-label", layer: "hella" }),
+  }, { label: "field-legend-label" }),
 };
 
 export const group = style({
@@ -37,7 +37,7 @@ export const group = style({
   "& > [data-slot='field-group']": {
     gap: "1rem",
   },
-}, { label: "hella-field-group", layer: "hella" });
+}, { label: "field-group" });
 
 export const base = style({
   display: "flex",
@@ -46,7 +46,7 @@ export const base = style({
   "&[data-invalid='true']": {
     color: "var(--destructive)",
   },
-}, { label: "hella-field", layer: "hella" });
+}, { label: "field" });
 
 export const orientation = {
   vertical: style({
@@ -57,7 +57,7 @@ export const orientation = {
     "& > .sr-only": {
       width: "auto",
     },
-  }, { label: "hella-field-vertical", layer: "hella" }),
+  }, { label: "field-vertical" }),
   horizontal: style({
     alignItems: "center",
     flexDirection: "row",
@@ -70,7 +70,7 @@ export const orientation = {
     "&:has([data-slot='field-content']) > [role='checkbox'], &:has([data-slot='field-content']) > [role='radio']": {
       marginTop: "1px",
     },
-  }, { label: "hella-field-horizontal", layer: "hella" }),
+  }, { label: "field-horizontal" }),
   responsive: style({
     flexDirection: "column",
     "& > *": {
@@ -98,7 +98,7 @@ export const orientation = {
         marginTop: "1px",
       },
     },
-  }, { label: "hella-field-responsive", layer: "hella" }),
+  }, { label: "field-responsive" }),
 };
 
 export const content = style({
@@ -107,7 +107,7 @@ export const content = style({
   flexDirection: "column",
   gap: "0.375rem",
   lineHeight: "1.625",
-}, { label: "hella-field-content", layer: "hella" });
+}, { label: "field-content" });
 
 export const label = style({
   alignItems: "center",
@@ -142,7 +142,7 @@ export const label = style({
   "&:is(.dark *):has([data-state='checked'])": {
     backgroundColor: "color-mix(in oklab, var(--primary) 10%, transparent)",
   },
-}, { label: "hella-field-label", layer: "hella" });
+}, { label: "field-label" });
 
 export const title = style({
   alignItems: "center",
@@ -152,7 +152,7 @@ export const title = style({
   gap: "0.5rem",
   lineHeight: "1.625",
   width: "fit-content",
-}, { label: "hella-field-title", layer: "hella" });
+}, { label: "field-title" });
 
 export const description = style({
   color: "var(--muted-foreground)",
@@ -172,14 +172,14 @@ export const description = style({
   "& > a:hover": {
     color: "var(--primary)",
   },
-}, { label: "hella-field-description", layer: "hella" });
+}, { label: "field-description" });
 
 export const separator = style({
   fontSize: "0.875rem",
   height: "1.25rem",
   marginBlock: "-0.5rem",
   position: "relative",
-}, { label: "hella-field-separator", layer: "hella" });
+}, { label: "field-separator" });
 
 export const separatorBase = style({
   backgroundColor: "var(--border)",
@@ -192,7 +192,7 @@ export const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "hella-field-separator-base", layer: "hella" });
+}, { label: "field-separator-base" });
 
 export const separatorRule = style({
   bottom: "0",
@@ -200,7 +200,7 @@ export const separatorRule = style({
   position: "absolute",
   right: "0",
   top: "50%",
-}, { label: "hella-field-separator-rule", layer: "hella" });
+}, { label: "field-separator-rule" });
 
 export const separatorContent = style({
   backgroundColor: "var(--background)",
@@ -211,13 +211,13 @@ export const separatorContent = style({
   paddingInline: "0.5rem",
   position: "relative",
   width: "fit-content",
-}, { label: "hella-field-separator-content", layer: "hella" });
+}, { label: "field-separator-content" });
 
 export const error = style({
   color: "var(--destructive)",
   fontSize: "0.875rem",
   fontWeight: "400",
-}, { label: "hella-field-error", layer: "hella" });
+}, { label: "field-error" });
 
 export const errorList = style({
   display: "flex",
@@ -225,21 +225,19 @@ export const errorList = style({
   gap: "0.25rem",
   listStyleType: "disc",
   marginLeft: "1rem",
-}, { label: "hella-field-error-list", layer: "hella" });
+}, { label: "field-error-list" });
 
 css({
-  "@layer hella": {
-    "[data-slot='field'][data-disabled='true'] [data-slot='field-label']": {
-      opacity: "0.5",
-    },
-    "[data-slot='field-group'][data-variant='outline'] [data-slot='field-separator']": {
-      marginBottom: "-0.5rem",
-    },
-    "[data-slot='field']:has([data-orientation='horizontal']) [data-slot='field-description']": {
-      textWrap: "balance",
-    },
-    "[data-variant='legend'] + [data-slot='field-description']": {
-      marginTop: "-0.375rem",
-    },
+  "[data-slot='field'][data-disabled='true'] [data-slot='field-label']": {
+    opacity: "0.5",
+  },
+  "[data-slot='field-group'][data-variant='outline'] [data-slot='field-separator']": {
+    marginBottom: "-0.5rem",
+  },
+  "[data-slot='field']:has([data-orientation='horizontal']) [data-slot='field-description']": {
+    textWrap: "balance",
+  },
+  "[data-variant='legend'] + [data-slot='field-description']": {
+    marginTop: "-0.375rem",
   },
 });

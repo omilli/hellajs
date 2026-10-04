@@ -18,7 +18,7 @@ export const base = style({
   pointerEvents: "none",
   position: "fixed",
   zIndex: "100",
-}, { label: "hella-sonner-base", layer: "hella" });
+}, { label: "sonner-base" });
 
 export const toasterPositions = {
   "top-left": style({
@@ -28,7 +28,7 @@ export const toasterPositions = {
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "hella-sonner-toaster-top-left", layer: "hella" }),
+  }, { label: "sonner-toaster-top-left" }),
   "top-center": style({
     alignItems: "center",
     flexDirection: "column",
@@ -36,7 +36,7 @@ export const toasterPositions = {
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "hella-sonner-toaster-top-center", layer: "hella" }),
+  }, { label: "sonner-toaster-top-center" }),
   "top-right": style({
     alignItems: "flex-end",
     flexDirection: "column",
@@ -44,7 +44,7 @@ export const toasterPositions = {
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "hella-sonner-toaster-top-right", layer: "hella" }),
+  }, { label: "sonner-toaster-top-right" }),
   "bottom-left": style({
     alignItems: "flex-start",
     flexDirection: "column-reverse",
@@ -52,7 +52,7 @@ export const toasterPositions = {
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "hella-sonner-toaster-bottom-left", layer: "hella" }),
+  }, { label: "sonner-toaster-bottom-left" }),
   "bottom-center": style({
     alignItems: "center",
     flexDirection: "column-reverse",
@@ -60,7 +60,7 @@ export const toasterPositions = {
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "hella-sonner-toaster-bottom-center", layer: "hella" }),
+  }, { label: "sonner-toaster-bottom-center" }),
   "bottom-right": style({
     alignItems: "flex-end",
     flexDirection: "column-reverse",
@@ -68,7 +68,7 @@ export const toasterPositions = {
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "hella-sonner-toaster-bottom-right", layer: "hella" }),
+  }, { label: "sonner-toaster-bottom-right" }),
 };
 
 export const item = style({
@@ -154,7 +154,7 @@ export const item = style({
     borderColor: "#1d4ed8",
     color: "#93c5fd",
   },
-}, { label: "hella-sonner-item", layer: "hella" });
+}, { label: "sonner-item" });
 
 export const content = style({
   display: "flex",
@@ -162,16 +162,16 @@ export const content = style({
   flexDirection: "column",
   gap: "0.125rem",
   minWidth: "0",
-}, { label: "hella-sonner-content", layer: "hella" });
+}, { label: "sonner-content" });
 
 export const title = style({
   fontWeight: "500",
   lineHeight: "1.25rem",
-}, { label: "hella-sonner-title", layer: "hella" });
+}, { label: "sonner-title" });
 
 export const description = style({
   opacity: "0.9",
-}, { label: "hella-sonner-description", layer: "hella" });
+}, { label: "sonner-description" });
 
 export const icon = style({
   alignItems: "center",
@@ -193,7 +193,7 @@ export const icon = style({
   "&[data-type='loading'] svg": {
     animation: `${spin} 1s linear infinite`,
   },
-}, { label: "hella-sonner-icon", layer: "hella" });
+}, { label: "sonner-icon" });
 
 export const actionButton = style({
   alignItems: "center",
@@ -213,7 +213,7 @@ export const actionButton = style({
   "&:hover": {
     background: "color-mix(in oklab, currentColor 12%, transparent)",
   },
-}, { label: "hella-sonner-action", layer: "hella" });
+}, { label: "sonner-action" });
 
 export const close = style({
   alignItems: "center",
@@ -251,12 +251,10 @@ export const close = style({
     opacity: "1",
     outlineStyle: "none",
   },
-}, { label: "hella-sonner-close", layer: "hella" });
+}, { label: "sonner-close" });
 
 css({
-  "@layer hella": {
-    "[data-slot='sonner-toast']:hover [data-slot='sonner-close']": {
-      opacity: "1",
-    },
+  "[data-slot='sonner-toast']:hover [data-slot='sonner-close']": {
+    opacity: "1",
   },
 });

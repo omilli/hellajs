@@ -30,10 +30,10 @@ export const base = style({
   "&:is([data-slot='tooltip-content'] *):is(.dark *)": {
     backgroundColor: "color-mix(in oklab, var(--background) 10%, transparent)",
   },
-}, { label: "hella-kbd", layer: "hella" });
+}, { label: "kbd" });
 
 export const group = style({
   alignItems: "center",
   display: "inline-flex",
   gap: "0.25rem",
-}, { label: "hella-kbd-group", layer: "hella" });
+}, { label: "kbd-group" });

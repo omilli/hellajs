@@ -90,7 +90,7 @@ describe("switch", () => {
       expect(classTokens(thumb)).toContain("data-[state=checked]:translate-x-[calc(100%-2px)]");
       expect(classTokens(root)).toContain("data-[size=default]:h-[1.15rem]");
     } else {
-      expect(classTokens(thumb).some((token) => token.startsWith("h-hella-switch-thumb"))).toBe(true);
+      expect(classTokens(thumb).some((token) => token.startsWith("switch-thumb"))).toBe(true);
     }
   });
 

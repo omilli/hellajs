@@ -134,7 +134,7 @@ export function resolveStyle(
  * [`cssText`](/reference/css/csstext)).
  * @param obj Style object to scope under the generated class
  * @param options Optional configuration. `label` embeds a readable segment in the class name; `layer` wraps the emitted rules in a named `@layer` (layered rules lose to unlayered author CSS); `host` creates the `<style>` element in a shadow root or other parent node instead of `document.head`.
- * @returns The class name (`h-{label}-{hash}` / `h-{hash}`) for `class` attributes.
+ * @returns The class name (`{label}-{hash}` / a bare letter-only `{hash}`) for `class` attributes.
  * @throws {Error} When obj is not a plain object, or when a property value is a function — use `vars()` for reactive values.
  */
 export function style(obj: StyleObject, options?: StyleOptions): string;

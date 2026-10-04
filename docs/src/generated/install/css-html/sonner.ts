@@ -23,7 +23,7 @@ const base = style({
   pointerEvents: "none",
   position: "fixed",
   zIndex: "100",
-}, { label: "hella-sonner-base", layer: "hella" });
+}, { label: "sonner-base" });
 
 const toasterPositions = {
   "top-left": style({
@@ -33,7 +33,7 @@ const toasterPositions = {
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "hella-sonner-toaster-top-left", layer: "hella" }),
+  }, { label: "sonner-toaster-top-left" }),
   "top-center": style({
     alignItems: "center",
     flexDirection: "column",
@@ -41,7 +41,7 @@ const toasterPositions = {
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "hella-sonner-toaster-top-center", layer: "hella" }),
+  }, { label: "sonner-toaster-top-center" }),
   "top-right": style({
     alignItems: "flex-end",
     flexDirection: "column",
@@ -49,7 +49,7 @@ const toasterPositions = {
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "hella-sonner-toaster-top-right", layer: "hella" }),
+  }, { label: "sonner-toaster-top-right" }),
   "bottom-left": style({
     alignItems: "flex-start",
     flexDirection: "column-reverse",
@@ -57,7 +57,7 @@ const toasterPositions = {
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "hella-sonner-toaster-bottom-left", layer: "hella" }),
+  }, { label: "sonner-toaster-bottom-left" }),
   "bottom-center": style({
     alignItems: "center",
     flexDirection: "column-reverse",
@@ -65,7 +65,7 @@ const toasterPositions = {
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "hella-sonner-toaster-bottom-center", layer: "hella" }),
+  }, { label: "sonner-toaster-bottom-center" }),
   "bottom-right": style({
     alignItems: "flex-end",
     flexDirection: "column-reverse",
@@ -73,7 +73,7 @@ const toasterPositions = {
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "hella-sonner-toaster-bottom-right", layer: "hella" }),
+  }, { label: "sonner-toaster-bottom-right" }),
 };
 
 const item = style({
@@ -159,7 +159,7 @@ const item = style({
     borderColor: "#1d4ed8",
     color: "#93c5fd",
   },
-}, { label: "hella-sonner-item", layer: "hella" });
+}, { label: "sonner-item" });
 
 const content = style({
   display: "flex",
@@ -167,16 +167,16 @@ const content = style({
   flexDirection: "column",
   gap: "0.125rem",
   minWidth: "0",
-}, { label: "hella-sonner-content", layer: "hella" });
+}, { label: "sonner-content" });
 
 const title = style({
   fontWeight: "500",
   lineHeight: "1.25rem",
-}, { label: "hella-sonner-title", layer: "hella" });
+}, { label: "sonner-title" });
 
 const description = style({
   opacity: "0.9",
-}, { label: "hella-sonner-description", layer: "hella" });
+}, { label: "sonner-description" });
 
 const icon = style({
   alignItems: "center",
@@ -198,7 +198,7 @@ const icon = style({
   "&[data-type='loading'] svg": {
     animation: `${spin} 1s linear infinite`,
   },
-}, { label: "hella-sonner-icon", layer: "hella" });
+}, { label: "sonner-icon" });
 
 const actionButton = style({
   alignItems: "center",
@@ -218,7 +218,7 @@ const actionButton = style({
   "&:hover": {
     background: "color-mix(in oklab, currentColor 12%, transparent)",
   },
-}, { label: "hella-sonner-action", layer: "hella" });
+}, { label: "sonner-action" });
 
 const close = style({
   alignItems: "center",
@@ -256,13 +256,11 @@ const close = style({
     opacity: "1",
     outlineStyle: "none",
   },
-}, { label: "hella-sonner-close", layer: "hella" });
+}, { label: "sonner-close" });
 
 css({
-  "@layer hella": {
-    "[data-slot='sonner-toast']:hover [data-slot='sonner-close']": {
-      opacity: "1",
-    },
+  "[data-slot='sonner-toast']:hover [data-slot='sonner-close']": {
+    opacity: "1",
   },
 });
 

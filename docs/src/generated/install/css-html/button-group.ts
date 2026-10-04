@@ -24,7 +24,7 @@ const base = style({
   "& > input": {
     flex: "1 1 0%",
   },
-}, { label: "hella-button-group", layer: "hella" });
+}, { label: "button-group" });
 
 const orientation = {
   horizontal: style({
@@ -37,7 +37,7 @@ const orientation = {
       borderBottomRightRadius: "0",
       borderTopRightRadius: "0",
     },
-  }, { label: "hella-button-group-horizontal", layer: "hella" }),
+  }, { label: "button-group-horizontal" }),
   vertical: style({
     flexDirection: "column",
     "& > *:not(:first-child)": {
@@ -49,7 +49,7 @@ const orientation = {
       borderBottomLeftRadius: "0",
       borderBottomRightRadius: "0",
     },
-  }, { label: "hella-button-group-vertical", layer: "hella" }),
+  }, { label: "button-group-vertical" }),
 };
 
 const text = style({
@@ -70,7 +70,7 @@ const text = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-button-group-text", layer: "hella" });
+}, { label: "button-group-text" });
 
 const separatorBase = style({
   backgroundColor: "var(--border)",
@@ -83,7 +83,7 @@ const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "hella-button-group-separator", layer: "hella" });
+}, { label: "button-group-separator" });
 
 const separator = style({
   alignSelf: "stretch",
@@ -93,7 +93,7 @@ const separator = style({
   "&[data-orientation='vertical']": {
     height: "auto",
   },
-}, { label: "hella-button-group-separator-override", layer: "hella" });
+}, { label: "button-group-separator-override" });
 
 interface ButtonGroupProps {
   children?: HellaChildren;

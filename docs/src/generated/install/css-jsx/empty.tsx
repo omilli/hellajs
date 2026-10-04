@@ -21,7 +21,7 @@ const base = style({
     paddingBlock: "3rem",
     paddingInline: "3rem",
   },
-}, { label: "hella-empty", layer: "hella" });
+}, { label: "empty" });
 
 const header = style({
   alignItems: "center",
@@ -30,7 +30,7 @@ const header = style({
   gap: "0.5rem",
   maxWidth: "24rem",
   textAlign: "center",
-}, { label: "hella-empty-header", layer: "hella" });
+}, { label: "empty-header" });
 
 const media = style({
   alignItems: "center",
@@ -42,12 +42,12 @@ const media = style({
     flexShrink: "0",
     pointerEvents: "none",
   },
-}, { label: "hella-empty-media", layer: "hella" });
+}, { label: "empty-media" });
 
 const mediaVariants = {
   default: style({
     backgroundColor: "transparent",
-  }, { label: "hella-empty-media-default", layer: "hella" }),
+  }, { label: "empty-media-default" }),
   icon: style({
     alignItems: "center",
     backgroundColor: "var(--muted)",
@@ -62,7 +62,7 @@ const mediaVariants = {
       height: "1.5rem",
       width: "1.5rem",
     },
-  }, { label: "hella-empty-media-icon", layer: "hella" }),
+  }, { label: "empty-media-icon" }),
 };
 
 const title = style({
@@ -70,7 +70,7 @@ const title = style({
   fontWeight: "500",
   letterSpacing: "-0.025em",
   lineHeight: "1.75rem",
-}, { label: "hella-empty-title", layer: "hella" });
+}, { label: "empty-title" });
 
 const description = style({
   color: "var(--muted-foreground)",
@@ -83,7 +83,7 @@ const description = style({
   "& > a:hover": {
     color: "var(--primary)",
   },
-}, { label: "hella-empty-description", layer: "hella" });
+}, { label: "empty-description" });
 
 const content = style({
   alignItems: "center",
@@ -97,7 +97,7 @@ const content = style({
   textAlign: "center",
   textWrap: "balance",
   width: "100%",
-}, { label: "hella-empty-content", layer: "hella" });
+}, { label: "empty-content" });
 
 interface EmptyPartProps {
   children?: HellaChildren;

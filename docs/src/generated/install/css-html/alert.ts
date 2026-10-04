@@ -27,13 +27,13 @@ const base = style({
     translate: "0 0.125rem",
     width: "1rem",
   },
-}, { label: "hella-alert", layer: "hella" });
+}, { label: "alert" });
 
 const variants = {
   default: style({
     backgroundColor: "var(--card)",
     color: "var(--card-foreground)",
-  }, { label: "hella-alert-default", layer: "hella" }),
+  }, { label: "alert-default" }),
   destructive: style({
     backgroundColor: "var(--card)",
     color: "var(--destructive)",
@@ -43,7 +43,7 @@ const variants = {
     "& > svg": {
       color: "currentColor",
     },
-  }, { label: "hella-alert-destructive", layer: "hella" }),
+  }, { label: "alert-destructive" }),
 };
 
 const title = style({
@@ -56,7 +56,7 @@ const title = style({
   overflow: "clip",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: "1",
-}, { label: "hella-alert-title", layer: "hella" });
+}, { label: "alert-title" });
 
 const description = style({
   color: "var(--muted-foreground)",
@@ -69,7 +69,7 @@ const description = style({
   "& p": {
     lineHeight: "1.625rem",
   },
-}, { label: "hella-alert-description", layer: "hella" });
+}, { label: "alert-description" });
 
 interface AlertProps {
   children?: HellaChildren;

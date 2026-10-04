@@ -1,7 +1,10 @@
 /**
- * Site preflight, base layer: a rule-for-rule port of tailwindcss's
+ * Site preflight: a rule-for-rule port of tailwindcss's
  * preflight.css (source: https://github.com/tailwindlabs/tailwindcss/
  * blob/main/packages/tailwindcss/preflight.css) as a `css()` module.
+ * Unlayered like every site sheet; specificity - never cascade-layer rank -
+ * keeps its element selectors under the class-scoped chrome and registry
+ * rules registered alongside it.
  */
 
 import { css } from "@hellajs/css";

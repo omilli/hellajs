@@ -71,7 +71,7 @@ export const base = style({
   "&:is(.dark *)[aria-invalid='true']": {
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-select-trigger", layer: "hella" });
+}, { label: "select-trigger" });
 
 export const content = style({
   backgroundColor: "var(--popover)",
@@ -113,7 +113,7 @@ export const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-select-content", layer: "hella" });
+}, { label: "select-content" });
 
 export const viewport = style({
   height: "var(--radix-select-trigger-height)",
@@ -121,7 +121,7 @@ export const viewport = style({
   padding: "0.25rem",
   scrollPaddingBlock: "0.25rem",
   width: "100%",
-}, { label: "hella-select-viewport", layer: "hella" });
+}, { label: "select-viewport" });
 
 export const item = style({
   alignItems: "center",
@@ -163,7 +163,7 @@ export const item = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "hella-select-item", layer: "hella" });
+}, { label: "select-item" });
 
 export const indicator = style({
   alignItems: "center",
@@ -173,18 +173,18 @@ export const indicator = style({
   position: "absolute",
   right: "0.5rem",
   width: "0.875rem",
-}, { label: "hella-select-indicator", layer: "hella" });
+}, { label: "select-indicator" });
 
 export const icon = style({
   height: "1rem",
   width: "1rem",
-}, { label: "hella-select-icon", layer: "hella" });
+}, { label: "select-icon" });
 
 export const chevron = style({
   height: "1rem",
   opacity: "0.5",
   width: "1rem",
-}, { label: "hella-select-chevron", layer: "hella" });
+}, { label: "select-chevron" });
 
 export const label = style({
   color: "var(--muted-foreground)",
@@ -192,7 +192,7 @@ export const label = style({
   lineHeight: "1rem",
   paddingBlock: "0.375rem",
   paddingInline: "0.5rem",
-}, { label: "hella-select-label", layer: "hella" });
+}, { label: "select-label" });
 
 export const separator = style({
   backgroundColor: "var(--border)",
@@ -200,7 +200,7 @@ export const separator = style({
   marginBlock: "0.25rem",
   marginInline: "-0.25rem",
   pointerEvents: "none",
-}, { label: "hella-select-separator", layer: "hella" });
+}, { label: "select-separator" });
 
 export const scrollButton = style({
   alignItems: "center",
@@ -208,4 +208,4 @@ export const scrollButton = style({
   display: "flex",
   justifyContent: "center",
   paddingBlock: "0.25rem",
-}, { label: "hella-select-scroll-button", layer: "hella" });
+}, { label: "select-scroll-button" });

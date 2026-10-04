@@ -31,8 +31,8 @@ describe("alert", () => {
     expect(tokens.at(-1)).toBe("my-alert");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(3);
-      expect(tokens[0]!.startsWith("h-hella-alert-")).toBe(true);
-      expect(tokens[1]!.startsWith("h-hella-alert-default-")).toBe(true);
+      expect(tokens[0]!.startsWith("alert-")).toBe(true);
+      expect(tokens[1]!.startsWith("alert-default-")).toBe(true);
     } else {
       for (const token of [...TOKENS.base, ...TOKENS.default]) expect(tokens).toContain(token);
     }
@@ -42,7 +42,7 @@ describe("alert", () => {
     const alert = renderVariant(variant, { children: variant.child("Error"), variant: "destructive" });
     const tokens = classTokens(alert);
     if (variant.style === "css") {
-      expect(tokens[1]!.startsWith("h-hella-alert-destructive-")).toBe(true);
+      expect(tokens[1]!.startsWith("alert-destructive-")).toBe(true);
     } else {
       for (const token of TOKENS.destructive) expect(tokens).toContain(token);
     }
@@ -61,7 +61,7 @@ describe("alert", () => {
     expect(tokens.at(-1)).toBe("my-part");
     const expected = variant.part === "Title" ? TOKENS.title : TOKENS.description;
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith(`h-hella-alert-${variant.part.toLowerCase()}-`)).toBe(true);
+      expect(tokens[0]!.startsWith(`alert-${variant.part.toLowerCase()}-`)).toBe(true);
     } else {
       for (const token of expected) expect(tokens).toContain(token);
     }

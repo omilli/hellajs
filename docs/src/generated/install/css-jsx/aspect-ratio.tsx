@@ -4,7 +4,7 @@ import { style } from "@hellajs/css";
 
 const base = style({
   position: "relative",
-}, { label: "hella-aspect-ratio", layer: "hella" });
+}, { label: "aspect-ratio" });
 
 interface AspectRatioProps {
   ratio?: number;

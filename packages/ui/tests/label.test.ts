@@ -23,7 +23,7 @@ describe("label", () => {
     expect(tokens.at(-1)).toBe("my-label");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("h-hella-label-")).toBe(true);
+      expect(tokens[0]!.startsWith("label-")).toBe(true);
     } else {
       for (const token of BASE_TOKENS) expect(tokens).toContain(token);
     }

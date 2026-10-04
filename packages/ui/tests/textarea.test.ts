@@ -59,9 +59,9 @@ describe("textarea", () => {
     const tokens = classTokens(textarea);
     if (variant.style === "css") {
       expect(tokens).toHaveLength(3);
-      expect(tokens[0]!.startsWith("h-hella-textarea-")).toBe(true);
-      expect(tokens[1]!.startsWith("h-hella-textarea-focus-")).toBe(true);
-      expect(tokens[2]!.startsWith("h-hella-textarea-invalid-")).toBe(true);
+      expect(tokens[0]!.startsWith("textarea-")).toBe(true);
+      expect(tokens[1]!.startsWith("textarea-focus-")).toBe(true);
+      expect(tokens[2]!.startsWith("textarea-invalid-")).toBe(true);
     } else {
       for (const token of BASE_TOKENS) expect(tokens).toContain(token);
       expect(tokens).toContain("focus-visible:ring-[3px]");

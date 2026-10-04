@@ -6,26 +6,26 @@ const container = style({
   overflowX: "auto",
   position: "relative",
   width: "100%",
-}, { label: "hella-table-container", layer: "hella" });
+}, { label: "table-container" });
 
 const base = style({
   captionSide: "bottom",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   width: "100%",
-}, { label: "hella-table", layer: "hella" });
+}, { label: "table" });
 
 const header = style({
   "& tr": {
     borderBottom: "1px solid var(--border)",
   },
-}, { label: "hella-table-header", layer: "hella" });
+}, { label: "table-header" });
 
 const body = style({
   "& tr:last-child": {
     borderBottom: "0",
   },
-}, { label: "hella-table-body", layer: "hella" });
+}, { label: "table-body" });
 
 const footer = style({
   backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
@@ -34,7 +34,7 @@ const footer = style({
   "& > tr:last-child": {
     borderBottom: "0",
   },
-}, { label: "hella-table-footer", layer: "hella" });
+}, { label: "table-footer" });
 
 const row = style({
   borderBottom: "1px solid var(--border)",
@@ -50,7 +50,7 @@ const row = style({
   "&[data-state='selected']": {
     backgroundColor: "var(--muted)",
   },
-}, { label: "hella-table-row", layer: "hella" });
+}, { label: "table-row" });
 
 const head = style({
   color: "var(--foreground)",
@@ -66,7 +66,7 @@ const head = style({
   "& > [role='checkbox']": {
     transform: "translateY(2px)",
   },
-}, { label: "hella-table-head", layer: "hella" });
+}, { label: "table-head" });
 
 const cell = style({
   padding: "0.5rem",
@@ -78,14 +78,14 @@ const cell = style({
   "& > [role='checkbox']": {
     transform: "translateY(2px)",
   },
-}, { label: "hella-table-cell", layer: "hella" });
+}, { label: "table-cell" });
 
 const caption = style({
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   marginTop: "1rem",
-}, { label: "hella-table-caption", layer: "hella" });
+}, { label: "table-caption" });
 
 interface TableProps {
   children?: HellaChildren;

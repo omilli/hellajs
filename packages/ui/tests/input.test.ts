@@ -56,9 +56,9 @@ describe("input", () => {
     const tokens = classTokens(input);
     if (variant.style === "css") {
       expect(tokens).toHaveLength(3);
-      expect(tokens[0]!.startsWith("h-hella-input-")).toBe(true);
-      expect(tokens[1]!.startsWith("h-hella-input-focus-")).toBe(true);
-      expect(tokens[2]!.startsWith("h-hella-input-invalid-")).toBe(true);
+      expect(tokens[0]!.startsWith("input-")).toBe(true);
+      expect(tokens[1]!.startsWith("input-focus-")).toBe(true);
+      expect(tokens[2]!.startsWith("input-invalid-")).toBe(true);
     } else {
       expect(tokens).toContain("w-full");
       expect(tokens).toContain("rounded-md");

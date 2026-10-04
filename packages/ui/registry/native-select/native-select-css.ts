@@ -6,7 +6,7 @@ export const wrapper = style({
   "&:has(select:disabled)": {
     opacity: "0.5",
   },
-}, { label: "hella-native-select-wrapper", layer: "hella" });
+}, { label: "native-select-wrapper" });
 
 export const base = style({
   appearance: "none",
@@ -44,14 +44,14 @@ export const base = style({
   "&:is(.dark *):hover": {
     background: "color-mix(in oklab, var(--input) 50%, transparent)",
   },
-}, { label: "hella-native-select", layer: "hella" });
+}, { label: "native-select" });
 
 export const focus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-native-select-focus", layer: "hella" });
+}, { label: "native-select-focus" });
 
 export const invalid = style({
   "&[aria-invalid='true']": {
@@ -63,7 +63,7 @@ export const invalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-native-select-invalid", layer: "hella" });
+}, { label: "native-select-invalid" });
 
 export const icon = style({
   color: "var(--muted-foreground)",
@@ -76,14 +76,14 @@ export const icon = style({
   transform: "translateY(-50%)",
   userSelect: "none",
   width: "1rem",
-}, { label: "hella-native-select-icon", layer: "hella" });
+}, { label: "native-select-icon" });
 
 export const option = style({
   backgroundColor: "Canvas",
   color: "CanvasText",
-}, { label: "hella-native-select-option", layer: "hella" });
+}, { label: "native-select-option" });
 
 export const optgroup = style({
   backgroundColor: "Canvas",
   color: "CanvasText",
-}, { label: "hella-native-select-optgroup", layer: "hella" });
+}, { label: "native-select-optgroup" });

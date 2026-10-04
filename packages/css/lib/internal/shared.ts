@@ -44,11 +44,20 @@ export function stringify(obj: unknown): string {
 
 /**
  * @internal
- * Computes a DJB2 hash from a string.
+ * Computes a DJB2 hash from a string, re-encoded as bijective base-26:
+ * the output is always one or more `[a-z]` letters — a valid CSS identifier
+ * on its own — and the encoding is injective on the unsigned 32-bit domain,
+ * so distinct hashes never collide on a class name.
  */
 export function hash(str: string): string {
   let h = 5381;
   let i = str.length;
   while (i) h = (h * 33) ^ str.charCodeAt(--i);
-  return (h >>> 0).toString(36);
+  let n = h >>> 0;
+  let s = "";
+  do {
+    s = String.fromCharCode(97 + (n % 26)) + s;
+    n = Math.floor(n / 26);
+  } while (n);
+  return s;
 }

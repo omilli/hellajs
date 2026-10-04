@@ -3,7 +3,7 @@ import { style } from "@hellajs/css";
 export const base = style({
   display: "grid",
   gap: "0.75rem",
-}, { label: "hella-radio-group", layer: "hella" });
+}, { label: "radio-group" });
 
 export const item = style({
   aspectRatio: "1 / 1",
@@ -37,14 +37,14 @@ export const item = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-radio-group-item", layer: "hella" });
+}, { label: "radio-group-item" });
 
 export const indicator = style({
   alignItems: "center",
   display: "flex",
   justifyContent: "center",
   position: "relative",
-}, { label: "hella-radio-group-indicator", layer: "hella" });
+}, { label: "radio-group-indicator" });
 
 export const icon = style({
   fill: "var(--primary)",
@@ -54,10 +54,10 @@ export const icon = style({
   top: "50%",
   translate: "-50% -50%",
   width: "0.5rem",
-}, { label: "hella-radio-group-icon", layer: "hella" });
+}, { label: "radio-group-icon" });
 
 export const row = style({
   alignItems: "center",
   display: "flex",
   gap: "0.5rem",
-}, { label: "hella-radio-group-row", layer: "hella" });
+}, { label: "radio-group-row" });

@@ -35,7 +35,7 @@ export type CSSObject = {
  * Options for the `style` function
  */
 export interface StyleOptions {
-  /** Label embedded in the generated class name (`h-{label}-{hash}`). Sanitized to [a-zA-Z0-9-]; a label empty after sanitization is treated as absent. */
+  /** Label embedded in the generated class name (`{label}-{hash}`). Sanitized to [a-zA-Z0-9-]; a label empty after sanitization is treated as absent. */
   label?: string;
   /** Name of the cascade layer the emitted rules wrap in (`@layer <name>`). Layered rules lose to unlayered author CSS by construction; composes outermost of `media`. Interpolated verbatim. */
   layer?: string;

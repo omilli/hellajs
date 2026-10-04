@@ -38,7 +38,7 @@ const description =
          is what cssText() deterministically contains — the same module set
          as MainLayout (minus demoCss) keeps this page's head identical in
          shape no matter which page the build rendered before it. -->
-    <style id="site-head" is:inline set:html={"@layer base, hella;\n" + cssText()} />
+    <style id="site-head" is:inline set:html={cssText()} />
   </head>
   <body>
     <main>

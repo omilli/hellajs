@@ -41,7 +41,7 @@ describe("table", () => {
     expect(wrapper.getAttribute("data-slot")).toBe("table-container");
     if (variant.style === "css") {
       expect(classTokens(wrapper)).toHaveLength(1);
-      expect(classTokens(wrapper)[0]!.startsWith("h-hella-table-container-")).toBe(true);
+      expect(classTokens(wrapper)[0]!.startsWith("table-container-")).toBe(true);
     } else {
       expect(classTokens(wrapper)).toContain("relative");
       expect(classTokens(wrapper)).toContain("w-full");
@@ -52,7 +52,7 @@ describe("table", () => {
     expect(table.textContent).toBe("Rows");
     expect(classTokens(table).at(-1)).toBe("my-table");
     if (variant.style === "css") {
-      expect(classTokens(table)[0]!.startsWith("h-hella-table-")).toBe(true);
+      expect(classTokens(table)[0]!.startsWith("table-")).toBe(true);
     } else {
       expect(classTokens(table)).toContain("caption-bottom");
     }
@@ -65,7 +65,7 @@ describe("table", () => {
     const tokens = classTokens(el);
     expect(tokens.at(-1)).toBe("my-part");
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith(`h-hella-table-${variant.part.toLowerCase()}-`)).toBe(true);
+      expect(tokens[0]!.startsWith(`table-${variant.part.toLowerCase()}-`)).toBe(true);
     } else {
       for (const token of TOKENS[variant.part]!) expect(tokens).toContain(token);
     }

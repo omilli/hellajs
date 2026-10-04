@@ -10,8 +10,8 @@ beforeEach(() => {
 describe("style", () => {
   test("returns the labeled class and injects the rule under it", () => {
     const cls = style({ background: "white", "&:hover": { opacity: 0.8 } }, { label: "card" });
-    expect(cls).toBe("h-card-1z0q41r");
-    expect(getStylesheet("hella-css")).toBe(".h-card-1z0q41r{background:white}.h-card-1z0q41r:hover{opacity:0.8}");
+    expect(cls).toBe("card-nxlglqt");
+    expect(getStylesheet("hella-css")).toBe(".card-nxlglqt{background:white}.card-nxlglqt:hover{opacity:0.8}");
   });
 
   test("same object and label derive the identical class", () => {
@@ -27,9 +27,19 @@ describe("style", () => {
     expect(getStylesheet("hella-css")).toBe(`.${labeled}{color:red}.${plain}{color:red}`);
   });
 
+  test("digit-led and letter-led legacy hashes derive distinct letter-only classes", () => {
+    // Legacy base36 hashes: { color: "red" } was 1ql06pj (digit-led), { fontSize: "14px" } was cnncxu (letter-led).
+    const digitLed = style({ color: "red" });
+    const letterLed = style({ fontSize: "14px" });
+    expect(digitLed).toMatch(/^[a-z]+$/);
+    expect(letterLed).toMatch(/^[a-z]+$/);
+    expect(digitLed).not.toBe(letterLed);
+    expect(style({ color: "red", fontSize: "1rem" }, { label: "btn" })).toMatch(/^btn-[a-z]+$/);
+  });
+
   test("label sanitizes invalid characters to hyphens", () => {
     const cls = style({ color: "red" }, { label: "my card!" });
-    expect(cls).toBe("h-my-card-1ql06pj");
+    expect(cls).toBe("my-card-mgmyaqx");
   });
 
   test("label empty after sanitization is treated as absent", () => {
@@ -58,7 +68,7 @@ describe("style", () => {
     const cls = style({ color: "red", "&:hover": { color: "blue" } });
     removeStyle({ "&:hover": { color: "blue" }, color: "red" });
     expect(getStylesheet("hella-css")).toBe("");
-    expect(cls).toMatch(/^h-[a-z0-9]+$/);
+    expect(cls).toMatch(/^[a-z]+$/);
   });
 
   test("removeStyle no-ops for input that was never styled", () => {

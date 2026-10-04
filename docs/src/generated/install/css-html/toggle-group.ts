@@ -11,12 +11,12 @@ const base = style({
   display: "flex",
   gap: "0",
   width: "fit-content",
-}, { label: "hella-toggle-group", layer: "hella" });
+}, { label: "toggle-group" });
 
 const variants = {
   default: style({
     backgroundColor: "transparent",
-  }, { label: "hella-toggle-group-default", layer: "hella" }),
+  }, { label: "toggle-group-default" }),
   outline: style({
     background: "transparent",
     border: "1px solid var(--input)",
@@ -25,7 +25,7 @@ const variants = {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
     },
-  }, { label: "hella-toggle-group-outline", layer: "hella" }),
+  }, { label: "toggle-group-outline" }),
 };
 
 const sizes = {
@@ -33,17 +33,17 @@ const sizes = {
     height: "2.25rem",
     minWidth: "2.25rem",
     paddingInline: "0.5rem",
-  }, { label: "hella-toggle-group-size-default", layer: "hella" }),
+  }, { label: "toggle-group-size-default" }),
   sm: style({
     height: "2rem",
     minWidth: "2rem",
     paddingInline: "0.375rem",
-  }, { label: "hella-toggle-group-size-sm", layer: "hella" }),
+  }, { label: "toggle-group-size-sm" }),
   lg: style({
     height: "2.5rem",
     minWidth: "2.5rem",
     paddingInline: "0.625rem",
-  }, { label: "hella-toggle-group-size-lg", layer: "hella" }),
+  }, { label: "toggle-group-size-lg" }),
 };
 
 const item = style({
@@ -73,7 +73,7 @@ const item = style({
   borderRadius: "0",
   boxShadow: "none",
   flexShrink: "0",
-}, { label: "hella-toggle-group-item", layer: "hella" });
+}, { label: "toggle-group-item" });
 
 interface ToggleGroupEntry {
   value: string;

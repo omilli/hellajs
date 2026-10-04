@@ -48,7 +48,7 @@ describe("avatar", () => {
     expect(large.getAttribute("data-size")).toBe("lg");
     expect(classTokens(avatar).at(-1)).toBe("my-avatar");
     if (variant.style === "css") {
-      expect(classTokens(avatar)[0]!.startsWith("h-hella-avatar-")).toBe(true);
+      expect(classTokens(avatar)[0]!.startsWith("avatar-")).toBe(true);
     } else {
       expect(classTokens(avatar)).toContain("group/avatar");
       expect(classTokens(avatar)).toContain("data-[size=lg]:size-10");
@@ -111,7 +111,7 @@ describe("avatar", () => {
     const tokens = classTokens(el);
     expect(tokens.at(-1)).toBe("my-part");
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith(`h-hella-avatar-${kebab(variant.part)}-`)).toBe(true);
+      expect(tokens[0]!.startsWith(`avatar-${kebab(variant.part)}-`)).toBe(true);
     } else {
       for (const token of TOKENS[variant.part]!) expect(tokens).toContain(token);
     }

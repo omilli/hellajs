@@ -28,7 +28,7 @@ describe("spinner", () => {
     expect(tokens.at(-1)).toBe("my-spinner");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("h-hella-spinner-")).toBe(true);
+      expect(tokens[0]!.startsWith("spinner-")).toBe(true);
     } else {
       for (const token of BASE_TOKENS) expect(tokens).toContain(token);
     }

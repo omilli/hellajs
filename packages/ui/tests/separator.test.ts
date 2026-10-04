@@ -27,7 +27,7 @@ describe("separator", () => {
     expect(tokens.at(-1)).toBe("my-sep");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("h-hella-separator-")).toBe(true);
+      expect(tokens[0]!.startsWith("separator-")).toBe(true);
     } else {
       for (const token of BASE_TOKENS) expect(tokens).toContain(token);
     }

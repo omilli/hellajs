@@ -29,7 +29,7 @@ const base = style({
   "&[data-state='idle']": {
     borderStyle: "dashed",
   },
-}, { label: "hella-attachment", layer: "hella" });
+}, { label: "attachment" });
 
 const sizes = {
   default: style({
@@ -43,7 +43,7 @@ const sizes = {
     "&:has([data-slot='attachment-media'])": {
       padding: "0.5rem",
     },
-  }, { label: "hella-attachment-size-default", layer: "hella" }),
+  }, { label: "attachment-size-default" }),
   sm: style({
     gap: "0.625rem",
     fontSize: "0.75rem",
@@ -55,7 +55,7 @@ const sizes = {
     "&:has([data-slot='attachment-media'])": {
       padding: "0.375rem",
     },
-  }, { label: "hella-attachment-size-sm", layer: "hella" }),
+  }, { label: "attachment-size-sm" }),
   xs: style({
     borderRadius: "calc(var(--radius) * 1)",
     gap: "0.375rem",
@@ -68,21 +68,21 @@ const sizes = {
     "&:has([data-slot='attachment-media'])": {
       padding: "0.25rem",
     },
-  }, { label: "hella-attachment-size-xs", layer: "hella" }),
+  }, { label: "attachment-size-xs" }),
 };
 
 const orientations = {
   horizontal: style({
     minWidth: "10rem",
     alignItems: "center",
-  }, { label: "hella-attachment-horizontal", layer: "hella" }),
+  }, { label: "attachment-horizontal" }),
   vertical: style({
     width: "6rem",
     flexDirection: "column",
     "&:has([data-slot='attachment-content'])": {
       width: "7.5rem",
     },
-  }, { label: "hella-attachment-vertical", layer: "hella" }),
+  }, { label: "attachment-vertical" }),
 };
 
 const media = style({
@@ -104,10 +104,10 @@ const media = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-attachment-media", layer: "hella" });
+}, { label: "attachment-media" });
 
 const mediaVariants = {
-  icon: style({}, { label: "hella-attachment-media-icon", layer: "hella" }),
+  icon: style({}, { label: "attachment-media-icon" }),
   image: style({
     opacity: "0.6",
     "& > img": {
@@ -115,7 +115,7 @@ const mediaVariants = {
       width: "100%",
       objectFit: "cover",
     },
-  }, { label: "hella-attachment-media-image", layer: "hella" }),
+  }, { label: "attachment-media-image" }),
 };
 
 const content = style({
@@ -123,7 +123,7 @@ const content = style({
   minWidth: "0",
   flex: "1",
   lineHeight: "1.25",
-}, { label: "hella-attachment-content", layer: "hella" });
+}, { label: "attachment-content" });
 
 const title = style({
   display: "block",
@@ -133,7 +133,7 @@ const title = style({
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
   fontWeight: "500",
-}, { label: "hella-attachment-title", layer: "hella" });
+}, { label: "attachment-title" });
 
 const description = style({
   marginTop: "0.125rem",
@@ -146,7 +146,7 @@ const description = style({
   fontSize: "0.75rem",
   lineHeight: "1rem",
   color: "var(--muted-foreground)",
-}, { label: "hella-attachment-description", layer: "hella" });
+}, { label: "attachment-description" });
 
 const actions = style({
   position: "relative",
@@ -154,14 +154,14 @@ const actions = style({
   display: "flex",
   flexShrink: "0",
   alignItems: "center",
-}, { label: "hella-attachment-actions", layer: "hella" });
+}, { label: "attachment-actions" });
 
 const trigger = style({
   position: "absolute",
   inset: "0",
   zIndex: "10",
   outlineStyle: "none",
-}, { label: "hella-attachment-trigger", layer: "hella" });
+}, { label: "attachment-trigger" });
 
 const group = style({
   display: "flex",
@@ -176,7 +176,7 @@ const group = style({
     flex: "none",
     scrollSnapAlign: "start",
   },
-}, { label: "hella-attachment-group", layer: "hella" });
+}, { label: "attachment-group" });
 
 const buttonBase = style({
   alignItems: "center",
@@ -217,7 +217,7 @@ const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-attachment-action", layer: "hella" });
+}, { label: "attachment-action" });
 
 const buttonVariants = {
   default: style({
@@ -226,7 +226,7 @@ const buttonVariants = {
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "hella-attachment-action-default", layer: "hella" }),
+  }, { label: "attachment-action-default" }),
   destructive: style({
     backgroundColor: "var(--destructive)",
     color: "#fff",
@@ -242,7 +242,7 @@ const buttonVariants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "hella-attachment-action-destructive", layer: "hella" }),
+  }, { label: "attachment-action-destructive" }),
   outline: style({
     background: "var(--background)",
     border: "1px solid var(--border)",
@@ -258,14 +258,14 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "hella-attachment-action-outline", layer: "hella" }),
+  }, { label: "attachment-action-outline" }),
   secondary: style({
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "hella-attachment-action-secondary", layer: "hella" }),
+  }, { label: "attachment-action-secondary" }),
   ghost: style({
     "&:hover": {
       backgroundColor: "var(--accent)",
@@ -274,14 +274,14 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "hella-attachment-action-ghost", layer: "hella" }),
+  }, { label: "attachment-action-ghost" }),
   link: style({
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "hella-attachment-action-link", layer: "hella" }),
+  }, { label: "attachment-action-link" }),
 };
 
 const buttonSizes = {
@@ -292,7 +292,7 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.75rem",
     },
-  }, { label: "hella-attachment-action-size-default", layer: "hella" }),
+  }, { label: "attachment-action-size-default" }),
   xs: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
@@ -307,7 +307,7 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-attachment-action-size-xs", layer: "hella" }),
+  }, { label: "attachment-action-size-xs" }),
   sm: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
@@ -316,7 +316,7 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-attachment-action-size-sm", layer: "hella" }),
+  }, { label: "attachment-action-size-sm" }),
   lg: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "2.5rem",
@@ -324,11 +324,11 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "1rem",
     },
-  }, { label: "hella-attachment-action-size-lg", layer: "hella" }),
+  }, { label: "attachment-action-size-lg" }),
   icon: style({
     height: "2.25rem",
     width: "2.25rem",
-  }, { label: "hella-attachment-action-size-icon", layer: "hella" }),
+  }, { label: "attachment-action-size-icon" }),
   "icon-xs": style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
@@ -337,63 +337,61 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-attachment-action-size-icon-xs", layer: "hella" }),
+  }, { label: "attachment-action-size-icon-xs" }),
   "icon-sm": style({
     height: "2rem",
     width: "2rem",
-  }, { label: "hella-attachment-action-size-icon-sm", layer: "hella" }),
+  }, { label: "attachment-action-size-icon-sm" }),
   "icon-lg": style({
     height: "2.5rem",
     width: "2.5rem",
-  }, { label: "hella-attachment-action-size-icon-lg", layer: "hella" }),
+  }, { label: "attachment-action-size-icon-lg" }),
 };
 
 css({
-  "@layer hella": {
-    "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media']": {
-      width: "100%",
-    },
-    "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] > [data-slot='spinner']": {
-      height: "1.5rem !important",
-      width: "1.5rem !important",
-    },
-    "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
-      height: "1.5rem",
-      width: "1.5rem",
-    },
-    "[data-slot='attachment'][data-size='sm'] [data-slot='attachment-media']": {
-      width: "2rem",
-    },
-    "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media']": {
-      width: "1.75rem",
-      borderRadius: "calc(var(--radius) * 0.8)",
-    },
-    "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
-      height: "0.875rem",
-      width: "0.875rem",
-    },
-    "[data-slot='attachment'][data-state='error'] [data-slot='attachment-media']": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
-      color: "var(--destructive)",
-    },
-    "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-content']": {
-      paddingInline: "0.25rem",
-    },
-    "[data-slot='attachment'][data-state='done'] [data-slot='attachment-media'][data-variant='image']": {
-      opacity: "1",
-    },
-    "[data-slot='attachment'][data-state='idle'] [data-slot='attachment-media'][data-variant='image']": {
-      opacity: "1",
-    },
-    "[data-slot='attachment'][data-state='error'] [data-slot='attachment-description']": {
-      color: "color-mix(in oklab, var(--destructive) 80%, transparent)",
-    },
-    "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-actions']": {
-      position: "absolute",
-      top: "0.75rem",
-      right: "0.75rem",
-      gap: "0.25rem",
-    },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media']": {
+    width: "100%",
+  },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] > [data-slot='spinner']": {
+    height: "1.5rem !important",
+    width: "1.5rem !important",
+  },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
+    height: "1.5rem",
+    width: "1.5rem",
+  },
+  "[data-slot='attachment'][data-size='sm'] [data-slot='attachment-media']": {
+    width: "2rem",
+  },
+  "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media']": {
+    width: "1.75rem",
+    borderRadius: "calc(var(--radius) * 0.8)",
+  },
+  "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
+    height: "0.875rem",
+    width: "0.875rem",
+  },
+  "[data-slot='attachment'][data-state='error'] [data-slot='attachment-media']": {
+    backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
+    color: "var(--destructive)",
+  },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-content']": {
+    paddingInline: "0.25rem",
+  },
+  "[data-slot='attachment'][data-state='done'] [data-slot='attachment-media'][data-variant='image']": {
+    opacity: "1",
+  },
+  "[data-slot='attachment'][data-state='idle'] [data-slot='attachment-media'][data-variant='image']": {
+    opacity: "1",
+  },
+  "[data-slot='attachment'][data-state='error'] [data-slot='attachment-description']": {
+    color: "color-mix(in oklab, var(--destructive) 80%, transparent)",
+  },
+  "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-actions']": {
+    position: "absolute",
+    top: "0.75rem",
+    right: "0.75rem",
+    gap: "0.25rem",
   },
 });
 

@@ -16,7 +16,7 @@ export const base = style({
     minHeight: "11rem",
     width: "auto",
   },
-}, { label: "hella-slider", layer: "hella" });
+}, { label: "slider" });
 
 export const track = style({
   borderRadius: "9999px",
@@ -32,7 +32,7 @@ export const track = style({
     height: "100%",
     width: "0.375rem",
   },
-}, { label: "hella-slider-track", layer: "hella" });
+}, { label: "slider-track" });
 
 export const range = style({
   backgroundColor: "var(--primary)",
@@ -43,7 +43,7 @@ export const range = style({
   "&[data-orientation='vertical']": {
     width: "100%",
   },
-}, { label: "hella-slider-range", layer: "hella" });
+}, { label: "slider-range" });
 
 export const thumb = style({
   backgroundColor: "#fff",
@@ -67,4 +67,4 @@ export const thumb = style({
     opacity: "0.5",
     pointerEvents: "none",
   },
-}, { label: "hella-slider-thumb", layer: "hella" });
+}, { label: "slider-thumb" });

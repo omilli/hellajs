@@ -136,7 +136,7 @@ describe("form", () => {
     const invalid = renderVariant(variant, { error: true, children: ["x"] });
     expect(invalid.getAttribute("data-error")).toBe("true");
     if (variant.style === "css") {
-      expect(classTokens(invalid)[0]!.startsWith("h-hella-form-item")).toBe(true);
+      expect(classTokens(invalid)[0]!.startsWith("form-item")).toBe(true);
     } else {
       expect(classTokens(invalid)).toContain("grid");
       expect(classTokens(invalid)).toContain("gap-2");
@@ -157,7 +157,7 @@ describe("form", () => {
     expect(invalid.getAttribute("aria-invalid")).toBe("true");
     expect(invalid.tagName).toBe("LABEL");
     if (variant.style === "css") {
-      expect(classTokens(invalid)[0]!.startsWith("h-hella-form-label")).toBe(true);
+      expect(classTokens(invalid)[0]!.startsWith("form-label")).toBe(true);
     } else {
       expect(classTokens(invalid)).toContain("data-[error=true]:text-destructive");
     }
@@ -184,7 +184,7 @@ describe("form", () => {
     expect(root.getAttribute("id")).toBe("email-desc");
     expect(root.tagName).toBe("P");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-form-description")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("form-description")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("text-muted-foreground");
     }
@@ -196,7 +196,7 @@ describe("form", () => {
     expect(root.textContent).toBe("Invalid email");
     expect(root.hasAttribute("hidden")).toBe(false);
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-form-message")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("form-message")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("text-destructive");
     }

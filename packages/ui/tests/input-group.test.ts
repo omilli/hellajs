@@ -40,7 +40,7 @@ describe("input-group", () => {
     expect(root.getAttribute("role")).toBe("group");
     const tokens = classTokens(root);
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith("h-hella-input-group")).toBe(true);
+      expect(tokens[0]!.startsWith("input-group")).toBe(true);
     } else {
       expect(tokens).toContain("group/input-group");
       expect(tokens).toContain("h-9");
@@ -60,7 +60,7 @@ describe("input-group", () => {
     const tokens = classTokens(root);
     if (variant.style === "css") {
       // The hashed base class owns the &:has([data-slot='input-group-control']:focus-visible) rule.
-      expect(tokens.filter((token) => token.startsWith("h-hella-input-group"))).toHaveLength(1);
+      expect(tokens.filter((token) => token.startsWith("input-group"))).toHaveLength(1);
     } else {
       expect(tokens).toContain("has-[[data-slot=input-group-control]:focus-visible]:border-ring");
       expect(tokens).toContain("has-[[data-slot=input-group-control]:focus-visible]:ring-[3px]");
@@ -75,7 +75,7 @@ describe("input-group", () => {
     expect(block.getAttribute("data-align")).toBe("block-end");
     if (variant.style === "css") {
       const tokens = classTokens(block);
-      expect(tokens.some((token) => token.startsWith("h-hella-input-group-addon-block-end"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("input-group-addon-block-end"))).toBe(true);
     } else {
       expect(classTokens(block)).toContain("order-last");
     }
@@ -112,8 +112,8 @@ describe("input-group", () => {
     expect(root.getAttribute("type")).toBe("button");
     if (variant.style === "css") {
       const tokens = classTokens(root);
-      expect(tokens.some((token) => token.startsWith("h-hella-input-group-button-ghost"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("h-hella-input-group-size-xs"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("input-group-button-ghost"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("input-group-size-xs"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("rounded-[calc(var(--radius)-5px)]");
     }
@@ -132,7 +132,7 @@ describe("input-group", () => {
     expect(root.getAttribute("placeholder")).toBe("type");
     const tokens = classTokens(root);
     if (variant.style === "css") {
-      expect(tokens.some((token) => token.startsWith(`h-hella-input-group-${variant.part.toLowerCase()}-control`))).toBe(true);
+      expect(tokens.some((token) => token.startsWith(`input-group-${variant.part.toLowerCase()}-control`))).toBe(true);
     } else {
       expect(tokens).toContain("focus-visible:ring-0");
       expect(tokens).toContain("border-0");

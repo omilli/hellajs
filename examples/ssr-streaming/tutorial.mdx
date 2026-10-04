@@ -399,10 +399,10 @@ The streamed HTML looks like this: the shell and all three fallbacks arrive befo
 ```bash
 curl -sN localhost:5173/
 # <!DOCTYPE html>…<style>…</style><script type="module" src="/src/client.tsx"></script>…<div id="app">
-#   <div class="h-dashboard-…"><header>…<h1>Dashboard</h1>…</header><main class="h-grid-…">
-#     <!--[--><section class="h-card-…">…<h2>Stats</h2>…<span class="h-bone-…"></span>…<!--hs0--><!--]-->        ← Stats skeleton (TTFB)
-#     <!--[--><section class="h-card-…">…<h2>Recent activity</h2>…<!--hs1-->…    ← Activity skeleton
-#     <!--[--><section class="h-card-…">…<h2>Top items</h2>…<!--hs2-->…          ← Top skeleton
+#   <div class="dashboard-…"><header>…<h1>Dashboard</h1>…</header><main class="grid-…">
+#     <!--[--><section class="card-…">…<h2>Stats</h2>…<span class="bone-…"></span>…<!--hs0--><!--]-->        ← Stats skeleton (TTFB)
+#     <!--[--><section class="card-…">…<h2>Recent activity</h2>…<!--hs1-->…    ← Activity skeleton
+#     <!--[--><section class="card-…">…<h2>Top items</h2>…<!--hs2-->…          ← Top skeleton
 #   </main></div>
 # <script>function $hs(id){…}</script>                                      ← one-time swap bootstrap (before the templates)
 # <template id="hs0">…<dd>$48.2k</dd>…</template><script>$hs("hs0")</script>  ← Stats resolves (~120ms) → swaps now

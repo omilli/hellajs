@@ -29,7 +29,7 @@ describe("platform-independent registration (no document)", () => {
 
   test("style() returns the class, never text", () => {
     const cls = style({ width: 5, margin: 0 }, { label: "x" });
-    expect(cls).toMatch(/^h-x-[a-z0-9]+$/);
+    expect(cls).toMatch(/^x-[a-z]+$/);
     expect(cssText()).toBe(`.${cls} {\n  width: 5px;\n  margin: 0px;\n}`);
   });
 
@@ -116,7 +116,7 @@ describe("platform-independent registration (no document)", () => {
   test("keyframes() returns the name and cssText() carries the rule", () => {
     const name = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
 
-    expect(name).toMatch(/^h-kf-[a-z0-9]+$/);
+    expect(name).toMatch(/^kf-[a-z]+$/);
     expect(cssText()).toBe(`@keyframes ${name} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}`);
   });
 
@@ -163,9 +163,10 @@ describe("platform-independent registration (no document)", () => {
 
   test("removeStyle decrements the server registration without throwing", () => {
     const cls = style({ color: "red" });
+    expect(cssText()).toContain(`.${cls} {`);
     removeStyle({ color: "red" });
     expect(cssText()).toBe("");
-    expect(cls).toMatch(/^h-[a-z0-9]+$/);
+    expect(cls).toMatch(/^[a-z]+$/);
   });
 
   test("resetCss does not throw", () => {

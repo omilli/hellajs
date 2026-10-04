@@ -325,7 +325,7 @@ describe("calendar", () => {
     expect(dayButton(root, "2025-03-14").getAttribute("class")).toContain("hooked-button");
     expect(root.querySelector("[data-slot='calendar-nav']")!.getAttribute("class")).toContain("hooked-nav");
     if (variant.style === "css") {
-      expect(classTokens(dayCell(root, "2025-03-14")!).some((token) => token.startsWith("h-hella-calendar-day"))).toBe(true);
+      expect(classTokens(dayCell(root, "2025-03-14")!).some((token) => token.startsWith("calendar-day"))).toBe(true);
     } else {
       expect(classTokens(dayCell(root, "2025-03-14")!)).toContain("group/day");
       expect(classTokens(dayButton(root, "2025-03-14"))).toContain("min-w-(--cell-size)");

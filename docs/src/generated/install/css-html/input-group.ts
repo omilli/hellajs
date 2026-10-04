@@ -54,7 +54,7 @@ const base = style({
   "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-group", layer: "hella" });
+}, { label: "input-group" });
 
 const addon = style({
   alignItems: "center",
@@ -75,7 +75,7 @@ const addon = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-input-group-addon", layer: "hella" });
+}, { label: "input-group-addon" });
 
 const addonAlign = {
   "inline-start": style({
@@ -87,7 +87,7 @@ const addonAlign = {
     "&:has(> kbd)": {
       marginLeft: "-0.35rem",
     },
-  }, { label: "hella-input-group-addon-inline-start", layer: "hella" }),
+  }, { label: "input-group-addon-inline-start" }),
   "inline-end": style({
     order: "9999",
     paddingRight: "0.75rem",
@@ -97,21 +97,21 @@ const addonAlign = {
     "&:has(> kbd)": {
       marginRight: "-0.35rem",
     },
-  }, { label: "hella-input-group-addon-inline-end", layer: "hella" }),
+  }, { label: "input-group-addon-inline-end" }),
   "block-start": style({
     justifyContent: "flex-start",
     order: "-9999",
     paddingInline: "0.75rem",
     paddingTop: "0.75rem",
     width: "100%",
-  }, { label: "hella-input-group-addon-block-start", layer: "hella" }),
+  }, { label: "input-group-addon-block-start" }),
   "block-end": style({
     justifyContent: "flex-start",
     order: "9999",
     paddingInline: "0.75rem",
     paddingBottom: "0.75rem",
     width: "100%",
-  }, { label: "hella-input-group-addon-block-end", layer: "hella" }),
+  }, { label: "input-group-addon-block-end" }),
 };
 
 const buttonBase = style({
@@ -153,7 +153,7 @@ const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-group-button", layer: "hella" });
+}, { label: "input-group-button" });
 
 const buttonVariants = {
   default: style({
@@ -162,7 +162,7 @@ const buttonVariants = {
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "hella-input-group-button-default", layer: "hella" }),
+  }, { label: "input-group-button-default" }),
   destructive: style({
     backgroundColor: "var(--destructive)",
     color: "#fff",
@@ -178,7 +178,7 @@ const buttonVariants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "hella-input-group-button-destructive", layer: "hella" }),
+  }, { label: "input-group-button-destructive" }),
   outline: style({
     background: "var(--background)",
     border: "1px solid var(--border)",
@@ -194,14 +194,14 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "hella-input-group-button-outline", layer: "hella" }),
+  }, { label: "input-group-button-outline" }),
   secondary: style({
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "hella-input-group-button-secondary", layer: "hella" }),
+  }, { label: "input-group-button-secondary" }),
   ghost: style({
     "&:hover": {
       backgroundColor: "var(--accent)",
@@ -210,14 +210,14 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "hella-input-group-button-ghost", layer: "hella" }),
+  }, { label: "input-group-button-ghost" }),
   link: style({
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "hella-input-group-button-link", layer: "hella" }),
+  }, { label: "input-group-button-link" }),
 };
 
 const buttonSizes = {
@@ -235,7 +235,7 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-input-group-button-size-xs", layer: "hella" }),
+  }, { label: "input-group-button-size-xs" }),
   sm: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
@@ -244,7 +244,7 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-input-group-button-size-sm", layer: "hella" }),
+  }, { label: "input-group-button-size-sm" }),
   "icon-xs": style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
@@ -253,11 +253,11 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-input-group-button-size-icon-xs", layer: "hella" }),
+  }, { label: "input-group-button-size-icon-xs" }),
   "icon-sm": style({
     height: "2rem",
     width: "2rem",
-  }, { label: "hella-input-group-button-size-icon-sm", layer: "hella" }),
+  }, { label: "input-group-button-size-icon-sm" }),
 };
 
 const sizes = {
@@ -276,7 +276,7 @@ const sizes = {
       height: "0.875rem",
       width: "0.875rem",
     },
-  }, { label: "hella-input-group-size-xs", layer: "hella" }),
+  }, { label: "input-group-size-xs" }),
   sm: style({
     alignItems: "center",
     borderRadius: "calc(var(--radius) * 0.8)",
@@ -288,7 +288,7 @@ const sizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-input-group-size-sm", layer: "hella" }),
+  }, { label: "input-group-size-sm" }),
   "icon-xs": style({
     alignItems: "center",
     borderRadius: "calc(var(--radius) - 5px)",
@@ -300,7 +300,7 @@ const sizes = {
     "&:has(> svg)": {
       padding: "0",
     },
-  }, { label: "hella-input-group-size-icon-xs", layer: "hella" }),
+  }, { label: "input-group-size-icon-xs" }),
   "icon-sm": style({
     alignItems: "center",
     display: "flex",
@@ -311,7 +311,7 @@ const sizes = {
     "&:has(> svg)": {
       padding: "0",
     },
-  }, { label: "hella-input-group-size-icon-sm", layer: "hella" }),
+  }, { label: "input-group-size-icon-sm" }),
 };
 
 const text = style({
@@ -327,7 +327,7 @@ const text = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-input-group-text", layer: "hella" });
+}, { label: "input-group-text" });
 
 const inputBase = style({
   background: "transparent",
@@ -373,14 +373,14 @@ const inputBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "hella-input-group-input", layer: "hella" });
+}, { label: "input-group-input" });
 
 const inputFocus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-input-group-input-focus", layer: "hella" });
+}, { label: "input-group-input-focus" });
 
 const inputInvalid = style({
   "&[aria-invalid='true']": {
@@ -392,7 +392,7 @@ const inputInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-group-input-invalid", layer: "hella" });
+}, { label: "input-group-input-invalid" });
 
 const inputControl = style({
   background: "transparent",
@@ -406,7 +406,7 @@ const inputControl = style({
   "&:is(.dark *)": {
     background: "transparent",
   },
-}, { label: "hella-input-group-input-control", layer: "hella" });
+}, { label: "input-group-input-control" });
 
 const textareaBase = style({
   border: "1px solid var(--input)",
@@ -436,14 +436,14 @@ const textareaBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "hella-input-group-textarea", layer: "hella" });
+}, { label: "input-group-textarea" });
 
 const textareaFocus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-input-group-textarea-focus", layer: "hella" });
+}, { label: "input-group-textarea-focus" });
 
 const textareaInvalid = style({
   "&[aria-invalid='true']": {
@@ -455,7 +455,7 @@ const textareaInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-group-textarea-invalid", layer: "hella" });
+}, { label: "input-group-textarea-invalid" });
 
 const textareaControl = style({
   background: "transparent",
@@ -471,25 +471,23 @@ const textareaControl = style({
   "&:is(.dark *)": {
     background: "transparent",
   },
-}, { label: "hella-input-group-textarea-control", layer: "hella" });
+}, { label: "input-group-textarea-control" });
 
 css({
-  "@layer hella": {
-    "[data-slot='input-group'][data-disabled='true'] [data-slot='input-group-addon']": {
-      opacity: "0.5",
-    },
-    "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-start']": {
-      paddingTop: "0.625rem",
-    },
-    "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-end']": {
-      paddingBottom: "0.625rem",
-    },
-    ".border-b [data-slot='input-group-addon'][data-align='block-start'], .border-b ~ [data-slot='input-group-addon'][data-align='block-start']": {
-      paddingBottom: "0.75rem",
-    },
-    ".border-t [data-slot='input-group-addon'][data-align='block-end'], .border-t ~ [data-slot='input-group-addon'][data-align='block-end']": {
-      paddingTop: "0.75rem",
-    },
+  "[data-slot='input-group'][data-disabled='true'] [data-slot='input-group-addon']": {
+    opacity: "0.5",
+  },
+  "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-start']": {
+    paddingTop: "0.625rem",
+  },
+  "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-end']": {
+    paddingBottom: "0.625rem",
+  },
+  ".border-b [data-slot='input-group-addon'][data-align='block-start'], .border-b ~ [data-slot='input-group-addon'][data-align='block-start']": {
+    paddingBottom: "0.75rem",
+  },
+  ".border-t [data-slot='input-group-addon'][data-align='block-end'], .border-t ~ [data-slot='input-group-addon'][data-align='block-end']": {
+    paddingTop: "0.75rem",
   },
 });
 

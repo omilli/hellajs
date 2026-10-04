@@ -19,8 +19,8 @@ describe("marker", () => {
     expect(root.getAttribute("data-variant")).toBe("default");
     expect(root.textContent).toBe("text");
     if (variant.style === "css") {
-      const tokens = classTokens(root).filter((token) => token.startsWith("h-hella-marker"));
-      expect(tokens[0]!.startsWith("h-hella-marker")).toBe(true);
+      const tokens = classTokens(root).filter((token) => token.startsWith("marker"));
+      expect(tokens[0]!.startsWith("marker")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("text-muted-foreground");
     }
@@ -30,7 +30,7 @@ describe("marker", () => {
     const root = renderVariant(variant, { variant: "separator", children: variant.child!("text") });
     expect(root.getAttribute("data-variant")).toBe("separator");
     if (variant.style === "css") {
-      expect(classTokens(root).some((token) => token.startsWith("h-hella-marker-separator"))).toBe(true);
+      expect(classTokens(root).some((token) => token.startsWith("marker-separator"))).toBe(true);
     } else {
       const tokens = classTokens(root);
       expect(tokens).toContain("before:h-px");
@@ -42,7 +42,7 @@ describe("marker", () => {
     const root = renderVariant(variant, { variant: "border", children: variant.child!("text") });
     expect(root.getAttribute("data-variant")).toBe("border");
     if (variant.style === "css") {
-      expect(classTokens(root).some((token) => token.startsWith("h-hella-marker-border"))).toBe(true);
+      expect(classTokens(root).some((token) => token.startsWith("marker-border"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("border-b");
     }
@@ -60,7 +60,7 @@ describe("marker", () => {
   test.each(markerPartVariants.filter((variant) => variant.part === "Icon"))("$part $format/$style sizes the icon wrapper", (variant) => {
     const root = renderVariant(variant, { children: ["x"] });
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-marker-icon")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("marker-icon")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("size-4");
     }

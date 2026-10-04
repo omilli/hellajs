@@ -177,8 +177,8 @@ import { style, cssText } from '@hellajs/css';
 import { ssr } from '@hellajs/ssr';
 
 const btn = style({ color: 'red' }, { label: 'btn' });
-// btn === "h-btn-…"; the class, never text, on the server too
-// `cssText()` holds ".h-btn-…{color:red}"; on client and server alike
+// btn === "btn-…"; the class, never text, on the server too
+// `cssText()` holds ".btn-…{color:red}"; on client and server alike
 
 const body = ssr(html`<button class=${btn}>Click</button>`);
 const page = `<style id="hella-css">${cssText()}</style><div id="app">${body}</div>`;

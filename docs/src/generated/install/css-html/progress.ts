@@ -15,7 +15,7 @@ const base = style({
   overflow: "hidden",
   position: "relative",
   width: "100%",
-}, { label: "hella-progress", layer: "hella" });
+}, { label: "progress" });
 
 const indicator = style({
   backgroundColor: "var(--primary)",
@@ -26,7 +26,7 @@ const indicator = style({
   "&[data-state='indeterminate']": {
     animation: `${indeterminate} 2s linear infinite`,
   },
-}, { label: "hella-progress-indicator", layer: "hella" });
+}, { label: "progress-indicator" });
 
 type ProgressValue = number | null | undefined;
 

@@ -25,7 +25,7 @@ describe("button-group", () => {
     const vertical = renderVariant(variant, { orientation: "vertical", children: variant.child!("x") });
     expect(vertical.getAttribute("data-orientation")).toBe("vertical");
     if (variant.style === "css") {
-      const tokens = classTokens(vertical).filter((token) => token.startsWith("h-hella-button-group-vertical"));
+      const tokens = classTokens(vertical).filter((token) => token.startsWith("button-group-vertical"));
       expect(tokens).toHaveLength(1);
     } else {
       expect(classTokens(vertical)).toContain("flex-col");
@@ -36,8 +36,8 @@ describe("button-group", () => {
     const root = renderVariant(variant, { children: variant.child!("x") });
     const tokens = classTokens(root);
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith("h-hella-button-group-")).toBe(true);
-      expect(tokens.some((token) => token.startsWith("h-hella-button-group-horizontal"))).toBe(true);
+      expect(tokens[0]!.startsWith("button-group-")).toBe(true);
+      expect(tokens.some((token) => token.startsWith("button-group-horizontal"))).toBe(true);
     } else {
       expect(tokens).toContain("w-fit");
       expect(tokens).toContain("[&>*:not(:first-child)]:rounded-l-none");
@@ -62,8 +62,8 @@ describe("button-group", () => {
       const root = renderVariant(variant, {});
       const tokens = classTokens(root);
       if (variant.style === "css") {
-        expect(tokens.some((token) => token.startsWith("h-hella-button-group-separator-"))).toBe(true);
-        expect(tokens.some((token) => token.startsWith("h-hella-button-group-separator-override"))).toBe(true);
+        expect(tokens.some((token) => token.startsWith("button-group-separator-"))).toBe(true);
+        expect(tokens.some((token) => token.startsWith("button-group-separator-override"))).toBe(true);
       } else {
         expect(tokens).toContain("shrink-0");
         expect(tokens).toContain("self-stretch");

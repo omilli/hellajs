@@ -95,8 +95,8 @@ describe("toggle", () => {
       expect(tokens).toContain("min-w-10");
       expect(tokens).toContain("px-2.5");
     } else {
-      expect(tokens.some((token) => token.startsWith("h-hella-toggle-outline"))).toBe(true);
-      expect(tokens.some((token) => token.startsWith("h-hella-toggle-size-lg"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("toggle-outline"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("toggle-size-lg"))).toBe(true);
     }
     // data-state=on styling rides the base class on both flavors.
     outlineLg.dispatchEvent(new Event("click"));

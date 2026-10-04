@@ -7,7 +7,7 @@ export const base = style({
   "&[aria-orientation='vertical']": {
     flexDirection: "column",
   },
-}, { label: "hella-resizable-panel-group", layer: "hella" });
+}, { label: "resizable-panel-group" });
 
 export const handle = style({
   alignItems: "center",
@@ -41,7 +41,7 @@ export const handle = style({
   "&[aria-orientation='horizontal'] > div": {
     rotate: "90deg",
   },
-}, { label: "hella-resizable-handle", layer: "hella" });
+}, { label: "resizable-handle" });
 
 export const grip = style({
   alignItems: "center",
@@ -53,9 +53,9 @@ export const grip = style({
   justifyContent: "center",
   width: "0.75rem",
   zIndex: "10",
-}, { label: "hella-resizable-grip", layer: "hella" });
+}, { label: "resizable-grip" });
 
 export const icon = style({
   height: "0.625rem",
   width: "0.625rem",
-}, { label: "hella-resizable-icon", layer: "hella" });
+}, { label: "resizable-icon" });

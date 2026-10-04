@@ -15,8 +15,8 @@ describe("cva responsive", () => {
       variants: { size: { sm: { fontSize: 12 }, lg: { fontSize: 16 } } },
     });
     const [sm, lg] = button({ size: { initial: "sm", md: "lg" } }).split(" ");
-    expect(sm).toMatch(/^h-size-sm-/);
-    expect(lg).toMatch(/^h-size-lg-/);
+    expect(sm).toMatch(/^size-sm-/);
+    expect(lg).toMatch(/^size-lg-/);
     expect(getStylesheet("hella-css")).toBe(
       `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}`
     );
@@ -44,8 +44,8 @@ describe("cva responsive", () => {
       defaultVariants: { size: "sm" },
     });
     const [sm, lg] = button({ size: { md: "lg" } }).split(" ");
-    expect(sm).toMatch(/^h-size-sm-/);
-    expect(lg).toMatch(/^h-size-lg-/);
+    expect(sm).toMatch(/^size-sm-/);
+    expect(lg).toMatch(/^size-lg-/);
     expect(getStylesheet("hella-css")).toBe(
       `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}`
     );
@@ -59,7 +59,7 @@ describe("cva responsive", () => {
     });
     const resolved = button({ size: { initial: "sm", md: "lg" } });
     const [sm, lg, compound] = resolved.split(" ");
-    expect(compound).toMatch(/^h-size-md-lg-[a-z0-9]+$/);
+    expect(compound).toMatch(/^size-md-lg-[a-z]+$/);
     expect(getStylesheet("hella-css")).toBe(
       `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}.${compound}{font-weight:700}`
     );

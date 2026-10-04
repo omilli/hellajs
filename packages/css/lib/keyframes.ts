@@ -37,7 +37,7 @@ function canonicalSteps<T extends Record<string, unknown>>(obj: T): T {
  */
 export function keyframesRule(obj: KeyframesObject): { name: string; cssText: string } {
   const steps = canonicalSteps(obj);
-  const name = `h-kf-${hash(stringify(steps))}`;
+  const name = `kf-${hash(stringify(steps))}`;
   return { name, cssText: wrapBlock(`@keyframes ${name}`, process(steps, "", false, 1)) };
 }
 
@@ -52,7 +52,7 @@ export function keyframesRule(obj: KeyframesObject): { name: string; cssText: st
  * count. Reference-counted removal via
  * [`removeKeyframes`](/reference/css/removekeyframes).
  * @param obj Keyframes object: step keys (`from`, `to`, percentage stops) mapped to declaration objects
- * @returns The animation name (`h-kf-{hash}`) for `animation` / `animation-name` values.
+ * @returns The animation name (`kf-{hash}`) for `animation` / `animation-name` values.
  * @throws {Error} When obj is not a plain object, or when a property value is a function — use `vars()` for reactive values.
  */
 export function keyframes(obj: KeyframesObject): string {

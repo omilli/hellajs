@@ -12,7 +12,7 @@ export const base = style({
   justifyContent: "center",
   maxWidth: "max-content",
   position: "relative",
-}, { label: "hella-navigation-menu-base", layer: "hella" });
+}, { label: "navigation-menu-base" });
 
 export const list = style({
   alignItems: "center",
@@ -21,11 +21,11 @@ export const list = style({
   gap: "0.25rem",
   justifyContent: "center",
   listStyle: "none",
-}, { label: "hella-navigation-menu-list", layer: "hella" });
+}, { label: "navigation-menu-list" });
 
 export const item = style({
   position: "relative",
-}, { label: "hella-navigation-menu-item", layer: "hella" });
+}, { label: "navigation-menu-item" });
 
 export const trigger = style({
   alignItems: "center",
@@ -73,7 +73,7 @@ export const trigger = style({
   "&[data-state='open'] svg": {
     transform: "rotate(180deg)",
   },
-}, { label: "hella-navigation-menu-trigger", layer: "hella" });
+}, { label: "navigation-menu-trigger" });
 
 export const chevron = style({
   height: "0.75rem",
@@ -82,7 +82,7 @@ export const chevron = style({
   top: "1px",
   transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "0.75rem",
-}, { label: "hella-navigation-menu-chevron", layer: "hella" });
+}, { label: "navigation-menu-chevron" });
 
 export const content = style({
   left: "0",
@@ -104,7 +104,7 @@ export const content = style({
       width: "auto",
     },
   },
-}, { label: "hella-navigation-menu-content", layer: "hella" });
+}, { label: "navigation-menu-content" });
 
 export const link = style({
   borderRadius: "calc(var(--radius) * 0.6)",
@@ -147,7 +147,7 @@ export const link = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "hella-navigation-menu-link", layer: "hella" });
+}, { label: "navigation-menu-link" });
 
 export const viewportWrapper = style({
   isolation: "isolate",
@@ -157,11 +157,11 @@ export const viewportWrapper = style({
   position: "absolute",
   top: "100%",
   zIndex: "50",
-}, { label: "hella-navigation-menu-viewport-wrapper", layer: "hella" });
+}, { label: "navigation-menu-viewport-wrapper" });
 
 export const contentAnchor = style({
   display: "contents",
-}, { label: "hella-navigation-menu-content-anchor", layer: "hella" });
+}, { label: "navigation-menu-content-anchor" });
 
 export const viewport = style({
   backgroundColor: "var(--popover)",
@@ -186,7 +186,7 @@ export const viewport = style({
       width: "var(--radix-navigation-menu-viewport-width)",
     },
   },
-}, { label: "hella-navigation-menu-viewport", layer: "hella" });
+}, { label: "navigation-menu-viewport" });
 
 export const indicator = style({
   alignItems: "flex-end",
@@ -203,7 +203,7 @@ export const indicator = style({
   "&[data-state='hidden']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "hella-navigation-menu-indicator", layer: "hella" });
+}, { label: "navigation-menu-indicator" });
 
 export const diamond = style({
   background: "var(--border)",
@@ -214,4 +214,4 @@ export const diamond = style({
   top: "60%",
   transform: "rotate(45deg)",
   width: "0.5rem",
-}, { label: "hella-navigation-menu-diamond", layer: "hella" });
+}, { label: "navigation-menu-diamond" });

@@ -6,12 +6,17 @@
  * slate-700/600 for border/input, and the Mulish font. Registry-named tokens
  * override `packages/ui/registry/theme/tokens.dark.js` so registry components
  * render in the site palette; the `base-*` ladder carries the site's own
- * tonal vocabulary for chrome styles. Registered UNLAYERED on `:root`:
- * unlayered normal declarations outrank every layered one (the registry
- * sheet emits into `@layer hella`), so the overrides hold on every page by
- * cascade rules, independent of module execution order — a shared layer
- * bucket would merge by name with last-writer-wins and flip on island
- * pages, where island SSR registers the registry sheet in-process.
+ * tonal vocabulary for chrome styles. Registered UNLAYERED at `html:root`
+ * (`scoped: "html:root"`): registry tokens and site tokens are both
+ * unlayered `:root`-family declarations now, and this block sits at
+ * `html:root` (0,1,1) so it beats every registry `:root` (0,1,0)
+ * registration regardless of registration order - island hydration
+ * registers the registry sheet client-side after this static tag and loses
+ * on specificity. The palette probe is the guard (a gitignored Playwright
+ * script over `astro preview` under docs/dist): body and registry-demo
+ * surfaces must compute to this palette identically on a static page and an
+ * island page - a failure there is a set-design fork, not a styling bug to
+ * patch here.
  * The `sidebar-*` family (unit 09) overrides the registry sidebar css
  * module's own light-value registration (`packages/ui/registry/sidebar/`),
  * whose `.dark` block never applies (the site's html carries no `.dark`
@@ -19,8 +24,9 @@
  * sidebar vocabulary would render the light sheet. Values map the sidebar
  * surfaces onto the site ladder per the current chrome: aside `bg-base-300`
  * → `--sidebar`, daisy menu hover/active → `--base-50`, the rest alias the
- * site tokens. Registered here (unlayered) rather than in the chrome css
- * module so the override holds regardless of module execution order.
+ * site tokens. Registered here rather than in the chrome css module so the
+ * palette and its sidebar overrides register as one sheet, scoped with the
+ * palette to `html:root`.
  * Consume through `cssText()` for the static head styles (unit 08); no
  * export — mirror of the registry theme sheet's side-effect registration
  * contract.
@@ -60,4 +66,4 @@ vars({
   "sidebar-primary-foreground": "var(--primary-foreground)",
   "sidebar-border": "var(--border)",
   "sidebar-ring": "var(--ring)",
-});
+}, { scoped: "html:root" });

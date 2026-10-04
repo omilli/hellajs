@@ -20,7 +20,7 @@ const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "hella-dialog-overlay", layer: "hella" });
+}, { label: "dialog-overlay" });
 
 const content = style({
   background: "var(--background)",
@@ -49,7 +49,7 @@ const content = style({
       maxWidth: "32rem",
     },
   },
-}, { label: "hella-dialog-content", layer: "hella" });
+}, { label: "dialog-content" });
 
 const close = style({
   borderRadius: "calc(var(--radius) * 0.2)",
@@ -91,7 +91,7 @@ const close = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "hella-dialog-close", layer: "hella" });
+}, { label: "dialog-close" });
 
 const header = style({
   display: "flex",
@@ -103,7 +103,7 @@ const header = style({
       textAlign: "left",
     },
   },
-}, { label: "hella-dialog-header", layer: "hella" });
+}, { label: "dialog-header" });
 
 const footer = style({
   display: "flex",
@@ -115,19 +115,19 @@ const footer = style({
       justifyContent: "flex-end",
     },
   },
-}, { label: "hella-dialog-footer", layer: "hella" });
+}, { label: "dialog-footer" });
 
 const title = style({
   fontSize: "1.125rem",
   fontWeight: "600",
   lineHeight: "1",
-}, { label: "hella-dialog-title", layer: "hella" });
+}, { label: "dialog-title" });
 
 const description = style({
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "hella-dialog-description", layer: "hella" });
+}, { label: "dialog-description" });
 
 /** Accessibility state shared by the animated dialog parts. */
 type DialogState = () => "open" | "closed";

@@ -97,7 +97,7 @@ describe("tabs", () => {
     await awaitWiring(pill.root);
     expect(pill.tablist.getAttribute("data-variant")).toBe("default");
     if (variant.style === "css") {
-      expect(classTokens(pill.tablist).some((token) => token.startsWith("h-hella-tabs-list-default"))).toBe(true);
+      expect(classTokens(pill.tablist).some((token) => token.startsWith("tabs-list-default"))).toBe(true);
     } else {
       expect(classTokens(pill.tablist)).toContain("bg-muted");
     }
@@ -107,7 +107,7 @@ describe("tabs", () => {
     expect(line.tablist.getAttribute("data-variant")).toBe("line");
     const tokens = classTokens(line.tablist);
     if (variant.style === "css") {
-      expect(tokens.some((token) => token.startsWith("h-hella-tabs-list-line"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("tabs-list-line"))).toBe(true);
     } else {
       expect(tokens).toContain("gap-1");
       expect(tokens).toContain("bg-transparent");

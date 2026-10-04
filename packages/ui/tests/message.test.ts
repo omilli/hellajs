@@ -24,7 +24,7 @@ describe("message", () => {
   test.each(messageVariants)("$part $format/$style carries the row-reverse class on end alignment", (variant) => {
     const root = renderVariant(variant, { align: "end", children: ["x"] });
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-message")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("message")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("data-[align=end]:flex-row-reverse");
     }
@@ -40,7 +40,7 @@ describe("message", () => {
     const root = renderVariant(variant, { children: ["x"] });
     expect(root.tagName).toBe("DIV");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-message-group")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("message-group")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("flex-col");
     }
@@ -50,7 +50,7 @@ describe("message", () => {
     const root = renderVariant(variant, { children: ["A"] });
     expect(root.textContent).toBe("A");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-message-avatar")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("message-avatar")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("rounded-full");
     }
@@ -60,7 +60,7 @@ describe("message", () => {
     const root = renderVariant(variant, { children: ["meta"] });
     expect(root.textContent).toBe("meta");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith(`h-hella-message-${variant.part.toLowerCase()}`)).toBe(true);
+      expect(classTokens(root)[0]!.startsWith(`message-${variant.part.toLowerCase()}`)).toBe(true);
     } else {
       expect(classTokens(root)).toContain("text-muted-foreground");
     }

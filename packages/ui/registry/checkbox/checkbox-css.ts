@@ -38,16 +38,16 @@ export const base = style({
   "&:is(.dark *)[data-state='checked']": {
     backgroundColor: "var(--primary)",
   },
-}, { label: "hella-checkbox", layer: "hella" });
+}, { label: "checkbox" });
 
 export const indicator = style({
   color: "currentColor",
   display: "grid",
   placeContent: "center",
   transition: "none",
-}, { label: "hella-checkbox-indicator", layer: "hella" });
+}, { label: "checkbox-indicator" });
 
 export const icon = style({
   height: "0.875rem",
   width: "0.875rem",
-}, { label: "hella-checkbox-icon", layer: "hella" });
+}, { label: "checkbox-icon" });

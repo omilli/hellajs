@@ -22,13 +22,13 @@ const base = style({
     height: "1.5rem",
     width: "1.5rem",
   },
-}, { label: "hella-avatar", layer: "hella" });
+}, { label: "avatar" });
 
 const image = style({
   aspectRatio: "1 / 1",
   height: "100%",
   width: "100%",
-}, { label: "hella-avatar-image", layer: "hella" });
+}, { label: "avatar-image" });
 
 const fallback = style({
   alignItems: "center",
@@ -43,7 +43,7 @@ const fallback = style({
   "&:is([data-slot='avatar'][data-size='sm'] *)": {
     fontSize: "0.75rem",
   },
-}, { label: "hella-avatar-fallback", layer: "hella" });
+}, { label: "avatar-fallback" });
 
 const badge = style({
   alignItems: "center",
@@ -81,7 +81,7 @@ const badge = style({
       width: "0.5rem",
     },
   },
-}, { label: "hella-avatar-badge", layer: "hella" });
+}, { label: "avatar-badge" });
 
 const group = style({
   display: "flex",
@@ -91,7 +91,7 @@ const group = style({
   "& > [data-slot='avatar']": {
     boxShadow: "0 0 0 2px var(--background)",
   },
-}, { label: "hella-avatar-group", layer: "hella" });
+}, { label: "avatar-group" });
 
 const groupCount = style({
   alignItems: "center",
@@ -126,7 +126,7 @@ const groupCount = style({
       width: "0.75rem",
     },
   },
-}, { label: "hella-avatar-group-count", layer: "hella" });
+}, { label: "avatar-group-count" });
 
 interface AvatarProps {
   children?: HellaChildren;

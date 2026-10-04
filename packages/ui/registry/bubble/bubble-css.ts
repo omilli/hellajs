@@ -5,7 +5,7 @@ export const base = style({
   flexDirection: "column",
   minWidth: "0",
   gap: "0.5rem",
-}, { label: "hella-bubble-group", layer: "hella" });
+}, { label: "bubble-group" });
 
 export const variants = {
   default: style({
@@ -16,7 +16,7 @@ export const variants = {
     "& > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 80%, transparent)",
     },
-  }, { label: "hella-bubble-default", layer: "hella" }),
+  }, { label: "bubble-default" }),
   secondary: style({
     "& > [data-slot='bubble-content']": {
       backgroundColor: "var(--secondary)",
@@ -25,7 +25,7 @@ export const variants = {
     "& > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklch, var(--secondary), var(--foreground) 5%)",
     },
-  }, { label: "hella-bubble-secondary", layer: "hella" }),
+  }, { label: "bubble-secondary" }),
   muted: style({
     "& > [data-slot='bubble-content']": {
       backgroundColor: "var(--muted)",
@@ -33,7 +33,7 @@ export const variants = {
     "& > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklch, var(--muted), var(--foreground) 5%)",
     },
-  }, { label: "hella-bubble-muted", layer: "hella" }),
+  }, { label: "bubble-muted" }),
   tinted: style({
     "& > [data-slot='bubble-content']": {
       backgroundColor: "oklch(from var(--primary) 0.93 calc(c * 0.4) h)",
@@ -48,7 +48,7 @@ export const variants = {
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "oklch(from var(--primary) 0.35 calc(c * 0.5) h)",
     },
-  }, { label: "hella-bubble-tinted", layer: "hella" }),
+  }, { label: "bubble-tinted" }),
   outline: style({
     "& > [data-slot='bubble-content']": {
       borderColor: "var(--border)",
@@ -61,7 +61,7 @@ export const variants = {
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
     },
-  }, { label: "hella-bubble-outline", layer: "hella" }),
+  }, { label: "bubble-outline" }),
   ghost: style({
     borderStyle: "none",
     "& > [data-slot='bubble-content']": {
@@ -76,7 +76,7 @@ export const variants = {
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
     },
-  }, { label: "hella-bubble-ghost", layer: "hella" }),
+  }, { label: "bubble-ghost" }),
   destructive: style({
     "& > [data-slot='bubble-content']": {
       backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
@@ -91,7 +91,7 @@ export const variants = {
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklab, var(--destructive) 30%, transparent)",
     },
-  }, { label: "hella-bubble-destructive", layer: "hella" }),
+  }, { label: "bubble-destructive" }),
 };
 
 export const bubble = style({
@@ -108,7 +108,7 @@ export const bubble = style({
   "&[data-variant='ghost']": {
     maxWidth: "100%",
   },
-}, { label: "hella-bubble", layer: "hella" });
+}, { label: "bubble" });
 
 export const content = style({
   width: "fit-content",
@@ -135,7 +135,7 @@ export const content = style({
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-bubble-content", layer: "hella" });
+}, { label: "bubble-content" });
 
 export const reactions = style({
   position: "absolute",
@@ -155,16 +155,14 @@ export const reactions = style({
   "&:has(button)": {
     padding: "0",
   },
-}, { label: "hella-bubble-reactions", layer: "hella" });
+}, { label: "bubble-reactions" });
 
 css({
-  "@layer hella": {
-    "[data-slot='message'][data-align='end'] [data-slot='bubble']": {
-      alignSelf: "flex-end",
-    },
-    "[data-slot='bubble'][data-align='end'] [data-slot='bubble-content']": {
-      alignSelf: "flex-end",
-    },
+  "[data-slot='message'][data-align='end'] [data-slot='bubble']": {
+    alignSelf: "flex-end",
+  },
+  "[data-slot='bubble'][data-align='end'] [data-slot='bubble-content']": {
+    alignSelf: "flex-end",
   },
 });
 
@@ -172,18 +170,18 @@ export const reactionsSides = {
   top: style({
     top: "0",
     transform: "translateY(-75%)",
-  }, { label: "hella-bubble-reactions-top", layer: "hella" }),
+  }, { label: "bubble-reactions-top" }),
   bottom: style({
     bottom: "0",
     transform: "translateY(75%)",
-  }, { label: "hella-bubble-reactions-bottom", layer: "hella" }),
+  }, { label: "bubble-reactions-bottom" }),
 };
 
 export const reactionsAligns = {
   start: style({
     left: "0.75rem",
-  }, { label: "hella-bubble-reactions-start", layer: "hella" }),
+  }, { label: "bubble-reactions-start" }),
   end: style({
     right: "0.75rem",
-  }, { label: "hella-bubble-reactions-end", layer: "hella" }),
+  }, { label: "bubble-reactions-end" }),
 };

@@ -16,7 +16,7 @@ const base = style({
   justifyContent: "center",
   maxWidth: "max-content",
   position: "relative",
-}, { label: "hella-navigation-menu-base", layer: "hella" });
+}, { label: "navigation-menu-base" });
 
 const list = style({
   alignItems: "center",
@@ -25,11 +25,11 @@ const list = style({
   gap: "0.25rem",
   justifyContent: "center",
   listStyle: "none",
-}, { label: "hella-navigation-menu-list", layer: "hella" });
+}, { label: "navigation-menu-list" });
 
 const item = style({
   position: "relative",
-}, { label: "hella-navigation-menu-item", layer: "hella" });
+}, { label: "navigation-menu-item" });
 
 const trigger = style({
   alignItems: "center",
@@ -77,7 +77,7 @@ const trigger = style({
   "&[data-state='open'] svg": {
     transform: "rotate(180deg)",
   },
-}, { label: "hella-navigation-menu-trigger", layer: "hella" });
+}, { label: "navigation-menu-trigger" });
 
 const chevron = style({
   height: "0.75rem",
@@ -86,7 +86,7 @@ const chevron = style({
   top: "1px",
   transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "0.75rem",
-}, { label: "hella-navigation-menu-chevron", layer: "hella" });
+}, { label: "navigation-menu-chevron" });
 
 const content = style({
   left: "0",
@@ -108,7 +108,7 @@ const content = style({
       width: "auto",
     },
   },
-}, { label: "hella-navigation-menu-content", layer: "hella" });
+}, { label: "navigation-menu-content" });
 
 const link = style({
   borderRadius: "calc(var(--radius) * 0.6)",
@@ -151,7 +151,7 @@ const link = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "hella-navigation-menu-link", layer: "hella" });
+}, { label: "navigation-menu-link" });
 
 const viewportWrapper = style({
   isolation: "isolate",
@@ -161,11 +161,11 @@ const viewportWrapper = style({
   position: "absolute",
   top: "100%",
   zIndex: "50",
-}, { label: "hella-navigation-menu-viewport-wrapper", layer: "hella" });
+}, { label: "navigation-menu-viewport-wrapper" });
 
 const contentAnchor = style({
   display: "contents",
-}, { label: "hella-navigation-menu-content-anchor", layer: "hella" });
+}, { label: "navigation-menu-content-anchor" });
 
 const viewport = style({
   backgroundColor: "var(--popover)",
@@ -190,7 +190,7 @@ const viewport = style({
       width: "var(--radix-navigation-menu-viewport-width)",
     },
   },
-}, { label: "hella-navigation-menu-viewport", layer: "hella" });
+}, { label: "navigation-menu-viewport" });
 
 const indicator = style({
   alignItems: "flex-end",
@@ -207,7 +207,7 @@ const indicator = style({
   "&[data-state='hidden']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "hella-navigation-menu-indicator", layer: "hella" });
+}, { label: "navigation-menu-indicator" });
 
 const diamond = style({
   background: "var(--border)",
@@ -218,7 +218,7 @@ const diamond = style({
   top: "60%",
   transform: "rotate(45deg)",
   width: "0.5rem",
-}, { label: "hella-navigation-menu-diamond", layer: "hella" });
+}, { label: "navigation-menu-diamond" });
 
 /** Document-level activation event: triggers carrying a `value` announce clicks so the root's store and its appended viewport follow without context. */
 const ACTIVATE_EVENT = "hella:navigation-menu-activate";

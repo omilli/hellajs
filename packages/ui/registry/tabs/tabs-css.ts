@@ -6,7 +6,7 @@ export const base = style({
   "&[data-orientation='horizontal']": {
     flexDirection: "column",
   },
-}, { label: "hella-tabs", layer: "hella" });
+}, { label: "tabs" });
 
 export const list = style({
   alignItems: "center",
@@ -24,16 +24,16 @@ export const list = style({
   "&[data-variant='line']": {
     borderRadius: "0",
   },
-}, { label: "hella-tabs-list", layer: "hella" });
+}, { label: "tabs-list" });
 
 export const variants = {
   default: style({
     backgroundColor: "var(--muted)",
-  }, { label: "hella-tabs-list-default", layer: "hella" }),
+  }, { label: "tabs-list-default" }),
   line: style({
     background: "transparent",
     gap: "0.25rem",
-  }, { label: "hella-tabs-list-line", layer: "hella" }),
+  }, { label: "tabs-list-line" }),
 };
 
 export const trigger = style({
@@ -96,47 +96,45 @@ export const trigger = style({
     position: "absolute",
     transition: "opacity 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   },
-}, { label: "hella-tabs-trigger", layer: "hella" });
+}, { label: "tabs-trigger" });
 
 export const content = style({
   flex: "1",
   outlineStyle: "none",
-}, { label: "hella-tabs-content", layer: "hella" });
+}, { label: "tabs-content" });
 
 css({
-  "@layer hella": {
-    "[data-slot='tabs-trigger'][data-orientation='vertical']": {
-      justifyContent: "flex-start",
-      width: "100%",
-    },
-    "[data-slot='tabs-trigger'][data-orientation='horizontal']::after": {
-      bottom: "-5px",
-      height: "2px",
-      left: "0",
-      right: "0",
-    },
-    "[data-slot='tabs-trigger'][data-orientation='vertical']::after": {
-      bottom: "0",
-      right: "-0.25rem",
-      top: "0",
-      width: "2px",
-    },
-    "[data-slot='tabs-trigger'][data-variant='default'][data-state='active']": {
-      boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-    },
-    "[data-slot='tabs-trigger'][data-variant='line']": {
-      backgroundColor: "transparent",
-    },
-    "[data-slot='tabs-trigger'][data-variant='line'][data-state='active']": {
-      backgroundColor: "transparent",
-      boxShadow: "none",
-    },
-    ".dark [data-slot='tabs-trigger'][data-variant='line'][data-state='active']": {
-      backgroundColor: "transparent",
-      borderColor: "transparent",
-    },
-    "[data-slot='tabs-trigger'][data-variant='line'][data-state='active']::after": {
-      opacity: "1",
-    },
+  "[data-slot='tabs-trigger'][data-orientation='vertical']": {
+    justifyContent: "flex-start",
+    width: "100%",
+  },
+  "[data-slot='tabs-trigger'][data-orientation='horizontal']::after": {
+    bottom: "-5px",
+    height: "2px",
+    left: "0",
+    right: "0",
+  },
+  "[data-slot='tabs-trigger'][data-orientation='vertical']::after": {
+    bottom: "0",
+    right: "-0.25rem",
+    top: "0",
+    width: "2px",
+  },
+  "[data-slot='tabs-trigger'][data-variant='default'][data-state='active']": {
+    boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+  },
+  "[data-slot='tabs-trigger'][data-variant='line']": {
+    backgroundColor: "transparent",
+  },
+  "[data-slot='tabs-trigger'][data-variant='line'][data-state='active']": {
+    backgroundColor: "transparent",
+    boxShadow: "none",
+  },
+  ".dark [data-slot='tabs-trigger'][data-variant='line'][data-state='active']": {
+    backgroundColor: "transparent",
+    borderColor: "transparent",
+  },
+  "[data-slot='tabs-trigger'][data-variant='line'][data-state='active']::after": {
+    opacity: "1",
   },
 });

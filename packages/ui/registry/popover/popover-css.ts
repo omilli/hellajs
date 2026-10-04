@@ -33,7 +33,7 @@ export const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-popover-content", layer: "hella" });
+}, { label: "popover-content" });
 
 export const header = style({
   display: "flex",
@@ -41,12 +41,12 @@ export const header = style({
   gap: "0.25rem",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "hella-popover-header", layer: "hella" });
+}, { label: "popover-header" });
 
 export const title = style({
   fontWeight: "500",
-}, { label: "hella-popover-title", layer: "hella" });
+}, { label: "popover-title" });
 
 export const description = style({
   color: "var(--muted-foreground)",
-}, { label: "hella-popover-description", layer: "hella" });
+}, { label: "popover-description" });

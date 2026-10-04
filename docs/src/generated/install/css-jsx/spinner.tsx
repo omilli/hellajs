@@ -8,7 +8,7 @@ const base = style({
   animation: `${spin} 1s linear infinite`,
   height: "1rem",
   width: "1rem",
-}, { label: "hella-spinner", layer: "hella" });
+}, { label: "spinner" });
 
 interface SpinnerProps {
   class?: string;

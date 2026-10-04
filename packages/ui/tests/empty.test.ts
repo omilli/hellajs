@@ -52,7 +52,7 @@ describe("empty", () => {
     expect(tokens.at(-1)).toBe("my-empty");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("h-hella-empty-")).toBe(true);
+      expect(tokens[0]!.startsWith("empty-")).toBe(true);
     } else {
       for (const token of TOKENS.base) expect(tokens).toContain(token);
     }
@@ -64,7 +64,7 @@ describe("empty", () => {
     const tokens = classTokens(el);
     expect(tokens.at(-1)).toBe("my-part");
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith(`h-hella-empty-${variant.part.toLowerCase()}-`)).toBe(true);
+      expect(tokens[0]!.startsWith(`empty-${variant.part.toLowerCase()}-`)).toBe(true);
     } else {
       for (const token of partTokens(variant.part)) expect(tokens).toContain(token);
     }
@@ -79,7 +79,7 @@ describe("empty", () => {
     const tokens = classTokens(media);
     expect(tokens.at(-1)).toBe("my-media");
     if (variant.style === "css") {
-      expect(tokens[1]!.startsWith("h-hella-empty-media-icon-")).toBe(true);
+      expect(tokens[1]!.startsWith("empty-media-icon-")).toBe(true);
     } else {
       for (const token of TOKENS.mediaIcon) expect(tokens).toContain(token);
     }
@@ -92,7 +92,7 @@ describe("empty", () => {
     );
     expect(media.getAttribute("data-variant")).toBe("default");
     if (variant.style === "css") {
-      expect(classTokens(media)[1]!.startsWith("h-hella-empty-media-default-")).toBe(true);
+      expect(classTokens(media)[1]!.startsWith("empty-media-default-")).toBe(true);
     } else {
       expect(classTokens(media)).toContain("bg-transparent");
     }

@@ -101,7 +101,7 @@ describe("collapsible", () => {
       expect(tokens).toContain("[&[data-state=open]>svg]:rotate-180");
       expect(tokens).not.toContain("rotate-180");
     } else {
-      expect(tokens.some((token) => token.startsWith("h-hella-collapsible-trigger"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("collapsible-trigger"))).toBe(true);
     }
     expect(trigger.getAttribute("data-state")).toBe("open");
   });

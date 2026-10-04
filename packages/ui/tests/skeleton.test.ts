@@ -23,7 +23,7 @@ describe("skeleton", () => {
     expect(tokens.at(-1)).toBe("my-skeleton");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("h-hella-skeleton-")).toBe(true);
+      expect(tokens[0]!.startsWith("skeleton-")).toBe(true);
     } else {
       for (const token of BASE_TOKENS) expect(tokens).toContain(token);
     }

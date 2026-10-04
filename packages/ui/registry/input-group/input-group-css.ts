@@ -51,7 +51,7 @@ export const base = style({
   "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-group", layer: "hella" });
+}, { label: "input-group" });
 
 export const addon = style({
   alignItems: "center",
@@ -72,7 +72,7 @@ export const addon = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-input-group-addon", layer: "hella" });
+}, { label: "input-group-addon" });
 
 export const addonAlign = {
   "inline-start": style({
@@ -84,7 +84,7 @@ export const addonAlign = {
     "&:has(> kbd)": {
       marginLeft: "-0.35rem",
     },
-  }, { label: "hella-input-group-addon-inline-start", layer: "hella" }),
+  }, { label: "input-group-addon-inline-start" }),
   "inline-end": style({
     order: "9999",
     paddingRight: "0.75rem",
@@ -94,21 +94,21 @@ export const addonAlign = {
     "&:has(> kbd)": {
       marginRight: "-0.35rem",
     },
-  }, { label: "hella-input-group-addon-inline-end", layer: "hella" }),
+  }, { label: "input-group-addon-inline-end" }),
   "block-start": style({
     justifyContent: "flex-start",
     order: "-9999",
     paddingInline: "0.75rem",
     paddingTop: "0.75rem",
     width: "100%",
-  }, { label: "hella-input-group-addon-block-start", layer: "hella" }),
+  }, { label: "input-group-addon-block-start" }),
   "block-end": style({
     justifyContent: "flex-start",
     order: "9999",
     paddingInline: "0.75rem",
     paddingBottom: "0.75rem",
     width: "100%",
-  }, { label: "hella-input-group-addon-block-end", layer: "hella" }),
+  }, { label: "input-group-addon-block-end" }),
 };
 
 export const buttonBase = style({
@@ -150,7 +150,7 @@ export const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-group-button", layer: "hella" });
+}, { label: "input-group-button" });
 
 export const buttonVariants = {
   default: style({
@@ -159,7 +159,7 @@ export const buttonVariants = {
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "hella-input-group-button-default", layer: "hella" }),
+  }, { label: "input-group-button-default" }),
   destructive: style({
     backgroundColor: "var(--destructive)",
     color: "#fff",
@@ -175,7 +175,7 @@ export const buttonVariants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "hella-input-group-button-destructive", layer: "hella" }),
+  }, { label: "input-group-button-destructive" }),
   outline: style({
     background: "var(--background)",
     border: "1px solid var(--border)",
@@ -191,14 +191,14 @@ export const buttonVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "hella-input-group-button-outline", layer: "hella" }),
+  }, { label: "input-group-button-outline" }),
   secondary: style({
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "hella-input-group-button-secondary", layer: "hella" }),
+  }, { label: "input-group-button-secondary" }),
   ghost: style({
     "&:hover": {
       backgroundColor: "var(--accent)",
@@ -207,14 +207,14 @@ export const buttonVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "hella-input-group-button-ghost", layer: "hella" }),
+  }, { label: "input-group-button-ghost" }),
   link: style({
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "hella-input-group-button-link", layer: "hella" }),
+  }, { label: "input-group-button-link" }),
 };
 
 export const buttonSizes = {
@@ -232,7 +232,7 @@ export const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-input-group-button-size-xs", layer: "hella" }),
+  }, { label: "input-group-button-size-xs" }),
   sm: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
@@ -241,7 +241,7 @@ export const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-input-group-button-size-sm", layer: "hella" }),
+  }, { label: "input-group-button-size-sm" }),
   "icon-xs": style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
@@ -250,11 +250,11 @@ export const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-input-group-button-size-icon-xs", layer: "hella" }),
+  }, { label: "input-group-button-size-icon-xs" }),
   "icon-sm": style({
     height: "2rem",
     width: "2rem",
-  }, { label: "hella-input-group-button-size-icon-sm", layer: "hella" }),
+  }, { label: "input-group-button-size-icon-sm" }),
 };
 
 export const sizes = {
@@ -273,7 +273,7 @@ export const sizes = {
       height: "0.875rem",
       width: "0.875rem",
     },
-  }, { label: "hella-input-group-size-xs", layer: "hella" }),
+  }, { label: "input-group-size-xs" }),
   sm: style({
     alignItems: "center",
     borderRadius: "calc(var(--radius) * 0.8)",
@@ -285,7 +285,7 @@ export const sizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-input-group-size-sm", layer: "hella" }),
+  }, { label: "input-group-size-sm" }),
   "icon-xs": style({
     alignItems: "center",
     borderRadius: "calc(var(--radius) - 5px)",
@@ -297,7 +297,7 @@ export const sizes = {
     "&:has(> svg)": {
       padding: "0",
     },
-  }, { label: "hella-input-group-size-icon-xs", layer: "hella" }),
+  }, { label: "input-group-size-icon-xs" }),
   "icon-sm": style({
     alignItems: "center",
     display: "flex",
@@ -308,7 +308,7 @@ export const sizes = {
     "&:has(> svg)": {
       padding: "0",
     },
-  }, { label: "hella-input-group-size-icon-sm", layer: "hella" }),
+  }, { label: "input-group-size-icon-sm" }),
 };
 
 export const text = style({
@@ -324,7 +324,7 @@ export const text = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-input-group-text", layer: "hella" });
+}, { label: "input-group-text" });
 
 export const inputBase = style({
   background: "transparent",
@@ -370,14 +370,14 @@ export const inputBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "hella-input-group-input", layer: "hella" });
+}, { label: "input-group-input" });
 
 export const inputFocus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-input-group-input-focus", layer: "hella" });
+}, { label: "input-group-input-focus" });
 
 export const inputInvalid = style({
   "&[aria-invalid='true']": {
@@ -389,7 +389,7 @@ export const inputInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-group-input-invalid", layer: "hella" });
+}, { label: "input-group-input-invalid" });
 
 export const inputControl = style({
   background: "transparent",
@@ -403,7 +403,7 @@ export const inputControl = style({
   "&:is(.dark *)": {
     background: "transparent",
   },
-}, { label: "hella-input-group-input-control", layer: "hella" });
+}, { label: "input-group-input-control" });
 
 export const textareaBase = style({
   border: "1px solid var(--input)",
@@ -433,14 +433,14 @@ export const textareaBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "hella-input-group-textarea", layer: "hella" });
+}, { label: "input-group-textarea" });
 
 export const textareaFocus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-input-group-textarea-focus", layer: "hella" });
+}, { label: "input-group-textarea-focus" });
 
 export const textareaInvalid = style({
   "&[aria-invalid='true']": {
@@ -452,7 +452,7 @@ export const textareaInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-group-textarea-invalid", layer: "hella" });
+}, { label: "input-group-textarea-invalid" });
 
 export const textareaControl = style({
   background: "transparent",
@@ -468,24 +468,22 @@ export const textareaControl = style({
   "&:is(.dark *)": {
     background: "transparent",
   },
-}, { label: "hella-input-group-textarea-control", layer: "hella" });
+}, { label: "input-group-textarea-control" });
 
 css({
-  "@layer hella": {
-    "[data-slot='input-group'][data-disabled='true'] [data-slot='input-group-addon']": {
-      opacity: "0.5",
-    },
-    "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-start']": {
-      paddingTop: "0.625rem",
-    },
-    "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-end']": {
-      paddingBottom: "0.625rem",
-    },
-    ".border-b [data-slot='input-group-addon'][data-align='block-start'], .border-b ~ [data-slot='input-group-addon'][data-align='block-start']": {
-      paddingBottom: "0.75rem",
-    },
-    ".border-t [data-slot='input-group-addon'][data-align='block-end'], .border-t ~ [data-slot='input-group-addon'][data-align='block-end']": {
-      paddingTop: "0.75rem",
-    },
+  "[data-slot='input-group'][data-disabled='true'] [data-slot='input-group-addon']": {
+    opacity: "0.5",
+  },
+  "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-start']": {
+    paddingTop: "0.625rem",
+  },
+  "[data-slot='input-group']:has(input) [data-slot='input-group-addon'][data-align='block-end']": {
+    paddingBottom: "0.625rem",
+  },
+  ".border-b [data-slot='input-group-addon'][data-align='block-start'], .border-b ~ [data-slot='input-group-addon'][data-align='block-start']": {
+    paddingBottom: "0.75rem",
+  },
+  ".border-t [data-slot='input-group-addon'][data-align='block-end'], .border-t ~ [data-slot='input-group-addon'][data-align='block-end']": {
+    paddingTop: "0.75rem",
   },
 });

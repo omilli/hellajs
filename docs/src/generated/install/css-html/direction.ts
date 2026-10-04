@@ -5,7 +5,7 @@ import { style } from "@hellajs/css";
 
 const base = style({
   display: "contents",
-}, { label: "hella-direction-provider", layer: "hella" });
+}, { label: "direction-provider" });
 
 interface DirectionProviderProps {
   children?: HellaChildren;

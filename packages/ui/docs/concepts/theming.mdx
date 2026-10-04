@@ -1,6 +1,6 @@
 # Theming
 
-One palette maintained in two artifact flavors, both emitted under the `hella` cascade layer: unlayered author CSS always wins, so a retheme is an override, not a specificity fight.
+One palette maintained in two artifact flavors, both plain unlayered stylesheets: a retheme overrides ordinary custom properties, not a specificity fight.
 
 ## Two Artifacts, One Palette
 
@@ -25,20 +25,20 @@ The split is deliberate. A tailwind project should not need a CSS-in-JS runtime 
 
 ## The Override Contract
 
-Everything the registry emits lives in the `hella` cascade layer: component declarations through the [`style`](/reference/css/style) `layer` option, both palettes wrapped or layered explicitly. Unlayered CSS always beats layered CSS in the cascade, which hands you two override paths:
+The registry emits plain unlayered CSS: component declarations through [`style`](/reference/css/style) scoped classes, both palettes as ordinary `:root` custom properties. Nothing is shielded by a cascade layer, so overrides resolve by the normal cascade - later registration wins at equal specificity, a more specific selector wins otherwise:
 
-- **Retheme**: override the custom properties in your own unlayered stylesheet. Every component reads the palette through `var(--*)` literals, so one block retints the whole registry.
-- **Restyle**: pass your own classes through `props.class` or edit the copied file. Your unlayered rules win over the component's layered declarations without specificity games.
+- **Retheme**: override the custom properties in a stylesheet imported after `tokens.js`. Every component reads the palette through `var(--*)` literals, so one block retints the whole registry.
+- **Restyle**: pass your own classes through `props.class` or edit the copied file. Your rules compete on equal footing, and normal cascade order settles it.
 
 ```css
-/* unlayered, so it always wins over the hella layer */
+/* imported after tokens.js, so this :root wins at equal specificity */
 :root {
   --primary: oklch(0.55 0.21 260);
   --radius: 0.25rem;
 }
 ```
 
-The same contract covers utilities in a tailwind project: utilities are unlayered, so `bg-blue-600` beats the layered `bg-primary` baked into the component.
+The tailwind flavor settles the same question mechanically: `cn` resolves utility conflicts with tailwind-merge, so a `bg-blue-600` in `props.class` beats the `bg-primary` baked into the component.
 
 ## Dark Mode
 
@@ -66,4 +66,4 @@ npx @hellajs/ui init --theme-mode dark
 
 The tailwind flavor's `theme.css` is shadcn's own new-york-v4 theme (chart tokens excluded): the `@custom-variant dark` definition, the full `@theme inline` block mapping every palette token including the sidebar set and the radius scale onto Tailwind color and radius utilities, the `:root` and `.dark` palettes, and the `@layer base` reset. It imports `tw-animate-css`, which the Dialog's `animate-in` / `animate-out` utilities require - `init` names it in the peer check for tailwind projects. Utilities then read the palette directly: `bg-primary`, `text-foreground`, `rounded-md` (the theme maps `--radius-md` onto `calc(var(--radius) * 0.8)`). Opacity modifiers compose through `color-mix`, so `hover:bg-primary/90` in the copied button works without extra configuration. This is why the two flavors can share one set of token names while only the tailwind flavor ships utilities.
 
-The css flavor's `tokens.js` carries the same palette values in its narrower shape: the eighteen tokens the components consume (`background` through `ring`, plus `radius`) as a [`vars`](/reference/css/vars) sheet, with the `.dark` remaps under the `hella` layer. Its dark-default sibling `tokens.dark.js` carries the `.dark` remap values as the only palette, so a `themeMode: "dark"` project reads the identical token names from `:root`. Sidebar and chart tokens are excluded - the css flavor ships only what its components read.
+The css flavor's `tokens.js` carries the same palette values in its narrower shape: the eighteen tokens the components consume (`background` through `ring`, plus `radius`) as a [`vars`](/reference/css/vars) sheet with the `.dark` remaps in the same sheet. Its dark-default sibling `tokens.dark.js` carries the `.dark` remap values as the only palette, so a `themeMode: "dark"` project reads the identical token names from `:root`. Sidebar and chart tokens are excluded - the css flavor ships only what its components read.

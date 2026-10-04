@@ -31,7 +31,10 @@ describe("addComponent", () => {
     expect(button.startsWith('import type { HellaChildren } from "@hellajs/dom";')).toBe(true);
     expect(button).toContain('import { style } from "@hellajs/css";');
     expect(button).toContain("const base = style(");
-    expect(button).toContain('layer: "hella"');
+    expect(button.includes('layer: "hella"')).toBe(false);
+    const tokens = readFileSync(join(componentsDir, "tokens.js"), "utf8");
+    expect(tokens.includes('layer: "hella"')).toBe(false);
+    expect(tokens.includes("@layer")).toBe(false);
     expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
     expect(existsSync(join(componentsDir, "button-html.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-css.ts"))).toBe(false);

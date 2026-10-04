@@ -8,7 +8,7 @@ const base = style({
   padding: "0.75rem",
   width: "fit-content",
   "--cell-size": "2rem",
-}, { label: "hella-calendar", layer: "hella" });
+}, { label: "calendar" });
 
 const months = style({
   display: "flex",
@@ -18,14 +18,14 @@ const months = style({
   "@media (min-width: 48rem)": {
     flexDirection: "row",
   },
-}, { label: "hella-calendar-months", layer: "hella" });
+}, { label: "calendar-months" });
 
 const month = style({
   display: "flex",
   flexDirection: "column",
   gap: "1rem",
   width: "100%",
-}, { label: "hella-calendar-month", layer: "hella" });
+}, { label: "calendar-month" });
 
 const monthCaption = style({
   alignItems: "center",
@@ -34,13 +34,13 @@ const monthCaption = style({
   justifyContent: "center",
   paddingInline: "var(--cell-size)",
   width: "100%",
-}, { label: "hella-calendar-caption", layer: "hella" });
+}, { label: "calendar-caption" });
 
 const captionLabel = style({
   fontSize: "0.875rem",
   fontWeight: "500",
   userSelect: "none",
-}, { label: "hella-calendar-caption-label", layer: "hella" });
+}, { label: "calendar-caption-label" });
 
 const nav = style({
   alignItems: "center",
@@ -52,7 +52,7 @@ const nav = style({
   right: "0",
   top: "0",
   width: "100%",
-}, { label: "hella-calendar-nav", layer: "hella" });
+}, { label: "calendar-nav" });
 
 /** The ref's nav buttons: ghost icon-class button tokens with the default size tokens pre-merged out against `size-(--cell-size)`/`p-0`. */
 const navButton = style({
@@ -106,21 +106,21 @@ const navButton = style({
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
   },
-}, { label: "hella-calendar-nav-button", layer: "hella" });
+}, { label: "calendar-nav-button" });
 
 const icon = style({
   height: "1rem",
   width: "1rem",
-}, { label: "hella-calendar-icon", layer: "hella" });
+}, { label: "calendar-icon" });
 
 const monthGrid = style({
   borderCollapse: "collapse",
   width: "100%",
-}, { label: "hella-calendar-grid", layer: "hella" });
+}, { label: "calendar-grid" });
 
 const weekdays = style({
   display: "flex",
-}, { label: "hella-calendar-weekdays", layer: "hella" });
+}, { label: "calendar-weekdays" });
 
 const weekday = style({
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -129,13 +129,13 @@ const weekday = style({
   fontSize: "0.8rem",
   fontWeight: "400",
   userSelect: "none",
-}, { label: "hella-calendar-weekday", layer: "hella" });
+}, { label: "calendar-weekday" });
 
 const week = style({
   display: "flex",
   marginTop: "0.5rem",
   width: "100%",
-}, { label: "hella-calendar-week", layer: "hella" });
+}, { label: "calendar-week" });
 
 const day = style({
   aspectRatio: "1 / 1",
@@ -145,7 +145,7 @@ const day = style({
   textAlign: "center",
   userSelect: "none",
   width: "100%",
-}, { label: "hella-calendar-day", layer: "hella" });
+}, { label: "calendar-day" });
 
 /** The ref's CalendarDayButton: ghost icon-class tokens with the conflicts the ref's `cn()` resolves pre-merged; range/selection state rides the button's own data attributes. */
 const dayButton = style({
@@ -221,61 +221,59 @@ const dayButton = style({
     borderRadius: "0",
     color: "var(--accent-foreground)",
   },
-}, { label: "hella-calendar-day-button", layer: "hella" });
+}, { label: "calendar-day-button" });
 
 css({
-  "@layer hella": {
-    "[data-slot='calendar-day'][data-today='true']": {
-      backgroundColor: "var(--accent)",
-      borderRadius: "calc(var(--radius) * 0.8)",
-      color: "var(--accent-foreground)",
-    },
-    "[data-slot='calendar-day'][data-today='true'][data-selected='true']": {
-      borderRadius: "0",
-    },
-    "[data-slot='calendar-day'][data-outside='true']": {
-      color: "var(--muted-foreground)",
-    },
-    "[data-slot='calendar-day'][data-disabled='true']": {
-      color: "var(--muted-foreground)",
-      opacity: "0.5",
-    },
-    "[data-slot='calendar-day'][data-hidden='true']": {
-      visibility: "hidden",
-    },
-    "[data-slot='calendar-day'][data-range-start='true']": {
-      backgroundColor: "var(--accent)",
-      borderBottomLeftRadius: "calc(var(--radius) * 0.8)",
-      borderTopLeftRadius: "calc(var(--radius) * 0.8)",
-    },
-    "[data-slot='calendar-day'][data-range-middle='true']": {
-      borderRadius: "0",
-    },
-    "[data-slot='calendar-day'][data-range-end='true']": {
-      backgroundColor: "var(--accent)",
-      borderBottomRightRadius: "calc(var(--radius) * 0.8)",
-      borderTopRightRadius: "calc(var(--radius) * 0.8)",
-    },
-    "[data-slot='calendar-day']:first-child[data-selected='true'] button": {
-      borderBottomLeftRadius: "calc(var(--radius) * 0.8)",
-      borderTopLeftRadius: "calc(var(--radius) * 0.8)",
-    },
-    "[data-slot='calendar-day']:last-child[data-selected='true'] button": {
-      borderBottomRightRadius: "calc(var(--radius) * 0.8)",
-      borderTopRightRadius: "calc(var(--radius) * 0.8)",
-    },
-    "[data-slot='calendar-day'][data-focused='true'] [data-slot='calendar-day-button']": {
-      borderColor: "var(--ring)",
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
-      position: "relative",
-      zIndex: "10",
-    },
-    "[data-slot='card-content'] [data-slot='calendar']": {
-      backgroundColor: "transparent",
-    },
-    "[data-slot='popover-content'] [data-slot='calendar']": {
-      backgroundColor: "transparent",
-    },
+  "[data-slot='calendar-day'][data-today='true']": {
+    backgroundColor: "var(--accent)",
+    borderRadius: "calc(var(--radius) * 0.8)",
+    color: "var(--accent-foreground)",
+  },
+  "[data-slot='calendar-day'][data-today='true'][data-selected='true']": {
+    borderRadius: "0",
+  },
+  "[data-slot='calendar-day'][data-outside='true']": {
+    color: "var(--muted-foreground)",
+  },
+  "[data-slot='calendar-day'][data-disabled='true']": {
+    color: "var(--muted-foreground)",
+    opacity: "0.5",
+  },
+  "[data-slot='calendar-day'][data-hidden='true']": {
+    visibility: "hidden",
+  },
+  "[data-slot='calendar-day'][data-range-start='true']": {
+    backgroundColor: "var(--accent)",
+    borderBottomLeftRadius: "calc(var(--radius) * 0.8)",
+    borderTopLeftRadius: "calc(var(--radius) * 0.8)",
+  },
+  "[data-slot='calendar-day'][data-range-middle='true']": {
+    borderRadius: "0",
+  },
+  "[data-slot='calendar-day'][data-range-end='true']": {
+    backgroundColor: "var(--accent)",
+    borderBottomRightRadius: "calc(var(--radius) * 0.8)",
+    borderTopRightRadius: "calc(var(--radius) * 0.8)",
+  },
+  "[data-slot='calendar-day']:first-child[data-selected='true'] button": {
+    borderBottomLeftRadius: "calc(var(--radius) * 0.8)",
+    borderTopLeftRadius: "calc(var(--radius) * 0.8)",
+  },
+  "[data-slot='calendar-day']:last-child[data-selected='true'] button": {
+    borderBottomRightRadius: "calc(var(--radius) * 0.8)",
+    borderTopRightRadius: "calc(var(--radius) * 0.8)",
+  },
+  "[data-slot='calendar-day'][data-focused='true'] [data-slot='calendar-day-button']": {
+    borderColor: "var(--ring)",
+    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    position: "relative",
+    zIndex: "10",
+  },
+  "[data-slot='card-content'] [data-slot='calendar']": {
+    backgroundColor: "transparent",
+  },
+  "[data-slot='popover-content'] [data-slot='calendar']": {
+    backgroundColor: "transparent",
   },
 });
 

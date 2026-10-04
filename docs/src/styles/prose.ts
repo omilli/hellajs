@@ -133,7 +133,7 @@ css({
 
     // Tables: 0.875em body, 50%-mix head rule, 20%-mix row rules; collapse
     // stated explicitly so the table reads right regardless of what the
-    // base-layer preflight carries.
+    // preflight port carries.
     table: {
       tableLayout: "auto",
       width: "100%",

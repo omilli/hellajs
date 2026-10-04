@@ -7,10 +7,10 @@ beforeEach(() => {
 });
 
 describe("keyframes", () => {
-  test("returns a content-hashed h-kf- name", () => {
+  test("returns a content-hashed kf- name", () => {
     const name = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
 
-    expect(name).toMatch(/^h-kf-[a-z0-9]+$/);
+    expect(name).toMatch(/^kf-[a-z]+$/);
   });
 
   test("injects the exact @keyframes rule into the stylesheet", () => {

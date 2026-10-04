@@ -14,7 +14,7 @@ export const base = style({
   height: "100%",
   overflow: "hidden",
   width: "100%",
-}, { label: "hella-command", layer: "hella" });
+}, { label: "command" });
 
 export const inputWrapper = style({
   alignItems: "center",
@@ -23,14 +23,14 @@ export const inputWrapper = style({
   gap: "0.5rem",
   height: "2.25rem",
   paddingInline: "0.75rem",
-}, { label: "hella-command-input-wrapper", layer: "hella" });
+}, { label: "command-input-wrapper" });
 
 export const icon = style({
   flexShrink: "0",
   height: "1rem",
   opacity: "0.5",
   width: "1rem",
-}, { label: "hella-command-icon", layer: "hella" });
+}, { label: "command-icon" });
 
 export const input = style({
   backgroundColor: "transparent",
@@ -50,21 +50,21 @@ export const input = style({
     cursor: "not-allowed",
     opacity: "0.5",
   },
-}, { label: "hella-command-input", layer: "hella" });
+}, { label: "command-input" });
 
 export const list = style({
   maxHeight: "300px",
   overflowX: "hidden",
   overflowY: "auto",
   scrollPaddingBlock: "0.25rem",
-}, { label: "hella-command-list", layer: "hella" });
+}, { label: "command-list" });
 
 export const empty = style({
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   paddingBlock: "1.5rem",
   textAlign: "center",
-}, { label: "hella-command-empty", layer: "hella" });
+}, { label: "command-empty" });
 
 export const group = style({
   color: "var(--foreground)",
@@ -78,7 +78,7 @@ export const group = style({
     paddingInline: "0.5rem",
     paddingBlock: "0.375rem",
   },
-}, { label: "hella-command-group", layer: "hella" });
+}, { label: "command-group" });
 
 export const groupHeading = style({
   color: "var(--muted-foreground)",
@@ -87,13 +87,13 @@ export const groupHeading = style({
   lineHeight: "1rem",
   paddingInline: "0.5rem",
   paddingBlock: "0.375rem",
-}, { label: "hella-command-group-heading", layer: "hella" });
+}, { label: "command-group-heading" });
 
 export const separator = style({
   backgroundColor: "var(--border)",
   height: "1px",
   marginInline: "-0.25rem",
-}, { label: "hella-command-separator", layer: "hella" });
+}, { label: "command-separator" });
 
 export const item = style({
   alignItems: "center",
@@ -128,7 +128,7 @@ export const item = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "hella-command-item", layer: "hella" });
+}, { label: "command-item" });
 
 export const shortcut = style({
   color: "var(--muted-foreground)",
@@ -136,7 +136,7 @@ export const shortcut = style({
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "hella-command-shortcut", layer: "hella" });
+}, { label: "command-shortcut" });
 
 export const palette = style({
   "& [data-slot='command-input-wrapper']": {
@@ -168,7 +168,7 @@ export const palette = style({
     height: "1.25rem",
     width: "1.25rem",
   },
-}, { label: "hella-command-palette", layer: "hella" });
+}, { label: "command-palette" });
 
 export const dialogOverlay = style({
   backgroundColor: "rgb(0 0 0 / 0.5)",
@@ -181,7 +181,7 @@ export const dialogOverlay = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "hella-command-dialog-overlay", layer: "hella" });
+}, { label: "command-dialog-overlay" });
 
 export const dialogPanel = style({
   background: "var(--background)",
@@ -211,7 +211,7 @@ export const dialogPanel = style({
       maxWidth: "32rem",
     },
   },
-}, { label: "hella-command-dialog-panel", layer: "hella" });
+}, { label: "command-dialog-panel" });
 
 export const dialogHeader = style({
   clip: "rect(0, 0, 0, 0)",
@@ -223,19 +223,19 @@ export const dialogHeader = style({
   position: "absolute",
   whiteSpace: "nowrap",
   width: "1px",
-}, { label: "hella-command-dialog-header", layer: "hella" });
+}, { label: "command-dialog-header" });
 
 export const dialogTitle = style({
   fontSize: "1.125rem",
   fontWeight: "600",
   lineHeight: "1",
-}, { label: "hella-command-dialog-title", layer: "hella" });
+}, { label: "command-dialog-title" });
 
 export const dialogDescription = style({
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "hella-command-dialog-description", layer: "hella" });
+}, { label: "command-dialog-description" });
 
 export const dialogClose = style({
   borderRadius: "calc(var(--radius) * 0.2)",
@@ -277,4 +277,4 @@ export const dialogClose = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "hella-command-dialog-close", layer: "hella" });
+}, { label: "command-dialog-close" });

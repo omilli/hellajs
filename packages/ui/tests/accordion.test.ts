@@ -102,7 +102,7 @@ describe("accordion", () => {
       expect(tokens).toContain("disabled:pointer-events-none");
       expect(tokens).toContain("disabled:opacity-50");
     } else {
-      expect(classTokens(triggers[3]!).some((token) => token.startsWith("h-hella-accordion-trigger"))).toBe(true);
+      expect(classTokens(triggers[3]!).some((token) => token.startsWith("accordion-trigger"))).toBe(true);
     }
     triggers[3]!.dispatchEvent(new Event("click"));
     expect(openIndexes(itemEls)).toEqual([]);
@@ -135,7 +135,7 @@ describe("accordion", () => {
       expect(tokens).toContain("pb-0");
       expect(tokens).toContain("data-[state=open]:pb-4");
     } else {
-      expect(tokens.some((token) => token.startsWith("h-hella-accordion-content-inner"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("accordion-content-inner"))).toBe(true);
     }
   });
 
@@ -149,7 +149,7 @@ describe("accordion", () => {
     if (variant.style === "tailwind") {
       expect(tokens).toContain("[&[data-state=open]>svg]:rotate-180");
     } else {
-      expect(tokens.some((token) => token.startsWith("h-hella-accordion-trigger"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("accordion-trigger"))).toBe(true);
     }
   });
 

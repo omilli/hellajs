@@ -27,7 +27,7 @@ describe("pagination", () => {
     expect(root.tagName).toBe("UL");
     expect(root.getAttribute("data-slot")).toBe("pagination-content");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-pagination-content")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("pagination-content")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("gap-1");
     }
@@ -47,7 +47,7 @@ describe("pagination", () => {
     expect(root.hasAttribute("data-active")).toBe(false);
     expect(root.hasAttribute("aria-current")).toBe(false);
     if (variant.style === "css") {
-      expect(classTokens(root).some((token) => token.startsWith("h-hella-pagination-link-size-icon"))).toBe(true);
+      expect(classTokens(root).some((token) => token.startsWith("pagination-link-size-icon"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("size-9");
     }
@@ -59,7 +59,7 @@ describe("pagination", () => {
     expect(root.getAttribute("data-active")).toBe("true");
     if (variant.style === "css") {
       const tokens = classTokens(root);
-      expect(tokens.some((token) => token.startsWith("h-hella-pagination-link-outline"))).toBe(true);
+      expect(tokens.some((token) => token.startsWith("pagination-link-outline"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("shadow-xs");
     }
@@ -69,7 +69,7 @@ describe("pagination", () => {
     const root = renderVariant(variant, { href: "?page=2", size: "sm", children: ["2"] });
     expect(root.getAttribute("href")).toBe("?page=2");
     if (variant.style === "css") {
-      expect(classTokens(root).some((token) => token.startsWith("h-hella-pagination-link-size-sm"))).toBe(true);
+      expect(classTokens(root).some((token) => token.startsWith("pagination-link-size-sm"))).toBe(true);
     } else {
       expect(classTokens(root)).toContain("h-8");
     }
@@ -89,7 +89,7 @@ describe("pagination", () => {
     const label = root.querySelector("span")!;
     expect(label.textContent).toBe(variant.part === "Previous" ? "Previous" : "Next");
     if (variant.style === "css") {
-      expect(classTokens(label)[0]!.startsWith("h-hella-pagination-hidden-until-sm")).toBe(true);
+      expect(classTokens(label)[0]!.startsWith("pagination-hidden-until-sm")).toBe(true);
     } else {
       expect(classTokens(label)).toContain("hidden");
       expect(classTokens(root)).toContain(variant.part === "Previous" ? "sm:pl-2.5" : "sm:pr-2.5");
@@ -103,7 +103,7 @@ describe("pagination", () => {
     expect(root.querySelectorAll("svg circle")).toHaveLength(3);
     expect(root.querySelector("span")!.textContent).toBe("More pages");
     if (variant.style === "css") {
-      expect(classTokens(root)[0]!.startsWith("h-hella-pagination-ellipsis")).toBe(true);
+      expect(classTokens(root)[0]!.startsWith("pagination-ellipsis")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("size-9");
     }

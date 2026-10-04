@@ -33,4 +33,4 @@ export const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "hella-hover-card-content", layer: "hella" });
+}, { label: "hover-card-content" });

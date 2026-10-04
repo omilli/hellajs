@@ -14,7 +14,7 @@ function cva<V extends CVAVariants, M extends CVAMedia>(config: {
 }): (props?: CVAProps<V, M>) => string;
 ```
 - `config`: Variant configuration
-  - `base`: Style object hashed into the base class (`h-base-{hash}`), or a class string passed through verbatim
+  - `base`: Style object hashed into the base class (`base-{hash}`), or a class string passed through verbatim
   - `media`: Breakpoint map: breakpoint name → media condition, interpolated verbatim (e.g. `{ md: '(min-width: 768px)' }`)
   - `variants`: Variant map: variant key → value name → style object or class string
   - `defaultVariants`: Selections applied when a prop omits the variant (the un-wrapped `initial` slot)
@@ -36,7 +36,7 @@ const button = cva({
 });
 
 <button class={button({ size: 'lg', tone: 'danger' })}>Delete</button>
-// "h-base-… h-size-lg-… h-tone-danger-…"
+// "base-… size-lg-… tone-danger-…"
 ```
 
 Unselected variants contribute nothing; no `sm` class ships while `lg` is selected.
@@ -45,7 +45,7 @@ Unselected variants contribute nothing; no `sm` class ships while `lg` is select
 
 ### Resolution Order
 
-The callable joins fragments with single spaces, in this order: `base` first, then each selected variant in config order, then every matching `compoundVariants` entry in config order. Each variant value, breakpoint selection, and compound owns its own class (`h-{label}-{hash}`, the label derived from the selection: `h-size-lg-…`), so variants compose on the element instead of competing in one rule.
+The callable joins fragments with single spaces, in this order: `base` first, then each selected variant in config order, then every matching `compoundVariants` entry in config order. Each variant value, breakpoint selection, and compound owns its own class (`{label}-{hash}`, the label derived from the selection: `size-lg-…`), so variants compose on the element instead of competing in one rule.
 
 ```jsx
 import { cva } from '@hellajs/css';
@@ -58,7 +58,7 @@ const badge = cva({
 });
 
 badge({ tone: 'success', size: 'sm' });
-// "h-tone-success-… h-size-sm-…"; config order, tone before size
+// "tone-success-… size-sm-…"; config order, tone before size
 ```
 
 ### Compound Variants
@@ -80,7 +80,7 @@ const button = cva({
 });
 
 button({ size: 'lg', tone: 'danger' });
-// "h-size-lg-… h-tone-danger-… h-size-lg-tone-danger-…"
+// "size-lg-… tone-danger-… size-lg-tone-danger-…"
 ```
 
 ### Responsive Variants
@@ -102,7 +102,7 @@ const layout = cva({
 });
 
 layout({ direction: { initial: 'column', md: 'row' } });
-// "h-base-… h-direction-column-… h-direction-row-…"
+// "base-… direction-column-… direction-row-…"
 // The row class is registered under @media (min-width: 768px); the browser
 // picks the winner, no resize listeners
 ```

@@ -5,21 +5,21 @@ import type { StyleObject } from "../types";
 /**
  * @internal
  * Derives the deterministic scoped class name for a style object:
- * `h-{label}-{hash}` with a label, `h-{hash}` without. The hash covers the
+ * `{label}-{hash}` with a label, a bare letter-only `{hash}` without. The hash covers the
  * object only — never the label or the emitted text — so the same object with
  * different labels yields distinct classes sharing identical rule bodies, and
  * the name never depends on the selector it will be embedded in. Labels are
  * sanitized to [a-zA-Z0-9-] (invalid characters become `-`, leading/trailing
  * hyphens trimmed); a label empty after sanitization is treated as absent.
  * @param obj Style object the hash is computed over
- * @param label Optional label embedded between the prefix and the hash
+ * @param label Optional label prefixed to the hash
  * @returns The scoped class name
  */
 export function scopedClassName(obj: StyleObject, label?: string): string {
   const sanitized = label
     ? label.replace(/[^a-zA-Z0-9-]/g, "-").replace(/^-+|-+$/g, "")
     : "";
-  return `h-${sanitized}${sanitized ? "-" : ""}${hash(stringify(obj))}`;
+  return `${sanitized}${sanitized ? "-" : ""}${hash(stringify(obj))}`;
 }
 
 /**
@@ -29,7 +29,7 @@ export function scopedClassName(obj: StyleObject, label?: string): string {
  * participate in derivation — sheet placement happens at registration.
  */
 export interface ScopedRuleOptions {
-  /** Label embedded between the prefix and the hash. */
+  /** Label prefixed to the hash. */
   label?: string;
   /** Media condition interpolated verbatim — wraps the whole rule text as `@media {q}{ … }`. */
   media?: string;

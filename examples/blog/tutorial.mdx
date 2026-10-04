@@ -525,7 +525,7 @@ export const SearchBar = ({ value, onSearch }: SearchBarProps) => {
 - **`value``={value}`**: Two-way binding between the input and the signal. The input value stays in sync with `searchValue`
 - **`on:input={e => value(...)}`**: Delegated input event. Updates the signal on every keystroke
 - **`on:keyup={handleKeyup}`**: Triggers search on Enter or when the input is cleared
-- **Nested selectors**: `"input": { ... }` inside the `searchBar` object generates `.h-search-bar-… input { ... }`: descendants scope under the generated class
+- **Nested selectors**: `"input": { ... }` inside the `searchBar` object generates `.search-bar-… input { ... }`: descendants scope under the generated class
 
 ### PostCard
 
@@ -548,7 +548,7 @@ interface PostCardProps {
 }
 
 // Compose onto the shared card class; the returned class string carries both
-// ("h-card-… h-post-card-…"), each side keeping its own rule.
+// ("card-… post-card-…"), each side keeping its own rule.
 const postCard = style(card, {
   "&:hover": {
     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
@@ -587,11 +587,11 @@ export const PostCard = ({ post, onClick }: PostCardProps) => (
 **Code Explanation**
 
 - **`onClick?: () => void`**: Optional click handler. When provided, the card shows a pointer cursor and is clickable
-- **[`style`](/reference/css/style)`(card, { ... }, { label: "post-card" })`**: Composes onto the shared card class: the returned string carries both (`"h-card-… h-post-card-…"`), each side keeping its own rule
+- **[`style`](/reference/css/style)`(card, { ... }, { label: "post-card" })`**: Composes onto the shared card class: the returned string carries both (`"card-… post-card-…"`), each side keeping its own rule
 - **[`navigate`](/reference/router/navigate)**: String interpolation builds URLs like `` `/users/${id}` `` directly. No param substitution needed
 - **`e.stopPropagation()`**: Prevents the user link click from bubbling up to the card's click handler
 - **`import type { Post }`**: Type-only import keeps the interface out of the runtime bundle
-- **`&:hover`**: The `&` refers to the parent selector. `.h-post-card-…:hover { ... }` adds a subtle shadow on hover
+- **`&:hover`**: The `&` refers to the parent selector. `.post-card-…:hover { ... }` adds a subtle shadow on hover
 
 ### Pagination
 
@@ -873,7 +873,7 @@ export const UserProfile = () => {
 - **`const { firstName, ... } = user || {}`**: Destructures with a fallback. The fields are undefined while loading, and the JSX handles that gracefully
 - **`user?.id`**: Checks if the user data is valid. The DummyJSON API returns `{ message: "..." }` for invalid IDs
 - **Separate reactive blocks for user and posts**: Each `{() => {}}` handles one concern independently. User info re-renders without touching the posts list and vice versa
-- **`"& p": { margin: "0.15rem 0" }`**: The `&` refers to the parent selector, producing `.h-user-meta-… p { ... }`
+- **`"& p": { margin: "0.15rem 0" }`**: The `&` refers to the parent selector, producing `.user-meta-… p { ... }`
 - **`isFetchingPosts()` checked first**: Returns a loading placeholder while fetching. Only shows posts or "not found" when loading is done
 - **`class={card}`**: The profile header reuses the shared card class imported from `theme.ts`; `avatar`, `userInfo`, and `userMeta` are their own hashed classes, so the styles are scoped to the user profile page
 
@@ -1247,7 +1247,7 @@ interface PostCardProps {
 }
 
 // Compose onto the shared card class; the returned class string carries both
-// ("h-card-… h-post-card-…"), each side keeping its own rule.
+// ("card-… post-card-…"), each side keeping its own rule.
 const postCard = style(card, {
   "&:hover": {
     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",

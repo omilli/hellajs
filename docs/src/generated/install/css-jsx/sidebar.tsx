@@ -13,23 +13,7 @@ vars({
   "sidebar-accent-foreground": "oklch(0.205 0 0)",
   "sidebar-border": "oklch(0.922 0 0)",
   "sidebar-ring": "oklch(0.708 0 0)",
-}, { layer: "hella" });
-
-css({
-  "@layer hella": {
-    ".dark": {
-      "--sidebar": "oklch(0.205 0 0)",
-      "--sidebar-foreground": "oklch(0.985 0 0)",
-      "--sidebar-primary": "oklch(0.488 0.243 264.376)",
-      "--sidebar-primary-foreground": "oklch(0.985 0 0)",
-      "--sidebar-accent": "oklch(0.269 0 0)",
-      "--sidebar-accent-foreground": "oklch(0.985 0 0)",
-      "--sidebar-border": "oklch(1 0 0 / 10%)",
-      "--sidebar-ring": "oklch(0.556 0 0)",
-    },
-  },
 });
-
 
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
@@ -43,7 +27,7 @@ const base = style({
   display: "flex",
   minHeight: "100svh",
   width: "100%",
-}, { label: "hella-sidebar-base", layer: "hella" });
+}, { label: "sidebar-base" });
 
 const sidebar = style({
   color: "var(--sidebar-foreground)",
@@ -53,7 +37,7 @@ const sidebar = style({
       display: "block",
     },
   },
-}, { label: "hella-sidebar", layer: "hella" });
+}, { label: "sidebar" });
 
 const none = style({
   background: "var(--sidebar)",
@@ -62,14 +46,14 @@ const none = style({
   flexDirection: "column",
   height: "100%",
   width: "var(--sidebar-width)",
-}, { label: "hella-sidebar-none", layer: "hella" });
+}, { label: "sidebar-none" });
 
 const gap = style({
   background: "transparent",
   position: "relative",
   transition: "width 200ms linear",
   width: "var(--sidebar-width)",
-}, { label: "hella-sidebar-gap", layer: "hella" });
+}, { label: "sidebar-gap" });
 
 const gapPlain = "";
 
@@ -88,15 +72,15 @@ const container = style({
       display: "flex",
     },
   },
-}, { label: "hella-sidebar-container", layer: "hella" });
+}, { label: "sidebar-container" });
 
 const containerSides = {
   left: style({
     left: "0",
-  }, { label: "hella-sidebar-container-left", layer: "hella" }),
+  }, { label: "sidebar-container-left" }),
   right: style({
     right: "0",
-  }, { label: "hella-sidebar-container-right", layer: "hella" }),
+  }, { label: "sidebar-container-right" }),
 };
 
 const containerPlain = "";
@@ -109,7 +93,7 @@ const inner = style({
   flexDirection: "column",
   height: "100%",
   width: "100%",
-}, { label: "hella-sidebar-inner", layer: "hella" });
+}, { label: "sidebar-inner" });
 
 const overlay = style({
   backgroundColor: "rgb(0 0 0 / 0.5)",
@@ -122,7 +106,7 @@ const overlay = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "hella-sidebar-overlay", layer: "hella" });
+}, { label: "sidebar-overlay" });
 
 const mobile = style({
   background: "var(--sidebar)",
@@ -149,7 +133,7 @@ const mobile = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "hella-sidebar-mobile", layer: "hella" });
+}, { label: "sidebar-mobile" });
 
 const mobileSides = {
   left: style({
@@ -170,7 +154,7 @@ const mobileSides = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "hella-sidebar-mobile-left", layer: "hella" }),
+  }, { label: "sidebar-mobile-left" }),
   right: style({
     borderLeft: "1px solid var(--border)",
     bottom: "0",
@@ -189,7 +173,7 @@ const mobileSides = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "hella-sidebar-mobile-right", layer: "hella" }),
+  }, { label: "sidebar-mobile-right" }),
 };
 
 const mobileInner = style({
@@ -197,7 +181,7 @@ const mobileInner = style({
   flexDirection: "column",
   height: "100%",
   width: "100%",
-}, { label: "hella-sidebar-mobile-inner", layer: "hella" });
+}, { label: "sidebar-mobile-inner" });
 
 const trigger = style({
   alignItems: "center",
@@ -248,7 +232,7 @@ const trigger = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "hella-sidebar-trigger", layer: "hella" });
+}, { label: "sidebar-trigger" });
 
 const rail = style({
   display: "none",
@@ -269,7 +253,7 @@ const rail = style({
       display: "flex",
     },
   },
-}, { label: "hella-sidebar-rail", layer: "hella" });
+}, { label: "sidebar-rail" });
 
 const inset = style({
   background: "var(--background)",
@@ -278,7 +262,7 @@ const inset = style({
   flexDirection: "column",
   position: "relative",
   width: "100%",
-}, { label: "hella-sidebar-inset", layer: "hella" });
+}, { label: "sidebar-inset" });
 
 const inputBase = style({
   background: "transparent",
@@ -324,14 +308,14 @@ const inputBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "hella-sidebar-input-base", layer: "hella" });
+}, { label: "sidebar-input-base" });
 
 const inputFocus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-sidebar-input-focus", layer: "hella" });
+}, { label: "sidebar-input-focus" });
 
 const inputInvalid = style({
   "&[aria-invalid='true']": {
@@ -343,28 +327,28 @@ const inputInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-sidebar-input-invalid", layer: "hella" });
+}, { label: "sidebar-input-invalid" });
 
 const input = style({
   background: "var(--background)",
   boxShadow: "none",
   height: "2rem",
   width: "100%",
-}, { label: "hella-sidebar-input", layer: "hella" });
+}, { label: "sidebar-input" });
 
 const header = style({
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   padding: "0.5rem",
-}, { label: "hella-sidebar-header", layer: "hella" });
+}, { label: "sidebar-header" });
 
 const footer = style({
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   padding: "0.5rem",
-}, { label: "hella-sidebar-footer", layer: "hella" });
+}, { label: "sidebar-footer" });
 
 const separatorBase = style({
   backgroundColor: "var(--border)",
@@ -377,13 +361,13 @@ const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "hella-sidebar-separator-base", layer: "hella" });
+}, { label: "sidebar-separator-base" });
 
 const separator = style({
   background: "var(--sidebar-border)",
   marginInline: "0.5rem",
   width: "auto",
-}, { label: "hella-sidebar-separator", layer: "hella" });
+}, { label: "sidebar-separator" });
 
 const content = style({
   display: "flex",
@@ -392,7 +376,7 @@ const content = style({
   gap: "0.5rem",
   minHeight: "0",
   overflow: "auto",
-}, { label: "hella-sidebar-content", layer: "hella" });
+}, { label: "sidebar-content" });
 
 const group = style({
   display: "flex",
@@ -401,7 +385,7 @@ const group = style({
   padding: "0.5rem",
   position: "relative",
   width: "100%",
-}, { label: "hella-sidebar-group", layer: "hella" });
+}, { label: "sidebar-group" });
 
 const groupLabel = style({
   alignItems: "center",
@@ -424,7 +408,7 @@ const groupLabel = style({
   "&:focus-visible": {
     boxShadow: "0 0 0 2px var(--sidebar-ring)",
   },
-}, { label: "hella-sidebar-group-label", layer: "hella" });
+}, { label: "sidebar-group-label" });
 
 const groupAction = style({
   alignItems: "center",
@@ -461,12 +445,12 @@ const groupAction = style({
       content: "none",
     },
   },
-}, { label: "hella-sidebar-group-action", layer: "hella" });
+}, { label: "sidebar-group-action" });
 
 const groupContent = style({
   fontSize: "0.875rem",
   width: "100%",
-}, { label: "hella-sidebar-group-content", layer: "hella" });
+}, { label: "sidebar-group-content" });
 
 const menu = style({
   display: "flex",
@@ -474,11 +458,11 @@ const menu = style({
   gap: "0.25rem",
   minWidth: "0",
   width: "100%",
-}, { label: "hella-sidebar-menu", layer: "hella" });
+}, { label: "sidebar-menu" });
 
 const menuItem = style({
   position: "relative",
-}, { label: "hella-sidebar-menu-item", layer: "hella" });
+}, { label: "sidebar-menu-item" });
 
 const menuButton = style({
   alignItems: "center",
@@ -529,7 +513,7 @@ const menuButton = style({
     backgroundColor: "var(--sidebar-accent)",
     color: "var(--sidebar-accent-foreground)",
   },
-}, { label: "hella-sidebar-menu-button", layer: "hella" });
+}, { label: "sidebar-menu-button" });
 
 const menuButtonVariants = {
   default: "",
@@ -541,22 +525,22 @@ const menuButtonVariants = {
       boxShadow: "0 0 0 1px var(--sidebar-accent)",
       color: "var(--sidebar-accent-foreground)",
     },
-  }, { label: "hella-sidebar-menu-button-outline", layer: "hella" }),
+  }, { label: "sidebar-menu-button-outline" }),
 };
 
 const menuButtonSizes = {
   default: style({
     fontSize: "0.875rem",
     height: "2rem",
-  }, { label: "hella-sidebar-menu-button-default", layer: "hella" }),
+  }, { label: "sidebar-menu-button-default" }),
   sm: style({
     fontSize: "0.75rem",
     height: "1.75rem",
-  }, { label: "hella-sidebar-menu-button-sm", layer: "hella" }),
+  }, { label: "sidebar-menu-button-sm" }),
   lg: style({
     fontSize: "0.875rem",
     height: "3rem",
-  }, { label: "hella-sidebar-menu-button-lg", layer: "hella" }),
+  }, { label: "sidebar-menu-button-lg" }),
 };
 
 const menuAction = style({
@@ -594,7 +578,7 @@ const menuAction = style({
       content: "none",
     },
   },
-}, { label: "hella-sidebar-menu-action", layer: "hella" });
+}, { label: "sidebar-menu-action" });
 
 const menuActionHover = "";
 
@@ -614,7 +598,7 @@ const menuBadge = style({
   position: "absolute",
   right: "0.25rem",
   userSelect: "none",
-}, { label: "hella-sidebar-menu-badge", layer: "hella" });
+}, { label: "sidebar-menu-badge" });
 
 const menuSkeleton = style({
   alignItems: "center",
@@ -623,7 +607,7 @@ const menuSkeleton = style({
   gap: "0.5rem",
   height: "2rem",
   paddingInline: "0.5rem",
-}, { label: "hella-sidebar-menu-skeleton", layer: "hella" });
+}, { label: "sidebar-menu-skeleton" });
 
 const pulse = keyframes({
   "50%": { opacity: "0.5" },
@@ -633,19 +617,19 @@ const skeletonBase = style({
   animation: `${pulse} 2s cubic-bezier(0.4, 0, 0.2, 1) infinite`,
   backgroundColor: "var(--accent)",
   borderRadius: "calc(var(--radius) * 0.8)",
-}, { label: "hella-sidebar-skeleton", layer: "hella" });
+}, { label: "sidebar-skeleton" });
 
 const skeletonIcon = style({
   borderRadius: "calc(var(--radius) * 0.8)",
   height: "1rem",
   width: "1rem",
-}, { label: "hella-sidebar-skeleton-icon", layer: "hella" });
+}, { label: "sidebar-skeleton-icon" });
 
 const skeletonText = style({
   flex: "1",
   height: "1rem",
   maxWidth: "var(--skeleton-width)",
-}, { label: "hella-sidebar-skeleton-text", layer: "hella" });
+}, { label: "sidebar-skeleton-text" });
 
 const menuSub = style({
   borderLeft: "1px solid var(--sidebar-border)",
@@ -657,11 +641,11 @@ const menuSub = style({
   paddingBlock: "0.125rem",
   paddingInline: "0.625rem",
   translate: "1px",
-}, { label: "hella-sidebar-menu-sub", layer: "hella" });
+}, { label: "sidebar-menu-sub" });
 
 const menuSubItem = style({
   position: "relative",
-}, { label: "hella-sidebar-menu-sub-item", layer: "hella" });
+}, { label: "sidebar-menu-sub-item" });
 
 const menuSubButton = style({
   alignItems: "center",
@@ -709,17 +693,17 @@ const menuSubButton = style({
     backgroundColor: "var(--sidebar-accent)",
     color: "var(--sidebar-accent-foreground)",
   },
-}, { label: "hella-sidebar-menu-sub-button", layer: "hella" });
+}, { label: "sidebar-menu-sub-button" });
 
 const menuSubSizes = {
   sm: style({
     fontSize: "0.75rem",
     lineHeight: "1rem",
-  }, { label: "hella-sidebar-menu-sub-sm", layer: "hella" }),
+  }, { label: "sidebar-menu-sub-sm" }),
   md: style({
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
-  }, { label: "hella-sidebar-menu-sub-md", layer: "hella" }),
+  }, { label: "sidebar-menu-sub-md" }),
 };
 
 const tooltipContent = style({
@@ -737,175 +721,186 @@ const tooltipContent = style({
   "&[data-state='open'][data-side='right']": {
     animation: `${tooltipInRight} 150ms ease-out both`,
   },
-}, { label: "hella-sidebar-tooltip-content", layer: "hella" });
+}, { label: "sidebar-tooltip-content" });
 
 css({
-  "@layer hella": {
-    "[data-slot='sidebar-wrapper']:has([data-variant='inset'])": {
-      background: "var(--sidebar)",
-    },
+  "[data-slot='sidebar-wrapper']:has([data-variant='inset'])": {
+    background: "var(--sidebar)",
+  },
 
-    "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-gap']": {
-      width: "var(--sidebar-width-icon)",
-    },
-    "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-gap'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-gap']": {
-      width: "calc(var(--sidebar-width-icon) + 1rem)",
-    },
-    "[data-collapsible='offcanvas'] [data-slot='sidebar-gap']": {
-      width: "0",
-    },
-    "[data-side='right'] [data-slot='sidebar-gap']": {
-      rotate: "180deg",
-    },
+  "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-gap']": {
+    width: "var(--sidebar-width-icon)",
+  },
+  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-gap'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-gap']": {
+    width: "calc(var(--sidebar-width-icon) + 1rem)",
+  },
+  "[data-collapsible='offcanvas'] [data-slot='sidebar-gap']": {
+    width: "0",
+  },
+  "[data-side='right'] [data-slot='sidebar-gap']": {
+    rotate: "180deg",
+  },
 
-    "[data-side='left'][data-collapsible='offcanvas'] [data-slot='sidebar-container']": {
-      left: "calc(var(--sidebar-width) * -1)",
-    },
-    "[data-side='right'][data-collapsible='offcanvas'] [data-slot='sidebar-container']": {
-      right: "calc(var(--sidebar-width) * -1)",
-    },
-    "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-container']": {
-      width: "var(--sidebar-width-icon)",
-    },
-    "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-container'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-container']": {
-      width: "calc(var(--sidebar-width-icon) + 1rem + 2px)",
-    },
-    "[data-side='left'][data-variant='sidebar'] [data-slot='sidebar-container']": {
-      borderRight: "1px solid var(--border)",
-    },
-    "[data-side='right'][data-variant='sidebar'] [data-slot='sidebar-container']": {
-      borderLeft: "1px solid var(--border)",
-    },
-    "[data-variant='floating'] [data-slot='sidebar-container'], [data-variant='inset'] [data-slot='sidebar-container']": {
-      padding: "0.5rem",
-    },
+  "[data-side='left'][data-collapsible='offcanvas'] [data-slot='sidebar-container']": {
+    left: "calc(var(--sidebar-width) * -1)",
+  },
+  "[data-side='right'][data-collapsible='offcanvas'] [data-slot='sidebar-container']": {
+    right: "calc(var(--sidebar-width) * -1)",
+  },
+  "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-container']": {
+    width: "var(--sidebar-width-icon)",
+  },
+  "[data-collapsible='icon'][data-variant='floating'] [data-slot='sidebar-container'], [data-collapsible='icon'][data-variant='inset'] [data-slot='sidebar-container']": {
+    width: "calc(var(--sidebar-width-icon) + 1rem + 2px)",
+  },
+  "[data-side='left'][data-variant='sidebar'] [data-slot='sidebar-container']": {
+    borderRight: "1px solid var(--border)",
+  },
+  "[data-side='right'][data-variant='sidebar'] [data-slot='sidebar-container']": {
+    borderLeft: "1px solid var(--border)",
+  },
+  "[data-variant='floating'] [data-slot='sidebar-container'], [data-variant='inset'] [data-slot='sidebar-container']": {
+    padding: "0.5rem",
+  },
 
-    "[data-variant='floating'] [data-slot='sidebar-inner']": {
-      border: "1px solid var(--sidebar-border)",
-      borderRadius: "0.5rem",
+  "[data-variant='floating'] [data-slot='sidebar-inner']": {
+    border: "1px solid var(--sidebar-border)",
+    borderRadius: "0.5rem",
+    boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+  },
+
+  "@media (min-width: 48rem)": {
+    "[data-slot='sidebar'][data-variant='inset'] ~ [data-slot='sidebar-inset']": {
+      borderRadius: "calc(var(--radius) * 1.4)",
       boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+      margin: "0.5rem",
+      marginLeft: "0",
     },
-
-    "@media (min-width: 48rem)": {
-      "[data-slot='sidebar'][data-variant='inset'] ~ [data-slot='sidebar-inset']": {
-        borderRadius: "calc(var(--radius) * 1.4)",
-        boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-        margin: "0.5rem",
-        marginLeft: "0",
-      },
-      "[data-slot='sidebar'][data-variant='inset'][data-state='collapsed'] ~ [data-slot='sidebar-inset']": {
-        marginLeft: "0.5rem",
-      },
-      "[data-sidebar='menu-action'][data-show-on-hover='true']": {
-        opacity: "0",
-      },
+    "[data-slot='sidebar'][data-variant='inset'][data-state='collapsed'] ~ [data-slot='sidebar-inset']": {
+      marginLeft: "0.5rem",
     },
-
-    "[data-side='left'] [data-slot='sidebar-rail']": {
-      cursor: "w-resize",
-      right: "-1rem",
-    },
-    "[data-side='right'] [data-slot='sidebar-rail']": {
-      cursor: "e-resize",
-      left: "0",
-    },
-    "[data-side='left'][data-state='collapsed'] [data-slot='sidebar-rail']": {
-      cursor: "e-resize",
-    },
-    "[data-side='right'][data-state='collapsed'] [data-slot='sidebar-rail']": {
-      cursor: "w-resize",
-    },
-    "[data-collapsible='offcanvas'] [data-slot='sidebar-rail']": {
-      translate: "0",
-    },
-    "[data-collapsible='offcanvas'] [data-slot='sidebar-rail']::after": {
-      left: "100%",
-    },
-    "[data-collapsible='offcanvas'] [data-slot='sidebar-rail']:hover": {
-      background: "var(--sidebar)",
-    },
-    "[data-side='left'][data-collapsible='offcanvas'] [data-slot='sidebar-rail']": {
-      right: "-0.5rem",
-    },
-    "[data-side='right'][data-collapsible='offcanvas'] [data-slot='sidebar-rail']": {
-      left: "-0.5rem",
-    },
-
-    "[data-collapsible='icon'] [data-slot='sidebar-content']": {
-      overflow: "hidden",
-    },
-
-    "[data-collapsible='icon'] [data-slot='sidebar-group-label']": {
-      marginTop: "-2rem",
+    "[data-sidebar='menu-action'][data-show-on-hover='true']": {
       opacity: "0",
     },
-    "[data-collapsible='icon'] [data-slot='sidebar-group-action']": {
-      display: "none",
-    },
+  },
 
-    "[data-collapsible='icon'] [data-sidebar='menu-button']": {
-      height: "2rem",
-      padding: "0.5rem",
-      width: "2rem",
-    },
-    "[data-collapsible='icon'] [data-sidebar='menu-button'][data-size='lg']": {
-      padding: "0",
-    },
-    "[data-slot='sidebar-menu-item']:has([data-sidebar='menu-action']) [data-sidebar='menu-button']": {
-      paddingRight: "2rem",
-    },
+  "[data-side='left'] [data-slot='sidebar-rail']": {
+    cursor: "w-resize",
+    right: "-1rem",
+  },
+  "[data-side='right'] [data-slot='sidebar-rail']": {
+    cursor: "e-resize",
+    left: "0",
+  },
+  "[data-side='left'][data-state='collapsed'] [data-slot='sidebar-rail']": {
+    cursor: "e-resize",
+  },
+  "[data-side='right'][data-state='collapsed'] [data-slot='sidebar-rail']": {
+    cursor: "w-resize",
+  },
+  "[data-collapsible='offcanvas'] [data-slot='sidebar-rail']": {
+    translate: "0",
+  },
+  "[data-collapsible='offcanvas'] [data-slot='sidebar-rail']::after": {
+    left: "100%",
+  },
+  "[data-collapsible='offcanvas'] [data-slot='sidebar-rail']:hover": {
+    background: "var(--sidebar)",
+  },
+  "[data-side='left'][data-collapsible='offcanvas'] [data-slot='sidebar-rail']": {
+    right: "-0.5rem",
+  },
+  "[data-side='right'][data-collapsible='offcanvas'] [data-slot='sidebar-rail']": {
+    left: "-0.5rem",
+  },
 
-    "[data-sidebar='menu-button']:hover ~ [data-sidebar='menu-action']": {
-      color: "var(--sidebar-accent-foreground)",
-    },
-    "[data-sidebar='menu-button'][data-size='sm'] ~ [data-sidebar='menu-action']": {
-      top: "0.25rem",
-    },
-    "[data-sidebar='menu-button'][data-size='default'] ~ [data-sidebar='menu-action']": {
-      top: "0.375rem",
-    },
-    "[data-sidebar='menu-button'][data-size='lg'] ~ [data-sidebar='menu-action']": {
-      top: "0.625rem",
-    },
-    "[data-collapsible='icon'] [data-sidebar='menu-action']": {
-      display: "none",
-    },
+  "[data-collapsible='icon'] [data-slot='sidebar-content']": {
+    overflow: "hidden",
+  },
 
-    "[data-slot='sidebar-menu-item']:focus-within [data-sidebar='menu-action'][data-show-on-hover='true'], [data-slot='sidebar-menu-item']:hover [data-sidebar='menu-action'][data-show-on-hover='true']": {
-      opacity: "1",
-    },
-    "[data-sidebar='menu-button'][data-active='true'] ~ [data-sidebar='menu-action'][data-show-on-hover='true']": {
-      color: "var(--sidebar-accent-foreground)",
-    },
-    "[data-sidebar='menu-action'][data-show-on-hover='true'][data-state='open']": {
-      opacity: "1",
-    },
+  "[data-collapsible='icon'] [data-slot='sidebar-group-label']": {
+    marginTop: "-2rem",
+    opacity: "0",
+  },
+  "[data-collapsible='icon'] [data-slot='sidebar-group-action']": {
+    display: "none",
+  },
 
-    "[data-sidebar='menu-button']:hover ~ [data-slot='sidebar-menu-badge']": {
-      color: "var(--sidebar-accent-foreground)",
-    },
-    "[data-sidebar='menu-button'][data-active='true'] ~ [data-slot='sidebar-menu-badge']": {
-      color: "var(--sidebar-accent-foreground)",
-    },
-    "[data-sidebar='menu-button'][data-size='sm'] ~ [data-slot='sidebar-menu-badge']": {
-      top: "0.25rem",
-    },
-    "[data-sidebar='menu-button'][data-size='default'] ~ [data-slot='sidebar-menu-badge']": {
-      top: "0.375rem",
-    },
-    "[data-sidebar='menu-button'][data-size='lg'] ~ [data-slot='sidebar-menu-badge']": {
-      top: "0.625rem",
-    },
-    "[data-collapsible='icon'] [data-slot='sidebar-menu-badge']": {
-      display: "none",
-    },
+  "[data-collapsible='icon'] [data-sidebar='menu-button']": {
+    height: "2rem",
+    padding: "0.5rem",
+    width: "2rem",
+  },
+  "[data-collapsible='icon'] [data-sidebar='menu-button'][data-size='lg']": {
+    padding: "0",
+  },
+  "[data-slot='sidebar-menu-item']:has([data-sidebar='menu-action']) [data-sidebar='menu-button']": {
+    paddingRight: "2rem",
+  },
 
-    "[data-collapsible='icon'] [data-slot='sidebar-menu-sub']": {
-      display: "none",
-    },
-    "[data-collapsible='icon'] [data-sidebar='menu-sub-button']": {
-      display: "none",
-    },
+  "[data-sidebar='menu-button']:hover ~ [data-sidebar='menu-action']": {
+    color: "var(--sidebar-accent-foreground)",
+  },
+  "[data-sidebar='menu-button'][data-size='sm'] ~ [data-sidebar='menu-action']": {
+    top: "0.25rem",
+  },
+  "[data-sidebar='menu-button'][data-size='default'] ~ [data-sidebar='menu-action']": {
+    top: "0.375rem",
+  },
+  "[data-sidebar='menu-button'][data-size='lg'] ~ [data-sidebar='menu-action']": {
+    top: "0.625rem",
+  },
+  "[data-collapsible='icon'] [data-sidebar='menu-action']": {
+    display: "none",
+  },
+
+  "[data-slot='sidebar-menu-item']:focus-within [data-sidebar='menu-action'][data-show-on-hover='true'], [data-slot='sidebar-menu-item']:hover [data-sidebar='menu-action'][data-show-on-hover='true']": {
+    opacity: "1",
+  },
+  "[data-sidebar='menu-button'][data-active='true'] ~ [data-sidebar='menu-action'][data-show-on-hover='true']": {
+    color: "var(--sidebar-accent-foreground)",
+  },
+  "[data-sidebar='menu-action'][data-show-on-hover='true'][data-state='open']": {
+    opacity: "1",
+  },
+
+  "[data-sidebar='menu-button']:hover ~ [data-slot='sidebar-menu-badge']": {
+    color: "var(--sidebar-accent-foreground)",
+  },
+  "[data-sidebar='menu-button'][data-active='true'] ~ [data-slot='sidebar-menu-badge']": {
+    color: "var(--sidebar-accent-foreground)",
+  },
+  "[data-sidebar='menu-button'][data-size='sm'] ~ [data-slot='sidebar-menu-badge']": {
+    top: "0.25rem",
+  },
+  "[data-sidebar='menu-button'][data-size='default'] ~ [data-slot='sidebar-menu-badge']": {
+    top: "0.375rem",
+  },
+  "[data-sidebar='menu-button'][data-size='lg'] ~ [data-slot='sidebar-menu-badge']": {
+    top: "0.625rem",
+  },
+  "[data-collapsible='icon'] [data-slot='sidebar-menu-badge']": {
+    display: "none",
+  },
+
+  "[data-collapsible='icon'] [data-slot='sidebar-menu-sub']": {
+    display: "none",
+  },
+  "[data-collapsible='icon'] [data-sidebar='menu-sub-button']": {
+    display: "none",
+  },
+});
+
+css({
+  ".dark": {
+    "--sidebar": "oklch(0.205 0 0)",
+    "--sidebar-foreground": "oklch(0.985 0 0)",
+    "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+    "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+    "--sidebar-accent": "oklch(0.269 0 0)",
+    "--sidebar-accent-foreground": "oklch(0.985 0 0)",
+    "--sidebar-border": "oklch(1 0 0 / 10%)",
+    "--sidebar-ring": "oklch(0.556 0 0)",
   },
 });
 

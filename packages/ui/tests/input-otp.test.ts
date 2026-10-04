@@ -284,8 +284,8 @@ describe("input-otp", () => {
       expect(classTokens(slotEl)).toContain("data-[active=true]:ring-[3px]");
       expect(classTokens(control(root))).toContain("disabled:cursor-not-allowed");
     } else {
-      expect(classTokens(root).some((token) => token.startsWith("h-hella-input-otp"))).toBe(true);
-      expect(classTokens(slotEl).some((token) => token.startsWith("h-hella-input-otp-slot"))).toBe(true);
+      expect(classTokens(root).some((token) => token.startsWith("input-otp"))).toBe(true);
+      expect(classTokens(slotEl).some((token) => token.startsWith("input-otp-slot"))).toBe(true);
     }
   });
 

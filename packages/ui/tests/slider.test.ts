@@ -204,8 +204,8 @@ describe("slider", () => {
       expect(classTokens(thumb)).toContain("focus-visible:ring-4");
       expect(classTokens(root)).toContain("touch-none");
     } else {
-      expect(classTokens(root).some((token) => token.startsWith("h-hella-slider"))).toBe(true);
-      expect(classTokens(thumb).some((token) => token.startsWith("h-hella-slider-thumb"))).toBe(true);
+      expect(classTokens(root).some((token) => token.startsWith("slider"))).toBe(true);
+      expect(classTokens(thumb).some((token) => token.startsWith("slider-thumb"))).toBe(true);
     }
   });
 

@@ -33,7 +33,7 @@ describe("card", () => {
     expect(tokens.at(-1)).toBe("my-card");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("h-hella-card-")).toBe(true);
+      expect(tokens[0]!.startsWith("card-")).toBe(true);
     } else {
       for (const token of PART_TOKENS[""]!) expect(tokens).toContain(token);
     }
@@ -51,7 +51,7 @@ describe("card", () => {
     const tokens = classTokens(el);
     expect(tokens.at(-1)).toBe("my-part");
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith(`h-hella-card-${variant.part.toLowerCase()}-`)).toBe(true);
+      expect(tokens[0]!.startsWith(`card-${variant.part.toLowerCase()}-`)).toBe(true);
     } else {
       for (const token of PART_TOKENS[variant.part]!) expect(tokens).toContain(token);
     }

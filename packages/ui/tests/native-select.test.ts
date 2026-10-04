@@ -89,16 +89,16 @@ describe("native-select", () => {
     const wrapperTokens = classTokens(wrapper);
     if (variant.style === "css") {
       expect(wrapperTokens).toHaveLength(1);
-      expect(wrapperTokens[0]!.startsWith("h-hella-native-select-wrapper-")).toBe(true);
+      expect(wrapperTokens[0]!.startsWith("native-select-wrapper-")).toBe(true);
     } else {
       for (const token of TOKENS.wrapper) expect(wrapperTokens).toContain(token);
     }
     const selectTokens = classTokens(wrapper.querySelector("select")!);
     if (variant.style === "css") {
       expect(selectTokens).toHaveLength(4);
-      expect(selectTokens[0]!.startsWith("h-hella-native-select-")).toBe(true);
-      expect(selectTokens[1]!.startsWith("h-hella-native-select-focus-")).toBe(true);
-      expect(selectTokens[2]!.startsWith("h-hella-native-select-invalid-")).toBe(true);
+      expect(selectTokens[0]!.startsWith("native-select-")).toBe(true);
+      expect(selectTokens[1]!.startsWith("native-select-focus-")).toBe(true);
+      expect(selectTokens[2]!.startsWith("native-select-invalid-")).toBe(true);
       expect(selectTokens.at(-1)).toBe("my-select");
     } else {
       for (const token of TOKENS.base) expect(selectTokens).toContain(token);
@@ -107,7 +107,7 @@ describe("native-select", () => {
     const iconTokens = classTokens(wrapper.querySelector("svg")!);
     if (variant.style === "css") {
       expect(iconTokens).toHaveLength(1);
-      expect(iconTokens[0]!.startsWith("h-hella-native-select-icon-")).toBe(true);
+      expect(iconTokens[0]!.startsWith("native-select-icon-")).toBe(true);
     } else {
       for (const token of TOKENS.icon) expect(iconTokens).toContain(token);
     }
@@ -126,7 +126,7 @@ describe("native-select", () => {
     const tokens = classTokens(el);
     expect(tokens.at(-1)).toBe("my-part");
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith(`h-hella-native-select-${variant.part.toLowerCase()}-`)).toBe(true);
+      expect(tokens[0]!.startsWith(`native-select-${variant.part.toLowerCase()}-`)).toBe(true);
     } else {
       for (const token of TOKENS.option) expect(tokens).toContain(token);
     }

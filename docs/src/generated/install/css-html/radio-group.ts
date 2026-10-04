@@ -7,7 +7,7 @@ import { style } from "@hellajs/css";
 const base = style({
   display: "grid",
   gap: "0.75rem",
-}, { label: "hella-radio-group", layer: "hella" });
+}, { label: "radio-group" });
 
 const item = style({
   aspectRatio: "1 / 1",
@@ -41,14 +41,14 @@ const item = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-radio-group-item", layer: "hella" });
+}, { label: "radio-group-item" });
 
 const indicator = style({
   alignItems: "center",
   display: "flex",
   justifyContent: "center",
   position: "relative",
-}, { label: "hella-radio-group-indicator", layer: "hella" });
+}, { label: "radio-group-indicator" });
 
 const icon = style({
   fill: "var(--primary)",
@@ -58,13 +58,13 @@ const icon = style({
   top: "50%",
   translate: "-50% -50%",
   width: "0.5rem",
-}, { label: "hella-radio-group-icon", layer: "hella" });
+}, { label: "radio-group-icon" });
 
 const row = style({
   alignItems: "center",
   display: "flex",
   gap: "0.5rem",
-}, { label: "hella-radio-group-row", layer: "hella" });
+}, { label: "radio-group-row" });
 
 interface RadioGroupItem {
   value: string;

@@ -11,7 +11,7 @@ const base = style({
   minHeight: "0",
   flexDirection: "column",
   overflow: "hidden",
-}, { label: "hella-message-scroller", layer: "hella" });
+}, { label: "message-scroller" });
 
 const viewport = style({
   height: "100%",
@@ -21,7 +21,7 @@ const viewport = style({
   overflowY: "auto",
   overscrollBehavior: "contain",
   contain: "content",
-}, { label: "hella-message-scroller-viewport", layer: "hella" });
+}, { label: "message-scroller-viewport" });
 
 const content = style({
   display: "flex",
@@ -29,14 +29,14 @@ const content = style({
   minHeight: "100%",
   flexDirection: "column",
   gap: "2rem",
-}, { label: "hella-message-scroller-content", layer: "hella" });
+}, { label: "message-scroller-content" });
 
 const item = style({
   minWidth: "0",
   flexShrink: "0",
   containIntrinsicSize: "auto 10rem",
   contentVisibility: "auto",
-}, { label: "hella-message-scroller-item", layer: "hella" });
+}, { label: "message-scroller-item" });
 
 const buttonBase = style({
   alignItems: "center",
@@ -77,7 +77,7 @@ const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-message-scroller-button", layer: "hella" });
+}, { label: "message-scroller-button" });
 
 const buttonVariants = {
   default: style({
@@ -86,7 +86,7 @@ const buttonVariants = {
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "hella-message-scroller-button-default", layer: "hella" }),
+  }, { label: "message-scroller-button-default" }),
   destructive: style({
     backgroundColor: "var(--destructive)",
     color: "#fff",
@@ -102,7 +102,7 @@ const buttonVariants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "hella-message-scroller-button-destructive", layer: "hella" }),
+  }, { label: "message-scroller-button-destructive" }),
   outline: style({
     background: "var(--background)",
     border: "1px solid var(--border)",
@@ -118,14 +118,14 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "hella-message-scroller-button-outline", layer: "hella" }),
+  }, { label: "message-scroller-button-outline" }),
   secondary: style({
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "hella-message-scroller-button-secondary", layer: "hella" }),
+  }, { label: "message-scroller-button-secondary" }),
   ghost: style({
     "&:hover": {
       backgroundColor: "var(--accent)",
@@ -134,14 +134,14 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "hella-message-scroller-button-ghost", layer: "hella" }),
+  }, { label: "message-scroller-button-ghost" }),
   link: style({
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "hella-message-scroller-button-link", layer: "hella" }),
+  }, { label: "message-scroller-button-link" }),
 };
 
 const buttonSizes = {
@@ -152,7 +152,7 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.75rem",
     },
-  }, { label: "hella-message-scroller-button-size-default", layer: "hella" }),
+  }, { label: "message-scroller-button-size-default" }),
   xs: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
@@ -167,7 +167,7 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-message-scroller-button-size-xs", layer: "hella" }),
+  }, { label: "message-scroller-button-size-xs" }),
   sm: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
@@ -176,7 +176,7 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "hella-message-scroller-button-size-sm", layer: "hella" }),
+  }, { label: "message-scroller-button-size-sm" }),
   lg: style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "2.5rem",
@@ -184,11 +184,11 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "1rem",
     },
-  }, { label: "hella-message-scroller-button-size-lg", layer: "hella" }),
+  }, { label: "message-scroller-button-size-lg" }),
   icon: style({
     height: "2.25rem",
     width: "2.25rem",
-  }, { label: "hella-message-scroller-button-size-icon", layer: "hella" }),
+  }, { label: "message-scroller-button-size-icon" }),
   "icon-xs": style({
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
@@ -197,15 +197,15 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "hella-message-scroller-button-size-icon-xs", layer: "hella" }),
+  }, { label: "message-scroller-button-size-icon-xs" }),
   "icon-sm": style({
     height: "2rem",
     width: "2rem",
-  }, { label: "hella-message-scroller-button-size-icon-sm", layer: "hella" }),
+  }, { label: "message-scroller-button-size-icon-sm" }),
   "icon-lg": style({
     height: "2.5rem",
     width: "2.5rem",
-  }, { label: "hella-message-scroller-button-size-icon-lg", layer: "hella" }),
+  }, { label: "message-scroller-button-size-icon-lg" }),
 };
 
 const overlay = style({
@@ -246,7 +246,7 @@ const overlay = style({
   "&[data-direction='start'][data-active='false']": {
     translate: "-50% -100%",
   },
-}, { label: "hella-message-scroller-overlay", layer: "hella" });
+}, { label: "message-scroller-overlay" });
 
 const srOnly = style({
   border: "0",
@@ -258,22 +258,20 @@ const srOnly = style({
   position: "absolute",
   whiteSpace: "nowrap",
   width: "1px",
-}, { label: "hella-message-scroller-sr-only", layer: "hella" });
+}, { label: "message-scroller-sr-only" });
 
 css({
-  "@layer hella": {
-    "[data-slot='message-scroller-button'][data-direction='start'] svg": {
-      transform: "rotate(180deg)",
-    },
-    "[dir='rtl'] [data-slot='message-scroller-button']": {
-      translate: "50% 0",
-    },
-    "[dir='rtl'] [data-slot='message-scroller-button'][data-direction='end'][data-active='false']": {
-      translate: "50% 100%",
-    },
-    "[dir='rtl'] [data-slot='message-scroller-button'][data-direction='start'][data-active='false']": {
-      translate: "50% -100%",
-    },
+  "[data-slot='message-scroller-button'][data-direction='start'] svg": {
+    transform: "rotate(180deg)",
+  },
+  "[dir='rtl'] [data-slot='message-scroller-button']": {
+    translate: "50% 0",
+  },
+  "[dir='rtl'] [data-slot='message-scroller-button'][data-direction='end'][data-active='false']": {
+    translate: "50% 100%",
+  },
+  "[dir='rtl'] [data-slot='message-scroller-button'][data-direction='start'][data-active='false']": {
+    translate: "50% -100%",
   },
 });
 

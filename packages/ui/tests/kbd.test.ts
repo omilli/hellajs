@@ -27,7 +27,7 @@ describe("kbd", () => {
     expect(tokens.at(-1)).toBe("my-kbd");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("h-hella-kbd-")).toBe(true);
+      expect(tokens[0]!.startsWith("kbd-")).toBe(true);
     } else {
       for (const token of TOKENS.base) expect(tokens).toContain(token);
     }
@@ -45,7 +45,7 @@ describe("kbd", () => {
     const tokens = classTokens(group);
     expect(tokens.at(-1)).toBe("my-group");
     if (variant.style === "css") {
-      expect(tokens[0]!.startsWith("h-hella-kbd-group-")).toBe(true);
+      expect(tokens[0]!.startsWith("kbd-group-")).toBe(true);
     } else {
       for (const token of TOKENS.group) expect(tokens).toContain(token);
     }

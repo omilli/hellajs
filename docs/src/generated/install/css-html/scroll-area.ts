@@ -6,7 +6,7 @@ import { style } from "@hellajs/css";
 
 const base = style({
   position: "relative",
-}, { label: "hella-scroll-area", layer: "hella" });
+}, { label: "scroll-area" });
 
 const viewport = style({
   height: "100%",
@@ -25,7 +25,7 @@ const viewport = style({
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
     outline: "1px solid",
   },
-}, { label: "hella-scroll-area-viewport", layer: "hella" });
+}, { label: "scroll-area-viewport" });
 
 const scrollbar = style({
   display: "flex",
@@ -52,14 +52,14 @@ const scrollbar = style({
     flexDirection: "column",
     borderTop: "1px solid transparent",
   },
-}, { label: "hella-scroll-area-scrollbar", layer: "hella" });
+}, { label: "scroll-area-scrollbar" });
 
 const thumb = style({
   position: "relative",
   flex: "1 1 0%",
   borderRadius: "9999px",
   backgroundColor: "var(--border)",
-}, { label: "hella-scroll-area-thumb", layer: "hella" });
+}, { label: "scroll-area-thumb" });
 
 interface ScrollBarProps {
   /** Axis the bar tracks and drags. Both orientations may be composed into one root. */

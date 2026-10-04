@@ -24,13 +24,13 @@ export const base = style({
     translate: "0 0.125rem",
     width: "1rem",
   },
-}, { label: "hella-alert", layer: "hella" });
+}, { label: "alert" });
 
 export const variants = {
   default: style({
     backgroundColor: "var(--card)",
     color: "var(--card-foreground)",
-  }, { label: "hella-alert-default", layer: "hella" }),
+  }, { label: "alert-default" }),
   destructive: style({
     backgroundColor: "var(--card)",
     color: "var(--destructive)",
@@ -40,7 +40,7 @@ export const variants = {
     "& > svg": {
       color: "currentColor",
     },
-  }, { label: "hella-alert-destructive", layer: "hella" }),
+  }, { label: "alert-destructive" }),
 };
 
 export const title = style({
@@ -53,7 +53,7 @@ export const title = style({
   overflow: "clip",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: "1",
-}, { label: "hella-alert-title", layer: "hella" });
+}, { label: "alert-title" });
 
 export const description = style({
   color: "var(--muted-foreground)",
@@ -66,4 +66,4 @@ export const description = style({
   "& p": {
     lineHeight: "1.625rem",
   },
-}, { label: "hella-alert-description", layer: "hella" });
+}, { label: "alert-description" });

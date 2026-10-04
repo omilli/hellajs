@@ -23,7 +23,7 @@ const base = style({
   "& a:hover": {
     color: "var(--foreground)",
   },
-}, { label: "hella-marker", layer: "hella" });
+}, { label: "marker" });
 
 const variants: Record<string, string> = {
   separator: style({
@@ -41,11 +41,11 @@ const variants: Record<string, string> = {
       marginLeft: "0.25rem",
       minWidth: "0",
     },
-  }, { label: "hella-marker-separator", layer: "hella" }),
+  }, { label: "marker-separator" }),
   border: style({
     borderBottom: "1px solid var(--border)",
     paddingBottom: "0.5rem",
-  }, { label: "hella-marker-border", layer: "hella" }),
+  }, { label: "marker-border" }),
 };
 
 const icon = style({
@@ -56,7 +56,7 @@ const icon = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-marker-icon", layer: "hella" });
+}, { label: "marker-icon" });
 
 const content = style({
   minWidth: "0",
@@ -68,14 +68,12 @@ const content = style({
   "& a:hover": {
     color: "var(--foreground)",
   },
-}, { label: "hella-marker-content", layer: "hella" });
+}, { label: "marker-content" });
 
 css({
-  "@layer hella": {
-    "[data-slot='marker'][data-variant='separator'] [data-slot='marker-content']": {
-      flex: "none",
-      textAlign: "center",
-    },
+  "[data-slot='marker'][data-variant='separator'] [data-slot='marker-content']": {
+    flex: "none",
+    textAlign: "center",
   },
 });
 

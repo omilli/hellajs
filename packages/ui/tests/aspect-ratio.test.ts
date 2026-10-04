@@ -37,7 +37,7 @@ describe("aspect-ratio", () => {
     expect(tokens.at(-1)).toBe("my-ratio");
     if (variant.style === "css") {
       expect(tokens).toHaveLength(2);
-      expect(tokens[0]!.startsWith("h-hella-aspect-ratio-")).toBe(true);
+      expect(tokens[0]!.startsWith("aspect-ratio-")).toBe(true);
     } else {
       expect(tokens).toContain("relative");
     }

@@ -24,7 +24,7 @@ const canonical = [
 const cssModule = [
   "import { style } from \"@hellajs/css\";",
   "",
-  "export const base = style({}, { label: \"hella-x\", layer: \"hella\" });",
+  "export const base = style({}, { label: \"x\" });",
   "",
 ].join("\n");
 
@@ -40,7 +40,7 @@ describe("applyStyleVariant", () => {
       "",
       "import { style } from \"@hellajs/css\";",
       "",
-      "const base = style({}, { label: \"hella-x\", layer: \"hella\" });",
+      "const base = style({}, { label: \"x\" });",
       "",
       "interface P { class?: string }",
       "",

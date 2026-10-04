@@ -19,7 +19,7 @@ const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "hella-drawer-base", layer: "hella" });
+}, { label: "drawer-base" });
 
 const content = style({
   background: "var(--background)",
@@ -32,7 +32,7 @@ const content = style({
   "&[data-dragging='true']": {
     transitionProperty: "none",
   },
-}, { label: "hella-drawer-content", layer: "hella" });
+}, { label: "drawer-content" });
 
 const contentDirections = {
   top: style({
@@ -43,7 +43,7 @@ const contentDirections = {
     maxHeight: "80vh",
     right: "0",
     top: "0",
-  }, { label: "hella-drawer-content-top", layer: "hella" }),
+  }, { label: "drawer-content-top" }),
   bottom: style({
     borderTop: "1px solid var(--border)",
     borderRadius: "var(--radius) var(--radius) 0 0",
@@ -52,7 +52,7 @@ const contentDirections = {
     marginTop: "6rem",
     maxHeight: "80vh",
     right: "0",
-  }, { label: "hella-drawer-content-bottom", layer: "hella" }),
+  }, { label: "drawer-content-bottom" }),
   right: style({
     borderLeft: "1px solid var(--border)",
     bottom: "0",
@@ -64,7 +64,7 @@ const contentDirections = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "hella-drawer-content-right", layer: "hella" }),
+  }, { label: "drawer-content-right" }),
   left: style({
     borderRight: "1px solid var(--border)",
     bottom: "0",
@@ -76,7 +76,7 @@ const contentDirections = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "hella-drawer-content-left", layer: "hella" }),
+  }, { label: "drawer-content-left" }),
 };
 
 const close = style({
@@ -118,24 +118,22 @@ const close = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "hella-drawer-close", layer: "hella" });
+}, { label: "drawer-close" });
 
 css({
-  "@layer hella": {
-    "[data-slot='drawer-content'] [data-slot='drawer-handle']": {
-      display: "none",
-    },
-    "[data-slot='drawer-content'][data-vaul-drawer-direction='bottom'] [data-slot='drawer-handle']": {
-      backgroundColor: "var(--muted)",
-      borderRadius: "calc(infinity * 1px)",
-      display: "block",
-      flexShrink: "0",
-      height: "0.5rem",
-      marginLeft: "auto",
-      marginRight: "auto",
-      marginTop: "1rem",
-      width: "100px",
-    },
+  "[data-slot='drawer-content'] [data-slot='drawer-handle']": {
+    display: "none",
+  },
+  "[data-slot='drawer-content'][data-vaul-drawer-direction='bottom'] [data-slot='drawer-handle']": {
+    backgroundColor: "var(--muted)",
+    borderRadius: "calc(infinity * 1px)",
+    display: "block",
+    flexShrink: "0",
+    height: "0.5rem",
+    marginLeft: "auto",
+    marginRight: "auto",
+    marginTop: "1rem",
+    width: "100px",
   },
 });
 
@@ -156,7 +154,7 @@ const header = style({
       textAlign: "left",
     },
   },
-}, { label: "hella-drawer-header", layer: "hella" });
+}, { label: "drawer-header" });
 
 const footer = style({
   display: "flex",
@@ -164,18 +162,18 @@ const footer = style({
   gap: "0.5rem",
   marginTop: "auto",
   padding: "1rem",
-}, { label: "hella-drawer-footer", layer: "hella" });
+}, { label: "drawer-footer" });
 
 const title = style({
   color: "var(--foreground)",
   fontWeight: "600",
-}, { label: "hella-drawer-title", layer: "hella" });
+}, { label: "drawer-title" });
 
 const description = style({
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "hella-drawer-description", layer: "hella" });
+}, { label: "drawer-description" });
 
 /** Accessibility state shared by the animated drawer parts. */
 type DrawerState = () => "open" | "closed";

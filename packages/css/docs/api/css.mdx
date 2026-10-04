@@ -45,7 +45,7 @@ const buttonStyle = style({
   borderRadius: '0.5rem',
   cursor: 'pointer'
 }, { label: 'btn' });
-// "h-btn-1xk2vi3"; the same class on client and server
+// "btn-lpqipao"; the same class on client and server
 
 <button class={buttonStyle}>Click me</button>
 ```
@@ -135,7 +135,7 @@ Under the unified registration, CSS is defined in shared modules or at the entry
 // styles.ts; shared module, works on both platforms
 import { style } from '@hellajs/css';
 
-// Client AND server: returns "h-btn-1ql06pj"
+// Client AND server: returns "btn-mgmyaqx"
 export const btnClass = style({ color: 'red' }, { label: 'btn' });
 ```
 

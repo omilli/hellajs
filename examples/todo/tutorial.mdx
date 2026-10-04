@@ -159,7 +159,7 @@ interface Todo {
 
 **Code Explanation**
 - **`css({ body: { ... } })`**:  Registers global element selectors
-- **`style({ ... }, { label: 'app' })`**:  Scopes the styles under a generated class (`h-app-…`) and returns it for `class={app}`: `label` embeds a readable segment in the hashed name
+- **`style({ ... }, { label: 'app' })`**:  Scopes the styles under a generated class (`app-…`) and returns it for `class={app}`: `label` embeds a readable segment in the hashed name
 - **`'h1'` / `'li'`**:  Nested selectors scope descendants under the generated class
 - **`class={[flex, todo.completed && done]}`**:  Combines class names in an array: `done` applies only when the todo is completed
 

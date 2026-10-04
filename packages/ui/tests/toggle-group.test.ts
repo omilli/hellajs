@@ -211,7 +211,7 @@ describe("toggle-group", () => {
         expect(tokens).toContain("data-[spacing=0]:rounded-none");
         expect(tokens).toContain("data-[spacing=0]:data-[variant=outline]:border-l-0");
       } else {
-        expect(tokens.some((token) => token.startsWith("h-hella-toggle-group-item"))).toBe(true);
+        expect(tokens.some((token) => token.startsWith("toggle-group-item"))).toBe(true);
       }
     }
   });

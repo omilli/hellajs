@@ -45,14 +45,14 @@ const base = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "hella-input", layer: "hella" });
+}, { label: "input" });
 
 const focus = style({
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "hella-input-focus", layer: "hella" });
+}, { label: "input-focus" });
 
 const invalid = style({
   "&[aria-invalid='true']": {
@@ -64,7 +64,7 @@ const invalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "hella-input-invalid", layer: "hella" });
+}, { label: "input-invalid" });
 
 interface InputProps {
   value?: string | (() => string);

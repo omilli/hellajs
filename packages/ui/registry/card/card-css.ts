@@ -10,7 +10,7 @@ export const base = style({
   gap: "1.5rem",
   paddingBlock: "1.5rem",
   boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-}, { label: "hella-card", layer: "hella" });
+}, { label: "card" });
 
 export const header = style({
   alignItems: "start",
@@ -23,18 +23,18 @@ export const header = style({
   "&:has([data-slot='card-action'])": {
     gridTemplateColumns: "1fr auto",
   },
-}, { label: "hella-card-header", layer: "hella" });
+}, { label: "card-header" });
 
 export const title = style({
   fontWeight: "600",
   lineHeight: "1",
-}, { label: "hella-card-title", layer: "hella" });
+}, { label: "card-title" });
 
 export const description = style({
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "hella-card-description", layer: "hella" });
+}, { label: "card-description" });
 
 export const action = style({
   gridColumnStart: "2",
@@ -42,25 +42,23 @@ export const action = style({
   gridRowStart: "1",
   justifySelf: "end",
   alignSelf: "start",
-}, { label: "hella-card-action", layer: "hella" });
+}, { label: "card-action" });
 
 export const content = style({
   paddingInline: "1.5rem",
-}, { label: "hella-card-content", layer: "hella" });
+}, { label: "card-content" });
 
 export const footer = style({
   alignItems: "center",
   display: "flex",
   paddingInline: "1.5rem",
-}, { label: "hella-card-footer", layer: "hella" });
+}, { label: "card-footer" });
 
 css({
-  "@layer hella": {
-    ".border-b [data-slot='card-header'], .border-b ~ [data-slot='card-header']": {
-      paddingBottom: "1.5rem",
-    },
-    ".border-t [data-slot='card-footer'], .border-t ~ [data-slot='card-footer']": {
-      paddingTop: "1.5rem",
-    },
+  ".border-b [data-slot='card-header'], .border-b ~ [data-slot='card-header']": {
+    paddingBottom: "1.5rem",
+  },
+  ".border-t [data-slot='card-footer'], .border-t ~ [data-slot='card-footer']": {
+    paddingTop: "1.5rem",
   },
 });

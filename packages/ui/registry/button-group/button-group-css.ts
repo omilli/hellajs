@@ -21,7 +21,7 @@ export const base = style({
   "& > input": {
     flex: "1 1 0%",
   },
-}, { label: "hella-button-group", layer: "hella" });
+}, { label: "button-group" });
 
 export const orientation = {
   horizontal: style({
@@ -34,7 +34,7 @@ export const orientation = {
       borderBottomRightRadius: "0",
       borderTopRightRadius: "0",
     },
-  }, { label: "hella-button-group-horizontal", layer: "hella" }),
+  }, { label: "button-group-horizontal" }),
   vertical: style({
     flexDirection: "column",
     "& > *:not(:first-child)": {
@@ -46,7 +46,7 @@ export const orientation = {
       borderBottomLeftRadius: "0",
       borderBottomRightRadius: "0",
     },
-  }, { label: "hella-button-group-vertical", layer: "hella" }),
+  }, { label: "button-group-vertical" }),
 };
 
 export const text = style({
@@ -67,7 +67,7 @@ export const text = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "hella-button-group-text", layer: "hella" });
+}, { label: "button-group-text" });
 
 export const separatorBase = style({
   backgroundColor: "var(--border)",
@@ -80,7 +80,7 @@ export const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "hella-button-group-separator", layer: "hella" });
+}, { label: "button-group-separator" });
 
 export const separator = style({
   alignSelf: "stretch",
@@ -90,4 +90,4 @@ export const separator = style({
   "&[data-orientation='vertical']": {
     height: "auto",
   },
-}, { label: "hella-button-group-separator-override", layer: "hella" });
+}, { label: "button-group-separator-override" });

@@ -79,15 +79,15 @@ describe("button", () => {
       const btn = renderVariant(variant, propsOf(variant, { variant: option, size: "lg" }));
       const tokens = classTokens(btn);
       if (variant.style === "css") {
-        expect(tokens[1]!.startsWith(`h-hella-button-${option}-`)).toBe(true);
-        expect(tokens[2]!.startsWith("h-hella-button-size-lg-")).toBe(true);
+        expect(tokens[1]!.startsWith(`button-${option}-`)).toBe(true);
+        expect(tokens[2]!.startsWith("button-size-lg-")).toBe(true);
       } else {
         for (const token of VARIANT_TOKENS[option]) expect(tokens).toContain(token);
       }
       for (const other of VARIANT_OPTIONS) {
         if (other === option) continue;
         if (variant.style === "css") {
-          expect(hasLabel(tokens[1], `h-hella-button-${other}`)).toBe(false);
+          expect(hasLabel(tokens[1], `button-${other}`)).toBe(false);
         } else {
           expect(tokens).not.toContain(VARIANT_UNIQUE[other]);
         }
@@ -100,14 +100,14 @@ describe("button", () => {
       const btn = renderVariant(variant, propsOf(variant, { size: option }));
       const tokens = classTokens(btn);
       if (variant.style === "css") {
-        expect(hasLabel(tokens[2], `h-hella-button-size-${option}`)).toBe(true);
+        expect(hasLabel(tokens[2], `button-size-${option}`)).toBe(true);
       } else {
         for (const token of SIZE_TOKENS[option]) expect(tokens).toContain(token);
       }
       for (const other of SIZE_OPTIONS) {
         if (other === option) continue;
         if (variant.style === "css") {
-          expect(hasLabel(tokens[2], `h-hella-button-size-${other}`)).toBe(false);
+          expect(hasLabel(tokens[2], `button-size-${other}`)).toBe(false);
         } else {
           expect(tokens).not.toContain(SIZE_TOKENS[other][0]!);
         }
@@ -121,8 +121,8 @@ describe("button", () => {
     expect(btn.getAttribute("data-variant")).toBe("default");
     expect(btn.getAttribute("data-size")).toBe("default");
     if (variant.style === "css") {
-      expect(tokens[1]!.startsWith("h-hella-button-default-")).toBe(true);
-      expect(tokens[2]!.startsWith("h-hella-button-size-default-")).toBe(true);
+      expect(tokens[1]!.startsWith("button-default-")).toBe(true);
+      expect(tokens[2]!.startsWith("button-size-default-")).toBe(true);
     } else {
       expect(tokens).toContain("bg-primary");
       expect(tokens).toContain("h-9");
@@ -141,9 +141,9 @@ describe("button", () => {
     const tokens = classTokens(btn);
     if (variant.style === "css") {
       expect(tokens).toHaveLength(4);
-      expect(tokens[0]!.startsWith("h-hella-button-")).toBe(true);
-      expect(tokens[1]!.startsWith("h-hella-button-default-")).toBe(true);
-      expect(tokens[2]!.startsWith("h-hella-button-size-default-")).toBe(true);
+      expect(tokens[0]!.startsWith("button-")).toBe(true);
+      expect(tokens[1]!.startsWith("button-default-")).toBe(true);
+      expect(tokens[2]!.startsWith("button-size-default-")).toBe(true);
       expect(tokens[3]).toBe("my-btn");
     } else {
       expect(tokens.at(-1)).toBe("my-btn");
