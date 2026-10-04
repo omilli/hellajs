@@ -1,5 +1,5 @@
 ---
-import { highlight } from "../utils/highlight";
+import { Code } from "astro:components";
 
 interface Props {
   id: string;
@@ -10,7 +10,6 @@ interface Props {
 }
 
 const { id, title, code, lang = "tsx", note } = Astro.props;
-const highlighted = await highlight(code, lang);
 ---
 
 <section class="demo-card">
@@ -19,7 +18,7 @@ const highlighted = await highlight(code, lang);
   <div class="demo-frame" id={id}><slot /></div>
   <details class="view-code">
     <summary>View Code</summary>
-    <div class="install-code" set:html={highlighted} />
+    <div class="install-code"><Code code={code} lang={lang} theme="github-dark" /></div>
   </details>
 </section>
 

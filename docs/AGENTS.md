@@ -32,7 +32,7 @@
   | `src/chrome/chrome-css.ts` | `css()` chrome module (nav shell, drawer, topbar, search command width, toc) — imported by MainLayout for the head tag. |
   | `src/components/Badge.astro` | npm version shield for a package (`package` prop); row layout via `.pkg-badge-row`. |
   | `src/components/CodeExample.mdx` | Static hero code block for the landing page. |
-  | `src/utils/highlight.ts` + `demo-code.ts` | Shiki highlighting for `Demo` View Code + the demo source extractor. |
+  | `src/utils/demo-code.ts` | Demo source extractor: slices each demo card's View Code export block out of the island's `?raw` source. |
   | `src/pages/index.astro` | Landing page (`LandingLayout`). |
   | `src/pages/learn/**` | `quick-start.mdx` + `concepts/` + `patterns/` + `tutorials/` — ALL are thin wrappers; content lives in `packages/*/docs/` (concepts/patterns) and `examples/{name}/tutorial.mdx` (tutorials). |
   | `src/pages/reference/{pkg}/**` | One wrapper page per exported symbol; imports `@<pkg>/api/<symbol>.mdx`. |

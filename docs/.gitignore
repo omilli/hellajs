@@ -28,6 +28,3 @@ src/generated/pagecss/
 
 # generator scratch (install-sources)
 .tmp/
-
-# shiki disk cache (docs/src/utils/highlight.ts)
-.cache/

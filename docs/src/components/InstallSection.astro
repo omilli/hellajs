@@ -1,5 +1,5 @@
 ---
-import { highlight } from "../utils/highlight";
+import { Code } from "astro:components";
 
 interface Props {
   entry: string;
@@ -39,16 +39,7 @@ for (const [variant, key] of Object.entries(sourceKeys)) {
   sources[variant] = match[1];
 }
 
-const langs: Record<string, string> = { "css-jsx": "tsx", "css-html": "ts", "tailwind-jsx": "tsx", "tailwind-html": "ts" };
-const highlighted: Record<string, string> = {};
-for (const [key, code] of Object.entries(sources)) {
-  highlighted[key] = await highlight(code, langs[key] ?? "ts");
-}
-
-const commandBlock = await highlight(
-  `npx @hellajs/ui add ${entry}\n# bunx @hellajs/ui add ${entry}\n# pnpm dlx @hellajs/ui add ${entry}`,
-  "bash",
-);
+const commandCode = `npx @hellajs/ui add ${entry}\n# bunx @hellajs/ui add ${entry}\n# pnpm dlx @hellajs/ui add ${entry}`;
 ---
 
 <section class="install-section" data-install>
@@ -58,7 +49,7 @@ const commandBlock = await highlight(
     <button type="button" class="install-tab" data-install-tab="manual">Manual</button>
   </div>
   <div class="install-panel" data-install-panel="command">
-    <div class="install-code" set:html={commandBlock} />
+    <div class="install-code"><Code code={commandCode} lang="bash" theme="github-dark" /></div>
   </div>
   <div class="install-panel" data-install-panel="manual" hidden>
     <div class="install-pickers">
@@ -72,10 +63,10 @@ const commandBlock = await highlight(
       </div>
     </div>
     <div class="install-source-frame">
-      <template data-install-template="css-jsx"><div class="install-code" set:html={highlighted["css-jsx"]} /></template>
-      <template data-install-template="css-html"><div class="install-code" set:html={highlighted["css-html"]} /></template>
-      <template data-install-template="tailwind-jsx"><div class="install-code" set:html={highlighted["tailwind-jsx"]} /></template>
-      <template data-install-template="tailwind-html"><div class="install-code" set:html={highlighted["tailwind-html"]} /></template>
+      <template data-install-template="css-jsx"><div class="install-code"><Code code={sources["css-jsx"]} lang="tsx" theme="github-dark" /></div></template>
+      <template data-install-template="css-html"><div class="install-code"><Code code={sources["css-html"]} lang="ts" theme="github-dark" /></div></template>
+      <template data-install-template="tailwind-jsx"><div class="install-code"><Code code={sources["tailwind-jsx"]} lang="tsx" theme="github-dark" /></div></template>
+      <template data-install-template="tailwind-html"><div class="install-code"><Code code={sources["tailwind-html"]} lang="ts" theme="github-dark" /></div></template>
       <div class="install-code" data-install-live />
       <button type="button" class="install-copy" data-install-copy>Copy</button>
     </div>
