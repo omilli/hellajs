@@ -1,4 +1,8 @@
 ---
+import { cssText } from "@hellajs/css";
+import "../styles/prose";
+import "../chrome/chrome-css";
+import "../styles/tokens";
 import "../global.css";
 
 const { frontmatter = {}, title: pageTitle } = Astro.props;
@@ -8,7 +12,7 @@ const description =
   "A reactive JavaScript framework for building fast, lightweight user interfaces with JSX.";
 ---
 
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -27,9 +31,15 @@ const description =
     <meta property="twitter:description" content={description} />
 
     <title>{title} | HellaJS</title>
+    <!-- Same mechanism as MainLayout's site-head tag. The css registry is
+         global to the build process, so whatever the layout imports itself
+         is what cssText() deterministically contains — the same module set
+         as MainLayout (minus demoCss) keeps this page's head identical in
+         shape no matter which page the build rendered before it. -->
+    <style id="site-head" is:inline set:html={"@layer base, hella;\n" + cssText()} />
   </head>
-  <body class="min-h-screen bg-base-100">
-    <main class="min-h-screen">
+  <body>
+    <main>
       <slot />
     </main>
   </body>

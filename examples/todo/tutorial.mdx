@@ -1,3 +1,5 @@
+import Callout from "@components/Callout.astro";
+
 # Build a Todo App
  
 Let's create a feature-rich todo application using advanced HellaJS patterns.
@@ -202,9 +204,7 @@ const TodoApp = () => {
 - **`todos().map(...)`**:  Creates a new array with the toggled todo
 - **`todos().filter(...)`**:  Creates a new array without the removed todo
 
-<div role="alert" class="alert alert-error text-base">
-  <span>Always create new arrays when updating signals. Mutating existing arrays won't trigger updates.</span>
-</div>
+<Callout variant="error">Always create new arrays when updating signals. Mutating existing arrays won't trigger updates.</Callout>
 
 **Good:** Creates a new array
 ```jsx
@@ -284,9 +284,7 @@ Your app will be running at `http://localhost:5173`. Add some todos and watch th
 - **`class={['flex', todo.completed && 'done']}`**:  Conditionally adds the `done` class when completed
 - **`{todos().length === 0 && (...)}`**:  Conditional empty state
 
-<div role="alert" class="alert alert-error text-base">
-  <span>Always use `<ForEach>` for signal lists or they won't be reactive.</span>
-</div>
+<Callout variant="error">Always use `<ForEach>` for signal lists or they won't be reactive.</Callout>
 
 **Good:** Reactive lists
 ```jsx

@@ -1,3 +1,5 @@
+import Callout from "@components/Callout.astro";
+
 # Build an Astro Islands App
 
 Run HellaJS components as first-class islands in an [Astro](https://astro.build) project: one page, three islands, three integration modes. A server-rendered JSX counter hydrates in place, a client-only `html` template tracks the cursor, and a `$ref` island binds reactive state to HTML that Astro itself rendered.
@@ -223,9 +225,7 @@ export default function NameSync() {
 - **`.bind(() => ...)`**: Binds a reactive function to the element's text. The greeting updates whenever `name` changes
 - **The returned `html` node**: Gives the island a small visible root; the real work happens through the two `$ref` bindings
 
-<div role="alert" class="alert alert-error">
-  <span>$ref queries document at call time. It throws on the server (no document exists), so keep $ref calls in client:only islands or client scripts. A client:load component body executes during server rendering, which is why NameSync is client:only.</span>
-</div>
+<Callout variant="error">$ref queries document at call time. It throws on the server (no document exists), so keep $ref calls in client:only islands or client scripts. A client:load component body executes during server rendering, which is why NameSync is client:only.</Callout>
 
 **Good:** the component using `$ref` mounted `client:only`
 ```astro

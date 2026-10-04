@@ -277,7 +277,7 @@ Full runnable code matching the example app.
 - **Progressive build**: each section adds code on top of the previous; never removes or rewrites earlier code. **Context markers** (`//... add after X`, `//... rest unchanged`) show placement — never full file repeats; the reader builds up from previous sections.
 - **Exercise blanks**: `/**/` marks a reader-filled blank (`const filter = /**/;`), legal alongside `//...` markers. `bun doc-snippets` skips blocks containing `/**/` (answers vary); every non-blank line must still be valid for the language tag, and the answer must appear in a later section or Complete Code.
 - **Code Explanation**: always after every code block — bullet list, bold backtick-wrapped API names linking to reference docs on first mention, factual tone.
-- **Alert boxes**: `<div role="alert" class="alert alert-error">` for critical warnings (mutation pitfalls, reactivity gotchas), followed by Good/Bad examples. No component imports — content docs live outside `docs/`.
+- **Callouts**: `<Callout variant="error">` (import from `@components/Callout.astro`) for critical warnings (mutation pitfalls, reactivity gotchas), followed by Good/Bad examples.
 - **Dev server callout**: in the section where the app first becomes reachable, the actual run command + URL — Vite: `npm run dev` + `http://localhost:5173`; Node-served SSR: the start command (`npm run dev` / `node --watch src/server.js`) + its URL.
 - **What You'll Learn**: bold concept labels + brief descriptions, linked to reference docs on first mention. **Project Setup**: always `### Installation` (npm commands) + `### Configuration` (vite config, tsconfig).
 - **Next Steps**: 3 links + one-line closing sentence. **Complete Code**: every source file under `examples/{name}/src/` appears identically (ambient shims like `vite-env.d.ts` may be omitted); single-file apps one block, multi-file one `### `src/...`` heading + block per file; configs appear in Project Setup.
@@ -323,7 +323,7 @@ import ContentName from '@{package}/{type}/{name}.mdx'
 
 - **Reference wrapper** (`docs/src/pages/reference/{package}/{name}.mdx`): imports `@{package}/api/{name}.mdx`. **Concept wrapper** (`learn/concepts/{name}.mdx`): `@{package}/concepts/{name}.mdx`. **Pattern wrapper** (`learn/patterns/{name}.mdx`): `@{package}/patterns/{name}.mdx`. **UI-section page** (`docs/src/pages/ui/{name}.astro`): a self-contained `.astro` page — frontmatter imports `MainLayout`, `InstallSection`, `Demo`, and `@ui/concepts/{name}.mdx`; the body renders, in order, `<h1>{Name}</h1>` plus a one-sentence `<p>` description (the component's lead line, no upstream-catalog references), the hero demo frame (`<div class="demo-frame dark" id="demo"></div>`), `<InstallSection entry="{name}" />` (site-generated Installation tabs), the package-doc content tag, an `Examples` h2, and `<Demo>` cards (titled demo frames with collapsible View Code); one page-level `<script>` composes the vendored components through the `<${Component}>` embedded-tag syntax and `mount`s into the hero frame and every Demo card's frame id — the frames, InstallSection/Demo tags, and script are sanctioned structural content alongside the package-doc component tag, not prose. Each demo demonstrates one distinct behavior the package doc documents, none twice; 2-4 live demos per page (hero + 1-3 cards). Wire page scripts and Demo `code` to hella's event contract: native-element events use the `on:` prefix (`e:` for direct handlers); a plain `on*` attribute is a reactive prop, invoked once at mount and never on the event. Component props use the registry's declared names (`ariaLabel`, not `aria-label`): vendored parts forward declared props only.
 - **Component name**: PascalCase from the file name (`signal.mdx` → `SignalContent`). **No content** between the import and the component tag.
-- A wrapper MAY import and render multiple package docs, separated by `<div class="...border-t..."></div>`, when the site joins related content under one URL — concepts from different packages, or sibling exports within one package — each import still follows the alias + PascalCase rules, and the wrapper still carries zero prose.
+- A wrapper MAY import and render multiple package docs, separated by `<hr />`, when the site joins related content under one URL — concepts from different packages, or sibling exports within one package — each import still follows the alias + PascalCase rules, and the wrapper still carries zero prose.
 
 ### Site-Authored Content Pages
 
@@ -677,27 +677,27 @@ Use for structured data: error categories/status enums, hook timing reference, o
 - Keep columns narrow enough for readable rendering.
 - Delimiter row cell count must match the header row (escaped `\|` does not split a cell); GFM refuses the whole table otherwise. Enforced by `bun lint:structure`.
 
-## Alert Boxes
+## Callouts
 
-Use Astro alert syntax for callouts needing visual emphasis:
+Use the site Callout component for callouts needing visual emphasis. Import it at the top of the file; the `@components/*` alias resolves into the docs site:
 
-```html
-<div role="alert" class="alert alert-info alert-soft">
-  <span>Content here</span>
-</div>
+```mdx
+import Callout from "@components/Callout.astro";
+
+<Callout variant="info">Content here</Callout>
 ```
 
 - Use sparingly — most information belongs in normal text.
-- Prefer `alert-info` for informational notes. Avoid `alert-warning`.
-- Use `<div role="alert" class="alert alert-error">` for critical warnings in tutorials. Never import site-only components (e.g. `astro-icon`) in content docs — they live outside `docs/` and cannot resolve them.
+- Prefer `variant="info"` for informational notes. Avoid `variant="warning"`.
+- Use `<Callout variant="error">` for critical warnings in tutorials. The component renders `role="alert"` itself; do not wrap callout content in extra divs or spans.
 
 ### Blockquote Callouts
 
-For single-sentence callouts needing more emphasis than plain prose but less than a full alert box, use a blockquote with a bold label:
+For single-sentence callouts needing more emphasis than plain prose but less than a full callout, use a blockquote with a bold label:
 
 > **Performance**: snapshot accesses every signal in the store.
 
-At most one per section. Prefer inline `⚠️` for in-code warnings; Astro alert boxes for multi-sentence or critical warnings.
+At most one per section. Prefer inline `⚠️` for in-code warnings; Callout components for multi-sentence or critical warnings.
 
 ## Content Tone
 

@@ -1,4 +1,37 @@
-export const navigation = {
+/**
+ * Docs navigation tree — the site's authored URL map (unit 09 of the
+ * site-foundation set). The data is the pre-existing tree, unchanged: the
+ * chrome components (docs/src/chrome/) consume it as pure data — no
+ * functions cross this boundary, so the shape stays JSON-serializable.
+ *
+ * Entry forms:
+ * - string — page slug; URL builds as `<section base>/<slug lowercased>`,
+ *   display title falls back to the slug's dashes-turned-spaces when no
+ *   pages/*.mdx frontmatter title resolves.
+ * - { label, slug } — slug entry with an authored display label (labels may
+ *   carry characters a folder name cannot, e.g. the `on:` attribute prefix).
+ * - { Group: children } — a group heading; children prefix the group's
+   folder URL only when that folder holds real pages (learn/concepts),
+ *   otherwise they keep the section root (ui's flat component pages).
+ */
+export type NavLeaf = string | { label: string; slug: string };
+export type NavGroup = { [group: string]: NavLeaf[] };
+export type NavEntry = NavLeaf | NavGroup;
+export type NavSection = "learn" | "reference" | "plugins" | "ui";
+
+/**
+ * The chrome-internal resolved shape: the tree after URL construction and
+ * frontmatter title lookup, as rendered by DocsNav/NavNode. Both fields are
+ * plain data (build-time only — the nav is server-rendered, nothing ships
+ * to the client).
+ */
+export interface NavTreeNode {
+  title: string;
+  url?: string;
+  children?: NavTreeNode[];
+}
+
+export const navigation: Record<NavSection, NavEntry[]> = {
   learn: [
     "Quick-Start",
     {

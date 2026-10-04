@@ -1,0 +1,81 @@
+---
+/**
+ * "On This Page", fully server-rendered (unit 09 of the site-foundation
+ * set — the hard requirement that kills the client-extractor flash): the
+ * layout extracts h2/h3 text+ids from the slot's rendered HTML and passes
+ * them here as plain data. Two surfaces from one entry list, placed by the
+ * layout: `mobile` renders a details/summary above the content (trigger is
+ * the browser's — no JS), `rail` renders the fixed desktop aside. Item
+ * links reuse the chrome menu-link class; surfaces are chrome-css.ts's.
+ * Emits nothing when the page has no extractable headings — the layout's
+ * has-toc margin only pairs with a rendered rail.
+ */
+interface TocEntry {
+  text: string;
+  slug: string;
+  depth: number;
+}
+
+interface Props {
+  entries: TocEntry[];
+  variant: "mobile" | "rail";
+}
+
+const { entries, variant } = Astro.props;
+---
+
+{
+  variant === "mobile" && entries.length > 0 && (
+    <details class="toc-mobile">
+      <summary aria-label="On this page">
+        <span>On this page</span>
+        <svg
+          class="toc-chevron"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </summary>
+      <ul>
+        {
+          entries.map((entry) => (
+            <li>
+              <a
+                href={`#${entry.slug}`}
+                class="site-menu-link"
+                style={`padding-left: ${(entry.depth - 2) * 1.5 + 0.5}rem`}
+              >
+                {entry.text}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </details>
+  )
+}
+{
+  variant === "rail" && entries.length > 0 && (
+    <aside class="toc-rail" aria-label="On this page">
+      <h2>On this page</h2>
+      <ul>
+        {
+          entries.map((entry) => (
+            <li>
+              <a
+                href={`#${entry.slug}`}
+                class="site-menu-link"
+                style={`padding-left: ${(entry.depth - 2) * 1.5 + 0.5}rem`}
+              >
+                {entry.text}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </aside>
+  )
+}

@@ -1,3 +1,5 @@
+import Callout from "@components/Callout.astro";
+
 # Attribute Prefixes
 
 HellaJS uses a prefix system to categorize element attributes. Each prefix maps to a specific behavior,  events, reactive bindings, lifecycle hooks, or error configuration.
@@ -47,9 +49,7 @@ The value may also be a `{ handler, options }` spec forwarding native listener o
 
 A function-ref is reactive: any attribute whose value is a function reference, a bare signal (`class={mySignal}`) or an expression (`class={active() ? "on" : "off"}`), updates the DOM when its dependencies change, with no prefix.
 
-<div role="error" class="alert alert-error text-base">
-  <span>Runtime `html` requires an explicit wrappers: (`class={() => active() ? "on" : "off"}`).</span>
-</div> 
+<Callout variant="error">Runtime `html` requires an explicit wrappers: (`class={() => active() ? "on" : "off"}`).</Callout> 
 
 ```jsx
 import { mount } from "@hellajs/dom";

@@ -2,67 +2,59 @@
 import LandingLayout from "../layouts/LandingLayout.astro";
 import CodeExample from "../components/CodeExample.mdx";
 import { Icon } from "astro-icon/components";
+import "../styles/tokens";
 const title = "HellaJS";
 const description =
   "A reactive JavaScript framework for building fast, lightweight user interfaces with JSX.";
 ---
 
 <LandingLayout {title} {description}>
-  <section class="hero min-h-screen">
-    <div class="hero-content max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-16 items-center">
+  <section class="landing-hero">
+    <div class="landing-inner">
+      <div class="landing-grid">
         <!-- Left Content -->
-        <div class="text-center lg:text-left space-y-8">
-          <div class="space-y-4">
-            <h1
-              class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight"
-            >
+        <div class="landing-copy">
+          <div>
+            <h1 class="landing-title">
               Hella <span id="typewriter"></span>
             </h1>
 
-            <p class="text-lg sm:text-xl max-w-2xl mx-auto lg:mx-0">
+            <p class="landing-tagline">
               Build tiny, lightning-fast web apps.
               <br />Fine-grained reactivity, without the complexity.
             </p>
           </div>
 
-          <div
-            class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
-          >
-            <a href="/learn" class="btn btn-primary btn-lg">
+          <div class="landing-ctas">
+            <a href="/learn" class="landing-btn landing-btn-primary">
               <Icon name="ph:graduation-cap" width={24} height={24} />
               Get Started
             </a>
-            <a href="/reference" class="btn btn-outline btn-lg">
+            <a href="/reference" class="landing-btn landing-btn-outline">
               <Icon name="ph:book-open-text" width={24} height={24} />
               API Reference
             </a>
           </div>
 
-          <div
-            class="flex items-center justify-center lg:justify-start space-x-6 text-sm text-left"
-          >
-            <div class="flex space-x-2 w-1/3">
+          <div class="landing-feats">
+            <div class="landing-feat">
               <Icon
-                class="text-success flex-none mt-0.5"
                 name="ph:check-circle"
                 width={18}
                 height={18}
               />
               <span>Zero Dependencies</span>
             </div>
-            <div class="flex space-x-2 w-1/3">
+            <div class="landing-feat">
               <Icon
-                class="text-success flex-none mt-0.5"
                 name="ph:check-circle"
                 width={18}
                 height={18}
               />
               <span>TypeScript Ready</span>
             </div>
-            <div class="flex space-x-2 w-1/3">
+            <div class="landing-feat">
               <Icon
-                class="text-success flex-none mt-0.5"
                 name="ph:check-circle"
                 width={18}
                 height={18}
@@ -73,22 +65,18 @@ const description =
         </div>
 
         <!-- Right Content - Code Example -->
-        <div class="flex justify-center lg:justify-end">
-          <div class="w-full max-w-xl">
-            <div class="bg-base-300 rounded-lg shadow-2xl overflow-hidden">
-              <div class="px-4 py-3 bg-base-200 border-b border-base-300">
-                <div class="flex items-center space-x-2">
-                  <div class="flex space-x-1">
-                    <div class="w-3 h-3 bg-error rounded-full"></div>
-                    <div class="w-3 h-3 bg-warning rounded-full"></div>
-                    <div class="w-3 h-3 bg-success rounded-full"></div>
-                  </div>
-                  <span class="text-sm text-base-content/60">Counter.jsx</span>
-                </div>
+        <div class="landing-demo">
+          <div class="landing-window">
+            <div class="landing-window-bar">
+              <div class="landing-dots">
+                <div class="landing-dot landing-dot-error"></div>
+                <div class="landing-dot landing-dot-warning"></div>
+                <div class="landing-dot landing-dot-success"></div>
               </div>
-              <div class="p-4 lg:p-10 hero-code">
-                <CodeExample />
-              </div>
+              <span class="landing-window-label">Counter.jsx</span>
+            </div>
+            <div class="landing-code">
+              <CodeExample />
             </div>
           </div>
         </div>

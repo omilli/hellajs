@@ -1,0 +1,118 @@
+---
+/**
+ * Docs left navigation (unit 09 of the site-foundation set) —
+ * server-rendered, zero client JS. The item look comes from chrome-css.ts's
+ * re-declaration of the registry sidebar menu vocabulary (`.site-menu-link`,
+ * `.site-nav-group-label`, `.site-nav-sub`; the registry's built output
+ * keeps style constants module-private, so the copies are docs-owned).
+ * Active route is computed at build time from Astro.url.pathname; the
+ * mobile drawer is the layout's checkbox + this aside (chrome-css.ts owns
+ * the mechanics). Replaces the daisyUI Sidebar.astro/NavItem.astro pair;
+ * the URL map is docs/src/nav.ts, whose tree is unchanged — only the
+ * transform moved here.
+ */
+import NavNode from "./NavNode.astro";
+import {
+  navigation,
+  type NavEntry,
+  type NavSection,
+  type NavTreeNode,
+} from "../nav";
+
+const { pathname: rawPathname } = Astro.props as { pathname: string };
+
+// Astro.url.pathname carries the directory format's trailing slash at build
+// time; the nav tree's urls don't. Normalize once here — every consumer
+// (exact-match leaf/group highlighting, startsWith section links) keys off
+// the stripped value. (The daisy-era nav compared raw and never matched —
+// the old build's nav links carry aria-current="false" throughout.)
+const pathname = rawPathname.replace(/\/+$/, "") || "/";
+
+const allDocs = Object.values(
+  import.meta.glob<Record<string, any>>("../pages/**/*.mdx", {
+    eager: true,
+  }),
+);
+
+const getSection = (path: string): NavSection | null => {
+  if (path.startsWith("/learn")) return "learn";
+  if (path.startsWith("/ui")) return "ui";
+  if (path.startsWith("/reference")) return "reference";
+  if (path.startsWith("/plugins")) return "plugins";
+  return null;
+};
+
+// Directories that hold real pages. A nav group prefixes its children only
+// when its folder URL is one of these (learn/concepts); otherwise the group
+// renders as a pure heading and children keep the section root (ui's flat
+// component pages).
+const pageDirs = new Set(
+  allDocs.map((doc) => {
+    const parts = (doc.url ?? "").split("/").filter(Boolean);
+    return `/${parts.slice(0, -1).join("/")}`;
+  }),
+);
+
+const transformNav = (nav: NavEntry[], basePath = ""): NavTreeNode[] =>
+  nav.map((item) => {
+    // Custom label entry: { label: "display text", slug: "url-slug" }
+    if (typeof item === "object" && "label" in item && "slug" in item) {
+      const url = `${basePath}/${item.slug}`;
+      const doc = allDocs.find((d) => d.url === url);
+      const title = doc?.frontmatter?.title || item.label;
+      return { title, url };
+    }
+
+    // String entry: simple navigation item
+    if (typeof item === "string") {
+      const url = `${basePath}/${item.toLowerCase()}`;
+      const doc = allDocs.find((d) => d.url === url);
+      const title = doc?.frontmatter?.title || item.replace(/-/g, " ");
+      return { title, url };
+    }
+
+    // Folder/group entry: { folderName: children[] }
+    const [folderName, children] = Object.entries(item)[0]!;
+    const url = `${basePath}/${folderName.toLowerCase()}`;
+    const doc = allDocs.find((d) => d.url === url);
+    const title = doc?.frontmatter?.title || folderName.replace(/-/g, " ");
+    const childBase = pageDirs.has(url) ? url : basePath;
+    return { title, children: transformNav(children, childBase) };
+  });
+
+const section = getSection(pathname);
+const sectionNodes = transformNav(
+  navigation[section ?? "learn"],
+  `/${section ?? "learn"}`,
+);
+
+const mainNavLinks = [
+  { label: "Learn", root: "/learn" },
+  { label: "API Reference", root: "/reference" },
+  { label: "Plugins", root: "/plugins" },
+  { label: "UI", root: "/ui" },
+];
+---
+
+<aside class="site-nav" aria-label="Docs navigation">
+  <nav>
+    <ul class="site-menu mobile-only">
+      {
+        mainNavLinks.map((link) => (
+          <li>
+            <a
+              href={link.root}
+              class="site-menu-link"
+              data-active={pathname.startsWith(link.root) ? "true" : undefined}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <ul class="site-menu">
+      {sectionNodes.map((node) => <NavNode node={node} pathname={pathname} />)}
+    </ul>
+  </nav>
+</aside>

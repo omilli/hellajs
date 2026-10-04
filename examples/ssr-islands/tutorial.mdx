@@ -1,3 +1,5 @@
+import Callout from "@components/Callout.astro";
+
 # Build an SSR Islands App
 
 Render a static HTML shell on the server with [`ssr`](/reference/ssr/ssr), then make it interactive on the client without a full re-render: mount a reactive island into an empty slot the server left open. No router, no full-tree [`hydrate`](/reference/dom/hydrate) (the lightest server-rendered mode).
@@ -169,9 +171,7 @@ mount(Counter, '#slot');
 - **`on:click=${() => count(count() + 1)}`**: Updates the signal value on click
 - **[`mount`](/reference/dom/mount)`(Counter, '#slot')`**: Renders the island into the empty slot. The server left `#slot` empty, so nothing is wiped
 
-<div role="alert" class="alert alert-error text-base">
-  <span>mount calls replaceChildren on its target: pointing it at any element the server already populated wipes that HTML. Always mount into an empty slot.</span>
-</div>
+<Callout variant="error">mount calls replaceChildren on its target: pointing it at any element the server already populated wipes that HTML. Always mount into an empty slot.</Callout>
 
 **Good:** Target the empty server slot
 ```js

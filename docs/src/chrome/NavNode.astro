@@ -1,0 +1,60 @@
+---
+/**
+ * One docs-nav node (unit 09): a leaf page link or a group disclosure.
+ * Classes come from chrome-css.ts's re-declaration of the registry sidebar
+ * menu vocabulary (`.site-menu-link`, `.site-nav-group-label`,
+ * `.site-nav-sub`); active state is computed server-side from the pathname
+ * — leaf = exact case-insensitive URL match, group = any descendant active
+ * (`[data-active='true']` hooks in both cases). Groups render as open
+ * details/summary rows (parity with the daisy-era nav: no collapsible
+ * state). Recursive via Astro.self for nested groups.
+ */
+import type { NavTreeNode } from "../nav";
+
+interface Props {
+  node: NavTreeNode;
+  pathname: string;
+}
+
+const { node, pathname } = Astro.props;
+
+const isGroup = !!node.children;
+const isActive = !!node.url && pathname.toLowerCase() === node.url.toLowerCase();
+
+const containsActive = (n: NavTreeNode): boolean =>
+  (!!n.url && pathname.toLowerCase() === n.url.toLowerCase()) ||
+  !!n.children?.some(containsActive);
+
+const isParentOfActive = isGroup && containsActive(node);
+---
+
+{
+  !isGroup ? (
+    <li>
+      <a
+        href={node.url}
+        class="site-menu-link"
+        data-active={isActive ? "true" : undefined}
+        aria-current={isActive ? "page" : undefined}
+      >
+        {node.title}
+      </a>
+    </li>
+  ) : (
+    <li>
+      <details open>
+        <summary
+          class="site-nav-group-label"
+          data-active={isParentOfActive ? "true" : undefined}
+        >
+          {node.title}
+        </summary>
+        <ul class="site-menu site-nav-sub">
+          {node.children!.map((child) => (
+            <Astro.self node={child} pathname={pathname} />
+          ))}
+        </ul>
+      </details>
+    </li>
+  )
+}

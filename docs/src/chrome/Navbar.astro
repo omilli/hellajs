@@ -1,0 +1,113 @@
+---
+/**
+ * Top bar (unit 10 of the site-foundation set) — static server-rendered
+ * chrome, zero client JS, replacing the daisyUI Navbar.astro (deleted).
+ * Composition follows the unit's resolved fork: site-owned bar on the
+ * chrome-css.ts vocabulary — logo, section links (active computed at build
+ * with the same trailing-slash normalization DocsNav applies), a search
+ * trigger button (opens the SearchPalette island via the data-command-open
+ * hook; the island owns the ⌘K/Ctrl+K shortcut), GitHub link, and the 09
+ * drawer toggle (the label[for] + .sidebar-hamburger/.sidebar-close pair
+ * chrome-css.ts swaps on the layout's checkbox). Sections collapse into
+ * the drawer below lg; the trigger collapses to an icon button.
+ */
+import { Icon } from "astro-icon/components";
+
+const { pathname: rawPathname } = Astro.url;
+const pathname = rawPathname.replace(/\/+$/, "") || "/";
+
+const links = [
+  { root: "/learn", label: "Learn" },
+  { root: "/reference", label: "API Reference" },
+  { root: "/plugins", label: "Plugins" },
+  { root: "/ui", label: "UI" },
+];
+---
+
+<header class="site-topbar">
+  <a href="/" class="site-logo" aria-label="HellaJS home">
+    <img src="/favicon.svg" alt="" width="32" height="32" />
+  </a>
+  <nav class="site-topbar-links" aria-label="Sections">
+    {
+      links.map((link) => (
+        <a
+          href={link.root}
+          class="site-topbar-link"
+          data-active={
+            pathname === link.root || pathname.startsWith(`${link.root}/`)
+              ? "true"
+              : undefined
+          }
+        >
+          {link.label}
+        </a>
+      ))
+    }
+  </nav>
+  <div class="site-topbar-actions">
+    <button
+      type="button"
+      class="site-search-trigger"
+      data-command-open
+      aria-label="Search the docs"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.34-4.34"></path>
+      </svg>
+      <span class="site-search-label">Search…</span>
+      <kbd class="site-search-kbd" aria-hidden="true">⌘K</kbd>
+    </button>
+    <a
+      href="https://github.com/omilli/hellajs"
+      class="site-icon-link"
+      aria-label="GitHub repository"
+    >
+      <Icon name="ph:github-logo" width={20} height={20} />
+    </a>
+    <label for="nav-drawer" class="site-drawer-toggle" aria-label="Toggle navigation">
+      <svg
+        class="sidebar-hamburger"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+      <svg
+        class="sidebar-close"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </label>
+  </div>
+</header>

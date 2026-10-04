@@ -1,9 +1,22 @@
 # Memory Update Log
 
+## 2026-10-04
+* **Creation**: Added concept [257](entries/257.md) (type: decision).
+* **Deprecation**: Archived [055](archive/055-docs-site-daisyui-tailwind-classes.md) → superseded by [257](entries/257.md).
+* **Creation**: Added concept [258](entries/258.md) (type: decision).
+
 ## 2026-10-03
 * **Creation**: Added concept [252](entries/252.md) (type: decision).
 * **Creation**: Added concept [253](entries/253.md) (type: decision).
 * **Update**: Renumber: parallel-writer ID collision — merged 242-247 → 248-253 (242/243 already allocated by in-flight writer)
+* **Creation**: Added concept [244](entries/244.md) (type: decision).
+* **Creation**: Added concept [245](entries/245.md) (type: decision).
+* **Refresh**: Refreshed 245: vars-bucket collision fix landed in site unit 08 (unlayered site tokens; 180/180 unlayered, 0 registry-only, 63 inert layered supersets)
+* **Creation**: Added concept [246](entries/246.md) (type: decision).
+* **Creation**: Added concept [247](entries/247.md) (type: decision).
+* **Creation**: Added concept [254](entries/254.md) (type: decision).
+* **Creation**: Added concept [255](entries/255.md) (type: decision).
+* **Creation**: Added concept [256](entries/256.md) (type: decision).
 
 ## 2026-10-02
 * **Creation**: Added concept [238](entries/238.md) (type: correction).

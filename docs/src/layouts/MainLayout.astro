@@ -1,11 +1,30 @@
 ---
-import Navbar from "../components/Navbar.astro";
-import Sidebar from "../components/Sidebar.astro";
-import { LAYER_ORDER } from "../utils/layer-order";
+import Navbar from "../chrome/Navbar.astro";
+import DocsNav from "../chrome/DocsNav.astro";
+import SearchPalette from "../chrome/SearchPalette";
+import Toc from "../chrome/Toc.astro";
+import { cssText } from "@hellajs/css";
+import "../styles/prose";
+import "../chrome/chrome-css";
 import "../global.css";
-
 const { frontmatter = {}, title: pageTitle, demoCss } = Astro.props;
 const title = frontmatter.title || pageTitle;
+
+// "On This Page" is server-rendered (site-foundation set contract: no
+// client render, zero flash). Render the slot to its final HTML first —
+// wrapper pages import their content as components, so Astro's headings
+// prop cannot see those headings — and lift the h2/h3 out of it. Ids come
+// from the mdx pipeline's own slugs (no slugger replication); headings
+// without an id are not linkable and are skipped.
+const content = await Astro.slots.render("default");
+const toc: { text: string; slug: string; depth: number }[] = Array.from(
+  content.matchAll(/<h([23])[^>]*?\sid="([^"]*)"[^>]*>([\s\S]*?)<\/h\1>/g),
+  (m) => ({
+    depth: Number(m[1]),
+    slug: m[2],
+    text: m[3].replace(/<[^>]+>/g, "").trim(),
+  }),
+);
 ---
 
 <html lang="en">
@@ -15,186 +34,38 @@ const title = frontmatter.title || pageTitle;
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>{title} | HellaJS</title>
-    {demoCss && <style id="hella-css" is:inline set:html={LAYER_ORDER + demoCss} />}
+    <!-- id="site-head", NOT "hella-css": the css runtime adopts and DRAINS
+         any #hella-css tag at first client registration (packages/css/lib/
+         internal/sheet.ts, adoptElementRules) — on pages whose first-registering
+         island is a demo island, the drain stripped this SSR text until the
+         site css re-registered, flashing an unstyled window. Under a foreign
+         id the runtime creates its own sheet alongside; registry styles
+         re-register there post-hydration (byte-identical rules, zero visual
+         difference) and this tag is never touched. The leading `@layer base,`
+         `hella;` statement pins the cascade-layer order (preflight port <
+         registry < unlayered site CSS) ahead of everything else — the
+         tailwind layer list it replaced died with the utility exit. -->
+    <style
+      id="site-head"
+      is:inline
+      set:html={"@layer base, hella;\n" + (demoCss ?? "") + cssText()}
+    />
   </head>
   <body>
+    <!-- Drawer state: checked = open. Sits before every drawer surface so
+         chrome-css's sibling selectors (`#nav-drawer:checked ~ …`) reach
+         them; Navbar's hamburger label toggles it — zero client JS. -->
+    <input id="nav-drawer" type="checkbox" hidden />
     <Navbar />
-    <Sidebar>
-      <div class="pt-16 pb-16 lg:pb-0">
-        <!-- Mobile "On this page" select-style dropdown (desktop uses the right rail);
-             populated by the TOC script below -->
-        <div class="lg:hidden px-4 pt-4">
-          <div id="toc-mobile" class="dropdown w-full">
-            <div
-              tabindex="0"
-              role="button"
-              aria-label="On this page"
-              class="flex w-full cursor-pointer select-none items-center justify-between rounded-lg border border-slate-700 bg-base-50 px-4 py-2.5 text-sm"
-            >
-              <span id="toc-mobile-label" class="truncate">On this page</span>
-              <svg
-                class="toc-chevron h-4 w-4 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                ></path>
-              </svg>
-            </div>
-            <ul
-              tabindex="0"
-              class="dropdown-content menu flex-nowrap z-1 w-full max-h-[calc(100dvh-12rem)] overflow-y-auto rounded-lg border border-slate-700 bg-base-50 p-2 shadow-xl"
-            >
-            </ul>
-          </div>
-        </div>
-        <main class:list={["flex-1 p-4 prose max-w-none lg:p-8 mt-6"]}>
-          <slot />
-        </main>
-        <!-- Simple right sidebar that gets populated by JavaScript -->
-        <aside
-          id="toc-rail"
-          class="fixed top-16 right-0 h-[calc(100vh-4rem)] w-70 p-4 hidden lg:block overflow-y-auto"
-        >
-          <!-- Content will be populated by client-side script -->
-        </aside>
-      </div>
-    </Sidebar>
-    <script>
-      /**
-       * Minimal headings extractor for build-time right sidebar
-       * Extracts headings from rendered MDX content and displays them
-       */
-
-      function initializeHeadingsNavigation() {
-        const mainContent = document.querySelector("main");
-        const rightSidebar = document.getElementById("toc-rail");
-        const mobileTocWrap = document.getElementById("toc-mobile");
-        const mobileToc = mobileTocWrap?.querySelector(".dropdown-content") ?? null;
-        const mobileLabel = document.getElementById("toc-mobile-label");
-
-        if (!mainContent || !rightSidebar || !mobileToc) {
-          return;
-        }
-
-        // Find all headings in the main content
-        const headings = Array.from(mainContent.querySelectorAll("h2, h3")).map(
-          (heading) => {
-            const text = heading.textContent?.trim() || "";
-            const slug = heading.id || generateSlug(text);
-
-            // Ensure heading has an ID for linking
-            if (!heading.id) {
-              heading.id = slug;
-            }
-
-            return {
-              text,
-              slug,
-              depth: parseInt(heading.tagName[1]),
-              element: heading,
-            };
-          },
-        );
-
-        if (headings.length === 0) {
-          rightSidebar.style.display = "none";
-          mobileTocWrap!.style.display = "none";
-          mainContent.classList.remove("lg:mr-80");
-          return;
-        }
-
-        // Show sidebar and add margin to content
-        rightSidebar.style.display = "";
-        mainContent.classList.add("lg:mr-80");
-
-        // Shared item markup: desktop rail wraps it in a titled ul, the mobile
-        // dropdown is itself the ul (title becomes a menu-title li)
-        const tocItems = headings
-          .map(
-            (heading) => `
-          <li>
-            <a
-              href="#${heading.slug}"
-              class="text-sm block"
-              style="margin-left: ${(heading.depth - 2) * 1}rem;"
-            >
-              ${heading.text}
-            </a>
-          </li>
-        `,
-          )
-          .join("");
-
-        // Populate the desktop rail
-        rightSidebar.innerHTML = `
-    <h2 class="font-bold mb-2">On this page</h2>
-    <ul class="menu">
-      ${tocItems}
-    </ul>
-  `;
-
-        // Populate the mobile top-of-page dropdown (the trigger label is the title)
-        mobileToc.innerHTML = tocItems;
-
-        // Smooth-scroll both surfaces on click; blurring the clicked link drops
-        // the dropdown's :focus-within, closing it, and the trigger label mirrors
-        // the selection like a native select
-        const onTocClick = (e: Event) => {
-          const link = (e.target as HTMLElement)?.closest('a[href^="#"]');
-          if (!link) return;
-          e.preventDefault();
-          const target = document.getElementById(
-            (link.getAttribute("href") || "").slice(1),
-          );
-          if (target) {
-            target.scrollIntoView({ behavior: "smooth" });
-          }
-          if (mobileLabel && link.textContent) {
-            mobileLabel.textContent = link.textContent.trim();
-          }
-          (document.activeElement as HTMLElement | null)?.blur?.();
-        };
-        rightSidebar.addEventListener("click", onTocClick);
-        mobileToc.addEventListener("click", onTocClick);
-      }
-
-      function generateSlug(text: string) {
-        return text
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, "")
-          .replace(/\s+/g, "-")
-          .replace(/-+/g, "-")
-          .trim();
-      }
-
-      /**
-       * Scroll the active sidebar link into view on page load
-       */
-      function scrollSidebarToActive() {
-        const active = document.querySelector<HTMLElement>(
-          ".drawer-side .menu-active",
-        );
-        if (active) {
-          active.scrollIntoView({ block: "center", behavior: "instant" });
-        }
-      }
-
-      // Initialize when DOM is ready
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => {
-          initializeHeadingsNavigation();
-          scrollSidebarToActive();
-        });
-      } else {
-        initializeHeadingsNavigation();
-        scrollSidebarToActive();
-      }
-    </script>
+    <Toc entries={toc} variant="mobile" />
+    <label for="nav-drawer" class="nav-overlay" aria-label="Close navigation"></label>
+    <DocsNav pathname={Astro.url.pathname} />
+    <div class:list={["site-main", toc.length > 0 && "has-toc"]}>
+      <main set:html={content} />
+    </div>
+    <Toc entries={toc} variant="rail" />
+    <!-- Search palette (unit 10): renders nothing until the trigger or
+         ⌘K opens it; its styles register client-side with its module. -->
+    <SearchPalette client:load />
   </body>
 </html>

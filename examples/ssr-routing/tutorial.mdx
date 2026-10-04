@@ -1,3 +1,5 @@
+import Callout from "@components/Callout.astro";
+
 # Build an SSR Routing App
 
 Server-render a routed app end to end: [`router`](/reference/router/router) resolves the request URL on the server, [`ssr`](/reference/ssr/ssr) stringifies the tree, [`cssText`](/reference/css/csstext) collects the styles, and the client [`hydrate`](/reference/dom/hydrate)s the **same** tree against the existing DOM, adopting nodes, never rebuilding them. One isomorphic route map drives both sides.
@@ -88,9 +90,7 @@ export const App = () => html`
 - **Pure-setter handlers** `() => currentView(View())`: They only update the signal. The matched handler fires once during `router()` on both sides, so a pure setter is idempotent and side-effect-free
 - **Reactive active class**: `class` wraps the getter in a reactive effect, so [`route`](/reference/router/route)`().active(href)` re-runs on every navigation. Use `class`, not plain `class`: a plain attribute is set once at mount and never updates
 
-<div role="alert" class="alert alert-error text-base">
-  <span>Route handlers must be pure setters, not <code>() => mount(...)</code>. <a href="/reference/dom/mount">mount</a> needs a <code>document</code> and throws on the server. Put side effects (analytics, subscriptions) in component <a href="/reference/core/effect">effect</a> bodies, not in the handler.</span>
-</div>
+<Callout variant="error">Route handlers must be pure setters, not <code>() => mount(...)</code>. <a href="/reference/dom/mount">mount</a> needs a <code>document</code> and throws on the server. Put side effects (analytics, subscriptions) in component <a href="/reference/core/effect">effect</a> bodies, not in the handler.</Callout>
 
 ## Styles
 

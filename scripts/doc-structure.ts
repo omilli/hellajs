@@ -34,7 +34,7 @@ import { logger, packagesDir, projectRoot } from "./utils/index.js";
  *    with `title`, `description`, and `layout`. Pages that import a package doc
  *    (the `@core/…`–`@examples/…` site aliases) are import-rendering wrappers: their
  *    body may contain only imports, component tags, and optional
- *    `border-t` divider divs. Site-authored content pages (no package-doc
+ *    `<hr />` dividers. Site-authored content pages (no package-doc
  *    import — quick-start, testing patterns) are exempt from the zero-content
  *    rule but not from the frontmatter rule.
  *
@@ -83,7 +83,6 @@ const HEADING_RE = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
 const SECTION_END_RE = /^## /;
 const IMPORT_RE = /^import\s.+/;
 const TAG_RE = /^<[A-Za-z][\w.]*\s[^>]*\/?>$|^<[A-Za-z][\w.]*>.*<\/[A-Za-z][\w.]*>$/;
-const DIVIDER_DIV_RE = /^<div class="[^"]*border-t[^"]*".*<\/div>$/;
 const PACKAGE_DOC_IMPORT_RE =
   /^import\s.+from\s+["']@(core|css|dom|resource|router|store|ssr|ui|examples)\/([^"']+)["']/;
 
@@ -441,7 +440,7 @@ function frontmatterLines(content: string): string[] | null {
 /**
  * Check 4 — wrapper validity: frontmatter completeness everywhere; import-rendering
  * wrappers carry no body content beyond imports, component tags, and
- * border-t divider divs. Site-authored pages (no package-doc import) skip the content rule.
+ * `<hr />` dividers. Site-authored pages (no package-doc import) skip the content rule.
  * @returns Findings
  */
 function checkWrappers(): Finding[] {
@@ -470,7 +469,7 @@ function checkWrappers(): Finding[] {
 
     for (const line of body.split("\n")) {
       const t = line.trim();
-      if (t === "" || IMPORT_RE.test(t) || TAG_RE.test(t) || DIVIDER_DIV_RE.test(t)) continue;
+      if (t === "" || IMPORT_RE.test(t) || TAG_RE.test(t)) continue;
       findings.push({ file, message: `wrapper carries content (zero-content rule): "${t.slice(0, 60)}"` });
     }
   }
@@ -492,22 +491,27 @@ function checkRegistration(): Finding[] {
   }
 
   // Flatten nav entries, scoped per section: learn labels, reference slugs, plugin names, ui slugs.
-  const referenceIdx = nav.indexOf("reference:");
-  const pluginsIdx = nav.indexOf("plugins:");
-  const uiIdx = nav.indexOf("ui:");
-  const learnSlice = nav.slice(0, referenceIdx === -1 ? undefined : referenceIdx);
+  // Anchor at the navigation export: the file header may carry quoted strings
+  // that are not nav data (the NavSection type union), and everything before
+  // `reference:` would otherwise read as learn slugs.
+  const navDataIdx = nav.indexOf("export const navigation");
+  const navData = navDataIdx === -1 ? nav : nav.slice(navDataIdx);
+  const referenceIdx = navData.indexOf("reference:");
+  const pluginsIdx = navData.indexOf("plugins:");
+  const uiIdx = navData.indexOf("ui:");
+  const learnSlice = navData.slice(0, referenceIdx === -1 ? undefined : referenceIdx);
   const learnSlugs = new Set<string>();
   for (const m of learnSlice.matchAll(/"([^"]+)"/g)) learnSlugs.add(m[1]!.toLowerCase());
 
   const uiSlugs = new Set<string>();
   if (uiIdx !== -1) {
-    for (const m of nav.slice(uiIdx).matchAll(/"([^"]+)"/g)) uiSlugs.add(m[1]!.toLowerCase());
+    for (const m of navData.slice(uiIdx).matchAll(/"([^"]+)"/g)) uiSlugs.add(m[1]!.toLowerCase());
   }
 
   const pluginSlugs = new Set<string>();
   const referenceSlugs = new Map<string, Set<string>>();
   if (referenceIdx !== -1) {
-    const refSlice = nav.slice(referenceIdx, pluginsIdx === -1 ? undefined : pluginsIdx);
+    const refSlice = navData.slice(referenceIdx, pluginsIdx === -1 ? undefined : pluginsIdx);
     for (const pkg of refSlice.matchAll(/\{\s*(\w+):\s*\[([^\]]*)\]/g)) {
       const set = new Set<string>();
       // Drop { label, slug } objects from the array text first so only plain-string
@@ -519,7 +523,7 @@ function checkRegistration(): Finding[] {
     }
   }
   if (pluginsIdx !== -1) {
-    for (const slug of nav.slice(pluginsIdx, uiIdx === -1 ? undefined : uiIdx).matchAll(/"([^"]+)"/g)) pluginSlugs.add(slug[1]!.toLowerCase());
+    for (const slug of navData.slice(pluginsIdx, uiIdx === -1 ? undefined : uiIdx).matchAll(/"([^"]+)"/g)) pluginSlugs.add(slug[1]!.toLowerCase());
   }
 
   const learnIndex = readFileOrNull(path.join(docsPagesDir, "learn", "index.mdx")) ?? "";

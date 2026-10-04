@@ -12,6 +12,9 @@
       "bun"
     ],
     "paths": {
+      "@components/*": [
+        "./src/components/*"
+      ],
       "@core/*": [
         "../packages/core/docs/*"
       ],

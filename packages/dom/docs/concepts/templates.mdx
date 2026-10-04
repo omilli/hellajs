@@ -1,3 +1,5 @@
+import Callout from "@components/Callout.astro";
+
 # Templates
 
 Templates bind reactive values directly to DOM elements, enabling surgical updates without virtual DOM diffing.
@@ -65,9 +67,7 @@ A signal **reference** is the simplest reactive binding. A **compound** expressi
 
 The compiler auto-wraps compound expressions in compiled `html` templates too.
 
-<div role="error" class="alert alert-error text-base">
-  <span>Runtime `html` requires an explicit `() => …` wrapper as shown below.</span>
-</div> 
+<Callout variant="error">Runtime `html` requires an explicit `() => …` wrapper as shown below.</Callout> 
 
 ```js
 // Runtime html`` (no compiler): reference stays bare, compound wrapped

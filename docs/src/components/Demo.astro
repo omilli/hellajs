@@ -33,11 +33,11 @@ const highlighted = await highlight(code, lang);
   }
   .demo-card-note {
     font-size: 0.875rem;
-    color: var(--muted-forground);
+    color: var(--muted-foreground);
   }
   .view-code {
     margin-top: 0.5rem;
-    border: 1px solid var(--color-slate-700);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
   }
@@ -45,12 +45,12 @@ const highlighted = await highlight(code, lang);
     padding: 0.5rem 0.875rem;
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--muted-forground);
+    color: var(--muted-foreground);
     cursor: pointer;
     user-select: none;
   }
   .view-code[open] summary {
-    border-bottom: 1px solid var(--color-slate-700);
+    border-bottom: 1px solid var(--border);
   }
   .view-code .install-code pre {
     padding: 1rem;

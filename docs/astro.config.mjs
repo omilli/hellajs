@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import tailwindcss from "@tailwindcss/vite";
 import icon from "astro-icon";
 import mdx from '@astrojs/mdx';
 import pagefind from "astro-pagefind";
@@ -10,9 +9,9 @@ import hellajs from "astro-plugin-hellajs";
 export default defineConfig({
   integrations: [icon(), mdx(), pagefind(), hellajs()],
   vite: {
-    plugins: [tailwindcss()],
     resolve: {
       alias: {
+        '@components/*': './src/components/*',
         '@core/*': '../packages/core/docs/*',
         '@css/*': '../packages/css/docs/*',
         '@dom/*': '../packages/dom/docs/*',

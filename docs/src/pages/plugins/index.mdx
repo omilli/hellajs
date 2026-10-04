@@ -20,7 +20,7 @@ All plugins are zero-config: install and add to your build tool. No options to c
       icon: "simple-icons:babel",
       color: "#F9DC3E",
       description: "JSX support for HellaJS.",
-      buttonTextColor: "text-black"
+      buttonTextColor: "#000"
     },
     {
       name: "Rollup",
@@ -28,7 +28,7 @@ All plugins are zero-config: install and add to your build tool. No options to c
       icon: "simple-icons:rollupdotjs",
       color: "#EC4A3F",
       description: "Tree-shaking output.",
-      buttonTextColor: "text-white"
+      buttonTextColor: "#fff"
     },
     {
       name: "Vite",
@@ -36,7 +36,7 @@ All plugins are zero-config: install and add to your build tool. No options to c
       icon: "simple-icons:vite",
       color: "#515cbd",
       description: "Lightning-fast development.",
-      buttonTextColor: "text-white"
+      buttonTextColor: "#fff"
     },
     {
       name: "Astro",
@@ -44,28 +44,28 @@ All plugins are zero-config: install and add to your build tool. No options to c
       icon: "simple-icons:astro",
       color: "#5f18ab",
       description: "HellaJS components in Astro.",
-      buttonTextColor: "text-white"
+      buttonTextColor: "#fff"
     },
   ];
 
   return (
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="index-grid plugin-grid">
       {plugins.map((plugin) => (
         <a 
           href={plugin.href} 
-          class="card no-underline hover:shadow-xl transition-all group"
+          class="index-card index-card-lift"
           style={`background: linear-gradient(to bottom right, color-mix(in srgb, ${plugin.color} 10%, transparent), color-mix(in srgb, ${plugin.color} 5%, transparent)); border: 1px solid color-mix(in srgb, ${plugin.color} 30%, transparent);`}
         >
-          <div class="card-body p-6">
-            <div class="flex items-center gap-3 mb-2">
+          <div class="index-card-body">
+            <div class="index-card-head">
               <Icon name={plugin.icon} width={32} height={32} style={`color: ${plugin.color}`} />
-              <h3 class="card-title">{plugin.name}</h3>
+              <h3 class="index-card-title">{plugin.name}</h3>
             </div>
-            <p class="text-sm opacity-80 mb-4 mt-0">{plugin.description}</p>
-            <div class="card-actions">
+            <p class="index-card-desc">{plugin.description}</p>
+            <div>
               <span 
-                class={`btn btn-sm ${plugin.buttonTextColor} border-none group-hover:scale-105 transition-transform`}
-                style={`background-color: ${plugin.color}`}
+                class="index-card-cta"
+                style={`background-color: ${plugin.color}; color: ${plugin.buttonTextColor}`}
               >
                 Get Started
               </span>

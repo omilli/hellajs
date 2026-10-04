@@ -1,26 +1,103 @@
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
-@plugin "daisyui";
+/* Docs-site global stylesheet — post-utility-exit (unit 11 of the
+   site-foundation set). The utility-framework toolchain is gone: prose
+   typography lives in
+   src/styles/prose.ts, chrome in src/chrome/chrome-css.ts, callouts in
+   src/styles/callouts.ts, tokens in src/styles/tokens.ts (all collected
+   into the layout head via cssText()). What remains here is plain CSS
+   only: the font face, the cascade-layer statement, the preflight
+   survivors (box-sizing, body paint, anchor/button resets — the old
+   utility preflight carried these; it exited with the toolchain), the
+   component-demo harness, and the landing-page stopgap styles (the
+   landing redesign is a separate deferred set; until it lands this block
+   ports the retired utility markup's computed look onto the tokens). */
 
-/* Registry styles inject as `@layer hella` (the ui pages' inline demo
-   scripts); this statement appends hella after tailwind's theme/base/components
-   order. Cascade layers trump specificity, so registry class rules sit above
-   preflight and daisyUI regardless of injection order. */
-@layer hella;
+@layer base, hella;
 
-/* Docs content lives outside the docs/ site; without explicit @source entries
-   Tailwind never scans it and tree-shakes every daisyUI class used only there
-   (alert-info, alert-soft, ...) out of the build. Paths are relative to THIS
-   stylesheet (docs/src/), and a glob with a directory tail must end in a
-   recursive file tail — oxide does not auto-expand directories that already
-   contain glob wildcards. */
-@source "../../packages/*/docs/**/*";
-@source "../../examples/*/tutorial.mdx";
+/* Layer order: the preflight port lives in `base`, the registry + demo
+   pagecss inject into `hella`, and site-owned styles stay unlayered —
+   cascade layers rank below unlayered author CSS, so the reset can never
+   override the components it sits under. */
+@layer base {
+  /* Preflight survivors — the retired utility preflight carried these;
+     site styles and the registry modules were written against them.
+     Ported here rule-for-rule so the exit changes nothing visible. */
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
 
-/* The generated install sources display tailwind-flavor class strings as text;
-   excluded so oxide never compiles CSS for display-only markup like
-   `data-[direction=end]:bottom-4`. Path is stylesheet-relative (docs/src/). */
-@source not "./generated/**";
+  html {
+    color-scheme: dark;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 20%, transparent) var(--base-100);
+  }
+
+  body {
+    background-color: var(--base-100);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+
+  /* Preflight reset these to inherit; content prose re-styles its own
+     links (src/styles/prose.ts), chrome links carry explicit colors. */
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  ol,
+  ul,
+  menu {
+    list-style: none;
+  }
+
+  img,
+  svg,
+  video,
+  canvas,
+  audio,
+  iframe,
+  embed,
+  object {
+    display: block;
+    vertical-align: middle;
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 1em;
+  }
+}
 
 @font-face {
   font-family: 'Mulish Variable';
@@ -31,111 +108,372 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@theme {
-  --color-base-50: hsl(222.2 47.4% 14%);
+/* npm version shields on the reference/ui index pages. Prose gives
+   `main img` 2em margins; badges opt back out. */
+.pkg-badge-row {
+  display: flex;
+  gap: 0.5rem;
 }
 
-:root {
-  /* Your preferred text font. Starlight uses a system font stack by default. */
-  --font-sans: 'Mulish Variable', sans-serif;
-
-  --color-primary: #38EBFF;
-  --color-primary-content: #090e19;
-
-  --color-base-100: hsl(222.2 47.4% 8%);
-  --color-base-200: hsl(222.2 47.4% 7%);
-  --color-base-300: hsl(222.2 47.4% 6%);
-
-  --pagefind-ui-scale: 0.8 !important;
-  --pagefind-ui-primary: var(--color-base-content) !important;
-  --pagefind-ui-text: var(--color-base-content) !important;
-  --pagefind-ui-background: var(--color-base-50) !important;
-  --pagefind-ui-border: var(--color-base-50) !important;
+.pkg-badge-row img {
+  display: block;
+  margin-block: 0;
 }
 
-.pagefind-ui .pagefind-ui__drawer:not(.pagefind-ui__hidden) {
-  @apply absolute left-0 right-0 mt-2 z-[9999] px-8 pb-4 max-h-[60vh] overflow-y-auto shadow-xl rounded bg-[var(--pagefind-ui-background)];
+/* Landing page (stopgap until the deferred redesign re-derives this
+   surface). Class names are landing-owned; values port the retired
+   utility-class markup against tokens.ts. */
+
+.landing-hero {
+  align-items: center;
+  display: flex;
+  min-height: 100vh;
 }
 
-.pagefind-ui__result-thumb {
-  @apply !hidden;
+.landing-inner {
+  margin-inline: auto;
+  padding-inline: 1rem;
+  width: 100%;
+  max-width: 80rem;
 }
 
-.pagefind-ui--reset mark {
-  @apply !bg-primary !rounded !px-0.5 !py-0.25;
+.landing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: center;
 }
 
-main {
-
-  h1,
-  h2,
-  h3 {
-    scroll-margin-top: 5rem;
-  }
+.landing-copy {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-.menu {
-  --menu-active-bg: var(--color-base-50);
-  --menu-active-fg: var(--color-primary);
+.landing-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 1rem;
 }
 
-.menu :where(li:not(.menu-title, .disabled) > *:not(ul, details, .menu-title):hover, li:not(.menu-title, .disabled) > details > summary:not(.menu-title)):not(.menu-active, :active, .btn):hover {
-  background-color: var(--color-base-50) !important;
+.landing-tagline {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 42rem;
 }
 
-.menu-active {
-  @apply font-bold text-primary
+.landing-ctas {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
 }
 
-pre {
-  background-color: var(--color-base-50) !important;
-  @apply shadow-xl border border-slate-700 overflow-x-auto max-w-[93vw];
+.landing-btn {
+  align-items: center;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.125rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  text-decoration: none;
+  transition: filter 150ms ease, background-color 150ms ease;
 }
 
-:where(code):not(pre > code) {
-  background-color: var(--color-base-50) !important;
-  @apply border border-slate-600 rounded px-1 py-0.5;
+.landing-btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
 }
 
-.hero-code {
-  background: var(--color-base-50);
+.landing-btn-primary:hover {
+  filter: brightness(0.92);
+}
 
-  pre {
-    @apply border-none shadow-none text-base;
-  }
+.landing-btn-outline {
+  border: 1px solid var(--foreground);
+  color: var(--foreground);
+}
+
+.landing-btn-outline:hover {
+  background-color: color-mix(in oklab, var(--foreground) 10%, transparent);
+}
+
+.landing-feats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.landing-feat {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.landing-feat svg {
+  color: oklch(76% .177 163.223);
+  flex: none;
+  margin-top: 0.125rem;
+}
+
+.landing-demo {
+  display: flex;
+  justify-content: center;
+}
+
+.landing-window {
+  background-color: var(--base-300);
+  border-radius: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  overflow: hidden;
+  width: 100%;
+  max-width: 36rem;
+}
+
+.landing-window-bar {
+  align-items: center;
+  background-color: var(--base-200);
+  border-bottom: 1px solid var(--base-300);
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.landing-dots {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.landing-dot {
+  border-radius: 9999px;
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.landing-dot-error {
+  background-color: oklch(71% .194 13.428);
+}
+
+.landing-dot-warning {
+  background-color: oklch(82% .189 84.429);
+}
+
+.landing-dot-success {
+  background-color: oklch(76% .177 163.223);
+}
+
+.landing-window-label {
+  color: color-mix(in oklab, var(--foreground) 60%, transparent);
+  font-size: 0.875rem;
+}
+
+.landing-code {
+  background: var(--base-50);
+  padding: 1rem;
+}
+
+/* (0,2,1): beats prose's `main pre.astro-code` (0,1,2) — the landing
+   window carries its own chrome, no prose padding/border inside. */
+.landing-code pre.astro-code {
+  background: var(--base-50) !important;
+  border: none;
+  box-shadow: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0;
 }
 
 .ti-cursor {
   display: none !important;
 }
 
-/* Sidebar toggle icons in navbar (labels live outside the drawer subtree, so :has() on a
-   shared ancestor reaches them — same pattern daisyUI uses for this checkbox) */
-body:has(#sidebar-drawer:checked) .sidebar-hamburger {
-  @apply hidden;
+@media (min-width: 40rem) {
+  .landing-inner {
+    padding-inline: 1.5rem;
+  }
+
+  .landing-title {
+    font-size: 3rem;
+  }
+
+  .landing-tagline {
+    font-size: 1.25rem;
+  }
+
+  .landing-ctas {
+    flex-direction: row;
+  }
+
+  .landing-feats {
+    flex-direction: row;
+  }
+
+  .landing-feat {
+    width: 33.3333%;
+  }
 }
 
-body:has(#sidebar-drawer:checked) .sidebar-close {
-  @apply block
+@media (min-width: 64rem) {
+  .landing-inner {
+    padding-inline: 2rem;
+  }
+
+  .landing-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+  }
+
+  .landing-copy {
+    text-align: left;
+  }
+
+  .landing-title {
+    font-size: 3.75rem;
+  }
+
+  .landing-tagline {
+    margin-inline: 0;
+  }
+
+  .landing-ctas {
+    justify-content: flex-start;
+  }
+
+  .landing-feats {
+    justify-content: flex-start;
+  }
+
+  .landing-demo {
+    justify-content: flex-end;
+  }
+
+  .landing-code {
+    padding: 2.5rem;
+  }
 }
 
-/* Mobile "On this page" select: chevron flips while the dropdown is open */
-.toc-chevron {
-  transition: rotate 0.2s ease-out;
+/* Enumeration-index card grids (plugins/index.mdx + learn/patterns/index.mdx).
+   Unlayered site-owned page styles, same footing as the landing block. The
+   card carries structure; page-level classes/inline styles carry color
+   (plugins tint per plugin, patterns use the shaded modifier). */
+.index-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin-bottom: 2rem;
 }
 
-#toc-mobile:focus-within .toc-chevron {
-  rotate: 180deg;
+.index-card {
+  border-radius: var(--radius);
+  display: flex;
+  text-decoration: none;
+}
+
+.index-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+.index-card-head {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.index-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.index-card-desc {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.index-card-cta {
+  align-items: center;
+  border-radius: calc(var(--radius) * 0.5);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 600;
+  height: 2rem;
+  padding-inline: 0.75rem;
+  transition: transform 150ms ease;
+}
+
+/* Patterns flavor: always-on shadow, tinted gradient, hover underline. */
+.index-card-shaded {
+  background: linear-gradient(to right,
+    color-mix(in srgb, var(--primary) 10%, transparent),
+    color-mix(in srgb, var(--accent) 10%, transparent));
+  border: 1px solid color-mix(in srgb, var(--primary) 15%, transparent);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.2);
+}
+
+.index-card-shaded:hover .index-card-body {
+  text-decoration: underline;
+}
+
+/* Plugins flavor: neutral until hover, then shadow + CTA grow. */
+.index-card-lift {
+  transition: box-shadow 150ms ease;
+}
+
+.index-card-lift:hover {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.2);
+}
+
+.index-card-lift:hover .index-card-cta {
+  transform: scale(1.05);
+}
+
+.pattern-grid {
+  gap: 1rem;
+}
+
+.plugin-grid {
+  gap: 1.5rem;
+}
+
+@media (min-width: 48rem) {
+  .plugin-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pattern-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .pattern-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* Component demo harness (the `docs/src/pages/ui/<name>.astro` demo
    frames). Unlayered by design: layered rules lose to unlayered author CSS by
    construction, and the harness must override the registry's hella layer the
    same way the retired per-demo shell did. Scoped to .demo-frame so nothing
-   leaks into site typography. */
+   leaks into site typography. Reads tokens.ts names (--base-50, --border,
+   --radius, --foreground, --muted-foreground). */
 .demo-frame {
-  background-color: var(--color-base-50);
-  border: 1px solid var(--color-slate-700);
+  background-color: var(--base-50);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--foreground);
   margin-block: 1.25rem;

@@ -1,7 +1,10 @@
 import { signal } from "@hellajs/core";
 
 import Button from "@registry/button/css/button.js";
+import { style } from "@hellajs/css";
 import { row, stack } from "./demo-kit";
+
+const full = style({ width: "100%" }, { label: "demo-button-full" });
 
 export default function ButtonDemo() {
   const clicks = signal(0);
@@ -34,5 +37,5 @@ export function ButtonInvalidDemo() {
 }
 
 export function ButtonOverrideDemo() {
-  return <Button variant="outline" size="lg" class="w-full">Deploy to production</Button>;
+  return <Button variant="outline" size="lg" class={full}>Deploy to production</Button>;
 }

@@ -4,10 +4,9 @@ const { package: pack } = Astro.props as {
 };
 ---
 
-<div class="flex gap-2">
+<div class="pkg-badge-row">
   <a href={`https://www.npmjs.com/package/@hellajs/${pack}`}>
     <img
-      class="m-0!"
       src={`https://img.shields.io/npm/v/@hellajs/${pack}?color=orange`}
       alt={`Version of @hellajs/${pack}`}
     />

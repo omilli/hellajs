@@ -5,28 +5,34 @@
   ## Architecture
 
   - **Three page kinds**: (1) *wrapper* pages (`learn/concepts/*`, `reference/{pkg}/*`) — frontmatter + `layout` + `import X from '@pkg/…'` + `<X />`; content is external. (2) *self-contained* pages (`pages/plugins/*`, `learn/quick-start.mdx`, landing, `pages/ui/<name>.astro`) — prose written inline; the ui pages are `.astro` (`Demo` cards with `client:load` islands + the `@ui/concepts/<name>.mdx` import), not mdx. (3) *enumeration* pages (`learn/index.mdx`, `learn/patterns/index.mdx`, `reference/index.mdx`, `ui/index.mdx`) — hand-maintained link lists.
-  - **Content aliases** — `@core` / `@css` / `@dom` / `@resource` / `@router` / `@store` → `../packages/<pkg>/docs/*`, plus `@registry/*` → `../packages/ui/dist/registry/*` (the ui demos' build-output alias; needs `bun bundle ui`). Defined in **two** places (`astro.config.mjs` `vite.resolve.alias` + `tsconfig.json` `compilerOptions.paths`); keep both in sync when adding a package or alias.
-  - **Sidebar** — `nav.ts` is the single source of truth; `Sidebar.astro` `import.meta.glob`s every `pages/**/*.mdx` and match-merges frontmatter titles against nav entries at render time. Three top-level sections: `learn` (Quick-Start + Concepts/Patterns/Tutorials groups), `reference` (per-package), `plugins`.
-  - **Search** — `astro-pagefind` indexes the built output (not source); rebuild (`astro build`) before verifying search results.
+  - **Content aliases** — `@core` / `@css` / `@dom` / `@resource` / `@router` / `@store` → `../packages/<pkg>/docs/*`, plus `@components/*` → `./src/components/*` (the Callout import for package docs + tutorials), `@registry/*` → `../packages/ui/dist/registry/*` (the ui demos' build-output alias; needs `bun bundle ui`) + `@examples/*`. Defined in **two** places (`astro.config.mjs` `vite.resolve.alias` + `tsconfig.json` `compilerOptions.paths`); keep both in sync when adding a package or alias.
+  - **Styling** — zero utility framework: site styles are `css()`/`style()` modules (`src/styles/`, `src/chrome/chrome-css.ts`) collected into the layout head via `cssText()`; `src/global.css` holds plain CSS only (font face, layer statement, preflight survivors, landing stopgap, demo harness). Registry components run on the registry's own style modules + `src/styles/tokens.ts` overrides.
+  - **Nav** — `nav.ts` is the single source of truth; `src/chrome/DocsNav.astro` consumes it as pure data and renders the tree server-side (no client JS). Four top-level sections: `learn` (Quick-Start + Concepts/Patterns/Tutorials groups), `reference` (per-package), `plugins`, `ui`.
+  - **Search** — `astro-pagefind` builds the index; the palette (`src/chrome/SearchPalette.tsx`, a `CommandDialog` island) queries it through pagefind's JS API lazily on first open. Rebuild (`astro build`) before verifying search results; dev has no index.
 
   ## Files
 
   | Path | Responsibility |
   |---|---|
-  | `astro.config.mjs` | Integrations (`astro-icon`, `@astrojs/mdx`, `astro-pagefind`, `astro-plugin-hellajs`) + the seven `@<pkg>` Vite aliases + `@registry` + `@examples`. |
+  | `astro.config.mjs` | Integrations (`astro-icon`, `@astrojs/mdx`, `astro-pagefind`, `astro-plugin-hellajs`) + the seven `@<pkg>` Vite aliases + `@components` + `@registry` + `@examples`. No vite plugins. |
   | `tsconfig.json` | `astro/tsconfigs/strict` + `compilerOptions.paths` mirroring the Vite aliases. |
-  | `package.json` | `predev`/`prebuild` (regenerate `src/generated/pagecss/` via `bun ../scripts/gen-demo-css.ts`) + `dev` / `build` / `preview` / `astro` scripts. |
-  | `src/nav.ts` | Sidebar tree (the nav contract); entry forms below. |
-  | `src/types/navigation.ts` | `NavNode` interface (`title`, `url?`, `children?`). |
-  | `src/global.css` | Tailwind v4 (`@import "tailwindcss"`) + `@tailwindcss/typography` + `daisyUI` plugins; Mulish font; dark-theme color overrides (`:root` + `@theme`). |
-  | `src/layouts/MainLayout.astro` | Docs layout: `Navbar` + `Sidebar` wrapper + mobile top-of-content "On this page" select-style dropdown (`#toc-mobile`) + inline client-side `<script>` that builds that dropdown and the desktop right-rail (`#toc-rail`) from `main h2, h3` at runtime. When the `demoCss` prop is present, inlines `LAYER_ORDER + demoCss` as `<style id="hella-css" is:inline>` — the id is what css-package hydration adopts, `LAYER_ORDER` (`src/utils/layer-order.ts`, TEMPORARY until the tailwind exit) first-declares every cascade layer with `hella` last so preflight cannot outrank demo rules. |
-  | `src/layouts/LandingLayout.astro` | Landing-only layout (no sidebar/navbar); OG/Twitter meta. |
-  | `src/components/Navbar.astro` | Top bar: logo, Learn/Reference/Plugins tabs, Pagefind `<Search>`, GitHub link, mobile hamburger. |
-  | `src/components/Sidebar.astro` | Renders the current section's nav tree via `NavItem`; mobile drawer + persistent desktop. |
-  | `src/components/NavItem.astro` | Recursive nav renderer (leaf vs. expandable `<details>`); active-link + active-parent detection. |
-  | `src/components/Badge.astro` | npm version shield for a package (`package` prop). |
+  | `package.json` | `predev`/`prebuild` (regenerate `src/generated/pagecss/` via `bun ../scripts/gen-demo-css.ts`) + `dev` / `build` / `preview` / `astro` scripts. No `@hellajs/*` and no utility-framework deps. |
+  | `src/nav.ts` | Nav tree + its types (`NavLeaf`/`NavGroup`/`NavSection`/`NavTreeNode`); entry forms below. |
+  | `src/global.css` | Plain CSS only: Mulish `@font-face`, the `@layer hella;` statement, preflight survivors (box-sizing, body paint, anchor/button resets), `.pkg-badge-row`, landing stopgap styles (`.landing-*`), `.ti-cursor`, demo harness (`.demo-*` on tokens.ts names). |
+  | `src/styles/tokens.ts` | Site tokens on the registry vocabulary (`vars()`): palette port, base ladder, `sidebar-*` overrides. Unlayered so overrides beat the registry sheet by cascade. |
+  | `src/styles/prose.ts` | `css()` typography ruleset under `main` (headings through code blocks, tables, lists); the only `!important` beats shiki's inline pre background. |
+  | `src/styles/callouts.ts` | `style()` mirror of the registry alert's base/body/title chrome + site `info`/`warning`/`error` variants (values port the retired daisy looks). |
+  | `src/components/Callout.astro` | Docs callout component (`variant="info|warning|error"`), `role="alert"` always; consumed by package docs + tutorials via `@components/Callout.astro`. |
+  | `src/layouts/MainLayout.astro` | Docs layout: `Navbar` + `DocsNav` + `Toc` + `SearchPalette`; renders the default slot in frontmatter to lift h2/h3 into the server-rendered TOC; inlines `"@layer hella;\n" + demoCss + cssText()` as `<style id="site-head" is:inline>` (foreign id on purpose — the css runtime drains `#hella-css`, never this tag). |
+  | `src/layouts/LandingLayout.astro` | Landing-only layout (no navbar/nav); OG/Twitter meta; plain markup — global.css paints the body. |
+  | `src/chrome/Navbar.astro` | Static top bar: logo, section links, search trigger (`data-command-open`), GitHub link, drawer toggle. Zero client JS. |
+  | `src/chrome/DocsNav.astro` + `NavNode.astro` | Server-rendered nav tree from `nav.ts` (drawer below lg, persistent rail at lg+). |
+  | `src/chrome/Toc.astro` | Server-rendered "On This Page" (mobile top + desktop rail) from the layout's slot-render lift. |
+  | `src/chrome/SearchPalette.tsx` | Command-palette island: `CommandDialog` + pagefind JS API (lazy first-open query, seq-guarded); ⌘K binding; opens from the navbar trigger. |
+  | `src/chrome/chrome-css.ts` | `css()` chrome module (nav shell, drawer, topbar, search command width, toc) — imported by MainLayout for the head tag. |
+  | `src/components/Badge.astro` | npm version shield for a package (`package` prop); row layout via `.pkg-badge-row`. |
   | `src/components/CodeExample.mdx` | Static hero code block for the landing page. |
-  | `src/components/RightSidebar.astro` | **Dead** — not imported anywhere. The live right-rail is the inline script in `MainLayout.astro`. Do not revive without wiring it in. |
+  | `src/utils/highlight.ts` + `demo-code.ts` | Shiki highlighting for `Demo` View Code + the demo source extractor. |
   | `src/pages/index.astro` | Landing page (`LandingLayout`). |
   | `src/pages/learn/**` | `quick-start.mdx` + `concepts/` + `patterns/` + `tutorials/` — ALL are thin wrappers; content lives in `packages/*/docs/` (concepts/patterns) and `examples/{name}/tutorial.mdx` (tutorials). |
   | `src/pages/reference/{pkg}/**` | One wrapper page per exported symbol; imports `@<pkg>/api/<symbol>.mdx`. |
@@ -80,11 +86,11 @@
 
   ## Non-obvious behaviors
 
-  - **Right rail is runtime-scraped** — `MainLayout.astro`'s inline `<script>` reads `main h2, h3` after hydration to build "On this page" on both surfaces (desktop rail `#toc-rail`, mobile top-of-page select-style dropdown `#toc-mobile` — blur-closes on select and mirrors the chosen heading in its trigger label); headings rendered purely client-side won't appear. `RightSidebar.astro` is unused.
-  - **Dark theme is hardcoded** — both layouts set `<html data-theme="dark">`; `global.css` overrides daisyUI `--color-base-*`. There is no theme toggle.
-  - **SSR is unsupported** — packages are client-side; the site is a static `astro build`. `learn/index.mdx` carries an explicit "Server-side rendering is not currently supported" alert; do not silently remove it.
+  - **"On This Page" is server-rendered** — `MainLayout.astro` renders the default slot in frontmatter and lifts h2/h3 (with their mdx slug ids) into `Toc.astro`; headings without an id are skipped. No client script, zero flash.
+  - **Dark-only by tokens** — no `data-theme` attribute, no theme toggle: `src/styles/tokens.ts` registers the site palette unlayered so it overrides the registry's dark sheet by cascade on every page.
+  - **Static site, SSR docs** — packages are client-side; the site is a static `astro build` (the `ssr` package's docs describe server-side string rendering).
   - **`slug` vs `title`** — nav string entries map to URL slugs (lowercased), but the sidebar displays `frontmatter.title` when present. A page whose title casing differs from its slug still resolves correctly; only a missing/renamed *file* breaks the link.
-  - **MDX is the default content format** — `Sidebar.astro` globs `**/*.mdx` for frontmatter titles; `.astro` pages are not glob-discoverable, so their sidebar titles resolve from the nav entry itself (dash→space fallback — the `ui/<name>.astro` pages rely on this; the landing `index.astro` is intentionally outside the nav).
+  - **MDX is the default content format** — `DocsNav.astro` consumes `nav.ts` for the tree; `.astro` pages are not glob-discoverable, so their titles resolve from the nav entry itself (dash→space fallback — the `ui/<name>.astro` pages rely on this; the landing `index.astro` is intentionally outside the nav).
 
   ## Drift surface (verify on every page add/remove/rename)
 

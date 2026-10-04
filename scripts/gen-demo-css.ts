@@ -1,7 +1,9 @@
 /**
  * Generates per-page CSS for the docs site's ui demo pages into
  * `docs/src/generated/pagecss/<page>.css` (gitignored; read by each ui
- * page's frontmatter and inlined by MainLayout behind the `hella-css` id).
+ * page's frontmatter and inlined by MainLayout behind the `site-head` id —
+ * deliberately NOT the css runtime's adopted `hella-css` id, so hydration
+ * never drains the SSR text).
  *
  * Each page collects in a fresh child process: demo wrappers, the shared
  * demo kit, the dark tokens, and registry components register styles at

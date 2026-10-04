@@ -1,6 +1,9 @@
 
 import Select from "@registry/select/css/select.js";
+import { style } from "@hellajs/css";
 import { row, stack } from "./demo-kit";
+
+const compact = style({ width: "12rem" }, { label: "demo-select-compact" });
 
 const fruits = [
   { value: "apple", label: "Apple" },
@@ -23,7 +26,7 @@ export function SelectCompactDemo() {
   return (
     <div class={stack}>
       <div class={row}>
-        <Select items={fruits} size="sm" clearable placeholder="Compact" class="w-48" />
+        <Select items={fruits} size="sm" clearable placeholder="Compact" class={compact} />
       </div>
     </div>
   );

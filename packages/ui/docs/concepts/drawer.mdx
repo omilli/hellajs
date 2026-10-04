@@ -1,3 +1,5 @@
+import Callout from "@components/Callout.astro";
+
 ## Usage
 
 A drag-dismissable panel mounting on one of the four screen edges: the caller owns an `open` accessor and an `onClose` callback, the panel follows the pointer while dragged, and release past a distance or velocity threshold dismisses it.
@@ -50,9 +52,7 @@ The whole panel is a drag surface (the grip handle at the top of a bottom drawer
 
 Below both thresholds the panel springs back through the restored transform transition - the same transition carrying the enter and exit slides, so open, close, and drag all move through one mechanism. Above either one the panel receives its off-edge transform, `onClose` fires, and the panel unmounts when the exit slide ends.
 
-<div role="alert" class="alert alert-info alert-soft">
-  <span>Interactive elements opt out of the drag: pointerdowns on buttons, links, inputs, or anything marked `data-no-drag` never move the panel.</span>
-</div>
+<Callout variant="info">Interactive elements opt out of the drag: pointerdowns on buttons, links, inputs, or anything marked `data-no-drag` never move the panel.</Callout>
 
 ## Direction
 
