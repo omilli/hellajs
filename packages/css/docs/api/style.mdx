@@ -8,24 +8,28 @@ Creates a scoped style from a declarations-first object and returns a content-ha
 // From a single style object
 function style(obj: StyleObject, options?: StyleOptions): string;
 
-// Composition: a class-string or object base plus an override
-function style(base: string | StyleObject, override: StyleObject, options?: StyleOptions): string;
+// Positional label: the string wins over a bag `label`
+function style(label: string, obj: StyleObject, options?: StyleOptions): string;
+
+// Composition: an object base plus an override
+function style(base: StyleObject, override: StyleObject, options?: StyleOptions): string;
 ```
 - `obj`: Style object to scope under the generated class
-- `base`: Class string or style object to compose onto
+- `label`: Readable segment embedded in the class name; wins over a bag `label`
+- `base`: Style object to compose onto
 - `override`: Style object contributing the new declarations
 - `options`: Optional configuration
   - `label`: Readable segment embedded in the class name (`{label}-{hash}`), sanitized to `[a-zA-Z0-9-]`; a label empty after sanitization is treated as absent
   - `layer`: Cascade layer name the emitted rules wrap in (`@layer <name>`), interpolated verbatim. Unlayered author CSS beats layered rules, so consumer overrides win by construction; composes outermost of `@media` when both apply
   - `host`: Node the `<style>` element is created in; e.g. a `ShadowRoot` for web components. Defaults to `document.head`
-- **Returns**: The class name (`{label}-{hash}` / a bare letter-only hash) for `class` attributes; the composed form prefixes a string base verbatim
+- **Returns**: The class name (`{label}-{hash}` / a bare letter-only hash) for `class` attributes
 
 ## Basic Usage
 
 ```jsx
 import { style } from '@hellajs/css';
 
-const card = style({
+const card = style('card', {
   padding: '1rem',
   borderRadius: '8px',
   backgroundColor: '#f8f9fa',
@@ -36,8 +40,8 @@ const card = style({
 
   // Responsive design inherits the class
   '@media (max-width: 768px)': { padding: '0.5rem' }
-}, { label: 'card' });
-// "card-cqknezd"; client AND server
+});
+// "card-cqknezd"; client AND server. style({ ... }, { label: 'card' }) is the equivalent bag form
 
 const Card = ({ title }: { title: string }) => (
   <div class={card}>
@@ -77,22 +81,31 @@ const head = `<style>${cssText()}</style>`;
 
 ### Composition
 
-Two overload shapes compose styles:
+An object base deep-merges two style objects into one class; class strings join with [`cx`](/reference/css/cx):
 
 ```jsx
-import { style } from '@hellajs/css';
+import { style, cx } from '@hellajs/css';
 
-const card = style({ padding: '1rem' }, { label: 'card' });
-
-// String base: prefix verbatim, each side keeps its own rule
-const alert = style(card, { color: 'red' });
-// "card-bcgbryh mgmyaqx"
+const card = style('card', {
+  padding: '1rem'
+});
 
 // Object base: deep-merge into ONE class; override wins,
 // nested objects merge, arrays replace
 const compact = style({ padding: '1rem', margin: '1rem' }, { padding: '0.5rem' });
 // one class, { padding: '0.5rem', margin: '1rem' }
+
+// Class strings join through cx; each style keeps its own rule
+const alert = cx(
+  card,
+  style({
+    color: 'red'
+  })
+);
+// "card-bcgbryh mgmyaqx"
 ```
+
+The former class-string argument (`style(card, { … })`) is removed: a string first argument is now the label, and class-string joins route through `cx`.
 
 ### Nested Selectors
 

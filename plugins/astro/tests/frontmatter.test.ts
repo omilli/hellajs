@@ -84,22 +84,22 @@ describe("frontmatter extraction", () => {
     expect(css).toMatch(/@keyframes kf-[a-z]+ \{\n {2}from \{\n {4}opacity: 0;\n {2}\}\n {2}to \{\n {4}opacity: 1;\n {2}\}\n\}/);
   });
 
-  test("folds same-module const bindings: object merge, string base, and options bag", () => {
+  test("folds same-module const bindings: object merge, positional label, and options bag", () => {
     const { code, css } = run(compiled(
       [`import { style } from "@hellajs/css";`],
       [
         `  const base = { fontSize: "14px" };`,
         `  const merged = style(base, { color: "blue" });`,
-        `  const composed = style("btn", { color: "red" });`,
+        `  const labeledBtn = style("btn", { color: "red" });`,
         `  const labeled = style({ margin: 0 }, { label: "card" });`,
       ].join("\n"),
       "<div></div>",
     ));
     expect(code).toMatch(/const merged = "[a-z]+"/);
-    expect(code).toMatch(/const composed = "btn [a-z]+"/);
+    expect(code).toMatch(/const labeledBtn = "btn-[a-z]+"/);
     expect(code).toMatch(/const labeled = "card-[a-z]+"/);
     expect(css).toMatch(/\.[a-z]+ \{\n {2}font-size: 14px;\n {2}color: blue;\n\}/);
-    expect(css).toMatch(/\.[a-z]+ \{\n {2}color: red;\n\}/);
+    expect(css).toMatch(/\.btn-[a-z]+ \{\n {2}color: red;\n\}/);
   });
 
   test("folds imports through a stubbed resolver: const objects and composed keyframes names", () => {
@@ -134,8 +134,10 @@ describe("frontmatter extraction", () => {
       ].join("\n"),
       "<div></div>",
     ));
-    expect(code).toMatch(/const mixed = "a b [a-z]+"/);
-    expect(code).toMatch(/const variant = "base-[a-z]+ size-sm-[a-z]+ [a-z]+"/);
+    // a string first argument is a positional label now: the folded cx/cva
+    // results feed the label slot, sanitized to `a-b` / `base-…-size-sm-…`.
+    expect(code).toMatch(/const mixed = "a-b-[a-z]+"/);
+    expect(code).toMatch(/const variant = "base-[a-z]+-size-sm-[a-z]+-[a-z]+"/);
   });
 
   test("collects imported top-level creator calls into the island tag and ignores their non-foldable calls and vars()", () => {

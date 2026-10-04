@@ -8,11 +8,15 @@ Removes a style created by [`style`](/reference/css/style) and decrements its re
 // Remove a single-object style
 function removeStyle(obj: StyleObject, options?: StyleOptions): void;
 
+// Remove a labeled style (matching the style() label overload)
+function removeStyle(label: string, obj: StyleObject, options?: StyleOptions): void;
+
 // Remove a composed style (matching the style() overload)
-function removeStyle(base: string | StyleObject, override: StyleObject, options?: StyleOptions): void;
+function removeStyle(base: StyleObject, override: StyleObject, options?: StyleOptions): void;
 ```
 - `obj`: Style object to remove (structurally identical objects match)
-- `base`: Class string or style object used in the `style()` call
+- `label`: Label used when creating the style; `removeStyle("card", obj)` matches `style("card", obj)`
+- `base`: Style object used in the `style()` call
 - `override`: Style object used in the `style()` call
 - `options`: Optional configuration object (must match the options used in `style()`)
   - `label`: Label used when creating the style

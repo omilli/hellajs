@@ -8,14 +8,6 @@ beforeEach(() => {
 });
 
 describe("style composition", () => {
-  test("a string base prefixes the generated class verbatim", () => {
-    const base = style({ color: "red" });
-    const override = style({ fontWeight: "700" });
-    const composed = style(base, { fontWeight: "700" });
-    expect(composed).toBe(`${base} ${override}`);
-    expect(getStylesheet("hella-css")).toBe(`.${base}{color:red}.${override}{font-weight:700}`);
-  });
-
   test("an object base deep-merges into one class with the override winning", () => {
     const cls = style({ padding: "1rem", color: "red" }, { color: "blue" });
     expect(cls).toMatch(/^[a-z]+$/);

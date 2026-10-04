@@ -49,14 +49,14 @@ css({
   }
 });
 
-const buttonStyle = style({
+const buttonStyle = style('btn', {
   padding: theme.spacing,
   backgroundColor: theme.colors.primary,
   color: 'white',
   border: 'none',
   cursor: 'pointer',
   '&:hover': { opacity: 0.8 }
-}, { label: 'btn' });
+});
 // "btn-kkkudgs"; the same class on client and server
 
 <button class={buttonStyle}>

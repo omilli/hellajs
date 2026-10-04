@@ -162,4 +162,42 @@ describe("style", () => {
     expect(getHostStylesheet(first)).toBe("");
     expect(getHostStylesheet(second)).toBe(`.${cls}{color:red}`);
   });
+
+  describe("style label", () => {
+    test("a positional label derives the labeled class and registers its rule under it", () => {
+      const cls = style("card", { padding: 0 });
+      expect(cls).toMatch(/^card-[a-z]+$/);
+      expect(getStylesheet("hella-css")).toBe(`.${cls}{padding:0px}`);
+    });
+
+    test("a positional label and the bag label share one registration", () => {
+      const styles = { color: "red" };
+      const positional = style("card", styles);
+      const bag = style(styles, { label: "card" });
+      expect(bag).toBe(positional);
+      expect(getStylesheet("hella-css")).toBe(`.${positional}{color:red}`);
+      removeStyle("card", styles);
+      expect(getStylesheet("hella-css")).toBe(`.${positional}{color:red}`);
+      removeStyle(styles, { label: "card" });
+      expect(getStylesheet("hella-css")).toBe("");
+    });
+
+    test("a positional label sanitizes invalid characters like the bag label", () => {
+      const cls = style("Card Title!", { color: "red" });
+      expect(cls).toMatch(/^Card-Title-[a-z]+$/);
+    });
+
+    test("a positional label empty after sanitization is treated as absent", () => {
+      const sanitized = style("!!", { color: "red" });
+      const plain = style({ color: "red" });
+      expect(sanitized).toBe(plain);
+    });
+
+    test("removeStyle with a positional label drops the rule it created", () => {
+      const cls = style("card", { color: "red", "&:hover": { color: "blue" } });
+      removeStyle("card", { "&:hover": { color: "blue" }, color: "red" });
+      expect(getStylesheet("hella-css")).toBe("");
+      expect(cls).toMatch(/^card-[a-z]+$/);
+    });
+  });
 });

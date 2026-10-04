@@ -41,12 +41,10 @@ describe("platform-independent registration (no document)", () => {
     expect(cssText()).toBe(`.${cls} {\n  color: red;\n}\n.${cls}:hover {\n  color: blue;\n}`);
   });
 
-  test("style() composition returns both classes and registers the override", () => {
-    const card = style({ color: "red" }, { label: "card" });
-    const alert = style(card, { fontWeight: "700" });
-    const override = alert.slice(card.length + 1);
-    expect(alert).toBe(`${card} ${override}`);
-    expect(cssText()).toBe(`.${card} {\n  color: red;\n}\n\n.${override} {\n  font-weight: 700;\n}`);
+  test("style() positional label returns the labeled class and registers the rule", () => {
+    const cls = style("card", { color: "red", fontWeight: "700" });
+    expect(cls).toMatch(/^card-[a-z]+$/);
+    expect(cssText()).toBe(`.${cls} {\n  color: red;\n  font-weight: 700;\n}`);
   });
 
   test("css() does not inject into the DOM", () => {

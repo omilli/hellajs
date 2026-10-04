@@ -34,6 +34,12 @@ describe("style layer", () => {
     expect(cssText()).toBe(`.${labeled} {\n  padding: 4px;\n}\n\n@layer hella {\n  .${labeled} {\n    padding: 4px;\n  }\n}`);
   });
 
+  test("a positional label composes with a layer bag", () => {
+    const cls = style("card", { color: "red" }, { layer: "hella" });
+    expect(cls).toMatch(/^card-[a-z]+$/);
+    expect(cssText()).toBe(`@layer hella {\n  .${cls} {\n    color: red;\n  }\n}`);
+  });
+
   test("removeStyle with the same options drops the layered registration", () => {
     const obj = { color: "red" };
     style(obj, { layer: "hella" });

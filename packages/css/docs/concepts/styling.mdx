@@ -13,7 +13,7 @@ import { style } from '@hellajs/css';
 const Counter = () => {
   const count = signal(0);
 
-  const buttonStyle = style({
+  const buttonStyle = style('btn', {
     padding: '0.75rem 1.5rem',
     border: 'none',
     borderRadius: '0.5rem',
@@ -27,8 +27,9 @@ const Counter = () => {
       background: '#2563eb',
       transform: 'translateY(-1px)'
     }
-  }, { label: 'btn' });
+  });
   // "btn-nficjjz"; identical on client and server
+  // style({ ... }, { label: 'btn' }) is the equivalent bag form
 
   return (
     <div>
@@ -45,14 +46,22 @@ Nested keys compose under the generated class: `&` refers to the class at every 
 
 ### Composing Styles
 
-A second object argument composes. A class-string base prefixes the new class verbatim; each side keeps its own rule; an object base deep-merges with the override into a single class where the override wins.
+A second object argument composes: an object base deep-merges with the override into a single class where the override wins. A string first argument is a positional label, not a base; class strings join with [`cx`](/reference/css/cx).
 
 ```jsx
-import { style } from '@hellajs/css';
+import { style, cx } from '@hellajs/css';
 
-const card = style({ padding: '1rem', borderRadius: '0.5rem' }, { label: 'card' });
-const alert = style(card, { border: '1px solid red' });
-// "card-drokihk nfvrehe"; the alert class carries only the added declarations
+const card = style('card', {
+  padding: '1rem',
+  borderRadius: '0.5rem'
+});
+const alert = cx(
+  card,
+  style({
+    border: '1px solid red'
+  })
+);
+// "card-drokihk …"; the second class carries only the added declarations
 
 const denseCard = style(
   { padding: '1rem', borderRadius: '0.5rem' },
@@ -122,14 +131,14 @@ const themeVars = vars({
   }
 });
 
-const buttonStyle = style({
+const buttonStyle = style('theme-btn', {
   padding: '0.75rem 1.5rem',
   border: 'none',
   borderRadius: '0.5rem',
   background: themeVars.button.background,
   color: themeVars.button.color,
   cursor: 'pointer'
-}, { label: 'theme-btn' });
+});
 
 <button
   class={buttonStyle}
@@ -153,14 +162,14 @@ const spin = keyframes({
   to: { transform: 'rotate(360deg)' }
 });
 
-const spinner = style({
+const spinner = style('spinner', {
   width: '2rem',
   height: '2rem',
   border: '3px solid #e5e7eb',
   borderTopColor: '#3b82f6',
   borderRadius: '50%',
   animation: `${spin} 0.8s linear infinite`
-}, { label: 'spinner' });
+});
 ```
 
 ## Server Rendering
@@ -172,7 +181,7 @@ import { css, cssText, style, vars } from '@hellajs/css';
 
 const tokens = vars({ bg: '#ffffff' });
 css({ body: { margin: 0, backgroundColor: tokens.bg } });
-const card = style({ padding: '1rem' }, { label: 'card' });
+const card = style('card', { padding: '1rem' });
 
 // In the response handler; one embed per response
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body>…</body></html>`;
@@ -212,7 +221,7 @@ const root = hostElement.attachShadow({ mode: 'open' });
 // Shadow roots don't match :root; scope vars to the host element
 const theme = vars({ accent: '#3b82f6' }, { host: root, scoped: ':host' });
 
-const card = style({ color: theme.accent }, { label: 'card', host: root });
+const card = style('card', { color: theme.accent }, { host: root });
 // <style> created inside the shadow root, not document.head
 ```
 
