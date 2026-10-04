@@ -10,7 +10,72 @@
  * land in the layout's head tag via `cssText()`.
  */
 import { cx } from "@hellajs/css";
-import { calloutBase, calloutBody, calloutVariants } from "../styles/callouts";
+import { style } from "@hellajs/css";
+
+const calloutBase = style({
+  alignItems: "start",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius)",
+  boxSizing: "border-box",
+  display: "grid",
+  fontSize: "0.875rem",
+  gridTemplateColumns: "0 1fr",
+  lineHeight: "1.25rem",
+  paddingBlock: "0.75rem",
+  paddingInline: "1rem",
+  position: "relative",
+  rowGap: "0.125rem",
+  width: "100%",
+  "&:has(> svg)": {
+    columnGap: "0.75rem",
+    gridTemplateColumns: "1rem 1fr",
+  },
+  "& > svg": {
+    color: "currentColor",
+    height: "1rem",
+    translate: "0 0.125rem",
+    width: "1rem",
+  },
+}, {
+  label: "site-callout"
+});
+
+const calloutBody = style({
+  display: "grid",
+  fontSize: "0.875rem",
+  gap: "0.25rem",
+  gridColumnStart: "2",
+  justifyItems: "start",
+  lineHeight: "1.25rem",
+  "> p": { lineHeight: "1.625rem" },
+}, {
+  label: "site-callout-body"
+});
+
+const calloutVariants = {
+  info: style({
+    color: "oklch(74% .16 232.661)",
+    backgroundColor: "color-mix(in oklab, oklch(74% .16 232.661) 8%, var(--base-100))",
+    borderColor: "color-mix(in oklab, oklch(74% .16 232.661) 10%, var(--base-100))",
+  }, {
+    label: "site-callout-info"
+  }),
+  warning: style({
+    color: "oklch(41% .112 45.904)",
+    backgroundColor: "oklch(82% .189 84.429)",
+    borderColor: "oklch(82% .189 84.429)",
+  }, {
+    label: "site-callout-warning"
+  }),
+  error: style({
+    color: "oklch(27% .105 12.094)",
+    backgroundColor: "oklch(71% .194 13.428)",
+    borderColor: "oklch(71% .194 13.428)",
+  }, {
+    label: "site-callout-error"
+  }),
+};
+
 
 interface Props {
 	variant?: "info" | "warning" | "error";
