@@ -83,6 +83,6 @@ describe("vars media", () => {
     }
 
     expect(result).toEqual({ bg: "var(--bg)" });
-    expect(text).toBe("@media (prefers-color-scheme: dark){:root{--bg:#000}}");
+    expect(text).toBe("@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #000;\n  }\n}");
   });
 });

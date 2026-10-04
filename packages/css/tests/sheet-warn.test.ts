@@ -22,13 +22,22 @@ describe("css platform-rejected rules", () => {
     css({ "@layer base": { body: { margin: 0 } } });
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
-      "[css] rule rejected by the platform and skipped: @layer base{body{margin:0px}}"
+      "[css] rule rejected by the platform and skipped: @layer base {\n  body {\n    margin: 0px;\n  }\n}"
     );
   });
 
   test("does not warn when insertRule accepts a rule", () => {
     css({ body: { margin: 0 } });
     expect(warn).not.toHaveBeenCalled();
+  });
+
+  test("inserts every segment of a multi-rule pretty registration without warning", () => {
+    // Pretty emission separates sibling rules with a newline, so every
+    // segment after the first reaches insertRule with a leading newline —
+    // accepted text must never hit the rejection warn path.
+    css({ nav: { display: "flex", a: { color: "blue" }, "a:hover": { color: "red" } } });
+    expect(warn).not.toHaveBeenCalled();
+    expect(getCssSheet().cssRules.length).toBe(3);
   });
 
   test("does not warn when removing a rejected rule", () => {

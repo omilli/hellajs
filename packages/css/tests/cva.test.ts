@@ -170,7 +170,7 @@ describe("cva", () => {
     });
     expect(serverClasses).toBe(clientButton({ size: "sm" }));
     const [base, size] = serverClasses.split(" ");
-    expect(serverText).toBe(`.${base}{padding:1rem}.${size}{font-size:12px}`);
+    expect(serverText).toBe(`.${base} {\n  padding: 1rem;\n}\n\n.${size} {\n  font-size: 12px;\n}`);
     expect(cssText()).toBe(serverText);
   });
 

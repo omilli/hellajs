@@ -1,5 +1,5 @@
 import { process } from "../css";
-import { hash, stringify } from "./shared";
+import { hash, stringify, wrapBlock } from "./shared";
 import type { StyleObject } from "../types";
 
 /**
@@ -65,7 +65,10 @@ export interface ScopedRule {
  */
 export function scopedRule(obj: StyleObject, options: ScopedRuleOptions = {}): ScopedRule {
   const cls = scopedClassName(obj, options.label);
-  const text = process(obj, `.${cls}`, false);
-  const mediaText = options.media ? `@media ${options.media}{${text}}` : text;
-  return { cls, cssText: options.layer ? `@layer ${options.layer}{${mediaText}}` : mediaText };
+  // Wraps nest outward (media inside layer), so the base rules start one level
+  // deeper per wrapper already applied.
+  const baseIndent = (options.media ? 1 : 0) + (options.layer ? 1 : 0);
+  const text = process(obj, `.${cls}`, false, baseIndent);
+  const mediaText = options.media ? wrapBlock(`@media ${options.media}`, text, options.layer ? 1 : 0) : text;
+  return { cls, cssText: options.layer ? wrapBlock(`@layer ${options.layer}`, mediaText) : mediaText };
 }

@@ -21,14 +21,14 @@ describe("vars layer", () => {
     const result = vars({ bg: "#000" }, { layer: "hella" });
 
     expect(result).toEqual({ bg: "var(--bg)" });
-    expect(cssText()).toBe("@layer hella{:root{--bg:#000}}");
+    expect(cssText()).toBe("@layer hella {\n  :root {\n    --bg: #000;\n  }\n}");
   });
 
   test("layer composes outermost of media in the emitted text", () => {
     vars({ bg: "#000" }, { media: "(min-width: 600px)", layer: "hella" });
 
     flush();
-    expect(cssText()).toBe("@layer hella{@media (min-width: 600px){:root{--bg:#000}}}");
+    expect(cssText()).toBe("@layer hella {\n  @media (min-width: 600px) {\n    :root {\n      --bg: #000;\n    }\n  }\n}");
   });
 
   test("same scope under two layers coexists and removeVars drops only its layer bucket", () => {
@@ -37,11 +37,11 @@ describe("vars layer", () => {
     vars({ bg: "#000" }, { layer: "two" });
 
     flush();
-    expect(cssText()).toBe("@layer one{:root{--bg:#fff}}@layer two{:root{--bg:#000}}");
+    expect(cssText()).toBe("@layer one {\n  :root {\n    --bg: #fff;\n  }\n}\n\n@layer two {\n  :root {\n    --bg: #000;\n  }\n}");
 
     removeVars(light, { layer: "one" });
     flush();
-    expect(cssText()).toBe("@layer two{:root{--bg:#000}}");
+    expect(cssText()).toBe("@layer two {\n  :root {\n    --bg: #000;\n  }\n}");
   });
 
   test("reactive vars register wrapped under a layer", () => {
@@ -49,6 +49,6 @@ describe("vars layer", () => {
     vars({ bg }, { layer: "hella" });
 
     flush();
-    expect(cssText()).toBe("@layer hella{:root{--bg:#111}}");
+    expect(cssText()).toBe("@layer hella {\n  :root {\n    --bg: #111;\n  }\n}");
   });
 });

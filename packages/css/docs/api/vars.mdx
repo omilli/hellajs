@@ -181,8 +181,11 @@ import { vars, cssText } from '@hellajs/css';
 
 const color = signal('red');
 
-// Client: { theme: { color: 'var(--theme-color)' } }, injects :root{--theme-color:red}
-// Server: { theme: { color: 'var(--theme-color)' } }, cssText() === ':root{--theme-color:red}'
+// Client: { theme: { color: 'var(--theme-color)' } }, injects:
+// :root {
+//   --theme-color: red;
+// }
+// Server: { theme: { color: 'var(--theme-color)' } }, same cssText() text
 const theme = vars({ theme: { color } });
 ```
 
@@ -245,7 +248,11 @@ const themeVars = vars({
 }, { scoped: '.theme-container' });
 
 // themeVars.primary = 'var(--primary)'
-// Generated: .theme-container{--primary:#3b82f6;--secondary:#64748b}
+// Generated:
+// .theme-container {
+//   --primary: #3b82f6;
+//   --secondary: #64748b;
+// }
 ```
 
 ```jsx
@@ -286,7 +293,10 @@ const theme = vars(
   { host: root, scoped: ':host' }
 );
 
-// Generated inside the shadow root: :host{--accent:#3b82f6}
+// Generated inside the shadow root:
+// :host {
+//   --accent: #3b82f6;
+// }
 ```
 
 Sheets are per host: the same vars injected into two hosts create independent rules with separate reference counting, and [`removeVars`](/reference/css/removevars) with the same `host` removes from that host's bucket. See [Shadow DOM Hosts](/reference/css/css#shadow-dom-hosts) for the full web-components example.
@@ -313,8 +323,16 @@ vars(
 );
 
 // Generated:
-// :root{--colors-background:#ffffff;--colors-text:#111827}
-// @media (prefers-color-scheme: dark){:root{--colors-background:#1a1a1a;--colors-text:#e5e7eb}}
+// :root {
+//   --colors-background: #ffffff;
+//   --colors-text: #111827;
+// }
+// @media (prefers-color-scheme: dark) {
+//   :root {
+//     --colors-background: #1a1a1a;
+//     --colors-text: #e5e7eb;
+//   }
+// }
 ```
 
 `media` composes with `scoped` and `prefix`, and the same scope under different conditions coexists as separate rules: each `(scope, media)` pair is its own bucket. It interpolates verbatim (no validation), matching `scoped`'s permissive contract. For JS-driven theming (a toggle signal instead of the OS), see [Reactive CSS Variables](#reactive-css-variables); the two modes combine freely.

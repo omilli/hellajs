@@ -79,10 +79,26 @@ css({
   }
 });
 // Generated CSS:
-// .card{padding:1rem;background-color:white;border-radius:0.5rem;box-shadow:0 1px 3px rgba(0, 0, 0, 0.1)}
-// .card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0, 0, 0, 0.15)}
-// .card h2{margin:0 0 0.5rem 0;font-size:1.25rem;font-weight:600}
-// @media (max-width: 768px){.card{padding:0.75rem}}
+// .card {
+//   padding: 1rem;
+//   background-color: white;
+//   border-radius: 0.5rem;
+//   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+// }
+// .card:hover {
+//   transform: translateY(-2px);
+//   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+// }
+// .card h2 {
+//   margin: 0 0 0.5rem 0;
+//   font-size: 1.25rem;
+//   font-weight: 600;
+// }
+// @media (max-width: 768px) {
+//   .card {
+//     padding: 0.75rem;
+//   }
+// }
 ```
 
 > **Note:** `css()` is always global; it does not wrap selectors in a class. For scoped styles that compose under a generated class, use [`style`](/reference/css/style).
@@ -107,7 +123,7 @@ import { css, cssText } from '@hellajs/css';
 // Client AND server: returns ""
 css({ body: { margin: 0 } });
 
-// Server: "body{margin:0px}"; the text the client would have injected
+// Server: "body {\n  margin: 0px;\n}"; the text the client would have injected
 const text = cssText();
 ```
 
@@ -161,7 +177,11 @@ Conditional at-rules (`@media`, `@container`, `@supports`, `@starting-style`) in
 ```typescript
 // Nested under a plain selector; the at-rule inherits it:
 css({ 'div.card': { '@media (min-width: 1px)': { color: 'red' } } });
-// @media (min-width:1px){div.card{color:red}}
+// @media (min-width: 1px) {
+//   div.card {
+//     color: red;
+//   }
+// }
 
 // Throws: direct declarations with no selector in scope:
 css({ '@media (min-width: 1px)': { color: 'red' } });
@@ -176,7 +196,7 @@ css({
 //        nest them under a selector or at-rule
 ```
 
-Nest selectors under the at-rule so every declaration has a selector to attach to. The same input throws in [`removeCss`](/reference/css/removecss) and on the server; the check runs in the shared CSS derivation before any platform branching. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) never inherit a scope; their direct declarations are their normal shape (`@font-face{font-family:…}`).
+Nest selectors under the at-rule so every declaration has a selector to attach to. The same input throws in [`removeCss`](/reference/css/removecss) and on the server; the check runs in the shared CSS derivation before any platform branching. Definitional at-rules (`@keyframes`, `@font-face`, `@layer`) never inherit a scope; their direct declarations are their normal shape (one `prop: value;` line per declaration inside the at-rule body, e.g. `@font-face`).
 
 One level up, a bare top-level declaration throws the sibling error: with no selector or at-rule in scope there is nothing to attach to, so nest it under a selector. The same [`removeCss`](/reference/css/removecss) and server parity hold (shared derivation).
 
@@ -304,7 +324,13 @@ css({
   '.a': { content: '}' },
   '.b': { color: 'red' }
 });
-// Generated: .a{content:"}"}.b{color:red}
+// Generated:
+// .a {
+//   content: "}";
+// }
+// .b {
+//   color: red;
+// }
 ```
 
 ### Definitional at-rules stay global
@@ -315,7 +341,11 @@ css({
 css({
   '@keyframes spin': { from: { transform: 'rotate(0deg)' } }
 });
-// @keyframes spin{from{transform:rotate(0deg)}}
+// @keyframes spin {
+//   from {
+//     transform: rotate(0deg);
+//   }
+// }
 ```
 
 `@import` is the statement form: a non-object value becomes the statement body, emitted block-less and hoisted ahead of every braced rule regardless of key order, because statements must precede all rules:
@@ -330,7 +360,10 @@ css({
   '@import': 'url("fonts.css")',
   body: { margin: 0 },
 });
-// @import url("fonts.css");body{margin:0px}
+// @import url("fonts.css");
+// body {
+//   margin: 0px;
+// }
 ```
 
 Statements serialize ahead of braced-only registrations in [`cssText`](/reference/css/csstext) as well, mirroring the client placement: `cssText()` emits statement-leading texts first, each class in first-registration order. Platforms that reject dynamic statement inserts (some test DOMs) skip them with the warning described under Platform-Rejected Rules Are Skipped With a Warning below.
@@ -342,6 +375,6 @@ Injection goes through the CSSOM (`insertRule`), so a rule the platform cannot p
 ```typescript
 // In an environment whose CSSOM rejects @layer (e.g. some test DOMs),
 // the rule is skipped and a warning is logged:
-// [css] rule rejected by the platform and skipped: @layer base{body{margin:0px}}
+// [css] rule rejected by the platform and skipped: @layer base {\n//   body {\n//     margin: 0px;\n//   }\n// }
 css({ '@layer base': { body: { margin: 0 } } });
 ```

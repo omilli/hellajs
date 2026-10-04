@@ -1,4 +1,5 @@
 import { hostQualifier, removeRule, upsertRule } from "./sheet";
+import { pad, wrapBlock } from "./shared";
 import type { CSSVars, VarsOptions } from "../types";
 /**
  * id attribute of the `<style>` element all vars() rules inject into.
@@ -124,11 +125,24 @@ function varsBucketKey(scope: string, media: string, layer: string, host?: Paren
  * @internal
  * Full rule text for one scope+media+layer bucket: declarations wrapped in
  * the scope selector, then in the media at-rule when present, then in the
- * layer at-rule (outermost) when present.
+ * layer at-rule (outermost) when present — pretty-printed, one `--k: v;`
+ * declaration per line indented under the scope selector.
+ * @param entries Variable entries to serialize into the scope block
  */
-export function varsRuleText(scope: string, media: string, layer: string, decls: string): string {
-  const inner = `${media ? `@media ${media}{` : ""}${scope}{${decls}}${media ? "}" : ""}`;
-  return layer ? `@layer ${layer}{${inner}}` : inner;
+export function varsRuleText(scope: string, media: string, layer: string, entries: Iterable<[string, unknown]>): string {
+  const depth = (media ? 1 : 0) + (layer ? 1 : 0);
+  const pairs = Array.from(entries);
+  let decls = "";
+  let i = 0;
+  const len = pairs.length;
+  while (i < len) {
+    const [k, v] = pairs[i++]!;
+    decls += `${pad(depth + 1)}--${k.replace(DOT_REGEX, "-")}: ${v};`;
+    if (i < len) decls += "\n";
+  }
+  const inner = wrapBlock(scope, decls, depth);
+  const mediaText = media ? wrapBlock(`@media ${media}`, inner, layer ? 1 : 0) : inner;
+  return layer ? wrapBlock(`@layer ${layer}`, mediaText) : mediaText;
 }
 
 /**
@@ -154,7 +168,7 @@ export function applyRules(flat: Record<string, unknown>, { scope, fullPrefix, m
     bucket.vars.set(`${fullPrefix}${k}`, String(v));
   }
 
-  upsertRule(VARS_ID, key, varsRuleText(scope, media, layer, serializeDecls(bucket.vars)), host);
+  upsertRule(VARS_ID, key, varsRuleText(scope, media, layer, bucket.vars), host);
 }
 
 /**
@@ -179,7 +193,7 @@ export function removeFromScope(flatKeys: string[], { scope, fullPrefix, media, 
     scopedVarsRulesMap.delete(key);
     removeRule(VARS_ID, key, host);
   } else {
-    upsertRule(VARS_ID, key, varsRuleText(scope, media, layer, serializeDecls(bucket.vars)), host);
+    upsertRule(VARS_ID, key, varsRuleText(scope, media, layer, bucket.vars), host);
   }
 }
 
@@ -194,34 +208,16 @@ export function resetReactiveRegistries(): void {
 
 /**
  * @internal
- * Serializes every default-host bucket's rule text in insertion order —
- * the vars contribution `cssText()` appends after the css-side text.
+ * Serializes every default-host bucket's rule text in insertion order, blank-line
+ * separated — the vars contribution `cssText()` appends after the css-side text.
  * Hosted buckets are skipped: their rules live in host sheets, not
  * `document.head`.
  */
 export function varsText(): string {
-  let text = "";
+  const texts: string[] = [];
   scopedVarsRulesMap.forEach((bucket) => {
-    if (!bucket.host) text += varsRuleText(bucket.scope, bucket.media, bucket.layer, serializeDecls(bucket.vars));
+    if (!bucket.host) texts.push(varsRuleText(bucket.scope, bucket.media, bucket.layer, bucket.vars));
   });
-  return text;
+  return texts.join("\n\n");
 }
 
-/**
- * @internal No-space CSSOM declaration form: `--k:v;--k2:v2`.
- * Keys arrive already prefixed (dots intact); dots fold to hyphens here.
- * Shared by applyRules (scope map), the vars server registration, and
- * varsText (cssText vars contribution).
- */
-export function serializeDecls(entries: Iterable<[string, unknown]>): string {
-  const pairs = Array.from(entries);
-  let i = 0;
-  const len = pairs.length;
-  let out = "";
-  while (i < len) {
-    const [k, v] = pairs[i++]!;
-    out += `--${k.replace(DOT_REGEX, "-")}:${v}`;
-    if (i < len) out += ";";
-  }
-  return out;
-}

@@ -1,6 +1,30 @@
 import { isObject } from "./core";
 
 /**
+ * One indentation level of the pretty-printed emission: two spaces.
+ */
+const INDENT = "  ";
+
+/**
+ * @internal
+ * The `n`-level indentation prefix every emission line at depth `n` carries.
+ */
+export function pad(n: number): string {
+  return INDENT.repeat(n);
+}
+
+/**
+ * @internal
+ * Wraps a body in a pretty-printed block at the given nesting depth: indented
+ * `head {`, body one level deeper, closing `}` realigned with the head. An
+ * empty body emits the inline empty block (a null-only at-rule body, an empty
+ * object).
+ */
+export function wrapBlock(head: string, body: string, indent = 0): string {
+  return body ? `${pad(indent)}${head} {\n${body}\n${pad(indent)}}` : `${pad(indent)}${head} {}`;
+}
+
+/**
  * @internal
  * Stringifies an object for hashing.
  */

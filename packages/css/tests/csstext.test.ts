@@ -20,7 +20,7 @@ describe("cssText", () => {
     css({ body: { margin: 0 } });
     const cls = style({ color: "red" });
     css({ a: { color: "blue" } });
-    expect(cssText()).toBe(`body{margin:0px}.${cls}{color:red}a{color:blue}`);
+    expect(cssText()).toBe(`body {\n  margin: 0px;\n}\n\n.${cls} {\n  color: red;\n}\n\na {\n  color: blue;\n}`);
   });
 
   test("hoists a statement registration ahead of braced-only text", () => {
@@ -37,7 +37,7 @@ describe("cssText", () => {
     } finally {
       (globalThis as unknown as Record<string, unknown>).document = savedDocument;
     }
-    expect(text).toBe('@import url("x.css");body{margin:0px}');
+    expect(text).toBe('@import url("x.css");\n\nbody {\n  margin: 0px;\n}');
   });
 
   test("excludes host-qualified registrations", () => {
@@ -45,7 +45,7 @@ describe("cssText", () => {
     document.body.appendChild(host);
     style({ color: "red" }, { host });
     const cls = style({ color: "blue" });
-    expect(cssText()).toBe(`.${cls}{color:blue}`);
+    expect(cssText()).toBe(`.${cls} {\n  color: blue;\n}`);
   });
 
   test("resetCss clears the css-side contribution", () => {
@@ -63,7 +63,10 @@ describe("cssText", () => {
 
     expect(theme.color.primary).toBe("var(--color-primary)");
     expect(cssText()).toBe(
-      `body{margin:0px}@keyframes ${spin}{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}.${cls}{animation:${spin} 1s linear infinite}:root{--color-primary:#3b82f6}`
+      `body {\n  margin: 0px;\n}\n\n` +
+      `@keyframes ${spin} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}\n\n` +
+      `.${cls} {\n  animation: ${spin} 1s linear infinite;\n}\n\n` +
+      `:root {\n  --color-primary: #3b82f6;\n}`
     );
   });
 
@@ -72,7 +75,7 @@ describe("cssText", () => {
     css({ body: { margin: 0 } });
 
     expect(sheetIds()).toEqual(["hella-css", "hella-vars"]);
-    expect(cssText()).toBe("body{margin:0px}:root{--a:1}");
+    expect(cssText()).toBe("body {\n  margin: 0px;\n}\n\n:root {\n  --a: 1;\n}");
   });
 
   test("keeps hella-css first when css registers before vars", () => {
@@ -93,7 +96,7 @@ describe("cssText", () => {
   test("wraps media vars in the at-rule", () => {
     vars({ bg: "#000" }, { media: "(prefers-color-scheme: dark)" });
 
-    expect(cssText()).toBe("@media (prefers-color-scheme: dark){:root{--bg:#000}}");
+    expect(cssText()).toBe("@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #000;\n  }\n}");
   });
 
   test("resetVars clears the vars contribution only", () => {
@@ -102,7 +105,7 @@ describe("cssText", () => {
 
     resetVars();
 
-    expect(cssText()).toBe(`.${cls}{color:red}`);
+    expect(cssText()).toBe(`.${cls} {\n  color: red;\n}`);
   });
 
   test("excludes hosted vars registrations", () => {
@@ -111,7 +114,7 @@ describe("cssText", () => {
     vars({ bg: "#000" }, { host });
     const cls = style({ color: "blue" });
 
-    expect(cssText()).toBe(`.${cls}{color:blue}`);
+    expect(cssText()).toBe(`.${cls} {\n  color: blue;\n}`);
   });
 
   test("peeks without draining", () => {
@@ -119,6 +122,6 @@ describe("cssText", () => {
     const first = cssText();
     const second = cssText();
     expect(second).toBe(first);
-    expect(first).toBe(`.${cls}{color:red}`);
+    expect(first).toBe(`.${cls} {\n  color: red;\n}`);
   });
 });

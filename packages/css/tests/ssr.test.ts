@@ -24,13 +24,13 @@ describe("platform-independent registration (no document)", () => {
 
   test("cssText() returns the exact text css() would have injected", () => {
     css({ body: { margin: 0 } });
-    expect(cssText()).toBe("body{margin:0px}");
+    expect(cssText()).toBe("body {\n  margin: 0px;\n}");
   });
 
   test("style() returns the class, never text", () => {
     const cls = style({ width: 5, margin: 0 }, { label: "x" });
     expect(cls).toMatch(/^h-x-[a-z0-9]+$/);
-    expect(cssText()).toBe(`.${cls}{width:5px;margin:0px}`);
+    expect(cssText()).toBe(`.${cls} {\n  width: 5px;\n  margin: 0px;\n}`);
   });
 
   test("style() nesting composes under the class in cssText()", () => {
@@ -38,7 +38,7 @@ describe("platform-independent registration (no document)", () => {
       color: "red",
       "&:hover": { color: "blue" },
     }, { label: "btn" });
-    expect(cssText()).toBe(`.${cls}{color:red}.${cls}:hover{color:blue}`);
+    expect(cssText()).toBe(`.${cls} {\n  color: red;\n}\n.${cls}:hover {\n  color: blue;\n}`);
   });
 
   test("style() composition returns both classes and registers the override", () => {
@@ -46,7 +46,7 @@ describe("platform-independent registration (no document)", () => {
     const alert = style(card, { fontWeight: "700" });
     const override = alert.slice(card.length + 1);
     expect(alert).toBe(`${card} ${override}`);
-    expect(cssText()).toBe(`.${card}{color:red}.${override}{font-weight:700}`);
+    expect(cssText()).toBe(`.${card} {\n  color: red;\n}\n\n.${override} {\n  font-weight: 700;\n}`);
   });
 
   test("css() does not inject into the DOM", () => {
@@ -78,13 +78,13 @@ describe("platform-independent registration (no document)", () => {
     const theme = vars({ theme: { color: "red" } });
 
     expect(theme.theme.color).toBe("var(--theme-color)");
-    expect(cssText()).toBe(":root{--theme-color:red}");
+    expect(cssText()).toBe(":root {\n  --theme-color: red;\n}");
   });
 
   test("vars() honors scoped and prefix options in the registered rule", () => {
     vars({ theme: { color: "blue" } }, { scoped: ".card", prefix: "app" });
 
-    expect(cssText()).toBe(".card{--app-theme-color:blue}");
+    expect(cssText()).toBe(".card {\n  --app-theme-color: blue;\n}");
   });
 
   test("vars() resolves function leaves exactly once on the server", () => {
@@ -92,7 +92,7 @@ describe("platform-independent registration (no document)", () => {
     const theme = vars({ x: tracker });
 
     expect(theme.x).toBe("var(--x)");
-    expect(cssText()).toBe(":root{--x:red}");
+    expect(cssText()).toBe(":root {\n  --x: red;\n}");
     expect(tracker).toHaveBeenCalledTimes(1);
   });
 
@@ -101,10 +101,10 @@ describe("platform-independent registration (no document)", () => {
     const theme = vars({ x: color });
 
     expect(theme.x).toBe("var(--x)");
-    expect(cssText()).toBe(":root{--x:red}");
+    expect(cssText()).toBe(":root {\n  --x: red;\n}");
 
     color("blue");
-    expect(cssText()).toBe(":root{--x:red}");
+    expect(cssText()).toBe(":root {\n  --x: red;\n}");
   });
 
   test("vars() does not inject into the DOM", () => {
@@ -117,12 +117,12 @@ describe("platform-independent registration (no document)", () => {
     const name = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
 
     expect(name).toMatch(/^h-kf-[a-z0-9]+$/);
-    expect(cssText()).toBe(`@keyframes ${name}{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`);
+    expect(cssText()).toBe(`@keyframes ${name} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}`);
   });
 
   test("removeCss decrements the server registration", () => {
     css({ body: { margin: 0 } });
-    expect(cssText()).toBe("body{margin:0px}");
+    expect(cssText()).toBe("body {\n  margin: 0px;\n}");
 
     removeCss({ body: { margin: 0 } });
     expect(cssText()).toBe("");
@@ -130,7 +130,7 @@ describe("platform-independent registration (no document)", () => {
 
   test("removeVars decrements the server static registration", () => {
     vars({ theme: { color: "red" } });
-    expect(cssText()).toBe(":root{--theme-color:red}");
+    expect(cssText()).toBe(":root {\n  --theme-color: red;\n}");
 
     removeVars({ theme: { color: "red" } });
     expect(cssText()).toBe("");
@@ -140,7 +140,7 @@ describe("platform-independent registration (no document)", () => {
     const color = signal("red");
     const theme = { color };
     vars(theme);
-    expect(cssText()).toBe(":root{--color:red}");
+    expect(cssText()).toBe(":root {\n  --color: red;\n}");
 
     removeVars(theme);
     expect(cssText()).toBe("");
@@ -158,7 +158,7 @@ describe("platform-independent registration (no document)", () => {
     expect(() => vars(theme, { scoped: ".b" })).toThrow(
       "[css] vars: reactive vars object already registered with different options"
     );
-    expect(cssText()).toBe(".a{--color:red}");
+    expect(cssText()).toBe(".a {\n  --color: red;\n}");
   });
 
   test("removeStyle decrements the server registration without throwing", () => {

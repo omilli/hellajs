@@ -48,7 +48,7 @@ describe("style composition", () => {
     expect(composed).toBe(direct);
     // hosted registration is excluded from cssText(), so the full emission
     // (label:x included) is pinned through the same-derivation document path
-    expect(cssText()).toBe(`.${direct}{color:red;label:x}`);
+    expect(cssText()).toBe(`.${direct} {\n  color: red;\n  label: x;\n}`);
   });
 
   test("removeStyle with the same three arguments removes the hosted composition", () => {

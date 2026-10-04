@@ -38,7 +38,9 @@ function startsWithStatement(text: string): boolean {
  * mirrors the two-element client model). Statement-leading texts hoist ahead
  * of braced-only texts within that order, so the server `<style>` keeps
  * statements ahead of every rule, mirroring the client's before-braced
- * placement. A peek, never a drain: repeated
+ * placement. Each registered text is pretty-printed (one declaration per
+ * line, 2-space indentation); separately-registered blocks join with a
+ * blank line. A peek, never a drain: repeated
  * calls return the same string until `resetCss()` / `resetVars()` clear the
  * registrations. Identical on both platforms — registration runs without a
  * DOM, so this is the server-side `<style>` source
@@ -48,12 +50,15 @@ function startsWithStatement(text: string): boolean {
  * @returns The joined rule text of all default-host registrations
  */
 export function cssText(): string {
-  let statements = "";
-  let braced = "";
+  const statements: string[] = [];
+  const braced: string[] = [];
   injectedMap.forEach((_entry, key) => {
     if (HOSTED_KEY.test(key)) return;
-    if (startsWithStatement(key)) statements += key;
-    else braced += key;
+    if (startsWithStatement(key)) statements.push(key);
+    else braced.push(key);
   });
-  return statements + braced + varsText();
+  const cssSide = statements.concat(braced).join("\n\n");
+  const vars = varsText();
+  if (!cssSide) return vars;
+  return vars ? `${cssSide}\n\n${vars}` : cssSide;
 }

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { resetTestState, getStylesheet } from "@utils/test-helpers.js";
-import { cva } from "@hellajs/css/bundle";
+import { cva, cssText } from "@hellajs/css/bundle";
 
 const MEDIA = { md: "(min-width: 768px)", lg: "(min-width: 1024px)" };
 
@@ -19,6 +19,9 @@ describe("cva responsive", () => {
     expect(lg).toMatch(/^h-size-lg-/);
     expect(getStylesheet("hella-css")).toBe(
       `.${sm}{font-size:12px}@media (min-width:768px){.${lg}{font-size:16px}}`
+    );
+    expect(cssText()).toBe(
+      `.${sm} {\n  font-size: 12px;\n}\n\n@media (min-width: 768px) {\n  .${lg} {\n    font-size: 16px;\n  }\n}`
     );
   });
 

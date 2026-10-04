@@ -20,9 +20,10 @@ const theme = vars({ color: { primary: '#3b82f6' } });
 const spin = keyframes({ from: { transform: 'rotate(0deg)' }, to: { transform: 'rotate(360deg)' } });
 
 const head = `<style id="hella-css">${cssText()}</style>`;
-// "body{margin:0px;font-family:system-ui,sans-serif}.h-card-…{background:white}"
-// + "@keyframes h-kf-…{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}"
-// + ":root{--color-primary:#3b82f6}"
+// "body {\n  margin: 0px;\n  font-family: system-ui, sans-serif;\n}" + "\n\n"
+// + ".h-card-… {\n  background: white;\n}" + "\n\n"
+// + "@keyframes h-kf-… {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}" + "\n\n"
+// + ":root {\n  --color-primary: #3b82f6;\n}"
 ```
 
 ## Key Concepts
@@ -38,6 +39,10 @@ Registration runs without a DOM, so the collector works the same on client and s
 ### Vars Append After the CSS-Side Text
 
 Two style elements exist on the client (`hella-css` for rules, `hella-vars` for custom properties), and the collector mirrors that split: css-side registrations (`css`, `style`, `keyframes`) join in call order (statement-leading texts hoist ahead of braced-only ones), then the vars contribution appends (each scope+media bucket's rule, in registration order, media-wrapped when the `media` option was set).
+
+### Formatted Output
+
+Every emission is pretty-printed: one declaration per line (`prop: value;` with a trailing semicolon), two-space indentation per nesting level (at-rule bodies indent their contents), and rules of one registration separated by single newlines. Separately-registered blocks join with a blank line, css side and vars buckets alike, so each `css()` / `style()` / `keyframes()` / `vars()` call reads as its own paragraph in the collected text.
 
 ### Host-Qualified Entries Are Excluded
 

@@ -22,7 +22,7 @@ describe("keyframes", () => {
   test("carries the exact from/to rule form via cssText (happy-dom re-serializes from/to in the CSSOM)", () => {
     const name = keyframes({ from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } });
 
-    expect(cssText()).toBe(`@keyframes ${name}{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`);
+    expect(cssText()).toBe(`@keyframes ${name} {\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n}`);
   });
 
   test("injects from/to steps into the CSSOM as 0%/100% (happy-dom serialization)", () => {
@@ -52,7 +52,7 @@ describe("keyframes", () => {
     keyframes(steps);
 
     removeKeyframes(steps);
-    expect(cssText()).toBe(`@keyframes ${name}{from{opacity:0}to{opacity:1}}`);
+    expect(cssText()).toBe(`@keyframes ${name} {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}`);
 
     removeKeyframes(steps);
     expect(cssText()).toBe("");

@@ -22,7 +22,7 @@ describe("style layer", () => {
     const layered = style(obj, { layer: "hella" });
 
     expect(layered).toBe(bare);
-    expect(cssText()).toBe(`.${bare}{color:red}@layer hella{.${bare}{color:red}}`);
+    expect(cssText()).toBe(`.${bare} {\n  color: red;\n}\n\n@layer hella {\n  .${bare} {\n    color: red;\n  }\n}`);
   });
 
   test("a label and layer bag reads as options, not an override", () => {
@@ -31,7 +31,7 @@ describe("style layer", () => {
     const layered = style(obj, { label: "btn", layer: "hella" });
 
     expect(layered).toBe(labeled);
-    expect(cssText()).toBe(`.${labeled}{padding:4px}@layer hella{.${labeled}{padding:4px}}`);
+    expect(cssText()).toBe(`.${labeled} {\n  padding: 4px;\n}\n\n@layer hella {\n  .${labeled} {\n    padding: 4px;\n  }\n}`);
   });
 
   test("removeStyle with the same options drops the layered registration", () => {

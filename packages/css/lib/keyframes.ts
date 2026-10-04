@@ -1,6 +1,6 @@
 import { isPlainObject } from "./internal/core";
 import { registerText } from "./internal/injection";
-import { hash, stringify } from "./internal/shared";
+import { hash, stringify, wrapBlock } from "./internal/shared";
 import { process } from "./css";
 import type { KeyframesObject } from "./types";
 
@@ -38,7 +38,7 @@ function canonicalSteps<T extends Record<string, unknown>>(obj: T): T {
 export function keyframesRule(obj: KeyframesObject): { name: string; cssText: string } {
   const steps = canonicalSteps(obj);
   const name = `h-kf-${hash(stringify(steps))}`;
-  return { name, cssText: `@keyframes ${name}{${process(steps, "", false)}}` };
+  return { name, cssText: wrapBlock(`@keyframes ${name}`, process(steps, "", false, 1)) };
 }
 
 /**

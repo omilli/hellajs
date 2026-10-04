@@ -65,7 +65,7 @@ describe("css at-rules", () => {
         fontStyle: "normal",
       },
     });
-    expect(cssText()).toBe('@font-face{font-family:"Inter";src:url("/fonts/inter.woff2") format("woff2");font-weight:400;font-style:normal}');
+    expect(cssText()).toBe('@font-face {\n  font-family: "Inter";\n  src: url("/fonts/inter.woff2") format("woff2");\n  font-weight: 400;\n  font-style: normal;\n}');
     expect(getStylesheet("hella-css")).toBe('@font-face{font-family:Inter;src:url("/fonts/inter.woff2") format("woff2");font-weight:400;font-style:normal}');
   });
 
@@ -77,7 +77,7 @@ describe("css at-rules", () => {
         },
       },
     });
-    expect(cssText()).toBe("@container (min-width: 400px){.card{font-size:1.25rem}}");
+    expect(cssText()).toBe("@container (min-width: 400px) {\n  .card {\n    font-size: 1.25rem;\n  }\n}");
     expect(getStylesheet("hella-css")).toBe("@container (min-width:400px){.card{font-size:1.25rem}}");
   });
 
@@ -115,7 +115,7 @@ describe("css at-rules", () => {
     } finally {
       (globalThis as unknown as Record<string, unknown>).document = savedDocument;
     }
-    expect(serverText).toBe("@layer base{h1{font-size:2rem}p{line-height:1.5}}");
+    expect(serverText).toBe("@layer base {\n  h1 {\n    font-size: 2rem;\n  }\n  p {\n    line-height: 1.5;\n  }\n}");
   });
 
   test("@import statement emits the exact block-less form", () => {
@@ -149,7 +149,7 @@ describe("css at-rules", () => {
     } finally {
       (globalThis as unknown as Record<string, unknown>).document = savedDocument;
     }
-    expect(serverText).toBe('@import url("x.css");body{margin:0px}');
+    expect(serverText).toBe('@import url("x.css");\nbody {\n  margin: 0px;\n}');
   });
 
   test("global @media (no name) is unaffected", () => {

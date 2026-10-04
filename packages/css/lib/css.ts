@@ -1,5 +1,6 @@
 import { isFunction, isNumber, isObject, isPlainObject, isString } from "./internal/core";
 import { registerText } from "./internal/injection";
+import { pad, wrapBlock } from "./internal/shared";
 import type { CSSObject, CSSOptions } from "./types";
 
 const AMP_REGEX = /&/g;
@@ -63,8 +64,8 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * block-less statements, emitted `@key value;` and hoisted ahead of all
  * braced text in the same call's emission, mirroring the client placement).
  * Definitional at-rules (@keyframes, @font-face, @layer, etc.) always process
- * content with an empty selector; their direct declarations emit bare (e.g.
- * `@font-face{font-family:…}`). The `&` token in nested selectors is replaced
+ * content with an empty selector; their direct declarations emit bare, one
+ * `prop: value;` line per declaration (e.g. inside `@font-face { … }`). The `&` token in nested selectors is replaced
  * with the parent selector. CamelCase property keys convert to kebab-case.
  * The `content` property auto-quotes unquoted strings. Array values join with
  * commas. Numeric values append `px` except on unitless properties and `--` custom
@@ -74,12 +75,18 @@ export function css(obj: CSSObject, options: CSSOptions = {}): string {
  * Exported so removeCss can re-derive the same text — deterministic: the same
  * object always produces the same text.
  *
+ * Output is pretty-printed: one declaration per line (`prop: value;`, trailing
+ * semicolon), two-space indentation per nesting level, segments of one frame
+ * joined with a single newline — blank lines appear only at cssText()'s
+ * registration joins, never inside one emission.
+ *
  * @param obj CSS object to process
  * @param selector Parent selector for nesting resolution
  * @param isTopLevel True only at the css()/removeCss() entry calls; every recursion and
  * derived rule builder (keyframes steps, scoped styles) passes false
+ * @param indent Nesting depth of this frame's lines (at-rule bodies recurse one deeper)
  */
-export function process(obj: CSSObject, selector: string, isTopLevel: boolean): string {
+export function process(obj: CSSObject, selector: string, isTopLevel: boolean, indent = 0): string {
   const rules: string[] = [];
   const properties: string[] = [];
   const statements: string[] = [];
@@ -120,9 +127,9 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean): 
           }
         }
         const nestedCss = isConditional && selector
-          ? process(value as CSSObject, selector, false)
-          : process(value as CSSObject, "", false);
-        rules.push(`${key}{${nestedCss}}`);
+          ? process(value as CSSObject, selector, false, indent + 1)
+          : process(value as CSSObject, "", false, indent + 1);
+        rules.push(wrapBlock(key, nestedCss, indent));
       } else {
         let nestedSelector: string;
         if (key.startsWith("&")) {
@@ -136,7 +143,7 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean): 
           nestedSelector = key;
         }
 
-        rules.push(process(value as CSSObject, nestedSelector, false));
+        rules.push(process(value as CSSObject, nestedSelector, false, indent));
       }
     } else {
       if (isFunction(value)) {
@@ -166,7 +173,7 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean): 
       }
 
       if (isTopLevel) hasDirectDeclaration = true;
-      properties.push(`${property}:${cssValue}`);
+      properties.push(`${property}: ${cssValue}`);
     }
   }
 
@@ -175,11 +182,32 @@ export function process(obj: CSSObject, selector: string, isTopLevel: boolean): 
   if (isTopLevel && hasDirectDeclaration) {
     throw new Error("[css] top-level declarations have no selector — nest them under a selector or at-rule");
   }
-  const statementText = statements.join("");
-  if (properties.length === 0) return `${statementText}${rules.join("")}`;
-  // No active selector: emit declarations bare (e.g. inside @font-face). Rules
-  // precede declarations; statements precede both — the registerText split
-  // segments on depth-0 ";" and closing braces, so each piece stays whole.
-  if (!selector) return `${statementText}${rules.join("")}${properties.join(";")}`;
-  return `${statementText}${selector}{${properties.join(";")}}${rules.join("")}`;
+  const segments: string[] = [];
+  let si = 0;
+  const statementLen = statements.length;
+  while (si < statementLen) {
+    segments.push(`${pad(indent)}${statements[si++] as string}`);
+  }
+  if (properties.length === 0) {
+    // Statements, then nested rules as sibling blocks at this frame's depth.
+    // The registerText split segments on depth-0 ";" and closing braces, so
+    // each piece stays whole.
+    segments.push(...rules);
+    return segments.join("\n");
+  }
+  // No active selector: emit declarations bare (e.g. inside @font-face), one
+  // per line at this frame's depth. Rules precede declarations; statements
+  // precede both.
+  if (!selector) {
+    segments.push(...rules);
+    let pi = 0;
+    const propLen = properties.length;
+    while (pi < propLen) {
+      segments.push(`${pad(indent)}${properties[pi++] as string};`);
+    }
+    return segments.join("\n");
+  }
+  segments.push(`${pad(indent)}${selector} {\n${pad(indent + 1)}${properties.join(";\n" + pad(indent + 1))};\n${pad(indent)}}`);
+  segments.push(...rules);
+  return segments.join("\n");
 }

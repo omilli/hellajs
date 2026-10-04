@@ -120,18 +120,18 @@ describe("css", () => {
 
   test("injects every rule when a quoted value contains a brace", () => {
     css({ ".a": { content: "}" }, ".b": { color: "red" } });
-    expect(cssText()).toBe('.a{content:"}"}.b{color:red}');
+    expect(cssText()).toBe('.a {\n  content: "}";\n}\n.b {\n  color: red;\n}');
     expect(getCssSheet().cssRules.length).toBe(2);
   });
 
   test("emits exact rule text for a style with a quoted brace", () => {
     const cls = style({ content: "}" });
-    expect(cssText()).toBe(`.${cls}{content:"}"}`);
+    expect(cssText()).toBe(`.${cls} {\n  content: "}";\n}`);
   });
 
   test("treats a backslash-escaped quote as part of the string", () => {
     css({ ".c": { content: 'quoted \\" and }' } });
-    expect(cssText()).toBe(`.c{content:"quoted \\" and }"}`);
+    expect(cssText()).toBe(`.c {\n  content: "quoted \\" and }";\n}`);
   });
 
   test("removeCss removes every rule of a multi-rule brace-containing text", () => {

@@ -31,7 +31,15 @@ const spin = keyframes({
 // spin === 'h-kf-43o0h3'; compose it into any animation declaration
 const loader = style({ animation: `${spin} 1s linear infinite` });
 
-// Generated: @keyframes h-kf-43o0h3{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+// Generated:
+// @keyframes h-kf-43o0h3 {
+//   from {
+//     transform: rotate(0deg);
+//   }
+//   to {
+//     transform: rotate(360deg);
+//   }
+// }
 ```
 
 ## Key Concepts
@@ -70,7 +78,18 @@ const bounce = keyframes({
 });
 
 // Client: rule injected into the hella-css sheet
-// Server: cssText() === '@keyframes h-kf-…{0%{translateY:0}50%{translateY:-10px}100%{translateY:0}}'
+// Server: cssText() carries:
+// @keyframes h-kf-… {
+//   0% {
+//     translateY: 0;
+//   }
+//   50% {
+//     translateY: -10px;
+//   }
+//   100% {
+//     translateY: 0;
+//   }
+// }
 ```
 
 ### Composing with style() and css()
@@ -110,7 +129,18 @@ const progress = keyframes({
   to: { width: '100%' }
 });
 
-// Generated: @keyframes h-kf-…{from{width:0%}50%{width:60%}to{width:100%}}
+// Generated:
+// @keyframes h-kf-… {
+//   from {
+//     width: 0%;
+//   }
+//   50% {
+//     width: 60%;
+//   }
+//   to {
+//     width: 100%;
+//   }
+// }
 ```
 
 ## Important Considerations
