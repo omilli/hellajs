@@ -121,9 +121,11 @@
       "name": "astro-plugin-hellajs",
       "version": "0.1.0",
       "dependencies": {
+        "@babel/parser": "^7.28.6",
         "vite-plugin-hellajs": "^0.8.9",
       },
       "peerDependencies": {
+        "@hellajs/css": "*",
         "@hellajs/dom": "*",
         "@hellajs/ssr": "*",
         "astro": "^7.0.0",
