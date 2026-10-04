@@ -4,9 +4,6 @@ import Counter from '../components/Counter';
 import MouseTracker from '../components/MouseTracker';
 import NameSync from '../components/NameSync';
 
-// Folded at build into the page's collected CSS: Astro delivers it as a
-// page-scoped style tag in the head, so server-rendered markup is styled at
-// first paint and none of these rules ship to the client.
 css({
   body: {
     fontFamily: "system-ui, sans-serif",

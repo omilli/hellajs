@@ -1,6 +1,12 @@
 import { signal } from "@hellajs/core";
+import { style } from "@hellajs/css";
 import { $ref, html } from "@hellajs/dom";
-import { note } from "../theme";
+
+export const note = style({
+  color: "#6b7280",
+}, {
+  label: "note"
+});
 
 export default function NameSync() {
   const name = signal("World");
