@@ -12,7 +12,8 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`hydrate`](/reference/dom/hydrate)**: Adopt server-rendered HTML in place on the client
 - **[`html`](/reference/dom/html)**: Build client-only islands from tagged templates in plain `.ts` files
 - **[`$ref`](/reference/dom/$ref)**: Bind reactive state to DOM nodes Astro rendered outside any island
-- **[`style`](/reference/css/style)**: Scope island styles under content-hashed classes and collect the registered CSS for the page head with [`cssText`](/reference/css/csstext)
+- **[`style`](/reference/css/style)**: Scope island styles under content-hashed classes that the build collects from the import graph
+- **[Frontmatter styles](/plugins/astro)**: Fold page-level [`css`](/reference/css/css) calls at build into page-scoped CSS that Astro delivers itself
 
 We'll start with a server-rendered island, then add the two client-only modes step by step so you can see what each directive changes.
 
@@ -237,36 +238,13 @@ export default function NameSync() {
 <NameSync client:load />
 ```
 
-## Styling Islands with `css` and `style`
+## Styling the Page and the Islands
 
-None of the islands carry styles yet. The integration has no CSS handling to configure: [`css`](/reference/css/css) and [`style`](/reference/css/style) register their rules on both the server and the client, so one theme module covers every island mode. Create `src/theme.ts`:
+The page and the islands pick up styles through two paths, and neither needs a manual style tag. [`style`](/reference/css/style) calls in island modules are collected at build from the import graph (they still register at runtime inside the islands themselves), and `css`/`style` calls in a page's frontmatter are folded where they stand. Create `src/theme.ts` with one class per island:
 
 ```ts
 // src/theme.ts
-import { css, style, cssText } from "@hellajs/css";
-
-// css() registers global rules, style() scoped ones, on both platforms. The
-// page imports `styles` below and inlines it into <head> server-side, so
-// server-rendered markup is styled at first paint; client islands import the
-// same module and re-register the same hashed rules on hydration.
-css({
-  body: {
-    fontFamily: "system-ui, sans-serif",
-    maxWidth: "42rem",
-    margin: "2rem auto",
-    padding: "0 1rem",
-  },
-  "#name-input": {
-    padding: "0.375rem 0.625rem",
-    fontSize: "1rem",
-    borderRadius: "0.375rem",
-    border: "1px solid #d1d5db",
-  },
-  "#greeting": {
-    fontSize: "1.25rem",
-    fontWeight: "600",
-  },
-});
+import { style } from "@hellajs/css";
 
 export const counterBtn = style({
   padding: "0.5rem 1.25rem",
@@ -288,16 +266,12 @@ export const tracker = style({
 export const note = style({
   color: "#6b7280",
 }, { label: "note" });
-
-// Collected after the registrations above, in first-registration order.
-export const styles = cssText();
 ```
 
 **Code Explanation**
 
-- **[`css`](/reference/css/css)`({...})`**: Registers global rules. The `#name-input` and `#greeting` selectors reach HTML that Astro itself rendered, outside any island
-- **[`style`](/reference/css/style)`({...}, { label: ... })`**: Returns a content-hashed class scoped to the rules. The hash is computed from the rule text, so the server and the client always produce the same class name
-- **[`cssText`](/reference/css/csstext)`()`**: Collects everything registered above into one string. It peeks, never drains: repeated calls return the same text. The tag carries the `hella-css` id, so client hydration adopts the element and repopulates it instead of duplicating its rules
+- **[`style`](/reference/css/style)`({...}, { label: ... })`**: Returns a content-hashed class scoped to the rules. The label keeps the class name readable, and the hash is computed from the rule text, so the server and the client always produce the same class name
+- **Runtime registration stays in island modules**: Each island imports its class, so the module's `style()` calls run wherever the island loads: the server while rendering `client:load` markup, the client when a `client:only` island loads
 
 Wire the counter to its class; the other two islands take theirs the same way:
 
@@ -315,31 +289,63 @@ export default function Counter({ initial = 0 }: { initial?: number }) {
 **Code Explanation**
 
 - **`class={counterBtn}`**: The hashed class name `style()` returned. `MouseTracker` applies `tracker` to its box and `NameSync` applies `note` to its paragraph
-- **`import { counterBtn } from "../theme"`**: Importing the theme from an island also runs its registrations on the client, so `client:only` islands have their rules injected when they load
 
-Finally, inline the collected CSS so server-rendered markup is styled at first paint:
+Page-level global rules go in the frontmatter. Add the `css` import and call to `src/pages/index.astro`:
 
 ```astro
-// src/pages/index.astro
 ---
 //... existing imports
-import { styles } from '../theme';
+import { css } from "@hellajs/css";
+
+// Folded at build into the page's collected CSS: Astro delivers it as a
+// page-scoped style tag in the head, so server-rendered markup is styled at
+// first paint and none of these rules ship to the client.
+css({
+  body: {
+    fontFamily: "system-ui, sans-serif",
+    maxWidth: "42rem",
+    margin: "2rem auto",
+    padding: "0 1rem",
+  },
+  "#name-input": {
+    padding: "0.375rem 0.625rem",
+    fontSize: "1rem",
+    borderRadius: "0.375rem",
+    border: "1px solid #d1d5db",
+  },
+  "#greeting": {
+    fontSize: "1.25rem",
+    fontWeight: "600",
+  },
+});
 ---
-<!-- ... -->
-<head>
-  <meta charset="utf-8" />
-  <title>Astro Islands</title>
-  <style id="hella-css" is:inline set:html={styles} />
-</head>
 ```
 
 **Code Explanation**
 
-- **Frontmatter runs server-side**: Importing `styles` registers the theme in the server's module scope, and `cssText()` collects it during the static build
-- **`is:inline`**: Tells Astro to emit the `<style>` tag verbatim instead of bundling and scoping it
-- **`set:html={styles}`**: Injects the collected rule text as the tag's content
+- **[`css`](/reference/css/css)`({...})`**: Registers global rules. The `#name-input` and `#greeting` selectors reach HTML that Astro itself rendered, outside any island
+- **Frontmatter folding**: The integration evaluates this call at build, folds it to a no-op (its rules are already collected), and injects an import for the collected CSS. Astro bundles that import as a page-scoped style tag, so none of these rules ship to the client
+- **Import-graph collection**: The islands' `style()` calls ride along: starting from the page, the integration follows imports into `Counter` and then `theme`, collecting registrations in module order. Server-rendered island markup arrives styled at first paint
 
-With the embed in place, the counter button, the input, and the greeting are styled in the HTML Astro ships. The two `client:only` islands inject the same rules themselves when they load, and the hashed class names match on both sides without any coordination.
+Build the app and inspect `dist/index.html`: one page-scoped style tag carries every rule, islands first, then the page's own rules:
+
+```html
+<!-- dist/index.html (built head, abridged) -->
+<style>
+  .h-counter-btn-aiytbh{cursor:pointer;background-color:#eff6ff;border:1px solid #2563eb;border-radius:.375rem;padding:.5rem 1.25rem;font-size:1rem}
+  /* ...one rule per island class, then the page's frontmatter rules */
+  body{max-width:42rem;margin:2rem auto;padding:0 1rem;font-family:system-ui,sans-serif}
+  #name-input{padding:.375rem .625rem;font-size:1rem;border-radius:.375rem;border:1px solid #d1d5db}
+  #greeting{font-size:1.25rem;font-weight:600}
+</style>
+```
+
+**Code Explanation**
+
+- **Registration order**: Island classes come first (the import graph evaluates before the page body), then the frontmatter rules in document order
+- **`client:only` islands**: `MouseTracker` and `NameSync` still register their rules on the client when they load. The runtime injects them into its own style tag, and the class names match the page's because the hash derives from the rule text
+
+Styles that need runtime values do not fold: move them into an island module instead. A page that must manage its CSS manually can reference [`cssText`](/reference/css/csstext), which opts it out of extraction entirely (see [Frontmatter styles](/plugins/astro)).
 
 ## Next Steps
 
@@ -356,16 +362,37 @@ One page can mix all three modes: pick `client:load` when the first paint needs 
 ```astro
 // src/pages/index.astro
 ---
+import { css } from "@hellajs/css";
 import Counter from '../components/Counter';
 import MouseTracker from '../components/MouseTracker';
 import NameSync from '../components/NameSync';
-import { styles } from '../theme';
+
+// Folded at build into the page's collected CSS: Astro delivers it as a
+// page-scoped style tag in the head, so server-rendered markup is styled at
+// first paint and none of these rules ship to the client.
+css({
+  body: {
+    fontFamily: "system-ui, sans-serif",
+    maxWidth: "42rem",
+    margin: "2rem auto",
+    padding: "0 1rem",
+  },
+  "#name-input": {
+    padding: "0.375rem 0.625rem",
+    fontSize: "1rem",
+    borderRadius: "0.375rem",
+    border: "1px solid #d1d5db",
+  },
+  "#greeting": {
+    fontSize: "1.25rem",
+    fontWeight: "600",
+  },
+});
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Astro Islands</title>
-    <style id="hella-css" is:inline set:html={styles} />
   </head>
   <body>
     <h1>Astro Islands</h1>
@@ -391,30 +418,12 @@ import { styles } from '../theme';
 
 ```ts
 // src/theme.ts
-import { css, style, cssText } from "@hellajs/css";
+import { style } from "@hellajs/css";
 
-// css() registers global rules, style() scoped ones, on both platforms. The
-// page imports `styles` below and inlines it into <head> server-side, so
-// server-rendered markup is styled at first paint; client islands import the
-// same module and re-register the same hashed rules on hydration.
-css({
-  body: {
-    fontFamily: "system-ui, sans-serif",
-    maxWidth: "42rem",
-    margin: "2rem auto",
-    padding: "0 1rem",
-  },
-  "#name-input": {
-    padding: "0.375rem 0.625rem",
-    fontSize: "1rem",
-    borderRadius: "0.375rem",
-    border: "1px solid #d1d5db",
-  },
-  "#greeting": {
-    fontSize: "1.25rem",
-    fontWeight: "600",
-  },
-});
+// Island theme: style() registers at runtime wherever this module loads, so
+// client:only islands re-register their rules on the client after loading it.
+// The .astro page collects these same calls at build through the import
+// graph, which is what styles server-rendered island markup at first paint.
 
 export const counterBtn = style({
   padding: "0.5rem 1.25rem",
@@ -436,9 +445,6 @@ export const tracker = style({
 export const note = style({
   color: "#6b7280",
 }, { label: "note" });
-
-// Collected after the registrations above, in first-registration order.
-export const styles = cssText();
 ```
 
 ### `src/components/Counter.tsx`

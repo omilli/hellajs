@@ -5,6 +5,8 @@
 * **Deprecation**: Archived [055](archive/055-docs-site-daisyui-tailwind-classes.md) → superseded by [257](entries/257.md).
 * **Creation**: Added concept [258](entries/258.md) (type: decision).
 * **Creation**: Added concept [259](entries/259.md) (type: decision).
+* **Creation**: Added concept [260](entries/260.md) (type: decision).
+* **Creation**: Added concept [262](entries/262-frontmatter-import-graph-walk-parses.md) (type: decision) — merged as 261, renumbered to resolve an ID collision with 261-insertrule-whitespace-asymmetry.
 
 ## 2026-10-03
 * **Creation**: Added concept [242](entries/242.md) (type: decision).

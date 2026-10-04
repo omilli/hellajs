@@ -1,27 +1,9 @@
-import { css, style, cssText } from "@hellajs/css";
+import { style } from "@hellajs/css";
 
-// css() registers global rules, style() scoped ones, on both platforms. The
-// page imports `styles` below and inlines it into <head> server-side, so
-// server-rendered markup is styled at first paint; client islands import the
-// same module and re-register the same hashed rules on hydration.
-css({
-  body: {
-    fontFamily: "system-ui, sans-serif",
-    maxWidth: "42rem",
-    margin: "2rem auto",
-    padding: "0 1rem",
-  },
-  "#name-input": {
-    padding: "0.375rem 0.625rem",
-    fontSize: "1rem",
-    borderRadius: "0.375rem",
-    border: "1px solid #d1d5db",
-  },
-  "#greeting": {
-    fontSize: "1.25rem",
-    fontWeight: "600",
-  },
-});
+// Island theme: style() registers at runtime wherever this module loads, so
+// client:only islands re-register their rules on the client after loading it.
+// The .astro page collects these same calls at build through the import
+// graph, which is what styles server-rendered island markup at first paint.
 
 export const counterBtn = style({
   padding: "0.5rem 1.25rem",
@@ -43,6 +25,3 @@ export const tracker = style({
 export const note = style({
   color: "#6b7280",
 }, { label: "note" });
-
-// Collected after the registrations above, in first-registration order.
-export const styles = cssText();

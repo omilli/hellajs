@@ -1,14 +1,35 @@
 ---
+import { css } from "@hellajs/css";
 import Counter from '../components/Counter';
 import MouseTracker from '../components/MouseTracker';
 import NameSync from '../components/NameSync';
-import { styles } from '../theme';
+
+// Folded at build into the page's collected CSS: Astro delivers it as a
+// page-scoped style tag in the head, so server-rendered markup is styled at
+// first paint and none of these rules ship to the client.
+css({
+  body: {
+    fontFamily: "system-ui, sans-serif",
+    maxWidth: "42rem",
+    margin: "2rem auto",
+    padding: "0 1rem",
+  },
+  "#name-input": {
+    padding: "0.375rem 0.625rem",
+    fontSize: "1rem",
+    borderRadius: "0.375rem",
+    border: "1px solid #d1d5db",
+  },
+  "#greeting": {
+    fontSize: "1.25rem",
+    fontWeight: "600",
+  },
+});
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>Astro Islands</title>
-    <style id="hella-css" is:inline set:html={styles} />
   </head>
   <body>
     <h1>Astro Islands</h1>

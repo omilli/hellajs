@@ -5,7 +5,7 @@ Astro 7 integration for [HellaJS](https://github.com/omilli/hellajs). Render `.j
 ## Install
 
 ```bash
-npm install astro-plugin-hellajs @hellajs/core @hellajs/dom @hellajs/ssr
+npm install astro-plugin-hellajs @hellajs/core @hellajs/dom @hellajs/ssr @hellajs/css
 ```
 
 ## Configure
@@ -47,9 +47,44 @@ The server renders the component to HTML with `<!--[-->…<!--]-->` markers; the
 
 A complete walkthrough lives in the [Astro Islands tutorial](https://hellajs.com/learn/tutorials/astro-islands).
 
+## Frontmatter styles
+
+Statically evaluable `css()`, `style()`, and `keyframes()` calls in `.astro` frontmatter compile at build: the integration folds each call against the real `@hellajs/css` package, replaces it with its class or name literal, and delivers the collected CSS through Astro's own pipeline as a page-scoped `<style>` in the built head. No client-side CSS ships for frontmatter styles.
+
+```astro
+---
+// src/pages/index.astro
+import { keyframes, style } from "@hellajs/css";
+
+const card = style({
+  padding: "1rem",
+  "&:hover": { color: "hotpink" },
+}, { label: "card" });
+const spin = keyframes({
+  from: { opacity: 0 },
+  to: { opacity: 1 },
+});
+---
+<div class={card} style={`animation: ${spin} 1s linear`}>Hello</div>
+```
+
+### Folding rules
+
+Call arguments must be statically evaluable: literals, objects, arrays, and template literals fold; `const` bindings in the module fold; imported bindings from local modules fold recursively through their source. `cx()` compositions and `cva()` recipes fold to their string results.
+
+### Positional policy
+
+A frontmatter creator call with non-foldable arguments fails the build and points at the escape hatch below. `vars()` in a page throws: its reactivity is dead server-side. Inside imported modules the same calls are collected only when their arguments fold; non-foldable calls and `vars()` are ignored silently (island runtime owns them).
+
+### Opt-out and dynamic styles
+
+A page importing and referencing `cssText` keeps byte-identical behavior: the integration leaves it untouched. That is also the escape hatch for dynamic styles: move them to a module and collect with `cssText()`, as shown under [Styling](#styling).
+
+Islands keep runtime registration. Extracted CSS lives in Astro-emitted tags, so the `#hella-css` adoption/drain never touches it.
+
 ## Styling
 
-The integration performs no CSS handling, and needs none: [`@hellajs/css`](https://hellajs.com/reference/css/css) registers `css()` and `style()` rules on both the server and the client. Collect what registered with [`cssText`](https://hellajs.com/reference/css/csstext) and inline it once in your page so server-rendered HTML is styled at first paint:
+Frontmatter styles that the integration can fold compile to page-scoped CSS on their own (see [Frontmatter styles](#frontmatter-styles)). For dynamic styles, collect what [`@hellajs/css`](https://hellajs.com/reference/css/css) registered with [`cssText`](https://hellajs.com/reference/css/csstext) and inline it once in your page so server-rendered HTML is styled at first paint; referencing `cssText` also opts the page out of extraction:
 
 ```astro
 ---

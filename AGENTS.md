@@ -40,7 +40,7 @@
   | babel | Core compile-time transform: JSX + `html` templates → HellaNode. Attribute prefixes (`on:` / `e:` / `hook:` / `error:`), component detection + `component(...)` wrapping. |
   | rollup | Thin Rollup wrapper around the babel plugin (`index.mjs`). |
   | vite | Thin Vite wrapper around the babel plugin (`index.mjs`). |
-  | astro | Astro 7 renderer: `addRenderer` + `vite-plugin-hellajs` wiring, server `renderToStaticMarkup` → `ssr`, client → `hydrate`, slot passthrough via `raw()`. Exclusive-use. Own `AGENTS.md` + tests. |
+  | astro | Astro 7 renderer: `addRenderer` + `vite-plugin-hellajs` wiring, server `renderToStaticMarkup` → `ssr`, client → `hydrate`, slot passthrough via `raw()`, frontmatter `css()`/`style()` build-time extraction via virtual CSS imports. Exclusive-use. Own `AGENTS.md` + tests. |
 
   ## Scripts
 

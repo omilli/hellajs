@@ -1,26 +1,31 @@
 <astro-plugin>
 
-Astro 7 framework-renderer integration (`astro-plugin-hellajs`). Wires `vite-plugin-hellajs` (JSX + `html` → HellaNode) and registers a renderer so `.jsx`/`.tsx` components render server-side via `@hellajs/ssr` and hydrate client-side behind `client:*`. Entry point: `index.mjs` — `hellajs()` returns an `AstroIntegration` whose `astro:config:setup` hook calls `updateConfig({ vite: { plugins } })` + `addRenderer({ name, clientEntrypoint, serverEntrypoint })`. **No config options**; signature takes no parameters.
+Astro 7 framework-renderer integration (`astro-plugin-hellajs`). Wires `vite-plugin-hellajs` (JSX + `html` → HellaNode), extracts statically foldable `css()`/`style()`/`keyframes()` frontmatter calls into page-scoped CSS via a virtual module import, and registers a renderer so `.jsx`/`.tsx` components render server-side via `@hellajs/ssr` and hydrate client-side behind `client:*`. Entry point: `index.mjs` — `hellajs()` returns an `AstroIntegration` whose `astro:config:setup` hook calls `updateConfig({ vite: { plugins } })` + `addRenderer({ name, clientEntrypoint, serverEntrypoint })`. **No config options**; signature takes no parameters.
 
 ## Mental model
 
 - **Two entrypoints beyond the integration** — `server.mjs` (SSR: `renderToStaticMarkup`) and `client.mjs` (island hydration). Both resolve entrypaths via `fileURLToPath(new URL("./{server,client}.mjs", import.meta.url))` in `index.mjs` so they survive packaging.
 - **The renderer is a thin adapter.** `renderToStaticMarkup(Component, props, slots)` maps slots → `raw()`, runs `Component(props)` (returns a HellaNode; nested `component()` calls execute server-side with no DOM — `memory/entries/005.md`), and stringifies via `ssr()`. All heavy lifting is existing dom/ssr behavior; `raw()` (`packages/dom/lib/raw.ts`, Unit A) is the only new primitive consumed.
 - **Slot passthrough is the load-bearing feature.** Astro passes `slots: Record<name, htmlString>` (already-rendered HTML of the `.astro` slot children). `mapSlots` wraps each as `[raw(html)]` — array-wrapped so a JSX `<X>{props.children}</X>` (compiled to `...props.children` by the babel plugin, `plugins/babel/src/processors/children.mjs`) spreads the sentinel, not the object's keys. `default` → `props.children`; named → `props[name]`. Server and client entries apply the identical mapping.
+- **Frontmatter CSS extraction rides Astro's pipeline, never a parallel style tag.** `frontmatterCss()` (enforce-post vite plugin) receives COMPILED `.astro` modules — frontmatter lives inside the `$$createComponent` arrow, so a full AST walk reaches every creator call. `evaluate.mjs` folds calls by running the REAL `@hellajs/css` functions in-process (hash drift impossible): `resetCss()` → evaluate → `cssText()` per batch, batch flushed through a `virtual:hella-frontmatter/…css` import (`resolveId` → `\0`-prefixed, `load` → text; content-hash busts vite's module cache). Registration order emulates runtime: import graph first, then module body. Registry is process-global and the batch leaves it reset — pages doing the manual `cssText()` dance opt out via the `cssText`-reference gate (byte-identical); a dev-mode page mixing extracted + dance pages can lose dance CSS until its module re-executes (accepted edge, `memory/entries/258`).
 
 ## Files
 
 | File | Responsibility |
 |---|---|
-| `index.mjs` | Integration entry; `astro:config:setup` → `updateConfig` (Vite plugin) + `addRenderer` (entrypoints). |
+| `index.mjs` | Integration entry; `astro:config:setup` → `updateConfig` (Vite plugins) + `addRenderer` (entrypoints). |
+| `frontmatter.mjs` | `hella-frontmatter` vite plugin (`enforce: "post"`); `transform` gates (`.astro` id, `cssText`-reference opt-out, creator candidates), applies splice edits, injects the virtual CSS import; `resolveId`/`load` serve the batch text; `addWatchFile` per folded source module. |
+| `evaluate.mjs` | Static evaluator + sandbox: `extractFrontmatter({ code, id, resolve, load })` — foldable-expression evaluator, import-graph resolution (injectable `resolve`/`load`), positional policies (frontmatter strict/loud, imported modules opportunistic/silent), per-batch `resetCss()` discipline. |
 | `server.mjs` | Renderer server entry; default-exports `{ check, renderToStaticMarkup }` + the shared `mapSlots`. |
 | `client.mjs` | Renderer client entry; default-exports `(el) => (Component, props, slots) => hydrate(...)`. |
 | `index.d.ts` | Hand-written minimal `AstroIntegration` types (no `astro` import — typechecks without `astro` installed). |
 | `tests/renderToStaticMarkup.test.ts` | Server-entry scenarios (the pure `renderToStaticMarkup` adapter). |
+| `tests/frontmatter.test.ts` | Extraction scenarios against the plugin hooks (compiled-shape fixtures, stubbed resolver/load). |
 
 ## Astro 7 renderer contract (grounded from installed source — verify on major-version bumps)
 
 - **Renderer registration** — `addRenderer({ name, clientEntrypoint, serverEntrypoint })` (`AstroRenderer`, `astro/dist/types/public/integrations.d.ts`).
+- **Compiled-module transform seam** — a vite plugin with `enforce: "post"` receives the COMPILED `.astro` module in `transform` (id still ends `.astro`): imports hoisted to module top, frontmatter statements inside the `$$createComponent(($$result, $$props, $$slots) => { … })` arrow, template expressions inside the `$$render` tagged template. A virtual `.css` import injected at module top lands page-scoped and inlined via Astro's own pipeline (`memory/entries/260`). Verified on Astro 7.2 and 7.3.5 static; dev-mode HMR and SSR-adapter rendering are covered by tests + manual smoke, not probe.
 - **Server entry** default-exports `{ check, renderToStaticMarkup }` (`SSRLoadedRendererValue`, `astro/dist/types/public/internal.d.ts`): `renderToStaticMarkup(Component, props, slots: Record<string, string>, metadata?) => Promise<{ html }>`. Astro calls it at `astro/dist/runtime/server/render/component.js`.
 - **Client entry** default export is a curried factory — `this.hydrator(this)(Component, props, slots, { client })` (`astro/dist/runtime/server/astro-island.prebuilt.js`). So: `default(el) => (Component, props, slots, { client }) => void`.
 - **Markers survive deferred islands** — Astro keeps SSR HTML directly in the `<astro-island>` element; `client:visible`/`idle`/`media` only delay the hydrator call, they do not serialize innerHTML into a comment-stripping `<template>`. So all `client:*` directives hydrate correctly.
