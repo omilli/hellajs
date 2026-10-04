@@ -98,15 +98,15 @@ const toItem = (page: PagefindPage): CommandItemData => {
 /** Lazily imports the built pagefind bundle once; undefined when it 404s (dev). */
 let pagefindPromise: Promise<PagefindApi | undefined> | undefined;
 const loadPagefind = (): Promise<PagefindApi | undefined> => {
-  pagefindPromise ??= import(/* @vite-ignore */ "/pagefind/pagefind.js")
-    .then((module) => module as PagefindApi)
-    .catch(() => {
-      console.warn(
-        "Search index not found — it is built for production builds only (bun run build).",
-      );
-      return undefined;
-    });
-  return pagefindPromise;
+  // pagefindPromise ??= import(/* @vite-ignore */ "/pagefind/pagefind.js")
+  //   .then((module) => module as PagefindApi)
+  //   .catch(() => {
+  //     console.warn(
+  //       "Search index not found — it is built for production builds only (bun run build).",
+  //     );
+  //     return undefined;
+  //   });
+  // return pagefindPromise;
 };
 
 /** The hydrated island: dialog palette + ⌘K wiring + trigger-click delegation. */

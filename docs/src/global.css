@@ -10,7 +10,7 @@
    landing redesign is a separate deferred set; until it lands this block
    ports the retired utility markup's computed look onto the tokens). */
 
-@layer base, hella;
+/*@layer base, hella;*/
 
 /* Layer order: the preflight port (src/styles/preflight.ts) lives in
    `base`, the registry + demo pagecss inject into `hella`, and site-owned

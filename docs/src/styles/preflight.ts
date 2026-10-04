@@ -25,7 +25,6 @@ const MONO =
   "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
 
 css({
-  "@layer base": {
     // Prevent padding and border from affecting element width; remove
     // default margins and padding; reset all borders.
     "*, ::after, ::before, ::backdrop, ::file-selector-button": {
@@ -195,5 +194,4 @@ css({
     "[hidden]:where(:not([hidden='until-found']))": {
       display: "none !important",
     }
-  },
 });

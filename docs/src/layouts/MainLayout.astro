@@ -50,7 +50,7 @@ const toc: { text: string; slug: string; depth: number }[] = Array.from(
     <style
       id="site-head"
       is:inline
-      set:html={"@layer base, hella;\n" + (demoCss ?? "") + cssText()}
+      set:html={(demoCss ?? "") + cssText()}
     />
   </head>
   <body>
