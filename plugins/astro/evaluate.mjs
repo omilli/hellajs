@@ -271,10 +271,12 @@ function referencesCssText(mod) {
 /**
  * Extracts statically foldable `css()`/`style()`/`keyframes()` calls from a
  * compiled `.astro` module. Runs the real `@hellajs/css` functions in a
- * sandbox (`resetCss()` → evaluate → `cssText()`), resolves imported
- * bindings recursively through `resolve`/`load` (registration order: import
- * graph first, then the module body), and rewrites creator calls to their
- * folded literals (`css()` → `void 0`).
+ * sandbox across two `resetCss()`-delimited phases — the import graph first
+ * (registrations island modules re-run at hydration), then the module body
+ * (registrations nothing re-runs client-side) — collecting each phase's
+ * `cssText()` separately. Imported bindings resolve recursively through
+ * `resolve`/`load`; creator calls rewrite to their folded literals
+ * (`css()` → `void 0`), all of which fire in the module-body phase.
  *
  * Positional policies: in the `.astro` module a creator call with
  * non-foldable arguments, or any `vars()` call, throws; in imported modules
@@ -286,7 +288,7 @@ function referencesCssText(mod) {
  * @param {string} options.id Resolved id of the module
  * @param {(specifier: string, importer: string) => string | null} [options.resolve] Module resolver, probed relative specifiers only
  * @param {(id: string) => string} [options.load] Module source loader
- * @returns {{ replacements: { start: number, end: number, text: string }[], css: string, watchFiles: string[] } | null} Splice edits, the collected CSS text, and folded source modules; null when the module opts out via a `cssText` reference or carries no creator calls
+ * @returns {{ replacements: { start: number, end: number, text: string }[], pageCss: string, islandCss: string, watchFiles: string[] } | null} Splice edits, main-module CSS (delivered through Astro's pipeline), import-graph CSS (delivered where hydration adopts it — island modules re-register these rules), and folded source modules; null when the module opts out via a `cssText` reference or carries no creator calls
  * @throws {Error} When a frontmatter creator call has non-foldable arguments, or `vars()` appears in the page.
  */
 export function extractFrontmatter({ code, id, resolve = defaultResolve, load = defaultLoad }) {
@@ -727,13 +729,14 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
   };
 
   evaluateImports(mod);
-  walkStatementsList(ast.program.body, mod, true, true);
-
-  let css;
+  const islandCss = cssText();
+  resetCss();
+  let pageCss;
   try {
-    css = cssText();
+    walkStatementsList(ast.program.body, mod, true, true);
+    pageCss = cssText();
   } finally {
     resetCss();
   }
-  return { replacements, css, watchFiles: Array.from(watched) };
+  return { replacements, pageCss, islandCss, watchFiles: Array.from(watched) };
 }

@@ -1,9 +1,11 @@
 import { describe, test, expect } from "bun:test";
+import { parse } from "@babel/parser";
 import { frontmatterCss } from "../frontmatter.mjs";
 
 interface Batch {
   code: string | null;
   css: string | null;
+  island: string | null;
   watched: string[];
 }
 
@@ -30,30 +32,34 @@ export default $$Page;`;
 }
 
 /**
- * Runs the plugin transform against compiled source and resolves the batch's
- * virtual CSS through the plugin's own load hook.
+ * Runs the plugin transform against compiled source, resolves the batch's
+ * virtual CSS through the plugin's own load hook, and extracts the spliced
+ * island style tag from the transformed code.
  */
 function run(code: string, opts: { id?: string; resolve?: Resolve; load?: Load } = {}): Batch {
   const plugin = frontmatterCss({ resolve: opts.resolve, load: opts.load }) as unknown as PluginUnderTest;
   const watched: string[] = [];
   const context = { addWatchFile: (file: string) => { watched.push(file); } };
   const result = plugin.transform.call(context, code, opts.id ?? "/src/pages/index.astro");
-  if (result === null) return { code: null, css: null, watched };
+  if (result === null) return { code: null, css: null, island: null, watched };
   const virtual = /import "virtual:hella-frontmatter\/([^"]+)\.css";/.exec(result.code);
   expect(virtual).not.toBeNull();
-  return { code: result.code, css: plugin.load.call({}, `\0virtual:hella-frontmatter/${virtual![1]}.css`), watched };
+  const tag = /<style id="hella-css">([\s\S]*?)<\/style>/.exec(result.code);
+  return { code: result.code, css: plugin.load.call({}, `\0virtual:hella-frontmatter/${virtual![1]}.css`), island: tag?.[1] ?? null, watched };
 }
 
 describe("frontmatter extraction", () => {
   test("folds a literal style() call to its class literal and collects the scoped rule", () => {
-    const { code, css } = run(compiled(
+    const { code, css, island } = run(compiled(
       [`import { style } from "@hellajs/css";`],
       `  const card = style({ padding: "1rem", "&:hover": { color: "red" } });`,
       "<div class=${card}></div>",
     ));
     expect(code).toContain(`const card = "h-`);
-    expect(css).toContain("padding:1rem");
-    expect(css).toContain(":hover{color:red}");
+    expect(css).toContain("padding: 1rem;");
+    expect(css).toContain(":hover {");
+    expect(css).toContain("color: red;");
+    expect(island).toBeNull();
   });
 
   test("folds a css() call to void 0 and collects the global rule", () => {
@@ -63,7 +69,8 @@ describe("frontmatter extraction", () => {
       "<main></main>",
     ));
     expect(code).toContain("void 0");
-    expect(css).toContain(".prose a{text-decoration:underline}");
+    expect(css).toContain(".prose a {");
+    expect(css).toContain("text-decoration: underline;");
   });
 
   test("folds a keyframes() call to its name literal and collects the rule", () => {
@@ -76,7 +83,7 @@ describe("frontmatter extraction", () => {
       "<div></div>",
     ));
     expect(code).toContain(`const spin = "h-kf-`);
-    expect(css).toMatch(/@keyframes h-kf-[a-z0-9]+\{from\{opacity:0\}to\{opacity:1\}\}/);
+    expect(css).toMatch(/@keyframes h-kf-[a-z0-9]+ \{\n {2}from \{\n {4}opacity: 0;\n {2}\}\n {2}to \{\n {4}opacity: 1;\n {2}\}\n\}/);
   });
 
   test("folds same-module const bindings: object merge, string base, and options bag", () => {
@@ -93,8 +100,10 @@ describe("frontmatter extraction", () => {
     expect(code).toMatch(/const merged = "h-[a-z0-9]+"/);
     expect(code).toMatch(/const composed = "btn h-[a-z0-9]+"/);
     expect(code).toMatch(/const labeled = "h-card-[a-z0-9]+"/);
-    expect(css).toContain("font-size:14px;color:blue");
-    expect(css).toMatch(/\.h-[a-z0-9]+\{color:red\}/);
+    expect(css).toContain("font-size: 14px;");
+    expect(css).toContain("color: blue;");
+    expect(css).toContain("color: red;");
+    expect(css).toMatch(/\.h-card-[a-z0-9]+ \{/);
   });
 
   test("folds imports through a stubbed resolver: const objects and composed keyframes names", () => {
@@ -107,14 +116,15 @@ describe("frontmatter extraction", () => {
     ]);
     const resolve: Resolve = (specifier) => (specifier === "../theme" ? "/src/theme.ts" : null);
     const load: Load = (id) => files.get(id) ?? "";
-    const { code, css, watched } = run(compiled(
+    const { code, css, island, watched } = run(compiled(
       [`import { style } from "@hellajs/css";`, `import { base, spin } from "../theme";`],
       "  const hero = style(base, { animation: `${spin} 1s linear` });",
       "<div></div>",
     ), { resolve, load });
     expect(code).toMatch(/const hero = "h-[a-z0-9]+"/);
-    expect(css).toContain("font-size:14px");
-    expect(css).toMatch(/animation:h-kf-[a-z0-9]+ 1s linear/);
+    expect(island).toContain("@keyframes h-kf-");
+    expect(css).toContain("font-size: 14px;");
+    expect(css).toMatch(/animation: h-kf-[a-z0-9]+ 1s linear/);
     expect(watched).toContain("/src/theme.ts");
   });
 
@@ -132,7 +142,7 @@ describe("frontmatter extraction", () => {
     expect(code).toMatch(/const variant = "h-base-[a-z0-9]+ h-size-sm-[a-z0-9]+ h-[a-z0-9]+"/);
   });
 
-  test("collects imported top-level creator calls and ignores their non-foldable calls and vars()", () => {
+  test("collects imported top-level creator calls into the island tag and ignores their non-foldable calls and vars()", () => {
     const files = new Map<string, string>([
       ["/src/island-styles.ts", [
         `import { css, style, vars } from "@hellajs/css";`,
@@ -144,17 +154,19 @@ describe("frontmatter extraction", () => {
     ]);
     const resolve: Resolve = (specifier) => (specifier === "../island-styles" ? "/src/island-styles.ts" : null);
     const load: Load = (id) => files.get(id) ?? "";
-    const { css } = run(compiled(
+    const { css, island } = run(compiled(
       [`import { style } from "@hellajs/css";`, `import "../island-styles";`],
       `  const own = style({ color: "blue" });`,
       "<div></div>",
     ), { resolve, load });
-    expect(css).toContain(".imported-rule{color:green}");
-    expect(css).not.toContain("--brand");
-    expect(css).not.toContain("nope");
+    expect(island).toContain(".imported-rule {");
+    expect(island).toContain("color: green;");
+    expect(island).not.toContain("--brand");
+    expect(island).not.toContain("nope");
+    expect(css).not.toContain(".imported-rule");
   });
 
-  test("collects styles through a TSX island component in the import graph", () => {
+  test("collects TSX island component styles into the island tag and frontmatter rules into the virtual css", () => {
     const files = new Map<string, string>([
       ["/src/components/Counter.tsx", [
         `import { signal } from "@hellajs/core";`,
@@ -174,14 +186,14 @@ describe("frontmatter extraction", () => {
       : specifier === "../theme" ? "/src/theme.ts"
       : null;
     const load: Load = (id) => files.get(id) ?? "";
-    const { css, watched } = run(compiled(
+    const { css, island, watched } = run(compiled(
       [`import { css } from "@hellajs/css";`, `import Counter from "../components/Counter";`],
       `  css({ body: { margin: "2rem auto" } });`,
       "<Counter client:load initial={0} />",
     ), { resolve, load });
-    expect(css).toContain("padding:0.5rem");
-    expect(css).toMatch(/\.h-counter-btn-[a-z0-9]+/);
-    expect(css).toContain("margin:2rem auto");
+    expect(island).toContain("padding: 0.5rem;");
+    expect(island).toMatch(/\.h-counter-btn-[a-z0-9]+/);
+    expect(css).toContain("margin: 2rem auto;");
     expect(watched).toContain("/src/components/Counter.tsx");
     expect(watched).toContain("/src/theme.ts");
   });
@@ -222,12 +234,72 @@ describe("frontmatter extraction", () => {
   });
 
   test("extracts a template-expression creator call inside $$render", () => {
-    const { code, css } = run(compiled(
+    const { code, css, island } = run(compiled(
       [`import { style } from "@hellajs/css";`],
       ``,
       "<div class=${style({ margin: 0 })}></div>",
     ));
     expect(code).toMatch(/\$\{"h-[a-z0-9]+"\}/);
-    expect(css).toContain("margin:0");
+    expect(css).toContain("margin: 0px;");
+    expect(island).toBeNull();
+  });
+
+  test.each([
+    { label: "after the head open tag", template: "<html><head><title>t</title></head><body><div></div></body></html>", adjacent: '<head><style id="hella-css">' },
+    { label: "after the body open tag", template: "<html><body><div></div></body></html>", adjacent: '<body><style id="hella-css">' },
+    { label: "at the quasi start without head or body", template: "<div></div>", adjacent: '$$render`<style id="hella-css">' },
+  ])("splices the island tag $label", ({ template, adjacent }) => {
+    const files = new Map<string, string>([
+      ["/src/island.ts", `import { style } from "@hellajs/css";\nstyle({ margin: 0 });`],
+    ]);
+    const resolve: Resolve = (specifier) => (specifier === "../island" ? "/src/island.ts" : null);
+    const load: Load = (id) => files.get(id) ?? "";
+    const { code, island } = run(compiled(
+      [`import { style } from "@hellajs/css";`, `import "../island";`],
+      `  const own = style({ color: "blue" });`,
+      template,
+    ), { resolve, load });
+    expect(code).toContain(adjacent);
+    expect(island).toContain("margin: 0px;");
+    expect(island).not.toContain("color: blue");
+  });
+
+  test("escapes island css for the template literal and keeps the module parseable", () => {
+    const files = new Map<string, string>([
+      ["/src/island.ts", [
+        `import { style } from "@hellajs/css";`,
+        `style({ ".brk::after": { content: "'</style>'" }, ".tick::after": { content: "'\`'" } });`,
+      ].join("\n")],
+    ]);
+    const resolve: Resolve = (specifier) => (specifier === "../island" ? "/src/island.ts" : null);
+    const load: Load = (id) => files.get(id) ?? "";
+    const { code, island } = run(compiled(
+      [`import { style } from "@hellajs/css";`, `import "../island";`],
+      `  const own = style({ color: "blue" });`,
+      "<div></div>",
+    ), { resolve, load });
+    expect(island).toContain("<\\\\/style>");
+    expect(island).toContain("\\`");
+    expect(island).not.toContain("</style>");
+    expect(() => parse(code!, { sourceType: "module" })).not.toThrow();
+  });
+
+  test("delivers island rules through the virtual import without a $$render template", () => {
+    const files = new Map<string, string>([
+      ["/src/island.ts", `import { style } from "@hellajs/css";\nstyle({ margin: 0 });`],
+    ]);
+    const resolve: Resolve = (specifier) => (specifier === "../island" ? "/src/island.ts" : null);
+    const load: Load = (id) => files.get(id) ?? "";
+    const { css, island } = run([
+      `import { css } from "@hellajs/css";`,
+      `import "../island";`,
+      `const $$Page = $$createComponent(($$result) => {`,
+      `  css({ body: { margin: "2rem auto" } });`,
+      `});`,
+      `export default $$Page;`,
+    ].join("\n"), { resolve, load });
+    expect(island).toBeNull();
+    expect(css).toContain("margin: 2rem auto;");
+    expect(css).toContain("margin: 0px;");
   });
 });

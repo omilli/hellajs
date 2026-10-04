@@ -12,7 +12,7 @@ Jump to the [Complete Code](#complete-code) for the finished application.
 - **[`hydrate`](/reference/dom/hydrate)**: Adopt server-rendered HTML in place on the client
 - **[`html`](/reference/dom/html)**: Build client-only islands from tagged templates in plain `.ts` files
 - **[`$ref`](/reference/dom/$ref)**: Bind reactive state to DOM nodes Astro rendered outside any island
-- **[`style`](/reference/css/style)**: Scope island styles under content-hashed classes that the build collects from the import graph
+- **[`style`](/reference/css/style)**: Declare scoped, content-hashed island classes right next to the markup that uses them
 - **[Frontmatter styles](/plugins/astro)**: Fold page-level [`css`](/reference/css/css) calls at build into page-scoped CSS that Astro delivers itself
 
 We'll start with a server-rendered island, then add the two client-only modes step by step so you can see what each directive changes.
@@ -108,10 +108,22 @@ Create `src/components/Counter.tsx`:
 ```tsx
 // src/components/Counter.tsx
 import { signal } from "@hellajs/core";
+import { style } from "@hellajs/css";
+
+export const counterBtn = style({
+  padding: "0.5rem 1.25rem",
+  fontSize: "1rem",
+  cursor: "pointer",
+  borderRadius: "0.375rem",
+  border: "1px solid #2563eb",
+  backgroundColor: "#eff6ff",
+}, {
+  label: "counter-btn"
+});
 
 export default function Counter({ initial = 0 }: { initial?: number }) {
   const count = signal(initial);
-  return <button on:click={() => count(count() + 1)}>{count()}</button>;
+  return <button class={counterBtn} on:click={() => count(count() + 1)}>{count()}</button>;
 }
 ```
 
@@ -120,6 +132,7 @@ export default function Counter({ initial = 0 }: { initial?: number }) {
 - **[`signal`](/reference/core/signal)`(initial)`**: Holds the count. `initial` arrives as a prop from the `.astro` page
 - **`{count()}`**: The Babel transform wraps child expressions that call signals into reactive thunks, so the button label tracks `count` without manual wiring
 - **`on:click`**: The HellaJS event prefix. Handlers attach through global event delegation after hydration
+- **[`style`](/reference/css/style)`({ ... }, { label: "counter-btn" })`**: Declares the button's class in the module, above the component; `class={counterBtn}` applies the returned name. The label keeps the hashed class readable, and the hash derives from the rule text, so the server and the client always produce the same class name
 
 When Astro renders the page, the integration's server entry runs `Counter({ initial: 0 })` and stringifies the resulting tree with [`ssr`](/reference/ssr/ssr). Reactive regions are wrapped in `<!--[-->...<!--]-->` markers. On the client, Astro's island runtime loads the component and [`hydrate`](/reference/dom/hydrate) re-runs it against the existing server DOM, attaching state and handlers in place instead of replacing the HTML.
 
@@ -140,8 +153,18 @@ Create `src/components/MouseTracker.ts`. Note the `.ts` extension: the Vite plug
 ```ts
 // src/components/MouseTracker.ts
 import { signal } from "@hellajs/core";
+import { style } from "@hellajs/css";
 import { html } from "@hellajs/dom";
-import { tracker } from "../theme";
+
+export const tracker = style({
+  marginTop: "1rem",
+  padding: "1rem",
+  minHeight: "3rem",
+  border: "1px dashed #9ca3af",
+  borderRadius: "0.375rem",
+}, {
+  label: "tracker"
+});
 
 export default function MouseTracker() {
   const pointerX = signal(0);
@@ -176,6 +199,7 @@ import MouseTracker from '../components/MouseTracker.ts';
 - **`${pointerX}, ${pointerY}`**: Interpolating the signals themselves (not calling them) creates live text bindings that update as the cursor moves
 - **`on:mousemove`**: The same event prefix as JSX, usable inside `html` templates
 - **`client:only="astro-hellajs"`**: Skips the server entirely. The value is the renderer name registered by the integration; Astro requires it because it cannot detect which framework a `client:only` component belongs to
+- **`tracker`**: The island's own class, declared the same way as the counter's and applied to the box through `class=${tracker}`
 
 ## Binding Astro's HTML with `$ref`
 
@@ -201,8 +225,14 @@ Create `src/components/NameSync.ts`:
 ```ts
 // src/components/NameSync.ts
 import { signal } from "@hellajs/core";
+import { style } from "@hellajs/css";
 import { $ref, html } from "@hellajs/dom";
-import { note } from "../theme";
+
+export const note = style({
+  color: "#6b7280",
+}, {
+  label: "note"
+});
 
 export default function NameSync() {
   const name = signal("World");
@@ -225,6 +255,7 @@ export default function NameSync() {
 - **`.on("input", ...)`**: Attaches a delegated listener. Every keystroke writes the field's value into the `name` signal
 - **`.bind(() => ...)`**: Binds a reactive function to the element's text. The greeting updates whenever `name` changes
 - **The returned `html` node**: Gives the island a small visible root; the real work happens through the two `$ref` bindings
+- **`note`**: The island's own class, declared inline like the others and applied to the returned paragraph
 
 <Callout variant="error">$ref queries document at call time. It throws on the server (no document exists), so keep $ref calls in client:only islands or client scripts. A client:load component body executes during server rendering, which is why NameSync is client:only.</Callout>
 
@@ -240,66 +271,15 @@ export default function NameSync() {
 
 ## Styling the Page and the Islands
 
-The page and the islands pick up styles through two paths, and neither needs a manual style tag. [`style`](/reference/css/style) calls in island modules are collected at build from the import graph (they still register at runtime inside the islands themselves), and `css`/`style` calls in a page's frontmatter are folded where they stand. Create `src/theme.ts` with one class per island:
-
-```ts
-// src/theme.ts
-import { style } from "@hellajs/css";
-
-export const counterBtn = style({
-  padding: "0.5rem 1.25rem",
-  fontSize: "1rem",
-  cursor: "pointer",
-  borderRadius: "0.375rem",
-  border: "1px solid #2563eb",
-  backgroundColor: "#eff6ff",
-}, { label: "counter-btn" });
-
-export const tracker = style({
-  marginTop: "1rem",
-  padding: "1rem",
-  minHeight: "3rem",
-  border: "1px dashed #9ca3af",
-  borderRadius: "0.375rem",
-}, { label: "tracker" });
-
-export const note = style({
-  color: "#6b7280",
-}, { label: "note" });
-```
-
-**Code Explanation**
-
-- **[`style`](/reference/css/style)`({...}, { label: ... })`**: Returns a content-hashed class scoped to the rules. The label keeps the class name readable, and the hash is computed from the rule text, so the server and the client always produce the same class name
-- **Runtime registration stays in island modules**: Each island imports its class, so the module's `style()` calls run wherever the island loads: the server while rendering `client:load` markup, the client when a `client:only` island loads
-
-Wire the counter to its class; the other two islands take theirs the same way:
-
-```tsx
-// src/components/Counter.tsx
-import { signal } from "@hellajs/core";
-import { counterBtn } from "../theme";
-
-export default function Counter({ initial = 0 }: { initial?: number }) {
-  const count = signal(initial);
-  return <button class={counterBtn} on:click={() => count(count() + 1)}>{count()}</button>;
-}
-```
-
-**Code Explanation**
-
-- **`class={counterBtn}`**: The hashed class name `style()` returned. `MouseTracker` applies `tracker` to its box and `NameSync` applies `note` to its paragraph
+Each island module already declares its `style()` call next to the markup that uses it. That leaves the page's own rules, and the question of how everything reaches the browser: classes for islands the server renders are collected into the page's CSS at build, `client:only` islands register their rules at runtime when they load, and page-level rules fold out of the frontmatter where they stand. None of it needs a manual style tag.
 
 Page-level global rules go in the frontmatter. Add the `css` import and call to `src/pages/index.astro`:
 
 ```astro
 ---
-//... existing imports
 import { css } from "@hellajs/css";
+//... existing island imports
 
-// Folded at build into the page's collected CSS: Astro delivers it as a
-// page-scoped style tag in the head, so server-rendered markup is styled at
-// first paint and none of these rules ship to the client.
 css({
   body: {
     fontFamily: "system-ui, sans-serif",
@@ -324,26 +304,31 @@ css({
 **Code Explanation**
 
 - **[`css`](/reference/css/css)`({...})`**: Registers global rules. The `#name-input` and `#greeting` selectors reach HTML that Astro itself rendered, outside any island
-- **Frontmatter folding**: The integration evaluates this call at build, folds it to a no-op (its rules are already collected), and injects an import for the collected CSS. Astro bundles that import as a page-scoped style tag, so none of these rules ship to the client
-- **Import-graph collection**: The islands' `style()` calls ride along: starting from the page, the integration follows imports into `Counter` and then `theme`, collecting registrations in module order. Server-rendered island markup arrives styled at first paint
+- **Frontmatter folding**: The integration evaluates this call at build, folds it to a no-op (its rules are already collected), and injects an import for the page's collected CSS. Astro bundles that import as a page-scoped style tag, so none of these rules ship to the client
+- **Import-graph collection**: Starting from the page, the integration follows the imports the server module actually carries, so `Counter`'s co-located `style()` call is collected and spliced into a `<style id="hella-css">` in the page's head; the server-rendered button arrives styled at first paint. `MouseTracker` and `NameSync` never join that module (`client:only` skips the server entirely), so their calls stay runtime-only. Hydration drains that tag once before the islands re-register their rules, so nothing duplicates
 
-Build the app and inspect `dist/index.html`: one page-scoped style tag carries every rule, islands first, then the page's own rules:
+Build the app and inspect `dist/index.html`: two style tags in the head, one per channel. The `hella-css` tag carries the island classes; Astro's own page-scoped tag carries the frontmatter rules:
 
 ```html
 <!-- dist/index.html (built head, abridged) -->
+<style id="hella-css">
+  .h-counter-btn-aiytbh {
+    padding: 0.5rem 1.25rem;
+    /* ...one rule per island class */
+  }
+</style>
 <style>
-  .h-counter-btn-aiytbh{cursor:pointer;background-color:#eff6ff;border:1px solid #2563eb;border-radius:.375rem;padding:.5rem 1.25rem;font-size:1rem}
-  /* ...one rule per island class, then the page's frontmatter rules */
+
   body{max-width:42rem;margin:2rem auto;padding:0 1rem;font-family:system-ui,sans-serif}
-  #name-input{padding:.375rem .625rem;font-size:1rem;border-radius:.375rem;border:1px solid #d1d5db}
+  #name-input{border:1px solid #d1d5db;border-radius:.375rem;padding:.375rem .625rem;font-size:1rem}
   #greeting{font-size:1.25rem;font-weight:600}
 </style>
 ```
 
 **Code Explanation**
 
-- **Registration order**: Island classes come first (the import graph evaluates before the page body), then the frontmatter rules in document order
-- **`client:only` islands**: `MouseTracker` and `NameSync` still register their rules on the client when they load. The runtime injects them into its own style tag, and the class names match the page's because the hash derives from the rule text
+- **Two channels**: Island-collected rules ride the `hella-css` tag because the islands re-register those same rules at hydration: the runtime adopts the tag (drains it once, then repopulates from client registrations), so each rule exists exactly once. The page's frontmatter rules are never re-registered, so they stay in Astro's pipeline tag
+- **`client:only` islands**: `MouseTracker` and `NameSync` are absent from the collected CSS. Their `style()` calls ship inside their client bundles and register when the islands load, appending into the adopted `hella-css` tag. The class names match the page's because the hash derives from the rule text
 
 Styles that need runtime values do not fold: move them into an island module instead. A page that must manage its CSS manually can reference [`cssText`](/reference/css/csstext), which opts it out of extraction entirely (see [Frontmatter styles](/plugins/astro)).
 
@@ -367,9 +352,6 @@ import Counter from '../components/Counter';
 import MouseTracker from '../components/MouseTracker';
 import NameSync from '../components/NameSync';
 
-// Folded at build into the page's collected CSS: Astro delivers it as a
-// page-scoped style tag in the head, so server-rendered markup is styled at
-// first paint and none of these rules ship to the client.
 css({
   body: {
     fontFamily: "system-ui, sans-serif",
@@ -414,16 +396,12 @@ css({
 </html>
 ```
 
-### `src/theme.ts`
+### `src/components/Counter.tsx`
 
-```ts
-// src/theme.ts
+```tsx
+// src/components/Counter.tsx
+import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
-
-// Island theme: style() registers at runtime wherever this module loads, so
-// client:only islands re-register their rules on the client after loading it.
-// The .astro page collects these same calls at build through the import
-// graph, which is what styles server-rendered island markup at first paint.
 
 export const counterBtn = style({
   padding: "0.5rem 1.25rem",
@@ -432,27 +410,9 @@ export const counterBtn = style({
   borderRadius: "0.375rem",
   border: "1px solid #2563eb",
   backgroundColor: "#eff6ff",
-}, { label: "counter-btn" });
-
-export const tracker = style({
-  marginTop: "1rem",
-  padding: "1rem",
-  minHeight: "3rem",
-  border: "1px dashed #9ca3af",
-  borderRadius: "0.375rem",
-}, { label: "tracker" });
-
-export const note = style({
-  color: "#6b7280",
-}, { label: "note" });
-```
-
-### `src/components/Counter.tsx`
-
-```tsx
-// src/components/Counter.tsx
-import { signal } from "@hellajs/core";
-import { counterBtn } from "../theme";
+}, {
+  label: "counter-btn"
+});
 
 export default function Counter({ initial = 0 }: { initial?: number }) {
   const count = signal(initial);
@@ -465,8 +425,18 @@ export default function Counter({ initial = 0 }: { initial?: number }) {
 ```ts
 // src/components/MouseTracker.ts
 import { signal } from "@hellajs/core";
+import { style } from "@hellajs/css";
 import { html } from "@hellajs/dom";
-import { tracker } from "../theme";
+
+export const tracker = style({
+  marginTop: "1rem",
+  padding: "1rem",
+  minHeight: "3rem",
+  border: "1px dashed #9ca3af",
+  borderRadius: "0.375rem",
+}, {
+  label: "tracker"
+});
 
 export default function MouseTracker() {
   const pointerX = signal(0);
@@ -488,8 +458,14 @@ export default function MouseTracker() {
 ```ts
 // src/components/NameSync.ts
 import { signal } from "@hellajs/core";
+import { style } from "@hellajs/css";
 import { $ref, html } from "@hellajs/dom";
-import { note } from "../theme";
+
+export const note = style({
+  color: "#6b7280",
+}, {
+  label: "note"
+});
 
 export default function NameSync() {
   const name = signal("World");
