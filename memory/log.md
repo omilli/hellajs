@@ -7,6 +7,9 @@
 * **Creation**: Added concept [259](entries/259.md) (type: decision).
 * **Creation**: Added concept [260](entries/260.md) (type: decision).
 * **Creation**: Added concept [262](entries/262-frontmatter-import-graph-walk-parses.md) (type: decision) — merged as 261, renumbered to resolve an ID collision with 261-insertrule-whitespace-asymmetry.
+* **Creation**: Added concept [263](entries/263.md) (type: decision).
+* **Creation**: Added concept [264](entries/264.md) (type: decision).
+* **Creation**: Added concept [265](entries/265.md) (type: decision).
 
 ## 2026-10-03
 * **Creation**: Added concept [242](entries/242.md) (type: decision).
