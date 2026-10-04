@@ -37,7 +37,7 @@ Does the work change a package's public surface (exported symbol, field on a cal
 - Plugin entries `plugins/<p>/index.mjs`.
 - Documented behavior is surface even when types don't move — docs and `{pkg}-comparison.md` describe the contract callers learn.
 
-`yes` → Code + Tests + Docs land together as one atomic unit. A `yes` Docs view may land as a cited no-change conclusion: when the fix makes code match docs already stating the target contract, the view cites those doc files (worker verifies the citations) instead of authoring ceremony. `no` → one task of the matching type; Tests/Docs views still appear, justifying absence with a cited reason. No public-surface notion (scripts, agent config, tooling) → Surface `no` by definition.
+`yes` → Code + Tests + Docs land together as one atomic unit. A `yes` Docs view may land as a cited no-change conclusion: when the fix makes code match docs already stating the target contract, the view cites those doc files (worker verifies the citations) instead of authoring ceremony. `no` → one task of the matching type; Tests/Docs views still appear, justifying absence with a cited reason — a Scope-block line of the form `Surface: no — <cited reason>` plus the Type line satisfies this when the reasoning is one clause (repo convention: plans/docs sets compress there), and the worker treats an absent view as a gate question only when the Scope block carries no reason. No public-surface notion (scripts, agent config, tooling) → Surface `no` by definition.
 
 ## Phase 3 — Contract crystallization
 

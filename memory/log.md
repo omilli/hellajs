@@ -4,8 +4,11 @@
 * **Creation**: Added concept [257](entries/257.md) (type: decision).
 * **Deprecation**: Archived [055](archive/055-docs-site-daisyui-tailwind-classes.md) → superseded by [257](entries/257.md).
 * **Creation**: Added concept [258](entries/258.md) (type: decision).
+* **Creation**: Added concept [259](entries/259.md) (type: decision).
 
 ## 2026-10-03
+* **Creation**: Added concept [242](entries/242.md) (type: decision).
+* **Creation**: Added concept [243](entries/243.md) (type: decision).
 * **Creation**: Added concept [252](entries/252.md) (type: decision).
 * **Creation**: Added concept [253](entries/253.md) (type: decision).
 * **Update**: Renumber: parallel-writer ID collision — merged 242-247 → 248-253 (242/243 already allocated by in-flight writer)
@@ -27,6 +30,7 @@
 * **Deprecation**: Archived [212](archive/212-docs-site-hellajs-runtime-imports.md) → superseded by [241](entries/241-docs-declares-zero-hellajs-deps.md).
 * **Creation**: Added concept [190](entries/190.md) (type: correction).
 * **Renumber**: Renumber the add-allocated template 190 to 241 - 190 was a never-filled template just deleted (committed empty in 2f9346f0); ID reuse would make the log ambiguous
+* **Creation**: Added concept [190](entries/190.md) (type: decision).
 
 ## 2026-10-01
 * **Merge**: Renumbered 235-canonical-twin-rename-count-assertions to 236 on merge of plans/ui/code/tailwind-inline-all-strings — 235 was already taken by narrow-map-iterator-destructuring

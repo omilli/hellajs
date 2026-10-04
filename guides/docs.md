@@ -592,6 +592,10 @@ try {
 
 5–30 lines. If >30, simplify. If the concept genuinely requires more, use context markers (`//...`) to omit irrelevant parts.
 
+### Exports per Doc
+
+One block per doc carries `export` lines. `bun doc-snippets` concatenates a doc's same-language blocks into ONE module, and export-bearing blocks (any line matching `/^(declare|export) /m`) hoist whole to module scope, so a second one collides: TS2451 on shared export names, TS2528 on double `default`. Structure multi-page or multi-component examples as one export-bearing block plus export-free blocks (export-free blocks nest-scope and chain: a later block reads earlier blocks' names); narrate additional pages in prose or build-output comments.
+
 ## Example Syntax (JSX Default)
 
 JSX is the only example syntax in every package, `dom` included. Write every example as JSX.
@@ -781,6 +785,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 - [ ] No single-letter variable names (well-known `i`, `x`, `fn` excepted)
 - [ ] No silent no-op — every `get`/`read`/`data()` demo reads a key that was written earlier in the block
 - [ ] Blocks 5–30 lines; `//…` context markers for longer
+- [ ] One export-bearing fenced block per doc (`export` lines hoist to module scope in doc-snippets' concatenated module; a second collides) (§Code Examples → Exports per Doc)
 
 **Tutorials**
 - [ ] Dev-server callout: run command + served URL in the section where the app first becomes reachable (Vite `npm run dev` → `http://localhost:5173`; Node-served SSR → start command + its URL)
