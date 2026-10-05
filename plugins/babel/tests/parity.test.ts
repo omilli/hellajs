@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { html } from "@hellajs/dom";
+import { html, component } from "@hellajs/dom";
 import { transformJSX } from "./helpers";
 
 /**
@@ -58,6 +58,18 @@ function evaluate(source: string, args: Record<string, unknown>): unknown {
   return fn(...names.map((name) => args[name]));
 }
 
+// Dynamic-component prefix forwarding: a component echoing its received
+// prefixed props back onto a root element — runtime and compiled shapes must
+// agree (component calls keep prefixed keys verbatim). A (props) => props
+// passthrough is NOT usable here: component() chains a fresh componentScope
+// per side and toEqual compares functions by reference.
+const Echo = (props: Record<string, unknown>) =>
+  html`<button on:click=${props["on:click"]} e:focus=${props["e:focus"]} hook:afterMount=${props["hook:afterMount"]} error:fallback=${props["error:fallback"]}></button>`;
+const delegated = () => {};
+const direct = () => {};
+const hook = () => {};
+const fallback = () => {};
+
 // Malformed-markup recovery set plus well-formed controls; `${v}` entries
 // evaluate with v = "x" on both paths.
 const corpus = [
@@ -70,7 +82,8 @@ const corpus = [
   { template: "<div><br />text</div>" },
   { template: "<div class=\"a\" data-x='b' lang=en><span title=\"c\">d</span></div>" },
   { template: "<><span>a</span><span>b</span></>" },
-  { template: "<input value=${v}>t" }
+  { template: "<input value=${v}>t" },
+  { template: "<${Echo} on:click=${delegated} e:focus=${direct} hook:afterMount=${hook} error:fallback=${fallback} />", args: { Echo, delegated, direct, hook, fallback } }
 ];
 
 describe("babel", () => {
@@ -96,10 +109,14 @@ describe("babel", () => {
       expect(canonical("ab")).toBe("ab");
     });
 
-    test.each(corpus)("runtime and compiled parsers agree on \"${template}\"", ({ template }) => {
-      const runtimeResult = evaluate("return html`" + template + "`;", { html, v: "x" });
-      const compiled = transformJSX("const n = html`" + template + "`;");
-      const compiledResult = evaluate(compiled + "; return n;", { v: "x" });
+    test.each(corpus)("runtime and compiled parsers agree on \"${template}\"", ({ template, args }) => {
+      const extra = args ?? {};
+      const runtimeResult = evaluate("return html`" + template + "`;", { html, component, v: "x", ...extra });
+      const compiled = transformJSX("const n = html`" + template + "`;")
+        // component-call templates inject an ESM import — `new Function` cannot
+        // evaluate it; the real component() is threaded through args instead.
+        .replace(/import\s*\{[^}]*\}\s*from\s*['"][^'"]+['"];?/g, "");
+      const compiledResult = evaluate(compiled + "; return n;", { html, component, v: "x", ...extra });
 
       expect(canonical(compiledResult)).toEqual(canonical(runtimeResult));
     });

@@ -234,9 +234,9 @@ describe("dom", () => {
       expect(host.childNodes[0]!.nodeName).toBe("SPAN");
     });
 
-    test("dynamic component with merged props", () => {
-      const Comp = (props: { id: string; class?: string; onClick?: () => void }) =>
-        html`<div id=${props.id} class=${props.class} on:click=${props.onClick}>Component</div>`;
+    test("dynamic component receives prefixed keys verbatim", () => {
+      const Comp = (props: { id: string; class?: string; "on:click"?: () => void }) =>
+        html`<div id=${props.id} class=${props.class} on:click=${props["on:click"]}>Component</div>`;
 
       const handler = () => { };
       const className = signal("dynamic");
@@ -250,6 +250,22 @@ describe("dom", () => {
 
       expect(node.tag).toBe("div");
       expect(node.props?.id).toBe("test-id");
+      expect(node.props?.class).toBe(className);
+      expect(node.on?.click).toBe(handler);
+    });
+
+    test("dynamic component receives error: config verbatim", () => {
+      let received: unknown;
+      const Comp = (props: Record<string, unknown>) => {
+        received = props["error:fallback"];
+        return html`<div>Component</div>`;
+      };
+
+      const fallback = (error: Error) => error.message;
+
+      html`<${Comp} error:fallback=${fallback} />`;
+
+      expect(received).toBe(fallback);
     });
 
     test("attribute prefix detection (on:, hook:, e:)", () => {

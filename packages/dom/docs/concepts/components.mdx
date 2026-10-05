@@ -49,6 +49,21 @@ const MyPage = () => (
 mount(MyPage, "#app");
 ```
 
+Prefixed attrs at a call site also pass through verbatim: `<Button on:click={fn}>` arrives as `props["on:click"]`, and the component forwards it by re-emitting `on:click` on its root element (where the runtime routes it to the matching live bucket). Plain event props like the `click` prop above remain valid: they are ordinary values the component wires itself.
+
+In the JSX flavor, forward the whole set with rest props: declare `HTMLAttributes<"button">` in the props type and spread `{...rest}` onto the root element. TypeScript already accepts the full canonical form:
+
+```jsx
+import type { HTMLAttributes } from "@hellajs/dom";
+
+const Button = ({ variant = "primary", children, ...rest }: HTMLAttributes<"button"> & { variant?: string }) => (
+  <button class={`btn btn-${variant}`} {...rest}>{children}</button>
+);
+
+// Every prefixed key arrives verbatim and forwards:
+// <Button disabled on:click={fn} on:focusin={fn} />
+```
+
 ## Component Data Flow
 
 Pass signals as props to maintain reactivity across component boundaries. The child component reads the signal prop in a template expression; element children auto-wrap, so the binding is reactive.

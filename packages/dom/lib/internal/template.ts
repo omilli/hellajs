@@ -310,12 +310,12 @@ export function parseHTML(html: string, placeholders: HtmlPlaceholder[]): HtmlIn
       }
     } else {
       const isDynamicComponent = tagName!.startsWith("__SLOT_");
-      const attrs = parseAttributes(attrsStr!, placeholders);
+      const attrs = parseAttributes(attrsStr!, placeholders, isDynamicComponent);
 
       const node: HtmlParsedNode = isDynamicComponent
         ? {
           dynamicComponent: parseInt(tagName!.slice(7, -2)),
-          props: { ...attrs.props, ...attrs.on, ...attrs.e, ...attrs.hooks },
+          props: attrs.props,
           children: []
         }
         : {
@@ -462,7 +462,7 @@ function parseAttrValue(text: string, placeholders: HtmlPlaceholder[]): unknown 
  * @param placeholders Array of placeholder markers
  * @returns Object with categorized attributes
  */
-function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): HtmlParsedAttrs {
+function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[], keepPrefixed = false): HtmlParsedAttrs {
   const result: HtmlParsedAttrs = { props: {} };
   const trimmed = attrsStr?.trim();
   if (!trimmed) return result;
@@ -490,7 +490,12 @@ function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[]): Htm
       value = true;
     }
 
-    if (name.startsWith("error:")) {
+    // Dynamic components receive prefixed attrs verbatim in props — the
+    // component forwards them onto elements, where render/hydrate route them
+    // into live buckets (routePrefixedProps).
+    if (keepPrefixed) {
+      result.props![name] = value;
+    } else if (name.startsWith("error:")) {
       const errorKey = name.slice(6) as "fallback" | "category" | "boundary";
       const errorConfig = result.error ||= {};
       (errorConfig as Record<string, unknown>)[errorKey] = value;

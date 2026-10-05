@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ErrorConfig, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, isString, isNumber, isObject, objectLoop } from "./core";
-import { renderProp, toText, resolveDeep, chainScopes, wireFragmentScope } from "./utils";
+import { renderProp, toText, resolveDeep, chainScopes, wireFragmentScope, routePrefixedProps } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
@@ -185,28 +185,32 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
     element = (ns ? document.createElementNS(ns, tag as string) : document.createElement(tag as string)) as HellaElement;
   }
 
-  if (componentScope || error) {
+  // Prefixed props keys ("on:click" from a component's rest-forwarding) slice
+  // into their live buckets before wiring; other props render as attributes.
+  const routed = routePrefixedProps(props as Record<string, unknown>, on as Record<string, unknown>, e as Record<string, unknown>, hooks, error);
+
+  if (componentScope || routed.error) {
     const state = getState(element);
     if (componentScope) state.componentScope = chainScopes(state.componentScope, componentScope);
-    if (error) {
-      state.errorConfig = error;
+    if (routed.error) {
+      state.errorConfig = routed.error;
       state.originalNode = node;
     }
   }
 
-  const currentBoundary = error ? element : boundaryElement;
+  const currentBoundary = routed.error ? element : boundaryElement;
 
-  if (hooks) {
-    hooks.beforeMount && registry.addHook(element, "beforeMount", hooks.beforeMount);
-    hooks.afterMount && registry.addHook(element, "afterMount", hooks.afterMount as ElementMountFn);
-    hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", hooks.beforeDestroy as ElementMountFn);
-    hooks.afterDestroy && registry.addHook(element, "afterDestroy", hooks.afterDestroy);
-    hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", hooks.beforeUpdate as ElementMountFn);
-    hooks.afterUpdate && registry.addHook(element, "afterUpdate", hooks.afterUpdate as ElementMountFn);
+  if (routed.hooks) {
+    routed.hooks.beforeMount && registry.addHook(element, "beforeMount", routed.hooks.beforeMount);
+    routed.hooks.afterMount && registry.addHook(element, "afterMount", routed.hooks.afterMount as ElementMountFn);
+    routed.hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", routed.hooks.beforeDestroy as ElementMountFn);
+    routed.hooks.afterDestroy && registry.addHook(element, "afterDestroy", routed.hooks.afterDestroy);
+    routed.hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", routed.hooks.beforeUpdate as ElementMountFn);
+    routed.hooks.afterUpdate && registry.addHook(element, "afterUpdate", routed.hooks.afterUpdate as ElementMountFn);
 
-    if (hooks.beforeMount) {
+    if (routed.hooks.beforeMount) {
       try {
-        hooks.beforeMount();
+        routed.hooks.beforeMount();
       } catch (err) {
         const config = getBoundaryConfig(currentBoundary);
         dispatchError(toError(err), { phase: "mount", element, config });
@@ -214,7 +218,7 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
     }
   }
 
-  objectLoop(props, (key, value) => {
+  objectLoop(routed.props, (key, value) => {
     if (!isFunction(value)) {
       renderProp(element, key, value);
       return;
@@ -233,12 +237,12 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
     });
   });
 
-  objectLoop(on, (eventName, handler) =>
+  objectLoop(routed.on, (eventName, handler) =>
     setNodeHandler(element, eventName, handler as EventListener)
   );
 
-  if (e) {
-    objectLoop(e, (eventName, handler) =>
+  if (routed.e) {
+    objectLoop(routed.e, (eventName, handler) =>
       setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec)
     );
   }

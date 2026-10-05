@@ -60,12 +60,12 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html`
 
 Five prefixes route attrs into five arrays. The `processAttributes` check order is `error:` → `hook:` → `e:` → `on:` → props (prefixes are mutually exclusive lexically; order only matters for documentation). `processComponentAttributes` (html\`\``) checks in a slightly different order but produces the same partition.
 
-| JSX prefix | Output object key | Strip prefix | Semantics |
+| JSX prefix | Output object key (element / component) | Strip prefix | Semantics |
 |---|---|---|---|
-| `error:` | `error` | yes | Error-boundary config (e.g. `fallback`, `category`). |
-| `hook:` | `hooks` | yes (also renames `hook` → `hooks`) | Lifecycle hooks (`mount`, `update`, …). |
-| `e:` | `e` | yes | **Direct (non-delegated) event handlers** — coexists with `on:` on the same element. |
-| `on:` | `on` | yes | Delegated event handlers (capture-phase global delegation). |
+| `error:` | `error` / `props["error:x"]` | element yes; component keeps the verbatim key | Error-boundary config (e.g. `fallback`, `category`). |
+| `hook:` | `hooks` (also renames `hook` → `hooks`) / `props["hook:x"]` | element yes; component keeps the verbatim key | Lifecycle hooks (`mount`, `update`, …). |
+| `e:` | `e` / `props["e:x"]` | element yes; component keeps the verbatim key | **Direct (non-delegated) event handlers** — coexists with `on:` on the same element. |
+| `on:` | `on` / `props["on:x"]` | element yes; component keeps the verbatim key | Delegated event handlers (capture-phase global delegation). |
 | *(none)* | `props` | no | Regular prop. camelCase `data*` / `aria*` → kebab-case (`dataTestId` → `"data-test-id"`); `data-*` / `aria-*` / hyphenated / namespaced keys emitted as quoted string keys; spread (`{...x}`) → `t.spreadElement` into props only. |
 | *(no value)* | (per prefix) | — | Boolean `true` (e.g. `<input required />`). Explicit `={false}` stays `false`. |
 
@@ -115,7 +115,7 @@ Emitted by `buildHellaNode` (`src/builders/vnode.mjs`). **Each field after `tag`
 | `error` | object | `error:`-prefixed. |
 | `children` | array | filtered children; if every child is a `StringLiteral` they are joined into one string inside a single-element array. |
 
-For components, **all five category arrays are merged into a single `props` object** (prefix-stripped); the `component(Tag, props)` call never carries `on` / `hooks` / `e` / `error` keys.
+For components, **all five category arrays are merged into a single `props` object** with prefixed attrs kept under verbatim string keys (`"on:click"`, `"hook:mount"`); the bucket arrays stay empty, so the `component(Tag, props)` call never carries bare `on` / `hooks` / `e` / `error` fields. The component forwards them by re-emitting the prefixed key onto an element; dom's render/hydrate (`routePrefixedProps`) then slices them into live buckets.
 
 ## Import injection
 

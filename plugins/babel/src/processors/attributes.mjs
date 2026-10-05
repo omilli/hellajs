@@ -38,7 +38,13 @@ export function processAttributes(t, attributes, isComponent) {
         value = t.booleanLiteral(true);
       }
 
-      if (key.startsWith("error:")) {
+      // Component calls keep prefixed keys verbatim in props — the component
+      // re-emits them onto elements, where dom routes them into live buckets
+      // at render time (routePrefixedProps). Bucket arrays stay element-only.
+      if (isComponent && /^(error|hook|e|on):/.test(key)) {
+        props.push(t.objectProperty(t.stringLiteral(key), value));
+      }
+      else if (key.startsWith("error:")) {
         const errorKey = key.slice(6);
         error.push(t.objectProperty(t.identifier(errorKey), value));
       }
@@ -118,7 +124,11 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
       processedValue = t.stringLiteral(String(value));
     }
 
-    if (key.startsWith("error:")) {
+    // Component calls keep prefixed keys verbatim in props (see processAttributes).
+    if (isComponent && /^(error|hook|e|on):/.test(key)) {
+      propsArray.push(t.objectProperty(t.stringLiteral(key), processedValue));
+    }
+    else if (key.startsWith("error:")) {
       const errorKey = key.slice(6);
       errorArray.push(t.objectProperty(t.identifier(errorKey), processedValue));
     }

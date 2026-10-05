@@ -1,6 +1,6 @@
 import type { HellaNode, HellaChild, HellaElement, RenderFn, ElementMountFn, DirectListenerSpec } from "../types/nodes";
 import { isFunction, isObject, isNull, objectLoop } from "./core";
-import { renderProp, resolveDeep, isHellaNode, chainScopes, wireFragmentScope } from "./utils";
+import { renderProp, resolveDeep, isHellaNode, chainScopes, wireFragmentScope, routePrefixedProps } from "./utils";
 import { setNodeHandler, setDirectHandler } from "./events";
 import { dispatchError, toError } from "./dispatch";
 import { registry } from "../registry";
@@ -322,24 +322,27 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
     const state = getState(element);
     state.componentScope = chainScopes(state.componentScope, componentScope);
   }
-  if (error) {
+  // Prefixed props keys ("on:click" from a component's rest-forwarding) slice
+  // into their live buckets before wiring; other props render as attributes.
+  const routed = routePrefixedProps(props as Record<string, unknown>, on as Record<string, unknown>, e as Record<string, unknown>, hooks, error);
+  if (routed.error) {
     const state = getState(element);
-    state.errorConfig = error;
+    state.errorConfig = routed.error;
     state.originalNode = node;
   }
-  const currentBoundary = error ? element : boundaryElement;
+  const currentBoundary = routed.error ? element : boundaryElement;
 
-  if (hooks) {
-    hooks.beforeMount && registry.addHook(element, "beforeMount", hooks.beforeMount);
-    hooks.afterMount && registry.addHook(element, "afterMount", hooks.afterMount as ElementMountFn);
-    hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", hooks.beforeDestroy as ElementMountFn);
-    hooks.afterDestroy && registry.addHook(element, "afterDestroy", hooks.afterDestroy);
-    hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", hooks.beforeUpdate as ElementMountFn);
-    hooks.afterUpdate && registry.addHook(element, "afterUpdate", hooks.afterUpdate as ElementMountFn);
+  if (routed.hooks) {
+    routed.hooks.beforeMount && registry.addHook(element, "beforeMount", routed.hooks.beforeMount);
+    routed.hooks.afterMount && registry.addHook(element, "afterMount", routed.hooks.afterMount as ElementMountFn);
+    routed.hooks.beforeDestroy && registry.addHook(element, "beforeDestroy", routed.hooks.beforeDestroy as ElementMountFn);
+    routed.hooks.afterDestroy && registry.addHook(element, "afterDestroy", routed.hooks.afterDestroy);
+    routed.hooks.beforeUpdate && registry.addHook(element, "beforeUpdate", routed.hooks.beforeUpdate as ElementMountFn);
+    routed.hooks.afterUpdate && registry.addHook(element, "afterUpdate", routed.hooks.afterUpdate as ElementMountFn);
 
-    if (hooks.beforeMount) {
+    if (routed.hooks.beforeMount) {
       try {
-        hooks.beforeMount();
+        routed.hooks.beforeMount();
       } catch (err) {
         const config = getBoundaryConfig(currentBoundary);
         dispatchError(toError(err), { phase: "mount", element, config });
@@ -348,7 +351,7 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
   }
 
   // Static props already applied by ssr(); wire only function-ref props as effects
-  objectLoop(props, (key, value) => {
+  objectLoop(routed.props, (key, value) => {
     if (!isFunction(value)) return;
     registry.addEffect(element, () => {
       try {
@@ -364,12 +367,12 @@ export function hydrateNode(node: HellaNode, existing: Node | null, boundaryElem
     });
   });
 
-  objectLoop(on, (eventName, handler) =>
+  objectLoop(routed.on, (eventName, handler) =>
     setNodeHandler(element, eventName, handler as EventListener)
   );
 
-  if (e) {
-    objectLoop(e, (eventName, handler) =>
+  if (routed.e) {
+    objectLoop(routed.e, (eventName, handler) =>
       setDirectHandler(element, eventName, handler as EventListener | DirectListenerSpec)
     );
   }

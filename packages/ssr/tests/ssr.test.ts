@@ -112,6 +112,15 @@ describe("ssr", () => {
     expect(() => ssr(html`<p>${bad}</p>` as HellaNode)).toThrow("boom");
   });
 
+  test("skips prefixed props keys (routed to live buckets at mount)", () => {
+    const node = {
+      tag: "button",
+      props: { "on:click": () => {}, disabled: true },
+      children: []
+    } as unknown as HellaNode;
+    expect(ssr(node)).toBe("<button disabled></button>");
+  });
+
   test("renders void elements without a closing tag", () => {
     expect(ssr(html`<img src=${"a.jpg"} />` as HellaNode)).toBe('<img src="a.jpg">');
   });

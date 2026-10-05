@@ -76,6 +76,11 @@ describe("babel", () => {
       const output = transformJSX('<Button id="test" />');
       expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Button, { id: "test" });');
     });
+
+    test("component keeps prefixed attrs verbatim in props", () => {
+      const output = transformJSX("<Button on:click={h}>x</Button>");
+      expect(normalize(output)).toBe('import { component } from "@hellajs/dom"; component(Button, { "on:click": h, children: ["x"] });');
+    });
   });
 
   describe("Passthrough components", () => {

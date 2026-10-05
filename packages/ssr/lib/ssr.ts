@@ -192,13 +192,19 @@ function ssrImpl(node: HellaNode, options?: SsrOptions): string {
     const len = keys.length;
     while (i < len) {
       const key = keys[i]!;
+      // Prefixed props keys ("on:click" forwarded through a component) are
+      // DOM/runtime-only — routed to live buckets at mount, never emitted.
+      if (key.startsWith("on:") || key.startsWith("e:") || key.startsWith("hook:") || key.startsWith("error:")) {
+        i++;
+        continue;
+      }
       const value = resolveValue((node.props as Record<string, unknown>)[key]);
       if (isPromise(value)) console.warn(SYNC_PROMISE_WARN);        // sync cannot await a function-ref prop's Promise — stringified as today
       open += serializeProp(key, value);
       i++;
     }
   }
-  // on:/e:/hooks/error: are DOM/runtime-only — not emitted
+  // on:/e:/hooks/error: bucket fields and prefixed props keys are DOM/runtime-only — not emitted
   if (VOID.has(tag as string)) return `${open}>`;                    // void element — no body, no closing tag
   return `${open}>${walkChildren(node.children, options)}</${tag}>`;
 }

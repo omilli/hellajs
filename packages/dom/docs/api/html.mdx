@@ -123,7 +123,7 @@ Define reusable component functions.
 
 ```js
 const Button = (props) => html`
-  <button class="btn" on:click=${props.onClick}>
+  <button class="btn" on:click=${props["on:click"]}>
     ${props.children}
   </button>
 `;
@@ -132,7 +132,11 @@ const Button = (props) => html`
 html`<${Button} on:click=${handleClick}>Click Me</${Button}>`
 ```
 
-Props from `on:` and `hook:` prefixes merge into the props object.
+Prefixed attrs pass through component boundaries verbatim: `on:click` arrives
+as `props["on:click"]` (never `props.click`). Forward one back onto an element
+by re-emitting the same prefixed key; the runtime routes it to the matching
+live bucket at mount. Plain (prefix-free) props like `disabled` arrive under
+their own names.
 
 ### Children as Props
 

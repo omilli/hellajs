@@ -79,14 +79,14 @@ describe("babel", () => {
   describe("component attribute handling", () => {
     test("component with on: events", () => {
       const output = transformJSX("<Button on:click={handler}>Click</Button>");
-      // Components get event handlers merged into props with the prefix removed
-      expect(output).toContain("click: handler");
+      // Components receive prefixed keys verbatim in props — dom routes them at element render
+      expect(output).toContain('"on:click": handler');
     });
 
     test("component with hook: lifecycle", () => {
       const output = transformJSX("<Component hook:mount={onMount} />");
-      // Components get hooks merged into props with the prefix removed
-      expect(output).toContain("mount: onMount");
+      // Components receive prefixed keys verbatim in props — dom routes them at element render
+      expect(output).toContain('"hook:mount": onMount');
     });
 
     test("component merges all attributes into props", () => {
@@ -97,19 +97,19 @@ describe("babel", () => {
         />
       `);
       expect(output).toContain('id: "test"');
-      expect(output).toContain("click: handler");
+      expect(output).toContain('"on:click": handler');
     });
 
     test("component with error: config", () => {
       const output = transformJSX("<Button error:fallback={handleError}>Click</Button>");
-      // Components get error config merged into props with the prefix removed
-      expect(output).toContain("fallback: handleError");
+      // Components receive prefixed keys verbatim in props — dom routes them at element render
+      expect(output).toContain('"error:fallback": handleError');
     });
 
     test("component with error: category", () => {
       const output = transformJSX('<Modal error:fallback={fallback} error:category="modal" />');
-      expect(output).toContain("fallback: fallback");
-      expect(output).toContain('category: "modal"');
+      expect(output).toContain('"error:fallback": fallback');
+      expect(output).toContain('"error:category": "modal"');
     });
   });
 
