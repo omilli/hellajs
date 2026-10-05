@@ -1,112 +1,35 @@
-## Usage
+## API
 
-The composed root takes an items array, not children slots:
+The composed root takes an items array, not children slots.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `items` | `{ value, label, disabled? }[]` | One labeled row per entry |
-| `value` | `() => string` | Controlled selected value (see below) |
-| `onValueChange` | `(value: string) => void` | Fires with the newly selected value; clicking the active item is a no-op |
-| `name` | `string` | Threaded onto every item button. Hidden native inputs for form submission are not rendered (deferred) |
-| `orientation` | `"horizontal" \| "vertical"` | Renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus |
-| `class` | `string` | Lands on the root next to the component class |
+### RadioGroup
 
-### jsx
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `items` | `{ value, label, disabled? }[]` | `-` |
+| `value` | `() => string` | `-` |
+| `onValueChange` | `(value: string) => void` | `-` |
+| `name` | `string` | `-` |
+| `orientation` | `"horizontal" \| "vertical"` | `-` |
+| `class` | `string` | `-` |
 
-```jsx
-import RadioGroup from './components/radio-group';
-
-const items = [{
-    value: 'free',
-    label: 'Free'
-  }, {
-    value: 'pro',
-    label: 'Pro'
-  }, {
-    value: 'team',
-    label: 'Team'
-  },
-];
-
-const Plan = () => (
-  <RadioGroup items={items} />
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${RadioGroup}
-    items=${items}
-  />
-</main>`
-```
-
-## Controlled and Uncontrolled
-
-Without `value`, the root owns a signal starting with nothing selected and updates it on click. Pass a `value` accessor and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged.
-
-```jsx
-import { signal } from '@hellajs/core';
-import RadioGroup from './components/radio-group';
-
-const plan = signal('pro');
-
-const Controlled = () => (
-  <RadioGroup
-    items={[
-      { value: 'free', label: 'Free' },
-      { value: 'pro', label: 'Pro' },
-    ]}
-    value={plan}
-    onValueChange={(next) => plan(next)}
-  />
-);
-```
-
-## Manual Parts
-
-`RadioGroupItem` ships beside the default root for custom composition. hella has no context primitive, so state is explicit: selection, keyboard movement, and label pairing are yours to thread.
+Without `value`, the root owns a signal starting with nothing selected and updates it on click. Pass a `value` accessor and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged. Clicking the active item is a no-op. `name` threads onto every item button; hidden native inputs for form submission are not rendered (deferred). `orientation` renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus.
 
 ### RadioGroupItem
 
-The circle button: a `role="radio"` control whose checked state drives `aria-checked`, `data-state`, and the indicator icon.
+The circle button: a `role="radio"` control whose checked state drives `aria-checked`, `data-state`, and the indicator icon. hella has no context primitive, so state is explicit: selection, keyboard movement, and label pairing are yours to thread.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string` | The entry's identity, rendered as `data-value` on the button |
-| `checked` | `boolean \| (() => boolean)` | Static read or reactive accessor driving `aria-checked` and `data-state` |
-| `onSelect` | `() => void` | Click callback requesting selection |
-| `disabled` | `boolean` | Native `disabled` attribute plus the disabled styling |
-| `name` | `string` | Rendered on the button; hidden native inputs for form submission are not rendered |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string` | `-` |
+| `checked` | `boolean \| (() => boolean)` | `-` |
+| `onSelect` | `() => void` | `-` |
+| `disabled` | `boolean` | `-` |
+| `name` | `string` | `-` |
+
+`value` is the entry's identity, rendered as `data-value` on the button. Form submission wiring remains a caller concern.
 
 Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { RadioGroupItem } from './components/radio-group';
-
-const size = signal('m');
-
-const Custom = () => (
-  <div>
-    <RadioGroupItem
-      value="m"
-      checked={() => size() === 'm'}
-      onSelect={() => size('m')}
-    />
-    <RadioGroupItem
-      value="l"
-      checked={() => size() === 'l'}
-      onSelect={() => size('l')}
-    />
-  </div>
-);
-```
-
-Form submission wiring remains a caller concern: `name` threads onto every item button, but the hidden native inputs that would submit the selection are not rendered.
 
 ## Accessibility
 

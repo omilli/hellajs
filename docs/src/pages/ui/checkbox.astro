@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import CheckboxContent from "@ui/concepts/checkbox.mdx";
-import CheckboxDemo, { CheckboxIndeterminateDemo } from "../../demos/checkbox-demo";
-import demoSource from "../../demos/checkbox-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { CheckboxDemo, CheckboxIndeterminateDemo } from "../../demos/checkbox-demo";
 
 const title = "Checkbox";
 const description = "Interactive Checkbox demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Checkbox</h1>
   <p>A checked-state control: a button carrying a checkbox role whose state lives in a signal, showing the check icon whenever the box is checked or indeterminate.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "CheckboxDemo", { withImports: true })} note="Clicks request the flip; the parent signal decides.">
-    <CheckboxDemo client:load />
-  </Demo>
+
   <InstallSection entry="checkbox" />
+
+  <Component heading="Playground" Demo={<CheckboxDemo client:load />} code="CheckboxDemo">
+    <p>Clicks request the flip; the parent signal decides.</p>
+  </Component>
+  <Component heading="Indeterminate" Demo={<CheckboxIndeterminateDemo client:load />} code="CheckboxIndeterminateDemo">
+    <p>The icon is the check glyph in both rows; only aria-checked and data-state separate mixed from checked. Clicking the mixed box reports true and clears it.</p>
+  </Component>
+
   <CheckboxContent />
-  <h2>Examples</h2>
-  <Demo id="demo-indeterminate" title="Indeterminate" code={demoCode(demoSource, "CheckboxIndeterminateDemo")} note="The icon is the check glyph in both rows; only aria-checked and data-state separate mixed from checked. Clicking the mixed box reports true and clears it.">
-    <CheckboxIndeterminateDemo client:load />
-  </Demo>
 </MainLayout>

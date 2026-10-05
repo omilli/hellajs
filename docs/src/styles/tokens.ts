@@ -41,7 +41,7 @@ vars({
   "base-contrast": "oklch(97.807% 0.029 256.847)",
   primary: "#38EBFF",
   "primary-foreground": "var(--base-300)",
-  secondary: "var(--base-50)",
+  secondary: "var(--base-200)",
   "secondary-foreground": "var(--base-contrast)",
   "font-sans": "'Mulish Variable', sans-serif",
   background: "var(--base-100)",

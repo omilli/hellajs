@@ -1,70 +1,20 @@
-## Usage
+## API
 
-The root renders the semantic `kbd` element carrying `data-slot="kbd"`, so browser and assistive-tech semantics come free:
+The root renders the semantic `kbd` element carrying `data-slot="kbd"`, so browser and assistive-tech semantics come free. Inside a tooltip with `data-slot="tooltip-content"`, the key chip flips to a translucent inverse surface so it stays readable on the tooltip's dark background; nothing extra to wire.
 
-### jsx
+### Kbd
 
-```jsx
-import Kbd from './components/kbd';
-
-const Shortcut = () => (
-  <span class="flex items-center gap-2 text-sm">
-    Save changes <Kbd>⌘S</Kbd>
-  </span>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <span class="flex items-center gap-2 text-sm">
-    Save changes <${Kbd}>⌘S</${Kbd}>
-  </span>
-</main>`
-```
-
-## Grouped Sequences
-
-`KbdGroup` lays a run of keys out as one sequence with a shared gap:
-
-```jsx
-import Kbd, { KbdGroup } from './components/kbd';
-
-const Sequence = () => (
-  <KbdGroup>
-    <Kbd>ctrl</Kbd>
-    <Kbd>shift</Kbd>
-    <Kbd>P</Kbd>
-  </KbdGroup>
-);
-```
-
-## Tooltip Inverse
-
-Inside a tooltip with `data-slot="tooltip-content"`, the key chip flips to a translucent inverse surface so it stays readable on the tooltip's dark background; nothing extra to wire:
-
-```jsx
-import Kbd, { KbdGroup } from './components/kbd';
-
-const Hint = () => (
-  <KbdGroup>
-    Press <Kbd>?</Kbd> anywhere
-  </KbdGroup>
-);
-```
-
-## Manual Parts
-
-`KbdGroup` ships beside the default root for custom composition.
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The key label |
 
 ### KbdGroup
 
-The sequence wrapper: a `kbd` element carrying `data-slot="kbd-group"`.
+The sequence wrapper: a `kbd` element carrying `data-slot="kbd-group"`, laying a run of keys out as one sequence with a shared gap.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The run of key chips |
 
 Every part also takes a `class` string, landing last in its style composition.

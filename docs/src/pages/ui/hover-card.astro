@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import HoverCardContent from "@ui/concepts/hover-card.mdx";
-import HoverCardDemo, { HoverCardManualDemo } from "../../demos/hover-card-demo";
-import demoSource from "../../demos/hover-card-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { HoverCardDemo, HoverCardManualDemo } from "../../demos/hover-card-demo";
 
 const title = "Hover Card";
 const description = "Interactive Hover Card demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Hover Card</h1>
   <p>A rich preview card: hovering the trigger opens an anchored panel, moving the pointer into the panel keeps it open, and focus follows the same open and close path a pointer takes.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "HoverCardDemo", { withImports: true })} note="Hovering opens the anchored preview after a short delay; moving the pointer into the card keeps it open, and focus opens it from the keyboard.">
-    <HoverCardDemo client:load />
-  </Demo>
+
   <InstallSection entry="hover-card" />
+
+  <Component heading="Playground" Demo={<HoverCardDemo client:load />} code="HoverCardDemo">
+    <p>Hovering opens the anchored preview after a short delay; moving the pointer into the card keeps it open, and focus opens it from the keyboard.</p>
+  </Component>
+  <Component heading="Manual parts" Demo={<HoverCardManualDemo client:load />} code="HoverCardManualDemo">
+    <p>The content's own onOpen re-arms the open state the moment the pointer enters, cancelling the trigger's pending close.</p>
+  </Component>
+
   <HoverCardContent />
-  <h2>Examples</h2>
-  <Demo id="demo-manual" title="Manual parts" code={demoCode(demoSource, "HoverCardManualDemo")} note="The content's own onOpen re-arms the open state the moment the pointer enters, cancelling the trigger's pending close.">
-    <HoverCardManualDemo client:load />
-  </Demo>
 </MainLayout>

@@ -2,7 +2,6 @@ import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import Button from "@registry/button/css/button.js";
 import DirectionProvider from "@registry/direction/css/direction.js";
-import { stack } from "./demo-kit";
 
 
 
@@ -12,29 +11,29 @@ const panel = style({
   padding: "0.75rem",
 }, { label: "demo-panel" });
 
-export default function DirectionDemo() {
+export function DirectionDemo() {
   const dir = signal<"ltr" | "rtl">("ltr");
   const flip = () => dir(dir() === "ltr" ? "rtl" : "ltr");
 
   return (
-    <div class={stack}>
+    <>
       <Button variant="outline" size="sm" onclick={flip}>{() => `Flip direction (${dir()})`}</Button>
       <DirectionProvider dir={dir}>
         <p class={panel}>This paragraph flips its inline direction with the wrapper's dir attribute; the wrapper itself stays out of layout.</p>
       </DirectionProvider>
-    </div>
+    </>
   );
 }
 
 export function DirectionNestedDemo() {
   return (
-    <div class={stack}>
+    <>
       <DirectionProvider dir="rtl">
         <p class={panel}>النص العربي</p>
         <DirectionProvider dir="ltr">
           <p class={panel}>English inline</p>
         </DirectionProvider>
       </DirectionProvider>
-    </div>
+    </>
   );
 }

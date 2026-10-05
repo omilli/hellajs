@@ -1,7 +1,5 @@
 import { signal } from "@hellajs/core";
-import { style } from "@hellajs/css";
 import Button from "@registry/button/css/button.js";
-import { row } from "./demo-kit";
 import DropdownMenu, {
   DropdownMenuCheckboxItem,
   DropdownMenuItem,
@@ -11,16 +9,7 @@ import DropdownMenu, {
   DropdownMenuSub,
 } from "@registry/dropdown-menu/css/dropdown-menu.js";
 
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
-
-
-export default function DropdownMenuDemo() {
+export function DropdownMenuDemo() {
   const bold = signal(false);
   const size = signal("medium");
 
@@ -42,11 +31,11 @@ export default function DropdownMenuDemo() {
   );
 
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <DropdownMenu content={formatItems}><Button variant="outline">Format</Button></DropdownMenu>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -66,10 +55,10 @@ export function DropdownMenuSubmenuDemo() {
   );
 
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <DropdownMenu content={fileItems}><Button variant="outline">File</Button></DropdownMenu>
       </div>
-    </div>
+    </>
   );
 }

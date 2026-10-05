@@ -1,118 +1,67 @@
-## Usage
+## API
 
-Compose the parts by hand: `Pagination` is the landmark, `PaginationContent` the list, `PaginationItem` one list entry, and `PaginationLink` an anchor styled like the button's ghost (inactive) or outline (active) variant:
+Compose the parts by hand: `Pagination` is the landmark, `PaginationContent` the list, `PaginationItem` one list entry, and `PaginationLink` an anchor styled like the button's ghost (inactive) or outline (active) variant. The root renders the `role="navigation"` landmark with `aria-label="pagination"`.
 
-### jsx
+Six named parts ship beside the default `Pagination`: `PaginationContent`, `PaginationItem`, `PaginationLink`, `PaginationPrevious`, `PaginationNext`, and `PaginationEllipsis`.
 
-```jsx
-import Pagination, { PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from './components/pagination';
+### Pagination
 
-const pages = [1, 2, 3, 4, 5];
-const current = 2;
+The landmark `nav` wrapper.
 
-const Pages = () => (
-  <Pagination>
-    <PaginationContent>
-      <PaginationItem><PaginationPrevious href={`?page=${Math.max(1, current - 1)}`} /></PaginationItem>
-      {pages.map((page) => (
-        <PaginationItem key={page}>
-          <PaginationLink href={`?page=${page}`} isActive={page === current}>{page}</PaginationLink>
-        </PaginationItem>
-      ))}
-      <PaginationItem><PaginationEllipsis /></PaginationItem>
-      <PaginationItem><PaginationNext href={`?page=${Math.min(5, current + 1)}`} /></PaginationItem>
-    </PaginationContent>
-  </Pagination>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<${Pagination}>
-  <${PaginationContent}>
-    <${PaginationItem}><${PaginationPrevious} href=${"?page=1"} /></${PaginationItem}>
-    <${PaginationItem}><${PaginationLink} href=${"?page=2"} isActive=${true}>2</${PaginationLink}></${PaginationItem}>
-    <${PaginationItem}><${PaginationEllipsis} /></${PaginationItem}>
-    <${PaginationItem}><${PaginationNext} href=${"?page=3"} /></${PaginationItem}>
-  </${PaginationContent}>
-</${Pagination}>`
-```
-
-## Without a Router
-
-`isActive` drives `aria-current="page"`, `data-active`, and the outline treatment. There is no router coupling: `href` is an optional passthrough and `onclick` replaces navigation for signal-driven paging:
-
-```jsx
-import { signal } from '@hellajs/core';
-import Pagination, { PaginationContent, PaginationItem, PaginationLink } from './components/pagination';
-
-const page = signal(1);
-const Pages = () => (
-  <Pagination>
-    <PaginationContent>
-      {[1, 2, 3].map((num) => (
-        <PaginationItem key={num}>
-          <PaginationLink onclick={() => page(num)} isActive={page() === num}>{num}</PaginationLink>
-        </PaginationItem>
-      ))}
-    </PaginationContent>
-  </Pagination>
-);
-```
-
-## Manual Parts
-
-Six named parts ship beside the default `Pagination`: `PaginationContent`, `PaginationItem`, `PaginationLink`, `PaginationPrevious`, `PaginationNext`, and `PaginationEllipsis`. The root renders the `role="navigation"` landmark with `aria-label="pagination"`.
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The list |
 
 ### PaginationContent
 
 The list: a `ul` wrapping one `PaginationItem` per entry.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The list items |
 
 ### PaginationItem
 
 One list slot: an `li` holding a link, the ellipsis, or a nav control.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The entry's node |
 
 ### PaginationLink
 
 The page anchor, styled through the button vocabulary: ghost inactive, outline active.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `isActive` | `boolean` | Renders `aria-current="page"` and `data-active`, and swaps the ghost variant for the outline one |
-| `href` | `string` | Optional passthrough anchor target; no router coupling |
-| `onclick` | `() => void` | Click callback, replacing navigation for signal-driven paging |
-| `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | Size map (default `"icon"`) |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `isActive` | `boolean` | `-` |
+| `href` | `string` | `-` |
+| `onclick` | `() => void` | `-` |
+| `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"icon"` |
 | `children` | `HellaChildren` | The page label |
+
+`isActive` renders `aria-current="page"`, `data-active`, and swaps the ghost variant for the outline one. `href` is an optional passthrough with no router coupling; `onclick` replaces navigation for signal-driven paging.
 
 ### PaginationPrevious
 
 The previous-page anchor: an `aria-label="Go to previous page"` link with the left chevron and a screen-reader-adjacent label hidden below the `sm` breakpoint.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `isActive` | `boolean` | Same swap as `PaginationLink` |
-| `href` | `string` | Optional passthrough anchor target |
-| `onclick` | `() => void` | Click callback |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `isActive` | `boolean` | `-` |
+| `href` | `string` | `-` |
+| `onclick` | `() => void` | `-` |
 
 ### PaginationNext
 
 The next-page anchor: an `aria-label="Go to next page"` link with the right chevron and the same responsive label treatment as `PaginationPrevious`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `isActive` | `boolean` | Same swap as `PaginationLink` |
-| `href` | `string` | Optional passthrough anchor target |
-| `onclick` | `() => void` | Click callback |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `isActive` | `boolean` | `-` |
+| `href` | `string` | `-` |
+| `onclick` | `() => void` | `-` |
 
 ### PaginationEllipsis
 

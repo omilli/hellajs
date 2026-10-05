@@ -1,45 +1,63 @@
-## Usage
+## API
 
-### jsx
+The composed root derives each row's trigger/content id pair and threads the open state through the manual parts.
 
-```jsx
-import Accordion from './components/accordion';
+### Accordion
 
-const items = [{
-    value: 'shipping',
-    trigger: 'How fast is shipping?',
-    content: 'Two business days, everywhere we deliver.'
-  },
-  {
-    value: 'returns',
-    trigger: 'What is the return window?',
-    content: 'Thirty days from delivery.'
-  },
-];
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `items` | `AccordionEntry[]` | `-` |
+| `type` | `"single" \| "multiple"` | `"single"` |
+| `collapsible` | `boolean` | `-` |
+| `open` | `string \| string[]` | `-` |
+| `class` | `string` | `-` |
 
-const Faq = () => (
-  <Accordion
-    type="single"
-    collapsible
-    open="shipping"
-    items={items}
-  />
-);
-```
-### html
+### AccordionEntry
 
-The html-format (`--format html`) works the same way.
+Each entry is one row; `value` keys its `data-value`, the generated id pair, and the `open` lookup.
 
-```js
-html`<main>
-  <${Accordion}
-    type="single"
-    collapsible
-    open="shipping"
-    items=${items}
-  />
-</main>`
-```
+| Field | Type | Default |
+| ----- | ---- | ------- |
+| `value` | `string` | `-` |
+| `trigger` | `HellaChildren` | The row's trigger label |
+| `content` | `HellaChildren` | The row's body |
+| `disabled` | `boolean` | `-` |
+
+### AccordionItem
+
+The row wrapper: a `div` carrying the value and open state.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string` | `-` |
+| `active` | `() => boolean` | `-` |
+| `children` | `HellaChild[]` | The trigger and content pair |
+
+### AccordionTrigger
+
+The header row: an `h3` wrapping the toggle button, with the chevron icon appended after the children.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `id` | `string` | `-` |
+| `active` | `() => boolean` | `-` |
+| `onToggle` | `() => void` | `-` |
+| `controls` | `string` | `-` |
+| `disabled` | `boolean` | `-` |
+| `children` | `HellaChildren` | The label inside the button |
+
+### AccordionContent
+
+The body region: a `role="region"` div whose inner wrapper carries the collapse animation.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `id` | `string` | `-` |
+| `labelledBy` | `string` | `-` |
+| `active` | `() => boolean` | `-` |
+| `children` | `HellaChildren` | The body inside the region |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ## Type
 
@@ -48,80 +66,3 @@ html`<main>
 | `type="single"` (default) | Closes the previous item, opens the clicked one | Does nothing unless `collapsible` is set |
 | `type="single" collapsible` | Same swap | Closes the item, leaving none open |
 | `type="multiple"` | Opens it alongside the rest | Closes it |
-
-
-## Items
-
-Each entry in the `items` array is one accordion row:
-
-| Field | Type | Behavior |
-|---|---|---|
-| `value` | `string` | Stable identity: keys the item's `data-value`, the generated `hella-accordion-trigger-<value>` and `hella-accordion-content-<value>` id pair, and the `open` lookup |
-| `trigger` | `HellaChildren` | Label node rendered inside the row's trigger button |
-| `content` | `HellaChildren` | Body node rendered inside the row's content region |
-| `disabled` | `boolean` | Blocks activation: `aria-disabled` plus the native `disabled` attribute, pointer events off, and 50 percent opacity |
-
-## Manual Parts
-
-`AccordionItem`, `AccordionTrigger`, and `AccordionContent` ship beside the default root for custom composition; state is explicit.
-
-### AccordionItem
-
-The row wrapper: a `div` carrying the value and open state, styled by the `item` map.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string` | Rendered as `data-value` on the row |
-| `active` | `() => boolean` | Accessor driving the row's `data-state` (`open` / `closed`) |
-| `children` | `HellaChild[]` | The trigger and content pair |
-
-### AccordionTrigger
-
-The header row: an `h3` wrapping the toggle button, with the chevron icon appended after the children.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `active` | `() => boolean` | Drives `aria-expanded` (`true` / `false`) and the button's `data-state` |
-| `onToggle` | `() => void` | Click callback |
-| `controls` | `string` | Paired content's `id`, rendered as `aria-controls` |
-| `id` | `string` | Button id; the paired content's `aria-labelledby` points at it |
-| `disabled` | `boolean` | Native `disabled` attribute plus `aria-disabled`, blocking activation |
-| `children` | `HellaChildren` | Label node rendered inside the button |
-
-### AccordionContent
-
-The body region: a `role="region"` div whose inner wrapper carries the collapse animation.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `active` | `() => boolean` | Drives `data-state` on the region and the inner wrapper the animation keys off |
-| `id` | `string` | Region id; the paired trigger's `aria-controls` points at it |
-| `labelledBy` | `string` | Paired trigger's `id`, rendered as `aria-labelledby` |
-| `children` | `HellaChildren` | Body node rendered inside the region |
-
-Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { AccordionContent, AccordionItem, AccordionTrigger } from './components/accordion';
-
-const open = signal(true);
-
-const toggle = () => open(!open());
-
-const Custom = () => (
-  <AccordionItem value="solo" active={open}>
-    <AccordionTrigger
-      id="solo-trigger"
-      active={open}
-      onToggle={toggle}
-      controls="solo-content"
-    >
-      Custom trigger
-    </AccordionTrigger>
-    <AccordionContent id="solo-content" labelledBy="solo-trigger" active={open}>
-      Custom body
-    </AccordionContent>
-  </AccordionItem>
-);
-```

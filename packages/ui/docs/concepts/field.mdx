@@ -1,147 +1,96 @@
-## Usage
+## API
 
-Compose the parts by hand; there is no context object and no schema prop:
+Compose the parts by hand; there is no context object and no schema prop.
 
-### jsx
+### Field
 
-```jsx
-import { Field, FieldContent, FieldDescription, FieldError, FieldLabel, FieldTitle } from './components/field';
-import Input from './components/input';
+The field row: a `div` carrying `data-slot="field-item"`, laying the label and control out by `orientation`.
 
-const Profile = () => (
-  <Field>
-    <FieldLabel for="name">
-      <FieldTitle>Name</FieldTitle>
-      <FieldContent>
-        <FieldDescription>Shown on your public profile.</FieldDescription>
-      </FieldContent>
-    </FieldLabel>
-    <Input id="name" placeholder="Ada Lovelace" />
-    <FieldError errors={[{ message: 'Required' }]} />
-  </Field>
-);
-```
-### html
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `orientation` | `"vertical" \| "horizontal" \| "responsive"` | `"vertical"` |
+| `disabled` | `boolean` | `-` |
+| `invalid` | `boolean` | `-` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The label, control, and error nodes |
 
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Field}>
-    <${FieldLabel} for="name">
-      <${FieldTitle}>Name</${FieldTitle}>
-      <${FieldContent}>
-        <${FieldDescription}>Shown on your public profile.</${FieldDescription}>
-      </${FieldContent}>
-    </${FieldLabel}>
-    <${Input} id="name" placeholder="Ada Lovelace" />
-    <${FieldError} errors=${[{ message: 'Required' }]} />
-  </${Field}>
-</main>`
-```
-
-## Orientation
-
-`orientation` on `Field` switches the layout: `vertical` (default) stacks, `horizontal` aligns the label beside the control, and `responsive` uses a container query so fields laid out inside a `FieldGroup` go horizontal only when the group is at least 28rem wide:
-
-```jsx
-import { Field, FieldContent, FieldDescription, FieldLabel } from './components/field';
-import Checkbox from './components/checkbox';
-
-const Terms = () => (
-  <Field orientation="horizontal">
-    <Checkbox id="terms" />
-    <FieldLabel for="terms">
-      <FieldTitle>Accept terms</FieldTitle>
-      <FieldContent>
-        <FieldDescription>You agree to our terms and conditions.</FieldDescription>
-      </FieldContent>
-    </FieldLabel>
-  </Field>
-);
-```
-
-## Disabled, Invalid, and Error State
-
-Pass `disabled` or `invalid` to `Field` and it renders `data-disabled="true"` / `data-invalid="true"`: labels and titles fade to half opacity and the field text turns destructive, without touching the children. `FieldError` renders children or derives content from its `errors` array: a single message renders as text, several render as a deduplicated list, and an empty error renders hidden rather than removed so both formats keep one DOM shape.
-
-## Manual Parts
-
-`FieldSet`, `FieldLegend`, `FieldGroup`, `FieldContent`, `FieldLabel`, `FieldTitle`, `FieldDescription`, `FieldSeparator`, and `FieldError` ship beside the default `Field` row for custom composition.
+`disabled` or `invalid` render `data-disabled="true"` / `data-invalid="true"`: labels and titles fade to half opacity and the field text turns destructive, without touching the children. `responsive` uses a container query so fields laid out inside a `FieldGroup` go horizontal only when the group is at least 28rem wide.
 
 ### FieldSet
 
 The group container: the native `fieldset` element wrapping related fields.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The grouped fields |
 
 ### FieldLegend
 
-The group's caption: the native `legend` element; `variant="label"` renders it with label styling.
+The group's caption: the native `legend` element.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `variant` | `"legend" \| "label"` | Caption treatment (default `"legend"`) |
-| `children` | `HellaChildren` | Caption node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"legend" \| "label"` | `"legend"` |
+| `children` | `HellaChildren` | The caption node |
 
 ### FieldGroup
 
 The flex row container that lays stacked or responsive fields out together.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The fields in the group |
 
 ### FieldContent
 
 The description stack beside the title inside `FieldLabel`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Description nodes |
 
 ### FieldLabel
 
 The full `label` element wrapping title and content; takes `for` like the standalone label copy.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `for` | `string` | The labeled control's `id`, rendered as the `for` attribute |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `for` | `string` | `-` |
 | `children` | `HellaChildren` | Title and content nodes |
 
 ### FieldTitle
 
 The label's heading line: a `div` carrying the same `data-slot="field-label"` as `FieldLabel`, which is what lets one disabled-state selector cover both parts.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Title node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The title node |
 
 ### FieldDescription
 
 The supporting line: a `p` carrying `data-slot="field-description"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Description node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The description node |
 
 ### FieldSeparator
 
 A rule between fields with optional centered text.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Optional text centered on the rule; its presence flips the wrapper's `data-content` |
 
 ### FieldError
 
 The message row: a `role="alert"` div that renders children or derives text from `errors`, hidden when there is nothing to show.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `errors` | `Array<{ message?: string } \| undefined>` | Messages to derive text from: one renders as text, several as a deduplicated list |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `errors` | `Array<{ message?: string } \| undefined>` | `-` |
 | `children` | `HellaChildren` | Explicit message content, rendered instead of the derived text |
+
+A single message renders as text, several render as a deduplicated list, and an empty error renders hidden rather than removed so both formats keep one DOM shape.
 
 Every part also takes a `class` string, landing last in its style composition.

@@ -1,84 +1,43 @@
-## Usage
+## API
 
 Compose the three exports: `ResizablePanelGroup` (the default), `ResizablePanel`, and `ResizableHandle`. Place one handle between each pair of panels you want to separate.
 
-### jsx
-
-```jsx
-import ResizablePanelGroup, {
-  ResizableHandle,
-  ResizablePanel,
-} from './components/resizable';
-
-const Shell = () => (
-  <ResizablePanelGroup direction="horizontal">
-    <ResizablePanel defaultSize={50}>Sidebar</ResizablePanel>
-    <ResizableHandle withHandle />
-    <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
-  </ResizablePanelGroup>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${ResizablePanelGroup} direction="horizontal">
-    <${ResizablePanel} defaultSize=${50}>Sidebar</${ResizablePanel}>
-    <${ResizableHandle} withHandle />
-    <${ResizablePanel} defaultSize=${50}>Editor</${ResizablePanel}>
-  </${ResizablePanelGroup}>
-</main>`
-```
-
 ### ResizablePanelGroup
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `direction` | `"horizontal" \| "vertical"` | Flex axis (default `"horizontal"`), rendered as `aria-orientation` |
-| `onLayout` | `(sizes: number[]) => void` | Reports the panel sizes in percent after each drag or keyboard resize; the initial layout does not fire it |
-| `children` | panels and handles | Discovered in the DOM at mount; every `ResizablePanel` child joins the layout |
-| `class` | `string` | Lands on the group next to the component class |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `direction` | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `onLayout` | `(sizes: number[]) => void` | `-` |
+| `children` | panels and handles | Discovered in the DOM at mount |
+| `class` | `string` | `-` |
+
+`direction` is the flex axis, rendered as `aria-orientation`. `onLayout` reports the panel sizes in percent after each drag or keyboard resize; the initial layout does not fire it. Every `ResizablePanel` child joins the layout.
 
 ### ResizablePanel
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `defaultSize` | `number` | Initial share of the group in percent; required, it seeds the group's layout |
-| `minSize` | `number` | Lower percent bound (default `0`) |
-| `maxSize` | `number` | Upper percent bound (default `100`) |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `defaultSize` | `number` | `-` |
+| `minSize` | `number` | `0` |
+| `maxSize` | `number` | `100` |
 | `children` | any | Rendered inside the panel |
-| `class` | `string` | Lands on the panel |
+| `class` | `string` | `-` |
+
+`defaultSize` is the initial share of the group in percent; required, it seeds the group's layout.
 
 ### ResizableHandle
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `withHandle` | `boolean` | Renders the grip icon chip centered on the divider |
-| `disabled` | `boolean` | Blocks drags and keys, renders `aria-disabled` and `data-disabled` |
-| `class` | `string` | Lands on the handle next to the component class |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `withHandle` | `boolean` | `-` |
+| `disabled` | `boolean` | `-` |
+| `class` | `string` | `-` |
+
+`withHandle` renders the grip icon chip centered on the divider; `disabled` blocks drags and keys, rendering `aria-disabled` and `data-disabled`.
 
 ## Sizing and Constraints
 
 Dragging a handle moves the boundary between the panel before it and the panel after it: the pixel delta converts to a percentage of the group, the previous panel takes the share the next one gives up. Both sides clamp at their `minSize` and `maxSize`, so a drag that runs out of room stops at the boundary instead of pushing other panels. Panel geometry is measured when the drag starts, not observed continuously.
-
-```jsx
-import ResizablePanelGroup, {
-  ResizableHandle,
-  ResizablePanel,
-} from './components/resizable';
-
-const Clamped = () => (
-  <ResizablePanelGroup direction="horizontal">
-    <ResizablePanel defaultSize={50} minSize={25} maxSize={75}>
-      Sidebar
-    </ResizablePanel>
-    <ResizableHandle />
-    <ResizablePanel defaultSize={50}>Editor</ResizablePanel>
-  </ResizablePanelGroup>
-);
-```
 
 ## Keyboard
 

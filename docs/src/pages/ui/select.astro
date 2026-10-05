@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
-import SelectTitle from "@ui/concepts/select.mdx";
-import SelectDemo, { SelectCompactDemo } from "../../demos/select-demo";
-import demoSource from "../../demos/select-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import SelectContent from "@ui/concepts/select.mdx";
+import Component from "../../components/Component.astro";
+
+import { SelectDemo, SelectCompactDemo } from "../../demos/select-demo";
 
 const title = "Select";
 const description = "Interactive Select demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Select</h1>
   <p>A listbox select: the trigger button opens an anchored, width-matched listbox; arrows rove the options, typing jumps to a match, and Enter commits the highlighted value; Escape and an outside press dismiss it.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SelectDemo", { withImports: true })} note="The listbox stretches to the trigger's width and flips on viewport collision; arrows rove the options, typing jumps to a match, Enter commits, and the disabled option is skipped.">
-    <SelectDemo client:load />
-  </Demo>
+
   <InstallSection entry="select" />
-  <SelectTitle />
-  <h2>Examples</h2>
-  <Demo id="demo-compact" title="Compact and clearable" code={demoCode(demoSource, "SelectCompactDemo")} note="The sm size renders the compact trigger height; once a value is selected, the clear affordance appears inside the trigger, and clearing reports the empty string through onValueChange.">
-    <SelectCompactDemo client:load />
-  </Demo>
+
+  <Component heading="Playground" Demo={<SelectDemo client:load />} code="SelectDemo">
+    <p>The listbox stretches to the trigger's width and flips on viewport collision; arrows rove the options, typing jumps to a match, Enter commits, and the disabled option is skipped.</p>
+  </Component>
+  <Component heading="Compact and clearable" Demo={<SelectCompactDemo client:load />} code="SelectCompactDemo">
+    <p>The sm size renders the compact trigger height; once a value is selected, the clear affordance appears inside the trigger, and clearing reports the empty string through onValueChange.</p>
+  </Component>
+
+  <SelectContent />
 </MainLayout>

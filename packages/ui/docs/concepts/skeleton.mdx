@@ -1,46 +1,10 @@
-## Usage
+## API
 
-The element has no intrinsic size, so `h-*` and `w-*` classes come from you; stack a few strips to stand in for text. The root carries `data-slot="skeleton"`:
+The element has no intrinsic size, so `h-*` and `w-*` classes come from you; stack a few strips to stand in for text. The root carries `data-slot="skeleton"`.
 
-### jsx
+### Skeleton
 
-```jsx
-import Skeleton from './components/skeleton';
-
-const Card = () => (
-  <div class="flex flex-col gap-2">
-    <Skeleton class="h-4 w-2/3" />
-    <Skeleton class="h-4 w-full" />
-    <Skeleton class="h-4 w-full" />
-  </div>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<div class="flex flex-col gap-2">
-  <${Skeleton} class="h-4 w-2/3" />
-  <${Skeleton} class="h-4 w-full" />
-  <${Skeleton} class="h-4 w-full" />
-</div>`
-```
-
-## Composed Placeholders
-
-Pair a circle with text lines for the classic profile placeholder:
-
-```jsx
-import Skeleton from './components/skeleton';
-
-const Profile = () => (
-  <div class="flex items-center gap-4">
-    <Skeleton class="size-12 rounded-full" />
-    <div class="flex flex-col gap-2">
-      <Skeleton class="h-4 w-32" />
-      <Skeleton class="h-4 w-24" />
-    </div>
-  </div>
-);
-```
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | Optional inner nodes |

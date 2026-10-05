@@ -1,85 +1,31 @@
-## Usage
+## API
 
 The group is caller-composed: `ButtonGroup` renders the `role="group"` wrapper and you place buttons, separators, or `ButtonGroupText` labels inside it. There is no slot machinery: render the element you want directly as a child.
 
-### jsx
+### ButtonGroup
 
-```jsx
-import Button from './components/button';
-import ButtonGroup, { ButtonGroupSeparator } from './components/button-group';
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The joined controls |
 
-const Actions = () => (
-  <ButtonGroup>
-    <Button variant="outline">Copy</Button>
-    <ButtonGroupSeparator />
-    <Button variant="outline">Paste</Button>
-  </ButtonGroup>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<${ButtonGroup}>
-  <${Button} variant="outline">Copy</${Button}>
-  <${ButtonGroupSeparator} />
-  <${Button} variant="outline">Paste</${Button}>
-</${ButtonGroup}>`
-```
-
-## Vertical Orientation
-
-`orientation="vertical"` stacks the children and moves the joined edges to top and bottom:
-
-```jsx
-import Button from './components/button';
-import ButtonGroup from './components/button-group';
-
-const Stacked = () => (
-  <ButtonGroup orientation="vertical">
-    <Button variant="outline">Top</Button>
-    <Button variant="outline">Middle</Button>
-    <Button variant="outline">Bottom</Button>
-  </ButtonGroup>
-);
-```
-
-## Manual Parts
-
-`ButtonGroupText` and `ButtonGroupSeparator` ship beside the default root for custom composition.
+`orientation="vertical"` stacks the children and moves the joined edges to top and bottom.
 
 ### ButtonGroupText
 
 The muted label plate for prefix text inside a group.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Label node rendered inside the plate |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The label node rendered inside the plate |
 
 ### ButtonGroupSeparator
 
 The divider between joined children: a `role="separator"` div whose markup is restated inline so the copied file stays self-contained.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `orientation` | `"horizontal" \| "vertical"` | Sets the divider's `data-orientation` and `aria-orientation` (default `vertical`) |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `orientation` | `"horizontal" \| "vertical"` | `"vertical"` |
 
 Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import Button from './components/button';
-import ButtonGroup, { ButtonGroupText } from './components/button-group';
-import Input from './components/input';
-
-const url = signal('hellajs.com');
-
-const Labeled = () => (
-  <ButtonGroup>
-    <ButtonGroupText>https://</ButtonGroupText>
-    <Input value={url} oninput={(v) => url(v)} />
-    <Button variant="outline">Open</Button>
-  </ButtonGroup>
-);
-```

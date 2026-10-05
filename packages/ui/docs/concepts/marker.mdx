@@ -1,73 +1,33 @@
-## Usage
+## API
 
-`Marker` renders the strip, `MarkerIcon` an optional leading icon box, and `MarkerContent` the label:
-
-### jsx
-
-```jsx
-import Marker, { MarkerContent, MarkerIcon } from './components/marker';
-
-const Caption = () => (
-  <Marker>
-    <MarkerIcon>X</MarkerIcon>
-    <MarkerContent>Migrated 12 entries</MarkerContent>
-  </Marker>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Marker}>
-    <${MarkerIcon}>X</${MarkerIcon}>
-    <${MarkerContent}>Migrated 12 entries</${MarkerContent}>
-  </${Marker}>
-</main>`
-```
-
-## Variants
-
-`variant` picks the treatment: `default` renders the bare strip, `separator` adds flex-filling rules before and after the content, and `border` adds a bottom border. Anchors inside a marker inherit the underline and hover-to-foreground treatment from its selectors:
-
-```jsx
-import Marker, { MarkerContent } from './components/marker';
-
-const Ruled = () => (
-  <Marker variant="separator">
-    <MarkerContent>Chapter 4</MarkerContent>
-  </Marker>
-);
-```
-
-## Manual Parts
-
-`MarkerIcon` and `MarkerContent` ship beside the default strip for custom composition.
+`Marker` renders the strip, `MarkerIcon` an optional leading icon box, and `MarkerContent` the label. Anchors inside a marker inherit the underline and hover-to-foreground treatment from its selectors.
 
 ### Marker
 
 The labeled divider strip: carries `data-variant` for the treatment selectors.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `variant` | `"default" \| "separator" \| "border"` | Strip treatment (default `"default"`) |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"default" \| "separator" \| "border"` | `"default"` |
+| `class` | `string` | `-` |
 | `children` | `HellaChildren` | Icon and content nodes |
+
+`default` renders the bare strip, `separator` adds flex-filling rules before and after the content, and `border` adds a bottom border.
 
 ### MarkerIcon
 
 The leading icon box: an `aria-hidden` span, sized by the style layer.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Icon node or glyph |
 
 ### MarkerContent
 
 The label: a `span` centered by the separator variant's selectors.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Label text |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The label text |
 
 Every part also takes a `class` string, landing last in its style composition.

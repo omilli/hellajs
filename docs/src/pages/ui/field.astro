@@ -1,30 +1,28 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import FieldContent from "@ui/concepts/field.mdx";
-import FieldDemo, { FieldResponsiveDemo, FieldStateDemo } from "../../demos/field-demo";
-import demoSource from "../../demos/field-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { FieldDemo, FieldStateDemo, FieldResponsiveDemo } from "../../demos/field-demo";
 
 const title = "Field";
 const description = "Interactive Field demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Field</h1>
   <p>A form-field composition kit: ten parts covering the set, legend, group, field row, content stack, label, title, description, separator, and error, wired so disabled and invalid state on the field propagates to its label and title.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "FieldDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <FieldDemo client:load />
-  </Demo>
+
   <InstallSection entry="field" />
+
+  <Component heading="Playground" Demo={<FieldDemo />} code="FieldDemo"/>
+  <Component heading="Disabled and invalid propagation" Demo={<FieldStateDemo />} code="FieldStateDemo">
+    <p>Disabled fades the label and title, invalid turns the field text destructive - neither touches the children's props.</p>
+  </Component>
+  <Component heading="Responsive orientation" Demo={<FieldResponsiveDemo />} code="FieldResponsiveDemo">
+    <p>Inside a FieldGroup the responsive orientation goes horizontal once the group is at least 28rem wide.</p>
+  </Component>
+
   <FieldContent />
-  <h2>Examples</h2>
-  <Demo id="demo-state" title="Disabled and invalid propagation" code={demoCode(demoSource, "FieldStateDemo")} note="disabled fades the label and title, invalid turns the field text destructive - neither touches the children's props.">
-    <FieldStateDemo client:load />
-  </Demo>
-  <Demo id="demo-responsive" title="Responsive orientation" code={demoCode(demoSource, "FieldResponsiveDemo")} note="Inside a FieldGroup the responsive orientation goes horizontal once the group is at least 28rem wide.">
-    <FieldResponsiveDemo client:load />
-  </Demo>
 </MainLayout>

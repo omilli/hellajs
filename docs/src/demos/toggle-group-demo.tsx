@@ -1,22 +1,11 @@
 import { signal } from "@hellajs/core";
-import { style } from "@hellajs/css";
 import ToggleGroup from "@registry/toggle-group/css/toggle-group.js";
-import { muted } from "./demo-kit";
 
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
-
-
-export default function ToggleGroupDemo() {
+export function ToggleGroupDemo() {
   const view = signal("week");
 
   return (
-    <div class={stack}>
+    <>
       <ToggleGroup
         type="single"
         items={[
@@ -27,8 +16,8 @@ export default function ToggleGroupDemo() {
         value={view}
         onValueChange={(next: string) => view(next)}
       />
-      <p class={muted}>{() => `View: ${view() || "none"}. Single mode keeps one active value; clicking the active item deselects it and reports an empty string.`}</p>
-    </div>
+      <p class="demo-muted">{() => `View: ${view() || "none"}. Single mode keeps one active value; clicking the active item deselects it and reports an empty string.`}</p>
+    </>
   );
 }
 
@@ -36,7 +25,7 @@ export function ToggleGroupMultipleDemo() {
   const formats = signal(["bold"]);
 
   return (
-    <div class={stack}>
+    <>
       <ToggleGroup
         type="multiple"
         variant="outline"
@@ -48,7 +37,7 @@ export function ToggleGroupMultipleDemo() {
         values={formats}
         onValueChange={(next: string[]) => formats(next)}
       />
-      <p class={muted}>{() => `Formats: ${formats().join(", ") || "none"}.`}</p>
-    </div>
+      <p class="demo-muted">{() => `Formats: ${formats().join(", ") || "none"}.`}</p>
+    </>
   );
 }

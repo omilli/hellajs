@@ -1,99 +1,53 @@
-## Usage
+## API
 
 A hover-triggered label: the trigger wraps your content, the label portals into `document.body`, opens after a hover delay, and anchors to the trigger with collision flipping. Keyboard focus opens it with the same path a pointer takes.
 
-### jsx
-
-```jsx
-import Tooltip from './components/tooltip';
-
-const Save = () => (
-  <Tooltip content="Save the current document" delayDuration={300}>
-    <button type="button">Save</button>
-  </Tooltip>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Tooltip} content="Save the current document" delayDuration=${300}>
-    <button type="button">Save</button>
-  </${Tooltip}>
-</main>`
-```
-
-| Prop | Default | Behavior |
-|---|---|---|
-| `content` | - | The label children, portaled into `document.body` while open |
-| `delayDuration` | `700` | Pointer-hover milliseconds before the label opens |
-| `side` | `"top"` | Which side of the trigger the label anchors to |
-| `align` | `"center"` | Alignment along the trigger's edge |
-| `class` | - | Extra classes on the trigger span |
-
 The composed `Tooltip` wraps its children in the trigger span. Hovering starts the open timer; leaving starts the close timer; focusing the trigger follows the same path for keyboard users. Adjacent triggers share a 500ms skip window through [`hoverIntent`](/reference/dom/hoverintent): moving from one tooltip straight onto another opens the next one instantly, without paying the delay again - after 500ms without any tooltip open, the full delay applies.
 
-## Manual Parts
-
 Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipContent`, and `TooltipProvider`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire the trigger's hover with [`hoverIntent`](/reference/dom/hoverintent).
+
+### Tooltip
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `content` | `HellaChildren` | The label children, portaled into `document.body` while open |
+| `delayDuration` | `number` | `700` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"top"` |
+| `align` | `"start" \| "center" \| "end"` | `"center"` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The trigger content |
 
 ### TooltipTrigger
 
 The manual trigger span carrying `aria-describedby`; the composed `Tooltip` renders the same shape wired to [`hoverIntent`](/reference/dom/hoverintent).
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `describedBy` | `string` | Rendered as the trigger's `aria-describedby` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `describedBy` | `string` | `-` |
 | `children` | `HellaChildren` | The trigger content |
 
 ### TooltipContent
 
 The `role="tooltip"` label carrying `data-slot="tooltip-content"`, positioned through [`anchorPosition`](/reference/dom/anchorposition) (fixed coordinates against the trigger, flipping to the opposite side on viewport collision, repositioning on scroll and resize).
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle |
-| `id` | `string` | Label id; the trigger's `aria-describedby` points at it |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | Which side of the trigger the label sits on (default `"top"`) |
-| `align` | `"start" \| "center" \| "end"` | Alignment along the trigger's edge (default `"center"`) |
-| `anchor` | `() => Element \| undefined` | Resolves the element the label anchors to; positioning is skipped when undefined |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `id` | `string` | `-` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"top"` |
+| `align` | `"start" \| "center" \| "end"` | `"center"` |
+| `anchor` | `() => Element \| undefined` | `-` |
+| `onExited` | `() => void` | `-` |
 | `children` | `HellaChildren` | The label content |
+
+`state` drives `data-state` and the enter/exit cycle. The label `id` is what the trigger's `aria-describedby` points at. The anchor resolves to the element the label anchors to; positioning is skipped when undefined. `onExited` fires when the exit animation ends under `data-state="closed"`.
 
 ### TooltipProvider
 
 A passthrough wrapper carrying nothing but children. Delay configuration is the per-Tooltip `delayDuration` prop, not a provider setting, and the label carries no arrow glyph - both absences are deliberate.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The wrapped content |
 
 Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { hoverIntent, Portal } from '@hellajs/dom';
-import { TooltipContent, TooltipTrigger } from './components/tooltip';
-
-const open = signal(false);
-const state = () => (open() ? 'open' : 'closed');
-let trigger;
-
-const Manual = () => (
-  <TooltipTrigger
-    describedBy="hella-tooltip-content-1"
-    hook:afterMount={(node) => {
-      trigger = node;
-      hoverIntent(node, {
-        onOpen: () => open(true),
-        onClose: () => open(false),
-        openDelay: 300,
-      });
-    }}
-  >
-    <button type="button">Hover me</button>
-  </TooltipTrigger>
-);
-```

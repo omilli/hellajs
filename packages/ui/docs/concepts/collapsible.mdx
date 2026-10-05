@@ -1,100 +1,41 @@
-## Usage
+## API
 
 The composed root takes the two halves as props, not as children slots; open content expands through a measurement-free grid (the region wrapper's rows flip between `0fr` and `1fr` on `data-state`), so any content height works, including reactive content that changes while open.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `trigger` | `HellaChildren` | Label node rendered inside the trigger button |
-| `content` | `HellaChildren` | Body node rendered inside the content region |
-| `open` | `() => boolean` | Controlled state. When given, the root never writes its internal signal and reports every requested flip through `onOpenChange` |
-| `defaultOpen` | `boolean` | Opens the region on mount (uncontrolled only) |
-| `onOpenChange` | `(open: boolean) => void` | Fires on every toggle with the requested state |
+### Collapsible
 
-### jsx
-
-```jsx
-import Collapsible from './components/collapsible';
-
-const Faq = () => (
-  <Collapsible
-    trigger="What ships in the box?"
-    content="One editable file per component, a theme entry, and no runtime dependency."
-  />
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Collapsible}
-    trigger="What ships in the box?"
-    content="One editable file per component, a theme entry, and no runtime dependency."
-  />
-</main>`
-```
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `trigger` | `HellaChildren` | `-` |
+| `content` | `HellaChildren` | `-` |
+| `open` | `() => boolean` | `-` |
+| `defaultOpen` | `boolean` | `-` |
+| `onOpenChange` | `(open: boolean) => void` | `-` |
+| `class` | `string` | `-` |
 
 ## Controlled and Uncontrolled
 
 Without `open`, the root owns a signal seeded by `defaultOpen` and toggles it on click. Pass `open` and the root becomes controlled: it reads state from your accessor and turns clicks into `onOpenChange` requests without writing any state, so a parent signal that ignores the request keeps the region open.
 
-```jsx
-import { signal } from '@hellajs/core';
-import Collapsible from './components/collapsible';
-
-const open = signal(false);
-
-const Controlled = () => (
-  <Collapsible
-    open={open}
-    onOpenChange={(next) => open(next)}
-    trigger="Synced with a parent signal"
-    content="The parent signal is the single source of truth."
-  />
-);
-```
-
-## Manual Parts
-
-`CollapsibleTrigger` and `CollapsibleContent` ship beside the default root for custom composition; state is explicit. The composed root is a thin wrapper that derives the region id and threads state, so replacing it with the parts loses nothing.
-
 ### CollapsibleTrigger
 
 The header row: a button whose `active` accessor drives `data-state` and `aria-expanded`, with the chevron icon appended after the children.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `active` | `() => boolean` | Drives `aria-expanded` (`true` / `false`) and the button's `data-state` (`open` / `closed`) |
-| `onToggle` | `() => void` | Click callback |
-| `controls` | `string` | Paired content's `id`, rendered as `aria-controls` |
-| `children` | `HellaChildren` | Label node rendered inside the button |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `active` | `() => boolean` | `-` |
+| `onToggle` | `() => void` | `-` |
+| `controls` | `string` | `-` |
+| `children` | `HellaChildren` | The label inside the button |
 
 ### CollapsibleContent
 
 The body region: a `role="region"` div whose grid rows flip between `0fr` and `1fr` on `data-state`, with an inner wrapper carrying the overflow clip.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `active` | `() => boolean` | Drives the region's `data-state`, which the grid collapse keys off |
-| `id` | `string` | Region id; the paired trigger's `aria-controls` points at it |
-| `children` | `HellaChildren` | Body node rendered inside the region |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `active` | `() => boolean` | `-` |
+| `id` | `string` | `-` |
+| `children` | `HellaChildren` | The body inside the region |
 
-Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { CollapsibleContent, CollapsibleTrigger } from './components/collapsible';
-
-const open = signal(false);
-const toggle = () => open(!open());
-
-const Custom = () => (
-  <div>
-    <CollapsibleTrigger active={open} onToggle={toggle} controls="custom-region">
-      Custom trigger
-    </CollapsibleTrigger>
-    <CollapsibleContent id="custom-region" active={open}>Custom body</CollapsibleContent>
-  </div>
-);
-```
+Every part also takes a `class` string, landing last in its style composition. The composed root is a thin wrapper that derives the region id and threads state, so replacing it with the parts loses nothing.

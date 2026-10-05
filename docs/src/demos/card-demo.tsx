@@ -1,11 +1,10 @@
 
 import Button from "@registry/button/css/button.js";
 import Card, { CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@registry/card/css/card.js";
-import { stack } from "./demo-kit";
 
-export default function CardDemo() {
+export function CardDemo() {
   return (
-    <div class={stack}>
+    <>
       <Card>
         <CardHeader>
           <CardTitle>Notifications</CardTitle>
@@ -15,13 +14,13 @@ export default function CardDemo() {
         <CardContent><p>Review your notification preferences and inbox rules at any time from settings.</p></CardContent>
         <CardFooter><Button>Open settings</Button></CardFooter>
       </Card>
-    </div>
+    </>
   );
 }
 
 export function CardMinimalDemo() {
   return (
-    <div class={stack}>
+    <>
       <Card>
         <CardHeader>
           <CardTitle>Deploys</CardTitle>
@@ -29,6 +28,6 @@ export function CardMinimalDemo() {
         </CardHeader>
         <CardContent><p>All regions green.</p></CardContent>
       </Card>
-    </div>
+    </>
   );
 }

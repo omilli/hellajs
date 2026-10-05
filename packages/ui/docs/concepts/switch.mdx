@@ -1,62 +1,15 @@
-## Usage
+## API
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `checked` | `boolean \| (() => boolean)` | Uncontrolled seed or controlled accessor (see below) |
-| `onCheckedChange` | `(checked: boolean) => void` | Fires on every click with the requested next value |
-| `disabled` | `boolean` | Blocks clicks and renders the disabled attribute |
-| `class` | `string` | Lands on the root next to the component class |
+### Switch
 
-### jsx
-
-```jsx
-import Switch from './components/switch';
-
-const Settings = () => (
-  <div class="flex flex-col gap-2">
-    <label>
-      <Switch /> Airplane mode
-    </label>
-    <label>
-      <Switch checked disabled /> Managed by policy
-    </label>
-  </div>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<div class="flex flex-col gap-2">
-  <label>
-    <${Switch} /> Airplane mode
-  </label>
-  <label>
-    <${Switch} checked disabled /> Managed by policy
-  </label>
-</div>`
-```
-
-## Controlled and Uncontrolled
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `checked` | `boolean \| (() => boolean)` | `-` |
+| `onCheckedChange` | `(checked: boolean) => void` | `-` |
+| `disabled` | `boolean` | `-` |
+| `class` | `string` | `-` |
 
 Without `checked`, the root owns a signal seeded by a boolean `checked` prop and flips it on click. Pass an accessor and the switch becomes controlled: clicks turn into `onCheckedChange` requests without writing state, so a parent signal that ignores the request keeps the switch unchanged.
-
-```jsx
-import { signal } from '@hellajs/core';
-import Switch from './components/switch';
-
-const enabled = signal(false);
-
-const Controlled = () => (
-  <label>
-    <Switch checked={enabled} onCheckedChange={(next) => enabled(next)} />
-    Enabled
-  </label>
-);
-```
-
-## Size
 
 There is no `size` prop: the root always carries `data-size="default"`, and the `sm` classes riding along in the tailwind module can never match. Resizing a switch means editing the copied file.
 

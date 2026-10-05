@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import AttachmentContent from "@ui/concepts/attachment.mdx";
-import AttachmentDemo, { AttachmentSizesDemo } from "../../demos/attachment-demo";
-import demoSource from "../../demos/attachment-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { AttachmentDemo, AttachmentSizesDemo } from "../../demos/attachment-demo";
 
 const title = "Attachment";
 const description = "Interactive Attachment demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Attachment</h1>
-  <p>A file chip that carries its upload state through one `data-state` prop, with an inline loading spinner while uploading and an error glyph on error.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "AttachmentDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <AttachmentDemo client:load />
-  </Demo>
+  <p>A file chip that carries its upload state through one data-state prop, with an inline loading spinner while uploading and an error glyph on error.</p>
+
   <InstallSection entry="attachment" />
+
+  <Component heading="Playground" Demo={<AttachmentDemo client:load />} code="AttachmentDemo"/>
+  <Component heading="Sizes" Demo={<AttachmentSizesDemo />} code="AttachmentSizesDemo">
+    <p>Size flows to the media and content parts through attribute selectors, so the chip rescales as one unit.</p>
+  </Component>
+
   <AttachmentContent />
-  <h2>Examples</h2>
-  <Demo id="demo-sizes" title="Sizes" code={demoCode(demoSource, "AttachmentSizesDemo")} note="Size flows to the media and content parts through attribute selectors, so the chip rescales as one unit.">
-    <AttachmentSizesDemo client:load />
-  </Demo>
 </MainLayout>

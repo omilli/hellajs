@@ -1,50 +1,19 @@
-## Usage
+## API
 
-Wrap the subtrees that should flip, or the whole application:
+Wrap the subtrees that should flip, or the whole application.
 
-### jsx
-
-```jsx
-import DirectionProvider from './components/direction';
-import Button from './components/button';
-
-const App = () => (
-  <DirectionProvider dir="rtl">
-    <Button variant="outline">مرحبا</Button>
-  </DirectionProvider>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${DirectionProvider} dir="rtl">
-    <${Button} variant="outline">مرحبا</${Button}>
-  </${DirectionProvider}>
-</main>`
-```
-
-## Why a DOM Node
+### DirectionProvider
 
 The wrapper renders a `dir` attribute on a layout-neutral node, and that attribute is the mechanism every directional behavior reads. Hella has no context primitive, and the dom behavior layer reads `getComputedStyle(anchor).direction` when it needs to flip anchoring and flow for right-to-left locales. The wrapper exists so that read has something to find: the rendered `dir` attribute IS the broadcast, visible to every descendant behavior without any subscription wiring.
 
 The node stays out of layout through `display: contents`, so wrapping children changes nothing about rendering; the div carries no visual styles of its own.
 
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `dir` | `"ltr" \| "rtl"` | `-` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The wrapped subtree |
+
 ## Nesting
 
-Nest providers to flip a subtree against its parent; each wrapper scopes its own `dir` attribute:
-
-```jsx
-import DirectionProvider from './components/direction';
-
-const Mixed = () => (
-  <DirectionProvider dir="rtl">
-    <p>النص العربي</p>
-    <DirectionProvider dir="ltr">
-      <p>English inline</p>
-    </DirectionProvider>
-  </DirectionProvider>
-);
-```
+Nest providers to flip a subtree against its parent; each wrapper scopes its own `dir` attribute.

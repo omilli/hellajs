@@ -1,50 +1,43 @@
-## Usage
+## API
 
 The default mode is single selection. Click a day (or press Enter on it) and the calendar reports the picked date through `onSelect`. One month renders at a time, with roving keyboard focus over the grid and previous/next month navigation.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `mode` | `"single" \| "multiple" \| "range"` | Selection behavior; defaults to `"single"` |
-| `selected` | `Date` \| `Date[]` \| `{ from?, to? }` | Initial selection in the mode's shape; selection is uncontrolled after mount |
-| `onSelect` | `(selected) => void` | Reports every selection change in the mode's shape |
-| `month` | `() => Date` | Controlled visible-month accessor; wins over internal navigation on every change |
-| `onMonthChange` | `(month: Date) => void` | Fires on user navigation (buttons, arrows, page keys) |
-| `defaultMonth` | `Date` | Initial visible month; defaults to the current month |
-| `disabled` | `(date: Date) => boolean` | Predicate blocking selection and keyboard activation; adjacent-month days are always disabled |
-| `showOutsideDays` | `boolean` | Renders adjacent-month days; defaults to `true`, hidden text when `false` |
-| `fixedWeeks` | `boolean` | Always renders six week rows so navigation never resizes the grid |
-| `weekStartsOn` | `0..6` | First day of the week; `0` = Sunday (default) through `6` = Saturday |
-| `hideNavigation` | `boolean` | Omits the previous/next buttons |
-| `classNames` | `Partial<Record<key, string>>` | Per-part class hook overrides keyed by part name |
-| `class` | `string` | Lands on the root next to the component class |
+### Calendar
 
-### jsx
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `mode` | `"single" \| "multiple" \| "range"` | `"single"` |
+| `selected` | `Date \| Date[] \| { from?, to? }` | `-` |
+| `onSelect` | `(selected) => void` | `-` |
+| `month` | `() => Date` | `-` |
+| `onMonthChange` | `(month: Date) => void` | `-` |
+| `defaultMonth` | `Date` | The current month |
+| `disabled` | `(date: Date) => boolean` | `-` |
+| `showOutsideDays` | `boolean` | `true` |
+| `fixedWeeks` | `boolean` | `-` |
+| `weekStartsOn` | `0..6` | `0` |
+| `hideNavigation` | `boolean` | `-` |
+| `classNames` | `Partial<Record<key, string>>` | `-` |
+| `class` | `string` | `-` |
 
-```jsx
-import { signal } from '@hellajs/core';
-import Calendar from './components/calendar';
+Selection is uncontrolled after mount: `selected` sets the initial state and `onSelect` reports every change in the mode's shape. The visible month is the one controlled prop: `month` as an accessor wins over internal navigation on every change, while `onMonthChange` still reports user navigation (buttons, arrows, page keys).
 
-const picked = signal(undefined);
+### CalendarDayButton
 
-const Picker = () => (
-  <Calendar
-    defaultMonth={new Date(2025, 2, 1)}
-    onSelect={(date) => picked(date)}
-  />
-);
-```
-### html
+The manual-composition day part is exported for standalone composition. State flags take plain booleans or reactive accessors, so a composed calendar drives them live while a direct call passes static values.
 
-The html-format (`--format html`) works the same way.
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `day` | `Date` | `-` |
+| `selectedSingle` | `boolean \| (() => boolean)` | `-` |
+| `rangeStart` / `rangeEnd` / `rangeMiddle` | `boolean \| (() => boolean)` | `-` |
+| `disabled` | `boolean \| (() => boolean)` | `-` |
+| `focused` | `boolean \| (() => boolean)` | `-` |
+| `today` | `boolean` | `-` |
+| `class` | `string` | `-` |
+| `onclick` / `onpointerenter` / `onpointerleave` | `(event) => void` | `-` |
 
-```js
-html`<main>
-  <${Calendar}
-    defaultMonth=${new Date(2025, 2, 1)}
-    onSelect=${(date) => picked(date)}
-  />
-</main>`
-```
+`day` is also emitted as `data-day` (locale string); `selectedSingle` renders `data-selected-single` and `aria-selected`, the range flags render the `data-range-*` attributes, `disabled` renders `aria-disabled`, `focused` drives the roving `tabindex`, and `today` renders `aria-current="date"`.
 
 ## Selection Modes
 
@@ -56,77 +49,17 @@ html`<main>
 | `multiple` | `Date[]` | Click toggles membership; order is stable, new days append |
 | `range` | `{ from?, to? }` | First click sets `from`. Second click sets `to`, reordering automatically when the click lands before `from`. Third click resets and starts a new span |
 
-```jsx
-import Calendar from './components/calendar';
-
-const Stay = () => (
-  <Calendar
-    mode="range"
-    defaultMonth={new Date(2025, 2, 1)}
-    onSelect={({ from, to }) => console.log(from, to)}
-  />
-);
-```
-
-While `from` dangles, hovering a day previews the span: the hovered day renders `data-range-end` and the days between render `data-range-middle`, so the range styling responds before the second click.
-
-## Recipes
-
-Block out days with a predicate; disabled days render `data-disabled` and `aria-disabled`, and clicks on them report nothing:
-
-```jsx
-import Calendar from './components/calendar';
-
-const Bookings = () => (
-  <Calendar
-    defaultMonth={new Date(2025, 2, 1)}
-    disabled={(date) => date.getDay() === 0 || date.getDay() === 6}
-  />
-);
-```
-
-Drive the visible month from your own state by passing `month` as an accessor: the view snaps back to it on every change, while `onMonthChange` still reports what the user asked for:
-
-```jsx
-import { signal } from '@hellajs/core';
-import Calendar from './components/calendar';
-
-const month = signal(new Date(2025, 0, 1));
-
-const Controlled = () => (
-  <Calendar
-    month={month}
-    onMonthChange={(next) => console.log('user navigated to', next)}
-  />
-);
-```
-
-## Manual Parts
-
-### CalendarDayButton
-
-The manual-composition day part is exported for standalone composition. State flags take plain booleans or reactive accessors, so a composed calendar drives them live while a direct call passes static values.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `day` | `Date` | The day rendered; also emitted as `data-day` (locale string) |
-| `selectedSingle` | `boolean \| (() => boolean)` | Selected outside a range span; renders `data-selected-single` and `aria-selected` |
-| `rangeStart` / `rangeEnd` / `rangeMiddle` | `boolean \| (() => boolean)` | Range span flags; render the `data-range-*` attributes |
-| `disabled` | `boolean \| (() => boolean)` | Renders `aria-disabled` and blocks pointer interaction styling |
-| `focused` | `boolean \| (() => boolean)` | Roving-focus flag driving `tabindex` 0/-1 |
-| `today` | `boolean` | Renders `aria-current="date"` |
-| `class` | `string` | Lands next to the day-button class |
-| `onclick` / `onpointerenter` / `onpointerleave` | `(event) => void` | Interaction hooks the composed calendar wires for selection and hover preview |
+While `from` dangles, hovering a day previews the span: the hovered day renders `data-range-end` and the days between render `data-range-middle`, so the range styling responds before the second click. Disabled days render `data-disabled` and `aria-disabled`, and clicks on them report nothing; adjacent-month days are always disabled.
 
 ## Intentionally Absent
 
 The port covers the observable surface of a single-month calendar; the intentionally absent pieces match the registry's zero-dependency rule:
 
 - `numberOfMonths` beyond one, `fromDate`/`toDate` navigation bounds, custom `formatters`, week numbers, and the dropdown caption layouts are not implemented; the caption is always the `label` layout.
-- Selection is uncontrolled: `selected` sets the initial state and `onSelect` reports changes; there is no controlled selection accessor (the visible month is the one controlled prop).
+- Selection is uncontrolled: there is no controlled selection accessor.
 - All date math runs on local `Date` fields with no timezone conversion, and labels are fixed to `en-US` (`March 2025` captions, `Sun`-style weekday headers) so rendering is deterministic across hosts.
 - The rtl navigation-button selectors are dropped; the copied file emits no `rdp-*` classes for them to target.
-- The outside-day `aria-selected` color rule folds into the base outside color: adjacent-month days are always disabled, so the extra state never differs.
+- The outside-day `aria-selected` color rule folds into the base outside color.
 
 ## Accessibility
 

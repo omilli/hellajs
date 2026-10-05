@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import SidebarContent from "@ui/concepts/sidebar.mdx";
-import SidebarDemo, { SidebarMenuDemo } from "../../demos/sidebar-demo";
-import demoSource from "../../demos/sidebar-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { SidebarDemo, SidebarMenuDemo } from "../../demos/sidebar-demo";
 
 const title = "Sidebar";
-const description = "Interactive Sidebar demo running the site's built registry source via an Astro island, with the provider-owned open and mobile state and the full menu part family.";
-
+const description = "Interactive Sidebar demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Sidebar</h1>
   <p>A composite shell whose provider owns the open and mobile state: a collapsible desktop panel with three variants, a mobile sheet past 769px, and a full menu part family.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SidebarDemo", { withImports: true })} note="The panel collapses to icons on toggle; menu buttons show their tooltip while collapsed, and the shell switches to a sheet under 769px.">
-    <SidebarDemo client:load />
-  </Demo>
+
   <InstallSection entry="sidebar" />
+
+  <Component heading="Playground" Demo={<SidebarDemo client:load />} code="SidebarDemo">
+    <p>The panel collapses to icons on toggle; menu buttons show their tooltip while collapsed, and the shell switches to a sheet under 769px.</p>
+  </Component>
+  <Component heading="Menu composition" Demo={<SidebarMenuDemo client:load />} code="SidebarMenuDemo">
+    <p>A badge, a hover-revealed action, sub-navigation, and a loading skeleton compose onto plain menu items; every part carries its data-slot and data-sidebar hooks. The action fades in on item hover from md up, and the skeleton picks a random width per mount.</p>
+  </Component>
+
   <SidebarContent />
-  <h2>Examples</h2>
-  <Demo id="demo-menu" title="Menu composition" code={demoCode(demoSource, "SidebarMenuDemo")} note="A badge, a hover-revealed action, sub-navigation, and a loading skeleton compose onto plain menu items; every part carries its data-slot and data-sidebar hooks. The action fades in on item hover from md up, and the skeleton picks a random width per mount.">
-    <SidebarMenuDemo client:load />
-  </Demo>
 </MainLayout>

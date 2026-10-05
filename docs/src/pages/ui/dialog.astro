@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import DialogContent from "@ui/concepts/dialog.mdx";
-import DialogDemo, { DialogLockedDemo } from "../../demos/dialog-demo";
-import demoSource from "../../demos/dialog-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { DialogDemo, DialogLockedDemo } from "../../demos/dialog-demo";
 
 const title = "Dialog";
 const description = "Interactive Dialog demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Dialog</h1>
-  <p>A modal overlay plus centered panel: the caller owns the `open` signal while the component wires the title, description, X close button, focus trap, and escape/outside dismissal around it.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "DialogDemo", { withImports: true })} note="Opens a portal-mounted dialog with wired title and description, an X close button, and enter/exit animations.">
-    <DialogDemo client:load />
-  </Demo>
+  <p>A modal overlay plus centered panel: the caller owns the open signal while the component wires the title, description, X close button, focus trap, and escape/outside dismissal around it.</p>
+
   <InstallSection entry="dialog" />
+
+  <Component heading="Playground" Demo={<DialogDemo client:load />} code="DialogDemo">
+    <p>Opens a portal-mounted dialog with wired title and description, an X close button, and enter/exit animations.</p>
+  </Component>
+  <Component heading="Locked dismissal" Demo={<DialogLockedDemo client:load />} code="DialogLockedDemo">
+    <p>Escape, outside presses, and the X button are wired off; only the panel's own buttons close it.</p>
+  </Component>
+
   <DialogContent />
-  <h2>Examples</h2>
-  <Demo id="demo-locked" title="Locked dismissal" code={demoCode(demoSource, "DialogLockedDemo")} note="Escape, outside presses, and the X button are wired off; only the panel's own buttons close it.">
-    <DialogLockedDemo client:load />
-  </Demo>
 </MainLayout>

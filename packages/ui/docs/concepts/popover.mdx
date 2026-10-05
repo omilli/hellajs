@@ -1,135 +1,79 @@
-## Usage
+## API
 
 A click-toggled panel: the trigger button opens an anchored, non-modal surface; Escape and an outside press dismiss it; stacked popovers dismiss one layer at a time, top first.
 
-### jsx
-
-```jsx
-import Popover from './components/popover';
-
-const Notifications = () => (
-  <Popover content={<p>You are all caught up.</p>}>
-    Notifications
-  </Popover>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Popover} content=${html`<p>You are all caught up.</p>`}>
-    Notifications
-  </${Popover}>
-</main>`
-```
-
-| Prop | Default | Behavior |
-|---|---|---|
-| `open` | - | Controlled open accessor; when given, the root never writes its internal signal |
-| `onOpenChange` | - | Reports every requested open and close flip |
-| `anchor` | - | Resolves the positioning anchor; defaults to the trigger element |
-| `content` | - | The panel children, portaled into `document.body` while open |
-| `class` | - | Extra classes on the trigger button |
-
 Clicking toggles; the trigger carries `data-state` and `aria-expanded` so styling and assistive tech track the open state. Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close. The popover is non-modal - no focus trap, and focus moves to the panel on open. Closing keeps the panel mounted under `data-state="closed"` until its exit animation ends, with the dismissal wiring down while it leaves.
 
-## Manual Parts
-
 Six named parts ship beside the default `Popover`: `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`, `PopoverHeader`, `PopoverTitle`, and `PopoverDescription`. State is explicit - portal the content yourself, hand it a `state` accessor and an `onDismiss` callback, and point its `anchor` at whatever should anchor it.
+
+### Popover
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `open` | `() => boolean` | `-` |
+| `onOpenChange` | `(open: boolean) => void` | `-` |
+| `anchor` | `() => Element \| undefined` | The trigger element |
+| `content` | `HellaChildren` | The panel children, portaled into `document.body` while open |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The trigger label |
+
+A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
 
 ### PopoverTrigger
 
 The manual trigger button; the composed `Popover` renders the same shape wired to toggle plus `aria-expanded`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The trigger label |
 
 ### PopoverContent
 
 The `role="dialog"` panel carrying `tabindex="-1"` for the focus-on-open contract, positioned through [`anchorPosition`](/reference/dom/anchorposition) (fixed coordinates against the anchor, collision flipping, repositioning on scroll and resize) and dismissed through [`layerDismissal`](/reference/dom/layerdismissal) (Escape and outside pointerdown close only the top layer, so popovers stack cleanly). Composing it without `onDismiss` holds the panel open by never installing that wiring.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle |
-| `id` | `string` | Panel id; the trigger's `aria-controls` points at it |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | Which side of the anchor the panel sits on (default `"bottom"`) |
-| `align` | `"start" \| "center" \| "end"` | Alignment along the anchor's edge (default `"center"`) |
-| `sideOffset` | `number` | Gap between the anchor and the panel edge, in px (default 4) |
-| `alignOffset` | `number` | Cross-axis shift applied after positioning, in px (default 0) |
-| `anchor` | `() => Element \| undefined` | Resolves the anchor element; positioning is skipped when undefined |
-| `onDismiss` | `() => void` | Escape and outside pointerdown fire this when the popover is the top layer |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `id` | `string` | `-` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
+| `align` | `"start" \| "center" \| "end"` | `"center"` |
+| `sideOffset` | `number` | `4` |
+| `alignOffset` | `number` | `0` |
+| `anchor` | `() => Element \| undefined` | `-` |
+| `onDismiss` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
 | `children` | `HellaChildren` | The panel body |
 
 ### PopoverAnchor
 
 A bare anchor span for compositions where the trigger should not be the positioning target.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The anchor content |
 
 ### PopoverHeader
 
 The top grouping `div` carrying `data-slot="popover-header"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title and description nodes |
 
 ### PopoverTitle
 
 The heading `div` carrying `data-slot="popover-title"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The title text |
 
 ### PopoverDescription
 
 The supporting line: a `p` carrying `data-slot="popover-description"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The description text |
 
 Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { Portal } from '@hellajs/dom';
-import { PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from './components/popover';
-
-const open = signal(false);
-const state = () => (open() ? 'open' : 'closed');
-let button;
-
-const Manual = () => (
-  <>
-    <button
-      type="button"
-      hook:afterMount={(node) => { button = node; }}
-      on:click={() => open(!open())}
-    >
-      Open
-    </button>
-    {() => open() && (
-      <Portal to="body">
-        <PopoverContent
-          state={state}
-          anchor={() => button}
-          onDismiss={() => open(false)}
-        >
-          <PopoverHeader>
-            <PopoverTitle>Dimensions</PopoverTitle>
-            <PopoverDescription>Set the width and height.</PopoverDescription>
-          </PopoverHeader>
-        </PopoverContent>
-      </Portal>
-    )}
-  </>
-);
-```

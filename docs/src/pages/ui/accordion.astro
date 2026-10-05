@@ -1,30 +1,28 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import AccordionContent from "@ui/concepts/accordion.mdx";
-import AccordionDemo, { AccordionDisabledDemo, AccordionMultipleDemo } from "../../demos/accordion-demo";
-import demoSource from "../../demos/accordion-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { AccordionDemo, AccordionMultipleDemo, AccordionDisabledDemo } from "../../demos/accordion-demo";
 
 const title = "Accordion";
 const description = "Interactive Accordion demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Accordion</h1>
   <p>Each row is an item whose trigger toggles its content region. Animations use a measurement-free grid, so content height is never explicitly measured.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "AccordionDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <AccordionDemo client:load />
-  </Demo>
+
   <InstallSection entry="accordion" />
+
+  <Component heading="Playground" Demo={<AccordionDemo client:load />} code="AccordionDemo"/>
+  <Component heading="Multiple" Demo={<AccordionMultipleDemo client:load />} code="AccordionMultipleDemo">
+    <p>Multiple mode toggles set membership; the roving arrows move focus while clicks do the selecting.</p>
+  </Component>
+  <Component heading="Disabled" Demo={<AccordionDisabledDemo client:load />} code="AccordionDisabledDemo">
+    <p>The disabled row ignores activation in every mode.</p>
+  </Component>
+
   <AccordionContent />
-  <h2>Examples</h2>
-  <Demo id="demo-multiple" title="Multiple" code={demoCode(demoSource, "AccordionMultipleDemo")}>
-    <AccordionMultipleDemo client:load />
-  </Demo>
-  <Demo id="demo-disabled" title="Disabled" code={demoCode(demoSource, "AccordionDisabledDemo")} note="The disabled row ignores activation in every mode.">
-    <AccordionDisabledDemo client:load />
-  </Demo>
 </MainLayout>

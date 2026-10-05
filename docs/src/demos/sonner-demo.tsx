@@ -2,7 +2,6 @@ import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import Button from "@registry/button/css/button.js";
 import Toaster, { toast } from "@registry/sonner/css/sonner.js";
-import { muted } from "./demo-kit";
 
 const stack = style({
   alignItems: "flex-start",
@@ -24,7 +23,7 @@ const row = style({
 
 
 
-export default function SonnerDemo() {
+export function SonnerDemo() {
   const pending = signal(false);
 
   const firePromise = () => {
@@ -41,21 +40,21 @@ export default function SonnerDemo() {
   };
 
   return (
-    <div class={stack}>
+    <>
       <Toaster richColors />
-      <div class={row}>
+      <div class="demo-row">
         <Button onclick={() => toast("Saved", { description: "Your work is safe.", type: "success" })}>Success</Button>
         <Button onclick={() => toast("Something broke.", { type: "error" })}>Error</Button>
         <Button onclick={() => toast("Disk almost full.", { type: "warning" })}>Warning</Button>
         <Button onclick={() => toast("New version available.", { type: "info" })}>Info</Button>
       </div>
-      <div class={row}>
+      <div class="demo-row">
         <Button variant="outline" onclick={() => toast("Deleted", { action: { label: "Undo", onclick: () => toast("Restored.", { type: "success" }) } })}>Action toast</Button>
         <Button variant="outline" onclick={firePromise}>{() => (pending() ? "Uploading…" : "Promise toast")}</Button>
         <Button variant="outline" onclick={() => toast.dismiss()}>Dismiss all</Button>
       </div>
-      <p class={muted}>Toasts stack bottom-right (three visible, older ones shrink and retire), pause their countdown on hover, and swipe away past 45% of the toast width. The X button appears on hover.</p>
-    </div>
+      <p class="demo-muted">Toasts stack bottom-right (three visible, older ones shrink and retire), pause their countdown on hover, and swipe away past 45% of the toast width. The X button appears on hover.</p>
+    </>
   );
 }
 
@@ -71,9 +70,9 @@ export function SonnerQueueDemo() {
   };
 
   return (
-    <div class={stack}>
+    <>
       <Button variant="outline" onclick={burst}>Run five jobs</Button>
-      <p class={muted}>Five toasts enter one shared queue (portaled beside the hero stack above): the first three stay, every later arrival retires the oldest, and the survivors shrink one depth step each.</p>
-    </div>
+      <p class="demo-muted">Five toasts enter one shared queue (portaled beside the hero stack above): the first three stay, every later arrival retires the oldest, and the survivors shrink one depth step each.</p>
+    </>
   );
 }

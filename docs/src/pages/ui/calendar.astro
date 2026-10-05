@@ -1,30 +1,30 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import CalendarContent from "@ui/concepts/calendar.mdx";
-import CalendarDemo, { CalendarDisabledDemo, CalendarRangeDemo } from "../../demos/calendar-demo";
-import demoSource from "../../demos/calendar-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { CalendarDemo, CalendarRangeDemo, CalendarDisabledDemo } from "../../demos/calendar-demo";
 
 const title = "Calendar";
 const description = "Interactive Calendar demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Calendar</h1>
-  <p>A one-month day grid with single, multiple, or range selection, roving keyboard focus, and previous/next navigation, computed from local `Date` fields in the copied file.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "CalendarDemo", { withImports: true })} note="Single selection: click a day or press Enter to pick it. The arrow keys rove focus across weeks and month edges, PageUp/PageDown jump a month, and Home/End jump the week.">
-    <CalendarDemo client:load />
-  </Demo>
+  <p>A one-month day grid with single, multiple, or range selection, roving keyboard focus, and previous/next navigation, computed from local Date fields in the copied file.</p>
+
   <InstallSection entry="calendar" />
+
+  <Component heading="Playground" Demo={<CalendarDemo client:load />} code="CalendarDemo">
+    <p>Single selection: click a day or press Enter to pick it. The arrow keys rove focus across weeks and month edges, PageUp/PageDown jump a month, and Home/End jump the week.</p>
+  </Component>
+  <Component heading="Range selection" Demo={<CalendarRangeDemo client:load />} code="CalendarRangeDemo">
+    <p>While the span dangles, hovering a day previews it: the hovered day renders data-range-end and the days between render data-range-middle.</p>
+  </Component>
+  <Component heading="Disabled days" Demo={<CalendarDisabledDemo client:load />} code="CalendarDisabledDemo">
+    <p>The predicate blocks weekends: they render data-disabled and aria-disabled, and selecting them reports nothing.</p>
+  </Component>
+
   <CalendarContent />
-  <h2>Examples</h2>
-  <Demo id="demo-range" title="Range selection" code={demoCode(demoSource, "CalendarRangeDemo")} note="While the span dangles, hovering a day previews it: the hovered day renders data-range-end and the days between render data-range-middle.">
-    <CalendarRangeDemo client:load />
-  </Demo>
-  <Demo id="demo-disabled" title="Disabled days" code={demoCode(demoSource, "CalendarDisabledDemo")} note="The predicate blocks weekends: they render data-disabled and aria-disabled, and selecting them reports nothing.">
-    <CalendarDisabledDemo client:load />
-  </Demo>
 </MainLayout>

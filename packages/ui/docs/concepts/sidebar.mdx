@@ -1,60 +1,36 @@
-## Usage
+## API
 
 `SidebarProvider` owns the state and hands it to a children function; every other part receives what it needs as explicit props. Hella has no context primitive, so the provider's threaded state object (`open`, `setOpen`, `mobile`, `openMobile`, `setOpenMobile`, `onToggle`) is the single source the parts read.
 
-### jsx
-
-```jsx
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarFooter, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarSeparator, SidebarTrigger } from './components/sidebar';
-
-const App = () => (
-  <SidebarProvider>
-    {({ open, mobile, openMobile, setOpenMobile, onToggle }) => (
-      <>
-        <Sidebar open={open} mobile={mobile} openMobile={openMobile} onOpenMobileChange={setOpenMobile}>
-          <SidebarHeader>Acme</SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Application</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton active tooltip="Home" open={open} mobile={mobile}>Home</SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter>Footer</SidebarFooter>
-          <SidebarSeparator />
-        </Sidebar>
-        <SidebarInset>
-          <SidebarTrigger onToggle={onToggle} />
-          <main>Page content stretches beside the panel.</main>
-        </SidebarInset>
-      </>
-    )}
-  </SidebarProvider>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way; the provider's children function composes through the embedded-tag idiom inside a static root.
-
-```js
-html`<${SidebarProvider}>
-  ${(state) => html`
-    <div class="app">
-      <${Sidebar} open=${state.open} mobile=${state.mobile} openMobile=${state.openMobile} onOpenMobileChange=${state.setOpenMobile}>
-        <${SidebarContent}>Panel content</${SidebarContent}>
-      </${Sidebar}>
-      <${SidebarTrigger} onToggle=${state.onToggle} />
-    </div>
-  `}
-</${SidebarProvider}>`
-```
-
 The wrapper `div` carries `data-slot="sidebar-wrapper"`, the width variables, and both listeners: a `matchMedia("(max-width: 769px)")` listener that flips the `mobile` state, and a Ctrl/Cmd+B shortcut, which calls `onToggle` (the mobile sheet on mobile, the desktop open state otherwise). `open` is the standard dual-surface pair: pass `open` with `onOpenChange` for a controlled signal, or `defaultOpen` (default `true`) to let the provider own it. Cookie persistence is dropped; persist the signal yourself if you need it.
+
+Twenty-two parts ship beside the `Sidebar` root. Layout: `SidebarHeader`, `SidebarFooter`, `SidebarSeparator`, `SidebarContent`, `SidebarInset` (the `main` that stretches beside the panel). Menu: `SidebarGroup`, `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarGroupContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton` (`variant: "default" | "outline"`, `size: "default" | "sm" | "lg"`, `active`, `tooltip`), `SidebarMenuAction` (`showOnHover` fades it in on item hover at `md` and up), `SidebarMenuBadge`, `SidebarMenuSkeleton` (`showIcon`), `SidebarMenuSub`, `SidebarMenuSubItem`, `SidebarMenuSubButton` (`size: "sm" | "md"`, `active`, anchor by default). Controls: `SidebarTrigger` (the panel-left icon button), `SidebarRail`. Every part carries its `data-slot` and a `data-sidebar` hook, so user CSS can target either. `SidebarInput` renders the search input (`h-8`, `bg-background`) with the input entry's class maps inlined.
+
+### SidebarProvider
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `open` | `() => boolean` | `-` |
+| `onOpenChange` | `(open: boolean) => void` | `-` |
+| `defaultOpen` | `boolean` | `true` |
+| `children` | `(state) => HellaChildren` | The shell, composed from the threaded state |
+
+### Sidebar
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `open` | `() => boolean` | `-` |
+| `mobile` | `() => boolean` | `-` |
+| `openMobile` | `() => boolean` | `-` |
+| `onOpenMobileChange` | `(open: boolean) => void` | `-` |
+| `side` | `"left" \| "right"` | `"left"` |
+| `collapsible` | `"offcanvas" \| "icon" \| "none"` | `"offcanvas"` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The panel parts |
+
+`SidebarMenuButton`'s `tooltip` composes an inline hover label (delay 0) anchored to the button; it renders only while the sidebar is collapsed to icon mode and never on mobile (the `hidden` attribute masks it otherwise). The `open` and `mobile` accessors thread that decision down.
+
+`SidebarRail` is the clickable edge handle (`aria-label` and `title` "Toggle Sidebar") wired to `onToggle`; width dragging is out of scope, so the rail toggles on click only.
 
 ## Collapsible Modes
 
@@ -65,10 +41,6 @@ The wrapper `div` carries `data-slot="sidebar-wrapper"`, the width variables, an
 | `"offcanvas"` (default) | The panel slides out of view; the gap closes to zero width |
 | `"icon"` | The panel shrinks to `--sidebar-width-icon` (3rem); labels, badges, actions, and submenus hide, menu buttons square to icons, and a button's `tooltip` shows on hover |
 | `"none"` | The panel renders as a fixed-width column and ignores the open state entirely |
-
-`SidebarMenuButton`'s `tooltip` composes an inline hover label (delay 0) anchored to the button; it renders only while the sidebar is collapsed to icon mode and never on mobile (the `hidden` attribute masks it otherwise). The `open` and `mobile` accessors thread that decision down.
-
-`SidebarRail` is the clickable edge handle (`aria-label` and `title` "Toggle Sidebar") wired to `onToggle`; width dragging is out of scope, so the rail toggles on click only.
 
 ## Mobile Behavior
 
@@ -86,31 +58,3 @@ The parts read four tokens; the first three are yours to set, the last the compo
 | `--skeleton-width` | random 50% to 90% per `SidebarMenuSkeleton` | The skeleton part's inline style |
 
 Override the widths by editing the inline `style` strings on the wrapper (and the mobile panel); override the palette through the theme entry (tailwind) or the style module's `vars()` call (css).
-
-## Structure Parts
-
-Twenty-two parts ship beside the `Sidebar` root. Layout: `SidebarHeader`, `SidebarFooter`, `SidebarSeparator`, `SidebarContent`, `SidebarInset` (the `main` that stretches beside the panel). Menu: `SidebarGroup`, `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarGroupContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton` (`variant: "default" | "outline"`, `size: "default" | "sm" | "lg"`, `active`, `tooltip`), `SidebarMenuAction` (`showOnHover` fades it in on item hover at `md` and up), `SidebarMenuBadge`, `SidebarMenuSkeleton` (`showIcon`), `SidebarMenuSub`, `SidebarMenuSubItem`, `SidebarMenuSubButton` (`size: "sm" | "md"`, `active`, anchor by default). Controls: `SidebarTrigger` (the panel-left icon button), `SidebarRail`. Every part carries its `data-slot` and a `data-sidebar` hook, so user CSS can target either.
-
-```jsx
-import { SidebarMenuAction, SidebarMenuBadge, SidebarMenuItem, SidebarMenuSkeleton, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from './components/sidebar';
-
-const LoadingItem = () => (
-  <SidebarMenuItem>
-    <SidebarMenuSkeleton showIcon />
-  </SidebarMenuItem>
-);
-
-const ItemWithAction = () => (
-  <SidebarMenuItem>
-    <SidebarMenuSub>
-      <SidebarMenuSubItem>
-        <SidebarMenuSubButton active href="/settings">Settings</SidebarMenuSubButton>
-      </SidebarMenuSubItem>
-    </SidebarMenuSub>
-    <SidebarMenuBadge>3</SidebarMenuBadge>
-    <SidebarMenuAction showOnHover onclick={() => console.log('configure')}>Configure</SidebarMenuAction>
-  </SidebarMenuItem>
-);
-```
-
-`SidebarInput` renders the search input (`h-8`, `bg-background`) with the input entry's class maps inlined.

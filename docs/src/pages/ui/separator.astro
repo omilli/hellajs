@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import SeparatorContent from "@ui/concepts/separator.mdx";
-import SeparatorDemo, { SeparatorVerticalDemo } from "../../demos/separator-demo";
-import demoSource from "../../demos/separator-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { SeparatorDemo, SeparatorVerticalDemo } from "../../demos/separator-demo";
 
 const title = "Separator";
 const description = "Interactive Separator demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Separator</h1>
   <p>A divider: one thin line with orientation switching between horizontal and vertical, exposed through a separator role and matching orientation attributes.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SeparatorDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <SeparatorDemo client:load />
-  </Demo>
+
   <InstallSection entry="separator" />
+
+  <Component heading="Playground" Demo={<SeparatorDemo />} code="SeparatorDemo"/>
+  <Component heading="Vertical orientation" Demo={<SeparatorVerticalDemo />} code="SeparatorVerticalDemo">
+    <p>A vertical separator stretches through a bounded-height flex row.</p>
+  </Component>
+
   <SeparatorContent />
-  <h2>Examples</h2>
-  <Demo id="demo-vertical" title="Vertical orientation" code={demoCode(demoSource, "SeparatorVerticalDemo")} note="A vertical separator stretches through a bounded-height flex row.">
-    <SeparatorVerticalDemo client:load />
-  </Demo>
 </MainLayout>

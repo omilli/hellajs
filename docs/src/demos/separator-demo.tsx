@@ -1,6 +1,5 @@
 import { style } from "@hellajs/css";
 import Separator from "@registry/separator/css/separator.js";
-import { stack } from "./demo-kit";
 
 const section = style({
   display: "flex",
@@ -28,9 +27,9 @@ const keyRow = style({
   height: "2rem",
 }, { label: "demo-key-row" });
 
-export default function SeparatorDemo() {
+export function SeparatorDemo() {
   return (
-    <div class={stack}>
+    <>
       <div class={section}>
         <h3 class={sectionTitle}>Profile</h3>
         <p class={sectionNote}>Your public profile details.</p>
@@ -40,13 +39,13 @@ export default function SeparatorDemo() {
         <h3 class={sectionTitle}>Security</h3>
         <p class={sectionNote}>Sessions and two-factor settings.</p>
       </div>
-    </div>
+    </>
   );
 }
 
 export function SeparatorVerticalDemo() {
   return (
-    <div class={stack}>
+    <>
       <div class={keyRow}>
         <span>Import</span>
         <Separator orientation="vertical">{[]}</Separator>
@@ -54,6 +53,6 @@ export function SeparatorVerticalDemo() {
         <Separator orientation="vertical">{[]}</Separator>
         <span>Delete</span>
       </div>
-    </div>
+    </>
   );
 }

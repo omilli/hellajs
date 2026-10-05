@@ -1,66 +1,22 @@
-## Usage
+## API
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `checked` | `boolean \| (() => boolean)` | Uncontrolled seed or controlled accessor (see below) |
-| `indeterminate` | `boolean \| (() => boolean)` | Mixed state. Wins over `checked` for rendering: `aria-checked="mixed"` and `data-state="indeterminate"` |
-| `onCheckedChange` | `(checked: boolean) => void` | Fires on every click with the requested next value |
-| `disabled` | `boolean` | Blocks clicks and renders the disabled attribute |
-| `ariaInvalid` | `boolean` | Renders `aria-invalid="true"`, which the invalid ring styles key off |
-| `id` | `string` | Rendered on the button for label pairing |
-| `class` | `string` | Lands on the root next to the component class |
+### Checkbox
 
-### jsx
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `checked` | `boolean \| (() => boolean)` | `-` |
+| `indeterminate` | `boolean \| (() => boolean)` | `-` |
+| `onCheckedChange` | `(checked: boolean) => void` | `-` |
+| `disabled` | `boolean` | `-` |
+| `ariaInvalid` | `boolean` | `-` |
+| `id` | `string` | `-` |
+| `class` | `string` | `-` |
 
-```jsx
-import Checkbox from './components/checkbox';
-
-const Settings = () => (
-  <div class="flex flex-col gap-2">
-    <label>
-      <Checkbox id="notifications" /> Email notifications
-    </label>
-    <label>
-      <Checkbox id="analytics" disabled /> Share analytics
-    </label>
-  </div>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<div class="flex flex-col gap-2">
-  <label>
-    <${Checkbox} id="notifications" /> Email notifications
-  </label>
-  <label>
-    <${Checkbox} id="analytics" disabled /> Share analytics
-  </label>
-</div>`
-```
+`indeterminate` wins over `checked` for rendering: `aria-checked="mixed"` and `data-state="indeterminate"`. `ariaInvalid` renders `aria-invalid="true"`, which the invalid ring styles key off, and `id` lands on the button for label pairing.
 
 ## Controlled and Uncontrolled
 
 Without `checked`, the root owns a signal seeded by a boolean `checked` prop and flips it on click. Pass an accessor and the checkbox becomes controlled: clicks turn into `onCheckedChange` requests without writing state, so a parent signal that ignores the request keeps the box unchanged.
-
-```jsx
-import { signal } from '@hellajs/core';
-import Checkbox from './components/checkbox';
-
-const subscribed = signal(false);
-
-const Controlled = () => (
-  <label>
-    <Checkbox
-      checked={subscribed}
-      onCheckedChange={(next) => subscribed(next)}
-    />
-    Subscribe
-  </label>
-);
-```
 
 `indeterminate` follows the same shape: a boolean seeds it, an accessor controls it. Clicking a mixed box reports `true` and clears an uncontrolled mixed state; a controlled mixed state clears only when the parent says so. The icon stays the check glyph in every state: only `aria-checked` and `data-state` distinguish mixed from checked.
 

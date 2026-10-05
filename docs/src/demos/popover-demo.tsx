@@ -1,18 +1,7 @@
 import { signal } from "@hellajs/core";
-import { style } from "@hellajs/css";
 import Button from "@registry/button/css/button.js";
 import Popover, { PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle } from "@registry/popover/css/popover.js";
 import { Portal } from "@hellajs/dom";
-import { row } from "./demo-kit";
-
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
-
 
 function panel(name: string) {
   return (
@@ -26,14 +15,14 @@ function panel(name: string) {
   );
 }
 
-export default function PopoverDemo() {
+export function PopoverDemo() {
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <Popover content={panel("Width")}><Button>Width</Button></Popover>
         <Popover content={panel("Height")}><Button variant="outline">Height</Button></Popover>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -43,7 +32,7 @@ export function PopoverManualDemo() {
   let trigger: Element | undefined;
 
   return (
-    <div class={stack}>
+    <>
       <Button
         hook:afterMount={(node: Element) => { trigger = node; }}
         onclick={() => open(!open())}
@@ -58,6 +47,6 @@ export function PopoverManualDemo() {
           </PopoverContent>
         </Portal>
       )}
-    </div>
+    </>
   );
 }

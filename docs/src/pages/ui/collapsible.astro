@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import CollapsibleContent from "@ui/concepts/collapsible.mdx";
-import CollapsibleDemo, { CollapsibleManualDemo } from "../../demos/collapsible-demo";
-import demoSource from "../../demos/collapsible-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { CollapsibleDemo, CollapsibleManualDemo } from "../../demos/collapsible-demo";
 
 const title = "Collapsible";
 const description = "Interactive Collapsible demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Collapsible</h1>
   <p>A disclosure region: a trigger button and a content region whose open state lives in a signal, animated through a measurement-free grid so any content height works.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "CollapsibleDemo", { withImports: true })} note="The parent signal is the single source of truth; the region label tracks it.">
-    <CollapsibleDemo client:load />
-  </Demo>
+
   <InstallSection entry="collapsible" />
+
+  <Component heading="Playground" Demo={<CollapsibleDemo client:load />} code="CollapsibleDemo">
+    <p>The parent signal is the single source of truth; the region label tracks it.</p>
+  </Component>
+  <Component heading="Manual parts" Demo={<CollapsibleManualDemo client:load />} code="CollapsibleManualDemo">
+    <p>The exported parts take the state explicitly; the composed root derives the region id and threads it for you.</p>
+  </Component>
+
   <CollapsibleContent />
-  <h2>Examples</h2>
-  <Demo id="demo-parts" title="Manual parts" code={demoCode(demoSource, "CollapsibleManualDemo")} note="The exported parts take the state explicitly; the composed root derives the region id and threads it for you.">
-    <CollapsibleManualDemo client:load />
-  </Demo>
 </MainLayout>

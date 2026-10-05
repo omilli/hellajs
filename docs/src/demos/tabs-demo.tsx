@@ -1,6 +1,5 @@
 
 import Tabs from "@registry/tabs/css/tabs.js";
-import { stack } from "./demo-kit";
 
 const account = [
   { id: "account", label: "Account", content: [<p>Change your name, email, and profile details.</p>] },
@@ -13,18 +12,18 @@ const line = [
   { id: "activity", label: "Activity", content: [<p>Recent edits, comments, and mentions.</p>] },
 ];
 
-export default function TabsDemo() {
+export function TabsDemo() {
   return (
-    <div class={stack}>
+    <>
       <Tabs items={account} />
-    </div>
+    </>
   );
 }
 
 export function TabsLineDemo() {
   return (
-    <div class={stack}>
+    <>
       <Tabs items={line} variant="line" initialId="activity" />
-    </div>
+    </>
   );
 }

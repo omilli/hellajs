@@ -1,14 +1,13 @@
 import { style } from "@hellajs/css";
 import Empty, { EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@registry/empty/css/empty.js";
-import { stack } from "./demo-kit";
 
 const bareMedia = style({
   color: "var(--muted-foreground)",
 }, { label: "demo-bare-media" });
 
-export default function EmptyDemo() {
+export function EmptyDemo() {
   return (
-    <div class={stack}>
+    <>
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
@@ -21,13 +20,13 @@ export default function EmptyDemo() {
           <p>Queries match against file names and contents.</p>
         </EmptyContent>
       </Empty>
-    </div>
+    </>
   );
 }
 
 export function EmptyPlainMediaDemo() {
   return (
-    <div class={stack}>
+    <>
       <Empty>
         <EmptyHeader>
           <EmptyMedia class={bareMedia}>
@@ -37,6 +36,6 @@ export function EmptyPlainMediaDemo() {
         </EmptyHeader>
         <EmptyContent>You are all caught up.</EmptyContent>
       </Empty>
-    </div>
+    </>
   );
 }

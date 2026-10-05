@@ -1,18 +1,10 @@
 import { signal } from "@hellajs/core";
-import { style } from "@hellajs/css";
 import ContextMenu, {
   ContextMenuCheckboxItem,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuSub,
 } from "@registry/context-menu/css/context-menu.js";
-
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
 
 function zone(label: string) {
   return (
@@ -27,11 +19,11 @@ const canvasItems = (
   </>
 );
 
-export default function ContextMenuDemo() {
+export function ContextMenuDemo() {
   return (
-    <div class={stack}>
+    <>
       <ContextMenu content={canvasItems}>{zone("Right-click this zone")}</ContextMenu>
-    </div>
+    </>
   );
 }
 
@@ -51,8 +43,8 @@ export function ContextMenuSubsetDemo() {
   );
 
   return (
-    <div class={stack}>
+    <>
       <ContextMenu content={fileItems}>{zone("Right-click file-card")}</ContextMenu>
-    </div>
+    </>
   );
 }

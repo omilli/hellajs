@@ -1,102 +1,43 @@
-## Usage
+## API
 
 `variant` switches the bubble surface: `default` (primary fill), `secondary`, `muted`, `tinted` (primary-tinted in light and dark), `outline`, `ghost` (borderless, padding-free), and `destructive`. `align="end"` floats the bubble to the inline end, and the same shift applies automatically to any bubble inside an end-aligned message row.
 
-### jsx
-
-```jsx
-import { Bubble, BubbleContent, BubbleGroup } from './components/bubble';
-
-const Thread = () => (
-  <BubbleGroup>
-    <Bubble variant="outline">
-      <BubbleContent>How does the scroller pin to the bottom?</BubbleContent>
-    </Bubble>
-    <Bubble align="end">
-      <BubbleContent>A ResizeObserver watches the content and scrolls while you are at the bottom.</BubbleContent>
-    </Bubble>
-  </BubbleGroup>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${BubbleGroup}>
-    <${Bubble} variant="outline">
-      <${BubbleContent}>How does the scroller pin to the bottom?</${BubbleContent}>
-    </${Bubble}>
-    <${Bubble} align="end">
-      <${BubbleContent}>A ResizeObserver watches the content and scrolls while you are at the bottom.</${BubbleContent}>
-    </${Bubble}>
-  </${BubbleGroup}>
-</main>`
-```
-
-## Reactions
-
-`BubbleReactions` renders a floating chip row positioned against its bubble; you author the chips as children (typically `button` elements, which the `has-[button]` rule unpads):
-
-```jsx
-import { Bubble, BubbleContent, BubbleReactions } from './components/bubble';
-
-const Reacted = () => (
-  <Bubble variant="muted">
-    <BubbleContent>Shipping the demo today.</BubbleContent>
-    <BubbleReactions side="bottom" align="end">
-      <button>👍 3</button>
-      <button>🎉 1</button>
-    </BubbleReactions>
-  </Bubble>
-);
-```
-
-`side` pins the chips above (`top`) or below (`bottom`, the default) and `align` picks `start` or `end` (the default).
-
-## Composition Notes
-
 All four exports are presentational. `BubbleContent` renders the element or node you hand it as is; there is no slot-rendering indirection, so render the element you want directly and pass its classes through `class`. The bubble's content hover styles key on `:is(button, a)`, so an anchor or button as the content keeps the interactive affordances.
-
-## Manual Parts
-
-All four exports are named; compose them by hand in any shape.
 
 ### BubbleGroup
 
 The stack: a `div` carrying `data-slot="bubble-group"` that spaces its bubbles vertically.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The bubbles |
 
 ### Bubble
 
 The bubble: a `div` carrying `data-variant` and `data-align`; end alignment floats it to the inline end.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `variant` | `"default" \| "secondary" \| "muted" \| "tinted" \| "outline" \| "ghost" \| "destructive"` | The bubble surface (default `"default"`) |
-| `align` | `"start" \| "end"` | `"end"` floats the bubble to the inline end (default `"start"`); bubbles inside an end-aligned message row inherit the shift |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"default" \| "secondary" \| "muted" \| "tinted" \| "outline" \| "ghost" \| "destructive"` | `"default"` |
+| `align` | `"start" \| "end"` | `"start"` |
 | `children` | `HellaChildren` | The content shell and reaction chips |
 
 ### BubbleContent
 
 The content shell: a `div` carrying `data-slot="bubble-content"` with the asymmetric corners.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Message text or interactive nodes; hover styles key on `:is(button, a)` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | Message text or interactive nodes |
 
 ### BubbleReactions
 
 The floating chip row positioned against its bubble, carrying `data-side` and `data-align`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `side` | `"top" \| "bottom"` | Pins the chips above or below (default `"bottom"`) |
-| `align` | `"start" \| "end"` | Picks the corner (default `"end"`) |
-| `children` | `HellaChildren` | The chips, typically buttons (the `has-[button]` rule unpads them) |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `side` | `"top" \| "bottom"` | `"bottom"` |
+| `align` | `"start" \| "end"` | `"end"` |
+| `children` | `HellaChildren` | The chips, typically buttons |
 
 Every part also takes a `class` string, landing last in its style composition.

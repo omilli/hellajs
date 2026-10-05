@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
-import BreadcrumbTitle from "@ui/concepts/breadcrumb.mdx";
-import BreadcrumbDemo, { BreadcrumbCollapsedDemo } from "../../demos/breadcrumb-demo";
-import demoSource from "../../demos/breadcrumb-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import BreadcrumbContent from "@ui/concepts/breadcrumb.mdx";
+import Component from "../../components/Component.astro";
+
+import { BreadcrumbDemo, BreadcrumbCollapsedDemo } from "../../demos/breadcrumb-demo";
 
 const title = "Breadcrumb";
 const description = "Interactive Breadcrumb demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Breadcrumb</h1>
   <p>A navigation trail: an ordered list of items with separators, the current page marked for assistive tech, an ellipsis for collapsed segments, and dropdown composition for overflow.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "BreadcrumbDemo", { withImports: true })} note="The current page is marked for assistive tech; separators are presentation-only and hidden from the accessibility tree.">
-    <BreadcrumbDemo client:load />
-  </Demo>
+
   <InstallSection entry="breadcrumb" />
-  <BreadcrumbTitle />
-  <h2>Examples</h2>
-  <Demo id="demo-collapsed" title="Collapsed segments" code={demoCode(demoSource, "BreadcrumbCollapsedDemo")} note="The ellipsis hosts a DropdownMenu holding the hidden levels; the trail ends on the current page.">
-    <BreadcrumbCollapsedDemo client:load />
-  </Demo>
+
+  <Component heading="Playground" Demo={<BreadcrumbDemo />} code="BreadcrumbDemo">
+    <p>The current page is marked for assistive tech; separators are presentation-only and hidden from the accessibility tree.</p>
+  </Component>
+  <Component heading="Collapsed segments" Demo={<BreadcrumbCollapsedDemo client:load />} code="BreadcrumbCollapsedDemo">
+    <p>The ellipsis hosts a DropdownMenu holding the hidden levels; the trail ends on the current page.</p>
+  </Component>
+
+  <BreadcrumbContent />
 </MainLayout>

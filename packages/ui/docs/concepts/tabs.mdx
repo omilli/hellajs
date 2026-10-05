@@ -1,63 +1,65 @@
-## Usage
+## API
 
-### jsx
+### Tabs
 
-```jsx
-import Tabs from './components/tabs';
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `items` | `TabsEntry[]` | `-` |
+| `initialId` | `string` | The first tab |
+| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `variant` | `"default" \| "line"` | `"default"` |
+| `class` | `string` | `-` |
 
-const items = [
-  { id: 'profile', label: 'Profile', content: 'Name, avatar, timezone.' },
-  { id: 'billing', label: 'Billing', content: 'Plans and invoices.' },
-];
+`initialId` opens a tab other than the first. `"vertical"` moves the arrow keys to Up and Down, declares `aria-orientation`, and stacks the panels. `"default"` is the segmented pill, the active tab elevated with a shadow; `"line"` is a transparent list whose active tab draws a foreground underline through its `::after`.
 
-const Account = () => (
-  <Tabs items={items} />
-);
-```
-### html
+### TabsEntry
 
-The html-format (`--format html`) works the same way.
+Each entry in the `items` array is one tab and its panel.
 
-```js
-html`<main>
-  <${Tabs} items=${items} />
-</main>`
-```
+| Field | Type | Default |
+| ----- | ---- | ------- |
+| `id` | `string` | `-` |
+| `label` | `string` | `-` |
+| `content` | `HellaChild \| (() => HellaChild)` | `-` |
 
-## Items
+`id` is the stable identity: it drives selection, the generated `hella-tabs-tab-<id>` and `hella-tabs-panel-<id>` pair, and the `initialId` lookup. Pass `content` a getter reading a signal and the panel re-renders when that signal changes; the tablist is never rebuilt.
 
-Each entry in the `items` array is one tab and its panel:
+### TabsList
 
-| Field | Type | Behavior |
-|---|---|---|
-| `id` | `string` | Stable identity: drives selection, the generated `hella-tabs-tab-<id>` and `hella-tabs-panel-<id>` pair, and the `initialId` lookup |
-| `label` | `string` | Text rendered inside the tab button |
-| `content` | `HellaChild \| (() => HellaChild)` | Panel body. Pass a getter reading a signal and the panel re-renders when that signal changes; the tablist is never rebuilt |
+The tablist row: a `role="tablist"` div carrying `data-orientation` and `data-variant` for the style module.
 
-Three optional props tune the rest:
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"default" \| "line"` | `"default"` |
+| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `children` | `HellaChild \| HellaChild[]` | The trigger buttons |
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `initialId` | `string` | Opens a tab other than the first |
-| `orientation` | `"horizontal" \| "vertical"` | `"vertical"` moves the arrow keys to Up and Down, declares `aria-orientation`, and stacks the panels |
-| `variant` | `"default" \| "line"` | `"default"` is the segmented pill, the active tab elevated with a shadow; `"line"` is a transparent list whose active tab draws a foreground underline through its `::after` |
+### TabsTrigger
 
-```jsx
-import { signal } from '@hellajs/core';
-import Tabs from './components/tabs';
+The tab button: the `id` derives the DOM id and the `aria-controls` pointer at the paired panel.
 
-const plan = signal('Pro');
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `id` | `string` | `-` |
+| `active` | `() => boolean` | `-` |
+| `onActivate` | `() => void` | `-` |
+| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `listVariant` | `"default" \| "line"` | `"default"` |
+| `children` | `HellaChild` | The label inside the button |
 
-const Settings = () => (
-  <Tabs
-    initialId="billing"
-    items={[
-      { id: 'profile', label: 'Profile', content: 'Name, avatar, timezone.' },
-      { id: 'billing', label: 'Billing', content: () => `Current plan: ${plan()}.` },
-    ]}
-  />
-);
-```
+`active` drives `aria-selected` and the button's `data-state` (`active` / `inactive`).
+
+### TabsContent
+
+The panel: `hidden` while inactive, labelled by its tab.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `id` | `string` | `-` |
+| `active` | `() => boolean` | `-` |
+| `children` | `HellaChild \| (() => HellaChild)` | The panel body |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ## Keyboard Interaction
 
@@ -72,76 +74,3 @@ The tablist wires [`rovingTabIndex`](/reference/dom/rovingtabindex) from `@hella
 ## Accessibility Wiring
 
 The generated ids link the parts without any querySelector: each tab's `aria-controls` names its panel's `hella-tabs-panel-<id>`, each panel's `aria-labelledby` names its tab back, and `aria-selected` marks the active tab. Inactive panels carry the `hidden` attribute, so they stay out of view and out of the tab order. Selection lives in an internal signal and panel switches are instant; motion composes later through the dom `Transition` primitive without changing the tabs' contract.
-
-## Manual Parts
-
-`TabsList`, `TabsTrigger`, and `TabsContent` ship beside the default `Tabs`, which composes them internally; the parts take their state explicitly, and triggers and contents pair through the raw item `id`.
-
-### TabsList
-
-The tablist row: a `role="tablist"` div carrying `data-orientation` and `data-variant` for the style module.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `variant` | `"default" \| "line"` | Re-declared as `data-variant` |
-| `orientation` | `"horizontal" \| "vertical"` | Re-declared as `data-orientation` plus `aria-orientation` |
-| `children` | `HellaChild \| HellaChild[]` | The trigger buttons |
-
-### TabsTrigger
-
-The tab button: the `id` derives the DOM id and the `aria-controls` pointer at the paired panel.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `id` | `string` | The raw item id: the button's DOM id is `hella-tabs-tab-<id>` and its `aria-controls` points at `hella-tabs-panel-<id>` |
-| `active` | `() => boolean` | Drives `aria-selected` (`true` / `false`) and the button's `data-state` (`active` / `inactive`) |
-| `onActivate` | `() => void` | Click callback |
-| `orientation` | `"horizontal" \| "vertical"` | Re-declared as `data-orientation` |
-| `listVariant` | `"default" \| "line"` | Re-declared as `data-variant` |
-| `children` | `HellaChild` | Label node rendered inside the button |
-
-### TabsContent
-
-The panel: `hidden` while inactive, labelled by its tab.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `id` | `string` | The raw item id: the panel's DOM id is `hella-tabs-panel-<id>` and its `aria-labelledby` points back at the tab |
-| `active` | `() => boolean` | Drives `data-state` and the `hidden` attribute; `false` hides the panel |
-| `children` | `HellaChild \| (() => HellaChild)` | Panel body; a getter reading a signal re-renders when that signal changes |
-
-Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { TabsContent, TabsList, TabsTrigger } from './components/tabs';
-
-const selected = signal('profile');
-
-const Custom = () => (
-  <div>
-    <TabsList>
-      <TabsTrigger
-        id="profile"
-        active={() => selected() === 'profile'}
-        onActivate={() => selected('profile')}
-      >
-        Profile
-      </TabsTrigger>
-      <TabsTrigger
-        id="billing"
-        active={() => selected() === 'billing'}
-        onActivate={() => selected('billing')}
-      >
-        Billing
-      </TabsTrigger>
-    </TabsList>
-    <TabsContent id="profile" active={() => selected() === 'profile'}>
-      Name, avatar, timezone.
-    </TabsContent>
-    <TabsContent id="billing" active={() => selected() === 'billing'}>
-      Plans and invoices.
-    </TabsContent>
-  </div>
-);
-```

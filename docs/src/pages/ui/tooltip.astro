@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import TooltipContent from "@ui/concepts/tooltip.mdx";
-import TooltipDemo, { TooltipManualDemo } from "../../demos/tooltip-demo";
-import demoSource from "../../demos/tooltip-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { TooltipDemo, TooltipManualDemo } from "../../demos/tooltip-demo";
 
 const title = "Tooltip";
 const description = "Interactive Tooltip demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Tooltip</h1>
   <p>A hover-triggered label portaled beside its trigger: it opens after a hover delay, anchors with collision flipping, and focus opens it with the same path a pointer takes.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "TooltipDemo", { withImports: true })} note="Hovering opens a portal-mounted, anchor-positioned label; moving between the two buttons skips the delay. Focus opens either one from the keyboard.">
-    <TooltipDemo client:load />
-  </Demo>
+
   <InstallSection entry="tooltip" />
+
+  <Component heading="Playground" Demo={<TooltipDemo client:load />} code="TooltipDemo">
+    <p>Hovering opens a portal-mounted, anchor-positioned label; moving between the two buttons skips the delay. Focus opens either one from the keyboard.</p>
+  </Component>
+  <Component heading="Manual parts" Demo={<TooltipManualDemo client:load />} code="TooltipManualDemo">
+    <p>No composed root to thread state: hoverIntent drives the signal, the portal mounts the label, and anchorPosition pins it to the trigger.</p>
+  </Component>
+
   <TooltipContent />
-  <h2>Examples</h2>
-  <Demo id="demo-manual" title="Manual parts" code={demoCode(demoSource, "TooltipManualDemo")} note="No composed root to thread state: hoverIntent drives the signal, the portal mounts the label, and anchorPosition pins it to the trigger.">
-    <TooltipManualDemo client:load />
-  </Demo>
 </MainLayout>

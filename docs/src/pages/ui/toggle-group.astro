@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import ToggleGroupContent from "@ui/concepts/toggle-group.mdx";
-import ToggleGroupDemo, { ToggleGroupMultipleDemo } from "../../demos/toggle-group-demo";
-import demoSource from "../../demos/toggle-group-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { ToggleGroupDemo, ToggleGroupMultipleDemo } from "../../demos/toggle-group-demo";
 
 const title = "Toggle Group";
 const description = "Interactive Toggle Group demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Toggle Group</h1>
   <p>A set of pressed-state buttons: a role="group" root that renders one item button per entry, in single (one active value) or multiple (a set of active values) mode.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ToggleGroupDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <ToggleGroupDemo client:load />
-  </Demo>
+
   <InstallSection entry="toggle-group" />
+
+  <Component type="row" heading="Playground" Demo={<ToggleGroupDemo client:load />} code="ToggleGroupDemo"/>
+  <Component type="row" heading="Multiple" Demo={<ToggleGroupMultipleDemo client:load />} code="ToggleGroupMultipleDemo">
+    <p>Multiple mode toggles set membership; the roving arrows move focus while clicks do the selecting.</p>
+  </Component>
+
   <ToggleGroupContent />
-  <h2>Examples</h2>
-  <Demo id="demo-multiple" title="Multiple" code={demoCode(demoSource, "ToggleGroupMultipleDemo")} note="Multiple mode toggles set membership; the roving arrows move focus while clicks do the selecting.">
-    <ToggleGroupMultipleDemo client:load />
-  </Demo>
 </MainLayout>

@@ -22,18 +22,18 @@ const bareInput = style({
 
 const dimmed = style({ opacity: 0.5 }, { label: "demo-dimmed" });
 
-export default function LabelDemo() {
+export function LabelDemo() {
   return (
-    <div class={stack}>
+    <>
       <Label for="demo-name">Project name</Label>
       <input id="demo-name" placeholder="acme-site" class={bareInput} />
-    </div>
+    </>
   );
 }
 
 export function LabelDisabledDemo() {
   return (
-    <div class={`${stack} group`} data-disabled="true">
+    <div class="demo-stack group" data-disabled="true">
       <Label for="demo-region">Region</Label>
       <input id="demo-region" value="eu-central-1" disabled class={`${bareInput} ${dimmed}`} />
     </div>

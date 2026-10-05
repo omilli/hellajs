@@ -1,109 +1,39 @@
-## Usage
+## API
 
-The composed root takes an items array, not children slots; items render joined into one segment strip (`data-spacing="0"`, `--gap: 0`):
+The composed root takes an items array, not children slots; items render joined into one segment strip (`data-spacing="0"`, `--gap: 0`). The `data-[spacing=...]` classes ride along in both style modules, so relaxing the joined strip into spaced buttons is an edit of the copied file away.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `items` | `{ value, label?, pressed?, disabled? }[]` | One item button per entry; `pressed` seeds the uncontrolled state |
-| `type` | `"single" \| "multiple"` | Single keeps one active value; multiple keeps a set |
-| `value` | `() => string` | Controlled single selection |
-| `values` | `() => string[]` | Controlled multiple selection |
-| `onValueChange` | `(value: string \| string[]) => void` | Single reports the newly active value (`""` when deselected); multiple reports the full active array |
-| `variant` | `"default" \| "outline"` | Visual variant (`default`) |
-| `size` | `"default" \| "sm" \| "lg"` | Control size (`default`) |
-| `class` | `string` | Lands on the root next to the component class |
+### ToggleGroup
 
-The `data-[spacing=...]` classes ride along in both style modules, so relaxing the joined strip into spaced buttons is an edit of the copied file away.
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `items` | `{ value, label?, pressed?, disabled? }[]` | `-` |
+| `type` | `"single" \| "multiple"` | `"single"` |
+| `value` | `() => string` | `-` |
+| `values` | `() => string[]` | `-` |
+| `onValueChange` | `(value: string \| string[]) => void` | `-` |
+| `variant` | `"default" \| "outline"` | `"default"` |
+| `size` | `"default" \| "sm" \| "lg"` | `"default"` |
+| `class` | `string` | `-` |
 
-### jsx
-
-```jsx
-import ToggleGroup from './components/toggle-group';
-
-const Formats = () => (
-  <ToggleGroup
-    type="multiple"
-    items={[
-      { value: 'bold', label: 'B' },
-      { value: 'italic', label: 'I', pressed: true },
-      { value: 'underline', label: 'U' },
-    ]}
-  />
-);
-```
-### html
-
-The html-format (`--format html`) works the same way; build the items array once and pass it in.
-
-```js
-const items = [
-  { value: 'day', label: 'Day' },
-  { value: 'week', label: 'Week' },
-];
-
-html`<main><${ToggleGroup} type="single" items=${items} /></main>`
-```
-
-## Controlled and Uncontrolled
-
-Without `value` / `values`, the root owns its state seeded by the items' `pressed` flags. In single mode, clicking the active item deselects it and reports `""`; in multiple mode, clicking toggles membership and reports the full array. Pass an accessor (`value` for single, `values` for multiple) and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged.
-
-```jsx
-import { signal } from '@hellajs/core';
-import ToggleGroup from './components/toggle-group';
-
-const view = signal('week');
-
-const Controlled = () => (
-  <ToggleGroup
-    type="single"
-    items={[
-      { value: 'day', label: 'Day' },
-      { value: 'week', label: 'Week' },
-    ]}
-    value={view}
-    onValueChange={(next) => view(next)}
-  />
-);
-```
-
-## Manual Parts
-
-`ToggleGroupItem` ships beside the default root for custom composition; it renders the joined-segment classes and the `data-variant` / `data-size` / `data-spacing` attributes the styles key off.
+`pressed` in an item seeds the uncontrolled state. Without `value` / `values`, the root owns its state seeded by the items' `pressed` flags: in single mode, clicking the active item deselects it and reports `""`; in multiple mode, clicking toggles membership and reports the full array. Pass an accessor (`value` for single, `values` for multiple) and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged.
 
 ### ToggleGroupItem
 
-One pressed-state button inside the group.
+One pressed-state button inside the group; it renders the joined-segment classes and the `data-variant` / `data-size` / `data-spacing` attributes the styles key off.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string` | The item's value in the group |
-| `pressed` | `boolean \| (() => boolean)` | Pressed state: a boolean reads statically, an accessor keeps the manual part reactive; drives `aria-pressed` and `data-state` (`on` / `off`) |
-| `onSelect` | `() => void` | Click callback |
-| `variant` | `"default" \| "outline"` | Visual variant (default `"default"`) |
-| `size` | `"default" \| "sm" \| "lg"` | Control size (default `"default"`) |
-| `disabled` | `boolean` | Native `disabled` attribute |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string` | `-` |
+| `pressed` | `boolean \| (() => boolean)` | `-` |
+| `onSelect` | `() => void` | `-` |
+| `variant` | `"default" \| "outline"` | `"default"` |
+| `size` | `"default" \| "sm" \| "lg"` | `"default"` |
+| `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The item's label |
 
+A boolean `pressed` reads statically, an accessor keeps the manual part reactive; it drives `aria-pressed` and `data-state` (`on` / `off`).
+
 Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { ToggleGroupItem } from './components/toggle-group';
-
-const active = signal(false);
-
-const Custom = () => (
-  <ToggleGroupItem
-    value="custom"
-    pressed={active}
-    onSelect={() => active(!active())}
-    variant="outline"
-  >
-    Custom
-  </ToggleGroupItem>
-);
-```
 
 ## Accessibility
 

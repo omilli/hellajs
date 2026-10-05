@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import BubbleContent from "@ui/concepts/bubble.mdx";
-import BubbleDemo, { BubbleReactionsDemo } from "../../demos/bubble-demo";
-import demoSource from "../../demos/bubble-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { BubbleDemo, BubbleReactionsDemo } from "../../demos/bubble-demo";
 
 const title = "Bubble";
 const description = "Interactive Bubble demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Bubble</h1>
   <p>A chat bubble in seven surface variants with asymmetric content corners, a group stack, and floating reaction chips.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "BubbleDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <BubbleDemo client:load />
-  </Demo>
+
   <InstallSection entry="bubble" />
+
+  <Component heading="Playground" Demo={<BubbleDemo />} code="BubbleDemo"/>
+  <Component heading="Floating reactions" Demo={<BubbleReactionsDemo />} code="BubbleReactionsDemo">
+    <p>The chip row floats against its bubble; side and align pick the corner.</p>
+  </Component>
+
   <BubbleContent />
-  <h2>Examples</h2>
-  <Demo id="demo-reactions" title="Floating reactions" code={demoCode(demoSource, "BubbleReactionsDemo")} note="The chip row floats against its bubble; side and align pick the corner.">
-    <BubbleReactionsDemo client:load />
-  </Demo>
 </MainLayout>

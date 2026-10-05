@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import TabsContent from "@ui/concepts/tabs.mdx";
-import TabsDemo, { TabsLineDemo } from "../../demos/tabs-demo";
-import demoSource from "../../demos/tabs-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { TabsDemo, TabsLineDemo } from "../../demos/tabs-demo";
 
 const title = "Tabs";
 const description = "Interactive Tabs demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Tabs</h1>
   <p>A tablist and its panels with roving keyboard focus: arrow keys move focus and selection together, and the active tab's panel swaps in place.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "TabsDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <TabsDemo client:load />
-  </Demo>
+
   <InstallSection entry="tabs" />
+
+  <Component heading="Playground" Demo={<TabsDemo client:load />} code="TabsDemo"/>
+  <Component heading="Line variant" Demo={<TabsLineDemo client:load />} code="TabsLineDemo">
+    <p>initialId opens the Activity tab; the line variant draws the active underline.</p>
+  </Component>
+
   <TabsContent />
-  <h2>Examples</h2>
-  <Demo id="demo-line" title="Line variant" code={demoCode(demoSource, "TabsLineDemo")} note="initialId opens the Activity tab; the line variant draws the active underline.">
-    <TabsLineDemo client:load />
-  </Demo>
 </MainLayout>

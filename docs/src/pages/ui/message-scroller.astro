@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import MessageScrollerContent from "@ui/concepts/message-scroller.mdx";
-import MessageScrollerDemo, { MessageScrollerJumpDemo } from "../../demos/message-scroller-demo";
-import demoSource from "../../demos/message-scroller-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { MessageScrollerDemo, MessageScrollerJumpDemo } from "../../demos/message-scroller-demo";
 
 const title = "Message Scroller";
 const description = "Interactive Message Scroller demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Message Scroller</h1>
   <p>A chat viewport that pins to the bottom while new content arrives and flips to a jump-to-end button when you scroll away, with the state handed to you explicitly.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "MessageScrollerDemo", { withImports: true })} note="Add messages and the viewport stays pinned to the newest bubble; the button row sits outside the scroller.">
-    <MessageScrollerDemo client:load />
-  </Demo>
+
   <InstallSection entry="message-scroller" />
+
+  <Component heading="Playground" Demo={<MessageScrollerDemo client:load />} code="MessageScrollerDemo">
+    <p>Add messages and the viewport stays pinned to the newest bubble; the button row sits outside the scroller.</p>
+  </Component>
+  <Component heading="Jump to end" Demo={<MessageScrollerJumpDemo client:load />} code="MessageScrollerJumpDemo">
+    <p>Seeding the shared state as false shows the jump button immediately; clicking it scrolls to the end and writes the state back to true.</p>
+  </Component>
+
   <MessageScrollerContent />
-  <h2>Examples</h2>
-  <Demo id="demo-jump" title="Jump to end" code={demoCode(demoSource, "MessageScrollerJumpDemo")} note="Seeding the shared state as false shows the jump button immediately; clicking it scrolls to the end and writes the state back to true.">
-    <MessageScrollerJumpDemo client:load />
-  </Demo>
 </MainLayout>

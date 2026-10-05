@@ -1,38 +1,12 @@
-## Usage
+## API
 
-A `role="progressbar"` track with a primary-colored indicator: the value accepts a number or a bare signal, the indicator's inline transform drives the fill, and the aria values mirror it between the fixed 0 to 100 min and max.
+A `role="progressbar"` track with a primary-colored indicator: the value accepts a number or a bare signal, the indicator's inline transform drives the fill, and the aria values mirror it between the fixed 0 to 100 min and max. The transform is `translateX(-{100 - value}%)`, so 0 hides the fill and 100 fills the track; `aria-valuenow` follows the same number.
 
-### jsx
+A null value (or a reactive reading one) drives the indeterminate state: the root and indicator carry `data-state="indeterminate"` and `aria-valuenow` drops from the DOM. Values of 100 and above report `data-state="complete"`.
 
-```jsx
-import { signal } from '@hellajs/core';
-import Progress from './components/progress';
+### Progress
 
-const uploaded = signal(40);
-
-const Upload = () => <Progress value={uploaded} />;
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Progress} value=${uploaded} />
-</main>`
-```
-
-The transform is `translateX(-{100 - value}%)`, so 0 hides the fill and 100 fills the track; `aria-valuenow` follows the same number.
-
-## Indeterminate
-
-A null value (or a reactive reading one) drives the indeterminate state: the root and indicator carry `data-state="indeterminate"` and `aria-valuenow` drops from the DOM. Values of 100 and above report `data-state="complete"`:
-
-```jsx
-import { signal } from '@hellajs/core';
-import Progress from './components/progress';
-
-const scanning = signal(null);
-
-const Scanner = () => <Progress value={scanning} />;
-```
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `number \| null \| (() => number \| null)` | `-` |
+| `class` | `string` | `-` |

@@ -1,159 +1,92 @@
-## Usage
+## API
 
-`Attachment` renders `data-state` from its `state` prop: `idle` (dashed border), `uploading`, `processing`, `error` (destructive border and description tint), or `done` (the default). The state drives every descendant condition through attribute selectors, so one prop moves the whole chip. `size` picks `default`, `sm`, or `xs` and `orientation` lays the chip out `horizontal` (the default) or `vertical`; both flow to the media and content parts through attribute selectors, so the chip rescales as one unit.
-
-### jsx
-
-```jsx
-import { Attachment, AttachmentAction, AttachmentActions, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle } from './components/attachment';
-
-const File = () => (
-  <Attachment state="done" size="sm">
-    <AttachmentMedia state="done" />
-    <AttachmentContent>
-      <AttachmentTitle>design.png</AttachmentTitle>
-      <AttachmentDescription>Ready</AttachmentDescription>
-    </AttachmentContent>
-    <AttachmentActions>
-      <AttachmentAction onclick={() => console.log('remove')}>x</AttachmentAction>
-    </AttachmentActions>
-  </Attachment>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Attachment} state="done" size="sm">
-    <${AttachmentMedia} state="done" />
-    <${AttachmentContent}>
-      <${AttachmentTitle}>design.png</${AttachmentTitle}>
-      <${AttachmentDescription}>Ready</${AttachmentDescription}>
-    </${AttachmentContent}>
-    <${AttachmentActions}>
-      <${AttachmentAction} onclick=${() => console.log('remove')}>x</${AttachmentAction}>
-    </${AttachmentActions}>
-  </${Attachment}>
-</main>`
-```
-
-## Status Wiring
-
-With no authored children, `AttachmentMedia` inlines the loading spinner while uploading and the error glyph on error, so a reactive `state` signal animates the whole lifecycle from one value:
-
-```jsx
-import { signal } from '@hellajs/core';
-import { Attachment, AttachmentAction, AttachmentActions, AttachmentContent, AttachmentDescription, AttachmentMedia, AttachmentTitle, AttachmentTrigger } from './components/attachment';
-
-const state = signal('uploading');
-
-const Upload = () => (
-  <Attachment state={state()}>
-    <AttachmentMedia state={state()} />
-    <AttachmentContent>
-      <AttachmentTitle>quarterly-report.pdf</AttachmentTitle>
-      <AttachmentDescription>{state() === 'uploading' ? 'Uploading...' : 'Ready'}</AttachmentDescription>
-    </AttachmentContent>
-    <AttachmentActions>
-      <AttachmentAction onclick={() => state('error')}>x</AttachmentAction>
-    </AttachmentActions>
-    <AttachmentTrigger onclick={() => console.log('open')} />
-  </Attachment>
-);
-```
-
-`AttachmentGroup` scroll-snaps its chips horizontally; `AttachmentTrigger` stretches an invisible button over the chip for open interactions, and `AttachmentAction` renders a real button (ghost, `icon-xs` by default) for remove/retry actions.
-
-## Composition Notes
-
-The `AttachmentMedia` icon variants (`icon` and `image`) restyle authored children: `image` dims until the state reads `done` or `idle` and object-fits its `img` children square. `AttachmentTrigger` renders the stretch button itself rather than delegating to its children, so there is no slot indirection to replicate; compose the parts directly and pass your own element classes through `class`. The media's error glyph uses the `octagon-x` icon; swap the path data if your project carries its own icon.
-
-## Manual Parts
-
-All nine parts are named exports; compose them by hand in any shape, and every descendant condition reads the root's `data-state`, `data-size`, and `data-orientation`.
+`Attachment` renders `data-state` from its `state` prop: `idle` (dashed border), `uploading`, `processing`, `error` (destructive border and description tint), or `done` (the default). The state drives every descendant condition through attribute selectors, so one prop moves the whole chip. `size` and `orientation` flow to the media and content parts the same way, so the chip rescales as one unit.
 
 ### Attachment
 
 The chip root: a `div` carrying the three state attributes the whole chip keys off.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `"idle" \| "uploading" \| "processing" \| "error" \| "done"` | Rendered as `data-state` (default `"done"`); drives the border, tint, and media conditions |
-| `size` | `"default" \| "sm" \| "xs"` | Rendered as `data-size`; the chip rescales as one unit |
-| `orientation` | `"horizontal" \| "vertical"` | Rendered as `data-orientation`; flips the chip's layout axis |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `"idle" \| "uploading" \| "processing" \| "error" \| "done"` | `"done"` |
+| `size` | `"default" \| "sm" \| "xs"` | `"default"` |
+| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `class` | `string` | `-` |
 | `children` | `HellaChildren` | The media, content, and action nodes |
 
 ### AttachmentMedia
 
 The media well: a `div` carrying `data-variant`; with no authored children it inlines the loading spinner on `uploading` and the error glyph on `error`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `variant` | `"icon" \| "image"` | Rendered as `data-variant` (default `"icon"`); `image` dims until the state reads `done` or `idle` and object-fits its `img` children square |
-| `state` | `"idle" \| "uploading" \| "processing" \| "error" \| "done"` | The owning chip's state, inlining the spinner or glyph when `children` is absent |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"icon" \| "image"` | `"icon"` |
+| `state` | `"idle" \| "uploading" \| "processing" \| "error" \| "done"` | `-` |
 | `children` | `HellaChildren` | Authored media nodes; suppress the inlined icons |
 
 ### AttachmentContent
 
 The text column: a `div` carrying `data-slot="attachment-content"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title and description nodes |
 
 ### AttachmentTitle
 
 The filename line: a `div` carrying `data-slot="attachment-title"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Title node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The title node |
 
 ### AttachmentDescription
 
 The status line: a `div` carrying `data-slot="attachment-description"`, tinted on error.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Description node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The description node |
 
 ### AttachmentActions
 
 The action row: a `div` carrying `data-slot="attachment-actions"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Action buttons |
 
 ### AttachmentAction
 
-A real button (ghost, `icon-xs` by default) for remove/retry actions.
+A real button for remove/retry actions.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | Button style (default `"ghost"`) |
-| `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | Button size (default `"icon-xs"`) |
-| `onclick` | `() => void` | Click callback |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | `"ghost"` |
+| `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"icon-xs"` |
+| `onclick` | `() => void` | `-` |
 | `children` | `HellaChildren` | Icon or label node |
 
 ### AttachmentTrigger
 
 An invisible button stretched over the whole chip for open interactions.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `type` | `string` | Native button type (default `"button"`) |
-| `onclick` | `() => void` | Click callback |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `type` | `string` | `"button"` |
+| `onclick` | `() => void` | `-` |
 | `children` | `HellaChildren` | Optional label nodes |
 
 ### AttachmentGroup
 
 The scroll-snapping chip row: a `div` carrying `data-slot="attachment-group"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The chips |
 
 Every part also takes a `class` string, landing last in its style composition.
+
+## Composition Notes
+
+A reactive `state` signal animates the whole lifecycle from one value: the inlined spinner and glyph follow the state, so wiring `state` through a signal is the only glue an upload flow needs. The `AttachmentMedia` icon variants (`icon` and `image`) restyle authored children: `image` dims until the state reads `done` or `idle` and object-fits its `img` children square. `AttachmentTrigger` renders the stretch button itself rather than delegating to its children, so there is no slot indirection to replicate; compose the parts directly and pass your own element classes through `class`. The media's error glyph uses the `octagon-x` icon; swap the path data if your project carries its own icon.

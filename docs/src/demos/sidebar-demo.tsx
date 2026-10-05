@@ -1,5 +1,4 @@
 import { style } from "@hellajs/css";
-import { stack } from "./demo-kit";
 import {
   Sidebar,
   SidebarContent,
@@ -30,12 +29,12 @@ const muted = style({
   fontSize: "0.875rem",
 }, { label: "demo-muted" });
 
-export default function SidebarDemo() {
+export function SidebarDemo() {
   return (
     <SidebarProvider children={(state) => (
-      <div class={stack}>
+      <div class="demo-stack">
           <Sidebar open={state.open} mobile={state.mobile} openMobile={state.openMobile} onOpenMobileChange={state.setOpenMobile} collapsible="icon">
-            <SidebarHeader><span class={muted}>Acme Inc</span></SidebarHeader>
+            <SidebarHeader><span class="demo-muted">Acme Inc</span></SidebarHeader>
             <SidebarContent>
               <SidebarGroup>
                 <SidebarGroupLabel>Application</SidebarGroupLabel>
@@ -52,7 +51,7 @@ export default function SidebarDemo() {
               </SidebarGroup>
             </SidebarContent>
             <SidebarSeparator />
-            <SidebarFooter><span class={muted}>Ctrl+B toggles</span></SidebarFooter>
+            <SidebarFooter><span class="demo-muted">Ctrl+B toggles</span></SidebarFooter>
           </Sidebar>
           <SidebarInset>
             <SidebarTrigger onToggle={state.onToggle} />
@@ -64,7 +63,7 @@ export default function SidebarDemo() {
 
 export function SidebarMenuDemo() {
   return (
-    <div class={stack}>
+    <>
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton active>Inbox</SidebarMenuButton>
@@ -80,6 +79,6 @@ export function SidebarMenuDemo() {
           <SidebarMenuSkeleton showIcon />
         </SidebarMenuItem>
       </SidebarMenu>
-    </div>
+    </>
   );
 }

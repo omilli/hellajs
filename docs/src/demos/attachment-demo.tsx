@@ -1,5 +1,4 @@
 
-import { stack } from "./demo-kit";
 import {
   Attachment,
   AttachmentAction,
@@ -39,25 +38,23 @@ function sized(name: string, size: "default" | "sm" | "xs") {
   );
 }
 
-export default function AttachmentDemo() {
+export function AttachmentDemo() {
   return (
-    <div class={stack}>
-      <AttachmentGroup>
-        {chip("report.pdf", "Uploaded", "done")}
-        {chip("photo.png", "Uploading...", "uploading")}
-        {chip("archive.zip", "Failed", "error")}
-        {chip("drop-file", "Waiting", "idle")}
-      </AttachmentGroup>
-    </div>
+    <AttachmentGroup>
+      {chip("report.pdf", "Uploaded", "done")}
+      {chip("photo.png", "Uploading...", "uploading")}
+      {chip("archive.zip", "Failed", "error")}
+      {chip("drop-file", "Waiting", "idle")}
+    </AttachmentGroup>
   );
 }
 
 export function AttachmentSizesDemo() {
   return (
-    <div class={stack}>
+    <>
       {sized("design-xs.png", "xs")}
       {sized("design-sm.png", "sm")}
       {sized("design.png", "default")}
-    </div>
+    </>
   );
 }

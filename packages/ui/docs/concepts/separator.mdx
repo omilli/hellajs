@@ -1,48 +1,12 @@
-## Usage
+## API
 
-`orientation` picks between `horizontal` (the default: 1px tall, full width) and `vertical` (full height, 1px wide); both attributes key off the rendered `data-orientation` value, so no reactive rewiring is needed when the prop differs per instance:
+`orientation` picks between `horizontal` (the default: 1px tall, full width) and `vertical` (full height, 1px wide); both attributes key off the rendered `data-orientation` value, so no reactive rewiring is needed when the prop differs per instance.
 
-### jsx
+### Separator
 
-```jsx
-import Separator from './components/separator';
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `class` | `string` | `-` |
 
-const Settings = () => (
-  <div class="flex flex-col gap-4">
-    <h2 class="text-lg font-medium">Profile</h2>
-    <p>Your public profile details.</p>
-    <Separator />
-    <h2 class="text-lg font-medium">Security</h2>
-    <p>Sessions and two-factor settings.</p>
-  </div>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<div class="flex flex-col gap-4">
-  <h2 class="text-lg font-medium">Profile</h2>
-  <p>Your public profile details.</p>
-  <${Separator} />
-  <h2 class="text-lg font-medium">Security</h2>
-  <p>Sessions and two-factor settings.</p>
-</div>`
-```
-
-## Vertical Orientation
-
-A vertical separator needs a bounded-height flex row to stretch into:
-
-```jsx
-import Separator from './components/separator';
-
-const Row = () => (
-  <div class="flex h-8 items-center gap-3">
-    <span>Import</span>
-    <Separator orientation="vertical" />
-    <span>Export</span>
-  </div>
-);
-```
+A vertical separator needs a bounded-height flex row to stretch into.

@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
-import MenubarTitle from "@ui/concepts/menubar.mdx";
-import MenubarDemo, { MenubarSelectionDemo } from "../../demos/menubar-demo";
-import demoSource from "../../demos/menubar-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import MenubarContent from "@ui/concepts/menubar.mdx";
+import Component from "../../components/Component.astro";
+
+import { MenubarDemo, MenubarSelectionDemo } from "../../demos/menubar-demo";
 
 const title = "Menubar";
 const description = "Interactive Menubar demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Menubar</h1>
   <p>A horizontal menu bar: the bar holds one open menu at a time, triggers open on click or ArrowDown, arrows move between triggers and between open menus, and Escape closes and returns focus to the trigger.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "MenubarDemo", { withImports: true })} note="Click or press ArrowDown to open; arrows switch menus while one is open, Escape returns focus to its trigger, Tab closes all.">
-    <MenubarDemo client:load />
-  </Demo>
+
   <InstallSection entry="menubar" />
-  <MenubarTitle />
-  <h2>Examples</h2>
-  <Demo id="demo-selection" title="Selection state" code={demoCode(demoSource, "MenubarSelectionDemo")} note="The checkbox takes a checked accessor and the radio group is items-driven, the same explicit-state props as the dropdown-menu entry.">
-    <MenubarSelectionDemo client:load />
-  </Demo>
+
+  <Component heading="Playground" Demo={<MenubarDemo client:load />} code="MenubarDemo">
+    <p>Click or press ArrowDown to open; arrows switch menus while one is open, Escape returns focus to its trigger, Tab closes all.</p>
+  </Component>
+  <Component heading="Selection state" Demo={<MenubarSelectionDemo client:load />} code="MenubarSelectionDemo">
+    <p>The checkbox takes a checked accessor and the radio group is items-driven, the same explicit-state props as the dropdown-menu entry.</p>
+  </Component>
+
+  <MenubarContent />
 </MainLayout>

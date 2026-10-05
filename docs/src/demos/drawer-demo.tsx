@@ -11,19 +11,18 @@ import Drawer, {
   DrawerTitle,
 } from "@registry/drawer/css/drawer.js";
 import { Portal } from "@hellajs/dom";
-import { stack } from "./demo-kit";
 
-export default function DrawerDemo() {
+export function DrawerDemo() {
   const open = signal(false);
 
   return (
-    <div class={stack}>
+    <>
       <Button onclick={() => open(true)}>Open bottom drawer</Button>
       <Drawer open={open} onClose={() => open(false)} title="Notifications" description="Three unread digests. Drag down to dismiss.">
         <p>The whole panel is the drag surface; buttons inside it still click normally.</p>
         <Button variant="outline" onclick={() => open(false)}>Mark all read</Button>
       </Drawer>
-    </div>
+    </>
   );
 }
 
@@ -33,7 +32,7 @@ export function DrawerManualDemo() {
   const fraction = signal(0);
 
   return (
-    <div class={stack}>
+    <>
       <Button variant="outline" onclick={() => open(!open())}>Open cart</Button>
       {() => open() && (
         <Portal to="body">
@@ -50,6 +49,6 @@ export function DrawerManualDemo() {
           </DrawerContent>
         </Portal>
       )}
-    </div>
+    </>
   );
 }

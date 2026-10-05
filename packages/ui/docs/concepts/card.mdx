@@ -1,99 +1,62 @@
-## Usage
+## API
 
-Every part takes `{ children?, class? }`, and the header automatically switches to a two-column grid when a `CardAction` is present:
+Every part takes `{ children?, class? }`, and the header automatically switches to a two-column grid when a `CardAction` is present.
 
-### jsx
+### Card
 
-```jsx
-import Card, { CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/card';
-import Button from './components/button';
+The panel root: a `div` carrying `data-slot="card"`.
 
-const ProfileCard = () => (
-  <Card class="w-80">
-    <CardHeader>
-      <CardTitle>Ada Lovelace</CardTitle>
-      <CardDescription>Wrote the first program.</CardDescription>
-      <CardAction>
-        <Button size="sm" variant="outline">Follow</Button>
-      </CardAction>
-    </CardHeader>
-    <CardContent>
-      <p>Published notes on the Analytical Engine in 1843.</p>
-    </CardContent>
-    <CardFooter>
-      <Button>Read the paper</Button>
-    </CardFooter>
-  </Card>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Card} class="w-80">
-    <${CardHeader}>
-      <${CardTitle}>Ada Lovelace</${CardTitle}>
-      <${CardDescription}>Wrote the first program.</${CardDescription}>
-    </${CardHeader}>
-    <${CardContent}>
-      <p>Published notes on the Analytical Engine in 1843.</p>
-    </${CardContent}>
-  </${Card}>
-</main>`
-```
-
-## Manual Parts
-
-`CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`, and `CardFooter` ship beside the default root for custom composition.
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The arranged parts |
 
 ### CardHeader
 
 The top row: a `div` carrying `data-slot="card-header"`, switching to a two-column grid when a `CardAction` joins its children.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title, description, and optional action nodes |
 
 ### CardTitle
 
 The heading: a `div` carrying `data-slot="card-title"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Title node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The title node |
 
 ### CardDescription
 
 The supporting line: a `div` carrying `data-slot="card-description"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Description node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The description node |
 
 ### CardAction
 
 The header's side slot: a `div` carrying `data-slot="card-action"`, aligned opposite the title.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Action nodes, typically buttons |
 
 ### CardContent
 
 The body: a `div` carrying `data-slot="card-content"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Body nodes |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The body nodes |
 
 ### CardFooter
 
 The bottom row: a `div` carrying `data-slot="card-footer"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Footer nodes |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The footer nodes |
 
 Every part also takes a `class` string, landing last in its style composition.

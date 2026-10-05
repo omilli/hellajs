@@ -1,142 +1,117 @@
-## Usage
+## API
 
 The composed `ContextMenu` wraps its children in a trigger zone and takes the items through the `content` prop. A `contextmenu` event (right-click, or the long-press equivalent) preventDefaults the browser menu and opens the surface; Escape and an outside press dismiss it.
 
-### jsx
-
-```jsx
-import ContextMenu from './components/context-menu';
-import { ContextMenuItem } from './components/context-menu';
-
-const Canvas = () => (
-  <ContextMenu
-    content={
-      <>
-        <ContextMenuItem onclick={() => console.log('cut')}>Cut</ContextMenuItem>
-        <ContextMenuItem shortcut="⌘C">Copy</ContextMenuItem>
-      </>
-    }
-  >
-    Right-click this zone
-  </ContextMenu>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${ContextMenu} content=${html`<p>One item.</p>`}>
-    Right-click zone
-  </${ContextMenu}>
-</main>`
-```
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `open` | `() => boolean` | Controlled open accessor; when given, the root never writes its internal signal |
-| `onOpenChange` | `(open: boolean) => void` | Reports every requested open and close flip |
-| `children` | `HellaChildren` | The trigger zone content |
-| `content` | `HellaChildren` | The menu items, portaled into `document.body` while open |
-| `class` | `string` | Extra classes on the trigger zone |
-
-## Dismissal and Positioning
-
-Coordinate anchoring: opening plants a zero-size fixed anchor node at the pointer position (`data-slot="context-menu-anchor"` in the document body) and positions the surface against it through [`anchorPosition`](/reference/dom/anchorposition) on the `bottom-start` placement, so the menu's top-left corner sits at the click point with the same collision flipping and scroll or resize repositioning as every anchored overlay. Reopening moves the anchor; closing removes it and restores focus to the trigger zone.
-
-Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus dismiss one layer at a time. Activating an item closes every open menu layer through a document-level activation event, which is also how Enter and Space close from the keyboard. Focus moves to the first activatable item on open; the menu is non-modal, with no focus trap.
-
-## Manual Parts
-
 Thirteen named parts ship beside the default `ContextMenu`: `ContextMenuTrigger`, `ContextMenuContent`, `ContextMenuGroup`, `ContextMenuItem`, `ContextMenuCheckboxItem`, `ContextMenuRadioGroup`, `ContextMenuRadioItem`, `ContextMenuLabel`, `ContextMenuSeparator`, `ContextMenuShortcut`, `ContextMenuSub`, `ContextMenuSubTrigger`, and `ContextMenuSubContent`. The content model is the dropdown menu's, duplicated per the registry's self-contained rule; only the trigger differs (a passive zone owning the `contextmenu` listener instead of a Button-wrapped toggle).
+
+### ContextMenu
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `open` | `() => boolean` | `-` |
+| `onOpenChange` | `(open: boolean) => void` | `-` |
+| `content` | `HellaChildren` | The menu items, portaled into `document.body` while open |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The trigger zone content |
+
+A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
 
 ### ContextMenuTrigger
 
 The manual trigger zone: a passive `span` owning the `contextmenu` listener.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The zone content |
 
 ### ContextMenuContent
 
 The `role="menu"` surface with the full keyboard model, anchored at the pointer coordinates.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle; `closed` tears the wirings down |
-| `id` | `string` | Menu id |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | Anchor placement (default `"bottom"`) |
-| `align` | `"start" \| "center" \| "end"` | Cross-axis alignment (default `"start"`) |
-| `anchor` | `() => Element \| undefined` | Resolves the element the content anchors to (the planted pointer anchor); positioning is skipped when undefined |
-| `onDismiss` | `() => void` | Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
-| `onArrowLeft` | `() => void` | ArrowLeft closes the menu when provided (submenu exit; a top-level menu stays inert) |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `id` | `string` | `-` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
+| `align` | `"start" \| "center" \| "end"` | `"start"` |
+| `anchor` | `() => Element \| undefined` | `-` |
+| `onDismiss` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
+| `onArrowLeft` | `() => void` | `-` |
 | `children` | `HellaChildren` | The menu items |
+
+`state` drives `data-state` and the enter/exit cycle; `closed` tears the wirings down. The anchor resolves to the planted pointer anchor; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it. `onExited` fires when the exit animation ends; `onArrowLeft` closes the menu when provided (submenu exit; a top-level menu stays inert).
 
 ### ContextMenuGroup
 
 A passthrough grouping `div`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The grouped items |
 
 ### ContextMenuItem
 
 A `role="menuitem"` row; activation closes every open layer.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `onclick` | `() => void` | Click callback, fired before the close-all activation event |
-| `destructive` | `boolean` | Renders the destructive `data-variant` treatment |
-| `inset` | `boolean` | Renders `data-inset="true"` for the indented alignment |
-| `disabled` | `boolean` | `data-disabled` plus `aria-disabled`; blocks `onclick` and the close |
-| `shortcut` | `string` | Shortcut text rendered as a trailing `ContextMenuShortcut` span |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `onclick` | `() => void` | `-` |
+| `destructive` | `boolean` | `-` |
+| `inset` | `boolean` | `-` |
+| `disabled` | `boolean` | `-` |
+| `shortcut` | `string` | `-` |
 | `children` | `HellaChildren` | The row's label |
+
+`onclick` fires before the close-all activation event; `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"` for the indented alignment; `disabled` renders `data-disabled` plus `aria-disabled` and blocks `onclick` and the close; `shortcut` renders as a trailing `ContextMenuShortcut` span.
 
 ### ContextMenuCheckboxItem
 
 A `role="menuitemcheckbox"` row with the check indicator.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `checked` | `boolean \| (() => boolean)` | A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange` |
-| `onCheckedChange` | `(checked: boolean) => void` | Reports every requested flip, then closes every open layer |
-| `disabled` | `boolean` | Blocks toggling; renders the disabled states |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `checked` | `boolean \| (() => boolean)` | `-` |
+| `onCheckedChange` | `(checked: boolean) => void` | `-` |
+| `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The row's label |
+
+A boolean `checked` seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`, which fires on every requested flip before every open layer closes.
 
 ### ContextMenuRadioGroup
 
 A group rendering one radio item per entry.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `items` | `{ value, label?, disabled? }[]` | One `ContextMenuRadioItem` per entry |
-| `value` | `() => string` | Controlled selected value; when given, the group never writes its internal signal and `onValueChange` reports the requested selection |
-| `onValueChange` | `(value: string) => void` | Reports every requested selection |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `items` | `{ value, label?, disabled? }[]` | `-` |
+| `value` | `() => string` | `-` |
+| `onValueChange` | `(value: string) => void` | `-` |
 | `children` | `HellaChildren` | Static group content rendered alongside the items |
+
+A controlled `value` stops the group from writing its internal signal; `onValueChange` reports the requested selection.
 
 ### ContextMenuRadioItem
 
 A `role="menuitemradio"` row with the circle indicator.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string` | This row's value in its group |
-| `checked` | `boolean \| (() => boolean)` | A boolean reads statically; an accessor keeps the row reactive against its owning group |
-| `onSelect` | `() => void` | Called on click when the row is enabled |
-| `disabled` | `boolean` | Blocks selection |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string` | `-` |
+| `checked` | `boolean \| (() => boolean)` | `-` |
+| `onSelect` | `() => void` | `-` |
+| `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The row's label |
+
+`checked` reads statically as a boolean; an accessor keeps the row reactive against its owning group. `onSelect` is called on click when the row is enabled.
 
 ### ContextMenuLabel
 
 A section label.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `inset` | `boolean` | Renders the indented alignment |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `inset` | `boolean` | `-` |
 | `children` | `HellaChildren` | The label text |
 
 ### ContextMenuSeparator
@@ -147,16 +122,16 @@ A hairline between groups.
 
 The trailing key-hint span inside a row.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The hint text |
 
 ### ContextMenuSub
 
-A sub-trigger plus its portaled sub-content; open state owned here.
+A sub-trigger plus its portaled sub-content; open state owned here. The sub opens on hover after roughly 100ms of rest, on click, or on ArrowRight, anchors against its trigger, and hands Escape to its own dismissal layer first.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `content` | `HellaChildren` | The sub-surface items |
 | `children` | `HellaChildren` | The sub-trigger label |
 
@@ -164,72 +139,40 @@ A sub-trigger plus its portaled sub-content; open state owned here.
 
 The manual sub-trigger row (chevron, `aria-haspopup`).
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `aria-expanded` and `data-state`; the composed `ContextMenuSub` wires it |
-| `onOpen` | `() => void` | Called on click and hover intent to open the submenu |
-| `inset` | `boolean` | Renders the indented alignment |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `onOpen` | `() => void` | `-` |
+| `inset` | `boolean` | `-` |
 | `children` | `HellaChildren` | The sub-trigger label |
+
+`state` drives `aria-expanded` and `data-state`; the composed `ContextMenuSub` wires it. `onOpen` is called on click and hover intent.
 
 ### ContextMenuSubContent
 
 The `role="menu"` sub-surface, anchored against its sub-trigger.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | Anchor placement |
-| `align` | `"start" \| "center" \| "end"` | Cross-axis alignment |
-| `anchor` | `() => Element \| undefined` | Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined |
-| `onDismiss` | `() => void` | Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
-| `onArrowLeft` | `() => void` | ArrowLeft closes the submenu |
-| `onPointerEnter` | `() => void` | Pointer entering the content cancels the trigger's pending close |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `-` |
+| `align` | `"start" \| "center" \| "end"` | `-` |
+| `anchor` | `() => Element \| undefined` | `-` |
+| `onDismiss` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
+| `onArrowLeft` | `() => void` | `-` |
+| `onPointerEnter` | `() => void` | `-` |
 | `children` | `HellaChildren` | The sub-surface items |
+
+`onDismiss` closes the sub's own layer; `onExited` fires when the exit animation ends; `onArrowLeft` closes the submenu; `onPointerEnter` cancels the trigger's pending close when the pointer enters the content.
 
 Every part also takes a `class` string, landing last in its style composition.
 
-A representative subset over one surface - destructive action, checkbox toggle, and a submenu:
+## Dismissal and Positioning
 
-```jsx
-import { signal } from '@hellajs/core';
-import ContextMenu from './components/context-menu';
-import {
-  ContextMenuItem,
-  ContextMenuCheckboxItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-} from './components/context-menu';
+Coordinate anchoring: opening plants a zero-size fixed anchor node at the pointer position (`data-slot="context-menu-anchor"` in the document body) and positions the surface against it through [`anchorPosition`](/reference/dom/anchorposition) on the `bottom-start` placement, so the menu's top-left corner sits at the click point with the same collision flipping and scroll or resize repositioning as every anchored overlay. Reopening moves the anchor; closing removes it and restores focus to the trigger zone.
 
-const locked = signal(false);
-
-const File = () => (
-  <ContextMenu
-    content={
-      <>
-        <ContextMenuItem>Rename</ContextMenuItem>
-        <ContextMenuCheckboxItem
-          checked={locked}
-          onCheckedChange={(next) => locked(next)}
-        >
-          Locked
-        </ContextMenuCheckboxItem>
-        <ContextMenuSeparator />
-        <ContextMenuSub content={<ContextMenuItem>Compress</ContextMenuItem>}>
-          Archive
-        </ContextMenuSub>
-        <ContextMenuItem destructive disabled={locked()}>
-          Delete
-        </ContextMenuItem>
-      </>
-    }
-  >
-    file-card
-  </ContextMenu>
-);
-```
-
-A boolean `checked` seeds the internal signal; an accessor makes the item controlled, so activation only reports through `onCheckedChange`. The sub opens on hover after roughly 100ms of rest, on click, or on ArrowRight, anchors against its trigger, and hands Escape to its own dismissal layer first.
+Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus dismiss one layer at a time. Activating an item closes every open menu layer through a document-level activation event, which is also how Enter and Space close from the keyboard. Focus moves to the first activatable item on open; the menu is non-modal, with no focus trap.
 
 ## Keyboard Interaction
 

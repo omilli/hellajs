@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import NativeSelectContent from "@ui/concepts/native-select.mdx";
-import NativeSelectDemo, { NativeSelectCompactDemo } from "../../demos/native-select-demo";
-import demoSource from "../../demos/native-select-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { NativeSelectDemo, NativeSelectCompactDemo } from "../../demos/native-select-demo";
 
 const title = "Native Select";
-const description = "Interactive NativeSelect demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
+const description = "Interactive Native Select demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Native Select</h1>
   <p>A styled native select: the real element (full keyboard and mobile behavior) inside a relative wrapper with an inlined chevron-down icon, plus thin passthroughs for option and optgroup.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "NativeSelectDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <NativeSelectDemo client:load />
-  </Demo>
+
   <InstallSection entry="native-select" />
+
+  <Component type="row" heading="Playground" Demo={<NativeSelectDemo />} code="NativeSelectDemo"/>
+  <Component type="row" heading="Compact size" Demo={<NativeSelectCompactDemo />} code="NativeSelectCompactDemo">
+    <p>size="sm" toggles the data-size treatment on the select.</p>
+  </Component>
+
   <NativeSelectContent />
-  <h2>Examples</h2>
-  <Demo id="demo-compact" title="Compact size" code={demoCode(demoSource, "NativeSelectCompactDemo")} note='size="sm" toggles the data-size treatment on the select.'>
-    <NativeSelectCompactDemo client:load />
-  </Demo>
 </MainLayout>

@@ -13,13 +13,12 @@ import AlertDialog, {
   AlertDialogTitle,
 } from "@registry/alert-dialog/css/alert-dialog.js";
 import { Portal } from "@hellajs/dom";
-import { stack } from "./demo-kit";
 
-export default function AlertDialogDemo() {
+export function AlertDialogDemo() {
   const open = signal(false);
 
   return (
-    <div class={stack}>
+    <>
       <Button variant="destructive" onclick={() => open(true)}>Delete project</Button>
       <AlertDialog open={open} onClose={() => open(false)} title="Delete project" description="This removes every deployment attached to it. This action cannot be undone.">
         <AlertDialogFooter>
@@ -27,7 +26,7 @@ export default function AlertDialogDemo() {
           <AlertDialogAction variant="destructive" onClose={() => open(false)}>Delete</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialog>
-    </div>
+    </>
   );
 }
 
@@ -36,7 +35,7 @@ export function AlertDialogManualDemo() {
   const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return (
-    <div class={stack}>
+    <>
       <Button variant="outline" onclick={() => open(!open())}>Delete</Button>
       {() => open() && (
         <Portal to="body">
@@ -56,6 +55,6 @@ export function AlertDialogManualDemo() {
           </AlertDialogContent>
         </Portal>
       )}
-    </div>
+    </>
   );
 }

@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
-import NavigationMenuTitle from "@ui/concepts/navigation-menu.mdx";
-import NavigationMenuDemo, { NavigationMenuActiveLinksDemo } from "../../demos/navigation-menu-demo";
-import demoSource from "../../demos/navigation-menu-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import NavigationMenuContent from "@ui/concepts/navigation-menu.mdx";
+import Component from "../../components/Component.astro";
+
+import { NavigationMenuDemo, NavigationMenuActiveLinksDemo } from "../../demos/navigation-menu-demo";
 
 const title = "Navigation Menu";
 const description = "Interactive Navigation Menu demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Navigation Menu</h1>
   <p>A horizontal navigation surface: triggers open content panels into a shared viewport slot under the bar, an indicator slides under the active trigger, and links carry the active accent styles.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "NavigationMenuDemo", { withImports: true })} note="Click a trigger to open its panel in the shared viewport; the indicator slides under the active trigger; click again to close.">
-    <NavigationMenuDemo client:load />
-  </Demo>
+
   <InstallSection entry="navigation-menu" />
-  <NavigationMenuTitle />
-  <h2>Examples</h2>
-  <Demo id="demo-active-links" title="Active links" code={demoCode(demoSource, "NavigationMenuActiveLinksDemo")} note="The active link renders data-active and its accent styles; the indicator and viewport follow the trigger through the same announcement stream.">
-    <NavigationMenuActiveLinksDemo client:load />
-  </Demo>
+
+  <Component heading="Playground" Demo={<NavigationMenuDemo client:load />} code="NavigationMenuDemo">
+    <p>Click a trigger to open its panel in the shared viewport; the indicator slides under the active trigger; click again to close.</p>
+  </Component>
+  <Component heading="Active links" Demo={<NavigationMenuActiveLinksDemo client:load />} code="NavigationMenuActiveLinksDemo">
+    <p>The active link renders data-active and its accent styles; the indicator and viewport follow the trigger through the same announcement stream.</p>
+  </Component>
+
+  <NavigationMenuContent />
 </MainLayout>

@@ -1,81 +1,36 @@
-## Usage
+## API
 
-Options are authored by the caller as plain native children; the component never models them as props. `value` accepts a plain string or a bare signal and binds as the select's value property, `onchange` receives the extracted `e.target.value` string, and the wrapper dims via `:has(select:disabled)` when the control is disabled:
+Options are authored by the caller as plain native children; the component never models them as props. `value` accepts a plain string or a bare signal and binds as the select's value property, `onchange` receives the extracted `e.target.value` string, and the wrapper dims via `:has(select:disabled)` when the control is disabled.
 
-### jsx
+`NativeSelectOption` and `NativeSelectOptGroup` ship beside the default root as styled passthroughs to their native elements; plain native `option` and `optgroup` children also render as-is. A group heading needs a plain native `optgroup` with its `label` attribute.
 
-```jsx
-import { signal } from '@hellajs/core';
-import NativeSelect from './components/native-select';
+### NativeSelect
 
-const region = signal('eu');
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string \| (() => string)` | `-` |
+| `size` | `"default" \| "sm"` | `"default"` |
+| `ariaLabel` | `string` | `-` |
+| `onchange` | `(value: string) => void` | `-` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The native options |
 
-const Picker = () => (
-  <NativeSelect value={region} onchange={(v) => region(v)} ariaLabel="Region">
-    <option value="eu">EU Central</option>
-    <option value="us">US East</option>
-    <option value="ap" disabled>AP South (coming soon)</option>
-  </NativeSelect>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<${NativeSelect} value=${region} onchange=${(v) => region(v)} ariaLabel="Region">
-  <option value="eu">EU Central</option>
-  <option value="us">US East</option>
-  <option value="ap" disabled>AP South (coming soon)</option>
-</${NativeSelect}>`
-```
-
-## Size
-
-`size="sm"` toggles the compact treatment through `data-size="sm"` on the select, trimming the control's height:
-
-```jsx
-import NativeSelect from './components/native-select';
-
-const Compact = () => (
-  <NativeSelect size="sm" ariaLabel="Compact select">
-    <option value="a">Compact option A</option>
-    <option value="b">Compact option B</option>
-  </NativeSelect>
-);
-```
-
-## Manual Parts
-
-`NativeSelectOption` and `NativeSelectOptGroup` ship beside the default root as styled passthroughs to their native elements; plain native `option` and `optgroup` children also render as-is.
+`size="sm"` toggles the compact treatment through `data-size="sm"` on the select, trimming the control's height.
 
 ### NativeSelectOption
 
 A passthrough to a native `option`, carrying the option color treatment.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The option's label node |
 
 ### NativeSelectOptGroup
 
-A passthrough to a native `optgroup`, carrying the same color treatment. It forwards only `children` and `class`: a group heading needs a plain native `optgroup` with its `label` attribute.
+A passthrough to a native `optgroup`, carrying the same color treatment.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The grouped options |
 
 Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import NativeSelect, { NativeSelectOption } from './components/native-select';
-
-const Grouped = () => (
-  <NativeSelect ariaLabel="Plan">
-    <optgroup label="Standard">
-      <NativeSelectOption value="basic">Basic</NativeSelectOption>
-      <NativeSelectOption value="plus">Plus</NativeSelectOption>
-    </optgroup>
-  </NativeSelect>
-);
-```

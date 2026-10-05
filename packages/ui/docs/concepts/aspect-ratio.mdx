@@ -1,40 +1,11 @@
-## Usage
+## API
 
-The wrapper carries `aspect-ratio: <ratio>` plus `width: 100%` inline (the ratio is a prop, so it cannot live in a stylesheet). Children render as-is, so images should bring `size-full` and an object-fit utility to cover the frame:
+The wrapper carries `aspect-ratio: <ratio>` plus `width: 100%` inline (the ratio is a prop, so it cannot live in a stylesheet). The ratio accepts any number and defaults to a square, and `base` contributes `position: relative` so absolutely positioned children still anchor to the box. Children render as-is, so images should bring their own object-fit cover.
 
-### jsx
+### AspectRatio
 
-```jsx
-import AspectRatio from './components/aspect-ratio';
-
-const Hero = () => (
-  <AspectRatio ratio={16 / 9} class="bg-muted rounded-lg overflow-hidden">
-    <img src="/hero.png" alt="Product hero" class="size-full object-cover" />
-  </AspectRatio>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${AspectRatio} ratio=${16 / 9} class="bg-muted rounded-lg overflow-hidden">
-    <img src="/hero.png" alt="Product hero" class="size-full object-cover" />
-  </${AspectRatio}>
-</main>`
-```
-
-## Default Ratio
-
-The ratio accepts any number; it defaults to 1 (a square), and the `base` map contributes `position: relative` so absolutely positioned children still anchor to the box:
-
-```jsx
-import AspectRatio from './components/aspect-ratio';
-
-const Square = () => (
-  <AspectRatio class="bg-muted">
-    <img src="/avatar.png" alt="Square crop" class="size-full object-cover" />
-  </AspectRatio>
-);
-```
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `ratio` | `number` | `1` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The framed content |

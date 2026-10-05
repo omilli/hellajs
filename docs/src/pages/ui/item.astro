@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import ItemContent from "@ui/concepts/item.mdx";
-import ItemDemo, { ItemSelectionDemo } from "../../demos/item-demo";
-import demoSource from "../../demos/item-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { ItemDemo, ItemSelectionDemo } from "../../demos/item-demo";
 
 const title = "Item";
 const description = "Interactive Item demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Item</h1>
   <p>A flexible list-row composition kit: ten parts covering the group, separator, row, media slot, content stack, title, description, actions, header, and footer, built for settings lists, result rows, and media objects.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ItemDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <ItemDemo client:load />
-  </Demo>
+
   <InstallSection entry="item" />
+
+  <Component heading="Playground" Demo={<ItemDemo />} code="ItemDemo"/>
+  <Component heading="Reactive selection" Demo={<ItemSelectionDemo client:load />} code="ItemSelectionDemo">
+    <p>Click a row; rows carry no click wiring - a delegated on:click on the wrapper flips the signal and selected drives data-selected and aria-selected.</p>
+  </Component>
+
   <ItemContent />
-  <h2>Examples</h2>
-  <Demo id="demo-selection" title="Reactive selection" code={demoCode(demoSource, "ItemSelectionDemo")} note="Click a row; rows carry no click wiring - a delegated on:click on the wrapper flips the signal and selected drives data-selected and aria-selected.">
-    <ItemSelectionDemo client:load />
-  </Demo>
 </MainLayout>

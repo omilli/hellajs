@@ -1,106 +1,55 @@
-## Usage
+## API
 
-Every part takes `{ children?, class? }`, and `EmptyMedia` adds a `variant` prop: `default` is a bare wrapper, while `icon` renders the rounded muted 2.5rem icon tile:
+Every part takes `{ children?, class? }`, and `EmptyMedia` adds a `variant` prop: `default` is a bare wrapper, while `icon` renders the rounded muted 2.5rem icon tile.
 
-### jsx
+### Empty
 
-```jsx
-import Empty, { EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
+The empty-state root: a `div` carrying `data-slot="empty"`.
 
-const NoResults = () => (
-  <Empty>
-    <EmptyHeader>
-      <EmptyMedia variant="icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-      </EmptyMedia>
-      <EmptyTitle>No results found</EmptyTitle>
-      <EmptyDescription>Try a different keyword or clear your filters.</EmptyDescription>
-    </EmptyHeader>
-    <EmptyContent>
-      <p>Queries match against file names and contents.</p>
-    </EmptyContent>
-  </Empty>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<${Empty}>
-  <${EmptyHeader}>
-    <${EmptyTitle}>No results found</${EmptyTitle}>
-    <${EmptyDescription}>Try a different keyword or clear your filters.</${EmptyDescription}>
-  </${EmptyHeader}>
-  <${EmptyContent}>
-    <p>Queries match against file names and contents.</p>
-  </${EmptyContent}>
-</${Empty}>`
-```
-
-## Media Variants
-
-The media variant stays plain for illustrations or avatars; the icon tile styling only applies when you ask for it:
-
-```jsx
-import Empty, { EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from './components/empty';
-
-const NoAccess = () => (
-  <Empty>
-    <EmptyHeader>
-      <EmptyMedia>
-        <img src="/illustrations/lock.svg" alt="" />
-      </EmptyMedia>
-      <EmptyTitle>Access restricted</EmptyTitle>
-    </EmptyHeader>
-    <EmptyContent>Ask an admin for permission.</EmptyContent>
-  </Empty>
-);
-```
-
-## Manual Parts
-
-`EmptyHeader`, `EmptyMedia`, `EmptyTitle`, `EmptyDescription`, and `EmptyContent` ship beside the default root for custom composition.
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The arranged parts |
 
 ### EmptyHeader
 
 The stacked top: a `div` carrying `data-slot="empty-header"`, centering its media, title, and description column.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Media, title, and description nodes |
 
 ### EmptyMedia
 
 The media slot: a `div` carrying `data-slot="empty-icon"`, styled by its `variant`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `variant` | `"default" \| "icon"` | `default` stays a bare wrapper; `icon` renders the rounded muted 2.5rem icon tile |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"default" \| "icon"` | `"default"` |
 | `children` | `HellaChildren` | An svg, illustration, or avatar |
 
 ### EmptyTitle
 
 The heading: a `div` carrying `data-slot="empty-title"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Title node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The title node |
 
 ### EmptyDescription
 
 The supporting line: a `div` carrying `data-slot="empty-description"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Description node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The description node |
 
 ### EmptyContent
 
 The body: a `div` carrying `data-slot="empty-content"` below the header.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Body nodes |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The body nodes |
 
 Every part also takes a `class` string, landing last in its style composition.

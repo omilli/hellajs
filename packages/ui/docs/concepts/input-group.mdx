@@ -1,121 +1,76 @@
-## Usage
+## API
 
-The group owns the focus and invalid rings: its selectors light the whole composite up when the inner control receives focus or carries `aria-invalid`, while the control itself strips its own ring. `InputGroupInput` and `InputGroupTextarea` carry `data-slot="input-group-control"`, which is the hook those selectors read. Addons order themselves around the control through `align`:
-
-### jsx
-
-```jsx
-import InputGroup, { InputGroupAddon, InputGroupInput, InputGroupText } from './components/input-group';
-
-const Search = () => (
-  <InputGroup>
-    <InputGroupAddon>
-      <InputGroupText>Search</InputGroupText>
-    </InputGroupAddon>
-    <InputGroupInput placeholder="Enter query" />
-    <InputGroupAddon align="inline-end">
-      <InputGroupButton>Go</InputGroupButton>
-    </InputGroupAddon>
-  </InputGroup>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${InputGroup}>
-    <${InputGroupAddon}><${InputGroupText}>Search</${InputGroupText}></${InputGroupAddon}>
-    <${InputGroupInput} placeholder="Enter query" />
-    <${InputGroupAddon} align="inline-end"><${InputGroupButton}>Go</${InputGroupButton}></${InputGroupAddon}>
-  </${InputGroup}>
-</main>`
-```
-
-## Addon Alignment
-
-`InputGroupAddon` takes `align` (`inline-start`, `inline-end`, `block-start`, `block-end`) to order and pad itself around the control; block alignments stack the group into a column. Clicking an addon focuses the group's input unless the click landed on a button:
-
-```jsx
-import InputGroup, { InputGroupAddon, InputGroupButton, InputGroupTextarea, InputGroupText } from './components/input-group';
-
-const Comment = () => (
-  <InputGroup>
-    <InputGroupAddon align="block-start">
-      <InputGroupText>New comment</InputGroupText>
-    </InputGroupAddon>
-    <InputGroupTextarea placeholder="Write your reply" />
-    <InputGroupAddon align="block-end">
-      <InputGroupButton>Send</InputGroupButton>
-    </InputGroupAddon>
-  </InputGroup>
-);
-```
-
-## Disabled State
-
-Pass `disabled` to the group and it renders `data-disabled="true"`; every addon reads that attribute and drops to half opacity.
-
-## Manual Parts
+The group owns the focus and invalid rings: its selectors light the whole composite up when the inner control receives focus or carries `aria-invalid`, while the control itself strips its own ring. `InputGroupInput` and `InputGroupTextarea` carry `data-slot="input-group-control"`, which is the hook those selectors read.
 
 `InputGroupAddon`, `InputGroupButton`, `InputGroupText`, `InputGroupInput`, and `InputGroupTextarea` ship beside the default root for custom composition.
 
+### InputGroup
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `disabled` | `boolean` | `-` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The addons and control |
+
+`disabled` renders `data-disabled="true"`; every addon reads that attribute and drops to half opacity.
+
 ### InputGroupAddon
 
-The wrapper for content beside or above the control; clicking it focuses the group's input unless the click landed on a button.
+The wrapper for content beside or above the control; clicking it focuses the group's input unless the click landed on a button. `align` orders and pads the addon around the control; block alignments stack the group into a column.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `align` | `"inline-start" \| "inline-end" \| "block-start" \| "block-end"` | Placement and padding around the control (default `"inline-start"`) |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `align` | `"inline-start" \| "inline-end" \| "block-start" \| "block-end"` | `"inline-start"` |
 | `children` | `HellaChildren` | Addon content, typically text or buttons |
 
 ### InputGroupButton
 
 The group's button, a tighter take on the standalone button copy.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | Visual treatment (default `"ghost"`) |
-| `size` | `"xs" \| "sm" \| "icon-xs" \| "icon-sm"` | Control size (default `"xs"`) |
-| `type` | `string` | Button type (default `"button"`) |
-| `onclick` | `() => void` | Click callback |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | `"ghost"` |
+| `size` | `"xs" \| "sm" \| "icon-xs" \| "icon-sm"` | `"xs"` |
+| `type` | `string` | `"button"` |
+| `onclick` | `() => void` | `-` |
 | `children` | `HellaChildren` | Button content |
 
 ### InputGroupText
 
 The text plate: a `span` for static labels and prefixes inside an addon.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Text content |
 
 ### InputGroupInput
 
 The composite's input: carries `data-slot="input-group-control"`, the hook the group's focus and error selectors read.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string \| (() => string)` | The input's value |
-| `type` | `string` | Input type |
-| `placeholder` | `string` | Placeholder text |
-| `id` | `string` | Element id |
-| `ariaLabel` | `string` | Accessible label |
-| `ariaInvalid` | `boolean` | Renders `aria-invalid="true"`, which turns the group's border destructive |
-| `oninput` | `(v: string) => void` | Reports the input's value on every edit |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string \| (() => string)` | `-` |
+| `type` | `string` | `-` |
+| `placeholder` | `string` | `-` |
+| `id` | `string` | `-` |
+| `ariaLabel` | `string` | `-` |
+| `ariaInvalid` | `boolean` | `-` |
+| `oninput` | `(value: string) => void` | `-` |
+
+`ariaInvalid` renders `aria-invalid="true"`, which turns the group's border destructive.
 
 ### InputGroupTextarea
 
 The composite's textarea, wired like `InputGroupInput`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string \| (() => string)` | The textarea's value |
-| `placeholder` | `string` | Placeholder text |
-| `id` | `string` | Element id |
-| `ariaLabel` | `string` | Accessible label |
-| `rows` | `number` | Visible row count |
-| `ariaInvalid` | `boolean` | Renders `aria-invalid="true"`, which turns the group's border destructive |
-| `oninput` | `(v: string) => void` | Reports the textarea's value on every edit |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string \| (() => string)` | `-` |
+| `placeholder` | `string` | `-` |
+| `id` | `string` | `-` |
+| `ariaLabel` | `string` | `-` |
+| `rows` | `number` | `-` |
+| `ariaInvalid` | `boolean` | `-` |
+| `oninput` | `(value: string) => void` | `-` |
 
 Every part also takes a `class` string, landing last in its style composition.

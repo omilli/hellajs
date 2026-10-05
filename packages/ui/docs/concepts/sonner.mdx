@@ -1,29 +1,6 @@
-## Usage
+## API
 
 An opinionated toast queue: `toast()` calls stack as cards on a screen edge, auto-dismiss on a pausable countdown, and swipe away past a distance threshold. The queue lives as a module-level singleton in the copied file - one copy/paste module owns one queue per app. Mount one `<Toaster />` high in the app (it portals the stack into `document.body`), then call `toast()` from anywhere that imports the same copied module.
-
-### jsx
-
-```jsx
-import Toaster, { toast } from './components/sonner';
-
-const App = () => (
-  <>
-    <Toaster />
-    <button on:click={() => toast('Saved')}>Save</button>
-  </>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Toaster} position=${'bottom-right'} />
-  <button e:click=${() => toast('Saved')}>Save</button>
-</main>`
-```
 
 `toast(message, options)` returns a `{ id, dismiss() }` handle:
 
@@ -34,34 +11,18 @@ html`<main>
 | `action` | - | `{ label, onclick }` rendered as a button; firing it also dismisses the toast |
 | `duration` | `4000` | Milliseconds before auto-dismiss; `Infinity` sticks |
 
-The countdown pauses while the pointer hovers the toast and resumes from the frozen remainder on leave. `toast.dismiss(id)` retires one toast; blanket `toast.dismiss()` retires everything. The Toaster itself takes `position` (six screen edges, `"bottom-right"` default) and `richColors` (tints the whole card per flavor; without it the card stays neutral and only the icon carries the hue).
+The countdown pauses while the pointer hovers the toast and resumes from the frozen remainder on leave. `toast.dismiss(id)` retires one toast; blanket `toast.dismiss()` retires everything.
 
-## Promise Toasts
+`toast.promise(promise, messages)` shows a sticky loading toast with a spinning loader, then swaps the flavor and message on settle: `success` and `error` take a string or a function of the settled value. The loading phase never auto-dismisses; the settled phase arms the normal duration. Dismissing before settle keeps the toast retired: a late settle never revives it.
 
-`toast.promise(promise, messages)` shows a sticky loading toast with a spinning loader, then swaps the flavor and message on settle:
+### Toaster
 
-```jsx
-import Toaster, { toast } from './components/sonner';
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `position` | The six screen edges | `"bottom-right"` |
+| `richColors` | `boolean` | `-` |
 
-const upload = () => new Promise<string>((resolve) => resolve('report.pdf'));
-
-const Upload = () => (
-  <>
-    <Toaster />
-    <button
-      on:click={() =>
-        toast.promise(upload(), {
-          loading: 'Uploading',
-          success: (name) => `Uploaded ${name}`,
-          error: 'Upload failed',
-        })
-      }
-    >Upload</button>
-  </>
-);
-```
-
-`success` and `error` take a string or a function of the settled value. The loading phase never auto-dismisses; the settled phase arms the normal duration. Dismissing before settle keeps the toast retired: a late settle never revives it.
+`richColors` tints the whole card per flavor; without it the card stays neutral and only the icon carries the hue.
 
 ## Queue Semantics
 

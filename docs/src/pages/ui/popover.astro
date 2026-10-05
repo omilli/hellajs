@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
-import PopoverTitle from "@ui/concepts/popover.mdx";
-import PopoverDemo, { PopoverManualDemo } from "../../demos/popover-demo";
-import demoSource from "../../demos/popover-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import PopoverContent from "@ui/concepts/popover.mdx";
+import Component from "../../components/Component.astro";
+
+import { PopoverDemo, PopoverManualDemo } from "../../demos/popover-demo";
 
 const title = "Popover";
 const description = "Interactive Popover demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Popover</h1>
   <p>A click-toggled panel anchored to its trigger: Escape and an outside press dismiss it, and stacked popovers dismiss one layer at a time, top first.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "PopoverDemo", { withImports: true })} note="Clicking toggles a non-modal panel; open both and press Escape to see layered dismissal close one at a time.">
-    <PopoverDemo client:load />
-  </Demo>
+
   <InstallSection entry="popover" />
-  <PopoverTitle />
-  <h2>Examples</h2>
-  <Demo id="demo-manual" title="Manual parts" code={demoCode(demoSource, "PopoverManualDemo")} note="The content part takes the state accessor, the anchor, and the onDismiss callback that layerDismissal fires into.">
-    <PopoverManualDemo client:load />
-  </Demo>
+
+  <Component heading="Playground" Demo={<PopoverDemo client:load />} code="PopoverDemo">
+    <p>Clicking toggles a non-modal panel; open both and press Escape to see layered dismissal close one at a time.</p>
+  </Component>
+  <Component heading="Manual parts" Demo={<PopoverManualDemo client:load />} code="PopoverManualDemo">
+    <p>The content part takes the state accessor, the anchor, and the onDismiss callback that layerDismissal fires into.</p>
+  </Component>
+
+  <PopoverContent />
 </MainLayout>

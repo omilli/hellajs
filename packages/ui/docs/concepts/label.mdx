@@ -1,44 +1,15 @@
-## Usage
+## API
 
 The root carries `data-slot="label"`, and `for` lands directly on the element so clicking the caption focuses the input without extra wiring.
 
-### jsx
+### Label
 
-```jsx
-import Label from './components/label';
-
-const Fields = () => (
-  <div class="flex flex-col gap-2">
-    <Label for="name">Project name</Label>
-    <input id="name" placeholder="acme-site" />
-    <Label for="region">Region</Label>
-    <input id="region" placeholder="eu-central-1" />
-  </div>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<div class="flex flex-col gap-2">
-  <${Label} for="name">Project name</${Label}>
-  <input id="name" placeholder="acme-site" />
-  <${Label} for="region">Region</${Label}>
-  <input id="region" placeholder="eu-central-1" />
-</div>`
-```
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `for` | `string` | `-` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The caption text |
 
 ## Disabled States
 
-Two disabled states are style-driven and need no props: a label inside an element marked `.group` with `data-disabled="true"` dims and drops pointer events, and a label following a disabled `.peer` sibling shows the not-allowed cursor:
-
-```jsx
-import Label from './components/label';
-
-const Fieldset = () => (
-  <div class="group" data-disabled="true">
-    <Label for="region">Region</Label>
-  </div>
-);
-```
+Two disabled states are style-driven and need no props: a label inside an element marked `.group` with `data-disabled="true"` dims and drops pointer events, and a label following a disabled `.peer` sibling shows the not-allowed cursor.

@@ -1,7 +1,6 @@
 import { style } from "@hellajs/css";
 import { Message, MessageAvatar, MessageContent, MessageFooter, MessageGroup, MessageHeader } from "@registry/message/css/message.js";
 import { Bubble } from "@registry/bubble/css/bubble.js";
-import { stack } from "./demo-kit";
 
 const initial = style({
   fontSize: "0.625rem",
@@ -20,20 +19,20 @@ function row(name: string, initialText: string, time: string, text: string) {
   );
 }
 
-export default function MessageDemo() {
+export function MessageDemo() {
   return (
-    <div class={stack}>
+    <>
       <MessageGroup>
         {row("Ada", "Ad", "2 minutes ago", "How does the scroller pin to the bottom?")}
         {row("Grace", "Gr", "A minute ago", "A scroll listener watches the distance to the bottom.")}
       </MessageGroup>
-    </div>
+    </>
   );
 }
 
 export function MessageEndDemo() {
   return (
-    <div class={stack}>
+    <>
       <Message align="end">
         <MessageAvatar><span class={initial}>You</span></MessageAvatar>
         <MessageContent>
@@ -42,6 +41,6 @@ export function MessageEndDemo() {
           <MessageFooter>Just now</MessageFooter>
         </MessageContent>
       </Message>
-    </div>
+    </>
   );
 }

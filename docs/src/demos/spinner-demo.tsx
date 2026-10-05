@@ -1,13 +1,6 @@
 import { style } from "@hellajs/css";
 import Spinner from "@registry/spinner/css/spinner.js";
 
-const stack = style({
-  alignItems: "flex-start",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
 const sizeRow = style({
   alignItems: "center",
   color: "var(--muted-foreground)",
@@ -35,9 +28,9 @@ const busyButton = style({
   padding: "0.5rem 1rem",
 }, { label: "demo-busy-button" });
 
-export default function SpinnerDemo() {
+export function SpinnerDemo() {
   return (
-    <div class={stack}>
+    <>
       <div class={sizeRow}>
         <Spinner class={spinnerSm} />
         <span class={sizeLabel}>Small</span>
@@ -50,17 +43,17 @@ export default function SpinnerDemo() {
         <Spinner class={spinnerLg} />
         <span class={sizeLabel}>Large</span>
       </div>
-    </div>
+    </>
   );
 }
 
 export function SpinnerBusyDemo() {
   return (
-    <div class={stack}>
+    <>
       <button type="button" disabled class={busyButton}>
         <Spinner />
         Saving...
       </button>
-    </div>
+    </>
   );
 }

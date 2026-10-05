@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import RadioGroupContent from "@ui/concepts/radio-group.mdx";
-import RadioGroupDemo, { RadioGroupHorizontalDemo } from "../../demos/radio-group-demo";
-import demoSource from "../../demos/radio-group-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { RadioGroupDemo, RadioGroupHorizontalDemo } from "../../demos/radio-group-demo";
 
 const title = "Radio Group";
 const description = "Interactive Radio Group demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Radio Group</h1>
   <p>A single-selection control: a radiogroup root rendering one labeled row per entry, with arrow-key focus movement shared through roving tabindex.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "RadioGroupDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <RadioGroupDemo client:load />
-  </Demo>
+
   <InstallSection entry="radio-group" />
+
+  <Component heading="Playground" Demo={<RadioGroupDemo client:load />} code="RadioGroupDemo"/>
+  <Component heading="Horizontal orientation" Demo={<RadioGroupHorizontalDemo client:load />} code="RadioGroupHorizontalDemo">
+    <p>aria-orientation moves to the root and the arrow keys scope to Left and Right.</p>
+  </Component>
+
   <RadioGroupContent />
-  <h2>Examples</h2>
-  <Demo id="demo-horizontal" title="Horizontal orientation" code={demoCode(demoSource, "RadioGroupHorizontalDemo")} note="aria-orientation moves to the root and the arrow keys scope to Left and Right.">
-    <RadioGroupHorizontalDemo client:load />
-  </Demo>
 </MainLayout>

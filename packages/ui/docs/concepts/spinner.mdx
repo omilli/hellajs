@@ -1,43 +1,12 @@
-## Usage
+## API
 
-The glyph inherits `currentColor` and scales through your own size classes; the `role="status"` announcement needs no wiring. The spin is a 1s linear infinite css animation:
+The glyph inherits `currentColor` and scales through your own size classes; the `role="status"` announcement needs no wiring. The spin is a 1s linear infinite css animation.
 
-### jsx
+### Spinner
 
-```jsx
-import Spinner from './components/spinner';
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | Optional inner nodes |
 
-const Sizes = () => (
-  <div class="flex items-center gap-4 text-muted-foreground">
-    <Spinner class="size-3" />
-    <Spinner />
-    <Spinner class="size-6" />
-  </div>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<div class="flex items-center gap-4 text-muted-foreground">
-  <${Spinner} class="size-3" />
-  <${Spinner} />
-  <${Spinner} class="size-6" />
-</div>`
-```
-
-## Busy Actions
-
-Drop the spinner into a disabled button to mark the operation in progress; pairing it with text keeps the action readable while the glyph spins:
-
-```jsx
-import Spinner from './components/spinner';
-
-const Saving = () => (
-  <button type="button" disabled class="inline-flex items-center gap-2">
-    <Spinner />
-    Saving...
-  </button>
-);
-```
+Drop the spinner into a disabled button to mark the operation in progress; pairing it with text keeps the action readable while the glyph spins.

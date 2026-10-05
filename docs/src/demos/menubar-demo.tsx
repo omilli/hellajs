@@ -1,6 +1,4 @@
 import { signal } from "@hellajs/core";
-import { style } from "@hellajs/css";
-import { row } from "./demo-kit";
 import Menubar, {
   MenubarCheckboxItem,
   MenubarItem,
@@ -11,16 +9,7 @@ import Menubar, {
   MenubarSub,
 } from "@registry/menubar/css/menubar.js";
 
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
-
-
-export default function MenubarDemo() {
+export function MenubarDemo() {
   const fileItems = (
     <>
       <MenubarLabel>File</MenubarLabel>
@@ -53,15 +42,15 @@ export default function MenubarDemo() {
   );
 
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <Menubar>
           <MenubarMenu value="file" content={fileItems}>File</MenubarMenu>
           <MenubarMenu value="edit" content={editItems}>Edit</MenubarMenu>
           <MenubarMenu value="view" content={viewItems}>View</MenubarMenu>
         </Menubar>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -86,12 +75,12 @@ export function MenubarSelectionDemo() {
   );
 
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <Menubar>
           <MenubarMenu value="format" content={formatItems}>Format</MenubarMenu>
         </Menubar>
       </div>
-    </div>
+    </>
   );
 }

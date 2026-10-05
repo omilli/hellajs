@@ -2,7 +2,6 @@ import { signal } from "@hellajs/core";
 
 import Button from "@registry/button/css/button.js";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "@registry/item/css/item.js";
-import { muted, stack } from "./demo-kit";
 
 function row(title: string, copy: string) {
   return (
@@ -17,9 +16,9 @@ function row(title: string, copy: string) {
   );
 }
 
-export default function ItemDemo() {
+export function ItemDemo() {
   return (
-    <div class={stack}>
+    <>
       <ItemGroup>
         {row("Archive", "Move the report to long-term storage.")}
         <ItemSeparator />
@@ -27,7 +26,7 @@ export default function ItemDemo() {
         <ItemSeparator />
         {row("Share", "Invite two teammates to collaborate.")}
       </ItemGroup>
-    </div>
+    </>
   );
 }
 
@@ -41,14 +40,14 @@ export function ItemSelectionDemo() {
   );
 
   return (
-    <div class={stack} on:click={(e: Event) => {
+    <div class="demo-stack" on:click={(e: Event) => {
       const row = (e.target as Element).closest('[data-slot="item"]');
       if (row) active([...row.parentElement!.children].indexOf(row));
     }}>
       <ItemGroup>
         {["Alpha", "Beta", "Gamma"].map((label, i) => option(label, i))}
       </ItemGroup>
-      <p class={muted}>{() => `Selected: ${["Alpha", "Beta", "Gamma"][active()]}`}</p>
+      <p class="demo-muted">{() => `Selected: ${["Alpha", "Beta", "Gamma"][active()]}`}</p>
     </div>
   );
 }

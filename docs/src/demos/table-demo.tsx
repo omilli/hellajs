@@ -1,15 +1,6 @@
 import { style } from "@hellajs/css";
 import Table, { TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@registry/table/css/table.js";
 
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-  maxWidth: "32rem",
-  width: "100%",
-});
-
 const right = style({ textAlign: "right" }, { label: "demo-num" });
 
 const invoices = [
@@ -26,9 +17,9 @@ const ledger = [
   ["INV003", "Initech", "Paid", "Bank Transfer", "Mar 09", "Apr 08", "Net 30", "$310.00"],
 ];
 
-export default function TableDemo() {
+export function TableDemo() {
   return (
-    <div class={stack}>
+    <>
       <Table>
         <TableCaption>A list of your recent invoices.</TableCaption>
         <TableHeader><TableRow>
@@ -52,13 +43,13 @@ export default function TableDemo() {
           <TableCell class={right}>$685.00</TableCell>
         </TableRow></TableFooter>
       </Table>
-    </div>
+    </>
   );
 }
 
 export function TableWideDemo() {
   return (
-    <div class={stack}>
+    <>
       <Table>
         <TableHeader><TableRow>
           {columns.map((col) => <TableHead>{col}</TableHead>)}
@@ -73,6 +64,6 @@ export function TableWideDemo() {
           ))}
         </TableBody>
       </Table>
-    </div>
+    </>
   );
 }

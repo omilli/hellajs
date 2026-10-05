@@ -1,68 +1,31 @@
-## Usage
+## API
 
-A callout carrying `role="alert"`: `variant` picks between `default` and `destructive`, and a direct `svg` child before the title occupies the reserved icon column, inheriting the current text color.
+A callout carrying `role="alert"`: a direct `svg` child before the title occupies the reserved icon column, inheriting the current text color.
 
-### jsx
+### Alert
 
-```jsx
-import Alert, { AlertDescription, AlertTitle } from './components/alert';
-
-const Heads = () => (
-  <Alert>
-    <AlertTitle>Heads up!</AlertTitle>
-    <AlertDescription>You can copy this alert into any project.</AlertDescription>
-  </Alert>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Alert}>
-    <${AlertTitle}>Heads up!</${AlertTitle}>
-    <${AlertDescription}>You can copy this alert into any project.</${AlertDescription}>
-  </${Alert}>
-</main>`
-```
-
-## Destructive
-
-The destructive variant reads the destructive token on the root, the title, and the description, so error callouts need no extra wiring:
-
-```jsx
-import Alert, { AlertDescription, AlertTitle } from './components/alert';
-
-const Failed = () => (
-  <Alert variant="destructive">
-    <AlertTitle>Deployment failed</AlertTitle>
-    <AlertDescription>
-      <p>The edge function timed out after 30 seconds.</p>
-      <p>Check the logs, then retry the deploy.</p>
-    </AlertDescription>
-  </Alert>
-);
-```
-
-## Manual Parts
-
-`AlertTitle` and `AlertDescription` ship beside the default root for custom composition.
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"default" \| "destructive"` | `"default"` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The callout parts |
 
 ### AlertTitle
 
 The bold heading: a `div` carrying `data-slot="alert-title"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Title node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The title node |
 
 ### AlertDescription
 
 The supporting line: a `div` carrying `data-slot="alert-description"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Description nodes, plain paragraphs included |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The description nodes, plain paragraphs included |
 
 Every part also takes a `class` string, landing last in its style composition.

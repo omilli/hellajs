@@ -1,15 +1,6 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import Resizable, { ResizableHandle, ResizablePanel } from "@registry/resizable/css/resizable.js";
-import { muted } from "./demo-kit";
-
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-  width: "100%",
-});
 
 const viewport = style({
   height: "12rem",
@@ -27,11 +18,11 @@ const panelBody = style({
 
 
 
-export default function ResizableDemo() {
+export function ResizableDemo() {
   const sizes = signal("50 / 50");
 
   return (
-    <div class={stack}>
+    <>
       <div class={viewport}>
         <Resizable direction="horizontal" onLayout={(next: number[]) => sizes(next.map((n) => Math.round(n)).join(" / "))}>
           <ResizablePanel defaultSize={50} minSize={25}>
@@ -43,14 +34,14 @@ export default function ResizableDemo() {
           </ResizablePanel>
         </Resizable>
       </div>
-      <p class={muted}>{() => `Sizes: ${sizes()}`}</p>
-    </div>
+      <p class="demo-muted">{() => `Sizes: ${sizes()}`}</p>
+    </>
   );
 }
 
 export function ResizableClampedDemo() {
   return (
-    <div class={stack}>
+    <>
       <div class={viewport}>
         <Resizable direction="horizontal">
           <ResizablePanel defaultSize={50} minSize={25} maxSize={75}>
@@ -62,6 +53,6 @@ export function ResizableClampedDemo() {
           </ResizablePanel>
         </Resizable>
       </div>
-    </div>
+    </>
   );
 }

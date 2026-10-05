@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import DrawerContent from "@ui/concepts/drawer.mdx";
-import DrawerDemo, { DrawerManualDemo } from "../../demos/drawer-demo";
-import demoSource from "../../demos/drawer-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { DrawerDemo, DrawerManualDemo } from "../../demos/drawer-demo";
 
 const title = "Drawer";
 const description = "Interactive Drawer demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Drawer</h1>
   <p>A drag-dismissable panel mounting on any screen edge: the panel follows the pointer while dragged, the overlay fades with the distance, and release past a distance or velocity threshold dismisses it.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "DrawerDemo", { withImports: true })} note="Slides up from the bottom edge with a grip handle. Drag the panel down: it follows the pointer, the overlay fades with the distance, and release past 25% of the panel height (or a 500px/s flick) dismisses.">
-    <DrawerDemo client:load />
-  </Demo>
+
   <InstallSection entry="drawer" />
+
+  <Component heading="Playground" Demo={<DrawerDemo client:load />} code="DrawerDemo">
+    <p>Slides up from the bottom edge with a grip handle. Drag the panel down: it follows the pointer, the overlay fades with the distance, and release past 25% of the panel height (or a 500px/s flick) dismisses.</p>
+  </Component>
+  <Component heading="Manual parts" Demo={<DrawerManualDemo client:load />} code="DrawerManualDemo">
+    <p>The overlay and panel share one drag-fraction signal, so the overlay keeps fading while you drag; release past 25% of the panel or flick to dismiss.</p>
+  </Component>
+
   <DrawerContent />
-  <h2>Examples</h2>
-  <Demo id="demo-manual" title="Manual parts" code={demoCode(demoSource, "DrawerManualDemo")} note="The overlay and panel share one drag-fraction signal, so the overlay keeps fading while you drag; release past 25% of the panel or flick to dismiss.">
-    <DrawerManualDemo client:load />
-  </Demo>
 </MainLayout>

@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
-import EmptyContentPage from "@ui/concepts/empty.mdx";
-import EmptyDemo, { EmptyPlainMediaDemo } from "../../demos/empty-demo";
-import demoSource from "../../demos/empty-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import EmptyContent from "@ui/concepts/empty.mdx";
+import Component from "../../components/Component.astro";
+
+import { EmptyDemo, EmptyPlainMediaDemo } from "../../demos/empty-demo";
 
 const title = "Empty";
 const description = "Interactive Empty demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Empty</h1>
   <p>An empty-state surface composed of a root plus header, media, title, description, and content parts, each carrying its data-slot and composable in any arrangement.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "EmptyDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <EmptyDemo client:load />
-  </Demo>
+
   <InstallSection entry="empty" />
-  <EmptyContentPage />
-  <h2>Examples</h2>
-  <Demo id="demo-plain-media" title="Plain media" code={demoCode(demoSource, "EmptyPlainMediaDemo")} note="Without the icon variant the media wrapper stays bare for illustrations and avatars.">
-    <EmptyPlainMediaDemo client:load />
-  </Demo>
+
+  <Component heading="Playground" Demo={<EmptyDemo />} code="EmptyDemo"/>
+  <Component heading="Plain media" Demo={<EmptyPlainMediaDemo />} code="EmptyPlainMediaDemo">
+    <p>Without the icon variant the media wrapper stays bare for illustrations and avatars.</p>
+  </Component>
+
+  <EmptyContent />
 </MainLayout>

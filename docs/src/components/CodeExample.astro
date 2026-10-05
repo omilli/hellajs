@@ -1,0 +1,50 @@
+---
+import { css } from "@hellajs/css";
+import { Code } from "astro:components";
+import { exampleCode } from "../utils/example-code";
+
+interface Props {
+  /** Function name of the demo export whose source the card shows. */
+  code: string;
+}
+
+css({
+  ".view-code": {
+    marginTop: "0.5rem",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius)",
+    overflow: "hidden",
+    "summary": {
+      padding: "0.5rem 0.875rem",
+      fontSize: "0.8125rem",
+      fontWeight: 500,
+      color: "var(--muted-foreground)",
+      cursor: "pointer",
+      userSelect: "none",
+    },
+    "&[open] summary": {
+      borderBottom: "1px solid var(--border)"
+    },
+    "pre.astro-code": {
+      padding: "1rem",
+      border: 0,
+      borderRadius: 0,
+      margin: 0,
+      overflowX: "auto",
+      fontSize: "0.8125rem",
+      lineHeight: 1.5
+    }
+  }
+})
+
+const { code } = Astro.props;
+// The page's last URL segment names both the page and its demo module
+// (ui/button → demos/button-demo.tsx); exampleCode throws loudly on a
+// mismatch instead of rendering an empty card.
+const demo = Astro.url.pathname.split("/").filter(Boolean).pop() ?? "";
+---
+
+<details class="view-code">
+  <summary>View Code</summary>
+  <div><Code code={exampleCode(demo, code)} lang={"tsx"} /></div>
+</details>

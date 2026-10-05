@@ -1,27 +1,27 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import InputOtpContent from "@ui/concepts/input-otp.mdx";
-import InputOtpDemo, { InputOtpDigitsDemo } from "../../demos/input-otp-demo";
-import demoSource from "../../demos/input-otp-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { InputOtpDemo, InputOtpDigitsDemo } from "../../demos/input-otp-demo";
 
 const title = "Input OTP";
 const description = "Interactive Input OTP demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Input OTP</h1>
   <p>The segmented one-time-code input: one visually transparent input owns focus, value, and selection, while the slots are pure mirrors of its state, so typing, IME composition, deletion, arrows, and paste stay fully native.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "InputOtpDemo", { withImports: true })} note="One hidden input owns the keyboard, so typing, backspace, arrows, and paste all behave natively. Focus lands on the next empty slot and the caret slot blinks.">
-    <InputOtpDemo client:load />
-  </Demo>
+
   <InstallSection entry="input-otp" />
+
+  <Component heading="Playground" Demo={<InputOtpDemo client:load />} code="InputOtpDemo">
+    <p>One hidden input owns the keyboard, so typing, backspace, arrows, and paste all behave natively. Focus lands on the next empty slot and the caret slot blinks.</p>
+  </Component>
+  <Component heading="Digit pattern" Demo={<InputOtpDigitsDemo client:load />} code="InputOtpDigitsDemo">
+    <p>A whole-value RegExp rejects any edit that fails it; the previous code stands.</p>
+  </Component>
+
   <InputOtpContent />
-  <h2>Examples</h2>
-  <Demo id="demo-digits" title="Digit pattern" code={demoCode(demoSource, "InputOtpDigitsDemo")} note="A whole-value RegExp rejects any edit that fails it; the previous code stands.">
-    <InputOtpDigitsDemo client:load />
-  </Demo>
 </MainLayout>

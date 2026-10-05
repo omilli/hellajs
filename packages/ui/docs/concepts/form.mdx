@@ -1,63 +1,6 @@
-## Usage
+## API
 
-One `createForm` call drives the whole row: field state flows into each part as explicit props, and the message re-renders as validation runs. Submit with an invalid email marks the field touched and flips the message on; submit again after fixing the value and `onValid` receives the values snapshot:
-
-### jsx
-
-```jsx
-import { signal } from '@hellajs/core';
-import { createForm, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from './components/form';
-import Button from './components/button';
-import Input from './components/input';
-
-const saved = signal('');
-
-const form = createForm(
-  { email: '' },
-  { validators: { email: (v) => (v.includes('@') ? null : 'Invalid email') } },
-);
-
-const Profile = () => (
-  <form on:submit={form.handleSubmit((values) => saved(values.email))}>
-    <FormItem error={form.errors().email != null}>
-      <FormLabel for="email" error={form.errors().email != null}>Email</FormLabel>
-      <FormControl describedBy="email-msg" invalid={form.errors().email != null}>
-        <Input
-          id="email"
-          value={form.values.email}
-          oninput={(v) => form.setField('email', v)}
-        />
-      </FormControl>
-      <FormDescription id="email-msg">We only use this for sign-in.</FormDescription>
-      <FormMessage errors={form.errors().email ? [form.errors().email!] : []} />
-    </FormItem>
-    <Button type="submit">Save</Button>
-  </form>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way; build the controller with `createForm` and arrow-wrap reactive props in the attribute.
-
-```js
-const form = createForm(
-  { email: '' },
-  { validators: { email: (v) => (v.includes('@') ? null : 'Invalid email') } },
-);
-
-html`<main>
-  <${FormItem} error=${() => form.errors().email != null}>
-    <${FormLabel} for="email">Email</${FormLabel}>
-    <${FormControl} describedBy="email-msg">
-      <${Input} id="email" value=${() => form.values.email()} oninput=${(v) => form.setField('email', v)} />
-    </${FormControl}>
-    <${FormDescription} id="email-msg">We only use this for sign-in.</${FormDescription}>
-    <${FormMessage} errors=${() => (form.errors().email ? [form.errors().email] : [])} />
-  </${FormItem}>
-</main>`
-```
-
-## The Controller
+One `createForm` call drives the whole row: field state flows into each part as explicit props, and the message re-renders as validation runs.
 
 `createForm(initial, options)` seeds one writable signal per field and returns the controller that every part reads through explicit props. Validators are per-field functions that receive the field value and the full values snapshot and return the message string, or null when the value is clean. A field without a validator is always clean.
 
@@ -71,54 +14,52 @@ html`<main>
 
 `blur(key)` needs the control's own blur event, and the vendored controls forward only their declared props, so wire it where your composition allows: a raw `input` element with the `e:blur` prefix, or a bubbling `e:focusout` handler on a wrapper.
 
-## Manual Parts
-
-`FormItem`, `FormLabel`, `FormControl`, `FormDescription`, and `FormMessage` compose each field row around one controller; every part takes its state as an explicit prop.
-
 ### FormItem
 
 The field row: a `div` carrying `data-error` as the container-level error hook.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `error` | `boolean \| (() => boolean)` | Renders `data-error="true"` / `"false"` for the row's error styling |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `error` | `boolean \| (() => boolean)` | `-` |
 | `children` | `HellaChildren` | The label, control, description, and message nodes |
 
 ### FormLabel
 
 The field's label: renders `data-required` when `required` is set, plus `aria-invalid` and the destructive text hook while the error flag is set.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `for` | `string` | The labeled control's `id`, rendered as the `for` attribute |
-| `required` | `boolean` | Renders `data-required="true"` as the required-marker styling hook |
-| `error` | `boolean \| (() => boolean)` | Renders `data-error`, `aria-invalid`, and the destructive text hook while set |
-| `children` | `HellaChildren` | Label text |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `for` | `string` | `-` |
+| `required` | `boolean` | `-` |
+| `error` | `boolean \| (() => boolean)` | `-` |
+| `children` | `HellaChildren` | The label text |
 
 ### FormControl
 
 The passthrough slot around the control itself: a wrapper carrying `aria-invalid` and the `aria-describedby` target you pass as `describedBy`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `invalid` | `boolean \| (() => boolean)` | Renders `aria-invalid="true"` on the wrapper |
-| `describedBy` | `string` | The description or message `id`, rendered as `aria-describedby` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `invalid` | `boolean \| (() => boolean)` | `-` |
+| `describedBy` | `string` | `-` |
 | `children` | `HellaChildren` | The control node |
 
 ### FormDescription
 
 The hint line: carries the `id` the control's `describedBy` points at.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `id` | `string` | The `id` a matching `FormControl` targets with `describedBy` |
-| `children` | `HellaChildren` | Hint text |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `id` | `string` | `-` |
+| `children` | `HellaChildren` | The hint text |
 
 ### FormMessage
 
 The message: renders the first error with `role="alert"` and hides (rather than unmounts) when there is nothing to show, so both formats keep one DOM shape.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `errors` | `string[] \| (() => string[] \| undefined)` | Messages keyed to the field; the first one renders, and an accessor re-evaluates as validation runs |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `errors` | `string[] \| (() => string[] \| undefined)` | `-` |
 | `children` | `HellaChildren` | Fallback content rendered when there are no errors |
+
+Every part also takes a `class` string, landing last in its style composition.

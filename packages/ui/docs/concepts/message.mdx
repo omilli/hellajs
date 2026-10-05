@@ -1,112 +1,58 @@
-## Usage
+## API
 
 Pair `MessageContent` with the `bubble` entry's `Bubble` to get the message surface itself; the avatar well takes any small element (an image, an initial).
 
-### jsx
-
-```jsx
-import { Bubble } from './components/bubble';
-import { Message, MessageAvatar, MessageContent, MessageFooter, MessageHeader } from './components/message';
-
-const Row = () => (
-  <Message>
-    <MessageAvatar>
-      <img src="/ada.png" alt="Ada" />
-    </MessageAvatar>
-    <MessageContent>
-      <MessageHeader>Ada Lovelace</MessageHeader>
-      <Bubble variant="outline">How does the scroller pin to the bottom?</Bubble>
-      <MessageFooter>2 minutes ago</MessageFooter>
-    </MessageContent>
-  </Message>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Message}>
-    <${MessageAvatar}><img src="/ada.png" alt="Ada" /></${MessageAvatar}>
-    <${MessageContent}>
-      <${MessageHeader}>Ada Lovelace</${MessageHeader}>
-      <${Bubble} variant="outline">How does the scroller pin to the bottom?</${Bubble}>
-      <${MessageFooter}>2 minutes ago</${MessageFooter}>
-    </${MessageContent}>
-  </${Message}>
-</main>`
-```
-
-## End Alignment
-
-`align="end"` on `Message` flips the row with `flex-row-reverse`, pushes the content column to the inline end, and right-aligns the footer, so sent messages mirror received ones without extra classes on the parts:
-
-```jsx
-import { Message, MessageContent } from './components/message';
-
-const Sent = () => (
-  <Message align="end">
-    <MessageContent>On my way.</MessageContent>
-  </Message>
-);
-```
-
-## Composition Notes
-
-The parts coordinate through data attributes rather than context. A footer lifts the avatar 2rem, a ghost-variant bubble (from the bubble entry) removes the header and footer side padding, and end alignment slides every direct content child to the inline end; all three conditions read `data-slot`/`data-align`/`data-variant` ancestors, so the wiring survives re-ordering parts.
-
-## Manual Parts
-
-All six exports are named; each renders its `data-slot`, and the parts coordinate through data attributes rather than context.
+All six exports are named; each renders its `data-slot`, and the parts coordinate through data attributes rather than context. A footer lifts the avatar 2rem, a ghost-variant bubble (from the bubble entry) removes the header and footer side padding, and end alignment slides every direct content child to the inline end; all three conditions read `data-slot`/`data-align`/`data-variant` ancestors, so the wiring survives re-ordering parts.
 
 ### MessageGroup
 
 The stack: a `div` carrying `data-slot="message-group"` that spaces its rows.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The message rows |
 
 ### Message
 
 The row: a `div` carrying `data-align`, which the descendant conditions read.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `align` | `"start" \| "end"` | `"end"` flips the row with `flex-row-reverse`, slides the content children to the inline end, and right-aligns the footer |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `align` | `"start" \| "end"` | `"start"` |
 | `children` | `HellaChildren` | The avatar well and content column |
+
+`align="end"` flips the row with `flex-row-reverse`, pushes the content column to the inline end, and right-aligns the footer, so sent messages mirror received ones without extra classes on the parts.
 
 ### MessageAvatar
 
 The avatar well: a `div` carrying `data-slot="message-avatar"`; a footer in the row lifts it 2rem.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Any small element (an image, an initial) |
 
 ### MessageContent
 
 The content column: a `div` carrying `data-slot="message-content"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Header, bubble, and footer nodes |
 
 ### MessageHeader
 
 The header meta row: a `div` carrying `data-slot="message-header"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Sender name node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The sender name node |
 
 ### MessageFooter
 
 The footer meta row: a `div` carrying `data-slot="message-footer"`, right-aligned on end-aligned rows.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | Timestamp node |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The timestamp node |
 
 Every part also takes a `class` string, landing last in its style composition.

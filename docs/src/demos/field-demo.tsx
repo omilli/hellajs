@@ -2,11 +2,10 @@
 import Checkbox from "@registry/checkbox/css/checkbox.js";
 import Input from "@registry/input/css/input.js";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet, FieldTitle } from "@registry/field/css/field.js";
-import { stack } from "./demo-kit";
 
-export default function FieldDemo() {
+export function FieldDemo() {
   return (
-    <div class={stack}>
+    <>
       <FieldSet>
         <FieldLegend>Profile</FieldLegend>
         <FieldGroup>
@@ -32,13 +31,13 @@ export default function FieldDemo() {
           </Field>
         </FieldGroup>
       </FieldSet>
-    </div>
+    </>
   );
 }
 
 export function FieldStateDemo() {
   return (
-    <div class={stack}>
+    <>
       <Field disabled>
         <FieldLabel for="demo-terms">
           <FieldTitle>Accept terms</FieldTitle>
@@ -52,13 +51,13 @@ export function FieldStateDemo() {
         <Input id="demo-email-state" ariaInvalid={true} placeholder="ada@lovelace.dev" />
         <FieldError errors={[{ message: "Enter a valid email." }]} />
       </Field>
-    </div>
+    </>
   );
 }
 
 export function FieldResponsiveDemo() {
   return (
-    <div class={stack}>
+    <>
       <FieldGroup>
         <Field orientation="responsive">
           <Checkbox id="demo-updates" />
@@ -70,6 +69,6 @@ export function FieldResponsiveDemo() {
           </FieldLabel>
         </Field>
       </FieldGroup>
-    </div>
+    </>
   );
 }

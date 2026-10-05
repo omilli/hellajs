@@ -1,75 +1,22 @@
-## Usage
+## API
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `pressed` | `boolean \| (() => boolean)` | Uncontrolled seed or controlled accessor (see below) |
-| `onPressedChange` | `(pressed: boolean) => void` | Fires on every click with the requested next value |
-| `variant` | `"default" \| "outline"` | Visual variant (`default`) |
-| `size` | `"default" \| "sm" \| "lg"` | Control size (`default`) |
-| `disabled` | `boolean` | Blocks clicks and renders the disabled attribute |
-| `class` | `string` | Lands on the root next to the resolved classes |
+### Toggle
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `pressed` | `boolean \| (() => boolean)` | `-` |
+| `onPressedChange` | `(pressed: boolean) => void` | `-` |
+| `variant` | `"default" \| "outline"` | `"default"` |
+| `size` | `"default" \| "sm" \| "lg"` | `"default"` |
+| `disabled` | `boolean` | `-` |
+| `class` | `string` | `-` |
 | `children` | node | The toggle's label content |
-
-### jsx
-
-```jsx
-import Toggle from './components/toggle';
-
-const Toolbar = () => (
-  <div class="flex gap-2">
-    <Toggle>Bold</Toggle>
-    <Toggle variant="outline">Italic</Toggle>
-    <Toggle size="sm">Strike</Toggle>
-    <Toggle size="lg" variant="outline">Underline</Toggle>
-  </div>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<div class="flex gap-2">
-  <${Toggle}>Bold</${Toggle}>
-  <${Toggle} variant="outline">Italic</${Toggle}>
-  <${Toggle} size="sm">Strike</${Toggle}>
-  <${Toggle} size="lg" variant="outline">Underline</${Toggle}>
-</div>`
-```
-
-## Controlled and Uncontrolled
 
 Without `pressed`, the root owns a signal seeded by a boolean `pressed` prop and flips it on click. Pass an accessor and the toggle becomes controlled: clicks turn into `onPressedChange` requests without writing state, so a parent signal that ignores the request keeps the toggle unchanged.
 
-```jsx
-import { signal } from '@hellajs/core';
-import Toggle from './components/toggle';
-
-const muted = signal(false);
-
-const Controlled = () => (
-  <Toggle pressed={muted} onPressedChange={(next) => muted(next)}>
-    Mute
-  </Toggle>
-);
-```
-
 ## Neighboring Markup
 
-`toggleVariants({ variant, size, class })` resolves the same class string the component renders, so a plain button (a toolbar frame, a tooltip trigger) can match it exactly:
-
-```jsx
-import Toggle, { toggleVariants } from './components/toggle';
-
-const Toolbar = () => (
-  <div class="flex items-center gap-2">
-    <Toggle variant="outline" size="sm">Pin</Toggle>
-    <button type="button" class={toggleVariants({ variant: 'outline', size: 'sm' })}>
-      Neighbor
-    </button>
-  </div>
-);
-```
+`toggleVariants({ variant, size, class })` resolves the same class string the component renders, so a plain button (a toolbar frame, a tooltip trigger) can match it exactly.
 
 ## Accessibility
 

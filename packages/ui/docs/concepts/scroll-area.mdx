@@ -1,62 +1,28 @@
-## Usage
+## API
 
 Give the root an explicit height (and width when needed): the viewport fills it with `size-full`, so an unbounded root has nothing to scroll.
 
-| Prop | Type | Behavior |
-|---|---|---|
+### ScrollArea
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | any | Rendered inside the viewport's content wrapper |
-| `observe` | `(target, onGrow) => () => void` | Injectable content watcher forwarded to the internal vertical bar; defaults to a `ResizeObserver` on the content wrapper |
-| `class` | `string` | Lands on the root next to the component class |
-
-### jsx
-
-```jsx
-import ScrollArea from './components/scroll-area';
-
-const Feed = () => (
-  <ScrollArea class="h-72 w-96 rounded-md border">
-    <div class="p-4">
-      {Array.from({ length: 40 }, (_, i) => (
-        <div key={i} class="mb-2">Item {i + 1}</div>
-      ))}
-    </div>
-  </ScrollArea>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${ScrollArea} class="h-72 w-96 rounded-md border">
-    <div class="p-4">Long content here</div>
-  </${ScrollArea}>
-</main>`
-```
+| `observe` | `(target, onGrow) => () => void` | A `ResizeObserver` on the content wrapper |
+| `class` | `string` | `-` |
 
 ### ScrollBar
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `orientation` | `"vertical" \| "horizontal"` | Axis the bar tracks and drags (default `"vertical"`) |
-| `observe` | `(target, onGrow) => () => void` | Injectable content watcher for a bar composed standalone |
-| `class` | `string` | Lands on the bar next to the component class |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `orientation` | `"vertical" \| "horizontal"` | `"vertical"` |
+| `observe` | `(target, onGrow) => () => void` | `-` |
+| `class` | `string` | `-` |
+
+`observe` is the injectable content watcher for a bar composed standalone.
 
 ## Both Axes
 
 `ScrollArea` renders the vertical bar itself. For horizontal scrolling, compose a second `ScrollBar` as a child: it lands inside the viewport in the DOM, but its absolute positioning anchors it to the `relative` root, so it never scrolls with the content. Each bar measures and drags its own axis, and the root renders a corner placeholder at the intersection.
-
-```jsx
-import ScrollArea, { ScrollBar } from './components/scroll-area';
-
-const Sheet = () => (
-  <ScrollArea class="h-72 w-96 rounded-md border">
-    <table class="w-[200%] p-4">Wide rows</table>
-    <ScrollBar orientation="horizontal" />
-  </ScrollArea>
-);
-```
 
 ## Thumb Geometry
 

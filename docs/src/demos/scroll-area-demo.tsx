@@ -1,13 +1,6 @@
 import { style } from "@hellajs/css";
 import ScrollArea, { ScrollBar } from "@registry/scroll-area/css/scroll-area.js";
 
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
 const pane = style({
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) - 2px)",
@@ -47,23 +40,23 @@ const rows = Array.from({ length: 40 }, (_, i) => <div class={itemRow}>Item {i +
 
 const cols = Array.from({ length: 12 }, (_, i) => <div class={colRow}>Column {i + 1}</div>);
 
-export default function ScrollAreaDemo() {
+export function ScrollAreaDemo() {
   return (
-    <div class={stack}>
+    <>
       <ScrollArea class={pane}>
         <div class={pad}>{rows}</div>
       </ScrollArea>
-    </div>
+    </>
   );
 }
 
 export function ScrollAreaBothAxesDemo() {
   return (
-    <div class={stack}>
+    <>
       <ScrollArea class={pane}>
         <div class={colStrip}>{cols}</div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-    </div>
+    </>
   );
 }

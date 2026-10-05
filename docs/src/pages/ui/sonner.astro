@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import SonnerContent from "@ui/concepts/sonner.mdx";
-import SonnerDemo, { SonnerQueueDemo } from "../../demos/sonner-demo";
-import demoSource from "../../demos/sonner-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { SonnerDemo, SonnerQueueDemo } from "../../demos/sonner-demo";
 
 const title = "Sonner";
-const description = "Interactive Sonner toast demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
+const description = "Interactive Sonner demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Sonner</h1>
-  <p>An opinionated toast queue: cards stack on a screen edge, auto-dismiss on a pausable countdown, and swipe away past a distance threshold, with `toast()` callable from anywhere importing the same copied module.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SonnerDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <SonnerDemo client:load />
-  </Demo>
+  <p>An opinionated toast queue: cards stack on a screen edge, auto-dismiss on a pausable countdown, and swipe away past a distance threshold, with toast() callable from anywhere importing the same copied module.</p>
+
   <InstallSection entry="sonner" />
+
+  <Component heading="Playground" Demo={<SonnerDemo client:load />} code="SonnerDemo"/>
+  <Component heading="Queue semantics" Demo={<SonnerQueueDemo client:load />} code="SonnerQueueDemo">
+    <p>One Toaster owns the module-level queue: past the visible cap of three, each new toast retires the oldest immediately, and the cards behind the front shrink per depth.</p>
+  </Component>
+
   <SonnerContent />
-  <h2>Examples</h2>
-  <Demo id="demo-queue" title="Queue semantics" code={demoCode(demoSource, "SonnerQueueDemo")} note="One Toaster owns the module-level queue: past the visible cap of three, each new toast retires the oldest immediately, and the cards behind the front shrink per depth.">
-    <SonnerQueueDemo client:load />
-  </Demo>
 </MainLayout>

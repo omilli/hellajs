@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import SkeletonContent from "@ui/concepts/skeleton.mdx";
-import SkeletonDemo, { SkeletonBlockDemo } from "../../demos/skeleton-demo";
-import demoSource from "../../demos/skeleton-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { SkeletonDemo, SkeletonBlockDemo } from "../../demos/skeleton-demo";
 
 const title = "Skeleton";
 const description = "Interactive Skeleton demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Skeleton</h1>
   <p>A loading placeholder: one div with the muted accent surface and a slow pulse animation, sized entirely through your own classes.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SkeletonDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <SkeletonDemo client:load />
-  </Demo>
+
   <InstallSection entry="skeleton" />
+
+  <Component heading="Playground" Demo={<SkeletonDemo />} code="SkeletonDemo"/>
+  <Component heading="Block placeholder" Demo={<SkeletonBlockDemo />} code="SkeletonBlockDemo">
+    <p>The element has no intrinsic size: height and width come from the call site.</p>
+  </Component>
+
   <SkeletonContent />
-  <h2>Examples</h2>
-  <Demo id="demo-block" title="Block placeholder" code={demoCode(demoSource, "SkeletonBlockDemo")} note="The element has no intrinsic size: height and width come from the call site.">
-    <SkeletonBlockDemo client:load />
-  </Demo>
 </MainLayout>

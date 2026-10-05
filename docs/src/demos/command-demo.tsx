@@ -2,7 +2,6 @@ import { signal } from "@hellajs/core";
 
 import Button from "@registry/button/css/button.js";
 import Command, { CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem, CommandShortcut } from "@registry/command/css/command.js";
-import { row, stack } from "./demo-kit";
 
 const commands = [
   { value: "theme-light", label: "Light theme", group: "Theme", shortcut: "⌘1" },
@@ -11,11 +10,11 @@ const commands = [
   { value: "new-post", label: "New post", group: "Actions", shortcut: "⌘N" },
 ];
 
-export default function CommandDemo() {
+export function CommandDemo() {
   return (
-    <div class={stack}>
+    <>
       <Command items={commands} />
-    </div>
+    </>
   );
 }
 
@@ -24,8 +23,8 @@ export function CommandPaletteDemo() {
   const closePalette = () => paletteOpen(false);
 
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <Button variant="outline" onclick={() => paletteOpen(true)}>Open palette ⌘K</Button>
       </div>
       <CommandDialog open={paletteOpen} onClose={closePalette} title="Command Palette" description="Search for a command to run...">
@@ -37,6 +36,6 @@ export function CommandPaletteDemo() {
           </CommandGroup>
         </CommandList>
       </CommandDialog>
-    </div>
+    </>
   );
 }

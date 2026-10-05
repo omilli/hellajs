@@ -1,108 +1,46 @@
-## Usage
+## API
 
 A rich preview card: hovering a trigger opens an anchored panel, moving the pointer into the panel keeps it open, and leaving both closes it. Keyboard focus follows the same open and close path a pointer takes.
 
-### jsx
+Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire both regions' hover through [`hoverIntent`](/reference/dom/hoverintent).
 
-```jsx
-import HoverCard from './components/hover-card';
-
-const Author = () => (
-  <HoverCard
-    content={
-      <div>
-        <strong>@milli</strong>
-        <p>Building reactive UI libraries. 142 commits this week.</p>
-      </div>
-    }
-  >
-    <a href="#profile" on:click={(event) => event.preventDefault()}>@milli</a>
-  </HoverCard>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${HoverCard} content=${html`<div><strong>@milli</strong><p>Building reactive UI libraries.</p></div>`}>
-    <a href="#profile">@milli</a>
-  </${HoverCard}>
-</main>`
-```
-
-| Prop | Default | Behavior |
-|---|---|---|
-| `open` | - | Controlled open accessor; when given, the root never writes its internal signal |
-| `onOpenChange` | - | Reports every requested open and close flip |
-| `content` | - | The panel children, portaled into `document.body` while open |
-| `class` | - | Extra classes on the trigger span |
+### HoverCard
 
 The composed `HoverCard` wraps its children in the trigger span. It opens 200ms after the pointer rests on the trigger and closes 300ms after it leaves. Moving the pointer from the trigger into the panel keeps it open: the content carries a second [`hoverIntent`](/reference/dom/hoverintent) with zero delays that re-arms the open state the moment the pointer enters, cancelling the trigger's pending close. Leaving the content closes it immediately; returning to the trigger cancels that close in turn, so crossing between the two regions in either direction never flickers.
 
-## Manual Parts
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `open` | `() => boolean` | `-` |
+| `onOpenChange` | `(open: boolean) => void` | `-` |
+| `content` | `HellaChildren` | The panel children, portaled into `document.body` while open |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The trigger content |
 
-Two named parts ship beside the default `HoverCard`: `HoverCardTrigger` and `HoverCardContent`. State is explicit - portal the content yourself, hand it a `state` accessor, and wire both regions' hover through [`hoverIntent`](/reference/dom/hoverintent).
+A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
 
 ### HoverCardTrigger
 
 The manual trigger span; the composed `HoverCard` renders the same shape wired to [`hoverIntent`](/reference/dom/hoverintent) with the 200ms/300ms delays and focus parity.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The trigger content |
 
 ### HoverCardContent
 
 The panel `div` carrying `data-slot="hover-card-content"`, positioned through [`anchorPosition`](/reference/dom/anchorposition) at a 4px offset. When both callbacks are given, hovering the content re-arms the open state with zero delays - the keep-open contract.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | Which side of the anchor the panel sits on (default `"bottom"`) |
-| `align` | `"start" \| "center" \| "end"` | Alignment along the anchor's edge (default `"center"`) |
-| `anchor` | `() => Element \| undefined` | Resolves the element the panel anchors to; positioning is skipped when undefined |
-| `onOpen` | `() => void` | Entering the panel fires this, re-arming the open state |
-| `onClose` | `() => void` | Leaving the panel fires this |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
+| `align` | `"start" \| "center" \| "end"` | `"center"` |
+| `anchor` | `() => Element \| undefined` | `-` |
+| `onOpen` | `() => void` | `-` |
+| `onClose` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
 | `children` | `HellaChildren` | The panel body |
 
+`state` drives `data-state` and the enter/exit cycle. The anchor resolves to the element the panel anchors to; positioning is skipped when undefined. `onOpen` fires when the pointer enters the panel, re-arming the open state; `onClose` fires when it leaves; `onExited` fires when the exit animation ends under `data-state="closed"`.
+
 Every part also takes a `class` string, landing last in its style composition. [`anchorPosition`](/reference/dom/anchorposition) fixes the coordinates against the trigger, flips on viewport collision, and repositions on scroll and resize.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { hoverIntent, Portal } from '@hellajs/dom';
-import { HoverCardContent, HoverCardTrigger } from './components/hover-card';
-
-const open = signal(false);
-const state = () => (open() ? 'open' : 'closed');
-let trigger;
-
-const Manual = () => (
-  <HoverCardTrigger
-    hook:afterMount={(node) => {
-      trigger = node;
-      hoverIntent(node, {
-        onOpen: () => open(true),
-        onClose: () => open(false),
-        openDelay: 200,
-        closeDelay: 300,
-      });
-    }}
-  >
-    <a href="#preview">Preview</a>
-    {() => open() && (
-      <Portal to="body">
-        <HoverCardContent
-          state={state}
-          anchor={() => trigger}
-          onOpen={() => open(true)}
-          onClose={() => open(false)}
-          children={<p>The panel keeps itself open under the pointer.</p>}
-        />
-      </Portal>
-    )}
-  </HoverCardTrigger>
-);
-```

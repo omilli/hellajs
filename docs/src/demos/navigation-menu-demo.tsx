@@ -1,6 +1,4 @@
 import { signal } from "@hellajs/core";
-import { style } from "@hellajs/css";
-import { row } from "./demo-kit";
 import NavigationMenu, {
   NavigationMenuContent,
   NavigationMenuItem,
@@ -11,28 +9,19 @@ import NavigationMenu, {
   NavigationMenuViewport,
 } from "@registry/navigation-menu/css/navigation-menu.js";
 
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
-
-
 function trigger(id: string, label: string, value: () => string, toggle: (id: string) => void) {
   return (
     <NavigationMenuTrigger value={id} active={() => value() === id} onActivate={() => toggle(id)}>{label}</NavigationMenuTrigger>
   );
 }
 
-export default function NavigationMenuDemo() {
+export function NavigationMenuDemo() {
   const value = signal("");
   const toggle = (id: string): void => value(value() === id ? "" : id);
 
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <NavigationMenu onValueChange={(next: string) => value(next)}>
           <NavigationMenuList>
             <NavigationMenuItem>
@@ -54,7 +43,7 @@ export default function NavigationMenuDemo() {
           <NavigationMenuIndicator />
         </NavigationMenu>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -63,8 +52,8 @@ export function NavigationMenuActiveLinksDemo() {
   const toggle = (id: string): void => value(value() === id ? "" : id);
 
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <NavigationMenu onValueChange={(next: string) => value(next)}>
           <NavigationMenuList>
             <NavigationMenuItem>
@@ -80,6 +69,6 @@ export function NavigationMenuActiveLinksDemo() {
           <NavigationMenuIndicator active={() => value() !== ""} />
         </NavigationMenu>
       </div>
-    </div>
+    </>
   );
 }

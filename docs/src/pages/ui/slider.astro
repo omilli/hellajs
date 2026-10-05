@@ -1,30 +1,28 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import SliderContent from "@ui/concepts/slider.mdx";
-import SliderDemo, { SliderThumbsDemo, SliderVerticalDemo } from "../../demos/slider-demo";
-import demoSource from "../../demos/slider-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { SliderDemo, SliderThumbsDemo, SliderVerticalDemo } from "../../demos/slider-demo";
 
 const title = "Slider";
 const description = "Interactive Slider demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Slider</h1>
   <p>A pointer and keyboard value control: a track span and range span with one thumb span per value, positions arriving as reactive inline styles.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "SliderDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <SliderDemo client:load />
-  </Demo>
+
   <InstallSection entry="slider" />
+
+  <Component heading="Playground" Demo={<SliderDemo client:load />} code="SliderDemo"/>
+  <Component heading="Multiple thumbs" Demo={<SliderThumbsDemo client:load />} code="SliderThumbsDemo">
+    <p>The value array length is the thumb count; minStepsBetweenThumbs keeps the two thumbs at least five steps apart.</p>
+  </Component>
+  <Component heading="Vertical" Demo={<SliderVerticalDemo client:load />} code="SliderVerticalDemo">
+    <p>The orientation prop flips the layout axis and the value mapping; positions arrive as bottom instead of left.</p>
+  </Component>
+
   <SliderContent />
-  <h2>Examples</h2>
-  <Demo id="demo-thumbs" title="Multiple thumbs" code={demoCode(demoSource, "SliderThumbsDemo")} note="The value array length is the thumb count; minStepsBetweenThumbs keeps the two thumbs at least five steps apart.">
-    <SliderThumbsDemo client:load />
-  </Demo>
-  <Demo id="demo-vertical" title="Vertical" code={demoCode(demoSource, "SliderVerticalDemo")} note="The orientation prop flips the layout axis and the value mapping; positions arrive as bottom instead of left.">
-    <SliderVerticalDemo client:load />
-  </Demo>
 </MainLayout>

@@ -1,0 +1,57 @@
+---
+import { css } from "@hellajs/css";
+import CodeExample from "./CodeExample.astro";
+import "@registry/theme/tokens.dark.js";
+
+css({
+  ".demo-frame":{
+    backgroundColor: "var(--base-50)",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius)",
+    color: "var(--foreground)",
+    marginBlock: "1.25rem",
+    padding: "2rem",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  ".demo-stack": {
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+  },
+  ".demo-row": {
+    alignItems: "center",
+    display: "flex",
+    gap: "0.5rem",
+    justifyContent: "center",
+    flexWrap: "wrap"
+  },
+  ".demo-muted": {
+    color: "var(--muted-foreground)",
+    fontSize: "0.875rem",
+    margin: 0
+  }
+})
+
+const {
+  type = "stack",
+  heading = "",
+  Demo = () => {},
+  code = ""
+} = Astro.props;
+
+let id = heading?.replaceAll(' ', '-').toLowerCase();
+---
+<h2 id={id}>{heading}</h2>
+
+<slot/>
+
+<div class="demo-frame">
+  <div class={`demo-${type}`}>
+    {Demo}
+  </div>
+</div>
+
+<CodeExample code={code || ""}/>

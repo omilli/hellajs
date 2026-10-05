@@ -1,71 +1,22 @@
-## Usage
+## API
 
-You compose the slots yourself: group them, place the separator between groups, and give every slot its zero-based `index`. The root owns the state and wires the slots after mount, so a slot renders whatever its index holds:
-
-### jsx
-
-```jsx
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from './components/input-otp';
-
-const Verify = () => (
-  <InputOTP
-    length={6}
-    onComplete={(code) => console.log('verifying', code)}
-  >
-    <InputOTPGroup>
-      <InputOTPSlot index={0} />
-      <InputOTPSlot index={1} />
-      <InputOTPSlot index={2} />
-    </InputOTPGroup>
-    <InputOTPSeparator />
-    <InputOTPGroup>
-      <InputOTPSlot index={3} />
-      <InputOTPSlot index={4} />
-      <InputOTPSlot index={5} />
-    </InputOTPGroup>
-  </InputOTP>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way; children sit between the part tags.
-
-```js
-html`<main>
-  <${InputOTP} length=${6}>
-    <${InputOTPGroup}>
-      <${InputOTPSlot} index=${0} />
-      <${InputOTPSlot} index=${1} />
-      <${InputOTPSlot} index=${2} />
-    </${InputOTPGroup}>
-    <${InputOTPSeparator} />
-    <${InputOTPGroup}>
-      <${InputOTPSlot} index=${3} />
-      <${InputOTPSlot} index=${4} />
-      <${InputOTPSlot} index=${5} />
-    </${InputOTPGroup}>
-  </${InputOTP}>
-</main>`
-```
+You compose the slots yourself: group them, place the separator between groups, and give every slot its zero-based `index`. The root owns the state and wires the slots after mount, so a slot renders whatever its index holds.
 
 ### InputOTP
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `length` | `number` | Slot count; fixed after mount. Defaults to `6` |
-| `value` | `string \| (() => string)` | The code. A static string seeds the internal state; an accessor makes it controlled, so edits report through `onChange` only |
-| `onChange` | `(value: string) => void` | Reports every accepted value change: typing, paste, and deletion |
-| `onComplete` | `(value: string) => void` | Fires once per transition to a full code |
-| `pattern` | `RegExp` | Whole-value gate: an edit whose result fails the test is rejected and the previous value stands. The source lands on the input's `pattern` attribute |
-| `autoFocus` | `boolean` | Focuses the hidden input on mount |
-| `disabled` | `boolean` | Disables the hidden input, blocks edits, and dims the group |
-| `class` | `string` | Lands on the root next to the component class |
-| `children` | slots and groups | The user-composed layout; the root renders them under the transparent input |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `length` | `number` | `6` |
+| `value` | `string \| (() => string)` | `-` |
+| `onChange` | `(value: string) => void` | `-` |
+| `onComplete` | `(value: string) => void` | `-` |
+| `pattern` | `RegExp` | `-` |
+| `autoFocus` | `boolean` | `-` |
+| `disabled` | `boolean` | `-` |
+| `class` | `string` | `-` |
+| `children` | slots and groups | The user-composed layout, rendered under the transparent input |
+
+`length` is the slot count, fixed after mount. A static `value` seeds the internal state; an accessor makes it controlled, so edits report through `onChange` only, which reports every accepted change: typing, paste, and deletion. `onComplete` fires once per transition to a full code. `pattern` is the whole-value gate: an edit whose result fails the test is rejected and the previous value stands (the source lands on the input's `pattern` attribute). `disabled` disables the hidden input, blocks edits, and dims the group.
 
 ### InputOTPGroup
 
@@ -75,10 +26,10 @@ A `flex items-center` wrapper for related slots. Takes `children` and an optiona
 
 A state mirror for one position, not an input. The root drives its character text, `data-active` marker, and fake caret after mount, so the slot only carries `index` (plus an optional `class`).
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `index` | `number` | The position this slot mirrors |
-| `class` | `string` | Lands next to the slot class |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `index` | `number` | `-` |
+| `class` | `string` | `-` |
 
 ### InputOTPSeparator
 
@@ -95,48 +46,9 @@ One real `<input>` spans the whole component (inline styles make it transparent 
 
 Slots read `(value, focused, selection)` signals, so `data-active` marks the caret slot and the blinking caret bar renders only on an active empty slot.
 
-## Pattern Gating
-
-Restrict the code to digits by passing a whole-value `RegExp`; a rejected edit leaves the previous code standing:
-
-```jsx
-import { InputOTP, InputOTPGroup, InputOTPSlot } from './components/input-otp';
-
-const Digits = () => (
-  <InputOTP length={4} pattern={/^\d+$/}>
-    <InputOTPGroup>
-      <InputOTPSlot index={0} />
-      <InputOTPSlot index={1} />
-      <InputOTPSlot index={2} />
-      <InputOTPSlot index={3} />
-    </InputOTPGroup>
-  </InputOTP>
-);
-```
-
 ## Controlled Value
 
-Drive the code from your own state by passing `value` as an accessor; writes from outside render straight into the slots, while user edits report through `onChange`:
-
-```jsx
-import { signal } from '@hellajs/core';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from './components/input-otp';
-
-const code = signal('');
-
-const Controlled = () => (
-  <InputOTP length={6} value={code} onChange={(next) => code(next)}>
-    <InputOTPGroup>
-      <InputOTPSlot index={0} />
-      <InputOTPSlot index={1} />
-      <InputOTPSlot index={2} />
-      <InputOTPSlot index={3} />
-      <InputOTPSlot index={4} />
-      <InputOTPSlot index={5} />
-    </InputOTPGroup>
-  </InputOTP>
-);
-```
+Drive the code from your own state by passing `value` as an accessor; writes from outside render straight into the slots, while user edits report through `onChange`.
 
 ## Intentionally Absent
 

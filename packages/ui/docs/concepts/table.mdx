@@ -1,140 +1,76 @@
-## Usage
+## API
 
 Compose the parts by hand; there is no context object and no schema prop. `Table` renders the overflow container (`data-slot="table-container"`) around the `table` element and takes the user's `class` on the table itself. The parts carry the structural selectors: header rows get bottom borders, the last body row drops its border, and footer rows keep theirs unless last.
 
-### jsx
-
-```jsx
-import Table, { TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from './components/table';
-
-const rows = [
-  { invoice: 'INV001', status: 'Paid', amount: '$250.00' },
-  { invoice: 'INV002', status: 'Pending', amount: '$125.00' },
-];
-
-const Invoices = () => (
-  <Table>
-    <TableCaption>A list of your recent invoices.</TableCaption>
-    <TableHeader>
-      <TableRow>
-        <TableHead>Invoice</TableHead>
-        <TableHead>Status</TableHead>
-        <TableHead>Amount</TableHead>
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {rows.map((row) => (
-        <TableRow key={row.invoice}>
-          <TableCell>{row.invoice}</TableCell>
-          <TableCell>{row.status}</TableCell>
-          <TableCell>{row.amount}</TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Table}>
-    <${TableCaption}>A list of your recent invoices.</${TableCaption}>
-    <${TableHeader}>
-      <${TableRow}>
-        <${TableHead}>Invoice</${TableHead}>
-        <${TableHead}>Status</${TableHead}>
-        <${TableHead}>Amount</${TableHead}>
-      </${TableRow}>
-    </${TableHeader}>
-    <${TableBody}>
-      <${TableRow}>
-        <${TableCell}>INV001</${TableCell}>
-        <${TableCell}>Paid</${TableCell}>
-        <${TableCell}>$250.00</${TableCell}>
-      </${TableRow}>
-    </${TableBody}>
-  </${Table}>
-</main>`
-```
-
-## Parts
-
 Seven semantic parts wrap the native table elements; each renders its `data-slot` and takes only `children`, `class`, plus `colSpan` where the element supports it, so anything else stays a native attribute you set directly.
+
+### Table
+
+The overflow container and `table` root.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The caption, row groups, and rows |
 
 ### TableHeader
 
 The `thead[data-slot="table-header"]` row group.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The head rows |
 
 ### TableBody
 
 The `tbody[data-slot="table-body"]` row group.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The body rows |
 
 ### TableFooter
 
 The `tfoot[data-slot="table-footer"]` row group.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The footer rows |
 
 ### TableRow
 
 The `tr[data-slot="table-row"]` row.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The cells |
 
 ### TableHead
 
 The `th[data-slot="table-head"]` header cell.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `colSpan` | `number` | `-` |
 | `children` | `HellaChildren` | The label content |
-| `colSpan` | `number` | Rendered as the native attribute for merged cells |
 
 ### TableCell
 
 The `td[data-slot="table-cell"]` body cell.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `colSpan` | `number` | `-` |
 | `children` | `HellaChildren` | The cell content |
-| `colSpan` | `number` | Rendered as the native attribute for merged cells |
+
+`colSpan` renders as the native attribute for merged cells.
 
 ### TableCaption
 
 The `caption[data-slot="table-caption"]` element.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The caption text |
 
 Every part also takes a `class` string, landing last in its style composition.
-
-## Merged Cells
-
-```jsx
-import { TableBody, TableCell, TableHead, TableRow } from './components/table';
-
-const Summary = () => (
-  <TableBody>
-    <TableRow>
-      <TableHead colSpan={2}>Total</TableHead>
-      <TableCell>$375.00</TableCell>
-    </TableRow>
-  </TableBody>
-);
-```

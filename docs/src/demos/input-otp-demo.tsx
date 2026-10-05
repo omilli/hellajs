@@ -1,16 +1,6 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import InputOTP, { InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@registry/input-otp/css/input-otp.js";
-import { row } from "./demo-kit";
-
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
-
 
 const muted = style({
   color: "var(--muted-foreground)",
@@ -23,12 +13,12 @@ const muted = style({
 const mask = (value: string): string =>
   (value + "_".repeat(6)).slice(0, 6).split("").join(" ");
 
-export default function InputOtpDemo() {
+export function InputOtpDemo() {
   const code = signal("");
 
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <InputOTP
           length={6}
           value={code}
@@ -48,15 +38,15 @@ export default function InputOtpDemo() {
           </InputOTPGroup>
         </InputOTP>
       </div>
-      <p class={muted}>{() => `The code so far: ${mask(code())}`}</p>
-    </div>
+      <p class="demo-muted">{() => `The code so far: ${mask(code())}`}</p>
+    </>
   );
 }
 
 export function InputOtpDigitsDemo() {
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <InputOTP length={4} pattern={/^\d+$/}>
           <InputOTPGroup>
             <InputOTPSlot index={0} />
@@ -66,6 +56,6 @@ export function InputOtpDigitsDemo() {
           </InputOTPGroup>
         </InputOTP>
       </div>
-    </div>
+    </>
   );
 }

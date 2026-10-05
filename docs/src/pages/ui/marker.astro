@@ -1,30 +1,28 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import MarkerContent from "@ui/concepts/marker.mdx";
-import MarkerDemo, { MarkerBorderDemo, MarkerSeparatorDemo } from "../../demos/marker-demo";
-import demoSource from "../../demos/marker-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { MarkerDemo, MarkerSeparatorDemo, MarkerBorderDemo } from "../../demos/marker-demo";
 
 const title = "Marker";
 const description = "Interactive Marker demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Marker</h1>
   <p>A labeled divider row: a full-width strip that presents a short label, with optional rule pseudo-elements or a bottom border, built for timeline captions, empty-state annotations, and section leads.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "MarkerDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <MarkerDemo client:load />
-  </Demo>
+
   <InstallSection entry="marker" />
+
+  <Component heading="Playground" Demo={<MarkerDemo />} code="MarkerDemo"/>
+  <Component heading="Rule variant" Demo={<MarkerSeparatorDemo />} code="MarkerSeparatorDemo">
+    <p>The separator variant adds flex-filling rules before and after the content.</p>
+  </Component>
+  <Component heading="Border variant" Demo={<MarkerBorderDemo />} code="MarkerBorderDemo">
+    <p>The border variant adds a bottom border - built for end-of-list captions.</p>
+  </Component>
+
   <MarkerContent />
-  <h2>Examples</h2>
-  <Demo id="demo-separator" title="Rule variant" code={demoCode(demoSource, "MarkerSeparatorDemo")} note="The separator variant adds flex-filling rules before and after the content.">
-    <MarkerSeparatorDemo client:load />
-  </Demo>
-  <Demo id="demo-border" title="Border variant" code={demoCode(demoSource, "MarkerBorderDemo")} note="The border variant adds a bottom border - built for end-of-list captions.">
-    <MarkerBorderDemo client:load />
-  </Demo>
 </MainLayout>

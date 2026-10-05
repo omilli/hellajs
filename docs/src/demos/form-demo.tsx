@@ -3,7 +3,6 @@ import { style } from "@hellajs/css";
 import Button from "@registry/button/css/button.js";
 import Input from "@registry/input/css/input.js";
 import { createForm, FormControl, FormDescription, FormItem, FormLabel, FormMessage } from "@registry/form/css/form.js";
-import { muted } from "./demo-kit";
 
 const stack = style({
   alignItems: "flex-start",
@@ -30,7 +29,7 @@ const resetButton = style({
   width: "fit-content",
 }, { label: "demo-reset-button" });
 
-export default function FormDemo() {
+export function FormDemo() {
   const saved = signal("");
   const form = createForm(
     { email: "", name: "" },
@@ -60,7 +59,7 @@ export default function FormDemo() {
         <FormMessage errors={() => (form.errors().name ? [form.errors().name!] : [])} />
       </FormItem>
       <Button>Save</Button>
-      <p class={muted}>{() => (saved() ? `Saved ${saved()}` : "Submit with an empty field to see the validation messages.")}</p>
+      <p class="demo-muted">{() => (saved() ? `Saved ${saved()}` : "Submit with an empty field to see the validation messages.")}</p>
     </form>
   );
 }
@@ -80,7 +79,7 @@ export function FormBlurDemo() {
         </FormControl>
         <FormMessage errors={() => (blurForm.errors().email ? [blurForm.errors().email!] : [])} />
       </FormItem>
-      <p class={muted}>{() => (blurForm.errors().email ? `Marked touched, validated: ${blurForm.errors().email}` : "Focus the field, type an invalid email, then leave it.")}</p>
+      <p class="demo-muted">{() => (blurForm.errors().email ? `Marked touched, validated: ${blurForm.errors().email}` : "Focus the field, type an invalid email, then leave it.")}</p>
     </div>
   );
 }
@@ -104,7 +103,7 @@ export function FormResetDemo() {
         <Button>Save</Button>
         <button type="button" class={resetButton} on:click={() => resetForm.reset()}>Reset</button>
       </div>
-      <p class={muted}>{() => `Value now: ${resetForm.values.email()}`}</p>
+      <p class="demo-muted">{() => `Value now: ${resetForm.values.email()}`}</p>
     </form>
   );
 }

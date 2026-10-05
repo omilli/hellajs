@@ -1,6 +1,5 @@
 import { style } from "@hellajs/css";
 import Skeleton from "@registry/skeleton/css/skeleton.js";
-import { stack } from "./demo-kit";
 
 const avatarRow = style({
   alignItems: "center",
@@ -23,9 +22,9 @@ const lineFull = style({ height: "1rem", width: "100%" }, { label: "demo-sk-full
 const lineTwoThirds = style({ height: "1rem", width: "66.666667%" }, { label: "demo-sk-2/3" });
 const block = style({ height: "8rem", width: "100%" }, { label: "demo-sk-block" });
 
-export default function SkeletonDemo() {
+export function SkeletonDemo() {
   return (
-    <div class={stack}>
+    <>
       <div class={avatarRow}>
         <Skeleton class={avatar}>{[]}</Skeleton>
         <div class={col}>
@@ -38,14 +37,14 @@ export default function SkeletonDemo() {
         <Skeleton class={lineFull}>{[]}</Skeleton>
         <Skeleton class={lineTwoThirds}>{[]}</Skeleton>
       </div>
-    </div>
+    </>
   );
 }
 
 export function SkeletonBlockDemo() {
   return (
-    <div class={stack}>
+    <>
       <Skeleton class={block}>{[]}</Skeleton>
-    </div>
+    </>
   );
 }

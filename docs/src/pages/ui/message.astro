@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import MessageContent from "@ui/concepts/message.mdx";
-import MessageDemo, { MessageEndDemo } from "../../demos/message-demo";
-import demoSource from "../../demos/message-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { MessageDemo, MessageEndDemo } from "../../demos/message-demo";
 
 const title = "Message";
 const description = "Interactive Message demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Message</h1>
   <p>A chat row built from six presentational parts: the row, the avatar well, the content column, and the header and footer meta rows.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "MessageDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <MessageDemo client:load />
-  </Demo>
+
   <InstallSection entry="message" />
+
+  <Component heading="Playground" Demo={<MessageDemo />} code="MessageDemo"/>
+  <Component heading="Sent alignment" Demo={<MessageEndDemo />} code="MessageEndDemo">
+    <p>One prop mirrors the row for sent messages; no extra classes on the parts.</p>
+  </Component>
+
   <MessageContent />
-  <h2>Examples</h2>
-  <Demo id="demo-end" title="Sent alignment" code={demoCode(demoSource, "MessageEndDemo")} note="One prop mirrors the row for sent messages; no extra classes on the parts.">
-    <MessageEndDemo client:load />
-  </Demo>
 </MainLayout>

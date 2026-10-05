@@ -1,45 +1,13 @@
-## Usage
+## API
 
-`variant` picks between `default`, `destructive`, `outline`, `secondary`, `ghost`, and `link`; `size` between `default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, and `icon-lg`. The root carries `data-slot="button"`, `data-variant`, and `data-size`, and `aria-invalid` reflects the `ariaInvalid` prop:
+The root carries `data-slot="button"`, `data-variant`, and `data-size`, and `aria-invalid` reflects the `ariaInvalid` prop.
 
-### jsx
+### Button
 
-```jsx
-import Button from './components/button';
-
-const Actions = () => (
-  <div class="flex gap-2">
-    <Button onclick={() => console.log('saved')}>Save</Button>
-    <Button variant="outline">Cancel</Button>
-    <Button variant="destructive" size="sm">Delete</Button>
-    <Button size="icon" aria-label="Add">+</Button>
-  </div>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<div class="flex gap-2">
-  <${Button} onclick=${() => console.log('saved')}>Save</${Button}>
-  <${Button} variant="outline">Cancel</${Button}>
-  <${Button} variant="destructive" size="sm">Delete</${Button}>
-  <${Button} size="icon" aria-label="Add">+</${Button}>
-</div>`
-```
-
-## Invalid State
-
-`ariaInvalid` styles the border and focus ring with the destructive token, the treatment form-adjacent buttons get on failed validation:
-
-```jsx
-import { signal } from '@hellajs/core';
-import Button from './components/button';
-
-const hasError = signal(true);
-
-const Retry = () => (
-  <Button ariaInvalid={hasError()} onclick={() => hasError(false)}>Retry submit</Button>
-);
-```
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | `"default"` |
+| `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"default"` |
+| `ariaInvalid` | `boolean` | `-` |
+| `class` | `string` | `-` |
+| `onclick` | `() => void` | `-` |

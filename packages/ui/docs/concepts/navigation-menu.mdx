@@ -1,70 +1,98 @@
-## Usage
+## API
 
-Each trigger and content takes its active state as an accessor, and the owner signal sits in your component:
-
-### jsx
-
-```jsx
-import { signal } from '@hellajs/core';
-import NavigationMenu from './components/navigation-menu';
-import {
-  NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuTrigger,
-  NavigationMenuContent,
-  NavigationMenuLink,
-  NavigationMenuIndicator,
-} from './components/navigation-menu';
-
-const value = signal('');
-const toggle = (id) => value(value() === id ? '' : id);
-
-const Nav = () => (
-  <NavigationMenu>
-    <NavigationMenuList>
-      <NavigationMenuItem>
-        <NavigationMenuTrigger
-          value="learn"
-          active={() => value() === 'learn'}
-          onActivate={() => toggle('learn')}
-        >
-          Learn
-        </NavigationMenuTrigger>
-        <NavigationMenuContent active={() => value() === 'learn'}>
-          <NavigationMenuLink href="#intro">Introduction</NavigationMenuLink>
-        </NavigationMenuContent>
-      </NavigationMenuItem>
-    </NavigationMenuList>
-    <NavigationMenuViewport active={() => value() !== ''} />
-    <NavigationMenuIndicator active={() => value() !== ''} />
-  </NavigationMenu>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${NavigationMenu}>
-    <${NavigationMenuList}>
-      <${NavigationMenuItem}>
-        <${NavigationMenuTrigger} value=${"learn"}>Learn</${NavigationMenuTrigger}>
-      </${NavigationMenuItem}>
-    </${NavigationMenuList}>
-  </${NavigationMenu}>
-</main>`
-```
-
-| Root prop | Type | Behavior |
-|---|---|---|
-| `value` | `() => string` | Controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given |
-| `onValueChange` | `(value: string) => void` | Reports every store flip |
-| `viewport` | `boolean` | Renders the shared viewport slot as the last child (default `true`); set `false` to render `NavigationMenuViewport` manually |
-| `children` | `HellaChildren` | The list, viewport, and indicator |
-| `class` | `string` | Extra classes on the bar |
+Each trigger and content takes its active state as an accessor, and the owner signal sits in your component.
 
 Triggers carrying a `value` announce clicks on a document-level event, so the root's store and the appended viewport follow without extra wiring: the store is a mirror, never a second state owner. Rendering the indicator with no `active` or `anchor` props joins the same announcement stream and follows the active trigger automatically.
+
+Seven named parts ship beside the default `NavigationMenu`: `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink`, `NavigationMenuViewport`, and `NavigationMenuIndicator`.
+
+### NavigationMenu
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `() => string` | `-` |
+| `onValueChange` | `(value: string) => void` | `-` |
+| `viewport` | `boolean` | `true` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The list, viewport, and indicator |
+
+`value` is the controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given. `viewport={false}` renders no shared viewport slot, for manual `NavigationMenuViewport` placement.
+
+### NavigationMenuList
+
+The bar: a `ul` row of items.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The `NavigationMenuItem` slots |
+
+### NavigationMenuItem
+
+One `li` slot for one trigger plus its content.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The trigger and content pair |
+
+### NavigationMenuTrigger
+
+The bar button with the rotating chevron.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string` | `-` |
+| `active` | `() => boolean` | `-` |
+| `onActivate` | `() => void` | `-` |
+| `children` | `HellaChildren` | The trigger label |
+
+`value` names this trigger in the root's open-value store; clicks announce it when no `onActivate` stands in. `active` resolves the open state for `aria-expanded` and `data-state`.
+
+### NavigationMenuContent
+
+The panel; portals into the shared viewport slot while open.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `active` | `() => boolean` | `-` |
+| `viewport` | `string` | The first `[data-slot="navigation-menu-viewport"]` |
+| `onExited` | `() => void` | `-` |
+| `children` | `HellaChildren` | The panel content, typically `NavigationMenuLink` rows |
+
+`active` resolves the open state; manual wiring threads it from the owning signal. `viewport` is the portal target selector. `onExited` fires when the exit animation ends (entry ends are ignored).
+
+### NavigationMenuLink
+
+The in-panel link.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `active` | `boolean` | `-` |
+| `href` | `string` | `-` |
+| `children` | `HellaChildren` | The link label |
+
+`active` renders `data-active="true"` and its accent styles.
+
+### NavigationMenuViewport
+
+The absolute slot under the bar; `data-state` drives its enter and exit.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `active` | `() => boolean` | `-` |
+| `id` | `string` | `-` |
+
+`id` anchors manual content wiring: give the slot an id and pass `#<id>` as each content's `viewport` selector.
+
+### NavigationMenuIndicator
+
+The underline diamond; measures the active trigger and transitions between positions.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `active` | `() => boolean` | `-` |
+| `anchor` | `() => Element \| undefined` | The announced trigger |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ## Viewport and Indicator
 
@@ -73,75 +101,3 @@ Every `NavigationMenuContent` portals into the viewport slot (`[data-slot="navig
 Closing runs through the same exit budget as the menus: a closed panel stays mounted under `data-state="closed"` until its `animationend` (or the 250ms fallback) unmounts it, so a trigger swap animates the outgoing panel before the viewport releases it.
 
 For a second navigation menu on the same page, render `NavigationMenuViewport` manually with `viewport={false}`, give the slot an `id`, and pass `#<id>` as each content's `viewport` selector so panels land in their own slot.
-
-## Manual Parts
-
-Seven named parts ship beside the default `NavigationMenu`: `NavigationMenuList`, `NavigationMenuItem`, `NavigationMenuTrigger`, `NavigationMenuContent`, `NavigationMenuLink`, `NavigationMenuViewport`, and `NavigationMenuIndicator`.
-
-### NavigationMenuList
-
-The bar: a `ul` row of items.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | The `NavigationMenuItem` slots |
-
-### NavigationMenuItem
-
-One `li` slot for one trigger plus its content.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | The trigger and content pair |
-
-### NavigationMenuTrigger
-
-The bar button with the rotating chevron.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string` | This trigger's id in the root's open-value store; clicks announce it when no `onActivate` stands in |
-| `active` | `() => boolean` | Resolves the open state for `aria-expanded` and `data-state` |
-| `onActivate` | `() => void` | Click callback |
-| `children` | `HellaChildren` | The trigger label |
-
-### NavigationMenuContent
-
-The panel; portals into the shared viewport slot while open.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `active` | `() => boolean` | Resolves the open state; manual wiring threads it from the owning signal |
-| `viewport` | `string` | Portal target for the shared viewport slot; defaults to the first `[data-slot="navigation-menu-viewport"]` in the document |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"`; entry animation ends are ignored |
-| `children` | `HellaChildren` | The panel content, typically `NavigationMenuLink` rows |
-
-### NavigationMenuLink
-
-The in-panel link.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `active` | `boolean` | Renders `data-active="true"` and its accent styles |
-| `href` | `string` | Passthrough anchor target |
-| `children` | `HellaChildren` | The link label |
-
-### NavigationMenuViewport
-
-The absolute slot under the bar; `data-state` drives its enter and exit.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `active` | `() => boolean` | Resolves the open state for the viewport's enter/exit `data-state`; the composed root wires its own store |
-| `id` | `string` | Anchors manual content wiring: give the slot an id and pass `#<id>` as each content's `viewport` selector |
-
-### NavigationMenuIndicator
-
-The underline diamond; measures the active trigger and transitions between positions.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `active` | `() => boolean` | Resolves the visible state (any panel open); manual wiring threads it from the owning signal |
-| `anchor` | `() => Element \| undefined` | Resolves the trigger the indicator sits under; defaults to the trigger announced by the activation stream |
-
-Every part also takes a `class` string, landing last in its style composition.

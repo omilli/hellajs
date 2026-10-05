@@ -1,149 +1,100 @@
-## Usage
+## API
 
 The composed `Dialog` portals an overlay plus a centered panel into `document.body`: the caller owns an `open` accessor and an `onClose` callback, and the component wires the title, description, X close button, focus trap, and escape/outside dismissal around them.
 
-### jsx
-
-```jsx
-import { signal } from '@hellajs/core';
-import Dialog from './components/dialog';
-
-const isOpen = signal(false);
-const close = () => isOpen(false);
-
-const Confirm = () => (
-  <Dialog open={isOpen} onClose={close} title="Deploy to production" description="Ship the release to all regions?">
-    <p>This action cannot be undone.</p>
-    <button on:click={close}>Cancel</button>
-  </Dialog>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Dialog}
-    open=${isOpen}
-    onClose=${close}
-    title="Deploy to production"
-    description="Ship the release to all regions?"
-  >
-    <p>This action cannot be undone.</p>
-    <button on:click=${close}>Cancel</button>
-  </${Dialog}>
-</main>`
-```
-
-## Opening and Closing
-
-Flipping `open` true portals the overlay and panel with `data-state="open"`; flipping it false keeps the panel mounted under `data-state="closed"` until its exit animation ends, with the dismissal wirings down while it leaves. `onClose` never flips the signal for you: the callback exists so dismissal paths can ask you to close, so wire it to the signal write.
-
-| Prop | Default | Behavior |
-|---|---|---|
-| `title` | - | Optional string rendered as a wired `DialogTitle` (the panel's `aria-labelledby` target) |
-| `description` | - | Optional string rendered as a wired `DialogDescription` (the panel's `aria-describedby` target) |
-| `showCloseButton` | `true` | Renders the X close button in the panel's top-right corner |
-| `closeOnEscape` | `true` | Escape keydown while the panel is open calls `onClose` |
-| `closeOnOutside` | `true` | Pointerdown outside the panel (the overlay included) calls `onClose` |
-
-While the panel rests open it traps focus: Tab never leaves it, the first focusable child receives focus on open, and focus returns to the pre-open element on close. Pass `false` to a dismissal prop to hold the dialog open against that path - Escape and outside clicks then leave dismissal entirely to your own controls.
-
-## Manual Parts
-
 Seven named parts ship beside the default `Dialog` for custom composition: `DialogOverlay`, `DialogContent`, `DialogHeader`, `DialogFooter`, `DialogTitle`, `DialogDescription`, and `DialogClose`. State is explicit - portal the overlay and panel yourself and hand both a `state` accessor.
+
+### Dialog
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `open` | `Signal<boolean>` | `-` |
+| `onClose` | `() => void` | `-` |
+| `title` | `string` | `-` |
+| `description` | `string` | `-` |
+| `showCloseButton` | `boolean` | `true` |
+| `closeOnEscape` | `boolean` | `true` |
+| `closeOnOutside` | `boolean` | `true` |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The panel body |
+
+`title` renders as a wired `DialogTitle` (the panel's `aria-labelledby` target) and `description` as a wired `DialogDescription` (the `aria-describedby` target). `showCloseButton` renders the X close button in the panel's top-right corner.
 
 ### DialogOverlay
 
 The screen-covering backdrop `div` carrying `data-slot="dialog-overlay"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives the overlay's `data-state` and its enter/exit fade |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+
+`state` drives the overlay's `data-state` and its enter/exit fade.
 
 ### DialogClose
 
 The X button carrying `data-slot="dialog-close"` with its `sr-only` "Close" label.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives the button's `data-state` |
-| `onClose` | `() => void` | Click callback |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `onClose` | `() => void` | `-` |
 
 ### DialogContent
 
 The `role="dialog"` panel carrying `data-slot="dialog-content"`: focus trap plus escape and outside dismissal while open, torn down the moment the exit starts.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle; `closed` tears the dismissal wirings down |
-| `labelledBy` | `string` | Rendered as the panel's `aria-labelledby` |
-| `describedBy` | `string` | Rendered as the panel's `aria-describedby` |
-| `showCloseButton` | `boolean` | Renders the X button in the panel's top-right corner (default `true`) |
-| `closeOnEscape` | `boolean` | Escape keydown calls `onClose` (default `true`) |
-| `closeOnOutside` | `boolean` | Outside pointerdown calls `onClose` (default `true`) |
-| `onClose` | `() => void` | Dismissal and close-button callback |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `labelledBy` | `string` | `-` |
+| `describedBy` | `string` | `-` |
+| `showCloseButton` | `boolean` | `true` |
+| `closeOnEscape` | `boolean` | `true` |
+| `closeOnOutside` | `boolean` | `true` |
+| `onClose` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
 | `children` | `HellaChildren` | The panel body |
+
+`state` drives `data-state` and the enter/exit cycle; `closed` tears the dismissal wirings down. `labelledBy` and `describedBy` render as the panel's `aria-labelledby` and `aria-describedby`. `onClose` is the dismissal and close-button callback; `onExited` fires when the exit animation ends under `data-state="closed"`.
 
 ### DialogHeader
 
 The top grouping `div` carrying `data-slot="dialog-header"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title and description nodes |
 
 ### DialogFooter
 
 The bottom grouping `div` carrying `data-slot="dialog-footer"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | Action nodes, typically buttons |
 
 ### DialogTitle
 
 The heading: an `h2` carrying `data-slot="dialog-title"` whose `id` the panel's `aria-labelledby` points at.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `id` | `string` | Rendered as the heading's `id` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `id` | `string` | `-` |
 | `children` | `HellaChildren` | The title text |
 
 ### DialogDescription
 
 The supporting line: a `p` carrying `data-slot="dialog-description"` whose `id` the panel's `aria-describedby` points at.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `id` | `string` | Rendered as the paragraph's `id` |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `id` | `string` | `-` |
 | `children` | `HellaChildren` | The description text |
 
 Every part also takes a `class` string, landing last in its style composition.
 
-```jsx
-import { signal } from '@hellajs/core';
-import { Portal } from '@hellajs/dom';
-import Dialog, { DialogClose, DialogContent, DialogDescription, DialogOverlay, DialogTitle } from './components/dialog';
+## Opening and Closing
 
-const isOpen = signal(false);
-const state = () => (isOpen() ? 'open' : 'closed');
+Flipping `open` true portals the overlay and panel with `data-state="open"`; flipping it false keeps the panel mounted under `data-state="closed"` until its exit animation ends, with the dismissal wirings down while it leaves. `onClose` never flips the signal for you: the callback exists so dismissal paths can ask you to close, so wire it to the signal write.
 
-const Manual = () => (
-  <>
-    <button on:click={() => isOpen(true)}>Open</button>
-    {() => isOpen() && (
-      <Portal to="body">
-        <DialogOverlay state={state} />
-        <DialogContent state={state} onClose={() => isOpen(false)}>
-          <DialogTitle>Manually composed</DialogTitle>
-          <DialogDescription>Same wiring, your arrangement.</DialogDescription>
-          <DialogClose onClose={() => isOpen(false)} />
-        </DialogContent>
-      </Portal>
-    )}
-  </>
-);
-```
+While the panel rests open it traps focus: Tab never leaves it, the first focusable child receives focus on open, and focus returns to the pre-open element on close. Pass `false` to a dismissal prop to hold the dialog open against that path - Escape and outside clicks then leave dismissal entirely to your own controls.

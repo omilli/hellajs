@@ -1,53 +1,18 @@
-## Usage
+## API
 
-`value` accepts a plain string or a bare [`signal`](/reference/core/signal). A signal keeps the field in sync after mount, and `oninput` receives the typed string on every input event. The input carries `data-slot="input"` for targeting.
+The input carries `data-slot="input"` for targeting. `value` accepts a plain string or an accessor: an accessor keeps the field in sync after mount, and `oninput` receives the typed string on every input event.
 
-### jsx
+### Input
 
-```jsx
-import { signal } from '@hellajs/core';
-import Input from './components/input';
-
-const EmailField = () => {
-  const email = signal('');
-
-  return (
-    <Input
-      type="email"
-      placeholder="you@example.com"
-      ariaLabel="Email address"
-      value={email}
-      oninput={(v) => email(v)}
-    />
-  );
-};
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<${Input}
-  type="email"
-  placeholder="you@example.com"
-  ariaLabel="Email address"
-  value=${email}
-  oninput=${(v) => email(v)}
-/>`
-```
-
-## Invalid State
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string \| (() => string)` | `-` |
+| `type` | `string` | `-` |
+| `placeholder` | `string` | `-` |
+| `id` | `string` | `-` |
+| `ariaLabel` | `string` | `-` |
+| `ariaInvalid` | `boolean` | `-` |
+| `oninput` | `(value: string) => void` | `-` |
+| `class` | `string` | `-` |
 
 `ariaInvalid` drives the invalid state: the destructive border and ring on failed validation.
-
-```jsx
-import { signal } from '@hellajs/core';
-import Input from './components/input';
-
-const email = signal('');
-const submitted = signal(true);
-
-const Required = () => (
-  <Input placeholder="Required field" ariaInvalid={submitted() && email() === ''} />
-);
-```

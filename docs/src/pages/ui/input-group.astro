@@ -1,30 +1,28 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import InputGroupContent from "@ui/concepts/input-group.mdx";
-import InputGroupDemo, { InputGroupColumnDemo, InputGroupRingsDemo } from "../../demos/input-group-demo";
-import demoSource from "../../demos/input-group-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { InputGroupDemo, InputGroupRingsDemo, InputGroupColumnDemo } from "../../demos/input-group-demo";
 
 const title = "Input Group";
 const description = "Interactive Input Group demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Input Group</h1>
   <p>A wrapper that joins an input or textarea with buttons, text, and dropdowns under one border: the group owns the focus and invalid rings, while the control itself strips its own ring.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "InputGroupDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <InputGroupDemo client:load />
-  </Demo>
+
   <InstallSection entry="input-group" />
+
+  <Component heading="Playground" Demo={<InputGroupDemo />} code="InputGroupDemo"/>
+  <Component heading="Focus and invalid rings" Demo={<InputGroupRingsDemo />} code="InputGroupRingsDemo">
+    <p>The group owns both rings: focusing the control lights the composite up, and aria-invalid turns the border destructive.</p>
+  </Component>
+  <Component heading="Column composite" Demo={<InputGroupColumnDemo />} code="InputGroupColumnDemo">
+    <p>Block alignments stack the group into a column around the control.</p>
+  </Component>
+
   <InputGroupContent />
-  <h2>Examples</h2>
-  <Demo id="demo-rings" title="Focus and invalid rings" code={demoCode(demoSource, "InputGroupRingsDemo")} note="The group owns both rings: focusing the control lights the composite up, and aria-invalid turns the border destructive.">
-    <InputGroupRingsDemo client:load />
-  </Demo>
-  <Demo id="demo-column" title="Column composite" code={demoCode(demoSource, "InputGroupColumnDemo")} note="Block alignments stack the group into a column around the control.">
-    <InputGroupColumnDemo client:load />
-  </Demo>
 </MainLayout>

@@ -1,10 +1,9 @@
 
 import { Bubble, BubbleContent, BubbleGroup, BubbleReactions } from "@registry/bubble/css/bubble.js";
-import { stack } from "./demo-kit";
 
-export default function BubbleDemo() {
+export function BubbleDemo() {
   return (
-    <div class={stack}>
+    <>
       <BubbleGroup>
         <Bubble><BubbleContent>Default</BubbleContent></Bubble>
         <Bubble variant="secondary"><BubbleContent>Secondary</BubbleContent></Bubble>
@@ -14,13 +13,13 @@ export default function BubbleDemo() {
         <Bubble variant="ghost"><BubbleContent>Ghost</BubbleContent></Bubble>
         <Bubble variant="destructive"><BubbleContent>Destructive</BubbleContent></Bubble>
       </BubbleGroup>
-    </div>
+    </>
   );
 }
 
 export function BubbleReactionsDemo() {
   return (
-    <div class={stack}>
+    <>
       <Bubble variant="muted">
         <BubbleContent>Shipping the demo today.</BubbleContent>
         <BubbleReactions side="bottom" align="end">
@@ -28,6 +27,6 @@ export function BubbleReactionsDemo() {
           <button>🎉 1</button>
         </BubbleReactions>
       </Bubble>
-    </div>
+    </>
   );
 }

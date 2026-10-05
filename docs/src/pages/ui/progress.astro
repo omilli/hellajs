@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import ProgressContent from "@ui/concepts/progress.mdx";
-import ProgressDemo, { ProgressIndeterminateDemo } from "../../demos/progress-demo";
-import demoSource from "../../demos/progress-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { ProgressDemo, ProgressIndeterminateDemo } from "../../demos/progress-demo";
 
 const title = "Progress";
 const description = "Interactive Progress demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Progress</h1>
-  <p>A `role="progressbar"` track whose indicator fills from 0 to 100 through an inline transform, with an indeterminate state driven by a null value.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ProgressDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <ProgressDemo client:load />
-  </Demo>
+  <p>A role="progressbar" track whose indicator fills from 0 to 100 through an inline transform, with an indeterminate state driven by a null value.</p>
+
   <InstallSection entry="progress" />
+
+  <Component heading="Playground" Demo={<ProgressDemo />} code="ProgressDemo"/>
+  <Component heading="Indeterminate" Demo={<ProgressIndeterminateDemo />} code="ProgressIndeterminateDemo">
+    <p>A null value drives the indeterminate sweep; 100 and above report complete.</p>
+  </Component>
+
   <ProgressContent />
-  <h2>Examples</h2>
-  <Demo id="demo-indeterminate" title="Indeterminate" code={demoCode(demoSource, "ProgressIndeterminateDemo")} note="A null value drives the indeterminate sweep; 100 and above report complete.">
-    <ProgressIndeterminateDemo client:load />
-  </Demo>
 </MainLayout>

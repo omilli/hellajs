@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import TableContent from "@ui/concepts/table.mdx";
-import TableDemo, { TableWideDemo } from "../../demos/table-demo";
-import demoSource from "../../demos/table-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { TableDemo, TableWideDemo } from "../../demos/table-demo";
 
 const title = "Table";
 const description = "Interactive Table demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Table</h1>
   <p>Seven semantic table parts wrapped in an overflow container, so wide tables scroll horizontally instead of breaking the page.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "TableDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <TableDemo client:load />
-  </Demo>
+
   <InstallSection entry="table" />
+
+  <Component heading="Playground" Demo={<TableDemo />} code="TableDemo"/>
+  <Component heading="Wide tables scroll" Demo={<TableWideDemo />} code="TableWideDemo">
+    <p>Table renders the overflow container, so more columns than the frame fits scroll horizontally instead of breaking the page.</p>
+  </Component>
+
   <TableContent />
-  <h2>Examples</h2>
-  <Demo id="demo-wide" title="Wide tables scroll" code={demoCode(demoSource, "TableWideDemo")} note="Table renders the overflow container, so more columns than the frame fits scroll horizontally instead of breaking the page.">
-    <TableWideDemo client:load />
-  </Demo>
 </MainLayout>

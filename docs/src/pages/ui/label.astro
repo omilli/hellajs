@@ -1,27 +1,25 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import LabelContent from "@ui/concepts/label.mdx";
-import LabelDemo, { LabelDisabledDemo } from "../../demos/label-demo";
-import demoSource from "../../demos/label-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import { LabelDemo, LabelDisabledDemo } from "../../demos/label-demo";
 
 const title = "Label";
 const description = "Interactive Label demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Label</h1>
   <p>A form-field caption: the semantic label element with a for passthrough, plus group- and peer-driven disabled styles.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "LabelDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <LabelDemo client:load />
-  </Demo>
+
   <InstallSection entry="label" />
+
+  <Component heading="Playground" Demo={<LabelDemo />} code="LabelDemo"/>
+  <Component heading="Disabled group" Demo={<LabelDisabledDemo />} code="LabelDisabledDemo">
+    <p>Inside .group[data-disabled=true] the caption dims and drops pointer events; no props needed.</p>
+  </Component>
+
   <LabelContent />
-  <h2>Examples</h2>
-  <Demo id="demo-disabled" title="Disabled group" code={demoCode(demoSource, "LabelDisabledDemo")} note="Inside .group[data-disabled=true] the caption dims and drops pointer events; no props needed.">
-    <LabelDisabledDemo client:load />
-  </Demo>
 </MainLayout>

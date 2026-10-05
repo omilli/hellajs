@@ -2,7 +2,6 @@ import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { hoverIntent, Portal } from "@hellajs/dom";
 import HoverCard, { HoverCardContent, HoverCardTrigger } from "@registry/hover-card/css/hover-card.js";
-import { stack } from "./demo-kit";
 
 
 
@@ -13,9 +12,9 @@ const cardBody = style({
   gap: "0.25rem",
 }, { label: "demo-card-body" });
 
-export default function HoverCardDemo() {
+export function HoverCardDemo() {
   return (
-    <div class={stack}>
+    <>
       <HoverCard content={
         <div class={cardBody}>
           <strong>@hella</strong>
@@ -24,7 +23,7 @@ export default function HoverCardDemo() {
       }>
         <a href="#profile" on:click={(e: Event) => e.preventDefault()}>@hella</a>
       </HoverCard>
-    </div>
+    </>
   );
 }
 
@@ -34,7 +33,7 @@ export function HoverCardManualDemo() {
   let trigger: Element | undefined;
 
   return (
-    <div class={stack}>
+    <>
       <HoverCardTrigger
         hook:afterMount={(node: Element) => {
           trigger = node;
@@ -60,6 +59,6 @@ export function HoverCardManualDemo() {
           </HoverCardContent>
         </Portal>
       )}
-    </div>
+    </>
   );
 }

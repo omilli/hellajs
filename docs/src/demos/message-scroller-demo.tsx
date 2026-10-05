@@ -2,7 +2,6 @@ import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
 import { MessageScroller, MessageScrollerItem } from "@registry/message-scroller/css/message-scroller.js";
 import { Bubble } from "@registry/bubble/css/bubble.js";
-import { stack } from "./demo-kit";
 
 
 
@@ -29,7 +28,7 @@ const sendButton = style({
   width: "fit-content",
 }, { label: "demo-send-button" });
 
-export default function MessageScrollerDemo() {
+export function MessageScrollerDemo() {
   const messages = signal(["First message", "Second message", "Third message"]);
   let counter = 3;
 
@@ -39,7 +38,7 @@ export default function MessageScrollerDemo() {
   };
 
   return (
-    <div class={stack}>
+    <>
       <div class={frame}>
         <MessageScroller class={fill}>
           {() => messages().map((text) => (
@@ -50,7 +49,7 @@ export default function MessageScrollerDemo() {
         </MessageScroller>
         <button class={sendButton} on:click={send}>Add a message</button>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -58,7 +57,7 @@ export function MessageScrollerJumpDemo() {
   const atBottom = signal(false);
 
   return (
-    <div class={stack}>
+    <>
       <div class={frame}>
         <MessageScroller atBottom={atBottom} class={fill}>
           <MessageScrollerItem><Bubble variant="outline">Older message one</Bubble></MessageScrollerItem>
@@ -71,6 +70,6 @@ export function MessageScrollerJumpDemo() {
           <MessageScrollerItem><Bubble variant="outline">Newest message</Bubble></MessageScrollerItem>
         </MessageScroller>
       </div>
-    </div>
+    </>
   );
 }

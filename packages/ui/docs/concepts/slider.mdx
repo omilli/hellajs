@@ -1,81 +1,23 @@
-## Usage
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `number[] \| (() => number[])` | Uncontrolled seed array or controlled accessor (see below) |
-| `onValueChange` | `(value: number[]) => void` | Fires with the full value array after every accepted drag or keyboard move |
-| `onValueCommit` | `(value: number[]) => void` | Fires when an interaction ends: drag release and each accepted keyboard change |
-| `min` | `number` | Lower bound (default `0`) |
-| `max` | `number` | Upper bound (default `100`) |
-| `step` | `number` | Value increment (default `1`) |
-| `orientation` | `"horizontal" \| "vertical"` | Layout and value axis (default `"horizontal"`) |
-| `disabled` | `boolean` | Blocks drags and keys, renders the disabled data attribute |
-| `minStepsBetweenThumbs` | `number` | Minimum step gap enforced between neighboring thumbs |
-| `class` | `string` | Lands on the root next to the component class |
-
-### jsx
-
-```jsx
-import Slider from './components/slider';
-
-const Volume = () => (
-  <Slider value={[40]} />
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Slider} value=${[40]} />
-</main>`
-```
+## API
 
 The track is a span, the range a second span, and each value one thumb span; pointerdown selects the nearest thumb, pointer movement maps track position to a stepped value through [`onDrag`](/reference/dom/ondrag), and values render as reactive inline styles.
 
-## Controlled and Uncontrolled
+### Slider
 
-Without `value`, the slider owns an internal signal seeded from the array you pass and writes every accepted move into it. Pass an accessor and the slider becomes controlled: drags and keys report through `onValueChange` without writing state, so a parent signal decides what sticks.
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `number[] \| (() => number[])` | `[min, max]` |
+| `onValueChange` | `(value: number[]) => void` | `-` |
+| `onValueCommit` | `(value: number[]) => void` | `-` |
+| `min` | `number` | `0` |
+| `max` | `number` | `100` |
+| `step` | `number` | `1` |
+| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
+| `disabled` | `boolean` | `-` |
+| `minStepsBetweenThumbs` | `number` | `-` |
+| `class` | `string` | `-` |
 
-```jsx
-import { signal } from '@hellajs/core';
-import Slider from './components/slider';
-
-const volume = signal(40);
-
-const Controlled = () => (
-  <Slider
-    value={volume}
-    onValueChange={(next) => volume(next[0])}
-  />
-);
-```
-
-The accessor must read a signal (or other reactive source) for updates to propagate; a plain array read never invalidates the rendered positions.
-
-## Multiple Thumbs
-
-The value array length is the thumb count: `[25, 75]` renders two thumbs and the range span stretches between them. A pointerdown grabs whichever thumb sits nearest the pointer, then drags it; `minStepsBetweenThumbs` clamps the dragged value so neighbors keep at least that many steps of separation.
-
-```jsx
-import { signal } from '@hellajs/core';
-import Slider from './components/slider';
-
-const range = signal([25, 75]);
-
-const PriceRange = () => (
-  <Slider
-    value={range}
-    min={0}
-    max={100}
-    minStepsBetweenThumbs={5}
-    onValueChange={(next) => range([...next])}
-  />
-);
-```
-
-With no `value` prop the slider renders a fallback pair spanning `min` to `max`. The thumb count is fixed at mount: value updates move the thumbs but never add or remove them.
+Without `value`, the slider owns an internal signal seeded from the array you pass and writes every accepted move into it. Pass an accessor and the slider becomes controlled: drags and keys report through `onValueChange` without writing state, so a parent signal decides what sticks. The accessor must read a signal (or other reactive source) for updates to propagate; a plain array read never invalidates the rendered positions. `onValueCommit` fires when an interaction ends: drag release and each accepted keyboard change. `minStepsBetweenThumbs` clamps the dragged value so neighbors keep at least that many steps of separation. The value array length is the thumb count; the thumb count is fixed at mount.
 
 ## Keyboard
 

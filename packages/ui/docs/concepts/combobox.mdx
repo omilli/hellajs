@@ -1,57 +1,211 @@
-## Usage
+## API
 
 The composed `Combobox` takes its options as data and renders the input shell plus the portaled panel: focusing the input opens the panel, typing filters it. The copied file carries its input-group shell inline (the entry never cross-imports) and wires its positioning, dismissal, and typeahead from the `@hellajs/dom` behavior functions.
 
-### jsx
-
-```jsx
-import Combobox from './components/combobox';
-
-const fruits = [
-  { value: 'apple', label: 'Apple' },
-  { value: 'blueberry', label: 'Blueberry' },
-  { value: 'canteloupe', label: 'Canteloupe' },
-];
-
-const FruitPicker = () => (
-  <Combobox items={fruits} placeholder="Search fruit" onValueChange={(value) => console.log(value)} />
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${Combobox}
-    items=${fruits}
-    placeholder="Search fruit"
-  />
-</main>`
-```
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `items` | `{ value, label?, disabled? }[]` | Options rendered in order; each entry is one row, tabled under Items |
-| `value` | `() => string \| string[]` | Controlled selection accessor; a string in single mode, an array in multiple mode. When given, the root never writes its internal signal |
-| `onValueChange` | `(value: string \| string[]) => void` | Reports the requested selection (string, or array in multiple mode) |
-| `multiple` | `boolean` | Toggles values in and out of an array and renders removable chips |
-| `placeholder` | `string` | The input's placeholder text |
-| `filter` | `(items, query) => ComboboxEntry[]` | Replaces the default case-insensitive substring filter |
-| `showClear` | `boolean` | Renders the panel's clear affordance while a value is selected (single mode) |
-| `class` | `string` | Extra classes on the input wrapper |
-
 The input always shows the query, never the selection: the selected value lives in `onValueChange` (render it through `ComboboxValue` where needed). The combobox submits nothing by itself; pair it with `native-select` (or a hidden input of your own) when a form needs the value.
 
-## Items
+### Combobox
 
-Each entry in the `items` array is one option:
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `items` | `ComboboxEntry[]` | `-` |
+| `value` | `() => string \| string[]` | `-` |
+| `onValueChange` | `(value: string \| string[]) => void` | `-` |
+| `multiple` | `boolean` | `-` |
+| `placeholder` | `string` | `-` |
+| `filter` | `(items, query) => ComboboxEntry[]` | Case-insensitive substring |
+| `showClear` | `boolean` | `-` |
+| `class` | `string` | `-` |
 
-| Field | Type | Behavior |
-|---|---|---|
-| `value` | `string` | Selection identity: reported through `onValueChange`, matched against the controlled `value`, and rendered as the option's `data-value` |
-| `label` | `string` | The option's text and its filter target; filtering falls back to the value when a label is missing |
-| `disabled` | `boolean` | Skipped by roving and typeahead, unclickable, and rendered with `aria-disabled` plus `data-disabled` |
+### ComboboxEntry
+
+Each entry in the `items` array is one option.
+
+| Field | Type | Default |
+| ----- | ---- | ------- |
+| `value` | `string` | `-` |
+| `label` | `string` | `-` |
+| `disabled` | `boolean` | `-` |
+
+`value` is the selection identity (reported through `onValueChange`, matched against the controlled `value`, rendered as `data-value`); `label` is the option's text and filter target, falling back to the value when missing; `disabled` entries are skipped by roving and typeahead, unclickable, and rendered with `aria-disabled` plus `data-disabled`.
+
+### ComboboxTrigger
+
+The manual trigger button; the composed root renders its chevron twin inside the input-group addon.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `onclick` | `() => void` | `-` |
+| `disabled` | `boolean` | `-` |
+| `children` | `HellaChildren` | The trigger label |
+
+### ComboboxInput
+
+The input-group shell with the chevron toggle and clear addons, carrying the combobox aria wiring.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string \| (() => string)` | `-` |
+| `placeholder` | `string` | `-` |
+| `onInput` | `(value: string) => void` | `-` |
+| `onKeydown` | `(e: KeyboardEvent) => void` | `-` |
+| `onFocus` | `() => void` | `-` |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `ariaControls` | `string` | `-` |
+| `activeDescendant` | `() => string \| undefined` | `-` |
+| `showTrigger` | `boolean` | `-` |
+| `showClear` | `boolean` | `-` |
+| `onToggle` | `() => void` | `-` |
+| `onClear` | `() => void` | `-` |
+| `hasValue` | `() => boolean` | `-` |
+| `wire` | `(node) => () => void` | `-` |
+| `portal` | `() => HellaChildren` | `-` |
+
+### ComboboxContent
+
+The positioned panel surface.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `id` | `string` | `-` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
+| `align` | `"start" \| "center" \| "end"` | `"start"` |
+| `sideOffset` | `number` | `6` |
+| `anchor` | `() => Element \| undefined` | `-` |
+| `chips` | `boolean` | `-` |
+| `empty` | `() => boolean` | `-` |
+| `onDismiss` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
+| `children` | `HellaChildren` | The list and static chrome |
+
+### ComboboxList
+
+The `role="listbox"` rendering one `ComboboxItem` per entry, hidden in place as the query filters.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `items` | `ComboboxEntry[]` | `-` |
+| `query` | `() => string` | `-` |
+| `filter` | `(items, query) => ComboboxEntry[]` | Case-insensitive substring |
+| `selected` | `(value: string) => boolean` | `-` |
+| `active` | `() => string \| undefined` | `-` |
+| `onselect` | `(value: string) => void` | `-` |
+| `empty` | `() => boolean` | `-` |
+| `id` | `string` | `-` |
+| `children` | `HellaChildren` | Static children such as `ComboboxEmpty` |
+
+### ComboboxItem
+
+One `role="option"` row with the check indicator and the highlight ring.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string` | `-` |
+| `label` | `string` | `-` |
+| `selected` | `boolean \| (() => boolean)` | `-` |
+| `highlighted` | `boolean \| (() => boolean)` | `-` |
+| `hidden` | `() => boolean` | `-` |
+| `onselect` | `() => void` | `-` |
+| `id` | `string` | `-` |
+| `disabled` | `boolean` | `-` |
+
+### ComboboxGroup
+
+A passthrough grouping `div`.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The grouped items |
+
+### ComboboxLabel
+
+A section label inside a group.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The label text |
+
+### ComboboxCollection
+
+A passthrough wrapper grouping items rendered from external data.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The collected items |
+
+### ComboboxEmpty
+
+The zero-match row; the composed root mounts it with its default text.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `children` | `HellaChildren` | The empty-state text |
+
+### ComboboxSeparator
+
+A hairline between groups.
+
+### ComboboxValue
+
+The selected value for compositions that show the selection outside the input.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string \| string[] \| (() => string \| string[] \| undefined)` | `-` |
+
+An array joins with `", "`.
+
+### ComboboxClear
+
+The clear affordance, styled as the input-group's ghost icon-xs button.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `onClear` | `() => void` | `-` |
+| `disabled` | `boolean` | `-` |
+
+### ComboboxChips
+
+The multiple-mode chips wrapper; anchors the panel in chips compositions.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `chips` | `() => HellaChildren` | `-` |
+| `wire` | `(node) => () => void` | `-` |
+| `portal` | `() => HellaChildren` | `-` |
+| `disabled` | `boolean` | `-` |
+| `children` | `HellaChildren` | Static chips wrapper content |
+
+### ComboboxChip
+
+One selected-value chip with its remove button.
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string` | `-` |
+| `showRemove` | `boolean` | `true` |
+| `onRemove` | `() => void` | `-` |
+| `children` | `HellaChildren` | The chip label |
+| `disabled` | `boolean` | `-` |
+
+### ComboboxChipsInput
+
+The chips-mode input: the input-group shell without the toggle and clear addons (the chips wrapper carries them).
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string \| (() => string)` | `-` |
+| `placeholder` | `string` | `-` |
+| `onInput` | `(value: string) => void` | `-` |
+| `onKeydown` | `(e: KeyboardEvent) => void` | `-` |
+| `onFocus` | `() => void` | `-` |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `ariaControls` | `string` | `-` |
+| `activeDescendant` | `() => string \| undefined` | `-` |
+| `id` | `string` | `-` |
+
+Every part also takes a `class` string, landing last in its style composition.
 
 ## Filtering
 
@@ -77,226 +231,3 @@ The input keeps focus the whole time (`role="combobox"`): ArrowDown and ArrowUp 
 In single mode, Enter closes the panel and clears the query. In `multiple` mode, Enter toggles the active value in or out of the array and the panel stays open; each selected value renders as a `ComboboxChip` whose remove button toggles it back out. `showClear` adds a clear affordance that wipes the whole selection.
 
 Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the wrapper close the top layer. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves. The panel positions itself through [`anchorPosition`](/reference/dom/anchorposition) with `matchAnchorWidth`, anchored to the input wrapper (the chips wrapper in multiple mode), flipping sides on viewport collision.
-
-## Manual Parts
-
-Fifteen named parts ship beside the default `Combobox`: `ComboboxTrigger`, `ComboboxInput`, `ComboboxContent`, `ComboboxList`, `ComboboxItem`, `ComboboxGroup`, `ComboboxLabel`, `ComboboxCollection`, `ComboboxEmpty`, `ComboboxSeparator`, `ComboboxValue`, `ComboboxClear`, `ComboboxChips`, `ComboboxChip`, and `ComboboxChipsInput`. Manual composition passes state explicitly: the list takes the items plus query, selection, and active resolvers; the input takes the aria wiring; the anchor threads to the wrapper node by hand (`anchor={() => wrapperNode}`).
-
-### ComboboxTrigger
-
-The manual trigger button; the composed root renders its chevron twin inside the input-group addon.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `onclick` | `() => void` | Click callback |
-| `disabled` | `boolean` | Native `disabled` attribute |
-| `children` | `HellaChildren` | The trigger label |
-
-### ComboboxInput
-
-The input-group shell with the chevron toggle and clear addons, carrying the combobox aria wiring.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string \| (() => string)` | The query text; an accessor keeps it reactive |
-| `placeholder` | `string` | The input's placeholder text |
-| `onInput` | `(value: string) => void` | Query change callback (delegated input event) |
-| `onKeydown` | `(e: KeyboardEvent) => void` | Keydown handler owning the keyboard model |
-| `onFocus` | `() => void` | Focus handler; the composed root opens on focus |
-| `state` | `() => "open" \| "closed"` | Resolves open state for `aria-expanded` |
-| `ariaControls` | `string` | The listbox id, rendered as `aria-controls` |
-| `activeDescendant` | `() => string \| undefined` | Resolves the active option id for `aria-activedescendant` |
-| `showTrigger` | `boolean` | Renders the chevron toggle addon |
-| `showClear` | `boolean` | Renders the clear addon while `hasValue` resolves truthy |
-| `onToggle` | `() => void` | Chevron toggle callback |
-| `onClear` | `() => void` | Clear callback |
-| `hasValue` | `() => boolean` | Resolves whether a value is selected (drives the clear addon) |
-| `wire` | `(node) => () => void` | Wires the wrapper on mount and returns its dispose; the composed root anchors the panel here and attaches typeahead |
-| `portal` | `() => HellaChildren` | The portaled panel, mounted while open inside the wrapper |
-
-### ComboboxContent
-
-The positioned panel surface.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle |
-| `id` | `string` | Panel id |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | Anchor placement (default `"bottom"`) |
-| `align` | `"start" \| "center" \| "end"` | Cross-axis alignment (default `"start"`) |
-| `sideOffset` | `number` | Gap between the anchor and the content edge, in px (default 6) |
-| `anchor` | `() => Element \| undefined` | Resolves the element the content anchors to (the input wrapper); positioning is skipped when undefined |
-| `chips` | `boolean` | Sets `data-chips="true"` (chips-composition width styling) |
-| `empty` | `() => boolean` | Zero-match flag; drives `data-empty` styling |
-| `onDismiss` | `() => void` | Escape and an outside pointerdown dismiss the top layer into this callback |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
-| `children` | `HellaChildren` | The list and static chrome |
-
-### ComboboxList
-
-The `role="listbox"` rendering one `ComboboxItem` per entry, hidden in place as the query filters.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `items` | `ComboboxEntry[]` | Data-driven options, rendered once and hidden (never remounted) as the query filters |
-| `query` | `() => string` | Resolves the live query driving the filter |
-| `filter` | `(items, query) => ComboboxEntry[]` | Replaces the default case-insensitive substring filter |
-| `selected` | `(value: string) => boolean` | Drives `aria-selected`, `data-state`, and the check icon |
-| `active` | `() => string \| undefined` | Resolves the highlighted value (`data-highlighted`, the `aria-activedescendant` target) |
-| `onselect` | `(value: string) => void` | Called on item click with the item value |
-| `empty` | `() => boolean` | Zero-match flag; drives `data-empty` styling |
-| `id` | `string` | Listbox id; per-option ids derive from it |
-| `children` | `HellaChildren` | Static children such as `ComboboxEmpty` |
-
-### ComboboxItem
-
-One `role="option"` row with the check indicator and the highlight ring.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string` | Rendered as the row's `data-value` |
-| `label` | `string` | The option's text node |
-| `selected` | `boolean \| (() => boolean)` | Drives `aria-selected`, `data-state`, and the check icon |
-| `highlighted` | `boolean \| (() => boolean)` | Drives the `data-highlighted` ring |
-| `hidden` | `() => boolean` | Hides the item (filtered out); a reactive accessor keeps it live against the query |
-| `onselect` | `() => void` | Called on click when the item is enabled |
-| `id` | `string` | Option id; the input's `aria-activedescendant` points at it |
-| `disabled` | `boolean` | `aria-disabled` plus `data-disabled`; skipped by roving and typeahead |
-
-### ComboboxGroup
-
-A passthrough grouping `div`.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | The grouped items |
-
-### ComboboxLabel
-
-A section label inside a group.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | The label text |
-
-### ComboboxCollection
-
-A passthrough wrapper grouping items rendered from external data.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | The collected items |
-
-### ComboboxEmpty
-
-The zero-match row; the composed root mounts it with its default text.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `children` | `HellaChildren` | The empty-state text |
-
-### ComboboxSeparator
-
-A hairline between groups.
-
-### ComboboxValue
-
-The selected value for compositions that show the selection outside the input.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string \| string[] \| (() => string \| string[] \| undefined)` | The displayed selection; an accessor keeps it reactive, an array joins with `", "` |
-
-### ComboboxClear
-
-The clear affordance, styled as the input-group's ghost icon-xs button.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `onClear` | `() => void` | Called on click; the composed root wipes the selection |
-| `disabled` | `boolean` | Native `disabled` attribute |
-
-### ComboboxChips
-
-The multiple-mode chips wrapper; anchors the panel in chips compositions.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `chips` | `() => HellaChildren` | Reactive chips; a thunk so the selected-values map stays a single reactive child |
-| `wire` | `(node) => () => void` | Wires the chips wrapper on mount and returns its dispose; anchors the panel here |
-| `portal` | `() => HellaChildren` | The portaled panel, mounted while open inside the wrapper |
-| `disabled` | `boolean` | Renders `data-disabled="true"` on the wrapper |
-| `children` | `HellaChildren` | Static chips wrapper content |
-
-### ComboboxChip
-
-One selected-value chip with its remove button.
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string` | The chip's value |
-| `showRemove` | `boolean` | Renders the remove button (default true) |
-| `onRemove` | `() => void` | Remove-button callback; toggles the value back out |
-| `children` | `HellaChildren` | The chip label |
-| `disabled` | `boolean` | `data-disabled="true"` on the chip and the native `disabled` attribute on its remove button |
-
-### ComboboxChipsInput
-
-The chips-mode input: the input-group shell without the toggle and clear addons (the chips wrapper carries them).
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string \| (() => string)` | The query text; an accessor keeps it reactive |
-| `placeholder` | `string` | The input's placeholder text |
-| `onInput` | `(value: string) => void` | Query change callback (delegated input event) |
-| `onKeydown` | `(e: KeyboardEvent) => void` | Keydown handler owning the keyboard model |
-| `onFocus` | `() => void` | Focus handler; the composed root opens on focus |
-| `state` | `() => "open" \| "closed"` | Resolves open state for `aria-expanded` |
-| `ariaControls` | `string` | The listbox id, rendered as `aria-controls` |
-| `activeDescendant` | `() => string \| undefined` | Resolves the active option id for `aria-activedescendant` |
-| `id` | `string` | Input id |
-
-Every part also takes a `class` string, landing last in its style composition.
-
-```jsx
-import { signal } from '@hellajs/core';
-import { Portal } from '@hellajs/dom';
-import { ComboboxContent, ComboboxList, ComboboxItem } from './components/combobox';
-
-const Manual = () => {
-  const query = signal('');
-  const current = signal('');
-  let wrapper;
-
-  return (
-    <div hook:afterMount={(node) => { wrapper = node; }}>
-      <input
-        role="combobox"
-        value={query}
-        on:input={(event) => query(event.target.value)}
-      />
-      {() => (
-        <Portal to="body">
-          <ComboboxContent anchor={() => wrapper} onDismiss={() => query('')}>
-            <ComboboxList
-              items={fruits}
-              query={query}
-              selected={(value) => current() === value}
-              active={current}
-              onselect={(value) => { current(value); query(''); }}
-            />
-          </ComboboxContent>
-        </Portal>
-      )}
-    </div>
-  );
-};
-```
-
-| Attribute | Where | Purpose |
-|---|---|---|
-| `role="combobox"` / `aria-expanded` / `aria-controls` / `aria-activedescendant` / `aria-autocomplete` | input | Combobox semantics; the active option is referenced by id |
-| `role="listbox"` / `data-empty` | list | Options container; zero-match styling hook |
-| `role="option"` / `aria-selected` / `data-state` / `data-highlighted` | item | Option semantics, the check indicator, and the active ring |
-| `data-disabled` / `aria-disabled` | item | Skipped by roving and typeahead, unclickable |
-| `data-chips` | content | Panel width styling in chips mode |

@@ -1,23 +1,12 @@
 import { signal } from "@hellajs/core";
-import { style } from "@hellajs/css";
 import Button from "@registry/button/css/button.js";
 import Tooltip, { TooltipContent, TooltipTrigger } from "@registry/tooltip/css/tooltip.js";
 import { hoverIntent, Portal } from "@hellajs/dom";
-import { row } from "./demo-kit";
 
-const stack = style({
-  alignItems: "center",
-  display: "flex",
-  flexDirection: "column",
-  gap: "1rem",
-});
-
-
-
-export default function TooltipDemo() {
+export function TooltipDemo() {
   return (
-    <div class={stack}>
-      <div class={row}>
+    <>
+      <div class="demo-row">
         <Tooltip content="Saves every pending change" delayDuration={100} side="top">
           <Button>Hover: top</Button>
         </Tooltip>
@@ -25,7 +14,7 @@ export default function TooltipDemo() {
           <Button variant="outline">Hover: bottom-start</Button>
         </Tooltip>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -35,7 +24,7 @@ export function TooltipManualDemo() {
   let trigger: Element | undefined;
 
   return (
-    <div class={stack}>
+    <>
       <TooltipTrigger
         describedBy="manual-tooltip-content"
         hook:afterMount={(node: Element) => {
@@ -56,6 +45,6 @@ export function TooltipManualDemo() {
           </TooltipContent>
         </Portal>
       )}
-    </div>
+    </>
   );
 }

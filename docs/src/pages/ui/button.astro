@@ -1,30 +1,32 @@
 ---
 import MainLayout from "../../layouts/MainLayout.astro";
 import InstallSection from "../../components/InstallSection.astro";
-import Demo from "../../components/Demo.astro";
 import ButtonContent from "@ui/concepts/button.mdx";
-import ButtonDemo, { ButtonInvalidDemo, ButtonOverrideDemo } from "../../demos/button-demo";
-import demoSource from "../../demos/button-demo.tsx?raw";
-import { demoCode } from "../../utils/demo-code";
+import Component from "../../components/Component.astro";
+
+import {
+  ButtonVariants,
+  ButtonSizes,
+  ButtonRounded,
+  ButtonIcon,
+  ButtonWithIcon
+} from "../../demos/button-demo"
 
 const title = "Button";
 const description = "Interactive Button demo running the site's built registry source via an Astro island, with install and per-style usage from the package docs.";
-
 ---
 
 <MainLayout frontmatter={{ title, description }}>
   <h1>Button</h1>
   <p>An interactive trigger: six variants, eight sizes, an aria-invalid state, and onclick wiring through dom's delegated event system.</p>
-  <Demo id="demo" title="Playground" code={demoCode(demoSource, "ButtonDemo", { withImports: true })} note="View Code shows the playground's imports and the exact component this demo runs.">
-    <ButtonDemo client:load />
-  </Demo>
+
   <InstallSection entry="button" />
+
+  <Component type="row" heading="Variants" Demo={<ButtonVariants/>} code="ButtonVariants"/>
+  <Component type="row" heading="Sizes" Demo={<ButtonSizes/>} code="ButtonSizes"/>
+  <Component type="row" heading="Icon" Demo={<ButtonIcon/>} code="ButtonIcon"/>
+  <Component type="row" heading="With Icon" Demo={<ButtonWithIcon/>} code="ButtonWithIcon"/>
+  <Component type="row" heading="Rounded" Demo={<ButtonRounded/>} code="ButtonRounded"/>
+
   <ButtonContent />
-  <h2>Examples</h2>
-  <Demo id="demo-invalid" title="Invalid state" code={demoCode(demoSource, "ButtonInvalidDemo")} note="ariaInvalid reads the destructive token for the border and focus ring.">
-    <ButtonInvalidDemo client:load />
-  </Demo>
-  <Demo id="demo-override" title="Call-site override" code={demoCode(demoSource, "ButtonOverrideDemo")} note="props.class lands last in the composition, so the call-site width wins.">
-    <ButtonOverrideDemo client:load />
-  </Demo>
 </MainLayout>

@@ -1,144 +1,119 @@
-## Usage
+## API
 
 The composed `DropdownMenu` wraps its children in the trigger button (Button-wrapped, the outline variant) and takes the items through the `content` prop. Clicking toggles; ArrowDown opens; the trigger carries `data-state`, `aria-expanded`, and `aria-haspopup="menu"`, and focus returns to it when the menu closes.
 
-### jsx
-
-```jsx
-import DropdownMenu from './components/dropdown-menu';
-import { DropdownMenuItem } from './components/dropdown-menu';
-
-const Actions = () => (
-  <DropdownMenu
-    content={
-      <>
-        <DropdownMenuItem onclick={() => console.log('opened')}>Open File</DropdownMenuItem>
-        <DropdownMenuItem shortcut="⌘N">New Window</DropdownMenuItem>
-      </>
-    }
-  >
-    Actions
-  </DropdownMenu>
-);
-```
-### html
-
-The html-format (`--format html`) works the same way.
-
-```js
-html`<main>
-  <${DropdownMenu} content=${html`<p>One item.</p>`}>
-    Menu
-  </${DropdownMenu}>
-</main>`
-```
-
-| Prop | Type | Behavior |
-|---|---|---|
-| `open` | `() => boolean` | Controlled open accessor; when given, the root never writes its internal signal |
-| `onOpenChange` | `(open: boolean) => void` | Reports every requested open and close flip |
-| `children` | `HellaChildren` | The trigger label |
-| `content` | `HellaChildren` | The menu items, portaled into `document.body` while open |
-| `class` | `string` | Extra classes on the trigger button |
-
-## Dismissal and Positioning
-
-Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus and popovers dismiss one layer at a time. Activating an item closes every open menu layer; the items fire that through a document-level activation event, which is also how Enter and Space close from the keyboard. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
-
-The panel positions through [`anchorPosition`](/reference/dom/anchorposition): fixed coordinates against the trigger, flipping on viewport collision, repositioning on scroll and resize. The menu is non-modal: there is no focus trap, and focus moves to the first activatable item on open.
-
-## Manual Parts
-
 Thirteen named parts ship beside the default `DropdownMenu`: `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuGroup`, `DropdownMenuItem`, `DropdownMenuCheckboxItem`, `DropdownMenuRadioGroup`, `DropdownMenuRadioItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`, `DropdownMenuShortcut`, `DropdownMenuSub`, `DropdownMenuSubTrigger`, and `DropdownMenuSubContent`. The parts take their state as explicit props: the checkbox item takes a `checked` accessor, the radio group is items-driven, and each sub owns its own open signal.
+
+### DropdownMenu
+
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `open` | `() => boolean` | `-` |
+| `onOpenChange` | `(open: boolean) => void` | `-` |
+| `content` | `HellaChildren` | The menu items, portaled into `document.body` while open |
+| `class` | `string` | `-` |
+| `children` | `HellaChildren` | The trigger label |
+
+A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
 
 ### DropdownMenuTrigger
 
 The manual trigger button carrying `aria-haspopup="menu"`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The trigger label |
 
 ### DropdownMenuContent
 
 The `role="menu"` surface with the full keyboard model, positioned against its anchor.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle; `closed` tears the wirings down |
-| `id` | `string` | Menu id |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | Anchor placement (default `"bottom"`) |
-| `align` | `"start" \| "center" \| "end"` | Cross-axis alignment (default `"start"`) |
-| `sideOffset` | `number` | Gap between the anchor and the content edge, in px (default 4) |
-| `alignOffset` | `number` | Cross-axis shift applied after positioning, in px (default 0) |
-| `anchor` | `() => Element \| undefined` | Resolves the element the content anchors to; positioning is skipped when undefined |
-| `onDismiss` | `() => void` | Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
-| `onArrowLeft` | `() => void` | ArrowLeft closes the menu when provided (submenu exit; a top-level menu stays inert) |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `id` | `string` | `-` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
+| `align` | `"start" \| "center" \| "end"` | `"start"` |
+| `sideOffset` | `number` | `4` |
+| `alignOffset` | `number` | `0` |
+| `anchor` | `() => Element \| undefined` | `-` |
+| `onDismiss` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
+| `onArrowLeft` | `() => void` | `-` |
 | `children` | `HellaChildren` | The menu items |
+
+`state` drives `data-state` and the enter/exit cycle; `closed` tears the wirings down. `sideOffset` is the gap between the anchor and the content edge in px, `alignOffset` the cross-axis shift applied after positioning. The anchor resolves to the element the content anchors to; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it; `onExited` fires when the exit animation ends; `onArrowLeft` closes the menu when provided (submenu exit; a top-level menu stays inert).
 
 ### DropdownMenuGroup
 
 A passthrough grouping `div`.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The grouped items |
 
 ### DropdownMenuItem
 
 A `role="menuitem"` row; activation closes every open layer.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `onclick` | `() => void` | Click callback, fired before the close-all activation event |
-| `destructive` | `boolean` | Renders the destructive `data-variant` treatment |
-| `inset` | `boolean` | Renders `data-inset="true"` for the indented alignment |
-| `disabled` | `boolean` | `data-disabled` plus `aria-disabled`; blocks `onclick` and the close |
-| `shortcut` | `string` | Shortcut text rendered as a trailing `DropdownMenuShortcut` span |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `onclick` | `() => void` | `-` |
+| `destructive` | `boolean` | `-` |
+| `inset` | `boolean` | `-` |
+| `disabled` | `boolean` | `-` |
+| `shortcut` | `string` | `-` |
 | `children` | `HellaChildren` | The row's label |
+
+`onclick` fires before the close-all activation event; `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"` for the indented alignment; `disabled` renders `data-disabled` plus `aria-disabled` and blocks `onclick` and the close; `shortcut` renders as a trailing `DropdownMenuShortcut` span.
 
 ### DropdownMenuCheckboxItem
 
 A `role="menuitemcheckbox"` row with the check indicator.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `checked` | `boolean \| (() => boolean)` | A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange` |
-| `onCheckedChange` | `(checked: boolean) => void` | Reports every requested flip, then closes every open layer |
-| `disabled` | `boolean` | Blocks toggling; renders the disabled states |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `checked` | `boolean \| (() => boolean)` | `-` |
+| `onCheckedChange` | `(checked: boolean) => void` | `-` |
+| `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The row's label |
+
+A boolean `checked` seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`, which fires on every requested flip before every open layer closes.
 
 ### DropdownMenuRadioGroup
 
 A group rendering one radio item per entry.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `items` | `{ value, label?, disabled? }[]` | One `DropdownMenuRadioItem` per entry |
-| `value` | `() => string` | Controlled selected value; when given, the group never writes its internal signal and `onValueChange` reports the requested selection |
-| `onValueChange` | `(value: string) => void` | Reports every requested selection |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `items` | `{ value, label?, disabled? }[]` | `-` |
+| `value` | `() => string` | `-` |
+| `onValueChange` | `(value: string) => void` | `-` |
 | `children` | `HellaChildren` | Static group content rendered alongside the items |
+
+A controlled `value` stops the group from writing its internal signal; `onValueChange` reports the requested selection.
 
 ### DropdownMenuRadioItem
 
 A `role="menuitemradio"` row with the circle indicator.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `value` | `string` | This row's value in its group |
-| `checked` | `boolean \| (() => boolean)` | A boolean reads statically; an accessor keeps the row reactive against its owning group |
-| `onSelect` | `() => void` | Called on click when the row is enabled |
-| `disabled` | `boolean` | Blocks selection |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `value` | `string` | `-` |
+| `checked` | `boolean \| (() => boolean)` | `-` |
+| `onSelect` | `() => void` | `-` |
+| `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The row's label |
+
+`checked` reads statically as a boolean; an accessor keeps the row reactive against its owning group. `onSelect` is called on click when the row is enabled.
 
 ### DropdownMenuLabel
 
 A section label.
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `inset` | `boolean` | Renders the indented alignment |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `inset` | `boolean` | `-` |
 | `children` | `HellaChildren` | The label text |
 
 ### DropdownMenuSeparator
@@ -149,16 +124,16 @@ A hairline between groups.
 
 The trailing key-hint span inside a row.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `children` | `HellaChildren` | The hint text |
 
 ### DropdownMenuSub
 
-A sub-trigger plus its portaled sub-content; open state owned here.
+A sub-trigger plus its portaled sub-content; open state owned here. The sub opens on hover after roughly 100ms of rest, on click, or on ArrowRight; leaving the trigger schedules a close that entering the sub-content cancels.
 
-| Prop | Type | Behavior |
-|---|---|---|
+| Prop | Type | Default |
+| ---- | ---- | ------- |
 | `content` | `HellaChildren` | The sub-surface items |
 | `children` | `HellaChildren` | The sub-trigger label |
 
@@ -166,108 +141,43 @@ A sub-trigger plus its portaled sub-content; open state owned here.
 
 The manual sub-trigger row (chevron, `aria-haspopup`).
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `aria-expanded` and `data-state`; the composed `DropdownMenuSub` wires it |
-| `onOpen` | `() => void` | Called on click and hover intent to open the submenu |
-| `inset` | `boolean` | Renders the indented alignment |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `onOpen` | `() => void` | `-` |
+| `inset` | `boolean` | `-` |
 | `children` | `HellaChildren` | The sub-trigger label |
+
+`state` drives `aria-expanded` and `data-state`; the composed `DropdownMenuSub` wires it. `onOpen` is called on click and hover intent.
 
 ### DropdownMenuSubContent
 
 The `role="menu"` sub-surface, anchored against its sub-trigger (right, start aligned, collision flipped).
 
-| Prop | Type | Behavior |
-|---|---|---|
-| `state` | `() => "open" \| "closed"` | Drives `data-state` and the enter/exit cycle |
-| `side` | `"top" \| "bottom" \| "left" \| "right"` | Anchor placement |
-| `align` | `"start" \| "center" \| "end"` | Cross-axis alignment |
-| `sideOffset` | `number` | Gap between the anchor and the content edge, in px |
-| `anchor` | `() => Element \| undefined` | Resolves the element the content anchors to (the sub-trigger); positioning is skipped when undefined |
-| `onDismiss` | `() => void` | Escape and an outside pointerdown dismiss the top layer into this callback, and item selection closes every open layer |
-| `onExited` | `() => void` | Called when the exit animation ends under `data-state="closed"` |
-| `onArrowLeft` | `() => void` | ArrowLeft closes the submenu |
-| `onPointerEnter` | `() => void` | Pointer entering the content cancels the trigger's pending close |
+| Prop | Type | Default |
+| ---- | ---- | ------- |
+| `state` | `() => "open" \| "closed"` | `-` |
+| `side` | `"top" \| "bottom" \| "left" \| "right"` | `-` |
+| `align` | `"start" \| "center" \| "end"` | `-` |
+| `sideOffset` | `number` | `-` |
+| `anchor` | `() => Element \| undefined` | `-` |
+| `onDismiss` | `() => void` | `-` |
+| `onExited` | `() => void` | `-` |
+| `onArrowLeft` | `() => void` | `-` |
+| `onPointerEnter` | `() => void` | `-` |
 | `children` | `HellaChildren` | The sub-surface items |
 
-The sub-content registers its own [`layerDismissal`](/reference/dom/layerdismissal) layer, so Escape pops one level at a time and an outside press closes the sub before the parent.
+`onDismiss` closes the sub's own layer; `onExited` fires when the exit animation ends; `onArrowLeft` closes the submenu; `onPointerEnter` cancels the trigger's pending close when the pointer enters the content.
 
 Every part also takes a `class` string, landing last in its style composition.
 
-Checkbox and radio state in a menu, one composition:
+The sub-content registers its own [`layerDismissal`](/reference/dom/layerdismissal) layer, so Escape pops one level at a time and an outside press closes the sub before the parent.
 
-```jsx
-import { signal } from '@hellajs/core';
-import DropdownMenu from './components/dropdown-menu';
-import {
-  DropdownMenuCheckboxItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from './components/dropdown-menu';
+## Dismissal and Positioning
 
-const bold = signal(false);
-const size = signal('medium');
+Dismissal runs through [`layerDismissal`](/reference/dom/layerdismissal): Escape and a pointerdown outside the panel ask the top layer to close, so stacked menus and popovers dismiss one layer at a time. Activating an item closes every open menu layer through a document-level activation event, which is also how Enter and Space close from the keyboard. Closing starts the exit - the panel stays mounted under `data-state="closed"` until its animation ends, with dismissal wiring down while it leaves.
 
-const Format = () => (
-  <DropdownMenu
-    content={
-      <>
-        <DropdownMenuLabel>Formatting</DropdownMenuLabel>
-        <DropdownMenuCheckboxItem
-          checked={bold}
-          onCheckedChange={(next) => bold(next)}
-        >
-          Bold
-        </DropdownMenuCheckboxItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          items={[
-            { value: 'small', label: 'Small' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'large', label: 'Large' },
-          ]}
-          value={size}
-          onValueChange={(next) => size(next)}
-        />
-      </>
-    }
-  >
-    Format
-  </DropdownMenu>
-);
-```
-
-The radio group mirrors the checkbox split: a `value` accessor keeps selection external, otherwise the group tracks its own signal until `onValueChange` reports.
-
-Submenus compose through `DropdownMenuSub`: its children label the trigger row and its `content` builds the sub-surface. The sub opens on hover after roughly 100ms of rest, on click, or on ArrowRight; leaving the trigger schedules a close that entering the sub-content cancels.
-
-```jsx
-import DropdownMenu from './components/dropdown-menu';
-import { DropdownMenuItem, DropdownMenuSub } from './components/dropdown-menu';
-
-const More = () => (
-  <DropdownMenu
-    content={
-      <>
-        <DropdownMenuItem>Save</DropdownMenuItem>
-        <DropdownMenuSub
-          content={
-            <>
-              <DropdownMenuItem>Export as PDF</DropdownMenuItem>
-              <DropdownMenuItem>Export as HTML</DropdownMenuItem>
-            </>
-          }
-        >
-          Export
-        </DropdownMenuSub>
-      </>
-    }
-  >
-    File
-  </DropdownMenu>
-);
-```
+The panel positions through [`anchorPosition`](/reference/dom/anchorposition): fixed coordinates against the trigger, flipping on viewport collision, repositioning on scroll and resize. The menu is non-modal: there is no focus trap, and focus moves to the first activatable item on open.
 
 ## Keyboard Interaction
 
