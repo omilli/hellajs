@@ -3,7 +3,7 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("toggle", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxSizing: "border-box",
@@ -49,13 +49,13 @@ const base = style({
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
   },
-}, { label: "toggle" });
+});
 
 const variants = {
-  default: style({
+  default: style("toggle-default", {
     backgroundColor: "transparent",
-  }, { label: "toggle-default" }),
-  outline: style({
+  }),
+  outline: style("toggle-outline", {
     background: "transparent",
     border: "1px solid var(--input)",
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -63,25 +63,25 @@ const variants = {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
     },
-  }, { label: "toggle-outline" }),
+  }),
 };
 
 const sizes = {
-  default: style({
+  default: style("toggle-size-default", {
     height: "2.25rem",
     minWidth: "2.25rem",
     paddingInline: "0.5rem",
-  }, { label: "toggle-size-default" }),
-  sm: style({
+  }),
+  sm: style("toggle-size-sm", {
     height: "2rem",
     minWidth: "2rem",
     paddingInline: "0.375rem",
-  }, { label: "toggle-size-sm" }),
-  lg: style({
+  }),
+  lg: style("toggle-size-lg", {
     height: "2.5rem",
     minWidth: "2.5rem",
     paddingInline: "0.625rem",
-  }, { label: "toggle-size-lg" }),
+  }),
 };
 
 interface ToggleProps {

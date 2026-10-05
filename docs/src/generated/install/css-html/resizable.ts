@@ -4,16 +4,16 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("resizable-panel-group", {
   display: "flex",
   height: "100%",
   width: "100%",
   "&[aria-orientation='vertical']": {
     flexDirection: "column",
   },
-}, { label: "resizable-panel-group" });
+});
 
-const handle = style({
+const handle = style("resizable-handle", {
   alignItems: "center",
   backgroundColor: "var(--border)",
   display: "flex",
@@ -45,9 +45,9 @@ const handle = style({
   "&[aria-orientation='horizontal'] > div": {
     rotate: "90deg",
   },
-}, { label: "resizable-handle" });
+});
 
-const grip = style({
+const grip = style("resizable-grip", {
   alignItems: "center",
   border: "1px solid var(--border)",
   borderRadius: "0.125rem",
@@ -57,12 +57,12 @@ const grip = style({
   justifyContent: "center",
   width: "0.75rem",
   zIndex: "10",
-}, { label: "resizable-grip" });
+});
 
-const icon = style({
+const icon = style("resizable-icon", {
   height: "0.625rem",
   width: "0.625rem",
-}, { label: "resizable-icon" });
+});
 
 interface ResizablePanelGroupProps {
   direction?: "horizontal" | "vertical";

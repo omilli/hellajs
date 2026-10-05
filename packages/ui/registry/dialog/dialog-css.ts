@@ -5,7 +5,7 @@ const fadeOut = keyframes({ to: { opacity: "0" } });
 const zoomIn = keyframes({ from: { opacity: "0", transform: "scale(0.95)" } });
 const zoomOut = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-export const base = style({
+export const base = style("dialog-overlay", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -16,9 +16,9 @@ export const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "dialog-overlay" });
+});
 
-export const content = style({
+export const content = style("dialog-content", {
   background: "var(--background)",
   border: "1px solid var(--border)",
   borderRadius: "var(--radius)",
@@ -45,9 +45,9 @@ export const content = style({
       maxWidth: "32rem",
     },
   },
-}, { label: "dialog-content" });
+});
 
-export const close = style({
+export const close = style("dialog-close", {
   borderRadius: "calc(var(--radius) * 0.2)",
   opacity: "0.7",
   position: "absolute",
@@ -87,9 +87,9 @@ export const close = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "dialog-close" });
+});
 
-export const header = style({
+export const header = style("dialog-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
@@ -99,9 +99,9 @@ export const header = style({
       textAlign: "left",
     },
   },
-}, { label: "dialog-header" });
+});
 
-export const footer = style({
+export const footer = style("dialog-footer", {
   display: "flex",
   flexDirection: "column-reverse",
   gap: "0.5rem",
@@ -111,16 +111,16 @@ export const footer = style({
       justifyContent: "flex-end",
     },
   },
-}, { label: "dialog-footer" });
+});
 
-export const title = style({
+export const title = style("dialog-title", {
   fontSize: "1.125rem",
   fontWeight: "600",
   lineHeight: "1",
-}, { label: "dialog-title" });
+});
 
-export const description = style({
+export const description = style("dialog-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "dialog-description" });
+});

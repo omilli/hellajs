@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("checkbox", {
   boxSizing: "border-box",
   borderRadius: "4px",
   border: "1px solid var(--input)",
@@ -38,16 +38,16 @@ export const base = style({
   "&:is(.dark *)[data-state='checked']": {
     backgroundColor: "var(--primary)",
   },
-}, { label: "checkbox" });
+});
 
-export const indicator = style({
+export const indicator = style("checkbox-indicator", {
   color: "currentColor",
   display: "grid",
   placeContent: "center",
   transition: "none",
-}, { label: "checkbox-indicator" });
+});
 
-export const icon = style({
+export const icon = style("checkbox-icon", {
   height: "0.875rem",
   width: "0.875rem",
-}, { label: "checkbox-icon" });
+});

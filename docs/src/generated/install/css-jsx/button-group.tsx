@@ -2,7 +2,7 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("button-group", {
   alignItems: "stretch",
   display: "flex",
   width: "fit-content",
@@ -23,10 +23,10 @@ const base = style({
   "& > input": {
     flex: "1 1 0%",
   },
-}, { label: "button-group" });
+});
 
 const orientation = {
-  horizontal: style({
+  horizontal: style("button-group-horizontal", {
     "& > *:not(:first-child)": {
       borderBottomLeftRadius: "0",
       borderLeftWidth: "0",
@@ -36,8 +36,8 @@ const orientation = {
       borderBottomRightRadius: "0",
       borderTopRightRadius: "0",
     },
-  }, { label: "button-group-horizontal" }),
-  vertical: style({
+  }),
+  vertical: style("button-group-vertical", {
     flexDirection: "column",
     "& > *:not(:first-child)": {
       borderTopLeftRadius: "0",
@@ -48,10 +48,10 @@ const orientation = {
       borderBottomLeftRadius: "0",
       borderBottomRightRadius: "0",
     },
-  }, { label: "button-group-vertical" }),
+  }),
 };
 
-const text = style({
+const text = style("button-group-text", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   border: "1px solid var(--border)",
@@ -69,9 +69,9 @@ const text = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "button-group-text" });
+});
 
-const separatorBase = style({
+const separatorBase = style("button-group-separator", {
   backgroundColor: "var(--border)",
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
@@ -82,9 +82,9 @@ const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "button-group-separator" });
+});
 
-const separator = style({
+const separator = style("button-group-separator-override", {
   alignSelf: "stretch",
   backgroundColor: "var(--input)",
   margin: "0 !important",
@@ -92,7 +92,7 @@ const separator = style({
   "&[data-orientation='vertical']": {
     height: "auto",
   },
-}, { label: "button-group-separator-override" });
+});
 
 interface ButtonGroupProps {
   children?: HellaChildren;

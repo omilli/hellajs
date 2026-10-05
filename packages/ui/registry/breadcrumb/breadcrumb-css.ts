@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const list = style({
+export const list = style("breadcrumb-list", {
   alignItems: "center",
   color: "var(--muted-foreground)",
   display: "flex",
@@ -17,47 +17,47 @@ export const list = style({
       gap: "0.625rem",
     },
   },
-}, { label: "breadcrumb-list" });
+});
 
-export const item = style({
+export const item = style("breadcrumb-item", {
   alignItems: "center",
   display: "inline-flex",
   gap: "0.375rem",
-}, { label: "breadcrumb-item" });
+});
 
-export const link = style({
+export const link = style("breadcrumb-link", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&:hover": {
     color: "var(--foreground)",
   },
-}, { label: "breadcrumb-link" });
+});
 
-export const page = style({
+export const page = style("breadcrumb-page", {
   color: "var(--foreground)",
   fontWeight: "400",
-}, { label: "breadcrumb-page" });
+});
 
-export const separator = style({
+export const separator = style("breadcrumb-separator", {
   "& svg": {
     height: "0.875rem",
     width: "0.875rem",
   },
-}, { label: "breadcrumb-separator" });
+});
 
-export const ellipsis = style({
+export const ellipsis = style("breadcrumb-ellipsis", {
   alignItems: "center",
   display: "flex",
   height: "2.25rem",
   justifyContent: "center",
   width: "2.25rem",
-}, { label: "breadcrumb-ellipsis" });
+});
 
-export const ellipsisIcon = style({
+export const ellipsisIcon = style("breadcrumb-ellipsis-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "breadcrumb-ellipsis-icon" });
+});
 
-export const srOnly = style({
+export const srOnly = style("breadcrumb-sr-only", {
   border: "0",
   clip: "rect(0, 0, 0, 0)",
   height: "1px",
@@ -67,4 +67,4 @@ export const srOnly = style({
   position: "absolute",
   whiteSpace: "nowrap",
   width: "1px",
-}, { label: "breadcrumb-sr-only" });
+});

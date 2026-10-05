@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("button-group", {
   alignItems: "stretch",
   display: "flex",
   width: "fit-content",
@@ -21,10 +21,10 @@ export const base = style({
   "& > input": {
     flex: "1 1 0%",
   },
-}, { label: "button-group" });
+});
 
 export const orientation = {
-  horizontal: style({
+  horizontal: style("button-group-horizontal", {
     "& > *:not(:first-child)": {
       borderBottomLeftRadius: "0",
       borderLeftWidth: "0",
@@ -34,8 +34,8 @@ export const orientation = {
       borderBottomRightRadius: "0",
       borderTopRightRadius: "0",
     },
-  }, { label: "button-group-horizontal" }),
-  vertical: style({
+  }),
+  vertical: style("button-group-vertical", {
     flexDirection: "column",
     "& > *:not(:first-child)": {
       borderTopLeftRadius: "0",
@@ -46,10 +46,10 @@ export const orientation = {
       borderBottomLeftRadius: "0",
       borderBottomRightRadius: "0",
     },
-  }, { label: "button-group-vertical" }),
+  }),
 };
 
-export const text = style({
+export const text = style("button-group-text", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   border: "1px solid var(--border)",
@@ -67,9 +67,9 @@ export const text = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "button-group-text" });
+});
 
-export const separatorBase = style({
+export const separatorBase = style("button-group-separator", {
   backgroundColor: "var(--border)",
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
@@ -80,9 +80,9 @@ export const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "button-group-separator" });
+});
 
-export const separator = style({
+export const separator = style("button-group-separator-override", {
   alignSelf: "stretch",
   backgroundColor: "var(--input)",
   margin: "0 !important",
@@ -90,4 +90,4 @@ export const separator = style({
   "&[data-orientation='vertical']": {
     height: "auto",
   },
-}, { label: "button-group-separator-override" });
+});

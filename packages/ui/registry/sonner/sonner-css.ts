@@ -7,7 +7,7 @@ const spin = keyframes({
   to: { transform: "rotate(360deg)" },
 });
 
-export const base = style({
+export const base = style("sonner-base", {
   display: "flex",
   flexDirection: "column",
   gap: "0.75rem",
@@ -18,60 +18,60 @@ export const base = style({
   pointerEvents: "none",
   position: "fixed",
   zIndex: "100",
-}, { label: "sonner-base" });
+});
 
 export const toasterPositions = {
-  "top-left": style({
+  "top-left": style("sonner-toaster-top-left", {
     alignItems: "flex-start",
     flexDirection: "column",
     justifyContent: "flex-start",
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "sonner-toaster-top-left" }),
-  "top-center": style({
+  }),
+  "top-center": style("sonner-toaster-top-center", {
     alignItems: "center",
     flexDirection: "column",
     justifyContent: "flex-start",
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "sonner-toaster-top-center" }),
-  "top-right": style({
+  }),
+  "top-right": style("sonner-toaster-top-right", {
     alignItems: "flex-end",
     flexDirection: "column",
     justifyContent: "flex-start",
     "--enter-offset": "-100%",
     "--stack-offset": "1.5rem",
     "--stack-origin": "top",
-  }, { label: "sonner-toaster-top-right" }),
-  "bottom-left": style({
+  }),
+  "bottom-left": style("sonner-toaster-bottom-left", {
     alignItems: "flex-start",
     flexDirection: "column-reverse",
     justifyContent: "flex-start",
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "sonner-toaster-bottom-left" }),
-  "bottom-center": style({
+  }),
+  "bottom-center": style("sonner-toaster-bottom-center", {
     alignItems: "center",
     flexDirection: "column-reverse",
     justifyContent: "flex-start",
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "sonner-toaster-bottom-center" }),
-  "bottom-right": style({
+  }),
+  "bottom-right": style("sonner-toaster-bottom-right", {
     alignItems: "flex-end",
     flexDirection: "column-reverse",
     justifyContent: "flex-start",
     "--enter-offset": "100%",
     "--stack-offset": "-1.5rem",
     "--stack-origin": "bottom",
-  }, { label: "sonner-toaster-bottom-right" }),
+  }),
 };
 
-export const item = style({
+export const item = style("sonner-item", {
   alignItems: "center",
   animation: `${enter} 400ms ease-out`,
   backgroundColor: "var(--popover)",
@@ -154,26 +154,26 @@ export const item = style({
     borderColor: "#1d4ed8",
     color: "#93c5fd",
   },
-}, { label: "sonner-item" });
+});
 
-export const content = style({
+export const content = style("sonner-content", {
   display: "flex",
   flex: "1",
   flexDirection: "column",
   gap: "0.125rem",
   minWidth: "0",
-}, { label: "sonner-content" });
+});
 
-export const title = style({
+export const title = style("sonner-title", {
   fontWeight: "500",
   lineHeight: "1.25rem",
-}, { label: "sonner-title" });
+});
 
-export const description = style({
+export const description = style("sonner-description", {
   opacity: "0.9",
-}, { label: "sonner-description" });
+});
 
-export const icon = style({
+export const icon = style("sonner-icon", {
   alignItems: "center",
   display: "inline-flex",
   flexShrink: "0",
@@ -193,9 +193,9 @@ export const icon = style({
   "&[data-type='loading'] svg": {
     animation: `${spin} 1s linear infinite`,
   },
-}, { label: "sonner-icon" });
+});
 
-export const actionButton = style({
+export const actionButton = style("sonner-action", {
   alignItems: "center",
   background: "transparent",
   border: "1px solid color-mix(in oklab, currentColor 30%, transparent)",
@@ -213,9 +213,9 @@ export const actionButton = style({
   "&:hover": {
     background: "color-mix(in oklab, currentColor 12%, transparent)",
   },
-}, { label: "sonner-action" });
+});
 
-export const close = style({
+export const close = style("sonner-close", {
   alignItems: "center",
   background: "transparent",
   border: "none",
@@ -251,7 +251,7 @@ export const close = style({
     opacity: "1",
     outlineStyle: "none",
   },
-}, { label: "sonner-close" });
+});
 
 css({
   "[data-slot='sonner-toast']:hover [data-slot='sonner-close']": {

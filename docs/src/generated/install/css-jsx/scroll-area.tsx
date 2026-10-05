@@ -4,11 +4,11 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("scroll-area", {
   position: "relative",
-}, { label: "scroll-area" });
+});
 
-const viewport = style({
+const viewport = style("scroll-area-viewport", {
   height: "100%",
   width: "100%",
   borderRadius: "inherit",
@@ -25,9 +25,9 @@ const viewport = style({
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
     outline: "1px solid",
   },
-}, { label: "scroll-area-viewport" });
+});
 
-const scrollbar = style({
+const scrollbar = style("scroll-area-scrollbar", {
   display: "flex",
   padding: "1px",
   touchAction: "none",
@@ -52,14 +52,14 @@ const scrollbar = style({
     flexDirection: "column",
     borderTop: "1px solid transparent",
   },
-}, { label: "scroll-area-scrollbar" });
+});
 
-const thumb = style({
+const thumb = style("scroll-area-thumb", {
   position: "relative",
   flex: "1 1 0%",
   borderRadius: "9999px",
   backgroundColor: "var(--border)",
-}, { label: "scroll-area-thumb" });
+});
 
 interface ScrollBarProps {
   /** Axis the bar tracks and drags. Both orientations may be composed into one root. */

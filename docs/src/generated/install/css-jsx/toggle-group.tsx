@@ -4,20 +4,20 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("toggle-group", {
   alignItems: "center",
   borderRadius: "var(--radius)",
   boxSizing: "border-box",
   display: "flex",
   gap: "0",
   width: "fit-content",
-}, { label: "toggle-group" });
+});
 
 const variants = {
-  default: style({
+  default: style("toggle-group-default", {
     backgroundColor: "transparent",
-  }, { label: "toggle-group-default" }),
-  outline: style({
+  }),
+  outline: style("toggle-group-outline", {
     background: "transparent",
     border: "1px solid var(--input)",
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -25,28 +25,28 @@ const variants = {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
     },
-  }, { label: "toggle-group-outline" }),
+  }),
 };
 
 const sizes = {
-  default: style({
+  default: style("toggle-group-size-default", {
     height: "2.25rem",
     minWidth: "2.25rem",
     paddingInline: "0.5rem",
-  }, { label: "toggle-group-size-default" }),
-  sm: style({
+  }),
+  sm: style("toggle-group-size-sm", {
     height: "2rem",
     minWidth: "2rem",
     paddingInline: "0.375rem",
-  }, { label: "toggle-group-size-sm" }),
-  lg: style({
+  }),
+  lg: style("toggle-group-size-lg", {
     height: "2.5rem",
     minWidth: "2.5rem",
     paddingInline: "0.625rem",
-  }, { label: "toggle-group-size-lg" }),
+  }),
 };
 
-const item = style({
+const item = style("toggle-group-item", {
   minWidth: "0",
   paddingInline: "0.75rem",
   width: "auto",
@@ -73,7 +73,7 @@ const item = style({
   borderRadius: "0",
   boxShadow: "none",
   flexShrink: "0",
-}, { label: "toggle-group-item" });
+});
 
 interface ToggleGroupEntry {
   value: string;

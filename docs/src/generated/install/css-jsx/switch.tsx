@@ -2,7 +2,7 @@ import { signal } from "@hellajs/core";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("switch", {
   alignItems: "center",
   border: "1px solid transparent",
   borderRadius: "9999px",
@@ -32,9 +32,9 @@ const base = style({
   "&:is(.dark *)[data-state='unchecked']": {
     backgroundColor: "color-mix(in oklab, var(--input) 80%, transparent)",
   },
-}, { label: "switch" });
+});
 
-const thumb = style({
+const thumb = style("switch-thumb", {
   backgroundColor: "var(--background)",
   borderRadius: "9999px",
   display: "block",
@@ -54,7 +54,7 @@ const thumb = style({
   "&:is(.dark *)[data-state='unchecked']": {
     backgroundColor: "var(--foreground)",
   },
-}, { label: "switch-thumb" });
+});
 
 interface SwitchProps {
   /** Checked state. A boolean seeds the internal signal; an accessor makes the switch controlled — clicks then only report through `onCheckedChange`. */

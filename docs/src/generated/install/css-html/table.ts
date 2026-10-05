@@ -3,41 +3,41 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const container = style({
+const container = style("table-container", {
   overflowX: "auto",
   position: "relative",
   width: "100%",
-}, { label: "table-container" });
+});
 
-const base = style({
+const base = style("table", {
   captionSide: "bottom",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   width: "100%",
-}, { label: "table" });
+});
 
-const header = style({
+const header = style("table-header", {
   "& tr": {
     borderBottom: "1px solid var(--border)",
   },
-}, { label: "table-header" });
+});
 
-const body = style({
+const body = style("table-body", {
   "& tr:last-child": {
     borderBottom: "0",
   },
-}, { label: "table-body" });
+});
 
-const footer = style({
+const footer = style("table-footer", {
   backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
   borderTop: "1px solid var(--border)",
   fontWeight: "500",
   "& > tr:last-child": {
     borderBottom: "0",
   },
-}, { label: "table-footer" });
+});
 
-const row = style({
+const row = style("table-row", {
   borderBottom: "1px solid var(--border)",
   transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
   transitionDuration: "150ms",
@@ -51,9 +51,9 @@ const row = style({
   "&[data-state='selected']": {
     backgroundColor: "var(--muted)",
   },
-}, { label: "table-row" });
+});
 
-const head = style({
+const head = style("table-head", {
   color: "var(--foreground)",
   fontWeight: "500",
   height: "2.5rem",
@@ -67,9 +67,9 @@ const head = style({
   "& > [role='checkbox']": {
     transform: "translateY(2px)",
   },
-}, { label: "table-head" });
+});
 
-const cell = style({
+const cell = style("table-cell", {
   padding: "0.5rem",
   verticalAlign: "middle",
   whiteSpace: "nowrap",
@@ -79,14 +79,14 @@ const cell = style({
   "& > [role='checkbox']": {
     transform: "translateY(2px)",
   },
-}, { label: "table-cell" });
+});
 
-const caption = style({
+const caption = style("table-caption", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   marginTop: "1rem",
-}, { label: "table-caption" });
+});
 
 interface TableProps {
   children?: HellaChildren;

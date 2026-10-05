@@ -5,7 +5,7 @@ const fadeOut = keyframes({ to: { opacity: "0" } });
 const zoomIn = keyframes({ from: { opacity: "0", transform: "scale(0.95)" } });
 const zoomOut = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-export const base = style({
+export const base = style("alert-dialog-base", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -16,9 +16,9 @@ export const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "alert-dialog-base" });
+});
 
-export const content = style({
+export const content = style("alert-dialog-content", {
   background: "var(--background)",
   border: "1px solid var(--border)",
   borderRadius: "var(--radius)",
@@ -48,9 +48,9 @@ export const content = style({
       maxWidth: "32rem",
     },
   },
-}, { label: "alert-dialog-content" });
+});
 
-export const header = style({
+export const header = style("alert-dialog-header", {
   display: "grid",
   gap: "0.375rem",
   gridTemplateRows: "auto 1fr",
@@ -69,9 +69,9 @@ export const header = style({
       gridTemplateRows: "auto 1fr",
     },
   },
-}, { label: "alert-dialog-header" });
+});
 
-export const footer = style({
+export const footer = style("alert-dialog-footer", {
   display: "flex",
   flexDirection: "column-reverse",
   gap: "0.5rem",
@@ -85,9 +85,9 @@ export const footer = style({
       justifyContent: "flex-end",
     },
   },
-}, { label: "alert-dialog-footer" });
+});
 
-export const title = style({
+export const title = style("alert-dialog-title", {
   fontSize: "1.125rem",
   fontWeight: "600",
   "@media (min-width: 40rem)": {
@@ -95,15 +95,15 @@ export const title = style({
       gridColumnStart: "2",
     },
   },
-}, { label: "alert-dialog-title" });
+});
 
-export const description = style({
+export const description = style("alert-dialog-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "alert-dialog-description" });
+});
 
-export const media = style({
+export const media = style("alert-dialog-media", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -121,9 +121,9 @@ export const media = style({
       gridRow: "span 2 / span 2",
     },
   },
-}, { label: "alert-dialog-media" });
+});
 
-export const buttonBase = style({
+export const buttonBase = style("alert-dialog-button", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxSizing: "border-box",
@@ -162,17 +162,17 @@ export const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "alert-dialog-button" });
+});
 
 export const buttonVariants = {
-  default: style({
+  default: style("alert-dialog-button-default", {
     backgroundColor: "var(--primary)",
     color: "var(--primary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "alert-dialog-button-default" }),
-  destructive: style({
+  }),
+  destructive: style("alert-dialog-button-destructive", {
     backgroundColor: "var(--destructive)",
     color: "#fff",
     "&:hover": {
@@ -187,8 +187,8 @@ export const buttonVariants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "alert-dialog-button-destructive" }),
-  outline: style({
+  }),
+  outline: style("alert-dialog-button-outline", {
     background: "var(--background)",
     border: "1px solid var(--border)",
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -203,15 +203,15 @@ export const buttonVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "alert-dialog-button-outline" }),
-  secondary: style({
+  }),
+  secondary: style("alert-dialog-button-secondary", {
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "alert-dialog-button-secondary" }),
-  ghost: style({
+  }),
+  ghost: style("alert-dialog-button-ghost", {
     "&:hover": {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
@@ -219,26 +219,26 @@ export const buttonVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "alert-dialog-button-ghost" }),
-  link: style({
+  }),
+  link: style("alert-dialog-button-link", {
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "alert-dialog-button-link" }),
+  }),
 };
 
 export const buttonSizes = {
-  default: style({
+  default: style("alert-dialog-button-size-default", {
     height: "2.25rem",
     paddingBlock: "0.5rem",
     paddingInline: "1rem",
     "&:has(> svg)": {
       paddingInline: "0.75rem",
     },
-  }, { label: "alert-dialog-button-size-default" }),
-  xs: style({
+  }),
+  xs: style("alert-dialog-button-size-xs", {
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
     gap: "0.25rem",
@@ -252,8 +252,8 @@ export const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "alert-dialog-button-size-xs" }),
-  sm: style({
+  }),
+  sm: style("alert-dialog-button-size-sm", {
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
     height: "2rem",
@@ -261,20 +261,20 @@ export const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "alert-dialog-button-size-sm" }),
-  lg: style({
+  }),
+  lg: style("alert-dialog-button-size-lg", {
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "2.5rem",
     paddingInline: "1.5rem",
     "&:has(> svg)": {
       paddingInline: "1rem",
     },
-  }, { label: "alert-dialog-button-size-lg" }),
-  icon: style({
+  }),
+  icon: style("alert-dialog-button-size-icon", {
     height: "2.25rem",
     width: "2.25rem",
-  }, { label: "alert-dialog-button-size-icon" }),
-  "icon-xs": style({
+  }),
+  "icon-xs": style("alert-dialog-button-size-icon-xs", {
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
     width: "1.5rem",
@@ -282,13 +282,13 @@ export const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "alert-dialog-button-size-icon-xs" }),
-  "icon-sm": style({
+  }),
+  "icon-sm": style("alert-dialog-button-size-icon-sm", {
     height: "2rem",
     width: "2rem",
-  }, { label: "alert-dialog-button-size-icon-sm" }),
-  "icon-lg": style({
+  }),
+  "icon-lg": style("alert-dialog-button-size-icon-lg", {
     height: "2.5rem",
     width: "2.5rem",
-  }, { label: "alert-dialog-button-size-icon-lg" }),
+  }),
 };

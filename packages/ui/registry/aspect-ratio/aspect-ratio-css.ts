@@ -1,5 +1,5 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("aspect-ratio", {
   position: "relative",
-}, { label: "aspect-ratio" });
+});

@@ -9,16 +9,16 @@ const caretBlink = keyframes({
   "20%,50%": { opacity: "0" },
 });
 
-const base = style({
+const base = style("input-otp", {
   alignItems: "center",
   display: "flex",
   gap: "0.5rem",
   "&:has(:disabled)": {
     opacity: "0.5",
   },
-}, { label: "input-otp" });
+});
 
-const control = style({
+const control = style("input-otp-input", {
   "&:disabled": {
     cursor: "not-allowed",
   },
@@ -26,14 +26,14 @@ const control = style({
     backgroundColor: "transparent",
     color: "transparent",
   },
-}, { label: "input-otp-input" });
+});
 
-const group = style({
+const group = style("input-otp-group", {
   alignItems: "center",
   display: "flex",
-}, { label: "input-otp-group" });
+});
 
-const slot = style({
+const slot = style("input-otp-slot", {
   alignItems: "center",
   borderBlock: "1px solid var(--input)",
   borderRight: "1px solid var(--input)",
@@ -73,23 +73,23 @@ const slot = style({
   "&:is(.dark *)": {
     backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "input-otp-slot" });
+});
 
-const caretWrap = style({
+const caretWrap = style("input-otp-caret", {
   alignItems: "center",
   display: "flex",
   inset: "0",
   justifyContent: "center",
   pointerEvents: "none",
   position: "absolute",
-}, { label: "input-otp-caret" });
+});
 
-const caret = style({
+const caret = style("input-otp-caret-bar", {
   animation: `${caretBlink} 1s ease-out infinite`,
   backgroundColor: "var(--foreground)",
   height: "1rem",
   width: "1px",
-}, { label: "input-otp-caret-bar" });
+});
 
 interface InputOTPProps {
   /** Number of slots; fixed after mount. Defaults to 6. */

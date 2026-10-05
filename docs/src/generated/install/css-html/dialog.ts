@@ -9,7 +9,7 @@ const fadeOut = keyframes({ to: { opacity: "0" } });
 const zoomIn = keyframes({ from: { opacity: "0", transform: "scale(0.95)" } });
 const zoomOut = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const base = style({
+const base = style("dialog-overlay", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -20,9 +20,9 @@ const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "dialog-overlay" });
+});
 
-const content = style({
+const content = style("dialog-content", {
   background: "var(--background)",
   border: "1px solid var(--border)",
   borderRadius: "var(--radius)",
@@ -49,9 +49,9 @@ const content = style({
       maxWidth: "32rem",
     },
   },
-}, { label: "dialog-content" });
+});
 
-const close = style({
+const close = style("dialog-close", {
   borderRadius: "calc(var(--radius) * 0.2)",
   opacity: "0.7",
   position: "absolute",
@@ -91,9 +91,9 @@ const close = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "dialog-close" });
+});
 
-const header = style({
+const header = style("dialog-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
@@ -103,9 +103,9 @@ const header = style({
       textAlign: "left",
     },
   },
-}, { label: "dialog-header" });
+});
 
-const footer = style({
+const footer = style("dialog-footer", {
   display: "flex",
   flexDirection: "column-reverse",
   gap: "0.5rem",
@@ -115,19 +115,19 @@ const footer = style({
       justifyContent: "flex-end",
     },
   },
-}, { label: "dialog-footer" });
+});
 
-const title = style({
+const title = style("dialog-title", {
   fontSize: "1.125rem",
   fontWeight: "600",
   lineHeight: "1",
-}, { label: "dialog-title" });
+});
 
-const description = style({
+const description = style("dialog-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "dialog-description" });
+});
 
 /** Accessibility state shared by the animated dialog parts. */
 type DialogState = () => "open" | "closed";

@@ -10,7 +10,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const base = style({
+const base = style("dropdown-menu-base", {
   alignItems: "center",
   background: "var(--background)",
   border: "1px solid var(--border)",
@@ -60,9 +60,9 @@ const base = style({
   "&:is(.dark *):hover": {
     background: "color-mix(in oklab, var(--input) 50%, transparent)",
   },
-}, { label: "dropdown-menu-base" });
+});
 
-const content = style({
+const content = style("dropdown-menu-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -92,9 +92,9 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "dropdown-menu-content" });
+});
 
-const item = style({
+const item = style("dropdown-menu-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -143,9 +143,9 @@ const item = style({
   "&[data-variant='destructive'] svg": {
     color: "var(--destructive) !important",
   },
-}, { label: "dropdown-menu-item" });
+});
 
-const checkItem = style({
+const checkItem = style("dropdown-menu-check-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -176,9 +176,9 @@ const checkItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "dropdown-menu-check-item" });
+});
 
-const radioItem = style({
+const radioItem = style("dropdown-menu-radio-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -209,9 +209,9 @@ const radioItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "dropdown-menu-radio-item" });
+});
 
-const indicator = style({
+const indicator = style("dropdown-menu-indicator", {
   alignItems: "center",
   display: "flex",
   height: "0.875rem",
@@ -220,20 +220,20 @@ const indicator = style({
   pointerEvents: "none",
   position: "absolute",
   width: "0.875rem",
-}, { label: "dropdown-menu-indicator" });
+});
 
-const icon = style({
+const icon = style("dropdown-menu-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "dropdown-menu-icon" });
+});
 
-const radioIcon = style({
+const radioIcon = style("dropdown-menu-radio-icon", {
   fill: "currentColor",
   height: "0.5rem",
   width: "0.5rem",
-}, { label: "dropdown-menu-radio-icon" });
+});
 
-const label = style({
+const label = style("dropdown-menu-label", {
   fontSize: "0.875rem",
   fontWeight: "500",
   lineHeight: "1.25rem",
@@ -242,26 +242,26 @@ const label = style({
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
-}, { label: "dropdown-menu-label" });
+});
 
-const separator = style({
+const separator = style("dropdown-menu-separator", {
   backgroundColor: "var(--border)",
   height: "1px",
   marginBottom: "0.25rem",
   marginLeft: "-0.25rem",
   marginRight: "-0.25rem",
   marginTop: "0.25rem",
-}, { label: "dropdown-menu-separator" });
+});
 
-const shortcut = style({
+const shortcut = style("dropdown-menu-shortcut", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "dropdown-menu-shortcut" });
+});
 
-const subTrigger = style({
+const subTrigger = style("dropdown-menu-sub-trigger", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -297,15 +297,15 @@ const subTrigger = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "dropdown-menu-sub-trigger" });
+});
 
-const chevron = style({
+const chevron = style("dropdown-menu-chevron", {
   height: "1rem",
   marginLeft: "auto",
   width: "1rem",
-}, { label: "dropdown-menu-chevron" });
+});
 
-const subContent = style({
+const subContent = style("dropdown-menu-sub-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -333,7 +333,7 @@ const subContent = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "dropdown-menu-sub-content" });
+});
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";

@@ -10,7 +10,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const content = style({
+const content = style("popover-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -37,23 +37,23 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "popover-content" });
+});
 
-const header = style({
+const header = style("popover-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.25rem",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "popover-header" });
+});
 
-const title = style({
+const title = style("popover-title", {
   fontWeight: "500",
-}, { label: "popover-title" });
+});
 
-const description = style({
+const description = style("popover-description", {
   color: "var(--muted-foreground)",
-}, { label: "popover-description" });
+});
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";

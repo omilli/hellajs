@@ -2,7 +2,7 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("alert", {
   alignItems: "start",
   border: "1px solid var(--border)",
   borderRadius: "var(--radius)",
@@ -26,14 +26,14 @@ const base = style({
     translate: "0 0.125rem",
     width: "1rem",
   },
-}, { label: "alert" });
+});
 
 const variants = {
-  default: style({
+  default: style("alert-default", {
     backgroundColor: "var(--card)",
     color: "var(--card-foreground)",
-  }, { label: "alert-default" }),
-  destructive: style({
+  }),
+  destructive: style("alert-destructive", {
     backgroundColor: "var(--card)",
     color: "var(--destructive)",
     "& > [data-slot='alert-description']": {
@@ -42,10 +42,10 @@ const variants = {
     "& > svg": {
       color: "currentColor",
     },
-  }, { label: "alert-destructive" }),
+  }),
 };
 
-const title = style({
+const title = style("alert-title", {
   display: "-webkit-box",
   fontWeight: "500",
   gridColumnStart: "2",
@@ -55,9 +55,9 @@ const title = style({
   overflow: "clip",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: "1",
-}, { label: "alert-title" });
+});
 
-const description = style({
+const description = style("alert-description", {
   color: "var(--muted-foreground)",
   display: "grid",
   fontSize: "0.875rem",
@@ -68,7 +68,7 @@ const description = style({
   "& p": {
     lineHeight: "1.625rem",
   },
-}, { label: "alert-description" });
+});
 
 interface AlertProps {
   children?: HellaChildren;

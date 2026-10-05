@@ -6,7 +6,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-export const base = style({
+export const base = style("dropdown-menu-base", {
   alignItems: "center",
   background: "var(--background)",
   border: "1px solid var(--border)",
@@ -56,9 +56,9 @@ export const base = style({
   "&:is(.dark *):hover": {
     background: "color-mix(in oklab, var(--input) 50%, transparent)",
   },
-}, { label: "dropdown-menu-base" });
+});
 
-export const content = style({
+export const content = style("dropdown-menu-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -88,9 +88,9 @@ export const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "dropdown-menu-content" });
+});
 
-export const item = style({
+export const item = style("dropdown-menu-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -139,9 +139,9 @@ export const item = style({
   "&[data-variant='destructive'] svg": {
     color: "var(--destructive) !important",
   },
-}, { label: "dropdown-menu-item" });
+});
 
-export const checkItem = style({
+export const checkItem = style("dropdown-menu-check-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -172,9 +172,9 @@ export const checkItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "dropdown-menu-check-item" });
+});
 
-export const radioItem = style({
+export const radioItem = style("dropdown-menu-radio-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -205,9 +205,9 @@ export const radioItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "dropdown-menu-radio-item" });
+});
 
-export const indicator = style({
+export const indicator = style("dropdown-menu-indicator", {
   alignItems: "center",
   display: "flex",
   height: "0.875rem",
@@ -216,20 +216,20 @@ export const indicator = style({
   pointerEvents: "none",
   position: "absolute",
   width: "0.875rem",
-}, { label: "dropdown-menu-indicator" });
+});
 
-export const icon = style({
+export const icon = style("dropdown-menu-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "dropdown-menu-icon" });
+});
 
-export const radioIcon = style({
+export const radioIcon = style("dropdown-menu-radio-icon", {
   fill: "currentColor",
   height: "0.5rem",
   width: "0.5rem",
-}, { label: "dropdown-menu-radio-icon" });
+});
 
-export const label = style({
+export const label = style("dropdown-menu-label", {
   fontSize: "0.875rem",
   fontWeight: "500",
   lineHeight: "1.25rem",
@@ -238,26 +238,26 @@ export const label = style({
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
-}, { label: "dropdown-menu-label" });
+});
 
-export const separator = style({
+export const separator = style("dropdown-menu-separator", {
   backgroundColor: "var(--border)",
   height: "1px",
   marginBottom: "0.25rem",
   marginLeft: "-0.25rem",
   marginRight: "-0.25rem",
   marginTop: "0.25rem",
-}, { label: "dropdown-menu-separator" });
+});
 
-export const shortcut = style({
+export const shortcut = style("dropdown-menu-shortcut", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "dropdown-menu-shortcut" });
+});
 
-export const subTrigger = style({
+export const subTrigger = style("dropdown-menu-sub-trigger", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -293,15 +293,15 @@ export const subTrigger = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "dropdown-menu-sub-trigger" });
+});
 
-export const chevron = style({
+export const chevron = style("dropdown-menu-chevron", {
   height: "1rem",
   marginLeft: "auto",
   width: "1rem",
-}, { label: "dropdown-menu-chevron" });
+});
 
-export const subContent = style({
+export const subContent = style("dropdown-menu-sub-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -329,4 +329,4 @@ export const subContent = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "dropdown-menu-sub-content" });
+});

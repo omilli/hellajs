@@ -1,13 +1,13 @@
 import { css, style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("calendar", {
   backgroundColor: "var(--background)",
   padding: "0.75rem",
   width: "fit-content",
   "--cell-size": "2rem",
-}, { label: "calendar" });
+});
 
-export const months = style({
+export const months = style("calendar-months", {
   display: "flex",
   flexDirection: "column",
   gap: "1rem",
@@ -15,31 +15,31 @@ export const months = style({
   "@media (min-width: 48rem)": {
     flexDirection: "row",
   },
-}, { label: "calendar-months" });
+});
 
-export const month = style({
+export const month = style("calendar-month", {
   display: "flex",
   flexDirection: "column",
   gap: "1rem",
   width: "100%",
-}, { label: "calendar-month" });
+});
 
-export const monthCaption = style({
+export const monthCaption = style("calendar-caption", {
   alignItems: "center",
   display: "flex",
   height: "var(--cell-size)",
   justifyContent: "center",
   paddingInline: "var(--cell-size)",
   width: "100%",
-}, { label: "calendar-caption" });
+});
 
-export const captionLabel = style({
+export const captionLabel = style("calendar-caption-label", {
   fontSize: "0.875rem",
   fontWeight: "500",
   userSelect: "none",
-}, { label: "calendar-caption-label" });
+});
 
-export const nav = style({
+export const nav = style("calendar-nav", {
   alignItems: "center",
   display: "flex",
   gap: "0.25rem",
@@ -49,10 +49,10 @@ export const nav = style({
   right: "0",
   top: "0",
   width: "100%",
-}, { label: "calendar-nav" });
+});
 
 /** The ref's nav buttons: ghost icon-class button tokens with the default size tokens pre-merged out against `size-(--cell-size)`/`p-0`. */
-export const navButton = style({
+export const navButton = style("calendar-nav-button", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxSizing: "border-box",
@@ -103,38 +103,38 @@ export const navButton = style({
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
   },
-}, { label: "calendar-nav-button" });
+});
 
-export const icon = style({
+export const icon = style("calendar-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "calendar-icon" });
+});
 
-export const monthGrid = style({
+export const monthGrid = style("calendar-grid", {
   borderCollapse: "collapse",
   width: "100%",
-}, { label: "calendar-grid" });
+});
 
-export const weekdays = style({
+export const weekdays = style("calendar-weekdays", {
   display: "flex",
-}, { label: "calendar-weekdays" });
+});
 
-export const weekday = style({
+export const weekday = style("calendar-weekday", {
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--muted-foreground)",
   flex: "1 1 0%",
   fontSize: "0.8rem",
   fontWeight: "400",
   userSelect: "none",
-}, { label: "calendar-weekday" });
+});
 
-export const week = style({
+export const week = style("calendar-week", {
   display: "flex",
   marginTop: "0.5rem",
   width: "100%",
-}, { label: "calendar-week" });
+});
 
-export const day = style({
+export const day = style("calendar-day", {
   aspectRatio: "1 / 1",
   height: "100%",
   padding: "0",
@@ -142,10 +142,10 @@ export const day = style({
   textAlign: "center",
   userSelect: "none",
   width: "100%",
-}, { label: "calendar-day" });
+});
 
 /** The ref's CalendarDayButton: ghost icon-class tokens with the conflicts the ref's `cn()` resolves pre-merged; range/selection state rides the button's own data attributes. */
-export const dayButton = style({
+export const dayButton = style("calendar-day-button", {
   alignItems: "center",
   aspectRatio: "1 / 1",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -218,7 +218,7 @@ export const dayButton = style({
     borderRadius: "0",
     color: "var(--accent-foreground)",
   },
-}, { label: "calendar-day-button" });
+});
 
 css({
   "[data-slot='calendar-day'][data-today='true']": {

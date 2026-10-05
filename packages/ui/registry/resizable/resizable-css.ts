@@ -1,15 +1,15 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("resizable-panel-group", {
   display: "flex",
   height: "100%",
   width: "100%",
   "&[aria-orientation='vertical']": {
     flexDirection: "column",
   },
-}, { label: "resizable-panel-group" });
+});
 
-export const handle = style({
+export const handle = style("resizable-handle", {
   alignItems: "center",
   backgroundColor: "var(--border)",
   display: "flex",
@@ -41,9 +41,9 @@ export const handle = style({
   "&[aria-orientation='horizontal'] > div": {
     rotate: "90deg",
   },
-}, { label: "resizable-handle" });
+});
 
-export const grip = style({
+export const grip = style("resizable-grip", {
   alignItems: "center",
   border: "1px solid var(--border)",
   borderRadius: "0.125rem",
@@ -53,9 +53,9 @@ export const grip = style({
   justifyContent: "center",
   width: "0.75rem",
   zIndex: "10",
-}, { label: "resizable-grip" });
+});
 
-export const icon = style({
+export const icon = style("resizable-icon", {
   height: "0.625rem",
   width: "0.625rem",
-}, { label: "resizable-icon" });
+});

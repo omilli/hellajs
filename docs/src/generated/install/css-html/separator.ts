@@ -3,7 +3,7 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("separator", {
   backgroundColor: "var(--border)",
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
@@ -14,7 +14,7 @@ const base = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "separator" });
+});
 
 interface SeparatorProps {
   children?: HellaChildren;

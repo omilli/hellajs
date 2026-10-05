@@ -1,11 +1,11 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("radio-group", {
   display: "grid",
   gap: "0.75rem",
-}, { label: "radio-group" });
+});
 
-export const item = style({
+export const item = style("radio-group-item", {
   aspectRatio: "1 / 1",
   border: "1px solid var(--input)",
   borderRadius: "9999px",
@@ -37,16 +37,16 @@ export const item = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "radio-group-item" });
+});
 
-export const indicator = style({
+export const indicator = style("radio-group-indicator", {
   alignItems: "center",
   display: "flex",
   justifyContent: "center",
   position: "relative",
-}, { label: "radio-group-indicator" });
+});
 
-export const icon = style({
+export const icon = style("radio-group-icon", {
   fill: "var(--primary)",
   height: "0.5rem",
   left: "50%",
@@ -54,10 +54,10 @@ export const icon = style({
   top: "50%",
   translate: "-50% -50%",
   width: "0.5rem",
-}, { label: "radio-group-icon" });
+});
 
-export const row = style({
+export const row = style("radio-group-row", {
   alignItems: "center",
   display: "flex",
   gap: "0.5rem",
-}, { label: "radio-group-row" });
+});

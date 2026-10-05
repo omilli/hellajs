@@ -3,16 +3,16 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const trigger = style({
+const trigger = style("collapsible-trigger", {
   alignItems: "center",
   display: "inline-flex",
   gap: "0.5rem",
   "&[data-state='open'] > svg": {
     rotate: "180deg",
   },
-}, { label: "collapsible-trigger" });
+});
 
-const icon = style({
+const icon = style("collapsible-icon", {
   color: "var(--muted-foreground)",
   flexShrink: "0",
   height: "1rem",
@@ -20,9 +20,9 @@ const icon = style({
   translate: "0 0.125rem",
   transition: "rotate 200ms cubic-bezier(0.4, 0, 0.2, 1), translate 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
-}, { label: "collapsible-icon" });
+});
 
-const content = style({
+const content = style("collapsible-content", {
   display: "grid",
   gridTemplateRows: "0fr",
   opacity: "0",
@@ -31,12 +31,12 @@ const content = style({
     gridTemplateRows: "1fr",
     opacity: "1",
   },
-}, { label: "collapsible-content" });
+});
 
-const contentInner = style({
+const contentInner = style("collapsible-content-inner", {
   minHeight: "0",
   overflow: "hidden",
-}, { label: "collapsible-content-inner" });
+});
 
 interface CollapsibleProps {
   /** Controlled open state. When given, the root never writes its internal signal and `onOpenChange` reports the requested flip. */

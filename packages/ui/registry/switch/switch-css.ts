@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("switch", {
   alignItems: "center",
   border: "1px solid transparent",
   borderRadius: "9999px",
@@ -30,9 +30,9 @@ export const base = style({
   "&:is(.dark *)[data-state='unchecked']": {
     backgroundColor: "color-mix(in oklab, var(--input) 80%, transparent)",
   },
-}, { label: "switch" });
+});
 
-export const thumb = style({
+export const thumb = style("switch-thumb", {
   backgroundColor: "var(--background)",
   borderRadius: "9999px",
   display: "block",
@@ -52,4 +52,4 @@ export const thumb = style({
   "&:is(.dark *)[data-state='unchecked']": {
     backgroundColor: "var(--foreground)",
   },
-}, { label: "switch-thumb" });
+});

@@ -3,7 +3,7 @@ import { onDrag } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("slider", {
   alignItems: "center",
   display: "flex",
   position: "relative",
@@ -19,9 +19,9 @@ const base = style({
     minHeight: "11rem",
     width: "auto",
   },
-}, { label: "slider" });
+});
 
-const track = style({
+const track = style("slider-track", {
   borderRadius: "9999px",
   backgroundColor: "var(--muted)",
   flexGrow: "1",
@@ -35,9 +35,9 @@ const track = style({
     height: "100%",
     width: "0.375rem",
   },
-}, { label: "slider-track" });
+});
 
-const range = style({
+const range = style("slider-range", {
   backgroundColor: "var(--primary)",
   position: "absolute",
   "&[data-orientation='horizontal']": {
@@ -46,9 +46,9 @@ const range = style({
   "&[data-orientation='vertical']": {
     width: "100%",
   },
-}, { label: "slider-range" });
+});
 
-const thumb = style({
+const thumb = style("slider-thumb", {
   backgroundColor: "#fff",
   border: "1px solid var(--primary)",
   borderRadius: "9999px",
@@ -70,7 +70,7 @@ const thumb = style({
     opacity: "0.5",
     pointerEvents: "none",
   },
-}, { label: "slider-thumb" });
+});
 
 interface SliderProps {
   /** The thumb values. A static array seeds the internal signal; an accessor makes the slider controlled, so writes report through `onValueChange` only. */

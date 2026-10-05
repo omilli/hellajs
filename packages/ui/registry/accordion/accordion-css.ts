@@ -1,17 +1,17 @@
 import { style } from "@hellajs/css";
 
-export const item = style({
+export const item = style("accordion-item", {
   borderBottom: "1px solid var(--border)",
   "&:last-child": {
     borderBottom: "0",
   },
-}, { label: "accordion-item" });
+});
 
-export const header = style({
+export const header = style("accordion-header", {
   display: "flex",
-}, { label: "accordion-header" });
+});
 
-export const trigger = style({
+export const trigger = style("accordion-trigger", {
   alignItems: "flex-start",
   borderRadius: "calc(var(--radius) * 0.8)",
   display: "flex",
@@ -39,9 +39,9 @@ export const trigger = style({
   "&[data-state='open'] > svg": {
     rotate: "180deg",
   },
-}, { label: "accordion-trigger" });
+});
 
-export const icon = style({
+export const icon = style("accordion-icon", {
   color: "var(--muted-foreground)",
   flexShrink: "0",
   height: "1rem",
@@ -49,9 +49,9 @@ export const icon = style({
   translate: "0 0.125rem",
   transition: "rotate 200ms cubic-bezier(0.4, 0, 0.2, 1), translate 200ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
-}, { label: "accordion-icon" });
+});
 
-export const content = style({
+export const content = style("accordion-content", {
   display: "grid",
   fontSize: "0.875rem",
   gridTemplateRows: "0fr",
@@ -62,9 +62,9 @@ export const content = style({
     gridTemplateRows: "1fr",
     opacity: "1",
   },
-}, { label: "accordion-content" });
+});
 
-export const contentInner = style({
+export const contentInner = style("accordion-content-inner", {
   minHeight: "0",
   overflow: "hidden",
   paddingBottom: "0",
@@ -73,4 +73,4 @@ export const contentInner = style({
   "&[data-state='open']": {
     paddingBottom: "1rem",
   },
-}, { label: "accordion-content-inner" });
+});

@@ -2,7 +2,7 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("badge", {
   alignItems: "center",
   border: "1px solid transparent",
   borderRadius: "calc(infinity * 1px)",
@@ -38,24 +38,24 @@ const base = style({
   "&:is(.dark *)[aria-invalid='true']": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "badge" });
+});
 
 const variants = {
-  default: style({
+  default: style("badge-default", {
     backgroundColor: "var(--primary)",
     color: "var(--primary-foreground)",
     "&:is(a):hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "badge-default" }),
-  secondary: style({
+  }),
+  secondary: style("badge-secondary", {
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:is(a):hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 90%, transparent)",
     },
-  }, { label: "badge-secondary" }),
-  destructive: style({
+  }),
+  destructive: style("badge-destructive", {
     backgroundColor: "var(--destructive)",
     color: "#fff",
     "&:focus-visible": {
@@ -70,28 +70,28 @@ const variants = {
     "&:is(a):hover": {
       backgroundColor: "color-mix(in oklab, var(--destructive) 90%, transparent)",
     },
-  }, { label: "badge-destructive" }),
-  outline: style({
+  }),
+  outline: style("badge-outline", {
     borderColor: "var(--border)",
     color: "var(--foreground)",
     "&:is(a):hover": {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
     },
-  }, { label: "badge-outline" }),
-  ghost: style({
+  }),
+  ghost: style("badge-ghost", {
     "&:is(a):hover": {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
     },
-  }, { label: "badge-ghost" }),
-  link: style({
+  }),
+  link: style("badge-link", {
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:is(a):hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "badge-link" }),
+  }),
 };
 
 interface BadgeProps {

@@ -19,13 +19,13 @@ const slideInRight = keyframes({ from: { opacity: "0", transform: "translateX(10
 const slideOutRight = keyframes({ to: { opacity: "0", transform: "translateX(100%)" } });
 const tooltipInRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 
-export const base = style({
+export const base = style("sidebar-base", {
   display: "flex",
   minHeight: "100svh",
   width: "100%",
-}, { label: "sidebar-base" });
+});
 
-export const sidebar = style({
+export const sidebar = style("sidebar", {
   color: "var(--sidebar-foreground)",
   display: "none",
   "@media (min-width: 48rem)": {
@@ -33,29 +33,29 @@ export const sidebar = style({
       display: "block",
     },
   },
-}, { label: "sidebar" });
+});
 
-export const none = style({
+export const none = style("sidebar-none", {
   background: "var(--sidebar)",
   color: "var(--sidebar-foreground)",
   display: "flex",
   flexDirection: "column",
   height: "100%",
   width: "var(--sidebar-width)",
-}, { label: "sidebar-none" });
+});
 
-export const gap = style({
+export const gap = style("sidebar-gap", {
   background: "transparent",
   position: "relative",
   transition: "width 200ms linear",
   width: "var(--sidebar-width)",
-}, { label: "sidebar-gap" });
+});
 
 export const gapPlain = "";
 
 export const gapInset = "";
 
-export const container = style({
+export const container = style("sidebar-container", {
   display: "none",
   height: "100svh",
   insetBlock: "0",
@@ -68,30 +68,30 @@ export const container = style({
       display: "flex",
     },
   },
-}, { label: "sidebar-container" });
+});
 
 export const containerSides = {
-  left: style({
+  left: style("sidebar-container-left", {
     left: "0",
-  }, { label: "sidebar-container-left" }),
-  right: style({
+  }),
+  right: style("sidebar-container-right", {
     right: "0",
-  }, { label: "sidebar-container-right" }),
+  }),
 };
 
 export const containerPlain = "";
 
 export const containerInset = "";
 
-export const inner = style({
+export const inner = style("sidebar-inner", {
   background: "var(--sidebar)",
   display: "flex",
   flexDirection: "column",
   height: "100%",
   width: "100%",
-}, { label: "sidebar-inner" });
+});
 
-export const overlay = style({
+export const overlay = style("sidebar-overlay", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -102,9 +102,9 @@ export const overlay = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "sidebar-overlay" });
+});
 
-export const mobile = style({
+export const mobile = style("sidebar-mobile", {
   background: "var(--sidebar)",
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   color: "var(--sidebar-foreground)",
@@ -129,10 +129,10 @@ export const mobile = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "sidebar-mobile" });
+});
 
 export const mobileSides = {
-  left: style({
+  left: style("sidebar-mobile-left", {
     borderRight: "1px solid var(--border)",
     bottom: "0",
     height: "100%",
@@ -150,8 +150,8 @@ export const mobileSides = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "sidebar-mobile-left" }),
-  right: style({
+  }),
+  right: style("sidebar-mobile-right", {
     borderLeft: "1px solid var(--border)",
     bottom: "0",
     height: "100%",
@@ -169,17 +169,17 @@ export const mobileSides = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "sidebar-mobile-right" }),
+  }),
 };
 
-export const mobileInner = style({
+export const mobileInner = style("sidebar-mobile-inner", {
   display: "flex",
   flexDirection: "column",
   height: "100%",
   width: "100%",
-}, { label: "sidebar-mobile-inner" });
+});
 
-export const trigger = style({
+export const trigger = style("sidebar-trigger", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   display: "inline-flex",
@@ -228,9 +228,9 @@ export const trigger = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "sidebar-trigger" });
+});
 
-export const rail = style({
+export const rail = style("sidebar-rail", {
   display: "none",
   insetBlock: "0",
   position: "absolute",
@@ -249,18 +249,18 @@ export const rail = style({
       display: "flex",
     },
   },
-}, { label: "sidebar-rail" });
+});
 
-export const inset = style({
+export const inset = style("sidebar-inset", {
   background: "var(--background)",
   display: "flex",
   flex: "1",
   flexDirection: "column",
   position: "relative",
   width: "100%",
-}, { label: "sidebar-inset" });
+});
 
-export const inputBase = style({
+export const inputBase = style("sidebar-input-base", {
   background: "transparent",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -304,16 +304,16 @@ export const inputBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "sidebar-input-base" });
+});
 
-export const inputFocus = style({
+export const inputFocus = style("sidebar-input-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "sidebar-input-focus" });
+});
 
-export const inputInvalid = style({
+export const inputInvalid = style("sidebar-input-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -323,30 +323,30 @@ export const inputInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "sidebar-input-invalid" });
+});
 
-export const input = style({
+export const input = style("sidebar-input", {
   background: "var(--background)",
   boxShadow: "none",
   height: "2rem",
   width: "100%",
-}, { label: "sidebar-input" });
+});
 
-export const header = style({
+export const header = style("sidebar-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   padding: "0.5rem",
-}, { label: "sidebar-header" });
+});
 
-export const footer = style({
+export const footer = style("sidebar-footer", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   padding: "0.5rem",
-}, { label: "sidebar-footer" });
+});
 
-export const separatorBase = style({
+export const separatorBase = style("sidebar-separator-base", {
   backgroundColor: "var(--border)",
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
@@ -357,33 +357,33 @@ export const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "sidebar-separator-base" });
+});
 
-export const separator = style({
+export const separator = style("sidebar-separator", {
   background: "var(--sidebar-border)",
   marginInline: "0.5rem",
   width: "auto",
-}, { label: "sidebar-separator" });
+});
 
-export const content = style({
+export const content = style("sidebar-content", {
   display: "flex",
   flex: "1",
   flexDirection: "column",
   gap: "0.5rem",
   minHeight: "0",
   overflow: "auto",
-}, { label: "sidebar-content" });
+});
 
-export const group = style({
+export const group = style("sidebar-group", {
   display: "flex",
   flexDirection: "column",
   minWidth: "0",
   padding: "0.5rem",
   position: "relative",
   width: "100%",
-}, { label: "sidebar-group" });
+});
 
-export const groupLabel = style({
+export const groupLabel = style("sidebar-group-label", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "color-mix(in oklab, var(--sidebar-foreground) 70%, transparent)",
@@ -404,9 +404,9 @@ export const groupLabel = style({
   "&:focus-visible": {
     boxShadow: "0 0 0 2px var(--sidebar-ring)",
   },
-}, { label: "sidebar-group-label" });
+});
 
-export const groupAction = style({
+export const groupAction = style("sidebar-group-action", {
   alignItems: "center",
   aspectRatio: "1 / 1",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -441,26 +441,26 @@ export const groupAction = style({
       content: "none",
     },
   },
-}, { label: "sidebar-group-action" });
+});
 
-export const groupContent = style({
+export const groupContent = style("sidebar-group-content", {
   fontSize: "0.875rem",
   width: "100%",
-}, { label: "sidebar-group-content" });
+});
 
-export const menu = style({
+export const menu = style("sidebar-menu", {
   display: "flex",
   flexDirection: "column",
   gap: "0.25rem",
   minWidth: "0",
   width: "100%",
-}, { label: "sidebar-menu" });
+});
 
-export const menuItem = style({
+export const menuItem = style("sidebar-menu-item", {
   position: "relative",
-}, { label: "sidebar-menu-item" });
+});
 
-export const menuButton = style({
+export const menuButton = style("sidebar-menu-button", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   display: "flex",
@@ -509,11 +509,11 @@ export const menuButton = style({
     backgroundColor: "var(--sidebar-accent)",
     color: "var(--sidebar-accent-foreground)",
   },
-}, { label: "sidebar-menu-button" });
+});
 
 export const menuButtonVariants = {
   default: "",
-  outline: style({
+  outline: style("sidebar-menu-button-outline", {
     background: "var(--background)",
     boxShadow: "0 0 0 1px var(--sidebar-border)",
     "&:hover": {
@@ -521,25 +521,25 @@ export const menuButtonVariants = {
       boxShadow: "0 0 0 1px var(--sidebar-accent)",
       color: "var(--sidebar-accent-foreground)",
     },
-  }, { label: "sidebar-menu-button-outline" }),
+  }),
 };
 
 export const menuButtonSizes = {
-  default: style({
+  default: style("sidebar-menu-button-default", {
     fontSize: "0.875rem",
     height: "2rem",
-  }, { label: "sidebar-menu-button-default" }),
-  sm: style({
+  }),
+  sm: style("sidebar-menu-button-sm", {
     fontSize: "0.75rem",
     height: "1.75rem",
-  }, { label: "sidebar-menu-button-sm" }),
-  lg: style({
+  }),
+  lg: style("sidebar-menu-button-lg", {
     fontSize: "0.875rem",
     height: "3rem",
-  }, { label: "sidebar-menu-button-lg" }),
+  }),
 };
 
-export const menuAction = style({
+export const menuAction = style("sidebar-menu-action", {
   alignItems: "center",
   aspectRatio: "1 / 1",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -574,11 +574,11 @@ export const menuAction = style({
       content: "none",
     },
   },
-}, { label: "sidebar-menu-action" });
+});
 
 export const menuActionHover = "";
 
-export const menuBadge = style({
+export const menuBadge = style("sidebar-menu-badge", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--sidebar-foreground)",
@@ -594,40 +594,40 @@ export const menuBadge = style({
   position: "absolute",
   right: "0.25rem",
   userSelect: "none",
-}, { label: "sidebar-menu-badge" });
+});
 
-export const menuSkeleton = style({
+export const menuSkeleton = style("sidebar-menu-skeleton", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   display: "flex",
   gap: "0.5rem",
   height: "2rem",
   paddingInline: "0.5rem",
-}, { label: "sidebar-menu-skeleton" });
+});
 
 const pulse = keyframes({
   "50%": { opacity: "0.5" },
 });
 
-export const skeletonBase = style({
+export const skeletonBase = style("sidebar-skeleton", {
   animation: `${pulse} 2s cubic-bezier(0.4, 0, 0.2, 1) infinite`,
   backgroundColor: "var(--accent)",
   borderRadius: "calc(var(--radius) * 0.8)",
-}, { label: "sidebar-skeleton" });
+});
 
-export const skeletonIcon = style({
+export const skeletonIcon = style("sidebar-skeleton-icon", {
   borderRadius: "calc(var(--radius) * 0.8)",
   height: "1rem",
   width: "1rem",
-}, { label: "sidebar-skeleton-icon" });
+});
 
-export const skeletonText = style({
+export const skeletonText = style("sidebar-skeleton-text", {
   flex: "1",
   height: "1rem",
   maxWidth: "var(--skeleton-width)",
-}, { label: "sidebar-skeleton-text" });
+});
 
-export const menuSub = style({
+export const menuSub = style("sidebar-menu-sub", {
   borderLeft: "1px solid var(--sidebar-border)",
   display: "flex",
   flexDirection: "column",
@@ -637,13 +637,13 @@ export const menuSub = style({
   paddingBlock: "0.125rem",
   paddingInline: "0.625rem",
   translate: "1px",
-}, { label: "sidebar-menu-sub" });
+});
 
-export const menuSubItem = style({
+export const menuSubItem = style("sidebar-menu-sub-item", {
   position: "relative",
-}, { label: "sidebar-menu-sub-item" });
+});
 
-export const menuSubButton = style({
+export const menuSubButton = style("sidebar-menu-sub-button", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--sidebar-foreground)",
@@ -689,20 +689,20 @@ export const menuSubButton = style({
     backgroundColor: "var(--sidebar-accent)",
     color: "var(--sidebar-accent-foreground)",
   },
-}, { label: "sidebar-menu-sub-button" });
+});
 
 export const menuSubSizes = {
-  sm: style({
+  sm: style("sidebar-menu-sub-sm", {
     fontSize: "0.75rem",
     lineHeight: "1rem",
-  }, { label: "sidebar-menu-sub-sm" }),
-  md: style({
+  }),
+  md: style("sidebar-menu-sub-md", {
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
-  }, { label: "sidebar-menu-sub-md" }),
+  }),
 };
 
-export const tooltipContent = style({
+export const tooltipContent = style("sidebar-tooltip-content", {
   backgroundColor: "var(--foreground)",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--background)",
@@ -717,7 +717,7 @@ export const tooltipContent = style({
   "&[data-state='open'][data-side='right']": {
     animation: `${tooltipInRight} 150ms ease-out both`,
   },
-}, { label: "sidebar-tooltip-content" });
+});
 
 css({
   "[data-slot='sidebar-wrapper']:has([data-variant='inset'])": {

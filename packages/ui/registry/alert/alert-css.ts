@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("alert", {
   alignItems: "start",
   border: "1px solid var(--border)",
   borderRadius: "var(--radius)",
@@ -24,14 +24,14 @@ export const base = style({
     translate: "0 0.125rem",
     width: "1rem",
   },
-}, { label: "alert" });
+});
 
 export const variants = {
-  default: style({
+  default: style("alert-default", {
     backgroundColor: "var(--card)",
     color: "var(--card-foreground)",
-  }, { label: "alert-default" }),
-  destructive: style({
+  }),
+  destructive: style("alert-destructive", {
     backgroundColor: "var(--card)",
     color: "var(--destructive)",
     "& > [data-slot='alert-description']": {
@@ -40,10 +40,10 @@ export const variants = {
     "& > svg": {
       color: "currentColor",
     },
-  }, { label: "alert-destructive" }),
+  }),
 };
 
-export const title = style({
+export const title = style("alert-title", {
   display: "-webkit-box",
   fontWeight: "500",
   gridColumnStart: "2",
@@ -53,9 +53,9 @@ export const title = style({
   overflow: "clip",
   WebkitBoxOrient: "vertical",
   WebkitLineClamp: "1",
-}, { label: "alert-title" });
+});
 
-export const description = style({
+export const description = style("alert-description", {
   color: "var(--muted-foreground)",
   display: "grid",
   fontSize: "0.875rem",
@@ -66,4 +66,4 @@ export const description = style({
   "& p": {
     lineHeight: "1.625rem",
   },
-}, { label: "alert-description" });
+});

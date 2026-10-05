@@ -10,7 +10,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const content = style({
+const content = style("tooltip-content", {
   backgroundColor: "var(--foreground)",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--background)",
@@ -37,7 +37,7 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "tooltip-content" });
+});
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";

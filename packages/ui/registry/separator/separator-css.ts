@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("separator", {
   backgroundColor: "var(--border)",
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
@@ -11,4 +11,4 @@ export const base = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "separator" });
+});

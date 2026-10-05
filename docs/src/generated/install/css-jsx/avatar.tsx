@@ -4,7 +4,7 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("avatar", {
   borderRadius: "calc(infinity * 1px)",
   display: "flex",
   flexShrink: "0",
@@ -21,15 +21,15 @@ const base = style({
     height: "1.5rem",
     width: "1.5rem",
   },
-}, { label: "avatar" });
+});
 
-const image = style({
+const image = style("avatar-image", {
   aspectRatio: "1 / 1",
   height: "100%",
   width: "100%",
-}, { label: "avatar-image" });
+});
 
-const fallback = style({
+const fallback = style("avatar-fallback", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   borderRadius: "calc(infinity * 1px)",
@@ -42,9 +42,9 @@ const fallback = style({
   "&:is([data-slot='avatar'][data-size='sm'] *)": {
     fontSize: "0.75rem",
   },
-}, { label: "avatar-fallback" });
+});
 
-const badge = style({
+const badge = style("avatar-badge", {
   alignItems: "center",
   backgroundColor: "var(--primary)",
   borderRadius: "calc(infinity * 1px)",
@@ -80,9 +80,9 @@ const badge = style({
       width: "0.5rem",
     },
   },
-}, { label: "avatar-badge" });
+});
 
-const group = style({
+const group = style("avatar-group", {
   display: "flex",
   "& > :not(:last-child)": {
     marginInlineEnd: "-0.5rem",
@@ -90,9 +90,9 @@ const group = style({
   "& > [data-slot='avatar']": {
     boxShadow: "0 0 0 2px var(--background)",
   },
-}, { label: "avatar-group" });
+});
 
-const groupCount = style({
+const groupCount = style("avatar-group-count", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   borderRadius: "calc(infinity * 1px)",
@@ -125,7 +125,7 @@ const groupCount = style({
       width: "0.75rem",
     },
   },
-}, { label: "avatar-group-count" });
+});
 
 interface AvatarProps {
   children?: HellaChildren;

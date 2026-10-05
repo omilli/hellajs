@@ -1,20 +1,20 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("pagination", {
   display: "flex",
   justifyContent: "center",
   marginInline: "auto",
   width: "100%",
-}, { label: "pagination" });
+});
 
-export const content = style({
+export const content = style("pagination-content", {
   alignItems: "center",
   display: "flex",
   flexDirection: "row",
   gap: "0.25rem",
-}, { label: "pagination-content" });
+});
 
-export const linkBase = style({
+export const linkBase = style("pagination-link", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxSizing: "border-box",
@@ -53,10 +53,10 @@ export const linkBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "pagination-link" });
+});
 
 export const linkVariants = {
-  ghost: style({
+  ghost: style("pagination-link-ghost", {
     "&:hover": {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
@@ -64,8 +64,8 @@ export const linkVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "pagination-link-ghost" }),
-  outline: style({
+  }),
+  outline: style("pagination-link-outline", {
     background: "var(--background)",
     border: "1px solid var(--border)",
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -80,19 +80,19 @@ export const linkVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "pagination-link-outline" }),
+  }),
 };
 
 export const linkSizes = {
-  default: style({
+  default: style("pagination-link-size-default", {
     height: "2.25rem",
     paddingBlock: "0.5rem",
     paddingInline: "1rem",
     "&:has(> svg)": {
       paddingInline: "0.75rem",
     },
-  }, { label: "pagination-link-size-default" }),
-  xs: style({
+  }),
+  xs: style("pagination-link-size-xs", {
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
     gap: "0.25rem",
@@ -106,8 +106,8 @@ export const linkSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "pagination-link-size-xs" }),
-  sm: style({
+  }),
+  sm: style("pagination-link-size-sm", {
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
     height: "2rem",
@@ -115,20 +115,20 @@ export const linkSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "pagination-link-size-sm" }),
-  lg: style({
+  }),
+  lg: style("pagination-link-size-lg", {
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "2.5rem",
     paddingInline: "1.5rem",
     "&:has(> svg)": {
       paddingInline: "1rem",
     },
-  }, { label: "pagination-link-size-lg" }),
-  icon: style({
+  }),
+  icon: style("pagination-link-size-icon", {
     height: "2.25rem",
     width: "2.25rem",
-  }, { label: "pagination-link-size-icon" }),
-  "icon-xs": style({
+  }),
+  "icon-xs": style("pagination-link-size-icon-xs", {
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
     width: "1.5rem",
@@ -136,18 +136,18 @@ export const linkSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "pagination-link-size-icon-xs" }),
-  "icon-sm": style({
+  }),
+  "icon-sm": style("pagination-link-size-icon-sm", {
     height: "2rem",
     width: "2rem",
-  }, { label: "pagination-link-size-icon-sm" }),
-  "icon-lg": style({
+  }),
+  "icon-lg": style("pagination-link-size-icon-lg", {
     height: "2.5rem",
     width: "2.5rem",
-  }, { label: "pagination-link-size-icon-lg" }),
+  }),
 };
 
-export const previous = style({
+export const previous = style("pagination-previous", {
   gap: "0.25rem",
   paddingInline: "0.625rem",
   "@media (min-width: 40rem)": {
@@ -155,9 +155,9 @@ export const previous = style({
       paddingLeft: "0.625rem",
     },
   },
-}, { label: "pagination-previous" });
+});
 
-export const next = style({
+export const next = style("pagination-next", {
   gap: "0.25rem",
   paddingInline: "0.625rem",
   "@media (min-width: 40rem)": {
@@ -165,18 +165,18 @@ export const next = style({
       paddingRight: "0.625rem",
     },
   },
-}, { label: "pagination-next" });
+});
 
-export const hiddenUntilSm = style({
+export const hiddenUntilSm = style("pagination-hidden-until-sm", {
   display: "none",
   "@media (min-width: 40rem)": {
     "&": {
       display: "block",
     },
   },
-}, { label: "pagination-hidden-until-sm" });
+});
 
-export const srOnly = style({
+export const srOnly = style("pagination-sr-only", {
   border: "0",
   clip: "rect(0, 0, 0, 0)",
   height: "1px",
@@ -186,9 +186,9 @@ export const srOnly = style({
   position: "absolute",
   whiteSpace: "nowrap",
   width: "1px",
-}, { label: "pagination-sr-only" });
+});
 
-export const ellipsis = style({
+export const ellipsis = style("pagination-ellipsis", {
   alignItems: "center",
   display: "flex",
   height: "2.25rem",
@@ -198,4 +198,4 @@ export const ellipsis = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "pagination-ellipsis" });
+});

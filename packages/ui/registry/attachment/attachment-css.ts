@@ -1,6 +1,6 @@
 import { css, style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("attachment", {
   position: "relative",
   display: "flex",
   width: "fit-content",
@@ -27,10 +27,10 @@ export const base = style({
   "&[data-state='idle']": {
     borderStyle: "dashed",
   },
-}, { label: "attachment" });
+});
 
 export const sizes = {
-  default: style({
+  default: style("attachment-size-default", {
     gap: "0.5rem",
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
@@ -41,8 +41,8 @@ export const sizes = {
     "&:has([data-slot='attachment-media'])": {
       padding: "0.5rem",
     },
-  }, { label: "attachment-size-default" }),
-  sm: style({
+  }),
+  sm: style("attachment-size-sm", {
     gap: "0.625rem",
     fontSize: "0.75rem",
     lineHeight: "1rem",
@@ -53,8 +53,8 @@ export const sizes = {
     "&:has([data-slot='attachment-media'])": {
       padding: "0.375rem",
     },
-  }, { label: "attachment-size-sm" }),
-  xs: style({
+  }),
+  xs: style("attachment-size-xs", {
     borderRadius: "calc(var(--radius) * 1)",
     gap: "0.375rem",
     fontSize: "0.75rem",
@@ -66,24 +66,24 @@ export const sizes = {
     "&:has([data-slot='attachment-media'])": {
       padding: "0.25rem",
     },
-  }, { label: "attachment-size-xs" }),
+  }),
 };
 
 export const orientations = {
-  horizontal: style({
+  horizontal: style("attachment-horizontal", {
     minWidth: "10rem",
     alignItems: "center",
-  }, { label: "attachment-horizontal" }),
-  vertical: style({
+  }),
+  vertical: style("attachment-vertical", {
     width: "6rem",
     flexDirection: "column",
     "&:has([data-slot='attachment-content'])": {
       width: "7.5rem",
     },
-  }, { label: "attachment-vertical" }),
+  }),
 };
 
-export const media = style({
+export const media = style("attachment-media", {
   position: "relative",
   display: "flex",
   aspectRatio: "1 / 1",
@@ -102,28 +102,28 @@ export const media = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "attachment-media" });
+});
 
 export const mediaVariants = {
-  icon: style({}, { label: "attachment-media-icon" }),
-  image: style({
+  icon: style("attachment-media-icon", {}),
+  image: style("attachment-media-image", {
     opacity: "0.6",
     "& > img": {
       aspectRatio: "1 / 1",
       width: "100%",
       objectFit: "cover",
     },
-  }, { label: "attachment-media-image" }),
+  }),
 };
 
-export const content = style({
+export const content = style("attachment-content", {
   maxWidth: "100%",
   minWidth: "0",
   flex: "1",
   lineHeight: "1.25",
-}, { label: "attachment-content" });
+});
 
-export const title = style({
+export const title = style("attachment-title", {
   display: "block",
   maxWidth: "100%",
   minWidth: "0",
@@ -131,9 +131,9 @@ export const title = style({
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
   fontWeight: "500",
-}, { label: "attachment-title" });
+});
 
-export const description = style({
+export const description = style("attachment-description", {
   marginTop: "0.125rem",
   display: "block",
   minWidth: "0",
@@ -144,24 +144,24 @@ export const description = style({
   fontSize: "0.75rem",
   lineHeight: "1rem",
   color: "var(--muted-foreground)",
-}, { label: "attachment-description" });
+});
 
-export const actions = style({
+export const actions = style("attachment-actions", {
   position: "relative",
   zIndex: "20",
   display: "flex",
   flexShrink: "0",
   alignItems: "center",
-}, { label: "attachment-actions" });
+});
 
-export const trigger = style({
+export const trigger = style("attachment-trigger", {
   position: "absolute",
   inset: "0",
   zIndex: "10",
   outlineStyle: "none",
-}, { label: "attachment-trigger" });
+});
 
-export const group = style({
+export const group = style("attachment-group", {
   display: "flex",
   minWidth: "0",
   gap: "0.75rem",
@@ -174,9 +174,9 @@ export const group = style({
     flex: "none",
     scrollSnapAlign: "start",
   },
-}, { label: "attachment-group" });
+});
 
-export const buttonBase = style({
+export const buttonBase = style("attachment-action", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxSizing: "border-box",
@@ -215,17 +215,17 @@ export const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "attachment-action" });
+});
 
 export const buttonVariants = {
-  default: style({
+  default: style("attachment-action-default", {
     backgroundColor: "var(--primary)",
     color: "var(--primary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "attachment-action-default" }),
-  destructive: style({
+  }),
+  destructive: style("attachment-action-destructive", {
     backgroundColor: "var(--destructive)",
     color: "#fff",
     "&:hover": {
@@ -240,8 +240,8 @@ export const buttonVariants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "attachment-action-destructive" }),
-  outline: style({
+  }),
+  outline: style("attachment-action-outline", {
     background: "var(--background)",
     border: "1px solid var(--border)",
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -256,15 +256,15 @@ export const buttonVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "attachment-action-outline" }),
-  secondary: style({
+  }),
+  secondary: style("attachment-action-secondary", {
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "attachment-action-secondary" }),
-  ghost: style({
+  }),
+  ghost: style("attachment-action-ghost", {
     "&:hover": {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
@@ -272,26 +272,26 @@ export const buttonVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "attachment-action-ghost" }),
-  link: style({
+  }),
+  link: style("attachment-action-link", {
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "attachment-action-link" }),
+  }),
 };
 
 export const buttonSizes = {
-  default: style({
+  default: style("attachment-action-size-default", {
     height: "2.25rem",
     paddingBlock: "0.5rem",
     paddingInline: "1rem",
     "&:has(> svg)": {
       paddingInline: "0.75rem",
     },
-  }, { label: "attachment-action-size-default" }),
-  xs: style({
+  }),
+  xs: style("attachment-action-size-xs", {
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
     gap: "0.25rem",
@@ -305,8 +305,8 @@ export const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "attachment-action-size-xs" }),
-  sm: style({
+  }),
+  sm: style("attachment-action-size-sm", {
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
     height: "2rem",
@@ -314,20 +314,20 @@ export const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "attachment-action-size-sm" }),
-  lg: style({
+  }),
+  lg: style("attachment-action-size-lg", {
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "2.5rem",
     paddingInline: "1.5rem",
     "&:has(> svg)": {
       paddingInline: "1rem",
     },
-  }, { label: "attachment-action-size-lg" }),
-  icon: style({
+  }),
+  icon: style("attachment-action-size-icon", {
     height: "2.25rem",
     width: "2.25rem",
-  }, { label: "attachment-action-size-icon" }),
-  "icon-xs": style({
+  }),
+  "icon-xs": style("attachment-action-size-icon-xs", {
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
     width: "1.5rem",
@@ -335,15 +335,15 @@ export const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "attachment-action-size-icon-xs" }),
-  "icon-sm": style({
+  }),
+  "icon-sm": style("attachment-action-size-icon-sm", {
     height: "2rem",
     width: "2rem",
-  }, { label: "attachment-action-size-icon-sm" }),
-  "icon-lg": style({
+  }),
+  "icon-lg": style("attachment-action-size-icon-lg", {
     height: "2.5rem",
     width: "2.5rem",
-  }, { label: "attachment-action-size-icon-lg" }),
+  }),
 };
 
 css({

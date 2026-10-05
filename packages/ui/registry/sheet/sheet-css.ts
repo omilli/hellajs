@@ -11,7 +11,7 @@ const slideOutBottom = keyframes({ to: { opacity: "0", transform: "translateY(10
 const slideInLeft = keyframes({ from: { opacity: "0", transform: "translateX(-100%)" } });
 const slideOutLeft = keyframes({ to: { opacity: "0", transform: "translateX(-100%)" } });
 
-export const base = style({
+export const base = style("sheet-base", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -22,9 +22,9 @@ export const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "sheet-base" });
+});
 
-export const content = style({
+export const content = style("sheet-content", {
   background: "var(--background)",
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   display: "flex",
@@ -33,10 +33,10 @@ export const content = style({
   position: "fixed",
   transition: "opacity 150ms ease-in-out, transform 150ms ease-in-out",
   zIndex: "50",
-}, { label: "sheet-content" });
+});
 
 export const contentSides = {
-  right: style({
+  right: style("sheet-content-right", {
     bottom: "0",
     borderLeft: "1px solid var(--border)",
     height: "100%",
@@ -54,8 +54,8 @@ export const contentSides = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "sheet-content-right" }),
-  left: style({
+  }),
+  left: style("sheet-content-left", {
     bottom: "0",
     borderRight: "1px solid var(--border)",
     height: "100%",
@@ -73,8 +73,8 @@ export const contentSides = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "sheet-content-left" }),
-  top: style({
+  }),
+  top: style("sheet-content-top", {
     borderBottom: "1px solid var(--border)",
     height: "auto",
     left: "0",
@@ -86,8 +86,8 @@ export const contentSides = {
     "&[data-state='closed']": {
       animation: `${slideOutTop} 300ms ease-in both`,
     },
-  }, { label: "sheet-content-top" }),
-  bottom: style({
+  }),
+  bottom: style("sheet-content-bottom", {
     borderTop: "1px solid var(--border)",
     bottom: "0",
     height: "auto",
@@ -99,10 +99,10 @@ export const contentSides = {
     "&[data-state='closed']": {
       animation: `${slideOutBottom} 300ms ease-in both`,
     },
-  }, { label: "sheet-content-bottom" }),
+  }),
 };
 
-export const close = style({
+export const close = style("sheet-close", {
   borderRadius: "calc(var(--radius) * 0.2)",
   opacity: "0.7",
   position: "absolute",
@@ -141,30 +141,30 @@ export const close = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "sheet-close" });
+});
 
-export const header = style({
+export const header = style("sheet-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.375rem",
   padding: "1rem",
-}, { label: "sheet-header" });
+});
 
-export const footer = style({
+export const footer = style("sheet-footer", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   marginTop: "auto",
   padding: "1rem",
-}, { label: "sheet-footer" });
+});
 
-export const title = style({
+export const title = style("sheet-title", {
   color: "var(--foreground)",
   fontWeight: "600",
-}, { label: "sheet-title" });
+});
 
-export const description = style({
+export const description = style("sheet-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "sheet-description" });
+});

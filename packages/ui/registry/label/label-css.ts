@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("label", {
   alignItems: "center",
   display: "flex",
   fontSize: "0.875rem",
@@ -16,4 +16,4 @@ export const base = style({
     cursor: "not-allowed",
     opacity: "0.5",
   },
-}, { label: "label" });
+});

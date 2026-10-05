@@ -1,7 +1,7 @@
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("textarea", {
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -29,16 +29,16 @@ const base = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "textarea" });
+});
 
-const focus = style({
+const focus = style("textarea-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "textarea-focus" });
+});
 
-const invalid = style({
+const invalid = style("textarea-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -48,7 +48,7 @@ const invalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "textarea-invalid" });
+});
 
 interface TextareaProps {
   value?: string | (() => string);

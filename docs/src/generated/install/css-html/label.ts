@@ -3,7 +3,7 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("label", {
   alignItems: "center",
   display: "flex",
   fontSize: "0.875rem",
@@ -19,7 +19,7 @@ const base = style({
     cursor: "not-allowed",
     opacity: "0.5",
   },
-}, { label: "label" });
+});
 
 interface LabelProps {
   children?: HellaChildren;

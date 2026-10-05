@@ -5,16 +5,16 @@ const caretBlink = keyframes({
   "20%,50%": { opacity: "0" },
 });
 
-export const base = style({
+export const base = style("input-otp", {
   alignItems: "center",
   display: "flex",
   gap: "0.5rem",
   "&:has(:disabled)": {
     opacity: "0.5",
   },
-}, { label: "input-otp" });
+});
 
-export const control = style({
+export const control = style("input-otp-input", {
   "&:disabled": {
     cursor: "not-allowed",
   },
@@ -22,14 +22,14 @@ export const control = style({
     backgroundColor: "transparent",
     color: "transparent",
   },
-}, { label: "input-otp-input" });
+});
 
-export const group = style({
+export const group = style("input-otp-group", {
   alignItems: "center",
   display: "flex",
-}, { label: "input-otp-group" });
+});
 
-export const slot = style({
+export const slot = style("input-otp-slot", {
   alignItems: "center",
   borderBlock: "1px solid var(--input)",
   borderRight: "1px solid var(--input)",
@@ -69,20 +69,20 @@ export const slot = style({
   "&:is(.dark *)": {
     backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "input-otp-slot" });
+});
 
-export const caretWrap = style({
+export const caretWrap = style("input-otp-caret", {
   alignItems: "center",
   display: "flex",
   inset: "0",
   justifyContent: "center",
   pointerEvents: "none",
   position: "absolute",
-}, { label: "input-otp-caret" });
+});
 
-export const caret = style({
+export const caret = style("input-otp-caret-bar", {
   animation: `${caretBlink} 1s ease-out infinite`,
   backgroundColor: "var(--foreground)",
   height: "1rem",
   width: "1px",
-}, { label: "input-otp-caret-bar" });
+});

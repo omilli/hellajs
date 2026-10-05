@@ -5,7 +5,7 @@ const fadeOut = keyframes({ to: { opacity: "0" } });
 const zoomIn = keyframes({ from: { opacity: "0", transform: "scale(0.95)" } });
 const zoomOut = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-export const base = style({
+export const base = style("command", {
   backgroundColor: "var(--popover)",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--popover-foreground)",
@@ -14,25 +14,25 @@ export const base = style({
   height: "100%",
   overflow: "hidden",
   width: "100%",
-}, { label: "command" });
+});
 
-export const inputWrapper = style({
+export const inputWrapper = style("command-input-wrapper", {
   alignItems: "center",
   borderBottom: "1px solid var(--border)",
   display: "flex",
   gap: "0.5rem",
   height: "2.25rem",
   paddingInline: "0.75rem",
-}, { label: "command-input-wrapper" });
+});
 
-export const icon = style({
+export const icon = style("command-icon", {
   flexShrink: "0",
   height: "1rem",
   opacity: "0.5",
   width: "1rem",
-}, { label: "command-icon" });
+});
 
-export const input = style({
+export const input = style("command-input", {
   backgroundColor: "transparent",
   borderRadius: "calc(var(--radius) * 0.8)",
   display: "flex",
@@ -50,23 +50,23 @@ export const input = style({
     cursor: "not-allowed",
     opacity: "0.5",
   },
-}, { label: "command-input" });
+});
 
-export const list = style({
+export const list = style("command-list", {
   maxHeight: "300px",
   overflowX: "hidden",
   overflowY: "auto",
   scrollPaddingBlock: "0.25rem",
-}, { label: "command-list" });
+});
 
-export const empty = style({
+export const empty = style("command-empty", {
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   paddingBlock: "1.5rem",
   textAlign: "center",
-}, { label: "command-empty" });
+});
 
-export const group = style({
+export const group = style("command-group", {
   color: "var(--foreground)",
   overflow: "hidden",
   padding: "0.25rem",
@@ -78,24 +78,24 @@ export const group = style({
     paddingInline: "0.5rem",
     paddingBlock: "0.375rem",
   },
-}, { label: "command-group" });
+});
 
-export const groupHeading = style({
+export const groupHeading = style("command-group-heading", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   fontWeight: "500",
   lineHeight: "1rem",
   paddingInline: "0.5rem",
   paddingBlock: "0.375rem",
-}, { label: "command-group-heading" });
+});
 
-export const separator = style({
+export const separator = style("command-separator", {
   backgroundColor: "var(--border)",
   height: "1px",
   marginInline: "-0.25rem",
-}, { label: "command-separator" });
+});
 
-export const item = style({
+export const item = style("command-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -128,17 +128,17 @@ export const item = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "command-item" });
+});
 
-export const shortcut = style({
+export const shortcut = style("command-shortcut", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "command-shortcut" });
+});
 
-export const palette = style({
+export const palette = style("command-palette", {
   "& [data-slot='command-input-wrapper']": {
     height: "3rem",
   },
@@ -168,9 +168,9 @@ export const palette = style({
     height: "1.25rem",
     width: "1.25rem",
   },
-}, { label: "command-palette" });
+});
 
-export const dialogOverlay = style({
+export const dialogOverlay = style("command-dialog-overlay", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -181,9 +181,9 @@ export const dialogOverlay = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "command-dialog-overlay" });
+});
 
-export const dialogPanel = style({
+export const dialogPanel = style("command-dialog-panel", {
   background: "var(--background)",
   border: "1px solid var(--border)",
   borderRadius: "var(--radius)",
@@ -211,9 +211,9 @@ export const dialogPanel = style({
       maxWidth: "32rem",
     },
   },
-}, { label: "command-dialog-panel" });
+});
 
-export const dialogHeader = style({
+export const dialogHeader = style("command-dialog-header", {
   clip: "rect(0, 0, 0, 0)",
   borderWidth: "0",
   height: "1px",
@@ -223,21 +223,21 @@ export const dialogHeader = style({
   position: "absolute",
   whiteSpace: "nowrap",
   width: "1px",
-}, { label: "command-dialog-header" });
+});
 
-export const dialogTitle = style({
+export const dialogTitle = style("command-dialog-title", {
   fontSize: "1.125rem",
   fontWeight: "600",
   lineHeight: "1",
-}, { label: "command-dialog-title" });
+});
 
-export const dialogDescription = style({
+export const dialogDescription = style("command-dialog-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "command-dialog-description" });
+});
 
-export const dialogClose = style({
+export const dialogClose = style("command-dialog-close", {
   borderRadius: "calc(var(--radius) * 0.2)",
   opacity: "0.7",
   position: "absolute",
@@ -277,4 +277,4 @@ export const dialogClose = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "command-dialog-close" });
+});

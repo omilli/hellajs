@@ -3,9 +3,9 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("aspect-ratio", {
   position: "relative",
-}, { label: "aspect-ratio" });
+});
 
 interface AspectRatioProps {
   ratio?: number;

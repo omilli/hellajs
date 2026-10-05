@@ -3,12 +3,12 @@ import { rovingTabIndex } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("radio-group", {
   display: "grid",
   gap: "0.75rem",
-}, { label: "radio-group" });
+});
 
-const item = style({
+const item = style("radio-group-item", {
   aspectRatio: "1 / 1",
   border: "1px solid var(--input)",
   borderRadius: "9999px",
@@ -40,16 +40,16 @@ const item = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "radio-group-item" });
+});
 
-const indicator = style({
+const indicator = style("radio-group-indicator", {
   alignItems: "center",
   display: "flex",
   justifyContent: "center",
   position: "relative",
-}, { label: "radio-group-indicator" });
+});
 
-const icon = style({
+const icon = style("radio-group-icon", {
   fill: "var(--primary)",
   height: "0.5rem",
   left: "50%",
@@ -57,13 +57,13 @@ const icon = style({
   top: "50%",
   translate: "-50% -50%",
   width: "0.5rem",
-}, { label: "radio-group-icon" });
+});
 
-const row = style({
+const row = style("radio-group-row", {
   alignItems: "center",
   display: "flex",
   gap: "0.5rem",
-}, { label: "radio-group-row" });
+});
 
 interface RadioGroupItem {
   value: string;

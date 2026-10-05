@@ -10,7 +10,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const base = style({
+const base = style("menubar-base", {
   alignItems: "center",
   background: "var(--background)",
   border: "1px solid var(--border)",
@@ -20,9 +20,9 @@ const base = style({
   gap: "0.25rem",
   height: "2.25rem",
   padding: "0.25rem",
-}, { label: "menubar-base" });
+});
 
-const trigger = style({
+const trigger = style("menubar-trigger", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   display: "flex",
@@ -41,9 +41,9 @@ const trigger = style({
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
   },
-}, { label: "menubar-trigger" });
+});
 
-const content = style({
+const content = style("menubar-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -71,9 +71,9 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "menubar-content" });
+});
 
-const item = style({
+const item = style("menubar-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -122,9 +122,9 @@ const item = style({
   "&[data-variant='destructive'] svg": {
     color: "var(--destructive) !important",
   },
-}, { label: "menubar-item" });
+});
 
-const checkItem = style({
+const checkItem = style("menubar-check-item", {
   alignItems: "center",
   borderRadius: "0.125rem",
   cursor: "default",
@@ -155,9 +155,9 @@ const checkItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "menubar-check-item" });
+});
 
-const radioItem = style({
+const radioItem = style("menubar-radio-item", {
   alignItems: "center",
   borderRadius: "0.125rem",
   cursor: "default",
@@ -188,9 +188,9 @@ const radioItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "menubar-radio-item" });
+});
 
-const indicator = style({
+const indicator = style("menubar-indicator", {
   alignItems: "center",
   display: "flex",
   height: "0.875rem",
@@ -199,20 +199,20 @@ const indicator = style({
   pointerEvents: "none",
   position: "absolute",
   width: "0.875rem",
-}, { label: "menubar-indicator" });
+});
 
-const icon = style({
+const icon = style("menubar-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "menubar-icon" });
+});
 
-const radioIcon = style({
+const radioIcon = style("menubar-radio-icon", {
   fill: "currentColor",
   height: "0.5rem",
   width: "0.5rem",
-}, { label: "menubar-radio-icon" });
+});
 
-const label = style({
+const label = style("menubar-label", {
   fontSize: "0.875rem",
   fontWeight: "500",
   lineHeight: "1.25rem",
@@ -221,26 +221,26 @@ const label = style({
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
-}, { label: "menubar-label" });
+});
 
-const separator = style({
+const separator = style("menubar-separator", {
   backgroundColor: "var(--border)",
   height: "1px",
   marginBottom: "0.25rem",
   marginLeft: "-0.25rem",
   marginRight: "-0.25rem",
   marginTop: "0.25rem",
-}, { label: "menubar-separator" });
+});
 
-const shortcut = style({
+const shortcut = style("menubar-shortcut", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "menubar-shortcut" });
+});
 
-const subTrigger = style({
+const subTrigger = style("menubar-sub-trigger", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -263,15 +263,15 @@ const subTrigger = style({
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
   },
-}, { label: "menubar-sub-trigger" });
+});
 
-const chevron = style({
+const chevron = style("menubar-chevron", {
   height: "1rem",
   marginLeft: "auto",
   width: "1rem",
-}, { label: "menubar-chevron" });
+});
 
-const subContent = style({
+const subContent = style("menubar-sub-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -299,7 +299,7 @@ const subContent = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "menubar-sub-content" });
+});
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";

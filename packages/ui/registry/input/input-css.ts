@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("input", {
   background: "transparent",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -44,16 +44,16 @@ export const base = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "input" });
+});
 
-export const focus = style({
+export const focus = style("input-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "input-focus" });
+});
 
-export const invalid = style({
+export const invalid = style("input-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -63,4 +63,4 @@ export const invalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "input-invalid" });
+});

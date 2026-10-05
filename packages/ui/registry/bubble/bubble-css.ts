@@ -1,14 +1,14 @@
 import { css, style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("bubble-group", {
   display: "flex",
   flexDirection: "column",
   minWidth: "0",
   gap: "0.5rem",
-}, { label: "bubble-group" });
+});
 
 export const variants = {
-  default: style({
+  default: style("bubble-default", {
     "& > [data-slot='bubble-content']": {
       backgroundColor: "var(--primary)",
       color: "var(--primary-foreground)",
@@ -16,8 +16,8 @@ export const variants = {
     "& > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 80%, transparent)",
     },
-  }, { label: "bubble-default" }),
-  secondary: style({
+  }),
+  secondary: style("bubble-secondary", {
     "& > [data-slot='bubble-content']": {
       backgroundColor: "var(--secondary)",
       color: "var(--secondary-foreground)",
@@ -25,16 +25,16 @@ export const variants = {
     "& > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklch, var(--secondary), var(--foreground) 5%)",
     },
-  }, { label: "bubble-secondary" }),
-  muted: style({
+  }),
+  muted: style("bubble-muted", {
     "& > [data-slot='bubble-content']": {
       backgroundColor: "var(--muted)",
     },
     "& > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklch, var(--muted), var(--foreground) 5%)",
     },
-  }, { label: "bubble-muted" }),
-  tinted: style({
+  }),
+  tinted: style("bubble-tinted", {
     "& > [data-slot='bubble-content']": {
       backgroundColor: "oklch(from var(--primary) 0.93 calc(c * 0.4) h)",
       color: "var(--foreground)",
@@ -48,8 +48,8 @@ export const variants = {
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "oklch(from var(--primary) 0.35 calc(c * 0.5) h)",
     },
-  }, { label: "bubble-tinted" }),
-  outline: style({
+  }),
+  outline: style("bubble-outline", {
     "& > [data-slot='bubble-content']": {
       borderColor: "var(--border)",
       backgroundColor: "var(--background)",
@@ -61,8 +61,8 @@ export const variants = {
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
     },
-  }, { label: "bubble-outline" }),
-  ghost: style({
+  }),
+  ghost: style("bubble-ghost", {
     borderStyle: "none",
     "& > [data-slot='bubble-content']": {
       borderRadius: "0",
@@ -76,8 +76,8 @@ export const variants = {
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
     },
-  }, { label: "bubble-ghost" }),
-  destructive: style({
+  }),
+  destructive: style("bubble-destructive", {
     "& > [data-slot='bubble-content']": {
       backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
       color: "var(--destructive)",
@@ -91,10 +91,10 @@ export const variants = {
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
       backgroundColor: "color-mix(in oklab, var(--destructive) 30%, transparent)",
     },
-  }, { label: "bubble-destructive" }),
+  }),
 };
 
-export const bubble = style({
+export const bubble = style("bubble", {
   position: "relative",
   display: "flex",
   width: "fit-content",
@@ -108,9 +108,9 @@ export const bubble = style({
   "&[data-variant='ghost']": {
     maxWidth: "100%",
   },
-}, { label: "bubble" });
+});
 
-export const content = style({
+export const content = style("bubble-content", {
   width: "fit-content",
   maxWidth: "100%",
   minWidth: "0",
@@ -135,9 +135,9 @@ export const content = style({
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "bubble-content" });
+});
 
-export const reactions = style({
+export const reactions = style("bubble-reactions", {
   position: "absolute",
   zIndex: "10",
   display: "flex",
@@ -155,7 +155,7 @@ export const reactions = style({
   "&:has(button)": {
     padding: "0",
   },
-}, { label: "bubble-reactions" });
+});
 
 css({
   "[data-slot='message'][data-align='end'] [data-slot='bubble']": {
@@ -167,21 +167,21 @@ css({
 });
 
 export const reactionsSides = {
-  top: style({
+  top: style("bubble-reactions-top", {
     top: "0",
     transform: "translateY(-75%)",
-  }, { label: "bubble-reactions-top" }),
-  bottom: style({
+  }),
+  bottom: style("bubble-reactions-bottom", {
     bottom: "0",
     transform: "translateY(75%)",
-  }, { label: "bubble-reactions-bottom" }),
+  }),
 };
 
 export const reactionsAligns = {
-  start: style({
+  start: style("bubble-reactions-start", {
     left: "0.75rem",
-  }, { label: "bubble-reactions-start" }),
-  end: style({
+  }),
+  end: style("bubble-reactions-end", {
     right: "0.75rem",
-  }, { label: "bubble-reactions-end" }),
+  }),
 };

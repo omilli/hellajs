@@ -6,7 +6,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-export const content = style({
+export const content = style("context-menu-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -36,9 +36,9 @@ export const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "context-menu-content" });
+});
 
-export const item = style({
+export const item = style("context-menu-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -87,9 +87,9 @@ export const item = style({
   "&[data-variant='destructive'] svg": {
     color: "var(--destructive) !important",
   },
-}, { label: "context-menu-item" });
+});
 
-export const checkItem = style({
+export const checkItem = style("context-menu-check-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -120,9 +120,9 @@ export const checkItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "context-menu-check-item" });
+});
 
-export const radioItem = style({
+export const radioItem = style("context-menu-radio-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -153,9 +153,9 @@ export const radioItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "context-menu-radio-item" });
+});
 
-export const indicator = style({
+export const indicator = style("context-menu-indicator", {
   alignItems: "center",
   display: "flex",
   height: "0.875rem",
@@ -164,20 +164,20 @@ export const indicator = style({
   pointerEvents: "none",
   position: "absolute",
   width: "0.875rem",
-}, { label: "context-menu-indicator" });
+});
 
-export const icon = style({
+export const icon = style("context-menu-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "context-menu-icon" });
+});
 
-export const radioIcon = style({
+export const radioIcon = style("context-menu-radio-icon", {
   fill: "currentColor",
   height: "0.5rem",
   width: "0.5rem",
-}, { label: "context-menu-radio-icon" });
+});
 
-export const label = style({
+export const label = style("context-menu-label", {
   color: "var(--foreground)",
   fontSize: "0.875rem",
   fontWeight: "500",
@@ -187,26 +187,26 @@ export const label = style({
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
-}, { label: "context-menu-label" });
+});
 
-export const separator = style({
+export const separator = style("context-menu-separator", {
   backgroundColor: "var(--border)",
   height: "1px",
   marginBottom: "0.25rem",
   marginLeft: "-0.25rem",
   marginRight: "-0.25rem",
   marginTop: "0.25rem",
-}, { label: "context-menu-separator" });
+});
 
-export const shortcut = style({
+export const shortcut = style("context-menu-shortcut", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "context-menu-shortcut" });
+});
 
-export const subTrigger = style({
+export const subTrigger = style("context-menu-sub-trigger", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -241,13 +241,13 @@ export const subTrigger = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "context-menu-sub-trigger" });
+});
 
-export const chevron = style({
+export const chevron = style("context-menu-chevron", {
   marginLeft: "auto",
-}, { label: "context-menu-chevron" });
+});
 
-export const subContent = style({
+export const subContent = style("context-menu-sub-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -275,4 +275,4 @@ export const subContent = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "context-menu-sub-content" });
+});

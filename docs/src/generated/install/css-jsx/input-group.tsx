@@ -2,7 +2,7 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
-const base = style({
+const base = style("input-group", {
   alignItems: "center",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -53,9 +53,9 @@ const base = style({
   "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "input-group" });
+});
 
-const addon = style({
+const addon = style("input-group-addon", {
   alignItems: "center",
   color: "var(--muted-foreground)",
   cursor: "text",
@@ -74,10 +74,10 @@ const addon = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "input-group-addon" });
+});
 
 const addonAlign = {
-  "inline-start": style({
+  "inline-start": style("input-group-addon-inline-start", {
     order: "-9999",
     paddingLeft: "0.75rem",
     "&:has(> button)": {
@@ -86,8 +86,8 @@ const addonAlign = {
     "&:has(> kbd)": {
       marginLeft: "-0.35rem",
     },
-  }, { label: "input-group-addon-inline-start" }),
-  "inline-end": style({
+  }),
+  "inline-end": style("input-group-addon-inline-end", {
     order: "9999",
     paddingRight: "0.75rem",
     "&:has(> button)": {
@@ -96,24 +96,24 @@ const addonAlign = {
     "&:has(> kbd)": {
       marginRight: "-0.35rem",
     },
-  }, { label: "input-group-addon-inline-end" }),
-  "block-start": style({
+  }),
+  "block-start": style("input-group-addon-block-start", {
     justifyContent: "flex-start",
     order: "-9999",
     paddingInline: "0.75rem",
     paddingTop: "0.75rem",
     width: "100%",
-  }, { label: "input-group-addon-block-start" }),
-  "block-end": style({
+  }),
+  "block-end": style("input-group-addon-block-end", {
     justifyContent: "flex-start",
     order: "9999",
     paddingInline: "0.75rem",
     paddingBottom: "0.75rem",
     width: "100%",
-  }, { label: "input-group-addon-block-end" }),
+  }),
 };
 
-const buttonBase = style({
+const buttonBase = style("input-group-button", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxSizing: "border-box",
@@ -152,17 +152,17 @@ const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "input-group-button" });
+});
 
 const buttonVariants = {
-  default: style({
+  default: style("input-group-button-default", {
     backgroundColor: "var(--primary)",
     color: "var(--primary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
     },
-  }, { label: "input-group-button-default" }),
-  destructive: style({
+  }),
+  destructive: style("input-group-button-destructive", {
     backgroundColor: "var(--destructive)",
     color: "#fff",
     "&:hover": {
@@ -177,8 +177,8 @@ const buttonVariants = {
     "&:is(.dark *):focus-visible": {
       boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
     },
-  }, { label: "input-group-button-destructive" }),
-  outline: style({
+  }),
+  outline: style("input-group-button-outline", {
     background: "var(--background)",
     border: "1px solid var(--border)",
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -193,15 +193,15 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       background: "color-mix(in oklab, var(--input) 50%, transparent)",
     },
-  }, { label: "input-group-button-outline" }),
-  secondary: style({
+  }),
+  secondary: style("input-group-button-secondary", {
     backgroundColor: "var(--secondary)",
     color: "var(--secondary-foreground)",
     "&:hover": {
       backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
     },
-  }, { label: "input-group-button-secondary" }),
-  ghost: style({
+  }),
+  ghost: style("input-group-button-ghost", {
     "&:hover": {
       backgroundColor: "var(--accent)",
       color: "var(--accent-foreground)",
@@ -209,18 +209,18 @@ const buttonVariants = {
     "&:is(.dark *):hover": {
       backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
     },
-  }, { label: "input-group-button-ghost" }),
-  link: style({
+  }),
+  link: style("input-group-button-link", {
     color: "var(--primary)",
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
     },
-  }, { label: "input-group-button-link" }),
+  }),
 };
 
 const buttonSizes = {
-  xs: style({
+  xs: style("input-group-button-size-xs", {
     borderRadius: "calc(var(--radius) * 0.8)",
     fontSize: "0.75rem",
     gap: "0.25rem",
@@ -234,8 +234,8 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "input-group-button-size-xs" }),
-  sm: style({
+  }),
+  sm: style("input-group-button-size-sm", {
     borderRadius: "calc(var(--radius) * 0.8)",
     gap: "0.375rem",
     height: "2rem",
@@ -243,8 +243,8 @@ const buttonSizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "input-group-button-size-sm" }),
-  "icon-xs": style({
+  }),
+  "icon-xs": style("input-group-button-size-icon-xs", {
     borderRadius: "calc(var(--radius) * 0.8)",
     height: "1.5rem",
     width: "1.5rem",
@@ -252,15 +252,15 @@ const buttonSizes = {
       height: "0.75rem",
       width: "0.75rem",
     },
-  }, { label: "input-group-button-size-icon-xs" }),
-  "icon-sm": style({
+  }),
+  "icon-sm": style("input-group-button-size-icon-sm", {
     height: "2rem",
     width: "2rem",
-  }, { label: "input-group-button-size-icon-sm" }),
+  }),
 };
 
 const sizes = {
-  xs: style({
+  xs: style("input-group-size-xs", {
     alignItems: "center",
     borderRadius: "calc(var(--radius) - 5px)",
     display: "flex",
@@ -275,8 +275,8 @@ const sizes = {
       height: "0.875rem",
       width: "0.875rem",
     },
-  }, { label: "input-group-size-xs" }),
-  sm: style({
+  }),
+  sm: style("input-group-size-sm", {
     alignItems: "center",
     borderRadius: "calc(var(--radius) * 0.8)",
     display: "flex",
@@ -287,8 +287,8 @@ const sizes = {
     "&:has(> svg)": {
       paddingInline: "0.625rem",
     },
-  }, { label: "input-group-size-sm" }),
-  "icon-xs": style({
+  }),
+  "icon-xs": style("input-group-size-icon-xs", {
     alignItems: "center",
     borderRadius: "calc(var(--radius) - 5px)",
     display: "flex",
@@ -299,8 +299,8 @@ const sizes = {
     "&:has(> svg)": {
       padding: "0",
     },
-  }, { label: "input-group-size-icon-xs" }),
-  "icon-sm": style({
+  }),
+  "icon-sm": style("input-group-size-icon-sm", {
     alignItems: "center",
     display: "flex",
     height: "2rem",
@@ -310,10 +310,10 @@ const sizes = {
     "&:has(> svg)": {
       padding: "0",
     },
-  }, { label: "input-group-size-icon-sm" }),
+  }),
 };
 
-const text = style({
+const text = style("input-group-text", {
   alignItems: "center",
   color: "var(--muted-foreground)",
   display: "flex",
@@ -326,9 +326,9 @@ const text = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "input-group-text" });
+});
 
-const inputBase = style({
+const inputBase = style("input-group-input", {
   background: "transparent",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -372,16 +372,16 @@ const inputBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "input-group-input" });
+});
 
-const inputFocus = style({
+const inputFocus = style("input-group-input-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "input-group-input-focus" });
+});
 
-const inputInvalid = style({
+const inputInvalid = style("input-group-input-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -391,9 +391,9 @@ const inputInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "input-group-input-invalid" });
+});
 
-const inputControl = style({
+const inputControl = style("input-group-input-control", {
   background: "transparent",
   borderRadius: "0",
   borderWidth: "0",
@@ -405,9 +405,9 @@ const inputControl = style({
   "&:is(.dark *)": {
     background: "transparent",
   },
-}, { label: "input-group-input-control" });
+});
 
-const textareaBase = style({
+const textareaBase = style("input-group-textarea", {
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -435,16 +435,16 @@ const textareaBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "input-group-textarea" });
+});
 
-const textareaFocus = style({
+const textareaFocus = style("input-group-textarea-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "input-group-textarea-focus" });
+});
 
-const textareaInvalid = style({
+const textareaInvalid = style("input-group-textarea-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -454,9 +454,9 @@ const textareaInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "input-group-textarea-invalid" });
+});
 
-const textareaControl = style({
+const textareaControl = style("input-group-textarea-control", {
   background: "transparent",
   borderRadius: "0",
   borderWidth: "0",
@@ -470,7 +470,7 @@ const textareaControl = style({
   "&:is(.dark *)": {
     background: "transparent",
   },
-}, { label: "input-group-textarea-control" });
+});
 
 css({
   "[data-slot='input-group'][data-disabled='true'] [data-slot='input-group-addon']": {

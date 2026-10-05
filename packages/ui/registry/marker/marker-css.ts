@@ -1,6 +1,6 @@
 import { css, style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("marker", {
   alignItems: "center",
   color: "var(--muted-foreground)",
   columnGap: "0.5rem",
@@ -20,10 +20,10 @@ export const base = style({
   "& a:hover": {
     color: "var(--foreground)",
   },
-}, { label: "marker" });
+});
 
 export const variants: Record<string, string> = {
-  separator: style({
+  separator: style("marker-separator", {
     "&::before": {
       backgroundColor: "var(--border)",
       flex: "1 1 0%",
@@ -38,14 +38,14 @@ export const variants: Record<string, string> = {
       marginLeft: "0.25rem",
       minWidth: "0",
     },
-  }, { label: "marker-separator" }),
-  border: style({
+  }),
+  border: style("marker-border", {
     borderBottom: "1px solid var(--border)",
     paddingBottom: "0.5rem",
-  }, { label: "marker-border" }),
+  }),
 };
 
-export const icon = style({
+export const icon = style("marker-icon", {
   flexShrink: "0",
   height: "1rem",
   width: "1rem",
@@ -53,9 +53,9 @@ export const icon = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "marker-icon" });
+});
 
-export const content = style({
+export const content = style("marker-content", {
   minWidth: "0",
   overflowWrap: "break-word",
   "& a": {
@@ -65,7 +65,7 @@ export const content = style({
   "& a:hover": {
     color: "var(--foreground)",
   },
-}, { label: "marker-content" });
+});
 
 css({
   "[data-slot='marker'][data-variant='separator'] [data-slot='marker-content']": {

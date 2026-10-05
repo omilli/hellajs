@@ -6,7 +6,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-export const base = style({
+export const base = style("select-trigger", {
   alignItems: "center",
   backgroundColor: "transparent",
   border: "1px solid var(--input)",
@@ -71,9 +71,9 @@ export const base = style({
   "&:is(.dark *)[aria-invalid='true']": {
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "select-trigger" });
+});
 
-export const content = style({
+export const content = style("select-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -113,17 +113,17 @@ export const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "select-content" });
+});
 
-export const viewport = style({
+export const viewport = style("select-viewport", {
   height: "var(--radix-select-trigger-height)",
   minWidth: "var(--radix-select-trigger-width)",
   padding: "0.25rem",
   scrollPaddingBlock: "0.25rem",
   width: "100%",
-}, { label: "select-viewport" });
+});
 
-export const item = style({
+export const item = style("select-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -163,9 +163,9 @@ export const item = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "select-item" });
+});
 
-export const indicator = style({
+export const indicator = style("select-indicator", {
   alignItems: "center",
   display: "flex",
   height: "0.875rem",
@@ -173,39 +173,39 @@ export const indicator = style({
   position: "absolute",
   right: "0.5rem",
   width: "0.875rem",
-}, { label: "select-indicator" });
+});
 
-export const icon = style({
+export const icon = style("select-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "select-icon" });
+});
 
-export const chevron = style({
+export const chevron = style("select-chevron", {
   height: "1rem",
   opacity: "0.5",
   width: "1rem",
-}, { label: "select-chevron" });
+});
 
-export const label = style({
+export const label = style("select-label", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   lineHeight: "1rem",
   paddingBlock: "0.375rem",
   paddingInline: "0.5rem",
-}, { label: "select-label" });
+});
 
-export const separator = style({
+export const separator = style("select-separator", {
   backgroundColor: "var(--border)",
   height: "1px",
   marginBlock: "0.25rem",
   marginInline: "-0.25rem",
   pointerEvents: "none",
-}, { label: "select-separator" });
+});
 
-export const scrollButton = style({
+export const scrollButton = style("select-scroll-button", {
   alignItems: "center",
   cursor: "default",
   display: "flex",
   justifyContent: "center",
   paddingBlock: "0.25rem",
-}, { label: "select-scroll-button" });
+});

@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("avatar", {
   borderRadius: "calc(infinity * 1px)",
   display: "flex",
   flexShrink: "0",
@@ -17,15 +17,15 @@ export const base = style({
     height: "1.5rem",
     width: "1.5rem",
   },
-}, { label: "avatar" });
+});
 
-export const image = style({
+export const image = style("avatar-image", {
   aspectRatio: "1 / 1",
   height: "100%",
   width: "100%",
-}, { label: "avatar-image" });
+});
 
-export const fallback = style({
+export const fallback = style("avatar-fallback", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   borderRadius: "calc(infinity * 1px)",
@@ -38,9 +38,9 @@ export const fallback = style({
   "&:is([data-slot='avatar'][data-size='sm'] *)": {
     fontSize: "0.75rem",
   },
-}, { label: "avatar-fallback" });
+});
 
-export const badge = style({
+export const badge = style("avatar-badge", {
   alignItems: "center",
   backgroundColor: "var(--primary)",
   borderRadius: "calc(infinity * 1px)",
@@ -76,9 +76,9 @@ export const badge = style({
       width: "0.5rem",
     },
   },
-}, { label: "avatar-badge" });
+});
 
-export const group = style({
+export const group = style("avatar-group", {
   display: "flex",
   "& > :not(:last-child)": {
     marginInlineEnd: "-0.5rem",
@@ -86,9 +86,9 @@ export const group = style({
   "& > [data-slot='avatar']": {
     boxShadow: "0 0 0 2px var(--background)",
   },
-}, { label: "avatar-group" });
+});
 
-export const groupCount = style({
+export const groupCount = style("avatar-group-count", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   borderRadius: "calc(infinity * 1px)",
@@ -121,4 +121,4 @@ export const groupCount = style({
       width: "0.75rem",
     },
   },
-}, { label: "avatar-group-count" });
+});

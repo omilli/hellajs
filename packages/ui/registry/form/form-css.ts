@@ -1,11 +1,11 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("form-item", {
   display: "grid",
   gap: "0.5rem",
-}, { label: "form-item" });
+});
 
-export const label = style({
+export const label = style("form-label", {
   alignItems: "center",
   display: "flex",
   fontSize: "0.875rem",
@@ -24,14 +24,14 @@ export const label = style({
   "&[data-error='true']": {
     color: "var(--destructive)",
   },
-}, { label: "form-label" });
+});
 
-export const description = style({
+export const description = style("form-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
-}, { label: "form-description" });
+});
 
-export const message = style({
+export const message = style("form-message", {
   color: "var(--destructive)",
   fontSize: "0.875rem",
-}, { label: "form-message" });
+});

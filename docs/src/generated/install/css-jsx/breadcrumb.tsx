@@ -2,7 +2,7 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const list = style({
+const list = style("breadcrumb-list", {
   alignItems: "center",
   color: "var(--muted-foreground)",
   display: "flex",
@@ -19,47 +19,47 @@ const list = style({
       gap: "0.625rem",
     },
   },
-}, { label: "breadcrumb-list" });
+});
 
-const item = style({
+const item = style("breadcrumb-item", {
   alignItems: "center",
   display: "inline-flex",
   gap: "0.375rem",
-}, { label: "breadcrumb-item" });
+});
 
-const link = style({
+const link = style("breadcrumb-link", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&:hover": {
     color: "var(--foreground)",
   },
-}, { label: "breadcrumb-link" });
+});
 
-const page = style({
+const page = style("breadcrumb-page", {
   color: "var(--foreground)",
   fontWeight: "400",
-}, { label: "breadcrumb-page" });
+});
 
-const separator = style({
+const separator = style("breadcrumb-separator", {
   "& svg": {
     height: "0.875rem",
     width: "0.875rem",
   },
-}, { label: "breadcrumb-separator" });
+});
 
-const ellipsis = style({
+const ellipsis = style("breadcrumb-ellipsis", {
   alignItems: "center",
   display: "flex",
   height: "2.25rem",
   justifyContent: "center",
   width: "2.25rem",
-}, { label: "breadcrumb-ellipsis" });
+});
 
-const ellipsisIcon = style({
+const ellipsisIcon = style("breadcrumb-ellipsis-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "breadcrumb-ellipsis-icon" });
+});
 
-const srOnly = style({
+const srOnly = style("breadcrumb-sr-only", {
   border: "0",
   clip: "rect(0, 0, 0, 0)",
   height: "1px",
@@ -69,7 +69,7 @@ const srOnly = style({
   position: "absolute",
   whiteSpace: "nowrap",
   width: "1px",
-}, { label: "breadcrumb-sr-only" });
+});
 
 interface BreadcrumbProps {
   children?: HellaChildren;

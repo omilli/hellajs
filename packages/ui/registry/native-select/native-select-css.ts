@@ -1,14 +1,14 @@
 import { style } from "@hellajs/css";
 
-export const wrapper = style({
+export const wrapper = style("native-select-wrapper", {
   position: "relative",
   width: "fit-content",
   "&:has(select:disabled)": {
     opacity: "0.5",
   },
-}, { label: "native-select-wrapper" });
+});
 
-export const base = style({
+export const base = style("native-select", {
   appearance: "none",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -44,16 +44,16 @@ export const base = style({
   "&:is(.dark *):hover": {
     background: "color-mix(in oklab, var(--input) 50%, transparent)",
   },
-}, { label: "native-select" });
+});
 
-export const focus = style({
+export const focus = style("native-select-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "native-select-focus" });
+});
 
-export const invalid = style({
+export const invalid = style("native-select-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -63,9 +63,9 @@ export const invalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "native-select-invalid" });
+});
 
-export const icon = style({
+export const icon = style("native-select-icon", {
   color: "var(--muted-foreground)",
   height: "1rem",
   opacity: "0.5",
@@ -76,14 +76,14 @@ export const icon = style({
   transform: "translateY(-50%)",
   userSelect: "none",
   width: "1rem",
-}, { label: "native-select-icon" });
+});
 
-export const option = style({
+export const option = style("native-select-option", {
   backgroundColor: "Canvas",
   color: "CanvasText",
-}, { label: "native-select-option" });
+});
 
-export const optgroup = style({
+export const optgroup = style("native-select-optgroup", {
   backgroundColor: "Canvas",
   color: "CanvasText",
-}, { label: "native-select-optgroup" });
+});

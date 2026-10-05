@@ -3,7 +3,7 @@ import { css, keyframes, style } from "@hellajs/css";
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 
-export const base = style({
+export const base = style("drawer-base", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -14,9 +14,9 @@ export const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "drawer-base" });
+});
 
-export const content = style({
+export const content = style("drawer-content", {
   background: "var(--background)",
   display: "flex",
   flexDirection: "column",
@@ -27,10 +27,10 @@ export const content = style({
   "&[data-dragging='true']": {
     transitionProperty: "none",
   },
-}, { label: "drawer-content" });
+});
 
 export const contentDirections = {
-  top: style({
+  top: style("drawer-content-top", {
     borderBottom: "1px solid var(--border)",
     borderRadius: "0 0 var(--radius) var(--radius)",
     left: "0",
@@ -38,8 +38,8 @@ export const contentDirections = {
     maxHeight: "80vh",
     right: "0",
     top: "0",
-  }, { label: "drawer-content-top" }),
-  bottom: style({
+  }),
+  bottom: style("drawer-content-bottom", {
     borderTop: "1px solid var(--border)",
     borderRadius: "var(--radius) var(--radius) 0 0",
     bottom: "0",
@@ -47,8 +47,8 @@ export const contentDirections = {
     marginTop: "6rem",
     maxHeight: "80vh",
     right: "0",
-  }, { label: "drawer-content-bottom" }),
-  right: style({
+  }),
+  right: style("drawer-content-right", {
     borderLeft: "1px solid var(--border)",
     bottom: "0",
     right: "0",
@@ -59,8 +59,8 @@ export const contentDirections = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "drawer-content-right" }),
-  left: style({
+  }),
+  left: style("drawer-content-left", {
     borderRight: "1px solid var(--border)",
     bottom: "0",
     left: "0",
@@ -71,10 +71,10 @@ export const contentDirections = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "drawer-content-left" }),
+  }),
 };
 
-export const close = style({
+export const close = style("drawer-close", {
   borderRadius: "calc(var(--radius) * 0.2)",
   opacity: "0.7",
   position: "absolute",
@@ -113,7 +113,7 @@ export const close = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "drawer-close" });
+});
 
 css({
   "[data-slot='drawer-content'] [data-slot='drawer-handle']": {
@@ -132,7 +132,7 @@ css({
   },
 });
 
-export const header = style({
+export const header = style("drawer-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.125rem",
@@ -149,23 +149,23 @@ export const header = style({
       textAlign: "left",
     },
   },
-}, { label: "drawer-header" });
+});
 
-export const footer = style({
+export const footer = style("drawer-footer", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   marginTop: "auto",
   padding: "1rem",
-}, { label: "drawer-footer" });
+});
 
-export const title = style({
+export const title = style("drawer-title", {
   color: "var(--foreground)",
   fontWeight: "600",
-}, { label: "drawer-title" });
+});
 
-export const description = style({
+export const description = style("drawer-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "drawer-description" });
+});

@@ -8,7 +8,7 @@ import { css, keyframes, style } from "@hellajs/css";
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
 
-const base = style({
+const base = style("drawer-base", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -19,9 +19,9 @@ const base = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "drawer-base" });
+});
 
-const content = style({
+const content = style("drawer-content", {
   background: "var(--background)",
   display: "flex",
   flexDirection: "column",
@@ -32,10 +32,10 @@ const content = style({
   "&[data-dragging='true']": {
     transitionProperty: "none",
   },
-}, { label: "drawer-content" });
+});
 
 const contentDirections = {
-  top: style({
+  top: style("drawer-content-top", {
     borderBottom: "1px solid var(--border)",
     borderRadius: "0 0 var(--radius) var(--radius)",
     left: "0",
@@ -43,8 +43,8 @@ const contentDirections = {
     maxHeight: "80vh",
     right: "0",
     top: "0",
-  }, { label: "drawer-content-top" }),
-  bottom: style({
+  }),
+  bottom: style("drawer-content-bottom", {
     borderTop: "1px solid var(--border)",
     borderRadius: "var(--radius) var(--radius) 0 0",
     bottom: "0",
@@ -52,8 +52,8 @@ const contentDirections = {
     marginTop: "6rem",
     maxHeight: "80vh",
     right: "0",
-  }, { label: "drawer-content-bottom" }),
-  right: style({
+  }),
+  right: style("drawer-content-right", {
     borderLeft: "1px solid var(--border)",
     bottom: "0",
     right: "0",
@@ -64,8 +64,8 @@ const contentDirections = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "drawer-content-right" }),
-  left: style({
+  }),
+  left: style("drawer-content-left", {
     borderRight: "1px solid var(--border)",
     bottom: "0",
     left: "0",
@@ -76,10 +76,10 @@ const contentDirections = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "drawer-content-left" }),
+  }),
 };
 
-const close = style({
+const close = style("drawer-close", {
   borderRadius: "calc(var(--radius) * 0.2)",
   opacity: "0.7",
   position: "absolute",
@@ -118,7 +118,7 @@ const close = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "drawer-close" });
+});
 
 css({
   "[data-slot='drawer-content'] [data-slot='drawer-handle']": {
@@ -137,7 +137,7 @@ css({
   },
 });
 
-const header = style({
+const header = style("drawer-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.125rem",
@@ -154,26 +154,26 @@ const header = style({
       textAlign: "left",
     },
   },
-}, { label: "drawer-header" });
+});
 
-const footer = style({
+const footer = style("drawer-footer", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   marginTop: "auto",
   padding: "1rem",
-}, { label: "drawer-footer" });
+});
 
-const title = style({
+const title = style("drawer-title", {
   color: "var(--foreground)",
   fontWeight: "600",
-}, { label: "drawer-title" });
+});
 
-const description = style({
+const description = style("drawer-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "drawer-description" });
+});
 
 /** Accessibility state shared by the animated drawer parts. */
 type DrawerState = () => "open" | "closed";

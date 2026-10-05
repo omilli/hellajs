@@ -2,7 +2,7 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("empty", {
   alignItems: "center",
   borderStyle: "dashed",
   borderRadius: "var(--radius)",
@@ -21,18 +21,18 @@ const base = style({
     paddingBlock: "3rem",
     paddingInline: "3rem",
   },
-}, { label: "empty" });
+});
 
-const header = style({
+const header = style("empty-header", {
   alignItems: "center",
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   maxWidth: "24rem",
   textAlign: "center",
-}, { label: "empty-header" });
+});
 
-const media = style({
+const media = style("empty-media", {
   alignItems: "center",
   display: "flex",
   flexShrink: "0",
@@ -42,13 +42,13 @@ const media = style({
     flexShrink: "0",
     pointerEvents: "none",
   },
-}, { label: "empty-media" });
+});
 
 const mediaVariants = {
-  default: style({
+  default: style("empty-media-default", {
     backgroundColor: "transparent",
-  }, { label: "empty-media-default" }),
-  icon: style({
+  }),
+  icon: style("empty-media-icon", {
     alignItems: "center",
     backgroundColor: "var(--muted)",
     borderRadius: "var(--radius)",
@@ -62,17 +62,17 @@ const mediaVariants = {
       height: "1.5rem",
       width: "1.5rem",
     },
-  }, { label: "empty-media-icon" }),
+  }),
 };
 
-const title = style({
+const title = style("empty-title", {
   fontSize: "1.125rem",
   fontWeight: "500",
   letterSpacing: "-0.025em",
   lineHeight: "1.75rem",
-}, { label: "empty-title" });
+});
 
-const description = style({
+const description = style("empty-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.625rem",
@@ -83,9 +83,9 @@ const description = style({
   "& > a:hover": {
     color: "var(--primary)",
   },
-}, { label: "empty-description" });
+});
 
-const content = style({
+const content = style("empty-content", {
   alignItems: "center",
   display: "flex",
   flexDirection: "column",
@@ -97,7 +97,7 @@ const content = style({
   textAlign: "center",
   textWrap: "balance",
   width: "100%",
-}, { label: "empty-content" });
+});
 
 interface EmptyPartProps {
   children?: HellaChildren;

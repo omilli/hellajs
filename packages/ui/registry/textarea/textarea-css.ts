@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("textarea", {
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -28,16 +28,16 @@ export const base = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "textarea" });
+});
 
-export const focus = style({
+export const focus = style("textarea-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "textarea-focus" });
+});
 
-export const invalid = style({
+export const invalid = style("textarea-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -47,4 +47,4 @@ export const invalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "textarea-invalid" });
+});

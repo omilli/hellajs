@@ -1,31 +1,31 @@
 import { css, style } from "@hellajs/css";
 
-export const set = style({
+export const set = style("field-set", {
   display: "flex",
   flexDirection: "column",
   gap: "1.5rem",
   "&:has(> [data-slot='checkbox-group']), &:has(> [data-slot='radio-group'])": {
     gap: "0.75rem",
   },
-}, { label: "field-set" });
+});
 
-export const legend = style({
+export const legend = style("field-legend", {
   fontWeight: "500",
   marginBottom: "0.75rem",
-}, { label: "field-legend" });
+});
 
 export const legendVariants = {
-  legend: style({
+  legend: style("field-legend-legend", {
     fontSize: "1rem",
     lineHeight: "1.5rem",
-  }, { label: "field-legend-legend" }),
-  label: style({
+  }),
+  label: style("field-legend-label", {
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
-  }, { label: "field-legend-label" }),
+  }),
 };
 
-export const group = style({
+export const group = style("field-group", {
   container: "field-group / inline-size",
   display: "flex",
   flexDirection: "column",
@@ -37,19 +37,19 @@ export const group = style({
   "& > [data-slot='field-group']": {
     gap: "1rem",
   },
-}, { label: "field-group" });
+});
 
-export const base = style({
+export const base = style("field", {
   display: "flex",
   gap: "0.75rem",
   width: "100%",
   "&[data-invalid='true']": {
     color: "var(--destructive)",
   },
-}, { label: "field" });
+});
 
 export const orientation = {
-  vertical: style({
+  vertical: style("field-vertical", {
     flexDirection: "column",
     "& > *": {
       width: "100%",
@@ -57,8 +57,8 @@ export const orientation = {
     "& > .sr-only": {
       width: "auto",
     },
-  }, { label: "field-vertical" }),
-  horizontal: style({
+  }),
+  horizontal: style("field-horizontal", {
     alignItems: "center",
     flexDirection: "row",
     "& > [data-slot='field-label']": {
@@ -70,8 +70,8 @@ export const orientation = {
     "&:has([data-slot='field-content']) > [role='checkbox'], &:has([data-slot='field-content']) > [role='radio']": {
       marginTop: "1px",
     },
-  }, { label: "field-horizontal" }),
-  responsive: style({
+  }),
+  responsive: style("field-responsive", {
     flexDirection: "column",
     "& > *": {
       width: "100%",
@@ -98,18 +98,18 @@ export const orientation = {
         marginTop: "1px",
       },
     },
-  }, { label: "field-responsive" }),
+  }),
 };
 
-export const content = style({
+export const content = style("field-content", {
   display: "flex",
   flex: "1 1 0%",
   flexDirection: "column",
   gap: "0.375rem",
   lineHeight: "1.625",
-}, { label: "field-content" });
+});
 
-export const label = style({
+export const label = style("field-label", {
   alignItems: "center",
   display: "flex",
   fontSize: "0.875rem",
@@ -142,9 +142,9 @@ export const label = style({
   "&:is(.dark *):has([data-state='checked'])": {
     backgroundColor: "color-mix(in oklab, var(--primary) 10%, transparent)",
   },
-}, { label: "field-label" });
+});
 
-export const title = style({
+export const title = style("field-title", {
   alignItems: "center",
   display: "flex",
   fontSize: "0.875rem",
@@ -152,9 +152,9 @@ export const title = style({
   gap: "0.5rem",
   lineHeight: "1.625",
   width: "fit-content",
-}, { label: "field-title" });
+});
 
-export const description = style({
+export const description = style("field-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   fontWeight: "400",
@@ -172,16 +172,16 @@ export const description = style({
   "& > a:hover": {
     color: "var(--primary)",
   },
-}, { label: "field-description" });
+});
 
-export const separator = style({
+export const separator = style("field-separator", {
   fontSize: "0.875rem",
   height: "1.25rem",
   marginBlock: "-0.5rem",
   position: "relative",
-}, { label: "field-separator" });
+});
 
-export const separatorBase = style({
+export const separatorBase = style("field-separator-base", {
   backgroundColor: "var(--border)",
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
@@ -192,17 +192,17 @@ export const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "field-separator-base" });
+});
 
-export const separatorRule = style({
+export const separatorRule = style("field-separator-rule", {
   bottom: "0",
   left: "0",
   position: "absolute",
   right: "0",
   top: "50%",
-}, { label: "field-separator-rule" });
+});
 
-export const separatorContent = style({
+export const separatorContent = style("field-separator-content", {
   backgroundColor: "var(--background)",
   color: "var(--muted-foreground)",
   display: "block",
@@ -211,21 +211,21 @@ export const separatorContent = style({
   paddingInline: "0.5rem",
   position: "relative",
   width: "fit-content",
-}, { label: "field-separator-content" });
+});
 
-export const error = style({
+export const error = style("field-error", {
   color: "var(--destructive)",
   fontSize: "0.875rem",
   fontWeight: "400",
-}, { label: "field-error" });
+});
 
-export const errorList = style({
+export const errorList = style("field-error-list", {
   display: "flex",
   flexDirection: "column",
   gap: "0.25rem",
   listStyleType: "disc",
   marginLeft: "1rem",
-}, { label: "field-error-list" });
+});
 
 css({
   "[data-slot='field'][data-disabled='true'] [data-slot='field-label']": {

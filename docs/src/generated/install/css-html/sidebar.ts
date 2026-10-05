@@ -23,13 +23,13 @@ const slideInRight = keyframes({ from: { opacity: "0", transform: "translateX(10
 const slideOutRight = keyframes({ to: { opacity: "0", transform: "translateX(100%)" } });
 const tooltipInRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 
-const base = style({
+const base = style("sidebar-base", {
   display: "flex",
   minHeight: "100svh",
   width: "100%",
-}, { label: "sidebar-base" });
+});
 
-const sidebar = style({
+const sidebar = style("sidebar", {
   color: "var(--sidebar-foreground)",
   display: "none",
   "@media (min-width: 48rem)": {
@@ -37,29 +37,29 @@ const sidebar = style({
       display: "block",
     },
   },
-}, { label: "sidebar" });
+});
 
-const none = style({
+const none = style("sidebar-none", {
   background: "var(--sidebar)",
   color: "var(--sidebar-foreground)",
   display: "flex",
   flexDirection: "column",
   height: "100%",
   width: "var(--sidebar-width)",
-}, { label: "sidebar-none" });
+});
 
-const gap = style({
+const gap = style("sidebar-gap", {
   background: "transparent",
   position: "relative",
   transition: "width 200ms linear",
   width: "var(--sidebar-width)",
-}, { label: "sidebar-gap" });
+});
 
 const gapPlain = "";
 
 const gapInset = "";
 
-const container = style({
+const container = style("sidebar-container", {
   display: "none",
   height: "100svh",
   insetBlock: "0",
@@ -72,30 +72,30 @@ const container = style({
       display: "flex",
     },
   },
-}, { label: "sidebar-container" });
+});
 
 const containerSides = {
-  left: style({
+  left: style("sidebar-container-left", {
     left: "0",
-  }, { label: "sidebar-container-left" }),
-  right: style({
+  }),
+  right: style("sidebar-container-right", {
     right: "0",
-  }, { label: "sidebar-container-right" }),
+  }),
 };
 
 const containerPlain = "";
 
 const containerInset = "";
 
-const inner = style({
+const inner = style("sidebar-inner", {
   background: "var(--sidebar)",
   display: "flex",
   flexDirection: "column",
   height: "100%",
   width: "100%",
-}, { label: "sidebar-inner" });
+});
 
-const overlay = style({
+const overlay = style("sidebar-overlay", {
   backgroundColor: "rgb(0 0 0 / 0.5)",
   inset: "0",
   position: "fixed",
@@ -106,9 +106,9 @@ const overlay = style({
   "&[data-state='closed']": {
     animation: `${fadeOut} 150ms ease-in both`,
   },
-}, { label: "sidebar-overlay" });
+});
 
-const mobile = style({
+const mobile = style("sidebar-mobile", {
   background: "var(--sidebar)",
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   color: "var(--sidebar-foreground)",
@@ -133,10 +133,10 @@ const mobile = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "sidebar-mobile" });
+});
 
 const mobileSides = {
-  left: style({
+  left: style("sidebar-mobile-left", {
     borderRight: "1px solid var(--border)",
     bottom: "0",
     height: "100%",
@@ -154,8 +154,8 @@ const mobileSides = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "sidebar-mobile-left" }),
-  right: style({
+  }),
+  right: style("sidebar-mobile-right", {
     borderLeft: "1px solid var(--border)",
     bottom: "0",
     height: "100%",
@@ -173,17 +173,17 @@ const mobileSides = {
         maxWidth: "24rem",
       },
     },
-  }, { label: "sidebar-mobile-right" }),
+  }),
 };
 
-const mobileInner = style({
+const mobileInner = style("sidebar-mobile-inner", {
   display: "flex",
   flexDirection: "column",
   height: "100%",
   width: "100%",
-}, { label: "sidebar-mobile-inner" });
+});
 
-const trigger = style({
+const trigger = style("sidebar-trigger", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   display: "inline-flex",
@@ -232,9 +232,9 @@ const trigger = style({
     whiteSpace: "nowrap",
     width: "1px",
   },
-}, { label: "sidebar-trigger" });
+});
 
-const rail = style({
+const rail = style("sidebar-rail", {
   display: "none",
   insetBlock: "0",
   position: "absolute",
@@ -253,18 +253,18 @@ const rail = style({
       display: "flex",
     },
   },
-}, { label: "sidebar-rail" });
+});
 
-const inset = style({
+const inset = style("sidebar-inset", {
   background: "var(--background)",
   display: "flex",
   flex: "1",
   flexDirection: "column",
   position: "relative",
   width: "100%",
-}, { label: "sidebar-inset" });
+});
 
-const inputBase = style({
+const inputBase = style("sidebar-input-base", {
   background: "transparent",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -308,16 +308,16 @@ const inputBase = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "sidebar-input-base" });
+});
 
-const inputFocus = style({
+const inputFocus = style("sidebar-input-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "sidebar-input-focus" });
+});
 
-const inputInvalid = style({
+const inputInvalid = style("sidebar-input-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -327,30 +327,30 @@ const inputInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "sidebar-input-invalid" });
+});
 
-const input = style({
+const input = style("sidebar-input", {
   background: "var(--background)",
   boxShadow: "none",
   height: "2rem",
   width: "100%",
-}, { label: "sidebar-input" });
+});
 
-const header = style({
+const header = style("sidebar-header", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   padding: "0.5rem",
-}, { label: "sidebar-header" });
+});
 
-const footer = style({
+const footer = style("sidebar-footer", {
   display: "flex",
   flexDirection: "column",
   gap: "0.5rem",
   padding: "0.5rem",
-}, { label: "sidebar-footer" });
+});
 
-const separatorBase = style({
+const separatorBase = style("sidebar-separator-base", {
   backgroundColor: "var(--border)",
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
@@ -361,33 +361,33 @@ const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "sidebar-separator-base" });
+});
 
-const separator = style({
+const separator = style("sidebar-separator", {
   background: "var(--sidebar-border)",
   marginInline: "0.5rem",
   width: "auto",
-}, { label: "sidebar-separator" });
+});
 
-const content = style({
+const content = style("sidebar-content", {
   display: "flex",
   flex: "1",
   flexDirection: "column",
   gap: "0.5rem",
   minHeight: "0",
   overflow: "auto",
-}, { label: "sidebar-content" });
+});
 
-const group = style({
+const group = style("sidebar-group", {
   display: "flex",
   flexDirection: "column",
   minWidth: "0",
   padding: "0.5rem",
   position: "relative",
   width: "100%",
-}, { label: "sidebar-group" });
+});
 
-const groupLabel = style({
+const groupLabel = style("sidebar-group-label", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "color-mix(in oklab, var(--sidebar-foreground) 70%, transparent)",
@@ -408,9 +408,9 @@ const groupLabel = style({
   "&:focus-visible": {
     boxShadow: "0 0 0 2px var(--sidebar-ring)",
   },
-}, { label: "sidebar-group-label" });
+});
 
-const groupAction = style({
+const groupAction = style("sidebar-group-action", {
   alignItems: "center",
   aspectRatio: "1 / 1",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -445,26 +445,26 @@ const groupAction = style({
       content: "none",
     },
   },
-}, { label: "sidebar-group-action" });
+});
 
-const groupContent = style({
+const groupContent = style("sidebar-group-content", {
   fontSize: "0.875rem",
   width: "100%",
-}, { label: "sidebar-group-content" });
+});
 
-const menu = style({
+const menu = style("sidebar-menu", {
   display: "flex",
   flexDirection: "column",
   gap: "0.25rem",
   minWidth: "0",
   width: "100%",
-}, { label: "sidebar-menu" });
+});
 
-const menuItem = style({
+const menuItem = style("sidebar-menu-item", {
   position: "relative",
-}, { label: "sidebar-menu-item" });
+});
 
-const menuButton = style({
+const menuButton = style("sidebar-menu-button", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   display: "flex",
@@ -513,11 +513,11 @@ const menuButton = style({
     backgroundColor: "var(--sidebar-accent)",
     color: "var(--sidebar-accent-foreground)",
   },
-}, { label: "sidebar-menu-button" });
+});
 
 const menuButtonVariants = {
   default: "",
-  outline: style({
+  outline: style("sidebar-menu-button-outline", {
     background: "var(--background)",
     boxShadow: "0 0 0 1px var(--sidebar-border)",
     "&:hover": {
@@ -525,25 +525,25 @@ const menuButtonVariants = {
       boxShadow: "0 0 0 1px var(--sidebar-accent)",
       color: "var(--sidebar-accent-foreground)",
     },
-  }, { label: "sidebar-menu-button-outline" }),
+  }),
 };
 
 const menuButtonSizes = {
-  default: style({
+  default: style("sidebar-menu-button-default", {
     fontSize: "0.875rem",
     height: "2rem",
-  }, { label: "sidebar-menu-button-default" }),
-  sm: style({
+  }),
+  sm: style("sidebar-menu-button-sm", {
     fontSize: "0.75rem",
     height: "1.75rem",
-  }, { label: "sidebar-menu-button-sm" }),
-  lg: style({
+  }),
+  lg: style("sidebar-menu-button-lg", {
     fontSize: "0.875rem",
     height: "3rem",
-  }, { label: "sidebar-menu-button-lg" }),
+  }),
 };
 
-const menuAction = style({
+const menuAction = style("sidebar-menu-action", {
   alignItems: "center",
   aspectRatio: "1 / 1",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -578,11 +578,11 @@ const menuAction = style({
       content: "none",
     },
   },
-}, { label: "sidebar-menu-action" });
+});
 
 const menuActionHover = "";
 
-const menuBadge = style({
+const menuBadge = style("sidebar-menu-badge", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--sidebar-foreground)",
@@ -598,40 +598,40 @@ const menuBadge = style({
   position: "absolute",
   right: "0.25rem",
   userSelect: "none",
-}, { label: "sidebar-menu-badge" });
+});
 
-const menuSkeleton = style({
+const menuSkeleton = style("sidebar-menu-skeleton", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   display: "flex",
   gap: "0.5rem",
   height: "2rem",
   paddingInline: "0.5rem",
-}, { label: "sidebar-menu-skeleton" });
+});
 
 const pulse = keyframes({
   "50%": { opacity: "0.5" },
 });
 
-const skeletonBase = style({
+const skeletonBase = style("sidebar-skeleton", {
   animation: `${pulse} 2s cubic-bezier(0.4, 0, 0.2, 1) infinite`,
   backgroundColor: "var(--accent)",
   borderRadius: "calc(var(--radius) * 0.8)",
-}, { label: "sidebar-skeleton" });
+});
 
-const skeletonIcon = style({
+const skeletonIcon = style("sidebar-skeleton-icon", {
   borderRadius: "calc(var(--radius) * 0.8)",
   height: "1rem",
   width: "1rem",
-}, { label: "sidebar-skeleton-icon" });
+});
 
-const skeletonText = style({
+const skeletonText = style("sidebar-skeleton-text", {
   flex: "1",
   height: "1rem",
   maxWidth: "var(--skeleton-width)",
-}, { label: "sidebar-skeleton-text" });
+});
 
-const menuSub = style({
+const menuSub = style("sidebar-menu-sub", {
   borderLeft: "1px solid var(--sidebar-border)",
   display: "flex",
   flexDirection: "column",
@@ -641,13 +641,13 @@ const menuSub = style({
   paddingBlock: "0.125rem",
   paddingInline: "0.625rem",
   translate: "1px",
-}, { label: "sidebar-menu-sub" });
+});
 
-const menuSubItem = style({
+const menuSubItem = style("sidebar-menu-sub-item", {
   position: "relative",
-}, { label: "sidebar-menu-sub-item" });
+});
 
-const menuSubButton = style({
+const menuSubButton = style("sidebar-menu-sub-button", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--sidebar-foreground)",
@@ -693,20 +693,20 @@ const menuSubButton = style({
     backgroundColor: "var(--sidebar-accent)",
     color: "var(--sidebar-accent-foreground)",
   },
-}, { label: "sidebar-menu-sub-button" });
+});
 
 const menuSubSizes = {
-  sm: style({
+  sm: style("sidebar-menu-sub-sm", {
     fontSize: "0.75rem",
     lineHeight: "1rem",
-  }, { label: "sidebar-menu-sub-sm" }),
-  md: style({
+  }),
+  md: style("sidebar-menu-sub-md", {
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
-  }, { label: "sidebar-menu-sub-md" }),
+  }),
 };
 
-const tooltipContent = style({
+const tooltipContent = style("sidebar-tooltip-content", {
   backgroundColor: "var(--foreground)",
   borderRadius: "calc(var(--radius) * 0.8)",
   color: "var(--background)",
@@ -721,7 +721,7 @@ const tooltipContent = style({
   "&[data-state='open'][data-side='right']": {
     animation: `${tooltipInRight} 150ms ease-out both`,
   },
-}, { label: "sidebar-tooltip-content" });
+});
 
 css({
   "[data-slot='sidebar-wrapper']:has([data-variant='inset'])": {

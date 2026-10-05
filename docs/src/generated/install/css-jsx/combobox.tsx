@@ -10,7 +10,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const base = style({
+const base = style("combobox-wrapper", {
   alignItems: "center",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -47,9 +47,9 @@ const base = style({
   "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "combobox-wrapper" });
+});
 
-const input = style({
+const input = style("combobox-input", {
   background: "transparent",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -93,16 +93,16 @@ const input = style({
   "&:is(.dark *)": {
     background: "color-mix(in oklab, var(--input) 30%, transparent)",
   },
-}, { label: "combobox-input" });
+});
 
-const inputFocus = style({
+const inputFocus = style("combobox-input-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "combobox-input-focus" });
+});
 
-const inputInvalid = style({
+const inputInvalid = style("combobox-input-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -112,9 +112,9 @@ const inputInvalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "combobox-input-invalid" });
+});
 
-const inputControl = style({
+const inputControl = style("combobox-input-control", {
   background: "transparent",
   borderRadius: "0",
   borderWidth: "0",
@@ -126,9 +126,9 @@ const inputControl = style({
   "&:is(.dark *)": {
     background: "transparent",
   },
-}, { label: "combobox-input-control" });
+});
 
-const addon = style({
+const addon = style("combobox-addon", {
   alignItems: "center",
   color: "var(--muted-foreground)",
   cursor: "text",
@@ -158,9 +158,9 @@ const addon = style({
   "&[data-disabled='true']": {
     opacity: "0.5",
   },
-}, { label: "combobox-addon" });
+});
 
-const buttonBase = style({
+const buttonBase = style("combobox-button", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxSizing: "border-box",
@@ -199,9 +199,9 @@ const buttonBase = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "combobox-button" });
+});
 
-const buttonGhost = style({
+const buttonGhost = style("combobox-button-ghost", {
   "&:hover": {
     backgroundColor: "var(--accent)",
     color: "var(--accent-foreground)",
@@ -209,9 +209,9 @@ const buttonGhost = style({
   "&:is(.dark *):hover": {
     backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
   },
-}, { label: "combobox-button-ghost" });
+});
 
-const buttonSizeIconXs = style({
+const buttonSizeIconXs = style("combobox-button-size-icon-xs", {
   borderRadius: "calc(var(--radius) * 0.8)",
   height: "1.5rem",
   width: "1.5rem",
@@ -219,9 +219,9 @@ const buttonSizeIconXs = style({
     height: "0.75rem",
     width: "0.75rem",
   },
-}, { label: "combobox-button-size-icon-xs" });
+});
 
-const sizeIconXs = style({
+const sizeIconXs = style("combobox-size-icon-xs", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) - 5px)",
   display: "flex",
@@ -233,37 +233,37 @@ const sizeIconXs = style({
   "&:has(> svg)": {
     padding: "0",
   },
-}, { label: "combobox-size-icon-xs" });
+});
 
-const triggerExtra = style({
+const triggerExtra = style("combobox-trigger-extra", {
   "&[data-pressed]": {
     backgroundColor: "transparent",
   },
-}, { label: "combobox-trigger-extra" });
+});
 
-const chipRemoveExtra = style({
+const chipRemoveExtra = style("combobox-chip-remove-extra", {
   marginLeft: "-0.25rem",
   opacity: "0.5",
   "&:hover": {
     opacity: "1",
   },
-}, { label: "combobox-chip-remove-extra" });
+});
 
-const trigger = style({
+const trigger = style("combobox-trigger", {
   "& svg:not([class*='size-'])": {
     height: "1rem",
     width: "1rem",
   },
-}, { label: "combobox-trigger" });
+});
 
-const triggerIcon = style({
+const triggerIcon = style("combobox-trigger-icon", {
   color: "var(--muted-foreground)",
   height: "1rem",
   pointerEvents: "none",
   width: "1rem",
-}, { label: "combobox-trigger-icon" });
+});
 
-const content = style({
+const content = style("combobox-content", {
   backgroundColor: "var(--popover)",
   borderRadius: "calc(var(--radius) * 0.8)",
   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1), 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent)",
@@ -314,9 +314,9 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 100ms ease-in both`,
   },
-}, { label: "combobox-content" });
+});
 
-const list = style({
+const list = style("combobox-list", {
   maxHeight: "min(calc(24rem - 2.25rem), calc(var(--available-height) - 2.25rem))",
   overflowY: "auto",
   padding: "0.25rem",
@@ -324,9 +324,9 @@ const list = style({
   "&[data-empty]": {
     padding: "0",
   },
-}, { label: "combobox-list" });
+});
 
-const item = style({
+const item = style("combobox-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -358,9 +358,9 @@ const item = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "combobox-item" });
+});
 
-const itemIndicator = style({
+const itemIndicator = style("combobox-item-indicator", {
   alignItems: "center",
   display: "flex",
   height: "1rem",
@@ -369,9 +369,9 @@ const itemIndicator = style({
   position: "absolute",
   right: "0.5rem",
   width: "1rem",
-}, { label: "combobox-item-indicator" });
+});
 
-const icon = style({
+const icon = style("combobox-icon", {
   height: "1rem",
   pointerEvents: "none",
   width: "1rem",
@@ -381,13 +381,13 @@ const icon = style({
       width: "1.25rem",
     },
   },
-}, { label: "combobox-icon" });
+});
 
-const xIcon = style({
+const xIcon = style("combobox-x-icon", {
   pointerEvents: "none",
-}, { label: "combobox-x-icon" });
+});
 
-const label = style({
+const label = style("combobox-label", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   lineHeight: "1rem",
@@ -401,9 +401,9 @@ const label = style({
       paddingInline: "0.75rem",
     },
   },
-}, { label: "combobox-label" });
+});
 
-const empty = style({
+const empty = style("combobox-empty", {
   color: "var(--muted-foreground)",
   display: "none",
   fontSize: "0.875rem",
@@ -415,16 +415,16 @@ const empty = style({
   "&:is([data-slot='combobox-content'][data-empty] *)": {
     display: "flex",
   },
-}, { label: "combobox-empty" });
+});
 
-const separator = style({
+const separator = style("combobox-separator", {
   backgroundColor: "var(--border)",
   height: "1px",
   marginBlock: "0.25rem",
   marginInline: "-0.25rem",
-}, { label: "combobox-separator" });
+});
 
-const chips = style({
+const chips = style("combobox-chips", {
   alignItems: "center",
   backgroundClip: "padding-box",
   backgroundColor: "transparent",
@@ -458,9 +458,9 @@ const chips = style({
     borderColor: "color-mix(in oklab, var(--destructive) 50%, transparent)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "combobox-chips" });
+});
 
-const chip = style({
+const chip = style("combobox-chip", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   borderRadius: "calc(var(--radius) * 0.6)",
@@ -482,13 +482,13 @@ const chip = style({
   "&:has([data-slot='combobox-chip-remove'])": {
     paddingRight: "0",
   },
-}, { label: "combobox-chip" });
+});
 
-const chipsInput = style({
+const chipsInput = style("combobox-chips-input", {
   flex: "1 1 0%",
   minWidth: "4rem",
   outlineStyle: "none",
-}, { label: "combobox-chips-input" });
+});
 
 css({
   "[data-slot='input-group']:has([data-slot='combobox-clear']) [data-slot='combobox-trigger']": {

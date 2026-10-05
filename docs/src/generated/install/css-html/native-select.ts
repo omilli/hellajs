@@ -3,15 +3,15 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const wrapper = style({
+const wrapper = style("native-select-wrapper", {
   position: "relative",
   width: "fit-content",
   "&:has(select:disabled)": {
     opacity: "0.5",
   },
-}, { label: "native-select-wrapper" });
+});
 
-const base = style({
+const base = style("native-select", {
   appearance: "none",
   border: "1px solid var(--input)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -47,16 +47,16 @@ const base = style({
   "&:is(.dark *):hover": {
     background: "color-mix(in oklab, var(--input) 50%, transparent)",
   },
-}, { label: "native-select" });
+});
 
-const focus = style({
+const focus = style("native-select-focus", {
   "&:focus-visible": {
     borderColor: "var(--ring)",
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
   },
-}, { label: "native-select-focus" });
+});
 
-const invalid = style({
+const invalid = style("native-select-invalid", {
   "&[aria-invalid='true']": {
     borderColor: "var(--destructive)",
   },
@@ -66,9 +66,9 @@ const invalid = style({
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
   },
-}, { label: "native-select-invalid" });
+});
 
-const icon = style({
+const icon = style("native-select-icon", {
   color: "var(--muted-foreground)",
   height: "1rem",
   opacity: "0.5",
@@ -79,17 +79,17 @@ const icon = style({
   transform: "translateY(-50%)",
   userSelect: "none",
   width: "1rem",
-}, { label: "native-select-icon" });
+});
 
-const option = style({
+const option = style("native-select-option", {
   backgroundColor: "Canvas",
   color: "CanvasText",
-}, { label: "native-select-option" });
+});
 
-const optgroup = style({
+const optgroup = style("native-select-optgroup", {
   backgroundColor: "Canvas",
   color: "CanvasText",
-}, { label: "native-select-optgroup" });
+});
 
 interface NativeSelectProps {
   children?: HellaChildren;

@@ -1,13 +1,13 @@
 import { css, style } from "@hellajs/css";
 
-export const group = style({
+export const group = style("message-group", {
   display: "flex",
   flexDirection: "column",
   minWidth: "0",
   gap: "0.5rem",
-}, { label: "message-group" });
+});
 
-export const base = style({
+export const base = style("message", {
   position: "relative",
   display: "flex",
   width: "100%",
@@ -18,9 +18,9 @@ export const base = style({
   "&[data-align='end']": {
     flexDirection: "row-reverse",
   },
-}, { label: "message" });
+});
 
-export const avatar = style({
+export const avatar = style("message-avatar", {
   display: "flex",
   width: "fit-content",
   minWidth: "2rem",
@@ -31,18 +31,18 @@ export const avatar = style({
   overflow: "hidden",
   borderRadius: "calc(infinity * 1px)",
   backgroundColor: "var(--muted)",
-}, { label: "message-avatar" });
+});
 
-export const content = style({
+export const content = style("message-content", {
   display: "flex",
   width: "100%",
   minWidth: "0",
   flexDirection: "column",
   gap: "0.625rem",
   overflowWrap: "break-word",
-}, { label: "message-content" });
+});
 
-export const header = style({
+export const header = style("message-header", {
   display: "flex",
   maxWidth: "100%",
   minWidth: "0",
@@ -51,9 +51,9 @@ export const header = style({
   fontSize: "0.75rem",
   fontWeight: "500",
   color: "var(--muted-foreground)",
-}, { label: "message-header" });
+});
 
-export const footer = style({
+export const footer = style("message-footer", {
   display: "flex",
   maxWidth: "100%",
   minWidth: "0",
@@ -62,7 +62,7 @@ export const footer = style({
   fontSize: "0.75rem",
   fontWeight: "500",
   color: "var(--muted-foreground)",
-}, { label: "message-footer" });
+});
 
 css({
   "[data-slot='message']:has([data-slot='message-footer']) [data-slot='message-avatar']": {

@@ -5,12 +5,12 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("form-item", {
   display: "grid",
   gap: "0.5rem",
-}, { label: "form-item" });
+});
 
-const label = style({
+const label = style("form-label", {
   alignItems: "center",
   display: "flex",
   fontSize: "0.875rem",
@@ -29,17 +29,17 @@ const label = style({
   "&[data-error='true']": {
     color: "var(--destructive)",
   },
-}, { label: "form-label" });
+});
 
-const description = style({
+const description = style("form-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
-}, { label: "form-description" });
+});
 
-const message = style({
+const message = style("form-message", {
   color: "var(--destructive)",
   fontSize: "0.875rem",
-}, { label: "form-message" });
+});
 
 /** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
 type FormValidator<T> = (value: T[keyof T], values: T) => string | null;

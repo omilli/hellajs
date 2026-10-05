@@ -1,10 +1,10 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("scroll-area", {
   position: "relative",
-}, { label: "scroll-area" });
+});
 
-export const viewport = style({
+export const viewport = style("scroll-area-viewport", {
   height: "100%",
   width: "100%",
   borderRadius: "inherit",
@@ -21,9 +21,9 @@ export const viewport = style({
     boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
     outline: "1px solid",
   },
-}, { label: "scroll-area-viewport" });
+});
 
-export const scrollbar = style({
+export const scrollbar = style("scroll-area-scrollbar", {
   display: "flex",
   padding: "1px",
   touchAction: "none",
@@ -48,11 +48,11 @@ export const scrollbar = style({
     flexDirection: "column",
     borderTop: "1px solid transparent",
   },
-}, { label: "scroll-area-scrollbar" });
+});
 
-export const thumb = style({
+export const thumb = style("scroll-area-thumb", {
   position: "relative",
   flex: "1 1 0%",
   borderRadius: "9999px",
   backgroundColor: "var(--border)",
-}, { label: "scroll-area-thumb" });
+});

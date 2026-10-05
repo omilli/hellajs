@@ -2,32 +2,32 @@ import type { HellaChild, HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
-const set = style({
+const set = style("field-set", {
   display: "flex",
   flexDirection: "column",
   gap: "1.5rem",
   "&:has(> [data-slot='checkbox-group']), &:has(> [data-slot='radio-group'])": {
     gap: "0.75rem",
   },
-}, { label: "field-set" });
+});
 
-const legend = style({
+const legend = style("field-legend", {
   fontWeight: "500",
   marginBottom: "0.75rem",
-}, { label: "field-legend" });
+});
 
 const legendVariants = {
-  legend: style({
+  legend: style("field-legend-legend", {
     fontSize: "1rem",
     lineHeight: "1.5rem",
-  }, { label: "field-legend-legend" }),
-  label: style({
+  }),
+  label: style("field-legend-label", {
     fontSize: "0.875rem",
     lineHeight: "1.25rem",
-  }, { label: "field-legend-label" }),
+  }),
 };
 
-const group = style({
+const group = style("field-group", {
   container: "field-group / inline-size",
   display: "flex",
   flexDirection: "column",
@@ -39,19 +39,19 @@ const group = style({
   "& > [data-slot='field-group']": {
     gap: "1rem",
   },
-}, { label: "field-group" });
+});
 
-const base = style({
+const base = style("field", {
   display: "flex",
   gap: "0.75rem",
   width: "100%",
   "&[data-invalid='true']": {
     color: "var(--destructive)",
   },
-}, { label: "field" });
+});
 
 const orientation = {
-  vertical: style({
+  vertical: style("field-vertical", {
     flexDirection: "column",
     "& > *": {
       width: "100%",
@@ -59,8 +59,8 @@ const orientation = {
     "& > .sr-only": {
       width: "auto",
     },
-  }, { label: "field-vertical" }),
-  horizontal: style({
+  }),
+  horizontal: style("field-horizontal", {
     alignItems: "center",
     flexDirection: "row",
     "& > [data-slot='field-label']": {
@@ -72,8 +72,8 @@ const orientation = {
     "&:has([data-slot='field-content']) > [role='checkbox'], &:has([data-slot='field-content']) > [role='radio']": {
       marginTop: "1px",
     },
-  }, { label: "field-horizontal" }),
-  responsive: style({
+  }),
+  responsive: style("field-responsive", {
     flexDirection: "column",
     "& > *": {
       width: "100%",
@@ -100,18 +100,18 @@ const orientation = {
         marginTop: "1px",
       },
     },
-  }, { label: "field-responsive" }),
+  }),
 };
 
-const content = style({
+const content = style("field-content", {
   display: "flex",
   flex: "1 1 0%",
   flexDirection: "column",
   gap: "0.375rem",
   lineHeight: "1.625",
-}, { label: "field-content" });
+});
 
-const label = style({
+const label = style("field-label", {
   alignItems: "center",
   display: "flex",
   fontSize: "0.875rem",
@@ -144,9 +144,9 @@ const label = style({
   "&:is(.dark *):has([data-state='checked'])": {
     backgroundColor: "color-mix(in oklab, var(--primary) 10%, transparent)",
   },
-}, { label: "field-label" });
+});
 
-const title = style({
+const title = style("field-title", {
   alignItems: "center",
   display: "flex",
   fontSize: "0.875rem",
@@ -154,9 +154,9 @@ const title = style({
   gap: "0.5rem",
   lineHeight: "1.625",
   width: "fit-content",
-}, { label: "field-title" });
+});
 
-const description = style({
+const description = style("field-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   fontWeight: "400",
@@ -174,16 +174,16 @@ const description = style({
   "& > a:hover": {
     color: "var(--primary)",
   },
-}, { label: "field-description" });
+});
 
-const separator = style({
+const separator = style("field-separator", {
   fontSize: "0.875rem",
   height: "1.25rem",
   marginBlock: "-0.5rem",
   position: "relative",
-}, { label: "field-separator" });
+});
 
-const separatorBase = style({
+const separatorBase = style("field-separator-base", {
   backgroundColor: "var(--border)",
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
@@ -194,17 +194,17 @@ const separatorBase = style({
     height: "100%",
     width: "1px",
   },
-}, { label: "field-separator-base" });
+});
 
-const separatorRule = style({
+const separatorRule = style("field-separator-rule", {
   bottom: "0",
   left: "0",
   position: "absolute",
   right: "0",
   top: "50%",
-}, { label: "field-separator-rule" });
+});
 
-const separatorContent = style({
+const separatorContent = style("field-separator-content", {
   backgroundColor: "var(--background)",
   color: "var(--muted-foreground)",
   display: "block",
@@ -213,21 +213,21 @@ const separatorContent = style({
   paddingInline: "0.5rem",
   position: "relative",
   width: "fit-content",
-}, { label: "field-separator-content" });
+});
 
-const error = style({
+const error = style("field-error", {
   color: "var(--destructive)",
   fontSize: "0.875rem",
   fontWeight: "400",
-}, { label: "field-error" });
+});
 
-const errorList = style({
+const errorList = style("field-error-list", {
   display: "flex",
   flexDirection: "column",
   gap: "0.25rem",
   listStyleType: "disc",
   marginLeft: "1rem",
-}, { label: "field-error-list" });
+});
 
 css({
   "[data-slot='field'][data-disabled='true'] [data-slot='field-label']": {

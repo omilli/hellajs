@@ -2,14 +2,14 @@ import type { HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
-const group = style({
+const group = style("message-group", {
   display: "flex",
   flexDirection: "column",
   minWidth: "0",
   gap: "0.5rem",
-}, { label: "message-group" });
+});
 
-const base = style({
+const base = style("message", {
   position: "relative",
   display: "flex",
   width: "100%",
@@ -20,9 +20,9 @@ const base = style({
   "&[data-align='end']": {
     flexDirection: "row-reverse",
   },
-}, { label: "message" });
+});
 
-const avatar = style({
+const avatar = style("message-avatar", {
   display: "flex",
   width: "fit-content",
   minWidth: "2rem",
@@ -33,18 +33,18 @@ const avatar = style({
   overflow: "hidden",
   borderRadius: "calc(infinity * 1px)",
   backgroundColor: "var(--muted)",
-}, { label: "message-avatar" });
+});
 
-const content = style({
+const content = style("message-content", {
   display: "flex",
   width: "100%",
   minWidth: "0",
   flexDirection: "column",
   gap: "0.625rem",
   overflowWrap: "break-word",
-}, { label: "message-content" });
+});
 
-const header = style({
+const header = style("message-header", {
   display: "flex",
   maxWidth: "100%",
   minWidth: "0",
@@ -53,9 +53,9 @@ const header = style({
   fontSize: "0.75rem",
   fontWeight: "500",
   color: "var(--muted-foreground)",
-}, { label: "message-header" });
+});
 
-const footer = style({
+const footer = style("message-footer", {
   display: "flex",
   maxWidth: "100%",
   minWidth: "0",
@@ -64,7 +64,7 @@ const footer = style({
   fontSize: "0.75rem",
   fontWeight: "500",
   color: "var(--muted-foreground)",
-}, { label: "message-footer" });
+});
 
 css({
   "[data-slot='message']:has([data-slot='message-footer']) [data-slot='message-avatar']": {

@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("kbd", {
   alignItems: "center",
   backgroundColor: "var(--muted)",
   borderRadius: "calc(var(--radius) * 0.6)",
@@ -30,10 +30,10 @@ export const base = style({
   "&:is([data-slot='tooltip-content'] *):is(.dark *)": {
     backgroundColor: "color-mix(in oklab, var(--background) 10%, transparent)",
   },
-}, { label: "kbd" });
+});
 
-export const group = style({
+export const group = style("kbd-group", {
   alignItems: "center",
   display: "inline-flex",
   gap: "0.25rem",
-}, { label: "kbd-group" });
+});

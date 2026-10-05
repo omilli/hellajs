@@ -4,15 +4,15 @@ import type { HellaChild } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
-const base = style({
+const base = style("tabs", {
   display: "flex",
   gap: "0.5rem",
   "&[data-orientation='horizontal']": {
     flexDirection: "column",
   },
-}, { label: "tabs" });
+});
 
-const list = style({
+const list = style("tabs-list", {
   alignItems: "center",
   borderRadius: "var(--radius)",
   color: "var(--muted-foreground)",
@@ -28,19 +28,19 @@ const list = style({
   "&[data-variant='line']": {
     borderRadius: "0",
   },
-}, { label: "tabs-list" });
+});
 
 const variants = {
-  default: style({
+  default: style("tabs-list-default", {
     backgroundColor: "var(--muted)",
-  }, { label: "tabs-list-default" }),
-  line: style({
+  }),
+  line: style("tabs-list-line", {
     background: "transparent",
     gap: "0.25rem",
-  }, { label: "tabs-list-line" }),
+  }),
 };
 
-const trigger = style({
+const trigger = style("tabs-trigger", {
   alignItems: "center",
   border: "1px solid transparent",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -100,12 +100,12 @@ const trigger = style({
     position: "absolute",
     transition: "opacity 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   },
-}, { label: "tabs-trigger" });
+});
 
-const content = style({
+const content = style("tabs-content", {
   flex: "1",
   outlineStyle: "none",
-}, { label: "tabs-content" });
+});
 
 css({
   "[data-slot='tabs-trigger'][data-orientation='vertical']": {

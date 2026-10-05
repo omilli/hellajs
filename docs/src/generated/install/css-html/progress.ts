@@ -8,16 +8,16 @@ const indeterminate = keyframes({
   to: { transform: "translateX(0)" },
 });
 
-const base = style({
+const base = style("progress", {
   backgroundColor: "color-mix(in oklab, var(--primary) 20%, transparent)",
   borderRadius: "calc(infinity * 1px)",
   height: "0.5rem",
   overflow: "hidden",
   position: "relative",
   width: "100%",
-}, { label: "progress" });
+});
 
-const indicator = style({
+const indicator = style("progress-indicator", {
   backgroundColor: "var(--primary)",
   flex: "1",
   height: "100%",
@@ -26,7 +26,7 @@ const indicator = style({
   "&[data-state='indeterminate']": {
     animation: `${indeterminate} 2s linear infinite`,
   },
-}, { label: "progress-indicator" });
+});
 
 type ProgressValue = number | null | undefined;
 

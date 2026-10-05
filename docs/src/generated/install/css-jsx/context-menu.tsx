@@ -10,7 +10,7 @@ const inLeft = keyframes({ from: { opacity: "0", transform: "translateX(0.5rem) 
 const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem) scale(0.95)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
-const content = style({
+const content = style("context-menu-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -40,9 +40,9 @@ const content = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "context-menu-content" });
+});
 
-const item = style({
+const item = style("context-menu-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -91,9 +91,9 @@ const item = style({
   "&[data-variant='destructive'] svg": {
     color: "var(--destructive) !important",
   },
-}, { label: "context-menu-item" });
+});
 
-const checkItem = style({
+const checkItem = style("context-menu-check-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -124,9 +124,9 @@ const checkItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "context-menu-check-item" });
+});
 
-const radioItem = style({
+const radioItem = style("context-menu-radio-item", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -157,9 +157,9 @@ const radioItem = style({
     height: "1rem",
     width: "1rem",
   },
-}, { label: "context-menu-radio-item" });
+});
 
-const indicator = style({
+const indicator = style("context-menu-indicator", {
   alignItems: "center",
   display: "flex",
   height: "0.875rem",
@@ -168,20 +168,20 @@ const indicator = style({
   pointerEvents: "none",
   position: "absolute",
   width: "0.875rem",
-}, { label: "context-menu-indicator" });
+});
 
-const icon = style({
+const icon = style("context-menu-icon", {
   height: "1rem",
   width: "1rem",
-}, { label: "context-menu-icon" });
+});
 
-const radioIcon = style({
+const radioIcon = style("context-menu-radio-icon", {
   fill: "currentColor",
   height: "0.5rem",
   width: "0.5rem",
-}, { label: "context-menu-radio-icon" });
+});
 
-const label = style({
+const label = style("context-menu-label", {
   color: "var(--foreground)",
   fontSize: "0.875rem",
   fontWeight: "500",
@@ -191,26 +191,26 @@ const label = style({
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
-}, { label: "context-menu-label" });
+});
 
-const separator = style({
+const separator = style("context-menu-separator", {
   backgroundColor: "var(--border)",
   height: "1px",
   marginBottom: "0.25rem",
   marginLeft: "-0.25rem",
   marginRight: "-0.25rem",
   marginTop: "0.25rem",
-}, { label: "context-menu-separator" });
+});
 
-const shortcut = style({
+const shortcut = style("context-menu-shortcut", {
   color: "var(--muted-foreground)",
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
   marginLeft: "auto",
-}, { label: "context-menu-shortcut" });
+});
 
-const subTrigger = style({
+const subTrigger = style("context-menu-sub-trigger", {
   alignItems: "center",
   borderRadius: "calc(var(--radius) * 0.6)",
   cursor: "default",
@@ -245,13 +245,13 @@ const subTrigger = style({
   "& svg:not([class*='text-'])": {
     color: "var(--muted-foreground)",
   },
-}, { label: "context-menu-sub-trigger" });
+});
 
-const chevron = style({
+const chevron = style("context-menu-chevron", {
   marginLeft: "auto",
-}, { label: "context-menu-chevron" });
+});
 
-const subContent = style({
+const subContent = style("context-menu-sub-content", {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 0.8)",
@@ -279,7 +279,7 @@ const subContent = style({
   "&[data-state='closed']": {
     animation: `${out} 150ms ease-in both`,
   },
-}, { label: "context-menu-sub-content" });
+});
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
 type AnchorAlign = "start" | "center" | "end";

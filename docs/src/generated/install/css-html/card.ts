@@ -3,7 +3,7 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
-const base = style({
+const base = style("card", {
   background: "var(--card)",
   border: "1px solid var(--border)",
   borderRadius: "calc(var(--radius) * 1.4)",
@@ -13,9 +13,9 @@ const base = style({
   gap: "1.5rem",
   paddingBlock: "1.5rem",
   boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-}, { label: "card" });
+});
 
-const header = style({
+const header = style("card-header", {
   alignItems: "start",
   container: "card-header / inline-size",
   display: "grid",
@@ -26,36 +26,36 @@ const header = style({
   "&:has([data-slot='card-action'])": {
     gridTemplateColumns: "1fr auto",
   },
-}, { label: "card-header" });
+});
 
-const title = style({
+const title = style("card-title", {
   fontWeight: "600",
   lineHeight: "1",
-}, { label: "card-title" });
+});
 
-const description = style({
+const description = style("card-description", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
-}, { label: "card-description" });
+});
 
-const action = style({
+const action = style("card-action", {
   gridColumnStart: "2",
   gridRowEnd: "span 2",
   gridRowStart: "1",
   justifySelf: "end",
   alignSelf: "start",
-}, { label: "card-action" });
+});
 
-const content = style({
+const content = style("card-content", {
   paddingInline: "1.5rem",
-}, { label: "card-content" });
+});
 
-const footer = style({
+const footer = style("card-footer", {
   alignItems: "center",
   display: "flex",
   paddingInline: "1.5rem",
-}, { label: "card-footer" });
+});
 
 css({
   ".border-b [data-slot='card-header'], .border-b ~ [data-slot='card-header']": {

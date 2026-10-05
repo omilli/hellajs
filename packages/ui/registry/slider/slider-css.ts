@@ -1,6 +1,6 @@
 import { style } from "@hellajs/css";
 
-export const base = style({
+export const base = style("slider", {
   alignItems: "center",
   display: "flex",
   position: "relative",
@@ -16,9 +16,9 @@ export const base = style({
     minHeight: "11rem",
     width: "auto",
   },
-}, { label: "slider" });
+});
 
-export const track = style({
+export const track = style("slider-track", {
   borderRadius: "9999px",
   backgroundColor: "var(--muted)",
   flexGrow: "1",
@@ -32,9 +32,9 @@ export const track = style({
     height: "100%",
     width: "0.375rem",
   },
-}, { label: "slider-track" });
+});
 
-export const range = style({
+export const range = style("slider-range", {
   backgroundColor: "var(--primary)",
   position: "absolute",
   "&[data-orientation='horizontal']": {
@@ -43,9 +43,9 @@ export const range = style({
   "&[data-orientation='vertical']": {
     width: "100%",
   },
-}, { label: "slider-range" });
+});
 
-export const thumb = style({
+export const thumb = style("slider-thumb", {
   backgroundColor: "#fff",
   border: "1px solid var(--primary)",
   borderRadius: "9999px",
@@ -67,4 +67,4 @@ export const thumb = style({
     opacity: "0.5",
     pointerEvents: "none",
   },
-}, { label: "slider-thumb" });
+});

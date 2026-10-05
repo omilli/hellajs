@@ -3,9 +3,9 @@ import type { HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("direction-provider", {
   display: "contents",
-}, { label: "direction-provider" });
+});
 
 interface DirectionProviderProps {
   children?: HellaChildren;

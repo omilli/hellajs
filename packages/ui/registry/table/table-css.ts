@@ -1,40 +1,40 @@
 import { style } from "@hellajs/css";
 
-export const container = style({
+export const container = style("table-container", {
   overflowX: "auto",
   position: "relative",
   width: "100%",
-}, { label: "table-container" });
+});
 
-export const base = style({
+export const base = style("table", {
   captionSide: "bottom",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   width: "100%",
-}, { label: "table" });
+});
 
-export const header = style({
+export const header = style("table-header", {
   "& tr": {
     borderBottom: "1px solid var(--border)",
   },
-}, { label: "table-header" });
+});
 
-export const body = style({
+export const body = style("table-body", {
   "& tr:last-child": {
     borderBottom: "0",
   },
-}, { label: "table-body" });
+});
 
-export const footer = style({
+export const footer = style("table-footer", {
   backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
   borderTop: "1px solid var(--border)",
   fontWeight: "500",
   "& > tr:last-child": {
     borderBottom: "0",
   },
-}, { label: "table-footer" });
+});
 
-export const row = style({
+export const row = style("table-row", {
   borderBottom: "1px solid var(--border)",
   transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
   transitionDuration: "150ms",
@@ -48,9 +48,9 @@ export const row = style({
   "&[data-state='selected']": {
     backgroundColor: "var(--muted)",
   },
-}, { label: "table-row" });
+});
 
-export const head = style({
+export const head = style("table-head", {
   color: "var(--foreground)",
   fontWeight: "500",
   height: "2.5rem",
@@ -64,9 +64,9 @@ export const head = style({
   "& > [role='checkbox']": {
     transform: "translateY(2px)",
   },
-}, { label: "table-head" });
+});
 
-export const cell = style({
+export const cell = style("table-cell", {
   padding: "0.5rem",
   verticalAlign: "middle",
   whiteSpace: "nowrap",
@@ -76,11 +76,11 @@ export const cell = style({
   "& > [role='checkbox']": {
     transform: "translateY(2px)",
   },
-}, { label: "table-cell" });
+});
 
-export const caption = style({
+export const caption = style("table-caption", {
   color: "var(--muted-foreground)",
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   marginTop: "1rem",
-}, { label: "table-caption" });
+});

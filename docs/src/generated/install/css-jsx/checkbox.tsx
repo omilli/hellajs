@@ -2,7 +2,7 @@ import { signal } from "@hellajs/core";
 
 import { style } from "@hellajs/css";
 
-const base = style({
+const base = style("checkbox", {
   boxSizing: "border-box",
   borderRadius: "4px",
   border: "1px solid var(--input)",
@@ -40,19 +40,19 @@ const base = style({
   "&:is(.dark *)[data-state='checked']": {
     backgroundColor: "var(--primary)",
   },
-}, { label: "checkbox" });
+});
 
-const indicator = style({
+const indicator = style("checkbox-indicator", {
   color: "currentColor",
   display: "grid",
   placeContent: "center",
   transition: "none",
-}, { label: "checkbox-indicator" });
+});
 
-const icon = style({
+const icon = style("checkbox-icon", {
   height: "0.875rem",
   width: "0.875rem",
-}, { label: "checkbox-icon" });
+});
 
 interface CheckboxProps {
   /** Checked state. A boolean seeds the internal signal; an accessor makes the checkbox controlled — clicks then only report through `onCheckedChange`. */
