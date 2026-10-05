@@ -64,13 +64,16 @@ function runCapture(
 }
 
 /**
- * Run lint as the final gate. Captures combined stdout+stderr so the caller can
- * append it to the final output — inherited stdio would print before the
- * captured test output (written last by writeAndExit) and bury the errors above
- * the test summary, making a lint failure look like an exit-1 with no reason.
- * Callers skip this when tests already failed — lint is the slow,
- * rarely-failing step, so it runs only on a green test run to keep the
- * iteration loop fast.
+ * Run the three lint stages (tsc, eslint, guards) concurrently with each other;
+ * the caller runs this concurrently with the test run. Every stage runs even
+ * when another fails — no short-circuit — so one run reports the full picture.
+ * Lint needs no fresh dist bundle (tsconfig paths resolve @hellajs/* to lib/
+ * sources), which is what makes the concurrency safe.
+ *
+ * Captures combined stdout+stderr so the caller can append failed stages'
+ * output to the final output — inherited stdio would print before the captured
+ * test output (written last by writeAndExit) and bury the errors above the
+ * test summary, making a lint failure look like an exit-1 with no reason.
  *
  * With `packageName`, eslint scopes to that package so files outside it
  * (sibling packages mid-edit, foreign scratch files) cannot fail a scoped run;
@@ -79,19 +82,16 @@ function runCapture(
  */
 async function runLint(packageName?: string): Promise<{ code: number; output: string }> {
   logger.info(packageName ? `Linting (eslint scoped to ${packageName})...` : "Linting...");
-  if (!packageName) {
-    const result = await runCapture("bun", ["lint"], { cwd: projectRoot });
-    return { code: result.code, output: result.output };
-  }
-  const tsc = await runCapture("bunx", ["tsc", "-p", "tsconfig.lint.json", "--noEmit"]);
-  if (tsc.code !== 0) {
-    return { code: tsc.code, output: tsc.output };
-  }
-  const eslint = await runCapture("bunx", ["eslint", `packages/${packageName}`]);
-  if (eslint.code !== 0) {
-    return { code: eslint.code, output: eslint.output };
-  }
-  return runCapture("bun", ["lint:guards"], { cwd: projectRoot });
+  const [tsc, eslint, guards] = await Promise.all([
+    runCapture("bunx", ["tsc", "-p", "tsconfig.lint.json", "--noEmit"]),
+    runCapture("bunx", ["eslint", packageName ? `packages/${packageName}` : "."]),
+    runCapture("bun", ["lint:guards"], { cwd: projectRoot }),
+  ]);
+  const failed = [tsc, eslint, guards].filter((stage) => stage.code !== 0);
+  return {
+    code: failed.length > 0 ? 1 : 0,
+    output: failed.map((stage) => stage.output).join("\n"),
+  };
 }
 
 async function main(): Promise<void> {
@@ -101,15 +101,12 @@ async function main(): Promise<void> {
   if (!packageName) {
     logger.info("Running full coverage...");
     await execCommand("bun", ["./scripts/bundle.ts", "--quiet"], { cwd: projectRoot });
-    const result = await runCapture("bun", ["test", "--coverage"], { cwd: projectRoot });
-    let exitCode = result.code;
-    let lintOutput = "";
-    if (result.code === 0) {
-      const lint = await runLint();
-      exitCode = lint.code;
-      if (lint.code !== 0) lintOutput = lint.output;
-    }
-    writeAndExit(result.output + lintOutput, exitCode);
+    const [result, lint] = await Promise.all([
+      runCapture("bun", ["test", "--parallel", "--coverage"], { cwd: projectRoot }),
+      runLint(),
+    ]);
+    const exitCode = result.code !== 0 ? result.code : lint.code;
+    writeAndExit(result.output + (lint.code !== 0 ? lint.output : ""), exitCode);
     return;
   }
 
@@ -128,21 +125,18 @@ async function main(): Promise<void> {
 
   await execCommand("bun", ["./scripts/bundle.ts", "--quiet"], { cwd: projectRoot });
 
-  const result = await runCapture(
-    "bun",
-    ["test", `packages/${packageName}/tests`, "--coverage"],
-    { cwd: projectRoot },
-  );
+  const [result, lint] = await Promise.all([
+    runCapture(
+      "bun",
+      ["test", "--parallel", `packages/${packageName}/tests`, "--coverage"],
+      { cwd: projectRoot },
+    ),
+    runLint(packageName),
+  ]);
 
   const filtered = filterCoverageTable(result.output, packageName);
-  let exitCode = result.code;
-  let lintOutput = "";
-  if (result.code === 0) {
-    const lint = await runLint(packageName);
-    exitCode = lint.code;
-    if (lint.code !== 0) lintOutput = lint.output;
-  }
-  writeAndExit(filtered + lintOutput, exitCode);
+  const exitCode = result.code !== 0 ? result.code : lint.code;
+  writeAndExit(filtered + (lint.code !== 0 ? lint.output : ""), exitCode);
 }
 
 /**
