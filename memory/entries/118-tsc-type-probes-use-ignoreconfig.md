@@ -4,7 +4,7 @@ title: "tsc type-probes pass --ignoreConfig and --jsx preserve — @hellajs/* ex
 description: "tsc type-probes: `bunx tsc --ignoreConfig --noEmit --strict --jsx preserve ...` — react-jsx fails (no jsx-runtime export); omitting --ignoreConfig fails TS5112 under TS 6."
 tags: [tooling, types, probes, dom]
 timestamp: 2026-09-26
-last_confirmed: 2026-09-26
+last_confirmed: 2026-10-05
 triggers: [tsc-probe, type-probe, ignoreConfig, jsx-runtime, assignability-check]
 ---
 
