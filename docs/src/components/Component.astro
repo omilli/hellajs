@@ -1,11 +1,18 @@
 ---
 import { css } from "@hellajs/css";
 import CodeExample from "./CodeExample.astro";
-import "@registry/theme/tokens.dark.js";
+// `tokens.js`, not `tokens.dark.js`: its `.dark` class block carries the
+// registry's default dark palette. The demo frame below carries the `dark`
+// class, so that class-scoped declaration re-asserts the default tokens on
+// the frame and beats the site palette inherited from `html:root` - every
+// surface outside the frame keeps the site theme. Portal-mounted demo
+// surfaces (dialogs, dropdowns, toasts) escape to `body` and render in the
+// site palette; scope contract recorded in `../styles/tokens.ts`.
+import "@registry/theme/tokens.js";
 
 css({
   ".demo-frame":{
-    backgroundColor: "var(--base-50)",
+    backgroundColor: "var(--background)",
     border: "1px solid var(--border)",
     borderRadius: "var(--radius)",
     color: "var(--foreground)",
@@ -48,7 +55,7 @@ let id = heading?.replaceAll(' ', '-').toLowerCase();
 
 <slot/>
 
-<div class="demo-frame">
+<div class="demo-frame dark">
   <div class={`demo-${type}`}>
     {Demo}
   </div>

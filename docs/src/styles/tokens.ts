@@ -4,19 +4,28 @@
  * `:root`/`@theme` from `docs/src/global.css` (base-50/100/200/300, primary,
  * primary-content), daisyUI dark `base-content` for foreground text, tailwind
  * slate-700/600 for border/input, and the Mulish font. Registry-named tokens
- * override `packages/ui/registry/theme/tokens.dark.js` so registry components
- * render in the site palette; the `base-*` ladder carries the site's own
- * tonal vocabulary for chrome styles. Registered UNLAYERED at `html:root`
+ * override the registry theme sheets so every surface outside the ui demo
+ * frames (chrome, prose, the search palette) renders in the site palette;
+ * the `base-*` ladder carries the site's own tonal vocabulary for chrome
+ * styles. The ui demo frames are the exception: `Component.astro` imports
+ * `@registry/theme/tokens.js` and adds the `dark` class to `.demo-frame`, so
+ * the theme sheet's `.dark` class block declares the registry's default dark
+ * palette directly on the frame - a direct class-scoped declaration beats
+ * this inherited `html:root` block, and the examples render exactly what a
+ * dark-default registry install produces. Portal-mounted demo surfaces
+ * (dialogs, dropdowns, toasts) escape the frame to `body` and fall back to
+ * this site palette. Registered UNLAYERED at `html:root`
  * (`scoped: "html:root"`): registry tokens and site tokens are both
  * unlayered `:root`-family declarations now, and this block sits at
  * `html:root` (0,1,1) so it beats every registry `:root` (0,1,0)
  * registration regardless of registration order - island hydration
  * registers the registry sheet client-side after this static tag and loses
  * on specificity. The palette probe is the guard (a gitignored Playwright
- * script over `astro preview` under docs/dist): body and registry-demo
- * surfaces must compute to this palette identically on a static page and an
- * island page - a failure there is a set-design fork, not a styling bug to
- * patch here.
+ * script over `astro preview` under docs/dist): body and chrome surfaces
+ * must compute to this palette identically on a static page and an island
+ * page, and demo frames (`.demo-frame.dark`) must compute to the registry's
+ * default dark palette - a failure there is a set-design fork, not a styling
+ * bug to patch here.
  * The `sidebar-*` family (unit 09) overrides the registry sidebar css
  * module's own light-value registration (`packages/ui/registry/sidebar/`),
  * whose `.dark` block never applies (the site's html carries no `.dark`
