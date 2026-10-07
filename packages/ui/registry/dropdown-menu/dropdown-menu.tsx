@@ -232,7 +232,7 @@ export function DropdownMenuTrigger(props: DropdownMenuTriggerProps): JSX.Elemen
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -326,7 +326,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps): JSX.Elemen
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -346,7 +346,7 @@ export function DropdownMenuGroup(props: DropdownMenuPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -383,7 +383,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): JSX.Element {
         closeAllMenus();
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => (props.shortcut !== undefined ? <DropdownMenuShortcut>{props.shortcut}</DropdownMenuShortcut> : null)}
     </div>
   );
@@ -435,7 +435,7 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): 
       >
         {() => (checked() ? checkIcon() : null)}
       </span>
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -465,7 +465,7 @@ export function DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps): JSX.
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
       {(props.items ?? []).map((entry) => (
         <DropdownMenuRadioItem
           value={entry.value}
@@ -524,7 +524,7 @@ export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps): JSX.El
       >
         {() => (checked() ? circleIcon() : null)}
       </span>
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -546,7 +546,7 @@ export function DropdownMenuLabel(props: DropdownMenuLabelProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -575,7 +575,7 @@ export function DropdownMenuShortcut(props: DropdownMenuPartProps): JSX.Element 
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </span>
   );
 }
@@ -636,7 +636,7 @@ export function DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps): JSX.
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
     </div>
   );
@@ -725,7 +725,7 @@ export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): JSX.
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -802,7 +802,7 @@ export function DropdownMenuSub(props: DropdownMenuSubProps): JSX.Element {
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
       {() => s.visible() && (
         <Portal to="body">
@@ -876,7 +876,7 @@ export default function DropdownMenu(props: DropdownMenuProps): JSX.Element {
         if (node instanceof HTMLElement) triggerNode = node;
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => s.visible() && (
         <Portal to="body">
           <DropdownMenuContent

@@ -252,6 +252,46 @@ describe("dom", () => {
       expect(container.querySelector("#root")!.textContent).toBe("content");
     });
 
+    test("null/false children consume no server node (ssr renders nothing for them)", () => {
+      // The exact shape the babel concat emission produces: [].concat(props.children, [sibling])
+      // with a nullish passthrough — the trailing sibling must hydrate in place, not shift.
+      const App = () => ({
+        tag: "div",
+        props: { id: "root" },
+        children: [null, undefined, false, { tag: "span", props: { id: "after" }, children: ["end"] }]
+      });
+      const container = ssrContainer(html`<${App} />`);
+
+      const { warnings } = suppressWarn(() => {
+        hydrate(html`<${App} />`, container);
+      });
+      expect(warnings).toEqual([]);
+      expect(container.querySelector("#after")!.textContent).toBe("end");
+      // null/false rendered nothing server-side — the span is the div's only child
+      expect(container.querySelector("#root")!.children.length).toBe(1);
+    });
+
+    test("nested array children hydrate positionally in order (the JSX `{items.map(…)}` shape)", () => {
+      const App = () => ({
+        tag: "ul",
+        props: { id: "root" },
+        children: [
+          { tag: "li", children: ["first"] },
+          [{ tag: "li", children: ["second"] }, { tag: "li", children: ["third"] }]
+        ]
+      });
+      const container = ssrContainer(html`<${App} />`);
+
+      const { warnings } = suppressWarn(() => {
+        hydrate(html`<${App} />`, container);
+      });
+      expect(warnings).toEqual([]);
+      const items = container.querySelectorAll("li");
+      expect([...items].map((li) => li.textContent)).toEqual(["first", "second", "third"]);
+      // adopted in place — no replacement subtree mounted after the list
+      expect(container.querySelector("#root")!.children.length).toBe(3);
+    });
+
     test("afterMount fires at hydrate; flush() is idempotent and unmount removes the tree", () => {
       const afterMount = mock(() => {});
       const App = () => html`<div id="root" hook:afterMount=${afterMount}>x</div>`;

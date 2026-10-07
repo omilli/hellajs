@@ -271,7 +271,7 @@ export function SelectTrigger(props: SelectTriggerProps): JSX.Element {
         props.onOpen?.();
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => (props.clearable && props.hasValue?.() ? (
         <span
           data-slot="select-clear"
@@ -457,7 +457,7 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
           // @hella:end
         }
       >
-        {() => props.children}
+        {props.children}
       </div>
       <div
         data-slot="select-scroll-down-button"
@@ -488,7 +488,7 @@ export function SelectGroup(props: SelectPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -559,7 +559,7 @@ export function SelectLabel(props: SelectLabelProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }

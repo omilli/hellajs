@@ -154,7 +154,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
           cn("flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground", props.class)
         }
       >
-        {() => props.children}
+        {props.children}
       </div>
     );
   }
@@ -202,7 +202,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
                 cn("flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm")
               }
             >
-              {() => props.children}
+              {props.children}
             </div>
           </div>
         </div>
@@ -330,7 +330,7 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
                 cn("flex h-full w-full flex-col")
               }
             >
-              {() => props.children}
+              {props.children}
             </div>
           </div>
         </Portal>
@@ -401,7 +401,7 @@ export function SidebarRail(props: SidebarRailProps): JSX.Element {
       }
       on:click={() => props.onToggle?.()}
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -419,7 +419,7 @@ export function SidebarInset(props: SidebarPartProps): JSX.Element {
         cn("relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </main>
   );
 }
@@ -463,7 +463,7 @@ export function SidebarHeader(props: SidebarPartProps): JSX.Element {
         cn("flex flex-col gap-2 p-2", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -477,7 +477,7 @@ export function SidebarFooter(props: SidebarPartProps): JSX.Element {
         cn("flex flex-col gap-2 p-2", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -494,7 +494,7 @@ export function SidebarSeparator(props: SidebarPartProps): JSX.Element {
         cn("shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px", "mx-2 w-auto bg-sidebar-border", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -508,7 +508,7 @@ export function SidebarContent(props: SidebarPartProps): JSX.Element {
         cn("flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -522,7 +522,7 @@ export function SidebarGroup(props: SidebarPartProps): JSX.Element {
         cn("relative flex w-full min-w-0 flex-col p-2", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -536,7 +536,7 @@ export function SidebarGroupLabel(props: SidebarPartProps): JSX.Element {
         cn("flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -558,7 +558,7 @@ export function SidebarGroupAction(props: SidebarGroupActionProps): JSX.Element 
       }
       on:click={() => props.onclick?.()}
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -572,7 +572,7 @@ export function SidebarGroupContent(props: SidebarPartProps): JSX.Element {
         cn("w-full text-sm", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -586,7 +586,7 @@ export function SidebarMenu(props: SidebarPartProps): JSX.Element {
         cn("flex w-full min-w-0 flex-col gap-1", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </ul>
   );
 }
@@ -600,7 +600,7 @@ export function SidebarMenuItem(props: SidebarPartProps): JSX.Element {
         cn("group/menu-item relative", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </li>
   );
 }
@@ -639,7 +639,7 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): JSX.Element {
       }
       on:click={() => props.onclick?.()}
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 
@@ -719,7 +719,7 @@ export function SidebarMenuAction(props: SidebarMenuActionProps): JSX.Element {
       }
       on:click={() => props.onclick?.()}
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -733,7 +733,7 @@ export function SidebarMenuBadge(props: SidebarPartProps): JSX.Element {
         cn("pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium text-sidebar-foreground tabular-nums select-none peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -783,7 +783,7 @@ export function SidebarMenuSub(props: SidebarPartProps): JSX.Element {
         cn("mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5 group-data-[collapsible=icon]:hidden", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </ul>
   );
 }
@@ -797,7 +797,7 @@ export function SidebarMenuSubItem(props: SidebarPartProps): JSX.Element {
         cn("group/menu-sub-item relative", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </li>
   );
 }
@@ -824,7 +824,7 @@ export function SidebarMenuSubButton(props: SidebarMenuSubButtonProps): JSX.Elem
         cn("flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground ring-sidebar-ring outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden", menuSubSizes[size], props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </a>
   );
 }

@@ -64,7 +64,7 @@ export function ResizablePanel(props: ResizablePanelProps): JSX.Element {
       style={{ flex: `${props.defaultSize} 1 0%` }}
       class={props.class}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -205,7 +205,7 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): JS
         while (wirings.length) wirings.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }

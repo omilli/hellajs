@@ -161,7 +161,7 @@ export function ComboboxTrigger(props: ComboboxTriggerProps): JSX.Element {
       }
       on:click={() => props.onclick?.()}
     >
-      {() => props.children}
+      {props.children}
       {chevronDownIcon()}
     </button>
   );
@@ -205,7 +205,7 @@ export function ComboboxGroup(props: ComboboxGroupProps): JSX.Element {
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -223,7 +223,7 @@ export function ComboboxLabel(props: ComboboxLabelProps): JSX.Element {
         cn("px-2 py-1.5 text-xs text-muted-foreground pointer-coarse:px-3 pointer-coarse:py-2 pointer-coarse:text-sm", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -240,7 +240,7 @@ export function ComboboxCollection(props: ComboboxCollectionProps): JSX.Element 
       data-slot="combobox-collection"
       class={props.class}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -259,7 +259,7 @@ export function ComboboxEmpty(props: ComboboxEmptyProps): JSX.Element {
         cn("hidden w-full justify-center py-2 text-center text-sm text-muted-foreground group-data-empty/combobox-content:flex", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -390,7 +390,7 @@ export function ComboboxList(props: ComboboxListProps): JSX.Element {
           onselect={() => props.onselect?.(entry.value)}
         />
       ))}
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -505,7 +505,7 @@ export function ComboboxInput(props: ComboboxInputProps): JSX.Element {
         ) : null)}
       </div>
       {() => props.portal?.()}
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -540,7 +540,7 @@ export function ComboboxChips(props: ComboboxChipsProps): JSX.Element {
       }}
     >
       {() => props.chips?.()}
-      {() => props.children}
+      {props.children}
       {() => props.portal?.()}
     </div>
   );
@@ -566,7 +566,7 @@ export function ComboboxChip(props: ComboboxChipProps): JSX.Element {
         cn("flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
       {() => (props.showRemove !== false ? (
         <button
           type="button"
@@ -690,7 +690,7 @@ export function ComboboxContent(props: ComboboxContentProps): JSX.Element {
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }

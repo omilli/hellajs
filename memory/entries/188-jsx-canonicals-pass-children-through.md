@@ -1,32 +1,32 @@
 ---
 type: decision
-title: "Jsx canonicals pass children through as the bare member `{props.children}` or arrow-wrapped — never a local identifier binding"
-description: The babel transform spreads bare member children but WRAPS identifier bindings into a nested array (`children: [binding]`), which appendToParent silently skips - a bound passthrough renders nothing.
+title: "Jsx canonicals pass children through bare (`{props.children}`) or arrow-wrapped for dynamic children — the arrow is a reactivity choice, not a crash workaround"
+description: "Since the concat emission (entry 272) every child-slot shape renders; the arrow slot remains canonical only when children are dynamic or compound (`() => props.children ?? fallback`)."
 tags: [arch, ui, registry, contract]
-timestamp: 2026-09-19
+timestamp: 2026-09-27
 last_confirmed: 2026-09-27
-triggers: [jsx-children-passthrough, canonical-children-binding, nested-array-children, appendtoparent-skip]
+triggers: [jsx-children-passthrough, canonical-children-binding, nested-array-children, function-slot-idiom]
 ---
 # Why
-The registry jsx transform has three child-slot shapes: bare member `{props.children}` compiles to
-`children: [...props.children]` (flat spread - caller must pass an array or string, crashes on a
-single vnode); an identifier binding `{itemChildren}` compiles to `children: [itemChildren]` (nested
-array); an arrow `{() => props.children}` compiles to a function child. `appendToParent`
-(`packages/dom/lib/internal/render.ts`) handles strings, functions (reactive), and vnode objects -
-an ARRAY child matches no branch and is silently dropped. So the nested-array shape renders empty
-with no error, and the spread shape throws on single-vnode children. The only shape correct for
-arbitrary `HellaChildren` (string, vnode, or array) is the arrow-wrapped function slot, which
-`resolveNode` resolves recursively (arrays included) - the same slot the html flavor always uses.
-Delivered precedent: dropdown-menu/context-menu canonicals (unit 10) use `{() => props.children}` in
-every part; popover's composed-root `triggerChildren` binding is the latent broken shape (renders
-empty when children are passed) and predates this lesson.
+Historical shape table (pre-272): bare member spread crashed on string/single-vnode children and
+identifier bindings compiled to nested arrays that `appendToParent` silently dropped. Entry 272's
+engine fix changed both halves: the babel pipeline emits `[].concat(children…)` for a bare member
+(safe for every `HellaChildren` shape) and `appendToParent`/`hydrateSequence` splice nested array
+children in order — so bare `{props.children}`, identifier bindings, and value slots all render.
+What survives of this entry is the DYNAMIC rule: a value slot (bare member, binding, or compound
+expression) evaluates ONCE at parent-node construction — children that change never re-render.
+Canonical idiom: bare `{props.children}` for static passthrough (registry-wide, post-revert);
+arrow slot `{() => props.children}` / `${() => props.children}` when children are reactive or a
+compound expression (`{() => props.children ?? fallback}`) — a function child resolves
+recursively through `resolveNode`. The popover `triggerChildren` binding and similar now render,
+but keep the arrow there if the value can change per open/interaction.
 
 # Evidence
-- Compiled: `dist/registry/dropdown-menu/css/dropdown-menu.js` pre-fix root had
-  `children: [...props.children, () => ...Portal]` (member spread) vs `children: [itemChildren]`
-  post-binding (nested) - read this session.
-- `appendToParent` child branches (render.ts ~252-345): isString / isFunction / isObject(tag|raw|Node)
-  / isNumber - arrays fall through all branches and render nothing (read this session).
-- Empirical: `DropdownMenuContent({ children: "Raw" })` via the binding shape mounted an empty div;
-  after switching every passthrough to `{() => props.children}` the full suite (204 menu tests)
-  went green and coverage hit 100% lines on all four compiled flavors.
+- Post-fix compiled shape: `dist/registry/accordion/css/accordion.js` AccordionTrigger
+  `children: [].concat(props.children, [{ tag: "svg" … }])` — string trigger renders one text
+  child, hydration adopts positionally (scratch ssr→hydrate probe, 1 icon/trigger).
+- Nested-array splice: `appendToParent` Array.isArray branch + `hydrateSequence` array recursion
+  (render.ts / hydrate.ts this session); command/select grouped items render through
+  `children: [members.map(…)]` again (ui suite 2836 pass).
+- History: dropdown-menu/context-menu arrow-everywhere precedent (unit 10) was the pre-272
+  workaround; 93 registry arrow slots reverted to bare in the same change.

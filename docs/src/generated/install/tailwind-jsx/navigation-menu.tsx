@@ -37,7 +37,7 @@ export function NavigationMenuList(props: NavigationMenuListProps): JSX.Element 
         cn("group flex flex-1 list-none items-center justify-center gap-1", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </ul>
   );
 }
@@ -55,7 +55,7 @@ export function NavigationMenuItem(props: NavigationMenuItemProps): JSX.Element 
         cn("relative", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </li>
   );
 }
@@ -90,7 +90,7 @@ export function NavigationMenuTrigger(props: NavigationMenuTriggerProps): JSX.El
         if (props.value !== undefined) document.dispatchEvent(new CustomEvent("hella:navigation-menu-activate", { detail: { id: props.value, open } }));
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
     </button>
   );
@@ -171,7 +171,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.El
               while (teardown.length) teardown.pop()!();
             }}
           >
-            {() => props.children}
+            {props.children}
           </div>
         </Portal>
       )}
@@ -197,7 +197,7 @@ export function NavigationMenuLink(props: NavigationMenuLinkProps): JSX.Element 
         cn("flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground data-[active=true]:hover:bg-accent data-[active=true]:focus:bg-accent [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </a>
   );
 }
@@ -351,7 +351,7 @@ export default function NavigationMenu(props: NavigationMenuProps): JSX.Element 
         while (wirings.length) wirings.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => (props.viewport === false ? null : <NavigationMenuViewport active={() => active() !== ""} />)}
     </div>
   );

@@ -206,7 +206,7 @@ export function MenubarTrigger(props: MenubarTriggerProps): JSX.Element {
         cn("flex items-center rounded-sm px-2 py-1 text-sm font-medium outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -299,7 +299,7 @@ export function MenubarContent(props: MenubarContentProps): JSX.Element {
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -317,7 +317,7 @@ export function MenubarGroup(props: MenubarPartProps): JSX.Element {
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -352,7 +352,7 @@ export function MenubarItem(props: MenubarItemProps): JSX.Element {
         closeAllMenus();
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => (props.shortcut !== undefined ? <MenubarShortcut>{props.shortcut}</MenubarShortcut> : null)}
     </div>
   );
@@ -400,7 +400,7 @@ export function MenubarCheckboxItem(props: MenubarCheckboxItemProps): JSX.Elemen
       >
         {() => (checked() ? checkIcon() : null)}
       </span>
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -428,7 +428,7 @@ export function MenubarRadioGroup(props: MenubarRadioGroupProps): JSX.Element {
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
       {(props.items ?? []).map((entry) => (
         <MenubarRadioItem
           value={entry.value}
@@ -483,7 +483,7 @@ export function MenubarRadioItem(props: MenubarRadioItemProps): JSX.Element {
       >
         {() => (checked() ? circleIcon() : null)}
       </span>
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -503,7 +503,7 @@ export function MenubarLabel(props: MenubarLabelProps): JSX.Element {
         cn("px-2 py-1.5 text-sm font-medium data-[inset]:pl-8", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -528,7 +528,7 @@ export function MenubarShortcut(props: MenubarPartProps): JSX.Element {
         cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </span>
   );
 }
@@ -587,7 +587,7 @@ export function MenubarSubTrigger(props: MenubarSubTriggerProps): JSX.Element {
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
     </div>
   );
@@ -674,7 +674,7 @@ export function MenubarSubContent(props: MenubarSubContentProps): JSX.Element {
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -749,7 +749,7 @@ export function MenubarSub(props: MenubarSubProps): JSX.Element {
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
       {() => s.visible() && (
         <Portal to="body">
@@ -872,7 +872,7 @@ export function MenubarMenu(props: MenubarMenuProps): JSX.Element {
           }
         }}
       >
-        {() => props.children}
+        {props.children}
       </button>
       {() => s.visible() && (
         <Portal to="body">
@@ -962,7 +962,7 @@ export default function Menubar(props: MenubarProps): JSX.Element {
         barNode = undefined;
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }

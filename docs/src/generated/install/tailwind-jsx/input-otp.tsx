@@ -186,7 +186,7 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
         while (wirings.length) wirings.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
       <input
         data-input-otp="true"
         type="text"

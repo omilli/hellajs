@@ -249,7 +249,7 @@ export function SelectTrigger(props: SelectTriggerProps): JSX.Element {
         props.onOpen?.();
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => (props.clearable && props.hasValue?.() ? (
         <span
           data-slot="select-clear"
@@ -427,7 +427,7 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
           cn("p-1 h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1")
         }
       >
-        {() => props.children}
+        {props.children}
       </div>
       <div
         data-slot="select-scroll-down-button"
@@ -454,7 +454,7 @@ export function SelectGroup(props: SelectPartProps): JSX.Element {
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -519,7 +519,7 @@ export function SelectLabel(props: SelectLabelProps): JSX.Element {
         cn("px-2 py-1.5 text-xs text-muted-foreground", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }

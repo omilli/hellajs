@@ -199,7 +199,7 @@ export function ComboboxTrigger(props: ComboboxTriggerProps): JSX.Element {
       }
       on:click={() => props.onclick?.()}
     >
-      {() => props.children}
+      {props.children}
       {chevronDownIcon()}
     </button>
   );
@@ -247,7 +247,7 @@ export function ComboboxGroup(props: ComboboxGroupProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -267,7 +267,7 @@ export function ComboboxLabel(props: ComboboxLabelProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -284,7 +284,7 @@ export function ComboboxCollection(props: ComboboxCollectionProps): JSX.Element 
       data-slot="combobox-collection"
       class={props.class}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -305,7 +305,7 @@ export function ComboboxEmpty(props: ComboboxEmptyProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -444,7 +444,7 @@ export function ComboboxList(props: ComboboxListProps): JSX.Element {
           onselect={() => props.onselect?.(entry.value)}
         />
       ))}
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -569,7 +569,7 @@ export function ComboboxInput(props: ComboboxInputProps): JSX.Element {
         ) : null)}
       </div>
       {() => props.portal?.()}
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -606,7 +606,7 @@ export function ComboboxChips(props: ComboboxChipsProps): JSX.Element {
       }}
     >
       {() => props.chips?.()}
-      {() => props.children}
+      {props.children}
       {() => props.portal?.()}
     </div>
   );
@@ -634,7 +634,7 @@ export function ComboboxChip(props: ComboboxChipProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
       {() => (props.showRemove !== false ? (
         <button
           type="button"
@@ -764,7 +764,7 @@ export function ComboboxContent(props: ComboboxContentProps): JSX.Element {
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }

@@ -163,7 +163,7 @@ export function CommandList(props: CommandListProps): JSX.Element {
       }
     >
       {() => props.body?.()}
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -183,7 +183,7 @@ export function CommandEmpty(props: CommandEmptyProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -220,7 +220,7 @@ export function CommandGroup(props: CommandGroupProps): JSX.Element {
           {props.heading}
         </div>
       )}
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -274,7 +274,7 @@ export function CommandItem(props: CommandItemProps): JSX.Element {
         props.onSelect?.();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -294,7 +294,7 @@ export function CommandShortcut(props: CommandShortcutProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </span>
   );
 }
@@ -496,7 +496,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
                 // @hella:end
               }
             >
-              {() => props.children}
+              {props.children}
             </div>
           </div>
         </Portal>
@@ -694,7 +694,7 @@ export default function Command(props: CommandProps): JSX.Element {
         onKeydown={onKeydown}
       />
       <CommandList body={renderBody} />
-      {() => props.children}
+      {props.children}
     </div>
   );
 }

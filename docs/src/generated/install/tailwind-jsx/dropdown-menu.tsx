@@ -205,7 +205,7 @@ export function DropdownMenuTrigger(props: DropdownMenuTriggerProps): JSX.Elemen
         cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -297,7 +297,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps): JSX.Elemen
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -315,7 +315,7 @@ export function DropdownMenuGroup(props: DropdownMenuPartProps): JSX.Element {
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -350,7 +350,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): JSX.Element {
         closeAllMenus();
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => (props.shortcut !== undefined ? <DropdownMenuShortcut>{props.shortcut}</DropdownMenuShortcut> : null)}
     </div>
   );
@@ -398,7 +398,7 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): 
       >
         {() => (checked() ? checkIcon() : null)}
       </span>
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -426,7 +426,7 @@ export function DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps): JSX.
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
       {(props.items ?? []).map((entry) => (
         <DropdownMenuRadioItem
           value={entry.value}
@@ -481,7 +481,7 @@ export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps): JSX.El
       >
         {() => (checked() ? circleIcon() : null)}
       </span>
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -501,7 +501,7 @@ export function DropdownMenuLabel(props: DropdownMenuLabelProps): JSX.Element {
         cn("px-2 py-1.5 text-sm font-medium data-[inset]:pl-8", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -526,7 +526,7 @@ export function DropdownMenuShortcut(props: DropdownMenuPartProps): JSX.Element 
         cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </span>
   );
 }
@@ -585,7 +585,7 @@ export function DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps): JSX.
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
     </div>
   );
@@ -672,7 +672,7 @@ export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): JSX.
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -747,7 +747,7 @@ export function DropdownMenuSub(props: DropdownMenuSubProps): JSX.Element {
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
       {() => s.visible() && (
         <Portal to="body">
@@ -819,7 +819,7 @@ export default function DropdownMenu(props: DropdownMenuProps): JSX.Element {
         if (node instanceof HTMLElement) triggerNode = node;
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => s.visible() && (
         <Portal to="body">
           <DropdownMenuContent

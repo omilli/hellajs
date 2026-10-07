@@ -182,7 +182,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
           // @hella:end
         }
       >
-        {() => props.children}
+        {props.children}
       </div>
     );
   }
@@ -238,7 +238,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
                 // @hella:end
               }
             >
-              {() => props.children}
+              {props.children}
             </div>
           </div>
         </div>
@@ -372,7 +372,7 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
                 // @hella:end
               }
             >
-              {() => props.children}
+              {props.children}
             </div>
           </div>
         </Portal>
@@ -447,7 +447,7 @@ export function SidebarRail(props: SidebarRailProps): JSX.Element {
       }
       on:click={() => props.onToggle?.()}
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -467,7 +467,7 @@ export function SidebarInset(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </main>
   );
 }
@@ -515,7 +515,7 @@ export function SidebarHeader(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -531,7 +531,7 @@ export function SidebarFooter(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -550,7 +550,7 @@ export function SidebarSeparator(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -566,7 +566,7 @@ export function SidebarContent(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -582,7 +582,7 @@ export function SidebarGroup(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -598,7 +598,7 @@ export function SidebarGroupLabel(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -622,7 +622,7 @@ export function SidebarGroupAction(props: SidebarGroupActionProps): JSX.Element 
       }
       on:click={() => props.onclick?.()}
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -638,7 +638,7 @@ export function SidebarGroupContent(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -654,7 +654,7 @@ export function SidebarMenu(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </ul>
   );
 }
@@ -670,7 +670,7 @@ export function SidebarMenuItem(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </li>
   );
 }
@@ -711,7 +711,7 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): JSX.Element {
       }
       on:click={() => props.onclick?.()}
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 
@@ -795,7 +795,7 @@ export function SidebarMenuAction(props: SidebarMenuActionProps): JSX.Element {
       }
       on:click={() => props.onclick?.()}
     >
-      {() => props.children}
+      {props.children}
     </button>
   );
 }
@@ -811,7 +811,7 @@ export function SidebarMenuBadge(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -869,7 +869,7 @@ export function SidebarMenuSub(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </ul>
   );
 }
@@ -885,7 +885,7 @@ export function SidebarMenuSubItem(props: SidebarPartProps): JSX.Element {
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </li>
   );
 }
@@ -914,7 +914,7 @@ export function SidebarMenuSubButton(props: SidebarMenuSubButtonProps): JSX.Elem
         // @hella:end
       }
     >
-      {() => props.children}
+      {props.children}
     </a>
   );
 }

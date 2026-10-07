@@ -203,7 +203,7 @@ export function ContextMenuTrigger(props: ContextMenuTriggerProps): JSX.Element 
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </span>
   );
 }
@@ -285,7 +285,7 @@ export function ContextMenuContent(props: ContextMenuContentProps): JSX.Element 
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -303,7 +303,7 @@ export function ContextMenuGroup(props: ContextMenuPartProps): JSX.Element {
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -338,7 +338,7 @@ export function ContextMenuItem(props: ContextMenuItemProps): JSX.Element {
         closeAllMenus();
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => (props.shortcut !== undefined ? <ContextMenuShortcut>{props.shortcut}</ContextMenuShortcut> : null)}
     </div>
   );
@@ -386,7 +386,7 @@ export function ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps): JS
       >
         {() => (checked() ? checkIcon() : null)}
       </span>
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -414,7 +414,7 @@ export function ContextMenuRadioGroup(props: ContextMenuRadioGroupProps): JSX.El
         cn(props.class)
       }
     >
-      {() => props.children}
+      {props.children}
       {(props.items ?? []).map((entry) => (
         <ContextMenuRadioItem
           value={entry.value}
@@ -469,7 +469,7 @@ export function ContextMenuRadioItem(props: ContextMenuRadioItemProps): JSX.Elem
       >
         {() => (checked() ? circleIcon() : null)}
       </span>
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -489,7 +489,7 @@ export function ContextMenuLabel(props: ContextMenuLabelProps): JSX.Element {
         cn("px-2 py-1.5 text-sm font-medium text-foreground data-[inset]:pl-8", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -514,7 +514,7 @@ export function ContextMenuShortcut(props: ContextMenuPartProps): JSX.Element {
         cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </span>
   );
 }
@@ -573,7 +573,7 @@ export function ContextMenuSubTrigger(props: ContextMenuSubTriggerProps): JSX.El
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
     </div>
   );
@@ -659,7 +659,7 @@ export function ContextMenuSubContent(props: ContextMenuSubContentProps): JSX.El
         while (teardown.length) teardown.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -734,7 +734,7 @@ export function ContextMenuSub(props: ContextMenuSubProps): JSX.Element {
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
       {() => s.visible() && (
         <Portal to="body">
@@ -827,7 +827,7 @@ export default function ContextMenu(props: ContextMenuProps): JSX.Element {
         if (node instanceof HTMLElement) triggerNode = node;
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => s.visible() && (
         <Portal to="body">
           <ContextMenuContent

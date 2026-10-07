@@ -137,9 +137,22 @@ describe("babel", () => {
       expect(output).toContain("expression");
     });
 
-    test("props.children is spread", () => {
+    test("bare props.children emits a concat call (safe for every HellaChildren shape)", () => {
       const output = transformJSX("<div>{props.children}</div>");
-      expect(output).toContain("...props.children");
+      expect(output).toContain("children: [].concat(props.children)");
+      expect(output).not.toContain("...props.children");
+    });
+
+    test("props.children with siblings flattens into one concat call", () => {
+      const output = transformJSX("<div>{props.children}<span>end</span></div>");
+      expect(output).toContain("[].concat(props.children, [");
+      expect(output).not.toContain("...props.children");
+    });
+
+    test("plain children keep the plain array form", () => {
+      const output = transformJSX("<div>{expression}<span>end</span></div>");
+      expect(output).toContain("children: [expression");
+      expect(output).not.toContain("concat");
     });
 
     test("nested elements", () => {

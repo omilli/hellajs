@@ -412,6 +412,14 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
       continue;
     }
 
+    // Nested array children (e.g. a JSX `{items.map(…)}` expression) — recurse in order,
+    // consuming server nodes positionally, mirroring ssr's array-children branch
+    if (Array.isArray(child)) {
+      current = hydrateSequence(parent, child, current, boundaryElement);
+      i++;
+      continue;
+    }
+
     if (isHellaNode(child)) {
       const node = child as HellaNode;
       if (node.tag === "$") {
@@ -468,6 +476,13 @@ export function hydrateSequence(parent: HellaElement, children: HellaChild[] | u
         if (current) parent.insertBefore(anchor, current); else parent.appendChild(anchor);
         adoptReactiveRegion(parent, child, anchor, [], boundaryElement);
       }
+      i++;
+      continue;
+    }
+
+    // null/undefined/false render nothing server-side (ssr's child classification) —
+    // consume no node, or every later positional match would shift by one
+    if (child === null || child === undefined || child === false) {
       i++;
       continue;
     }

@@ -1,5 +1,5 @@
 // Build HellaNode AST objects
-
+import { buildChildrenValue } from "./children.mjs";
 
 /**
  * Build HellaNode object expression from categorized attributes.
@@ -50,22 +50,9 @@ export function buildHellaNode(t, tag, props, on, e, hooks, children, error) {
   }
 
   if (children && children.length > 0) {
-    // Check if all children are string literals (static text only)
-    const allStringLiterals = children.every(child => t.isStringLiteral(child));
-
-    if (allStringLiterals) {
-      // Join all string literals into a single string
-      const joinedText = children.map(child => child.value).join("");
-      vNodeProperties.push(
-        t.objectProperty(t.identifier("children"), t.arrayExpression([
-          t.stringLiteral(joinedText)
-        ]))
-      );
-    } else {
-      vNodeProperties.push(
-        t.objectProperty(t.identifier("children"), t.arrayExpression(children))
-      );
-    }
+    vNodeProperties.push(
+      t.objectProperty(t.identifier("children"), buildChildrenValue(t, children))
+    );
   }
 
   return t.objectExpression(vNodeProperties);

@@ -42,6 +42,21 @@ describe("dom", () => {
       expect(document.getElementById("rep")?.textContent).toBe("second");
     });
 
+    test("nested array children splice in order (the JSX `{items.map(…)}` shape)", () => {
+      // The exact compiled shape a JSX child expression evaluating to an array produces
+      const node = {
+        tag: "ul",
+        children: [
+          { tag: "li", children: ["first"] },
+          [{ tag: "li", children: ["second"] }, { tag: "li", children: ["third"] }]
+        ]
+      } as HellaNode;
+
+      mount(node);
+      const items = document.querySelectorAll("ul > li");
+      expect([...items].map((li) => li.textContent)).toEqual(["first", "second", "third"]);
+    });
+
     test("error:boundary creates error config on node", () => {
       const node = html`<div error:boundary>Content</div>` as HellaNode;
       expect(node.error?.boundary).toBe(true);

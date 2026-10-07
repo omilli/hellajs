@@ -3,6 +3,10 @@
 ## 2026-10-07
 * **Creation**: Added concept [270](entries/270.md) (type: decision).
 * **Creation**: Added concept [271](entries/271.md) (type: decision).
+* **Creation**: Added concept [272](entries/272.md) (type: decision).
+* **Deprecation**: Archived [172](archive/172-bare-optional-children-spread.md) → superseded by [272](entries/272.md).
+* **Deprecation**: Archived [182](archive/182-registry-jsx-canonicals-compile-children.md) → superseded by [272](entries/272-babel-emits-concat-children-bare.md).
+* **Deprecation**: Archived [270](archive/270-bare-props-children-sibling-before.md) → superseded by [272](entries/272-babel-emits-concat-children-bare.md).
 
 ## 2026-10-05
 * **Creation**: Added concept [268](entries/268.md) (type: decision).

@@ -1,4 +1,5 @@
 import { PASSTHROUGH_NAMES } from "../constants.mjs";
+import { buildChildrenValue } from "./children.mjs";
 
 /**
  * Build component() or passthrough Tag() call expression.
@@ -12,18 +13,11 @@ export function buildComponentCall(t, tagCallee, props, children) {
   let finalProps;
 
   if (children && children.length > 0) {
-    // Check if all children are string literals (static text only)
-    const allStringLiterals = children.every(child => t.isStringLiteral(child));
-
-    const childrenValue = allStringLiterals
-      ? t.arrayExpression([t.stringLiteral(children.map(child => child.value).join(""))])
-      : t.arrayExpression(children);
-
     finalProps = t.objectExpression([
       ...props,
       t.objectProperty(
         t.identifier("children"),
-        childrenValue
+        buildChildrenValue(t, children)
       )
     ]);
   } else if (props.length > 0) {

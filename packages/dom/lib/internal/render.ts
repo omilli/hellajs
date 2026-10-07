@@ -261,10 +261,10 @@ export function mountNode(node: HellaNode, boundaryElement?: Element, ns?: strin
  * @param currentBoundary The nearest error boundary element (for error propagation during construction)
  * @param ns Namespace inherited from the insertion context — used when `parent` is a DocumentFragment
  */
-function appendToParent(parent: HellaElement, children?: HellaChild[], currentBoundary?: Element, ns?: string) {
+function appendToParent(parent: HellaElement, children?: HellaChild[], currentBoundary?: Element, ns?: string, topLevel = true) {
   if (!children || children.length === 0) return;
 
-  if (children.length === 1 && isString(children[0])) {
+  if (topLevel && children.length === 1 && isString(children[0])) {
     parent.textContent = children[0];
     return;
   }
@@ -277,6 +277,14 @@ function appendToParent(parent: HellaElement, children?: HellaChild[], currentBo
   while (index < length) {
     const child = children[index];
     index++;
+
+    if (Array.isArray(child)) {
+      // Nested array children (e.g. a JSX `{items.map(…)}` expression evaluating to an
+      // array, or component passthrough) — splice their elements in order, mirroring
+      // ssr's array-children branch. Never a mid-list textContent target.
+      appendToParent(parent, child, currentBoundary, childNs, false);
+      continue;
+    }
 
     if (isString(child)) {
       parent.appendChild(document.createTextNode(child));

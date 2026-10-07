@@ -134,7 +134,7 @@ export function CommandList(props: CommandListProps): JSX.Element {
       }
     >
       {() => props.body?.()}
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -152,7 +152,7 @@ export function CommandEmpty(props: CommandEmptyProps): JSX.Element {
         cn("py-6 text-center text-sm", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -185,7 +185,7 @@ export function CommandGroup(props: CommandGroupProps): JSX.Element {
           {props.heading}
         </div>
       )}
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -235,7 +235,7 @@ export function CommandItem(props: CommandItemProps): JSX.Element {
         props.onSelect?.();
       }}
     >
-      {() => props.children}
+      {props.children}
     </div>
   );
 }
@@ -253,7 +253,7 @@ export function CommandShortcut(props: CommandShortcutProps): JSX.Element {
         cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
       }
     >
-      {() => props.children}
+      {props.children}
     </span>
   );
 }
@@ -441,7 +441,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
                 cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", "[&_[data-slot='command-input-wrapper']]:h-12 [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground [&_[data-slot='command-group']]:px-2 [&_[data-slot='command-group']:not([hidden])~[data-slot='command-group']]:pt-0 [&_[data-slot='command-input-wrapper']_svg]:h-5 [&_[data-slot='command-input-wrapper']_svg]:w-5 [&_[data-slot='command-input']]:h-12 [&_[data-slot='command-item']]:px-2 [&_[data-slot='command-item']]:py-3 [&_[data-slot='command-item']_svg]:h-5 [&_[data-slot='command-item']_svg]:w-5")
               }
             >
-              {() => props.children}
+              {props.children}
             </div>
           </div>
         </Portal>
@@ -637,7 +637,7 @@ export default function Command(props: CommandProps): JSX.Element {
         onKeydown={onKeydown}
       />
       <CommandList body={renderBody} />
-      {() => props.children}
+      {props.children}
     </div>
   );
 }

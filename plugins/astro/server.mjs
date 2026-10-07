@@ -3,9 +3,9 @@ import { raw } from "@hellajs/dom";
 
 /**
  * Maps Astro's pre-rendered slot HTML (`slots: Record<name, htmlString>`) into the component's
- * props as `[raw(html)]` arrays — array-wrapped so a JSX `<X>{props.children}</X>` (compiled by the
- * HellaJS babel plugin to `...props.children`) spreads the sentinel into the children array, not its
- * keys. `default` → `props.children`; named slots → `props[name]`.
+ * props as `[raw(html)]` arrays — one stable child value per slot regardless of which slot shape
+ * the component's template consumes (function slot, concat passthrough, or direct value).
+ * `default` → `props.children`; named slots → `props[name]`.
  */
 function mapSlots(props, slots) {
   if (!slots) return props;

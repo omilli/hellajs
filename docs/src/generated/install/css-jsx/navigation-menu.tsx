@@ -260,7 +260,7 @@ export function NavigationMenuList(props: NavigationMenuListProps): JSX.Element 
         [list, props.class]
       }
     >
-      {() => props.children}
+      {props.children}
     </ul>
   );
 }
@@ -278,7 +278,7 @@ export function NavigationMenuItem(props: NavigationMenuItemProps): JSX.Element 
         [item, props.class]
       }
     >
-      {() => props.children}
+      {props.children}
     </li>
   );
 }
@@ -313,7 +313,7 @@ export function NavigationMenuTrigger(props: NavigationMenuTriggerProps): JSX.El
         if (props.value !== undefined) document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id: props.value, open } }));
       }}
     >
-      {() => props.children}
+      {props.children}
       {chevronIcon()}
     </button>
   );
@@ -394,7 +394,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.El
               while (teardown.length) teardown.pop()!();
             }}
           >
-            {() => props.children}
+            {props.children}
           </div>
         </Portal>
       )}
@@ -420,7 +420,7 @@ export function NavigationMenuLink(props: NavigationMenuLinkProps): JSX.Element 
         [link, props.class]
       }
     >
-      {() => props.children}
+      {props.children}
     </a>
   );
 }
@@ -574,7 +574,7 @@ export default function NavigationMenu(props: NavigationMenuProps): JSX.Element 
         while (wirings.length) wirings.pop()!();
       }}
     >
-      {() => props.children}
+      {props.children}
       {() => (props.viewport === false ? null : <NavigationMenuViewport active={() => active() !== ""} />)}
     </div>
   );
