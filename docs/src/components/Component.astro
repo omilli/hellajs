@@ -55,7 +55,8 @@ let id = heading?.replaceAll(' ', '-').toLowerCase();
 
 <slot/>
 
-<div class="demo-frame dark">
+<!-- `not-prose`: opts the island out of the layout's prose typography — prose.ts excludes .not-prose subtrees (preflight supplies the zeroed base, registry classes own everything else). -->
+<div class="demo-frame dark not-prose">
   <div class={`demo-${type}`}>
     {Demo}
   </div>

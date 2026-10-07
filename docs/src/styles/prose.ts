@@ -14,13 +14,23 @@
  * no mdx content uses them (add when one does). Collected by the MainLayout
  * head tag via `cssText()`; imported for side effect by the layout, no
  * exports. All rules nest under `main` (user directive: no repeated prefix
- * selectors, site-wide convention for css()/style() objects).
+ * selectors, site-wide convention for css()/style() objects). Every element
+ * rule carries the `.not-prose` subtree exclusion (`inProse()` below): the
+ * demo frame and any future inline island opts out of prose entirely (the
+ * shadcn/tailwindcss-typography model). The guard wraps its argument in
+ * `:where()` so it adds zero specificity — every existing beat/loss stands
+ * (global.css's `.landing-code pre.astro-code` must keep beating the prose
+ * `pre.astro-code` rule). Nested keys stay plain: css() composes them into
+ * `main <guarded-ancestor> <key>`, and an element inside a `.not-prose`
+ * subtree always has its matched ancestor there too, so the exclusion is
+ * transitive. Base metrics on `main` itself (font-size, line-height, color)
+ * are inherited properties — they reach the frame and stand, same as shadcn.
  */
 import { css } from "@hellajs/css";
 import "./tokens";
 
-const MONO =
-  "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+/** Appends the `.not-prose` subtree exclusion to a selector; the `:where()` inside `:not()` adds zero specificity, so guarded rules match exactly as strongly as without it. */
+const inProse = (sel: string) => `${sel}:not(:where(.not-prose *))`;
 
 css({
   main: {
@@ -30,7 +40,7 @@ css({
     color: "color-mix(in oklab, var(--foreground) 80%, transparent)",
 
     // Headings: full foreground, the typography scale.
-    h1: {
+    [inProse("h1")]: {
       color: "var(--foreground)",
       marginTop: 0,
       marginBottom: ".888889em",
@@ -38,7 +48,7 @@ css({
       fontWeight: 800,
       lineHeight: 1.11111,
     },
-    h2: {
+    [inProse("h2")]: {
       color: "var(--foreground)",
       marginTop: "2em",
       marginBottom: "1em",
@@ -47,7 +57,7 @@ css({
       lineHeight: 1.33333,
       code: { fontSize: ".875em" },
     },
-    h3: {
+    [inProse("h3")]: {
       color: "var(--foreground)",
       marginTop: "1.6em",
       marginBottom: ".6em",
@@ -56,7 +66,7 @@ css({
       lineHeight: 1.6,
       code: { fontSize: ".9em" },
     },
-    h4: {
+    [inProse("h4")]: {
       color: "var(--foreground)",
       marginTop: "2em",
       marginBottom: ".6em",
@@ -64,7 +74,7 @@ css({
       fontWeight: 600,
       lineHeight: 1.6,
     },
-    ":is(h5, h6)": {
+    [inProse(":is(h5, h6)")]: {
       color: "var(--foreground)",
       marginTop: "2em",
       marginBottom: ".6em",
@@ -73,14 +83,24 @@ css({
       lineHeight: 1.6,
     },
 
-    p: { marginTop: "1.25em", marginBottom: "1.25em" },
+    [inProse("p")]: {
+      marginTop: "1.25em",
+      marginBottom: "1.25em"
+    },
 
     // Links and emphasis: full-foreground text, underline, 500/600 weights.
-    a: { color: "var(--foreground)", fontWeight: 500, textDecoration: "underline" },
-    strong: { color: "var(--foreground)", fontWeight: 600 },
+    [inProse("a")]: {
+      color: "var(--foreground)",
+      fontWeight: 500,
+      textDecoration: "underline"
+    },
+    [inProse("strong")]: {
+      color: "var(--foreground)",
+      fontWeight: 600
+    },
 
     // Lists.
-    ul: {
+    [inProse("ul")]: {
       marginTop: "1.25em",
       marginBottom: "1.25em",
       paddingInlineStart: "1.625em",
@@ -88,53 +108,85 @@ css({
       "> li::marker": {
         color: "color-mix(in oklab, var(--foreground) 50%, transparent)",
       },
-      "> li p": { marginTop: ".75em", marginBottom: ".75em" },
-      ":is(ul, ol)": { marginTop: ".75em", marginBottom: ".75em" },
+      "> li p": {
+        marginTop: ".75em",
+        marginBottom: ".75em"
+      },
+      ":is(ul, ol)": {
+        marginTop: ".75em",
+        marginBottom: ".75em"
+      },
     },
-    ol: {
+    [inProse("ol")]: {
       marginTop: "1.25em",
       marginBottom: "1.25em",
       paddingInlineStart: "1.625em",
       listStyleType: "decimal",
-      "> li::marker": { color: "var(--foreground)", fontWeight: 400 },
-      "> li p": { marginTop: ".75em", marginBottom: ".75em" },
-      ":is(ul, ol)": { marginTop: ".75em", marginBottom: ".75em" },
+      "> li::marker": {
+        color: "var(--foreground)",
+        fontWeight: 400
+      },
+      "> li p": {
+        marginTop: ".75em",
+        marginBottom: ".75em"
+      },
+      ":is(ul, ol)": {
+        marginTop: ".75em",
+        marginBottom: ".75em"
+      },
     },
-    li: { marginTop: ".5em", marginBottom: ".5em" },
-    ":is(ul, ol) > li": { paddingInlineStart: ".375em" },
+    [inProse("li")]: {
+      marginTop: ".5em",
+      marginBottom: ".5em"
+    },
+    [inProse(":is(ul, ol) > li")]: {
+      paddingInlineStart: ".375em"
+    },
 
     // Blockquote: italic, left rule at the 20% mix, typographic quotes.
-    blockquote: {
+    [inProse("blockquote")]: {
       color: "var(--foreground)",
       fontStyle: "italic",
       fontWeight: 500,
       marginTop: "1.6em",
       marginBottom: "1.6em",
       paddingInlineStart: "1em",
-      borderInlineStart:
-        ".25rem solid color-mix(in oklab, var(--foreground) 20%, transparent)",
+      borderInlineStart: ".25rem solid color-mix(in oklab, var(--foreground) 20%, transparent)",
       quotes: '"\u201c" "\u201d" "\u201c" "\u201d"',
-      "p:first-of-type::before": { content: "open-quote" },
-      "p:last-of-type::after": { content: "close-quote" },
+      "p:first-of-type::before": {
+        content: "open-quote"
+      },
+      "p:last-of-type::after": {
+        content: "close-quote"
+      },
     },
 
     // Definition lists (dom/api/foreach.mdx, ssr-streaming tutorial).
-    dl: { marginTop: "1.25em", marginBottom: "1.25em" },
-    dt: { color: "var(--foreground)", marginTop: "1.25em", fontWeight: 600 },
-    dd: { marginTop: ".5em", paddingInlineStart: "1.625em" },
+    [inProse("dl")]: {
+      marginTop: "1.25em",
+      marginBottom: "1.25em"
+    },
+    [inProse("dt")]: {
+      color: "var(--foreground)",
+      marginTop: "1.25em",
+      fontWeight: 600
+    },
+    [inProse("dd")]: {
+      marginTop: ".5em",
+      paddingInlineStart: "1.625em"
+    },
 
-    hr: {
+    [inProse("hr")]: {
       marginTop: "3em",
       marginBottom: "3em",
       border: "none",
-      borderTop:
-        "1px solid color-mix(in oklab, var(--foreground) 20%, transparent)",
+      borderTop: "1px solid color-mix(in oklab, var(--foreground) 20%, transparent)",
     },
 
     // Tables: 0.875em body, 50%-mix head rule, 20%-mix row rules; collapse
     // stated explicitly so the table reads right regardless of what the
     // preflight port carries.
-    table: {
+    [inProse("table")]: {
       tableLayout: "auto",
       width: "100%",
       borderCollapse: "collapse",
@@ -143,8 +195,7 @@ css({
       fontSize: ".875em",
       lineHeight: 1.71429,
       "> thead": {
-        borderBottom:
-          "1px solid color-mix(in oklab, var(--foreground) 50%, transparent)",
+        borderBottom: "1px solid color-mix(in oklab, var(--foreground) 50%, transparent)",
       },
       th: {
         color: "var(--foreground)",
@@ -159,17 +210,22 @@ css({
         padding: ".571429em",
       },
       ":is(tbody, tfoot) tr": {
-        borderBottom:
-          "1px solid color-mix(in oklab, var(--foreground) 20%, transparent)",
+        borderBottom: "1px solid color-mix(in oklab, var(--foreground) 20%, transparent)",
       },
-      "tbody tr:last-child": { borderBottom: "none" },
-      ":is(tbody, tfoot) td:first-child": { paddingInlineStart: 0 },
-      ":is(tbody, tfoot) td:last-child": { paddingInlineEnd: 0 },
+      "tbody tr:last-child": {
+        borderBottom: "none"
+      },
+      ":is(tbody, tfoot) td:first-child": {
+        paddingInlineStart: 0
+      },
+      ":is(tbody, tfoot) td:last-child": {
+        paddingInlineEnd: 0
+      },
     },
 
     // Images: block display + media constraints restated (the preflight
     // port carries them too; kept so prose stays self-sufficient).
-    img: {
+    [inProse("img")]: {
       display: "block",
       maxWidth: "100%",
       height: "auto",
@@ -178,9 +234,9 @@ css({
     },
 
     // Inline code chrome: base-50 fill, input-color border (fork 3 port).
-    ":where(code)": {
+    [inProse(":where(code)")]: {
       color: "var(--foreground)",
-      fontFamily: MONO,
+      fontFamily: "var(--font-mono)",
       fontSize: ".875em",
       fontWeight: 600,
       backgroundColor: "var(--base-50)",
@@ -191,14 +247,14 @@ css({
 
     // Code blocks: chrome only; shiki token colors are inline spans. The
     // !important background beats shiki's inline `style` attr (fork 3).
-    "pre.astro-code": {
+    [inProse("pre.astro-code")]: {
       backgroundColor: "var(--base-50) !important",
       border: "1px solid var(--border)",
       borderRadius: ".375rem",
       marginTop: "1.71429em",
       marginBottom: "1.71429em",
       padding: ".857143em 1.14286em",
-      fontFamily: MONO,
+      fontFamily: "var(--font-mono)",
       fontSize: ".875em",
       fontWeight: 400,
       lineHeight: 1.71429,
@@ -207,7 +263,7 @@ css({
 
     // Reset the inline-code chrome inside blocks; shiki's inner code inherits
     // the pre's font metrics and its spans carry their own colors.
-    "pre code": {
+    [inProse("pre code")]: {
       backgroundColor: "transparent",
       border: "none",
       borderRadius: 0,

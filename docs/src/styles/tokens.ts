@@ -53,6 +53,7 @@ vars({
   secondary: "var(--base-200)",
   "secondary-foreground": "var(--base-contrast)",
   "font-sans": "'Mulish Variable', sans-serif",
+  "font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   background: "var(--base-100)",
   foreground: "var(--base-contrast)",
   card: "var(--base-300)",
