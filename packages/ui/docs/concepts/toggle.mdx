@@ -8,9 +8,10 @@
 | `onPressedChange` | `(pressed: boolean) => void` | `-` |
 | `variant` | `"default" \| "outline"` | `"default"` |
 | `size` | `"default" \| "sm" \| "lg"` | `"default"` |
-| `disabled` | `boolean` | `-` |
 | `class` | `string` | `-` |
 | `children` | node | The toggle's label content |
+
+Accepts all native `button` attributes (forwarded to the root element): `disabled` gates the toggle.
 
 Without `pressed`, the root owns a signal seeded by a boolean `pressed` prop and flips it on click. Pass an accessor and the toggle becomes controlled: clicks turn into `onPressedChange` requests without writing state, so a parent signal that ignores the request keeps the toggle unchanged.
 

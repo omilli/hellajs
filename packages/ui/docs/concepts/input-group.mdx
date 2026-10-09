@@ -12,6 +12,8 @@ The group owns the focus and invalid rings: its selectors light the whole compos
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The addons and control |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 `disabled` renders `data-disabled="true"`; every addon reads that attribute and drops to half opacity.
 
 ### InputGroupAddon
@@ -23,17 +25,19 @@ The wrapper for content beside or above the control; clicking it focuses the gro
 | `align` | `"inline-start" \| "inline-end" \| "block-start" \| "block-end"` | `"inline-start"` |
 | `children` | `HellaChildren` | Addon content, typically text or buttons |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### InputGroupButton
 
-The group's button, a tighter take on the standalone button copy.
+The group's button, a tighter take on the standalone button copy. It renders `type="button"` unless a native `type` rides the attributes.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | `"ghost"` |
 | `size` | `"xs" \| "sm" \| "icon-xs" \| "icon-sm"` | `"xs"` |
-| `type` | `string` | `"button"` |
-| `onclick` | `() => void` | `-` |
 | `children` | `HellaChildren` | Button content |
+
+Accepts all native `button` attributes (forwarded to the root element); `type`, `on:click`, and friends ride the spread.
 
 ### InputGroupText
 
@@ -43,21 +47,17 @@ The text plate: a `span` for static labels and prefixes inside an addon.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Text content |
 
+Accepts all native `span` attributes (forwarded to the root element).
+
 ### InputGroupInput
 
 The composite's input: carries `data-slot="input-group-control"`, the hook the group's focus and error selectors read.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `value` | `string \| (() => string)` | `-` |
-| `type` | `string` | `-` |
-| `placeholder` | `string` | `-` |
-| `id` | `string` | `-` |
-| `ariaLabel` | `string` | `-` |
-| `ariaInvalid` | `boolean` | `-` |
-| `oninput` | `(value: string) => void` | `-` |
+| `class` | `string` | `-` |
 
-`ariaInvalid` renders `aria-invalid="true"`, which turns the group's border destructive.
+Accepts all native `input` attributes (forwarded to the root element): `type`, `placeholder`, `id`, `value`, `aria-label`, and friends ride the spread, and `value` binds as the element's value property so a plain string or a bare signal stays in sync after mount. The invalid state is driven by the native `aria-invalid` attribute, which turns the group's border destructive.
 
 ### InputGroupTextarea
 
@@ -65,12 +65,8 @@ The composite's textarea, wired like `InputGroupInput`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `value` | `string \| (() => string)` | `-` |
-| `placeholder` | `string` | `-` |
-| `id` | `string` | `-` |
-| `ariaLabel` | `string` | `-` |
-| `rows` | `number` | `-` |
-| `ariaInvalid` | `boolean` | `-` |
-| `oninput` | `(value: string) => void` | `-` |
+| `class` | `string` | `-` |
+
+Accepts all native `textarea` attributes (forwarded to the root element): `placeholder`, `id`, `rows`, `value`, `aria-label`, and friends ride the spread, with the same `value` binding and native `aria-invalid` invalid state as the input.
 
 Every part also takes a `class` string, landing last in its style composition.

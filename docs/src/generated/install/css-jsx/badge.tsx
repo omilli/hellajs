@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -94,28 +94,27 @@ const variants = {
   }),
 };
 
-interface BadgeProps {
+interface BadgeProps extends HTMLAttributes<"span"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
-  ariaInvalid?: boolean;
-  class?: string;
 }
 
-export default function Badge(props: BadgeProps): JSX.Element {
+export default function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): JSX.Element {
   return (
     <span
       data-slot="badge"
-      data-variant={props.variant ?? "default"}
-      aria-invalid={props.ariaInvalid ? "true" : undefined}
+      data-variant={variant ?? "default"}
       class={
         [
           base,
-          variants[props.variant ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          cls,
         ]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }

@@ -8,6 +8,7 @@ The root renders the semantic `kbd` element carrying `data-slot="kbd"`, so brows
 | ---- | ---- | ------- |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The key label |
+Accepts all native `kbd` attributes (forwarded to the root element).
 
 ### KbdGroup
 
@@ -16,5 +17,6 @@ The sequence wrapper: a `kbd` element carrying `data-slot="kbd-group"`, laying a
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The run of key chips |
+Accepts all native `kbd` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

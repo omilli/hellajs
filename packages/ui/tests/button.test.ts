@@ -67,11 +67,23 @@ describe("button", () => {
     expect(btn.getAttribute("data-size")).toBe("lg");
   });
 
-  test.each(buttonVariants)("$format/$style fires the onclick handler on click", (variant) => {
-    const onclick = mock(() => {});
-    const btn = renderVariant(variant, propsOf(variant, { onclick }));
+  test.each(buttonVariants)("$format/$style fires a user on:click handler on click", (variant) => {
+    const onClick = mock(() => {});
+    const btn = renderVariant(variant, propsOf(variant, { "on:click": onClick }));
     btn.dispatchEvent(new Event("click"));
-    expect(onclick).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(buttonVariants)("$format/$style forwards user attrs onto the root", (variant) => {
+    const btn = renderVariant(variant, propsOf(variant, { title: "Hella" }));
+    expect(btn.getAttribute("title")).toBe("Hella");
+  });
+
+  test.each(buttonVariants)("$format/$style spreads disabled onto the root", (variant) => {
+    const disabled = renderVariant(variant, propsOf(variant, { disabled: true }));
+    expect(disabled.hasAttribute("disabled")).toBe(true);
+    const enabled = renderVariant(variant, propsOf(variant, {}));
+    expect(enabled.hasAttribute("disabled")).toBe(false);
   });
 
   test.each(buttonVariants)("$format/$style applies every variant's tokens at a representative size", (variant) => {
@@ -129,8 +141,8 @@ describe("button", () => {
     }
   });
 
-  test.each(buttonVariants)("$format/$style sets aria-invalid only from the prop", (variant) => {
-    const invalid = renderVariant(variant, propsOf(variant, { ariaInvalid: true }));
+  test.each(buttonVariants)("$format/$style renders aria-invalid from the kebab attribute", (variant) => {
+    const invalid = renderVariant(variant, propsOf(variant, { "aria-invalid": "true" }));
     expect(invalid.getAttribute("aria-invalid")).toBe("true");
     const valid = renderVariant(variant, propsOf(variant, {}));
     expect(valid.hasAttribute("aria-invalid")).toBe(false);

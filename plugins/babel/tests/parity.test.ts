@@ -81,6 +81,7 @@ const corpus = [
   { template: "<div><span>x" },
   { template: "<div><br />text</div>" },
   { template: "<div class=\"a\" data-x='b' lang=en><span title=\"c\">d</span></div>" },
+  { template: "<button class=\"a\" ...${attrs}></button>", args: { attrs: { title: "t" } } },
   { template: "<><span>a</span><span>b</span></>" },
   { template: "<input value=${v}>t" },
   { template: "<${Echo} on:click=${delegated} e:focus=${direct} hook:afterMount=${hook} error:fallback=${fallback} />", args: { Echo, delegated, direct, hook, fallback } }

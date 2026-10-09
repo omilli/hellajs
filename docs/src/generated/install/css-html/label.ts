@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -21,20 +21,19 @@ const base = style("label", {
   },
 });
 
-interface LabelProps {
-  children?: HellaChildren;
-  for?: string;
+interface LabelProps extends HTMLAttributes<"label"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Label(props: LabelProps): HellaNode {
+export default function Label({ children, class: cls, ...attrs }: LabelProps): HellaNode {
   return html`
     <label
       data-slot="label"
-      for="${props.for}"
       class="${
-        [base, props.class]
+        [base, cls]
       }"
-    >${() => props.children}</label>
+      ...${attrs}
+    >${() => children}</label>
   ` as HellaNode;
 }

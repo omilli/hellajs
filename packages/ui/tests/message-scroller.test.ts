@@ -3,6 +3,7 @@ import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { html, mount, peekState } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
   assertStructuralParity,
   classTokens,
   messageScrollerPartVariants,
@@ -209,6 +210,26 @@ describe("message-scroller", () => {
     withGeometry(viewport, 300, 50, 0);
     grow!();
     expect(override).toHaveBeenCalledTimes(1);
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(messageScrollerVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("merges the user class last on the root across all four variants", () => {
+    for (const variant of messageScrollerVariants) {
+      const root = renderVariant(variant, { class: "my-scroller", children: ["m1"] });
+      expect(classTokens(root).at(-1)).toBe("my-scroller");
+    }
+  });
+
+  test.each(messageScrollerPartVariants.filter((variant) => variant.part === "Button"))("$part $format/$style chains the user on:click with the owned scroll action", (variant) => {
+    const atBottom = signal(false);
+    const userClick = mock(() => {});
+    const root = renderVariant(variant, { atBottom, scrollToBottom: () => atBottom(true), "on:click": userClick });
+    root.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(atBottom()).toBe(true);
   });
 
   test("all four flavors agree on tag and attributes", () => {

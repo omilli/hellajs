@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const badge: string;
@@ -11,124 +11,136 @@ declare const groupCount: string;
 declare const image: string;
 // @hella:end
 
-interface AvatarProps {
+interface AvatarProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   size?: "default" | "sm" | "lg";
-  class?: string;
 }
 
-export default function Avatar(props: AvatarProps): JSX.Element {
+export default function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): JSX.Element {
   return (
     <div
       data-slot="avatar"
-      data-size={props.size ?? "default"}
+      data-size={size ?? "default"}
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface AvatarImageProps {
-  src?: string;
-  alt?: string;
+interface AvatarImageProps extends HTMLAttributes<"img"> {
+  class?: string;
   /** Shared loaded state: flipped by load/error, read by AvatarFallback to swap visibility. */
   loaded?: Signal<boolean>;
-  class?: string;
 }
 
-export function AvatarImage(props: AvatarImageProps): JSX.Element {
-  const loaded = props.loaded ?? signal(false);
+export function AvatarImage({ loaded: loadedSignal, class: cls, ...attrs }: AvatarImageProps): JSX.Element {
+  const loaded = loadedSignal ?? signal(false);
   return (
     <img
       data-slot="avatar-image"
-      src={props.src}
-      alt={props.alt}
       hidden={() => !loaded()}
       class={
         // @hella:compose
-        [image, props.class]
+        [image, cls]
         // @hella:end
       }
-      on:load={() => loaded(true)}
-      on:error={() => loaded(false)}
+      e:load={() => loaded(true)}
+      e:error={() => loaded(false)}
+      {...attrs}
     />
   );
 }
 
-interface AvatarFallbackProps {
+interface AvatarFallbackProps extends HTMLAttributes<"span"> {
+  class?: string;
   children?: HellaChildren;
   /** Shared loaded state: the fallback hides while the signal reads true. */
   loaded?: () => boolean;
-  class?: string;
 }
 
-export function AvatarFallback(props: AvatarFallbackProps): JSX.Element {
+export function AvatarFallback({ loaded, children, class: cls, ...attrs }: AvatarFallbackProps): JSX.Element {
   return (
     <span
       data-slot="avatar-fallback"
-      hidden={() => Boolean(props.loaded?.())}
+      hidden={() => Boolean(loaded?.())}
       class={
         // @hella:compose
-        [fallback, props.class]
+        [fallback, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }
 
-interface AvatarBadgeProps {
-  children?: HellaChildren;
+interface AvatarBadgeProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AvatarBadge(props: AvatarBadgeProps): JSX.Element {
+export function AvatarBadge({ children, class: cls, ...attrs }: AvatarBadgeProps): JSX.Element {
   return (
     <span
       data-slot="avatar-badge"
       class={
         // @hella:compose
-        [badge, props.class]
+        [badge, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }
 
-export function AvatarGroup(props: AvatarBadgeProps): JSX.Element {
+interface AvatarGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function AvatarGroup({ children, class: cls, ...attrs }: AvatarGroupProps): JSX.Element {
   return (
     <div
       data-slot="avatar-group"
       class={
         // @hella:compose
-        [group, props.class]
+        [group, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function AvatarGroupCount(props: AvatarBadgeProps): JSX.Element {
+interface AvatarGroupCountProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function AvatarGroupCount({ children, class: cls, ...attrs }: AvatarGroupCountProps): JSX.Element {
   return (
     <div
       data-slot="avatar-group-count"
       class={
         // @hella:compose
-        [groupCount, props.class]
+        [groupCount, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

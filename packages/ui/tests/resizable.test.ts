@@ -10,6 +10,8 @@ import * as ResizableCssHtml from "../dist/registry/resizable/css/resizable-html
 import * as ResizableTailwindJsx from "../dist/registry/resizable/tailwind/resizable";
 import * as ResizableTailwindHtml from "../dist/registry/resizable/tailwind/resizable-html";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   renderVariant,
@@ -215,6 +217,19 @@ describe("resizable", () => {
     dragHandle(handle, [{ x: 20 }]);
     press(handle, "ArrowRight");
     expect(onLayout).not.toHaveBeenCalled();
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(resizableVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the root across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(resizableVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("spreads user attrs onto the handle part across all four flavors", () => {
+    assertAttrForwarded(resizablePartVariants.filter((candidate) => candidate.part === "Handle"), { title: "Hella" }, "title", "Hella");
   });
 
   test("keeps structural parity across all four variants", () => {

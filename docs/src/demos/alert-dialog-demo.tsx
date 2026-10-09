@@ -19,7 +19,7 @@ export function AlertDialogDemo() {
 
   return (
     <>
-      <Button variant="destructive" onclick={() => open(true)}>Delete project</Button>
+      <Button variant="destructive" on:click={() => open(true)}>Delete project</Button>
       <AlertDialog open={open} onClose={() => open(false)} title="Delete project" description="This removes every deployment attached to it. This action cannot be undone.">
         <AlertDialogFooter>
           <AlertDialogCancel onClose={() => open(false)}>Cancel</AlertDialogCancel>
@@ -36,11 +36,11 @@ export function AlertDialogManualDemo() {
 
   return (
     <>
-      <Button variant="outline" onclick={() => open(!open())}>Delete</Button>
+      <Button variant="outline" on:click={() => open(!open())}>Delete</Button>
       {() => open() && (
         <Portal to="body">
           <AlertDialogOverlay state={state} />
-          <AlertDialogContent state={state} labelledBy="alert-manual-title" describedBy="alert-manual-description" onClose={() => open(false)}>
+          <AlertDialogContent state={state} aria-labelledby="alert-manual-title" aria-describedby="alert-manual-description" onClose={() => open(false)}>
             <AlertDialogHeader>
               <AlertDialogMedia>
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>

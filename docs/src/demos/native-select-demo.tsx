@@ -6,7 +6,11 @@ export function NativeSelectDemo() {
 
   return (
     <>
-      <NativeSelect value={region} onchange={(v) => region(v)} ariaLabel="Region">
+      <NativeSelect
+        value={region}
+        on:change={(e: Event) => region((e.target as HTMLSelectElement).value)}
+        aria-label="Region"
+      >
         <option value="eu">EU Central</option>
         <option value="us">US East</option>
         <option value="ap" disabled>AP South (coming soon)</option>
@@ -19,7 +23,7 @@ export function NativeSelectDemo() {
 export function NativeSelectCompactDemo() {
   return (
     <>
-      <NativeSelect size="sm" ariaLabel="Compact select">
+      <NativeSelect size="sm" aria-label="Compact select">
         <option value="a">Compact option A</option>
         <option value="b">Compact option B</option>
       </NativeSelect>

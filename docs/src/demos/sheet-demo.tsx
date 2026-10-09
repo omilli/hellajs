@@ -9,10 +9,10 @@ export function SheetDemo() {
 
   return (
     <>
-      <Button variant="outline" onclick={() => open(true)}>Open right sheet</Button>
+      <Button variant="outline" on:click={() => open(true)}>Open right sheet</Button>
       <Sheet open={open} onClose={() => open(false)} side="right" title="Edit profile" description="Make changes to your profile here. Click save when you're done.">
         <p>This panel slides in from the right edge with its geometry and slide variant from the side table.</p>
-        <Button onclick={() => open(false)}>Save changes</Button>
+        <Button on:click={() => open(false)}>Save changes</Button>
       </Sheet>
     </>
   );
@@ -24,11 +24,11 @@ export function SheetManualDemo() {
 
   return (
     <>
-      <Button variant="outline" onclick={() => open(!open())}>Open cart</Button>
+      <Button variant="outline" on:click={() => open(!open())}>Open cart</Button>
       {() => open() && (
         <Portal to="body">
           <SheetOverlay state={state} />
-          <SheetContent state={state} side="bottom" labelledBy="sheet-manual-title" describedBy="sheet-manual-description" onClose={() => open(false)}>
+          <SheetContent state={state} side="bottom" aria-labelledby="sheet-manual-title" aria-describedby="sheet-manual-description" onClose={() => open(false)}>
             <SheetHeader>
               <SheetTitle id="sheet-manual-title">Cart</SheetTitle>
               <SheetDescription id="sheet-manual-description">Three items reserved for you.</SheetDescription>

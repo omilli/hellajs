@@ -4,6 +4,7 @@ import type { HellaChildren } from "@hellajs/dom";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import {
   assertStructuralParity,
+  classTokens,
   menuModulePart,
   menubarModules,
   menubarPartVariants,
@@ -33,7 +34,7 @@ interface ItemProps {
   destructive?: boolean;
   inset?: boolean;
   disabled?: boolean;
-  onclick?: () => void;
+  "on:click"?: () => void;
   shortcut?: string;
   class?: string;
 }
@@ -181,7 +182,7 @@ describe("menubar", () => {
   test.each(menubarVariants)("$format/$style activates items and closes the whole bar menu", async (variant) => {
     const onclick = mock(() => {});
     const bar = renderBar(variant, [
-      Menu(variant, { value: "file", content: Item(variant, { children: "Open", onclick }) }),
+      Menu(variant, { value: "file", content: Item(variant, { children: "Open", "on:click": onclick }) }),
     ]);
     const [file] = triggers(bar);
     const content = await openMenu(file!);
@@ -362,7 +363,7 @@ describe("menubar", () => {
     const bar = renderBar(variant, [
       Menu(variant, {
         value: "file",
-        content: [Item(variant, { children: "Locked", disabled: true, onclick }), Item(variant, { children: "Free" })],
+        content: [Item(variant, { children: "Locked", disabled: true, "on:click": onclick }), Item(variant, { children: "Free" })],
       }),
     ]);
     const [file] = triggers(bar);
@@ -405,7 +406,7 @@ describe("menubar", () => {
         value: "file",
         content: Sub(variant, {
           children: "Export",
-          content: [Item(variant, { children: "PDF", onclick }), Item(variant, { children: "HTML" })],
+          content: [Item(variant, { children: "PDF", "on:click": onclick }), Item(variant, { children: "HTML" })],
         }),
       }),
     ]);
@@ -519,6 +520,29 @@ describe("menubar", () => {
     // Drained coordination listeners: announcements after unmount are inert.
     document.dispatchEvent(new CustomEvent("hella:menubar-open", { detail: { id: "other" } }));
     expect(bar.isConnected).toBe(false);
+  });
+
+  test.each(menubarVariants)("$format/$style forwards user attrs onto the bar root across all four variants", (variant) => {
+    const bar = renderVariant(variant, { "aria-label": "main" });
+    expect(bar.getAttribute("aria-label")).toBe("main");
+  });
+
+  test.each(menubarVariants)("$format/$style fires a user on:click handler on the bar root across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const bar = renderVariant(variant, { "on:click": userClick });
+    bar.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(menubarVariants)("$format/$style merges a user class into the bar root's class across all four variants", (variant) => {
+    const bar = renderVariant(variant, { class: "user-class" });
+    expect(classTokens(bar).at(-1)).toBe("user-class");
+  });
+
+  test.each(menubarPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ id: "custom-menubar-content", children: [] }), container);
+    expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menubar-content");
   });
 
   test("keeps structural parity across all four variants", () => {

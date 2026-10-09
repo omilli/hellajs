@@ -1,6 +1,6 @@
 import { html, onDrag } from "@hellajs/dom";
 import { effect, signal } from "@hellajs/core";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -9,27 +9,26 @@ declare const handle: string;
 declare const icon: string;
 // @hella:end
 
-interface ResizablePanelGroupProps {
+interface ResizablePanelGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   direction?: "horizontal" | "vertical";
   /** Reports the panel sizes (percentages) after each drag or keyboard resize. The initial layout does not fire it. */
   onLayout?: (sizes: number[]) => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
-interface ResizablePanelProps {
+interface ResizablePanelProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   /** Initial share of the group, in percent. The group rewrites `flex-grow` as handles resize the pair. */
   defaultSize: number;
   minSize?: number;
   maxSize?: number;
-  children?: HellaChildren;
-  class?: string;
 }
 
-interface ResizableHandleProps {
-  withHandle?: boolean;
-  disabled?: boolean;
+interface ResizableHandleProps extends HTMLAttributes<"div"> {
   class?: string;
+  withHandle?: boolean;
 }
 
 /** The grip visual (refs/icons/grip-vertical.svg), created per call so clones never share nodes. */
@@ -59,36 +58,38 @@ const gripIcon = (): HellaNode =>
     <circle cx="15" cy="19" r="1" />
   </svg>` as HellaNode;
 
-export function ResizablePanel(props: ResizablePanelProps): HellaNode {
-  const minSize = props.minSize ?? 0;
-  const maxSize = props.maxSize ?? 100;
+export function ResizablePanel({ defaultSize, minSize, maxSize, children, class: cls, ...attrs }: ResizablePanelProps): HellaNode {
+  const minSizeValue = minSize ?? 0;
+  const maxSizeValue = maxSize ?? 100;
   return html`
     <div
       data-slot="resizable-panel"
-      data-default-size="${props.defaultSize}"
-      data-min-size="${minSize}"
-      data-max-size="${maxSize}"
-      style="${`flex: ${props.defaultSize} 1 0%`}"
-      class="${props.class}"
-    >${() => props.children}</div>
+      data-default-size="${defaultSize}"
+      data-min-size="${minSizeValue}"
+      data-max-size="${maxSizeValue}"
+      style="${`flex: ${defaultSize} 1 0%`}"
+      class="${cls}"
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function ResizableHandle(props: ResizableHandleProps): HellaNode {
+export function ResizableHandle({ withHandle, disabled, class: cls, ...attrs }: ResizableHandleProps): HellaNode {
   return html`
     <div
       data-slot="resizable-handle"
       role="separator"
-      tabindex="${props.disabled ? -1 : 0}"
+      tabindex="${disabled ? -1 : 0}"
       aria-orientation="horizontal"
-      aria-disabled="${props.disabled ? "true" : undefined}"
-      data-disabled="${props.disabled ? "true" : undefined}"
+      aria-disabled="${disabled ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
       class="${
         // @hella:compose
-        [handle, props.class]
+        [handle, cls]
         // @hella:end
       }"
-    >${() => props.withHandle && html`<div class="${
+      ...${attrs}
+    >${() => withHandle && html`<div class="${
         // @hella:compose
         [grip]
         // @hella:end
@@ -97,8 +98,8 @@ export function ResizableHandle(props: ResizableHandleProps): HellaNode {
   ` as HellaNode;
 }
 
-export default function ResizablePanelGroup(props: ResizablePanelGroupProps): HellaNode {
-  const direction = props.direction ?? "horizontal";
+export default function ResizablePanelGroup({ direction: directionProp, onLayout, children, class: cls, ...attrs }: ResizablePanelGroupProps): HellaNode {
+  const direction = directionProp ?? "horizontal";
   const sizes = signal<number[]>([]);
   const panels: HTMLElement[] = [];
   const wirings: (() => void)[] = [];
@@ -139,7 +140,7 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): He
     updated[prevIndex] = prev + clamped;
     updated[nextIndex] = next - clamped;
     sizes(updated);
-    props.onLayout?.(updated);
+    onLayout?.(updated);
   };
 
   const wireHandle = (group: HTMLElement, handleEl: HTMLElement, prevIndex: number): void => {
@@ -181,7 +182,7 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): He
       aria-orientation="${direction}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {
@@ -210,8 +211,9 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): He
       hook:beforeDestroy="${() => {
         while (wirings.length) wirings.pop()!();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}
+      ${() => children}
     </div>
   ` as HellaNode;
 }

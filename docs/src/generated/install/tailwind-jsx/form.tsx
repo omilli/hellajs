@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 /** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
@@ -104,119 +104,125 @@ export function createForm<T extends object>(initial: T, options?: FormOptions<T
   return { values, errors, touched, dirty, setField, blur, validate, reset, handleSubmit };
 }
 
-interface FormItemProps {
+interface FormItemProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   /** Error flag; renders data-error="true"/"false" as the container-level hook for the error state. */
   error?: boolean | (() => boolean);
-  children?: HellaChildren;
-  class?: string;
 }
 
-export function FormItem(props: FormItemProps): JSX.Element {
-  const hasError = (): boolean => (typeof props.error === "function" ? props.error() : props.error) === true;
+export function FormItem({ error, children, class: cls, ...attrs }: FormItemProps): JSX.Element {
+  const hasError = (): boolean => (typeof error === "function" ? error() : error) === true;
   return (
     <div
       data-slot="form-item"
       data-error={hasError() ? "true" : "false"}
       class={
-        cn("grid gap-2", props.class)
+        cn("grid gap-2", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface FormLabelProps {
-  /** Renders data-required="true" as the styling hook for the required marker. */
-  required?: boolean;
+interface FormLabelProps extends HTMLAttributes<"label"> {
+  class?: string;
+  children?: HellaChildren;
   /** Error flag; renders data-error="true"/"false", aria-invalid, and the destructive text hook. */
   error?: boolean | (() => boolean);
-  for?: string;
-  children?: HellaChildren;
 }
 
-export function FormLabel(props: FormLabelProps): JSX.Element {
-  const hasError = (): boolean => (typeof props.error === "function" ? props.error() : props.error) === true;
+export function FormLabel({ required, for: htmlFor, error, children, class: cls, ...attrs }: FormLabelProps): JSX.Element {
+  const hasError = (): boolean => (typeof error === "function" ? error() : error) === true;
   const invalid = (): "true" | undefined => (hasError() ? "true" : undefined);
   return (
     <label
       data-slot="form-label"
-      data-required={props.required ? "true" : undefined}
-      for={props.for}
+      data-required={required ? "true" : undefined}
+      for={htmlFor}
       aria-invalid={invalid()}
       data-error={hasError() ? "true" : "false"}
       class={
-        cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 data-[error=true]:text-destructive")
+        cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 data-[error=true]:text-destructive", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </label>
   );
 }
 
-interface FormControlProps {
+interface FormControlProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   /** Error flag; renders aria-invalid="true" on the passthrough wrapper. */
   invalid?: boolean | (() => boolean);
   /** aria-describedby target, typically the FormDescription or FormMessage id. */
   describedBy?: string;
-  children?: HellaChildren;
 }
 
-export function FormControl(props: FormControlProps): JSX.Element {
-  const isInvalid = (): boolean => (typeof props.invalid === "function" ? props.invalid() : props.invalid) === true;
+export function FormControl({ invalid, describedBy, children, class: cls, ...attrs }: FormControlProps): JSX.Element {
+  const isInvalid = (): boolean => (typeof invalid === "function" ? invalid() : invalid) === true;
   return (
     <div
       data-slot="form-control"
       aria-invalid={isInvalid() ? "true" : undefined}
-      aria-describedby={props.describedBy}
+      aria-describedby={describedBy}
+      class={
+        cn(cls)
+      }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface FormDescriptionProps {
-  /** Id the matching FormControl points its aria-describedby at. */
-  id?: string;
+interface FormDescriptionProps extends HTMLAttributes<"p"> {
+  class?: string;
   children?: HellaChildren;
 }
 
-export function FormDescription(props: FormDescriptionProps): JSX.Element {
+export function FormDescription({ id, children, class: cls, ...attrs }: FormDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="form-description"
-      id={props.id}
+      id={id}
       class={
-        cn("text-sm text-muted-foreground")
+        cn("text-sm text-muted-foreground", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </p>
   );
 }
 
-interface FormMessageProps {
+interface FormMessageProps extends HTMLAttributes<"p"> {
+  class?: string;
+  children?: HellaChildren;
   /** Error messages; the first one renders. An accessor re-evaluates as validation runs. */
   errors?: string[] | (() => string[] | undefined);
-  /** Fallback content rendered when there are no errors. */
-  children?: HellaChildren;
 }
 
-export function FormMessage(props: FormMessageProps): JSX.Element {
-  const messages = (): string[] => (typeof props.errors === "function" ? props.errors() : props.errors) ?? [];
-  const hasContent = (): boolean => messages().length > 0 || props.children != null;
+export function FormMessage({ errors, children, class: cls, ...attrs }: FormMessageProps): JSX.Element {
+  const messages = (): string[] => (typeof errors === "function" ? errors() : errors) ?? [];
+  const hasContent = (): boolean => messages().length > 0 || children != null;
   return (
     <p
       role="alert"
       data-slot="form-message"
       hidden={() => !hasContent()}
       class={
-        cn("text-sm text-destructive")
+        cn("text-sm text-destructive", cls)
       }
+      {...attrs}
     >
       {() => {
         const list = messages();
-        return list.length > 0 ? list[0] : props.children;
+        return list.length > 0 ? list[0] : children;
       }}
     </p>
   );

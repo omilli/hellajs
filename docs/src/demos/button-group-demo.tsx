@@ -24,7 +24,7 @@ export function ButtonGroupPlateDemo() {
     <>
       <ButtonGroup>
         <ButtonGroupText>https://</ButtonGroupText>
-        <Input value={url} oninput={(v) => url(v)} />
+        <Input value={url} on:input={(e: Event) => url((e.target as HTMLInputElement).value)} />
         <Button variant="outline">Open</Button>
       </ButtonGroup>
     </>

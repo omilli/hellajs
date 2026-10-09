@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   paginationPartVariants,
@@ -106,6 +108,33 @@ describe("pagination", () => {
       expect(classTokens(root)[0]!.startsWith("pagination-ellipsis")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("size-9");
+    }
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(paginationVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("merges the user class last on the root across all four variants", () => {
+    for (const variant of paginationVariants) {
+      const root = renderVariant(variant, { class: "my-pagination", children: variant.child!("x") });
+      expect(classTokens(root).at(-1)).toBe("my-pagination");
+    }
+  });
+
+  test("fires a user on:click on the link without breaking the active wiring", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(paginationPartVariants.filter((variant) => variant.part === "Link"), { isActive: true, "on:click": onClick }, "on:click", "click", onClick);
+    for (const variant of paginationPartVariants.filter((candidate) => candidate.part === "Link")) {
+      const root = renderVariant(variant, { isActive: true, children: ["1"] });
+      expect(root.getAttribute("aria-current")).toBe("page");
+    }
+  });
+
+  test("lands the user href on the nav anchors through the spread", () => {
+    for (const variant of paginationPartVariants.filter((candidate) => candidate.part === "Previous" || candidate.part === "Next")) {
+      const root = renderVariant(variant, { href: "?page=2" });
+      expect(root.getAttribute("href")).toBe("?page=2");
     }
   });
 

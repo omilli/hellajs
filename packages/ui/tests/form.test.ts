@@ -4,6 +4,8 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount and the components' reactivity share one dom instance.
 import { mount } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   formApiVariants,
@@ -237,6 +239,26 @@ describe("form", () => {
       await delay();
     }
     throw new Error("form message never rendered the validation error");
+  });
+
+  test("forwards user attrs onto the parts across all four variants", () => {
+    for (const part of FORM_PARTS) {
+      assertAttrForwarded(formPartVariants.filter((candidate) => candidate.part === part), { title: "Hella" }, "title", "Hella");
+    }
+  });
+
+  test("fires a user on:click handler on the label across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(formPartVariants.filter((candidate) => candidate.part === "Label"), { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges the user class last on the parts across all four variants", () => {
+    for (const part of FORM_PARTS) {
+      for (const variant of formPartVariants.filter((candidate) => candidate.part === part)) {
+        const root = renderVariant(variant, { class: "my-form-part", children: ["x"] });
+        expect(classTokens(root).at(-1)).toBe("my-form-part");
+      }
+    }
   });
 
   test("all four flavors agree on tag and attributes", () => {

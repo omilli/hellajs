@@ -1,24 +1,25 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
 // @hella:end
 
-interface SkeletonProps {
-  children?: HellaChildren;
+interface SkeletonProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Skeleton(props: SkeletonProps): HellaNode {
+export default function Skeleton({ children, class: cls, ...attrs }: SkeletonProps): HellaNode {
   return html`
     <div
       data-slot="skeleton"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

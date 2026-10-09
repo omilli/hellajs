@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   fieldPartVariants,
@@ -134,6 +136,26 @@ describe("field", () => {
     const list = root.querySelector("ul")!;
     expect(list.querySelectorAll("li")).toHaveLength(2);
     expect(root.textContent).toContain("Required");
+  });
+
+  test("forwards user attrs onto the field root across all four variants", () => {
+    assertAttrForwarded(fieldVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the field root across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(fieldVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges the user class last on the field root across all four variants", () => {
+    for (const variant of fieldVariants) {
+      const root = renderVariant(variant, { class: "my-field", children: ["x"] });
+      expect(classTokens(root).at(-1)).toBe("my-field");
+    }
+  });
+
+  test("lands the label's for target through the spread across all four variants", () => {
+    assertAttrForwarded(fieldPartVariants.filter((variant) => variant.part === "Label"), { for: "demo-name" }, "for", "demo-name");
   });
 
   test("all four flavors agree on tag and attributes", () => {

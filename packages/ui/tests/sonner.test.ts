@@ -5,6 +5,7 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { html, mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   sonnerVariants,
 } from "./helpers/variants";
 import type { SonnerVariant } from "./helpers/variants";
@@ -336,6 +337,24 @@ describe("sonner", () => {
     expect(ol.getAttribute("data-position")).toBe("top-left");
     variant.toast("Tinted", { type: "success" });
     expect(newestToast()!.getAttribute("data-rich-colors")).toBe("true");
+  });
+
+  test.each(sonnerVariants)("$format/$style forwards user attrs onto the portaled ol", async (variant) => {
+    const ol = await mountToaster(variant, { title: "Hella", "aria-label": "Notifications" });
+    expect(ol.getAttribute("title")).toBe("Hella");
+    expect(ol.getAttribute("aria-label")).toBe("Notifications");
+  });
+
+  test.each(sonnerVariants)("$format/$style fires a user on:click on the portaled ol", async (variant) => {
+    const onClick = mock(() => {});
+    const ol = await mountToaster(variant, { "on:click": onClick });
+    ol.dispatchEvent(new Event("click", { bubbles: true }));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(sonnerVariants)("$format/$style merges props.class into the class attribute", async (variant) => {
+    const ol = await mountToaster(variant, { class: "my-toaster" });
+    expect(classTokens(ol).at(-1)).toBe("my-toaster");
   });
 
   test("keeps structural parity across all four variants", async () => {

@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -95,64 +95,67 @@ const separator = style("button-group-separator-override", {
   },
 });
 
-interface ButtonGroupProps {
+interface ButtonGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
-export default function ButtonGroup(props: ButtonGroupProps): HellaNode {
+export default function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): HellaNode {
   return html`
     <div
       role="group"
       data-slot="button-group"
-      data-orientation="${props.orientation ?? "horizontal"}"
+      data-orientation="${orient ?? "horizontal"}"
       class="${
         [
           base,
-          orientation[props.orientation ?? "horizontal"],
-          props.class,
+          orientation[orient ?? "horizontal"],
+          cls,
         ]
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ButtonGroupTextProps {
-  children?: HellaChildren;
+interface ButtonGroupTextProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ButtonGroupText(props: ButtonGroupTextProps): HellaNode {
+export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupTextProps): HellaNode {
   return html`
     <div
       data-slot="button-group-text"
       class="${
-        [text, props.class]
+        [text, cls]
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ButtonGroupSeparatorProps {
+interface ButtonGroupSeparatorProps extends HTMLAttributes<"div"> {
   orientation?: "horizontal" | "vertical";
   class?: string;
 }
 
-export function ButtonGroupSeparator(props: ButtonGroupSeparatorProps): HellaNode {
+export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs }: ButtonGroupSeparatorProps): HellaNode {
   return html`
     <div
       role="separator"
       data-slot="button-group-separator"
-      data-orientation="${props.orientation ?? "vertical"}"
-      aria-orientation="${props.orientation ?? "vertical"}"
+      data-orientation="${orient ?? "vertical"}"
+      aria-orientation="${orient ?? "vertical"}"
       class="${
         [
           separatorBase,
           separator,
-          props.class,
+          cls,
         ]
       }"
+      ...${attrs}
     ></div>
   ` as HellaNode;
 }

@@ -1,7 +1,9 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   progressVariants,
@@ -81,5 +83,14 @@ describe("progress", () => {
 
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(progressVariants, { value: 50 });
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(progressVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(progressVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 });

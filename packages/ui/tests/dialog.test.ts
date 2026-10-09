@@ -7,6 +7,7 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { html, mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   dialogPartVariants,
   dialogVariants,
 } from "./helpers/variants";
@@ -28,7 +29,7 @@ function newestPanel(): HTMLElement | undefined {
  * (earlier tests can leave stale panels attached) that has finished the
  * observer-driven mount walk.
  */
-function mountDialog(variant: DialogVariant, props: Omit<DialogVariantProps, "open">) {
+function mountDialog(variant: DialogVariant, props: Partial<DialogVariantProps> & { onClose: () => void }) {
   const open = signal(false);
   const container = setupContainer();
   mount(html`<div>${variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>`, container);
@@ -177,12 +178,12 @@ describe("dialog", () => {
     dlg.open(true);
     const panel = await dlg.panel();
     dlg.open(false);
-    let waited = 0;
-    while (panel.isConnected && waited < 400) {
+    const budget = Date.now();
+    while (panel.isConnected && Date.now() - budget < 450) {
       await delay(null, 20);
-      waited += 20;
     }
-    expect(waited).toBeGreaterThanOrEqual(200);
+    // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
+    expect(Date.now() - budget).toBeGreaterThanOrEqual(200);
     expect(panel.isConnected).toBe(false);
   });
 
@@ -218,6 +219,43 @@ describe("dialog", () => {
     expect(document.activeElement).toBe(outside);
   });
 
+  test.each(dialogVariants)("$format/$style forwards user attrs onto the portaled panel across all four variants", async (variant) => {
+    const dlg = mountDialog(variant, { onClose: () => {}, title: "Forward", "aria-label": "panel" });
+    dlg.open(true);
+    const panel = await dlg.panel();
+    expect(panel.getAttribute("aria-label")).toBe("panel");
+  });
+
+  test.each(dialogVariants)("$format/$style fires a user on:click handler on the portaled panel across all four variants", async (variant) => {
+    const onPanelClick = mock(() => {});
+    const dlg = mountDialog(variant, { onClose: () => {}, title: "Forward", "on:click": onPanelClick });
+    dlg.open(true);
+    const panel = await dlg.panel();
+    panel.dispatchEvent(new Event("click"));
+    expect(onPanelClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(dialogVariants)("$format/$style merges a user class into the portaled panel's class across all four variants", async (variant) => {
+    const dlg = mountDialog(variant, { onClose: () => {}, title: "Forward", class: "user-class" });
+    dlg.open(true);
+    const panel = await dlg.panel();
+    expect(classTokens(panel).at(-1)).toBe("user-class");
+  });
+
+  test.each(dialogPartVariants.filter((entry) => entry.part === "Close"))("$format/$style Close chains a user on:click with its owned dismiss", (variant) => {
+    const onClose = mock(() => {});
+    const userClick = mock(() => {});
+    const close = renderPart(variant, { onClose, "on:click": userClick });
+    close.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(dialogPartVariants.filter((entry) => entry.part === "Content"))("$format/$style content part forwards the manual aria wiring attrs", (variant) => {
+    const el = renderPart(variant, { "aria-labelledby": "wired-title" });
+    expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
+  });
+
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(
       dialogVariants,
@@ -249,9 +287,9 @@ describe("dialog", () => {
 });
 
 /** Renders one dialog part and resolves its mounted root (the panel part is a plain element). */
-function renderPart(variant: (typeof dialogPartVariants)[number]): Element {
+function renderPart(variant: (typeof dialogPartVariants)[number], extra: Record<string, unknown> = {}): Element {
   const container = setupContainer();
-  const rendered = variant.render({ children: [] } as unknown as Record<string, never>);
+  const rendered = variant.render({ children: [], ...extra } as unknown as Record<string, never>);
   // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
   mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered as never, container);
   return container.firstElementChild!;

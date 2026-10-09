@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const badge: string;
@@ -12,114 +12,126 @@ declare const groupCount: string;
 declare const image: string;
 // @hella:end
 
-interface AvatarProps {
+interface AvatarProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   size?: "default" | "sm" | "lg";
-  class?: string;
 }
 
-export default function Avatar(props: AvatarProps): HellaNode {
+export default function Avatar({ size, children, class: cls, ...attrs }: AvatarProps): HellaNode {
   return html`
     <div
       data-slot="avatar"
-      data-size="${props.size ?? "default"}"
+      data-size="${size ?? "default"}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface AvatarImageProps {
-  src?: string;
-  alt?: string;
+interface AvatarImageProps extends HTMLAttributes<"img"> {
+  class?: string;
   /** Shared loaded state: flipped by load/error, read by AvatarFallback to swap visibility. */
   loaded?: Signal<boolean>;
-  class?: string;
 }
 
-export function AvatarImage(props: AvatarImageProps): HellaNode {
-  const loaded = props.loaded ?? signal(false);
+export function AvatarImage({ loaded: loadedSignal, class: cls, ...attrs }: AvatarImageProps): HellaNode {
+  const loaded = loadedSignal ?? signal(false);
   return html`
     <img
       data-slot="avatar-image"
-      src="${props.src}"
-      alt="${props.alt}"
       hidden="${() => !loaded()}"
       class="${
         // @hella:compose
-        [image, props.class]
+        [image, cls]
         // @hella:end
       }"
       e:load="${() => loaded(true)}"
       e:error="${() => loaded(false)}"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-interface AvatarFallbackProps {
+interface AvatarFallbackProps extends HTMLAttributes<"span"> {
+  class?: string;
   children?: HellaChildren;
   /** Shared loaded state: the fallback hides while the signal reads true. */
   loaded?: () => boolean;
-  class?: string;
 }
 
-export function AvatarFallback(props: AvatarFallbackProps): HellaNode {
+export function AvatarFallback({ loaded, children, class: cls, ...attrs }: AvatarFallbackProps): HellaNode {
   return html`
     <span
       data-slot="avatar-fallback"
-      hidden="${() => Boolean(props.loaded?.())}"
+      hidden="${() => Boolean(loaded?.())}"
       class="${
         // @hella:compose
-        [fallback, props.class]
+        [fallback, cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface AvatarBadgeProps {
-  children?: HellaChildren;
+interface AvatarBadgeProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AvatarBadge(props: AvatarBadgeProps): HellaNode {
+export function AvatarBadge({ children, class: cls, ...attrs }: AvatarBadgeProps): HellaNode {
   return html`
     <span
       data-slot="avatar-badge"
       class="${
         // @hella:compose
-        [badge, props.class]
+        [badge, cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-export function AvatarGroup(props: AvatarBadgeProps): HellaNode {
+interface AvatarGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function AvatarGroup({ children, class: cls, ...attrs }: AvatarGroupProps): HellaNode {
   return html`
     <div
       data-slot="avatar-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [group, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function AvatarGroupCount(props: AvatarBadgeProps): HellaNode {
+interface AvatarGroupCountProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function AvatarGroupCount({ children, class: cls, ...attrs }: AvatarGroupCountProps): HellaNode {
   return html`
     <div
       data-slot="avatar-group-count"
       class="${
         // @hella:compose
-        [groupCount, props.class]
+        [groupCount, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

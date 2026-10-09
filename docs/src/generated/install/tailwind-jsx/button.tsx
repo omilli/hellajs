@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const variants = {
@@ -21,33 +21,30 @@ const sizes = {
   "icon-lg": "size-10",
 };
 
-interface ButtonProps {
+interface ButtonProps extends HTMLAttributes<"button"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-  ariaInvalid?: boolean;
-  class?: string;
-  onclick?: () => void;
 }
 
-export default function Button(props: ButtonProps): JSX.Element {
+export default function Button({ variant, size, children, class: cls, ...attrs }: ButtonProps): JSX.Element {
   return (
     <button
       data-slot="button"
-      data-variant={props.variant ?? "default"}
-      data-size={props.size ?? "default"}
-      aria-invalid={props.ariaInvalid ? "true" : undefined}
+      data-variant={variant ?? "default"}
+      data-size={size ?? "default"}
       class={
         cn(
           "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-          variants[props.variant ?? "default"],
-          sizes[props.size ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          sizes[size ?? "default"],
+          cls,
         )
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }

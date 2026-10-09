@@ -1,7 +1,7 @@
 import { effect, signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 import { onDrag, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 
 import { css, keyframes, style } from "@hellajs/css";
 
@@ -206,46 +206,48 @@ function followTransform(direction: DrawerDirection, d: number): string {
   return `translate${axis}(${clamped}px)`;
 }
 
-interface DrawerOverlayProps {
+interface DrawerOverlayProps extends HTMLAttributes<"div"> {
   state?: DrawerState;
   /** Drag fraction (0..1 toward dismissal) — drives the proportional overlay fade. */
   fraction?: Signal<number>;
   class?: string;
 }
 
-export function DrawerOverlay(props: DrawerOverlayProps): JSX.Element {
+export function DrawerOverlay({ state, fraction, class: cls, ...attrs }: DrawerOverlayProps): JSX.Element {
   const overlayStyle = (): Record<string, string> | undefined => {
-    const f = props.fraction?.() ?? 0;
+    const f = fraction?.() ?? 0;
     return f > 0 ? { opacity: String(Math.max(0, 1 - f)) } : undefined;
   };
   return (
     <div
       data-slot="drawer-overlay"
-      data-state={props.state?.()}
+      data-state={state?.()}
       style={overlayStyle}
       class={
-        [base, props.class]
+        [base, cls]
       }
+      {...attrs}
     />
   );
 }
 
-interface DrawerCloseProps {
+interface DrawerCloseProps extends HTMLAttributes<"button"> {
   state?: DrawerState;
   onClose?: () => void;
   class?: string;
 }
 
-export function DrawerClose(props: DrawerCloseProps): JSX.Element {
+export function DrawerClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DrawerCloseProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="drawer-close"
-      data-state={props.state?.()}
+      data-state={state?.()}
       class={
-        [close, props.class]
+        [close, cls]
       }
-      on:click={() => props.onClose?.()}
+      on:click={function (e) { userClick?.call(this, e); onClose?.(); }}
+      {...attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -279,33 +281,32 @@ export function DrawerPortal(props: DrawerPortalProps): JSX.Element {
   );
 }
 
-interface DrawerTriggerProps {
+interface DrawerTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
-export function DrawerTrigger(props: DrawerTriggerProps): JSX.Element {
+export function DrawerTrigger({ children, class: cls, ...attrs }: DrawerTriggerProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="drawer-trigger"
       class={
-        [props.class]
+        [cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface DrawerContentProps {
+interface DrawerContentProps extends HTMLAttributes<"div"> {
   state?: DrawerState;
   direction?: DrawerDirection;
   /** Shared drag fraction (0..1 toward dismissal); the overlay fades proportionally when both parts receive the same signal. */
   fraction?: Signal<number>;
-  labelledBy?: string;
-  describedBy?: string;
   closeOnEscape?: boolean;
   closeOnOutside?: boolean;
   onClose?: () => void;
@@ -323,11 +324,11 @@ interface DrawerContentProps {
  * dismisses - past 25% of the panel size, or moving faster than 500px/s -
  * or springs back through the restored transition.
  */
-export function DrawerContent(props: DrawerContentProps): JSX.Element {
+export function DrawerContent({ state, direction: drawerDirection, fraction, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: DrawerContentProps): JSX.Element {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
-  const direction = props.direction ?? "bottom";
+  const direction = drawerDirection ?? "bottom";
   let dragging = false;
   let panelSize = 0;
   // Signed displacement (px, positive toward dismissal) + timestamp of the
@@ -339,10 +340,10 @@ export function DrawerContent(props: DrawerContentProps): JSX.Element {
   };
 
   const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.state?.() === "closed") return;
+    if (panel === undefined || wirings.length > 0 || state?.() === "closed") return;
     const target = panel;
-    if (props.closeOnEscape !== false && props.onClose) wirings.push(onEscape(target, props.onClose));
-    if (props.closeOnOutside !== false && props.onClose) wirings.push(onOutside(() => [target], props.onClose));
+    if (closeOnEscape !== false && onClose) wirings.push(onEscape(target, onClose));
+    if (closeOnOutside !== false && onClose) wirings.push(onOutside(() => [target], onClose));
     wirings.push(trapFocus(target));
   };
 
@@ -355,7 +356,7 @@ export function DrawerContent(props: DrawerContentProps): JSX.Element {
   // handlers down immediately, slides the panel off-edge through the restored
   // transition, and reopening re-arms them without a remount.
   effect(() => {
-    if (props.state?.() === "closed") {
+    if (state?.() === "closed") {
       disposeWirings();
       startExit();
     } else {
@@ -373,14 +374,12 @@ export function DrawerContent(props: DrawerContentProps): JSX.Element {
   return (
     <div
       data-slot="drawer-content"
-      data-state={props.state?.()}
+      data-state={state?.()}
       data-vaul-drawer-direction={direction}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={props.labelledBy}
-      aria-describedby={props.describedBy}
       class={
-        [content, contentDirections[direction], props.class]
+        [content, contentDirections[direction], cls]
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
@@ -394,7 +393,7 @@ export function DrawerContent(props: DrawerContentProps): JSX.Element {
         // The exit's transitionend (state already "closed") is the primary
         // unmount trigger; the copied fallback budget in the root is the net.
         const onTransitionEnd = (event: TransitionEvent): void => {
-          if (event.target === node && event.propertyName === "transform" && props.state?.() === "closed") props.onExited?.();
+          if (event.target === node && event.propertyName === "transform" && state?.() === "closed") onExited?.();
         };
         node.addEventListener("transitionend", onTransitionEnd);
         teardown.push(() => node.removeEventListener("transitionend", onTransitionEnd));
@@ -402,7 +401,7 @@ export function DrawerContent(props: DrawerContentProps): JSX.Element {
         // out so buttons inside the panel stay clickable.
         teardown.push(onDrag(node, {
           onStart: (event) => {
-            if (props.state?.() !== "open") return;
+            if (state?.() !== "open") return;
             const hit = event.target as HTMLElement | null;
             if (hit?.closest?.("button, a, input, textarea, select, [data-no-drag]")) return;
             dragging = true;
@@ -415,7 +414,7 @@ export function DrawerContent(props: DrawerContentProps): JSX.Element {
             if (!dragging) return;
             const d = AXIS[direction] === "y" ? delta.dy : delta.dx;
             node.style.transform = followTransform(direction, d);
-            props.fraction?.(panelSize > 0 ? Math.min(1, Math.max(0, d * SIGN[direction]) / panelSize) : 0);
+            fraction?.(panelSize > 0 ? Math.min(1, Math.max(0, d * SIGN[direction]) / panelSize) : 0);
             samples.push({ d: d * SIGN[direction], t: delta.event.timeStamp });
             if (samples.length > 2) samples.shift();
           },
@@ -427,10 +426,10 @@ export function DrawerContent(props: DrawerContentProps): JSX.Element {
             const dismiss = (panelSize > 0 && displaced >= panelSize * DISMISS_DISTANCE)
               || releaseVelocity() >= DISMISS_VELOCITY;
             samples = [];
-            props.fraction?.(0);
+            fraction?.(0);
             if (dismiss) {
               node.style.transform = EXIT_TRANSFORM[direction];
-              props.onClose?.();
+              onClose?.();
             } else {
               // Spring back: data-dragging is gone, so the restored
               // transition animates the cleared transform to identity.
@@ -443,79 +442,88 @@ export function DrawerContent(props: DrawerContentProps): JSX.Element {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
       <div data-slot="drawer-handle" class="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface DrawerPartProps {
+interface DrawerPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function DrawerHeader(props: DrawerPartProps): JSX.Element {
+export function DrawerHeader({ children, class: cls, ...attrs }: DrawerPartProps): JSX.Element {
   return (
     <div
       data-slot="drawer-header"
       class={
-        [header, props.class]
+        [header, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function DrawerFooter(props: DrawerPartProps): JSX.Element {
+export function DrawerFooter({ children, class: cls, ...attrs }: DrawerPartProps): JSX.Element {
   return (
     <div
       data-slot="drawer-footer"
       class={
-        [footer, props.class]
+        [footer, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface DrawerTitleProps {
-  id?: string;
+interface DrawerTitleProps extends HTMLAttributes<"h2"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function DrawerTitle(props: DrawerTitleProps): JSX.Element {
+export function DrawerTitle({ id, children, class: cls, ...attrs }: DrawerTitleProps): JSX.Element {
   return (
     <h2
-      id={props.id}
+      id={id}
       data-slot="drawer-title"
       class={
-        [title, props.class]
+        [title, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </h2>
   );
 }
 
-export function DrawerDescription(props: DrawerTitleProps): JSX.Element {
+interface DrawerDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function DrawerDescription({ id, children, class: cls, ...attrs }: DrawerDescriptionProps): JSX.Element {
   return (
     <p
-      id={props.id}
+      id={id}
       data-slot="drawer-description"
       class={
-        [description, props.class]
+        [description, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </p>
   );
 }
 
-interface DrawerProps {
+interface DrawerProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   direction?: DrawerDirection;
@@ -529,7 +537,7 @@ interface DrawerProps {
 
 let drawerCount = 0;
 
-export default function Drawer(props: DrawerProps): JSX.Element {
+export default function Drawer({ open, onClose, direction, title: titleText, description: descriptionText, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DrawerProps): JSX.Element {
   const titleId = `hella-drawer-title-${++drawerCount}`;
   const descriptionId = `hella-drawer-description-${drawerCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -552,7 +560,7 @@ export default function Drawer(props: DrawerProps): JSX.Element {
   // panel stays mounted under data-state="closed" until its transform
   // transition ends (or the copied fallback budget) unmounts it.
   effect(() => {
-    if (props.open()) {
+    if (open()) {
       wasOpen = true;
       finishExit();
       visible(true);
@@ -563,7 +571,7 @@ export default function Drawer(props: DrawerProps): JSX.Element {
     }
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
+  const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return (
     <>
@@ -572,19 +580,20 @@ export default function Drawer(props: DrawerProps): JSX.Element {
           <DrawerOverlay state={state} fraction={dragFraction} />
           <DrawerContent
             state={state}
-            direction={props.direction}
+            direction={direction}
             fraction={dragFraction}
-            labelledBy={titleId}
-            describedBy={props.description === undefined ? undefined : descriptionId}
-            closeOnEscape={props.closeOnEscape}
-            closeOnOutside={props.closeOnOutside}
-            onClose={props.onClose}
+            aria-labelledby={titleId}
+            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+            closeOnEscape={closeOnEscape}
+            closeOnOutside={closeOnOutside}
+            onClose={onClose}
             onExited={finishExit}
-            class={props.class}
+            class={cls}
+            {...attrs}
             children={[
-              ...(props.title !== undefined ? [<DrawerTitle id={titleId}>{props.title}</DrawerTitle>] : []),
-              ...(props.description !== undefined ? [<DrawerDescription id={descriptionId}>{props.description}</DrawerDescription>] : []),
-              ...flattenChildren(props.children),
+              ...(titleText !== undefined ? [<DrawerTitle id={titleId}>{titleText}</DrawerTitle>] : []),
+              ...(descriptionText !== undefined ? [<DrawerDescription id={descriptionId}>{descriptionText}</DrawerDescription>] : []),
+              ...flattenChildren(children),
             ] as HellaChild[]}
           />
         </Portal>

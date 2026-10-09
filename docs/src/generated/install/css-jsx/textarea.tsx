@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -50,36 +51,23 @@ const invalid = style("textarea-invalid", {
   },
 });
 
-interface TextareaProps {
-  value?: string | (() => string);
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  rows?: number;
-  ariaInvalid?: boolean;
+interface TextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export default function Textarea(props: TextareaProps): JSX.Element {
+export default function Textarea({ class: cls, ...attrs }: TextareaProps): JSX.Element {
   return (
     <textarea
       data-slot="textarea"
-      placeholder={props.placeholder}
-      id={props.id}
-      ariaLabel={props.ariaLabel}
-      rows={props.rows}
-      aria-invalid={props.ariaInvalid ? "true" : undefined}
-      value={props.value}
       class={
         [
           base,
           focus,
           invalid,
-          props.class,
+          cls,
         ]
       }
-      on:input={(e: Event) => props.oninput?.((e.target as HTMLTextAreaElement).value)}
+      {...attrs}
     />
   );
 }

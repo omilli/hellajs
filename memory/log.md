@@ -1,5 +1,14 @@
 # Memory Update Log
 
+## 2026-10-09
+* **merge**: Renumbered 273->277 and 274->278 on merge of attrs-spread: parallel workers allocated IDs the main tree had taken
+
+## 2026-10-08
+* **Creation**: Added concept [275](entries/275.md) (type: decision).
+* **Update**: 273 evidence refresh: unit 04 second collision mechanism (TS18048 keyed-map shadowing, both flavors)
+* **Creation**: Added concept [276](entries/276.md) (type: decision).
+* **Update**: 276: registry bundle errors cite style-spliced line numbers - diagnose by symbol search; 273: refreshed with unit-07 collision pre-flight
+
 ## 2026-10-07
 * **Creation**: Added concept [270](entries/270.md) (type: decision).
 * **Creation**: Added concept [271](entries/271.md) (type: decision).
@@ -7,6 +16,8 @@
 * **Deprecation**: Archived [172](archive/172-bare-optional-children-spread.md) → superseded by [272](entries/272.md).
 * **Deprecation**: Archived [182](archive/182-registry-jsx-canonicals-compile-children.md) → superseded by [272](entries/272-babel-emits-concat-children-bare.md).
 * **Deprecation**: Archived [270](archive/270-bare-props-children-sibling-before.md) → superseded by [272](entries/272-babel-emits-concat-children-bare.md).
+* **Creation**: Added concept [273](entries/273.md) (type: decision).
+* **Creation**: Added concept [274](entries/274.md) (type: decision).
 
 ## 2026-10-05
 * **Creation**: Added concept [268](entries/268.md) (type: decision).

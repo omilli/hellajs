@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   directionVariants,
@@ -36,5 +38,23 @@ describe("direction", () => {
 
   test("all four flavors agree on tag and attributes", () => {
     assertStructuralParity(directionVariants, { dir: "rtl", children: ["x"] });
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(directionVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(directionVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges a user class into the root class across all four variants", () => {
+    for (const variant of directionVariants) {
+      const root = renderVariant(variant, { class: "my-dir", children: variant.child!("x") });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("my-dir");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
   });
 });

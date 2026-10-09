@@ -1,12 +1,14 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
-import { mount, peekState } from "@hellajs/dom";
+import { html, mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  assertAttrForwarded,
   comboboxModules,
   comboboxPartVariants,
   comboboxVariants,
+  classTokens,
   menuModulePart,
   renderVariant,
   type ComboboxEntryVariant,
@@ -363,12 +365,17 @@ describe("combobox", () => {
     expect(content.isConnected).toBe(false);
   });
 
-  test.each(comboboxPartVariants.filter((variant) => variant.part === "Input"))("$format/$style input part threads onInput, onKeydown, and focus restores", (variant) => {
+  test.each(comboboxPartVariants.filter((variant) => variant.part === "Input"))("$format/$style input part threads on:input, on:keydown, and focus restores", (variant) => {
     const onInput = mock<(value: string) => void>(() => {});
     const onKeydown = mock<(e: KeyboardEvent) => void>(() => {});
     const onFocus = mock(() => {});
     const container = setupContainer();
-    const handle = mount(variant.render({ children: [], onInput, onKeydown, onFocus }), container);
+    const handle = mount(variant.render({
+      children: [],
+      "on:input": (e: Event) => onInput((e.target as HTMLInputElement).value),
+      "on:keydown": (e: Event) => onKeydown(e as KeyboardEvent),
+      "on:focus": () => onFocus(),
+    }), container);
     const root = container.firstElementChild as HTMLElement;
     const input = root.querySelector("input") as HTMLInputElement;
     type(input, "ab");
@@ -421,6 +428,58 @@ describe("combobox", () => {
         const Item = menuModulePart<{ value?: string; label?: string }>(comboboxModules, { style, format }, "ComboboxItem");
         expect(Item({ value: "a", label: "A" })).toBeDefined();
       }
+    }
+  });
+
+  test("typing flows through the on:input-routed internal wiring to update the filter", async () => {
+    for (const variant of comboboxVariants) {
+      const { input, content } = await openCombobox(variant);
+      type(input, "BLU");
+      await delay();
+      const visible = [...content.querySelectorAll("[role='option']")].filter((el) => (el as HTMLElement).style.display !== "none");
+      expect(visible.map((el) => el.getAttribute("data-value"))).toEqual(["blueberry"]);
+    }
+  });
+
+  test("forwards user attrs onto the inner input across all four variants", () => {
+    assertAttrForwarded(comboboxVariants, { items: FRUITS, title: "Hella" }, "title", "Hella", (el) => el.querySelector("input")!);
+  });
+
+  test("merges a user class into the input-group root class across all four variants", () => {
+    for (const variant of comboboxVariants) {
+      const root = renderVariant(variant, { items: FRUITS, class: "my-combobox" });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("my-combobox");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
+  });
+
+  test("input part forwards placeholder, id, and kebab aria-controls onto the inner input", () => {
+    for (const variant of comboboxPartVariants.filter((candidate) => candidate.part === "Input")) {
+      const container = setupContainer();
+      const rendered = variant.render({
+        placeholder: "Search fruit",
+        id: "fruit-input",
+        "aria-controls": "fruit-list",
+        state: () => "open" as const,
+      });
+      mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered, container);
+      const input = container.querySelector("input")!;
+      expect(input.getAttribute("placeholder")).toBe("Search fruit");
+      expect(input.id).toBe("fruit-input");
+      expect(input.getAttribute("aria-controls")).toBe("fruit-list");
+    }
+  });
+
+  test("manual trigger part spreads a user on:click handler across all four variants", () => {
+    for (const variant of comboboxPartVariants.filter((candidate) => candidate.part === "Trigger")) {
+      const userClick = mock(() => {});
+      const container = setupContainer();
+      const rendered = variant.render({ "on:click": userClick, children: [] });
+      mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered, container);
+      const trigger = container.querySelector("[data-slot='combobox-trigger']") as HTMLElement;
+      trigger.dispatchEvent(new Event("click", { bubbles: true }));
+      expect(userClick).toHaveBeenCalledTimes(1);
     }
   });
 });

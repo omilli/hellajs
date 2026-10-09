@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
@@ -84,112 +84,118 @@ css({
   },
 });
 
-interface MessageGroupProps {
-  children?: HellaChildren;
+interface MessageGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageGroup(props: MessageGroupProps): JSX.Element {
+export function MessageGroup({ children, class: cls, ...attrs }: MessageGroupProps): JSX.Element {
   return (
     <div
       data-slot="message-group"
       class={
-        [group, props.class]
+        [group, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface MessageProps {
+interface MessageProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   align?: "start" | "end";
-  class?: string;
 }
 
-export function Message(props: MessageProps): JSX.Element {
+export function Message({ align, children, class: cls, ...attrs }: MessageProps): JSX.Element {
   return (
     <div
       data-slot="message"
-      data-align={props.align ?? "start"}
+      data-align={align ?? "start"}
       class={
-        [base, props.class]
+        [base, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface MessageAvatarProps {
-  children?: HellaChildren;
+interface MessageAvatarProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageAvatar(props: MessageAvatarProps): JSX.Element {
+export function MessageAvatar({ children, class: cls, ...attrs }: MessageAvatarProps): JSX.Element {
   return (
     <div
       data-slot="message-avatar"
       class={
-        [avatar, props.class]
+        [avatar, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface MessageContentProps {
-  children?: HellaChildren;
+interface MessageContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageContent(props: MessageContentProps): JSX.Element {
+export function MessageContent({ children, class: cls, ...attrs }: MessageContentProps): JSX.Element {
   return (
     <div
       data-slot="message-content"
       class={
-        [content, props.class]
+        [content, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface MessageHeaderProps {
-  children?: HellaChildren;
+interface MessageHeaderProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageHeader(props: MessageHeaderProps): JSX.Element {
+export function MessageHeader({ children, class: cls, ...attrs }: MessageHeaderProps): JSX.Element {
   return (
     <div
       data-slot="message-header"
       class={
-        [header, props.class]
+        [header, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface MessageFooterProps {
-  children?: HellaChildren;
+interface MessageFooterProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageFooter(props: MessageFooterProps): JSX.Element {
+export function MessageFooter({ children, class: cls, ...attrs }: MessageFooterProps): JSX.Element {
   return (
     <div
       data-slot="message-footer"
       class={
-        [footer, props.class]
+        [footer, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

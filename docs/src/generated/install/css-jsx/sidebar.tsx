@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 
 import { css, keyframes, style, vars } from "@hellajs/css";
 
@@ -924,7 +924,7 @@ interface SidebarState {
   onToggle: () => void;
 }
 
-interface SidebarProviderProps {
+interface SidebarProviderProps extends HTMLAttributes<"div"> {
   /** Controlled open state. When given, the provider never writes its internal signal and `onOpenChange` reports the requested flip. */
   open?: () => boolean;
   defaultOpen?: boolean;
@@ -933,17 +933,17 @@ interface SidebarProviderProps {
   class?: string;
 }
 
-export function SidebarProvider(props: SidebarProviderProps): JSX.Element {
-  const internal = signal(props.defaultOpen ?? true);
+export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, children, class: cls, ...attrs }: SidebarProviderProps): JSX.Element {
+  const internal = signal(defaultOpen ?? true);
   // Two separate states the ref also splits: the viewport query and the
   // mobile sheet's own open flag - conflating them would flip the branch
   // back to desktop on sheet close.
   const viewport = signal(false);
   const sheetOpen = signal(false);
-  const open = (): boolean => (props.open !== undefined ? props.open() : internal());
+  const open = (): boolean => (openProp !== undefined ? openProp() : internal());
   const setOpen = (next: boolean): void => {
-    if (props.open === undefined) internal(next);
-    props.onOpenChange?.(next);
+    if (openProp === undefined) internal(next);
+    onOpenChange?.(next);
   };
   const openMobile = (): boolean => sheetOpen();
   const setOpenMobile = (next: boolean): void => {
@@ -958,7 +958,7 @@ export function SidebarProvider(props: SidebarProviderProps): JSX.Element {
       data-slot="sidebar-wrapper"
       style="--sidebar-width: 16rem; --sidebar-width-icon: 3rem"
       class={
-        [base, props.class]
+        [base, cls]
       }
       hook:afterMount={() => {
         // Mobile detection: the ref's use-mobile hook, inlined as a
@@ -983,8 +983,9 @@ export function SidebarProvider(props: SidebarProviderProps): JSX.Element {
       hook:beforeDestroy={() => {
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}
+      {children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}
     </div>
   );
 }
@@ -996,7 +997,7 @@ type SidebarVariant = "sidebar" | "floating" | "inset";
 
 type SidebarCollapsible = "offcanvas" | "icon" | "none";
 
-interface SidebarProps {
+interface SidebarProps extends HTMLAttributes<"div"> {
   /** Desktop expanded accessor threaded from SidebarProvider. */
   open?: () => boolean;
   /** Mobile viewport accessor threaded from SidebarProvider. */
@@ -1014,11 +1015,11 @@ interface SidebarProps {
 
 let sidebarCount = 0;
 
-export function Sidebar(props: SidebarProps): JSX.Element {
-  const side = props.side ?? "left";
-  const variant = props.variant ?? "sidebar";
-  const collapsible = props.collapsible ?? "offcanvas";
-  const collapsed = (): boolean => props.open !== undefined && props.open() === false;
+export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChange, side: sideProp, variant: variantProp, collapsible: collapsibleProp, class: cls, children, ...attrs }: SidebarProps): JSX.Element {
+  const side = sideProp ?? "left";
+  const variant = variantProp ?? "sidebar";
+  const collapsible = collapsibleProp ?? "offcanvas";
+  const collapsed = (): boolean => open !== undefined && open() === false;
   const variantIsInset = variant === "floating" || variant === "inset";
 
   if (collapsible === "none") {
@@ -1026,10 +1027,11 @@ export function Sidebar(props: SidebarProps): JSX.Element {
       <div
         data-slot="sidebar"
         class={
-          [none, props.class]
+          [none, cls]
         }
+        {...attrs}
       >
-        {props.children}
+        {children}
       </div>
     );
   }
@@ -1039,12 +1041,12 @@ export function Sidebar(props: SidebarProps): JSX.Element {
   // provider's matchMedia flip would never propagate.
   return (
     <>
-      {() => props.mobile?.() === true ? (
+      {() => mobileProp?.() === true ? (
         <SidebarMobileSheet
-          open={() => props.openMobile?.() ?? false}
-          onClose={() => props.onOpenMobileChange?.(false)}
+          open={() => openMobile?.() ?? false}
+          onClose={() => onOpenMobileChange?.(false)}
           side={side}
-          children={flattenChildren(props.children)}
+          children={flattenChildren(children)}
         />
       ) : (
         <div
@@ -1056,6 +1058,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
           class={
             [sidebar]
           }
+          {...attrs}
         >
           {/* This is what handles the sidebar gap on desktop */}
           <div
@@ -1067,7 +1070,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
           <div
             data-slot="sidebar-container"
             class={
-              [container, containerSides[side], variantIsInset ? containerInset : containerPlain, props.class]
+              [container, containerSides[side], variantIsInset ? containerInset : containerPlain, cls]
             }
           >
             <div
@@ -1077,7 +1080,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
                 [inner]
               }
             >
-              {props.children}
+              {children}
             </div>
           </div>
         </div>
@@ -1214,26 +1217,25 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
   );
 }
 
-interface SidebarTriggerProps {
-  onclick?: () => void;
+interface SidebarTriggerProps extends HTMLAttributes<"button"> {
   onToggle?: () => void;
   class?: string;
-  children?: HellaChildren;
 }
 
-export function SidebarTrigger(props: SidebarTriggerProps): JSX.Element {
+export function SidebarTrigger({ onToggle, "on:click": userClick, class: cls, ...attrs }: SidebarTriggerProps): JSX.Element {
   return (
     <button
       type="button"
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       class={
-        [trigger, props.class]
+        [trigger, cls]
       }
-      on:click={() => {
-        props.onclick?.();
-        props.onToggle?.();
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onToggle?.();
       }}
+      {...attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -1255,14 +1257,14 @@ export function SidebarTrigger(props: SidebarTriggerProps): JSX.Element {
   );
 }
 
-interface SidebarRailProps {
+interface SidebarRailProps extends HTMLAttributes<"button"> {
   onToggle?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
 /** The drag-handle edge - click toggles; width dragging is out of scope (bounded open). */
-export function SidebarRail(props: SidebarRailProps): JSX.Element {
+export function SidebarRail({ onToggle, "on:click": userClick, class: cls, children, ...attrs }: SidebarRailProps): JSX.Element {
   return (
     <button
       type="button"
@@ -1272,92 +1274,86 @@ export function SidebarRail(props: SidebarRailProps): JSX.Element {
       title="Toggle Sidebar"
       tabIndex={-1}
       class={
-        [rail, props.class]
+        [rail, cls]
       }
-      on:click={() => props.onToggle?.()}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onToggle?.();
+      }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface SidebarPartProps {
+interface SidebarPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SidebarInset(props: SidebarPartProps): JSX.Element {
+export function SidebarInset({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <main
       data-slot="sidebar-inset"
       class={
-        [inset, props.class]
+        [inset, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </main>
   );
 }
 
-interface SidebarInputProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+interface SidebarInputProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function SidebarInput(props: SidebarInputProps): JSX.Element {
+export function SidebarInput({ class: cls, ...attrs }: SidebarInputProps): JSX.Element {
   return (
     <input
       data-sidebar="input"
       data-slot="sidebar-input"
-      type={props.type}
-      placeholder={props.placeholder}
-      id={props.id}
-      ariaLabel={props.ariaLabel}
-      aria-invalid={props.ariaInvalid ? "true" : undefined}
-      value={props.value}
       class={
-        [inputBase, inputFocus, inputInvalid, input, props.class]
+        [inputBase, inputFocus, inputInvalid, input, cls]
       }
-      on:input={(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}
+      {...attrs}
     />
   );
 }
 
-export function SidebarHeader(props: SidebarPartProps): JSX.Element {
+export function SidebarHeader({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
       class={
-        [header, props.class]
+        [header, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarFooter(props: SidebarPartProps): JSX.Element {
+export function SidebarFooter({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-footer"
       data-sidebar="footer"
       class={
-        [footer, props.class]
+        [footer, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarSeparator(props: SidebarPartProps): JSX.Element {
+export function SidebarSeparator({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-separator"
@@ -1366,121 +1362,127 @@ export function SidebarSeparator(props: SidebarPartProps): JSX.Element {
       data-orientation="horizontal"
       aria-orientation="horizontal"
       class={
-        [separatorBase, separator, props.class]
+        [separatorBase, separator, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarContent(props: SidebarPartProps): JSX.Element {
+export function SidebarContent({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-content"
       data-sidebar="content"
       class={
-        [content, props.class]
+        [content, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarGroup(props: SidebarPartProps): JSX.Element {
+export function SidebarGroup({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
       class={
-        [group, props.class]
+        [group, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarGroupLabel(props: SidebarPartProps): JSX.Element {
+export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       class={
-        [groupLabel, props.class]
+        [groupLabel, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface SidebarGroupActionProps {
-  onclick?: () => void;
+interface SidebarGroupActionProps extends HTMLAttributes<"button"> {
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarGroupAction(props: SidebarGroupActionProps): JSX.Element {
+export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGroupActionProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="sidebar-group-action"
       data-sidebar="group-action"
       class={
-        [groupAction, props.class]
+        [groupAction, cls]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-export function SidebarGroupContent(props: SidebarPartProps): JSX.Element {
+export function SidebarGroupContent({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-content"
       data-sidebar="group-content"
       class={
-        [groupContent, props.class]
+        [groupContent, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarMenu(props: SidebarPartProps): JSX.Element {
+export function SidebarMenu({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <ul
       data-slot="sidebar-menu"
       data-sidebar="menu"
       class={
-        [menu, props.class]
+        [menu, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </ul>
   );
 }
 
-export function SidebarMenuItem(props: SidebarPartProps): JSX.Element {
+export function SidebarMenuItem({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <li
       data-slot="sidebar-menu-item"
       data-sidebar="menu-item"
       class={
-        [menuItem, props.class]
+        [menuItem, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </li>
   );
 }
 
-interface SidebarMenuButtonProps {
+interface SidebarMenuButtonProps extends HTMLAttributes<"button"> {
   active?: boolean;
   /** Tooltip label shown while the sidebar is collapsed to icon mode (hover). */
   tooltip?: HellaChildren;
@@ -1490,41 +1492,38 @@ interface SidebarMenuButtonProps {
   open?: () => boolean;
   /** Mobile viewport accessor threaded from SidebarProvider; the tooltip never shows on mobile. */
   mobile?: () => boolean;
-  type?: string;
-  disabled?: boolean;
-  onclick?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuButton(props: SidebarMenuButtonProps): JSX.Element {
-  const variant = props.variant ?? "default";
-  const size = props.size ?? "default";
+export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: variantProp, size: sizeProp, open, mobile: mobileProp, disabled, class: cls, children, ...attrs }: SidebarMenuButtonProps): JSX.Element {
+  const variant = variantProp ?? "default";
+  const size = sizeProp ?? "default";
 
   const button = (
     <button
-      type={props.type ?? "button"}
+      type="button"
       data-sidebar="menu-button"
       data-slot="sidebar-menu-button"
       data-size={size}
-      data-active={props.active ? "true" : undefined}
-      disabled={props.disabled}
+      data-active={active ? "true" : undefined}
+      disabled={disabled as boolean | undefined}
       class={
-        [menuButton, menuButtonVariants[variant], menuButtonSizes[size], props.class]
+        [menuButton, menuButtonVariants[variant], menuButtonSizes[size], cls]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 
-  if (props.tooltip === undefined) return button;
+  if (tooltipProp === undefined) return button;
 
   // The ref composes its tooltip entry around the button in icon mode; this
   // entry is self-contained, so the hover wiring (delay 0) is duplicated inline.
   const tooltipId = `hella-sidebar-tooltip-${++sidebarCount}`;
   const tooltipOpen = signal(false);
-  const hidden = (): boolean => props.open === undefined || props.open() || (props.mobile?.() ?? false);
+  const hidden = (): boolean => open === undefined || open() || (mobileProp?.() ?? false);
   const disposals: (() => void)[] = [];
   let triggerNode: Element | undefined;
 
@@ -1567,7 +1566,7 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): JSX.Element {
               disposals.push(anchorPosition(anchor, node, { placement: "right" }));
             }}
           >
-            {props.tooltip}
+            {tooltipProp}
           </div>
         </Portal>
       )}
@@ -1575,50 +1574,50 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): JSX.Element {
   );
 }
 
-interface SidebarMenuActionProps {
+interface SidebarMenuActionProps extends HTMLAttributes<"button"> {
   showOnHover?: boolean;
-  onclick?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuAction(props: SidebarMenuActionProps): JSX.Element {
+export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs }: SidebarMenuActionProps): JSX.Element {
   return (
     <button
       type="button"
       data-sidebar="menu-action"
       data-slot="sidebar-menu-action"
-      data-show-on-hover={props.showOnHover ? "true" : undefined}
+      data-show-on-hover={showOnHover ? "true" : undefined}
       class={
-        [menuAction, props.showOnHover ? menuActionHover : "", props.class]
+        [menuAction, showOnHover ? menuActionHover : "", cls]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-export function SidebarMenuBadge(props: SidebarPartProps): JSX.Element {
+export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-sidebar="menu-badge"
       data-slot="sidebar-menu-badge"
       class={
-        [menuBadge, props.class]
+        [menuBadge, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface SidebarMenuSkeletonProps {
+interface SidebarMenuSkeletonProps extends HTMLAttributes<"div"> {
   showIcon?: boolean;
   class?: string;
 }
 
-export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): JSX.Element {
+export function SidebarMenuSkeleton({ showIcon, class: cls, ...attrs }: SidebarMenuSkeletonProps): JSX.Element {
   // Random width between 50 to 90%, fixed per call.
   const width = `${Math.floor(Math.random() * 40) + 50}%`;
 
@@ -1627,10 +1626,11 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): JSX.Elemen
       data-sidebar="menu-skeleton"
       data-slot="sidebar-menu-skeleton"
       class={
-        [menuSkeleton, props.class]
+        [menuSkeleton, cls]
       }
+      {...attrs}
     >
-      {props.showIcon === true && (
+      {showIcon === true && (
         <div
           data-sidebar="menu-skeleton-icon"
           class={
@@ -1649,57 +1649,58 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): JSX.Elemen
   );
 }
 
-export function SidebarMenuSub(props: SidebarPartProps): JSX.Element {
+export function SidebarMenuSub({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <ul
       data-sidebar="menu-sub"
       data-slot="sidebar-menu-sub"
       class={
-        [menuSub, props.class]
+        [menuSub, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </ul>
   );
 }
 
-export function SidebarMenuSubItem(props: SidebarPartProps): JSX.Element {
+export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <li
       data-sidebar="menu-sub-item"
       data-slot="sidebar-menu-sub-item"
       class={
-        [menuSubItem, props.class]
+        [menuSubItem, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </li>
   );
 }
 
-interface SidebarMenuSubButtonProps {
+interface SidebarMenuSubButtonProps extends HTMLAttributes<"a"> {
   size?: "sm" | "md";
   active?: boolean;
-  href?: string;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuSubButton(props: SidebarMenuSubButtonProps): JSX.Element {
-  const size = props.size ?? "md";
+export function SidebarMenuSubButton({ size: sizeProp, active, class: cls, children, ...attrs }: SidebarMenuSubButtonProps): JSX.Element {
+  const size = sizeProp ?? "md";
 
   return (
     <a
-      href={props.href}
       data-sidebar="menu-sub-button"
       data-slot="sidebar-menu-sub-button"
       data-size={size}
-      data-active={props.active ? "true" : undefined}
+      data-active={active ? "true" : undefined}
       class={
-        [menuSubButton, menuSubSizes[size], props.class]
+        [menuSubButton, menuSubSizes[size], cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </a>
   );
 }

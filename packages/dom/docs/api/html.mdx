@@ -117,6 +117,19 @@ html`<input disabled />`        // disabled=true
 html`<input disabled=${flag} />` // conditional
 ```
 
+### Attribute Spread
+
+Spread an object of attributes onto an element with `...${attrs}`. Entries merge at the spread's source position: a spread entry overrides a literal attribute written before it, and a literal written after the spread overrides the spread's entry (later wins). `null`, `undefined`, and primitive spread values merge nothing. Prefixed keys inside the spread (`on:click`, `e:focus`) ride through to the same render routing as declared prefixed attributes.
+
+```js
+import { html, mount } from "@hellajs/dom";
+
+const attrs = { disabled: true, "on:click": () => alert("hi") };
+
+mount(html`<button class="btn" ...${attrs}>Go</button>`, "#app");
+// <button class="btn" disabled>Go</button>; the click handler fires via delegation
+```
+
 ### Components
 
 Define reusable component functions.

@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import babel from "@babel/core";
 import { processComponentAttributes } from "../src/processors/attributes.mjs";
-import { transformJSX } from "./helpers";
+import { transformJSX, normalize } from "./helpers";
 
 
 describe("babel", () => {
@@ -211,6 +211,16 @@ describe("babel", () => {
       const output = transformJSX('const node = html`<div data-value="test" aria-label="label"></div>`;');
       expect(output).toContain('"data-value": "test"');
       expect(output).toContain('"aria-label": "label"');
+    });
+
+    test("spread in template emits a positional spreadElement inside props", () => {
+      const output = transformJSX('const node = html`<button class="a" ...${attrs} id="b"></button>`;');
+      // Spread lands at its source position: byte-shape equivalent to the JSX
+      // flavor's `props: { ...attrs }` (statics before stay before, after stay after).
+      expect(normalize(output)).toContain('props: { class: "a", ...attrs, id: "b" }');
+
+      const spreadOnly = transformJSX("const node = html`<div ...${attrs}></div>`;");
+      expect(normalize(spreadOnly)).toContain("props: { ...attrs }");
     });
 
     test("component with static attribute in template", () => {

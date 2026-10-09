@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -186,26 +186,26 @@ const chevronIcon = (): HellaNode =>
     <path d="m9 18 6-6-6-6" />
   </svg>` as HellaNode;
 
-interface ContextMenuTriggerProps {
+interface ContextMenuTriggerProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger zone; the composed ContextMenu renders the same shape wired to the `contextmenu` listener. */
-export function ContextMenuTrigger(props: ContextMenuTriggerProps): HellaNode {
+export function ContextMenuTrigger({ children, class: cls, ...attrs }: ContextMenuTriggerProps): HellaNode {
   return html`
     <span
       data-slot="context-menu-trigger"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface ContextMenuContentProps {
+interface ContextMenuContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchorSide;
   align?: AnchorAlign;
   /** Resolves the element the content anchors to; positioning is skipped when undefined. */
@@ -220,10 +220,10 @@ interface ContextMenuContentProps {
   class?: string;
 }
 
-export function ContextMenuContent(props: ContextMenuContentProps): HellaNode {
-  const side = props.side ?? "bottom";
-  const align = props.align ?? "start";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function ContextMenuContent({ state, id, side: sideProp, align: alignProp, anchor, onDismiss, onExited, onArrowLeft, children, class: cls, ...attrs }: ContextMenuContentProps): HellaNode {
+  const side = sideProp ?? "bottom";
+  const align = alignProp ?? "start";
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -234,33 +234,33 @@ export function ContextMenuContent(props: ContextMenuContentProps): HellaNode {
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return html`
     <div
       role="menu"
       tabindex="-1"
-      id="${props.id}"
+      id="${id}"
       data-slot="context-menu-content"
-      data-state="${state}"
+      data-state="${stateOf}"
       data-side="${side}"
       data-align="${align}"
       class="${
-        cn("z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", props.class)
+        cn("z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
+        const anchorEl = anchor?.();
         if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
-        if (props.onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
-          const onSelect = (): void => props.onDismiss?.();
+        if (onDismiss) {
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
+          const onSelect = (): void => onDismiss?.();
           document.addEventListener("hella:menu-select", onSelect);
           wirings.push(() => document.removeEventListener("hella:menu-select", onSelect));
         }
         wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
-        const onKey = menuKeyDown(props.onArrowLeft)(node);
+        const onKey = menuKeyDown(onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
         // Focus moves to the first activatable item on open (the content
@@ -270,7 +270,7 @@ export function ContextMenuContent(props: ContextMenuContentProps): HellaNode {
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -279,79 +279,79 @@ export function ContextMenuContent(props: ContextMenuContentProps): HellaNode {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ContextMenuPartProps {
+interface ContextMenuPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function ContextMenuGroup(props: ContextMenuPartProps): HellaNode {
+export function ContextMenuGroup({ children, class: cls, ...attrs }: ContextMenuPartProps): HellaNode {
   return html`
     <div
       data-slot="context-menu-group"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ContextMenuItemProps {
+interface ContextMenuItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   destructive?: boolean;
   inset?: boolean;
-  disabled?: boolean;
-  onclick?: () => void;
   /** Shortcut text rendered as a trailing Shortcut span. */
   shortcut?: string;
   class?: string;
 }
 
-export function ContextMenuItem(props: ContextMenuItemProps): HellaNode {
+export function ContextMenuItem({ destructive, inset, disabled, "on:click": userClick, shortcut: shortcutSlot, children, class: cls, ...attrs }: ContextMenuItemProps): HellaNode {
   return html`
     <div
       role="menuitem"
       tabindex="-1"
       data-slot="context-menu-item"
-      data-variant="${props.destructive ? "destructive" : "default"}"
-      data-inset="${props.inset ? "true" : undefined}"
-      data-disabled="${props.disabled ? "true" : undefined}"
-      aria-disabled="${props.disabled ? "true" : undefined}"
+      data-variant="${destructive ? "destructive" : "default"}"
+      data-inset="${inset ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
+      aria-disabled="${disabled ? "true" : undefined}"
       class="${
-        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!", props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!", cls)
       }"
-      on:click="${() => {
-        if (props.disabled) return;
-        props.onclick?.();
+      on:click="${function (this: HTMLElement, e: MouseEvent) {
+        if (disabled) return;
+        userClick?.call(this, e);
         closeAllMenus();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${() => (props.shortcut !== undefined ? ContextMenuShortcut({ children: props.shortcut }) : null)}
+      ${() => children}${() => (shortcutSlot !== undefined ? ContextMenuShortcut({ children: shortcutSlot }) : null)}
     </div>
   ` as HellaNode;
 }
 
-interface ContextMenuCheckboxItemProps {
+interface ContextMenuCheckboxItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   /** Checked state. A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`. */
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
   class?: string;
 }
 
-export function ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps): HellaNode {
-  const accessor = typeof props.checked === "function" ? props.checked : undefined;
-  const internal = signal(typeof props.checked === "boolean" ? props.checked : false);
+export function ContextMenuCheckboxItem({ checked: checkedProp, onCheckedChange, disabled, children, class: cls, ...attrs }: ContextMenuCheckboxItemProps): HellaNode {
+  const accessor = typeof checkedProp === "function" ? checkedProp : undefined;
+  const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (accessor ? accessor() : internal());
   const toggle = (): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const next = !checked();
     if (!accessor) internal(next);
-    props.onCheckedChange?.(next);
+    onCheckedChange?.(next);
     closeAllMenus();
   };
   return html`
@@ -361,12 +361,13 @@ export function ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps): He
       data-slot="context-menu-checkbox-item"
       aria-checked="${() => (checked() ? "true" : "false")}"
       data-state="${() => (checked() ? "checked" : "unchecked")}"
-      data-disabled="${props.disabled ? "true" : undefined}"
-      aria-disabled="${props.disabled ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
+      aria-disabled="${disabled ? "true" : undefined}"
       class="${
-        cn("relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
       }"
       on:click="${toggle}"
+      ...${attrs}
     >
       <span
         data-slot="context-menu-indicator"
@@ -376,12 +377,12 @@ export function ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps): He
       >
         ${() => (checked() ? checkIcon() : null)}
       </span>
-      ${() => props.children}
+      ${() => children}
     </div>
   ` as HellaNode;
 }
 
-interface ContextMenuRadioGroupProps {
+interface ContextMenuRadioGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   items?: MenuEntry[];
   /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
@@ -390,21 +391,22 @@ interface ContextMenuRadioGroupProps {
   class?: string;
 }
 
-export function ContextMenuRadioGroup(props: ContextMenuRadioGroupProps): HellaNode {
+export function ContextMenuRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: ContextMenuRadioGroupProps): HellaNode {
   const internal = signal("");
-  const current = (): string => (props.value !== undefined ? props.value() : internal());
+  const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
-    if (props.value === undefined) internal(value);
-    props.onValueChange?.(value);
+    if (valueProp === undefined) internal(value);
+    onValueChange?.(value);
   };
   return html`
     <div
       data-slot="context-menu-radio-group"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
+      ...${attrs}
     >
-      ${() => props.children}${(props.items ?? []).map((entry) => ContextMenuRadioItem({
+      ${() => children}${(items ?? []).map((entry) => ContextMenuRadioItem({
         value: entry.value,
         checked: () => current() === entry.value,
         disabled: entry.disabled,
@@ -415,37 +417,37 @@ export function ContextMenuRadioGroup(props: ContextMenuRadioGroupProps): HellaN
   ` as HellaNode;
 }
 
-interface ContextMenuRadioItemProps {
+interface ContextMenuRadioItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   value?: string;
   /** Checked state. A boolean reads statically; an accessor keeps the item reactive against its owning group. */
   checked?: boolean | (() => boolean);
   onSelect?: () => void;
-  disabled?: boolean;
   class?: string;
 }
 
-export function ContextMenuRadioItem(props: ContextMenuRadioItemProps): HellaNode {
+export function ContextMenuRadioItem({ value, checked: checkedProp, onSelect, disabled, children, class: cls, ...attrs }: ContextMenuRadioItemProps): HellaNode {
   const checked = (): boolean =>
-    typeof props.checked === "function" ? props.checked() : props.checked ?? false;
+    typeof checkedProp === "function" ? checkedProp() : checkedProp ?? false;
   return html`
     <div
       role="menuitemradio"
       tabindex="-1"
       data-slot="context-menu-radio-item"
-      data-value="${props.value}"
+      data-value="${value}"
       aria-checked="${() => (checked() ? "true" : "false")}"
       data-state="${() => (checked() ? "checked" : "unchecked")}"
-      data-disabled="${props.disabled ? "true" : undefined}"
-      aria-disabled="${props.disabled ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
+      aria-disabled="${disabled ? "true" : undefined}"
       class="${
-        cn("relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
       }"
       on:click="${() => {
-        if (props.disabled) return;
-        props.onSelect?.();
+        if (disabled) return;
+        onSelect?.();
         closeAllMenus();
       }}"
+      ...${attrs}
     >
       <span
         data-slot="context-menu-indicator"
@@ -455,53 +457,61 @@ export function ContextMenuRadioItem(props: ContextMenuRadioItemProps): HellaNod
       >
         ${() => (checked() ? circleIcon() : null)}
       </span>
-      ${() => props.children}
+      ${() => children}
     </div>
   ` as HellaNode;
 }
 
-interface ContextMenuLabelProps {
+interface ContextMenuLabelProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   inset?: boolean;
   class?: string;
 }
 
-export function ContextMenuLabel(props: ContextMenuLabelProps): HellaNode {
+export function ContextMenuLabel({ inset, children, class: cls, ...attrs }: ContextMenuLabelProps): HellaNode {
   return html`
     <div
       data-slot="context-menu-label"
-      data-inset="${props.inset ? "true" : undefined}"
+      data-inset="${inset ? "true" : undefined}"
       class="${
-        cn("px-2 py-1.5 text-sm font-medium text-foreground data-[inset]:pl-8", props.class)
+        cn("px-2 py-1.5 text-sm font-medium text-foreground data-[inset]:pl-8", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function ContextMenuSeparator(props: ContextMenuPartProps): HellaNode {
+export function ContextMenuSeparator({ class: cls, ...attrs }: ContextMenuPartProps): HellaNode {
   return html`
     <div
       role="separator"
       data-slot="context-menu-separator"
       class="${
-        cn("-mx-1 my-1 h-px bg-border", props.class)
+        cn("-mx-1 my-1 h-px bg-border", cls)
       }"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-export function ContextMenuShortcut(props: ContextMenuPartProps): HellaNode {
+interface ContextMenuShortcutProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function ContextMenuShortcut({ children, class: cls, ...attrs }: ContextMenuShortcutProps): HellaNode {
   return html`
     <span
       data-slot="context-menu-shortcut"
       class="${
-        cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
+        cn("ml-auto text-xs tracking-widest text-muted-foreground", cls)
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface ContextMenuSubTriggerProps {
+interface ContextMenuSubTriggerProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   inset?: boolean;
   /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
@@ -511,31 +521,31 @@ interface ContextMenuSubTriggerProps {
   class?: string;
 }
 
-export function ContextMenuSubTrigger(props: ContextMenuSubTriggerProps): HellaNode {
-  const state = (): "open" | "closed" => props.state?.() ?? "closed";
+export function ContextMenuSubTrigger({ inset, state, onOpen, children, class: cls, ...attrs }: ContextMenuSubTriggerProps): HellaNode {
+  const stateOf = (): "open" | "closed" => state?.() ?? "closed";
   const teardown: (() => void)[] = [];
   return html`
     <div
       role="menuitem"
       tabindex="-1"
       data-slot="context-menu-sub-trigger"
-      data-state="${state}"
-      data-inset="${props.inset ? "true" : undefined}"
+      data-state="${stateOf}"
+      data-inset="${inset ? "true" : undefined}"
       aria-haspopup="menu"
-      aria-expanded="${() => (state() === "open" ? "true" : "false")}"
+      aria-expanded="${() => (stateOf() === "open" ? "true" : "false")}"
       class="${
-        cn("flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", props.class)
+        cn("flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
       }"
-      on:click="${() => props.onOpen?.()}"
+      on:click="${() => onOpen?.()}"
       hook:afterMount="${(node: Element) => {
-        if (!(node instanceof HTMLElement) || !props.onOpen) return;
+        if (!(node instanceof HTMLElement) || !onOpen) return;
         // Hover intent: ~100ms rest opens, leaving before it fires cancels.
         let timer: ReturnType<typeof setTimeout> | null = null;
         const enter = (): void => {
           if (timer !== null) return;
           timer = setTimeout(() => {
             timer = null;
-            props.onOpen?.();
+            onOpen?.();
           }, 100);
         };
         const leave = (): void => {
@@ -554,13 +564,14 @@ export function ContextMenuSubTrigger(props: ContextMenuSubTriggerProps): HellaN
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${chevronIcon()}
+      ${() => children}${chevronIcon()}
     </div>
   ` as HellaNode;
 }
 
-interface ContextMenuSubContentProps {
+interface ContextMenuSubContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
   side?: AnchorSide;
   align?: AnchorAlign;
@@ -578,10 +589,10 @@ interface ContextMenuSubContentProps {
   class?: string;
 }
 
-export function ContextMenuSubContent(props: ContextMenuSubContentProps): HellaNode {
-  const side = props.side ?? "right";
-  const align = props.align ?? "start";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function ContextMenuSubContent({ state, side: sideProp, align: alignProp, anchor, onDismiss, onExited, onArrowLeft, onPointerEnter, children, class: cls, ...attrs }: ContextMenuSubContentProps): HellaNode {
+  const side = sideProp ?? "right";
+  const align = alignProp ?? "start";
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -592,7 +603,7 @@ export function ContextMenuSubContent(props: ContextMenuSubContentProps): HellaN
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return html`
@@ -600,37 +611,37 @@ export function ContextMenuSubContent(props: ContextMenuSubContentProps): HellaN
       role="menu"
       tabindex="-1"
       data-slot="context-menu-sub-content"
-      data-state="${state}"
+      data-state="${stateOf}"
       data-side="${side}"
       data-align="${align}"
       class="${
-        cn("z-50 min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", props.class)
+        cn("z-50 min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
+        const anchorEl = anchor?.();
         if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
-        if (props.onDismiss) {
+        if (onDismiss) {
           // Submenu layers register their own dismissal: Escape pops one
           // level, an outside pointerdown closes the sub before the parent.
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
-          const onSelect = (): void => props.onDismiss?.();
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
+          const onSelect = (): void => onDismiss?.();
           document.addEventListener("hella:menu-select", onSelect);
           wirings.push(() => document.removeEventListener("hella:menu-select", onSelect));
         }
         wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
-        const onKey = menuKeyDown(props.onArrowLeft)(node);
+        const onKey = menuKeyDown(onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
-        if (props.onPointerEnter) {
-          const onPointerEnter = (): void => props.onPointerEnter?.();
-          node.addEventListener("pointerenter", onPointerEnter);
-          wirings.push(() => node.removeEventListener("pointerenter", onPointerEnter));
+        if (onPointerEnter) {
+          const onPointerEnterListener = (): void => onPointerEnter?.();
+          node.addEventListener("pointerenter", onPointerEnterListener);
+          wirings.push(() => node.removeEventListener("pointerenter", onPointerEnterListener));
         }
         const first = menuItems(node)[0];
         (first ?? node).focus();
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -639,17 +650,18 @@ export function ContextMenuSubContent(props: ContextMenuSubContentProps): HellaN
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ContextMenuSubProps {
+interface ContextMenuSubProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   content?: HellaChildren;
   class?: string;
 }
 
-export function ContextMenuSub(props: ContextMenuSubProps): HellaNode {
+export function ContextMenuSub({ content: contentSlot, children, class: cls, ...attrs }: ContextMenuSubProps): HellaNode {
   const s = menuOpenState({});
   let triggerNode: HTMLElement | undefined;
   let openTimer: ReturnType<typeof setTimeout> | null = null;
@@ -675,7 +687,7 @@ export function ContextMenuSub(props: ContextMenuSubProps): HellaNode {
       aria-haspopup="menu"
       aria-expanded="${() => (s.isOpen() ? "true" : "false")}"
       class="${
-        cn("flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", props.class)
+        cn("flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
       }"
       on:click="${() => s.setOpen(true)}"
       hook:afterMount="${(node: Element) => {
@@ -712,8 +724,9 @@ export function ContextMenuSub(props: ContextMenuSubProps): HellaNode {
         if (openTimer !== null) clearTimeout(openTimer);
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${chevronIcon()}${() => s.visible() && Portal({
+      ${() => children}${chevronIcon()}${() => s.visible() && Portal({
         to: "body",
         children: [
           ContextMenuSubContent({
@@ -728,7 +741,7 @@ export function ContextMenuSub(props: ContextMenuSubProps): HellaNode {
                 closeTimer = null;
               }
             },
-            children: props.content,
+            children: contentSlot,
           }) as HellaChild,
         ],
       })}
@@ -736,7 +749,7 @@ export function ContextMenuSub(props: ContextMenuSubProps): HellaNode {
   ` as HellaNode;
 }
 
-interface ContextMenuProps {
+interface ContextMenuProps extends HTMLAttributes<"span"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
   children?: HellaChildren;
@@ -746,8 +759,8 @@ interface ContextMenuProps {
 
 let contextMenuCount = 0;
 
-export default function ContextMenu(props: ContextMenuProps): HellaNode {
-  const s = menuOpenState(props);
+export default function ContextMenu({ open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: ContextMenuProps): HellaNode {
+  const s = menuOpenState({ open, onOpenChange });
   const contentId = `hella-context-menu-content-${++contextMenuCount}`;
   let triggerNode: HTMLElement | undefined;
   let anchorNode: HTMLElement | undefined;
@@ -795,7 +808,7 @@ export default function ContextMenu(props: ContextMenuProps): HellaNode {
       aria-haspopup="menu"
       tabindex="-1"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
       on:contextmenu="${(e: Event) => {
         e.preventDefault();
@@ -804,8 +817,9 @@ export default function ContextMenu(props: ContextMenuProps): HellaNode {
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${() => s.visible() && Portal({
+      ${() => children}${() => s.visible() && Portal({
         to: "body",
         children: [
           ContextMenuContent({
@@ -814,7 +828,7 @@ export default function ContextMenu(props: ContextMenuProps): HellaNode {
             anchor: () => anchorNode,
             onDismiss: () => s.setOpen(false),
             onExited: s.finishExit,
-            children: props.content,
+            children: contentSlot,
           }) as HellaChild,
         ],
       })}

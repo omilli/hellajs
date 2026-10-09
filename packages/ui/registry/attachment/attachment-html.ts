@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const actions: string;
@@ -20,36 +20,37 @@ declare const trigger: string;
 
 type AttachmentState = "idle" | "uploading" | "processing" | "error" | "done";
 
-interface AttachmentProps {
+interface AttachmentProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   state?: AttachmentState;
   size?: "default" | "sm" | "xs";
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
-export function Attachment(props: AttachmentProps): HellaNode {
+export function Attachment({ state, size, orientation, children, class: cls, ...attrs }: AttachmentProps): HellaNode {
   return html`
     <div
       data-slot="attachment"
-      data-state="${props.state ?? "done"}"
-      data-size="${props.size ?? "default"}"
-      data-orientation="${props.orientation ?? "horizontal"}"
+      data-state="${state ?? "done"}"
+      data-size="${size ?? "default"}"
+      data-orientation="${orientation ?? "horizontal"}"
       class="${
         // @hella:compose
-        [base, sizes[props.size ?? "default"], orientations[props.orientation ?? "horizontal"], props.class]
+        [base, sizes[size ?? "default"], orientations[orientation ?? "horizontal"], cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface AttachmentMediaProps {
+interface AttachmentMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "icon" | "image";
   /** The owning Attachment's state; inlines the loading spinner on uploading and the error glyph on error when no children are authored. */
   state?: AttachmentState;
-  class?: string;
 }
 
 const loaderIcon = (): HellaNode => html`
@@ -84,160 +85,163 @@ const errorIcon = (): HellaNode => html`
     <path d="m9 9 6 6" />
   </svg>` as HellaNode;
 
-export function AttachmentMedia(props: AttachmentMediaProps): HellaNode {
+export function AttachmentMedia({ variant, state, children, class: cls, ...attrs }: AttachmentMediaProps): HellaNode {
   const autoIcon = (): HellaChildren | undefined => {
-    if (props.children !== undefined) return undefined;
-    if (props.state === "uploading") return loaderIcon();
-    if (props.state === "error") return errorIcon();
+    if (children !== undefined) return undefined;
+    if (state === "uploading") return loaderIcon();
+    if (state === "error") return errorIcon();
     return undefined;
   };
 
   return html`
     <div
       data-slot="attachment-media"
-      data-variant="${props.variant ?? "icon"}"
+      data-variant="${variant ?? "icon"}"
       class="${
         // @hella:compose
-        [media, mediaVariants[props.variant ?? "icon"], props.class]
+        [media, mediaVariants[variant ?? "icon"], cls]
         // @hella:end
       }"
-    >${() => props.children ?? autoIcon()}</div>
+      ...${attrs}
+    >${() => children ?? autoIcon()}</div>
   ` as HellaNode;
 }
 
-interface AttachmentContentProps {
-  children?: HellaChildren;
+interface AttachmentContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentContent(props: AttachmentContentProps): HellaNode {
+export function AttachmentContent({ children, class: cls, ...attrs }: AttachmentContentProps): HellaNode {
   return html`
     <div
       data-slot="attachment-content"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface AttachmentTitleProps {
-  children?: HellaChildren;
+interface AttachmentTitleProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentTitle(props: AttachmentTitleProps): HellaNode {
+export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTitleProps): HellaNode {
   return html`
     <span
       data-slot="attachment-title"
       class="${
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface AttachmentDescriptionProps {
-  children?: HellaChildren;
+interface AttachmentDescriptionProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentDescription(props: AttachmentDescriptionProps): HellaNode {
+export function AttachmentDescription({ children, class: cls, ...attrs }: AttachmentDescriptionProps): HellaNode {
   return html`
     <span
       data-slot="attachment-description"
       class="${
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface AttachmentActionsProps {
-  children?: HellaChildren;
+interface AttachmentActionsProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentActions(props: AttachmentActionsProps): HellaNode {
+export function AttachmentActions({ children, class: cls, ...attrs }: AttachmentActionsProps): HellaNode {
   return html`
     <div
       data-slot="attachment-actions"
       class="${
         // @hella:compose
-        [actions, props.class]
+        [actions, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface AttachmentActionProps {
+interface AttachmentActionProps extends HTMLAttributes<"button"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-  onclick?: () => void;
-  class?: string;
 }
 
-export function AttachmentAction(props: AttachmentActionProps): HellaNode {
+export function AttachmentAction({ variant, size, children, class: cls, ...attrs }: AttachmentActionProps): HellaNode {
   return html`
     <button
       type="button"
       data-slot="attachment-action"
-      data-variant="${props.variant ?? "ghost"}"
-      data-size="${props.size ?? "icon-xs"}"
+      data-variant="${variant ?? "ghost"}"
+      data-size="${size ?? "icon-xs"}"
       class="${
         // @hella:compose
-        [buttonBase, buttonVariants[props.variant ?? "ghost"], buttonSizes[props.size ?? "icon-xs"], props.class]
+        [buttonBase, buttonVariants[variant ?? "ghost"], buttonSizes[size ?? "icon-xs"], cls]
         // @hella:end
       }"
-      e:click="${() => props.onclick?.()}"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-interface AttachmentTriggerProps {
-  children?: HellaChildren;
-  type?: string;
-  onclick?: () => void;
+interface AttachmentTriggerProps extends HTMLAttributes<"button"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentTrigger(props: AttachmentTriggerProps): HellaNode {
+export function AttachmentTrigger({ children, class: cls, ...attrs }: AttachmentTriggerProps): HellaNode {
   return html`
     <button
-      type="${props.type ?? "button"}"
+      type="button"
       data-slot="attachment-trigger"
       class="${
         // @hella:compose
-        [trigger, props.class]
+        [trigger, cls]
         // @hella:end
       }"
-      e:click="${() => props.onclick?.()}"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-interface AttachmentGroupProps {
-  children?: HellaChildren;
+interface AttachmentGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentGroup(props: AttachmentGroupProps): HellaNode {
+export function AttachmentGroup({ children, class: cls, ...attrs }: AttachmentGroupProps): HellaNode {
   return html`
     <div
       data-slot="attachment-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [group, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

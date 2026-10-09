@@ -10,6 +10,7 @@ The panel root: a `div` carrying `data-slot="card"`.
 | ---- | ---- | ------- |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The arranged parts |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### CardHeader
 
@@ -18,6 +19,7 @@ The top row: a `div` carrying `data-slot="card-header"`, switching to a two-colu
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title, description, and optional action nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### CardTitle
 
@@ -26,6 +28,7 @@ The heading: a `div` carrying `data-slot="card-title"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The title node |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### CardDescription
 
@@ -34,6 +37,7 @@ The supporting line: a `div` carrying `data-slot="card-description"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The description node |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### CardAction
 
@@ -42,6 +46,7 @@ The header's side slot: a `div` carrying `data-slot="card-action"`, aligned oppo
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Action nodes, typically buttons |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### CardContent
 
@@ -50,6 +55,7 @@ The body: a `div` carrying `data-slot="card-content"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The body nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### CardFooter
 
@@ -58,5 +64,6 @@ The bottom row: a `div` carrying `data-slot="card-footer"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The footer nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

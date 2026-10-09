@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
@@ -397,42 +397,43 @@ css({
 
 type AttachmentState = "idle" | "uploading" | "processing" | "error" | "done";
 
-interface AttachmentProps {
+interface AttachmentProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   state?: AttachmentState;
   size?: "default" | "sm" | "xs";
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
-export function Attachment(props: AttachmentProps): JSX.Element {
+export function Attachment({ state, size, orientation, children, class: cls, ...attrs }: AttachmentProps): JSX.Element {
   return (
     <div
       data-slot="attachment"
-      data-state={props.state ?? "done"}
-      data-size={props.size ?? "default"}
-      data-orientation={props.orientation ?? "horizontal"}
+      data-state={state ?? "done"}
+      data-size={size ?? "default"}
+      data-orientation={orientation ?? "horizontal"}
       class={
-        [base, sizes[props.size ?? "default"], orientations[props.orientation ?? "horizontal"], props.class]
+        [base, sizes[size ?? "default"], orientations[orientation ?? "horizontal"], cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface AttachmentMediaProps {
+interface AttachmentMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "icon" | "image";
   /** The owning Attachment's state; inlines the loading spinner on uploading and the error glyph on error when no children are authored. */
   state?: AttachmentState;
-  class?: string;
 }
 
-export function AttachmentMedia(props: AttachmentMediaProps): JSX.Element {
+export function AttachmentMedia({ variant, state, children, class: cls, ...attrs }: AttachmentMediaProps): JSX.Element {
   const icon = (): HellaChildren | undefined => {
-    if (props.children !== undefined) return undefined;
-    if (props.state === "uploading") {
+    if (children !== undefined) return undefined;
+    if (state === "uploading") {
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -449,7 +450,7 @@ export function AttachmentMedia(props: AttachmentMediaProps): JSX.Element {
         </svg>
       );
     }
-    if (props.state === "error") {
+    if (state === "error") {
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -474,149 +475,152 @@ export function AttachmentMedia(props: AttachmentMediaProps): JSX.Element {
   return (
     <div
       data-slot="attachment-media"
-      data-variant={props.variant ?? "icon"}
+      data-variant={variant ?? "icon"}
       class={
-        [media, mediaVariants[props.variant ?? "icon"], props.class]
+        [media, mediaVariants[variant ?? "icon"], cls]
       }
+      {...attrs}
     >
-      {() => props.children ?? icon()}
+      {() => children ?? icon()}
     </div>
   );
 }
 
-interface AttachmentContentProps {
-  children?: HellaChildren;
+interface AttachmentContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentContent(props: AttachmentContentProps): JSX.Element {
+export function AttachmentContent({ children, class: cls, ...attrs }: AttachmentContentProps): JSX.Element {
   return (
     <div
       data-slot="attachment-content"
       class={
-        [content, props.class]
+        [content, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface AttachmentTitleProps {
-  children?: HellaChildren;
+interface AttachmentTitleProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentTitle(props: AttachmentTitleProps): JSX.Element {
+export function AttachmentTitle({ children, class: cls, ...attrs }: AttachmentTitleProps): JSX.Element {
   return (
     <span
       data-slot="attachment-title"
       class={
-        [title, props.class]
+        [title, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }
 
-interface AttachmentDescriptionProps {
-  children?: HellaChildren;
+interface AttachmentDescriptionProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentDescription(props: AttachmentDescriptionProps): JSX.Element {
+export function AttachmentDescription({ children, class: cls, ...attrs }: AttachmentDescriptionProps): JSX.Element {
   return (
     <span
       data-slot="attachment-description"
       class={
-        [description, props.class]
+        [description, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }
 
-interface AttachmentActionsProps {
-  children?: HellaChildren;
+interface AttachmentActionsProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentActions(props: AttachmentActionsProps): JSX.Element {
+export function AttachmentActions({ children, class: cls, ...attrs }: AttachmentActionsProps): JSX.Element {
   return (
     <div
       data-slot="attachment-actions"
       class={
-        [actions, props.class]
+        [actions, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface AttachmentActionProps {
+interface AttachmentActionProps extends HTMLAttributes<"button"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-  onclick?: () => void;
-  class?: string;
 }
 
-export function AttachmentAction(props: AttachmentActionProps): JSX.Element {
+export function AttachmentAction({ variant, size, children, class: cls, ...attrs }: AttachmentActionProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="attachment-action"
-      data-variant={props.variant ?? "ghost"}
-      data-size={props.size ?? "icon-xs"}
+      data-variant={variant ?? "ghost"}
+      data-size={size ?? "icon-xs"}
       class={
-        [buttonBase, buttonVariants[props.variant ?? "ghost"], buttonSizes[props.size ?? "icon-xs"], props.class]
+        [buttonBase, buttonVariants[variant ?? "ghost"], buttonSizes[size ?? "icon-xs"], cls]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface AttachmentTriggerProps {
-  children?: HellaChildren;
-  type?: string;
-  onclick?: () => void;
+interface AttachmentTriggerProps extends HTMLAttributes<"button"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentTrigger(props: AttachmentTriggerProps): JSX.Element {
+export function AttachmentTrigger({ children, class: cls, ...attrs }: AttachmentTriggerProps): JSX.Element {
   return (
     <button
-      type={props.type ?? "button"}
+      type="button"
       data-slot="attachment-trigger"
       class={
-        [trigger, props.class]
+        [trigger, cls]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface AttachmentGroupProps {
-  children?: HellaChildren;
+interface AttachmentGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AttachmentGroup(props: AttachmentGroupProps): JSX.Element {
+export function AttachmentGroup({ children, class: cls, ...attrs }: AttachmentGroupProps): JSX.Element {
   return (
     <div
       data-slot="attachment-group"
       class={
-        [group, props.class]
+        [group, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

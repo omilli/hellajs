@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, html, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -9,7 +9,7 @@ type AnchorAlign = "start" | "center" | "end";
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
-interface TooltipProviderProps {
+interface TooltipProviderProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
@@ -19,39 +19,38 @@ interface TooltipProviderProps {
  * Divergence: delay config is the per-Tooltip `delayDuration` prop here, so
  * the provider carries children only.
  */
-export function TooltipProvider(props: TooltipProviderProps): HellaNode {
+export function TooltipProvider({ children, class: cls, ...attrs }: TooltipProviderProps): HellaNode {
   return html`
     <div
       data-slot="tooltip-provider"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface TooltipTriggerProps {
-  describedBy?: string;
+interface TooltipTriggerProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger span; the composed Tooltip renders the same shape wired to hoverIntent. */
-export function TooltipTrigger(props: TooltipTriggerProps): HellaNode {
+export function TooltipTrigger({ children, class: cls, ...attrs }: TooltipTriggerProps): HellaNode {
   return html`
     <span
       data-slot="tooltip-trigger"
-      aria-describedby="${props.describedBy}"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface TooltipContentProps {
+interface TooltipContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchorSide;
   align?: AnchorAlign;
   /** Resolves the element the content anchors to; positioning is skipped when undefined. */
@@ -62,31 +61,31 @@ interface TooltipContentProps {
   class?: string;
 }
 
-export function TooltipContent(props: TooltipContentProps): HellaNode {
-  const side = props.side ?? "top";
-  const align = props.align ?? "center";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function TooltipContent({ state, id, side: sideProp, align: alignProp, anchor, onExited, children, class: cls, ...attrs }: TooltipContentProps): HellaNode {
+  const side = sideProp ?? "top";
+  const align = alignProp ?? "center";
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   return html`
     <div
       role="tooltip"
-      id="${props.id}"
+      id="${id}"
       data-slot="tooltip-content"
-      data-state="${state}"
+      data-state="${stateOf}"
       data-side="${side}"
       data-align="${align}"
       class="${
-        cn("z-50 w-fit origin-(--radix-tooltip-content-transform-origin) animate-in rounded-md bg-foreground px-3 py-1.5 text-xs text-balance text-background fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95", props.class)
+        cn("z-50 w-fit origin-(--radix-tooltip-content-transform-origin) animate-in rounded-md bg-foreground px-3 py-1.5 text-xs text-balance text-background fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
+        const anchorEl = anchor?.();
         if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align) }));
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -95,11 +94,12 @@ export function TooltipContent(props: TooltipContentProps): HellaNode {
         while (wirings.length) wirings.pop()!();
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface TooltipProps {
+interface TooltipProps extends HTMLAttributes<"span"> {
   content: HellaChildren;
   /** Pointer-hover ms before the content opens. Default 700. */
   delayDuration?: number;
@@ -111,7 +111,7 @@ interface TooltipProps {
 
 let tooltipCount = 0;
 
-export default function Tooltip(props: TooltipProps): HellaNode {
+export default function Tooltip({ content: contentSlot, delayDuration, side: sideProp, align: alignProp, children, class: cls, ...attrs }: TooltipProps): HellaNode {
   const contentId = `hella-tooltip-content-${++tooltipCount}`;
   const open = signal(false);
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -146,8 +146,8 @@ export default function Tooltip(props: TooltipProps): HellaNode {
   });
 
   const state = (): "open" | "closed" => (open() ? "open" : "closed");
-  const side = props.side ?? "top";
-  const align = props.align ?? "center";
+  const side = sideProp ?? "top";
+  const align = alignProp ?? "center";
   const disposals: (() => void)[] = [];
 
   return html`
@@ -155,7 +155,7 @@ export default function Tooltip(props: TooltipProps): HellaNode {
       data-slot="tooltip-trigger"
       aria-describedby="${contentId}"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
@@ -165,13 +165,14 @@ export default function Tooltip(props: TooltipProps): HellaNode {
         disposals.push(hoverIntent(node, {
           onOpen: () => open(true),
           onClose: () => open(false),
-          openDelay: props.delayDuration ?? 700,
+          openDelay: delayDuration ?? 700,
         }));
       }}"
       hook:beforeDestroy="${() => {
         while (disposals.length) disposals.pop()!();
       }}"
-    >${() => props.children}${() => visible() && Portal({
+      ...${attrs}
+    >${() => children}${() => visible() && Portal({
       to: "body",
       children: [
         TooltipContent({
@@ -181,7 +182,7 @@ export default function Tooltip(props: TooltipProps): HellaNode {
           align,
           anchor: () => triggerNode,
           onExited: finishExit,
-          children: props.content,
+          children: contentSlot,
         }) as HellaChild,
       ],
     })}</span>

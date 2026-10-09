@@ -1,10 +1,11 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { mount } from "@hellajs/dom";
 import type { HellaNode } from "@hellajs/dom";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import {
   assertStructuralParity,
   breadcrumbPartVariants,
+  classTokens,
   breadcrumbVariants,
   dropdownMenuVariants,
   renderVariant,
@@ -108,6 +109,32 @@ describe("breadcrumb", () => {
     trigger.dispatchEvent(new Event("click"));
     const content = await awaitPortaled("dropdown-menu-content");
     expect(content.getAttribute("data-state")).toBe("open");
+  });
+
+  test.each(breadcrumbVariants)("$format/$style forwards user attrs onto the nav root across all four variants", (variant) => {
+    const nav = renderVariant(variant, { title: "Hella", children: [] });
+    expect(nav.getAttribute("title")).toBe("Hella");
+  });
+
+  test.each(breadcrumbVariants)("$format/$style fires a user on:click handler on the nav root across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const nav = renderVariant(variant, { "on:click": userClick, children: [] });
+    nav.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(breadcrumbVariants)("$format/$style merges a user class into the nav root's class across all four variants", (variant) => {
+    const nav = renderVariant(variant, { class: "user-class", children: [] });
+    expect(classTokens(nav).at(-1)).toBe("user-class");
+  });
+
+  test.each(breadcrumbPartVariants.filter((variant) => variant.part === "Link"))("$format/$style link part forwards user attrs beside href", (variant) => {
+    const container = setupContainer();
+    const rendered = variant.render({ href: "/", title: "Home", children: ["Home"] });
+    mount(typeof rendered === "function" ? rendered : rendered, container);
+    const link = container.firstElementChild!;
+    expect(link.getAttribute("href")).toBe("/");
+    expect(link.getAttribute("title")).toBe("Home");
   });
 
   test("keeps structural parity across all four variants", () => {

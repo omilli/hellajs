@@ -9,11 +9,12 @@ The composed root takes an items array, not children slots.
 | `items` | `{ value, label, disabled? }[]` | `-` |
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
-| `name` | `string` | `-` |
 | `orientation` | `"horizontal" \| "vertical"` | `-` |
 | `class` | `string` | `-` |
 
-Without `value`, the root owns a signal starting with nothing selected and updates it on click. Pass a `value` accessor and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged. Clicking the active item is a no-op. `name` threads onto every item button; hidden native inputs for form submission are not rendered (deferred). `orientation` renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus.
+Accepts all native `div` attributes (forwarded to the root element).
+
+Without `value`, the root owns a signal starting with nothing selected and updates it on click. Pass a `value` accessor and the group becomes controlled: clicks turn into `onValueChange` requests without writing state, so a parent signal that ignores the request keeps the selection unchanged. Clicking the active item is a no-op. A native `name` attribute on the root threads onto every item button; hidden native inputs for form submission are not rendered (deferred). `orientation` renders `aria-orientation` and scopes the arrow-key axis; unset means both axes move focus.
 
 ### RadioGroupItem
 
@@ -24,8 +25,9 @@ The circle button: a `role="radio"` control whose checked state drives `aria-che
 | `value` | `string` | `-` |
 | `checked` | `boolean \| (() => boolean)` | `-` |
 | `onSelect` | `() => void` | `-` |
-| `disabled` | `boolean` | `-` |
-| `name` | `string` | `-` |
+| `class` | `string` | `-` |
+
+Accepts all native `button` attributes (forwarded to the button element): `disabled` gates the item, `name` threads onto the button.
 
 `value` is the entry's identity, rendered as `data-value` on the button. Form submission wiring remains a caller concern.
 

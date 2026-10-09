@@ -1,4 +1,4 @@
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
@@ -244,183 +244,189 @@ css({
   },
 });
 
-interface FieldSetProps {
-  children?: HellaChildren;
+interface FieldSetProps extends HTMLAttributes<"fieldset"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function FieldSet(props: FieldSetProps): JSX.Element {
+export function FieldSet({ children, class: cls, ...attrs }: FieldSetProps): JSX.Element {
   return (
     <fieldset
       data-slot="field-set"
       class={
-        [set, props.class]
+        [set, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </fieldset>
   );
 }
 
-interface FieldLegendProps {
+interface FieldLegendProps extends HTMLAttributes<"legend"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "legend" | "label";
-  class?: string;
 }
 
-export function FieldLegend(props: FieldLegendProps): JSX.Element {
+export function FieldLegend({ variant, children, class: cls, ...attrs }: FieldLegendProps): JSX.Element {
   return (
     <legend
       data-slot="field-legend"
-      data-variant={props.variant ?? "legend"}
+      data-variant={variant ?? "legend"}
       class={
         [
           legend,
-          legendVariants[props.variant ?? "legend"],
-          props.class,
+          legendVariants[variant ?? "legend"],
+          cls,
         ]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </legend>
   );
 }
 
-interface FieldGroupProps {
-  children?: HellaChildren;
+interface FieldGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function FieldGroup(props: FieldGroupProps): JSX.Element {
+export function FieldGroup({ children, class: cls, ...attrs }: FieldGroupProps): JSX.Element {
   return (
     <div
       data-slot="field-group"
       class={
-        [group, props.class]
+        [group, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface FieldProps {
+interface FieldProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   orientation?: "vertical" | "horizontal" | "responsive";
-  /** Renders data-invalid="true" (destructive text) and data-disabled="true" (label/title opacity) on the field. */
-  disabled?: boolean;
+  /** Renders data-invalid="true" (destructive text) on the field; `disabled` (native attr) renders data-disabled="true" (label/title opacity). */
   invalid?: boolean;
-  class?: string;
 }
 
-export function Field(props: FieldProps): JSX.Element {
+export function Field({ orientation: orient, disabled, invalid, children, class: cls, ...attrs }: FieldProps): JSX.Element {
   return (
     <div
       role="group"
       data-slot="field"
-      data-orientation={props.orientation ?? "vertical"}
-      data-disabled={props.disabled ? "true" : undefined}
-      data-invalid={props.invalid ? "true" : undefined}
+      data-orientation={orient ?? "vertical"}
+      data-disabled={disabled ? "true" : undefined}
+      data-invalid={invalid ? "true" : undefined}
       class={
         [
           base,
-          orientation[props.orientation ?? "vertical"],
-          props.class,
+          orientation[orient ?? "vertical"],
+          cls,
         ]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface FieldContentProps {
-  children?: HellaChildren;
+interface FieldContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function FieldContent(props: FieldContentProps): JSX.Element {
+export function FieldContent({ children, class: cls, ...attrs }: FieldContentProps): JSX.Element {
   return (
     <div
       data-slot="field-content"
       class={
-        [content, props.class]
+        [content, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface FieldLabelProps {
-  children?: HellaChildren;
-  for?: string;
+interface FieldLabelProps extends HTMLAttributes<"label"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function FieldLabel(props: FieldLabelProps): JSX.Element {
+export function FieldLabel({ children, class: cls, ...attrs }: FieldLabelProps): JSX.Element {
   return (
     <label
       data-slot="field-label"
-      for={props.for}
       class={
-        [label, props.class]
+        [label, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </label>
   );
 }
 
-interface FieldTitleProps {
-  children?: HellaChildren;
+interface FieldTitleProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function FieldTitle(props: FieldTitleProps): JSX.Element {
+export function FieldTitle({ children, class: cls, ...attrs }: FieldTitleProps): JSX.Element {
   return (
     <div
       data-slot="field-label"
       class={
-        [title, props.class]
+        [title, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface FieldDescriptionProps {
-  children?: HellaChildren;
+interface FieldDescriptionProps extends HTMLAttributes<"p"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function FieldDescription(props: FieldDescriptionProps): JSX.Element {
+export function FieldDescription({ children, class: cls, ...attrs }: FieldDescriptionProps): JSX.Element {
   return (
     <p
       data-slot="field-description"
       class={
-        [description, props.class]
+        [description, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </p>
   );
 }
 
-interface FieldSeparatorProps {
-  children?: HellaChildren;
+interface FieldSeparatorProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function FieldSeparator(props: FieldSeparatorProps): JSX.Element {
+export function FieldSeparator({ children, class: cls, ...attrs }: FieldSeparatorProps): JSX.Element {
   return (
     <div
       data-slot="field-separator"
-      data-content={props.children ? "true" : "false"}
+      data-content={children ? "true" : "false"}
       class={
-        [separator, props.class]
+        [separator, cls]
       }
+      {...attrs}
     >
       <div
         role="separator"
@@ -429,13 +435,13 @@ export function FieldSeparator(props: FieldSeparatorProps): JSX.Element {
         aria-orientation="horizontal"
         class={[separatorBase, separatorRule]}
       />
-      {props.children
+      {children
         ? (
           <span
             data-slot="field-separator-content"
             class={[separatorContent]}
           >
-            {props.children}
+            {children}
           </span>
         )
         : null}
@@ -443,21 +449,21 @@ export function FieldSeparator(props: FieldSeparatorProps): JSX.Element {
   );
 }
 
-interface FieldErrorProps {
+interface FieldErrorProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   errors?: Array<{ message?: string } | undefined>;
-  class?: string;
 }
 
-export function FieldError(props: FieldErrorProps): JSX.Element {
+export function FieldError({ errors, children, class: cls, ...attrs }: FieldErrorProps): JSX.Element {
   const unique = (): { message?: string }[] => {
     const seen = new Map<string | undefined, { message?: string } | undefined>();
-    for (const issue of props.errors ?? []) seen.set(issue?.message, issue);
+    for (const issue of errors ?? []) seen.set(issue?.message, issue);
     return [...seen.values()].filter((issue) => issue !== undefined);
   };
   const hasChildren = (): boolean => {
-    if (props.children == null) return false;
-    if (Array.isArray(props.children)) return props.children.length > 0;
+    if (children == null) return false;
+    if (Array.isArray(children)) return children.length > 0;
     return true;
   };
   const hasContent = (): boolean => hasChildren() || unique().length > 0;
@@ -467,19 +473,20 @@ export function FieldError(props: FieldErrorProps): JSX.Element {
       data-slot="field-error"
       hidden={() => !hasContent()}
       class={
-        [error, props.class]
+        [error, cls]
       }
+      {...attrs}
     >
       {() => {
-        if (props.children) {
-          return typeof props.children === "function" ? (props.children as () => HellaChild)() : props.children;
+        if (children) {
+          return typeof children === "function" ? (children as () => HellaChild)() : children;
         }
-        const errors = unique();
-        if (errors.length === 1) return errors[0]!.message;
-        if (errors.length === 0) return null;
+        const issues = unique();
+        if (issues.length === 1) return issues[0]!.message;
+        if (issues.length === 0) return null;
         return (
           <ul class={errorList}>
-            {errors.map((item) => item.message ? <li>{item.message}</li> : null)}
+            {issues.map((item) => item.message ? <li>{item.message}</li> : null)}
           </ul>
         );
       }}

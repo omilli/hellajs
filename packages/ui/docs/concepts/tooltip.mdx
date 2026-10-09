@@ -16,15 +16,16 @@ Three named parts ship beside the default `Tooltip`: `TooltipTrigger`, `TooltipC
 | `align` | `"start" \| "center" \| "end"` | `"center"` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The trigger content |
+Accepts all native `span` attributes (forwarded to the root element).
 
 ### TooltipTrigger
 
-The manual trigger span carrying `aria-describedby`; the composed `Tooltip` renders the same shape wired to [`hoverIntent`](/reference/dom/hoverintent).
+The manual trigger span; the composed `Tooltip` renders the same shape wired to [`hoverIntent`](/reference/dom/hoverintent) and carries the label's id as its `aria-describedby`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `describedBy` | `string` | `-` |
 | `children` | `HellaChildren` | The trigger content |
+Accepts all native `span` attributes (forwarded to the root element).
 
 ### TooltipContent
 
@@ -39,6 +40,7 @@ The `role="tooltip"` label carrying `data-slot="tooltip-content"`, positioned th
 | `anchor` | `() => Element \| undefined` | `-` |
 | `onExited` | `() => void` | `-` |
 | `children` | `HellaChildren` | The label content |
+Accepts all native `div` attributes (forwarded to the root element; a user-supplied `id` wins over the generated one).
 
 `state` drives `data-state` and the enter/exit cycle. The label `id` is what the trigger's `aria-describedby` points at. The anchor resolves to the element the label anchors to; positioning is skipped when undefined. `onExited` fires when the exit animation ends under `data-state="closed"`.
 
@@ -49,5 +51,6 @@ A passthrough wrapper carrying nothing but children. Delay configuration is the 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The wrapped content |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

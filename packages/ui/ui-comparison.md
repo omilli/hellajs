@@ -120,7 +120,7 @@ Dependency facts come from each package's `package.json` (HellaJS: `packages/ui/
 
 ## 6. Customization Path
 
-- **HellaJS ui**: edit the copied file. The style maps live inside it, the compose array names its members explicitly, and `props.class` lands last in the composition (`registry/button/button.tsx`). For the css flavor, retheming without editing is the ordinary cascade: later custom-property registration at equal specificity, or a more specific selector, retints the whole registry (`docs/concepts/theming.mdx`).
+- **HellaJS ui**: edit the copied file. The style maps live inside it, the compose array names its members explicitly, and the user's `class` lands last as its final member (`registry/button/button.tsx`). For the css flavor, retheming without editing is the ordinary cascade: later custom-property registration at equal specificity, or a more specific selector, retints the whole registry (`docs/concepts/theming.mdx`).
 - **shadcn/ui**: edit the copied wrapper, or restyle through CSS variables and `cn()` overrides; variant structure comes from the cva recipe inside the file.
 - **Base UI**: restyle from scratch; there is nothing to edit, which is the point. Customization means composing hooks and parts with your own CSS.
 - **Park UI**: edit the copied component or its recipe; theme-level changes flow through Panda presets and tokens.

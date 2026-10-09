@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -216,11 +216,7 @@ const clearIcon = (): HellaNode =>
     <path d="m6 6 12 12" />
   </svg>` as HellaNode;
 
-interface SelectTriggerProps {
-  id?: string;
-  /** Id of the listbox content the trigger expands; lands in aria-controls. */
-  ariaControls?: string;
-  ariaLabel?: string;
+interface SelectTriggerProps extends HTMLAttributes<"button"> {
   size?: "sm" | "default";
   /** Resolves the open state for `data-state`/`aria-expanded`; the composed Select wires it. */
   state?: () => "open" | "closed";
@@ -232,55 +228,54 @@ interface SelectTriggerProps {
   onClear?: () => void;
   /** Resolves whether a value is currently selected (drives the clear affordance). */
   hasValue?: () => boolean;
-  disabled?: boolean;
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger button; the composed Select renders the same shape wired to state and aria. */
-export function SelectTrigger(props: SelectTriggerProps): HellaNode {
-  const state = (): "open" | "closed" => props.state?.() ?? "closed";
+export function SelectTrigger({ id, size, state, onOpen, clearable, onClear, hasValue, disabled, children, class: cls, ...attrs }: SelectTriggerProps): HellaNode {
+  const stateOf = (): "open" | "closed" => state?.() ?? "closed";
   return html`
     <button
       type="button"
       data-slot="select-trigger"
-      data-size="${props.size ?? "default"}"
-      data-state="${state}"
+      id="${id}"
+      data-size="${size ?? "default"}"
+      data-state="${stateOf}"
       aria-haspopup="listbox"
-      aria-expanded="${() => (state() === "open" ? "true" : "false")}"
-      aria-controls="${props.ariaControls}"
-      aria-label="${props.ariaLabel}"
-      disabled="${props.disabled}"
+      aria-expanded="${() => (stateOf() === "open" ? "true" : "false")}"
+      disabled="${disabled}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
       on:click="${() => {
-        if (props.disabled) return;
-        props.onOpen?.();
+        if (disabled) return;
+        onOpen?.();
       }}"
       on:keydown="${(e: Event) => {
         const key = (e as KeyboardEvent).key;
-        if (props.disabled || (key !== "ArrowDown" && key !== "ArrowUp")) return;
+        if (disabled || (key !== "ArrowDown" && key !== "ArrowUp")) return;
         e.preventDefault();
-        props.onOpen?.();
+        onOpen?.();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${() => (props.clearable && props.hasValue?.() ? html`<span
+      ${() => children}${() => (clearable && hasValue?.() ? html`<span
         data-slot="select-clear"
         role="button"
         aria-label="Clear"
         on:click="${(e: Event) => {
           e.stopPropagation();
-          props.onClear?.();
+          onClear?.();
         }}"
       >${clearIcon()}</span>` as HellaChild : null)}${chevronDownIcon()}
     </button>
   ` as HellaNode;
 }
 
-interface SelectValueProps {
+interface SelectValueProps extends HTMLAttributes<"span"> {
   placeholder?: string;
   /** The chosen label. A string reads statically; an accessor keeps it reactive (the composed Select threads one). Manual wiring passes the current label. */
   value?: HellaChildren | (() => HellaChildren | undefined);
@@ -288,9 +283,9 @@ interface SelectValueProps {
 }
 
 /** Renders the chosen label; shows the placeholder (with `data-placeholder`) while empty. */
-export function SelectValue(props: SelectValueProps): HellaNode {
+export function SelectValue({ placeholder, value, class: cls, ...attrs }: SelectValueProps): HellaNode {
   const current = (): HellaChildren | undefined =>
-    typeof props.value === "function" ? (props.value as () => HellaChildren | undefined)() : props.value;
+    typeof value === "function" ? (value as () => HellaChildren | undefined)() : value;
   return html`
     <span
       data-slot="select-value"
@@ -300,19 +295,19 @@ export function SelectValue(props: SelectValueProps): HellaNode {
       }}"
       class="${
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }"
+      ...${attrs}
     >${() => {
       const v = current();
-      return v === undefined || v === "" ? props.placeholder : v;
+      return v === undefined || v === "" ? placeholder : v;
     }}</span>
   ` as HellaNode;
 }
 
-interface SelectContentProps {
+interface SelectContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchorSide;
   align?: AnchorAlign;
   /** Gap between the anchor and the content edge, in px. Default 6. */
@@ -329,10 +324,10 @@ interface SelectContentProps {
   class?: string;
 }
 
-export function SelectContent(props: SelectContentProps): HellaNode {
-  const side = props.side ?? "bottom";
-  const align = props.align ?? "start";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function SelectContent({ state, id, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onClose, children, class: cls, ...attrs }: SelectContentProps): HellaNode {
+  const side = sideProp ?? "bottom";
+  const align = alignProp ?? "start";
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -343,32 +338,32 @@ export function SelectContent(props: SelectContentProps): HellaNode {
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return html`
     <div
       role="listbox"
       tabindex="-1"
-      id="${props.id}"
+      id="${id}"
       data-slot="select-content"
-      data-state="${state}"
+      data-state="${stateOf}"
       data-side="${side}"
       data-align="${align}"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: props.sideOffset ?? 6, matchAnchorWidth: true }));
-        if (props.onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
+        const anchorEl = anchor?.();
+        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 6, matchAnchorWidth: true }));
+        if (onDismiss) {
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
         }
         wirings.push(menuTypeahead(node, () => optionEntries(node), (entry) => highlightOption(node, entry.node)));
-        const onKey = listKeyDown(node, props.onClose);
+        const onKey = listKeyDown(node, onClose);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
         // Focus lands on the selected option (first option otherwise) and the
@@ -417,7 +412,7 @@ export function SelectContent(props: SelectContentProps): HellaNode {
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -426,6 +421,7 @@ export function SelectContent(props: SelectContentProps): HellaNode {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}"
+      ...${attrs}
     >
       <div
         data-slot="select-scroll-up-button"
@@ -445,7 +441,7 @@ export function SelectContent(props: SelectContentProps): HellaNode {
           // @hella:end
         }"
       >
-        ${() => props.children}
+        ${() => children}
       </div>
       <div
         data-slot="select-scroll-down-button"
@@ -461,59 +457,58 @@ export function SelectContent(props: SelectContentProps): HellaNode {
   ` as HellaNode;
 }
 
-interface SelectPartProps {
+interface SelectPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SelectGroup(props: SelectPartProps): HellaNode {
+export function SelectGroup({ children, class: cls, ...attrs }: SelectPartProps): HellaNode {
   return html`
     <div
       data-slot="select-group"
       class="${
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface SelectItemProps {
+interface SelectItemProps extends HTMLAttributes<"div"> {
   value?: string;
   label?: HellaChildren;
-  disabled?: boolean;
   /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning select. */
   selected?: boolean | (() => boolean);
   /** Called on click when the item is enabled; the composed Select commits the value. */
   onselect?: () => void;
-  id?: string;
   class?: string;
 }
 
-export function SelectItem(props: SelectItemProps): HellaNode {
+export function SelectItem({ value, label: labelSlot, selected: selectedProp, onselect, disabled, class: cls, ...attrs }: SelectItemProps): HellaNode {
   const selected = (): boolean =>
-    typeof props.selected === "function" ? props.selected() : props.selected ?? false;
+    typeof selectedProp === "function" ? selectedProp() : selectedProp ?? false;
   return html`
     <div
       role="option"
       tabindex="-1"
-      id="${props.id}"
       data-slot="select-item"
-      data-value="${props.value}"
+      data-value="${value}"
       aria-selected="${() => (selected() ? "true" : "false")}"
       data-state="${() => (selected() ? "checked" : "unchecked")}"
-      data-disabled="${props.disabled ? "true" : undefined}"
-      aria-disabled="${props.disabled ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
+      aria-disabled="${disabled ? "true" : undefined}"
       class="${
         // @hella:compose
-        [item, props.class]
+        [item, cls]
         // @hella:end
       }"
       on:click="${() => {
-        if (props.disabled) return;
-        props.onselect?.();
+        if (disabled) return;
+        onselect?.();
       }}"
+      ...${attrs}
     >
       <span
         data-slot="select-item-indicator"
@@ -525,75 +520,79 @@ export function SelectItem(props: SelectItemProps): HellaNode {
       >
         ${() => (selected() ? checkIcon() : null)}
       </span>
-      ${() => props.label}
+      ${() => labelSlot}
     </div>
   ` as HellaNode;
 }
 
-interface SelectLabelProps {
+interface SelectLabelProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SelectLabel(props: SelectLabelProps): HellaNode {
+export function SelectLabel({ children, class: cls, ...attrs }: SelectLabelProps): HellaNode {
   return html`
     <div
       data-slot="select-label"
       class="${
         // @hella:compose
-        [label, props.class]
+        [label, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function SelectSeparator(props: SelectPartProps): HellaNode {
+export function SelectSeparator({ class: cls, ...attrs }: SelectPartProps): HellaNode {
   return html`
     <div
       role="separator"
       data-slot="select-separator"
       class="${
         // @hella:compose
-        [separator, props.class]
+        [separator, cls]
         // @hella:end
       }"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-interface SelectScrollButtonProps {
+interface SelectScrollButtonProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SelectScrollUpButton(props: SelectScrollButtonProps): HellaNode {
+export function SelectScrollUpButton({ children, class: cls, ...attrs }: SelectScrollButtonProps): HellaNode {
   return html`
     <div
       data-slot="select-scroll-up-button"
       class="${
         // @hella:compose
-        [scrollButton, props.class]
+        [scrollButton, cls]
         // @hella:end
       }"
-    >${() => props.children ?? chevronUpIcon()}</div>
+      ...${attrs}
+    >${() => children ?? chevronUpIcon()}</div>
   ` as HellaNode;
 }
 
-export function SelectScrollDownButton(props: SelectScrollButtonProps): HellaNode {
+export function SelectScrollDownButton({ children, class: cls, ...attrs }: SelectScrollButtonProps): HellaNode {
   return html`
     <div
       data-slot="select-scroll-down-button"
       class="${
         // @hella:compose
-        [scrollButton, props.class]
+        [scrollButton, cls]
         // @hella:end
       }"
-    >${() => props.children ?? chevronDownIcon()}</div>
+      ...${attrs}
+    >${() => children ?? chevronDownIcon()}</div>
   ` as HellaNode;
 }
 
-interface SelectProps {
+interface SelectProps extends HTMLAttributes<"button"> {
   items?: SelectEntry[];
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
@@ -607,17 +606,17 @@ interface SelectProps {
 
 let selectCount = 0;
 
-export default function Select(props: SelectProps): HellaNode {
+export default function Select({ items, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): HellaNode {
   const s = selectOpenState();
   const contentId = `hella-select-content-${++selectCount}`;
   const internal = signal("");
-  const current = (): string => (props.value !== undefined ? props.value() : internal());
+  const current = (): string => (value !== undefined ? value() : internal());
   const select = (next: string): void => {
-    if (props.value === undefined) internal(next);
-    props.onValueChange?.(next);
+    if (value === undefined) internal(next);
+    onValueChange?.(next);
   };
   const currentLabel = (): HellaChildren | undefined =>
-    (props.items ?? []).find((entry) => entry.value === current())?.label;
+    (items ?? []).find((entry) => entry.value === current())?.label;
   let triggerNode: HTMLElement | undefined;
 
   // Focus returns to the trigger when the listbox closes (one open→closed
@@ -635,14 +634,14 @@ export default function Select(props: SelectProps): HellaNode {
     <button
       type="button"
       data-slot="select-trigger"
-      data-size="${props.size ?? "default"}"
+      data-size="${size ?? "default"}"
       data-state="${() => s.state()}"
       aria-haspopup="listbox"
       aria-expanded="${() => (s.isOpen() ? "true" : "false")}"
       aria-controls="${contentId}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
       on:click="${() => s.setOpen(!s.isOpen())}"
@@ -655,8 +654,9 @@ export default function Select(props: SelectProps): HellaNode {
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}"
+      ...${attrs}
     >
-      ${SelectValue({ placeholder: props.placeholder, value: () => currentLabel() }) as HellaChild}${() => (props.clearable && current() !== "" ? html`<span
+      ${SelectValue({ placeholder, value: () => currentLabel() }) as HellaChild}${() => (clearable && current() !== "" ? html`<span
         data-slot="select-clear"
         role="button"
         aria-label="Clear"
@@ -674,7 +674,7 @@ export default function Select(props: SelectProps): HellaNode {
             onDismiss: () => s.setOpen(false),
             onExited: s.finishExit,
             onClose: () => s.setOpen(false),
-            children: (props.items ?? []).map((entry) =>
+            children: (items ?? []).map((entry) =>
               SelectItem({
                 value: entry.value,
                 label: entry.label,

@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HellaChildren, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, Placement } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
 
@@ -411,11 +411,7 @@ const clearIcon = (): JSX.Element => (
   </svg>
 );
 
-interface SelectTriggerProps {
-  id?: string;
-  /** Id of the listbox content the trigger expands; lands in aria-controls. */
-  ariaControls?: string;
-  ariaLabel?: string;
+interface SelectTriggerProps extends HTMLAttributes<"button"> {
   size?: "sm" | "default";
   /** Resolves the open state for `data-state`/`aria-expanded`; the composed Select wires it. */
   state?: () => "open" | "closed";
@@ -427,48 +423,47 @@ interface SelectTriggerProps {
   onClear?: () => void;
   /** Resolves whether a value is currently selected (drives the clear affordance). */
   hasValue?: () => boolean;
-  disabled?: boolean;
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger button; the composed Select renders the same shape wired to state and aria. */
-export function SelectTrigger(props: SelectTriggerProps): JSX.Element {
-  const state = (): "open" | "closed" => props.state?.() ?? "closed";
+export function SelectTrigger({ id, size, state, onOpen, clearable, onClear, hasValue, disabled, children, class: cls, ...attrs }: SelectTriggerProps): JSX.Element {
+  const stateOf = (): "open" | "closed" => state?.() ?? "closed";
   return (
     <button
       type="button"
       data-slot="select-trigger"
-      data-size={props.size ?? "default"}
-      data-state={state()}
+      id={id}
+      data-size={size ?? "default"}
+      data-state={stateOf()}
       aria-haspopup="listbox"
-      aria-expanded={state() === "open" ? "true" : "false"}
-      aria-controls={props.ariaControls}
-      aria-label={props.ariaLabel}
-      disabled={props.disabled}
+      aria-expanded={stateOf() === "open" ? "true" : "false"}
+      disabled={disabled}
       class={
-        [base, props.class]
+        [base, cls]
       }
       on:click={() => {
-        if (props.disabled) return;
-        props.onOpen?.();
+        if (disabled) return;
+        onOpen?.();
       }}
       on:keydown={(e) => {
         const key = (e as KeyboardEvent).key;
-        if (props.disabled || (key !== "ArrowDown" && key !== "ArrowUp")) return;
+        if (disabled || (key !== "ArrowDown" && key !== "ArrowUp")) return;
         e.preventDefault();
-        props.onOpen?.();
+        onOpen?.();
       }}
+      {...attrs}
     >
-      {props.children}
-      {() => (props.clearable && props.hasValue?.() ? (
+      {children}
+      {() => (clearable && hasValue?.() ? (
         <span
           data-slot="select-clear"
           role="button"
           aria-label="Clear"
           on:click={(e) => {
             e.stopPropagation();
-            props.onClear?.();
+            onClear?.();
           }}
         >
           {clearIcon()}
@@ -479,7 +474,7 @@ export function SelectTrigger(props: SelectTriggerProps): JSX.Element {
   );
 }
 
-interface SelectValueProps {
+interface SelectValueProps extends HTMLAttributes<"span"> {
   placeholder?: string;
   /** The chosen label. A string reads statically; an accessor keeps it reactive (the composed Select threads one). Manual wiring passes the current label. */
   value?: HellaChildren | (() => HellaChildren | undefined);
@@ -487,9 +482,9 @@ interface SelectValueProps {
 }
 
 /** Renders the chosen label; shows the placeholder (with `data-placeholder`) while empty. */
-export function SelectValue(props: SelectValueProps): JSX.Element {
+export function SelectValue({ placeholder, value, class: cls, ...attrs }: SelectValueProps): JSX.Element {
   const current = (): HellaChildren | undefined =>
-    typeof props.value === "function" ? (props.value as () => HellaChildren | undefined)() : props.value;
+    typeof value === "function" ? (value as () => HellaChildren | undefined)() : value;
   return (
     <span
       data-slot="select-value"
@@ -498,20 +493,20 @@ export function SelectValue(props: SelectValueProps): JSX.Element {
         return v === undefined || v === "" ? "" : undefined;
       }}
       class={
-        [props.class]
+        [cls]
       }
+      {...attrs}
     >
       {() => {
         const v = current();
-        return v === undefined || v === "" ? props.placeholder : v;
+        return v === undefined || v === "" ? placeholder : v;
       }}
     </span>
   );
 }
 
-interface SelectContentProps {
+interface SelectContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchorSide;
   align?: AnchorAlign;
   /** Gap between the anchor and the content edge, in px. Default 6. */
@@ -528,10 +523,10 @@ interface SelectContentProps {
   class?: string;
 }
 
-export function SelectContent(props: SelectContentProps): JSX.Element {
-  const side = props.side ?? "bottom";
-  const align = props.align ?? "start";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function SelectContent({ state, id, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onClose, children, class: cls, ...attrs }: SelectContentProps): JSX.Element {
+  const side = sideProp ?? "bottom";
+  const align = alignProp ?? "start";
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -542,30 +537,30 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return (
     <div
       role="listbox"
       tabindex="-1"
-      id={props.id}
+      id={id}
       data-slot="select-content"
-      data-state={state()}
+      data-state={stateOf()}
       data-side={side}
       data-align={align}
       class={
-        [content, props.class]
+        [content, cls]
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: props.sideOffset ?? 6, matchAnchorWidth: true }));
-        if (props.onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
+        const anchorEl = anchor?.();
+        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 6, matchAnchorWidth: true }));
+        if (onDismiss) {
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
         }
         wirings.push(menuTypeahead(node, () => optionEntries(node), (entry) => highlightOption(node, entry.node)));
-        const onKey = listKeyDown(node, props.onClose);
+        const onKey = listKeyDown(node, onClose);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
         // Focus lands on the selected option (first option otherwise) and the
@@ -614,7 +609,7 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -623,6 +618,7 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
       <div
         data-slot="select-scroll-up-button"
@@ -638,7 +634,7 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
           [viewport]
         }
       >
-        {props.children}
+        {children}
       </div>
       <div
         data-slot="select-scroll-down-button"
@@ -652,57 +648,56 @@ export function SelectContent(props: SelectContentProps): JSX.Element {
   );
 }
 
-interface SelectPartProps {
+interface SelectPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SelectGroup(props: SelectPartProps): JSX.Element {
+export function SelectGroup({ children, class: cls, ...attrs }: SelectPartProps): JSX.Element {
   return (
     <div
       data-slot="select-group"
       class={
-        [props.class]
+        [cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface SelectItemProps {
+interface SelectItemProps extends HTMLAttributes<"div"> {
   value?: string;
   label?: HellaChildren;
-  disabled?: boolean;
   /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning select. */
   selected?: boolean | (() => boolean);
   /** Called on click when the item is enabled; the composed Select commits the value. */
   onselect?: () => void;
-  id?: string;
   class?: string;
 }
 
-export function SelectItem(props: SelectItemProps): JSX.Element {
+export function SelectItem({ value, label: labelSlot, selected: selectedProp, onselect, disabled, class: cls, ...attrs }: SelectItemProps): JSX.Element {
   const selected = (): boolean =>
-    typeof props.selected === "function" ? props.selected() : props.selected ?? false;
+    typeof selectedProp === "function" ? selectedProp() : selectedProp ?? false;
   return (
     <div
       role="option"
       tabindex="-1"
-      id={props.id}
       data-slot="select-item"
-      data-value={props.value}
+      data-value={value}
       aria-selected={selected() ? "true" : "false"}
       data-state={selected() ? "checked" : "unchecked"}
-      data-disabled={props.disabled ? "true" : undefined}
-      aria-disabled={props.disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
+      aria-disabled={disabled ? "true" : undefined}
       class={
-        [item, props.class]
+        [item, cls]
       }
       on:click={() => {
-        if (props.disabled) return;
-        props.onselect?.();
+        if (disabled) return;
+        onselect?.();
       }}
+      {...attrs}
     >
       <span
         data-slot="select-item-indicator"
@@ -712,73 +707,77 @@ export function SelectItem(props: SelectItemProps): JSX.Element {
       >
         {() => (selected() ? checkIcon() : null)}
       </span>
-      {() => props.label}
+      {() => labelSlot}
     </div>
   );
 }
 
-interface SelectLabelProps {
+interface SelectLabelProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SelectLabel(props: SelectLabelProps): JSX.Element {
+export function SelectLabel({ children, class: cls, ...attrs }: SelectLabelProps): JSX.Element {
   return (
     <div
       data-slot="select-label"
       class={
-        [label, props.class]
+        [label, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SelectSeparator(props: SelectPartProps): JSX.Element {
+export function SelectSeparator({ class: cls, ...attrs }: SelectPartProps): JSX.Element {
   return (
     <div
       role="separator"
       data-slot="select-separator"
       class={
-        [separator, props.class]
+        [separator, cls]
       }
+      {...attrs}
     />
   );
 }
 
-interface SelectScrollButtonProps {
+interface SelectScrollButtonProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SelectScrollUpButton(props: SelectScrollButtonProps): JSX.Element {
+export function SelectScrollUpButton({ children, class: cls, ...attrs }: SelectScrollButtonProps): JSX.Element {
   return (
     <div
       data-slot="select-scroll-up-button"
       class={
-        [scrollButton, props.class]
+        [scrollButton, cls]
       }
+      {...attrs}
     >
-      {() => props.children ?? chevronUpIcon()}
+      {() => children ?? chevronUpIcon()}
     </div>
   );
 }
 
-export function SelectScrollDownButton(props: SelectScrollButtonProps): JSX.Element {
+export function SelectScrollDownButton({ children, class: cls, ...attrs }: SelectScrollButtonProps): JSX.Element {
   return (
     <div
       data-slot="select-scroll-down-button"
       class={
-        [scrollButton, props.class]
+        [scrollButton, cls]
       }
+      {...attrs}
     >
-      {() => props.children ?? chevronDownIcon()}
+      {() => children ?? chevronDownIcon()}
     </div>
   );
 }
 
-interface SelectProps {
+interface SelectProps extends HTMLAttributes<"button"> {
   items?: SelectEntry[];
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
@@ -792,17 +791,17 @@ interface SelectProps {
 
 let selectCount = 0;
 
-export default function Select(props: SelectProps): JSX.Element {
+export default function Select({ items, value, onValueChange, placeholder, size, clearable, class: cls, ...attrs }: SelectProps): JSX.Element {
   const s = selectOpenState();
   const contentId = `hella-select-content-${++selectCount}`;
   const internal = signal("");
-  const current = (): string => (props.value !== undefined ? props.value() : internal());
+  const current = (): string => (value !== undefined ? value() : internal());
   const select = (next: string): void => {
-    if (props.value === undefined) internal(next);
-    props.onValueChange?.(next);
+    if (value === undefined) internal(next);
+    onValueChange?.(next);
   };
   const currentLabel = (): HellaChildren | undefined =>
-    (props.items ?? []).find((entry) => entry.value === current())?.label;
+    (items ?? []).find((entry) => entry.value === current())?.label;
   let triggerNode: HTMLElement | undefined;
 
   // Focus returns to the trigger when the listbox closes (one open→closed
@@ -820,13 +819,13 @@ export default function Select(props: SelectProps): JSX.Element {
     <button
       type="button"
       data-slot="select-trigger"
-      data-size={props.size ?? "default"}
+      data-size={size ?? "default"}
       data-state={s.state()}
       aria-haspopup="listbox"
       aria-expanded={s.isOpen() ? "true" : "false"}
       aria-controls={contentId}
       class={
-        [base, props.class]
+        [base, cls]
       }
       on:click={() => s.setOpen(!s.isOpen())}
       on:keydown={(e) => {
@@ -838,9 +837,10 @@ export default function Select(props: SelectProps): JSX.Element {
       hook:afterMount={(node) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}
+      {...attrs}
     >
-      <SelectValue placeholder={props.placeholder} value={currentLabel} />
-      {() => (props.clearable && current() !== "" ? (
+      <SelectValue placeholder={placeholder} value={currentLabel} />
+      {() => (clearable && current() !== "" ? (
         <span
           data-slot="select-clear"
           role="button"
@@ -864,7 +864,7 @@ export default function Select(props: SelectProps): JSX.Element {
             onExited={s.finishExit}
             onClose={() => s.setOpen(false)}
           >
-            {(props.items ?? []).map((entry) => (
+            {(items ?? []).map((entry) => (
               <SelectItem
                 value={entry.value}
                 label={entry.label}

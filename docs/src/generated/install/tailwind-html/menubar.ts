@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -187,28 +187,28 @@ const chevronIcon = (): HellaNode =>
     <path d="m9 18 6-6-6-6" />
   </svg>` as HellaNode;
 
-interface MenubarTriggerProps {
+interface MenubarTriggerProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
-/** The manual trigger button; the composed MenubarMenu renders the same shape wired to toggle + aria state. */
-export function MenubarTrigger(props: MenubarTriggerProps): HellaNode {
+/** The manual trigger button; the composed Menubar renders the same shape wired to toggle + aria state. */
+export function MenubarTrigger({ children, class: cls, ...attrs }: MenubarTriggerProps): HellaNode {
   return html`
     <button
       type="button"
       data-slot="menubar-trigger"
       aria-haspopup="menu"
       class="${
-        cn("flex items-center rounded-sm px-2 py-1 text-sm font-medium outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", props.class)
+        cn("flex items-center rounded-sm px-2 py-1 text-sm font-medium outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", cls)
       }"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-interface MenubarContentProps {
+interface MenubarContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchorSide;
   align?: AnchorAlign;
   /** Gap between the anchor and the content edge, in px. Default 8. */
@@ -227,11 +227,11 @@ interface MenubarContentProps {
   class?: string;
 }
 
-export function MenubarContent(props: MenubarContentProps): HellaNode {
-  const side = props.side ?? "bottom";
-  const align = props.align ?? "start";
-  const alignOffset = props.alignOffset ?? -4;
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function MenubarContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, onArrow, children, class: cls, ...attrs }: MenubarContentProps): HellaNode {
+  const side = sideProp ?? "bottom";
+  const align = alignProp ?? "start";
+  const alignOffset = alignOffsetProp ?? -4;
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -242,38 +242,37 @@ export function MenubarContent(props: MenubarContentProps): HellaNode {
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return html`
     <div
       role="menu"
       tabindex="-1"
-      id="${props.id}"
+      id="${id}"
       data-slot="menubar-content"
-      data-state="${state}"
+      data-state="${stateOf}"
       data-side="${side}"
       data-align="${align}"
       class="${
-        cn("z-50 min-w-[12rem] origin-(--radix-menubar-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", props.class)
+        cn("z-50 min-w-[12rem] origin-(--radix-menubar-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: props.sideOffset ?? 8 }));
+        const anchorEl = anchor?.();
+        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 8 }));
         if (alignOffset !== 0) {
           // Cross-axis shift over the placed coordinates; the placement axis
           // stays owned by anchorPosition's left/top writes.
-          node.style.translate = side === "top" || side === "bottom" ? alignOffset + "px 0" : "0 " + alignOffset + "px";
+          node.style.translate = side === "top" || side === "bottom" ? `${alignOffset}px 0` : `0 ${alignOffset}px`;
         }
-        if (props.onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
-          const onSelect = (): void => props.onDismiss?.();
+        if (onDismiss) {
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
+          const onSelect = (): void => onDismiss?.();
           document.addEventListener("hella:menu-select", onSelect);
           wirings.push(() => document.removeEventListener("hella:menu-select", onSelect));
         }
         wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
-        const onArrow = props.onArrow;
         const onKey = menuKeyDown(onArrow ? { onArrowLeft: () => onArrow("left"), onArrowRight: () => onArrow("right") } : {})(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
@@ -284,7 +283,7 @@ export function MenubarContent(props: MenubarContentProps): HellaNode {
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -293,79 +292,79 @@ export function MenubarContent(props: MenubarContentProps): HellaNode {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MenubarPartProps {
+interface MenubarPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function MenubarGroup(props: MenubarPartProps): HellaNode {
+export function MenubarGroup({ children, class: cls, ...attrs }: MenubarPartProps): HellaNode {
   return html`
     <div
       data-slot="menubar-group"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MenubarItemProps {
+interface MenubarItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   destructive?: boolean;
   inset?: boolean;
-  disabled?: boolean;
-  onclick?: () => void;
   /** Shortcut text rendered as a trailing Shortcut span. */
   shortcut?: string;
   class?: string;
 }
 
-export function MenubarItem(props: MenubarItemProps): HellaNode {
+export function MenubarItem({ destructive, inset, disabled, "on:click": userClick, shortcut: shortcutSlot, children, class: cls, ...attrs }: MenubarItemProps): HellaNode {
   return html`
     <div
       role="menuitem"
       tabindex="-1"
       data-slot="menubar-item"
-      data-variant="${props.destructive ? "destructive" : "default"}"
-      data-inset="${props.inset ? "true" : undefined}"
-      data-disabled="${props.disabled ? "true" : undefined}"
-      aria-disabled="${props.disabled ? "true" : undefined}"
+      data-variant="${destructive ? "destructive" : "default"}"
+      data-inset="${inset ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
+      aria-disabled="${disabled ? "true" : undefined}"
       class="${
-        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!", props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:*:[svg]:text-destructive!", cls)
       }"
-      on:click="${() => {
-        if (props.disabled) return;
-        props.onclick?.();
+      on:click="${function (this: HTMLElement, e: MouseEvent) {
+        if (disabled) return;
+        userClick?.call(this, e);
         closeAllMenus();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${() => (props.shortcut !== undefined ? MenubarShortcut({ children: props.shortcut }) : null)}
+      ${() => children}${() => (shortcutSlot !== undefined ? MenubarShortcut({ children: shortcutSlot }) : null)}
     </div>
   ` as HellaNode;
 }
 
-interface MenubarCheckboxItemProps {
+interface MenubarCheckboxItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   /** Checked state. A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`. */
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
   class?: string;
 }
 
-export function MenubarCheckboxItem(props: MenubarCheckboxItemProps): HellaNode {
-  const accessor = typeof props.checked === "function" ? props.checked : undefined;
-  const internal = signal(typeof props.checked === "boolean" ? props.checked : false);
+export function MenubarCheckboxItem({ checked: checkedProp, onCheckedChange, disabled, children, class: cls, ...attrs }: MenubarCheckboxItemProps): HellaNode {
+  const accessor = typeof checkedProp === "function" ? checkedProp : undefined;
+  const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (accessor ? accessor() : internal());
   const toggle = (): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const next = !checked();
     if (!accessor) internal(next);
-    props.onCheckedChange?.(next);
+    onCheckedChange?.(next);
     closeAllMenus();
   };
   return html`
@@ -375,12 +374,13 @@ export function MenubarCheckboxItem(props: MenubarCheckboxItemProps): HellaNode 
       data-slot="menubar-checkbox-item"
       aria-checked="${() => (checked() ? "true" : "false")}"
       data-state="${() => (checked() ? "checked" : "unchecked")}"
-      data-disabled="${props.disabled ? "true" : undefined}"
-      aria-disabled="${props.disabled ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
+      aria-disabled="${disabled ? "true" : undefined}"
       class="${
-        cn("relative flex cursor-default items-center gap-2 rounded-xs py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-xs py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
       }"
       on:click="${toggle}"
+      ...${attrs}
     >
       <span
         data-slot="menubar-indicator"
@@ -390,12 +390,12 @@ export function MenubarCheckboxItem(props: MenubarCheckboxItemProps): HellaNode 
       >
         ${() => (checked() ? checkIcon() : null)}
       </span>
-      ${() => props.children}
+      ${() => children}
     </div>
   ` as HellaNode;
 }
 
-interface MenubarRadioGroupProps {
+interface MenubarRadioGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   items?: MenuEntry[];
   /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
@@ -404,21 +404,22 @@ interface MenubarRadioGroupProps {
   class?: string;
 }
 
-export function MenubarRadioGroup(props: MenubarRadioGroupProps): HellaNode {
+export function MenubarRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarRadioGroupProps): HellaNode {
   const internal = signal("");
-  const current = (): string => (props.value !== undefined ? props.value() : internal());
+  const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
-    if (props.value === undefined) internal(value);
-    props.onValueChange?.(value);
+    if (valueProp === undefined) internal(value);
+    onValueChange?.(value);
   };
   return html`
     <div
       data-slot="menubar-radio-group"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
+      ...${attrs}
     >
-      ${() => props.children}${(props.items ?? []).map((entry) => MenubarRadioItem({
+      ${() => children}${(items ?? []).map((entry) => MenubarRadioItem({
         value: entry.value,
         checked: () => current() === entry.value,
         disabled: entry.disabled,
@@ -429,37 +430,37 @@ export function MenubarRadioGroup(props: MenubarRadioGroupProps): HellaNode {
   ` as HellaNode;
 }
 
-interface MenubarRadioItemProps {
+interface MenubarRadioItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   value?: string;
   /** Checked state. A boolean reads statically; an accessor keeps the item reactive against its owning group. */
   checked?: boolean | (() => boolean);
   onSelect?: () => void;
-  disabled?: boolean;
   class?: string;
 }
 
-export function MenubarRadioItem(props: MenubarRadioItemProps): HellaNode {
+export function MenubarRadioItem({ value, checked: checkedProp, onSelect, disabled, children, class: cls, ...attrs }: MenubarRadioItemProps): HellaNode {
   const checked = (): boolean =>
-    typeof props.checked === "function" ? props.checked() : props.checked ?? false;
+    typeof checkedProp === "function" ? checkedProp() : checkedProp ?? false;
   return html`
     <div
       role="menuitemradio"
       tabindex="-1"
       data-slot="menubar-radio-item"
-      data-value="${props.value}"
+      data-value="${value}"
       aria-checked="${() => (checked() ? "true" : "false")}"
       data-state="${() => (checked() ? "checked" : "unchecked")}"
-      data-disabled="${props.disabled ? "true" : undefined}"
-      aria-disabled="${props.disabled ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
+      aria-disabled="${disabled ? "true" : undefined}"
       class="${
-        cn("relative flex cursor-default items-center gap-2 rounded-xs py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-xs py-1.5 pr-2 pl-8 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
       }"
       on:click="${() => {
-        if (props.disabled) return;
-        props.onSelect?.();
+        if (disabled) return;
+        onSelect?.();
         closeAllMenus();
       }}"
+      ...${attrs}
     >
       <span
         data-slot="menubar-indicator"
@@ -469,53 +470,61 @@ export function MenubarRadioItem(props: MenubarRadioItemProps): HellaNode {
       >
         ${() => (checked() ? circleIcon() : null)}
       </span>
-      ${() => props.children}
+      ${() => children}
     </div>
   ` as HellaNode;
 }
 
-interface MenubarLabelProps {
+interface MenubarLabelProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   inset?: boolean;
   class?: string;
 }
 
-export function MenubarLabel(props: MenubarLabelProps): HellaNode {
+export function MenubarLabel({ inset, children, class: cls, ...attrs }: MenubarLabelProps): HellaNode {
   return html`
     <div
       data-slot="menubar-label"
-      data-inset="${props.inset ? "true" : undefined}"
+      data-inset="${inset ? "true" : undefined}"
       class="${
-        cn("px-2 py-1.5 text-sm font-medium data-[inset]:pl-8", props.class)
+        cn("px-2 py-1.5 text-sm font-medium data-[inset]:pl-8", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function MenubarSeparator(props: MenubarPartProps): HellaNode {
+export function MenubarSeparator({ class: cls, ...attrs }: MenubarPartProps): HellaNode {
   return html`
     <div
       role="separator"
       data-slot="menubar-separator"
       class="${
-        cn("-mx-1 my-1 h-px bg-border", props.class)
+        cn("-mx-1 my-1 h-px bg-border", cls)
       }"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-export function MenubarShortcut(props: MenubarPartProps): HellaNode {
+interface MenubarShortcutProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function MenubarShortcut({ children, class: cls, ...attrs }: MenubarShortcutProps): HellaNode {
   return html`
     <span
       data-slot="menubar-shortcut"
       class="${
-        cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
+        cn("ml-auto text-xs tracking-widest text-muted-foreground", cls)
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface MenubarSubTriggerProps {
+interface MenubarSubTriggerProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   inset?: boolean;
   /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
@@ -525,31 +534,31 @@ interface MenubarSubTriggerProps {
   class?: string;
 }
 
-export function MenubarSubTrigger(props: MenubarSubTriggerProps): HellaNode {
-  const state = (): "open" | "closed" => props.state?.() ?? "closed";
+export function MenubarSubTrigger({ inset, state, onOpen, children, class: cls, ...attrs }: MenubarSubTriggerProps): HellaNode {
+  const stateOf = (): "open" | "closed" => state?.() ?? "closed";
   const teardown: (() => void)[] = [];
   return html`
     <div
       role="menuitem"
       tabindex="-1"
       data-slot="menubar-sub-trigger"
-      data-state="${state}"
-      data-inset="${props.inset ? "true" : undefined}"
+      data-state="${stateOf}"
+      data-inset="${inset ? "true" : undefined}"
       aria-haspopup="menu"
-      aria-expanded="${() => (state() === "open" ? "true" : "false")}"
+      aria-expanded="${() => (stateOf() === "open" ? "true" : "false")}"
       class="${
-        cn("flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", props.class)
+        cn("flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", cls)
       }"
-      on:click="${() => props.onOpen?.()}"
+      on:click="${() => onOpen?.()}"
       hook:afterMount="${(node: Element) => {
-        if (!(node instanceof HTMLElement) || !props.onOpen) return;
+        if (!(node instanceof HTMLElement) || !onOpen) return;
         // Hover intent: ~100ms rest opens, leaving before it fires cancels.
         let timer: ReturnType<typeof setTimeout> | null = null;
         const enter = (): void => {
           if (timer !== null) return;
           timer = setTimeout(() => {
             timer = null;
-            props.onOpen?.();
+            onOpen?.();
           }, 100);
         };
         const leave = (): void => {
@@ -568,13 +577,14 @@ export function MenubarSubTrigger(props: MenubarSubTriggerProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${chevronIcon()}
+      ${() => children}${chevronIcon()}
     </div>
   ` as HellaNode;
 }
 
-interface MenubarSubContentProps {
+interface MenubarSubContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
   side?: AnchorSide;
   align?: AnchorAlign;
@@ -593,10 +603,10 @@ interface MenubarSubContentProps {
   class?: string;
 }
 
-export function MenubarSubContent(props: MenubarSubContentProps): HellaNode {
-  const side = props.side ?? "right";
-  const align = props.align ?? "start";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function MenubarSubContent({ state, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onArrowLeft, onPointerEnter, children, class: cls, ...attrs }: MenubarSubContentProps): HellaNode {
+  const side = sideProp ?? "right";
+  const align = alignProp ?? "start";
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -607,7 +617,7 @@ export function MenubarSubContent(props: MenubarSubContentProps): HellaNode {
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return html`
@@ -615,37 +625,37 @@ export function MenubarSubContent(props: MenubarSubContentProps): HellaNode {
       role="menu"
       tabindex="-1"
       data-slot="menubar-sub-content"
-      data-state="${state}"
+      data-state="${stateOf}"
       data-side="${side}"
       data-align="${align}"
       class="${
-        cn("z-50 min-w-[8rem] origin-(--radix-menubar-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", props.class)
+        cn("z-50 min-w-[8rem] origin-(--radix-menubar-content-transform-origin) overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: props.sideOffset ?? 0 }));
-        if (props.onDismiss) {
+        const anchorEl = anchor?.();
+        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 0 }));
+        if (onDismiss) {
           // Submenu layers register their own dismissal: Escape pops one
           // level, an outside pointerdown closes the sub before the parent.
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
-          const onSelect = (): void => props.onDismiss?.();
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
+          const onSelect = (): void => onDismiss?.();
           document.addEventListener("hella:menu-select", onSelect);
           wirings.push(() => document.removeEventListener("hella:menu-select", onSelect));
         }
         wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
-        const onKey = menuKeyDown(props.onArrowLeft ? { onArrowLeft: props.onArrowLeft } : {})(node);
+        const onKey = menuKeyDown(onArrowLeft ? { onArrowLeft } : {})(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
-        if (props.onPointerEnter) {
-          const onPointerEnter = (): void => props.onPointerEnter?.();
-          node.addEventListener("pointerenter", onPointerEnter);
-          wirings.push(() => node.removeEventListener("pointerenter", onPointerEnter));
+        if (onPointerEnter) {
+          const onPointerEnterListener = (): void => onPointerEnter?.();
+          node.addEventListener("pointerenter", onPointerEnterListener);
+          wirings.push(() => node.removeEventListener("pointerenter", onPointerEnterListener));
         }
         const first = menuItems(node)[0];
         (first ?? node).focus();
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -654,24 +664,25 @@ export function MenubarSubContent(props: MenubarSubContentProps): HellaNode {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MenubarSubProps {
+interface MenubarSubProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   content?: HellaChildren;
   class?: string;
 }
 
-export function MenubarSub(props: MenubarSubProps): HellaNode {
+export function MenubarSub({ content: contentSlot, children, class: cls, ...attrs }: MenubarSubProps): HellaNode {
   const s = menuOpenState({});
   let triggerNode: HTMLElement | undefined;
   let openTimer: ReturnType<typeof setTimeout> | null = null;
   let closeTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Closing the submenu returns focus to its trigger; the bar menu's own
-  // restore owns the top-level handoff, so a detached trigger is left alone.
+  // Closing the submenu returns focus to its trigger; the root's own restore
+  // owns the top-level handoff, so a detached trigger is left alone.
   let subWasOpen = false;
   effect(() => {
     if (s.isOpen()) subWasOpen = true;
@@ -690,7 +701,7 @@ export function MenubarSub(props: MenubarSubProps): HellaNode {
       aria-haspopup="menu"
       aria-expanded="${() => (s.isOpen() ? "true" : "false")}"
       class="${
-        cn("flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", props.class)
+        cn("flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground", cls)
       }"
       on:click="${() => s.setOpen(true)}"
       hook:afterMount="${(node: Element) => {
@@ -727,8 +738,9 @@ export function MenubarSub(props: MenubarSubProps): HellaNode {
         if (openTimer !== null) clearTimeout(openTimer);
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${chevronIcon()}${() => s.visible() && Portal({
+      ${() => children}${chevronIcon()}${() => s.visible() && Portal({
         to: "body",
         children: [
           MenubarSubContent({
@@ -743,7 +755,7 @@ export function MenubarSub(props: MenubarSubProps): HellaNode {
                 closeTimer = null;
               }
             },
-            children: props.content,
+            children: contentSlot,
           }) as HellaChild,
         ],
       })}
@@ -751,7 +763,7 @@ export function MenubarSub(props: MenubarSubProps): HellaNode {
   ` as HellaNode;
 }
 
-interface MenubarMenuProps {
+interface MenubarMenuProps extends HTMLAttributes<"div"> {
   /** This menu's id in the bar's open-menu value; a generated id stands in when omitted. */
   value?: string;
   open?: () => boolean;
@@ -763,9 +775,9 @@ interface MenubarMenuProps {
 
 let menubarMenuCount = 0;
 
-export function MenubarMenu(props: MenubarMenuProps): HellaNode {
-  const s = menuOpenState(props);
-  const menuId = props.value ?? `hella-menubar-menu-${++menubarMenuCount}`;
+export function MenubarMenu({ value, open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: MenubarMenuProps): HellaNode {
+  const s = menuOpenState({ open, onOpenChange });
+  const menuId = value ?? `hella-menubar-menu-${++menubarMenuCount}`;
   const contentId = `${menuId}-content`;
   let triggerNode: HTMLElement | undefined;
   const wirings: (() => void)[] = [];
@@ -819,9 +831,9 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
   return html`
     <div
       data-slot="menubar-menu"
-      data-value="${props.value}"
+      data-value="${value}"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node.querySelector("[data-slot='menubar-trigger']") ?? undefined;
@@ -831,6 +843,7 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (wirings.length) wirings.pop()!();
       }}"
+      ...${attrs}
     >
       <button
         type="button"
@@ -850,7 +863,7 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
           }
         }}"
       >
-        ${() => props.children}
+        ${() => children}
       </button>
       ${() => s.visible() && Portal({
         to: "body",
@@ -862,7 +875,7 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
             onDismiss: () => s.setOpen(false),
             onExited: s.finishExit,
             onArrow,
-            children: props.content,
+            children: contentSlot,
           }) as HellaChild,
         ],
       })}
@@ -870,7 +883,7 @@ export function MenubarMenu(props: MenubarMenuProps): HellaNode {
   ` as HellaNode;
 }
 
-interface MenubarProps {
+interface MenubarProps extends HTMLAttributes<"div"> {
   /** Controlled id of the open menu ("" when closed). When given, the bar never writes its internal signal and `onValueChange` reports every flip. */
   value?: () => string;
   onValueChange?: (value: string) => void;
@@ -878,12 +891,12 @@ interface MenubarProps {
   class?: string;
 }
 
-export default function Menubar(props: MenubarProps): HellaNode {
+export default function Menubar({ value: valueProp, onValueChange, children, class: cls, ...attrs }: MenubarProps): HellaNode {
   const internal = signal("");
-  const active = (): string => (props.value !== undefined ? props.value() : internal());
+  const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {
-    if (props.value === undefined) internal(value);
-    props.onValueChange?.(value);
+    if (valueProp === undefined) internal(value);
+    onValueChange?.(value);
   };
   const wirings: (() => void)[] = [];
   let barNode: HTMLElement | undefined;
@@ -922,7 +935,7 @@ export default function Menubar(props: MenubarProps): HellaNode {
       role="menubar"
       data-slot="menubar"
       class="${
-        cn("flex h-9 items-center gap-1 rounded-md border bg-background p-1 shadow-xs", props.class)
+        cn("flex h-9 items-center gap-1 rounded-md border bg-background p-1 shadow-xs", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
@@ -940,6 +953,7 @@ export default function Menubar(props: MenubarProps): HellaNode {
         while (wirings.length) wirings.pop()!();
         barNode = undefined;
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

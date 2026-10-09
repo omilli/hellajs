@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { html, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 /** The chevron-down icon (refs/icons/chevron-down.svg), created per call so reactive swaps never share nodes between clones. */
@@ -23,39 +23,41 @@ const chevronIcon = (): HellaNode =>
     <path d="m6 9 6 6 6-6" />
   </svg>` as HellaNode;
 
-interface NavigationMenuListProps {
+interface NavigationMenuListProps extends HTMLAttributes<"ul"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function NavigationMenuList(props: NavigationMenuListProps): HellaNode {
+export function NavigationMenuList({ children, class: cls, ...attrs }: NavigationMenuListProps): HellaNode {
   return html`
     <ul
       data-slot="navigation-menu-list"
       class="${
-        cn("group flex flex-1 list-none items-center justify-center gap-1", props.class)
+        cn("group flex flex-1 list-none items-center justify-center gap-1", cls)
       }"
-    >${() => props.children}</ul>
+      ...${attrs}
+    >${() => children}</ul>
   ` as HellaNode;
 }
 
-interface NavigationMenuItemProps {
+interface NavigationMenuItemProps extends HTMLAttributes<"li"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function NavigationMenuItem(props: NavigationMenuItemProps): HellaNode {
+export function NavigationMenuItem({ children, class: cls, ...attrs }: NavigationMenuItemProps): HellaNode {
   return html`
     <li
       data-slot="navigation-menu-item"
       class="${
-        cn("relative", props.class)
+        cn("relative", cls)
       }"
-    >${() => props.children}</li>
+      ...${attrs}
+    >${() => children}</li>
   ` as HellaNode;
 }
 
-interface NavigationMenuTriggerProps {
+interface NavigationMenuTriggerProps extends HTMLAttributes<"button"> {
   /** This trigger's id in the root's open-value store; clicks announce it when no `onActivate` stands in. */
   value?: string;
   /** Resolves the open state for `aria-expanded`/`data-state`; manual wiring threads it from the owning signal. */
@@ -65,32 +67,33 @@ interface NavigationMenuTriggerProps {
   class?: string;
 }
 
-export function NavigationMenuTrigger(props: NavigationMenuTriggerProps): HellaNode {
-  const active = (): boolean => props.active?.() ?? false;
+export function NavigationMenuTrigger({ value, active: activeProp, onActivate, children, class: cls, ...attrs }: NavigationMenuTriggerProps): HellaNode {
+  const active = (): boolean => activeProp?.() ?? false;
   return html`
     <button
       type="button"
       data-slot="navigation-menu-trigger"
-      data-value="${props.value}"
+      data-value="${value}"
       data-state="${() => (active() ? "open" : "closed")}"
       aria-expanded="${() => (active() ? "true" : "false")}"
       class="${
-        cn("group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent/50 data-[state=open]:text-accent-foreground data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent", props.class)
+        cn("group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-[color,box-shadow] outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-accent/50 data-[state=open]:text-accent-foreground data-[state=open]:hover:bg-accent data-[state=open]:focus:bg-accent", cls)
       }"
       on:click="${() => {
         // The announce carries the requested state (computed before the owner
         // toggle runs), so the root's store mirrors instead of re-toggling.
         const open = !active();
-        props.onActivate?.();
-        if (props.value !== undefined) document.dispatchEvent(new CustomEvent("hella:navigation-menu-activate", { detail: { id: props.value, open } }));
+        onActivate?.();
+        if (value !== undefined) document.dispatchEvent(new CustomEvent("hella:navigation-menu-activate", { detail: { id: value, open } }));
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${chevronIcon()}
+      ${() => children}${chevronIcon()}
     </button>
   ` as HellaNode;
 }
 
-interface NavigationMenuContentProps {
+interface NavigationMenuContentProps extends HTMLAttributes<"div"> {
   /** Resolves the open state; manual wiring threads it from the owning signal. */
   active?: () => boolean;
   /** Portal target for the shared viewport slot; defaults to the first `[data-slot="navigation-menu-viewport"]` in the document. */
@@ -101,9 +104,9 @@ interface NavigationMenuContentProps {
   class?: string;
 }
 
-export function NavigationMenuContent(props: NavigationMenuContentProps): HellaNode {
-  const active = (): boolean => props.active?.() ?? false;
-  const portalTarget = props.viewport ?? "[data-slot='navigation-menu-viewport']";
+export function NavigationMenuContent({ active: activeProp, viewport: viewportSlot, onExited, children, class: cls, ...attrs }: NavigationMenuContentProps): HellaNode {
+  const active = (): boolean => activeProp?.() ?? false;
+  const portalTarget = viewportSlot ?? "[data-slot='navigation-menu-viewport']";
   // `visible` alone gates the render so an open→closed flip never unmounts
   // before this watcher starts the exit; the panel stays mounted under
   // data-state="closed" until its animationend (or the copied duration
@@ -146,7 +149,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): HellaN
           data-slot="navigation-menu-content"
           data-state="${state}"
           class="${
-            cn("top-0 left-0 w-full p-2 pr-2.5 data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 data-[motion^=from-]:animate-in data-[motion^=from-]:fade-in data-[motion^=to-]:animate-out data-[motion^=to-]:fade-out md:absolute md:w-auto group-data-[viewport=false]/navigation-menu:top-full group-data-[viewport=false]/navigation-menu:mt-1.5 group-data-[viewport=false]/navigation-menu:overflow-hidden group-data-[viewport=false]/navigation-menu:rounded-md group-data-[viewport=false]/navigation-menu:border group-data-[viewport=false]/navigation-menu:bg-popover group-data-[viewport=false]/navigation-menu:text-popover-foreground group-data-[viewport=false]/navigation-menu:shadow group-data-[viewport=false]/navigation-menu:duration-200 **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none group-data-[viewport=false]/navigation-menu:data-[state=closed]:animate-out group-data-[viewport=false]/navigation-menu:data-[state=closed]:fade-out-0 group-data-[viewport=false]/navigation-menu:data-[state=closed]:zoom-out-95 group-data-[viewport=false]/navigation-menu:data-[state=open]:animate-in group-data-[viewport=false]/navigation-menu:data-[state=open]:fade-in-0 group-data-[viewport=false]/navigation-menu:data-[state=open]:zoom-in-95", props.class)
+            cn("top-0 left-0 w-full p-2 pr-2.5 data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 data-[motion^=from-]:animate-in data-[motion^=from-]:fade-in data-[motion^=to-]:animate-out data-[motion^=to-]:fade-out md:absolute md:w-auto group-data-[viewport=false]/navigation-menu:top-full group-data-[viewport=false]/navigation-menu:mt-1.5 group-data-[viewport=false]/navigation-menu:overflow-hidden group-data-[viewport=false]/navigation-menu:rounded-md group-data-[viewport=false]/navigation-menu:border group-data-[viewport=false]/navigation-menu:bg-popover group-data-[viewport=false]/navigation-menu:text-popover-foreground group-data-[viewport=false]/navigation-menu:shadow group-data-[viewport=false]/navigation-menu:duration-200 **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none group-data-[viewport=false]/navigation-menu:data-[state=closed]:animate-out group-data-[viewport=false]/navigation-menu:data-[state=closed]:fade-out-0 group-data-[viewport=false]/navigation-menu:data-[state=closed]:zoom-out-95 group-data-[viewport=false]/navigation-menu:data-[state=open]:animate-in group-data-[viewport=false]/navigation-menu:data-[state=open]:fade-in-0 group-data-[viewport=false]/navigation-menu:data-[state=open]:zoom-in-95", cls)
           }"
           hook:afterMount="${(node: Element) => {
             // The exit's animationend (state already "closed") unmounts the
@@ -155,7 +158,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): HellaN
             const onAnimationEnd = (): void => {
               if (!active()) {
                 visible(false);
-                props.onExited?.();
+                onExited?.();
               }
             };
             node.addEventListener("animationend", onAnimationEnd);
@@ -164,53 +167,52 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): HellaN
           hook:beforeDestroy="${() => {
             while (teardown.length) teardown.pop()!();
           }}"
-        >${() => props.children}</div>` as HellaChild,
+          ...${attrs}
+        >${() => children}</div>` as HellaChild,
       ],
     })}
     </div>
   ` as HellaNode;
 }
 
-interface NavigationMenuLinkProps {
+interface NavigationMenuLinkProps extends HTMLAttributes<"a"> {
   /** Renders `data-active="true"` and its accent styles (the ref's data-[active=true] set). */
   active?: boolean;
-  href?: string;
   children?: HellaChildren;
   class?: string;
 }
 
-export function NavigationMenuLink(props: NavigationMenuLinkProps): HellaNode {
+export function NavigationMenuLink({ active, children, class: cls, ...attrs }: NavigationMenuLinkProps): HellaNode {
   return html`
     <a
       data-slot="navigation-menu-link"
-      data-active="${props.active ? "true" : undefined}"
-      href="${props.href}"
+      data-active="${active ? "true" : undefined}"
       class="${
-        cn("flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground data-[active=true]:hover:bg-accent data-[active=true]:focus:bg-accent [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", props.class)
+        cn("flex flex-col gap-1 rounded-sm p-2 text-sm transition-all outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground data-[active=true]:hover:bg-accent data-[active=true]:focus:bg-accent [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
       }"
-    >${() => props.children}</a>
+      ...${attrs}
+    >${() => children}</a>
   ` as HellaNode;
 }
 
-interface NavigationMenuViewportProps {
+interface NavigationMenuViewportProps extends HTMLAttributes<"div"> {
   /** Resolves the open state for the viewport's enter/exit `data-state`; the composed root wires its own store. */
   active?: () => boolean;
-  /** Anchors manual Content wiring: give the slot an id and pass `#<id>` as each Content's `viewport` selector. */
-  id?: string;
   class?: string;
 }
 
-export function NavigationMenuViewport(props: NavigationMenuViewportProps): HellaNode {
-  const active = (): boolean => props.active?.() ?? false;
+export function NavigationMenuViewport({ active: activeProp, id, class: cls, ...attrs }: NavigationMenuViewportProps): HellaNode {
+  const active = (): boolean => activeProp?.() ?? false;
   return html`
     <div
       class="${
-        cn("absolute top-full left-0 isolate z-50 flex justify-center", props.class)
+        cn("absolute top-full left-0 isolate z-50 flex justify-center", cls)
       }"
+      ...${attrs}
     >
       <div
         data-slot="navigation-menu-viewport"
-        id="${props.id}"
+        id="${id}"
         data-state="${() => (active() ? "open" : "closed")}"
         class="${
           cn("origin-top-center relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:zoom-in-90 md:w-[var(--radix-navigation-menu-viewport-width)]")
@@ -220,7 +222,7 @@ export function NavigationMenuViewport(props: NavigationMenuViewportProps): Hell
   ` as HellaNode;
 }
 
-interface NavigationMenuIndicatorProps {
+interface NavigationMenuIndicatorProps extends HTMLAttributes<"div"> {
   /** Resolves the visible state (any panel open); manual wiring threads it from the owning signal. */
   active?: () => boolean;
   /** Resolves the trigger the indicator sits under; defaults to the trigger announced by the activation stream. */
@@ -229,16 +231,16 @@ interface NavigationMenuIndicatorProps {
   class?: string;
 }
 
-export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): HellaNode {
+export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls, ...attrs }: NavigationMenuIndicatorProps): HellaNode {
   const activeId = signal("");
-  const visible = (): boolean => props.active?.() ?? activeId() !== "";
+  const visible = (): boolean => activeProp?.() ?? activeId() !== "";
   const wirings: (() => void)[] = [];
   let node: HTMLElement | undefined;
 
   // The trigger to sit under: the manual anchor when given, else the active
   // trigger found by the announcement stream's id.
   const resolveTrigger = (): Element | undefined => {
-    if (props.anchor) return props.anchor();
+    if (anchor) return anchor();
     const id = activeId();
     return id === "" ? undefined : document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ?? undefined;
   };
@@ -268,7 +270,7 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): He
       data-slot="navigation-menu-indicator"
       data-state="${() => (visible() ? "visible" : "hidden")}"
       class="${
-        cn("top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:animate-in data-[state=visible]:fade-in transition-[transform,width] duration-200", props.class)
+        cn("top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:animate-in data-[state=visible]:fade-in transition-[transform,width] duration-200", cls)
       }"
       hook:afterMount="${(mounted: Element) => {
         if (!(mounted instanceof HTMLElement)) return;
@@ -289,6 +291,7 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): He
         while (wirings.length) wirings.pop()!();
         node = undefined;
       }}"
+      ...${attrs}
     >
       <div
         class="${
@@ -299,7 +302,7 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): He
   ` as HellaNode;
 }
 
-interface NavigationMenuProps {
+interface NavigationMenuProps extends HTMLAttributes<"div"> {
   /** Controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given. */
   value?: () => string;
   onValueChange?: (value: string) => void;
@@ -309,12 +312,12 @@ interface NavigationMenuProps {
   class?: string;
 }
 
-export default function NavigationMenu(props: NavigationMenuProps): HellaNode {
+export default function NavigationMenu({ value: valueProp, onValueChange, viewport: viewportProp, children, class: cls, ...attrs }: NavigationMenuProps): HellaNode {
   const internal = signal("");
-  const active = (): string => (props.value !== undefined ? props.value() : internal());
+  const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {
-    if (props.value === undefined) internal(value);
-    props.onValueChange?.(value);
+    if (valueProp === undefined) internal(value);
+    onValueChange?.(value);
   };
   const wirings: (() => void)[] = [];
 
@@ -329,9 +332,9 @@ export default function NavigationMenu(props: NavigationMenuProps): HellaNode {
   return html`
     <div
       data-slot="navigation-menu"
-      data-viewport="${props.viewport === false ? "false" : "true"}"
+      data-viewport="${viewportProp === false ? "false" : "true"}"
       class="${
-        cn("group/navigation-menu relative flex max-w-max flex-1 items-center justify-center", props.class)
+        cn("group/navigation-menu relative flex max-w-max flex-1 items-center justify-center", cls)
       }"
       hook:afterMount="${() => {
         document.addEventListener("hella:navigation-menu-activate", onActivate);
@@ -340,8 +343,9 @@ export default function NavigationMenu(props: NavigationMenuProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (wirings.length) wirings.pop()!();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}${() => (props.viewport === false ? null : NavigationMenuViewport({ active: () => active() !== "" }))}
+      ${() => children}${() => (viewportProp === false ? null : NavigationMenuViewport({ active: () => active() !== "" }))}
     </div>
   ` as HellaNode;
 }

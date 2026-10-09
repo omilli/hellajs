@@ -26,7 +26,7 @@ export function InputGroupRingsDemo() {
         <InputGroupInput placeholder="Focus me - the whole group lights up" />
       </InputGroup>
       <InputGroup>
-        <InputGroupInput placeholder="Invalid value" ariaInvalid={true} />
+        <InputGroupInput placeholder="Invalid value" aria-invalid="true" />
       </InputGroup>
     </>
   );

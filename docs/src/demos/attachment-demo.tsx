@@ -21,7 +21,7 @@ function chip(name: string, note: string, state: ChipState) {
         <AttachmentDescription>{note}</AttachmentDescription>
       </AttachmentContent>
       <AttachmentActions>
-        <AttachmentAction onclick={() => alert(`Remove ${name}`)}>x</AttachmentAction>
+        <AttachmentAction on:click={() => alert(`Remove ${name}`)}>x</AttachmentAction>
       </AttachmentActions>
     </Attachment>
   );

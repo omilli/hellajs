@@ -11,17 +11,17 @@ export function PaginationDemo() {
     <>
       <Pagination>
         <PaginationContent>
-          <PaginationItem><PaginationPrevious onclick={() => go(Math.max(1, page() - 1))} /></PaginationItem>
+          <PaginationItem><PaginationPrevious on:click={() => go(Math.max(1, page() - 1))} /></PaginationItem>
           {pages.map((p) => (
             <PaginationItem>
-              <PaginationLink onclick={() => go(p)} isActive={page() === p}>{p}</PaginationLink>
+              <PaginationLink on:click={() => go(p)} isActive={page() === p}>{p}</PaginationLink>
             </PaginationItem>
           ))}
           <PaginationItem><PaginationEllipsis /></PaginationItem>
-          <PaginationItem><PaginationNext onclick={() => go(Math.min(5, page() + 1))} /></PaginationItem>
+          <PaginationItem><PaginationNext on:click={() => go(Math.min(5, page() + 1))} /></PaginationItem>
         </PaginationContent>
       </Pagination>
-      <p class="demo-muted">{() => `Page ${page()} of 5, driven by the links' onclick - no router.`}</p>
+      <p class="demo-muted">{() => `Page ${page()} of 5, driven by the links' on:click - no router.`}</p>
     </>
   );
 }

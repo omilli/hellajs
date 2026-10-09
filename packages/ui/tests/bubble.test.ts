@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   bubblePartVariants,
   bubbleVariants,
@@ -98,5 +100,23 @@ describe("bubble", () => {
     assertStructuralParity(bubbleVariants, { variant: "ghost", align: "end", children: ["x"] });
     assertStructuralParity(bubblePartVariants.filter((candidate) => candidate.part === "Reactions"), { side: "top", align: "start", children: ["x"] });
     assertStructuralParity(bubblePartVariants.filter((candidate) => candidate.part === "Content"), { children: ["x"] });
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(bubbleVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(bubbleVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges a user class into the root class across all four variants", () => {
+    for (const variant of bubbleVariants) {
+      const root = renderVariant(variant, { class: "my-bubble", children: ["x"] });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("my-bubble");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
   });
 });

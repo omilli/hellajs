@@ -1,6 +1,6 @@
 import { signal } from "@hellajs/core";
 import { rovingTabIndex } from "@hellajs/dom";
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -17,7 +17,8 @@ interface ToggleGroupEntry {
   disabled?: boolean;
 }
 
-interface ToggleGroupProps {
+interface ToggleGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: ToggleGroupEntry[];
   type: "single" | "multiple";
   /** Controlled single selection. */
@@ -28,19 +29,17 @@ interface ToggleGroupProps {
   onValueChange?: (value: string | string[]) => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-  class?: string;
 }
 
-interface ToggleGroupItemProps {
+interface ToggleGroupItemProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   value?: string;
   /** Pressed state. A boolean reads statically; an accessor keeps the manual part reactive. */
   pressed?: boolean | (() => boolean);
   onSelect?: () => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-  disabled?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /** The toggle variant maps, duplicated from the toggle entry (self-contained entries never cross-import). */
@@ -49,60 +48,57 @@ const toggleVariants = (options?: {
   size?: "default" | "sm" | "lg";
 }): string => [base, variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]].filter(Boolean).join(" ");
 
-export function ToggleGroupItem(props: ToggleGroupItemProps): JSX.Element {
-  const pressed = (): boolean =>
-    typeof props.pressed === "function" ? props.pressed() : props.pressed ?? false;
-  const variant = props.variant ?? "default";
-  const size = props.size ?? "default";
+export function ToggleGroupItem({ value, pressed, onSelect, variant = "default", size = "default", disabled, "on:click": userClick, children, class: cls, ...attrs }: ToggleGroupItemProps): JSX.Element {
+  const isPressed = (): boolean =>
+    typeof pressed === "function" ? pressed() : pressed ?? false;
 
   return (
     <button
       type="button"
       data-slot="toggle-group-item"
-      value={props.value}
+      value={value}
       data-variant={variant}
       data-size={size}
       data-spacing="0"
-      aria-pressed={pressed() ? "true" : "false"}
-      data-state={pressed() ? "on" : "off"}
-      disabled={props.disabled ? true : undefined}
+      aria-pressed={isPressed() ? "true" : "false"}
+      data-state={isPressed() ? "on" : "off"}
+      disabled={disabled ? true : undefined}
       class={
         // @hella:compose
-        [toggleVariants({ variant, size }), item, props.class]
+        [toggleVariants({ variant, size }), item, cls]
         // @hella:end
       }
-      on:click={() => props.onSelect?.()}
+      on:click={function (e) { userClick?.call(this, e); onSelect?.(); }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-export default function ToggleGroup(props: ToggleGroupProps): JSX.Element {
-  const variant = props.variant ?? "default";
-  const size = props.size ?? "default";
-  const pressedValues = props.items.filter((entry) => entry.pressed).map((entry) => entry.value);
+export default function ToggleGroup({ items, type, value, values, onValueChange, variant = "default", size = "default", class: cls, ...attrs }: ToggleGroupProps): JSX.Element {
+  const pressedValues = items.filter((entry) => entry.pressed).map((entry) => entry.value);
   const internalSingle = signal(pressedValues[0] ?? "");
   const internalMulti = signal<Set<string>>(new Set(pressedValues));
   const wirings: (() => void)[] = [];
 
-  const isPressed = (value: string): boolean =>
-    props.type === "multiple"
-      ? (props.values !== undefined ? props.values() : [...internalMulti()]).includes(value)
-      : (props.value !== undefined ? props.value() : internalSingle()) === value;
+  const isPressed = (itemValue: string): boolean =>
+    type === "multiple"
+      ? (values !== undefined ? values() : [...internalMulti()]).includes(itemValue)
+      : (value !== undefined ? value() : internalSingle()) === itemValue;
 
-  const toggleItem = (value: string): void => {
-    if (props.type === "multiple") {
-      const current = props.values !== undefined ? props.values() : [...internalMulti()];
-      const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
-      if (props.values === undefined) internalMulti(new Set(next));
-      props.onValueChange?.(next);
+  const toggleItem = (itemValue: string): void => {
+    if (type === "multiple") {
+      const current = values !== undefined ? values() : [...internalMulti()];
+      const next = current.includes(itemValue) ? current.filter((v) => v !== itemValue) : [...current, itemValue];
+      if (values === undefined) internalMulti(new Set(next));
+      onValueChange?.(next);
       return;
     }
-    const current = props.value !== undefined ? props.value() : internalSingle();
-    const next = current === value ? "" : value;
-    if (props.value === undefined) internalSingle(next);
-    props.onValueChange?.(next);
+    const current = value !== undefined ? value() : internalSingle();
+    const next = current === itemValue ? "" : itemValue;
+    if (value === undefined) internalSingle(next);
+    onValueChange?.(next);
   };
 
   return (
@@ -115,7 +111,7 @@ export default function ToggleGroup(props: ToggleGroupProps): JSX.Element {
       style="--gap: 0"
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
       hook:afterMount={(node) => {
@@ -127,8 +123,9 @@ export default function ToggleGroup(props: ToggleGroupProps): JSX.Element {
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();
       }}
+      {...attrs}
     >
-      {props.items.map((entry) => (
+      {items.map((entry) => (
         <ToggleGroupItem
           value={entry.value}
           pressed={() => isPressed(entry.value)}

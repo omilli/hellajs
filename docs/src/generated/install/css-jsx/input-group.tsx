@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
@@ -490,174 +490,149 @@ css({
   },
 });
 
-interface InputGroupProps {
+interface InputGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   /** Renders data-disabled="true" on the group; addons read it for their opacity state. */
   disabled?: boolean;
   class?: string;
 }
 
-export default function InputGroup(props: InputGroupProps): JSX.Element {
+export default function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): JSX.Element {
   return (
     <div
       data-slot="input-group"
       role="group"
-      data-disabled={props.disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
       class={
-        [base, props.class]
+        [base, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface InputGroupAddonProps {
+interface InputGroupAddonProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   align?: "inline-start" | "inline-end" | "block-start" | "block-end";
   class?: string;
 }
 
-export function InputGroupAddon(props: InputGroupAddonProps): JSX.Element {
+export function InputGroupAddon({ align, children, class: cls, ...attrs }: InputGroupAddonProps): JSX.Element {
   return (
     <div
       role="group"
       data-slot="input-group-addon"
-      data-align={props.align ?? "inline-start"}
+      data-align={align ?? "inline-start"}
       class={
         [
           addon,
-          addonAlign[props.align ?? "inline-start"],
-          props.class,
+          addonAlign[align ?? "inline-start"],
+          cls,
         ]
       }
-      on:click={(e: Event) => {
+      e:click={(e: Event) => {
         const target = e.target as HTMLElement;
         if (target.closest("button")) return;
         target.closest('[data-slot="input-group"]')?.querySelector("input")?.focus();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface InputGroupButtonProps {
+interface InputGroupButtonProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
-  type?: string;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "xs" | "sm" | "icon-xs" | "icon-sm";
   class?: string;
-  onclick?: () => void;
 }
 
-export function InputGroupButton(props: InputGroupButtonProps): JSX.Element {
+export function InputGroupButton({ variant, size, children, class: cls, ...attrs }: InputGroupButtonProps): JSX.Element {
   return (
     <button
-      type={props.type ?? "button"}
+      type="button"
       data-slot="button"
-      data-variant={props.variant ?? "ghost"}
-      data-size={props.size ?? "xs"}
+      data-variant={variant ?? "ghost"}
+      data-size={size ?? "xs"}
       class={
         [
           buttonBase,
-          buttonVariants[props.variant ?? "ghost"],
-          buttonSizes[props.size ?? "xs"],
-          sizes[props.size ?? "xs"],
-          props.class,
+          buttonVariants[variant ?? "ghost"],
+          buttonSizes[size ?? "xs"],
+          sizes[size ?? "xs"],
+          cls,
         ]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface InputGroupTextProps {
+interface InputGroupTextProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function InputGroupText(props: InputGroupTextProps): JSX.Element {
+export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTextProps): JSX.Element {
   return (
     <span
       data-slot="input-group-text"
       class={
-        [text, props.class]
+        [text, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }
 
-interface InputGroupInputProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+interface InputGroupInputProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function InputGroupInput(props: InputGroupInputProps): JSX.Element {
+export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps): JSX.Element {
   return (
     <input
       data-slot="input-group-control"
-      type={props.type}
-      placeholder={props.placeholder}
-      id={props.id}
-      ariaLabel={props.ariaLabel}
-      aria-invalid={props.ariaInvalid ? "true" : undefined}
-      value={props.value}
       class={
         [
           inputBase,
           inputFocus,
           inputInvalid,
           inputControl,
-          props.class,
+          cls,
         ]
       }
-      on:input={(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}
+      {...attrs}
     />
   );
 }
 
-interface InputGroupTextareaProps {
-  value?: string | (() => string);
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  rows?: number;
-  ariaInvalid?: boolean;
+interface InputGroupTextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function InputGroupTextarea(props: InputGroupTextareaProps): JSX.Element {
+export function InputGroupTextarea({ class: cls, ...attrs }: InputGroupTextareaProps): JSX.Element {
   return (
     <textarea
       data-slot="input-group-control"
-      placeholder={props.placeholder}
-      id={props.id}
-      ariaLabel={props.ariaLabel}
-      rows={props.rows}
-      aria-invalid={props.ariaInvalid ? "true" : undefined}
-      value={props.value}
       class={
         [
           textareaBase,
           textareaFocus,
           textareaInvalid,
           textareaControl,
-          props.class,
+          cls,
         ]
       }
-      on:input={(e: Event) => props.oninput?.((e.target as HTMLTextAreaElement).value)}
+      {...attrs}
     />
   );
 }

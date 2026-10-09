@@ -10,6 +10,8 @@ The group is caller-composed: `ButtonGroup` renders the `role="group"` wrapper a
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The joined controls |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 `orientation="vertical"` stacks the children and moves the joined edges to top and bottom.
 
 ### ButtonGroupText
@@ -20,6 +22,8 @@ The muted label plate for prefix text inside a group.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The label node rendered inside the plate |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### ButtonGroupSeparator
 
 The divider between joined children: a `role="separator"` div whose markup is restated inline so the copied file stays self-contained.
@@ -27,5 +31,7 @@ The divider between joined children: a `role="separator"` div whose markup is re
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `orientation` | `"horizontal" \| "vertical"` | `"vertical"` |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

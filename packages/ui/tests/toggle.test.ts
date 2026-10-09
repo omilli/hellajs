@@ -5,6 +5,8 @@ import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount shares one dom instance with the components.
 import { html, mount } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   toggleVariants,
@@ -103,6 +105,29 @@ describe("toggle", () => {
     if (variant.style === "tailwind") {
       expect(classTokens(outlineLg)).toContain("data-[state=on]:bg-accent");
     }
+  });
+
+  test.each(toggleVariants)("$format/$style chains a user on:click with the owned toggle", (variant) => {
+    const userClick = mock(function (this: HTMLElement, e: Event) { void e; });
+    const root = mountToggle(variant, { "on:click": userClick, children: variant.child("Bold") });
+    root.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(root.getAttribute("aria-pressed")).toBe("true");
+    expect(root.getAttribute("data-state")).toBe("on");
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(toggleVariants, { title: "Hella", children: "Forwarded" } as never, "title", "Hella");
+  });
+
+  test("fires a forwarded on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(toggleVariants, { "on:click": onClick, children: "Forwarded" } as never, "on:click", "click", onClick);
+  });
+
+  test.each(toggleVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+    const root = mountToggle(variant, { class: "my-toggle", children: variant.child("Bold") });
+    expect(classTokens(root).at(-1)).toBe("my-toggle");
   });
 
   test("keeps structural parity across all four variants", () => {

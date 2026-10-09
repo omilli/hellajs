@@ -1,12 +1,14 @@
+import type { HTMLAttributes } from "@hellajs/dom";
+
 // @hella:styles
 declare const base: string;
 // @hella:end
 
-interface SpinnerProps {
+interface SpinnerProps extends HTMLAttributes<"svg"> {
   class?: string;
 }
 
-export default function Spinner(props: SpinnerProps): JSX.Element {
+export default function Spinner({ class: cls, ...attrs }: SpinnerProps): JSX.Element {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -22,9 +24,10 @@ export default function Spinner(props: SpinnerProps): JSX.Element {
       aria-label="Loading"
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
+      {...attrs}
     >
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>

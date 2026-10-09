@@ -1,7 +1,9 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   itemPartVariants,
@@ -81,6 +83,22 @@ describe("item", () => {
       expect(root.tagName).toBe("P");
     } else {
       expect(root.tagName).toBe("DIV");
+    }
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(itemVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the root across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(itemVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges the user class last on the root across all four variants", () => {
+    for (const variant of itemVariants) {
+      const root = renderVariant(variant, { class: "my-item", children: ["x"] });
+      expect(classTokens(root).at(-1)).toBe("my-item");
     }
   });
 

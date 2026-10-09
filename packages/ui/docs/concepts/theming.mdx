@@ -12,7 +12,7 @@ import Button from './components/button';
 
 const App = () => (
   <main>
-    <Button variant="outline" onclick={() => console.log('themed')}>
+    <Button variant="outline" on:click={() => console.log('themed')}>
       Themed button
     </Button>
   </main>
@@ -28,7 +28,7 @@ The split is deliberate. A tailwind project should not need a CSS-in-JS runtime 
 The registry emits plain unlayered CSS: component declarations through [`style`](/reference/css/style) scoped classes, both palettes as ordinary `:root` custom properties. Nothing is shielded by a cascade layer, so overrides resolve by the normal cascade - later registration wins at equal specificity, a more specific selector wins otherwise:
 
 - **Retheme**: override the custom properties in a stylesheet imported after `tokens.js`. Every component reads the palette through `var(--*)` literals, so one block retints the whole registry.
-- **Restyle**: pass your own classes through `props.class` or edit the copied file. Your rules compete on equal footing, and normal cascade order settles it.
+- **Restyle**: pass your own classes through the `class` prop or edit the copied file. Your rules compete on equal footing, and normal cascade order settles it.
 
 ```css
 /* imported after tokens.js, so this :root wins at equal specificity */
@@ -38,7 +38,7 @@ The registry emits plain unlayered CSS: component declarations through [`style`]
 }
 ```
 
-The tailwind flavor settles the same question mechanically: `cn` resolves utility conflicts with tailwind-merge, so a `bg-blue-600` in `props.class` beats the `bg-primary` baked into the component.
+The tailwind flavor settles the same question mechanically: `cn` resolves utility conflicts with tailwind-merge, so a `bg-blue-600` in the `class` prop beats the `bg-primary` baked into the component.
 
 ## Dark Mode
 

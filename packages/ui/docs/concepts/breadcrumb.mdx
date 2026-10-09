@@ -1,6 +1,6 @@
 ## API
 
-`Breadcrumb` renders the labeled `nav`; `BreadcrumbList` is the ordered list; each `BreadcrumbItem` is one `li` slot holding a `BreadcrumbLink`, the `BreadcrumbPage`, an ellipsis, or a dropdown. `BreadcrumbLink` takes an `href` passthrough (there is no router coupling), and `BreadcrumbPage` renders `role="link"` with `aria-disabled="true"` and `aria-current="page"`: it marks where the reader is, not a link to click. Separators are `role="presentation"` and hidden from the accessibility tree, so screen readers announce the trail through the list semantics alone.
+`Breadcrumb` renders the labeled `nav`; `BreadcrumbList` is the ordered list; each `BreadcrumbItem` is one `li` slot holding a `BreadcrumbLink`, the `BreadcrumbPage`, an ellipsis, or a dropdown. `BreadcrumbLink` forwards `href` as a native attribute (there is no router coupling), and `BreadcrumbPage` renders `role="link"` with `aria-disabled="true"` and `aria-current="page"`: it marks where the reader is, not a link to click. Separators are `role="presentation"` and hidden from the accessibility tree, so screen readers announce the trail through the list semantics alone.
 
 ### Breadcrumb
 
@@ -10,6 +10,7 @@ The labeled `nav` wrapper.
 | ---- | ---- | ------- |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The list |
+Accepts all native `nav` attributes (forwarded to the root element).
 
 ### BreadcrumbList
 
@@ -18,6 +19,7 @@ The trail: an `ol` laid out as the wrapping flex row with the `sm:` gap step.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The trail's items and separators |
+Accepts all native `ol` attributes (forwarded to the root element).
 
 ### BreadcrumbItem
 
@@ -26,6 +28,7 @@ One trail slot: an `li` holding a link, the current page, an ellipsis, or a drop
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The slot's node |
+Accepts all native `li` attributes (forwarded to the root element).
 
 ### BreadcrumbLink
 
@@ -33,8 +36,8 @@ One trail link: an `a` with the color transition on hover.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `href` | `string` | `-` |
 | `children` | `HellaChildren` | The segment label |
+Accepts all native `a` attributes (forwarded to the root element).
 
 ### BreadcrumbPage
 
@@ -43,6 +46,7 @@ The current segment: a `span` carrying `role="link"`, `aria-disabled="true"`, an
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The current page's label |
+Accepts all native `span` attributes (forwarded to the root element).
 
 ### BreadcrumbSeparator
 
@@ -51,10 +55,13 @@ The between-items marker: an `li` carrying `role="presentation"` and `aria-hidde
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Replaces the inlined chevron when given |
+Accepts all native `li` attributes (forwarded to the root element).
 
 ### BreadcrumbEllipsis
 
 The collapsed-segments marker: a `span` carrying `role="presentation"` and `aria-hidden="true"`, inlining the more-horizontal icon plus a screen-reader-only "More" label.
+
+Accepts all native `span` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
 

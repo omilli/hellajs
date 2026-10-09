@@ -1,9 +1,11 @@
 import { html } from "@hellajs/dom";
 import { effect, signal } from "@hellajs/core";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-interface InputOTPProps {
+interface InputOTPProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   /** Number of slots; fixed after mount. Defaults to 6. */
   length?: number;
   /** The code. A static string seeds the internal state; an accessor makes it controlled, so edits report through `onChange` only. */
@@ -12,20 +14,17 @@ interface InputOTPProps {
   onChange?: (value: string) => void;
   /** Fires once per transition to a full code. */
   onComplete?: (value: string) => void;
-  /** Whole-value RegExp gate: an edit whose result fails the test is rejected and the previous value stands. */
-  pattern?: RegExp;
-  autoFocus?: boolean;
-  disabled?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
-export default function InputOTP(props: InputOTPProps): HellaNode {
-  const length = props.length ?? 6;
-  const pattern = props.pattern ?? null;
+export default function InputOTP({ length: lengthProp, value: valueProp, onChange, onComplete, pattern: patternAttr, autofocus: autofocusAttr, disabled: disabledAttr, class: cls, children, ...attrs }: InputOTPProps): HellaNode {
+  const length = lengthProp ?? 6;
+  const pattern = patternAttr as string | undefined;
+  const autofocus = autofocusAttr as boolean | undefined;
+  const disabled = disabledAttr as boolean | undefined;
+  const mask = pattern === undefined ? null : new RegExp(pattern);
 
-  const internal = signal(typeof props.value === "function" ? "" : props.value ?? "");
-  const value = (): string => (typeof props.value === "function" ? props.value() : internal());
+  const internal = signal(typeof valueProp === "function" ? "" : valueProp ?? "");
+  const value = (): string => (typeof valueProp === "function" ? valueProp() : internal());
 
   const focused = signal(false);
   const mss = signal<number | null>(null);
@@ -39,10 +38,10 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
 
   const accept = (next: string): boolean => {
     const prev = value();
-    if (next.length > 0 && pattern && !pattern.test(next)) return false;
-    if (typeof props.value !== "function") internal(next);
-    props.onChange?.(next);
-    if (next.length === length && prev.length < length) props.onComplete?.(next);
+    if (next.length > 0 && mask && !mask.test(next)) return false;
+    if (typeof valueProp !== "function") internal(next);
+    onChange?.(next);
+    if (next.length === length && prev.length < length) onComplete?.(next);
     return true;
   };
 
@@ -95,7 +94,7 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
   };
 
   const onInput = (event: Event): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const input = event.target as HTMLInputElement;
     const next = input.value.slice(0, length);
     if (!accept(next)) input.value = value();
@@ -103,7 +102,7 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
   };
 
   const onFocus = (event: Event): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const input = event.target as HTMLInputElement;
     focused(true);
     const at = Math.min(input.value.length, length - 1);
@@ -120,7 +119,7 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
   };
 
   const onPaste = (event: ClipboardEvent): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const input = event.target as HTMLInputElement;
     const data = event.clipboardData?.getData("text/plain") ?? "";
     event.preventDefault();
@@ -141,7 +140,7 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
 
   const wirings: (() => void)[] = [];
 
-  const rootStyle = `position: relative; cursor: ${props.disabled ? "default" : "text"}; user-select: none`;
+  const rootStyle = `position: relative; cursor: ${disabled ? "default" : "text"}; user-select: none`;
   const inputStyle = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; text-align: left; color: transparent; caret-color: transparent; background-color: transparent; border: 0 solid transparent; outline: none; box-shadow: none; pointer-events: all";
 
   return html`
@@ -149,7 +148,7 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
       data-slot="input-otp"
       style="${rootStyle}"
       class="${
-        cn("flex items-center gap-2 has-disabled:opacity-50", props.class)
+        cn("flex items-center gap-2 has-disabled:opacity-50", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
@@ -186,20 +185,21 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (wirings.length) wirings.pop()!();
       }}"
-    >${() => props.children}<input
+      ...${attrs}
+    >${() => children}<input
         data-input-otp="true"
         type="text"
         inputmode="numeric"
         autocomplete="one-time-code"
         spellcheck="false"
-        pattern="${pattern ? pattern.source : undefined}"
-        autofocus="${props.autoFocus}"
-        disabled="${props.disabled}"
+        pattern="${pattern}"
+        autofocus="${autofocus ? true : undefined}"
+        disabled="${disabled ? true : undefined}"
         style="${inputStyle}"
-        e:input="${onInput}"
-        e:focus="${onFocus}"
-        e:blur="${onBlur}"
-        e:paste="${onPaste}"
+        on:input="${onInput}"
+        on:focus="${onFocus}"
+        on:blur="${onBlur}"
+        on:paste="${onPaste}"
         class="${
           cn("disabled:cursor-not-allowed")
         }"
@@ -208,36 +208,38 @@ export default function InputOTP(props: InputOTPProps): HellaNode {
   ` as HellaNode;
 }
 
-interface InputOTPGroupProps {
-  children?: HellaChildren;
+interface InputOTPGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function InputOTPGroup(props: InputOTPGroupProps): HellaNode {
+export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupProps): HellaNode {
   return html`
     <div
       data-slot="input-otp-group"
       class="${
-        cn("flex items-center", props.class)
+        cn("flex items-center", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface InputOTPSlotProps {
+interface InputOTPSlotProps extends HTMLAttributes<"div"> {
+  class?: string;
   /** Slot position this mirror renders; the root wires its char and caret state after mount. */
   index: number;
-  class?: string;
 }
 
-export function InputOTPSlot(props: InputOTPSlotProps): HellaNode {
+export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps): HellaNode {
   return html`
     <div
       data-slot="input-otp-slot"
-      data-index="${props.index}"
+      data-index="${index}"
       class="${
-        cn("relative flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm shadow-xs transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-[3px] data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:border-destructive data-[active=true]:aria-invalid:ring-destructive/20 dark:bg-input/30 dark:data-[active=true]:aria-invalid:ring-destructive/40", props.class)
+        cn("relative flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm shadow-xs transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-[3px] data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:border-destructive data-[active=true]:aria-invalid:ring-destructive/20 dark:bg-input/30 dark:data-[active=true]:aria-invalid:ring-destructive/40", cls)
       }"
+      ...${attrs}
     >
       <div
         class="${
@@ -255,13 +257,13 @@ export function InputOTPSlot(props: InputOTPSlotProps): HellaNode {
   ` as HellaNode;
 }
 
-interface InputOTPSeparatorProps {
+interface InputOTPSeparatorProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export function InputOTPSeparator(props: InputOTPSeparatorProps): HellaNode {
+export function InputOTPSeparator({ class: cls, ...attrs }: InputOTPSeparatorProps): HellaNode {
   return html`
-    <div data-slot="input-otp-separator" role="separator" class="${props.class}">
+    <div data-slot="input-otp-separator" role="separator" class="${cls}" ...${attrs}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"

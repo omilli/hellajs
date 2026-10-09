@@ -11,6 +11,7 @@ The stack: a `div` carrying `data-slot="bubble-group"` that spaces its bubbles v
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The bubbles |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### Bubble
 
@@ -21,6 +22,7 @@ The bubble: a `div` carrying `data-variant` and `data-align`; end alignment floa
 | `variant` | `"default" \| "secondary" \| "muted" \| "tinted" \| "outline" \| "ghost" \| "destructive"` | `"default"` |
 | `align` | `"start" \| "end"` | `"start"` |
 | `children` | `HellaChildren` | The content shell and reaction chips |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### BubbleContent
 
@@ -29,6 +31,7 @@ The content shell: a `div` carrying `data-slot="bubble-content"` with the asymme
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Message text or interactive nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### BubbleReactions
 
@@ -39,5 +42,6 @@ The floating chip row positioned against its bubble, carrying `data-side` and `d
 | `side` | `"top" \| "bottom"` | `"bottom"` |
 | `align` | `"start" \| "end"` | `"end"` |
 | `children` | `HellaChildren` | The chips, typically buttons |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

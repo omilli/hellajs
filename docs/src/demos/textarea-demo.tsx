@@ -6,7 +6,13 @@ export function TextareaDemo() {
 
   return (
     <>
-      <Textarea value={bio} oninput={(v) => bio(v)} placeholder="Tell us about yourself" rows={4} ariaLabel="Biography" />
+      <Textarea
+        value={bio}
+        on:input={(e: Event) => bio((e.target as HTMLTextAreaElement).value)}
+        placeholder="Tell us about yourself"
+        rows={4}
+        aria-label="Biography"
+      />
       <p class="demo-muted">{() => `${bio().length} characters`}</p>
     </>
   );
@@ -15,7 +21,7 @@ export function TextareaDemo() {
 export function TextareaInvalidDemo() {
   return (
     <>
-      <Textarea placeholder="Required field" ariaInvalid={true} ariaLabel="Invalid textarea example" />
+      <Textarea placeholder="Required field" aria-invalid="true" aria-label="Invalid textarea example" />
     </>
   );
 }

@@ -5,6 +5,8 @@ import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount shares one dom instance with the components.
 import { html, mount } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   switchVariants,
@@ -92,6 +94,29 @@ describe("switch", () => {
     } else {
       expect(classTokens(thumb).some((token) => token.startsWith("switch-thumb"))).toBe(true);
     }
+  });
+
+  test.each(switchVariants)("$format/$style chains a user on:click with the owned toggle", (variant) => {
+    const userClick = mock(function (this: HTMLElement, e: Event) { void e; });
+    const { root } = mountSwitch(variant, { "on:click": userClick });
+    root.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(root.getAttribute("aria-checked")).toBe("true");
+    expect(root.getAttribute("data-state")).toBe("checked");
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(switchVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a forwarded on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(switchVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test.each(switchVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+    const { root } = mountSwitch(variant, { class: "my-switch" });
+    expect(classTokens(root).at(-1)).toBe("my-switch");
   });
 
   test("keeps structural parity across all four variants", () => {

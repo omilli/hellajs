@@ -47,7 +47,7 @@ export function InputOtpDigitsDemo() {
   return (
     <>
       <div class="demo-row">
-        <InputOTP length={4} pattern={/^\d+$/}>
+        <InputOTP length={4} pattern="^\d+$">
           <InputOTPGroup>
             <InputOTPSlot index={0} />
             <InputOTPSlot index={1} />

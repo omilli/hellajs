@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import {resetTestState} from "@utils/test-helpers.js";
 import { mount, html } from "@hellajs/dom/bundle";
@@ -348,6 +348,76 @@ describe("dom", () => {
       a.unmount();
       expect(document.querySelectorAll("#shared").length).toBe(1);
       expect(b.container.textContent).toBe("static textnested");
+    });
+
+    test("spread attributes render onto the element", () => {
+      mount(html`<button id="spread-both" ...${{ disabled: true, title: "t" }}>Go</button>`);
+      const btn = document.getElementById("spread-both")!;
+      expect(btn.hasAttribute("disabled")).toBe(true);
+      expect(btn.getAttribute("title")).toBe("t");
+    });
+
+    test("spread entries override static attrs written before them and lose to ones written after", () => {
+      const before = html`<div title="static" ...${{ title: "spread" }}>x</div>` as HellaNode;
+      expect(before.props?.title).toBe("spread");
+
+      const after = html`<div ...${{ title: "spread" }} title="static">x</div>` as HellaNode;
+      expect(after.props?.title).toBe("static");
+    });
+
+    test("spread on:click routes through the delegated path and e:click attaches direct", () => {
+      const delegated = mock(() => {});
+      const direct = mock(() => {});
+
+      mount(html`<button id="spread-delegated" ...${{ "on:click": delegated }}>Go</button>`);
+      document.getElementById("spread-delegated")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(delegated).toHaveBeenCalledTimes(1);
+
+      mount(html`<button id="spread-direct" ...${{ "e:click": direct }}>Go</button>`);
+      document.getElementById("spread-direct")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(direct).toHaveBeenCalledTimes(1);
+    });
+
+    test("static class survives a spread without a class key and loses to a spread with one", () => {
+      const kept = html`<div class="a" ...${{ id: "x" }}>k</div>` as HellaNode;
+      expect(kept.props?.class).toBe("a");
+
+      const overridden = html`<div class="a" ...${{ class: "b" }}>o</div>` as HellaNode;
+      expect(overridden.props?.class).toBe("b");
+    });
+
+    test("nullish and primitive spread values merge nothing and throw nothing", () => {
+      const node = html`<input ...${null} ...${undefined} ...${5} ...${"str"} id="spread-noop" />` as HellaNode;
+      expect(Object.keys(node.props!)).toEqual(["id"]);
+
+      expect(() => mount(html`<input ...${null} id="spread-noop-mount" />`)).not.toThrow();
+      expect(document.getElementById("spread-noop-mount")?.hasAttribute("id")).toBe(true);
+    });
+
+    test("cached template spreads stay independent across invocations", () => {
+      const template = (attrs: Record<string, unknown>) => html`<div ...${attrs}>x</div>`;
+
+      const first = template({ title: "A" }) as HellaNode;
+      const second = template({ title: "B", id: "b" }) as HellaNode;
+
+      expect(first.props?.title).toBe("A");
+      expect(first.props).not.toHaveProperty("id");
+      expect(second.props?.title).toBe("B");
+      expect(second.props?.id).toBe("b");
+    });
+
+    test("a template whose only dynamic part is a spread is not static and mounts independently", () => {
+      const node = html`<div ...${{ title: "A" }}>x</div>` as HellaNode;
+      expect(node.static).toBeUndefined();
+
+      const render = (attrs: Record<string, unknown>) => html`<p ...${attrs}>x</p>`;
+      const hostA = document.createElement("div");
+      const hostB = document.createElement("div");
+      document.body.append(hostA, hostB);
+      mount(render({ title: "A" }), hostA);
+      mount(render({ title: "B" }), hostB);
+      expect(hostA.querySelector("p")?.getAttribute("title")).toBe("A");
+      expect(hostB.querySelector("p")?.getAttribute("title")).toBe("B");
     });
   });
 });

@@ -262,11 +262,14 @@ Attribute prefixes are explicit and uniform across JSX and `html`:
   style={{ color: theme() }}// style object → kebab-case, no auto-px
   hook:afterMount={fn}      // lifecycle
   error:fallback={<Fail/>}  // error config
+  ...${attrs}               // html attr spread: merges at its source position
 >
   {count}                   // bare signal → live binding
   {count() * 2}             // auto-wrapped by the compiler; static in runtime html``
 </div>
 ```
+
+Spreads work in both flavors: JSX scatters `{...rest}` onto the element, `html` takes `...${attrs}` in attribute position. Both merge at the spread's source position (a literal attribute after the spread wins; one before is overridden), and both land as the same HellaNode props, so rest-attrs forwarding reads identically in either syntax.
 
 The `on:`/`e:`/`hook:`/`error:` convention (`lib/internal/template.ts`) is closer to Svelte's directive style than React's `onClick` or Vue's `@click`, and it makes the delegated-vs-direct listener choice a prefix rather than a different API. Function-ref props separate reactive from static attributes syntactically, a clarity win over libraries where every attribute behaves the same way until you learn which ones track.
 

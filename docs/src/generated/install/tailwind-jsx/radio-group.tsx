@@ -1,5 +1,6 @@
 import { signal } from "@hellajs/core";
 import { rovingTabIndex } from "@hellajs/dom";
+import type { HTMLAttributes } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 interface RadioGroupItem {
@@ -8,25 +9,21 @@ interface RadioGroupItem {
   disabled?: boolean;
 }
 
-interface RadioGroupProps {
+interface RadioGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: RadioGroupItem[];
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;
-  /** Threaded onto every item button. Hidden native inputs for form submission are not rendered (deferred). */
-  name?: string;
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
-interface RadioGroupItemProps {
+interface RadioGroupItemProps extends HTMLAttributes<"button"> {
+  class?: string;
   value: string;
   /** Checked state. A boolean reads statically; an accessor keeps the manual part reactive. */
   checked?: boolean | (() => boolean);
   onSelect?: () => void;
-  disabled?: boolean;
-  name?: string;
-  class?: string;
 }
 
 /** The circle icon (refs/icons/circle.svg), created per call so reactive swaps never share nodes between clones. */
@@ -50,24 +47,25 @@ const circleIcon = (): JSX.Element => (
   </svg>
 );
 
-export function RadioGroupItem(props: RadioGroupItemProps): JSX.Element {
-  const checked = (): boolean =>
-    typeof props.checked === "function" ? props.checked() : props.checked ?? false;
+export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:click": userClick, class: cls, ...attrs }: RadioGroupItemProps): JSX.Element {
+  const isChecked = (): boolean =>
+    typeof checked === "function" ? checked() : checked ?? false;
 
   return (
     <button
       type="button"
       role="radio"
       data-slot="radio-group-item"
-      value={props.value}
-      name={props.name}
-      aria-checked={checked() ? "true" : "false"}
-      data-state={checked() ? "checked" : "unchecked"}
-      disabled={props.disabled ? true : undefined}
+      value={value}
+      name={name}
+      aria-checked={isChecked() ? "true" : "false"}
+      data-state={isChecked() ? "checked" : "unchecked"}
+      disabled={disabled ? true : undefined}
       class={
-        cn("aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40", props.class)
+        cn("aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40", cls)
       }
-      on:click={() => props.onSelect?.()}
+      on:click={function (e) { userClick?.call(this, e); onSelect?.(); }}
+      {...attrs}
     >
       <span
         data-slot="radio-group-indicator"
@@ -75,15 +73,15 @@ export function RadioGroupItem(props: RadioGroupItemProps): JSX.Element {
           cn("relative flex items-center justify-center")
         }
       >
-        {() => (checked() ? circleIcon() : null)}
+        {() => (isChecked() ? circleIcon() : null)}
       </span>
     </button>
   );
 }
 
-export default function RadioGroup(props: RadioGroupProps): JSX.Element {
+export default function RadioGroup({ items, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): JSX.Element {
   const internal = signal("");
-  const current = (): string => (props.value !== undefined ? props.value() : internal());
+  const current = (): string => (value !== undefined ? value() : internal());
   const wirings: (() => void)[] = [];
   let group: HTMLElement | null = null;
 
@@ -108,10 +106,10 @@ export default function RadioGroup(props: RadioGroupProps): JSX.Element {
     }
   };
 
-  const select = (value: string): void => {
-    if (current() === value) return;
-    if (props.value === undefined) internal(value);
-    props.onValueChange?.(value);
+  const select = (selected: string): void => {
+    if (current() === selected) return;
+    if (value === undefined) internal(selected);
+    onValueChange?.(selected);
     roveToSelection();
   };
 
@@ -119,15 +117,15 @@ export default function RadioGroup(props: RadioGroupProps): JSX.Element {
     <div
       role="radiogroup"
       data-slot="radio-group"
-      aria-orientation={props.orientation}
+      aria-orientation={orientation}
       class={
-        cn("grid gap-3", props.class)
+        cn("grid gap-3", cls)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         group = node;
         wirings.push(rovingTabIndex(node, {
-          orientation: props.orientation,
+          orientation,
           selector: "[role='radio']:not(:disabled)",
         }));
         const onFocusIn = (event: Event) => {
@@ -145,8 +143,9 @@ export default function RadioGroup(props: RadioGroupProps): JSX.Element {
         while (wirings.length) wirings.pop()!();
         group = null;
       }}
+      {...attrs}
     >
-      {props.items.map((entry) => (
+      {items.map((entry) => (
         <label
           data-slot="radio-group-row"
           class={
@@ -155,7 +154,7 @@ export default function RadioGroup(props: RadioGroupProps): JSX.Element {
         >
           <RadioGroupItem
             value={entry.value}
-            name={props.name}
+            name={name as string | undefined}
             checked={() => current() === entry.value}
             onSelect={() => {
               if (entry.disabled) return;

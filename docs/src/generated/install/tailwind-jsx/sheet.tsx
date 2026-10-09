@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const contentSides = {
@@ -16,39 +16,41 @@ type SheetState = () => "open" | "closed";
 /** Side the panel slides in from. */
 type SheetSide = "top" | "right" | "bottom" | "left";
 
-interface SheetOverlayProps {
+interface SheetOverlayProps extends HTMLAttributes<"div"> {
   state?: SheetState;
   class?: string;
 }
 
-export function SheetOverlay(props: SheetOverlayProps): JSX.Element {
+export function SheetOverlay({ state, class: cls, ...attrs }: SheetOverlayProps): JSX.Element {
   return (
     <div
       data-slot="sheet-overlay"
-      data-state={props.state?.()}
+      data-state={state?.()}
       class={
-        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", props.class)
+        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", cls)
       }
+      {...attrs}
     />
   );
 }
 
-interface SheetCloseProps {
+interface SheetCloseProps extends HTMLAttributes<"button"> {
   state?: SheetState;
   onClose?: () => void;
   class?: string;
 }
 
-export function SheetClose(props: SheetCloseProps): JSX.Element {
+export function SheetClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: SheetCloseProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="sheet-close"
-      data-state={props.state?.()}
+      data-state={state?.()}
       class={
-        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary", props.class)
+        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary", cls)
       }
-      on:click={() => props.onClose?.()}
+      on:click={function (e) { userClick?.call(this, e); onClose?.(); }}
+      {...attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -82,31 +84,30 @@ export function SheetPortal(props: SheetPortalProps): JSX.Element {
   );
 }
 
-interface SheetTriggerProps {
+interface SheetTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
-export function SheetTrigger(props: SheetTriggerProps): JSX.Element {
+export function SheetTrigger({ children, class: cls, ...attrs }: SheetTriggerProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="sheet-trigger"
       class={
-        cn(props.class)
+        cn(cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface SheetContentProps {
+interface SheetContentProps extends HTMLAttributes<"div"> {
   state?: SheetState;
   side?: SheetSide;
-  labelledBy?: string;
-  describedBy?: string;
   showCloseButton?: boolean;
   closeOnEscape?: boolean;
   closeOnOutside?: boolean;
@@ -120,11 +121,11 @@ interface SheetContentProps {
  * The sheet panel. Manual composition portals it alongside a SheetOverlay
  * sibling - hella has no Radix context, so the portal/overlay pairing is the
  * composer's (the default Sheet below shows the wired composition). The
- * Title/Description parts carry the required aria wiring through
- * labelledBy/describedBy - pass their generated ids even in manual
- * compositions, screen readers announce nothing without them.
+ * Title/Description parts carry the required aria wiring: pass their
+ * generated ids as the panel's `aria-labelledby`/`aria-describedby` attrs
+ * even in manual compositions, screen readers announce nothing without them.
  */
-export function SheetContent(props: SheetContentProps): JSX.Element {
+export function SheetContent({ state, side, showCloseButton, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: SheetContentProps): JSX.Element {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
@@ -134,33 +135,31 @@ export function SheetContent(props: SheetContentProps): JSX.Element {
   };
 
   const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.state?.() === "closed") return;
+    if (panel === undefined || wirings.length > 0 || state?.() === "closed") return;
     const target = panel;
-    if (props.closeOnEscape !== false && props.onClose) wirings.push(onEscape(target, props.onClose));
-    if (props.closeOnOutside !== false && props.onClose) wirings.push(onOutside(() => [target], props.onClose));
+    if (closeOnEscape !== false && onClose) wirings.push(onEscape(target, onClose));
+    if (closeOnOutside !== false && onClose) wirings.push(onOutside(() => [target], onClose));
     wirings.push(trapFocus(target));
   };
 
   // The exit runs unwired: flipping to "closed" tears the trap/escape/outside
   // handlers down immediately; reopening re-arms them without a remount.
   effect(() => {
-    if (props.state?.() === "closed") disposeWirings();
+    if (state?.() === "closed") disposeWirings();
     else installWirings();
   });
 
-  const side = props.side ?? "right";
+  const resolvedSide = side ?? "right";
 
   return (
     <div
       data-slot="sheet-content"
-      data-state={props.state?.()}
-      data-side={side}
+      data-state={state?.()}
+      data-side={resolvedSide}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={props.labelledBy}
-      aria-describedby={props.describedBy}
       class={
-        cn("fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", contentSides[side], props.class)
+        cn("fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", contentSides[resolvedSide], cls)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
@@ -169,7 +168,7 @@ export function SheetContent(props: SheetContentProps): JSX.Element {
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (props.state?.() === "closed") props.onExited?.();
+          if (state?.() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -178,81 +177,90 @@ export function SheetContent(props: SheetContentProps): JSX.Element {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
-      {props.showCloseButton !== false && (
-        <SheetClose state={props.state} onClose={props.onClose} />
+      {children}
+      {showCloseButton !== false && (
+        <SheetClose state={state} onClose={onClose} />
       )}
     </div>
   );
 }
 
-interface SheetPartProps {
+interface SheetPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SheetHeader(props: SheetPartProps): JSX.Element {
+export function SheetHeader({ children, class: cls, ...attrs }: SheetPartProps): JSX.Element {
   return (
     <div
       data-slot="sheet-header"
       class={
-        cn("flex flex-col gap-1.5 p-4", props.class)
+        cn("flex flex-col gap-1.5 p-4", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SheetFooter(props: SheetPartProps): JSX.Element {
+export function SheetFooter({ children, class: cls, ...attrs }: SheetPartProps): JSX.Element {
   return (
     <div
       data-slot="sheet-footer"
       class={
-        cn("mt-auto flex flex-col gap-2 p-4", props.class)
+        cn("mt-auto flex flex-col gap-2 p-4", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface SheetTitleProps {
-  id?: string;
+interface SheetTitleProps extends HTMLAttributes<"h2"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SheetTitle(props: SheetTitleProps): JSX.Element {
+export function SheetTitle({ id, children, class: cls, ...attrs }: SheetTitleProps): JSX.Element {
   return (
     <h2
-      id={props.id}
+      id={id}
       data-slot="sheet-title"
       class={
-        cn("font-semibold text-foreground", props.class)
+        cn("font-semibold text-foreground", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </h2>
   );
 }
 
-export function SheetDescription(props: SheetTitleProps): JSX.Element {
+interface SheetDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function SheetDescription({ id, children, class: cls, ...attrs }: SheetDescriptionProps): JSX.Element {
   return (
     <p
-      id={props.id}
+      id={id}
       data-slot="sheet-description"
       class={
-        cn("text-sm text-muted-foreground", props.class)
+        cn("text-sm text-muted-foreground", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </p>
   );
 }
 
-interface SheetProps {
+interface SheetProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   side?: SheetSide;
@@ -267,7 +275,7 @@ interface SheetProps {
 
 let sheetCount = 0;
 
-export default function Sheet(props: SheetProps): JSX.Element {
+export default function Sheet({ open, onClose, side, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: SheetProps): JSX.Element {
   const titleId = `hella-sheet-title-${++sheetCount}`;
   const descriptionId = `hella-sheet-description-${sheetCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -289,7 +297,7 @@ export default function Sheet(props: SheetProps): JSX.Element {
   // panel stays mounted under data-state="closed" until its animationend
   // (or the copied 300ms duration budget) unmounts it.
   effect(() => {
-    if (props.open()) {
+    if (open()) {
       wasOpen = true;
       finishExit();
       visible(true);
@@ -300,7 +308,7 @@ export default function Sheet(props: SheetProps): JSX.Element {
     }
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
+  const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return (
     <>
@@ -309,19 +317,20 @@ export default function Sheet(props: SheetProps): JSX.Element {
           <SheetOverlay state={state} />
           <SheetContent
             state={state}
-            side={props.side}
-            labelledBy={titleId}
-            describedBy={props.description === undefined ? undefined : descriptionId}
-            showCloseButton={props.showCloseButton}
-            closeOnEscape={props.closeOnEscape}
-            closeOnOutside={props.closeOnOutside}
-            onClose={props.onClose}
+            side={side}
+            aria-labelledby={titleId}
+            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+            showCloseButton={showCloseButton}
+            closeOnEscape={closeOnEscape}
+            closeOnOutside={closeOnOutside}
+            onClose={onClose}
             onExited={finishExit}
-            class={props.class}
+            class={cls}
+            {...attrs}
             children={[
-              ...(props.title !== undefined ? [<SheetTitle id={titleId}>{props.title}</SheetTitle>] : []),
-              ...(props.description !== undefined ? [<SheetDescription id={descriptionId}>{props.description}</SheetDescription>] : []),
-              ...flattenChildren(props.children),
+              ...(titleText !== undefined ? [<SheetTitle id={titleId}>{titleText}</SheetTitle>] : []),
+              ...(descriptionText !== undefined ? [<SheetDescription id={descriptionId}>{descriptionText}</SheetDescription>] : []),
+              ...flattenChildren(children),
             ] as HellaChild[]}
           />
         </Portal>

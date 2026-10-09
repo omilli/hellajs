@@ -1,12 +1,12 @@
 ## API
 
-The root is a `span` carrying `data-slot="badge"` and `data-variant`, and `aria-invalid` reflects the `ariaInvalid` prop. Inside an anchor the hover styles activate: `default`, `secondary`, and `destructive` deepen their background, while `outline` and `ghost` pick up the accent surface.
+The root is a `span` carrying `data-slot="badge"` and `data-variant`. Inside an anchor the hover styles activate: `default`, `secondary`, and `destructive` deepen their background, while `outline` and `ghost` pick up the accent surface.
 
 ### Badge
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `variant` | `"default" \| "secondary" \| "destructive" \| "outline" \| "ghost" \| "link"` | `"default"` |
-| `ariaInvalid` | `boolean` | `-` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The badge label |
+Accepts all native `span` attributes (forwarded to the root element).

@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, html, layerDismissal, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 
 // @hella:styles
 declare const content: string;
@@ -15,48 +15,49 @@ type AnchorAlign = "start" | "center" | "end";
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
-interface PopoverAnchorProps {
+interface PopoverAnchorProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** Bare anchor span - the manual composition's positioning target when the trigger should not anchor. */
-export function PopoverAnchor(props: PopoverAnchorProps): HellaNode {
+export function PopoverAnchor({ children, class: cls, ...attrs }: PopoverAnchorProps): HellaNode {
   return html`
     <span
       data-slot="popover-anchor"
       class="${
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface PopoverTriggerProps {
+interface PopoverTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger button; the composed Popover renders the same shape wired to toggle + aria state. */
-export function PopoverTrigger(props: PopoverTriggerProps): HellaNode {
+export function PopoverTrigger({ children, class: cls, ...attrs }: PopoverTriggerProps): HellaNode {
   return html`
     <button
       type="button"
       data-slot="popover-trigger"
       class="${
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-interface PopoverContentProps {
+interface PopoverContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchorSide;
   align?: AnchorAlign;
   /** Gap between the anchor and the content edge, in px. Default 4. */
@@ -73,11 +74,11 @@ interface PopoverContentProps {
   class?: string;
 }
 
-export function PopoverContent(props: PopoverContentProps): HellaNode {
-  const side = props.side ?? "bottom";
-  const align = props.align ?? "center";
-  const alignOffset = props.alignOffset ?? 0;
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function PopoverContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, children, class: cls, ...attrs }: PopoverContentProps): HellaNode {
+  const side = sideProp ?? "bottom";
+  const align = alignProp ?? "center";
+  const alignOffset = alignOffsetProp ?? 0;
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -88,39 +89,39 @@ export function PopoverContent(props: PopoverContentProps): HellaNode {
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return html`
     <div
       role="dialog"
       tabindex="-1"
-      id="${props.id}"
+      id="${id}"
       data-slot="popover-content"
-      data-state="${state}"
+      data-state="${stateOf}"
       data-side="${side}"
       data-align="${align}"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: props.sideOffset ?? 4 }));
+        const anchorEl = anchor?.();
+        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 4 }));
         if (alignOffset !== 0) {
           // Cross-axis shift over the placed coordinates; the placement axis
           // stays owned by anchorPosition's left/top writes.
           node.style.translate = side === "top" || side === "bottom" ? alignOffset + "px 0" : "0 " + alignOffset + "px";
         }
-        if (props.onDismiss) wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
+        if (onDismiss) wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
         // Non-modal: no trap - focus moves to the content on open, upstream parity.
         node.focus();
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -129,55 +130,64 @@ export function PopoverContent(props: PopoverContentProps): HellaNode {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface PopoverPartProps {
+interface PopoverPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function PopoverHeader(props: PopoverPartProps): HellaNode {
+export function PopoverHeader({ children, class: cls, ...attrs }: PopoverPartProps): HellaNode {
   return html`
     <div
       data-slot="popover-header"
       class="${
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function PopoverTitle(props: PopoverPartProps): HellaNode {
+export function PopoverTitle({ children, class: cls, ...attrs }: PopoverPartProps): HellaNode {
   return html`
     <div
       data-slot="popover-title"
       class="${
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function PopoverDescription(props: PopoverPartProps): HellaNode {
+interface PopoverDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function PopoverDescription({ children, class: cls, ...attrs }: PopoverDescriptionProps): HellaNode {
   return html`
     <p
       data-slot="popover-description"
       class="${
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }"
-    >${() => props.children}</p>
+      ...${attrs}
+    >${() => children}</p>
   ` as HellaNode;
 }
 
-interface PopoverProps {
+interface PopoverProps extends HTMLAttributes<"button"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
   /** Resolves the positioning anchor; defaults to the trigger element. */
@@ -189,12 +199,12 @@ interface PopoverProps {
 
 let popoverCount = 0;
 
-export default function Popover(props: PopoverProps): HellaNode {
+export default function Popover({ open, onOpenChange, anchor: anchorProp, "on:click": userClick, children, content: contentSlot, class: cls, ...attrs }: PopoverProps): HellaNode {
   const internal = signal(false);
-  const isOpen = (): boolean => (props.open !== undefined ? props.open() : internal());
+  const isOpen = (): boolean => (open !== undefined ? open() : internal());
   const setOpen = (next: boolean): void => {
-    if (props.open === undefined) internal(next);
-    props.onOpenChange?.(next);
+    if (open === undefined) internal(next);
+    onOpenChange?.(next);
   };
   const toggle = (): void => setOpen(!isOpen());
 
@@ -231,7 +241,7 @@ export default function Popover(props: PopoverProps): HellaNode {
   });
 
   const state = (): "open" | "closed" => (isOpen() ? "open" : "closed");
-  const anchor = (): Element | undefined => props.anchor?.() ?? triggerNode;
+  const anchor = (): Element | undefined => anchorProp?.() ?? triggerNode;
 
   return html`
     <button
@@ -242,14 +252,15 @@ export default function Popover(props: PopoverProps): HellaNode {
       aria-controls="${contentId}"
       class="${
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }"
-      on:click="${toggle}"
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); toggle(); }}"
       hook:afterMount="${(node: Element) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}"
-    >${() => props.children}${() => visible() && Portal({
+      ...${attrs}
+    >${() => children}${() => visible() && Portal({
       to: "body",
       children: [
         PopoverContent({
@@ -258,7 +269,7 @@ export default function Popover(props: PopoverProps): HellaNode {
           anchor,
           onDismiss: () => setOpen(false),
           onExited: finishExit,
-          children: props.content,
+          children: contentSlot,
         }) as HellaChild,
       ],
     })}</button>

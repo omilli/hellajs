@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -7,13 +7,13 @@ declare const title: string;
 declare const variants: Record<string, string>;
 // @hella:end
 
-interface AlertProps {
+interface AlertProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "destructive";
-  class?: string;
 }
 
-export default function Alert(props: AlertProps): JSX.Element {
+export default function Alert({ variant, children, class: cls, ...attrs }: AlertProps): JSX.Element {
   return (
     <div
       data-slot="alert"
@@ -22,48 +22,51 @@ export default function Alert(props: AlertProps): JSX.Element {
         // @hella:compose
         [
           base,
-          variants[props.variant ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          cls,
         ]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface AlertPartProps {
-  children?: HellaChildren;
+interface AlertPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AlertTitle(props: AlertPartProps): JSX.Element {
+export function AlertTitle({ children, class: cls, ...attrs }: AlertPartProps): JSX.Element {
   return (
     <div
       data-slot="alert-title"
       class={
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function AlertDescription(props: AlertPartProps): JSX.Element {
+export function AlertDescription({ children, class: cls, ...attrs }: AlertPartProps): JSX.Element {
   return (
     <div
       data-slot="alert-description"
       class={
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

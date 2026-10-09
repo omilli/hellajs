@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const containerSides = {
@@ -49,7 +49,7 @@ interface SidebarState {
   onToggle: () => void;
 }
 
-interface SidebarProviderProps {
+interface SidebarProviderProps extends HTMLAttributes<"div"> {
   /** Controlled open state. When given, the provider never writes its internal signal and `onOpenChange` reports the requested flip. */
   open?: () => boolean;
   defaultOpen?: boolean;
@@ -58,17 +58,17 @@ interface SidebarProviderProps {
   class?: string;
 }
 
-export function SidebarProvider(props: SidebarProviderProps): JSX.Element {
-  const internal = signal(props.defaultOpen ?? true);
+export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, children, class: cls, ...attrs }: SidebarProviderProps): JSX.Element {
+  const internal = signal(defaultOpen ?? true);
   // Two separate states the ref also splits: the viewport query and the
   // mobile sheet's own open flag - conflating them would flip the branch
   // back to desktop on sheet close.
   const viewport = signal(false);
   const sheetOpen = signal(false);
-  const open = (): boolean => (props.open !== undefined ? props.open() : internal());
+  const open = (): boolean => (openProp !== undefined ? openProp() : internal());
   const setOpen = (next: boolean): void => {
-    if (props.open === undefined) internal(next);
-    props.onOpenChange?.(next);
+    if (openProp === undefined) internal(next);
+    onOpenChange?.(next);
   };
   const openMobile = (): boolean => sheetOpen();
   const setOpenMobile = (next: boolean): void => {
@@ -83,7 +83,7 @@ export function SidebarProvider(props: SidebarProviderProps): JSX.Element {
       data-slot="sidebar-wrapper"
       style="--sidebar-width: 16rem; --sidebar-width-icon: 3rem"
       class={
-        cn("group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar", props.class)
+        cn("group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar", cls)
       }
       hook:afterMount={() => {
         // Mobile detection: the ref's use-mobile hook, inlined as a
@@ -108,8 +108,9 @@ export function SidebarProvider(props: SidebarProviderProps): JSX.Element {
       hook:beforeDestroy={() => {
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}
+      {children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}
     </div>
   );
 }
@@ -121,7 +122,7 @@ type SidebarVariant = "sidebar" | "floating" | "inset";
 
 type SidebarCollapsible = "offcanvas" | "icon" | "none";
 
-interface SidebarProps {
+interface SidebarProps extends HTMLAttributes<"div"> {
   /** Desktop expanded accessor threaded from SidebarProvider. */
   open?: () => boolean;
   /** Mobile viewport accessor threaded from SidebarProvider. */
@@ -139,11 +140,11 @@ interface SidebarProps {
 
 let sidebarCount = 0;
 
-export function Sidebar(props: SidebarProps): JSX.Element {
-  const side = props.side ?? "left";
-  const variant = props.variant ?? "sidebar";
-  const collapsible = props.collapsible ?? "offcanvas";
-  const collapsed = (): boolean => props.open !== undefined && props.open() === false;
+export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChange, side: sideProp, variant: variantProp, collapsible: collapsibleProp, class: cls, children, ...attrs }: SidebarProps): JSX.Element {
+  const side = sideProp ?? "left";
+  const variant = variantProp ?? "sidebar";
+  const collapsible = collapsibleProp ?? "offcanvas";
+  const collapsed = (): boolean => open !== undefined && open() === false;
   const variantIsInset = variant === "floating" || variant === "inset";
 
   if (collapsible === "none") {
@@ -151,10 +152,11 @@ export function Sidebar(props: SidebarProps): JSX.Element {
       <div
         data-slot="sidebar"
         class={
-          cn("flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground", props.class)
+          cn("flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground", cls)
         }
+        {...attrs}
       >
-        {props.children}
+        {children}
       </div>
     );
   }
@@ -164,12 +166,12 @@ export function Sidebar(props: SidebarProps): JSX.Element {
   // provider's matchMedia flip would never propagate.
   return (
     <>
-      {() => props.mobile?.() === true ? (
+      {() => mobileProp?.() === true ? (
         <SidebarMobileSheet
-          open={() => props.openMobile?.() ?? false}
-          onClose={() => props.onOpenMobileChange?.(false)}
+          open={() => openMobile?.() ?? false}
+          onClose={() => onOpenMobileChange?.(false)}
           side={side}
-          children={flattenChildren(props.children)}
+          children={flattenChildren(children)}
         />
       ) : (
         <div
@@ -181,6 +183,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
           class={
             cn("group peer hidden text-sidebar-foreground md:block")
           }
+          {...attrs}
         >
           {/* This is what handles the sidebar gap on desktop */}
           <div
@@ -192,7 +195,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
           <div
             data-slot="sidebar-container"
             class={
-              cn("fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex", containerSides[side], variantIsInset ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]" : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l", props.class)
+              cn("fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex", containerSides[side], variantIsInset ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]" : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l", cls)
             }
           >
             <div
@@ -202,7 +205,7 @@ export function Sidebar(props: SidebarProps): JSX.Element {
                 cn("flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm")
               }
             >
-              {props.children}
+              {children}
             </div>
           </div>
         </div>
@@ -339,26 +342,25 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): JSX.Element {
   );
 }
 
-interface SidebarTriggerProps {
-  onclick?: () => void;
+interface SidebarTriggerProps extends HTMLAttributes<"button"> {
   onToggle?: () => void;
   class?: string;
-  children?: HellaChildren;
 }
 
-export function SidebarTrigger(props: SidebarTriggerProps): JSX.Element {
+export function SidebarTrigger({ onToggle, "on:click": userClick, class: cls, ...attrs }: SidebarTriggerProps): JSX.Element {
   return (
     <button
       type="button"
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       class={
-        cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-7", props.class)
+        cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-7", cls)
       }
-      on:click={() => {
-        props.onclick?.();
-        props.onToggle?.();
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onToggle?.();
       }}
+      {...attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -380,14 +382,14 @@ export function SidebarTrigger(props: SidebarTriggerProps): JSX.Element {
   );
 }
 
-interface SidebarRailProps {
+interface SidebarRailProps extends HTMLAttributes<"button"> {
   onToggle?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
 /** The drag-handle edge - click toggles; width dragging is out of scope (bounded open). */
-export function SidebarRail(props: SidebarRailProps): JSX.Element {
+export function SidebarRail({ onToggle, "on:click": userClick, class: cls, children, ...attrs }: SidebarRailProps): JSX.Element {
   return (
     <button
       type="button"
@@ -397,92 +399,86 @@ export function SidebarRail(props: SidebarRailProps): JSX.Element {
       title="Toggle Sidebar"
       tabIndex={-1}
       class={
-        cn("absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize [[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar [[data-side=left][data-collapsible=offcanvas]_&]:-right-2 [[data-side=right][data-collapsible=offcanvas]_&]:-left-2", props.class)
+        cn("absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize [[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar [[data-side=left][data-collapsible=offcanvas]_&]:-right-2 [[data-side=right][data-collapsible=offcanvas]_&]:-left-2", cls)
       }
-      on:click={() => props.onToggle?.()}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onToggle?.();
+      }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface SidebarPartProps {
+interface SidebarPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SidebarInset(props: SidebarPartProps): JSX.Element {
+export function SidebarInset({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <main
       data-slot="sidebar-inset"
       class={
-        cn("relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2", props.class)
+        cn("relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </main>
   );
 }
 
-interface SidebarInputProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+interface SidebarInputProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function SidebarInput(props: SidebarInputProps): JSX.Element {
+export function SidebarInput({ class: cls, ...attrs }: SidebarInputProps): JSX.Element {
   return (
     <input
       data-sidebar="input"
       data-slot="sidebar-input"
-      type={props.type}
-      placeholder={props.placeholder}
-      id={props.id}
-      ariaLabel={props.ariaLabel}
-      aria-invalid={props.ariaInvalid ? "true" : undefined}
-      value={props.value}
       class={
-        cn("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", "h-8 w-full bg-background shadow-none", props.class)
+        cn("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", "h-8 w-full bg-background shadow-none", cls)
       }
-      on:input={(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}
+      {...attrs}
     />
   );
 }
 
-export function SidebarHeader(props: SidebarPartProps): JSX.Element {
+export function SidebarHeader({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
       class={
-        cn("flex flex-col gap-2 p-2", props.class)
+        cn("flex flex-col gap-2 p-2", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarFooter(props: SidebarPartProps): JSX.Element {
+export function SidebarFooter({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-footer"
       data-sidebar="footer"
       class={
-        cn("flex flex-col gap-2 p-2", props.class)
+        cn("flex flex-col gap-2 p-2", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarSeparator(props: SidebarPartProps): JSX.Element {
+export function SidebarSeparator({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-separator"
@@ -491,121 +487,127 @@ export function SidebarSeparator(props: SidebarPartProps): JSX.Element {
       data-orientation="horizontal"
       aria-orientation="horizontal"
       class={
-        cn("shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px", "mx-2 w-auto bg-sidebar-border", props.class)
+        cn("shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px", "mx-2 w-auto bg-sidebar-border", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarContent(props: SidebarPartProps): JSX.Element {
+export function SidebarContent({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-content"
       data-sidebar="content"
       class={
-        cn("flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden", props.class)
+        cn("flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarGroup(props: SidebarPartProps): JSX.Element {
+export function SidebarGroup({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
       class={
-        cn("relative flex w-full min-w-0 flex-col p-2", props.class)
+        cn("relative flex w-full min-w-0 flex-col p-2", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarGroupLabel(props: SidebarPartProps): JSX.Element {
+export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       class={
-        cn("flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0", props.class)
+        cn("flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface SidebarGroupActionProps {
-  onclick?: () => void;
+interface SidebarGroupActionProps extends HTMLAttributes<"button"> {
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarGroupAction(props: SidebarGroupActionProps): JSX.Element {
+export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGroupActionProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="sidebar-group-action"
       data-sidebar="group-action"
       class={
-        cn("absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden group-data-[collapsible=icon]:hidden", props.class)
+        cn("absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden group-data-[collapsible=icon]:hidden", cls)
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-export function SidebarGroupContent(props: SidebarPartProps): JSX.Element {
+export function SidebarGroupContent({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-slot="sidebar-group-content"
       data-sidebar="group-content"
       class={
-        cn("w-full text-sm", props.class)
+        cn("w-full text-sm", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function SidebarMenu(props: SidebarPartProps): JSX.Element {
+export function SidebarMenu({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <ul
       data-slot="sidebar-menu"
       data-sidebar="menu"
       class={
-        cn("flex w-full min-w-0 flex-col gap-1", props.class)
+        cn("flex w-full min-w-0 flex-col gap-1", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </ul>
   );
 }
 
-export function SidebarMenuItem(props: SidebarPartProps): JSX.Element {
+export function SidebarMenuItem({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <li
       data-slot="sidebar-menu-item"
       data-sidebar="menu-item"
       class={
-        cn("group/menu-item relative", props.class)
+        cn("group/menu-item relative", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </li>
   );
 }
 
-interface SidebarMenuButtonProps {
+interface SidebarMenuButtonProps extends HTMLAttributes<"button"> {
   active?: boolean;
   /** Tooltip label shown while the sidebar is collapsed to icon mode (hover). */
   tooltip?: HellaChildren;
@@ -615,41 +617,38 @@ interface SidebarMenuButtonProps {
   open?: () => boolean;
   /** Mobile viewport accessor threaded from SidebarProvider; the tooltip never shows on mobile. */
   mobile?: () => boolean;
-  type?: string;
-  disabled?: boolean;
-  onclick?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuButton(props: SidebarMenuButtonProps): JSX.Element {
-  const variant = props.variant ?? "default";
-  const size = props.size ?? "default";
+export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: variantProp, size: sizeProp, open, mobile: mobileProp, disabled, class: cls, children, ...attrs }: SidebarMenuButtonProps): JSX.Element {
+  const variant = variantProp ?? "default";
+  const size = sizeProp ?? "default";
 
   const button = (
     <button
-      type={props.type ?? "button"}
+      type="button"
       data-sidebar="menu-button"
       data-slot="sidebar-menu-button"
       data-size={size}
-      data-active={props.active ? "true" : undefined}
-      disabled={props.disabled}
+      data-active={active ? "true" : undefined}
+      disabled={disabled as boolean | undefined}
       class={
-        cn("peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0", menuButtonVariants[variant], menuButtonSizes[size], props.class)
+        cn("peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0", menuButtonVariants[variant], menuButtonSizes[size], cls)
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 
-  if (props.tooltip === undefined) return button;
+  if (tooltipProp === undefined) return button;
 
   // The ref composes its tooltip entry around the button in icon mode; this
   // entry is self-contained, so the hover wiring (delay 0) is duplicated inline.
   const tooltipId = `hella-sidebar-tooltip-${++sidebarCount}`;
   const tooltipOpen = signal(false);
-  const hidden = (): boolean => props.open === undefined || props.open() || (props.mobile?.() ?? false);
+  const hidden = (): boolean => open === undefined || open() || (mobileProp?.() ?? false);
   const disposals: (() => void)[] = [];
   let triggerNode: Element | undefined;
 
@@ -692,7 +691,7 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): JSX.Element {
               disposals.push(anchorPosition(anchor, node, { placement: "right" }));
             }}
           >
-            {props.tooltip}
+            {tooltipProp}
           </div>
         </Portal>
       )}
@@ -700,50 +699,50 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): JSX.Element {
   );
 }
 
-interface SidebarMenuActionProps {
+interface SidebarMenuActionProps extends HTMLAttributes<"button"> {
   showOnHover?: boolean;
-  onclick?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuAction(props: SidebarMenuActionProps): JSX.Element {
+export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs }: SidebarMenuActionProps): JSX.Element {
   return (
     <button
       type="button"
       data-sidebar="menu-action"
       data-slot="sidebar-menu-action"
-      data-show-on-hover={props.showOnHover ? "true" : undefined}
+      data-show-on-hover={showOnHover ? "true" : undefined}
       class={
-        cn("absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform peer-hover/menu-button:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden", props.showOnHover ? "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-[state=open]:opacity-100 md:opacity-0" : "", props.class)
+        cn("absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform peer-hover/menu-button:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 after:absolute after:-inset-2 md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden", showOnHover ? "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-[state=open]:opacity-100 md:opacity-0" : "", cls)
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-export function SidebarMenuBadge(props: SidebarPartProps): JSX.Element {
+export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <div
       data-sidebar="menu-badge"
       data-slot="sidebar-menu-badge"
       class={
-        cn("pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium text-sidebar-foreground tabular-nums select-none peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden", props.class)
+        cn("pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium text-sidebar-foreground tabular-nums select-none peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface SidebarMenuSkeletonProps {
+interface SidebarMenuSkeletonProps extends HTMLAttributes<"div"> {
   showIcon?: boolean;
   class?: string;
 }
 
-export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): JSX.Element {
+export function SidebarMenuSkeleton({ showIcon, class: cls, ...attrs }: SidebarMenuSkeletonProps): JSX.Element {
   // Random width between 50 to 90%, fixed per call.
   const width = `${Math.floor(Math.random() * 40) + 50}%`;
 
@@ -752,10 +751,11 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): JSX.Elemen
       data-sidebar="menu-skeleton"
       data-slot="sidebar-menu-skeleton"
       class={
-        cn("flex h-8 items-center gap-2 rounded-md px-2", props.class)
+        cn("flex h-8 items-center gap-2 rounded-md px-2", cls)
       }
+      {...attrs}
     >
-      {props.showIcon === true && (
+      {showIcon === true && (
         <div
           data-sidebar="menu-skeleton-icon"
           class={
@@ -774,57 +774,58 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): JSX.Elemen
   );
 }
 
-export function SidebarMenuSub(props: SidebarPartProps): JSX.Element {
+export function SidebarMenuSub({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <ul
       data-sidebar="menu-sub"
       data-slot="sidebar-menu-sub"
       class={
-        cn("mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5 group-data-[collapsible=icon]:hidden", props.class)
+        cn("mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5 group-data-[collapsible=icon]:hidden", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </ul>
   );
 }
 
-export function SidebarMenuSubItem(props: SidebarPartProps): JSX.Element {
+export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPartProps): JSX.Element {
   return (
     <li
       data-sidebar="menu-sub-item"
       data-slot="sidebar-menu-sub-item"
       class={
-        cn("group/menu-sub-item relative", props.class)
+        cn("group/menu-sub-item relative", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </li>
   );
 }
 
-interface SidebarMenuSubButtonProps {
+interface SidebarMenuSubButtonProps extends HTMLAttributes<"a"> {
   size?: "sm" | "md";
   active?: boolean;
-  href?: string;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuSubButton(props: SidebarMenuSubButtonProps): JSX.Element {
-  const size = props.size ?? "md";
+export function SidebarMenuSubButton({ size: sizeProp, active, class: cls, children, ...attrs }: SidebarMenuSubButtonProps): JSX.Element {
+  const size = sizeProp ?? "md";
 
   return (
     <a
-      href={props.href}
       data-sidebar="menu-sub-button"
       data-slot="sidebar-menu-sub-button"
       data-size={size}
-      data-active={props.active ? "true" : undefined}
+      data-active={active ? "true" : undefined}
       class={
-        cn("flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground ring-sidebar-ring outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden", menuSubSizes[size], props.class)
+        cn("flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground ring-sidebar-ring outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground group-data-[collapsible=icon]:hidden", menuSubSizes[size], cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </a>
   );
 }

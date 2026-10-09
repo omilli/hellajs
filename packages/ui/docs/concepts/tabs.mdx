@@ -9,6 +9,7 @@
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `variant` | `"default" \| "line"` | `"default"` |
 | `class` | `string` | `-` |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `initialId` opens a tab other than the first. `"vertical"` moves the arrow keys to Up and Down, declares `aria-orientation`, and stacks the panels. `"default"` is the segmented pill, the active tab elevated with a shadow; `"line"` is a transparent list whose active tab draws a foreground underline through its `::after`.
 
@@ -33,6 +34,7 @@ The tablist row: a `role="tablist"` div carrying `data-orientation` and `data-va
 | `variant` | `"default" \| "line"` | `"default"` |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `children` | `HellaChild \| HellaChild[]` | The trigger buttons |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### TabsTrigger
 
@@ -46,6 +48,7 @@ The tab button: the `id` derives the DOM id and the `aria-controls` pointer at t
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
 | `listVariant` | `"default" \| "line"` | `"default"` |
 | `children` | `HellaChild` | The label inside the button |
+Accepts all native `button` attributes (forwarded to the root element).
 
 `active` drives `aria-selected` and the button's `data-state` (`active` / `inactive`).
 
@@ -58,6 +61,7 @@ The panel: `hidden` while inactive, labelled by its tab.
 | `id` | `string` | `-` |
 | `active` | `() => boolean` | `-` |
 | `children` | `HellaChild \| (() => HellaChild)` | The panel body |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
 

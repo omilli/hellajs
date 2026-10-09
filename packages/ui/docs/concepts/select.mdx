@@ -17,6 +17,7 @@ Nine named parts ship beside the default `Select`: `SelectTrigger`, `SelectValue
 | `size` | `"sm" \| "default"` | `"default"` |
 | `clearable` | `boolean` | `-` |
 | `class` | `string` | `-` |
+Accepts all native `button` attributes (forwarded to the root element).
 
 A controlled `value` stops the root from writing its internal signal; `onValueChange` reports the requested selection, including the empty string when cleared. `placeholder` shows in the trigger with `data-placeholder` while nothing is selected. `size="sm"` renders the compact `data-size="sm"` trigger variant. `clearable` renders an inline clear affordance on the trigger while a value is selected.
 
@@ -34,20 +35,17 @@ Each entry in the `items` array is one option row.
 
 ### SelectTrigger
 
-The trigger button carrying `aria-haspopup="listbox"`, `aria-expanded`, and the open-state `data-state`.
+The trigger button carrying `aria-haspopup="listbox"`, `aria-expanded`, and the open-state `data-state`. The caller supplies `aria-controls` and `aria-label` as native attributes (the composed `Select` generates and wires the content id itself); `disabled` re-renders `disabled` and gates the open handlers.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `state` | `() => "open" \| "closed"` | `-` |
-| `id` | `string` | `-` |
-| `ariaControls` | `string` | `-` |
-| `ariaLabel` | `string` | `-` |
 | `size` | `"sm" \| "default"` | `"default"` |
 | `onOpen` | `() => void` | `-` |
 | `clearable` | `boolean` | `-` |
 | `onClear` | `() => void` | `-` |
 | `hasValue` | `() => boolean` | `-` |
-| `disabled` | `boolean` | `-` |
+Accepts all native `button` attributes (forwarded to the root element).
 
 ### SelectValue
 
@@ -57,6 +55,7 @@ The chosen-label span inside the trigger, showing the placeholder with `data-pla
 | ---- | ---- | ------- |
 | `placeholder` | `string` | `-` |
 | `value` | `HellaChildren \| (() => HellaChildren \| undefined)` | `-` |
+Accepts all native `span` attributes (forwarded to the root element).
 
 ### SelectContent
 
@@ -65,7 +64,6 @@ The portaled `role="listbox"` surface with its keyboard model, typeahead, and ed
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `state` | `() => "open" \| "closed"` | `-` |
-| `id` | `string` | `-` |
 | `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
 | `align` | `"start" \| "center" \| "end"` | `"start"` |
 | `sideOffset` | `number` | `6` |
@@ -74,6 +72,7 @@ The portaled `role="listbox"` surface with its keyboard model, typeahead, and ed
 | `onExited` | `() => void` | `-` |
 | `onClose` | `() => void` | `-` |
 | `children` | `HellaChildren` | The options and grouping parts |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectItem
 
@@ -85,8 +84,7 @@ One `role="option"` row with the check indicator.
 | `label` | `HellaChildren` | `-` |
 | `selected` | `boolean \| (() => boolean)` | `-` |
 | `onselect` | `() => void` | `-` |
-| `id` | `string` | `-` |
-| `disabled` | `boolean` | `-` |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectGroup
 
@@ -95,6 +93,7 @@ A passthrough grouping `div` for options and labels.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The grouped items |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectLabel
 
@@ -103,10 +102,13 @@ A section label inside a group.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The label text |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectSeparator
 
 A `role="separator"` hairline between groups.
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectScrollUpButton
 
@@ -115,6 +117,7 @@ The top edge scroll row, rendering an up chevron unless children replace it; `Se
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Replaces the default up chevron when given |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SelectScrollDownButton
 
@@ -123,6 +126,7 @@ The bottom edge scroll row, rendering a down chevron unless children replace it;
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Replaces the default down chevron when given |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
 

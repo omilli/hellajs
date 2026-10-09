@@ -1,6 +1,6 @@
 import { html } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 export interface AccordionEntry {
@@ -10,55 +10,51 @@ export interface AccordionEntry {
   disabled?: boolean;
 }
 
-interface AccordionProps {
+interface AccordionProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: AccordionEntry[];
   /** `single` keeps at most one item open (`collapsible` gates the last close); `multiple` toggles freely. */
   type?: "single" | "multiple";
   collapsible?: boolean;
   /** Open values on mount; a single string or a list for `multiple`. */
   open?: string | string[];
-  class?: string;
 }
 
-interface AccordionItemProps {
+interface AccordionItemProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   value: string;
   active?: () => boolean;
-  children?: HellaChildren;
-  class?: string;
 }
 
-interface AccordionTriggerProps {
-  id?: string;
+interface AccordionTriggerProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   active?: () => boolean;
   onToggle?: () => void;
-  controls?: string;
-  disabled?: boolean;
-  children?: HellaChildren;
-  class?: string;
 }
 
-interface AccordionContentProps {
-  id?: string;
-  labelledBy?: string;
+interface AccordionContentProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   active?: () => boolean;
-  children?: HellaChildren;
-  class?: string;
 }
 
-export function AccordionItem(props: AccordionItemProps): HellaNode {
+export function AccordionItem({ value, active, children, class: cls, ...attrs }: AccordionItemProps): HellaNode {
   return html`
     <div
       data-slot="accordion-item"
-      data-value="${props.value}"
-      data-state="${() => (props.active?.() ? "open" : "closed")}"
+      data-value="${value}"
+      data-state="${() => (active?.() ? "open" : "closed")}"
       class="${
-        cn("border-b last:border-b-0", props.class)
+        cn("border-b last:border-b-0", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function AccordionTrigger(props: AccordionTriggerProps): HellaNode {
+export function AccordionTrigger({ active, onToggle, id, disabled, "on:click": userClick, children, class: cls, ...attrs }: AccordionTriggerProps): HellaNode {
   return html`
     <h3
       data-slot="accordion-header"
@@ -69,18 +65,18 @@ export function AccordionTrigger(props: AccordionTriggerProps): HellaNode {
       <button
         type="button"
         data-slot="accordion-trigger"
-        id="${props.id}"
-        aria-expanded="${() => (props.active?.() ? "true" : "false")}"
-        aria-controls="${props.controls}"
-        aria-disabled="${props.disabled ? "true" : undefined}"
-        disabled="${props.disabled ? true : undefined}"
-        data-state="${() => (props.active?.() ? "open" : "closed")}"
+        id="${id}"
+        aria-expanded="${() => (active?.() ? "true" : "false")}"
+        aria-disabled="${disabled ? "true" : undefined}"
+        disabled="${disabled ? true : undefined}"
+        data-state="${() => (active?.() ? "open" : "closed")}"
         class="${
-          cn("flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180", props.class)
+          cn("flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180", cls)
         }"
-        e:click="${() => props.onToggle?.()}"
+        on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); onToggle?.(); }}"
+        ...${attrs}
       >
-        ${() => props.children}
+        ${() => children}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -104,63 +100,64 @@ export function AccordionTrigger(props: AccordionTriggerProps): HellaNode {
   ` as HellaNode;
 }
 
-export function AccordionContent(props: AccordionContentProps): HellaNode {
+export function AccordionContent({ active, id, children, class: cls, ...attrs }: AccordionContentProps): HellaNode {
   return html`
     <div
       role="region"
       data-slot="accordion-content"
-      id="${props.id}"
-      aria-labelledby="${props.labelledBy}"
-      data-state="${() => (props.active?.() ? "open" : "closed")}"
+      id="${id}"
+      data-state="${() => (active?.() ? "open" : "closed")}"
       class="${
-        cn("grid grid-rows-[0fr] text-sm opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", props.class)
+        cn("grid grid-rows-[0fr] text-sm opacity-0 transition-all duration-200 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", cls)
       }"
+      ...${attrs}
     >
       <div
-        data-state="${() => (props.active?.() ? "open" : "closed")}"
+        data-state="${() => (active?.() ? "open" : "closed")}"
         class="${
           cn("min-h-0 overflow-hidden pt-0 pb-0 transition-[padding-bottom] duration-200 data-[state=open]:pb-4")
         }"
       >
-        ${() => props.children}
+        ${() => children}
       </div>
     </div>
   ` as HellaNode;
 }
 
-export default function Accordion(props: AccordionProps): HellaNode {
-  const type = props.type ?? "single";
-  const seed = props.open === undefined
+export default function Accordion({ items, type, collapsible, open, class: cls, ...attrs }: AccordionProps): HellaNode {
+  const mode = type ?? "single";
+  const seed = open === undefined
     ? []
-    : Array.isArray(props.open)
-      ? props.open
-      : [props.open];
+    : Array.isArray(open)
+      ? open
+      : [open];
   // Single mode keeps at most one value open: a multi-value seed clamps to the first.
-  const open = signal<Set<string>>(new Set(type === "single" ? seed.slice(0, 1) : seed));
+  const openValues = signal<Set<string>>(new Set(mode === "single" ? seed.slice(0, 1) : seed));
 
-  const isOpen = (value: string): boolean => open().has(value);
+  const isOpen = (value: string): boolean => openValues().has(value);
 
   const toggle = (value: string, disabled?: boolean): void => {
     if (disabled) return;
-    const next = new Set(open());
+    const next = new Set(openValues());
     if (next.has(value)) {
-      if (type === "single" && props.collapsible !== true) return;
+      if (mode === "single" && collapsible !== true) return;
       next.delete(value);
     } else {
-      if (type === "single") next.clear();
+      if (mode === "single") next.clear();
       next.add(value);
     }
-    open(next);
+    openValues(next);
   };
 
   return html`
     <div
       data-slot="accordion"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
+      ...${attrs}
     >
-      ${props.items.map((entry) => AccordionItem({
+      ${items.map((entry) => AccordionItem({
         value: entry.value,
         active: () => isOpen(entry.value),
         children: [
@@ -168,14 +165,14 @@ export default function Accordion(props: AccordionProps): HellaNode {
             id: `${"hella-accordion-trigger-"}${entry.value}`,
             active: () => isOpen(entry.value),
             onToggle: () => toggle(entry.value, entry.disabled),
-            controls: `${"hella-accordion-content-"}${entry.value}`,
             disabled: entry.disabled,
+            "aria-controls": `${"hella-accordion-content-"}${entry.value}`,
             children: entry.trigger,
           }),
           AccordionContent({
             id: `${"hella-accordion-content-"}${entry.value}`,
-            labelledBy: `${"hella-accordion-trigger-"}${entry.value}`,
             active: () => isOpen(entry.value),
+            "aria-labelledby": `${"hella-accordion-trigger-"}${entry.value}`,
             children: entry.content,
           }),
         ],

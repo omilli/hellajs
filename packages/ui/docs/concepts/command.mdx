@@ -16,6 +16,8 @@ Items sharing a `group` render under one heading, in the order the groups first 
 | `children` | `HellaChildren` | Extra chrome below the list |
 | `class` | `string` | `-` |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 `loop` wraps arrow movement at the edges (the default clamps); a controlled `value` stops the root from writing its internal cursor and `onValueChange` then reports each requested move and selection.
 
 ### CommandItemData
@@ -36,14 +38,13 @@ Each entry in the `items` array is one palette row.
 
 ### CommandInput
 
-The search row: the search icon plus the text input.
+The search row: the search icon plus the text input. The composed `Command` threads the query updates and the keyboard model through `on:input` and `on:keydown` on the inner input.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `value` | `string \| (() => string)` | `-` |
-| `placeholder` | `string` | `-` |
-| `onInput` | `(value: string) => void` | `-` |
-| `onKeydown` | `(e: KeyboardEvent) => void` | `-` |
+| `class` | `string` | `-` |
+
+Accepts all native `input` attributes (forwarded to the inner input element): `placeholder`, `id`, `value`, `aria-label`, and friends ride the spread.
 
 ### CommandList
 
@@ -54,6 +55,8 @@ The scrolling `role="listbox"` container.
 | `body` | `() => HellaChild \| HellaChild[]` | `-` |
 | `children` | `HellaChildren` | Static list chrome |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### CommandEmpty
 
 The zero-match row.
@@ -61,6 +64,8 @@ The zero-match row.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The empty-state text |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### CommandGroup
 
@@ -70,6 +75,8 @@ One group: its heading plus children; `hidden` drops the whole group when every 
 | ---- | ---- | ------- |
 | `heading` | `string` | `-` |
 | `hidden` | `boolean \| (() => boolean)` | `-` |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### CommandItem
 
@@ -83,6 +90,8 @@ One `role="option"` row; activation runs `onSelect` on click.
 | `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The row's label |
 
+Accepts all native `div` attributes (forwarded to the root element); a user `on:click` chains with the owned select.
+
 ### CommandShortcut
 
 The right-aligned key hint inside a row.
@@ -91,9 +100,11 @@ The right-aligned key hint inside a row.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The hint text |
 
+Accepts all native `span` attributes (forwarded to the root element).
+
 ### CommandSeparator
 
-A `role="separator"` rule between groups.
+A `role="separator"` rule between groups. Accepts all native `div` attributes (forwarded to the root element).
 
 ### CommandDialog
 
@@ -106,6 +117,8 @@ The palette wrapped in the dialog surface: the overlay, the portaled panel, the 
 | `title` | `string` | `-` |
 | `description` | `string` | `-` |
 | `children` | `HellaChildren` | The palette (input, list, groups) |
+
+Accepts all native `div` attributes (forwarded to the portaled panel element).
 
 Every part also takes a `class` string, landing last in its style composition. The dialog surface is duplicated inside the command file under `hella-command-dialog` labels, so the palette works without copying the dialog entry; the entry's `dialog` registry dependency exists so standalone dialogs are one `add` away.
 

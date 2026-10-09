@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   renderVariant,
@@ -72,14 +74,23 @@ describe("table", () => {
   });
 
   test.each(tablePartVariants.filter((variant) => variant.part === "Head" || variant.part === "Cell"))(
-    "$format/$style $part passes colSpan through",
+    "$format/$style $part passes colspan through",
     (variant) => {
-      const spanned = renderVariant(variant, { children: [], colSpan: 2 });
+      const spanned = renderVariant(variant, { children: [], colspan: 2 });
       expect(spanned.getAttribute("colspan")).toBe("2");
       const plain = renderVariant(variant, { children: [] });
       expect(plain.hasAttribute("colspan")).toBe(false);
     },
   );
+
+  test("forwards user attrs onto the table element across all four variants", () => {
+    assertAttrForwarded(tableVariants, { title: "Hella" }, "title", "Hella", (el) => el.querySelector("table")!);
+  });
+
+  test("fires a user on:click handler on the table element across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(tableVariants, { "on:click": onClick }, "on:click", "click", onClick, (el) => el.querySelector("table")!);
+  });
 
   test("keeps structural parity for the full table across all four variants", () => {
     assertStructuralParity(tableVariants);

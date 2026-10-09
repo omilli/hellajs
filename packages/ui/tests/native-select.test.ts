@@ -2,6 +2,8 @@ import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { delay, resetTestState } from "@utils/test-helpers.js";
 import { html } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   nativeSelectPartVariants,
@@ -75,13 +77,13 @@ describe("native-select", () => {
     expect(select.value).toBe("us");
   });
 
-  test.each(nativeSelectVariants)("$format/$style passes the selected value to onchange", (variant) => {
-    const onchange = mock<(v: string) => void>(() => {});
-    const select = renderVariant(variant, { onchange, children: variant.child(option("eu", "EU")) }).querySelector("select")! as HTMLSelectElement;
+  test.each(nativeSelectVariants)("$format/$style passes the selected value to on:change via e.target", (variant) => {
+    const onChange = mock((e: Event) => (e.target as HTMLSelectElement).value);
+    const select = renderVariant(variant, { "on:change": onChange, children: variant.child(option("eu", "EU")) }).querySelector("select")! as HTMLSelectElement;
     select.value = "eu";
     select.dispatchEvent(new Event("change"));
-    expect(onchange).toHaveBeenCalledTimes(1);
-    expect(onchange).toHaveBeenCalledWith("eu");
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.results[0]!.value).toBe("eu");
   });
 
   test.each(nativeSelectVariants)("$format/$style composes wrapper, base, focus, and invalid classes", (variant) => {
@@ -113,11 +115,20 @@ describe("native-select", () => {
     }
   });
 
-  test.each(nativeSelectVariants)("$format/$style sets aria-invalid only from the prop", (variant) => {
-    const invalid = renderVariant(variant, { ariaInvalid: true, children: variant.child(option("a", "A")) });
+  test.each(nativeSelectVariants)("$format/$style renders aria-invalid from the kebab attribute", (variant) => {
+    const invalid = renderVariant(variant, { "aria-invalid": "true", children: variant.child(option("a", "A")) });
     expect(invalid.querySelector("select")!.getAttribute("aria-invalid")).toBe("true");
     const valid = renderVariant(variant, { children: variant.child(option("a", "A")) });
     expect(valid.querySelector("select")!.hasAttribute("aria-invalid")).toBe(false);
+  });
+
+  test("forwards user attrs onto the select across all four variants", () => {
+    assertAttrForwarded(nativeSelectVariants, { title: "Hella", children: [] } as never, "title", "Hella", (el) => el.querySelector("select")!);
+  });
+
+  test("fires a user on:click handler on the select across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(nativeSelectVariants, { "on:click": onClick, children: [] } as never, "on:click", "click", onClick, (el) => el.querySelector("select")!);
   });
 
   test.each(nativeSelectPartVariants)("$format/$style $part renders with its data-slot and classes", (variant) => {

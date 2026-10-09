@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 export interface CommandItemData {
@@ -65,20 +65,16 @@ const defaultFilter = (items: CommandItemData[], query: string): CommandItemData
   return ranked.sort((a, b) => b.score - a.score).map((entry) => entry.item);
 };
 
-interface CommandInputProps {
-  value?: string | (() => string);
-  placeholder?: string;
-  onInput?: (value: string) => void;
-  onKeydown?: (e: KeyboardEvent) => void;
+interface CommandInputProps extends HTMLAttributes<"input"> {
   class?: string;
 }
 
-export function CommandInput(props: CommandInputProps): JSX.Element {
+export function CommandInput({ class: cls, ...attrs }: CommandInputProps): JSX.Element {
   return (
     <div
       data-slot="command-input-wrapper"
       class={
-        cn("flex h-9 items-center gap-2 border-b px-3", props.class)
+        cn("flex h-9 items-center gap-2 border-b px-3", cls)
       }
     >
       <svg
@@ -102,113 +98,113 @@ export function CommandInput(props: CommandInputProps): JSX.Element {
       <input
         type="text"
         data-slot="command-input"
-        value={props.value}
-        placeholder={props.placeholder}
         autocomplete="off"
         spellcheck="false"
         class={
           cn("flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50")
         }
-        on:input={(e) => props.onInput?.((e.target as HTMLInputElement).value)}
-        on:keydown={(e) => props.onKeydown?.(e as KeyboardEvent)}
+        {...attrs}
       />
     </div>
   );
 }
 
-interface CommandListProps {
+interface CommandListProps extends HTMLAttributes<"div"> {
   /** Reactive items body; a thunk so the composed root's re-ranked list re-renders through the slot. */
   body?: () => HellaChild | HellaChild[];
   children?: HellaChildren;
   class?: string;
 }
 
-export function CommandList(props: CommandListProps): JSX.Element {
+export function CommandList({ body, children, class: cls, ...attrs }: CommandListProps): JSX.Element {
   return (
     <div
       role="listbox"
       data-slot="command-list"
       aria-label="Suggestions"
       class={
-        cn("max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto", props.class)
+        cn("max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto", cls)
       }
+      {...attrs}
     >
-      {() => props.body?.()}
-      {props.children}
+      {() => body?.()}
+      {children}
     </div>
   );
 }
 
-interface CommandEmptyProps {
+interface CommandEmptyProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function CommandEmpty(props: CommandEmptyProps): JSX.Element {
+export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyProps): JSX.Element {
   return (
     <div
       data-slot="command-empty"
       class={
-        cn("py-6 text-center text-sm", props.class)
+        cn("py-6 text-center text-sm", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface CommandGroupProps {
+interface CommandGroupProps extends HTMLAttributes<"div"> {
   heading?: string;
   hidden?: boolean | (() => boolean);
   children?: HellaChildren;
   class?: string;
 }
 
-export function CommandGroup(props: CommandGroupProps): JSX.Element {
+export function CommandGroup({ heading, hidden, children, class: cls, ...attrs }: CommandGroupProps): JSX.Element {
   const isHidden = (): boolean =>
-    typeof props.hidden === "function" ? props.hidden() : props.hidden ?? false;
+    typeof hidden === "function" ? hidden() : hidden ?? false;
   return (
     <div
       data-slot="command-group"
       hidden={isHidden}
       class={
-        cn("overflow-hidden p-1 text-foreground [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:py-1.5 [&_[data-slot='command-group-heading']]:text-xs [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground", props.class)
+        cn("overflow-hidden p-1 text-foreground [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:py-1.5 [&_[data-slot='command-group-heading']]:text-xs [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground", cls)
       }
+      {...attrs}
     >
-      {props.heading !== undefined && (
+      {heading !== undefined && (
         <div
           data-slot="command-group-heading"
           class={
             cn("px-2 py-1.5 text-xs font-medium text-muted-foreground")
           }
         >
-          {props.heading}
+          {heading}
         </div>
       )}
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface CommandSeparatorProps {
+interface CommandSeparatorProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export function CommandSeparator(props: CommandSeparatorProps): JSX.Element {
+export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps): JSX.Element {
   return (
     <div
       role="separator"
       data-slot="command-separator"
       class={
-        cn("-mx-1 h-px bg-border", props.class)
+        cn("-mx-1 h-px bg-border", cls)
       }
+      {...attrs}
     />
   );
 }
 
-interface CommandItemProps {
+interface CommandItemProps extends HTMLAttributes<"div"> {
   value?: string;
-  disabled?: boolean;
   /** Selected state (the ref's data-selected accent); an accessor follows the owning command's active item. */
   active?: () => boolean;
   /** Called on click and on Enter when the owning command commits. */
@@ -217,48 +213,51 @@ interface CommandItemProps {
   class?: string;
 }
 
-export function CommandItem(props: CommandItemProps): JSX.Element {
+export function CommandItem({ value, disabled, active, onSelect, "on:click": userClick, children, class: cls, ...attrs }: CommandItemProps): JSX.Element {
   return (
     <div
       role="option"
       data-slot="command-item"
-      data-value={props.value}
-      aria-selected={() => (props.active?.() ? "true" : "false")}
-      aria-disabled={props.disabled ? "true" : undefined}
-      data-selected={() => (props.active?.() ? "true" : undefined)}
-      data-disabled={props.disabled ? "true" : undefined}
+      data-value={value}
+      aria-selected={() => (active?.() ? "true" : "false")}
+      aria-disabled={disabled ? "true" : undefined}
+      data-selected={() => (active?.() ? "true" : undefined)}
+      data-disabled={disabled ? "true" : undefined}
       class={
-        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", props.class)
+        cn("relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground", cls)
       }
-      on:click={() => {
-        if (props.disabled) return;
-        props.onSelect?.();
+      on:click={function (e) {
+        if (disabled) return;
+        userClick?.call(this, e);
+        onSelect?.();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface CommandShortcutProps {
+interface CommandShortcutProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function CommandShortcut(props: CommandShortcutProps): JSX.Element {
+export function CommandShortcut({ children, class: cls, ...attrs }: CommandShortcutProps): JSX.Element {
   return (
     <span
       data-slot="command-shortcut"
       class={
-        cn("ml-auto text-xs tracking-widest text-muted-foreground", props.class)
+        cn("ml-auto text-xs tracking-widest text-muted-foreground", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }
 
-interface CommandProps {
+interface CommandProps extends HTMLAttributes<"div"> {
   items?: CommandItemData[];
   /** Replaces the default scoring filter (earlier matches, word-boundary starts, keyword hits). */
   filter?: (items: CommandItemData[], query: string) => CommandItemData[];
@@ -272,11 +271,12 @@ interface CommandProps {
   children?: HellaChildren;
 }
 
-interface CommandDialogProps {
+interface CommandDialogProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   title?: string;
   description?: string;
+  class?: string;
   children?: HellaChildren;
 }
 
@@ -288,7 +288,7 @@ let commandDialogCount = 0;
  * entries never cross-import - with the command palette scoping on its root.
  * Manual parts compose inside through children.
  */
-export function CommandDialog(props: CommandDialogProps): JSX.Element {
+export function CommandDialog({ open, onClose, title: titleText, description: descriptionText, children, class: cls, ...attrs }: CommandDialogProps): JSX.Element {
   const titleId = `hella-command-dialog-title-${++commandDialogCount}`;
   const descriptionId = `hella-command-dialog-description-${commandDialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -314,10 +314,10 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
   };
 
   const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.open() === false) return;
+    if (panel === undefined || wirings.length > 0 || open() === false) return;
     const target = panel;
-    wirings.push(onEscape(target, props.onClose));
-    wirings.push(onOutside(() => [target], props.onClose));
+    wirings.push(onEscape(target, onClose));
+    wirings.push(onOutside(() => [target], onClose));
     wirings.push(trapFocus(target));
   };
 
@@ -327,7 +327,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
   // unwired: closing tears the trap/escape/outside handlers down
   // immediately; reopening re-arms them without a remount.
   effect(() => {
-    if (props.open()) {
+    if (open()) {
       wasOpen = true;
       finishExit();
       visible(true);
@@ -340,7 +340,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
     }
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
+  const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return (
     <>
@@ -358,17 +358,17 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            aria-describedby={props.description === undefined ? undefined : descriptionId}
+            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
             data-state={state()}
             class={
-              cn("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-0 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg overflow-hidden")
+              cn("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-0 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg overflow-hidden", cls)
             }
             hook:afterMount={(node) => {
               if (!(node instanceof HTMLElement)) return;
               panel = node;
               installWirings();
               const onAnimationEnd = (): void => {
-                if (props.open() === false) finishExit();
+                if (open() === false) finishExit();
               };
               node.addEventListener("animationend", onAnimationEnd);
               teardown.push(() => {
@@ -380,6 +380,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
               disposeWirings();
               while (teardown.length) teardown.pop()!();
             }}
+            {...attrs}
           >
             <div
               data-slot="dialog-header"
@@ -387,7 +388,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
                 cn("sr-only")
               }
             >
-              {props.title !== undefined && (
+              {titleText !== undefined && (
                 <h2
                   id={titleId}
                   data-slot="dialog-title"
@@ -395,10 +396,10 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
                     cn("text-lg leading-none font-semibold")
                   }
                 >
-                  {props.title}
+                  {titleText}
                 </h2>
               )}
-              {props.description !== undefined && (
+              {descriptionText !== undefined && (
                 <p
                   id={descriptionId}
                   data-slot="dialog-description"
@@ -406,7 +407,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
                     cn("text-sm text-muted-foreground")
                   }
                 >
-                  {props.description}
+                  {descriptionText}
                 </p>
               )}
             </div>
@@ -417,7 +418,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
               class={
                 cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4")
               }
-              on:click={() => props.onClose()}
+              on:click={() => onClose()}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -441,7 +442,7 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
                 cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", "[&_[data-slot='command-input-wrapper']]:h-12 [&_[data-slot='command-group-heading']]:px-2 [&_[data-slot='command-group-heading']]:font-medium [&_[data-slot='command-group-heading']]:text-muted-foreground [&_[data-slot='command-group']]:px-2 [&_[data-slot='command-group']:not([hidden])~[data-slot='command-group']]:pt-0 [&_[data-slot='command-input-wrapper']_svg]:h-5 [&_[data-slot='command-input-wrapper']_svg]:w-5 [&_[data-slot='command-input']]:h-12 [&_[data-slot='command-item']]:px-2 [&_[data-slot='command-item']]:py-3 [&_[data-slot='command-item']_svg]:h-5 [&_[data-slot='command-item']_svg]:w-5")
               }
             >
-              {props.children}
+              {children}
             </div>
           </div>
         </Portal>
@@ -450,27 +451,27 @@ export function CommandDialog(props: CommandDialogProps): JSX.Element {
   );
 }
 
-export default function Command(props: CommandProps): JSX.Element {
-  const items = props.items ?? [];
+export default function Command({ items: itemsProp, filter, loop, value, onValueChange, children, class: cls, ...attrs }: CommandProps): JSX.Element {
+  const items = itemsProp ?? [];
   const query = signal("");
   const activeIndex = signal(0);
   let rootNode: HTMLElement | undefined;
   let previous: string | undefined;
 
   const ranked = (): CommandItemData[] =>
-    (props.filter ?? defaultFilter)(items, query());
+    (filter ?? defaultFilter)(items, query());
 
   // The active value: the controlled accessor when given, the internal
   // cursor resolved against the ranked list otherwise.
   const activeValue = (): string | undefined => {
-    if (props.value !== undefined) return props.value();
+    if (value !== undefined) return value();
     return ranked()[activeIndex()]?.value;
   };
 
   const select = (next: number): void => {
     const entry = ranked()[next];
     if (entry === undefined) return;
-    if (props.value !== undefined) props.onValueChange?.(entry.value);
+    if (value !== undefined) onValueChange?.(entry.value);
     else activeIndex(next);
   };
 
@@ -484,7 +485,7 @@ export default function Command(props: CommandProps): JSX.Element {
     let hops = 0;
     let next = at;
     while (hops < len) {
-      if (props.loop) next = (next + delta + len) % len;
+      if (loop) next = (next + delta + len) % len;
       else {
         next = next + delta;
         if (next < 0 || next >= len) return;
@@ -499,11 +500,11 @@ export default function Command(props: CommandProps): JSX.Element {
 
   const jump = (edge: "first" | "last"): void => {
     const rankedList = ranked();
-    if (props.value !== undefined) {
+    if (value !== undefined) {
       let i = edge === "first" ? 0 : rankedList.length - 1;
       while (i >= 0 && i < rankedList.length) {
         if (!rankedList[i]!.disabled) {
-          props.onValueChange?.(rankedList[i]!.value);
+          onValueChange?.(rankedList[i]!.value);
           return;
         }
         i = edge === "first" ? i + 1 : i - 1;
@@ -525,7 +526,7 @@ export default function Command(props: CommandProps): JSX.Element {
     const entry = ranked().find((candidate) => candidate.value === current);
     if (entry === undefined || entry.disabled) return;
     entry.onSelect?.();
-    props.onValueChange?.(entry.value);
+    onValueChange?.(entry.value);
   };
 
   const onKeydown = (e: KeyboardEvent): void => {
@@ -576,7 +577,7 @@ export default function Command(props: CommandProps): JSX.Element {
 
   const commitItem = (entry: CommandItemData): void => {
     entry.onSelect?.();
-    props.onValueChange?.(entry.value);
+    onValueChange?.(entry.value);
   };
 
   const renderItem = (entry: CommandItemData): JSX.Element => (
@@ -619,7 +620,7 @@ export default function Command(props: CommandProps): JSX.Element {
     <div
       data-slot="command"
       class={
-        cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", props.class)
+        cn("flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground", cls)
       }
       hook:afterMount={(node) => {
         if (node instanceof HTMLElement) rootNode = node;
@@ -627,17 +628,18 @@ export default function Command(props: CommandProps): JSX.Element {
       hook:beforeDestroy={() => {
         rootNode = undefined;
       }}
+      {...attrs}
     >
       <CommandInput
         value={query}
-        onInput={(v) => {
-          query(v);
-          if (props.value === undefined) activeIndex(0);
+        on:input={(e) => {
+          query((e.target as HTMLInputElement).value);
+          if (value === undefined) activeIndex(0);
         }}
-        onKeydown={onKeydown}
+        on:keydown={onKeydown}
       />
       <CommandList body={renderBody} />
-      {props.children}
+      {children}
     </div>
   );
 }

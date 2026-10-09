@@ -21,6 +21,8 @@ The composed root: it adopts or owns the at-bottom signal, wraps the children in
 | `observe` | `(target: Element, onGrow: () => void) => () => void` | A `ResizeObserver` |
 | `children` | `HellaChildren` | The message items |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### MessageScrollerViewport
 
 The scroll container: a `div` carrying `data-slot="message-scroller-viewport"` whose passive scroll listener and content watcher drive the shared state.
@@ -33,6 +35,8 @@ The scroll container: a `div` carrying `data-slot="message-scroller-viewport"` w
 | `observe` | `(target: Element, onGrow: () => void) => () => void` | A `ResizeObserver` |
 | `children` | `HellaChildren` | The content stack |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### MessageScrollerContent
 
 The content stack: a `div` carrying `data-slot="message-scroller-content"` that the growth watcher observes.
@@ -41,6 +45,8 @@ The content stack: a `div` carrying `data-slot="message-scroller-content"` that 
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The items |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### MessageScrollerItem
 
 One message row: a `div` carrying `data-slot="message-scroller-item"`.
@@ -48,6 +54,8 @@ One message row: a `div` carrying `data-slot="message-scroller-item"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The message node |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### MessageScrollerButton
 
@@ -60,8 +68,9 @@ The jump button: rendered while the shared state reads false and hidden while tr
 | `variant` | Button variant pick | `"secondary"` |
 | `size` | Button size pick | `"icon-sm"` |
 | `scrollToBottom` | `() => void` | `-` |
-| `onclick` | `() => void` | `-` |
 | `children` | `HellaChildren` | The arrow icon plus a screen-reader label |
+
+Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains ahead of the owned scroll action).
 
 ### MessageScrollerProvider
 

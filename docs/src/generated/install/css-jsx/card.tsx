@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
@@ -65,98 +65,105 @@ css({
   },
 });
 
-interface CardPartProps {
-  children?: HellaChildren;
+interface CardPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Card(props: CardPartProps): JSX.Element {
+export default function Card({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (
     <div
       data-slot="card"
       class={
-        [base, props.class]
+        [base, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function CardHeader(props: CardPartProps): JSX.Element {
+export function CardHeader({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (
     <div
       data-slot="card-header"
       class={
-        [header, props.class]
+        [header, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function CardTitle(props: CardPartProps): JSX.Element {
+export function CardTitle({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (
     <div
       data-slot="card-title"
       class={
-        [title, props.class]
+        [title, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function CardDescription(props: CardPartProps): JSX.Element {
+export function CardDescription({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (
     <div
       data-slot="card-description"
       class={
-        [description, props.class]
+        [description, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function CardAction(props: CardPartProps): JSX.Element {
+export function CardAction({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (
     <div
       data-slot="card-action"
       class={
-        [action, props.class]
+        [action, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function CardContent(props: CardPartProps): JSX.Element {
+export function CardContent({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (
     <div
       data-slot="card-content"
       class={
-        [content, props.class]
+        [content, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function CardFooter(props: CardPartProps): JSX.Element {
+export function CardFooter({ children, class: cls, ...attrs }: CardPartProps): JSX.Element {
   return (
     <div
       data-slot="card-footer"
       class={
-        [footer, props.class]
+        [footer, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

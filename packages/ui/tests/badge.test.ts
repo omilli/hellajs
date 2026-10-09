@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
-import { assertStructuralParity, badgeVariants, classTokens, renderVariant } from "./helpers/variants";
+import { assertAttrForwarded, assertHandlerForwarded, assertStructuralParity, badgeVariants, classTokens, renderVariant } from "./helpers/variants";
 import type { BadgeVariantProps } from "./helpers/variants";
 
 /** Verbatim shadcn utility tokens per variant — asserted in the tailwind flavor. */
@@ -50,9 +50,18 @@ describe("badge", () => {
     }
   });
 
-  test.each(badgeVariants)("$format/$style reflects the ariaInvalid prop on the root", (variant) => {
-    const badge = renderVariant(variant, { children: variant.child("X"), ariaInvalid: true });
+  test.each(badgeVariants)("$format/$style renders aria-invalid from the kebab attribute", (variant) => {
+    const badge = renderVariant(variant, { children: variant.child("X"), "aria-invalid": "true" });
     expect(badge.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(badgeVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(badgeVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
   test("keeps structural parity across all four variants", () => {

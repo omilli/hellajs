@@ -1,18 +1,11 @@
 ## API
 
-The root carries `data-slot="textarea"`, and `value` accepts a plain string or a bare signal, binding as the element's value property so a controlled textarea reads and writes like Input. Typed input flows back through `oninput`, which receives the extracted `e.target.value` string rather than the event. Auto-sizing comes from `field-sizing: content` with a `min-height` floor; cap growth with a `max-h` class override.
+The root carries `data-slot="textarea"`, and `value` accepts a plain string or a bare signal, binding as the element's value property so a controlled textarea reads and writes like Input. Typed input flows back through `on:input`, where the handler reads `(e.target as HTMLTextAreaElement).value`. Auto-sizing comes from `field-sizing: content` with a `min-height` floor; cap growth with a `max-h` class override.
 
 ### Textarea
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `value` | `string \| (() => string)` | `-` |
-| `placeholder` | `string` | `-` |
-| `rows` | `number` | `-` |
-| `ariaLabel` | `string` | `-` |
-| `ariaInvalid` | `boolean` | `-` |
-| `disabled` | `boolean` | `-` |
-| `oninput` | `(value: string) => void` | `-` |
 | `class` | `string` | `-` |
 
-`ariaInvalid` drives the invalid treatment, matching Input: `aria-invalid` recolors the border and, once focused, the ring.
+Accepts all native `textarea` attributes (forwarded to the root element): `placeholder`, `rows`, `id`, `value`, `aria-label`, and friends ride the spread. The invalid treatment matches Input: the native `aria-invalid` attribute recolors the border and, once focused, the ring.

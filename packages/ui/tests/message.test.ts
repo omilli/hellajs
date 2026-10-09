@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   messagePartVariants,
@@ -69,5 +71,23 @@ describe("message", () => {
   test("all four flavors agree on tag and attributes", () => {
     assertStructuralParity(messageVariants, { align: "end", children: ["x"] });
     assertStructuralParity(messagePartVariants.filter((candidate) => candidate.part === "Avatar"), { children: ["x"] });
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(messageVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(messageVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges a user class into the root class across all four variants", () => {
+    for (const variant of messageVariants) {
+      const root = renderVariant(variant, { class: "my-message", children: ["x"] });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("my-message");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
   });
 });

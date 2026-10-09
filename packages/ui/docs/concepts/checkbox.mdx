@@ -7,12 +7,11 @@
 | `checked` | `boolean \| (() => boolean)` | `-` |
 | `indeterminate` | `boolean \| (() => boolean)` | `-` |
 | `onCheckedChange` | `(checked: boolean) => void` | `-` |
-| `disabled` | `boolean` | `-` |
-| `ariaInvalid` | `boolean` | `-` |
-| `id` | `string` | `-` |
 | `class` | `string` | `-` |
 
-`indeterminate` wins over `checked` for rendering: `aria-checked="mixed"` and `data-state="indeterminate"`. `ariaInvalid` renders `aria-invalid="true"`, which the invalid ring styles key off, and `id` lands on the button for label pairing.
+Accepts all native `button` attributes (forwarded to the root element): `disabled` gates the toggle, `id` lands on the button for label pairing, and `aria-invalid` drives the invalid ring styles.
+
+`indeterminate` wins over `checked` for rendering: `aria-checked="mixed"` and `data-state="indeterminate"`.
 
 ## Controlled and Uncontrolled
 
@@ -29,6 +28,6 @@ The root is a `button` element, so Space toggles it through native activation an
 | Role | `checkbox` on the root button |
 | State | `aria-checked` is `true`, `false`, or `mixed`; `data-state` is `checked`, `unchecked`, or `indeterminate` |
 | Keyboard | Space toggles; the button is disabled for pointer and keyboard while `disabled` |
-| Labeling | Pair with a `label` element or `aria-labelledby` through the `id` prop |
+| Labeling | Pair with a `label` element or `aria-labelledby` through the native `id` attribute |
 
 The indicator element stays mounted in every state; only the icon inside it appears and disappears, so a transition on the indicator survives state flips.

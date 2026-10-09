@@ -121,6 +121,14 @@ describe("ssr", () => {
     expect(ssr(node)).toBe("<button disabled></button>");
   });
 
+  test("stringifies spread-resolved plain attrs and skips prefix-carrying spread keys", () => {
+    // Runtime cloneWithValues already merged the spread: ssr sees resolved props
+    // only, so prefixed keys inside the spread skip exactly like declared ones.
+    const attrs = { disabled: true, title: "t", "on:click": () => {} };
+    expect(ssr(html`<button class="b" ...${attrs}></button>` as HellaNode))
+      .toBe('<button class="b" disabled title="t"></button>');
+  });
+
   test("renders void elements without a closing tag", () => {
     expect(ssr(html`<img src=${"a.jpg"} />` as HellaNode)).toBe('<img src="a.jpg">');
   });

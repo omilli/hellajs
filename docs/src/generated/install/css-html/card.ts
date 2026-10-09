@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
@@ -66,84 +66,91 @@ css({
   },
 });
 
-interface CardPartProps {
-  children?: HellaChildren;
+interface CardPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Card(props: CardPartProps): HellaNode {
+export default function Card({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`
     <div
       data-slot="card"
       class="${
-        [base, props.class]
+        [base, cls]
       }"
-    >${props.children}</div>
+      ...${attrs}
+    >${children}</div>
   ` as HellaNode;
 }
 
-export function CardHeader(props: CardPartProps): HellaNode {
+export function CardHeader({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`
     <div
       data-slot="card-header"
       class="${
-        [header, props.class]
+        [header, cls]
       }"
-    >${props.children}</div>
+      ...${attrs}
+    >${children}</div>
   ` as HellaNode;
 }
 
-export function CardTitle(props: CardPartProps): HellaNode {
+export function CardTitle({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`
     <div
       data-slot="card-title"
       class="${
-        [title, props.class]
+        [title, cls]
       }"
-    >${props.children}</div>
+      ...${attrs}
+    >${children}</div>
   ` as HellaNode;
 }
 
-export function CardDescription(props: CardPartProps): HellaNode {
+export function CardDescription({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`
     <div
       data-slot="card-description"
       class="${
-        [description, props.class]
+        [description, cls]
       }"
-    >${props.children}</div>
+      ...${attrs}
+    >${children}</div>
   ` as HellaNode;
 }
 
-export function CardAction(props: CardPartProps): HellaNode {
+export function CardAction({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`
     <div
       data-slot="card-action"
       class="${
-        [action, props.class]
+        [action, cls]
       }"
-    >${props.children}</div>
+      ...${attrs}
+    >${children}</div>
   ` as HellaNode;
 }
 
-export function CardContent(props: CardPartProps): HellaNode {
+export function CardContent({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`
     <div
       data-slot="card-content"
       class="${
-        [content, props.class]
+        [content, cls]
       }"
-    >${props.children}</div>
+      ...${attrs}
+    >${children}</div>
   ` as HellaNode;
 }
 
-export function CardFooter(props: CardPartProps): HellaNode {
+export function CardFooter({ children, class: cls, ...attrs }: CardPartProps): HellaNode {
   return html`
     <div
       data-slot="card-footer"
       class="${
-        [footer, props.class]
+        [footer, cls]
       }"
-    >${props.children}</div>
+      ...${attrs}
+    >${children}</div>
   ` as HellaNode;
 }

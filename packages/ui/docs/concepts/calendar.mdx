@@ -20,6 +20,8 @@ The default mode is single selection. Click a day (or press Enter on it) and the
 | `classNames` | `Partial<Record<key, string>>` | `-` |
 | `class` | `string` | `-` |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 Selection is uncontrolled after mount: `selected` sets the initial state and `onSelect` reports every change in the mode's shape. The visible month is the one controlled prop: `month` as an accessor wins over internal navigation on every change, while `onMonthChange` still reports user navigation (buttons, arrows, page keys).
 
 ### CalendarDayButton
@@ -35,7 +37,8 @@ The manual-composition day part is exported for standalone composition. State fl
 | `focused` | `boolean \| (() => boolean)` | `-` |
 | `today` | `boolean` | `-` |
 | `class` | `string` | `-` |
-| `onclick` / `onpointerenter` / `onpointerleave` | `(event) => void` | `-` |
+
+Accepts all native `button` attributes (forwarded to the root element): `on:click`, `on:pointerenter`, and `on:pointerleave` ride the spread.
 
 `day` is also emitted as `data-day` (locale string); `selectedSingle` renders `data-selected-single` and `aria-selected`, the range flags render the `data-range-*` attributes, `disabled` renders `aria-disabled`, `focused` drives the roving `tabindex`, and `today` renders `aria-current="date"`.
 

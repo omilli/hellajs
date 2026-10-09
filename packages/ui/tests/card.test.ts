@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   cardPartVariants,
   cardVariants,
@@ -59,6 +61,15 @@ describe("card", () => {
 
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(cardVariants);
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(cardVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(cardVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
   test("keeps structural parity for every part across all four variants", () => {

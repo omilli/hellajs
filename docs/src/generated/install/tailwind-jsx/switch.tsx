@@ -1,24 +1,24 @@
 import { signal } from "@hellajs/core";
+import type { HTMLAttributes } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-interface SwitchProps {
+interface SwitchProps extends HTMLAttributes<"button"> {
+  class?: string;
   /** Checked state. A boolean seeds the internal signal; an accessor makes the switch controlled — clicks then only report through `onCheckedChange`. */
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
-  class?: string;
 }
 
-export default function Switch(props: SwitchProps): JSX.Element {
-  const checkedAccessor = typeof props.checked === "function" ? props.checked : undefined;
-  const internal = signal(typeof props.checked === "boolean" ? props.checked : false);
+export default function Switch({ checked: checkedProp, onCheckedChange, disabled, "on:click": userClick, class: cls, ...attrs }: SwitchProps): JSX.Element {
+  const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
+  const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internal());
 
   const toggle = (): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const next = !checked();
     if (!checkedAccessor) internal(next);
-    props.onCheckedChange?.(next);
+    onCheckedChange?.(next);
   };
 
   return (
@@ -29,11 +29,12 @@ export default function Switch(props: SwitchProps): JSX.Element {
       data-size="default"
       aria-checked={checked() ? "true" : "false"}
       data-state={checked() ? "checked" : "unchecked"}
-      disabled={props.disabled ? true : undefined}
+      disabled={disabled ? true : undefined}
       class={
-        cn("peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80", props.class)
+        cn("peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80", cls)
       }
-      on:click={toggle}
+      on:click={function (e) { userClick?.call(this, e); toggle(); }}
+      {...attrs}
     >
       <span
         data-slot="switch-thumb"

@@ -1,10 +1,11 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and the component's hook wiring share one dom instance.
 import { html, mount, peekState } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
   assertStructuralParity,
   classTokens,
   tabsPartVariants,
@@ -181,6 +182,41 @@ describe("tabs", () => {
 
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(tabsVariants, { items });
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(tabsVariants, { items, title: "Hella" }, "title", "Hella");
+  });
+
+  test("merges a user class into the root class across all four variants", () => {
+    for (const variant of tabsVariants) {
+      const { root } = mountTabs(variant, { items, class: "tabs-root" });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("tabs-root");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
+  });
+
+  test("chains a user on:click with the owned activate on a trigger across all four variants", () => {
+    for (const variant of tabsPartVariants.filter((candidate) => candidate.part === "Trigger")) {
+      const userClick = mock(() => {});
+      const selected = signal(false);
+      const container = setupContainer();
+      const props: Record<string, unknown> = {
+        id: "alpha",
+        active: () => selected(),
+        onActivate: () => selected(!selected()),
+        "on:click": userClick,
+        children: "Label",
+      };
+      const rendered = variant.render(props as never);
+      mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered, container);
+      const tab = container.firstElementChild!;
+      tab.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(selected()).toBe(true);
+      expect(tab.getAttribute("aria-selected")).toBe("true");
+    }
   });
 
   test("renders every named part with its role and data-slot across all four variants", () => {

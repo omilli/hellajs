@@ -1,7 +1,9 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { html, mount } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   inputGroupPartVariants,
@@ -83,7 +85,7 @@ describe("input-group", () => {
 
   test("addon click focuses the group's input", () => {
     for (const variant of inputGroupVariants) {
-      const root = mountGroup(variant, [partNode(variant, "Addon"), partNode(variant, "Input", { ariaLabel: "target" })]);
+      const root = mountGroup(variant, [partNode(variant, "Addon"), partNode(variant, "Input", { "aria-label": "target" })]);
       const addon = root.querySelector("[data-slot='input-group-addon']") as HTMLElement;
       const input = root.querySelector("input") as HTMLInputElement;
       addon.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -95,7 +97,7 @@ describe("input-group", () => {
     for (const variant of inputGroupVariants) {
       const root = mountGroup(variant, [
         partNode(variant, "Addon", { children: [partNode(variant, "Button")] }),
-        partNode(variant, "Input", { ariaLabel: "target" }),
+        partNode(variant, "Input", { "aria-label": "target" }),
       ]);
       const button = root.querySelector("[data-slot='button']") as HTMLElement;
       const input = root.querySelector("input") as HTMLInputElement;
@@ -150,5 +152,42 @@ describe("input-group", () => {
   test("all four flavors agree on tag and attributes", () => {
     assertStructuralParity(inputGroupVariants, { children: ["x"] });
     assertStructuralParity(inputGroupVariants, { disabled: true, children: ["x"] });
+  });
+
+  test("forwards user attrs onto the group root across all four variants", () => {
+    assertAttrForwarded(inputGroupVariants, { title: "Hella", children: ["x"] }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the group root across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(inputGroupVariants, { "on:click": onClick, children: ["x"] }, "on:click", "click", onClick);
+  });
+
+  test("merges a user class into the group root class across all four variants", () => {
+    for (const variant of inputGroupVariants) {
+      const root = renderVariant(variant, { class: "my-group", children: variant.child!("x") });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("my-group");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
+  });
+
+  test("button part spreads a user on:click handler across all four variants", () => {
+    for (const variant of inputGroupPartVariants.filter((candidate) => candidate.part === "Button")) {
+      const onClick = mock(() => {});
+      const root = renderVariant(variant, { "on:click": onClick, children: ["go"] });
+      root.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(onClick).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  test("input part forwards value, placeholder, and kebab aria attrs through the spread", () => {
+    for (const variant of inputGroupPartVariants.filter((candidate) => candidate.part === "Input")) {
+      const root = renderVariant(variant, { value: "seeded", placeholder: "type here", "aria-label": "target" });
+      const input = root.tagName === "INPUT" ? root : root.querySelector("input")!;
+      expect((input as HTMLInputElement).value).toBe("seeded");
+      expect(input.getAttribute("placeholder")).toBe("type here");
+      expect(input.getAttribute("aria-label")).toBe("target");
+    }
   });
 });

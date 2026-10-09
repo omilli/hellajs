@@ -93,7 +93,7 @@ export function processAttributes(t, attributes, isComponent) {
 /**
  * Categorize html`` component attributes into five typed arrays.
  * @param {typeof import("@babel/core").types} t
- * @param {Record<string, boolean | string | { __slot: number } | Array<string | { __slot: number }>>} props
+ * @param {Record<string, boolean | string | { __slot: number } | { __spread: number } | Array<string | { __slot: number }>>} props
  * @param {import("@babel/core").Expression[]} expressions
  * @param {boolean} isComponent When false (element), call-containing values are
  *   auto-wrapped into arrow thunks for reactivity; when true (component), values
@@ -111,6 +111,13 @@ export function processComponentAttributes(t, props, expressions, isComponent) {
     const key = keys[i++];
     const value = props[key];
     let processedValue;
+
+    // Spread sentinel: emit a positional spreadElement, byte-shape equivalent
+    // to the JSX flavor's `props: { ...attrs, ... }` (unwrapped on both paths).
+    if (value.__spread !== undefined) {
+      propsArray.push(t.spreadElement(expressions[value.__spread]));
+      continue;
+    }
 
     if (value === true) {
       processedValue = t.booleanLiteral(true);

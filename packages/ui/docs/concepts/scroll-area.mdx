@@ -10,6 +10,8 @@ Give the root an explicit height (and width when needed): the viewport fills it 
 | `observe` | `(target, onGrow) => () => void` | A `ResizeObserver` on the content wrapper |
 | `class` | `string` | `-` |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### ScrollBar
 
 | Prop | Type | Default |
@@ -17,6 +19,8 @@ Give the root an explicit height (and width when needed): the viewport fills it 
 | `orientation` | `"vertical" \| "horizontal"` | `"vertical"` |
 | `observe` | `(target, onGrow) => () => void` | `-` |
 | `class` | `string` | `-` |
+
+Accepts all native `div` attributes (forwarded to the bar element).
 
 `observe` is the injectable content watcher for a bar composed standalone.
 

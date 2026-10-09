@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   markerPartVariants,
@@ -71,6 +73,24 @@ describe("marker", () => {
     assertStructuralParity(markerVariants, { variant: "border", children: ["text"] });
     for (const part of ["Icon", "Content"] as const) {
       assertStructuralParity(markerPartVariants.filter((candidate) => candidate.part === part), { children: ["x"] });
+    }
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(markerVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(markerVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges a user class into the root class across all four variants", () => {
+    for (const variant of markerVariants) {
+      const root = renderVariant(variant, { class: "my-marker", children: variant.child!("text") });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("my-marker");
+      expect(tokens.length).toBeGreaterThan(1);
     }
   });
 });

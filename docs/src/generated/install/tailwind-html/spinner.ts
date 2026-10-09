@@ -1,12 +1,12 @@
 import { html } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-interface SpinnerProps {
+interface SpinnerProps extends HTMLAttributes<"svg"> {
   class?: string;
 }
 
-export default function Spinner(props: SpinnerProps): HellaNode {
+export default function Spinner({ class: cls, ...attrs }: SpinnerProps): HellaNode {
   return html`
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -21,8 +21,9 @@ export default function Spinner(props: SpinnerProps): HellaNode {
       role="status"
       aria-label="Loading"
       class="${
-        cn("size-4 animate-spin", props.class)
+        cn("size-4 animate-spin", cls)
       }"
+      ...${attrs}
     >
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
     </svg>

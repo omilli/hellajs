@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
 
@@ -12,20 +12,21 @@ const base = style("skeleton", {
   borderRadius: "calc(var(--radius) * 0.8)",
 });
 
-interface SkeletonProps {
-  children?: HellaChildren;
+interface SkeletonProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Skeleton(props: SkeletonProps): JSX.Element {
+export default function Skeleton({ children, class: cls, ...attrs }: SkeletonProps): JSX.Element {
   return (
     <div
       data-slot="skeleton"
       class={
-        [base, props.class]
+        [base, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

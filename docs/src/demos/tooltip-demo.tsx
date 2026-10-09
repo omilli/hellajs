@@ -26,7 +26,7 @@ export function TooltipManualDemo() {
   return (
     <>
       <TooltipTrigger
-        describedBy="manual-tooltip-content"
+        aria-describedby="manual-tooltip-content"
         hook:afterMount={(node: Element) => {
           trigger = node;
           hoverIntent(node, {

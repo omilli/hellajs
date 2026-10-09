@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { onEscape, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -24,21 +24,22 @@ type ActionVariant = "default" | "destructive" | "outline" | "secondary" | "ghos
 /** Button size union carried by the Action/Cancel buttons (mirrors the emitted ButtonProps). */
 type ActionSize = "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 
-interface AlertDialogOverlayProps {
+interface AlertDialogOverlayProps extends HTMLAttributes<"div"> {
   state?: AlertDialogState;
   class?: string;
 }
 
-export function AlertDialogOverlay(props: AlertDialogOverlayProps): JSX.Element {
+export function AlertDialogOverlay({ state, class: cls, ...attrs }: AlertDialogOverlayProps): JSX.Element {
   return (
     <div
       data-slot="alert-dialog-overlay"
-      data-state={props.state?.()}
+      data-state={state?.()}
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
+      {...attrs}
     />
   );
 }
@@ -56,33 +57,32 @@ export function AlertDialogPortal(props: AlertDialogPortalProps): JSX.Element {
   );
 }
 
-interface AlertDialogTriggerProps {
+interface AlertDialogTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
-export function AlertDialogTrigger(props: AlertDialogTriggerProps): JSX.Element {
+export function AlertDialogTrigger({ children, class: cls, ...attrs }: AlertDialogTriggerProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="alert-dialog-trigger"
       class={
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface AlertDialogContentProps {
+interface AlertDialogContentProps extends HTMLAttributes<"div"> {
   state?: AlertDialogState;
   size?: "default" | "sm";
-  labelledBy?: string;
-  describedBy?: string;
   closeOnEscape?: boolean;
   onClose?: () => void;
   onExited?: () => void;
@@ -97,7 +97,7 @@ interface AlertDialogContentProps {
  * shows the wired composition). Unlike DialogContent there is no outside
  * dismissal: Radix's AlertDialog semantics are escape-only by design.
  */
-export function AlertDialogContent(props: AlertDialogContentProps): JSX.Element {
+export function AlertDialogContent({ state, size, closeOnEscape, onClose, onExited, children, class: cls, ...attrs }: AlertDialogContentProps): JSX.Element {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
@@ -107,31 +107,29 @@ export function AlertDialogContent(props: AlertDialogContentProps): JSX.Element 
   };
 
   const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.state?.() === "closed") return;
+    if (panel === undefined || wirings.length > 0 || state?.() === "closed") return;
     const target = panel;
-    if (props.closeOnEscape !== false && props.onClose) wirings.push(onEscape(target, props.onClose));
+    if (closeOnEscape !== false && onClose) wirings.push(onEscape(target, onClose));
     wirings.push(trapFocus(target));
   };
 
   // The exit runs unwired: flipping to "closed" tears the trap/escape
   // handlers down immediately; reopening re-arms them without a remount.
   effect(() => {
-    if (props.state?.() === "closed") disposeWirings();
+    if (state?.() === "closed") disposeWirings();
     else installWirings();
   });
 
   return (
     <div
       data-slot="alert-dialog-content"
-      data-state={props.state?.()}
-      data-size={props.size ?? "default"}
+      data-state={state?.()}
+      data-size={size ?? "default"}
       role="alertdialog"
       aria-modal="true"
-      aria-labelledby={props.labelledBy}
-      aria-describedby={props.describedBy}
       class={
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }
       hook:afterMount={(node) => {
@@ -141,7 +139,7 @@ export function AlertDialogContent(props: AlertDialogContentProps): JSX.Element 
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (props.state?.() === "closed") props.onExited?.();
+          if (state?.() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -150,101 +148,111 @@ export function AlertDialogContent(props: AlertDialogContentProps): JSX.Element 
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface AlertDialogPartProps {
+interface AlertDialogPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function AlertDialogHeader(props: AlertDialogPartProps): JSX.Element {
+export function AlertDialogHeader({ children, class: cls, ...attrs }: AlertDialogPartProps): JSX.Element {
   return (
     <div
       data-slot="alert-dialog-header"
       class={
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function AlertDialogFooter(props: AlertDialogPartProps): JSX.Element {
+export function AlertDialogFooter({ children, class: cls, ...attrs }: AlertDialogPartProps): JSX.Element {
   return (
     <div
       data-slot="alert-dialog-footer"
       class={
         // @hella:compose
-        [footer, props.class]
+        [footer, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface AlertDialogTitleProps {
-  id?: string;
+interface AlertDialogTitleProps extends HTMLAttributes<"h2"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function AlertDialogTitle(props: AlertDialogTitleProps): JSX.Element {
+export function AlertDialogTitle({ id, children, class: cls, ...attrs }: AlertDialogTitleProps): JSX.Element {
   return (
     <h2
-      id={props.id}
+      id={id}
       data-slot="alert-dialog-title"
       class={
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </h2>
   );
 }
 
-export function AlertDialogDescription(props: AlertDialogTitleProps): JSX.Element {
+interface AlertDialogDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function AlertDialogDescription({ id, children, class: cls, ...attrs }: AlertDialogDescriptionProps): JSX.Element {
   return (
     <p
-      id={props.id}
+      id={id}
       data-slot="alert-dialog-description"
       class={
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </p>
   );
 }
 
-export function AlertDialogMedia(props: AlertDialogPartProps): JSX.Element {
+export function AlertDialogMedia({ children, class: cls, ...attrs }: AlertDialogPartProps): JSX.Element {
   return (
     <div
       data-slot="alert-dialog-media"
       class={
         // @hella:compose
-        [media, props.class]
+        [media, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface AlertDialogActionProps {
+interface AlertDialogActionProps extends HTMLAttributes<"button"> {
   variant?: ActionVariant;
   size?: ActionSize;
   onClose?: () => void;
@@ -253,25 +261,26 @@ interface AlertDialogActionProps {
 }
 
 /** The confirm button - a composed Button (default variant) calling the close path. */
-export function AlertDialogAction(props: AlertDialogActionProps): JSX.Element {
+export function AlertDialogAction({ variant, size, onClose, "on:click": userClick, children, class: cls, ...attrs }: AlertDialogActionProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="alert-dialog-action"
-      data-variant={props.variant ?? "default"}
+      data-variant={variant ?? "default"}
       class={
         // @hella:compose
-        [buttonBase, buttonVariants[props.variant ?? "default"], buttonSizes[props.size ?? "default"], props.class]
+        [buttonBase, buttonVariants[variant ?? "default"], buttonSizes[size ?? "default"], cls]
         // @hella:end
       }
-      on:click={() => props.onClose?.()}
+      on:click={function (e) { userClick?.call(this, e); onClose?.(); }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface AlertDialogCancelProps {
+interface AlertDialogCancelProps extends HTMLAttributes<"button"> {
   variant?: ActionVariant;
   size?: ActionSize;
   onClose?: () => void;
@@ -280,25 +289,26 @@ interface AlertDialogCancelProps {
 }
 
 /** The dismiss button - a composed Button (outline variant) calling the close path. */
-export function AlertDialogCancel(props: AlertDialogCancelProps): JSX.Element {
+export function AlertDialogCancel({ variant, size, onClose, "on:click": userClick, children, class: cls, ...attrs }: AlertDialogCancelProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="alert-dialog-cancel"
-      data-variant={props.variant ?? "outline"}
+      data-variant={variant ?? "outline"}
       class={
         // @hella:compose
-        [buttonBase, buttonVariants[props.variant ?? "outline"], buttonSizes[props.size ?? "default"], props.class]
+        [buttonBase, buttonVariants[variant ?? "outline"], buttonSizes[size ?? "default"], cls]
         // @hella:end
       }
-      on:click={() => props.onClose?.()}
+      on:click={function (e) { userClick?.call(this, e); onClose?.(); }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface AlertDialogProps {
+interface AlertDialogProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   title?: string;
@@ -311,7 +321,7 @@ interface AlertDialogProps {
 
 let alertDialogCount = 0;
 
-export default function AlertDialog(props: AlertDialogProps): JSX.Element {
+export default function AlertDialog({ open, onClose, title: titleText, description: descriptionText, size, closeOnEscape, children, class: cls, ...attrs }: AlertDialogProps): JSX.Element {
   const titleId = `hella-alert-dialog-title-${++alertDialogCount}`;
   const descriptionId = `hella-alert-dialog-description-${alertDialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -333,7 +343,7 @@ export default function AlertDialog(props: AlertDialogProps): JSX.Element {
   // panel stays mounted under data-state="closed" until its animationend
   // (or the copied 200ms duration budget) unmounts it.
   effect(() => {
-    if (props.open()) {
+    if (open()) {
       wasOpen = true;
       finishExit();
       visible(true);
@@ -344,7 +354,7 @@ export default function AlertDialog(props: AlertDialogProps): JSX.Element {
     }
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
+  const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return (
     <>
@@ -353,17 +363,18 @@ export default function AlertDialog(props: AlertDialogProps): JSX.Element {
           <AlertDialogOverlay state={state} />
           <AlertDialogContent
             state={state}
-            size={props.size}
-            labelledBy={titleId}
-            describedBy={props.description === undefined ? undefined : descriptionId}
-            closeOnEscape={props.closeOnEscape}
-            onClose={props.onClose}
+            size={size}
+            aria-labelledby={titleId}
+            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+            closeOnEscape={closeOnEscape}
+            onClose={onClose}
             onExited={finishExit}
-            class={props.class}
+            class={cls}
+            {...attrs}
             children={[
-              ...(props.title !== undefined ? [<AlertDialogTitle id={titleId}>{props.title}</AlertDialogTitle>] : []),
-              ...(props.description !== undefined ? [<AlertDialogDescription id={descriptionId}>{props.description}</AlertDialogDescription>] : []),
-              ...flattenChildren(props.children),
+              ...(titleText !== undefined ? [<AlertDialogTitle id={titleId}>{titleText}</AlertDialogTitle>] : []),
+              ...(descriptionText !== undefined ? [<AlertDialogDescription id={descriptionId}>{descriptionText}</AlertDialogDescription>] : []),
+              ...flattenChildren(children),
             ] as HellaChild[]}
           />
         </Portal>

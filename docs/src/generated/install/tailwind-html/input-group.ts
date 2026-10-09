@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const addonAlign = {
@@ -32,43 +32,44 @@ const sizes = {
   "icon-sm": "flex items-center gap-2 text-sm shadow-none size-8 p-0 has-[>svg]:p-0",
 };
 
-interface InputGroupProps {
+interface InputGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   /** Renders data-disabled="true" on the group; addons read it for their opacity state. */
   disabled?: boolean;
   class?: string;
 }
 
-export default function InputGroup(props: InputGroupProps): HellaNode {
+export default function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): HellaNode {
   return html`
     <div
       data-slot="input-group"
       role="group"
-      data-disabled="${props.disabled ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
       class="${
-        cn("group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30 h-9 min-w-0 has-[>textarea]:h-auto has-[>[data-align=inline-start]]:[&>input]:pl-2 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40", props.class)
+        cn("group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30 h-9 min-w-0 has-[>textarea]:h-auto has-[>[data-align=inline-start]]:[&>input]:pl-2 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface InputGroupAddonProps {
+interface InputGroupAddonProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   align?: "inline-start" | "inline-end" | "block-start" | "block-end";
   class?: string;
 }
 
-export function InputGroupAddon(props: InputGroupAddonProps): HellaNode {
+export function InputGroupAddon({ align, children, class: cls, ...attrs }: InputGroupAddonProps): HellaNode {
   return html`
     <div
       role="group"
       data-slot="input-group-addon"
-      data-align="${props.align ?? "inline-start"}"
+      data-align="${align ?? "inline-start"}"
       class="${
         cn(
           "flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
-          addonAlign[props.align ?? "inline-start"],
-          props.class,
+          addonAlign[align ?? "inline-start"],
+          cls,
         )
       }"
       e:click="${(e: Event) => {
@@ -76,122 +77,96 @@ export function InputGroupAddon(props: InputGroupAddonProps): HellaNode {
         if (target.closest("button")) return;
         target.closest('[data-slot="input-group"]')?.querySelector("input")?.focus();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface InputGroupButtonProps {
+interface InputGroupButtonProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
-  type?: string;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "xs" | "sm" | "icon-xs" | "icon-sm";
   class?: string;
-  onclick?: () => void;
 }
 
-export function InputGroupButton(props: InputGroupButtonProps): HellaNode {
+export function InputGroupButton({ variant, size, children, class: cls, ...attrs }: InputGroupButtonProps): HellaNode {
   return html`
     <button
-      type="${props.type ?? "button"}"
+      type="button"
       data-slot="button"
-      data-variant="${props.variant ?? "ghost"}"
-      data-size="${props.size ?? "xs"}"
+      data-variant="${variant ?? "ghost"}"
+      data-size="${size ?? "xs"}"
       class="${
         cn(
           "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-          buttonVariants[props.variant ?? "ghost"],
-          buttonSizes[props.size ?? "xs"],
-          sizes[props.size ?? "xs"],
-          props.class,
+          buttonVariants[variant ?? "ghost"],
+          buttonSizes[size ?? "xs"],
+          sizes[size ?? "xs"],
+          cls,
         )
       }"
-      e:click="${() => props.onclick?.()}"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-interface InputGroupTextProps {
+interface InputGroupTextProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function InputGroupText(props: InputGroupTextProps): HellaNode {
+export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTextProps): HellaNode {
   return html`
     <span
       data-slot="input-group-text"
       class="${
-        cn("flex items-center gap-2 text-sm text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("flex items-center gap-2 text-sm text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4", cls)
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface InputGroupInputProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+interface InputGroupInputProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function InputGroupInput(props: InputGroupInputProps): HellaNode {
+export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps): HellaNode {
   return html`
     <input
       data-slot="input-group-control"
-      type="${props.type}"
-      placeholder="${props.placeholder}"
-      id="${props.id}"
-      ariaLabel="${props.ariaLabel}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
-      value="${props.value}"
       class="${
         cn(
           "h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30",
           "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
           "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
           "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent",
-          props.class,
+          cls,
         )
       }"
-      on:input="${(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-interface InputGroupTextareaProps {
-  value?: string | (() => string);
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  rows?: number;
-  ariaInvalid?: boolean;
+interface InputGroupTextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function InputGroupTextarea(props: InputGroupTextareaProps): HellaNode {
+export function InputGroupTextarea({ class: cls, ...attrs }: InputGroupTextareaProps): HellaNode {
   return html`
     <textarea
       data-slot="input-group-control"
-      placeholder="${props.placeholder}"
-      id="${props.id}"
-      ariaLabel="${props.ariaLabel}"
-      rows="${props.rows}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
-      value="${props.value}"
       class="${
         cn(
           "flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30",
           "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
           "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
           "flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 dark:bg-transparent",
-          props.class,
+          cls,
         )
       }"
-      on:input="${(e: Event) => props.oninput?.((e.target as HTMLTextAreaElement).value)}"
+      ...${attrs}
     ></textarea>
   ` as HellaNode;
 }

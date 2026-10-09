@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -73,7 +73,7 @@ interface SidebarState {
   onToggle: () => void;
 }
 
-interface SidebarProviderProps {
+interface SidebarProviderProps extends HTMLAttributes<"div"> {
   /** Controlled open state. When given, the provider never writes its internal signal and `onOpenChange` reports the requested flip. */
   open?: () => boolean;
   defaultOpen?: boolean;
@@ -82,17 +82,17 @@ interface SidebarProviderProps {
   class?: string;
 }
 
-export function SidebarProvider(props: SidebarProviderProps): HellaNode {
-  const internal = signal(props.defaultOpen ?? true);
+export function SidebarProvider({ open: openProp, defaultOpen, onOpenChange, children, class: cls, ...attrs }: SidebarProviderProps): HellaNode {
+  const internal = signal(defaultOpen ?? true);
   // Two separate states the ref also splits: the viewport query and the
   // mobile sheet's own open flag - conflating them would flip the branch
   // back to desktop on sheet close.
   const viewport = signal(false);
   const sheetOpen = signal(false);
-  const open = (): boolean => (props.open !== undefined ? props.open() : internal());
+  const open = (): boolean => (openProp !== undefined ? openProp() : internal());
   const setOpen = (next: boolean): void => {
-    if (props.open === undefined) internal(next);
-    props.onOpenChange?.(next);
+    if (openProp === undefined) internal(next);
+    onOpenChange?.(next);
   };
   const openMobile = (): boolean => sheetOpen();
   const setOpenMobile = (next: boolean): void => {
@@ -108,7 +108,7 @@ export function SidebarProvider(props: SidebarProviderProps): HellaNode {
       style="--sidebar-width: 16rem; --sidebar-width-icon: 3rem"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
       hook:afterMount="${() => {
@@ -134,7 +134,8 @@ export function SidebarProvider(props: SidebarProviderProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
       }}"
-    >${props.children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}</div>
+      ...${attrs}
+    >${children({ open, setOpen, mobile: isMobile, openMobile, setOpenMobile, onToggle })}</div>
   ` as HellaNode;
 }
 
@@ -145,7 +146,7 @@ type SidebarVariant = "sidebar" | "floating" | "inset";
 
 type SidebarCollapsible = "offcanvas" | "icon" | "none";
 
-interface SidebarProps {
+interface SidebarProps extends HTMLAttributes<"div"> {
   /** Desktop expanded accessor threaded from SidebarProvider. */
   open?: () => boolean;
   /** Mobile viewport accessor threaded from SidebarProvider. */
@@ -163,11 +164,11 @@ interface SidebarProps {
 
 let sidebarCount = 0;
 
-export function Sidebar(props: SidebarProps): HellaNode {
-  const side = props.side ?? "left";
-  const variant = props.variant ?? "sidebar";
-  const collapsible = props.collapsible ?? "offcanvas";
-  const collapsed = (): boolean => props.open !== undefined && props.open() === false;
+export function Sidebar({ open, mobile: mobileProp, openMobile, onOpenMobileChange, side: sideProp, variant: variantProp, collapsible: collapsibleProp, class: cls, children, ...attrs }: SidebarProps): HellaNode {
+  const side = sideProp ?? "left";
+  const variant = variantProp ?? "sidebar";
+  const collapsible = collapsibleProp ?? "offcanvas";
+  const collapsed = (): boolean => open !== undefined && open() === false;
   const variantIsInset = variant === "floating" || variant === "inset";
 
   if (collapsible === "none") {
@@ -176,10 +177,11 @@ export function Sidebar(props: SidebarProps): HellaNode {
         data-slot="sidebar"
         class="${
           // @hella:compose
-          [none, props.class]
+          [none, cls]
           // @hella:end
         }"
-      >${() => props.children}</div>
+        ...${attrs}
+      >${() => children}</div>
     ` as HellaNode;
   }
 
@@ -189,14 +191,14 @@ export function Sidebar(props: SidebarProps): HellaNode {
   // the sheet's gate so the branch resolves to a vnode (or false) in one
   // unwrap - a bare render-fn member would stringify through resolveNode.
   const mobileTree = SidebarMobileSheet({
-    open: () => props.openMobile?.() ?? false,
-    onClose: () => props.onOpenMobileChange?.(false),
+    open: () => openMobile?.() ?? false,
+    onClose: () => onOpenMobileChange?.(false),
     side,
-    children: flattenChildren(props.children),
+    children: flattenChildren(children),
   });
 
   return html`
-    ${() => props.mobile?.() === true ? mobileTree() : html`
+    ${() => mobileProp?.() === true ? mobileTree() : html`
         <div
           data-slot="sidebar"
           data-state="${() => (collapsed() ? "collapsed" : "expanded")}"
@@ -208,6 +210,7 @@ export function Sidebar(props: SidebarProps): HellaNode {
             [sidebar]
             // @hella:end
           }"
+          ...${attrs}
         >
           <div
             data-slot="sidebar-gap"
@@ -221,7 +224,7 @@ export function Sidebar(props: SidebarProps): HellaNode {
             data-slot="sidebar-container"
             class="${
               // @hella:compose
-              [container, containerSides[side], variantIsInset ? containerInset : containerPlain, props.class]
+              [container, containerSides[side], variantIsInset ? containerInset : containerPlain, cls]
               // @hella:end
             }"
           >
@@ -234,7 +237,7 @@ export function Sidebar(props: SidebarProps): HellaNode {
                 // @hella:end
               }"
             >
-              ${() => props.children}
+              ${() => children}
             </div>
           </div>
         </div>
@@ -388,14 +391,12 @@ function SidebarMobileSheet(props: SidebarMobileSheetProps): () => HellaChild {
   });
 }
 
-interface SidebarTriggerProps {
-  onclick?: () => void;
+interface SidebarTriggerProps extends HTMLAttributes<"button"> {
   onToggle?: () => void;
   class?: string;
-  children?: HellaChildren;
 }
 
-export function SidebarTrigger(props: SidebarTriggerProps): HellaNode {
+export function SidebarTrigger({ onToggle, class: cls, ...attrs }: SidebarTriggerProps): HellaNode {
   return html`
     <button
       type="button"
@@ -403,13 +404,11 @@ export function SidebarTrigger(props: SidebarTriggerProps): HellaNode {
       data-slot="sidebar-trigger"
       class="${
         // @hella:compose
-        [trigger, props.class]
+        [trigger, cls]
         // @hella:end
       }"
-      e:click="${() => {
-        props.onclick?.();
-        props.onToggle?.();
-      }}"
+      e:click="${() => onToggle?.()}"
+      ...${attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -431,14 +430,14 @@ export function SidebarTrigger(props: SidebarTriggerProps): HellaNode {
   ` as HellaNode;
 }
 
-interface SidebarRailProps {
+interface SidebarRailProps extends HTMLAttributes<"button"> {
   onToggle?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
 /** The drag-handle edge - click toggles; width dragging is out of scope (bounded open). */
-export function SidebarRail(props: SidebarRailProps): HellaNode {
+export function SidebarRail({ onToggle, class: cls, children, ...attrs }: SidebarRailProps): HellaNode {
   return html`
     <button
       type="button"
@@ -449,93 +448,84 @@ export function SidebarRail(props: SidebarRailProps): HellaNode {
       tabindex="-1"
       class="${
         // @hella:compose
-        [rail, props.class]
+        [rail, cls]
         // @hella:end
       }"
-      e:click="${() => props.onToggle?.()}"
-    >${() => props.children}</button>
+      e:click="${() => onToggle?.()}"
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-interface SidebarPartProps {
+interface SidebarPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SidebarInset(props: SidebarPartProps): HellaNode {
+export function SidebarInset({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <main
       data-slot="sidebar-inset"
       class="${
         // @hella:compose
-        [inset, props.class]
+        [inset, cls]
         // @hella:end
       }"
-    >${() => props.children}</main>
+      ...${attrs}
+    >${() => children}</main>
   ` as HellaNode;
 }
 
-interface SidebarInputProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+interface SidebarInputProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function SidebarInput(props: SidebarInputProps): HellaNode {
+export function SidebarInput({ class: cls, ...attrs }: SidebarInputProps): HellaNode {
   return html`
     <input
       data-sidebar="input"
       data-slot="sidebar-input"
-      type="${props.type}"
-      placeholder="${props.placeholder}"
-      id="${props.id}"
-      aria-label="${props.ariaLabel}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
-      value="${props.value}"
       class="${
         // @hella:compose
-        [inputBase, inputFocus, inputInvalid, input, props.class]
+        [inputBase, inputFocus, inputInvalid, input, cls]
         // @hella:end
       }"
-      on:input="${(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-export function SidebarHeader(props: SidebarPartProps): HellaNode {
+export function SidebarHeader({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
       class="${
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function SidebarFooter(props: SidebarPartProps): HellaNode {
+export function SidebarFooter({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <div
       data-slot="sidebar-footer"
       data-sidebar="footer"
       class="${
         // @hella:compose
-        [footer, props.class]
+        [footer, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function SidebarSeparator(props: SidebarPartProps): HellaNode {
+export function SidebarSeparator({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <div
       data-slot="sidebar-separator"
@@ -545,62 +535,65 @@ export function SidebarSeparator(props: SidebarPartProps): HellaNode {
       aria-orientation="horizontal"
       class="${
         // @hella:compose
-        [separatorBase, separator, props.class]
+        [separatorBase, separator, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function SidebarContent(props: SidebarPartProps): HellaNode {
+export function SidebarContent({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <div
       data-slot="sidebar-content"
       data-sidebar="content"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function SidebarGroup(props: SidebarPartProps): HellaNode {
+export function SidebarGroup({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [group, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function SidebarGroupLabel(props: SidebarPartProps): HellaNode {
+export function SidebarGroupLabel({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <div
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       class="${
         // @hella:compose
-        [groupLabel, props.class]
+        [groupLabel, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface SidebarGroupActionProps {
-  onclick?: () => void;
+interface SidebarGroupActionProps extends HTMLAttributes<"button"> {
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarGroupAction(props: SidebarGroupActionProps): HellaNode {
+export function SidebarGroupAction({ children, class: cls, ...attrs }: SidebarGroupActionProps): HellaNode {
   return html`
     <button
       type="button"
@@ -608,57 +601,60 @@ export function SidebarGroupAction(props: SidebarGroupActionProps): HellaNode {
       data-sidebar="group-action"
       class="${
         // @hella:compose
-        [groupAction, props.class]
+        [groupAction, cls]
         // @hella:end
       }"
-      e:click="${() => props.onclick?.()}"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-export function SidebarGroupContent(props: SidebarPartProps): HellaNode {
+export function SidebarGroupContent({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <div
       data-slot="sidebar-group-content"
       data-sidebar="group-content"
       class="${
         // @hella:compose
-        [groupContent, props.class]
+        [groupContent, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function SidebarMenu(props: SidebarPartProps): HellaNode {
+export function SidebarMenu({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <ul
       data-slot="sidebar-menu"
       data-sidebar="menu"
       class="${
         // @hella:compose
-        [menu, props.class]
+        [menu, cls]
         // @hella:end
       }"
-    >${() => props.children}</ul>
+      ...${attrs}
+    >${() => children}</ul>
   ` as HellaNode;
 }
 
-export function SidebarMenuItem(props: SidebarPartProps): HellaNode {
+export function SidebarMenuItem({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <li
       data-slot="sidebar-menu-item"
       data-sidebar="menu-item"
       class="${
         // @hella:compose
-        [menuItem, props.class]
+        [menuItem, cls]
         // @hella:end
       }"
-    >${() => props.children}</li>
+      ...${attrs}
+    >${() => children}</li>
   ` as HellaNode;
 }
 
-interface SidebarMenuButtonProps {
+interface SidebarMenuButtonProps extends HTMLAttributes<"button"> {
   active?: boolean;
   /** Tooltip label shown while the sidebar is collapsed to icon mode (hover). */
   tooltip?: HellaChildren;
@@ -668,41 +664,38 @@ interface SidebarMenuButtonProps {
   open?: () => boolean;
   /** Mobile viewport accessor threaded from SidebarProvider; the tooltip never shows on mobile. */
   mobile?: () => boolean;
-  type?: string;
-  disabled?: boolean;
-  onclick?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuButton(props: SidebarMenuButtonProps): HellaNode {
-  const variant = props.variant ?? "default";
-  const size = props.size ?? "default";
+export function SidebarMenuButton({ active, tooltip: tooltipProp, variant: variantProp, size: sizeProp, open, mobile: mobileProp, disabled, class: cls, children, ...attrs }: SidebarMenuButtonProps): HellaNode {
+  const variant = variantProp ?? "default";
+  const size = sizeProp ?? "default";
 
   const button = html`
     <button
-      type="${props.type ?? "button"}"
+      type="button"
       data-sidebar="menu-button"
       data-slot="sidebar-menu-button"
       data-size="${size}"
-      data-active="${props.active ? "true" : undefined}"
-      disabled="${props.disabled}"
+      data-active="${active ? "true" : undefined}"
+      disabled="${disabled as boolean | undefined}"
       class="${
         // @hella:compose
-        [menuButton, menuButtonVariants[variant], menuButtonSizes[size], props.class]
+        [menuButton, menuButtonVariants[variant], menuButtonSizes[size], cls]
         // @hella:end
       }"
-      e:click="${() => props.onclick?.()}"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 
-  if (props.tooltip === undefined) return button;
+  if (tooltipProp === undefined) return button;
 
   // The ref composes its tooltip entry around the button in icon mode; this
   // entry is self-contained, so the hover wiring (delay 0) is duplicated inline.
   const tooltipId = `hella-sidebar-tooltip-${++sidebarCount}`;
   const tooltipOpen = signal(false);
-  const hidden = (): boolean => props.open === undefined || props.open() || (props.mobile?.() ?? false);
+  const hidden = (): boolean => open === undefined || open() || (mobileProp?.() ?? false);
   const disposals: (() => void)[] = [];
   let triggerNode: Element | undefined;
 
@@ -747,7 +740,7 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): HellaNode {
                 const anchor = triggerNode;
                 disposals.push(anchorPosition(anchor, node, { placement: "right" }));
               }}"
-            >${() => props.tooltip}</div>
+            >${() => tooltipProp}</div>
           ` as HellaChild,
         ],
       })}
@@ -755,50 +748,50 @@ export function SidebarMenuButton(props: SidebarMenuButtonProps): HellaNode {
   ` as HellaNode;
 }
 
-interface SidebarMenuActionProps {
+interface SidebarMenuActionProps extends HTMLAttributes<"button"> {
   showOnHover?: boolean;
-  onclick?: () => void;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuAction(props: SidebarMenuActionProps): HellaNode {
+export function SidebarMenuAction({ showOnHover, children, class: cls, ...attrs }: SidebarMenuActionProps): HellaNode {
   return html`
     <button
       type="button"
       data-sidebar="menu-action"
       data-slot="sidebar-menu-action"
-      data-show-on-hover="${props.showOnHover ? "true" : undefined}"
+      data-show-on-hover="${showOnHover ? "true" : undefined}"
       class="${
         // @hella:compose
-        [menuAction, props.showOnHover ? menuActionHover : "", props.class]
+        [menuAction, showOnHover ? menuActionHover : "", cls]
         // @hella:end
       }"
-      e:click="${() => props.onclick?.()}"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-export function SidebarMenuBadge(props: SidebarPartProps): HellaNode {
+export function SidebarMenuBadge({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <div
       data-sidebar="menu-badge"
       data-slot="sidebar-menu-badge"
       class="${
         // @hella:compose
-        [menuBadge, props.class]
+        [menuBadge, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface SidebarMenuSkeletonProps {
+interface SidebarMenuSkeletonProps extends HTMLAttributes<"div"> {
   showIcon?: boolean;
   class?: string;
 }
 
-export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): HellaNode {
+export function SidebarMenuSkeleton({ showIcon, class: cls, ...attrs }: SidebarMenuSkeletonProps): HellaNode {
   // Random width between 50 to 90%, fixed per call.
   const width = `${Math.floor(Math.random() * 40) + 50}%`;
 
@@ -808,11 +801,12 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): HellaNode 
       data-slot="sidebar-menu-skeleton"
       class="${
         // @hella:compose
-        [menuSkeleton, props.class]
+        [menuSkeleton, cls]
         // @hella:end
       }"
+      ...${attrs}
     >
-      ${() => props.showIcon === true && html`
+      ${() => showIcon === true && html`
         <div
           data-sidebar="menu-skeleton-icon"
           class="${
@@ -835,58 +829,59 @@ export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps): HellaNode 
   ` as HellaNode;
 }
 
-export function SidebarMenuSub(props: SidebarPartProps): HellaNode {
+export function SidebarMenuSub({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <ul
       data-sidebar="menu-sub"
       data-slot="sidebar-menu-sub"
       class="${
         // @hella:compose
-        [menuSub, props.class]
+        [menuSub, cls]
         // @hella:end
       }"
-    >${() => props.children}</ul>
+      ...${attrs}
+    >${() => children}</ul>
   ` as HellaNode;
 }
 
-export function SidebarMenuSubItem(props: SidebarPartProps): HellaNode {
+export function SidebarMenuSubItem({ children, class: cls, ...attrs }: SidebarPartProps): HellaNode {
   return html`
     <li
       data-sidebar="menu-sub-item"
       data-slot="sidebar-menu-sub-item"
       class="${
         // @hella:compose
-        [menuSubItem, props.class]
+        [menuSubItem, cls]
         // @hella:end
       }"
-    >${() => props.children}</li>
+      ...${attrs}
+    >${() => children}</li>
   ` as HellaNode;
 }
 
-interface SidebarMenuSubButtonProps {
+interface SidebarMenuSubButtonProps extends HTMLAttributes<"a"> {
   size?: "sm" | "md";
   active?: boolean;
-  href?: string;
   class?: string;
   children?: HellaChildren;
 }
 
-export function SidebarMenuSubButton(props: SidebarMenuSubButtonProps): HellaNode {
-  const size = props.size ?? "md";
+export function SidebarMenuSubButton({ size: sizeProp, active, class: cls, children, ...attrs }: SidebarMenuSubButtonProps): HellaNode {
+  const size = sizeProp ?? "md";
 
   return html`
     <a
-      href="${props.href}"
       data-sidebar="menu-sub-button"
       data-slot="sidebar-menu-sub-button"
       data-size="${size}"
-      data-active="${props.active ? "true" : undefined}"
+      data-active="${active ? "true" : undefined}"
       class="${
         // @hella:compose
-        [menuSubButton, menuSubSizes[size], props.class]
+        [menuSubButton, menuSubSizes[size], cls]
         // @hella:end
       }"
-    >${() => props.children}</a>
+      ...${attrs}
+    >${() => children}</a>
   ` as HellaNode;
 }
 

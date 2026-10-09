@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -11,96 +11,102 @@ declare const mediaVariants: Record<string, string>;
 declare const title: string;
 // @hella:end
 
-interface EmptyPartProps {
-  children?: HellaChildren;
+interface EmptyPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Empty(props: EmptyPartProps): HellaNode {
+export default function Empty({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
   return html`
     <div
       data-slot="empty"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function EmptyHeader(props: EmptyPartProps): HellaNode {
+export function EmptyHeader({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
   return html`
     <div
       data-slot="empty-header"
       class="${
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface EmptyMediaProps {
+interface EmptyMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "icon";
-  class?: string;
 }
 
-export function EmptyMedia(props: EmptyMediaProps): HellaNode {
+export function EmptyMedia({ variant, children, class: cls, ...attrs }: EmptyMediaProps): HellaNode {
   return html`
     <div
       data-slot="empty-icon"
-      data-variant="${props.variant ?? "default"}"
+      data-variant="${variant ?? "default"}"
       class="${
         // @hella:compose
         [
           media,
-          mediaVariants[props.variant ?? "default"],
-          props.class,
+          mediaVariants[variant ?? "default"],
+          cls,
         ]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function EmptyTitle(props: EmptyPartProps): HellaNode {
+export function EmptyTitle({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
   return html`
     <div
       data-slot="empty-title"
       class="${
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function EmptyDescription(props: EmptyPartProps): HellaNode {
+export function EmptyDescription({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
   return html`
     <div
       data-slot="empty-description"
       class="${
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function EmptyContent(props: EmptyPartProps): HellaNode {
+export function EmptyContent({ children, class: cls, ...attrs }: EmptyPartProps): HellaNode {
   return html`
     <div
       data-slot="empty-content"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

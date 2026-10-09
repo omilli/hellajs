@@ -1,5 +1,5 @@
 import { effect, signal } from "@hellajs/core";
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -10,7 +10,9 @@ declare const group: string;
 declare const slot: string;
 // @hella:end
 
-interface InputOTPProps {
+interface InputOTPProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   /** Number of slots; fixed after mount. Defaults to 6. */
   length?: number;
   /** The code. A static string seeds the internal state; an accessor makes it controlled, so edits report through `onChange` only. */
@@ -19,20 +21,17 @@ interface InputOTPProps {
   onChange?: (value: string) => void;
   /** Fires once per transition to a full code. */
   onComplete?: (value: string) => void;
-  /** Whole-value RegExp gate: an edit whose result fails the test is rejected and the previous value stands. */
-  pattern?: RegExp;
-  autoFocus?: boolean;
-  disabled?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
-export default function InputOTP(props: InputOTPProps): JSX.Element {
-  const length = props.length ?? 6;
-  const pattern = props.pattern ?? null;
+export default function InputOTP({ length: lengthProp, value: valueProp, onChange, onComplete, pattern: patternAttr, autofocus: autofocusAttr, disabled: disabledAttr, class: cls, children, ...attrs }: InputOTPProps): JSX.Element {
+  const length = lengthProp ?? 6;
+  const pattern = patternAttr as string | undefined;
+  const autofocus = autofocusAttr as boolean | undefined;
+  const disabled = disabledAttr as boolean | undefined;
+  const mask = pattern === undefined ? null : new RegExp(pattern);
 
-  const internal = signal(typeof props.value === "function" ? "" : props.value ?? "");
-  const value = (): string => (typeof props.value === "function" ? props.value() : internal());
+  const internal = signal(typeof valueProp === "function" ? "" : valueProp ?? "");
+  const value = (): string => (typeof valueProp === "function" ? valueProp() : internal());
 
   const focused = signal(false);
   const mss = signal<number | null>(null);
@@ -46,10 +45,10 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
 
   const accept = (next: string): boolean => {
     const prev = value();
-    if (next.length > 0 && pattern && !pattern.test(next)) return false;
-    if (typeof props.value !== "function") internal(next);
-    props.onChange?.(next);
-    if (next.length === length && prev.length < length) props.onComplete?.(next);
+    if (next.length > 0 && mask && !mask.test(next)) return false;
+    if (typeof valueProp !== "function") internal(next);
+    onChange?.(next);
+    if (next.length === length && prev.length < length) onComplete?.(next);
     return true;
   };
 
@@ -102,7 +101,7 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
   };
 
   const onInput = (event: Event): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const input = event.target as HTMLInputElement;
     const next = input.value.slice(0, length);
     if (!accept(next)) input.value = value();
@@ -110,7 +109,7 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
   };
 
   const onFocus = (event: Event): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const input = event.target as HTMLInputElement;
     focused(true);
     const at = Math.min(input.value.length, length - 1);
@@ -127,7 +126,7 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
   };
 
   const onPaste = (event: ClipboardEvent): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const input = event.target as HTMLInputElement;
     const data = event.clipboardData?.getData("text/plain") ?? "";
     event.preventDefault();
@@ -148,7 +147,7 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
 
   const wirings: (() => void)[] = [];
 
-  const rootStyle = `position: relative; cursor: ${props.disabled ? "default" : "text"}; user-select: none`;
+  const rootStyle = `position: relative; cursor: ${disabled ? "default" : "text"}; user-select: none`;
   const inputStyle = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; text-align: left; color: transparent; caret-color: transparent; background-color: transparent; border: 0 solid transparent; outline: none; box-shadow: none; pointer-events: all";
 
   return (
@@ -157,7 +156,7 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
       style={rootStyle}
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
       hook:afterMount={(node) => {
@@ -195,17 +194,18 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
       <input
         data-input-otp="true"
         type="text"
         inputmode="numeric"
         autocomplete="one-time-code"
         spellcheck="false"
-        pattern={pattern ? pattern.source : undefined}
-        autofocus={props.autoFocus}
-        disabled={props.disabled}
+        pattern={pattern}
+        autofocus={autofocus ? true : undefined}
+        disabled={disabled ? true : undefined}
         style={inputStyle}
         on:input={onInput}
         on:focus={onFocus}
@@ -221,42 +221,44 @@ export default function InputOTP(props: InputOTPProps): JSX.Element {
   );
 }
 
-interface InputOTPGroupProps {
-  children?: HellaChildren;
+interface InputOTPGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function InputOTPGroup(props: InputOTPGroupProps): JSX.Element {
+export function InputOTPGroup({ children, class: cls, ...attrs }: InputOTPGroupProps): JSX.Element {
   return (
     <div
       data-slot="input-otp-group"
       class={
         // @hella:compose
-        [group, props.class]
+        [group, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface InputOTPSlotProps {
+interface InputOTPSlotProps extends HTMLAttributes<"div"> {
+  class?: string;
   /** Slot position this mirror renders; the root wires its char and caret state after mount. */
   index: number;
-  class?: string;
 }
 
-export function InputOTPSlot(props: InputOTPSlotProps): JSX.Element {
+export function InputOTPSlot({ index, class: cls, ...attrs }: InputOTPSlotProps): JSX.Element {
   return (
     <div
       data-slot="input-otp-slot"
-      data-index={props.index}
+      data-index={index}
       class={
         // @hella:compose
-        [slot, props.class]
+        [slot, cls]
         // @hella:end
       }
+      {...attrs}
     >
       <div
         class={
@@ -278,13 +280,13 @@ export function InputOTPSlot(props: InputOTPSlotProps): JSX.Element {
   );
 }
 
-interface InputOTPSeparatorProps {
+interface InputOTPSeparatorProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export function InputOTPSeparator(props: InputOTPSeparatorProps): JSX.Element {
+export function InputOTPSeparator({ class: cls, ...attrs }: InputOTPSeparatorProps): JSX.Element {
   return (
-    <div data-slot="input-otp-separator" role="separator" class={props.class}>
+    <div data-slot="input-otp-separator" role="separator" class={cls} {...attrs}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"

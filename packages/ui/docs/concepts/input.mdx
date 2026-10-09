@@ -1,18 +1,11 @@
 ## API
 
-The input carries `data-slot="input"` for targeting. `value` accepts a plain string or an accessor: an accessor keeps the field in sync after mount, and `oninput` receives the typed string on every input event.
+The input carries `data-slot="input"` for targeting. `value` accepts a plain string or an accessor: an accessor keeps the field in sync after mount, and typed input flows back through `on:input`, where the handler reads `(e.target as HTMLInputElement).value`.
 
 ### Input
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `value` | `string \| (() => string)` | `-` |
-| `type` | `string` | `-` |
-| `placeholder` | `string` | `-` |
-| `id` | `string` | `-` |
-| `ariaLabel` | `string` | `-` |
-| `ariaInvalid` | `boolean` | `-` |
-| `oninput` | `(value: string) => void` | `-` |
 | `class` | `string` | `-` |
 
-`ariaInvalid` drives the invalid state: the destructive border and ring on failed validation.
+Accepts all native `input` attributes (forwarded to the root element): `type`, `placeholder`, `id`, `value`, `aria-label`, and friends ride the spread, and `value` binds as the element's value property so a plain string or a bare signal stays in sync after mount. The invalid state is driven by the native `aria-invalid` attribute, which recolors the destructive border and ring on failed validation.

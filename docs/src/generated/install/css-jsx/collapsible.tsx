@@ -1,5 +1,5 @@
 import { signal } from "@hellajs/core";
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -38,47 +38,45 @@ const contentInner = style("collapsible-content-inner", {
   overflow: "hidden",
 });
 
-interface CollapsibleProps {
+interface CollapsibleProps extends HTMLAttributes<"div"> {
+  class?: string;
   /** Controlled open state. When given, the root never writes its internal signal and `onOpenChange` reports the requested flip. */
   open?: () => boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger: HellaChildren;
   content: HellaChildren;
-  class?: string;
 }
 
-interface CollapsibleTriggerProps {
+interface CollapsibleTriggerProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   active?: () => boolean;
   onToggle?: () => void;
-  controls?: string;
-  children?: HellaChildren;
-  class?: string;
 }
 
-interface CollapsibleContentProps {
-  active?: () => boolean;
-  id?: string;
-  children?: HellaChildren;
+interface CollapsibleContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
+  active?: () => boolean;
 }
 
 let collapsibleCount = 0;
 
-export function CollapsibleTrigger(props: CollapsibleTriggerProps): JSX.Element {
+export function CollapsibleTrigger({ active, onToggle, "on:click": userClick, children, class: cls, ...attrs }: CollapsibleTriggerProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="collapsible-trigger"
-      aria-expanded={props.active?.() ? "true" : "false"}
-      aria-controls={props.controls}
-      data-state={props.active?.() ? "open" : "closed"}
+      aria-expanded={active?.() ? "true" : "false"}
+      data-state={active?.() ? "open" : "closed"}
       class={
-        [trigger, props.class]
+        [trigger, cls]
       }
-      on:click={() => props.onToggle?.()}
+      on:click={function (e) { userClick?.call(this, e); onToggle?.(); }}
+      {...attrs}
     >
-      {props.children}
+      {children}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -101,35 +99,36 @@ export function CollapsibleTrigger(props: CollapsibleTriggerProps): JSX.Element 
   );
 }
 
-export function CollapsibleContent(props: CollapsibleContentProps): JSX.Element {
+export function CollapsibleContent({ active, id, children, class: cls, ...attrs }: CollapsibleContentProps): JSX.Element {
   return (
     <div
       role="region"
       data-slot="collapsible-content"
-      id={props.id}
-      data-state={props.active?.() ? "open" : "closed"}
+      id={id}
+      data-state={active?.() ? "open" : "closed"}
       class={
-        [content, props.class]
+        [content, cls]
       }
+      {...attrs}
     >
       <div
         class={
           [contentInner]
         }
-      >{props.children}</div>
+      >{children}</div>
     </div>
   );
 }
 
-export default function Collapsible(props: CollapsibleProps): JSX.Element {
-  const internal = signal(props.defaultOpen ?? false);
-  const active = (): boolean => (props.open !== undefined ? props.open() : internal());
+export default function Collapsible({ open, defaultOpen, onOpenChange, trigger: triggerSlot, content: contentSlot, class: cls, ...attrs }: CollapsibleProps): JSX.Element {
+  const internal = signal(defaultOpen ?? false);
+  const active = (): boolean => (open !== undefined ? open() : internal());
   const contentId = `hella-collapsible-content-${++collapsibleCount}`;
 
   const toggle = (): void => {
     const next = !active();
-    if (props.open === undefined) internal(next);
-    props.onOpenChange?.(next);
+    if (open === undefined) internal(next);
+    onOpenChange?.(next);
   };
 
   return (
@@ -137,19 +136,20 @@ export default function Collapsible(props: CollapsibleProps): JSX.Element {
       data-slot="collapsible"
       data-state={active() ? "open" : "closed"}
       class={
-        [props.class]
+        [cls]
       }
+      {...attrs}
     >
       <CollapsibleTrigger
         active={active}
         onToggle={toggle}
-        controls={contentId}
-        children={props.trigger}
+        aria-controls={contentId}
+        children={triggerSlot}
       />
       <CollapsibleContent
         id={contentId}
         active={active}
-        children={props.content}
+        children={contentSlot}
       />
     </div>
   );

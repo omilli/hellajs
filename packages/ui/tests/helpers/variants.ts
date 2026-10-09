@@ -1,4 +1,4 @@
-import { expect } from "bun:test";
+import { expect, mock } from "bun:test";
 import type { Signal } from "@hellajs/core";
 import { delay, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
@@ -116,35 +116,26 @@ import * as TableCssJsx from "../../dist/registry/table/css/table";
 import * as TableCssHtml from "../../dist/registry/table/css/table-html";
 import * as TableTailwindJsx from "../../dist/registry/table/tailwind/table";
 import * as TableTailwindHtml from "../../dist/registry/table/tailwind/table-html";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { GlobalHTMLAttributes, HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 import type { UiFormat, UiStyle } from "@hellajs/ui";
 
 /** Prop bag shared by every compiled Button variant (mirrors the emitted ButtonProps). */
-export interface ButtonVariantProps {
+export interface ButtonVariantProps extends HTMLAttributes<"button"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-  ariaInvalid?: boolean;
-  class?: string;
-  onclick?: () => void;
 }
 
 /** Prop bag shared by every compiled Input variant (mirrors the emitted InputProps). */
-export interface InputVariantProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+export interface InputVariantProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
 /** Prop bag shared by every compiled Card part (mirrors the emitted CardPartProps). */
-export interface CardPartProps {
-  children?: HellaChildren;
+export interface CardPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Item shape of every compiled Tabs variant (mirrors the emitted TabsItem). */
@@ -155,16 +146,16 @@ export interface TabsItem {
 }
 
 /** Prop bag shared by every compiled Tabs variant (mirrors the emitted TabsProps). */
-export interface TabsVariantProps {
+export interface TabsVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: TabsItem[];
   initialId?: string;
   orientation?: "horizontal" | "vertical";
   variant?: "default" | "line";
-  class?: string;
 }
 
 /** Prop bag shared by every compiled Dialog variant (mirrors the emitted DialogProps). */
-export interface DialogVariantProps {
+export interface DialogVariantProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   title?: string;
@@ -174,6 +165,18 @@ export interface DialogVariantProps {
   closeOnOutside?: boolean;
   class?: string;
   children?: HellaChild | HellaChild[];
+}
+
+/** Superset prop bag across Dialog parts (mirrors the emitted part props). */
+export interface DialogPartVariantProps extends GlobalHTMLAttributes {
+  state?: () => "open" | "closed";
+  showCloseButton?: boolean;
+  closeOnEscape?: boolean;
+  closeOnOutside?: boolean;
+  onClose?: () => void;
+  onExited?: () => void;
+  children?: HellaChildren;
+  class?: string;
 }
 
 /** One compiled component flavor — style × format. */
@@ -191,48 +194,47 @@ export interface ChildrenVariant<P extends object> extends ComponentVariant<P> {
 }
 
 /** Prop bag shared by every compiled Badge variant (mirrors the emitted BadgeProps). */
-export interface BadgeVariantProps {
+export interface BadgeVariantProps extends HTMLAttributes<"span"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
-  ariaInvalid?: boolean;
-  class?: string;
 }
 
 /** Prop bag shared by every compiled Alert variant (mirrors the emitted AlertProps). */
-export interface AlertVariantProps {
+export interface AlertVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "destructive";
-  class?: string;
 }
 
 /** Prop bag shared by every compiled Kbd variant (mirrors the emitted KbdProps). */
-export interface KbdVariantProps {
-  children?: HellaChildren;
+export interface KbdVariantProps extends HTMLAttributes<"kbd"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Prop bag shared by every compiled Separator variant (mirrors the emitted SeparatorProps). */
-export interface SeparatorVariantProps {
+export interface SeparatorVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
 /** Prop bag shared by every compiled Skeleton variant (mirrors the emitted SkeletonProps). */
-export interface SkeletonVariantProps {
-  children?: HellaChildren;
+export interface SkeletonVariantProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Prop bag shared by every compiled Spinner variant (mirrors the emitted SpinnerProps). */
-export interface SpinnerVariantProps {
+export interface SpinnerVariantProps extends HTMLAttributes<"svg"> {
   class?: string;
 }
 
 /** Prop bag shared by every compiled Empty part (mirrors the emitted EmptyPartProps). */
-export interface EmptyPartProps {
-  children?: HellaChildren;
+export interface EmptyPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Prop bag for the compiled EmptyMedia part (mirrors the emitted EmptyMediaProps). */
@@ -241,47 +243,35 @@ export interface EmptyMediaVariantProps extends EmptyPartProps {
 }
 
 /** Prop bag shared by every compiled Label variant (mirrors the emitted LabelProps). */
-export interface LabelVariantProps {
-  children?: HellaChildren;
-  for?: string;
+export interface LabelVariantProps extends HTMLAttributes<"label"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Prop bag shared by every compiled Textarea variant (mirrors the emitted TextareaProps). */
-export interface TextareaVariantProps {
-  value?: string | (() => string);
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  rows?: number;
-  ariaInvalid?: boolean;
+export interface TextareaVariantProps extends HTMLAttributes<"textarea"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
 /** Prop bag shared by every compiled NativeSelect variant (mirrors the emitted NativeSelectProps). */
-export interface NativeSelectVariantProps {
+export interface NativeSelectVariantProps extends HTMLAttributes<"select"> {
+  class?: string;
   children?: HellaChildren;
   value?: string | (() => string);
   size?: "sm" | "default";
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
-  class?: string;
-  onchange?: (v: string) => void;
 }
 
 /** Prop bag shared by every compiled AspectRatio variant (mirrors the emitted AspectRatioProps). */
-export interface AspectRatioVariantProps {
-  ratio?: number;
-  children?: HellaChildren;
+export interface AspectRatioVariantProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
+  ratio?: number;
 }
 
-/** Prop bag shared by every compiled Avatar part (mirrors the emitted AvatarBadgeProps). */
-export interface AvatarPartProps {
-  children?: HellaChildren;
+/** Prop bag shared by every compiled Avatar part (the open contract across the span/div/img roots). */
+export interface AvatarPartProps extends GlobalHTMLAttributes {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Prop bag for the compiled Avatar root (mirrors the emitted AvatarProps). */
@@ -290,9 +280,8 @@ export interface AvatarVariantProps extends AvatarPartProps {
 }
 
 /** Prop bag for the compiled AvatarImage part (mirrors the emitted AvatarImageProps). */
-export interface AvatarImageVariantProps extends AvatarPartProps {
-  src?: string;
-  alt?: string;
+export interface AvatarImageVariantProps extends HTMLAttributes<"img"> {
+  class?: string;
   loaded?: (value?: boolean) => boolean;
 }
 
@@ -302,15 +291,14 @@ export interface AvatarFallbackVariantProps extends AvatarPartProps {
 }
 
 /** Prop bag shared by every compiled Progress variant (mirrors the emitted ProgressProps). */
-export interface ProgressVariantProps {
-  value?: number | null | (() => number | null);
+export interface ProgressVariantProps extends HTMLAttributes<"div"> {
   class?: string;
+  /** 0-100; null (or a reactive fn reading null) drives the indeterminate state. */
+  value?: number | null | (() => number | null);
 }
 
 /** Prop bag for compiled TableHead/TableCell parts (mirrors the emitted props). */
-export interface TableCellVariantProps extends CardPartProps {
-  colSpan?: number;
-}
+export interface TableCellVariantProps extends CardPartProps {}
 
 /** One compiled Button flavor. */
 export type ButtonVariant = ChildrenVariant<ButtonVariantProps>;
@@ -409,7 +397,7 @@ export const cardPartVariants: PartVariant<CardPartProps & { children?: HellaChi
 /**
  * Every compiled Dialog part at every flavor.
  */
-export const dialogPartVariants: PartVariant<Record<string, never> & { children?: HellaChildren }>[] = DIALOG_PARTS.flatMap((part) =>
+export const dialogPartVariants: PartVariant<DialogPartVariantProps>[] = DIALOG_PARTS.flatMap((part) =>
   partVariants(part, "Dialog", [
     [DialogCssJsx as unknown as AnyModule, "css", "jsx"],
     [DialogCssHtml as unknown as AnyModule, "css", "html"],
@@ -756,6 +744,58 @@ export function assertStructuralParity<P extends object>(
   for (const shape of rest) expect(shape).toEqual(head as { tag: string; attributes: string[]; });
 }
 
+/**
+ * Renders every suite with `props` and asserts `attr` landed on each rendered root with `value`.
+ * Suites carrying a `child` bag get the bag's content injected ("Forwarded").
+ * @param suites Compiled variants to render.
+ * @param props Props handed to every variant (includes the forwarded user attr).
+ * @param attr Attribute name expected on the rendered root.
+ * @param value Expected attribute value.
+ * @param resolve Optional root override for wrapper components (defaults to the rendered root).
+ */
+export function assertAttrForwarded<P extends object>(
+  suites: (ComponentVariant<P> & { child?: (value: HellaChild) => HellaChildren })[],
+  props: P,
+  attr: string,
+  value: string,
+  resolve: (el: Element) => Element = (el) => el,
+): void {
+  for (const suite of suites) {
+    const el = suite.child
+      ? renderVariant(suite, { ...props, children: suite.child("Forwarded") } as P)
+      : renderVariant(suite, props);
+    expect(resolve(el).getAttribute(attr)).toBe(value);
+  }
+}
+
+/**
+ * Renders every suite with `props` (carrying `handler` under `attr`), dispatches `event`
+ * on each rendered root, and asserts the handler ran exactly once per suite.
+ * @param suites Compiled variants to render.
+ * @param props Props handed to every variant (includes the handler under `attr`).
+ * @param attr Attribute name carrying the handler (e.g. "on:click").
+ * @param event DOM event name to dispatch on the rendered root.
+ * @param handler The tracked handler passed inside `props`.
+ * @param resolve Optional root override for wrapper components (defaults to the rendered root).
+ */
+export function assertHandlerForwarded<P extends object>(
+  suites: (ComponentVariant<P> & { child?: (value: HellaChild) => HellaChildren })[],
+  props: P,
+  attr: string,
+  event: string,
+  handler: ReturnType<typeof mock>,
+  resolve: (el: Element) => Element = (el) => el,
+): void {
+  for (const suite of suites) {
+    const el = suite.child
+      ? renderVariant(suite, { ...props, children: suite.child("Forwarded") } as P)
+      : renderVariant(suite, props);
+    handler.mockClear();
+    resolve(el).dispatchEvent(new Event(event));
+    expect(handler).toHaveBeenCalledTimes(1);
+  }
+}
+
 import ButtonGroupCssDefault from "../../dist/registry/button-group/css/button-group";
 import ButtonGroupCssHtmlDefault from "../../dist/registry/button-group/css/button-group-html";
 import ButtonGroupTailwindDefault from "../../dist/registry/button-group/tailwind/button-group";
@@ -802,17 +842,17 @@ import DirectionTailwindDefault from "../../dist/registry/direction/tailwind/dir
 import DirectionTailwindHtmlDefault from "../../dist/registry/direction/tailwind/direction-html";
 
 /** Prop bag shared by every compiled ButtonGroup variant (mirrors the emitted ButtonGroupProps). */
-export interface ButtonGroupVariantProps {
+export interface ButtonGroupVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
 /** Prop bag for the compiled ButtonGroupText part (mirrors the emitted props). */
 export interface ButtonGroupTextVariantProps extends CardPartProps {}
 
 /** Prop bag for the compiled ButtonGroupSeparator part (mirrors the emitted props). */
-export interface ButtonGroupSeparatorVariantProps {
+export interface ButtonGroupSeparatorVariantProps extends HTMLAttributes<"div"> {
   orientation?: "horizontal" | "vertical";
   class?: string;
 }
@@ -846,7 +886,7 @@ export const buttonGroupPartVariants: PartVariant<ButtonGroupPartVariantProps>[]
 );
 
 /** Prop bag shared by every compiled InputGroup variant (mirrors the emitted InputGroupProps). */
-export interface InputGroupVariantProps {
+export interface InputGroupVariantProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   disabled?: boolean;
   class?: string;
@@ -926,9 +966,9 @@ export const inputGroupPartVariants: PartVariant<InputGroupPartVariantProps>[] =
 );
 
 /** Prop bag for the compiled FieldSet/FieldGroup/FieldContent parts (mirrors the emitted props). */
-export interface FieldPartProps {
-  children?: HellaChildren;
+export interface FieldPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Prop bag for the compiled FieldLegend part (mirrors the emitted props). */
@@ -939,14 +979,11 @@ export interface FieldLegendVariantProps extends FieldPartProps {
 /** Prop bag for the compiled Field root (mirrors the emitted FieldProps). */
 export interface FieldVariantProps extends FieldPartProps {
   orientation?: "vertical" | "horizontal" | "responsive";
-  disabled?: boolean;
   invalid?: boolean;
 }
 
 /** Prop bag for the compiled FieldLabel part (mirrors the emitted props). */
-export interface FieldLabelVariantProps extends FieldPartProps {
-  for?: string;
-}
+export interface FieldLabelVariantProps extends FieldPartProps {}
 
 /** Prop bag for the compiled FieldError part (mirrors the emitted props). */
 export interface FieldErrorVariantProps extends FieldPartProps {
@@ -975,34 +1012,30 @@ export const fieldPartVariants: PartVariant<FieldPartVariantProps>[] = FIELD_PAR
 );
 
 /** Prop bag shared by every compiled Pagination variant (mirrors the emitted PaginationProps). */
-export interface PaginationVariantProps {
-  children?: HellaChildren;
+export interface PaginationVariantProps extends HTMLAttributes<"nav"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Prop bag for the compiled PaginationLink part (mirrors the emitted props). */
-export interface PaginationLinkVariantProps {
+export interface PaginationLinkVariantProps extends HTMLAttributes<"a"> {
+  class?: string;
   children?: HellaChildren;
   isActive?: boolean;
-  href?: string;
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-  class?: string;
-  onclick?: () => void;
 }
 
 /** Prop bag for the compiled PaginationPrevious/Next parts (mirrors the emitted props). */
-export interface PaginationNavVariantProps {
-  isActive?: boolean;
-  href?: string;
+export interface PaginationNavVariantProps extends HTMLAttributes<"a"> {
   class?: string;
-  onclick?: () => void;
+  isActive?: boolean;
 }
 
 /** Prop bag for the compiled PaginationContent/PaginationItem parts (mirrors the emitted props). */
 export interface PaginationContentVariantProps extends CardPartProps {}
 
 /** Prop bag for the compiled PaginationEllipsis part (mirrors the emitted props). */
-export interface PaginationEllipsisVariantProps {
+export interface PaginationEllipsisVariantProps extends HTMLAttributes<"span"> {
   class?: string;
 }
 
@@ -1036,9 +1069,9 @@ export const paginationPartVariants: PartVariant<PaginationPartVariantProps>[] =
 );
 
 /** Prop bag for the compiled ItemGroup/ItemContent/ItemTitle/ItemDescription/ItemActions/ItemHeader/ItemFooter parts (mirrors the emitted props). */
-export interface ItemPartProps {
-  children?: HellaChildren;
+export interface ItemPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** Prop bag for the compiled Item root (mirrors the emitted ItemProps). */
@@ -1077,16 +1110,16 @@ export const itemPartVariants: PartVariant<ItemPartVariantProps>[] = ITEM_PARTS.
 );
 
 /** Prop bag shared by every compiled Marker variant (mirrors the emitted MarkerProps). */
-export interface MarkerVariantProps {
+export interface MarkerVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "separator" | "border";
-  class?: string;
 }
 
 /** Prop bag for the compiled MarkerIcon/MarkerContent parts (mirrors the emitted props). */
-export interface MarkerPartProps {
-  children?: HellaChildren;
+export interface MarkerPartProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
 /** The named Marker parts (every export except the default Marker). */
@@ -1115,10 +1148,10 @@ export const markerPartVariants: PartVariant<MarkerPartProps>[] = MARKER_PARTS.f
 );
 
 /** Prop bag shared by every compiled DirectionProvider variant (mirrors the emitted DirectionProviderProps). */
-export interface DirectionVariantProps {
+export interface DirectionVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   dir?: "ltr" | "rtl";
-  class?: string;
 }
 
 /**
@@ -1169,11 +1202,11 @@ import * as AttachmentTailwindJsx from "../../dist/registry/attachment/tailwind/
 import * as AttachmentTailwindHtml from "../../dist/registry/attachment/tailwind/attachment-html";
 
 /** Prop bag for the compiled Bubble part (mirrors the emitted props). */
-export interface BubbleVariantProps {
+export interface BubbleVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive";
   align?: "start" | "end";
-  class?: string;
 }
 
 /** Prop bag shared by every compiled Bubble part except Bubble itself (mirrors the emitted props). */
@@ -1256,13 +1289,14 @@ export interface MessageScrollerVariantProps extends CardPartProps {
 export interface MessageScrollerViewportVariantProps extends MessageScrollerVariantProps {}
 
 /** Prop bag for the compiled MessageScrollerButton part (mirrors the emitted props). */
-export interface MessageScrollerButtonVariantProps extends CardPartProps {
+export interface MessageScrollerButtonVariantProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   atBottom?: Signal<boolean>;
   scrollToBottom?: () => void;
   direction?: "start" | "end";
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-  onclick?: () => void;
 }
 
 /** Superset prop bag across MessageScroller parts. */
@@ -1307,10 +1341,11 @@ export interface AttachmentMediaVariantProps extends CardPartProps {
 }
 
 /** Prop bag for the compiled AttachmentAction part (mirrors the emitted props). */
-export interface AttachmentActionVariantProps extends CardPartProps {
+export interface AttachmentActionVariantProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-  onclick?: () => void;
 }
 
 /** Superset prop bag across Attachment parts. */
@@ -1387,23 +1422,23 @@ import * as ToggleGroupTailwindJsx from "../../dist/registry/toggle-group/tailwi
 import * as ToggleGroupTailwindHtml from "../../dist/registry/toggle-group/tailwind/toggle-group-html";
 
 /** Prop bag shared by every compiled Collapsible variant (mirrors the emitted CollapsibleProps). */
-export interface CollapsibleVariantProps {
+export interface CollapsibleVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
+  /** Controlled open state. When given, the root never writes its internal signal and `onOpenChange` reports the requested flip. */
   open?: () => boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger: HellaChildren;
   content: HellaChildren;
-  class?: string;
 }
 
-/** Superset prop bag across Collapsible parts (mirrors the emitted part props). */
-export interface CollapsiblePartVariantProps {
+/** Superset prop bag across Collapsible parts (the open contract across the button/div roots). */
+export interface CollapsiblePartVariantProps extends GlobalHTMLAttributes {
+  class?: string;
+  children?: HellaChildren;
   active?: () => boolean;
   onToggle?: () => void;
-  controls?: string;
   id?: string;
-  children?: HellaChildren;
-  class?: string;
 }
 
 /** Item shape of every compiled Accordion variant (mirrors the emitted AccordionEntry). */
@@ -1415,25 +1450,23 @@ export interface AccordionEntryVariant {
 }
 
 /** Prop bag shared by every compiled Accordion variant (mirrors the emitted AccordionProps). */
-export interface AccordionVariantProps {
+export interface AccordionVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: AccordionEntryVariant[];
   type?: "single" | "multiple";
   collapsible?: boolean;
   open?: string | string[];
-  class?: string;
 }
 
-/** Superset prop bag across Accordion parts (mirrors the emitted part props). */
-export interface AccordionPartVariantProps {
+/** Superset prop bag across Accordion parts (the open contract across the div/button roots). */
+export interface AccordionPartVariantProps extends GlobalHTMLAttributes {
+  class?: string;
+  children?: HellaChildren;
   value?: string;
   id?: string;
-  labelledBy?: string;
   active?: () => boolean;
   onToggle?: () => void;
-  controls?: string;
   disabled?: boolean;
-  children?: HellaChildren;
-  class?: string;
 }
 
 /**
@@ -1496,43 +1529,37 @@ export interface RadioGroupEntryVariant {
 }
 
 /** Prop bag shared by every compiled RadioGroup variant (mirrors the emitted RadioGroupProps). */
-export interface RadioGroupVariantProps {
+export interface RadioGroupVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: RadioGroupEntryVariant[];
   value?: () => string;
   onValueChange?: (value: string) => void;
-  name?: string;
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
 /** Prop bag shared by every compiled Checkbox variant (mirrors the emitted CheckboxProps). */
-export interface CheckboxVariantProps {
+export interface CheckboxVariantProps extends HTMLAttributes<"button"> {
+  class?: string;
   checked?: boolean | (() => boolean);
   indeterminate?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
-  ariaInvalid?: boolean;
-  id?: string;
-  class?: string;
 }
 
 /** Prop bag shared by every compiled Switch variant (mirrors the emitted SwitchProps). */
-export interface SwitchVariantProps {
+export interface SwitchVariantProps extends HTMLAttributes<"button"> {
+  class?: string;
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
-  class?: string;
 }
 
 /** Prop bag shared by every compiled Toggle variant (mirrors the emitted ToggleProps). */
-export interface ToggleVariantProps {
+export interface ToggleVariantProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   pressed?: boolean | (() => boolean);
   onPressedChange?: (pressed: boolean) => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-  disabled?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /** Item shape of every compiled ToggleGroup variant (mirrors the emitted ToggleGroupEntry). */
@@ -1544,7 +1571,8 @@ export interface ToggleGroupEntryVariant {
 }
 
 /** Prop bag shared by every compiled ToggleGroup variant (mirrors the emitted ToggleGroupProps). */
-export interface ToggleGroupVariantProps {
+export interface ToggleGroupVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: ToggleGroupEntryVariant[];
   type: "single" | "multiple";
   value?: () => string;
@@ -1552,7 +1580,6 @@ export interface ToggleGroupVariantProps {
   onValueChange?: (value: string | string[]) => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-  class?: string;
 }
 
 /**
@@ -1580,13 +1607,12 @@ export const radioGroupVariants: ComponentVariant<RadioGroupVariantProps>[] = [
 export const RADIO_GROUP_PARTS = ["Item"] as const;
 
 /** Prop bag shared by every compiled RadioGroup part (mirrors the emitted RadioGroupItemProps). */
-export interface RadioGroupPartVariantProps {
+export interface RadioGroupPartVariantProps extends HTMLAttributes<"button"> {
+  class?: string;
   value: string;
   checked?: boolean | (() => boolean);
   onSelect?: () => void;
-  disabled?: boolean;
   name?: string;
-  class?: string;
 }
 
 /**
@@ -1636,15 +1662,14 @@ export const toggleGroupVariants: ComponentVariant<ToggleGroupVariantProps>[] = 
 export const TOGGLE_GROUP_PARTS = ["Item"] as const;
 
 /** Prop bag shared by every compiled ToggleGroup part (mirrors the emitted ToggleGroupItemProps). */
-export interface ToggleGroupPartVariantProps {
+export interface ToggleGroupPartVariantProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   value?: string;
   pressed?: boolean | (() => boolean);
   onSelect?: () => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-  disabled?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -1673,17 +1698,13 @@ import * as ResizableTailwindJsx from "../../dist/registry/resizable/tailwind/re
 import * as ResizableTailwindHtml from "../../dist/registry/resizable/tailwind/resizable-html";
 
 /** Prop bag shared by every compiled Slider variant (mirrors the emitted SliderProps). */
-export interface SliderVariantProps {
+export interface SliderVariantProps extends HTMLAttributes<"span"> {
+  class?: string;
   value?: number[] | (() => number[]);
   onValueChange?: (value: number[]) => void;
   onValueCommit?: (value: number[]) => void;
-  min?: number;
-  max?: number;
-  step?: number;
   orientation?: "horizontal" | "vertical";
-  disabled?: boolean;
   minStepsBetweenThumbs?: number;
-  class?: string;
 }
 
 /**
@@ -1697,11 +1718,11 @@ export const sliderVariants: ComponentVariant<SliderVariantProps>[] = [
 ];
 
 /** Prop bag shared by every compiled ResizablePanelGroup variant (mirrors the emitted ResizablePanelGroupProps). */
-export interface ResizableVariantProps {
+export interface ResizableVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   direction?: "horizontal" | "vertical";
   onLayout?: (sizes: number[]) => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
 /**
@@ -1752,14 +1773,13 @@ export const resizableVariants: ChildrenVariant<ResizableVariantProps>[] = [
 ];
 
 /** Superset prop bag across Resizable parts (mirrors the emitted part props). */
-export interface ResizablePartVariantProps {
+export interface ResizablePartVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   defaultSize?: number;
   minSize?: number;
   maxSize?: number;
   withHandle?: boolean;
-  disabled?: boolean;
-  children?: HellaChildren;
-  class?: string;
 }
 
 /** The named Resizable parts (every export except the default ResizablePanelGroup). */
@@ -1795,7 +1815,7 @@ export type AnchoredSide = "top" | "bottom" | "left" | "right";
 export type AnchoredAlign = "start" | "center" | "end";
 
 /** Prop bag shared by every compiled Tooltip variant (mirrors the emitted TooltipProps). */
-export interface TooltipVariantProps {
+export interface TooltipVariantProps extends HTMLAttributes<"span"> {
   content: HellaChildren;
   delayDuration?: number;
   side?: AnchoredSide;
@@ -1805,13 +1825,12 @@ export interface TooltipVariantProps {
 }
 
 /** Superset prop bag across Tooltip parts (mirrors the emitted part props). */
-export interface TooltipPartVariantProps {
+export interface TooltipPartVariantProps extends GlobalHTMLAttributes {
   state?: () => "open" | "closed";
-  id?: string;
-  describedBy?: string;
   side?: AnchoredSide;
   align?: AnchoredAlign;
   anchor?: () => Element | undefined;
+  onExited?: () => void;
   children?: HellaChildren;
   class?: string;
 }
@@ -1844,7 +1863,7 @@ export const tooltipPartVariants: PartVariant<TooltipPartVariantProps>[] = TOOLT
 );
 
 /** Prop bag shared by every compiled HoverCard variant (mirrors the emitted HoverCardProps). */
-export interface HoverCardVariantProps {
+export interface HoverCardVariantProps extends HTMLAttributes<"span"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
   children?: HellaChildren;
@@ -1853,13 +1872,14 @@ export interface HoverCardVariantProps {
 }
 
 /** Superset prop bag across HoverCard parts (mirrors the emitted part props). */
-export interface HoverCardPartVariantProps {
+export interface HoverCardPartVariantProps extends GlobalHTMLAttributes {
   state?: () => "open" | "closed";
   side?: AnchoredSide;
   align?: AnchoredAlign;
   anchor?: () => Element | undefined;
   onOpen?: () => void;
   onClose?: () => void;
+  onExited?: () => void;
   children?: HellaChildren;
   class?: string;
 }
@@ -1892,7 +1912,7 @@ export const hoverCardPartVariants: PartVariant<HoverCardPartVariantProps>[] = H
 );
 
 /** Prop bag shared by every compiled Popover variant (mirrors the emitted PopoverProps). */
-export interface PopoverVariantProps {
+export interface PopoverVariantProps extends HTMLAttributes<"button"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
   anchor?: () => Element | undefined;
@@ -1902,15 +1922,15 @@ export interface PopoverVariantProps {
 }
 
 /** Superset prop bag across Popover parts (mirrors the emitted part props). */
-export interface PopoverPartVariantProps {
+export interface PopoverPartVariantProps extends GlobalHTMLAttributes {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchoredSide;
   align?: AnchoredAlign;
   sideOffset?: number;
   alignOffset?: number;
   anchor?: () => Element | undefined;
   onDismiss?: () => void;
+  onExited?: () => void;
   children?: HellaChildren;
   class?: string;
 }
@@ -1970,7 +1990,7 @@ export interface MenuRadioEntryVariant {
 }
 
 /** Prop bag shared by every compiled DropdownMenu variant (mirrors the emitted DropdownMenuProps). */
-export interface DropdownMenuVariantProps {
+export interface DropdownMenuVariantProps extends HTMLAttributes<"button"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
   children?: HellaChildren;
@@ -1979,7 +1999,7 @@ export interface DropdownMenuVariantProps {
 }
 
 /** Superset prop bag across DropdownMenu parts (mirrors the emitted part props). */
-export interface DropdownMenuPartVariantProps {
+export interface DropdownMenuPartVariantProps extends GlobalHTMLAttributes {
   state?: () => "open" | "closed";
   id?: string;
   side?: AnchoredSide;
@@ -1995,7 +2015,6 @@ export interface DropdownMenuPartVariantProps {
   inset?: boolean;
   destructive?: boolean;
   disabled?: boolean;
-  onclick?: () => void;
   shortcut?: string;
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
@@ -2041,7 +2060,7 @@ export const dropdownMenuPartVariants: PartVariant<DropdownMenuPartVariantProps>
 );
 
 /** Prop bag shared by every compiled ContextMenu variant (mirrors the emitted ContextMenuProps). */
-export interface ContextMenuVariantProps {
+export interface ContextMenuVariantProps extends HTMLAttributes<"span"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
   children?: HellaChildren;
@@ -2050,7 +2069,7 @@ export interface ContextMenuVariantProps {
 }
 
 /** Superset prop bag across ContextMenu parts (mirrors the emitted part props). */
-export interface ContextMenuPartVariantProps {
+export interface ContextMenuPartVariantProps extends GlobalHTMLAttributes {
   state?: () => "open" | "closed";
   id?: string;
   side?: AnchoredSide;
@@ -2064,7 +2083,6 @@ export interface ContextMenuPartVariantProps {
   inset?: boolean;
   destructive?: boolean;
   disabled?: boolean;
-  onclick?: () => void;
   shortcut?: string;
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
@@ -2115,7 +2133,7 @@ import * as MenubarTailwindJsx from "../../dist/registry/menubar/tailwind/menuba
 import * as MenubarTailwindHtml from "../../dist/registry/menubar/tailwind/menubar-html";
 
 /** Prop bag shared by every compiled Menubar variant (mirrors the emitted MenubarProps). */
-export interface MenubarVariantProps {
+export interface MenubarVariantProps extends HTMLAttributes<"div"> {
   value?: () => string;
   onValueChange?: (value: string) => void;
   children?: HellaChildren;
@@ -2123,7 +2141,7 @@ export interface MenubarVariantProps {
 }
 
 /** Superset prop bag across Menubar parts (mirrors the emitted part props). */
-export interface MenubarPartVariantProps {
+export interface MenubarPartVariantProps extends GlobalHTMLAttributes {
   value?: string;
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
@@ -2143,7 +2161,6 @@ export interface MenubarPartVariantProps {
   inset?: boolean;
   destructive?: boolean;
   disabled?: boolean;
-  onclick?: () => void;
   shortcut?: string;
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
@@ -2194,7 +2211,7 @@ import * as NavigationMenuTailwindJsx from "../../dist/registry/navigation-menu/
 import * as NavigationMenuTailwindHtml from "../../dist/registry/navigation-menu/tailwind/navigation-menu-html";
 
 /** Prop bag shared by every compiled NavigationMenu variant (mirrors the emitted NavigationMenuProps). */
-export interface NavigationMenuVariantProps {
+export interface NavigationMenuVariantProps extends HTMLAttributes<"div"> {
   value?: () => string;
   onValueChange?: (value: string) => void;
   viewport?: boolean;
@@ -2203,7 +2220,7 @@ export interface NavigationMenuVariantProps {
 }
 
 /** Superset prop bag across NavigationMenu parts (mirrors the emitted part props). */
-export interface NavigationMenuPartVariantProps {
+export interface NavigationMenuPartVariantProps extends GlobalHTMLAttributes {
   value?: string;
   active?: boolean | (() => boolean);
   onActivate?: () => void;
@@ -2248,13 +2265,13 @@ import * as BreadcrumbTailwindJsx from "../../dist/registry/breadcrumb/tailwind/
 import * as BreadcrumbTailwindHtml from "../../dist/registry/breadcrumb/tailwind/breadcrumb-html";
 
 /** Prop bag shared by every compiled Breadcrumb variant (mirrors the emitted BreadcrumbProps). */
-export interface BreadcrumbVariantProps {
+export interface BreadcrumbVariantProps extends HTMLAttributes<"nav"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** Superset prop bag across Breadcrumb parts (mirrors the emitted part props). */
-export interface BreadcrumbPartVariantProps {
+export interface BreadcrumbPartVariantProps extends GlobalHTMLAttributes {
   children?: HellaChildren;
   href?: string;
   class?: string;
@@ -2302,7 +2319,7 @@ export interface SelectEntryVariant {
 }
 
 /** Prop bag shared by every compiled Select variant (mirrors the emitted SelectProps). */
-export interface SelectVariantProps {
+export interface SelectVariantProps extends HTMLAttributes<"button"> {
   items?: SelectEntryVariant[];
   value?: () => string;
   onValueChange?: (value: string) => void;
@@ -2313,10 +2330,8 @@ export interface SelectVariantProps {
 }
 
 /** Superset prop bag across Select parts (mirrors the emitted part props). */
-export interface SelectPartVariantProps {
+export interface SelectPartVariantProps extends GlobalHTMLAttributes {
   id?: string;
-  ariaControls?: string;
-  ariaLabel?: string;
   size?: "sm" | "default";
   state?: () => "open" | "closed";
   onOpen?: () => void;
@@ -2381,28 +2396,21 @@ export interface ComboboxEntryVariant {
 }
 
 /** Prop bag shared by every compiled Combobox variant (mirrors the emitted ComboboxProps). */
-export interface ComboboxVariantProps {
+export interface ComboboxVariantProps extends HTMLAttributes<"div"> {
   items?: ComboboxEntryVariant[];
   value?: () => string | string[];
   onValueChange?: (value: string | string[]) => void;
   multiple?: boolean;
-  placeholder?: string;
   filter?: (items: ComboboxEntryVariant[], query: string) => ComboboxEntryVariant[];
   showClear?: boolean;
   class?: string;
 }
 
 /** Superset prop bag across Combobox parts (mirrors the emitted part props). */
-export interface ComboboxPartVariantProps {
-  id?: string;
+export interface ComboboxPartVariantProps extends HTMLAttributes<"input"> {
   value?: string | string[] | (() => string | string[] | undefined);
-  placeholder?: string;
   disabled?: boolean;
-  onInput?: (value: string) => void;
-  onKeydown?: (e: KeyboardEvent) => void;
-  onFocus?: () => void;
   state?: () => "open" | "closed";
-  ariaControls?: string;
   activeDescendant?: () => string | undefined;
   showTrigger?: boolean;
   showClear?: boolean;
@@ -2411,7 +2419,6 @@ export interface ComboboxPartVariantProps {
   hasValue?: () => boolean;
   wire?: (node: HTMLElement) => () => void;
   portal?: () => HellaChildren;
-  onclick?: () => void;
   onRemove?: () => void;
   showRemove?: boolean;
   selected?: boolean | (() => boolean) | ((value: string) => boolean);
@@ -2484,7 +2491,7 @@ export interface CommandItemDataVariant {
 }
 
 /** Prop bag shared by every compiled Command variant (mirrors the emitted CommandProps). */
-export interface CommandVariantProps {
+export interface CommandVariantProps extends HTMLAttributes<"div"> {
   items?: CommandItemDataVariant[];
   filter?: (items: CommandItemDataVariant[], query: string) => CommandItemDataVariant[];
   loop?: boolean;
@@ -2495,11 +2502,9 @@ export interface CommandVariantProps {
 }
 
 /** Superset prop bag across Command parts (mirrors the emitted part props). */
-export interface CommandPartVariantProps {
+export interface CommandPartVariantProps extends HTMLAttributes<"div"> {
   value?: string | (() => string);
   placeholder?: string;
-  onInput?: (value: string) => void;
-  onKeydown?: (e: KeyboardEvent) => void;
   heading?: string;
   hidden?: boolean | (() => boolean);
   disabled?: boolean;
@@ -2564,7 +2569,7 @@ import * as DrawerTailwindJsx from "../../dist/registry/drawer/tailwind/drawer";
 import * as DrawerTailwindHtml from "../../dist/registry/drawer/tailwind/drawer-html";
 
 /** Prop bag shared by every compiled AlertDialog variant (mirrors the emitted AlertDialogProps). */
-export interface AlertDialogVariantProps {
+export interface AlertDialogVariantProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   title?: string;
@@ -2576,7 +2581,7 @@ export interface AlertDialogVariantProps {
 }
 
 /** Prop bag shared by every compiled Sheet variant (mirrors the emitted SheetProps). */
-export interface SheetVariantProps {
+export interface SheetVariantProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   side?: "top" | "right" | "bottom" | "left";
@@ -2590,7 +2595,7 @@ export interface SheetVariantProps {
 }
 
 /** Prop bag shared by every compiled Drawer variant (mirrors the emitted DrawerProps). */
-export interface DrawerVariantProps {
+export interface DrawerVariantProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   direction?: "top" | "right" | "bottom" | "left";
@@ -2603,13 +2608,10 @@ export interface DrawerVariantProps {
 }
 
 /** Superset prop bag across AlertDialog parts (mirrors the emitted part props). */
-export interface AlertDialogPartVariantProps {
+export interface AlertDialogPartVariantProps extends GlobalHTMLAttributes {
   children?: HellaChildren;
   class?: string;
   state?: () => "open" | "closed";
-  id?: string;
-  labelledBy?: string;
-  describedBy?: string;
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   closeOnEscape?: boolean;
@@ -2743,10 +2745,10 @@ import * as SonnerTailwind from "../../dist/registry/sonner/tailwind/sonner";
 import * as SonnerTailwindHtml from "../../dist/registry/sonner/tailwind/sonner-html";
 
 /** Prop bag shared by every compiled Sonner variant (mirrors the emitted ToasterProps). */
-export interface SonnerVariantProps {
+export interface SonnerVariantProps extends HTMLAttributes<"ol"> {
+  class?: string;
   position?: "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
   richColors?: boolean;
-  class?: string;
 }
 
 /** The compiled module's toast queue API (per-flavor singleton). */
@@ -2788,17 +2790,17 @@ import * as ScrollAreaTailwindJsx from "../../dist/registry/scroll-area/tailwind
 import * as ScrollAreaTailwindHtml from "../../dist/registry/scroll-area/tailwind/scroll-area-html";
 
 /** Prop bag shared by every compiled ScrollArea variant (mirrors the emitted ScrollAreaProps). */
-export interface ScrollAreaVariantProps {
+export interface ScrollAreaVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   observe?: ScrollerObserve;
-  class?: string;
 }
 
 /** Prop bag shared by every compiled ScrollBar variant (mirrors the emitted ScrollBarProps). */
-export interface ScrollBarVariantProps {
+export interface ScrollBarVariantProps extends GlobalHTMLAttributes {
+  class?: string;
   orientation?: "vertical" | "horizontal";
   observe?: ScrollerObserve;
-  class?: string;
 }
 
 /**
@@ -2831,7 +2833,7 @@ import * as CalendarTailwindJsx from "../../dist/registry/calendar/tailwind/cale
 import * as CalendarTailwindHtml from "../../dist/registry/calendar/tailwind/calendar-html";
 
 /** Prop bag shared by every compiled Calendar variant (mirrors the emitted CalendarProps). */
-export interface CalendarVariantProps {
+export interface CalendarVariantProps extends HTMLAttributes<"div"> {
   mode?: "single" | "multiple" | "range";
   selected?: Date | Date[] | { from?: Date; to?: Date };
   onSelect?: (selected: Date | Date[] | { from?: Date; to?: Date } | undefined) => void;
@@ -2848,7 +2850,7 @@ export interface CalendarVariantProps {
 }
 
 /** Prop bag for the compiled CalendarDayButton part (mirrors the emitted props). */
-export interface CalendarDayButtonVariantProps {
+export interface CalendarDayButtonVariantProps extends HTMLAttributes<"button"> {
   day: Date;
   selectedSingle?: boolean | (() => boolean);
   rangeStart?: boolean | (() => boolean);
@@ -2891,16 +2893,13 @@ import * as InputOtpTailwindJsx from "../../dist/registry/input-otp/tailwind/inp
 import * as InputOtpTailwindHtml from "../../dist/registry/input-otp/tailwind/input-otp-html";
 
 /** Prop bag shared by every compiled InputOTP variant (mirrors the emitted InputOTPProps). */
-export interface InputOtpVariantProps {
+export interface InputOtpVariantProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   length?: number;
   value?: string | (() => string);
   onChange?: (value: string) => void;
   onComplete?: (value: string) => void;
-  pattern?: RegExp;
-  autoFocus?: boolean;
-  disabled?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /**
@@ -2932,13 +2931,10 @@ import * as FormTailwindJsx from "../../dist/registry/form/tailwind/form";
 import * as FormTailwindHtml from "../../dist/registry/form/tailwind/form-html";
 
 /** Superset prop bag across Form parts (mirrors the emitted part props). */
-export interface FormPartVariantProps {
+export interface FormPartVariantProps extends GlobalHTMLAttributes {
   error?: boolean | (() => boolean);
-  required?: boolean;
-  for?: string;
   invalid?: boolean | (() => boolean);
   describedBy?: string;
-  id?: string;
   errors?: string[] | (() => string[] | undefined);
   children?: HellaChildren;
   class?: string;
@@ -2999,7 +2995,7 @@ export interface SidebarProviderVariantProps {
 }
 
 /** Prop bag for the compiled Sidebar root part (mirrors the emitted SidebarProps). */
-export interface SidebarVariantProps {
+export interface SidebarVariantProps extends HTMLAttributes<"div"> {
   open?: () => boolean;
   mobile?: () => boolean;
   openMobile?: () => boolean;
@@ -3012,16 +3008,14 @@ export interface SidebarVariantProps {
 }
 
 /** Prop bag for the compiled SidebarMenuButton part (mirrors the emitted props). */
-export interface SidebarMenuButtonVariantProps {
+export interface SidebarMenuButtonVariantProps extends HTMLAttributes<"button"> {
   active?: boolean;
   tooltip?: HellaChildren;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
   open?: () => boolean;
   mobile?: () => boolean;
-  type?: string;
   disabled?: boolean;
-  onclick?: () => void;
   class?: string;
   children?: HellaChildren;
 }

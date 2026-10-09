@@ -9,6 +9,7 @@ A callout carrying `role="alert"`: a direct `svg` child before the title occupie
 | `variant` | `"default" \| "destructive"` | `"default"` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The callout parts |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### AlertTitle
 
@@ -18,6 +19,7 @@ The bold heading: a `div` carrying `data-slot="alert-title"`.
 | ---- | ---- | ------- |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The title node |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### AlertDescription
 
@@ -27,5 +29,6 @@ The supporting line: a `div` carrying `data-slot="alert-description"`.
 | ---- | ---- | ------- |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The description nodes, plain paragraphs included |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

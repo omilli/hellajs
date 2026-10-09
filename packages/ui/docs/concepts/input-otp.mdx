@@ -10,13 +10,12 @@ You compose the slots yourself: group them, place the separator between groups, 
 | `value` | `string \| (() => string)` | `-` |
 | `onChange` | `(value: string) => void` | `-` |
 | `onComplete` | `(value: string) => void` | `-` |
-| `pattern` | `RegExp` | `-` |
-| `autoFocus` | `boolean` | `-` |
-| `disabled` | `boolean` | `-` |
 | `class` | `string` | `-` |
 | `children` | slots and groups | The user-composed layout, rendered under the transparent input |
 
-`length` is the slot count, fixed after mount. A static `value` seeds the internal state; an accessor makes it controlled, so edits report through `onChange` only, which reports every accepted change: typing, paste, and deletion. `onComplete` fires once per transition to a full code. `pattern` is the whole-value gate: an edit whose result fails the test is rejected and the previous value stands (the source lands on the input's `pattern` attribute). `disabled` disables the hidden input, blocks edits, and dims the group.
+Accepts all native `div` attributes (forwarded to the root element): a native `pattern` attribute (a regex-source string) gates every accepted edit and lands verbatim on the hidden input, `autofocus` focuses the control on mount, and `disabled` disables the hidden input, blocks edits, and dims the group.
+
+`length` is the slot count, fixed after mount. A static `value` seeds the internal state; an accessor makes it controlled, so edits report through `onChange` only, which reports every accepted change: typing, paste, and deletion. `onComplete` fires once per transition to a full code.
 
 ### InputOTPGroup
 

@@ -4,7 +4,7 @@
 
 The wrapper `div` carries `data-slot="sidebar-wrapper"`, the width variables, and both listeners: a `matchMedia("(max-width: 769px)")` listener that flips the `mobile` state, and a Ctrl/Cmd+B shortcut, which calls `onToggle` (the mobile sheet on mobile, the desktop open state otherwise). `open` is the standard dual-surface pair: pass `open` with `onOpenChange` for a controlled signal, or `defaultOpen` (default `true`) to let the provider own it. Cookie persistence is dropped; persist the signal yourself if you need it.
 
-Twenty-two parts ship beside the `Sidebar` root. Layout: `SidebarHeader`, `SidebarFooter`, `SidebarSeparator`, `SidebarContent`, `SidebarInset` (the `main` that stretches beside the panel). Menu: `SidebarGroup`, `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarGroupContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton` (`variant: "default" | "outline"`, `size: "default" | "sm" | "lg"`, `active`, `tooltip`), `SidebarMenuAction` (`showOnHover` fades it in on item hover at `md` and up), `SidebarMenuBadge`, `SidebarMenuSkeleton` (`showIcon`), `SidebarMenuSub`, `SidebarMenuSubItem`, `SidebarMenuSubButton` (`size: "sm" | "md"`, `active`, anchor by default). Controls: `SidebarTrigger` (the panel-left icon button), `SidebarRail`. Every part carries its `data-slot` and a `data-sidebar` hook, so user CSS can target either. `SidebarInput` renders the search input (`h-8`, `bg-background`) with the input entry's class maps inlined.
+Twenty-two parts ship beside the `Sidebar` root. Layout: `SidebarHeader`, `SidebarFooter`, `SidebarSeparator`, `SidebarContent`, `SidebarInset` (the `main` that stretches beside the panel). Menu: `SidebarGroup`, `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarGroupContent`, `SidebarMenu`, `SidebarMenuItem`, `SidebarMenuButton` (`variant: "default" | "outline"`, `size: "default" | "sm" | "lg"`, `active`, `tooltip`; renders `type="button"` unless a native `type` rides the attributes), `SidebarMenuAction` (`showOnHover` fades it in on item hover at `md` and up), `SidebarMenuBadge`, `SidebarMenuSkeleton` (`showIcon`), `SidebarMenuSub`, `SidebarMenuSubItem`, `SidebarMenuSubButton` (`size: "sm" | "md"`, `active`, anchor by default). Controls: `SidebarTrigger` (the panel-left icon button), `SidebarRail`. Every part carries its `data-slot` and a `data-sidebar` hook, so user CSS can target either. Every part also accepts all native attributes of its root tag (forwarded to the root element): `SidebarMenuSubButton`'s `href` and `SidebarInput`'s `value`, `placeholder`, and `aria-label` ride the spread, and a user `on:click` on the trigger, rail, or menu buttons fires alongside the owned toggles. `SidebarInput` renders the search input (`h-8`, `bg-background`) with the input entry's class maps inlined.
 
 ### SidebarProvider
 
@@ -14,6 +14,8 @@ Twenty-two parts ship beside the `Sidebar` root. Layout: `SidebarHeader`, `Sideb
 | `onOpenChange` | `(open: boolean) => void` | `-` |
 | `defaultOpen` | `boolean` | `true` |
 | `children` | `(state) => HellaChildren` | The shell, composed from the threaded state |
+
+Accepts all native `div` attributes (forwarded to the wrapper element).
 
 ### Sidebar
 
@@ -27,6 +29,8 @@ Twenty-two parts ship beside the `Sidebar` root. Layout: `SidebarHeader`, `Sideb
 | `collapsible` | `"offcanvas" \| "icon" \| "none"` | `"offcanvas"` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The panel parts |
+
+Accepts all native `div` attributes (forwarded to the desktop panel element).
 
 `SidebarMenuButton`'s `tooltip` composes an inline hover label (delay 0) anchored to the button; it renders only while the sidebar is collapsed to icon mode and never on mobile (the `hidden` attribute masks it otherwise). The `open` and `mobile` accessors thread that decision down.
 

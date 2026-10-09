@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -11,82 +11,86 @@ declare const reactionsSides: Record<string, string>;
 declare const variants: Record<string, string>;
 // @hella:end
 
-interface BubbleGroupProps {
-  children?: HellaChildren;
+interface BubbleGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function BubbleGroup(props: BubbleGroupProps): HellaNode {
+export function BubbleGroup({ children, class: cls, ...attrs }: BubbleGroupProps): HellaNode {
   return html`
     <div
       data-slot="bubble-group"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface BubbleProps {
+interface BubbleProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive";
   align?: "start" | "end";
-  class?: string;
 }
 
-export function Bubble(props: BubbleProps): HellaNode {
+export function Bubble({ variant, align, children, class: cls, ...attrs }: BubbleProps): HellaNode {
   return html`
     <div
       data-slot="bubble"
-      data-variant="${props.variant ?? "default"}"
-      data-align="${props.align ?? "start"}"
+      data-variant="${variant ?? "default"}"
+      data-align="${align ?? "start"}"
       class="${
         // @hella:compose
-        [bubble, variants[props.variant ?? "default"], props.class]
+        [bubble, variants[variant ?? "default"], cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface BubbleContentProps {
-  children?: HellaChildren;
+interface BubbleContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function BubbleContent(props: BubbleContentProps): HellaNode {
+export function BubbleContent({ children, class: cls, ...attrs }: BubbleContentProps): HellaNode {
   return html`
     <div
       data-slot="bubble-content"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface BubbleReactionsProps {
+interface BubbleReactionsProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   side?: "top" | "bottom";
   align?: "start" | "end";
-  class?: string;
 }
 
-export function BubbleReactions(props: BubbleReactionsProps): HellaNode {
+export function BubbleReactions({ side, align, children, class: cls, ...attrs }: BubbleReactionsProps): HellaNode {
   return html`
     <div
       data-slot="bubble-reactions"
-      data-align="${props.align ?? "end"}"
-      data-side="${props.side ?? "bottom"}"
+      data-align="${align ?? "end"}"
+      data-side="${side ?? "bottom"}"
       class="${
         // @hella:compose
-        [reactions, reactionsSides[props.side ?? "bottom"], reactionsAligns[props.align ?? "end"], props.class]
+        [reactions, reactionsSides[side ?? "bottom"], reactionsAligns[align ?? "end"], cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

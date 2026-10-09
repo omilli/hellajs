@@ -1,5 +1,6 @@
 import { signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
+import type { HTMLAttributes } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -8,34 +9,30 @@ declare const thumb: string;
 declare const track: string;
 // @hella:end
 
-interface SliderProps {
+interface SliderProps extends HTMLAttributes<"span"> {
+  class?: string;
   /** The thumb values. A static array seeds the internal signal; an accessor makes the slider controlled, so writes report through `onValueChange` only. */
   value?: number[] | (() => number[]);
   onValueChange?: (value: number[]) => void;
   /** Fired when an interaction ends: drag release and each accepted keyboard change. */
   onValueCommit?: (value: number[]) => void;
-  min?: number;
-  max?: number;
-  step?: number;
   orientation?: "horizontal" | "vertical";
-  disabled?: boolean;
   /** Minimum number of steps enforced between neighboring thumbs. */
   minStepsBetweenThumbs?: number;
-  class?: string;
 }
 
-export default function Slider(props: SliderProps): JSX.Element {
-  const min = props.min ?? 0;
-  const max = props.max ?? 100;
-  const step = props.step ?? 1;
-  const orientation = props.orientation ?? "horizontal";
-  const minSteps = props.minStepsBetweenThumbs ?? 0;
+export default function Slider({ value, onValueChange, onValueCommit, orientation: orientationProp, minStepsBetweenThumbs, min: minAttr, max: maxAttr, step: stepAttr, disabled, class: cls, ...attrs }: SliderProps): JSX.Element {
+  const min = (minAttr as number | undefined) ?? 0;
+  const max = (maxAttr as number | undefined) ?? 100;
+  const step = (stepAttr as number | undefined) ?? 1;
+  const orientation = orientationProp ?? "horizontal";
+  const minSteps = minStepsBetweenThumbs ?? 0;
 
   const internal = signal<number[]>(
-    typeof props.value === "function" ? [] : props.value ?? [min, max],
+    typeof value === "function" ? [] : value ?? [min, max],
   );
   const values = (): number[] =>
-    typeof props.value === "function" ? props.value() : internal();
+    typeof value === "function" ? value() : internal();
 
   // Thumb count is fixed at mount; value updates move the thumbs but never add or remove them.
   const thumbCount = Math.max(values().length, 1);
@@ -61,8 +58,8 @@ export default function Slider(props: SliderProps): JSX.Element {
     if (current[index] === next) return;
     const updated = current.slice();
     updated[index] = next;
-    if (typeof props.value !== "function") internal(updated);
-    props.onValueChange?.(updated);
+    if (typeof value !== "function") internal(updated);
+    onValueChange?.(updated);
   };
 
   const pointerValue = (clientX: number, clientY: number, rect: DOMRect): number => {
@@ -108,17 +105,20 @@ export default function Slider(props: SliderProps): JSX.Element {
     <span
       data-slot="slider"
       data-orientation={orientation}
-      data-disabled={props.disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
+      min={min}
+      max={max}
+      step={step}
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
         wirings.push(onDrag(node, {
           onStart: (event) => {
-            if (props.disabled) return;
+            if (disabled) return;
             const trackEl = node.querySelector<HTMLElement>("[data-slot='slider-track']");
             if (!trackEl) return;
             const rect = trackEl.getBoundingClientRect();
@@ -145,13 +145,14 @@ export default function Slider(props: SliderProps): JSX.Element {
             if (activeIndex < 0) return;
             activeIndex = -1;
             trackRect = null;
-            props.onValueCommit?.(values());
+            onValueCommit?.(values());
           },
         }));
       }}
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();
       }}
+      {...attrs}
     >
       <span data-slot="slider-track" data-orientation={orientation} class={
         // @hella:compose
@@ -168,21 +169,21 @@ export default function Slider(props: SliderProps): JSX.Element {
         <span
           data-slot="slider-thumb"
           role="slider"
-          tabindex={props.disabled ? -1 : 0}
+          tabindex={disabled ? -1 : 0}
           aria-valuemin={min}
           aria-valuemax={max}
           aria-valuenow={() => values()[index] as number}
           aria-orientation={orientation}
-          aria-disabled={props.disabled ? "true" : undefined}
+          aria-disabled={disabled ? "true" : undefined}
           style={() => thumbStyle(index)}
           on:keydown={(event: KeyboardEvent) => {
-            if (props.disabled) return;
+            if (disabled) return;
             const current = values();
             const raw = stepFromKey(event.key, current[index] ?? min);
             if (raw === null) return;
             event.preventDefault();
             setValue(index, applyLimits(index, quantize(raw), current));
-            props.onValueCommit?.(values());
+            onValueCommit?.(values());
           }}
           class={
             // @hella:compose

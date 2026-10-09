@@ -5,6 +5,7 @@ import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount shares one dom instance with the components.
 import { html, mount } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
   assertStructuralParity,
   classTokens,
   collapsiblePartVariants,
@@ -110,6 +111,38 @@ describe("collapsible", () => {
     assertStructuralParity(collapsibleVariants, { trigger: "More", content: "Details" });
   });
 
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(collapsibleVariants, { trigger: "More", content: "Details", title: "Hella" }, "title", "Hella");
+  });
+
+  test("merges a user class into the root class across all four variants", () => {
+    for (const variant of collapsibleVariants) {
+      const { root } = mountCollapsible(variant, { trigger: "More", content: "Details", class: "col-root" });
+      expect(classTokens(root)).toContain("col-root");
+    }
+  });
+
+  test("chains a user on:click with the owned toggle on a trigger across all four variants", () => {
+    for (const variant of collapsiblePartVariants.filter((candidate) => candidate.part === "Trigger")) {
+      const userClick = mock(() => {});
+      const open = signal(false);
+      const container = setupContainer();
+      const props: Record<string, unknown> = {
+        active: () => open(),
+        onToggle: () => open(!open()),
+        "on:click": userClick,
+        children: "Toggle",
+      };
+      const rendered = variant.render(props as never);
+      mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered, container);
+      const trigger = container.firstElementChild!;
+      trigger.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(open()).toBe(true);
+      expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    }
+  });
+
   test("renders every named part with its data-slot and state across all four variants", () => {
     for (const variant of collapsiblePartVariants) {
       const container = setupContainer();
@@ -117,7 +150,7 @@ describe("collapsible", () => {
       if (variant.part === "Trigger") {
         props.active = () => true;
         props.onToggle = () => {};
-        props.controls = "target-id";
+        props["aria-controls"] = "target-id";
       } else {
         props.active = () => false;
         props.id = "region-id";

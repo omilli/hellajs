@@ -1,8 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach, mock } from "bun:test";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState, resetDom } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   renderVariant,
   tooltipPartVariants,
   tooltipVariants,
@@ -168,6 +169,29 @@ describe("tooltip", () => {
     expect(content.style.top).toBe("110px");
     handle.unmount();
     expect(content.isConnected).toBe(false);
+  });
+
+  test.each(tooltipVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Hi", "aria-label": "trigger" });
+    expect(trigger.getAttribute("aria-label")).toBe("trigger");
+  });
+
+  test.each(tooltipVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const trigger = renderVariant(variant, { content: "Hi", "on:click": userClick });
+    trigger.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(tooltipVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Hi", class: "user-class" });
+    expect(classTokens(trigger).at(-1)).toBe("user-class");
+  });
+
+  test.each(tooltipPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ id: "custom-tooltip", children: [] }), container);
+    expect(container.firstElementChild!.getAttribute("id")).toBe("custom-tooltip");
   });
 
   test("keeps structural parity across all four variants", () => {

@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   renderVariant,
@@ -43,5 +45,14 @@ describe("spinner", () => {
 
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(spinnerVariants);
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(spinnerVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(spinnerVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 });

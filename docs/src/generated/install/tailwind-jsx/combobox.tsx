@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HellaChildren, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, Placement } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 type AnchorSide = "top" | "bottom" | "left" | "right";
@@ -117,22 +117,23 @@ const clearIcon = (): JSX.Element => (
   </svg>
 );
 
-interface ComboboxValueProps {
+interface ComboboxValueProps extends HTMLAttributes<"span"> {
   /** The displayed selection. A string reads statically; an accessor keeps it reactive; an array joins with ", ". */
   value?: string | string[] | (() => string | string[] | undefined);
   class?: string;
 }
 
 /** Renders the selected value for compositions that show the selection outside the input. */
-export function ComboboxValue(props: ComboboxValueProps): JSX.Element {
+export function ComboboxValue({ value, class: cls, ...attrs }: ComboboxValueProps): JSX.Element {
   const current = (): string | string[] | undefined =>
-    typeof props.value === "function" ? props.value() : props.value;
+    typeof value === "function" ? value() : value;
   return (
     <span
       data-slot="combobox-value"
       class={
-        cn(props.class)
+        cn(cls)
       }
+      {...attrs}
     >
       {() => {
         const v = current();
@@ -142,149 +143,151 @@ export function ComboboxValue(props: ComboboxValueProps): JSX.Element {
   );
 }
 
-interface ComboboxTriggerProps {
+interface ComboboxTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
-  onclick?: () => void;
-  disabled?: boolean;
   class?: string;
 }
 
 /** The manual trigger button; the composed Combobox renders its chevron twin inside the input-group addon. */
-export function ComboboxTrigger(props: ComboboxTriggerProps): JSX.Element {
+export function ComboboxTrigger({ children, class: cls, ...attrs }: ComboboxTriggerProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="combobox-trigger"
-      disabled={props.disabled}
       class={
-        cn("[&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("[&_svg:not([class*='size-'])]:size-4", cls)
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
       {chevronDownIcon()}
     </button>
   );
 }
 
-interface ComboboxClearProps {
+interface ComboboxClearProps extends HTMLAttributes<"button"> {
   /** Called on click; the composed Combobox wipes the selection. */
   onClear?: () => void;
-  disabled?: boolean;
   class?: string;
 }
 
 /** The clear affordance, styled as the input-group's ghost icon-xs button. */
-export function ComboboxClear(props: ComboboxClearProps): JSX.Element {
+export function ComboboxClear({ onClear, "on:click": userClick, class: cls, ...attrs }: ComboboxClearProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="combobox-clear"
       aria-label="Clear"
-      disabled={props.disabled}
       class={
-        cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", props.class)
+        cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", cls)
       }
-      on:click={() => props.onClear?.()}
+      on:click={function (e) {
+        userClick?.call(this, e);
+        onClear?.();
+      }}
+      {...attrs}
     >
       {clearIcon()}
     </button>
   );
 }
 
-interface ComboboxGroupProps {
+interface ComboboxGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function ComboboxGroup(props: ComboboxGroupProps): JSX.Element {
+export function ComboboxGroup({ children, class: cls, ...attrs }: ComboboxGroupProps): JSX.Element {
   return (
     <div
       data-slot="combobox-group"
       class={
-        cn(props.class)
+        cn(cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface ComboboxLabelProps {
+interface ComboboxLabelProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function ComboboxLabel(props: ComboboxLabelProps): JSX.Element {
+export function ComboboxLabel({ children, class: cls, ...attrs }: ComboboxLabelProps): JSX.Element {
   return (
     <div
       data-slot="combobox-label"
       class={
-        cn("px-2 py-1.5 text-xs text-muted-foreground pointer-coarse:px-3 pointer-coarse:py-2 pointer-coarse:text-sm", props.class)
+        cn("px-2 py-1.5 text-xs text-muted-foreground pointer-coarse:px-3 pointer-coarse:py-2 pointer-coarse:text-sm", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface ComboboxCollectionProps {
+interface ComboboxCollectionProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** Passthrough wrapper grouping items rendered from external data. */
-export function ComboboxCollection(props: ComboboxCollectionProps): JSX.Element {
+export function ComboboxCollection({ children, class: cls, ...attrs }: ComboboxCollectionProps): JSX.Element {
   return (
     <div
       data-slot="combobox-collection"
-      class={props.class}
+      class={cls}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface ComboboxEmptyProps {
+interface ComboboxEmptyProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** Renders when the query matches nothing; the composed Combobox mounts it with its default text. */
-export function ComboboxEmpty(props: ComboboxEmptyProps): JSX.Element {
+export function ComboboxEmpty({ children, class: cls, ...attrs }: ComboboxEmptyProps): JSX.Element {
   return (
     <div
       data-slot="combobox-empty"
       class={
-        cn("hidden w-full justify-center py-2 text-center text-sm text-muted-foreground group-data-empty/combobox-content:flex", props.class)
+        cn("hidden w-full justify-center py-2 text-center text-sm text-muted-foreground group-data-empty/combobox-content:flex", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface ComboboxSeparatorProps {
+interface ComboboxSeparatorProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export function ComboboxSeparator(props: ComboboxSeparatorProps): JSX.Element {
+export function ComboboxSeparator({ class: cls, ...attrs }: ComboboxSeparatorProps): JSX.Element {
   return (
     <div
       role="separator"
       data-slot="combobox-separator"
       class={
-        cn("-mx-1 my-1 h-px bg-border", props.class)
+        cn("-mx-1 my-1 h-px bg-border", cls)
       }
+      {...attrs}
     />
   );
 }
 
-interface ComboboxItemProps {
+interface ComboboxItemProps extends HTMLAttributes<"div"> {
   value?: string;
   label?: string;
-  id?: string;
-  disabled?: boolean;
   /** Selected state. A boolean reads statically; an accessor keeps the item reactive against its owning combobox. */
   selected?: boolean | (() => boolean);
   /** Highlighted state (the ref's data-highlighted ring); an accessor follows the active option. */
@@ -297,37 +300,38 @@ interface ComboboxItemProps {
   class?: string;
 }
 
-export function ComboboxItem(props: ComboboxItemProps): JSX.Element {
+export function ComboboxItem({ value, label: labelProp, disabled, selected: selectedProp, highlighted: highlightedProp, hidden, onselect, "on:click": userClick, children, class: cls, ...attrs }: ComboboxItemProps): JSX.Element {
   const selected = (): boolean =>
-    typeof props.selected === "function" ? props.selected() : props.selected ?? false;
+    typeof selectedProp === "function" ? selectedProp() : selectedProp ?? false;
   const highlighted = (): boolean =>
-    typeof props.highlighted === "function" ? props.highlighted() : props.highlighted ?? false;
+    typeof highlightedProp === "function" ? highlightedProp() : highlightedProp ?? false;
   // Precomputed so the style prop stays a bare reactive accessor (a compound
   // attribute expression would stringify through the transform).
-  const hiddenStyle = props.hidden
-    ? (): string => (props.hidden as () => boolean)() ? "display: none" : ""
+  const hiddenStyle = hidden
+    ? (): string => (hidden as () => boolean)() ? "display: none" : ""
     : undefined;
   return (
     <div
       role="option"
-      id={props.id}
       data-slot="combobox-item"
-      data-value={props.value}
+      data-value={value}
       aria-selected={selected() ? "true" : "false"}
       data-state={selected() ? "checked" : "unchecked"}
       data-highlighted={() => (highlighted() ? "true" : undefined)}
-      data-disabled={props.disabled ? "true" : undefined}
-      aria-disabled={props.disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
+      aria-disabled={disabled ? "true" : undefined}
       style={hiddenStyle}
       class={
-        cn("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
       }
-      on:click={() => {
-        if (props.disabled) return;
-        props.onselect?.();
+      on:click={function (e) {
+        if (disabled) return;
+        userClick?.call(this, e);
+        onselect?.();
       }}
+      {...attrs}
     >
-      {() => props.children ?? props.label}
+      {() => children ?? labelProp}
       <span
         data-slot="combobox-item-indicator"
         class={
@@ -340,8 +344,7 @@ export function ComboboxItem(props: ComboboxItemProps): JSX.Element {
   );
 }
 
-interface ComboboxListProps {
-  id?: string;
+interface ComboboxListProps extends HTMLAttributes<"div"> {
   /** Data-driven items; rendered once and hidden (never remounted) as the query filters them. */
   items?: ComboboxEntry[];
   /** Resolves the live query driving the filter. */
@@ -360,56 +363,47 @@ interface ComboboxListProps {
   class?: string;
 }
 
-export function ComboboxList(props: ComboboxListProps): JSX.Element {
+export function ComboboxList({ id, items: itemsProp, query, filter, selected, active, onselect, empty: emptyProp, children, class: cls, ...attrs }: ComboboxListProps): JSX.Element {
+  const items = itemsProp ?? [];
   const matches = (): ComboboxEntry[] => {
-    const items = props.items ?? [];
-    if (props.filter) return props.filter(items, props.query?.() ?? "");
-    const q = (props.query?.() ?? "").trim().toLowerCase();
+    if (filter) return filter(items, query?.() ?? "");
+    const q = (query?.() ?? "").trim().toLowerCase();
     if (q === "") return items;
     return items.filter((entry) => (entry.label ?? entry.value).toLowerCase().includes(q));
   };
   return (
     <div
       role="listbox"
-      id={props.id}
+      id={id}
       data-slot="combobox-list"
-      data-empty={() => (props.empty?.() ? "" : undefined)}
+      data-empty={() => (emptyProp?.() ? "" : undefined)}
       class={
-        cn("max-h-[min(calc(--spacing(96)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0", props.class)
+        cn("max-h-[min(calc(--spacing(96)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0", cls)
       }
+      {...attrs}
     >
-      {(props.items ?? []).map((entry) => (
+      {items.map((entry) => (
         <ComboboxItem
           value={entry.value}
           label={entry.label}
           disabled={entry.disabled}
-          id={`${props.id}-opt-${(props.items ?? []).indexOf(entry)}`}
-          selected={() => props.selected?.(entry.value) ?? false}
-          highlighted={() => props.active?.() === entry.value}
+          id={`${id}-opt-${items.indexOf(entry)}`}
+          selected={() => selected?.(entry.value) ?? false}
+          highlighted={() => active?.() === entry.value}
           hidden={() => !matches().includes(entry)}
-          onselect={() => props.onselect?.(entry.value)}
+          onselect={() => onselect?.(entry.value)}
         />
       ))}
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface ComboboxInputProps {
-  id?: string;
+interface ComboboxInputProps extends HTMLAttributes<"input"> {
   value?: string | (() => string);
-  placeholder?: string;
   disabled?: boolean;
-  /** Query change callback (delegated input event, e.target.value). */
-  onInput?: (value: string) => void;
-  /** Keydown handler owning the combobox keyboard model. */
-  onKeydown?: (e: KeyboardEvent) => void;
-  /** Focus handler; the composed Combobox opens on focus. */
-  onFocus?: () => void;
   /** Resolves open state for aria-expanded; the composed Combobox wires it. */
   state?: () => "open" | "closed";
-  /** Id of the listbox the input controls; lands in aria-controls. */
-  ariaControls?: string;
   /** Resolves the active option id for aria-activedescendant. */
   activeDescendant?: () => string | undefined;
   showTrigger?: boolean;
@@ -425,19 +419,19 @@ interface ComboboxInputProps {
   class?: string;
 }
 
-export function ComboboxInput(props: ComboboxInputProps): JSX.Element {
-  const state = (): "open" | "closed" => props.state?.() ?? "closed";
+export function ComboboxInput({ value, disabled, state: stateProp, activeDescendant, showTrigger, showClear, onToggle, onClear, wire, portal, children, class: cls, ...attrs }: ComboboxInputProps): JSX.Element {
+  const state = (): "open" | "closed" => stateProp?.() ?? "closed";
   let disposeWire: (() => void) | undefined;
   return (
     <div
       data-slot="input-group"
       role="group"
-      data-disabled={props.disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
       class={
-        cn("group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30 h-9 min-w-0 has-[>textarea]:h-auto has-[>[data-align=inline-start]]:[&>input]:pl-2 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40", props.class)
+        cn("group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30 h-9 min-w-0 has-[>textarea]:h-auto has-[>[data-align=inline-start]]:[&>input]:pl-2 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3 has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40", cls)
       }
       hook:afterMount={(node) => {
-        if (node instanceof HTMLElement) disposeWire = props.wire?.(node);
+        if (node instanceof HTMLElement) disposeWire = wire?.(node);
       }}
       hook:beforeDestroy={() => {
         disposeWire?.();
@@ -450,17 +444,13 @@ export function ComboboxInput(props: ComboboxInputProps): JSX.Element {
         data-slot="input-group-control"
         aria-autocomplete="list"
         aria-expanded={state() === "open" ? "true" : "false"}
-        aria-controls={props.ariaControls}
-        aria-activedescendant={() => props.activeDescendant?.()}
-        placeholder={props.placeholder}
-        disabled={props.disabled}
-        value={props.value}
+        aria-activedescendant={() => activeDescendant?.()}
+        disabled={disabled}
+        value={value}
         class={
           cn("h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30", "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50", "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40", "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent")
         }
-        on:input={(e) => props.onInput?.((e.target as HTMLInputElement).value)}
-        on:keydown={(e) => props.onKeydown?.(e as KeyboardEvent)}
-        on:focus={() => props.onFocus?.()}
+        {...attrs}
       />
       <div
         data-slot="input-group-addon"
@@ -475,45 +465,46 @@ export function ComboboxInput(props: ComboboxInputProps): JSX.Element {
           target.closest('[data-slot="input-group"]')?.querySelector("input")?.focus();
         }}
       >
-        {() => (props.showTrigger ? (
+        {() => (showTrigger ? (
           <button
             type="button"
             data-slot="combobox-trigger"
             aria-label="Toggle"
-            disabled={props.disabled}
+            disabled={disabled}
             class={
               cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", "group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent")
             }
-            on:click={() => props.onToggle?.()}
+            on:click={() => onToggle?.()}
           >
             {chevronDownIcon()}
           </button>
         ) : null)}
-        {() => (props.showClear ? (
+        {() => (showClear ? (
           <button
             type="button"
             data-slot="combobox-clear"
             aria-label="Clear"
-            disabled={props.disabled}
+            disabled={disabled}
             class={
               cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0")
             }
-            on:click={() => props.onClear?.()}
+            on:click={() => onClear?.()}
           >
             {clearIcon()}
           </button>
         ) : null)}
       </div>
-      {() => props.portal?.()}
-      {props.children}
+      {() => portal?.()}
+      {children}
     </div>
   );
 }
 
-interface ComboboxChipsProps {
+interface ComboboxChipsProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   /** Reactive chips; a thunk so the selected-values map stays a single reactive child (nested function children stringify). */
   chips?: () => HellaChildren;
+  /** Wired, not spread: renders data-disabled and gates the chip remove buttons. */
   disabled?: boolean;
   /** Wires the chips wrapper on mount and returns its dispose; the composed Combobox anchors the panel here. */
   wire?: (node: HTMLElement) => () => void;
@@ -522,32 +513,34 @@ interface ComboboxChipsProps {
   class?: string;
 }
 
-export function ComboboxChips(props: ComboboxChipsProps): JSX.Element {
+export function ComboboxChips({ children, chips: chipsSlot, disabled, wire, portal, class: cls, ...attrs }: ComboboxChipsProps): JSX.Element {
   let disposeWire: (() => void) | undefined;
   return (
     <div
       data-slot="combobox-chips"
-      data-disabled={props.disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
       class={
-        cn("flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40", props.class)
+        cn("flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent bg-clip-padding px-2.5 py-1.5 text-sm shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1.5 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40", cls)
       }
       hook:afterMount={(node) => {
-        if (node instanceof HTMLElement) disposeWire = props.wire?.(node);
+        if (node instanceof HTMLElement) disposeWire = wire?.(node);
       }}
       hook:beforeDestroy={() => {
         disposeWire?.();
         disposeWire = undefined;
       }}
+      {...attrs}
     >
-      {() => props.chips?.()}
-      {props.children}
-      {() => props.portal?.()}
+      {() => chipsSlot?.()}
+      {children}
+      {() => portal?.()}
     </div>
   );
 }
 
-interface ComboboxChipProps {
+interface ComboboxChipProps extends HTMLAttributes<"div"> {
   value?: string;
+  /** Wired, not spread: renders data-disabled and gates the remove button. */
   disabled?: boolean;
   /** Renders the remove button; defaults to true. */
   showRemove?: boolean;
@@ -556,27 +549,28 @@ interface ComboboxChipProps {
   class?: string;
 }
 
-export function ComboboxChip(props: ComboboxChipProps): JSX.Element {
+export function ComboboxChip({ value, disabled, showRemove, onRemove, children, class: cls, ...attrs }: ComboboxChipProps): JSX.Element {
   return (
     <div
       data-slot="combobox-chip"
-      data-value={props.value}
-      data-disabled={props.disabled ? "true" : undefined}
+      data-value={value}
+      data-disabled={disabled ? "true" : undefined}
       class={
-        cn("flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0", props.class)
+        cn("flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-sm bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0", cls)
       }
+      {...attrs}
     >
-      {props.children}
-      {() => (props.showRemove !== false ? (
+      {children}
+      {() => (showRemove !== false ? (
         <button
           type="button"
           data-slot="combobox-chip-remove"
           aria-label="Remove"
-          disabled={props.disabled}
+          disabled={disabled}
           class={
             cn("inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3", "flex items-center gap-2 text-sm shadow-none size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0", "-ml-1 opacity-50 hover:opacity-100")
           }
-          on:click={() => props.onRemove?.()}
+          on:click={() => onRemove?.()}
         >
           {clearIcon()}
         </button>
@@ -585,22 +579,18 @@ export function ComboboxChip(props: ComboboxChipProps): JSX.Element {
   );
 }
 
-interface ComboboxChipsInputProps {
-  id?: string;
+interface ComboboxChipsInputProps extends HTMLAttributes<"input"> {
   value?: string | (() => string);
-  placeholder?: string;
   disabled?: boolean;
-  onInput?: (value: string) => void;
-  onKeydown?: (e: KeyboardEvent) => void;
-  onFocus?: () => void;
+  /** Resolves open state for aria-expanded; the composed Combobox wires it. */
   state?: () => "open" | "closed";
-  ariaControls?: string;
+  /** Resolves the active option id for aria-activedescendant. */
   activeDescendant?: () => string | undefined;
   class?: string;
 }
 
-export function ComboboxChipsInput(props: ComboboxChipsInputProps): JSX.Element {
-  const state = (): "open" | "closed" => props.state?.() ?? "closed";
+export function ComboboxChipsInput({ value, disabled, state: stateProp, activeDescendant, class: cls, ...attrs }: ComboboxChipsInputProps): JSX.Element {
+  const state = (): "open" | "closed" => stateProp?.() ?? "closed";
   return (
     <input
       type="text"
@@ -608,24 +598,19 @@ export function ComboboxChipsInput(props: ComboboxChipsInputProps): JSX.Element 
       data-slot="combobox-chip-input"
       aria-autocomplete="list"
       aria-expanded={state() === "open" ? "true" : "false"}
-      aria-controls={props.ariaControls}
-      aria-activedescendant={() => props.activeDescendant?.()}
-      placeholder={props.placeholder}
-      disabled={props.disabled}
-      value={props.value}
+      aria-activedescendant={() => activeDescendant?.()}
+      disabled={disabled}
+      value={value}
       class={
-        cn("min-w-16 flex-1 outline-none", props.class)
+        cn("min-w-16 flex-1 outline-none", cls)
       }
-      on:input={(e) => props.onInput?.((e.target as HTMLInputElement).value)}
-      on:keydown={(e) => props.onKeydown?.(e as KeyboardEvent)}
-      on:focus={() => props.onFocus?.()}
+      {...attrs}
     />
   );
 }
 
-interface ComboboxContentProps {
+interface ComboboxContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchorSide;
   align?: AnchorAlign;
   /** Gap between the anchor and the content edge, in px. Default 6. */
@@ -644,10 +629,10 @@ interface ComboboxContentProps {
   class?: string;
 }
 
-export function ComboboxContent(props: ComboboxContentProps): JSX.Element {
-  const side = props.side ?? "bottom";
-  const align = props.align ?? "start";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function ComboboxContent({ state: stateProp, side: sideProp, align: alignProp, sideOffset, anchor, chips: chipsProp, empty: emptyProp, onDismiss, onExited, children, class: cls, ...attrs }: ComboboxContentProps): JSX.Element {
+  const side = sideProp ?? "bottom";
+  const align = alignProp ?? "start";
+  const state = (): "open" | "closed" => stateProp?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -667,20 +652,20 @@ export function ComboboxContent(props: ComboboxContentProps): JSX.Element {
       data-state={state()}
       data-side={side}
       data-align={align}
-      data-chips={props.chips ? "true" : undefined}
-      data-empty={() => (props.empty?.() ? "" : undefined)}
+      data-chips={chipsProp ? "true" : undefined}
+      data-empty={() => (emptyProp?.() ? "" : undefined)}
       class={
-        cn("group/combobox-content relative max-h-96 w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", props.class)
+        cn("group/combobox-content relative max-h-96 w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", cls)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: props.sideOffset ?? 6, matchAnchorWidth: true }));
-        if (props.onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
+        const anchorEl = anchor?.();
+        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 6, matchAnchorWidth: true }));
+        if (onDismiss) {
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
         }
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (state() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -689,19 +674,19 @@ export function ComboboxContent(props: ComboboxContentProps): JSX.Element {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface ComboboxProps {
+interface ComboboxProps extends HTMLAttributes<"div"> {
   items?: ComboboxEntry[];
   /** Controlled selection. Single mode holds one value; multiple mode holds an array. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string | string[];
   onValueChange?: (value: string | string[]) => void;
   multiple?: boolean;
-  placeholder?: string;
   /** Replaces the default case-insensitive substring filter over item labels. */
   filter?: (items: ComboboxEntry[], query: string) => ComboboxEntry[];
   /** Renders the input's clear affordance while a value is selected. */
@@ -711,31 +696,31 @@ interface ComboboxProps {
 
 let comboboxCount = 0;
 
-export default function Combobox(props: ComboboxProps): JSX.Element {
+export default function Combobox({ items: itemsProp, value, onValueChange, multiple, filter, showClear, class: cls, ...attrs }: ComboboxProps): JSX.Element {
+  const items = itemsProp ?? [];
   const s = comboboxOpenState();
   const listId = `hella-combobox-list-${++comboboxCount}`;
   const query = signal("");
-  const internal = signal<string | string[]>(props.multiple ? [] : "");
-  const current = (): string | string[] => (props.value !== undefined ? props.value() : internal());
+  const internal = signal<string | string[]>(multiple ? [] : "");
+  const current = (): string | string[] => (value !== undefined ? value() : internal());
   const selectedList = (): string[] => {
     const v = current();
     if (Array.isArray(v)) return v;
     return v !== "" && v !== undefined ? [v] : [];
   };
   const select = (next: string): void => {
-    if (props.multiple) {
+    if (multiple) {
       const currentList = selectedList();
       const nextList = currentList.includes(next) ? currentList.filter((v) => v !== next) : [...currentList, next];
-      if (props.value === undefined) internal(nextList);
-      props.onValueChange?.(nextList);
+      if (value === undefined) internal(nextList);
+      onValueChange?.(nextList);
       return;
     }
-    if (props.value === undefined) internal(next);
-    props.onValueChange?.(next);
+    if (value === undefined) internal(next);
+    onValueChange?.(next);
   };
   const matches = (): ComboboxEntry[] => {
-    const items = props.items ?? [];
-    if (props.filter) return props.filter(items, query());
+    if (filter) return filter(items, query());
     const q = query().trim().toLowerCase();
     if (q === "") return items;
     return items.filter((entry) => (entry.label ?? entry.value).toLowerCase().includes(q));
@@ -743,8 +728,8 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
   // The active option is tracked by value, so highlight survives the
   // items staying mounted while the query hides and shows them.
   const activeValue = signal<string | undefined>(undefined);
-  const optionIdOf = (value: string): string => {
-    const at = (props.items ?? []).findIndex((entry) => entry.value === value);
+  const optionIdOf = (optionValue: string): string => {
+    const at = items.findIndex((entry) => entry.value === optionValue);
     return `${listId}-opt-${at}`;
   };
   const move = (delta: number): void => {
@@ -763,9 +748,9 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
     if (next && !s.isOpen()) openSelection();
     s.setOpen(next);
   };
-  const commit = (value: string): void => {
-    select(value);
-    if (!props.multiple) {
+  const commit = (next: string): void => {
+    select(next);
+    if (!multiple) {
       query("");
       setOpen(false);
     }
@@ -794,11 +779,11 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
   };
   const inputProps = {
     value: () => query(),
-    onInput: (v: string) => query(v),
-    onKeydown,
-    onFocus: () => setOpen(true),
+    "on:input": (e: Event) => query((e.target as HTMLInputElement).value),
+    "on:keydown": onKeydown,
+    "on:focus": () => setOpen(true),
     state: s.state,
-    ariaControls: listId,
+    "aria-controls": listId,
     activeDescendant: (): string | undefined =>
       s.isOpen() && activeValue() !== undefined ? optionIdOf(activeValue()!) : undefined,
   };
@@ -816,7 +801,7 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
       }
       return entries;
     }, (record) => {
-      const entry = (props.items ?? []).find((e) => optionIdOf(e.value) === record.node.id);
+      const entry = items.find((e) => optionIdOf(e.value) === record.node.id);
       if (entry) activeValue(entry.value);
     });
   };
@@ -825,7 +810,7 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
     <Portal to="body">
       <ComboboxContent
         state={s.state}
-        chips={props.multiple}
+        chips={multiple}
         anchor={() => wrapperNode}
         empty={() => matches().length === 0}
         onDismiss={() => setOpen(false)}
@@ -833,9 +818,9 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
       >
         <ComboboxList
           id={listId}
-          items={props.items}
+          items={items}
           query={query}
-          filter={props.filter}
+          filter={filter}
           selected={(v) => selectedList().includes(v)}
           active={activeValue}
           empty={() => matches().length === 0}
@@ -846,12 +831,14 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
       </ComboboxContent>
     </Portal>
   ) : null;
-  if (props.multiple) {
+  if (multiple) {
     return (
       <ComboboxChips
+        class={cls}
+        {...attrs}
         chips={() => selectedList().map((v) => (
           <ComboboxChip value={v} onRemove={() => select(v)}>
-            {(props.items ?? []).find((entry) => entry.value === v)?.label ?? v}
+            {items.find((entry) => entry.value === v)?.label ?? v}
           </ComboboxChip>
         ))}
         wire={(node) => {
@@ -867,8 +854,10 @@ export default function Combobox(props: ComboboxProps): JSX.Element {
   return (
     <ComboboxInput
       {...inputProps}
+      class={cls}
+      {...attrs}
       showTrigger={true}
-      showClear={props.showClear}
+      showClear={showClear}
       onToggle={() => setOpen(!s.isOpen())}
       onClear={() => {
         select("");

@@ -20,6 +20,7 @@ Nine named parts ship beside the default `Sheet` for custom composition: `SheetT
 | `closeOnOutside` | `boolean` | `true` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The panel body |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `side` is the edge the panel mounts on; it sets `data-side` and the slide variant. `title` renders as a wired `SheetTitle` (the panel's `aria-labelledby` target) and `description` as a wired `SheetDescription` (the `aria-describedby` target).
 
@@ -30,6 +31,7 @@ A bare button; wire its click to your own signal write.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The trigger label |
+Accepts all native `button` attributes (forwarded to the root element).
 
 ### SheetClose
 
@@ -39,6 +41,7 @@ The X button with its `sr-only` "Close" label; `SheetContent` renders the same s
 | ---- | ---- | ------- |
 | `state` | `() => "open" \| "closed"` | `-` |
 | `onClose` | `() => void` | `-` |
+Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned dismiss).
 
 ### SheetPortal
 
@@ -55,6 +58,7 @@ The screen-covering backdrop `div` carrying `data-slot="sheet-overlay"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `state` | `() => "open" \| "closed"` | `-` |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SheetContent
 
@@ -64,14 +68,13 @@ The `role="dialog"` panel carrying `data-slot="sheet-content"`: focus trap plus 
 | ---- | ---- | ------- |
 | `state` | `() => "open" \| "closed"` | `-` |
 | `side` | `"top" \| "right" \| "bottom" \| "left"` | `"right"` |
-| `labelledBy` | `string` | `-` |
-| `describedBy` | `string` | `-` |
 | `showCloseButton` | `boolean` | `true` |
 | `closeOnEscape` | `boolean` | `true` |
 | `closeOnOutside` | `boolean` | `true` |
 | `onClose` | `() => void` | `-` |
 | `onExited` | `() => void` | `-` |
 | `children` | `HellaChildren` | The panel body |
+Accepts all native `div` attributes (forwarded to the root element). Pass the wired ids as the panel's `aria-labelledby` and `aria-describedby` attrs - in the composed `Sheet` the root threads them for you.
 
 ### SheetHeader
 
@@ -80,6 +83,7 @@ The top grouping `div` carrying `data-slot="sheet-header"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title and description nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SheetFooter
 
@@ -88,6 +92,7 @@ The bottom grouping `div` carrying `data-slot="sheet-footer"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Action nodes, typically buttons |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### SheetTitle
 
@@ -97,6 +102,7 @@ The heading: an `h2` carrying `data-slot="sheet-title"` whose `id` the panel's `
 | ---- | ---- | ------- |
 | `id` | `string` | `-` |
 | `children` | `HellaChildren` | The title text |
+Accepts all native `h2` attributes (forwarded to the root element).
 
 ### SheetDescription
 
@@ -106,6 +112,7 @@ The supporting line: a `p` carrying `data-slot="sheet-description"` whose `id` t
 | ---- | ---- | ------- |
 | `id` | `string` | `-` |
 | `children` | `HellaChildren` | The description text |
+Accepts all native `p` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
 

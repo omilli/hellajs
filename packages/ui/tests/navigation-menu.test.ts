@@ -5,6 +5,7 @@ import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import type { HellaNode } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   navigationMenuPartVariants,
   navigationMenuVariants,
   renderVariant,
@@ -290,6 +291,29 @@ describe("navigation-menu", () => {
     handle.unmount();
     expect(container.contains(indicator)).toBe(false);
     expect(() => window.dispatchEvent(new Event("resize"))).not.toThrow();
+  });
+
+  test.each(navigationMenuVariants)("$format/$style forwards user attrs onto the bar root across all four variants", (variant) => {
+    const bar = renderVariant(variant, { "aria-label": "site" });
+    expect(bar.getAttribute("aria-label")).toBe("site");
+  });
+
+  test.each(navigationMenuVariants)("$format/$style fires a user on:click handler on the bar root across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const bar = renderVariant(variant, { "on:click": userClick });
+    bar.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(navigationMenuVariants)("$format/$style merges a user class into the bar root's class across all four variants", (variant) => {
+    const bar = renderVariant(variant, { class: "user-class" });
+    expect(classTokens(bar).at(-1)).toBe("user-class");
+  });
+
+  test.each(navigationMenuPartVariants.filter((variant) => variant.part === "Viewport"))("$format/$style viewport part re-emits a user-supplied id onto the slot", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ id: "custom-viewport", active: () => false }), container);
+    expect(container.querySelector("[data-slot='navigation-menu-viewport']")!.getAttribute("id")).toBe("custom-viewport");
   });
 
   test("keeps structural parity across all four variants", () => {

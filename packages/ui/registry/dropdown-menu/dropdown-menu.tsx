@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/dom";
-import type { HellaChildren, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, Placement } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -214,13 +214,13 @@ const chevronIcon = (): JSX.Element => (
   </svg>
 );
 
-interface DropdownMenuTriggerProps {
+interface DropdownMenuTriggerProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger button; the composed DropdownMenu renders the same shape wired to toggle + aria state. */
-export function DropdownMenuTrigger(props: DropdownMenuTriggerProps): JSX.Element {
+export function DropdownMenuTrigger({ children, class: cls, ...attrs }: DropdownMenuTriggerProps): JSX.Element {
   return (
     <button
       type="button"
@@ -228,18 +228,18 @@ export function DropdownMenuTrigger(props: DropdownMenuTriggerProps): JSX.Elemen
       aria-haspopup="menu"
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </button>
   );
 }
 
-interface DropdownMenuContentProps {
+interface DropdownMenuContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
-  id?: string;
   side?: AnchorSide;
   align?: AnchorAlign;
   /** Gap between the anchor and the content edge, in px. Default 4. */
@@ -258,11 +258,11 @@ interface DropdownMenuContentProps {
   class?: string;
 }
 
-export function DropdownMenuContent(props: DropdownMenuContentProps): JSX.Element {
-  const side = props.side ?? "bottom";
-  const align = props.align ?? "start";
-  const alignOffset = props.alignOffset ?? 0;
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function DropdownMenuContent({ state, id, side: sideProp, align: alignProp, sideOffset, alignOffset: alignOffsetProp, anchor, onDismiss, onExited, onArrowLeft, children, class: cls, ...attrs }: DropdownMenuContentProps): JSX.Element {
+  const side = sideProp ?? "bottom";
+  const align = alignProp ?? "start";
+  const alignOffset = alignOffsetProp ?? 0;
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -273,40 +273,40 @@ export function DropdownMenuContent(props: DropdownMenuContentProps): JSX.Elemen
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return (
     <div
       role="menu"
       tabindex="-1"
-      id={props.id}
+      id={id}
       data-slot="dropdown-menu-content"
-      data-state={state()}
+      data-state={stateOf()}
       data-side={side}
       data-align={align}
       class={
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: props.sideOffset ?? 4 }));
+        const anchorEl = anchor?.();
+        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 4 }));
         if (alignOffset !== 0) {
           // Cross-axis shift over the placed coordinates; the placement axis
           // stays owned by anchorPosition's left/top writes.
           node.style.translate = side === "top" || side === "bottom" ? `${alignOffset}px 0` : `0 ${alignOffset}px`;
         }
-        if (props.onDismiss) {
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
-          const onSelect = (): void => props.onDismiss?.();
+        if (onDismiss) {
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
+          const onSelect = (): void => onDismiss?.();
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
         wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
-        const onKey = menuKeyDown(props.onArrowLeft)(node);
+        const onKey = menuKeyDown(onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
         // Focus moves to the first activatable item on open (the content
@@ -316,7 +316,7 @@ export function DropdownMenuContent(props: DropdownMenuContentProps): JSX.Elemen
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -325,88 +325,88 @@ export function DropdownMenuContent(props: DropdownMenuContentProps): JSX.Elemen
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface DropdownMenuPartProps {
+interface DropdownMenuPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function DropdownMenuGroup(props: DropdownMenuPartProps): JSX.Element {
+export function DropdownMenuGroup({ children, class: cls, ...attrs }: DropdownMenuPartProps): JSX.Element {
   return (
     <div
       data-slot="dropdown-menu-group"
       class={
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface DropdownMenuItemProps {
+interface DropdownMenuItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   destructive?: boolean;
   inset?: boolean;
-  disabled?: boolean;
-  onclick?: () => void;
   /** Shortcut text rendered as a trailing Shortcut span. */
   shortcut?: string;
   class?: string;
 }
 
-export function DropdownMenuItem(props: DropdownMenuItemProps): JSX.Element {
+export function DropdownMenuItem({ destructive, inset, disabled, "on:click": userClick, shortcut: shortcutSlot, children, class: cls, ...attrs }: DropdownMenuItemProps): JSX.Element {
   return (
     <div
       role="menuitem"
       tabindex="-1"
       data-slot="dropdown-menu-item"
-      data-variant={props.destructive ? "destructive" : "default"}
-      data-inset={props.inset ? "true" : undefined}
-      data-disabled={props.disabled ? "true" : undefined}
-      aria-disabled={props.disabled ? "true" : undefined}
+      data-variant={destructive ? "destructive" : "default"}
+      data-inset={inset ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
+      aria-disabled={disabled ? "true" : undefined}
       class={
         // @hella:compose
-        [item, props.class]
+        [item, cls]
         // @hella:end
       }
-      on:click={() => {
-        if (props.disabled) return;
-        props.onclick?.();
+      on:click={function (e) {
+        if (disabled) return;
+        userClick?.call(this, e);
         closeAllMenus();
       }}
+      {...attrs}
     >
-      {props.children}
-      {() => (props.shortcut !== undefined ? <DropdownMenuShortcut>{props.shortcut}</DropdownMenuShortcut> : null)}
+      {children}
+      {() => (shortcutSlot !== undefined ? <DropdownMenuShortcut>{shortcutSlot}</DropdownMenuShortcut> : null)}
     </div>
   );
 }
 
-interface DropdownMenuCheckboxItemProps {
+interface DropdownMenuCheckboxItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   /** Checked state. A boolean seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`. */
   checked?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
   class?: string;
 }
 
-export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): JSX.Element {
-  const accessor = typeof props.checked === "function" ? props.checked : undefined;
-  const internal = signal(typeof props.checked === "boolean" ? props.checked : false);
+export function DropdownMenuCheckboxItem({ checked: checkedProp, onCheckedChange, disabled, children, class: cls, ...attrs }: DropdownMenuCheckboxItemProps): JSX.Element {
+  const accessor = typeof checkedProp === "function" ? checkedProp : undefined;
+  const internal = signal(typeof checkedProp === "boolean" ? checkedProp : false);
   const checked = (): boolean => (accessor ? accessor() : internal());
   const toggle = (): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const next = !checked();
     if (!accessor) internal(next);
-    props.onCheckedChange?.(next);
+    onCheckedChange?.(next);
     closeAllMenus();
   };
   return (
@@ -416,14 +416,15 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): 
       data-slot="dropdown-menu-checkbox-item"
       aria-checked={checked() ? "true" : "false"}
       data-state={checked() ? "checked" : "unchecked"}
-      data-disabled={props.disabled ? "true" : undefined}
-      aria-disabled={props.disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
+      aria-disabled={disabled ? "true" : undefined}
       class={
         // @hella:compose
-        [checkItem, props.class]
+        [checkItem, cls]
         // @hella:end
       }
       on:click={toggle}
+      {...attrs}
     >
       <span
         data-slot="dropdown-menu-indicator"
@@ -435,12 +436,12 @@ export function DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps): 
       >
         {() => (checked() ? checkIcon() : null)}
       </span>
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface DropdownMenuRadioGroupProps {
+interface DropdownMenuRadioGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   items?: MenuEntry[];
   /** Controlled selected value. When given, the group never writes its internal signal and `onValueChange` reports the requested selection. */
@@ -449,24 +450,25 @@ interface DropdownMenuRadioGroupProps {
   class?: string;
 }
 
-export function DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps): JSX.Element {
+export function DropdownMenuRadioGroup({ items, value: valueProp, onValueChange, children, class: cls, ...attrs }: DropdownMenuRadioGroupProps): JSX.Element {
   const internal = signal("");
-  const current = (): string => (props.value !== undefined ? props.value() : internal());
+  const current = (): string => (valueProp !== undefined ? valueProp() : internal());
   const select = (value: string): void => {
-    if (props.value === undefined) internal(value);
-    props.onValueChange?.(value);
+    if (valueProp === undefined) internal(value);
+    onValueChange?.(value);
   };
   return (
     <div
       data-slot="dropdown-menu-radio-group"
       class={
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
-      {(props.items ?? []).map((entry) => (
+      {children}
+      {(items ?? []).map((entry) => (
         <DropdownMenuRadioItem
           value={entry.value}
           checked={() => current() === entry.value}
@@ -480,39 +482,39 @@ export function DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps): JSX.
   );
 }
 
-interface DropdownMenuRadioItemProps {
+interface DropdownMenuRadioItemProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   value?: string;
   /** Checked state. A boolean reads statically; an accessor keeps the item reactive against its owning group. */
   checked?: boolean | (() => boolean);
   onSelect?: () => void;
-  disabled?: boolean;
   class?: string;
 }
 
-export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps): JSX.Element {
+export function DropdownMenuRadioItem({ value, checked: checkedProp, onSelect, disabled, children, class: cls, ...attrs }: DropdownMenuRadioItemProps): JSX.Element {
   const checked = (): boolean =>
-    typeof props.checked === "function" ? props.checked() : props.checked ?? false;
+    typeof checkedProp === "function" ? checkedProp() : checkedProp ?? false;
   return (
     <div
       role="menuitemradio"
       tabindex="-1"
       data-slot="dropdown-menu-radio-item"
-      data-value={props.value}
+      data-value={value}
       aria-checked={checked() ? "true" : "false"}
       data-state={checked() ? "checked" : "unchecked"}
-      data-disabled={props.disabled ? "true" : undefined}
-      aria-disabled={props.disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
+      aria-disabled={disabled ? "true" : undefined}
       class={
         // @hella:compose
-        [radioItem, props.class]
+        [radioItem, cls]
         // @hella:end
       }
       on:click={() => {
-        if (props.disabled) return;
-        props.onSelect?.();
+        if (disabled) return;
+        onSelect?.();
         closeAllMenus();
       }}
+      {...attrs}
     >
       <span
         data-slot="dropdown-menu-indicator"
@@ -524,63 +526,71 @@ export function DropdownMenuRadioItem(props: DropdownMenuRadioItemProps): JSX.El
       >
         {() => (checked() ? circleIcon() : null)}
       </span>
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface DropdownMenuLabelProps {
+interface DropdownMenuLabelProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   inset?: boolean;
   class?: string;
 }
 
-export function DropdownMenuLabel(props: DropdownMenuLabelProps): JSX.Element {
+export function DropdownMenuLabel({ inset, children, class: cls, ...attrs }: DropdownMenuLabelProps): JSX.Element {
   return (
     <div
       data-slot="dropdown-menu-label"
-      data-inset={props.inset ? "true" : undefined}
+      data-inset={inset ? "true" : undefined}
       class={
         // @hella:compose
-        [label, props.class]
+        [label, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function DropdownMenuSeparator(props: DropdownMenuPartProps): JSX.Element {
+export function DropdownMenuSeparator({ class: cls, ...attrs }: DropdownMenuPartProps): JSX.Element {
   return (
     <div
       role="separator"
       data-slot="dropdown-menu-separator"
       class={
         // @hella:compose
-        [separator, props.class]
+        [separator, cls]
         // @hella:end
       }
+      {...attrs}
     />
   );
 }
 
-export function DropdownMenuShortcut(props: DropdownMenuPartProps): JSX.Element {
+interface DropdownMenuShortcutProps extends HTMLAttributes<"span"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function DropdownMenuShortcut({ children, class: cls, ...attrs }: DropdownMenuShortcutProps): JSX.Element {
   return (
     <span
       data-slot="dropdown-menu-shortcut"
       class={
         // @hella:compose
-        [shortcut, props.class]
+        [shortcut, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }
 
-interface DropdownMenuSubTriggerProps {
+interface DropdownMenuSubTriggerProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   inset?: boolean;
   /** Resolves the open state for `aria-expanded`/`data-state`; the composed Sub wires it. */
@@ -590,33 +600,33 @@ interface DropdownMenuSubTriggerProps {
   class?: string;
 }
 
-export function DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps): JSX.Element {
-  const state = (): "open" | "closed" => props.state?.() ?? "closed";
+export function DropdownMenuSubTrigger({ inset, state, onOpen, children, class: cls, ...attrs }: DropdownMenuSubTriggerProps): JSX.Element {
+  const stateOf = (): "open" | "closed" => state?.() ?? "closed";
   const teardown: (() => void)[] = [];
   return (
     <div
       role="menuitem"
       tabindex="-1"
       data-slot="dropdown-menu-sub-trigger"
-      data-state={state()}
-      data-inset={props.inset ? "true" : undefined}
+      data-state={stateOf()}
+      data-inset={inset ? "true" : undefined}
       aria-haspopup="menu"
-      aria-expanded={state() === "open" ? "true" : "false"}
+      aria-expanded={stateOf() === "open" ? "true" : "false"}
       class={
         // @hella:compose
-        [subTrigger, props.class]
+        [subTrigger, cls]
         // @hella:end
       }
-      on:click={() => props.onOpen?.()}
+      on:click={() => onOpen?.()}
       hook:afterMount={(node) => {
-        if (!(node instanceof HTMLElement) || !props.onOpen) return;
+        if (!(node instanceof HTMLElement) || !onOpen) return;
         // Hover intent: ~100ms rest opens, leaving before it fires cancels.
         let timer: ReturnType<typeof setTimeout> | null = null;
         const enter = (): void => {
           if (timer !== null) return;
           timer = setTimeout(() => {
             timer = null;
-            props.onOpen?.();
+            onOpen?.();
           }, 100);
         };
         const leave = (): void => {
@@ -635,14 +645,15 @@ export function DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps): JSX.
       hook:beforeDestroy={() => {
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
       {chevronIcon()}
     </div>
   );
 }
 
-interface DropdownMenuSubContentProps {
+interface DropdownMenuSubContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
   side?: AnchorSide;
   align?: AnchorAlign;
@@ -661,10 +672,10 @@ interface DropdownMenuSubContentProps {
   class?: string;
 }
 
-export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): JSX.Element {
-  const side = props.side ?? "right";
-  const align = props.align ?? "start";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function DropdownMenuSubContent({ state, side: sideProp, align: alignProp, sideOffset, anchor, onDismiss, onExited, onArrowLeft, onPointerEnter, children, class: cls, ...attrs }: DropdownMenuSubContentProps): JSX.Element {
+  const side = sideProp ?? "right";
+  const align = alignProp ?? "start";
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
 
@@ -675,7 +686,7 @@ export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): JSX.
   // The exit runs unwired: flipping to "closed" tears the layer down
   // immediately; reopening remounts fresh wirings with the content.
   effect(() => {
-    if (state() === "closed") disposeWirings();
+    if (stateOf() === "closed") disposeWirings();
   });
 
   return (
@@ -683,39 +694,39 @@ export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): JSX.
       role="menu"
       tabindex="-1"
       data-slot="dropdown-menu-sub-content"
-      data-state={state()}
+      data-state={stateOf()}
       data-side={side}
       data-align={align}
       class={
         // @hella:compose
-        [subContent, props.class]
+        [subContent, cls]
         // @hella:end
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
-        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: props.sideOffset ?? 0 }));
-        if (props.onDismiss) {
+        const anchorEl = anchor?.();
+        if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: sideOffset ?? 0 }));
+        if (onDismiss) {
           // Submenu layers register their own dismissal: Escape pops one
           // level, an outside pointerdown closes the sub before the parent.
-          wirings.push(layerDismissal(() => [node, anchorEl ?? null], props.onDismiss));
-          const onSelect = (): void => props.onDismiss?.();
+          wirings.push(layerDismissal(() => [node, anchorEl ?? null], onDismiss));
+          const onSelect = (): void => onDismiss?.();
           document.addEventListener(SELECT_EVENT, onSelect);
           wirings.push(() => document.removeEventListener(SELECT_EVENT, onSelect));
         }
         wirings.push(menuTypeahead(node, () => menuEntries(node), (entry) => entry.node.focus()));
-        const onKey = menuKeyDown(props.onArrowLeft)(node);
+        const onKey = menuKeyDown(onArrowLeft)(node);
         node.addEventListener("keydown", onKey);
         wirings.push(() => node.removeEventListener("keydown", onKey));
-        if (props.onPointerEnter) {
-          const onPointerEnter = (): void => props.onPointerEnter?.();
-          node.addEventListener("pointerenter", onPointerEnter);
-          wirings.push(() => node.removeEventListener("pointerenter", onPointerEnter));
+        if (onPointerEnter) {
+          const onPointerEnterListener = (): void => onPointerEnter?.();
+          node.addEventListener("pointerenter", onPointerEnterListener);
+          wirings.push(() => node.removeEventListener("pointerenter", onPointerEnterListener));
         }
         const first = menuItems(node)[0];
         (first ?? node).focus();
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -724,19 +735,20 @@ export function DropdownMenuSubContent(props: DropdownMenuSubContentProps): JSX.
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface DropdownMenuSubProps {
+interface DropdownMenuSubProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   content?: HellaChildren;
   class?: string;
 }
 
-export function DropdownMenuSub(props: DropdownMenuSubProps): JSX.Element {
+export function DropdownMenuSub({ content: contentSlot, children, class: cls, ...attrs }: DropdownMenuSubProps): JSX.Element {
   const s = menuOpenState({});
   let triggerNode: HTMLElement | undefined;
   let openTimer: ReturnType<typeof setTimeout> | null = null;
@@ -763,7 +775,7 @@ export function DropdownMenuSub(props: DropdownMenuSubProps): JSX.Element {
       aria-expanded={s.isOpen() ? "true" : "false"}
       class={
         // @hella:compose
-        [subTrigger, props.class]
+        [subTrigger, cls]
         // @hella:end
       }
       on:click={() => s.setOpen(true)}
@@ -801,8 +813,9 @@ export function DropdownMenuSub(props: DropdownMenuSubProps): JSX.Element {
         if (openTimer !== null) clearTimeout(openTimer);
         if (closeTimer !== null) clearTimeout(closeTimer);
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
       {chevronIcon()}
       {() => s.visible() && (
         <Portal to="body">
@@ -818,7 +831,7 @@ export function DropdownMenuSub(props: DropdownMenuSubProps): JSX.Element {
                 closeTimer = null;
               }
             }}
-            children={props.content}
+            children={contentSlot}
           />
         </Portal>
       )}
@@ -826,7 +839,7 @@ export function DropdownMenuSub(props: DropdownMenuSubProps): JSX.Element {
   );
 }
 
-interface DropdownMenuProps {
+interface DropdownMenuProps extends HTMLAttributes<"button"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
   children?: HellaChildren;
@@ -836,8 +849,8 @@ interface DropdownMenuProps {
 
 let dropdownMenuCount = 0;
 
-export default function DropdownMenu(props: DropdownMenuProps): JSX.Element {
-  const s = menuOpenState(props);
+export default function DropdownMenu({ open, onOpenChange, content: contentSlot, children, class: cls, ...attrs }: DropdownMenuProps): JSX.Element {
+  const s = menuOpenState({ open, onOpenChange });
   const contentId = `hella-dropdown-menu-content-${++dropdownMenuCount}`;
   let triggerNode: HTMLElement | undefined;
 
@@ -862,7 +875,7 @@ export default function DropdownMenu(props: DropdownMenuProps): JSX.Element {
       aria-controls={contentId}
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
       on:click={() => s.setOpen(!s.isOpen())}
@@ -875,8 +888,9 @@ export default function DropdownMenu(props: DropdownMenuProps): JSX.Element {
       hook:afterMount={(node) => {
         if (node instanceof HTMLElement) triggerNode = node;
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
       {() => s.visible() && (
         <Portal to="body">
           <DropdownMenuContent
@@ -885,7 +899,7 @@ export default function DropdownMenu(props: DropdownMenuProps): JSX.Element {
             anchor={() => triggerNode}
             onDismiss={() => s.setOpen(false)}
             onExited={s.finishExit}
-            children={props.content}
+            children={contentSlot}
           />
         </Portal>
       )}

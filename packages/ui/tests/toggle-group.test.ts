@@ -5,6 +5,8 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount and the component's roving wiring share one dom instance.
 import { html, mount, peekState } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   toggleGroupPartVariants,
@@ -189,6 +191,20 @@ describe("toggle-group", () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(toggleGroupVariants, { items, type: "single", title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the root across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(toggleGroupVariants, { items, type: "single", "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test.each(toggleGroupVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+    const { root } = mountToggleGroup(variant, { items, type: "single", class: "my-toggle-group" });
+    expect(classTokens(root).at(-1)).toBe("my-toggle-group");
+  });
+
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(toggleGroupVariants, { items, type: "single" });
     assertStructuralParity(toggleGroupVariants, { items, type: "multiple", variant: "outline", size: "lg" });
@@ -213,6 +229,22 @@ describe("toggle-group", () => {
       } else {
         expect(tokens.some((token) => token.startsWith("toggle-group-item"))).toBe(true);
       }
+    }
+  });
+
+  test("chains a user on:click on the item part with its owned select across all four variants", () => {
+    const userClick = mock(function (this: HTMLElement, e: Event) { void e; });
+    const onSelect = mock(() => {});
+    for (const variant of toggleGroupPartVariants) {
+      const container = setupContainer();
+      const rendered = variant.render({ value: "bold", onSelect, "on:click": userClick, children: "Bold" });
+      mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered, container);
+      const el = container.firstElementChild as HTMLElement;
+      userClick.mockClear();
+      onSelect.mockClear();
+      el.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(onSelect).toHaveBeenCalledTimes(1);
     }
   });
 });

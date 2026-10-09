@@ -1,18 +1,18 @@
 import { signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-interface ScrollBarProps {
+interface ScrollBarProps extends HTMLAttributes<"div"> {
+  class?: string;
   /** Axis the bar tracks and drags. Both orientations may be composed into one root. */
   orientation?: "vertical" | "horizontal";
   /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver on the viewport's content. */
   observe?: (target: Element, onGrow: () => void) => () => void;
-  class?: string;
 }
 
-export function ScrollBar(props: ScrollBarProps): JSX.Element {
-  const orientation = (): "vertical" | "horizontal" => props.orientation ?? "vertical";
+export function ScrollBar({ orientation: orientationProp, observe, class: cls, ...attrs }: ScrollBarProps): JSX.Element {
+  const orientation = (): "vertical" | "horizontal" => orientationProp ?? "vertical";
   const vertical = (): boolean => orientation() === "vertical";
 
   const length = signal(0);
@@ -55,7 +55,7 @@ export function ScrollBar(props: ScrollBarProps): JSX.Element {
       data-slot="scroll-area-scrollbar"
       data-orientation={orientation()}
       class={
-        cn("flex touch-none p-px transition-colors select-none absolute data-[orientation=vertical]:top-0 data-[orientation=vertical]:right-0 data-[orientation=vertical]:h-full data-[orientation=vertical]:w-2.5 data-[orientation=vertical]:border-l data-[orientation=vertical]:border-l-transparent data-[orientation=horizontal]:bottom-0 data-[orientation=horizontal]:left-0 data-[orientation=horizontal]:w-full data-[orientation=horizontal]:h-2.5 data-[orientation=horizontal]:flex-col data-[orientation=horizontal]:border-t data-[orientation=horizontal]:border-t-transparent", props.class)
+        cn("flex touch-none p-px transition-colors select-none absolute data-[orientation=vertical]:top-0 data-[orientation=vertical]:right-0 data-[orientation=vertical]:h-full data-[orientation=vertical]:w-2.5 data-[orientation=vertical]:border-l data-[orientation=vertical]:border-l-transparent data-[orientation=horizontal]:bottom-0 data-[orientation=horizontal]:left-0 data-[orientation=horizontal]:w-full data-[orientation=horizontal]:h-2.5 data-[orientation=horizontal]:flex-col data-[orientation=horizontal]:border-t data-[orientation=horizontal]:border-t-transparent", cls)
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
@@ -67,7 +67,7 @@ export function ScrollBar(props: ScrollBarProps): JSX.Element {
         view.addEventListener("scroll", measure, { passive: true });
         teardown.push(() => view.removeEventListener("scroll", measure));
         const content = view.firstElementChild;
-        if (content) teardown.push((props.observe ?? defaultObserve)(content, measure));
+        if (content) teardown.push((observe ?? defaultObserve)(content, measure));
         const thumbEl = node.querySelector<HTMLElement>("[data-slot='scroll-area-thumb']");
         if (thumbEl) {
           let startScroll = 0;
@@ -98,6 +98,7 @@ export function ScrollBar(props: ScrollBarProps): JSX.Element {
         bar = undefined;
         viewportEl = undefined;
       }}
+      {...attrs}
     >
       <div
         data-slot="scroll-area-thumb"
@@ -110,11 +111,11 @@ export function ScrollBar(props: ScrollBarProps): JSX.Element {
   );
 }
 
-interface ScrollAreaProps {
+interface ScrollAreaProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   /** Injectable content watcher forwarded to the internal vertical ScrollBar. */
   observe?: (target: Element, onGrow: () => void) => () => void;
-  class?: string;
 }
 
 /**
@@ -122,13 +123,14 @@ interface ScrollAreaProps {
  * a real scrolling viewport plus a vertical ScrollBar, and a horizontal bar
  * composes in as a child for both-axes scrolling.
  */
-export default function ScrollArea(props: ScrollAreaProps): JSX.Element {
+export default function ScrollArea({ observe, children, class: cls, ...attrs }: ScrollAreaProps): JSX.Element {
   return (
     <div
       data-slot="scroll-area"
       class={
-        cn("relative", props.class)
+        cn("relative", cls)
       }
+      {...attrs}
     >
       <div
         data-slot="scroll-area-viewport"
@@ -136,9 +138,9 @@ export default function ScrollArea(props: ScrollAreaProps): JSX.Element {
           cn("size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 overflow-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden")
         }
       >
-        <div data-slot="scroll-area-content">{props.children}</div>
+        <div data-slot="scroll-area-content">{children}</div>
       </div>
-      <ScrollBar observe={props.observe} />
+      <ScrollBar observe={observe} />
       <div data-slot="scroll-area-corner" />
     </div>
   );

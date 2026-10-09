@@ -5,6 +5,8 @@ import { resetTestState, delay } from "@utils/test-helpers.js";
 // specifier, so the harness mount shares one dom instance with the components.
 import { peekState } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   inlineStyles,
@@ -208,10 +210,11 @@ describe("input-otp", () => {
     expect(onComplete.mock.calls[0]).toEqual(["123456"]);
   });
 
-  test.each(inputOtpVariants)("$format/$style rejects edits that break the pattern mask", async (variant) => {
+  test.each(inputOtpVariants)("$format/$style rejects edits that break the pattern mask and re-emits the pattern attribute", async (variant) => {
     const onChange = mock((value: string) => value);
-    const root = renderVariant(variant, { length: 4, children: code(), pattern: /^\d+$/, onChange }) as HTMLElement;
+    const root = renderVariant(variant, { length: 4, children: code(), pattern: "^\\d+$", onChange }) as HTMLElement;
     await awaitWiring(root);
+    expect(control(root).getAttribute("pattern")).toBe("^\\d+$");
     focusInput(root);
     edit(root, "a", 1);
     expect(control(root).value).toBe("");
@@ -301,6 +304,20 @@ describe("input-otp", () => {
     expect(peekState(root)).toBeUndefined();
     edit(root, "9", 1);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(suites(), { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(suites(), { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test.each(inputOtpVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+    const root = renderVariant(variant, { length: 6, children: code(), class: "my-otp" }) as HTMLElement;
+    expect(classTokens(root).at(-1)).toBe("my-otp");
   });
 
   test("keeps structural parity across all four variants", () => {

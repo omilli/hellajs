@@ -1,4 +1,5 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { signal } from "@hellajs/core";
 import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount shares one dom instance with the components.
@@ -6,6 +7,7 @@ import { html, mount } from "@hellajs/dom";
 import {
   accordionPartVariants,
   accordionVariants,
+  assertAttrForwarded,
   assertStructuralParity,
   classTokens,
 } from "./helpers/variants";
@@ -157,6 +159,39 @@ describe("accordion", () => {
     assertStructuralParity(accordionVariants, { items });
   });
 
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(accordionVariants, { items, title: "Hella" }, "title", "Hella");
+  });
+
+  test("merges a user class into the root class across all four variants", () => {
+    for (const variant of accordionVariants) {
+      const { root } = mountAccordion(variant, { items, class: "acc-root" });
+      expect(classTokens(root)).toContain("acc-root");
+    }
+  });
+
+  test("chains a user on:click with the owned toggle on a trigger across all four variants", () => {
+    for (const variant of accordionPartVariants.filter((candidate) => candidate.part === "Trigger")) {
+      const userClick = mock(() => {});
+      const open = signal(false);
+      const container = setupContainer();
+      const props: Record<string, unknown> = {
+        id: "t1",
+        active: () => open(),
+        onToggle: () => open(!open()),
+        "on:click": userClick,
+        children: "Toggle",
+      };
+      const rendered = variant.render(props as never);
+      mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered, container);
+      const trigger = container.querySelector('[data-slot="accordion-trigger"]')!;
+      trigger.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(open()).toBe(true);
+      expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    }
+  });
+
   test("renders every named part with its data-slot and state across all four variants", () => {
     for (const variant of accordionPartVariants) {
       const container = setupContainer();
@@ -168,10 +203,10 @@ describe("accordion", () => {
         props.id = "trigger-id";
         props.active = () => true;
         props.onToggle = () => {};
-        props.controls = "content-id";
+        props["aria-controls"] = "content-id";
       } else {
         props.id = "content-id";
-        props.labelledBy = "trigger-id";
+        props["aria-labelledby"] = "trigger-id";
         props.active = () => false;
       }
       const rendered = variant.render(props as never);

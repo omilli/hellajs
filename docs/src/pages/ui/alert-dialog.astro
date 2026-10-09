@@ -20,7 +20,7 @@ const description = "Interactive Alert Dialog demo running the site's built regi
     <p>Opens a portal-mounted alert dialog with wired title and description, an Action/Cancel footer, and no outside-click dismissal: escape or the buttons are the only ways out.</p>
   </Component>
   <Component heading="Manual Parts" Demo={<AlertDialogManualDemo client:load />} code="AlertDialogManualDemo">
-    <p>The same panel composed from the exported parts: overlay and content portaled by hand, both fed the state accessor; labelledBy and describedBy point at the title and description ids you assign.</p>
+    <p>The same panel composed from the exported parts: overlay and content portaled by hand, both fed the state accessor; the `aria-labelledby` and `aria-describedby` attrs point at the title and description ids you assign.</p>
   </Component>
 
   <AlertDialogContent />

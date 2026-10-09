@@ -14,7 +14,9 @@ The list row: carries `data-variant`, `data-size`, and the selection attributes 
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | Media, content, and action nodes |
 
-`selected` marks the row interactively: pass a boolean or a reactive function and the row renders `data-selected` plus `aria-selected`, updating as the signal changes. Rows carry no click wiring of their own; delegate the click on a wrapping element, find the row through its `data-slot`, and flip the signal.
+Accepts all native `div` attributes (forwarded to the root element).
+
+`selected` marks the row interactively: pass a boolean or a reactive function and the row renders `data-selected` plus `aria-selected`, updating as the signal changes. Rows carry no click wiring of their own; pass `on:click` to the row directly, or delegate on a wrapping element, find the row through its `data-slot`, and flip the signal.
 
 ### ItemGroup
 
@@ -24,9 +26,13 @@ The list container: a `role="list"` wrapper for related rows.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Rows and separators |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### ItemSeparator
 
 The rule between rows: a `role="separator"` div. Takes an optional `class`.
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### ItemMedia
 
@@ -37,6 +43,8 @@ The leading sizing box before the content stack; `variant="icon"` or `"image"` p
 | `variant` | `"default" \| "icon" \| "image"` | `"default"` |
 | `children` | `HellaChildren` | Icon or image node |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### ItemContent
 
 The title and description stack.
@@ -44,6 +52,8 @@ The title and description stack.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title and description nodes |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### ItemTitle
 
@@ -53,6 +63,8 @@ The row heading: a `div` carrying `data-slot="item-title"`.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The title node |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### ItemDescription
 
 The supporting line: a `p` clamped to two lines.
@@ -60,6 +72,8 @@ The supporting line: a `p` clamped to two lines.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The description node |
+
+Accepts all native `p` attributes (forwarded to the root element).
 
 ### ItemActions
 
@@ -69,6 +83,8 @@ The trailing action slot.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Action nodes, typically buttons |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### ItemHeader
 
 A full-width row that breaks out of the flex-wrap flow, for titled sections.
@@ -77,6 +93,8 @@ A full-width row that breaks out of the flex-wrap flow, for titled sections.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Header nodes |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### ItemFooter
 
 A full-width row that breaks out of the flex-wrap flow, for footer content.
@@ -84,5 +102,7 @@ A full-width row that breaks out of the flex-wrap flow, for footer content.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Footer nodes |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

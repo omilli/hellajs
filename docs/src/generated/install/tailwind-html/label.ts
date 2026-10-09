@@ -1,21 +1,20 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-interface LabelProps {
-  children?: HellaChildren;
-  for?: string;
+interface LabelProps extends HTMLAttributes<"label"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Label(props: LabelProps): HellaNode {
+export default function Label({ children, class: cls, ...attrs }: LabelProps): HellaNode {
   return html`
     <label
       data-slot="label"
-      for="${props.for}"
       class="${
-        cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", props.class)
+        cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", cls)
       }"
-    >${() => props.children}</label>
+      ...${attrs}
+    >${() => children}</label>
   ` as HellaNode;
 }

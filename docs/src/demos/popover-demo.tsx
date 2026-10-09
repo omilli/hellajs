@@ -35,7 +35,7 @@ export function PopoverManualDemo() {
     <>
       <Button
         hook:afterMount={(node: Element) => { trigger = node; }}
-        onclick={() => open(!open())}
+        on:click={() => open(!open())}
       >Open</Button>
       {() => open() && (
         <Portal to="body">

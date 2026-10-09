@@ -12,6 +12,7 @@ The composed root takes the two halves as props, not as children slots; open con
 | `defaultOpen` | `boolean` | `-` |
 | `onOpenChange` | `(open: boolean) => void` | `-` |
 | `class` | `string` | `-` |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ## Controlled and Uncontrolled
 
@@ -25,8 +26,8 @@ The header row: a button whose `active` accessor drives `data-state` and `aria-e
 | ---- | ---- | ------- |
 | `active` | `() => boolean` | `-` |
 | `onToggle` | `() => void` | `-` |
-| `controls` | `string` | `-` |
 | `children` | `HellaChildren` | The label inside the button |
+Accepts all native `button` attributes (forwarded to the root element).
 
 ### CollapsibleContent
 
@@ -34,8 +35,7 @@ The body region: a `role="region"` div whose grid rows flip between `0fr` and `1
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `active` | `() => boolean` | `-` |
-| `id` | `string` | `-` |
 | `children` | `HellaChildren` | The body inside the region |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition. The composed root is a thin wrapper that derives the region id and threads state, so replacing it with the parts loses nothing.

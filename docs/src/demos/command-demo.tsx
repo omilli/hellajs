@@ -25,7 +25,7 @@ export function CommandPaletteDemo() {
   return (
     <>
       <div class="demo-row">
-        <Button variant="outline" onclick={() => paletteOpen(true)}>Open palette ⌘K</Button>
+        <Button variant="outline" on:click={() => paletteOpen(true)}>Open palette ⌘K</Button>
       </div>
       <CommandDialog open={paletteOpen} onClose={closePalette} title="Command Palette" description="Search for a command to run...">
         <CommandInput placeholder="Type a command or search..." />

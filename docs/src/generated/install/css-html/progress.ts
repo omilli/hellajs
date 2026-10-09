@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
 
@@ -30,14 +30,14 @@ const indicator = style("progress-indicator", {
 
 type ProgressValue = number | null | undefined;
 
-interface ProgressProps {
+interface ProgressProps extends HTMLAttributes<"div"> {
+  class?: string;
   /** 0-100; null (or a reactive fn reading null) drives the indeterminate state. */
   value?: number | null | (() => number | null);
-  class?: string;
 }
 
-export default function Progress(props: ProgressProps): HellaNode {
-  const current = (): ProgressValue => (typeof props.value === "function" ? props.value() : props.value);
+export default function Progress({ value, class: cls, ...attrs }: ProgressProps): HellaNode {
+  const current = (): ProgressValue => (typeof value === "function" ? value() : value);
   const state = (): string => {
     const v = current();
     return v == null ? "indeterminate" : v >= 100 ? "complete" : "loading";
@@ -51,8 +51,9 @@ export default function Progress(props: ProgressProps): HellaNode {
       aria-valuenow="${() => current() ?? null}"
       data-state="${state}"
       class="${
-        [base, props.class]
+        [base, cls]
       }"
+      ...${attrs}
     >
       <div
         data-slot="progress-indicator"

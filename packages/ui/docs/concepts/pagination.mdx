@@ -13,6 +13,8 @@ The landmark `nav` wrapper.
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The list |
 
+Accepts all native `nav` attributes (forwarded to the root element).
+
 ### PaginationContent
 
 The list: a `ul` wrapping one `PaginationItem` per entry.
@@ -20,6 +22,8 @@ The list: a `ul` wrapping one `PaginationItem` per entry.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The list items |
+
+Accepts all native `ul` attributes (forwarded to the root element).
 
 ### PaginationItem
 
@@ -29,6 +33,8 @@ One list slot: an `li` holding a link, the ellipsis, or a nav control.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The entry's node |
 
+Accepts all native `li` attributes (forwarded to the root element).
+
 ### PaginationLink
 
 The page anchor, styled through the button vocabulary: ghost inactive, outline active.
@@ -36,12 +42,12 @@ The page anchor, styled through the button vocabulary: ghost inactive, outline a
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `isActive` | `boolean` | `-` |
-| `href` | `string` | `-` |
-| `onclick` | `() => void` | `-` |
 | `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"icon"` |
 | `children` | `HellaChildren` | The page label |
 
-`isActive` renders `aria-current="page"`, `data-active`, and swaps the ghost variant for the outline one. `href` is an optional passthrough with no router coupling; `onclick` replaces navigation for signal-driven paging.
+Accepts all native `a` attributes (forwarded to the root element).
+
+`isActive` renders `aria-current="page"`, `data-active`, and swaps the ghost variant for the outline one. `href` forwards natively with no router coupling; pass `on:click` instead of a URL for signal-driven paging.
 
 ### PaginationPrevious
 
@@ -50,8 +56,8 @@ The previous-page anchor: an `aria-label="Go to previous page"` link with the le
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `isActive` | `boolean` | `-` |
-| `href` | `string` | `-` |
-| `onclick` | `() => void` | `-` |
+
+Accepts all native `a` attributes (forwarded to the root element).
 
 ### PaginationNext
 
@@ -60,11 +66,13 @@ The next-page anchor: an `aria-label="Go to next page"` link with the right chev
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `isActive` | `boolean` | `-` |
-| `href` | `string` | `-` |
-| `onclick` | `() => void` | `-` |
+
+Accepts all native `a` attributes (forwarded to the root element).
 
 ### PaginationEllipsis
 
 The overflow marker: an `aria-hidden` span with the ellipsis icon and a screen-reader-only "More pages" label.
+
+Accepts all native `span` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

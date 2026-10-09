@@ -1,6 +1,6 @@
 import { html, rovingTabIndex } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const variants = {
@@ -23,7 +23,8 @@ interface ToggleGroupEntry {
   disabled?: boolean;
 }
 
-interface ToggleGroupProps {
+interface ToggleGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: ToggleGroupEntry[];
   type: "single" | "multiple";
   /** Controlled single selection. */
@@ -34,19 +35,17 @@ interface ToggleGroupProps {
   onValueChange?: (value: string | string[]) => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-  class?: string;
 }
 
-interface ToggleGroupItemProps {
+interface ToggleGroupItemProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   value?: string;
   /** Pressed state. A boolean reads statically; an accessor keeps the manual part reactive. */
   pressed?: boolean | (() => boolean);
   onSelect?: () => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-  disabled?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /** The toggle variant maps, duplicated from the toggle entry (self-contained entries never cross-import). */
@@ -55,56 +54,53 @@ const toggleVariants = (options?: {
   size?: "default" | "sm" | "lg";
 }): string => ["group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs", variants[options?.variant ?? "default"], sizes[options?.size ?? "default"]].filter(Boolean).join(" ");
 
-export function ToggleGroupItem(props: ToggleGroupItemProps): HellaNode {
-  const pressed = (): boolean =>
-    typeof props.pressed === "function" ? props.pressed() : props.pressed ?? false;
-  const variant = props.variant ?? "default";
-  const size = props.size ?? "default";
+export function ToggleGroupItem({ value, pressed, onSelect, variant = "default", size = "default", disabled, "on:click": userClick, children, class: cls, ...attrs }: ToggleGroupItemProps): HellaNode {
+  const isPressed = (): boolean =>
+    typeof pressed === "function" ? pressed() : pressed ?? false;
 
   return html`
     <button
       type="button"
       data-slot="toggle-group-item"
-      value="${props.value}"
+      value="${value}"
       data-variant="${variant}"
       data-size="${size}"
       data-spacing="0"
-      aria-pressed="${() => (pressed() ? "true" : "false")}"
-      data-state="${() => (pressed() ? "on" : "off")}"
-      disabled="${props.disabled ? true : undefined}"
+      aria-pressed="${() => (isPressed() ? "true" : "false")}"
+      data-state="${() => (isPressed() ? "on" : "off")}"
+      disabled="${disabled ? true : undefined}"
       class="${
-        cn(toggleVariants({ variant, size }), "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10 data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l", props.class)
+        cn(toggleVariants({ variant, size }), "w-auto min-w-0 shrink-0 px-3 focus:z-10 focus-visible:z-10 data-[spacing=0]:rounded-none data-[spacing=0]:shadow-none data-[spacing=0]:first:rounded-l-md data-[spacing=0]:last:rounded-r-md data-[spacing=0]:data-[variant=outline]:border-l-0 data-[spacing=0]:data-[variant=outline]:first:border-l", cls)
       }"
-      e:click="${() => props.onSelect?.()}"
-    >${() => props.children}</button>
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); onSelect?.(); }}"
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-export default function ToggleGroup(props: ToggleGroupProps): HellaNode {
-  const variant = props.variant ?? "default";
-  const size = props.size ?? "default";
-  const pressedValues = props.items.filter((entry) => entry.pressed).map((entry) => entry.value);
+export default function ToggleGroup({ items, type, value, values, onValueChange, variant = "default", size = "default", class: cls, ...attrs }: ToggleGroupProps): HellaNode {
+  const pressedValues = items.filter((entry) => entry.pressed).map((entry) => entry.value);
   const internalSingle = signal(pressedValues[0] ?? "");
   const internalMulti = signal<Set<string>>(new Set(pressedValues));
   const wirings: (() => void)[] = [];
 
-  const isPressed = (value: string): boolean =>
-    props.type === "multiple"
-      ? (props.values !== undefined ? props.values() : [...internalMulti()]).includes(value)
-      : (props.value !== undefined ? props.value() : internalSingle()) === value;
+  const isPressed = (itemValue: string): boolean =>
+    type === "multiple"
+      ? (values !== undefined ? values() : [...internalMulti()]).includes(itemValue)
+      : (value !== undefined ? value() : internalSingle()) === itemValue;
 
-  const toggleItem = (value: string): void => {
-    if (props.type === "multiple") {
-      const current = props.values !== undefined ? props.values() : [...internalMulti()];
-      const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
-      if (props.values === undefined) internalMulti(new Set(next));
-      props.onValueChange?.(next);
+  const toggleItem = (itemValue: string): void => {
+    if (type === "multiple") {
+      const current = values !== undefined ? values() : [...internalMulti()];
+      const next = current.includes(itemValue) ? current.filter((v) => v !== itemValue) : [...current, itemValue];
+      if (values === undefined) internalMulti(new Set(next));
+      onValueChange?.(next);
       return;
     }
-    const current = props.value !== undefined ? props.value() : internalSingle();
-    const next = current === value ? "" : value;
-    if (props.value === undefined) internalSingle(next);
-    props.onValueChange?.(next);
+    const current = value !== undefined ? value() : internalSingle();
+    const next = current === itemValue ? "" : itemValue;
+    if (value === undefined) internalSingle(next);
+    onValueChange?.(next);
   };
 
   return html`
@@ -116,7 +112,7 @@ export default function ToggleGroup(props: ToggleGroupProps): HellaNode {
       data-spacing="0"
       style="--gap: 0"
       class="${
-        cn("group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs", props.class)
+        cn("group/toggle-group flex w-fit items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=default]:data-[variant=outline]:shadow-xs", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
@@ -127,8 +123,9 @@ export default function ToggleGroup(props: ToggleGroupProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (wirings.length) wirings.pop()!();
       }}"
+      ...${attrs}
     >
-      ${props.items.map((entry) => ToggleGroupItem({
+      ${items.map((entry) => ToggleGroupItem({
         value: entry.value,
         pressed: () => isPressed(entry.value),
         onSelect: () => {

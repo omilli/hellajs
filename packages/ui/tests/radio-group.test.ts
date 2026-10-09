@@ -5,7 +5,10 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount and the component's roving wiring share one dom instance.
 import { html, mount, peekState } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
+  classTokens,
   radioGroupPartVariants,
   radioGroupVariants,
 } from "./helpers/variants";
@@ -164,6 +167,20 @@ describe("radio-group", () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(radioGroupVariants, { items, title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the root across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(radioGroupVariants, { items, "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test.each(radioGroupVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+    const { root } = mountRadioGroup(variant, { items, class: "my-radio-group" });
+    expect(classTokens(root).at(-1)).toBe("my-radio-group");
+  });
+
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(radioGroupVariants, { items });
     assertStructuralParity(radioGroupVariants, { items, orientation: "vertical", name: "plan" });
@@ -181,6 +198,22 @@ describe("radio-group", () => {
       expect(el.getAttribute("data-state")).toBe("checked");
       expect(el.getAttribute("name")).toBe("plan");
       expect(el.querySelector("[data-slot='radio-group-indicator'] svg")).not.toBeNull();
+    }
+  });
+
+  test("chains a user on:click on the item part with its owned select across all four variants", () => {
+    const userClick = mock(function (this: HTMLElement, e: Event) { void e; });
+    const onSelect = mock(() => {});
+    for (const variant of radioGroupPartVariants) {
+      const container = setupContainer();
+      const rendered = variant.render({ value: "solo", onSelect, "on:click": userClick });
+      mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered, container);
+      const el = container.firstElementChild as HTMLElement;
+      userClick.mockClear();
+      onSelect.mockClear();
+      el.dispatchEvent(new Event("click"));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(onSelect).toHaveBeenCalledTimes(1);
     }
   });
 });

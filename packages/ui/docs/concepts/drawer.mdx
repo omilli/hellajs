@@ -22,6 +22,7 @@ Nine named parts ship beside the default `Drawer` for custom composition: `Drawe
 | `closeOnOutside` | `boolean` | `true` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The panel body |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `direction` is the edge the panel mounts on; it sets `data-vaul-drawer-direction` and the dismissal axis. `title` renders as a wired `DrawerTitle` (the panel's `aria-labelledby` target) and `description` as a wired `DrawerDescription` (the `aria-describedby` target).
 
@@ -32,6 +33,7 @@ A bare button; wire its click to your own signal write.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The trigger label |
+Accepts all native `button` attributes (forwarded to the root element).
 
 ### DrawerClose
 
@@ -41,6 +43,7 @@ The X button with its `sr-only` "Close" label - the default panel renders no clo
 | ---- | ---- | ------- |
 | `state` | `() => "open" \| "closed"` | `-` |
 | `onClose` | `() => void` | `-` |
+Accepts all native `button` attributes (forwarded to the root element; a user `on:click` chains with the owned dismiss).
 
 ### DrawerPortal
 
@@ -58,6 +61,7 @@ The screen-covering backdrop `div` carrying `data-slot="drawer-overlay"`.
 | ---- | ---- | ------- |
 | `state` | `() => "open" \| "closed"` | `-` |
 | `fraction` | `Signal<number>` | `-` |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `state` drives the overlay's `data-state` and its enter/exit fade; `fraction` is the drag fraction (0 to 1 toward dismissal) driving the proportional fade while the panel is dragged.
 
@@ -70,13 +74,12 @@ The `role="dialog"` panel carrying `data-slot="drawer-content"` and the grip han
 | `state` | `() => "open" \| "closed"` | `-` |
 | `direction` | `"top" \| "right" \| "bottom" \| "left"` | `"bottom"` |
 | `fraction` | `Signal<number>` | `-` |
-| `labelledBy` | `string` | `-` |
-| `describedBy` | `string` | `-` |
 | `closeOnEscape` | `boolean` | `true` |
 | `closeOnOutside` | `boolean` | `true` |
 | `onClose` | `() => void` | `-` |
 | `onExited` | `() => void` | `-` |
 | `children` | `HellaChildren` | The panel body |
+Accepts all native `div` attributes (forwarded to the root element). Pass the wired ids as the panel's `aria-labelledby` and `aria-describedby` attrs - in the composed `Drawer` the root threads them for you.
 
 `fraction` is the shared drag fraction; the overlay fades proportionally when both parts receive the same signal. `onClose` is the dismissal callback - drag release, escape, and outside pointerdown all fire it; `onExited` fires when the exit slide ends.
 
@@ -87,6 +90,7 @@ The top grouping `div` carrying `data-slot="drawer-header"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title and description nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### DrawerFooter
 
@@ -95,6 +99,7 @@ The bottom grouping `div` carrying `data-slot="drawer-footer"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Action nodes, typically buttons |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### DrawerTitle
 
@@ -104,6 +109,7 @@ The heading: an `h2` carrying `data-slot="drawer-title"` whose `id` the panel's 
 | ---- | ---- | ------- |
 | `id` | `string` | `-` |
 | `children` | `HellaChildren` | The title text |
+Accepts all native `h2` attributes (forwarded to the root element).
 
 ### DrawerDescription
 
@@ -113,6 +119,7 @@ The supporting line: a `p` carrying `data-slot="drawer-description"` whose `id` 
 | ---- | ---- | ------- |
 | `id` | `string` | `-` |
 | `children` | `HellaChildren` | The description text |
+Accepts all native `p` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
 

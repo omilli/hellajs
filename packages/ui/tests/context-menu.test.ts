@@ -4,6 +4,7 @@ import { mount, peekState } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   contextMenuModules,
   contextMenuPartVariants,
   contextMenuVariants,
@@ -32,7 +33,7 @@ interface ItemProps {
   children?: HellaChildren;
   destructive?: boolean;
   disabled?: boolean;
-  onclick?: () => void;
+  "on:click"?: () => void;
   shortcut?: string;
 }
 
@@ -131,7 +132,7 @@ describe("context-menu", () => {
   test.each(contextMenuVariants)("$format/$style activates items with Enter and closes the menu", async (variant) => {
     const onclick = mock(() => {});
     const { content } = await openContextMenu(variant, [
-      Item(variant, { children: "Rename", onclick, shortcut: "⌘R" }),
+      Item(variant, { children: "Rename", "on:click": onclick, shortcut: "⌘R" }),
       Item(variant, { children: "Delete", destructive: true }),
     ]);
     const destructive = content.querySelector("[data-variant='destructive']")!;
@@ -145,7 +146,7 @@ describe("context-menu", () => {
   test.each(contextMenuVariants)("$format/$style blocks activation on disabled items", async (variant) => {
     const onclick = mock(() => {});
     const { content } = await openContextMenu(variant, [
-      Item(variant, { children: "Locked", disabled: true, onclick }),
+      Item(variant, { children: "Locked", disabled: true, "on:click": onclick }),
       Item(variant, { children: "Free" }),
     ]);
     const locked = content.querySelector("[data-disabled]")!;
@@ -305,6 +306,29 @@ describe("context-menu", () => {
     pressEscape();
     pointerDownOutside();
     expect(content.isConnected).toBe(false);
+  });
+
+  test.each(contextMenuVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Inspect", "aria-label": "zone" });
+    expect(trigger.getAttribute("aria-label")).toBe("zone");
+  });
+
+  test.each(contextMenuVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const trigger = renderVariant(variant, { content: "Inspect", "on:click": userClick });
+    trigger.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(contextMenuVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Inspect", class: "user-class" });
+    expect(classTokens(trigger).at(-1)).toBe("user-class");
+  });
+
+  test.each(contextMenuPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ id: "custom-menu", children: [] }), container);
+    expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menu");
   });
 
   test("keeps structural parity across all four variants", () => {

@@ -5,8 +5,11 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount and the component's Portal/hover wiring share one dom instance.
 import { html, mount, peekState, resetDom } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   awaitWiring,
+  classTokens,
   sidebarModuleVariants,
   sidebarPartVariants,
   sidebarVariants,
@@ -234,12 +237,12 @@ describe("sidebar", () => {
     state.setOpenMobile(true);
     const panel = await awaitMobilePanel();
     state.setOpenMobile(false);
-    let waited = 0;
-    while (panel.isConnected && waited < 500) {
+    const budget = Date.now();
+    while (panel.isConnected && Date.now() - budget < 600) {
       await delay(null, 20);
-      waited += 20;
     }
-    expect(waited).toBeGreaterThanOrEqual(300);
+    // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
+    expect(Date.now() - budget).toBeGreaterThanOrEqual(300);
     expect(panel.isConnected).toBe(false);
   });
 
@@ -353,12 +356,12 @@ describe("sidebar", () => {
     expect(subButton.getAttribute("data-size")).toBe("md");
   });
 
-  test.each(sidebarModuleVariants)("$format/$style menu action fires its onclick through the button path", (variant) => {
+  test.each(sidebarModuleVariants)("$format/$style menu action fires its on:click through the button path", (variant) => {
     const part = <P extends object>(name: string): ((props: P) => HellaNode) => sidebarModulePart<P>(variant, name);
     const onClick = mock(() => {});
     const container = setupContainer();
     const rendered = part<SidebarPartVariantProps>("SidebarMenuItem")({
-      children: [part<SidebarPartVariantProps>("SidebarMenuAction")({ onclick: onClick, children: "More" })],
+      children: [part<SidebarPartVariantProps>("SidebarMenuAction")({ "on:click": onClick, children: "More" })],
     });
     mount(typeof rendered === "function" ? html`<div>${rendered}</div>` : rendered, container);
     const action = container.querySelector('[data-slot="sidebar-menu-action"]') as HTMLElement;
@@ -471,15 +474,90 @@ describe("sidebar", () => {
       expect(el.getAttribute("data-slot")).toBe(expected);
     }
   });
+
+  test("mobile-sheet trigger chains a user on:click with the owned open toggle", async () => {
+    for (const variant of sidebarModuleVariants) {
+      const part = <P extends object>(name: string): ((props: P) => HellaNode) => sidebarModulePart<P>(variant, name);
+      const userClick = mock(() => {});
+      const container = setupContainer();
+      const Provider = part<{ children: (state: SidebarThreadedState) => HellaChildren }>("SidebarProvider");
+      const Root = part<SidebarVariantProps>("Sidebar");
+      const Trigger = part<Record<string, unknown>>("SidebarTrigger");
+      const rendered = Provider({
+        children: (threaded: SidebarThreadedState) => [
+          Root({
+            open: threaded.open,
+            mobile: threaded.mobile,
+            openMobile: threaded.openMobile,
+            onOpenMobileChange: threaded.setOpenMobile,
+            children: [],
+          }),
+          Trigger({ onToggle: threaded.onToggle, "on:click": userClick }),
+        ],
+      });
+      mount(typeof rendered === "function" ? html`<div>${rendered}</div>` : rendered, container);
+      const wrapper = container.querySelector("[data-slot='sidebar-wrapper']") as HTMLElement;
+      await awaitWiring(wrapper);
+      flipMedia(true);
+      await delay();
+      const trigger = container.querySelector("[data-slot='sidebar-trigger']") as HTMLElement;
+      trigger.dispatchEvent(new Event("click", { bubbles: true }));
+      await awaitMobilePanel();
+      expect(userClick).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  test("menu button chains a user on:click through the button path", () => {
+    for (const variant of sidebarModuleVariants) {
+      const part = <P extends object>(name: string): ((props: P) => HellaNode) => sidebarModulePart<P>(variant, name);
+      const userClick = mock(() => {});
+      const container = setupContainer();
+      const MenuButton = part<Record<string, unknown>>("SidebarMenuButton");
+      const rendered = MenuButton({ "on:click": userClick, children: "Home" });
+      mount(typeof rendered === "function" ? html`<div>${rendered}</div>` : rendered, container);
+      const button = container.querySelector("[data-slot='sidebar-menu-button']") as HTMLElement;
+      button.dispatchEvent(new Event("click", { bubbles: true }));
+      expect(userClick).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  test("forwards user attrs onto the desktop panel across all four variants", () => {
+    assertAttrForwarded(sidebarVariants, { open: () => true, title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the desktop panel across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(sidebarVariants, { open: () => true, "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges a user class into the desktop container class across all four variants", () => {
+    for (const variant of sidebarVariants) {
+      const root = renderSidebarRoot(variant, { open: () => true, class: "my-sidebar" });
+      const container = root.querySelector('[data-slot="sidebar-container"]') as HTMLElement;
+      const tokens = classTokens(container);
+      expect(tokens.at(-1)).toBe("my-sidebar");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
+  });
+
+  test("input part forwards value, placeholder, and kebab aria attrs through the spread", () => {
+    for (const variant of sidebarPartVariants.filter((candidate) => candidate.part === "Input")) {
+      const root = renderPart(variant, { value: "seeded", placeholder: "filter", "aria-label": "sidebar search" });
+      const input = root.tagName === "INPUT" ? root : root.querySelector("input")!;
+      expect((input as HTMLInputElement).value).toBe("seeded");
+      expect(input.getAttribute("placeholder")).toBe("filter");
+      expect(input.getAttribute("aria-label")).toBe("sidebar search");
+    }
+  });
 });
 
 /** Renders one sidebar part standalone (the Provider receives a children function). */
-function renderPart(variant: (typeof sidebarPartVariants)[number]): Element {
+function renderPart(variant: (typeof sidebarPartVariants)[number], extra: Record<string, unknown> = {}): Element {
   const props = variant.part === "Provider"
     ? { children: () => [] }
     : { children: [] };
   const container = setupContainer();
-  const rendered = variant.render(props as never);
+  const rendered = variant.render({ ...props, ...extra } as never);
   mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered as never, container);
   return container.querySelector('[data-slot]')!;
 }

@@ -1,44 +1,46 @@
 import { effect, signal } from "@hellajs/core";
 import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 /** Accessibility state shared by the animated dialog parts. */
 type DialogState = () => "open" | "closed";
 
-interface DialogOverlayProps {
+interface DialogOverlayProps extends HTMLAttributes<"div"> {
   state?: DialogState;
   class?: string;
 }
 
-export function DialogOverlay(props: DialogOverlayProps): HellaNode {
+export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProps): HellaNode {
   return html`
     <div
       data-slot="dialog-overlay"
-      data-state="${() => props.state?.()}"
+      data-state="${() => state?.()}"
       class="${
-        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", props.class)
+        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", cls)
       }"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-interface DialogCloseProps {
+interface DialogCloseProps extends HTMLAttributes<"button"> {
   state?: DialogState;
   onClose?: () => void;
   class?: string;
 }
 
-export function DialogClose(props: DialogCloseProps): HellaNode {
+export function DialogClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DialogCloseProps): HellaNode {
   return html`
     <button
       type="button"
       data-slot="dialog-close"
-      data-state="${() => props.state?.()}"
+      data-state="${() => state?.()}"
       class="${
-        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
       }"
-      e:click="${() => props.onClose?.()}"
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); onClose?.(); }}"
+      ...${attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -59,10 +61,8 @@ export function DialogClose(props: DialogCloseProps): HellaNode {
   ` as HellaNode;
 }
 
-interface DialogContentProps {
+interface DialogContentProps extends HTMLAttributes<"div"> {
   state?: DialogState;
-  labelledBy?: string;
-  describedBy?: string;
   showCloseButton?: boolean;
   closeOnEscape?: boolean;
   closeOnOutside?: boolean;
@@ -77,7 +77,7 @@ interface DialogContentProps {
  * sibling - hella has no Radix context, so the portal/overlay pairing is the
  * composer's (the default Dialog below shows the wired composition).
  */
-export function DialogContent(props: DialogContentProps): HellaNode {
+export function DialogContent({ state, showCloseButton, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: DialogContentProps): HellaNode {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
@@ -87,30 +87,28 @@ export function DialogContent(props: DialogContentProps): HellaNode {
   };
 
   const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.state?.() === "closed") return;
+    if (panel === undefined || wirings.length > 0 || state?.() === "closed") return;
     const target = panel;
-    if (props.closeOnEscape !== false && props.onClose) wirings.push(onEscape(target, props.onClose));
-    if (props.closeOnOutside !== false && props.onClose) wirings.push(onOutside(() => [target], props.onClose));
+    if (closeOnEscape !== false && onClose) wirings.push(onEscape(target, onClose));
+    if (closeOnOutside !== false && onClose) wirings.push(onOutside(() => [target], onClose));
     wirings.push(trapFocus(target));
   };
 
   // The exit runs unwired: flipping to "closed" tears the trap/escape/outside
   // handlers down immediately; reopening re-arms them without a remount.
   effect(() => {
-    if (props.state?.() === "closed") disposeWirings();
+    if (state?.() === "closed") disposeWirings();
     else installWirings();
   });
 
   return html`
     <div
       data-slot="dialog-content"
-      data-state="${() => props.state?.()}"
+      data-state="${() => state?.()}"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="${props.labelledBy}"
-      aria-describedby="${props.describedBy}"
       class="${
-        cn("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg", props.class)
+        cn("fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg", cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
@@ -119,7 +117,7 @@ export function DialogContent(props: DialogContentProps): HellaNode {
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (props.state?.() === "closed") props.onExited?.();
+          if (state?.() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -128,71 +126,80 @@ export function DialogContent(props: DialogContentProps): HellaNode {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}
-      ${() => (props.showCloseButton !== false) && DialogClose({ state: props.state, onClose: props.onClose })}
+      ${() => children}
+      ${() => (showCloseButton !== false) && DialogClose({ state, onClose })}
     </div>
   ` as HellaNode;
 }
 
-interface DialogPartProps {
+interface DialogPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function DialogHeader(props: DialogPartProps): HellaNode {
+export function DialogHeader({ children, class: cls, ...attrs }: DialogPartProps): HellaNode {
   return html`
     <div
       data-slot="dialog-header"
       class="${
-        cn("flex flex-col gap-2 text-center sm:text-left", props.class)
+        cn("flex flex-col gap-2 text-center sm:text-left", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function DialogFooter(props: DialogPartProps): HellaNode {
+export function DialogFooter({ children, class: cls, ...attrs }: DialogPartProps): HellaNode {
   return html`
     <div
       data-slot="dialog-footer"
       class="${
-        cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", props.class)
+        cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface DialogTitleProps {
-  id?: string;
+interface DialogTitleProps extends HTMLAttributes<"h2"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function DialogTitle(props: DialogTitleProps): HellaNode {
+export function DialogTitle({ id, children, class: cls, ...attrs }: DialogTitleProps): HellaNode {
   return html`
     <h2
-      id="${props.id}"
+      id="${id}"
       data-slot="dialog-title"
       class="${
-        cn("text-lg leading-none font-semibold", props.class)
+        cn("text-lg leading-none font-semibold", cls)
       }"
-    >${() => props.children}</h2>
+      ...${attrs}
+    >${() => children}</h2>
   ` as HellaNode;
 }
 
-export function DialogDescription(props: DialogTitleProps): HellaNode {
+interface DialogDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function DialogDescription({ id, children, class: cls, ...attrs }: DialogDescriptionProps): HellaNode {
   return html`
     <p
-      id="${props.id}"
+      id="${id}"
       data-slot="dialog-description"
       class="${
-        cn("text-sm text-muted-foreground", props.class)
+        cn("text-sm text-muted-foreground", cls)
       }"
-    >${() => props.children}</p>
+      ...${attrs}
+    >${() => children}</p>
   ` as HellaNode;
 }
 
-interface DialogProps {
+interface DialogProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   title?: string;
@@ -206,7 +213,7 @@ interface DialogProps {
 
 let dialogCount = 0;
 
-export default function Dialog(props: DialogProps): HellaNode {
+export default function Dialog({ open, onClose, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DialogProps): HellaNode {
   const titleId = `hella-dialog-title-${++dialogCount}`;
   const descriptionId = `hella-dialog-description-${dialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -228,7 +235,7 @@ export default function Dialog(props: DialogProps): HellaNode {
   // panel stays mounted under data-state="closed" until its animationend
   // (or the copied 200ms duration budget) unmounts it.
   effect(() => {
-    if (props.open()) {
+    if (open()) {
       wasOpen = true;
       finishExit();
       visible(true);
@@ -239,7 +246,7 @@ export default function Dialog(props: DialogProps): HellaNode {
     }
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
+  const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return html`
     ${() => visible() && Portal({
@@ -248,18 +255,19 @@ export default function Dialog(props: DialogProps): HellaNode {
         DialogOverlay({ state }) as HellaChild,
         DialogContent({
           state,
-          labelledBy: titleId,
-          describedBy: props.description === undefined ? undefined : descriptionId,
-          showCloseButton: props.showCloseButton,
-          closeOnEscape: props.closeOnEscape,
-          closeOnOutside: props.closeOnOutside,
-          onClose: props.onClose,
+          "aria-labelledby": titleId,
+          "aria-describedby": descriptionText === undefined ? undefined : descriptionId,
+          showCloseButton,
+          closeOnEscape,
+          closeOnOutside,
+          onClose,
           onExited: finishExit,
-          class: props.class,
+          class: cls,
+          ...attrs,
           children: [
-            ...(props.title !== undefined ? [DialogTitle({ id: titleId, children: props.title }) as HellaChild] : []),
-            ...(props.description !== undefined ? [DialogDescription({ id: descriptionId, children: props.description }) as HellaChild] : []),
-            ...(props.children === undefined ? [] : Array.isArray(props.children) ? props.children : [props.children]),
+            ...(titleText !== undefined ? [DialogTitle({ id: titleId, children: titleText }) as HellaChild] : []),
+            ...(descriptionText !== undefined ? [DialogDescription({ id: descriptionId, children: descriptionText }) as HellaChild] : []),
+            ...(children === undefined ? [] : Array.isArray(children) ? children : [children]),
           ],
         }) as HellaChild,
       ],

@@ -7,6 +7,7 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { html, mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   drawerPartVariants,
   drawerVariants,
 } from "./helpers/variants";
@@ -31,7 +32,7 @@ function newestPanel(): HTMLElement | undefined {
  * (earlier tests can leave stale panels attached) that has finished the
  * observer-driven mount walk.
  */
-function mountDrawer(variant: DrawerVariant, props: Omit<DrawerVariantProps, "open">) {
+function mountDrawer(variant: DrawerVariant, props: Partial<DrawerVariantProps> & { onClose: () => void }) {
   const open = signal(false);
   const container = setupContainer();
   mount(html`<div>${variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>`, container);
@@ -279,6 +280,43 @@ describe("drawer", () => {
     expect(panel.isConnected).toBe(true);
   });
 
+  test.each(drawerVariants)("$format/$style forwards user attrs onto the portaled panel across all four variants", async (variant) => {
+    const drawer = mountDrawer(variant, { onClose: () => {}, title: "Forward", "aria-label": "panel" });
+    drawer.open(true);
+    const panel = await drawer.panel();
+    expect(panel.getAttribute("aria-label")).toBe("panel");
+  });
+
+  test.each(drawerVariants)("$format/$style fires a user on:click handler on the portaled panel across all four variants", async (variant) => {
+    const onPanelClick = mock(() => {});
+    const drawer = mountDrawer(variant, { onClose: () => {}, title: "Forward", "on:click": onPanelClick });
+    drawer.open(true);
+    const panel = await drawer.panel();
+    panel.dispatchEvent(new Event("click"));
+    expect(onPanelClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(drawerVariants)("$format/$style merges a user class into the portaled panel's class across all four variants", async (variant) => {
+    const drawer = mountDrawer(variant, { onClose: () => {}, title: "Forward", class: "user-class" });
+    drawer.open(true);
+    const panel = await drawer.panel();
+    expect(classTokens(panel).at(-1)).toBe("user-class");
+  });
+
+  test.each(drawerPartVariants.filter((entry) => entry.part === "Close"))("$format/$style Close chains a user on:click with its owned dismiss", (variant) => {
+    const onClose = mock(() => {});
+    const userClick = mock(() => {});
+    const close = renderPart(variant, [], { onClose, "on:click": userClick });
+    close.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(drawerPartVariants.filter((entry) => entry.part === "Content"))("$format/$style content part forwards the manual aria wiring attrs", (variant) => {
+    const el = renderPart(variant, [], { "aria-labelledby": "wired-title" });
+    expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
+  });
+
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(
       drawerVariants,
@@ -326,9 +364,9 @@ describe("drawer", () => {
  * resolves to the wrapper (its children land in document.body) — the dedicated
  * Portal test above asserts the portaled child instead.
  */
-function renderPart(variant: (typeof drawerPartVariants)[number], children?: ReturnType<typeof html>[]): Element {
+function renderPart(variant: (typeof drawerPartVariants)[number], children?: ReturnType<typeof html>[], extra: Record<string, unknown> = {}): Element {
   const container = setupContainer();
-  const rendered = variant.render({ children: children ?? [] } as unknown as Record<string, never>);
+  const rendered = variant.render({ children: children ?? [], ...extra } as unknown as Record<string, never>);
   // A reactive fn root cannot pass through mount's resolve-once unwrap — wrap it like the harness does.
   mount(typeof rendered === "function" ? html`<div>${rendered as never}</div>` : rendered as never, container);
   return container.firstElementChild!;

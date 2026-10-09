@@ -1,18 +1,15 @@
 import { html } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
-interface CheckboxProps {
+interface CheckboxProps extends HTMLAttributes<"button"> {
+  class?: string;
   /** Checked state. A boolean seeds the internal signal; an accessor makes the checkbox controlled — clicks then only report through `onCheckedChange`. */
   checked?: boolean | (() => boolean);
   /** Indeterminate (mixed) state. A boolean seeds the internal signal; an accessor makes it controlled. Wins over `checked` for rendering. */
   indeterminate?: boolean | (() => boolean);
   onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
-  ariaInvalid?: boolean;
-  id?: string;
-  class?: string;
 }
 
 /** The check icon (refs/icons/check.svg), created per call so reactive swaps never share nodes between clones. */
@@ -35,11 +32,11 @@ const checkIcon = (): HellaNode =>
     <path d="M20 6 9 17l-5-5" />
   </svg>` as HellaNode;
 
-export default function Checkbox(props: CheckboxProps): HellaNode {
-  const checkedAccessor = typeof props.checked === "function" ? props.checked : undefined;
-  const indeterminateAccessor = typeof props.indeterminate === "function" ? props.indeterminate : undefined;
-  const internalChecked = signal(typeof props.checked === "boolean" ? props.checked : false);
-  const internalIndeterminate = signal(typeof props.indeterminate === "boolean" ? props.indeterminate : false);
+export default function Checkbox({ checked: checkedProp, indeterminate: indeterminateProp, onCheckedChange, id, disabled, "on:click": userClick, class: cls, ...attrs }: CheckboxProps): HellaNode {
+  const checkedAccessor = typeof checkedProp === "function" ? checkedProp : undefined;
+  const indeterminateAccessor = typeof indeterminateProp === "function" ? indeterminateProp : undefined;
+  const internalChecked = signal(typeof checkedProp === "boolean" ? checkedProp : false);
+  const internalIndeterminate = signal(typeof indeterminateProp === "boolean" ? indeterminateProp : false);
 
   const checked = (): boolean => (checkedAccessor ? checkedAccessor() : internalChecked());
   const indeterminate = (): boolean => (indeterminateAccessor ? indeterminateAccessor() : internalIndeterminate());
@@ -49,11 +46,11 @@ export default function Checkbox(props: CheckboxProps): HellaNode {
     indeterminate() ? "mixed" : checked() ? "true" : "false";
 
   const toggle = (): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const next = !checked();
     if (!checkedAccessor) internalChecked(next);
     if (!indeterminateAccessor) internalIndeterminate(false);
-    props.onCheckedChange?.(next);
+    onCheckedChange?.(next);
   };
 
   return html`
@@ -61,15 +58,15 @@ export default function Checkbox(props: CheckboxProps): HellaNode {
       type="button"
       role="checkbox"
       data-slot="checkbox"
-      id="${props.id}"
+      id="${id}"
       aria-checked="${ariaChecked}"
       data-state="${state}"
-      disabled="${props.disabled ? true : undefined}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
+      disabled="${disabled ? true : undefined}"
       class="${
-        cn("peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary", props.class)
+        cn("peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary", cls)
       }"
-      e:click="${toggle}"
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); toggle(); }}"
+      ...${attrs}
     >
       <span
         data-slot="checkbox-indicator"

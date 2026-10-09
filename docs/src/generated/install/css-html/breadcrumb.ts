@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -72,74 +72,76 @@ const srOnly = style("breadcrumb-sr-only", {
   width: "1px",
 });
 
-interface BreadcrumbProps {
-  children?: HellaChildren;
+interface BreadcrumbProps extends HTMLAttributes<"nav"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Breadcrumb(props: BreadcrumbProps): HellaNode {
+export default function Breadcrumb({ children, class: cls, ...attrs }: BreadcrumbProps): HellaNode {
   return html`
     <nav
       aria-label="breadcrumb"
       data-slot="breadcrumb"
       class="${
-        [props.class]
+        [cls]
       }"
-    >${() => props.children}</nav>
+      ...${attrs}
+    >${() => children}</nav>
   ` as HellaNode;
 }
 
-interface BreadcrumbPartProps {
-  children?: HellaChildren;
+interface BreadcrumbPartProps extends HTMLAttributes<"li"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function BreadcrumbList(props: BreadcrumbPartProps): HellaNode {
+export function BreadcrumbList({ children, class: cls, ...attrs }: BreadcrumbPartProps): HellaNode {
   return html`
     <ol
       data-slot="breadcrumb-list"
       class="${
-        [list, props.class]
+        [list, cls]
       }"
-    >${() => props.children}</ol>
+      ...${attrs}
+    >${() => children}</ol>
   ` as HellaNode;
 }
 
-export function BreadcrumbItem(props: BreadcrumbPartProps): HellaNode {
+export function BreadcrumbItem({ children, class: cls, ...attrs }: BreadcrumbPartProps): HellaNode {
   return html`
     <li
       data-slot="breadcrumb-item"
       class="${
-        [item, props.class]
+        [item, cls]
       }"
-    >${() => props.children}</li>
+      ...${attrs}
+    >${() => children}</li>
   ` as HellaNode;
 }
 
-interface BreadcrumbLinkProps {
-  children?: HellaChildren;
-  href?: string;
+interface BreadcrumbLinkProps extends HTMLAttributes<"a"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function BreadcrumbLink(props: BreadcrumbLinkProps): HellaNode {
+export function BreadcrumbLink({ children, class: cls, ...attrs }: BreadcrumbLinkProps): HellaNode {
   return html`
     <a
       data-slot="breadcrumb-link"
-      href="${props.href}"
       class="${
-        [link, props.class]
+        [link, cls]
       }"
-    >${() => props.children}</a>
+      ...${attrs}
+    >${() => children}</a>
   ` as HellaNode;
 }
 
-interface BreadcrumbPageProps {
-  children?: HellaChildren;
+interface BreadcrumbPageProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function BreadcrumbPage(props: BreadcrumbPageProps): HellaNode {
+export function BreadcrumbPage({ children, class: cls, ...attrs }: BreadcrumbPageProps): HellaNode {
   return html`
     <span
       data-slot="breadcrumb-page"
@@ -147,29 +149,31 @@ export function BreadcrumbPage(props: BreadcrumbPageProps): HellaNode {
       aria-disabled="true"
       aria-current="page"
       class="${
-        [page, props.class]
+        [page, cls]
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface BreadcrumbSeparatorProps {
+interface BreadcrumbSeparatorProps extends HTMLAttributes<"li"> {
   /** Replaces the inlined chevron when given. */
   children?: HellaChildren;
   class?: string;
 }
 
-export function BreadcrumbSeparator(props: BreadcrumbSeparatorProps): HellaNode {
+export function BreadcrumbSeparator({ children, class: cls, ...attrs }: BreadcrumbSeparatorProps): HellaNode {
   return html`
     <li
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
       class="${
-        [separator, props.class]
+        [separator, cls]
       }"
+      ...${attrs}
     >
-      ${() => props.children ?? html`
+      ${() => children ?? html`
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -188,15 +192,20 @@ export function BreadcrumbSeparator(props: BreadcrumbSeparatorProps): HellaNode 
   ` as HellaNode;
 }
 
-export function BreadcrumbEllipsis(props: BreadcrumbPartProps): HellaNode {
+interface BreadcrumbEllipsisProps extends HTMLAttributes<"span"> {
+  class?: string;
+}
+
+export function BreadcrumbEllipsis({ class: cls, ...attrs }: BreadcrumbEllipsisProps): HellaNode {
   return html`
     <span
       data-slot="breadcrumb-ellipsis"
       role="presentation"
       aria-hidden="true"
       class="${
-        [ellipsis, props.class]
+        [ellipsis, cls]
       }"
+      ...${attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

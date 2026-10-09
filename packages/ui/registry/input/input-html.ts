@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -7,38 +7,25 @@ declare const focus: string;
 declare const invalid: string;
 // @hella:end
 
-interface InputProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+interface InputProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export default function Input(props: InputProps): HellaNode {
+export default function Input({ class: cls, ...attrs }: InputProps): HellaNode {
   return html`
     <input
       data-slot="input"
-      type="${props.type}"
-      placeholder="${props.placeholder}"
-      id="${props.id}"
-      aria-label="${props.ariaLabel}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
-      value="${props.value}"
       class="${
         // @hella:compose
         [
           base,
           focus,
           invalid,
-          props.class,
+          cls,
         ]
         // @hella:end
       }"
-      e:input="${(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}"
+      ...${attrs}
     />
   ` as HellaNode;
 }

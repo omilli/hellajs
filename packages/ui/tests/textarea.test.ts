@@ -2,6 +2,8 @@ import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   renderVariant,
@@ -20,7 +22,7 @@ describe("textarea", () => {
     const textarea = renderVariant(variant, {
       placeholder: "Tell us more",
       id: "bio-field",
-      ariaLabel: "Biography",
+      "aria-label": "Biography",
       rows: 4,
     }) as HTMLTextAreaElement;
     expect(textarea.tagName).toBe("TEXTAREA");
@@ -45,13 +47,13 @@ describe("textarea", () => {
     expect(textarea.value).toBe("second");
   });
 
-  test.each(textareaVariants)("$format/$style passes the typed value to oninput", (variant) => {
-    const oninput = mock<(v: string) => void>(() => {});
-    const textarea = renderVariant(variant, { oninput }) as HTMLTextAreaElement;
+  test.each(textareaVariants)("$format/$style passes the typed value to on:input via e.target", (variant) => {
+    const onInput = mock((e: Event) => (e.target as HTMLTextAreaElement).value);
+    const textarea = renderVariant(variant, { "on:input": onInput }) as HTMLTextAreaElement;
     textarea.value = "typed";
     textarea.dispatchEvent(new Event("input"));
-    expect(oninput).toHaveBeenCalledTimes(1);
-    expect(oninput).toHaveBeenCalledWith("typed");
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onInput.mock.results[0]!.value).toBe("typed");
   });
 
   test.each(textareaVariants)("$format/$style composes base, focus, and invalid classes", (variant) => {
@@ -70,8 +72,8 @@ describe("textarea", () => {
     }
   });
 
-  test.each(textareaVariants)("$format/$style sets aria-invalid only from the prop", (variant) => {
-    const invalid = renderVariant(variant, { ariaInvalid: true });
+  test.each(textareaVariants)("$format/$style renders aria-invalid from the kebab attribute", (variant) => {
+    const invalid = renderVariant(variant, { "aria-invalid": "true" });
     expect(invalid.getAttribute("aria-invalid")).toBe("true");
     const valid = renderVariant(variant, {});
     expect(valid.hasAttribute("aria-invalid")).toBe(false);
@@ -80,6 +82,15 @@ describe("textarea", () => {
   test.each(textareaVariants)("$format/$style merges props.class into the class attribute", (variant) => {
     const textarea = renderVariant(variant, { class: "my-textarea" });
     expect(classTokens(textarea).at(-1)).toBe("my-textarea");
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(textareaVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(textareaVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
   test("keeps structural parity across all four variants", () => {

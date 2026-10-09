@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -90,18 +90,14 @@ const optgroup = style("native-select-optgroup", {
   color: "CanvasText",
 });
 
-interface NativeSelectProps {
+interface NativeSelectProps extends HTMLAttributes<"select"> {
+  class?: string;
   children?: HellaChildren;
   value?: string | (() => string);
   size?: "sm" | "default";
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
-  class?: string;
-  onchange?: (v: string) => void;
 }
 
-export default function NativeSelect(props: NativeSelectProps): JSX.Element {
+export default function NativeSelect({ value, size, children, class: cls, ...attrs }: NativeSelectProps): JSX.Element {
   return (
     <div
       data-slot="native-select-wrapper"
@@ -111,28 +107,25 @@ export default function NativeSelect(props: NativeSelectProps): JSX.Element {
     >
       <select
         data-slot="native-select"
-        data-size={props.size ?? "default"}
-        id={props.id}
-        ariaLabel={props.ariaLabel}
-        aria-invalid={props.ariaInvalid ? "true" : undefined}
-        value={props.value}
+        data-size={size ?? "default"}
+        value={value}
         hook:afterMount={(node) => {
           // Props apply before children mount: a value set on an optionless select
           // is lost, so re-apply the current value once the options exist.
           const select = node as HTMLSelectElement;
-          select.value = (typeof props.value === "function" ? props.value() : props.value) ?? "";
+          select.value = (typeof value === "function" ? value() : value) ?? "";
         }}
         class={
           [
             base,
             focus,
             invalid,
-            props.class,
+            cls,
           ]
         }
-        on:change={(e: Event) => props.onchange?.((e.target as HTMLSelectElement).value)}
+        {...attrs}
       >
-        {props.children}
+        {children}
       </select>      <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -155,33 +148,40 @@ export default function NativeSelect(props: NativeSelectProps): JSX.Element {
   );
 }
 
-interface NativeSelectOptionProps {
-  children?: HellaChildren;
+interface NativeSelectOptionProps extends HTMLAttributes<"option"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function NativeSelectOption(props: NativeSelectOptionProps): JSX.Element {
+interface NativeSelectOptGroupProps extends HTMLAttributes<"optgroup"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function NativeSelectOption({ children, class: cls, ...attrs }: NativeSelectOptionProps): JSX.Element {
   return (
     <option
       data-slot="native-select-option"
       class={
-        [option, props.class]
+        [option, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </option>
   );
 }
 
-export function NativeSelectOptGroup(props: NativeSelectOptionProps): JSX.Element {
+export function NativeSelectOptGroup({ children, class: cls, ...attrs }: NativeSelectOptGroupProps): JSX.Element {
   return (
     <optgroup
       data-slot="native-select-optgroup"
       class={
-        [optgroup, props.class]
+        [optgroup, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </optgroup>
   );
 }

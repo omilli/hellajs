@@ -2,6 +2,8 @@ import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { flush, signal } from "@hellajs/core";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   inputVariants,
@@ -18,7 +20,7 @@ describe("input", () => {
       type: "email",
       placeholder: "you@example.com",
       id: "email-field",
-      ariaLabel: "Email address",
+      "aria-label": "Email address",
     });
     expect(input.tagName).toBe("INPUT");
     expect(input.getAttribute("data-slot")).toBe("input");
@@ -42,13 +44,13 @@ describe("input", () => {
     expect(input.value).toBe("second");
   });
 
-  test.each(inputVariants)("$format/$style passes the typed value to oninput", (variant) => {
-    const oninput = mock<(v: string) => void>(() => {});
-    const input = renderVariant(variant, { oninput }) as HTMLInputElement;
+  test.each(inputVariants)("$format/$style passes the typed value to on:input via e.target", (variant) => {
+    const onInput = mock((e: Event) => (e.target as HTMLInputElement).value);
+    const input = renderVariant(variant, { "on:input": onInput }) as HTMLInputElement;
     input.value = "typed";
     input.dispatchEvent(new Event("input"));
-    expect(oninput).toHaveBeenCalledTimes(1);
-    expect(oninput).toHaveBeenCalledWith("typed");
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onInput.mock.results[0]!.value).toBe("typed");
   });
 
   test.each(inputVariants)("$format/$style composes base, focus, and invalid classes", (variant) => {
@@ -68,8 +70,8 @@ describe("input", () => {
     }
   });
 
-  test.each(inputVariants)("$format/$style sets aria-invalid only from the prop", (variant) => {
-    const invalid = renderVariant(variant, { ariaInvalid: true });
+  test.each(inputVariants)("$format/$style renders aria-invalid from the kebab attribute", (variant) => {
+    const invalid = renderVariant(variant, { "aria-invalid": "true" });
     expect(invalid.getAttribute("aria-invalid")).toBe("true");
     const valid = renderVariant(variant, {});
     expect(valid.hasAttribute("aria-invalid")).toBe(false);
@@ -79,6 +81,15 @@ describe("input", () => {
     const input = renderVariant(variant, { class: "my-input" });
     const tokens = classTokens(input);
     expect(tokens.at(-1)).toBe("my-input");
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(inputVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(inputVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
   test("keeps structural parity across all four variants", () => {

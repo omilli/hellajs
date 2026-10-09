@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   renderVariant,
@@ -49,5 +51,14 @@ describe("separator", () => {
 
   test("keeps structural parity for the vertical orientation across all four variants", () => {
     assertStructuralParity(separatorVariants, { orientation: "vertical" } as SeparatorVariantProps);
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(separatorVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(separatorVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 });

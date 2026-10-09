@@ -9,13 +9,11 @@ The track is a span, the range a second span, and each value one thumb span; poi
 | `value` | `number[] \| (() => number[])` | `[min, max]` |
 | `onValueChange` | `(value: number[]) => void` | `-` |
 | `onValueCommit` | `(value: number[]) => void` | `-` |
-| `min` | `number` | `0` |
-| `max` | `number` | `100` |
-| `step` | `number` | `1` |
 | `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` |
-| `disabled` | `boolean` | `-` |
 | `minStepsBetweenThumbs` | `number` | `-` |
 | `class` | `string` | `-` |
+
+Accepts all native `span` attributes (forwarded to the root element): `min`, `max`, and `step` are destructured back onto the root and drive the range math, and `disabled` blocks drags and keys while rendering `data-disabled` and dimmed thumbs.
 
 Without `value`, the slider owns an internal signal seeded from the array you pass and writes every accepted move into it. Pass an accessor and the slider becomes controlled: drags and keys report through `onValueChange` without writing state, so a parent signal decides what sticks. The accessor must read a signal (or other reactive source) for updates to propagate; a plain array read never invalidates the rendered positions. `onValueCommit` fires when an interaction ends: drag release and each accepted keyboard change. `minStepsBetweenThumbs` clamps the dragged value so neighbors keep at least that many steps of separation. The value array length is the thumb count; the thumb count is fixed at mount.
 

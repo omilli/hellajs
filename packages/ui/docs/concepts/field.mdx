@@ -9,12 +9,13 @@ The field row: a `div` carrying `data-slot="field-item"`, laying the label and c
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `orientation` | `"vertical" \| "horizontal" \| "responsive"` | `"vertical"` |
-| `disabled` | `boolean` | `-` |
 | `invalid` | `boolean` | `-` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The label, control, and error nodes |
 
-`disabled` or `invalid` render `data-disabled="true"` / `data-invalid="true"`: labels and titles fade to half opacity and the field text turns destructive, without touching the children. `responsive` uses a container query so fields laid out inside a `FieldGroup` go horizontal only when the group is at least 28rem wide.
+Accepts all native `div` attributes (forwarded to the root element).
+
+`invalid` renders `data-invalid="true"` and the native `disabled` attribute renders `data-disabled="true"`: the field text turns destructive and labels and titles fade to half opacity, without touching the children. `responsive` uses a container query so fields laid out inside a `FieldGroup` go horizontal only when the group is at least 28rem wide.
 
 ### FieldSet
 
@@ -23,6 +24,8 @@ The group container: the native `fieldset` element wrapping related fields.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The grouped fields |
+
+Accepts all native `fieldset` attributes (forwarded to the root element).
 
 ### FieldLegend
 
@@ -33,6 +36,8 @@ The group's caption: the native `legend` element.
 | `variant` | `"legend" \| "label"` | `"legend"` |
 | `children` | `HellaChildren` | The caption node |
 
+Accepts all native `legend` attributes (forwarded to the root element).
+
 ### FieldGroup
 
 The flex row container that lays stacked or responsive fields out together.
@@ -40,6 +45,8 @@ The flex row container that lays stacked or responsive fields out together.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The fields in the group |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### FieldContent
 
@@ -49,14 +56,17 @@ The description stack beside the title inside `FieldLabel`.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Description nodes |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### FieldLabel
 
-The full `label` element wrapping title and content; takes `for` like the standalone label copy.
+The full `label` element wrapping title and content; `for` forwards natively like the standalone label copy.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `for` | `string` | `-` |
 | `children` | `HellaChildren` | Title and content nodes |
+
+Accepts all native `label` attributes (forwarded to the root element).
 
 ### FieldTitle
 
@@ -66,6 +76,8 @@ The label's heading line: a `div` carrying the same `data-slot="field-label"` as
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The title node |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### FieldDescription
 
 The supporting line: a `p` carrying `data-slot="field-description"`.
@@ -73,6 +85,8 @@ The supporting line: a `p` carrying `data-slot="field-description"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The description node |
+
+Accepts all native `p` attributes (forwarded to the root element).
 
 ### FieldSeparator
 
@@ -82,6 +96,8 @@ A rule between fields with optional centered text.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Optional text centered on the rule; its presence flips the wrapper's `data-content` |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### FieldError
 
 The message row: a `role="alert"` div that renders children or derives text from `errors`, hidden when there is nothing to show.
@@ -90,6 +106,8 @@ The message row: a `role="alert"` div that renders children or derives text from
 | ---- | ---- | ------- |
 | `errors` | `Array<{ message?: string } \| undefined>` | `-` |
 | `children` | `HellaChildren` | Explicit message content, rendered instead of the derived text |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 A single message renders as text, several render as a deduplicated list, and an empty error renders hidden rather than removed so both formats keep one DOM shape.
 

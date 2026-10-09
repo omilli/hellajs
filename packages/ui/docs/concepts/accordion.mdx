@@ -11,6 +11,7 @@ The composed root derives each row's trigger/content id pair and threads the ope
 | `collapsible` | `boolean` | `-` |
 | `open` | `string \| string[]` | `-` |
 | `class` | `string` | `-` |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### AccordionEntry
 
@@ -32,6 +33,7 @@ The row wrapper: a `div` carrying the value and open state.
 | `value` | `string` | `-` |
 | `active` | `() => boolean` | `-` |
 | `children` | `HellaChild[]` | The trigger and content pair |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### AccordionTrigger
 
@@ -39,12 +41,8 @@ The header row: an `h3` wrapping the toggle button, with the chevron icon append
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `id` | `string` | `-` |
-| `active` | `() => boolean` | `-` |
-| `onToggle` | `() => void` | `-` |
-| `controls` | `string` | `-` |
-| `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The label inside the button |
+Accepts all native `button` attributes (forwarded to the root element).
 
 ### AccordionContent
 
@@ -52,10 +50,9 @@ The body region: a `role="region"` div whose inner wrapper carries the collapse 
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `id` | `string` | `-` |
-| `labelledBy` | `string` | `-` |
 | `active` | `() => boolean` | `-` |
 | `children` | `HellaChildren` | The body inside the region |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
 

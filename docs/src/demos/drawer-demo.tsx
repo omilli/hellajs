@@ -17,10 +17,10 @@ export function DrawerDemo() {
 
   return (
     <>
-      <Button onclick={() => open(true)}>Open bottom drawer</Button>
+      <Button on:click={() => open(true)}>Open bottom drawer</Button>
       <Drawer open={open} onClose={() => open(false)} title="Notifications" description="Three unread digests. Drag down to dismiss.">
         <p>The whole panel is the drag surface; buttons inside it still click normally.</p>
-        <Button variant="outline" onclick={() => open(false)}>Mark all read</Button>
+        <Button variant="outline" on:click={() => open(false)}>Mark all read</Button>
       </Drawer>
     </>
   );
@@ -33,11 +33,11 @@ export function DrawerManualDemo() {
 
   return (
     <>
-      <Button variant="outline" onclick={() => open(!open())}>Open cart</Button>
+      <Button variant="outline" on:click={() => open(!open())}>Open cart</Button>
       {() => open() && (
         <Portal to="body">
           <DrawerOverlay state={state} fraction={fraction} />
-          <DrawerContent state={state} fraction={fraction} labelledBy="drawer-manual-title" describedBy="drawer-manual-description" onClose={() => open(false)}>
+          <DrawerContent state={state} fraction={fraction} aria-labelledby="drawer-manual-title" aria-describedby="drawer-manual-description" onClose={() => open(false)}>
             <DrawerHeader>
               <DrawerTitle id="drawer-manual-title">Cart</DrawerTitle>
               <DrawerDescription id="drawer-manual-description">Three items reserved for you.</DrawerDescription>

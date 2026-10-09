@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -40,33 +40,35 @@ const group = style("kbd-group", {
   gap: "0.25rem",
 });
 
-interface KbdProps {
-  children?: HellaChildren;
+interface KbdProps extends HTMLAttributes<"kbd"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Kbd(props: KbdProps): JSX.Element {
+export default function Kbd({ children, class: cls, ...attrs }: KbdProps): JSX.Element {
   return (
     <kbd
       data-slot="kbd"
       class={
-        [base, props.class]
+        [base, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </kbd>
   );
 }
 
-export function KbdGroup(props: KbdProps): JSX.Element {
+export function KbdGroup({ children, class: cls, ...attrs }: KbdProps): JSX.Element {
   return (
     <kbd
       data-slot="kbd-group"
       class={
-        [group, props.class]
+        [group, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </kbd>
   );
 }

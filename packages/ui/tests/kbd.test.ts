@@ -1,6 +1,8 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   kbdPartVariants,
@@ -53,6 +55,15 @@ describe("kbd", () => {
 
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(kbdVariants);
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(kbdVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(kbdVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
   test("keeps structural parity for KbdGroup across all four variants", () => {

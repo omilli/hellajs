@@ -4,6 +4,7 @@ import { delay, resetTestState } from "@utils/test-helpers.js";
 // The bare "@hellajs/dom" index, not the bundle: the compiled registry components import the bare
 // specifier, so the harness mount and the component's delegated events share one dom instance.
 import {
+  assertAttrForwarded,
   assertStructuralParity,
   calendarDayButtonVariants,
   calendarVariants,
@@ -353,5 +354,38 @@ describe("calendar", () => {
     assertStructuralParity(calendarVariants, { defaultMonth: MAR_2025, mode: "range" });
     assertStructuralParity(calendarVariants, { defaultMonth: MAR_2025, hideNavigation: true });
     assertStructuralParity(calendarDayButtonVariants, { day: new Date(2025, 2, 14), selectedSingle: true }, ["data-day"]);
+  });
+
+  test("day-cell user on:click fires alongside the owned date-select across all four variants", () => {
+    for (const variant of calendarVariants) {
+      const userClick = mock(() => {});
+      const root = calendarRoot(variant, { defaultMonth: MAR_2025, "on:click": userClick });
+      click(root, "2025-03-14");
+      expect(userClick).toHaveBeenCalledTimes(1);
+      const cell = dayCell(root, "2025-03-14")!;
+      expect(cell.getAttribute("data-selected")).toBe("true");
+    }
+  });
+
+  test("forwards user attrs onto the calendar root across all four variants", () => {
+    assertAttrForwarded(calendarVariants, { defaultMonth: MAR_2025, title: "Hella" } as never, "title", "Hella");
+  });
+
+  test("merges a user class into the calendar root class across all four variants", () => {
+    for (const variant of calendarVariants) {
+      const root = calendarRoot(variant, { defaultMonth: MAR_2025, class: "my-calendar" });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("my-calendar");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
+  });
+
+  test("manual day button spreads a user on:click handler across all four variants", () => {
+    for (const variant of calendarDayButtonVariants) {
+      const userClick = mock(() => {});
+      const root = renderVariant(variant, { day: new Date(2025, 2, 14), "on:click": userClick });
+      root.dispatchEvent(new Event("click", { bubbles: true }));
+      expect(userClick).toHaveBeenCalledTimes(1);
+    }
   });
 });

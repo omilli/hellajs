@@ -23,7 +23,7 @@ export function CollapsibleManualDemo() {
 
   return (
     <>
-      <CollapsibleTrigger active={open} onToggle={() => open(!open())} controls="manual-region">Can I edit the copied source?</CollapsibleTrigger>
+      <CollapsibleTrigger active={open} onToggle={() => open(!open())} aria-controls="manual-region">Can I edit the copied source?</CollapsibleTrigger>
       <CollapsibleContent id="manual-region" active={open}>
         <p class="demo-muted">Yes. The file lands in your project and the style declarations ride inside it.</p>
       </CollapsibleContent>

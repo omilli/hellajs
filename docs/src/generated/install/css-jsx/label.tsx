@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -20,22 +20,21 @@ const base = style("label", {
   },
 });
 
-interface LabelProps {
-  children?: HellaChildren;
-  for?: string;
+interface LabelProps extends HTMLAttributes<"label"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Label(props: LabelProps): JSX.Element {
+export default function Label({ children, class: cls, ...attrs }: LabelProps): JSX.Element {
   return (
     <label
       data-slot="label"
-      for={props.for}
       class={
-        [base, props.class]
+        [base, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </label>
   );
 }

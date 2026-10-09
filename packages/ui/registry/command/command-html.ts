@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -86,21 +86,17 @@ const defaultFilter = (items: CommandItemData[], query: string): CommandItemData
   return ranked.sort((a, b) => b.score - a.score).map((entry) => entry.item);
 };
 
-interface CommandInputProps {
-  value?: string | (() => string);
-  placeholder?: string;
-  onInput?: (value: string) => void;
-  onKeydown?: (e: KeyboardEvent) => void;
+interface CommandInputProps extends HTMLAttributes<"input"> {
   class?: string;
 }
 
-export function CommandInput(props: CommandInputProps): HellaNode {
+export function CommandInput({ class: cls, ...attrs }: CommandInputProps): HellaNode {
   return html`
     <div
       data-slot="command-input-wrapper"
       class="${
         // @hella:compose
-        [inputWrapper, props.class]
+        [inputWrapper, cls]
         // @hella:end
       }"
     >
@@ -123,8 +119,6 @@ export function CommandInput(props: CommandInputProps): HellaNode {
       <input
         type="text"
         data-slot="command-input"
-        value="${props.value}"
-        placeholder="${props.placeholder}"
         autocomplete="off"
         spellcheck="false"
         class="${
@@ -132,21 +126,20 @@ export function CommandInput(props: CommandInputProps): HellaNode {
           [input]
           // @hella:end
         }"
-        on:input="${(e: Event) => props.onInput?.((e.target as HTMLInputElement).value)}"
-        on:keydown="${(e: Event) => props.onKeydown?.(e as KeyboardEvent)}"
+        ...${attrs}
       />
     </div>
   ` as HellaNode;
 }
 
-interface CommandListProps {
+interface CommandListProps extends HTMLAttributes<"div"> {
   /** Reactive items body; a thunk so the composed root's re-ranked list re-renders through the slot. */
   body?: () => HellaChild | HellaChild[];
   children?: HellaChildren;
   class?: string;
 }
 
-export function CommandList(props: CommandListProps): HellaNode {
+export function CommandList({ body, children, class: cls, ...attrs }: CommandListProps): HellaNode {
   return html`
     <div
       role="listbox"
@@ -154,54 +147,57 @@ export function CommandList(props: CommandListProps): HellaNode {
       aria-label="Suggestions"
       class="${
         // @hella:compose
-        [list, props.class]
+        [list, cls]
         // @hella:end
       }"
+      ...${attrs}
     >
-      ${() => props.body?.()}${() => props.children}
+      ${() => body?.()}${() => children}
     </div>
   ` as HellaNode;
 }
 
-interface CommandEmptyProps {
+interface CommandEmptyProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function CommandEmpty(props: CommandEmptyProps): HellaNode {
+export function CommandEmpty({ children, class: cls, ...attrs }: CommandEmptyProps): HellaNode {
   return html`
     <div
       data-slot="command-empty"
       class="${
         // @hella:compose
-        [empty, props.class]
+        [empty, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface CommandGroupProps {
+interface CommandGroupProps extends HTMLAttributes<"div"> {
   heading?: string;
   hidden?: boolean | (() => boolean);
   children?: HellaChildren;
   class?: string;
 }
 
-export function CommandGroup(props: CommandGroupProps): HellaNode {
+export function CommandGroup({ heading, hidden, children, class: cls, ...attrs }: CommandGroupProps): HellaNode {
   const isHidden = (): boolean =>
-    typeof props.hidden === "function" ? props.hidden() : props.hidden ?? false;
+    typeof hidden === "function" ? hidden() : hidden ?? false;
   return html`
     <div
       data-slot="command-group"
       hidden="${isHidden}"
       class="${
         // @hella:compose
-        [group, props.class]
+        [group, cls]
         // @hella:end
       }"
+      ...${attrs}
     >
-      ${props.heading !== undefined ? html`
+      ${heading !== undefined ? html`
         <div
           data-slot="command-group-heading"
           class="${
@@ -209,34 +205,34 @@ export function CommandGroup(props: CommandGroupProps): HellaNode {
             [groupHeading]
             // @hella:end
           }"
-        >${props.heading}</div>
+        >${heading}</div>
       ` : null}
-      ${() => props.children}
+      ${() => children}
     </div>
   ` as HellaNode;
 }
 
-interface CommandSeparatorProps {
+interface CommandSeparatorProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export function CommandSeparator(props: CommandSeparatorProps): HellaNode {
+export function CommandSeparator({ class: cls, ...attrs }: CommandSeparatorProps): HellaNode {
   return html`
     <div
       role="separator"
       data-slot="command-separator"
       class="${
         // @hella:compose
-        [separator, props.class]
+        [separator, cls]
         // @hella:end
       }"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-interface CommandItemProps {
+interface CommandItemProps extends HTMLAttributes<"div"> {
   value?: string;
-  disabled?: boolean;
   /** Selected state (the ref's data-selected accent); an accessor follows the owning command's active item. */
   active?: () => boolean;
   /** Called on click and on Enter when the owning command commits. */
@@ -245,48 +241,50 @@ interface CommandItemProps {
   class?: string;
 }
 
-export function CommandItem(props: CommandItemProps): HellaNode {
+export function CommandItem({ value, disabled, active, onSelect, children, class: cls, ...attrs }: CommandItemProps): HellaNode {
   return html`
     <div
       role="option"
       data-slot="command-item"
-      data-value="${props.value}"
-      aria-selected="${() => (props.active?.() ? "true" : "false")}"
-      aria-disabled="${props.disabled ? "true" : undefined}"
-      data-selected="${() => (props.active?.() ? "true" : undefined)}"
-      data-disabled="${props.disabled ? "true" : undefined}"
+      data-value="${value}"
+      aria-selected="${() => (active?.() ? "true" : "false")}"
+      aria-disabled="${disabled ? "true" : undefined}"
+      data-selected="${() => (active?.() ? "true" : undefined)}"
+      data-disabled="${disabled ? "true" : undefined}"
       class="${
         // @hella:compose
-        [item, props.class]
+        [item, cls]
         // @hella:end
       }"
       e:click="${() => {
-        if (props.disabled) return;
-        props.onSelect?.();
+        if (disabled) return;
+        onSelect?.();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface CommandShortcutProps {
+interface CommandShortcutProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function CommandShortcut(props: CommandShortcutProps): HellaNode {
+export function CommandShortcut({ children, class: cls, ...attrs }: CommandShortcutProps): HellaNode {
   return html`
     <span
       data-slot="command-shortcut"
       class="${
         // @hella:compose
-        [shortcut, props.class]
+        [shortcut, cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface CommandProps {
+interface CommandProps extends HTMLAttributes<"div"> {
   items?: CommandItemData[];
   /** Replaces the default scoring filter (earlier matches, word-boundary starts, keyword hits). */
   filter?: (items: CommandItemData[], query: string) => CommandItemData[];
@@ -300,11 +298,12 @@ interface CommandProps {
   children?: HellaChildren;
 }
 
-interface CommandDialogProps {
+interface CommandDialogProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   title?: string;
   description?: string;
+  class?: string;
   children?: HellaChildren;
 }
 
@@ -316,7 +315,7 @@ let commandDialogCount = 0;
  * entries never cross-import - with the command palette scoping on its root.
  * Manual parts compose inside through children.
  */
-export function CommandDialog(props: CommandDialogProps): HellaNode {
+export function CommandDialog({ open, onClose, title: titleText, description: descriptionText, children, class: cls, ...attrs }: CommandDialogProps): HellaNode {
   const titleId = `hella-command-dialog-title-${++commandDialogCount}`;
   const descriptionId = `hella-command-dialog-description-${commandDialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -342,10 +341,10 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
   };
 
   const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.open() === false) return;
+    if (panel === undefined || wirings.length > 0 || open() === false) return;
     const target = panel;
-    wirings.push(onEscape(target, props.onClose));
-    wirings.push(onOutside(() => [target], props.onClose));
+    wirings.push(onEscape(target, onClose));
+    wirings.push(onOutside(() => [target], onClose));
     wirings.push(trapFocus(target));
   };
 
@@ -355,7 +354,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
   // unwired: closing tears the trap/escape/outside handlers down
   // immediately; reopening re-arms them without a remount.
   effect(() => {
-    if (props.open()) {
+    if (open()) {
       wasOpen = true;
       finishExit();
       visible(true);
@@ -368,7 +367,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
     }
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
+  const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return html`
     ${() => visible() && Portal({
@@ -391,11 +390,11 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
             role="dialog"
             aria-modal="true"
             aria-labelledby="${titleId}"
-            aria-describedby="${props.description === undefined ? undefined : descriptionId}"
+            aria-describedby="${descriptionText === undefined ? undefined : descriptionId}"
             data-state="${state}"
             class="${
               // @hella:compose
-              [dialogPanel]
+              [dialogPanel, cls]
               // @hella:end
             }"
             hook:afterMount="${(node: Element) => {
@@ -403,7 +402,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
               panel = node;
               installWirings();
               const onAnimationEnd = (): void => {
-                if (props.open() === false) finishExit();
+                if (open() === false) finishExit();
               };
               node.addEventListener("animationend", onAnimationEnd);
               teardown.push(() => {
@@ -415,6 +414,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
               disposeWirings();
               while (teardown.length) teardown.pop()!();
             }}"
+            ...${attrs}
           >
             <div
               data-slot="dialog-header"
@@ -424,16 +424,16 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
                 // @hella:end
               }"
             >
-              ${props.title !== undefined ? html`<h2
+              ${titleText !== undefined ? html`<h2
                 id="${titleId}"
                 data-slot="dialog-title"
                 class="${dialogTitle}"
-              >${props.title}</h2>` : null}
-              ${props.description !== undefined ? html`<p
+              >${titleText}</h2>` : null}
+              ${descriptionText !== undefined ? html`<p
                 id="${descriptionId}"
                 data-slot="dialog-description"
                 class="${dialogDescription}"
-              >${props.description}</p>` : null}
+              >${descriptionText}</p>` : null}
             </div>
             <button
               type="button"
@@ -444,7 +444,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
                 [dialogClose]
                 // @hella:end
               }"
-              e:click="${() => props.onClose()}"
+              e:click="${() => onClose()}"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -469,7 +469,7 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
                 [base, palette]
                 // @hella:end
               }"
-            >${() => props.children}</div>
+            >${() => children}</div>
           </div>
         `,
       ],
@@ -477,27 +477,27 @@ export function CommandDialog(props: CommandDialogProps): HellaNode {
   ` as HellaNode;
 }
 
-export default function Command(props: CommandProps): HellaNode {
-  const items = props.items ?? [];
+export default function Command({ items: itemsProp, filter, loop, value, onValueChange, children, class: cls, ...attrs }: CommandProps): HellaNode {
+  const items = itemsProp ?? [];
   const query = signal("");
   const activeIndex = signal(0);
   let rootNode: HTMLElement | undefined;
   let previous: string | undefined;
 
   const ranked = (): CommandItemData[] =>
-    (props.filter ?? defaultFilter)(items, query());
+    (filter ?? defaultFilter)(items, query());
 
   // The active value: the controlled accessor when given, the internal
   // cursor resolved against the ranked list otherwise.
   const activeValue = (): string | undefined => {
-    if (props.value !== undefined) return props.value();
+    if (value !== undefined) return value();
     return ranked()[activeIndex()]?.value;
   };
 
   const select = (next: number): void => {
     const entry = ranked()[next];
     if (entry === undefined) return;
-    if (props.value !== undefined) props.onValueChange?.(entry.value);
+    if (value !== undefined) onValueChange?.(entry.value);
     else activeIndex(next);
   };
 
@@ -511,7 +511,7 @@ export default function Command(props: CommandProps): HellaNode {
     let hops = 0;
     let next = at;
     while (hops < len) {
-      if (props.loop) next = (next + delta + len) % len;
+      if (loop) next = (next + delta + len) % len;
       else {
         next = next + delta;
         if (next < 0 || next >= len) return;
@@ -526,11 +526,11 @@ export default function Command(props: CommandProps): HellaNode {
 
   const jump = (edge: "first" | "last"): void => {
     const rankedList = ranked();
-    if (props.value !== undefined) {
+    if (value !== undefined) {
       let i = edge === "first" ? 0 : rankedList.length - 1;
       while (i >= 0 && i < rankedList.length) {
         if (!rankedList[i]!.disabled) {
-          props.onValueChange?.(rankedList[i]!.value);
+          onValueChange?.(rankedList[i]!.value);
           return;
         }
         i = edge === "first" ? i + 1 : i - 1;
@@ -552,7 +552,7 @@ export default function Command(props: CommandProps): HellaNode {
     const entry = ranked().find((candidate) => candidate.value === current);
     if (entry === undefined || entry.disabled) return;
     entry.onSelect?.();
-    props.onValueChange?.(entry.value);
+    onValueChange?.(entry.value);
   };
 
   const onKeydown = (e: KeyboardEvent): void => {
@@ -603,7 +603,7 @@ export default function Command(props: CommandProps): HellaNode {
 
   const commitItem = (entry: CommandItemData): void => {
     entry.onSelect?.();
-    props.onValueChange?.(entry.value);
+    onValueChange?.(entry.value);
   };
 
   const renderItem = (entry: CommandItemData): HellaNode =>
@@ -646,7 +646,7 @@ export default function Command(props: CommandProps): HellaNode {
       data-slot="command"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {
@@ -655,17 +655,18 @@ export default function Command(props: CommandProps): HellaNode {
       hook:beforeDestroy="${() => {
         rootNode = undefined;
       }}"
+      ...${attrs}
     >
       ${CommandInput({
         value: () => query(),
-        onInput: (v: string) => {
-          query(v);
-          if (props.value === undefined) activeIndex(0);
+        "on:input": (e: Event) => {
+          query((e.target as HTMLInputElement).value);
+          if (value === undefined) activeIndex(0);
         },
-        onKeydown,
+        "on:keydown": onKeydown,
       })}
       ${CommandList({ body: () => renderBody() })}
-      ${() => props.children}
+      ${() => children}
     </div>
   ` as HellaNode;
 }

@@ -2,7 +2,7 @@
 
 Compose the parts by hand; there is no context object and no schema prop. `Table` renders the overflow container (`data-slot="table-container"`) around the `table` element and takes the user's `class` on the table itself. The parts carry the structural selectors: header rows get bottom borders, the last body row drops its border, and footer rows keep theirs unless last.
 
-Seven semantic parts wrap the native table elements; each renders its `data-slot` and takes only `children`, `class`, plus `colSpan` where the element supports it, so anything else stays a native attribute you set directly.
+Seven semantic parts wrap the native table elements; each renders its `data-slot` and takes `children`, `class`, and the native attributes of its element, forwarded to the rendered element.
 
 ### Table
 
@@ -12,6 +12,7 @@ The overflow container and `table` root.
 | ---- | ---- | ------- |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The caption, row groups, and rows |
+Accepts all native `table` attributes (forwarded to the root element).
 
 ### TableHeader
 
@@ -20,6 +21,7 @@ The `thead[data-slot="table-header"]` row group.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The head rows |
+Accepts all native `thead` attributes (forwarded to the root element).
 
 ### TableBody
 
@@ -28,6 +30,7 @@ The `tbody[data-slot="table-body"]` row group.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The body rows |
+Accepts all native `tbody` attributes (forwarded to the root element).
 
 ### TableFooter
 
@@ -36,6 +39,7 @@ The `tfoot[data-slot="table-footer"]` row group.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The footer rows |
+Accepts all native `tfoot` attributes (forwarded to the root element).
 
 ### TableRow
 
@@ -44,6 +48,7 @@ The `tr[data-slot="table-row"]` row.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The cells |
+Accepts all native `tr` attributes (forwarded to the root element).
 
 ### TableHead
 
@@ -51,8 +56,8 @@ The `th[data-slot="table-head"]` header cell.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `colSpan` | `number` | `-` |
 | `children` | `HellaChildren` | The label content |
+Accepts all native `th` attributes (forwarded to the root element).
 
 ### TableCell
 
@@ -60,10 +65,10 @@ The `td[data-slot="table-cell"]` body cell.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `colSpan` | `number` | `-` |
 | `children` | `HellaChildren` | The cell content |
+Accepts all native `td` attributes (forwarded to the root element).
 
-`colSpan` renders as the native attribute for merged cells.
+`colspan` rides the native pass-through for merged cells.
 
 ### TableCaption
 
@@ -72,5 +77,6 @@ The `caption[data-slot="table-caption"]` element.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The caption text |
+Accepts all native `caption` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

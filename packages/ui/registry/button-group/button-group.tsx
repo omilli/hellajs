@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -8,74 +8,77 @@ declare const separatorBase: string;
 declare const text: string;
 // @hella:end
 
-interface ButtonGroupProps {
+interface ButtonGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
-export default function ButtonGroup(props: ButtonGroupProps): JSX.Element {
+export default function ButtonGroup({ orientation: orient, children, class: cls, ...attrs }: ButtonGroupProps): JSX.Element {
   return (
     <div
       role="group"
       data-slot="button-group"
-      data-orientation={props.orientation ?? "horizontal"}
+      data-orientation={orient ?? "horizontal"}
       class={
         // @hella:compose
         [
           base,
-          orientation[props.orientation ?? "horizontal"],
-          props.class,
+          orientation[orient ?? "horizontal"],
+          cls,
         ]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface ButtonGroupTextProps {
-  children?: HellaChildren;
+interface ButtonGroupTextProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ButtonGroupText(props: ButtonGroupTextProps): JSX.Element {
+export function ButtonGroupText({ children, class: cls, ...attrs }: ButtonGroupTextProps): JSX.Element {
   return (
     <div
       data-slot="button-group-text"
       class={
         // @hella:compose
-        [text, props.class]
+        [text, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface ButtonGroupSeparatorProps {
+interface ButtonGroupSeparatorProps extends HTMLAttributes<"div"> {
   orientation?: "horizontal" | "vertical";
   class?: string;
 }
 
-export function ButtonGroupSeparator(props: ButtonGroupSeparatorProps): JSX.Element {
+export function ButtonGroupSeparator({ orientation: orient, class: cls, ...attrs }: ButtonGroupSeparatorProps): JSX.Element {
   return (
     <div
       role="separator"
       data-slot="button-group-separator"
-      data-orientation={props.orientation ?? "vertical"}
-      aria-orientation={props.orientation ?? "vertical"}
+      data-orientation={orient ?? "vertical"}
+      aria-orientation={orient ?? "vertical"}
       class={
         // @hella:compose
         [
           separatorBase,
           separator,
-          props.class,
+          cls,
         ]
         // @hella:end
       }
+      {...attrs}
     />
   );
 }

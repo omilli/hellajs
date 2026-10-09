@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { Portal } from "@hellajs/dom";
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -46,47 +46,49 @@ const chevronIcon = (): JSX.Element => (
   </svg>
 );
 
-interface NavigationMenuListProps {
+interface NavigationMenuListProps extends HTMLAttributes<"ul"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function NavigationMenuList(props: NavigationMenuListProps): JSX.Element {
+export function NavigationMenuList({ children, class: cls, ...attrs }: NavigationMenuListProps): JSX.Element {
   return (
     <ul
       data-slot="navigation-menu-list"
       class={
         // @hella:compose
-        [list, props.class]
+        [list, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </ul>
   );
 }
 
-interface NavigationMenuItemProps {
+interface NavigationMenuItemProps extends HTMLAttributes<"li"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function NavigationMenuItem(props: NavigationMenuItemProps): JSX.Element {
+export function NavigationMenuItem({ children, class: cls, ...attrs }: NavigationMenuItemProps): JSX.Element {
   return (
     <li
       data-slot="navigation-menu-item"
       class={
         // @hella:compose
-        [item, props.class]
+        [item, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </li>
   );
 }
 
-interface NavigationMenuTriggerProps {
+interface NavigationMenuTriggerProps extends HTMLAttributes<"button"> {
   /** This trigger's id in the root's open-value store; clicks announce it when no `onActivate` stands in. */
   value?: string;
   /** Resolves the open state for `aria-expanded`/`data-state`; manual wiring threads it from the owning signal. */
@@ -96,35 +98,36 @@ interface NavigationMenuTriggerProps {
   class?: string;
 }
 
-export function NavigationMenuTrigger(props: NavigationMenuTriggerProps): JSX.Element {
-  const active = (): boolean => props.active?.() ?? false;
+export function NavigationMenuTrigger({ value, active: activeProp, onActivate, children, class: cls, ...attrs }: NavigationMenuTriggerProps): JSX.Element {
+  const active = (): boolean => activeProp?.() ?? false;
   return (
     <button
       type="button"
       data-slot="navigation-menu-trigger"
-      data-value={props.value}
+      data-value={value}
       data-state={active() ? "open" : "closed"}
       aria-expanded={active() ? "true" : "false"}
       class={
         // @hella:compose
-        [trigger, props.class]
+        [trigger, cls]
         // @hella:end
       }
       on:click={() => {
         // The announce carries the requested state (computed before the owner
         // toggle runs), so the root's store mirrors instead of re-toggling.
         const open = !active();
-        props.onActivate?.();
-        if (props.value !== undefined) document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id: props.value, open } }));
+        onActivate?.();
+        if (value !== undefined) document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: { id: value, open } }));
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
       {chevronIcon()}
     </button>
   );
 }
 
-interface NavigationMenuContentProps {
+interface NavigationMenuContentProps extends HTMLAttributes<"div"> {
   /** Resolves the open state; manual wiring threads it from the owning signal. */
   active?: () => boolean;
   /** Portal target for the shared viewport slot; defaults to the first `[data-slot="navigation-menu-viewport"]` in the document. */
@@ -135,9 +138,9 @@ interface NavigationMenuContentProps {
   class?: string;
 }
 
-export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.Element {
-  const active = (): boolean => props.active?.() ?? false;
-  const portalTarget = props.viewport ?? VIEWPORT_SELECTOR;
+export function NavigationMenuContent({ active: activeProp, viewport: viewportSlot, onExited, children, class: cls, ...attrs }: NavigationMenuContentProps): JSX.Element {
+  const active = (): boolean => activeProp?.() ?? false;
+  const portalTarget = viewportSlot ?? VIEWPORT_SELECTOR;
   // `visible` alone gates the render so an open→closed flip never unmounts
   // before this watcher starts the exit; the panel stays mounted under
   // data-state="closed" until its animationend (or the copied duration
@@ -183,7 +186,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.El
             data-state={state()}
             class={
               // @hella:compose
-              [content, props.class]
+              [content, cls]
               // @hella:end
             }
             hook:afterMount={(node) => {
@@ -193,7 +196,7 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.El
               const onAnimationEnd = (): void => {
                 if (!active()) {
                   visible(false);
-                  props.onExited?.();
+                  onExited?.();
                 }
               };
               node.addEventListener("animationend", onAnimationEnd);
@@ -202,8 +205,9 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.El
             hook:beforeDestroy={() => {
               while (teardown.length) teardown.pop()!();
             }}
+            {...attrs}
           >
-            {props.children}
+            {children}
           </div>
         </Portal>
       )}
@@ -211,52 +215,50 @@ export function NavigationMenuContent(props: NavigationMenuContentProps): JSX.El
   );
 }
 
-interface NavigationMenuLinkProps {
+interface NavigationMenuLinkProps extends HTMLAttributes<"a"> {
   /** Renders `data-active="true"` and its accent styles (the ref's data-[active=true] set). */
   active?: boolean;
-  href?: string;
   children?: HellaChildren;
   class?: string;
 }
 
-export function NavigationMenuLink(props: NavigationMenuLinkProps): JSX.Element {
+export function NavigationMenuLink({ active, children, class: cls, ...attrs }: NavigationMenuLinkProps): JSX.Element {
   return (
     <a
       data-slot="navigation-menu-link"
-      data-active={props.active ? "true" : undefined}
-      href={props.href}
+      data-active={active ? "true" : undefined}
       class={
         // @hella:compose
-        [link, props.class]
+        [link, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </a>
   );
 }
 
-interface NavigationMenuViewportProps {
+interface NavigationMenuViewportProps extends HTMLAttributes<"div"> {
   /** Resolves the open state for the viewport's enter/exit `data-state`; the composed root wires its own store. */
   active?: () => boolean;
-  /** Anchors manual Content wiring: give the slot an id and pass `#<id>` as each Content's `viewport` selector. */
-  id?: string;
   class?: string;
 }
 
-export function NavigationMenuViewport(props: NavigationMenuViewportProps): JSX.Element {
-  const active = (): boolean => props.active?.() ?? false;
+export function NavigationMenuViewport({ active: activeProp, id, class: cls, ...attrs }: NavigationMenuViewportProps): JSX.Element {
+  const active = (): boolean => activeProp?.() ?? false;
   return (
     <div
       class={
         // @hella:compose
-        [viewportWrapper, props.class]
+        [viewportWrapper, cls]
         // @hella:end
       }
+      {...attrs}
     >
       <div
         data-slot="navigation-menu-viewport"
-        id={props.id}
+        id={id}
         data-state={active() ? "open" : "closed"}
         class={
           // @hella:compose
@@ -268,7 +270,7 @@ export function NavigationMenuViewport(props: NavigationMenuViewportProps): JSX.
   );
 }
 
-interface NavigationMenuIndicatorProps {
+interface NavigationMenuIndicatorProps extends HTMLAttributes<"div"> {
   /** Resolves the visible state (any panel open); manual wiring threads it from the owning signal. */
   active?: () => boolean;
   /** Resolves the trigger the indicator sits under; defaults to the trigger announced by the activation stream. */
@@ -277,16 +279,16 @@ interface NavigationMenuIndicatorProps {
   class?: string;
 }
 
-export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): JSX.Element {
+export function NavigationMenuIndicator({ active: activeProp, anchor, class: cls, ...attrs }: NavigationMenuIndicatorProps): JSX.Element {
   const activeId = signal("");
-  const visible = (): boolean => props.active?.() ?? activeId() !== "";
+  const visible = (): boolean => activeProp?.() ?? activeId() !== "";
   const wirings: (() => void)[] = [];
   let node: HTMLElement | undefined;
 
   // The trigger to sit under: the manual anchor when given, else the active
   // trigger found by the announcement stream's id.
   const resolveTrigger = (): Element | undefined => {
-    if (props.anchor) return props.anchor();
+    if (anchor) return anchor();
     const id = activeId();
     return id === "" ? undefined : document.querySelector(`[data-slot='navigation-menu-trigger'][data-value='${id}']`) ?? undefined;
   };
@@ -317,7 +319,7 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): JS
       data-state={visible() ? "visible" : "hidden"}
       class={
         // @hella:compose
-        [indicator, props.class]
+        [indicator, cls]
         // @hella:end
       }
       hook:afterMount={(mounted) => {
@@ -339,6 +341,7 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): JS
         while (wirings.length) wirings.pop()!();
         node = undefined;
       }}
+      {...attrs}
     >
       <div
         class={
@@ -351,7 +354,7 @@ export function NavigationMenuIndicator(props: NavigationMenuIndicatorProps): JS
   );
 }
 
-interface NavigationMenuProps {
+interface NavigationMenuProps extends HTMLAttributes<"div"> {
   /** Controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given. */
   value?: () => string;
   onValueChange?: (value: string) => void;
@@ -361,12 +364,12 @@ interface NavigationMenuProps {
   class?: string;
 }
 
-export default function NavigationMenu(props: NavigationMenuProps): JSX.Element {
+export default function NavigationMenu({ value: valueProp, onValueChange, viewport: viewportProp, children, class: cls, ...attrs }: NavigationMenuProps): JSX.Element {
   const internal = signal("");
-  const active = (): string => (props.value !== undefined ? props.value() : internal());
+  const active = (): string => (valueProp !== undefined ? valueProp() : internal());
   const setActive = (value: string): void => {
-    if (props.value === undefined) internal(value);
-    props.onValueChange?.(value);
+    if (valueProp === undefined) internal(value);
+    onValueChange?.(value);
   };
   const wirings: (() => void)[] = [];
 
@@ -381,10 +384,10 @@ export default function NavigationMenu(props: NavigationMenuProps): JSX.Element 
   return (
     <div
       data-slot="navigation-menu"
-      data-viewport={props.viewport === false ? "false" : "true"}
+      data-viewport={viewportProp === false ? "false" : "true"}
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
       hook:afterMount={() => {
@@ -394,9 +397,10 @@ export default function NavigationMenu(props: NavigationMenuProps): JSX.Element 
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
-      {() => (props.viewport === false ? null : <NavigationMenuViewport active={() => active() !== ""} />)}
+      {children}
+      {() => (viewportProp === false ? null : <NavigationMenuViewport active={() => active() !== ""} />)}
     </div>
   );
 }

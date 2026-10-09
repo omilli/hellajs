@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const avatar: string;
@@ -10,112 +10,118 @@ declare const group: string;
 declare const header: string;
 // @hella:end
 
-interface MessageGroupProps {
-  children?: HellaChildren;
+interface MessageGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageGroup(props: MessageGroupProps): HellaNode {
+export function MessageGroup({ children, class: cls, ...attrs }: MessageGroupProps): HellaNode {
   return html`
     <div
       data-slot="message-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [group, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MessageProps {
+interface MessageProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   align?: "start" | "end";
-  class?: string;
 }
 
-export function Message(props: MessageProps): HellaNode {
+export function Message({ align, children, class: cls, ...attrs }: MessageProps): HellaNode {
   return html`
     <div
       data-slot="message"
-      data-align="${props.align ?? "start"}"
+      data-align="${align ?? "start"}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MessageAvatarProps {
-  children?: HellaChildren;
+interface MessageAvatarProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageAvatar(props: MessageAvatarProps): HellaNode {
+export function MessageAvatar({ children, class: cls, ...attrs }: MessageAvatarProps): HellaNode {
   return html`
     <div
       data-slot="message-avatar"
       class="${
         // @hella:compose
-        [avatar, props.class]
+        [avatar, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MessageContentProps {
-  children?: HellaChildren;
+interface MessageContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageContent(props: MessageContentProps): HellaNode {
+export function MessageContent({ children, class: cls, ...attrs }: MessageContentProps): HellaNode {
   return html`
     <div
       data-slot="message-content"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MessageHeaderProps {
-  children?: HellaChildren;
+interface MessageHeaderProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageHeader(props: MessageHeaderProps): HellaNode {
+export function MessageHeader({ children, class: cls, ...attrs }: MessageHeaderProps): HellaNode {
   return html`
     <div
       data-slot="message-header"
       class="${
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MessageFooterProps {
-  children?: HellaChildren;
+interface MessageFooterProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageFooter(props: MessageFooterProps): HellaNode {
+export function MessageFooter({ children, class: cls, ...attrs }: MessageFooterProps): HellaNode {
   return html`
     <div
       data-slot="message-footer"
       class="${
         // @hella:compose
-        [footer, props.class]
+        [footer, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

@@ -46,7 +46,7 @@ export function FormDemo() {
       <FormItem error={() => form.errors().email != null}>
         <FormLabel for="demo-email" error={() => form.errors().email != null}>Email</FormLabel>
         <FormControl describedBy="demo-email-msg" invalid={() => form.errors().email != null}>
-          <Input id="demo-email" type="email" placeholder="ada@lovelace.dev" value={() => form.values.email()} oninput={(v) => form.setField("email", v)} />
+          <Input id="demo-email" type="email" placeholder="ada@lovelace.dev" value={() => form.values.email()} on:input={(e: Event) => form.setField("email", (e.target as HTMLInputElement).value)} />
         </FormControl>
         <FormDescription id="demo-email-msg">We only use this for sign-in.</FormDescription>
         <FormMessage errors={() => (form.errors().email ? [form.errors().email!] : [])} />
@@ -54,7 +54,7 @@ export function FormDemo() {
       <FormItem error={() => form.errors().name != null}>
         <FormLabel for="demo-name" error={() => form.errors().name != null}>Display name</FormLabel>
         <FormControl invalid={() => form.errors().name != null}>
-          <Input id="demo-name" placeholder="Ada Lovelace" value={() => form.values.name()} oninput={(v) => form.setField("name", v)} />
+          <Input id="demo-name" placeholder="Ada Lovelace" value={() => form.values.name()} on:input={(e: Event) => form.setField("name", (e.target as HTMLInputElement).value)} />
         </FormControl>
         <FormMessage errors={() => (form.errors().name ? [form.errors().name!] : [])} />
       </FormItem>
@@ -75,7 +75,7 @@ export function FormBlurDemo() {
       <FormItem error={() => blurForm.errors().email != null}>
         <FormLabel for="demo-blur-email">Email</FormLabel>
         <FormControl invalid={() => blurForm.errors().email != null}>
-          <Input id="demo-blur-email" placeholder="Leave the field to validate" value={() => blurForm.values.email()} oninput={(v) => blurForm.setField("email", v)} />
+          <Input id="demo-blur-email" placeholder="Leave the field to validate" value={() => blurForm.values.email()} on:input={(e: Event) => blurForm.setField("email", (e.target as HTMLInputElement).value)} />
         </FormControl>
         <FormMessage errors={() => (blurForm.errors().email ? [blurForm.errors().email!] : [])} />
       </FormItem>
@@ -95,7 +95,7 @@ export function FormResetDemo() {
       <FormItem error={() => resetForm.errors().email != null}>
         <FormLabel for="demo-reset-email">Email</FormLabel>
         <FormControl invalid={() => resetForm.errors().email != null}>
-          <Input id="demo-reset-email" value={() => resetForm.values.email()} oninput={(v) => resetForm.setField("email", v)} />
+          <Input id="demo-reset-email" value={() => resetForm.values.email()} on:input={(e: Event) => resetForm.setField("email", (e.target as HTMLInputElement).value)} />
         </FormControl>
         <FormMessage errors={() => (resetForm.errors().email ? [resetForm.errors().email!] : [])} />
       </FormItem>

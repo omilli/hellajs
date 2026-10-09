@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const variants: Record<string, string> = {
@@ -6,63 +6,66 @@ const variants: Record<string, string> = {
   border: "border-b border-border pb-2",
 };
 
-interface MarkerProps {
+interface MarkerProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "separator" | "border";
-  class?: string;
 }
 
-export default function Marker(props: MarkerProps): JSX.Element {
+export default function Marker({ variant, children, class: cls, ...attrs }: MarkerProps): JSX.Element {
   return (
     <div
       data-slot="marker"
-      data-variant={props.variant ?? "default"}
+      data-variant={variant ?? "default"}
       class={
         cn(
           "group/marker relative flex min-h-4 w-full items-center gap-2 text-left text-sm text-muted-foreground [&_svg:not([class*='size-'])]:size-4 [a]:underline [a]:underline-offset-3 [a]:hover:text-foreground",
-          variants[props.variant ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          cls,
         )
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface MarkerIconProps {
-  children?: HellaChildren;
+interface MarkerIconProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MarkerIcon(props: MarkerIconProps): JSX.Element {
+export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps): JSX.Element {
   return (
     <span
       data-slot="marker-icon"
       aria-hidden="true"
       class={
-        cn("size-4 shrink-0 [&_svg:not([class*='size-'])]:size-4", props.class)
+        cn("size-4 shrink-0 [&_svg:not([class*='size-'])]:size-4", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }
 
-interface MarkerContentProps {
-  children?: HellaChildren;
+interface MarkerContentProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MarkerContent(props: MarkerContentProps): JSX.Element {
+export function MarkerContent({ children, class: cls, ...attrs }: MarkerContentProps): JSX.Element {
   return (
     <span
       data-slot="marker-content"
       class={
-        cn("min-w-0 wrap-break-word group-data-[variant=separator]/marker:flex-none group-data-[variant=separator]/marker:text-center *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", props.class)
+        cn("min-w-0 wrap-break-word group-data-[variant=separator]/marker:flex-none group-data-[variant=separator]/marker:text-center *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </span>
   );
 }

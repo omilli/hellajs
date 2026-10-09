@@ -14,6 +14,8 @@ The chip root: a `div` carrying the three state attributes the whole chip keys o
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The media, content, and action nodes |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### AttachmentMedia
 
 The media well: a `div` carrying `data-variant`; with no authored children it inlines the loading spinner on `uploading` and the error glyph on `error`.
@@ -24,6 +26,8 @@ The media well: a `div` carrying `data-variant`; with no authored children it in
 | `state` | `"idle" \| "uploading" \| "processing" \| "error" \| "done"` | `-` |
 | `children` | `HellaChildren` | Authored media nodes; suppress the inlined icons |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### AttachmentContent
 
 The text column: a `div` carrying `data-slot="attachment-content"`.
@@ -32,21 +36,27 @@ The text column: a `div` carrying `data-slot="attachment-content"`.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Title and description nodes |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### AttachmentTitle
 
-The filename line: a `div` carrying `data-slot="attachment-title"`.
+The filename line: a `span` carrying `data-slot="attachment-title"`.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The title node |
 
+Accepts all native `span` attributes (forwarded to the root element).
+
 ### AttachmentDescription
 
-The status line: a `div` carrying `data-slot="attachment-description"`, tinted on error.
+The status line: a `span` carrying `data-slot="attachment-description"`, tinted on error.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The description node |
+
+Accepts all native `span` attributes (forwarded to the root element).
 
 ### AttachmentActions
 
@@ -56,6 +66,8 @@ The action row: a `div` carrying `data-slot="attachment-actions"`.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Action buttons |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### AttachmentAction
 
 A real button for remove/retry actions.
@@ -64,8 +76,9 @@ A real button for remove/retry actions.
 | ---- | ---- | ------- |
 | `variant` | `"default" \| "destructive" \| "outline" \| "secondary" \| "ghost" \| "link"` | `"ghost"` |
 | `size` | `"default" \| "xs" \| "sm" \| "lg" \| "icon" \| "icon-xs" \| "icon-sm" \| "icon-lg"` | `"icon-xs"` |
-| `onclick` | `() => void` | `-` |
 | `children` | `HellaChildren` | Icon or label node |
+
+Accepts all native `button` attributes (forwarded to the root element).
 
 ### AttachmentTrigger
 
@@ -73,9 +86,9 @@ An invisible button stretched over the whole chip for open interactions.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `type` | `string` | `"button"` |
-| `onclick` | `() => void` | `-` |
 | `children` | `HellaChildren` | Optional label nodes |
+
+Accepts all native `button` attributes (forwarded to the root element).
 
 ### AttachmentGroup
 
@@ -84,6 +97,8 @@ The scroll-snapping chip row: a `div` carrying `data-slot="attachment-group"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The chips |
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
 

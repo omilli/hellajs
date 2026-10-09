@@ -6,7 +6,12 @@ export function InputDemo() {
 
   return (
     <>
-      <Input value={email} oninput={(v) => email(v)} placeholder="Email address" aria-label="Email address" />
+      <Input
+        value={email}
+        on:input={(e: Event) => email((e.target as HTMLInputElement).value)}
+        placeholder="Email address"
+        aria-label="Email address"
+      />
       <p class="demo-muted">{() => `Echoing: ${email() === "" ? "nothing yet" : email()}`}</p>
     </>
   );
@@ -15,7 +20,7 @@ export function InputDemo() {
 export function InputInvalidDemo() {
   return (
     <>
-      <Input placeholder="Required field" ariaInvalid={true} aria-label="Invalid input example" />
+      <Input placeholder="Required field" aria-invalid="true" aria-label="Invalid input example" />
     </>
   );
 }

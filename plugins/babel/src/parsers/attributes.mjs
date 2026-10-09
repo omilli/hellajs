@@ -4,14 +4,16 @@ import { parseTextContent } from "./text.mjs";
 /**
  * @param {string | null | undefined} attrsStr
  * @param {import("@babel/core").Expression[]} expressions
- * @returns {Record<string, boolean | string | { __slot: number } | Array<string | { __slot: number }>>}
+ * @returns {Record<string, boolean | string | { __slot: number } | { __spread: number } | Array<string | { __slot: number }>>}
  */
 export function parseAttributes(attrsStr, expressions) {
   if (!attrsStr?.trim()) return {};
 
   const props = {};
-  // Match all prefixes including error:
-  const attrRegex = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)|([^\s>]+)))?/g;
+  // Match all prefixes including error:, plus the spread form (`...${expr}`,
+  // source `...__SLOT_N__`). The spread alternative must lead so `...` is
+  // never consumed by the bare-name branch.
+  const attrRegex = /(\.\.\.__SLOT_\d+__|error:[\w-]+|e:[\w-]+|on:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)|([^\s>]+)))?/g;
   let match;
 
   while ((match = attrRegex.exec(attrsStr)) !== null) {
@@ -21,7 +23,13 @@ export function parseAttributes(attrsStr, expressions) {
     const slotMarker = match[4];
     const unquoted = match[5];
 
-    if (slotMarker) {
+    // Spread (`...${expr}`, source `...__SLOT_N__`): record an ordered
+    // sentinel in props; the processor emits a positional spreadElement.
+    if (name.startsWith("...")) {
+      const spreadMatch = name.match(/__SLOT_(\d+)__/);
+      const index = spreadMatch ? parseInt(spreadMatch[1]) : 0;
+      props[`__SPREAD_${index}__`] = { __spread: index };
+    } else if (slotMarker) {
       const slotMatch = slotMarker.match(/__SLOT_(\d+)__/);
       const index = slotMatch ? parseInt(slotMatch[1]) : 0;
       props[name] = { __slot: index };

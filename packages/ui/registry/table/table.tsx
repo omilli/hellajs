@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -12,12 +12,12 @@ declare const header: string;
 declare const row: string;
 // @hella:end
 
-interface TableProps {
-  children?: HellaChildren;
+interface TableProps extends HTMLAttributes<"table"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Table(props: TableProps): JSX.Element {
+export default function Table({ children, class: cls, ...attrs }: TableProps): JSX.Element {
   return (
     <div
       data-slot="table-container"
@@ -31,136 +31,160 @@ export default function Table(props: TableProps): JSX.Element {
         data-slot="table"
         class={
           // @hella:compose
-          [base, props.class]
+          [base, cls]
           // @hella:end
         }
+        {...attrs}
       >
-        {props.children}
+        {children}
       </table>
     </div>
   );
 }
 
-interface TablePartProps {
-  children?: HellaChildren;
+interface TableHeaderProps extends HTMLAttributes<"thead"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function TableHeader(props: TablePartProps): JSX.Element {
+export function TableHeader({ children, class: cls, ...attrs }: TableHeaderProps): JSX.Element {
   return (
     <thead
       data-slot="table-header"
       class={
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </thead>
   );
 }
 
-export function TableBody(props: TablePartProps): JSX.Element {
+interface TableBodyProps extends HTMLAttributes<"tbody"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function TableBody({ children, class: cls, ...attrs }: TableBodyProps): JSX.Element {
   return (
     <tbody
       data-slot="table-body"
       class={
         // @hella:compose
-        [body, props.class]
+        [body, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </tbody>
   );
 }
 
-export function TableFooter(props: TablePartProps): JSX.Element {
+interface TableFooterProps extends HTMLAttributes<"tfoot"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function TableFooter({ children, class: cls, ...attrs }: TableFooterProps): JSX.Element {
   return (
     <tfoot
       data-slot="table-footer"
       class={
         // @hella:compose
-        [footer, props.class]
+        [footer, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </tfoot>
   );
 }
 
-export function TableRow(props: TablePartProps): JSX.Element {
+interface TableRowProps extends HTMLAttributes<"tr"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function TableRow({ children, class: cls, ...attrs }: TableRowProps): JSX.Element {
   return (
     <tr
       data-slot="table-row"
       class={
         // @hella:compose
-        [row, props.class]
+        [row, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </tr>
   );
 }
 
-interface TableHeadProps {
-  children?: HellaChildren;
-  colSpan?: number;
+interface TableHeadProps extends HTMLAttributes<"th"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function TableHead(props: TableHeadProps): JSX.Element {
+export function TableHead({ children, class: cls, ...attrs }: TableHeadProps): JSX.Element {
   return (
     <th
       data-slot="table-head"
-      colSpan={props.colSpan}
       class={
         // @hella:compose
-        [head, props.class]
+        [head, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </th>
   );
 }
 
-interface TableCellProps {
-  children?: HellaChildren;
-  colSpan?: number;
+interface TableCellProps extends HTMLAttributes<"td"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function TableCell(props: TableCellProps): JSX.Element {
+export function TableCell({ children, class: cls, ...attrs }: TableCellProps): JSX.Element {
   return (
     <td
       data-slot="table-cell"
-      colSpan={props.colSpan}
       class={
         // @hella:compose
-        [cell, props.class]
+        [cell, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </td>
   );
 }
 
-export function TableCaption(props: TablePartProps): JSX.Element {
+interface TableCaptionProps extends HTMLAttributes<"caption"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function TableCaption({ children, class: cls, ...attrs }: TableCaptionProps): JSX.Element {
   return (
     <caption
       data-slot="table-caption"
       class={
         // @hella:compose
-        [caption, props.class]
+        [caption, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </caption>
   );
 }

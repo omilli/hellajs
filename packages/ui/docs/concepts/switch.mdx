@@ -6,8 +6,9 @@
 | ---- | ---- | ------- |
 | `checked` | `boolean \| (() => boolean)` | `-` |
 | `onCheckedChange` | `(checked: boolean) => void` | `-` |
-| `disabled` | `boolean` | `-` |
 | `class` | `string` | `-` |
+
+Accepts all native `button` attributes (forwarded to the root element): `disabled` gates the toggle and dims the control.
 
 Without `checked`, the root owns a signal seeded by a boolean `checked` prop and flips it on click. Pass an accessor and the switch becomes controlled: clicks turn into `onCheckedChange` requests without writing state, so a parent signal that ignores the request keeps the switch unchanged.
 

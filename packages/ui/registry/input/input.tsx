@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -5,38 +6,25 @@ declare const focus: string;
 declare const invalid: string;
 // @hella:end
 
-interface InputProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+interface InputProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export default function Input(props: InputProps): JSX.Element {
+export default function Input({ class: cls, ...attrs }: InputProps): JSX.Element {
   return (
     <input
       data-slot="input"
-      type={props.type}
-      placeholder={props.placeholder}
-      id={props.id}
-      ariaLabel={props.ariaLabel}
-      aria-invalid={props.ariaInvalid ? "true" : undefined}
-      value={props.value}
       class={
         // @hella:compose
         [
           base,
           focus,
           invalid,
-          props.class,
+          cls,
         ]
         // @hella:end
       }
-      on:input={(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}
+      {...attrs}
     />
   );
 }

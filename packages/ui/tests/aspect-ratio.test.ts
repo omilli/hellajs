@@ -1,7 +1,9 @@
-import { describe, test, expect, beforeEach } from "bun:test";
+import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
   aspectRatioVariants,
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   renderVariant,
@@ -46,5 +48,14 @@ describe("aspect-ratio", () => {
   test("keeps structural parity across all four variants", () => {
     // HappyDOM serializes the html flavor's style attribute through cssText (spaces); jsx keeps it raw.
     assertStructuralParity(aspectRatioVariants, { ratio: 1.5 }, ["style"]);
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(aspectRatioVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(aspectRatioVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 });

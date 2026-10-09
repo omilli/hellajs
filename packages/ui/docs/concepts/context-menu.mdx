@@ -13,6 +13,7 @@ Thirteen named parts ship beside the default `ContextMenu`: `ContextMenuTrigger`
 | `content` | `HellaChildren` | The menu items, portaled into `document.body` while open |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The trigger zone content |
+Accepts all native `span` attributes (forwarded to the root element).
 
 A controlled `open` stops the root from writing its internal signal; `onOpenChange` reports every requested open and close flip.
 
@@ -23,6 +24,7 @@ The manual trigger zone: a passive `span` owning the `contextmenu` listener.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The zone content |
+Accepts all native `span` attributes (forwarded to the root element).
 
 ### ContextMenuContent
 
@@ -31,7 +33,6 @@ The `role="menu"` surface with the full keyboard model, anchored at the pointer 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `state` | `() => "open" \| "closed"` | `-` |
-| `id` | `string` | `-` |
 | `side` | `"top" \| "bottom" \| "left" \| "right"` | `"bottom"` |
 | `align` | `"start" \| "center" \| "end"` | `"start"` |
 | `anchor` | `() => Element \| undefined` | `-` |
@@ -39,6 +40,7 @@ The `role="menu"` surface with the full keyboard model, anchored at the pointer 
 | `onExited` | `() => void` | `-` |
 | `onArrowLeft` | `() => void` | `-` |
 | `children` | `HellaChildren` | The menu items |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `state` drives `data-state` and the enter/exit cycle; `closed` tears the wirings down. The anchor resolves to the planted pointer anchor; positioning is skipped when undefined. `onDismiss` receives Escape and outside pointerdowns from the top layer, and item selection closes every open layer through it. `onExited` fires when the exit animation ends; `onArrowLeft` closes the menu when provided (submenu exit; a top-level menu stays inert).
 
@@ -49,6 +51,7 @@ A passthrough grouping `div`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The grouped items |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### ContextMenuItem
 
@@ -56,14 +59,13 @@ A `role="menuitem"` row; activation closes every open layer.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `onclick` | `() => void` | `-` |
 | `destructive` | `boolean` | `-` |
 | `inset` | `boolean` | `-` |
-| `disabled` | `boolean` | `-` |
 | `shortcut` | `string` | `-` |
 | `children` | `HellaChildren` | The row's label |
+Accepts all native `div` attributes (forwarded to the root element).
 
-`onclick` fires before the close-all activation event; `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"` for the indented alignment; `disabled` renders `data-disabled` plus `aria-disabled` and blocks `onclick` and the close; `shortcut` renders as a trailing `ContextMenuShortcut` span.
+A user `on:click` chains with the owned close (it fires before the close-all activation event); `destructive` renders the destructive `data-variant` treatment; `inset` renders `data-inset="true"` for the indented alignment; `disabled` renders `data-disabled` plus `aria-disabled` and blocks the user's `on:click` and the close; `shortcut` renders as a trailing `ContextMenuShortcut` span.
 
 ### ContextMenuCheckboxItem
 
@@ -73,8 +75,8 @@ A `role="menuitemcheckbox"` row with the check indicator.
 | ---- | ---- | ------- |
 | `checked` | `boolean \| (() => boolean)` | `-` |
 | `onCheckedChange` | `(checked: boolean) => void` | `-` |
-| `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The row's label |
+Accepts all native `div` attributes (forwarded to the root element).
 
 A boolean `checked` seeds the internal signal; an accessor makes the item controlled - activation then only reports through `onCheckedChange`, which fires on every requested flip before every open layer closes.
 
@@ -88,6 +90,7 @@ A group rendering one radio item per entry.
 | `value` | `() => string` | `-` |
 | `onValueChange` | `(value: string) => void` | `-` |
 | `children` | `HellaChildren` | Static group content rendered alongside the items |
+Accepts all native `div` attributes (forwarded to the root element).
 
 A controlled `value` stops the group from writing its internal signal; `onValueChange` reports the requested selection.
 
@@ -100,8 +103,8 @@ A `role="menuitemradio"` row with the circle indicator.
 | `value` | `string` | `-` |
 | `checked` | `boolean \| (() => boolean)` | `-` |
 | `onSelect` | `() => void` | `-` |
-| `disabled` | `boolean` | `-` |
 | `children` | `HellaChildren` | The row's label |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `checked` reads statically as a boolean; an accessor keeps the row reactive against its owning group. `onSelect` is called on click when the row is enabled.
 
@@ -113,10 +116,13 @@ A section label.
 | ---- | ---- | ------- |
 | `inset` | `boolean` | `-` |
 | `children` | `HellaChildren` | The label text |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### ContextMenuSeparator
 
 A hairline between groups.
+
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### ContextMenuShortcut
 
@@ -125,6 +131,7 @@ The trailing key-hint span inside a row.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The hint text |
+Accepts all native `span` attributes (forwarded to the root element).
 
 ### ContextMenuSub
 
@@ -134,6 +141,7 @@ A sub-trigger plus its portaled sub-content; open state owned here. The sub open
 | ---- | ---- | ------- |
 | `content` | `HellaChildren` | The sub-surface items |
 | `children` | `HellaChildren` | The sub-trigger label |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### ContextMenuSubTrigger
 
@@ -145,6 +153,7 @@ The manual sub-trigger row (chevron, `aria-haspopup`).
 | `onOpen` | `() => void` | `-` |
 | `inset` | `boolean` | `-` |
 | `children` | `HellaChildren` | The sub-trigger label |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `state` drives `aria-expanded` and `data-state`; the composed `ContextMenuSub` wires it. `onOpen` is called on click and hover intent.
 
@@ -163,6 +172,7 @@ The `role="menu"` sub-surface, anchored against its sub-trigger.
 | `onArrowLeft` | `() => void` | `-` |
 | `onPointerEnter` | `() => void` | `-` |
 | `children` | `HellaChildren` | The sub-surface items |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `onDismiss` closes the sub's own layer; `onExited` fires when the exit animation ends; `onArrowLeft` closes the submenu; `onPointerEnter` cancels the trigger's pending close when the pointer enters the content.
 

@@ -10,6 +10,7 @@ The empty-state root: a `div` carrying `data-slot="empty"`.
 | ---- | ---- | ------- |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The arranged parts |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### EmptyHeader
 
@@ -18,6 +19,7 @@ The stacked top: a `div` carrying `data-slot="empty-header"`, centering its medi
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Media, title, and description nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### EmptyMedia
 
@@ -27,6 +29,7 @@ The media slot: a `div` carrying `data-slot="empty-icon"`, styled by its `varian
 | ---- | ---- | ------- |
 | `variant` | `"default" \| "icon"` | `"default"` |
 | `children` | `HellaChildren` | An svg, illustration, or avatar |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### EmptyTitle
 
@@ -35,6 +38,7 @@ The heading: a `div` carrying `data-slot="empty-title"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The title node |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### EmptyDescription
 
@@ -43,6 +47,7 @@ The supporting line: a `div` carrying `data-slot="empty-description"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The description node |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### EmptyContent
 
@@ -51,5 +56,6 @@ The body: a `div` carrying `data-slot="empty-content"` below the header.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The body nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

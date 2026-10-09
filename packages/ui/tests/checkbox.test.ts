@@ -5,6 +5,8 @@ import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 // specifier, so the harness mount shares one dom instance with the components.
 import { html, mount } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   checkboxVariants,
@@ -93,8 +95,8 @@ describe("checkbox", () => {
     expect(onCheckedChange).not.toHaveBeenCalled();
   });
 
-  test.each(checkboxVariants)("$format/$style renders aria-invalid and the id when given", (variant) => {
-    const { root } = mountCheckbox(variant, { ariaInvalid: true, id: "terms" });
+  test.each(checkboxVariants)("$format/$style renders aria-invalid from the kebab attribute and re-emits the id", (variant) => {
+    const { root } = mountCheckbox(variant, { "aria-invalid": "true", id: "terms" });
     expect(root.getAttribute("aria-invalid")).toBe("true");
     expect(root.id).toBe("terms");
     if (variant.style === "tailwind") {
@@ -102,8 +104,31 @@ describe("checkbox", () => {
     }
   });
 
+  test.each(checkboxVariants)("$format/$style chains a user on:click with the owned toggle", (variant) => {
+    const userClick = mock(function (this: HTMLElement, e: Event) { void e; });
+    const { root } = mountCheckbox(variant, { "on:click": userClick });
+    root.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(root.getAttribute("aria-checked")).toBe("true");
+    expect(root.getAttribute("data-state")).toBe("checked");
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(checkboxVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a forwarded on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(checkboxVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test.each(checkboxVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+    const { root } = mountCheckbox(variant, { class: "my-checkbox" });
+    expect(classTokens(root).at(-1)).toBe("my-checkbox");
+  });
+
   test("keeps structural parity across all four variants", () => {
     assertStructuralParity(checkboxVariants, {});
-    assertStructuralParity(checkboxVariants, { checked: true, ariaInvalid: true, disabled: true });
+    assertStructuralParity(checkboxVariants, { checked: true, "aria-invalid": "true", disabled: true });
   });
 });

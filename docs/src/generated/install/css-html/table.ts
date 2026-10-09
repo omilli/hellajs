@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -88,12 +88,12 @@ const caption = style("table-caption", {
   marginTop: "1rem",
 });
 
-interface TableProps {
-  children?: HellaChildren;
+interface TableProps extends HTMLAttributes<"table"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Table(props: TableProps): HellaNode {
+export default function Table({ children, class: cls, ...attrs }: TableProps): HellaNode {
   return html`
     <div
       data-slot="table-container"
@@ -104,105 +104,129 @@ export default function Table(props: TableProps): HellaNode {
       <table
         data-slot="table"
         class="${
-          [base, props.class]
+          [base, cls]
         }"
-      >${() => props.children}</table>
+        ...${attrs}
+      >${() => children}</table>
     </div>
   ` as HellaNode;
 }
 
-interface TablePartProps {
-  children?: HellaChildren;
+interface TableHeaderProps extends HTMLAttributes<"thead"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function TableHeader(props: TablePartProps): HellaNode {
+export function TableHeader({ children, class: cls, ...attrs }: TableHeaderProps): HellaNode {
   return html`
     <thead
       data-slot="table-header"
       class="${
-        [header, props.class]
+        [header, cls]
       }"
-    >${() => props.children}</thead>
+      ...${attrs}
+    >${() => children}</thead>
   ` as HellaNode;
 }
 
-export function TableBody(props: TablePartProps): HellaNode {
+interface TableBodyProps extends HTMLAttributes<"tbody"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function TableBody({ children, class: cls, ...attrs }: TableBodyProps): HellaNode {
   return html`
     <tbody
       data-slot="table-body"
       class="${
-        [body, props.class]
+        [body, cls]
       }"
-    >${() => props.children}</tbody>
+      ...${attrs}
+    >${() => children}</tbody>
   ` as HellaNode;
 }
 
-export function TableFooter(props: TablePartProps): HellaNode {
+interface TableFooterProps extends HTMLAttributes<"tfoot"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function TableFooter({ children, class: cls, ...attrs }: TableFooterProps): HellaNode {
   return html`
     <tfoot
       data-slot="table-footer"
       class="${
-        [footer, props.class]
+        [footer, cls]
       }"
-    >${() => props.children}</tfoot>
+      ...${attrs}
+    >${() => children}</tfoot>
   ` as HellaNode;
 }
 
-export function TableRow(props: TablePartProps): HellaNode {
+interface TableRowProps extends HTMLAttributes<"tr"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function TableRow({ children, class: cls, ...attrs }: TableRowProps): HellaNode {
   return html`
     <tr
       data-slot="table-row"
       class="${
-        [row, props.class]
+        [row, cls]
       }"
-    >${() => props.children}</tr>
+      ...${attrs}
+    >${() => children}</tr>
   ` as HellaNode;
 }
 
-interface TableHeadProps {
-  children?: HellaChildren;
-  colSpan?: number;
+interface TableHeadProps extends HTMLAttributes<"th"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function TableHead(props: TableHeadProps): HellaNode {
+export function TableHead({ children, class: cls, ...attrs }: TableHeadProps): HellaNode {
   return html`
     <th
       data-slot="table-head"
-      colSpan="${props.colSpan}"
       class="${
-        [head, props.class]
+        [head, cls]
       }"
-    >${() => props.children}</th>
+      ...${attrs}
+    >${() => children}</th>
   ` as HellaNode;
 }
 
-interface TableCellProps {
-  children?: HellaChildren;
-  colSpan?: number;
+interface TableCellProps extends HTMLAttributes<"td"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function TableCell(props: TableCellProps): HellaNode {
+export function TableCell({ children, class: cls, ...attrs }: TableCellProps): HellaNode {
   return html`
     <td
       data-slot="table-cell"
-      colSpan="${props.colSpan}"
       class="${
-        [cell, props.class]
+        [cell, cls]
       }"
-    >${() => props.children}</td>
+      ...${attrs}
+    >${() => children}</td>
   ` as HellaNode;
 }
 
-export function TableCaption(props: TablePartProps): HellaNode {
+interface TableCaptionProps extends HTMLAttributes<"caption"> {
+  class?: string;
+  children?: HellaChildren;
+}
+
+export function TableCaption({ children, class: cls, ...attrs }: TableCaptionProps): HellaNode {
   return html`
     <caption
       data-slot="table-caption"
       class="${
-        [caption, props.class]
+        [caption, cls]
       }"
-    >${() => props.children}</caption>
+      ...${attrs}
+    >${() => children}</caption>
   ` as HellaNode;
 }

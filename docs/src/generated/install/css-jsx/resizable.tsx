@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { onDrag } from "@hellajs/dom";
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -64,27 +64,26 @@ const icon = style("resizable-icon", {
   width: "0.625rem",
 });
 
-interface ResizablePanelGroupProps {
+interface ResizablePanelGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   direction?: "horizontal" | "vertical";
   /** Reports the panel sizes (percentages) after each drag or keyboard resize. The initial layout does not fire it. */
   onLayout?: (sizes: number[]) => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
-interface ResizablePanelProps {
+interface ResizablePanelProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   /** Initial share of the group, in percent. The group rewrites `flex-grow` as handles resize the pair. */
   defaultSize: number;
   minSize?: number;
   maxSize?: number;
-  children?: HellaChildren;
-  class?: string;
 }
 
-interface ResizableHandleProps {
-  withHandle?: boolean;
-  disabled?: boolean;
+interface ResizableHandleProps extends HTMLAttributes<"div"> {
   class?: string;
+  withHandle?: boolean;
 }
 
 /** The grip visual (refs/icons/grip-vertical.svg), created per call so clones never share nodes. */
@@ -113,37 +112,39 @@ const gripIcon = (): JSX.Element => (
   </svg>
 );
 
-export function ResizablePanel(props: ResizablePanelProps): JSX.Element {
-  const minSize = props.minSize ?? 0;
-  const maxSize = props.maxSize ?? 100;
+export function ResizablePanel({ defaultSize, minSize, maxSize, children, class: cls, ...attrs }: ResizablePanelProps): JSX.Element {
+  const minSizeValue = minSize ?? 0;
+  const maxSizeValue = maxSize ?? 100;
   return (
     <div
       data-slot="resizable-panel"
-      data-default-size={props.defaultSize}
-      data-min-size={minSize}
-      data-max-size={maxSize}
-      style={{ flex: `${props.defaultSize} 1 0%` }}
-      class={props.class}
+      data-default-size={defaultSize}
+      data-min-size={minSizeValue}
+      data-max-size={maxSizeValue}
+      style={{ flex: `${defaultSize} 1 0%` }}
+      class={cls}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function ResizableHandle(props: ResizableHandleProps): JSX.Element {
+export function ResizableHandle({ withHandle, disabled, class: cls, ...attrs }: ResizableHandleProps): JSX.Element {
   return (
     <div
       data-slot="resizable-handle"
       role="separator"
-      tabindex={props.disabled ? -1 : 0}
+      tabindex={disabled ? -1 : 0}
       aria-orientation="horizontal"
-      aria-disabled={props.disabled ? "true" : undefined}
-      data-disabled={props.disabled ? "true" : undefined}
+      aria-disabled={disabled ? "true" : undefined}
+      data-disabled={disabled ? "true" : undefined}
       class={
-        [handle, props.class]
+        [handle, cls]
       }
+      {...attrs}
     >
-      {props.withHandle && (
+      {withHandle && (
         <div class={
           [grip]
         }>
@@ -154,8 +155,8 @@ export function ResizableHandle(props: ResizableHandleProps): JSX.Element {
   );
 }
 
-export default function ResizablePanelGroup(props: ResizablePanelGroupProps): JSX.Element {
-  const direction = props.direction ?? "horizontal";
+export default function ResizablePanelGroup({ direction: directionProp, onLayout, children, class: cls, ...attrs }: ResizablePanelGroupProps): JSX.Element {
+  const direction = directionProp ?? "horizontal";
   const sizes = signal<number[]>([]);
   const panels: HTMLElement[] = [];
   const wirings: (() => void)[] = [];
@@ -196,7 +197,7 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): JS
     updated[prevIndex] = prev + clamped;
     updated[nextIndex] = next - clamped;
     sizes(updated);
-    props.onLayout?.(updated);
+    onLayout?.(updated);
   };
 
   const wireHandle = (group: HTMLElement, handleEl: HTMLElement, prevIndex: number): void => {
@@ -237,15 +238,15 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): JS
       data-slot="resizable-panel-group"
       aria-orientation={direction}
       class={
-        [base, props.class]
+        [base, cls]
       }
       hook:afterMount={(node) => {
         if (!(node instanceof HTMLElement)) return;
-        const children = Array.from(node.children) as HTMLElement[];
+        const nodes = Array.from(node.children) as HTMLElement[];
         let panelCount = 0;
         let i = 0;
-        while (i < children.length) {
-          const child = children[i]!;
+        while (i < nodes.length) {
+          const child = nodes[i]!;
           if (child.getAttribute("data-slot") === "resizable-panel") {
             panels.push(child);
             panelCount++;
@@ -265,8 +266,9 @@ export default function ResizablePanelGroup(props: ResizablePanelGroupProps): JS
       hook:beforeDestroy={() => {
         while (wirings.length) wirings.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

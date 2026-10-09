@@ -5,6 +5,8 @@ import { delay, resetTestState } from "@utils/test-helpers.js";
 // specifier, so the harness mount shares one dom instance with the components.
 import { peekState } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   awaitWiring,
   classTokens,
@@ -221,6 +223,15 @@ describe("scroll-area", () => {
     expect(dispose).toHaveBeenCalledTimes(1);
     dragThumb(thumb, [{ dy: 25 }]);
     expect(view.scrollTop).toBe(0);
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(scrollAreaVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the root across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(scrollAreaVariants, { "on:click": onClick }, "on:click", "click", onClick);
   });
 
   test("keeps structural parity across all four variants", () => {

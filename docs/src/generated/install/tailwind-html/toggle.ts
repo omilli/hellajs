@@ -1,6 +1,6 @@
 import { html } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const variants = {
@@ -15,15 +15,14 @@ const sizes = {
   lg: "h-10 min-w-10 px-2.5",
 };
 
-interface ToggleProps {
+interface ToggleProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   /** Pressed state. A boolean seeds the internal signal; an accessor makes the toggle controlled — clicks then only report through `onPressedChange`. */
   pressed?: boolean | (() => boolean);
   onPressedChange?: (pressed: boolean) => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
-  disabled?: boolean;
-  class?: string;
-  children?: HellaChildren;
 }
 
 /** Resolves the toggle's full class from the spliced variant maps — the compose arrays' shared builder. */
@@ -40,16 +39,16 @@ export function toggleVariants(options?: {
   ].filter(Boolean).join(" ");
 }
 
-export default function Toggle(props: ToggleProps): HellaNode {
-  const pressedAccessor = typeof props.pressed === "function" ? props.pressed : undefined;
-  const internal = signal(typeof props.pressed === "boolean" ? props.pressed : false);
+export default function Toggle({ pressed: pressedProp, onPressedChange, variant, size, disabled, "on:click": userClick, children, class: cls, ...attrs }: ToggleProps): HellaNode {
+  const pressedAccessor = typeof pressedProp === "function" ? pressedProp : undefined;
+  const internal = signal(typeof pressedProp === "boolean" ? pressedProp : false);
   const pressed = (): boolean => (pressedAccessor ? pressedAccessor() : internal());
 
   const toggle = (): void => {
-    if (props.disabled) return;
+    if (disabled) return;
     const next = !pressed();
     if (!pressedAccessor) internal(next);
-    props.onPressedChange?.(next);
+    onPressedChange?.(next);
   };
 
   return html`
@@ -58,11 +57,12 @@ export default function Toggle(props: ToggleProps): HellaNode {
       data-slot="toggle"
       aria-pressed="${() => (pressed() ? "true" : "false")}"
       data-state="${() => (pressed() ? "on" : "off")}"
-      disabled="${props.disabled ? true : undefined}"
+      disabled="${disabled ? true : undefined}"
       class="${
-        cn(toggleVariants({ variant: props.variant, size: props.size }), props.class)
+        cn(toggleVariants({ variant, size }), cls)
       }"
-      e:click="${toggle}"
-    >${() => props.children}</button>
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); toggle(); }}"
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }

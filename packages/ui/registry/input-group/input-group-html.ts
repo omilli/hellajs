@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const addon: string;
@@ -20,46 +20,47 @@ declare const textareaFocus: string;
 declare const textareaInvalid: string;
 // @hella:end
 
-interface InputGroupProps {
+interface InputGroupProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   /** Renders data-disabled="true" on the group; addons read it for their opacity state. */
   disabled?: boolean;
   class?: string;
 }
 
-export default function InputGroup(props: InputGroupProps): HellaNode {
+export default function InputGroup({ disabled, children, class: cls, ...attrs }: InputGroupProps): HellaNode {
   return html`
     <div
       data-slot="input-group"
       role="group"
-      data-disabled="${props.disabled ? "true" : undefined}"
+      data-disabled="${disabled ? "true" : undefined}"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface InputGroupAddonProps {
+interface InputGroupAddonProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   align?: "inline-start" | "inline-end" | "block-start" | "block-end";
   class?: string;
 }
 
-export function InputGroupAddon(props: InputGroupAddonProps): HellaNode {
+export function InputGroupAddon({ align, children, class: cls, ...attrs }: InputGroupAddonProps): HellaNode {
   return html`
     <div
       role="group"
       data-slot="input-group-addon"
-      data-align="${props.align ?? "inline-start"}"
+      data-align="${align ?? "inline-start"}"
       class="${
         // @hella:compose
         [
           addon,
-          addonAlign[props.align ?? "inline-start"],
-          props.class,
+          addonAlign[align ?? "inline-start"],
+          cls,
         ]
         // @hella:end
       }"
@@ -68,81 +69,68 @@ export function InputGroupAddon(props: InputGroupAddonProps): HellaNode {
         if (target.closest("button")) return;
         target.closest('[data-slot="input-group"]')?.querySelector("input")?.focus();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface InputGroupButtonProps {
+interface InputGroupButtonProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
-  type?: string;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "xs" | "sm" | "icon-xs" | "icon-sm";
   class?: string;
-  onclick?: () => void;
 }
 
-export function InputGroupButton(props: InputGroupButtonProps): HellaNode {
+export function InputGroupButton({ variant, size, children, class: cls, ...attrs }: InputGroupButtonProps): HellaNode {
   return html`
     <button
-      type="${props.type ?? "button"}"
+      type="button"
       data-slot="button"
-      data-variant="${props.variant ?? "ghost"}"
-      data-size="${props.size ?? "xs"}"
+      data-variant="${variant ?? "ghost"}"
+      data-size="${size ?? "xs"}"
       class="${
         // @hella:compose
         [
           buttonBase,
-          buttonVariants[props.variant ?? "ghost"],
-          buttonSizes[props.size ?? "xs"],
-          sizes[props.size ?? "xs"],
-          props.class,
+          buttonVariants[variant ?? "ghost"],
+          buttonSizes[size ?? "xs"],
+          sizes[size ?? "xs"],
+          cls,
         ]
         // @hella:end
       }"
-      e:click="${() => props.onclick?.()}"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-interface InputGroupTextProps {
+interface InputGroupTextProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function InputGroupText(props: InputGroupTextProps): HellaNode {
+export function InputGroupText({ children, class: cls, ...attrs }: InputGroupTextProps): HellaNode {
   return html`
     <span
       data-slot="input-group-text"
       class="${
         // @hella:compose
-        [text, props.class]
+        [text, cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface InputGroupInputProps {
-  value?: string | (() => string);
-  type?: string;
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  ariaInvalid?: boolean;
+interface InputGroupInputProps extends HTMLAttributes<"input"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function InputGroupInput(props: InputGroupInputProps): HellaNode {
+export function InputGroupInput({ class: cls, ...attrs }: InputGroupInputProps): HellaNode {
   return html`
     <input
       data-slot="input-group-control"
-      type="${props.type}"
-      placeholder="${props.placeholder}"
-      id="${props.id}"
-      ariaLabel="${props.ariaLabel}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
-      value="${props.value}"
       class="${
         // @hella:compose
         [
@@ -150,36 +138,23 @@ export function InputGroupInput(props: InputGroupInputProps): HellaNode {
           inputFocus,
           inputInvalid,
           inputControl,
-          props.class,
+          cls,
         ]
         // @hella:end
       }"
-      on:input="${(e: Event) => props.oninput?.((e.target as HTMLInputElement).value)}"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-interface InputGroupTextareaProps {
-  value?: string | (() => string);
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  rows?: number;
-  ariaInvalid?: boolean;
+interface InputGroupTextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export function InputGroupTextarea(props: InputGroupTextareaProps): HellaNode {
+export function InputGroupTextarea({ class: cls, ...attrs }: InputGroupTextareaProps): HellaNode {
   return html`
     <textarea
       data-slot="input-group-control"
-      placeholder="${props.placeholder}"
-      id="${props.id}"
-      ariaLabel="${props.ariaLabel}"
-      rows="${props.rows}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
-      value="${props.value}"
       class="${
         // @hella:compose
         [
@@ -187,11 +162,11 @@ export function InputGroupTextarea(props: InputGroupTextareaProps): HellaNode {
           textareaFocus,
           textareaInvalid,
           textareaControl,
-          props.class,
+          cls,
         ]
         // @hella:end
       }"
-      on:input="${(e: Event) => props.oninput?.((e.target as HTMLTextAreaElement).value)}"
+      ...${attrs}
     ></textarea>
   ` as HellaNode;
 }

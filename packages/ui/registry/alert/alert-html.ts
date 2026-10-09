@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -8,13 +8,13 @@ declare const title: string;
 declare const variants: Record<string, string>;
 // @hella:end
 
-interface AlertProps {
+interface AlertProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "destructive";
-  class?: string;
 }
 
-export default function Alert(props: AlertProps): HellaNode {
+export default function Alert({ variant, children, class: cls, ...attrs }: AlertProps): HellaNode {
   return html`
     <div
       data-slot="alert"
@@ -23,42 +23,45 @@ export default function Alert(props: AlertProps): HellaNode {
         // @hella:compose
         [
           base,
-          variants[props.variant ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          cls,
         ]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface AlertPartProps {
-  children?: HellaChildren;
+interface AlertPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function AlertTitle(props: AlertPartProps): HellaNode {
+export function AlertTitle({ children, class: cls, ...attrs }: AlertPartProps): HellaNode {
   return html`
     <div
       data-slot="alert-title"
       class="${
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function AlertDescription(props: AlertPartProps): HellaNode {
+export function AlertDescription({ children, class: cls, ...attrs }: AlertPartProps): HellaNode {
   return html`
     <div
       data-slot="alert-description"
       class="${
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

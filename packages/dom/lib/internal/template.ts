@@ -61,7 +61,8 @@ const VOID_TAGS = new Set([
 ]);
 const PLACEHOLDER_REGEX = /__SLOT_(\d+)__/g;
 const SKIP_REGEX = /<!--[\s\S]*?-->|<!DOCTYPE[^>]*>|<!\[CDATA\[[\s\S]*?\]\]>/gi;
-const ATTR_REGEX = /(error:[\w-]+|e:[\w-]+|on:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)|([^\s>]+)))?/g;
+const ATTR_REGEX = /(\.\.\.__SLOT_\d+__|error:[\w-]+|e:[\w-]+|on:[\w-]+|hook:[\w-]+|[\w-]+)(?:=(?:"([^"]*?)"|'([^']*?)'|(__SLOT_\d+__)|([^\s>]+)))?/g;
+const SPREAD_REGEX = /^__SPREAD_(\d+)__$/;
 
 /**
  * @internal
@@ -128,6 +129,25 @@ export function cloneWithValues(node: unknown, values: unknown[]): unknown {
     const len = keys.length;
     while (i < len) {
       const key = keys[i++]!;
+      // A spread sentinel (`__SPREAD_N__`) resolves its slot value and merges
+      // each entry into the clone at the sentinel's position: a static attr
+      // written after the spread overrides it, one written before is
+      // overridden. Only objects merge (nullish and primitives contribute
+      // nothing); the sentinel key itself never survives into the clone.
+      const spread = SPREAD_REGEX.exec(key);
+      if (spread) {
+        const resolved = values[parseInt(spread[1]!)] as Record<string, unknown> | undefined;
+        if (isObject(resolved)) {
+          const attrKeys = Object.keys(resolved);
+          let ai = 0;
+          const aLen = attrKeys.length;
+          while (ai < aLen) {
+            const attrKey = attrKeys[ai++]!;
+            props[attrKey] = resolved[attrKey] as typeof hellaNode.props[string];
+          }
+        }
+        continue;
+      }
       const raw = hellaNode.props[key];
       // A cached array prop is always a mixed-attribute parts array: concatenate
       // the cloned parts so the value matches the compiled template's output.
@@ -392,7 +412,9 @@ function markIfStatic(node: unknown): boolean {
         if (Array.isArray(v)) {
           // mixed-attribute parts arrays: any marker element is a placeholder dep
           if (v.some((el) => isObject(el) && Object.hasOwn(el, "placeholder"))) return false;
-        } else if (isObject(v) && Object.hasOwn(v, "placeholder")) {
+        } else if (isObject(v) && (Object.hasOwn(v, "placeholder") || Object.hasOwn(v, "__spread"))) {
+          // a spread sentinel is a per-invocation value: never static, or its
+          // merged entries would bleed across mounts via the shared subtree
           return false;
         }
         ki++;
@@ -457,7 +479,8 @@ function parseAttrValue(text: string, placeholders: HtmlPlaceholder[]): unknown 
 
 /**
  * Parses attribute string and categorizes into props, hooks, on, e, and error objects.
- * Recognizes prefixes: error:, on:, hook:, e:.
+ * Recognizes prefixes: error:, on:, hook:, e:. Records `...${expr}` spreads as
+ * ordered `__SPREAD_N__` sentinels in props (resolved positionally at clone time).
  * @param attrsStr The attributes string from the HTML tag
  * @param placeholders Array of placeholder markers
  * @returns Object with categorized attributes
@@ -472,6 +495,14 @@ function parseAttributes(attrsStr: string, placeholders: HtmlPlaceholder[], keep
 
   while ((match = ATTR_REGEX.exec(trimmed)) !== null) {
     const name = match[1]!;
+    // Spread (`...${expr}`, source `...__SLOT_N__`): record an ordered sentinel
+    // in props; cloneWithValues merges the resolved entries at this position.
+    if (name.startsWith("...")) {
+      const slot = name.slice(3);
+      const index = parseInt(slot.slice(7, -2));
+      result.props![`__SPREAD_${index}__`] = { __spread: index };
+      continue;
+    }
     const doubleQuoted = match[2];
     const singleQuoted = match[3];
     const placeholder = match[4];

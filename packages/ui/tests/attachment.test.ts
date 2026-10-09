@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { resetTestState } from "@utils/test-helpers.js";
 import {
+  assertAttrForwarded,
   assertStructuralParity,
   attachmentPartVariants,
   attachmentVariants,
@@ -93,7 +94,7 @@ describe("attachment", () => {
 
   test.each(attachmentPartVariants.filter((variant) => variant.part === "Action"))("$part $format/$style fires the action click handler", (variant) => {
     const onclick = mock(() => {});
-    const root = renderVariant(variant, { onclick, children: ["x"] });
+    const root = renderVariant(variant, { "on:click": onclick, children: ["x"] });
     expect(root.getAttribute("data-slot")).toBe("attachment-action");
     expect(root.getAttribute("data-variant")).toBe("ghost");
     expect(root.getAttribute("data-size")).toBe("icon-xs");
@@ -103,7 +104,7 @@ describe("attachment", () => {
 
   test.each(attachmentPartVariants.filter((variant) => variant.part === "Trigger"))("$part $format/$style fires the trigger click handler", (variant) => {
     const onclick = mock(() => {});
-    const root = renderVariant(variant, { onclick, children: ["x"] });
+    const root = renderVariant(variant, { "on:click": onclick, children: ["x"] });
     expect(root.getAttribute("data-slot")).toBe("attachment-trigger");
     expect(root.getAttribute("type")).toBe("button");
     root.dispatchEvent(new Event("click"));
@@ -118,6 +119,24 @@ describe("attachment", () => {
       expect(classTokens(root)[0]!.startsWith("attachment-group")).toBe(true);
     } else {
       expect(classTokens(root)).toContain("snap-x");
+    }
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(attachmentVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("merges the user class last on the root across all four variants", () => {
+    for (const variant of attachmentVariants) {
+      const root = renderVariant(variant, { class: "my-attachment", children: ["x"] });
+      expect(classTokens(root).at(-1)).toBe("my-attachment");
+    }
+  });
+
+  test("forwards the trigger type through the spread across all four variants", () => {
+    for (const variant of attachmentPartVariants.filter((candidate) => candidate.part === "Trigger")) {
+      const root = renderVariant(variant, { type: "submit", children: ["x"] });
+      expect(root.getAttribute("type")).toBe("submit");
     }
   });
 

@@ -17,7 +17,7 @@ export function DirectionDemo() {
 
   return (
     <>
-      <Button variant="outline" size="sm" onclick={flip}>{() => `Flip direction (${dir()})`}</Button>
+      <Button variant="outline" size="sm" on:click={flip}>{() => `Flip direction (${dir()})`}</Button>
       <DirectionProvider dir={dir}>
         <p class={panel}>This paragraph flips its inline direction with the wrapper's dir attribute; the wrapper itself stays out of layout.</p>
       </DirectionProvider>

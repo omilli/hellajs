@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const bubble =
@@ -37,82 +37,86 @@ const reactionsAligns = {
   end: "right-3",
 };
 
-interface BubbleGroupProps {
-  children?: HellaChildren;
+interface BubbleGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function BubbleGroup(props: BubbleGroupProps): JSX.Element {
+export function BubbleGroup({ children, class: cls, ...attrs }: BubbleGroupProps): JSX.Element {
   return (
     <div
       data-slot="bubble-group"
       class={
-        cn("flex min-w-0 flex-col gap-2", props.class)
+        cn("flex min-w-0 flex-col gap-2", cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface BubbleProps {
+interface BubbleProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "secondary" | "muted" | "tinted" | "outline" | "ghost" | "destructive";
   align?: "start" | "end";
-  class?: string;
 }
 
-export function Bubble(props: BubbleProps): JSX.Element {
+export function Bubble({ variant, align, children, class: cls, ...attrs }: BubbleProps): JSX.Element {
   return (
     <div
       data-slot="bubble"
-      data-variant={props.variant ?? "default"}
-      data-align={props.align ?? "start"}
+      data-variant={variant ?? "default"}
+      data-align={align ?? "start"}
       class={
-        cn(bubble, variants[props.variant ?? "default"], props.class)
+        cn(bubble, variants[variant ?? "default"], cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface BubbleContentProps {
-  children?: HellaChildren;
+interface BubbleContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function BubbleContent(props: BubbleContentProps): JSX.Element {
+export function BubbleContent({ children, class: cls, ...attrs }: BubbleContentProps): JSX.Element {
   return (
     <div
       data-slot="bubble-content"
       class={
-        cn(content, props.class)
+        cn(content, cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface BubbleReactionsProps {
+interface BubbleReactionsProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   side?: "top" | "bottom";
   align?: "start" | "end";
-  class?: string;
 }
 
-export function BubbleReactions(props: BubbleReactionsProps): JSX.Element {
+export function BubbleReactions({ side, align, children, class: cls, ...attrs }: BubbleReactionsProps): JSX.Element {
   return (
     <div
       data-slot="bubble-reactions"
-      data-align={props.align ?? "end"}
-      data-side={props.side ?? "bottom"}
+      data-align={align ?? "end"}
+      data-side={side ?? "bottom"}
       class={
-        cn(reactions, reactionsSides[props.side ?? "bottom"], reactionsAligns[props.align ?? "end"], props.class)
+        cn(reactions, reactionsSides[side ?? "bottom"], reactionsAligns[align ?? "end"], cls)
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

@@ -17,9 +17,9 @@ Build-time Babel transform (`babel-plugin-hellajs`) that compiles JSX and `html`
 | `src/transformers/jsx.mjs` | `JSXElement` + `JSXFragment` visitors; tag-type dispatch (component / element / fragment). |
 | `src/transformers/component.mjs` | `TaggedTemplateExpression` visitor for `html`; orchestrates parse → ensure imports → convert → replace. |
 | `src/parsers/html.mjs` | `parseHTML` + `parseHTMLComponent`: strip comments/DOCTYPE/CDATA, tokenize via single regex, stack-based nest tracking (void elements, ancestor-match closers, EOF flush; mirrored by `packages/dom/lib/internal/template.ts`, parity corpus in `tests/parity.test.ts`), fragment normalization. |
-| `src/parsers/attributes.mjs` | `parseAttributes`: regex over attribute string; handles double/single/unquoted values + `__SLOT_N__` markers + mixed-content arrays. |
+| `src/parsers/attributes.mjs` | `parseAttributes`: regex over attribute string; handles double/single/unquoted values + `__SLOT_N__` markers + mixed-content arrays + `...${expr}` spread (ordered `__SPREAD_N__` sentinel). |
 | `src/parsers/text.mjs` | `parseTextContent`: splits text on `__SLOT_N__` markers, preserving text before/after/between. |
-| `src/processors/attributes.mjs` | `processAttributes` (JSX) + `processComponentAttributes` (html\`\``); prefix categorization, `JSXExpressionContainer` unwrap, camelCase→kebab conversion. |
+| `src/processors/attributes.mjs` | `processAttributes` (JSX) + `processComponentAttributes` (html\`\``); prefix categorization, `JSXExpressionContainer` unwrap, camelCase→kebab conversion, positional `spreadElement` emission for spread sentinels. |
 | `src/processors/children.mjs` | `filterEmptyChildren`: drops empty/whitespace text + JSXEmptyExpression, normalizes whitespace, marks bare `props.children` as a SpreadElement. |
 | `src/builders/children.mjs` | `buildChildrenValue`: children list → array expression (joined when all-static); any SpreadElement flips the whole list to an `[].concat(...)` call so passthrough children are safe for every `HellaChildren` shape. |
 | `src/builders/vnode.mjs` | `buildHellaNode`: emits object expression with `tag` + non-empty category fields + `buildChildrenValue` children. |

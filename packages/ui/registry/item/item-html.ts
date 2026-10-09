@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const actions: string;
@@ -18,30 +18,31 @@ declare const title: string;
 declare const variants: Record<string, string>;
 // @hella:end
 
-interface ItemGroupProps {
-  children?: HellaChildren;
+interface ItemGroupProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ItemGroup(props: ItemGroupProps): HellaNode {
+export function ItemGroup({ children, class: cls, ...attrs }: ItemGroupProps): HellaNode {
   return html`
     <div
       role="list"
       data-slot="item-group"
       class="${
         // @hella:compose
-        [group, props.class]
+        [group, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ItemSeparatorProps {
+interface ItemSeparatorProps extends HTMLAttributes<"div"> {
   class?: string;
 }
 
-export function ItemSeparator(props: ItemSeparatorProps): HellaNode {
+export function ItemSeparator({ class: cls, ...attrs }: ItemSeparatorProps): HellaNode {
   return html`
     <div
       role="separator"
@@ -53,175 +54,184 @@ export function ItemSeparator(props: ItemSeparatorProps): HellaNode {
         [
           separatorBase,
           separator,
-          props.class,
+          cls,
         ]
         // @hella:end
       }"
+      ...${attrs}
     ></div>
   ` as HellaNode;
 }
 
-interface ItemProps {
+interface ItemProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "outline" | "muted";
   size?: "default" | "sm";
   /** Static boolean or reactive fn; drives data-selected + aria-selected (omitted when absent). */
   selected?: boolean | (() => boolean);
-  class?: string;
 }
 
-export function Item(props: ItemProps): HellaNode {
+export function Item({ variant, size, selected, children, class: cls, ...attrs }: ItemProps): HellaNode {
   const selectedAttr = (): "true" | "false" =>
-    (typeof props.selected === "function" ? props.selected() : props.selected) ? "true" : "false";
+    (typeof selected === "function" ? selected() : selected) ? "true" : "false";
   return html`
     <div
       data-slot="item"
-      data-variant="${props.variant ?? "default"}"
-      data-size="${props.size ?? "default"}"
+      data-variant="${variant ?? "default"}"
+      data-size="${size ?? "default"}"
       data-selected="${selectedAttr}"
       aria-selected="${selectedAttr}"
       class="${
         // @hella:compose
         [
           base,
-          variants[props.variant ?? "default"],
-          sizes[props.size ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          sizes[size ?? "default"],
+          cls,
         ]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ItemMediaProps {
+interface ItemMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "icon" | "image";
-  class?: string;
 }
 
-export function ItemMedia(props: ItemMediaProps): HellaNode {
+export function ItemMedia({ variant, children, class: cls, ...attrs }: ItemMediaProps): HellaNode {
   return html`
     <div
       data-slot="item-media"
-      data-variant="${props.variant ?? "default"}"
+      data-variant="${variant ?? "default"}"
       class="${
         // @hella:compose
         [
           media,
-          mediaVariants[props.variant ?? "default"],
-          props.class,
+          mediaVariants[variant ?? "default"],
+          cls,
         ]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ItemContentProps {
-  children?: HellaChildren;
+interface ItemContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ItemContent(props: ItemContentProps): HellaNode {
+export function ItemContent({ children, class: cls, ...attrs }: ItemContentProps): HellaNode {
   return html`
     <div
       data-slot="item-content"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ItemTitleProps {
-  children?: HellaChildren;
+interface ItemTitleProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ItemTitle(props: ItemTitleProps): HellaNode {
+export function ItemTitle({ children, class: cls, ...attrs }: ItemTitleProps): HellaNode {
   return html`
     <div
       data-slot="item-title"
       class="${
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ItemDescriptionProps {
-  children?: HellaChildren;
+interface ItemDescriptionProps extends HTMLAttributes<"p"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ItemDescription(props: ItemDescriptionProps): HellaNode {
+export function ItemDescription({ children, class: cls, ...attrs }: ItemDescriptionProps): HellaNode {
   return html`
     <p
       data-slot="item-description"
       class="${
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }"
-    >${() => props.children}</p>
+      ...${attrs}
+    >${() => children}</p>
   ` as HellaNode;
 }
 
-interface ItemActionsProps {
-  children?: HellaChildren;
+interface ItemActionsProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ItemActions(props: ItemActionsProps): HellaNode {
+export function ItemActions({ children, class: cls, ...attrs }: ItemActionsProps): HellaNode {
   return html`
     <div
       data-slot="item-actions"
       class="${
         // @hella:compose
-        [actions, props.class]
+        [actions, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ItemHeaderProps {
-  children?: HellaChildren;
+interface ItemHeaderProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ItemHeader(props: ItemHeaderProps): HellaNode {
+export function ItemHeader({ children, class: cls, ...attrs }: ItemHeaderProps): HellaNode {
   return html`
     <div
       data-slot="item-header"
       class="${
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface ItemFooterProps {
-  children?: HellaChildren;
+interface ItemFooterProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function ItemFooter(props: ItemFooterProps): HellaNode {
+export function ItemFooter({ children, class: cls, ...attrs }: ItemFooterProps): HellaNode {
   return html`
     <div
       data-slot="item-footer"
       class="${
         // @hella:compose
-        [footer, props.class]
+        [footer, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

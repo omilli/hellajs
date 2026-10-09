@@ -15,6 +15,7 @@ Seven named parts ship beside the default `NavigationMenu`: `NavigationMenuList`
 | `viewport` | `boolean` | `true` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The list, viewport, and indicator |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `value` is the controlled id of the open panel ("" when closed), fed by trigger announcements; the root never writes it when given. `viewport={false}` renders no shared viewport slot, for manual `NavigationMenuViewport` placement.
 
@@ -25,6 +26,7 @@ The bar: a `ul` row of items.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The `NavigationMenuItem` slots |
+Accepts all native `ul` attributes (forwarded to the root element).
 
 ### NavigationMenuItem
 
@@ -33,6 +35,7 @@ One `li` slot for one trigger plus its content.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The trigger and content pair |
+Accepts all native `li` attributes (forwarded to the root element).
 
 ### NavigationMenuTrigger
 
@@ -44,6 +47,7 @@ The bar button with the rotating chevron.
 | `active` | `() => boolean` | `-` |
 | `onActivate` | `() => void` | `-` |
 | `children` | `HellaChildren` | The trigger label |
+Accepts all native `button` attributes (forwarded to the root element).
 
 `value` names this trigger in the root's open-value store; clicks announce it when no `onActivate` stands in. `active` resolves the open state for `aria-expanded` and `data-state`.
 
@@ -57,6 +61,7 @@ The panel; portals into the shared viewport slot while open.
 | `viewport` | `string` | The first `[data-slot="navigation-menu-viewport"]` |
 | `onExited` | `() => void` | `-` |
 | `children` | `HellaChildren` | The panel content, typically `NavigationMenuLink` rows |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `active` resolves the open state; manual wiring threads it from the owning signal. `viewport` is the portal target selector. `onExited` fires when the exit animation ends (entry ends are ignored).
 
@@ -67,8 +72,8 @@ The in-panel link.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `active` | `boolean` | `-` |
-| `href` | `string` | `-` |
 | `children` | `HellaChildren` | The link label |
+Accepts all native `a` attributes (forwarded to the root element).
 
 `active` renders `data-active="true"` and its accent styles.
 
@@ -79,7 +84,7 @@ The absolute slot under the bar; `data-state` drives its enter and exit.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `active` | `() => boolean` | `-` |
-| `id` | `string` | `-` |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `id` anchors manual content wiring: give the slot an id and pass `#<id>` as each content's `viewport` selector.
 
@@ -91,6 +96,7 @@ The underline diamond; measures the active trigger and transitions between posit
 | ---- | ---- | ------- |
 | `active` | `() => boolean` | `-` |
 | `anchor` | `() => Element \| undefined` | The announced trigger |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.
 

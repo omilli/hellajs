@@ -1,6 +1,6 @@
 import { effect, signal, untracked } from "@hellajs/core";
 import { ForEach, html } from "@hellajs/dom";
-import type { HellaChild, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -48,7 +48,7 @@ type CalendarClassKey =
   | "day"
   | "day_button";
 
-interface CalendarProps {
+interface CalendarProps extends HTMLAttributes<"div"> {
   /** Selection behavior; defaults to `"single"`. */
   mode?: CalendarMode;
   /** Initial selection in the shape the mode calls for; selection is uncontrolled, `onSelect` reports every change. */
@@ -74,7 +74,7 @@ interface CalendarProps {
   class?: string;
 }
 
-interface CalendarDayButtonProps {
+interface CalendarDayButtonProps extends HTMLAttributes<"button"> {
   /** The day this button renders; also emitted as `data-day` (locale string, per the ref). */
   day: Date;
   /** Reactive-capable selected flag; renders `data-selected-single` when the day is selected outside a range span. */
@@ -82,15 +82,13 @@ interface CalendarDayButtonProps {
   rangeStart?: boolean | (() => boolean);
   rangeEnd?: boolean | (() => boolean);
   rangeMiddle?: boolean | (() => boolean);
+  /** Reactive-capable disabled flag; renders the disabled state attributes (wired, not spread). */
   disabled?: boolean | (() => boolean);
   /** Reactive-capable roving-focus flag; drives `tabindex` 0/-1. */
   focused?: boolean | (() => boolean);
   /** Marks the day as today with `aria-current="date"`. */
   today?: boolean;
   class?: string;
-  onclick?: (event: MouseEvent) => void;
-  onpointerenter?: (event: PointerEvent) => void;
-  onpointerleave?: (event: PointerEvent) => void;
 }
 
 const WEEKDAY_COUNT = 7;
@@ -150,9 +148,8 @@ function weekdayLabels(weekStartsOn: number): string[] {
   return labels;
 }
 
-/** One grid day: `key` is the stable ISO identity, `id` salts it with the view epoch so a month change rebuilds every cell (per-cell static attributes never go stale on reused nodes). */
+/** One grid day: `key` is the stable ISO identity used for focus, selection, and range math. */
 interface CalendarCell {
-  id: string;
   key: string;
   date: Date;
   outside: boolean;
@@ -160,7 +157,7 @@ interface CalendarCell {
   disabled: boolean;
 }
 
-function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined, epoch: number): CalendarCell[][] {
+function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, disabled: ((date: Date) => boolean) | undefined): CalendarCell[][] {
   const monthStart = startOfMonth(anchor);
   const gridStart = startOfWeek(monthStart, weekStartsOn);
   const days = daysInMonth(anchor.getFullYear(), anchor.getMonth());
@@ -176,7 +173,6 @@ function buildMonth(anchor: Date, weekStartsOn: number, fixedWeeks: boolean, dis
       const date = addDays(gridStart, w * WEEKDAY_COUNT + d);
       const outside = !isSameMonth(date, anchor);
       row.push({
-        id: `${epoch}:${dayKey(date)}`,
         key: dayKey(date),
         date,
         outside,
@@ -264,32 +260,30 @@ const chevronRightIcon = (): HellaNode =>
  * accessors, so a composed calendar drives them live while a standalone call
  * passes static values.
  */
-export function CalendarDayButton(props: CalendarDayButtonProps): HellaNode {
-  const selected = (): boolean => resolveFlag(props.selectedSingle);
+export function CalendarDayButton({ day: dayProp, selectedSingle, rangeStart, rangeEnd, rangeMiddle, disabled, focused, today, class: cls, ...attrs }: CalendarDayButtonProps): HellaNode {
+  const selected = (): boolean => resolveFlag(selectedSingle);
   const ariaSelected = (): "true" | "false" =>
-    selected() || resolveFlag(props.rangeStart) || resolveFlag(props.rangeEnd) || resolveFlag(props.rangeMiddle) ? "true" : "false";
+    selected() || resolveFlag(rangeStart) || resolveFlag(rangeEnd) || resolveFlag(rangeMiddle) ? "true" : "false";
   return html`
     <button
       type="button"
       data-slot="calendar-day-button"
-      data-day="${props.day.toLocaleDateString()}"
+      data-day="${dayProp.toLocaleDateString()}"
       data-selected-single="${() => (selected() ? "true" : undefined)}"
-      data-range-start="${() => (resolveFlag(props.rangeStart) ? "true" : undefined)}"
-      data-range-end="${() => (resolveFlag(props.rangeEnd) ? "true" : undefined)}"
-      data-range-middle="${() => (resolveFlag(props.rangeMiddle) ? "true" : undefined)}"
+      data-range-start="${() => (resolveFlag(rangeStart) ? "true" : undefined)}"
+      data-range-end="${() => (resolveFlag(rangeEnd) ? "true" : undefined)}"
+      data-range-middle="${() => (resolveFlag(rangeMiddle) ? "true" : undefined)}"
       aria-selected="${ariaSelected}"
-      aria-disabled="${() => (resolveFlag(props.disabled) ? "true" : undefined)}"
-      aria-current="${props.today === true ? "date" : undefined}"
-      tabindex="${() => (resolveFlag(props.focused) ? 0 : -1)}"
+      aria-disabled="${() => (resolveFlag(disabled as boolean | (() => boolean) | undefined) ? "true" : undefined)}"
+      aria-current="${today === true ? "date" : undefined}"
+      tabindex="${() => (resolveFlag(focused) ? 0 : -1)}"
       class="${
         // @hella:compose
-        [dayButton, props.class]
+        [dayButton, cls]
         // @hella:end
       }"
-      on:click="${(event: Event) => props.onclick?.(event as MouseEvent)}"
-      on:pointerenter="${(event: Event) => props.onpointerenter?.(event as PointerEvent)}"
-      on:pointerleave="${(event: Event) => props.onpointerleave?.(event as PointerEvent)}"
-    >${props.day.getDate()}</button>
+      ...${attrs}
+    >${dayProp.getDate()}</button>
   ` as HellaNode;
 }
 
@@ -301,7 +295,8 @@ interface DayCellProps {
   rangeEnd: () => boolean;
   focused: () => boolean;
   hidden: boolean;
-  class?: string;
+  /** The ref's `day` class hook, applied to the grid cell. */
+  dayClass?: string;
   /** The ref's `day_button` class hook, forwarded to the day button. */
   buttonClass?: string;
   onSelect: (cell: CalendarCell) => void;
@@ -329,7 +324,7 @@ function DayCell(props: DayCellProps): HellaNode {
       data-range-end="${() => attr(props.rangeEnd())}"
       class="${
         // @hella:compose
-        [day, props.class]
+        [day, props.dayClass]
         // @hella:end
       }"
     >
@@ -343,9 +338,9 @@ function DayCell(props: DayCellProps): HellaNode {
         today: props.cell.today,
         focused: props.focused,
         class: props.buttonClass,
-        onclick: () => props.onSelect(props.cell),
-        onpointerenter: () => props.onHover(props.cell),
-        onpointerleave: () => props.onLeave(),
+        "on:click": () => props.onSelect(props.cell),
+        "on:pointerenter": () => props.onHover(props.cell),
+        "on:pointerleave": () => props.onLeave(),
       })}
     </td>
   ` as HellaNode;
@@ -358,26 +353,24 @@ function DayCell(props: DayCellProps): HellaNode {
  * previous/next month navigation. `numberOfMonths > 1`, `fromDate`/`toDate`
  * bounds, custom `formatters`, and week numbers are out of scope.
  */
-export default function Calendar(props: CalendarProps): HellaNode {
-  const mode = props.mode ?? "single";
-  const weekStartsOn = props.weekStartsOn ?? 0;
+export default function Calendar({ mode: modeProp, selected, onSelect, month: monthProp, onMonthChange, defaultMonth, disabled, showOutsideDays, fixedWeeks, weekStartsOn: weekStartProp, hideNavigation, classNames, class: cls, ...attrs }: CalendarProps): HellaNode {
+  const mode = modeProp ?? "single";
+  const weekStartsOn = weekStartProp ?? 0;
 
-  const view = signal(startOfMonth(props.defaultMonth ?? props.month?.() ?? new Date()));
+  const view = signal(startOfMonth(defaultMonth ?? monthProp?.() ?? new Date()));
   const selection = signal<CalendarSelection>(
-    mode === "multiple" ? (props.selected as Date[] | undefined ?? []) : (props.selected as CalendarSelection),
+    mode === "multiple" ? (selected as Date[] | undefined ?? []) : (selected as CalendarSelection),
   );
   const hoverKey = signal<string | undefined>(undefined);
   const focusedKey = signal<string | undefined>(undefined);
   const pendingFocus = signal<string | undefined>(undefined);
   const weeks = signal<CalendarCell[][]>([]);
 
-  let epoch = 0;
   let cellIndex = new Map<string, CalendarCell>();
   let gridEl: HTMLElement | undefined;
 
   const rebuild = (): void => {
-    epoch++;
-    const rows = buildMonth(view(), weekStartsOn, props.fixedWeeks === true, props.disabled, epoch);
+    const rows = buildMonth(view(), weekStartsOn, fixedWeeks === true, disabled);
     cellIndex = new Map();
     let r = 0;
     while (r < rows.length) {
@@ -396,7 +389,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
 
   // Controlled month wins: whenever the accessor's signals change the view snaps back.
   effect(() => {
-    const controlled = props.month?.();
+    const controlled = monthProp?.();
     if (controlled !== undefined) view(startOfMonth(controlled));
   });
 
@@ -453,12 +446,12 @@ export default function Calendar(props: CalendarProps): HellaNode {
   const notify = (): void => {
     const value = selection();
     if (mode === "single") {
-      props.onSelect?.(value === undefined ? undefined : new Date(value as Date));
+      onSelect?.(value === undefined ? undefined : new Date(value as Date));
     } else if (mode === "multiple") {
-      props.onSelect?.((value as Date[]).map((dateValue) => new Date(dateValue)));
+      onSelect?.((value as Date[]).map((dateValue) => new Date(dateValue)));
     } else {
       const range = (value as CalendarRange) ?? {};
-      props.onSelect?.({
+      onSelect?.({
         from: range.from === undefined ? undefined : new Date(range.from),
         to: range.to === undefined ? undefined : new Date(range.to),
       });
@@ -496,7 +489,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
   const navMonth = (delta: number): void => {
     const next = addMonths(view(), delta);
     view(startOfMonth(next));
-    props.onMonthChange?.(next);
+    onMonthChange?.(next);
   };
 
   /** Moves roving focus to `date`, switching the visible month first when the target spills out; the button is focused once the grid rebuilds. */
@@ -504,7 +497,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
     const key = dayKey(date);
     if (!isSameMonth(date, view())) {
       view(startOfMonth(date));
-      props.onMonthChange?.(view());
+      onMonthChange?.(view());
     }
     hoverKey(undefined);
     focusedKey(key);
@@ -542,15 +535,16 @@ export default function Calendar(props: CalendarProps): HellaNode {
       data-slot="calendar"
       class="${
         // @hella:compose
-        [base, props.classNames?.root, props.class]
+        [base, classNames?.root, cls]
         // @hella:end
       }"
+      ...${attrs}
     >
       <div
         data-slot="calendar-months"
         class="${
           // @hella:compose
-          [months, props.classNames?.months]
+          [months, classNames?.months]
           // @hella:end
         }"
       >
@@ -558,7 +552,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
           data-slot="calendar-month"
           class="${
             // @hella:compose
-            [month, props.classNames?.month]
+            [month, classNames?.month]
             // @hella:end
           }"
         >
@@ -566,7 +560,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
             data-slot="calendar-caption"
             class="${
               // @hella:compose
-              [monthCaption, props.classNames?.month_caption]
+              [monthCaption, classNames?.month_caption]
               // @hella:end
             }"
           >
@@ -575,19 +569,19 @@ export default function Calendar(props: CalendarProps): HellaNode {
               aria-live="polite"
               class="${
                 // @hella:compose
-                [captionLabel, props.classNames?.caption_label]
+                [captionLabel, classNames?.caption_label]
                 // @hella:end
               }"
             >
               ${() => monthLabel(view())}
             </div>
           </div>
-          ${props.hideNavigation === true ? undefined : html`
+          ${hideNavigation === true ? undefined : html`
             <nav
               data-slot="calendar-nav"
               class="${
                 // @hella:compose
-                [nav, props.classNames?.nav]
+                [nav, classNames?.nav]
                 // @hella:end
               }"
             >
@@ -597,7 +591,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
                 aria-label="Go to the previous month"
                 class="${
                   // @hella:compose
-                  [navButton, props.classNames?.button_previous]
+                  [navButton, classNames?.button_previous]
                   // @hella:end
                 }"
                 on:click="${() => navMonth(-1)}"
@@ -610,7 +604,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
                 aria-label="Go to the next month"
                 class="${
                   // @hella:compose
-                  [navButton, props.classNames?.button_next]
+                  [navButton, classNames?.button_next]
                   // @hella:end
                 }"
                 on:click="${() => navMonth(1)}"
@@ -625,7 +619,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
             aria-label="${() => monthLabel(view())}"
             class="${
               // @hella:compose
-              [monthGrid, props.classNames?.month_grid]
+              [monthGrid, classNames?.month_grid]
               // @hella:end
             }"
             on:keydown="${(event: Event) => onGridKeydown(event)}"
@@ -636,7 +630,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
                 data-slot="calendar-weekdays"
                 class="${
                   // @hella:compose
-                  [weekdays, props.classNames?.weekdays]
+                  [weekdays, classNames?.weekdays]
                   // @hella:end
                 }"
               >
@@ -647,7 +641,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
                     data-slot="calendar-weekday"
                     class="${
                       // @hella:compose
-                      [weekday, props.classNames?.weekday]
+                      [weekday, classNames?.weekday]
                       // @hella:end
                     }"
                   >${label}</th>
@@ -663,7 +657,7 @@ export default function Calendar(props: CalendarProps): HellaNode {
                     data-slot="calendar-week"
                     class="${
                       // @hella:compose
-                      [week, props.classNames?.week]
+                      [week, classNames?.week]
                       // @hella:end
                     }"
                   >
@@ -676,9 +670,9 @@ export default function Calendar(props: CalendarProps): HellaNode {
                         rangeMiddle: () => rangeEdge(cell, "middle"),
                         rangeEnd: () => rangeEdge(cell, "end"),
                         focused: () => focusedKey() === cell.key,
-                        hidden: props.showOutsideDays === false && cell.outside,
-                        class: props.classNames?.day,
-                        buttonClass: props.classNames?.day_button,
+                        hidden: showOutsideDays === false && cell.outside,
+                        dayClass: classNames?.day,
+                        buttonClass: classNames?.day_button,
                         onSelect: selectDay,
                         onHover: onDayHover,
                         onLeave: () => hoverKey(undefined),

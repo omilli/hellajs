@@ -68,7 +68,7 @@ export function SidebarMenuDemo() {
         <SidebarMenuItem>
           <SidebarMenuButton active>Inbox</SidebarMenuButton>
           <SidebarMenuBadge>3</SidebarMenuBadge>
-          <SidebarMenuAction showOnHover onclick={() => console.log("configure")}>Configure</SidebarMenuAction>
+          <SidebarMenuAction showOnHover on:click={() => console.log("configure")}>Configure</SidebarMenuAction>
           <SidebarMenuSub>
             <SidebarMenuSubItem>
               <SidebarMenuSubButton active href="#settings">Settings</SidebarMenuSubButton>

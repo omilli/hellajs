@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -202,114 +202,117 @@ const ellipsis = style("pagination-ellipsis", {
   },
 });
 
-interface PaginationProps {
-  children?: HellaChildren;
+interface PaginationProps extends HTMLAttributes<"nav"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Pagination(props: PaginationProps): JSX.Element {
+export default function Pagination({ children, class: cls, ...attrs }: PaginationProps): JSX.Element {
   return (
     <nav
       role="navigation"
       aria-label="pagination"
       data-slot="pagination"
       class={
-        [base, props.class]
+        [base, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </nav>
   );
 }
 
-interface PaginationContentProps {
-  children?: HellaChildren;
+interface PaginationContentProps extends HTMLAttributes<"ul"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function PaginationContent(props: PaginationContentProps): JSX.Element {
+export function PaginationContent({ children, class: cls, ...attrs }: PaginationContentProps): JSX.Element {
   return (
     <ul
       data-slot="pagination-content"
       class={
-        [content, props.class]
+        [content, cls]
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </ul>
   );
 }
 
-interface PaginationItemProps {
-  children?: HellaChildren;
+interface PaginationItemProps extends HTMLAttributes<"li"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function PaginationItem(props: PaginationItemProps): JSX.Element {
+export function PaginationItem({ children, class: cls, ...attrs }: PaginationItemProps): JSX.Element {
   return (
-    <li data-slot="pagination-item" class={props.class}>
-      {props.children}
+    <li
+      data-slot="pagination-item"
+      class={
+        [cls]
+      }
+      {...attrs}
+    >
+      {children}
     </li>
   );
 }
 
-interface PaginationLinkProps {
-  children?: HellaChildren;
-  /** Renders aria-current="page" and the outline variant; no router coupling — href is an optional passthrough. */
-  isActive?: boolean;
-  href?: string;
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+interface PaginationLinkProps extends HTMLAttributes<"a"> {
   class?: string;
-  onclick?: () => void;
+  children?: HellaChildren;
+  /** Renders aria-current="page" and the outline variant; no router coupling — href forwards natively. */
+  isActive?: boolean;
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
-export function PaginationLink(props: PaginationLinkProps): JSX.Element {
+export function PaginationLink({ isActive, size, children, class: cls, ...attrs }: PaginationLinkProps): JSX.Element {
   return (
     <a
-      aria-current={props.isActive ? "page" : undefined}
+      aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
-      data-active={props.isActive === undefined ? undefined : String(props.isActive)}
-      href={props.href}
+      data-active={isActive === undefined ? undefined : String(isActive)}
       class={
         [
           linkBase,
-          props.isActive ? linkVariants.outline : linkVariants.ghost,
-          linkSizes[props.size ?? "icon"],
-          props.class,
+          isActive ? linkVariants.outline : linkVariants.ghost,
+          linkSizes[size ?? "icon"],
+          cls,
         ]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
-      {props.children}
+      {children}
     </a>
   );
 }
 
-interface PaginationNavProps {
-  isActive?: boolean;
-  href?: string;
+interface PaginationNavProps extends HTMLAttributes<"a"> {
   class?: string;
-  onclick?: () => void;
+  /** Renders aria-current="page" and the outline variant. */
+  isActive?: boolean;
 }
 
-export function PaginationPrevious(props: PaginationNavProps): JSX.Element {
+export function PaginationPrevious({ isActive, class: cls, ...attrs }: PaginationNavProps): JSX.Element {
   return (
     <a
       aria-label="Go to previous page"
-      aria-current={props.isActive ? "page" : undefined}
+      aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
-      data-active={props.isActive === undefined ? undefined : String(props.isActive)}
-      href={props.href}
+      data-active={isActive === undefined ? undefined : String(isActive)}
       class={
         [
           linkBase,
-          props.isActive ? linkVariants.outline : linkVariants.ghost,
+          isActive ? linkVariants.outline : linkVariants.ghost,
           linkSizes.default,
           previous,
-          props.class,
+          cls,
         ]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -329,24 +332,23 @@ export function PaginationPrevious(props: PaginationNavProps): JSX.Element {
   );
 }
 
-export function PaginationNext(props: PaginationNavProps): JSX.Element {
+export function PaginationNext({ isActive, class: cls, ...attrs }: PaginationNavProps): JSX.Element {
   return (
     <a
       aria-label="Go to next page"
-      aria-current={props.isActive ? "page" : undefined}
+      aria-current={isActive ? "page" : undefined}
       data-slot="pagination-link"
-      data-active={props.isActive === undefined ? undefined : String(props.isActive)}
-      href={props.href}
+      data-active={isActive === undefined ? undefined : String(isActive)}
       class={
         [
           linkBase,
-          props.isActive ? linkVariants.outline : linkVariants.ghost,
+          isActive ? linkVariants.outline : linkVariants.ghost,
           linkSizes.default,
           next,
-          props.class,
+          cls,
         ]
       }
-      on:click={() => props.onclick?.()}
+      {...attrs}
     >
       <span class={hiddenUntilSm}>Next</span>
       <svg
@@ -366,18 +368,19 @@ export function PaginationNext(props: PaginationNavProps): JSX.Element {
   );
 }
 
-interface PaginationEllipsisProps {
+interface PaginationEllipsisProps extends HTMLAttributes<"span"> {
   class?: string;
 }
 
-export function PaginationEllipsis(props: PaginationEllipsisProps): JSX.Element {
+export function PaginationEllipsis({ class: cls, ...attrs }: PaginationEllipsisProps): JSX.Element {
   return (
     <span
       aria-hidden="true"
       data-slot="pagination-ellipsis"
       class={
-        [ellipsis, props.class]
+        [ellipsis, cls]
       }
+      {...attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

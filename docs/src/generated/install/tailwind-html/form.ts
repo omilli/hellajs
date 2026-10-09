@@ -1,7 +1,7 @@
 import { html } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 /** Per-field validator: receives the field value and the full values snapshot, returns the error message or null when the value is clean. */
@@ -105,112 +105,118 @@ export function createForm<T extends object>(initial: T, options?: FormOptions<T
   return { values, errors, touched, dirty, setField, blur, validate, reset, handleSubmit };
 }
 
-interface FormItemProps {
+interface FormItemProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   /** Error flag; renders data-error="true"/"false" as the container-level hook for the error state. */
   error?: boolean | (() => boolean);
-  children?: HellaChildren;
-  class?: string;
 }
 
-export function FormItem(props: FormItemProps): HellaNode {
-  const hasError = (): "true" | "false" => ((typeof props.error === "function" ? props.error() : props.error) === true ? "true" : "false");
+export function FormItem({ error, children, class: cls, ...attrs }: FormItemProps): HellaNode {
+  const hasError = (): "true" | "false" => ((typeof error === "function" ? error() : error) === true ? "true" : "false");
   return html`
     <div
       data-slot="form-item"
       data-error="${hasError}"
       class="${
-        cn("grid gap-2", props.class)
+        cn("grid gap-2", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface FormLabelProps {
-  /** Renders data-required="true" as the styling hook for the required marker. */
-  required?: boolean;
+interface FormLabelProps extends HTMLAttributes<"label"> {
+  class?: string;
+  children?: HellaChildren;
   /** Error flag; renders data-error="true"/"false", aria-invalid, and the destructive text hook. */
   error?: boolean | (() => boolean);
-  for?: string;
-  children?: HellaChildren;
 }
 
-export function FormLabel(props: FormLabelProps): HellaNode {
-  const hasError = (): boolean => (typeof props.error === "function" ? props.error() : props.error) === true;
+export function FormLabel({ required, for: htmlFor, error, children, class: cls, ...attrs }: FormLabelProps): HellaNode {
+  const hasError = (): boolean => (typeof error === "function" ? error() : error) === true;
   const errorFlag = (): "true" | "false" => (hasError() ? "true" : "false");
   const invalid = (): "true" | undefined => (hasError() ? "true" : undefined);
   return html`
     <label
       data-slot="form-label"
-      data-required="${props.required ? "true" : undefined}"
-      for="${props.for}"
+      data-required="${required ? "true" : undefined}"
+      for="${htmlFor}"
       aria-invalid="${invalid}"
       data-error="${errorFlag}"
       class="${
-        cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 data-[error=true]:text-destructive")
+        cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 data-[error=true]:text-destructive", cls)
       }"
-    >${() => props.children}</label>
+      ...${attrs}
+    >${() => children}</label>
   ` as HellaNode;
 }
 
-interface FormControlProps {
+interface FormControlProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChildren;
   /** Error flag; renders aria-invalid="true" on the passthrough wrapper. */
   invalid?: boolean | (() => boolean);
   /** aria-describedby target, typically the FormDescription or FormMessage id. */
   describedBy?: string;
-  children?: HellaChildren;
 }
 
-export function FormControl(props: FormControlProps): HellaNode {
+export function FormControl({ invalid, describedBy, children, class: cls, ...attrs }: FormControlProps): HellaNode {
   const isInvalid = (): "true" | undefined =>
-    ((typeof props.invalid === "function" ? props.invalid() : props.invalid) === true ? "true" : undefined);
+    ((typeof invalid === "function" ? invalid() : invalid) === true ? "true" : undefined);
   return html`
     <div
       data-slot="form-control"
       aria-invalid="${isInvalid}"
-      aria-describedby="${props.describedBy}"
-    >${() => props.children}</div>
+      aria-describedby="${describedBy}"
+      class="${
+        cn(cls)
+      }"
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface FormDescriptionProps {
-  /** Id the matching FormControl points its aria-describedby at. */
-  id?: string;
+interface FormDescriptionProps extends HTMLAttributes<"p"> {
+  class?: string;
   children?: HellaChildren;
 }
 
-export function FormDescription(props: FormDescriptionProps): HellaNode {
+export function FormDescription({ id, children, class: cls, ...attrs }: FormDescriptionProps): HellaNode {
   return html`
     <p
       data-slot="form-description"
-      id="${props.id}"
+      id="${id}"
       class="${
-        cn("text-sm text-muted-foreground")
+        cn("text-sm text-muted-foreground", cls)
       }"
-    >${() => props.children}</p>
+      ...${attrs}
+    >${() => children}</p>
   ` as HellaNode;
 }
 
-interface FormMessageProps {
+interface FormMessageProps extends HTMLAttributes<"p"> {
+  class?: string;
+  children?: HellaChildren;
   /** Error messages; the first one renders. An accessor re-evaluates as validation runs. */
   errors?: string[] | (() => string[] | undefined);
-  /** Fallback content rendered when there are no errors. */
-  children?: HellaChildren;
 }
 
-export function FormMessage(props: FormMessageProps): HellaNode {
-  const messages = (): string[] => (typeof props.errors === "function" ? props.errors() : props.errors) ?? [];
-  const hasContent = (): boolean => messages().length > 0 || props.children != null;
+export function FormMessage({ errors, children, class: cls, ...attrs }: FormMessageProps): HellaNode {
+  const messages = (): string[] => (typeof errors === "function" ? errors() : errors) ?? [];
+  const hasContent = (): boolean => messages().length > 0 || children != null;
   return html`
     <p
       role="alert"
       data-slot="form-message"
       hidden="${() => !hasContent()}"
       class="${
-        cn("text-sm text-destructive")
+        cn("text-sm text-destructive", cls)
       }"
+      ...${attrs}
     >${() => {
         const list = messages();
-        return list.length > 0 ? list[0] : props.children;
+        return list.length > 0 ? list[0] : children;
       }}</p>
   ` as HellaNode;
 }

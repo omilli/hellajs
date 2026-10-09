@@ -8,12 +8,12 @@ export function DialogDemo() {
 
   return (
     <>
-      <Button variant="destructive" onclick={() => open(true)}>Delete account</Button>
+      <Button variant="destructive" on:click={() => open(true)}>Delete account</Button>
       <Dialog open={open} onClose={() => open(false)} title="Delete account" description="This permanently removes your account and all of its data.">
         <p>This action cannot be undone. All of your projects will be lost.</p>
         <div class="demo-row">
-          <Button variant="outline" onclick={() => open(false)}>Cancel</Button>
-          <Button variant="destructive" onclick={() => open(false)}>Delete</Button>
+          <Button variant="outline" on:click={() => open(false)}>Cancel</Button>
+          <Button variant="destructive" on:click={() => open(false)}>Delete</Button>
         </div>
       </Dialog>
     </>
@@ -25,12 +25,12 @@ export function DialogLockedDemo() {
 
   return (
     <>
-      <Button variant="outline" onclick={() => locked(true)}>Confirm shipment</Button>
+      <Button variant="outline" on:click={() => locked(true)}>Confirm shipment</Button>
       <Dialog open={locked} onClose={() => locked(false)} title="Confirm shipment" description="Escape and outside presses are ignored; choose an action." closeOnEscape={false} closeOnOutside={false} showCloseButton={false}>
         <p>Only the buttons in this panel can close it.</p>
         <div class="demo-row">
-          <Button variant="outline" onclick={() => locked(false)}>Cancel</Button>
-          <Button onclick={() => locked(false)}>Confirm</Button>
+          <Button variant="outline" on:click={() => locked(false)}>Cancel</Button>
+          <Button on:click={() => locked(false)}>Confirm</Button>
         </div>
       </Dialog>
     </>

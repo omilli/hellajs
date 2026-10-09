@@ -1,15 +1,16 @@
+import type { HTMLAttributes } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 type ProgressValue = number | null | undefined;
 
-interface ProgressProps {
+interface ProgressProps extends HTMLAttributes<"div"> {
+  class?: string;
   /** 0-100; null (or a reactive fn reading null) drives the indeterminate state. */
   value?: number | null | (() => number | null);
-  class?: string;
 }
 
-export default function Progress(props: ProgressProps): JSX.Element {
-  const current = (): ProgressValue => (typeof props.value === "function" ? props.value() : props.value);
+export default function Progress({ value, class: cls, ...attrs }: ProgressProps): JSX.Element {
+  const current = (): ProgressValue => (typeof value === "function" ? value() : value);
   // Null reads as indeterminate: renderProp drops the attribute, matching Radix's omitted aria-valuenow.
   const state = (): string => {
     const v = current();
@@ -24,8 +25,9 @@ export default function Progress(props: ProgressProps): JSX.Element {
       aria-valuenow={() => current() as number}
       data-state={state}
       class={
-        cn("relative h-2 w-full overflow-hidden rounded-full bg-primary/20", props.class)
+        cn("relative h-2 w-full overflow-hidden rounded-full bg-primary/20", cls)
       }
+      {...attrs}
     >
       <div
         data-slot="progress-indicator"

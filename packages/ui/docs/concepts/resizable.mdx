@@ -11,6 +11,8 @@ Compose the three exports: `ResizablePanelGroup` (the default), `ResizablePanel`
 | `children` | panels and handles | Discovered in the DOM at mount |
 | `class` | `string` | `-` |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 `direction` is the flex axis, rendered as `aria-orientation`. `onLayout` reports the panel sizes in percent after each drag or keyboard resize; the initial layout does not fire it. Every `ResizablePanel` child joins the layout.
 
 ### ResizablePanel
@@ -23,6 +25,8 @@ Compose the three exports: `ResizablePanelGroup` (the default), `ResizablePanel`
 | `children` | any | Rendered inside the panel |
 | `class` | `string` | `-` |
 
+Accepts all native `div` attributes (forwarded to the panel element).
+
 `defaultSize` is the initial share of the group in percent; required, it seeds the group's layout.
 
 ### ResizableHandle
@@ -30,10 +34,11 @@ Compose the three exports: `ResizablePanelGroup` (the default), `ResizablePanel`
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `withHandle` | `boolean` | `-` |
-| `disabled` | `boolean` | `-` |
 | `class` | `string` | `-` |
 
-`withHandle` renders the grip icon chip centered on the divider; `disabled` blocks drags and keys, rendering `aria-disabled` and `data-disabled`.
+Accepts all native `div` attributes (forwarded to the handle element).
+
+`withHandle` renders the grip icon chip centered on the divider; a native `disabled` attribute blocks drags and keys, rendering `aria-disabled` and `data-disabled`.
 
 ## Sizing and Constraints
 

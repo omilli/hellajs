@@ -1,6 +1,6 @@
 import { html, onDrag } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -9,16 +9,16 @@ declare const thumb: string;
 declare const viewport: string;
 // @hella:end
 
-interface ScrollBarProps {
+interface ScrollBarProps extends HTMLAttributes<"div"> {
+  class?: string;
   /** Axis the bar tracks and drags. Both orientations may be composed into one root. */
   orientation?: "vertical" | "horizontal";
   /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver on the viewport's content. */
   observe?: (target: Element, onGrow: () => void) => () => void;
-  class?: string;
 }
 
-export function ScrollBar(props: ScrollBarProps): HellaNode {
-  const orientation = (): "vertical" | "horizontal" => props.orientation ?? "vertical";
+export function ScrollBar({ orientation: orientationProp, observe, class: cls, ...attrs }: ScrollBarProps): HellaNode {
+  const orientation = (): "vertical" | "horizontal" => orientationProp ?? "vertical";
   const vertical = (): boolean => orientation() === "vertical";
 
   const length = signal(0);
@@ -62,7 +62,7 @@ export function ScrollBar(props: ScrollBarProps): HellaNode {
       data-orientation="${orientation()}"
       class="${
         // @hella:compose
-        [scrollbar, props.class]
+        [scrollbar, cls]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {
@@ -75,7 +75,7 @@ export function ScrollBar(props: ScrollBarProps): HellaNode {
         view.addEventListener("scroll", measure, { passive: true });
         teardown.push(() => view.removeEventListener("scroll", measure));
         const content = view.firstElementChild;
-        if (content) teardown.push((props.observe ?? defaultObserve)(content, measure));
+        if (content) teardown.push((observe ?? defaultObserve)(content, measure));
         const thumbEl = node.querySelector<HTMLElement>("[data-slot='scroll-area-thumb']");
         if (thumbEl) {
           let startScroll = 0;
@@ -106,6 +106,7 @@ export function ScrollBar(props: ScrollBarProps): HellaNode {
         bar = undefined;
         viewportEl = undefined;
       }}"
+      ...${attrs}
     >
       <div
         data-slot="scroll-area-thumb"
@@ -120,11 +121,11 @@ export function ScrollBar(props: ScrollBarProps): HellaNode {
   ` as HellaNode;
 }
 
-interface ScrollAreaProps {
+interface ScrollAreaProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   /** Injectable content watcher forwarded to the internal vertical ScrollBar. */
   observe?: (target: Element, onGrow: () => void) => () => void;
-  class?: string;
 }
 
 /**
@@ -132,15 +133,16 @@ interface ScrollAreaProps {
  * a real scrolling viewport plus a vertical ScrollBar, and a horizontal bar
  * composes in as a child for both-axes scrolling.
  */
-export default function ScrollArea(props: ScrollAreaProps): HellaNode {
+export default function ScrollArea({ observe, children, class: cls, ...attrs }: ScrollAreaProps): HellaNode {
   return html`
     <div
       data-slot="scroll-area"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
+      ...${attrs}
     >
       <div
         data-slot="scroll-area-viewport"
@@ -151,10 +153,10 @@ export default function ScrollArea(props: ScrollAreaProps): HellaNode {
         }"
       >
         <div data-slot="scroll-area-content">
-          ${() => props.children}
+          ${() => children}
         </div>
       </div>
-      ${ScrollBar({ observe: props.observe })}
+      ${ScrollBar({ observe })}
       <div data-slot="scroll-area-corner" />
     </div>
   ` as HellaNode;

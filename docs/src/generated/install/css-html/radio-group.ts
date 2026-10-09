@@ -1,6 +1,6 @@
 import { html, rovingTabIndex } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -72,25 +72,21 @@ interface RadioGroupItem {
   disabled?: boolean;
 }
 
-interface RadioGroupProps {
+interface RadioGroupProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: RadioGroupItem[];
   /** Controlled selected value. When given, the root never writes its internal signal and `onValueChange` reports the requested selection. */
   value?: () => string;
   onValueChange?: (value: string) => void;
-  /** Threaded onto every item button. Hidden native inputs for form submission are not rendered (deferred). */
-  name?: string;
   orientation?: "horizontal" | "vertical";
-  class?: string;
 }
 
-interface RadioGroupItemProps {
+interface RadioGroupItemProps extends HTMLAttributes<"button"> {
+  class?: string;
   value: string;
   /** Checked state. A boolean reads statically; an accessor keeps the manual part reactive. */
   checked?: boolean | (() => boolean);
   onSelect?: () => void;
-  disabled?: boolean;
-  name?: string;
-  class?: string;
 }
 
 /** The circle icon (refs/icons/circle.svg), created per call so reactive swaps never share nodes between clones. */
@@ -113,24 +109,25 @@ const circleIcon = (): HellaNode =>
     <circle cx="12" cy="12" r="10" />
   </svg>` as HellaNode;
 
-export function RadioGroupItem(props: RadioGroupItemProps): HellaNode {
-  const checked = (): boolean =>
-    typeof props.checked === "function" ? props.checked() : props.checked ?? false;
+export function RadioGroupItem({ value, checked, onSelect, disabled, name, "on:click": userClick, class: cls, ...attrs }: RadioGroupItemProps): HellaNode {
+  const isChecked = (): boolean =>
+    typeof checked === "function" ? checked() : checked ?? false;
 
   return html`
     <button
       type="button"
       role="radio"
       data-slot="radio-group-item"
-      value="${props.value}"
-      name="${props.name}"
-      aria-checked="${() => (checked() ? "true" : "false")}"
-      data-state="${() => (checked() ? "checked" : "unchecked")}"
-      disabled="${props.disabled ? true : undefined}"
+      value="${value}"
+      name="${name}"
+      aria-checked="${() => (isChecked() ? "true" : "false")}"
+      data-state="${() => (isChecked() ? "checked" : "unchecked")}"
+      disabled="${disabled ? true : undefined}"
       class="${
-        [item, props.class]
+        [item, cls]
       }"
-      e:click="${() => props.onSelect?.()}"
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); onSelect?.(); }}"
+      ...${attrs}
     >
       <span
         data-slot="radio-group-indicator"
@@ -138,15 +135,15 @@ export function RadioGroupItem(props: RadioGroupItemProps): HellaNode {
           [indicator]
         }"
       >
-        ${() => (checked() ? circleIcon() : null)}
+        ${() => (isChecked() ? circleIcon() : null)}
       </span>
     </button>
   ` as HellaNode;
 }
 
-export default function RadioGroup(props: RadioGroupProps): HellaNode {
+export default function RadioGroup({ items, value, onValueChange, orientation, name, class: cls, ...attrs }: RadioGroupProps): HellaNode {
   const internal = signal("");
-  const current = (): string => (props.value !== undefined ? props.value() : internal());
+  const current = (): string => (value !== undefined ? value() : internal());
   const wirings: (() => void)[] = [];
   let group: HTMLElement | null = null;
 
@@ -171,10 +168,10 @@ export default function RadioGroup(props: RadioGroupProps): HellaNode {
     }
   };
 
-  const select = (value: string): void => {
-    if (current() === value) return;
-    if (props.value === undefined) internal(value);
-    props.onValueChange?.(value);
+  const select = (selected: string): void => {
+    if (current() === selected) return;
+    if (value === undefined) internal(selected);
+    onValueChange?.(selected);
     roveToSelection();
   };
 
@@ -182,15 +179,15 @@ export default function RadioGroup(props: RadioGroupProps): HellaNode {
     <div
       role="radiogroup"
       data-slot="radio-group"
-      aria-orientation="${props.orientation}"
+      aria-orientation="${orientation}"
       class="${
-        [base, props.class]
+        [base, cls]
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
         group = node;
         wirings.push(rovingTabIndex(node, {
-          orientation: props.orientation,
+          orientation,
           selector: "[role='radio']:not(:disabled)",
         }));
         const onFocusIn = (event: Event) => {
@@ -208,8 +205,9 @@ export default function RadioGroup(props: RadioGroupProps): HellaNode {
         while (wirings.length) wirings.pop()!();
         group = null;
       }}"
+      ...${attrs}
     >
-      ${props.items.map((entry) => html`
+      ${items.map((entry) => html`
         <label
           data-slot="radio-group-row"
           class="${
@@ -218,7 +216,7 @@ export default function RadioGroup(props: RadioGroupProps): HellaNode {
         >
           ${RadioGroupItem({
             value: entry.value,
-            name: props.name,
+            name: name as string | undefined,
             checked: () => current() === entry.value,
             onSelect: () => {
               if (entry.disabled) return;

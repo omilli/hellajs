@@ -48,7 +48,7 @@ export function FieldStateDemo() {
         <FieldLabel for="demo-email-state">
           <FieldTitle>Work email</FieldTitle>
         </FieldLabel>
-        <Input id="demo-email-state" ariaInvalid={true} placeholder="ada@lovelace.dev" />
+        <Input id="demo-email-state" aria-invalid="true" placeholder="ada@lovelace.dev" />
         <FieldError errors={[{ message: "Enter a valid email." }]} />
       </Field>
     </>

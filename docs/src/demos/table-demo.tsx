@@ -39,7 +39,7 @@ export function TableDemo() {
           ))}
         </TableBody>
         <TableFooter><TableRow>
-          <TableHead colSpan={3}>Total</TableHead>
+          <TableHead colspan={3}>Total</TableHead>
           <TableCell class={right}>$685.00</TableCell>
         </TableRow></TableFooter>
       </Table>

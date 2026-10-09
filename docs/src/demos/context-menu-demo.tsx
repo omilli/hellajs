@@ -14,7 +14,7 @@ function zone(label: string) {
 
 const canvasItems = (
   <>
-    <ContextMenuItem onclick={() => console.log("cut")}>Cut</ContextMenuItem>
+    <ContextMenuItem on:click={() => console.log("cut")}>Cut</ContextMenuItem>
     <ContextMenuItem shortcut="⌘C">Copy</ContextMenuItem>
   </>
 );

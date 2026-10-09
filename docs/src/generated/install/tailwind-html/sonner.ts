@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 import { $ref, ForEach, html, onDrag, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const toasterPositions = {
@@ -378,11 +378,11 @@ function ToastItem(props: ToastItemProps): HellaNode {
   ` as HellaNode;
 }
 
-interface ToasterProps {
+interface ToasterProps extends HTMLAttributes<"ol"> {
+  class?: string;
   position?: ToasterPosition;
   /** Tints the whole card per flavor (sonner's richColors); icons are tinted either way. */
   richColors?: boolean;
-  class?: string;
 }
 
 /**
@@ -390,8 +390,7 @@ interface ToasterProps {
  * The queue is the singleton in this file: mount one Toaster per app and call
  * `toast()` from anywhere that imports the same copied module.
  */
-export default function Toaster(props: ToasterProps): HellaNode {
-  const position = props.position ?? "bottom-right";
+export default function Toaster({ position = "bottom-right", richColors, class: cls, ...attrs }: ToasterProps): HellaNode {
   return html`
     ${Portal({
       to: "body",
@@ -403,9 +402,10 @@ export default function Toaster(props: ToasterProps): HellaNode {
             data-position="${position}"
             aria-live="polite"
             class="${
-              cn("pointer-events-none fixed inset-0 z-[100] flex list-none flex-col gap-3 p-4 group/toaster", toasterPositions[position], props.class)
+              cn("pointer-events-none fixed inset-0 z-[100] flex list-none flex-col gap-3 p-4 group/toaster", toasterPositions[position], cls)
             }"
-          >${ForEach({ each: toasts, use: (record: ToastRecord) => ToastItem({ record, richColors: props.richColors === true }) as HellaChild })}</ol>
+            ...${attrs}
+          >${ForEach({ each: toasts, use: (record: ToastRecord) => ToastItem({ record, richColors: richColors === true }) as HellaChild })}</ol>
         ` as HellaChild,
       ],
     })}

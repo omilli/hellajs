@@ -11,6 +11,7 @@ The labeled divider strip: carries `data-variant` for the treatment selectors.
 | `variant` | `"default" \| "separator" \| "border"` | `"default"` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | Icon and content nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `default` renders the bare strip, `separator` adds flex-filling rules before and after the content, and `border` adds a bottom border.
 
@@ -21,6 +22,7 @@ The leading icon box: an `aria-hidden` span, sized by the style layer.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Icon node or glyph |
+Accepts all native `span` attributes (forwarded to the root element).
 
 ### MarkerContent
 
@@ -29,5 +31,6 @@ The label: a `span` centered by the separator variant's selectors.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The label text |
+Accepts all native `span` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

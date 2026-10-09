@@ -1,6 +1,6 @@
 ## API
 
-Options are authored by the caller as plain native children; the component never models them as props. `value` accepts a plain string or a bare signal and binds as the select's value property, `onchange` receives the extracted `e.target.value` string, and the wrapper dims via `:has(select:disabled)` when the control is disabled.
+Options are authored by the caller as plain native children; the component never models them as props. `value` accepts a plain string or a bare signal and binds as the select's value property, `on:change` delivers the native event (read the selection with `(e.target as HTMLSelectElement).value`), and the wrapper dims via `:has(select:disabled)` when the control is disabled.
 
 `NativeSelectOption` and `NativeSelectOptGroup` ship beside the default root as styled passthroughs to their native elements; plain native `option` and `optgroup` children also render as-is. A group heading needs a plain native `optgroup` with its `label` attribute.
 
@@ -10,10 +10,10 @@ Options are authored by the caller as plain native children; the component never
 | ---- | ---- | ------- |
 | `value` | `string \| (() => string)` | `-` |
 | `size` | `"default" \| "sm"` | `"default"` |
-| `ariaLabel` | `string` | `-` |
-| `onchange` | `(value: string) => void` | `-` |
 | `class` | `string` | `-` |
 | `children` | `HellaChildren` | The native options |
+
+Accepts all native `select` attributes (forwarded to the select element): `id`, `aria-label`, `disabled`, `name`, and friends ride the spread.
 
 `size="sm"` toggles the compact treatment through `data-size="sm"` on the select, trimming the control's height.
 
@@ -25,6 +25,8 @@ A passthrough to a native `option`, carrying the option color treatment.
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The option's label node |
 
+Accepts all native `option` attributes (forwarded to the option element).
+
 ### NativeSelectOptGroup
 
 A passthrough to a native `optgroup`, carrying the same color treatment.
@@ -32,5 +34,7 @@ A passthrough to a native `optgroup`, carrying the same color treatment.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The grouped options |
+
+Accepts all native `optgroup` attributes (forwarded to the optgroup element).
 
 Every part also takes a `class` string, landing last in its style composition.

@@ -1,7 +1,7 @@
 import { html } from "@hellajs/dom";
 import { signal as coreSignal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const base =
@@ -52,7 +52,8 @@ export function MessageScrollerProvider(props: MessageScrollerProviderProps): He
   return html`${() => props.children}` as HellaNode;
 }
 
-interface MessageScrollerViewportProps {
+interface MessageScrollerViewportProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   /** Shared at-bottom state; the viewport flips it and owns an internal signal when absent. */
   atBottom?: Signal<boolean>;
@@ -62,18 +63,17 @@ interface MessageScrollerViewportProps {
   threshold?: number;
   /** Injectable content watcher returning its own dispose; defaults to a ResizeObserver. */
   observe?: (target: Element, onGrow: () => void) => () => void;
-  class?: string;
 }
 
-export function MessageScrollerViewport(props: MessageScrollerViewportProps): HellaNode {
+export function MessageScrollerViewport({ atBottom, scrollToBottom, threshold, observe, children, class: cls, ...attrs }: MessageScrollerViewportProps): HellaNode {
   const fallback = coreSignal(true);
   const teardown: (() => void)[] = [];
   let el: HTMLElement | undefined;
 
-  const state = (): Signal<boolean> => props.atBottom ?? fallback;
+  const state = (): Signal<boolean> => atBottom ?? fallback;
 
-  const scrollToBottom = (): void => {
-    if (props.scrollToBottom) props.scrollToBottom();
+  const jump = (): void => {
+    if (scrollToBottom) scrollToBottom();
     else if (el) {
       el.scrollTop = el.scrollHeight;
       state()(true);
@@ -84,7 +84,7 @@ export function MessageScrollerViewport(props: MessageScrollerViewportProps): He
     const node = el;
     if (!node) return;
     const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
-    state()(distance <= (props.threshold ?? 80));
+    state()(distance <= (threshold ?? 80));
   };
 
   const defaultObserve = (target: Element, onGrow: () => void): (() => void) => {
@@ -95,7 +95,7 @@ export function MessageScrollerViewport(props: MessageScrollerViewportProps): He
   };
 
   const onGrow = (): void => {
-    if (state()()) scrollToBottom();
+    if (state()()) jump();
     sync();
   };
 
@@ -103,90 +103,91 @@ export function MessageScrollerViewport(props: MessageScrollerViewportProps): He
     <div
       data-slot="message-scroller-viewport"
       class="${
-        cn(viewport, props.class)
+        cn(viewport, cls)
       }"
+      ...${attrs}
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
         el = node;
         node.addEventListener("scroll", sync, { passive: true });
         teardown.push(() => node.removeEventListener("scroll", sync));
         const inner = node.firstElementChild;
-        if (inner) teardown.push((props.observe ?? defaultObserve)(inner, onGrow));
+        if (inner) teardown.push((observe ?? defaultObserve)(inner, onGrow));
         if (state()()) node.scrollTop = node.scrollHeight;
       }}"
       hook:beforeDestroy="${() => {
         while (teardown.length) teardown.pop()!();
         el = undefined;
       }}"
-    >${() => props.children}</div>
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MessageScrollerContentProps {
-  children?: HellaChildren;
+interface MessageScrollerContentProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageScrollerContent(props: MessageScrollerContentProps): HellaNode {
+export function MessageScrollerContent({ children, class: cls, ...attrs }: MessageScrollerContentProps): HellaNode {
   return html`
     <div
       data-slot="message-scroller-content"
       class="${
-        cn("flex h-max min-h-full flex-col gap-8", props.class)
+        cn("flex h-max min-h-full flex-col gap-8", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MessageScrollerItemProps {
-  children?: HellaChildren;
+interface MessageScrollerItemProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MessageScrollerItem(props: MessageScrollerItemProps): HellaNode {
+export function MessageScrollerItem({ children, class: cls, ...attrs }: MessageScrollerItemProps): HellaNode {
   return html`
     <div
       data-slot="message-scroller-item"
       class="${
-        cn(item, props.class)
+        cn(item, cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MessageScrollerButtonProps {
+interface MessageScrollerButtonProps extends HTMLAttributes<"button"> {
+  class?: string;
+  children?: HellaChildren;
   /** Shared at-bottom state driving data-active; the default scroll action writes it back to true. */
   atBottom?: Signal<boolean>;
   scrollToBottom?: () => void;
   direction?: "start" | "end";
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
-  onclick?: () => void;
-  children?: HellaChildren;
-  class?: string;
 }
 
-export function MessageScrollerButton(props: MessageScrollerButtonProps): HellaNode {
-  const direction = (): "start" | "end" => props.direction ?? "end";
+export function MessageScrollerButton({ atBottom, scrollToBottom, direction: dir, variant, size, "on:click": userClick, children, class: cls, ...attrs }: MessageScrollerButtonProps): HellaNode {
+  const direction = (): "start" | "end" => dir ?? "end";
 
   const active = (): "true" | "false" => {
-    const atBottom = props.atBottom?.() ?? true;
-    const isActive = direction() === "end" ? !atBottom : atBottom;
+    const bottom = atBottom?.() ?? true;
+    const isActive = direction() === "end" ? !bottom : bottom;
     return isActive ? "true" : "false";
   };
 
   const click = (event: Event): void => {
-    if (props.onclick) return props.onclick();
-    if (props.scrollToBottom) {
-      props.scrollToBottom();
-      props.atBottom?.(true);
+    if (scrollToBottom) {
+      scrollToBottom();
+      atBottom?.(true);
       return;
     }
     if (!(event.target instanceof Element)) return;
     const viewport = event.target.closest('[data-slot="message-scroller"]')?.querySelector('[data-slot="message-scroller-viewport"]');
     if (viewport instanceof HTMLElement) {
       viewport.scrollTop = viewport.scrollHeight;
-      props.atBottom?.(true);
+      atBottom?.(true);
     }
   };
 
@@ -195,20 +196,21 @@ export function MessageScrollerButton(props: MessageScrollerButtonProps): HellaN
       type="button"
       data-slot="message-scroller-button"
       data-direction="${direction()}"
-      data-variant="${props.variant ?? "secondary"}"
-      data-size="${props.size ?? "icon-sm"}"
+      data-variant="${variant ?? "secondary"}"
+      data-size="${size ?? "icon-sm"}"
       data-active="${active}"
       class="${
         cn(
           buttonBase,
-          buttonVariants[props.variant ?? "secondary"],
-          buttonSizes[props.size ?? "icon-sm"],
+          buttonVariants[variant ?? "secondary"],
+          buttonSizes[size ?? "icon-sm"],
           overlay,
-          props.class,
+          cls,
         )
       }"
-      e:click="${click}"
-    >${() => props.children ?? [
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); click(e); }}"
+      ...${attrs}
+    >${() => children ?? [
       html`
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -229,14 +231,14 @@ export function MessageScrollerButton(props: MessageScrollerButtonProps): HellaN
   ` as HellaNode;
 }
 
-interface MessageScrollerProps {
+interface MessageScrollerProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   atBottom?: Signal<boolean>;
   scrollToBottom?: () => void;
   threshold?: number;
   observe?: (target: Element, onGrow: () => void) => () => void;
   showScrollButton?: boolean;
-  class?: string;
 }
 
 /**
@@ -244,23 +246,24 @@ interface MessageScrollerProps {
  * children in a viewport + content stack, and renders the jump-to-end button
  * whose visibility the at-bottom state drives.
  */
-export function MessageScroller(props: MessageScrollerProps): HellaNode {
-  const atBottom = props.atBottom ?? coreSignal(true);
+export function MessageScroller({ atBottom, scrollToBottom, threshold, observe, showScrollButton, children, class: cls, ...attrs }: MessageScrollerProps): HellaNode {
+  const bottom = atBottom ?? coreSignal(true);
   return html`
     <div
       data-slot="message-scroller"
       class="${
-        cn(base, props.class)
+        cn(base, cls)
       }"
+      ...${attrs}
     >
       ${() => MessageScrollerViewport({
-        atBottom,
-        scrollToBottom: props.scrollToBottom,
-        threshold: props.threshold,
-        observe: props.observe,
-        children: [MessageScrollerContent({ children: props.children }) as HellaChild],
+        atBottom: bottom,
+        scrollToBottom,
+        threshold,
+        observe,
+        children: [MessageScrollerContent({ children }) as HellaChild],
       })}
-      ${() => (props.showScrollButton !== false) && MessageScrollerButton({ atBottom, scrollToBottom: props.scrollToBottom })}
+      ${() => (showScrollButton !== false) && MessageScrollerButton({ atBottom: bottom, scrollToBottom })}
     </div>
   ` as HellaNode;
 }

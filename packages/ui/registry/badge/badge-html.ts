@@ -1,33 +1,32 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
 declare const variants: Record<string, string>;
 // @hella:end
 
-interface BadgeProps {
+interface BadgeProps extends HTMLAttributes<"span"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
-  ariaInvalid?: boolean;
-  class?: string;
 }
 
-export default function Badge(props: BadgeProps): HellaNode {
+export default function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): HellaNode {
   return html`
     <span
       data-slot="badge"
-      data-variant="${props.variant ?? "default"}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
+      data-variant="${variant ?? "default"}"
       class="${
         // @hella:compose
         [
           base,
-          variants[props.variant ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          cls,
         ]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }

@@ -1,26 +1,27 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
 // @hella:end
 
-interface AspectRatioProps {
-  ratio?: number;
-  children?: HellaChildren;
+interface AspectRatioProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
+  ratio?: number;
 }
 
-export default function AspectRatio(props: AspectRatioProps): HellaNode {
+export default function AspectRatio({ ratio, children, class: cls, ...attrs }: AspectRatioProps): HellaNode {
   return html`
     <div
       data-slot="aspect-ratio"
-      style="aspect-ratio:${props.ratio ?? 1}; width:100%"
+      style="aspect-ratio:${ratio ?? 1}; width:100%"
       class="${
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }

@@ -12,7 +12,7 @@ One `createForm` call drives the whole row: field state flows into each part as 
 | `handleSubmit(onValid)` | Validates all and marks all touched, then calls `onValid(values)` only when clean; the optional event argument is preventDefaulted. |
 | `reset()` | Restores every field to its initial value and clears errors, touched, and dirty. |
 
-`blur(key)` needs the control's own blur event, and the vendored controls forward only their declared props, so wire it where your composition allows: a raw `input` element with the `e:blur` prefix, or a bubbling `e:focusout` handler on a wrapper.
+`blur(key)` needs the control's own blur event, so wire it where your composition allows: a raw `input` element with the `e:blur` prefix, or a bubbling `e:focusout` handler on a wrapper.
 
 ### FormItem
 
@@ -23,16 +23,18 @@ The field row: a `div` carrying `data-error` as the container-level error hook.
 | `error` | `boolean \| (() => boolean)` | `-` |
 | `children` | `HellaChildren` | The label, control, description, and message nodes |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### FormLabel
 
-The field's label: renders `data-required` when `required` is set, plus `aria-invalid` and the destructive text hook while the error flag is set.
+The field's label: renders `data-required` when the native `required` attribute is set, plus `aria-invalid` and the destructive text hook while the error flag is set.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `for` | `string` | `-` |
-| `required` | `boolean` | `-` |
 | `error` | `boolean \| (() => boolean)` | `-` |
 | `children` | `HellaChildren` | The label text |
+
+Accepts all native `label` attributes (forwarded to the root element; `for` re-emits from the destructured attribute).
 
 ### FormControl
 
@@ -44,14 +46,17 @@ The passthrough slot around the control itself: a wrapper carrying `aria-invalid
 | `describedBy` | `string` | `-` |
 | `children` | `HellaChildren` | The control node |
 
+Accepts all native `div` attributes (forwarded to the root element).
+
 ### FormDescription
 
-The hint line: carries the `id` the control's `describedBy` points at.
+The hint line: carries the native `id` the control's `describedBy` points at.
 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
-| `id` | `string` | `-` |
 | `children` | `HellaChildren` | The hint text |
+
+Accepts all native `p` attributes (forwarded to the root element; `id` re-emits from the destructured attribute).
 
 ### FormMessage
 
@@ -61,5 +66,7 @@ The message: renders the first error with `role="alert"` and hides (rather than 
 | ---- | ---- | ------- |
 | `errors` | `string[] \| (() => string[] \| undefined)` | `-` |
 | `children` | `HellaChildren` | Fallback content rendered when there are no errors |
+
+Accepts all native `p` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

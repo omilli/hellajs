@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -15,43 +15,45 @@ declare const title: string;
 /** Accessibility state shared by the animated dialog parts. */
 type DialogState = () => "open" | "closed";
 
-interface DialogOverlayProps {
+interface DialogOverlayProps extends HTMLAttributes<"div"> {
   state?: DialogState;
   class?: string;
 }
 
-export function DialogOverlay(props: DialogOverlayProps): JSX.Element {
+export function DialogOverlay({ state, class: cls, ...attrs }: DialogOverlayProps): JSX.Element {
   return (
     <div
       data-slot="dialog-overlay"
-      data-state={props.state?.()}
+      data-state={state?.()}
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
+      {...attrs}
     />
   );
 }
 
-interface DialogCloseProps {
+interface DialogCloseProps extends HTMLAttributes<"button"> {
   state?: DialogState;
   onClose?: () => void;
   class?: string;
 }
 
-export function DialogClose(props: DialogCloseProps): JSX.Element {
+export function DialogClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: DialogCloseProps): JSX.Element {
   return (
     <button
       type="button"
       data-slot="dialog-close"
-      data-state={props.state?.()}
+      data-state={state?.()}
       class={
         // @hella:compose
-        [close, props.class]
+        [close, cls]
         // @hella:end
       }
-      on:click={() => props.onClose?.()}
+      on:click={function (e) { userClick?.call(this, e); onClose?.(); }}
+      {...attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -72,10 +74,8 @@ export function DialogClose(props: DialogCloseProps): JSX.Element {
   );
 }
 
-interface DialogContentProps {
+interface DialogContentProps extends HTMLAttributes<"div"> {
   state?: DialogState;
-  labelledBy?: string;
-  describedBy?: string;
   showCloseButton?: boolean;
   closeOnEscape?: boolean;
   closeOnOutside?: boolean;
@@ -90,7 +90,7 @@ interface DialogContentProps {
  * sibling - hella has no Radix context, so the portal/overlay pairing is the
  * composer's (the default Dialog below shows the wired composition).
  */
-export function DialogContent(props: DialogContentProps): JSX.Element {
+export function DialogContent({ state, showCloseButton, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: DialogContentProps): JSX.Element {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
@@ -100,31 +100,29 @@ export function DialogContent(props: DialogContentProps): JSX.Element {
   };
 
   const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.state?.() === "closed") return;
+    if (panel === undefined || wirings.length > 0 || state?.() === "closed") return;
     const target = panel;
-    if (props.closeOnEscape !== false && props.onClose) wirings.push(onEscape(target, props.onClose));
-    if (props.closeOnOutside !== false && props.onClose) wirings.push(onOutside(() => [target], props.onClose));
+    if (closeOnEscape !== false && onClose) wirings.push(onEscape(target, onClose));
+    if (closeOnOutside !== false && onClose) wirings.push(onOutside(() => [target], onClose));
     wirings.push(trapFocus(target));
   };
 
   // The exit runs unwired: flipping to "closed" tears the trap/escape/outside
   // handlers down immediately; reopening re-arms them without a remount.
   effect(() => {
-    if (props.state?.() === "closed") disposeWirings();
+    if (state?.() === "closed") disposeWirings();
     else installWirings();
   });
 
   return (
     <div
       data-slot="dialog-content"
-      data-state={props.state?.()}
+      data-state={state?.()}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={props.labelledBy}
-      aria-describedby={props.describedBy}
       class={
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }
       hook:afterMount={(node) => {
@@ -134,7 +132,7 @@ export function DialogContent(props: DialogContentProps): JSX.Element {
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (props.state?.() === "closed") props.onExited?.();
+          if (state?.() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -143,89 +141,98 @@ export function DialogContent(props: DialogContentProps): JSX.Element {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}
+      {...attrs}
     >
-      {props.children}
-      {props.showCloseButton !== false && (
-        <DialogClose state={props.state} onClose={props.onClose} />
+      {children}
+      {showCloseButton !== false && (
+        <DialogClose state={state} onClose={onClose} />
       )}
     </div>
   );
 }
 
-interface DialogPartProps {
+interface DialogPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function DialogHeader(props: DialogPartProps): JSX.Element {
+export function DialogHeader({ children, class: cls, ...attrs }: DialogPartProps): JSX.Element {
   return (
     <div
       data-slot="dialog-header"
       class={
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function DialogFooter(props: DialogPartProps): JSX.Element {
+export function DialogFooter({ children, class: cls, ...attrs }: DialogPartProps): JSX.Element {
   return (
     <div
       data-slot="dialog-footer"
       class={
         // @hella:compose
-        [footer, props.class]
+        [footer, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface DialogTitleProps {
-  id?: string;
+interface DialogTitleProps extends HTMLAttributes<"h2"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function DialogTitle(props: DialogTitleProps): JSX.Element {
+export function DialogTitle({ id, children, class: cls, ...attrs }: DialogTitleProps): JSX.Element {
   return (
     <h2
-      id={props.id}
+      id={id}
       data-slot="dialog-title"
       class={
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </h2>
   );
 }
 
-export function DialogDescription(props: DialogTitleProps): JSX.Element {
+interface DialogDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function DialogDescription({ id, children, class: cls, ...attrs }: DialogDescriptionProps): JSX.Element {
   return (
     <p
-      id={props.id}
+      id={id}
       data-slot="dialog-description"
       class={
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </p>
   );
 }
 
-interface DialogProps {
+interface DialogProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   title?: string;
@@ -239,7 +246,7 @@ interface DialogProps {
 
 let dialogCount = 0;
 
-export default function Dialog(props: DialogProps): JSX.Element {
+export default function Dialog({ open, onClose, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: DialogProps): JSX.Element {
   const titleId = `hella-dialog-title-${++dialogCount}`;
   const descriptionId = `hella-dialog-description-${dialogCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -261,7 +268,7 @@ export default function Dialog(props: DialogProps): JSX.Element {
   // panel stays mounted under data-state="closed" until its animationend
   // (or the copied 200ms duration budget) unmounts it.
   effect(() => {
-    if (props.open()) {
+    if (open()) {
       wasOpen = true;
       finishExit();
       visible(true);
@@ -272,7 +279,7 @@ export default function Dialog(props: DialogProps): JSX.Element {
     }
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
+  const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return (
     <>
@@ -281,18 +288,19 @@ export default function Dialog(props: DialogProps): JSX.Element {
           <DialogOverlay state={state} />
           <DialogContent
             state={state}
-            labelledBy={titleId}
-            describedBy={props.description === undefined ? undefined : descriptionId}
-            showCloseButton={props.showCloseButton}
-            closeOnEscape={props.closeOnEscape}
-            closeOnOutside={props.closeOnOutside}
-            onClose={props.onClose}
+            aria-labelledby={titleId}
+            aria-describedby={descriptionText === undefined ? undefined : descriptionId}
+            showCloseButton={showCloseButton}
+            closeOnEscape={closeOnEscape}
+            closeOnOutside={closeOnOutside}
+            onClose={onClose}
             onExited={finishExit}
-            class={props.class}
+            class={cls}
+            {...attrs}
             children={[
-              ...(props.title !== undefined ? [<DialogTitle id={titleId}>{props.title}</DialogTitle>] : []),
-              ...(props.description !== undefined ? [<DialogDescription id={descriptionId}>{props.description}</DialogDescription>] : []),
-              ...flattenChildren(props.children),
+              ...(titleText !== undefined ? [<DialogTitle id={titleId}>{titleText}</DialogTitle>] : []),
+              ...(descriptionText !== undefined ? [<DialogDescription id={descriptionId}>{descriptionText}</DialogDescription>] : []),
+              ...flattenChildren(children),
             ] as HellaChild[]}
           />
         </Portal>

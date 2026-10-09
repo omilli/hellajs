@@ -3,6 +3,7 @@ import { resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   popoverPartVariants,
   popoverVariants,
   renderVariant,
@@ -135,6 +136,36 @@ describe("popover", () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
     handle.unmount();
     expect(content.isConnected).toBe(false);
+  });
+
+  test.each(popoverVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Body", "aria-label": "trigger" });
+    expect(trigger.getAttribute("aria-label")).toBe("trigger");
+  });
+
+  test.each(popoverVariants)("$format/$style chains a user on:click with the owned toggle across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const onOpenChange = mock<(open: boolean) => void>(() => {});
+    const trigger = renderVariant(variant, { content: "Body", onOpenChange, "on:click": userClick });
+    trigger.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+  });
+
+  test.each(popoverVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Body", class: "user-class" });
+    expect(classTokens(trigger).at(-1)).toBe("user-class");
+  });
+
+  test.each(popoverVariants)("$format/$style wires aria-controls to the generated content id", async (variant) => {
+    const { trigger, content } = await openPopover(variant);
+    expect(trigger.getAttribute("aria-controls")).toBe(content.id);
+  });
+
+  test.each(popoverPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ id: "custom-popover", children: [] }), container);
+    expect(container.firstElementChild!.getAttribute("id")).toBe("custom-popover");
   });
 
   test("keeps structural parity across all four variants", () => {

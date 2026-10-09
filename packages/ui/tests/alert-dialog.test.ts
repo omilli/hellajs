@@ -7,6 +7,7 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { html, mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   alertDialogPartVariants,
   alertDialogVariants,
 } from "./helpers/variants";
@@ -28,7 +29,7 @@ function newestPanel(): HTMLElement | undefined {
  * (earlier tests can leave stale panels attached) that has finished the
  * observer-driven mount walk.
  */
-function mountAlertDialog(variant: AlertDialogVariant, props: Omit<AlertDialogVariantProps, "open">) {
+function mountAlertDialog(variant: AlertDialogVariant, props: Partial<AlertDialogVariantProps> & { onClose: () => void }) {
   const open = signal(false);
   const container = setupContainer();
   mount(html`<div>${variant.render({ ...props, open: () => open(), children: props.children ?? [] })}</div>`, container);
@@ -144,11 +145,57 @@ describe("alert-dialog", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Action"))("$format/$style Action chains a user on:click with its owned dismiss", (variant) => {
+    const onClose = mock(() => {});
+    const userClick = mock(() => {});
+    const action = renderPart(variant, [], { onClose, "on:click": userClick });
+    action.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   test.each(alertDialogPartVariants.filter((entry) => entry.part === "Cancel"))("$format/$style Cancel calls onClose on click", (variant) => {
     const onClose = mock(() => {});
     const cancel = renderPart(variant, [], { onClose });
     cancel.dispatchEvent(new Event("click"));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Cancel"))("$format/$style Cancel chains a user on:click with its owned dismiss", (variant) => {
+    const onClose = mock(() => {});
+    const userClick = mock(() => {});
+    const cancel = renderPart(variant, [], { onClose, "on:click": userClick });
+    cancel.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(alertDialogPartVariants.filter((entry) => entry.part === "Content"))("$format/$style content part forwards the manual aria wiring attrs", (variant) => {
+    const el = renderPart(variant, [], { "aria-labelledby": "wired-title" });
+    expect(el.getAttribute("aria-labelledby")).toBe("wired-title");
+  });
+
+  test.each(alertDialogVariants)("$format/$style forwards user attrs onto the portaled panel across all four variants", async (variant) => {
+    const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Forward", "aria-label": "panel" });
+    dlg.open(true);
+    const panel = await dlg.panel();
+    expect(panel.getAttribute("aria-label")).toBe("panel");
+  });
+
+  test.each(alertDialogVariants)("$format/$style fires a user on:click handler on the portaled panel across all four variants", async (variant) => {
+    const onPanelClick = mock(() => {});
+    const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Forward", "on:click": onPanelClick });
+    dlg.open(true);
+    const panel = await dlg.panel();
+    panel.dispatchEvent(new Event("click"));
+    expect(onPanelClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(alertDialogVariants)("$format/$style merges a user class into the portaled panel's class across all four variants", async (variant) => {
+    const dlg = mountAlertDialog(variant, { onClose: () => {}, title: "Forward", class: "user-class" });
+    dlg.open(true);
+    const panel = await dlg.panel();
+    expect(classTokens(panel).at(-1)).toBe("user-class");
   });
 
   test.each(alertDialogVariants)("$format/$style stays mounted under data-state closed until the panel's animationend", async (variant) => {
@@ -168,12 +215,12 @@ describe("alert-dialog", () => {
     dlg.open(true);
     const panel = await dlg.panel();
     dlg.open(false);
-    let waited = 0;
-    while (panel.isConnected && waited < 400) {
+    const budget = Date.now();
+    while (panel.isConnected && Date.now() - budget < 450) {
       await delay(null, 20);
-      waited += 20;
     }
-    expect(waited).toBeGreaterThanOrEqual(200);
+    // Wall clock, not loop iterations: per-iteration lag under load must not read as an early unmount.
+    expect(Date.now() - budget).toBeGreaterThanOrEqual(200);
     expect(panel.isConnected).toBe(false);
   });
 

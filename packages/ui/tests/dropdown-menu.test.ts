@@ -5,6 +5,7 @@ import { mount, peekState } from "@hellajs/dom";
 import type { HellaChildren } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   dropdownMenuModules,
   dropdownMenuPartVariants,
   dropdownMenuVariants,
@@ -34,7 +35,7 @@ interface ItemProps {
   destructive?: boolean;
   inset?: boolean;
   disabled?: boolean;
-  onclick?: () => void;
+  "on:click"?: () => void;
   shortcut?: string;
   class?: string;
 }
@@ -133,7 +134,7 @@ describe("dropdown-menu", () => {
   test.each(dropdownMenuVariants)("$format/$style activates items on Enter and Space", async (variant) => {
     const onclick = mock(() => {});
     const { content } = await openMenu(variant, [
-      Item(variant, { children: "Alpha", onclick }),
+      Item(variant, { children: "Alpha", "on:click": onclick }),
       Item(variant, { children: "Beta" }),
     ]);
     pressKey(content, "Enter");
@@ -141,7 +142,7 @@ describe("dropdown-menu", () => {
     expect(content.getAttribute("data-state")).toBe("closed");
     const second = await openMenu(variant, [
       Item(variant, { children: "Alpha" }),
-      Item(variant, { children: "Beta", onclick }),
+      Item(variant, { children: "Beta", "on:click": onclick }),
     ]);
     const items = [...second.content.querySelectorAll("[role='menuitem']")] as HTMLElement[];
     items[1]!.focus();
@@ -180,7 +181,7 @@ describe("dropdown-menu", () => {
     const onclick = mock(() => {});
     const onOpenChange = mock<(open: boolean) => void>(() => {});
     const trigger = renderVariant(variant, {
-      content: [Item(variant, { children: "Locked", disabled: true, onclick }), Item(variant, { children: "Free" })],
+      content: [Item(variant, { children: "Locked", disabled: true, "on:click": onclick }), Item(variant, { children: "Free" })],
       onOpenChange,
     });
     trigger.dispatchEvent(new Event("click"));
@@ -441,6 +442,29 @@ describe("dropdown-menu", () => {
     const second = await awaitPortaled("dropdown-menu-content");
     expect(second).not.toBe(first);
     expect(second.getAttribute("data-state")).toBe("open");
+  });
+
+  test.each(dropdownMenuVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Inspect", "aria-label": "actions" });
+    expect(trigger.getAttribute("aria-label")).toBe("actions");
+  });
+
+  test.each(dropdownMenuVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const trigger = renderVariant(variant, { content: "Inspect", "on:click": userClick });
+    trigger.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(dropdownMenuVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Inspect", class: "user-class" });
+    expect(classTokens(trigger).at(-1)).toBe("user-class");
+  });
+
+  test.each(dropdownMenuPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part respects a user-supplied id", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ id: "custom-menu", children: [] }), container);
+    expect(container.firstElementChild!.getAttribute("id")).toBe("custom-menu");
   });
 
   test("keeps structural parity across all four variants", () => {

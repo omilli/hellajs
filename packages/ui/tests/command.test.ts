@@ -3,7 +3,10 @@ import { signal } from "@hellajs/core";
 import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { html, mount } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
+  classTokens,
   commandPartVariants,
   commandVariants,
   renderVariant,
@@ -435,5 +438,63 @@ describe("command", () => {
       { open: () => true, onClose: () => {}, title: "Parity", description: "Parity description" },
       ["aria-labelledby", "aria-describedby", "id"],
     );
+  });
+
+  test("filter signal drives list filtering through the migrated on:input wiring", () => {
+    for (const variant of commandVariants) {
+      const root = renderVariant(variant, { items: GROUPED });
+      const input = queryInput(root);
+      type(input, "ban");
+      const visible = items(root).filter((el) => (el as HTMLElement).style.display !== "none");
+      expect(visible.map((el) => el.getAttribute("data-value"))).toEqual(["banana"]);
+    }
+  });
+
+  test("forwards user attrs onto the command root across all four variants", () => {
+    assertAttrForwarded(commandVariants, { items: GROUPED, title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler on the command root across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(commandVariants, { items: GROUPED, "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test("merges a user class into the command root class across all four variants", () => {
+    for (const variant of commandVariants) {
+      const root = renderVariant(variant, { items: GROUPED, class: "my-command" });
+      const tokens = classTokens(root);
+      expect(tokens.at(-1)).toBe("my-command");
+      expect(tokens.length).toBeGreaterThan(1);
+    }
+  });
+
+  test("input part forwards placeholder and id onto the inner input across all four variants", () => {
+    for (const variant of commandPartVariants.filter((candidate) => candidate.part === "Input")) {
+      const container = setupContainer();
+      const rendered = variant.render({ placeholder: "Search actions", id: "cmd-input" });
+      mountPart(rendered, container);
+      const input = container.querySelector("input")!;
+      expect(input.getAttribute("placeholder")).toBe("Search actions");
+      expect(input.id).toBe("cmd-input");
+    }
+  });
+
+  test("item part chains a user on:click with the owned select", () => {
+    for (const variant of commandPartVariants.filter((candidate) => candidate.part === "Item")) {
+      const userClick = mock(() => {});
+      const onSelect = mock(() => {});
+      const container = setupContainer();
+      const rendered = variant.render({
+        value: "a",
+        "on:click": userClick,
+        onSelect,
+        children: [],
+      });
+      mountPart(rendered, container);
+      const item = container.querySelector("[data-slot='command-item']") as HTMLElement;
+      item.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(userClick).toHaveBeenCalledTimes(1);
+      expect(onSelect).toHaveBeenCalledTimes(1);
+    }
   });
 });

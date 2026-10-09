@@ -11,6 +11,7 @@ The stack: a `div` carrying `data-slot="message-group"` that spaces its rows.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The message rows |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### Message
 
@@ -20,6 +21,7 @@ The row: a `div` carrying `data-align`, which the descendant conditions read.
 | ---- | ---- | ------- |
 | `align` | `"start" \| "end"` | `"start"` |
 | `children` | `HellaChildren` | The avatar well and content column |
+Accepts all native `div` attributes (forwarded to the root element).
 
 `align="end"` flips the row with `flex-row-reverse`, pushes the content column to the inline end, and right-aligns the footer, so sent messages mirror received ones without extra classes on the parts.
 
@@ -30,6 +32,7 @@ The avatar well: a `div` carrying `data-slot="message-avatar"`; a footer in the 
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Any small element (an image, an initial) |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### MessageContent
 
@@ -38,6 +41,7 @@ The content column: a `div` carrying `data-slot="message-content"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | Header, bubble, and footer nodes |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### MessageHeader
 
@@ -46,6 +50,7 @@ The header meta row: a `div` carrying `data-slot="message-header"`.
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The sender name node |
+Accepts all native `div` attributes (forwarded to the root element).
 
 ### MessageFooter
 
@@ -54,5 +59,6 @@ The footer meta row: a `div` carrying `data-slot="message-footer"`, right-aligne
 | Prop | Type | Default |
 | ---- | ---- | ------- |
 | `children` | `HellaChildren` | The timestamp node |
+Accepts all native `div` attributes (forwarded to the root element).
 
 Every part also takes a `class` string, landing last in its style composition.

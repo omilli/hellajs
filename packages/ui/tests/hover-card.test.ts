@@ -3,6 +3,7 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, resetDom } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   hoverCardPartVariants,
   hoverCardVariants,
   renderVariant,
@@ -162,6 +163,29 @@ describe("hover-card", () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
     handle.unmount();
     expect(content.isConnected).toBe(false);
+  });
+
+  test.each(hoverCardVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Card", "aria-label": "trigger" });
+    expect(trigger.getAttribute("aria-label")).toBe("trigger");
+  });
+
+  test.each(hoverCardVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const trigger = renderVariant(variant, { content: "Card", "on:click": userClick });
+    trigger.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(hoverCardVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { content: "Card", class: "user-class" });
+    expect(classTokens(trigger).at(-1)).toBe("user-class");
+  });
+
+  test.each(hoverCardPartVariants.filter((variant) => variant.part === "Content"))("$format/$style content part forwards user attrs", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ "aria-label": "panel", children: [] }), container);
+    expect(container.firstElementChild!.getAttribute("aria-label")).toBe("panel");
   });
 
   test("keeps structural parity across all four variants", () => {

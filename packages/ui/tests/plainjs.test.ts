@@ -95,7 +95,7 @@ describe("plain-js delivery", () => {
     const card = readFileSync(join(componentsDir(root), "card.js"), "utf8");
     expect(card).toMatch(/html`/);
     for (const part of ["Card", "CardHeader", "CardTitle", "CardDescription", "CardAction", "CardContent", "CardFooter"]) {
-      expect(card).toContain(`function ${part}(props)`);
+      expect(card).toContain(`function ${part}({ children, class: cls, ...attrs })`);
     }
     expect(card).not.toMatch(/\binterface\b/);
     expect(card).not.toContain(": CardPartProps");

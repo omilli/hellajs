@@ -22,7 +22,7 @@ npx @hellajs/ui add button
 import Button from './components/button';
 
 const App = () => (
-  <Button variant="outline" onclick={() => console.log('clicked')}>
+  <Button variant="outline" on:click={() => console.log('clicked')}>
     Click me
   </Button>
 );

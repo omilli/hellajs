@@ -1,7 +1,7 @@
 import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 import { $ref, ForEach, onDrag, Portal } from "@hellajs/dom";
-import type { HellaChild } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const toasterPositions = {
@@ -376,11 +376,11 @@ function ToastItem(props: ToastItemProps): JSX.Element {
   );
 }
 
-interface ToasterProps {
+interface ToasterProps extends HTMLAttributes<"ol"> {
+  class?: string;
   position?: ToasterPosition;
   /** Tints the whole card per flavor (sonner's richColors); icons are tinted either way. */
   richColors?: boolean;
-  class?: string;
 }
 
 /**
@@ -388,8 +388,7 @@ interface ToasterProps {
  * The queue is the singleton in this file: mount one Toaster per app and call
  * `toast()` from anywhere that imports the same copied module.
  */
-export default function Toaster(props: ToasterProps): JSX.Element {
-  const position = props.position ?? "bottom-right";
+export default function Toaster({ position = "bottom-right", richColors, class: cls, ...attrs }: ToasterProps): JSX.Element {
   return (
     <Portal to="body">
       <ol
@@ -398,10 +397,11 @@ export default function Toaster(props: ToasterProps): JSX.Element {
         data-position={position}
         aria-live="polite"
         class={
-          cn("pointer-events-none fixed inset-0 z-[100] flex list-none flex-col gap-3 p-4 group/toaster", toasterPositions[position], props.class)
+          cn("pointer-events-none fixed inset-0 z-[100] flex list-none flex-col gap-3 p-4 group/toaster", toasterPositions[position], cls)
         }
+        {...attrs}
       >
-        <ForEach each={toasts} use={(record: ToastRecord) => <ToastItem record={record} richColors={props.richColors === true} />} />
+        <ForEach each={toasts} use={(record: ToastRecord) => <ToastItem record={record} richColors={richColors === true} />} />
       </ol>
     </Portal>
   );

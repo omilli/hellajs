@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -52,36 +52,23 @@ const invalid = style("textarea-invalid", {
   },
 });
 
-interface TextareaProps {
-  value?: string | (() => string);
-  placeholder?: string;
-  id?: string;
-  ariaLabel?: string;
-  rows?: number;
-  ariaInvalid?: boolean;
+interface TextareaProps extends HTMLAttributes<"textarea"> {
   class?: string;
-  oninput?: (v: string) => void;
 }
 
-export default function Textarea(props: TextareaProps): HellaNode {
+export default function Textarea({ class: cls, ...attrs }: TextareaProps): HellaNode {
   return html`
     <textarea
       data-slot="textarea"
-      placeholder="${props.placeholder}"
-      id="${props.id}"
-      aria-label="${props.ariaLabel}"
-      rows="${props.rows}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
-      value="${props.value}"
       class="${
         [
           base,
           focus,
           invalid,
-          props.class,
+          cls,
         ]
       }"
-      e:input="${(e: Event) => props.oninput?.((e.target as HTMLTextAreaElement).value)}"
+      ...${attrs}
     ></textarea>
   ` as HellaNode;
 }

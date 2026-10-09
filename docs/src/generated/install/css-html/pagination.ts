@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
 
@@ -203,109 +203,109 @@ const ellipsis = style("pagination-ellipsis", {
   },
 });
 
-interface PaginationProps {
-  children?: HellaChildren;
+interface PaginationProps extends HTMLAttributes<"nav"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Pagination(props: PaginationProps): HellaNode {
+export default function Pagination({ children, class: cls, ...attrs }: PaginationProps): HellaNode {
   return html`
     <nav
       role="navigation"
       aria-label="pagination"
       data-slot="pagination"
       class="${
-        [base, props.class]
+        [base, cls]
       }"
-    >${() => props.children}</nav>
+      ...${attrs}
+    >${() => children}</nav>
   ` as HellaNode;
 }
 
-interface PaginationContentProps {
-  children?: HellaChildren;
+interface PaginationContentProps extends HTMLAttributes<"ul"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function PaginationContent(props: PaginationContentProps): HellaNode {
+export function PaginationContent({ children, class: cls, ...attrs }: PaginationContentProps): HellaNode {
   return html`
     <ul
       data-slot="pagination-content"
       class="${
-        [content, props.class]
+        [content, cls]
       }"
-    >${() => props.children}</ul>
+      ...${attrs}
+    >${() => children}</ul>
   ` as HellaNode;
 }
 
-interface PaginationItemProps {
-  children?: HellaChildren;
+interface PaginationItemProps extends HTMLAttributes<"li"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function PaginationItem(props: PaginationItemProps): HellaNode {
+export function PaginationItem({ children, class: cls, ...attrs }: PaginationItemProps): HellaNode {
   return html`
     <li
       data-slot="pagination-item"
-      class="${props.class}"
-    >${() => props.children}</li>
+      class="${
+        [cls]
+      }"
+      ...${attrs}
+    >${() => children}</li>
   ` as HellaNode;
 }
 
-interface PaginationLinkProps {
-  children?: HellaChildren;
-  /** Renders aria-current="page" and the outline variant; no router coupling — href is an optional passthrough. */
-  isActive?: boolean;
-  href?: string;
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+interface PaginationLinkProps extends HTMLAttributes<"a"> {
   class?: string;
-  onclick?: () => void;
+  children?: HellaChildren;
+  /** Renders aria-current="page" and the outline variant; no router coupling — href forwards natively. */
+  isActive?: boolean;
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
 }
 
-export function PaginationLink(props: PaginationLinkProps): HellaNode {
+export function PaginationLink({ isActive, size, children, class: cls, ...attrs }: PaginationLinkProps): HellaNode {
   return html`
     <a
-      aria-current="${props.isActive ? "page" : undefined}"
+      aria-current="${isActive ? "page" : undefined}"
       data-slot="pagination-link"
-      data-active="${props.isActive === undefined ? undefined : String(props.isActive)}"
-      href="${props.href}"
+      data-active="${isActive === undefined ? undefined : String(isActive)}"
       class="${
         [
           linkBase,
-          props.isActive ? linkVariants.outline : linkVariants.ghost,
-          linkSizes[props.size ?? "icon"],
-          props.class,
+          isActive ? linkVariants.outline : linkVariants.ghost,
+          linkSizes[size ?? "icon"],
+          cls,
         ]
       }"
-      e:click="${() => props.onclick?.()}"
-    >${() => props.children}</a>
+      ...${attrs}
+    >${() => children}</a>
   ` as HellaNode;
 }
 
-interface PaginationNavProps {
-  isActive?: boolean;
-  href?: string;
+interface PaginationNavProps extends HTMLAttributes<"a"> {
   class?: string;
-  onclick?: () => void;
+  /** Renders aria-current="page" and the outline variant. */
+  isActive?: boolean;
 }
 
-export function PaginationPrevious(props: PaginationNavProps): HellaNode {
+export function PaginationPrevious({ isActive, class: cls, ...attrs }: PaginationNavProps): HellaNode {
   return html`
     <a
       aria-label="Go to previous page"
-      aria-current="${props.isActive ? "page" : undefined}"
+      aria-current="${isActive ? "page" : undefined}"
       data-slot="pagination-link"
-      data-active="${props.isActive === undefined ? undefined : String(props.isActive)}"
-      href="${props.href}"
+      data-active="${isActive === undefined ? undefined : String(isActive)}"
       class="${
         [
           linkBase,
-          props.isActive ? linkVariants.outline : linkVariants.ghost,
+          isActive ? linkVariants.outline : linkVariants.ghost,
           linkSizes.default,
           previous,
-          props.class,
+          cls,
         ]
       }"
-      e:click="${() => props.onclick?.()}"
+      ...${attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -325,24 +325,23 @@ export function PaginationPrevious(props: PaginationNavProps): HellaNode {
   ` as HellaNode;
 }
 
-export function PaginationNext(props: PaginationNavProps): HellaNode {
+export function PaginationNext({ isActive, class: cls, ...attrs }: PaginationNavProps): HellaNode {
   return html`
     <a
       aria-label="Go to next page"
-      aria-current="${props.isActive ? "page" : undefined}"
+      aria-current="${isActive ? "page" : undefined}"
       data-slot="pagination-link"
-      data-active="${props.isActive === undefined ? undefined : String(props.isActive)}"
-      href="${props.href}"
+      data-active="${isActive === undefined ? undefined : String(isActive)}"
       class="${
         [
           linkBase,
-          props.isActive ? linkVariants.outline : linkVariants.ghost,
+          isActive ? linkVariants.outline : linkVariants.ghost,
           linkSizes.default,
           next,
-          props.class,
+          cls,
         ]
       }"
-      e:click="${() => props.onclick?.()}"
+      ...${attrs}
     >
       <span class="${hiddenUntilSm}">Next</span>
       <svg
@@ -362,18 +361,19 @@ export function PaginationNext(props: PaginationNavProps): HellaNode {
   ` as HellaNode;
 }
 
-interface PaginationEllipsisProps {
+interface PaginationEllipsisProps extends HTMLAttributes<"span"> {
   class?: string;
 }
 
-export function PaginationEllipsis(props: PaginationEllipsisProps): HellaNode {
+export function PaginationEllipsis({ class: cls, ...attrs }: PaginationEllipsisProps): HellaNode {
   return html`
     <span
       aria-hidden="true"
       data-slot="pagination-ellipsis"
       class="${
-        [ellipsis, props.class]
+        [ellipsis, cls]
       }"
+      ...${attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

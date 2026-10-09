@@ -1,6 +1,6 @@
 import { html, rovingTabIndex } from "@hellajs/dom";
 import { signal } from "@hellajs/core";
-import type { HellaChild, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaNode } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
 
@@ -149,46 +149,44 @@ export interface TabsItem {
   content: HellaChild | (() => HellaChild);
 }
 
-interface TabsProps {
+interface TabsProps extends HTMLAttributes<"div"> {
+  class?: string;
   items: TabsItem[];
   initialId?: string;
   orientation?: "horizontal" | "vertical";
   variant?: "default" | "line";
-  class?: string;
 }
 
-interface TabsListProps {
+interface TabsListProps extends HTMLAttributes<"div"> {
+  class?: string;
+  children?: HellaChild | HellaChild[];
   variant?: "default" | "line";
   orientation?: "horizontal" | "vertical";
-  children?: HellaChild | HellaChild[];
-  class?: string;
 }
 
-interface TabsTriggerProps {
+interface TabsTriggerProps extends HTMLAttributes<"button"> {
+  class?: string;
   /** The raw TabsItem id - the DOM id is `${TAB_ID}${id}`. */
   id?: string;
+  children?: HellaChild;
   active?: () => boolean;
   onActivate?: () => void;
   orientation?: "horizontal" | "vertical";
   listVariant?: "default" | "line";
-  children?: HellaChild;
-  class?: string;
 }
 
-interface TabsContentProps {
+interface TabsContentProps extends HTMLAttributes<"div"> {
+  class?: string;
   /** The raw TabsItem id - the DOM id is `${PANEL_ID}${id}`. */
   id?: string;
-  active?: () => boolean;
   children?: HellaChild | (() => HellaChild);
-  class?: string;
+  active?: () => boolean;
 }
 
 const TAB_ID = "hella-tabs-tab-";
 const PANEL_ID = "hella-tabs-panel-";
 
-export function TabsList(props: TabsListProps): HellaNode {
-  const orientation = props.orientation ?? "horizontal";
-  const variant = props.variant ?? "default";
+export function TabsList({ variant = "default", orientation = "horizontal", children, class: cls, ...attrs }: TabsListProps): HellaNode {
   return html`
     <div
       role="tablist"
@@ -197,52 +195,53 @@ export function TabsList(props: TabsListProps): HellaNode {
       data-variant="${variant}"
       aria-orientation="${orientation}"
       class="${
-        [list, variants[variant], props.class]
+        [list, variants[variant], cls]
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function TabsTrigger(props: TabsTriggerProps): HellaNode {
+export function TabsTrigger({ id, active, onActivate, orientation = "horizontal", listVariant = "default", "on:click": userClick, children, class: cls, ...attrs }: TabsTriggerProps): HellaNode {
   return html`
     <button
       type="button"
       role="tab"
       data-slot="tabs-trigger"
-      id="${props.id === undefined ? undefined : `${TAB_ID}${props.id}`}"
-      aria-selected="${() => (props.active?.() ? "true" : "false")}"
-      aria-controls="${props.id === undefined ? undefined : `${PANEL_ID}${props.id}`}"
-      data-state="${() => (props.active?.() ? "active" : "inactive")}"
-      data-orientation="${props.orientation ?? "horizontal"}"
-      data-variant="${props.listVariant ?? "default"}"
+      id="${id === undefined ? undefined : `${TAB_ID}${id}`}"
+      aria-selected="${() => (active?.() ? "true" : "false")}"
+      aria-controls="${id === undefined ? undefined : `${PANEL_ID}${id}`}"
+      data-state="${() => (active?.() ? "active" : "inactive")}"
+      data-orientation="${orientation}"
+      data-variant="${listVariant}"
       class="${
-        [trigger, props.class]
+        [trigger, cls]
       }"
-      e:click="${() => props.onActivate?.()}"
-    >${() => props.children}</button>
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); onActivate?.(); }}"
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-export function TabsContent(props: TabsContentProps): HellaNode {
+export function TabsContent({ id, active, children, class: cls, ...attrs }: TabsContentProps): HellaNode {
   return html`
     <div
       role="tabpanel"
       data-slot="tabs-content"
-      id="${props.id === undefined ? undefined : `${PANEL_ID}${props.id}`}"
-      aria-labelledby="${props.id === undefined ? undefined : `${TAB_ID}${props.id}`}"
-      data-state="${() => (props.active?.() ? "active" : "inactive")}"
-      hidden="${() => !props.active?.()}"
+      id="${id === undefined ? undefined : `${PANEL_ID}${id}`}"
+      aria-labelledby="${id === undefined ? undefined : `${TAB_ID}${id}`}"
+      data-state="${() => (active?.() ? "active" : "inactive")}"
+      hidden="${() => !active?.()}"
       class="${
-        [content, props.class]
+        [content, cls]
       }"
-    >${props.children}</div>
+      ...${attrs}
+    >${children}</div>
   ` as HellaNode;
 }
 
-export default function Tabs(props: TabsProps): HellaNode {
-  const selected = signal(props.initialId ?? props.items[0]!.id);
-  const orientation = props.orientation ?? "horizontal";
-  const listVariant = props.variant ?? "default";
+export default function Tabs({ items, initialId, orientation = "horizontal", variant = "default", class: cls, ...attrs }: TabsProps): HellaNode {
+  const selected = signal(initialId ?? items[0]!.id);
   const wirings: (() => void)[] = [];
   let tablist: HTMLElement | null = null;
 
@@ -269,7 +268,7 @@ export default function Tabs(props: TabsProps): HellaNode {
       data-slot="tabs"
       data-orientation="${orientation}"
       class="${
-        [base, props.class]
+        [base, cls]
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
@@ -298,20 +297,21 @@ export default function Tabs(props: TabsProps): HellaNode {
         while (wirings.length) wirings.pop()!();
         tablist = null;
       }}"
+      ...${attrs}
     >
       ${TabsList({
-        variant: listVariant,
+        variant,
         orientation,
-        children: props.items.map((item) => TabsTrigger({
+        children: items.map((item) => TabsTrigger({
           id: item.id,
           active: () => selected() === item.id,
           onActivate: () => select(item.id),
           orientation,
-          listVariant,
+          listVariant: variant,
           children: item.label,
         })),
       })}
-      ${props.items.map((item) => TabsContent({
+      ${items.map((item) => TabsContent({
         id: item.id,
         active: () => selected() === item.id,
         children: item.content,

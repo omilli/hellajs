@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const contentSides = {
@@ -16,39 +16,41 @@ type SheetState = () => "open" | "closed";
 /** Side the panel slides in from. */
 type SheetSide = "top" | "right" | "bottom" | "left";
 
-interface SheetOverlayProps {
+interface SheetOverlayProps extends HTMLAttributes<"div"> {
   state?: SheetState;
   class?: string;
 }
 
-export function SheetOverlay(props: SheetOverlayProps): HellaNode {
+export function SheetOverlay({ state, class: cls, ...attrs }: SheetOverlayProps): HellaNode {
   return html`
     <div
       data-slot="sheet-overlay"
-      data-state="${() => props.state?.()}"
+      data-state="${() => state?.()}"
       class="${
-        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", props.class)
+        cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", cls)
       }"
+      ...${attrs}
     />
   ` as HellaNode;
 }
 
-interface SheetCloseProps {
+interface SheetCloseProps extends HTMLAttributes<"button"> {
   state?: SheetState;
   onClose?: () => void;
   class?: string;
 }
 
-export function SheetClose(props: SheetCloseProps): HellaNode {
+export function SheetClose({ state, onClose, "on:click": userClick, class: cls, ...attrs }: SheetCloseProps): HellaNode {
   return html`
     <button
       type="button"
       data-slot="sheet-close"
-      data-state="${() => props.state?.()}"
+      data-state="${() => state?.()}"
       class="${
-        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary", props.class)
+        cn("absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary", cls)
       }"
-      e:click="${() => props.onClose?.()}"
+      on:click="${function (this: HTMLElement, e: MouseEvent) { userClick?.call(this, e); onClose?.(); }}"
+      ...${attrs}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -78,29 +80,28 @@ export function SheetPortal(props: SheetPortalProps): HellaNode {
   return Portal({ to: "body", children: props.children === undefined ? [] : Array.isArray(props.children) ? props.children : [props.children] }) as HellaNode;
 }
 
-interface SheetTriggerProps {
+interface SheetTriggerProps extends HTMLAttributes<"button"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger button; wire its click to the caller's open signal - hella has no Radix context to do it for you. */
-export function SheetTrigger(props: SheetTriggerProps): HellaNode {
+export function SheetTrigger({ children, class: cls, ...attrs }: SheetTriggerProps): HellaNode {
   return html`
     <button
       type="button"
       data-slot="sheet-trigger"
       class="${
-        cn(props.class)
+        cn(cls)
       }"
-    >${() => props.children}</button>
+      ...${attrs}
+    >${() => children}</button>
   ` as HellaNode;
 }
 
-interface SheetContentProps {
+interface SheetContentProps extends HTMLAttributes<"div"> {
   state?: SheetState;
   side?: SheetSide;
-  labelledBy?: string;
-  describedBy?: string;
   showCloseButton?: boolean;
   closeOnEscape?: boolean;
   closeOnOutside?: boolean;
@@ -114,11 +115,11 @@ interface SheetContentProps {
  * The sheet panel. Manual composition portals it alongside a SheetOverlay
  * sibling - hella has no Radix context, so the portal/overlay pairing is the
  * composer's (the default Sheet below shows the wired composition). The
- * Title/Description parts carry the required aria wiring through
- * labelledBy/describedBy - pass their generated ids even in manual
- * compositions, screen readers announce nothing without them.
+ * Title/Description parts carry the required aria wiring: pass their
+ * generated ids as the panel's `aria-labelledby`/`aria-describedby` attrs
+ * even in manual compositions, screen readers announce nothing without them.
  */
-export function SheetContent(props: SheetContentProps): HellaNode {
+export function SheetContent({ state, side, showCloseButton, closeOnEscape, closeOnOutside, onClose, onExited, children, class: cls, ...attrs }: SheetContentProps): HellaNode {
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   let panel: HTMLElement | undefined;
@@ -128,33 +129,31 @@ export function SheetContent(props: SheetContentProps): HellaNode {
   };
 
   const installWirings = (): void => {
-    if (panel === undefined || wirings.length > 0 || props.state?.() === "closed") return;
+    if (panel === undefined || wirings.length > 0 || state?.() === "closed") return;
     const target = panel;
-    if (props.closeOnEscape !== false && props.onClose) wirings.push(onEscape(target, props.onClose));
-    if (props.closeOnOutside !== false && props.onClose) wirings.push(onOutside(() => [target], props.onClose));
+    if (closeOnEscape !== false && onClose) wirings.push(onEscape(target, onClose));
+    if (closeOnOutside !== false && onClose) wirings.push(onOutside(() => [target], onClose));
     wirings.push(trapFocus(target));
   };
 
   // The exit runs unwired: flipping to "closed" tears the trap/escape/outside
   // handlers down immediately; reopening re-arms them without a remount.
   effect(() => {
-    if (props.state?.() === "closed") disposeWirings();
+    if (state?.() === "closed") disposeWirings();
     else installWirings();
   });
 
-  const side = props.side ?? "right";
+  const resolvedSide = side ?? "right";
 
   return html`
     <div
       data-slot="sheet-content"
-      data-state="${() => props.state?.()}"
-      data-side="${side}"
+      data-state="${() => state?.()}"
+      data-side="${resolvedSide}"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="${props.labelledBy}"
-      aria-describedby="${props.describedBy}"
       class="${
-        cn("fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", contentSides[side], props.class)
+        cn("fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", contentSides[resolvedSide], cls)
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
@@ -163,7 +162,7 @@ export function SheetContent(props: SheetContentProps): HellaNode {
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (props.state?.() === "closed") props.onExited?.();
+          if (state?.() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -172,71 +171,80 @@ export function SheetContent(props: SheetContentProps): HellaNode {
         disposeWirings();
         while (teardown.length) teardown.pop()!();
       }}"
+      ...${attrs}
     >
-      ${() => props.children}
-      ${() => (props.showCloseButton !== false) && SheetClose({ state: props.state, onClose: props.onClose })}
+      ${() => children}
+      ${() => (showCloseButton !== false) && SheetClose({ state, onClose })}
     </div>
   ` as HellaNode;
 }
 
-interface SheetPartProps {
+interface SheetPartProps extends HTMLAttributes<"div"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SheetHeader(props: SheetPartProps): HellaNode {
+export function SheetHeader({ children, class: cls, ...attrs }: SheetPartProps): HellaNode {
   return html`
     <div
       data-slot="sheet-header"
       class="${
-        cn("flex flex-col gap-1.5 p-4", props.class)
+        cn("flex flex-col gap-1.5 p-4", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-export function SheetFooter(props: SheetPartProps): HellaNode {
+export function SheetFooter({ children, class: cls, ...attrs }: SheetPartProps): HellaNode {
   return html`
     <div
       data-slot="sheet-footer"
       class="${
-        cn("mt-auto flex flex-col gap-2 p-4", props.class)
+        cn("mt-auto flex flex-col gap-2 p-4", cls)
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface SheetTitleProps {
-  id?: string;
+interface SheetTitleProps extends HTMLAttributes<"h2"> {
   children?: HellaChildren;
   class?: string;
 }
 
-export function SheetTitle(props: SheetTitleProps): HellaNode {
+export function SheetTitle({ id, children, class: cls, ...attrs }: SheetTitleProps): HellaNode {
   return html`
     <h2
-      id="${props.id}"
+      id="${id}"
       data-slot="sheet-title"
       class="${
-        cn("font-semibold text-foreground", props.class)
+        cn("font-semibold text-foreground", cls)
       }"
-    >${() => props.children}</h2>
+      ...${attrs}
+    >${() => children}</h2>
   ` as HellaNode;
 }
 
-export function SheetDescription(props: SheetTitleProps): HellaNode {
+interface SheetDescriptionProps extends HTMLAttributes<"p"> {
+  children?: HellaChildren;
+  class?: string;
+}
+
+export function SheetDescription({ id, children, class: cls, ...attrs }: SheetDescriptionProps): HellaNode {
   return html`
     <p
-      id="${props.id}"
+      id="${id}"
       data-slot="sheet-description"
       class="${
-        cn("text-sm text-muted-foreground", props.class)
+        cn("text-sm text-muted-foreground", cls)
       }"
-    >${() => props.children}</p>
+      ...${attrs}
+    >${() => children}</p>
   ` as HellaNode;
 }
 
-interface SheetProps {
+interface SheetProps extends HTMLAttributes<"div"> {
   open: () => boolean;
   onClose: () => void;
   side?: SheetSide;
@@ -251,7 +259,7 @@ interface SheetProps {
 
 let sheetCount = 0;
 
-export default function Sheet(props: SheetProps): HellaNode {
+export default function Sheet({ open, onClose, side, title: titleText, description: descriptionText, showCloseButton, closeOnEscape, closeOnOutside, children, class: cls, ...attrs }: SheetProps): HellaNode {
   const titleId = `hella-sheet-title-${++sheetCount}`;
   const descriptionId = `hella-sheet-description-${sheetCount}`;
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -273,7 +281,7 @@ export default function Sheet(props: SheetProps): HellaNode {
   // panel stays mounted under data-state="closed" until its animationend
   // (or the copied 300ms duration budget) unmounts it.
   effect(() => {
-    if (props.open()) {
+    if (open()) {
       wasOpen = true;
       finishExit();
       visible(true);
@@ -284,7 +292,7 @@ export default function Sheet(props: SheetProps): HellaNode {
     }
   });
 
-  const state = (): "open" | "closed" => (props.open() ? "open" : "closed");
+  const state = (): "open" | "closed" => (open() ? "open" : "closed");
 
   return html`
     ${() => visible() && Portal({
@@ -293,19 +301,20 @@ export default function Sheet(props: SheetProps): HellaNode {
         SheetOverlay({ state }) as HellaChild,
         SheetContent({
           state,
-          side: props.side,
-          labelledBy: titleId,
-          describedBy: props.description === undefined ? undefined : descriptionId,
-          showCloseButton: props.showCloseButton,
-          closeOnEscape: props.closeOnEscape,
-          closeOnOutside: props.closeOnOutside,
-          onClose: props.onClose,
+          side,
+          "aria-labelledby": titleId,
+          "aria-describedby": descriptionText === undefined ? undefined : descriptionId,
+          showCloseButton,
+          closeOnEscape,
+          closeOnOutside,
+          onClose,
           onExited: finishExit,
-          class: props.class,
+          class: cls,
+          ...attrs,
           children: [
-            ...(props.title !== undefined ? [SheetTitle({ id: titleId, children: props.title }) as HellaChild] : []),
-            ...(props.description !== undefined ? [SheetDescription({ id: descriptionId, children: props.description }) as HellaChild] : []),
-            ...(props.children === undefined ? [] : Array.isArray(props.children) ? props.children : [props.children]),
+            ...(titleText !== undefined ? [SheetTitle({ id: titleId, children: titleText }) as HellaChild] : []),
+            ...(descriptionText !== undefined ? [SheetDescription({ id: descriptionId, children: descriptionText }) as HellaChild] : []),
+            ...(children === undefined ? [] : Array.isArray(children) ? children : [children]),
           ],
         }) as HellaChild,
       ],

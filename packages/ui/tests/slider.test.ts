@@ -5,6 +5,8 @@ import { resetTestState, delay } from "@utils/test-helpers.js";
 // specifier, so the harness mount shares one dom instance with the components.
 import { peekState } from "@hellajs/dom";
 import {
+  assertAttrForwarded,
+  assertHandlerForwarded,
   assertStructuralParity,
   classTokens,
   renderVariant,
@@ -173,6 +175,22 @@ describe("slider", () => {
     expect(onValueChange.mock.calls[2]).toEqual([[70]]);
   });
 
+  test.each(sliderVariants)("$format/$style lands user min/max/step overrides on the root and drives the range math", async (variant) => {
+    const onValueChange = mock((value: number[]) => value);
+    const root = renderVariant(variant, { value: [50], min: 20, max: 80, step: 10, onValueChange }) as HTMLElement;
+    await awaitWiring(root);
+    expect(root.getAttribute("min")).toBe("20");
+    expect(root.getAttribute("max")).toBe("80");
+    expect(root.getAttribute("step")).toBe("10");
+    const thumb = root.querySelector("[data-slot='slider-thumb']") as HTMLElement;
+    expect(thumb.getAttribute("aria-valuemin")).toBe("20");
+    expect(thumb.getAttribute("aria-valuemax")).toBe("80");
+    spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
+    drag(root, [{ x: 25 }]);
+    // 25% of the 20–80 track is 35; the step-10 grid quantizes it to 40.
+    expect(onValueChange.mock.calls[0]).toEqual([[40]]);
+  });
+
   test.each(sliderVariants)("$format/$style blocks drags and keys while disabled", async (variant) => {
     const onValueChange = mock((value: number[]) => value);
     const root = renderVariant(variant, { value: [50], disabled: true, onValueChange }) as HTMLElement;
@@ -223,6 +241,20 @@ describe("slider", () => {
     spyTrackRect(root, { left: 0, top: 0, width: 100, height: 10 });
     drag(root, [{ x: 20 }]);
     expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  test("forwards user attrs onto the root across all four variants", () => {
+    assertAttrForwarded(sliderVariants, { title: "Hella" }, "title", "Hella");
+  });
+
+  test("fires a user on:click handler across all four variants", () => {
+    const onClick = mock(() => {});
+    assertHandlerForwarded(sliderVariants, { "on:click": onClick }, "on:click", "click", onClick);
+  });
+
+  test.each(sliderVariants)("$format/$style merges props.class into the class attribute", (variant) => {
+    const root = renderVariant(variant, { class: "my-slider" }) as HTMLElement;
+    expect(classTokens(root).at(-1)).toBe("my-slider");
   });
 
   test("keeps structural parity across all four variants", () => {

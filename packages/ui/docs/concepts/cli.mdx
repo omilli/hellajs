@@ -68,6 +68,6 @@ Every component entry declares `@hellajs/core` and `@hellajs/dom` as base peers;
 
 ## The cn Helper
 
-Tailwind adds copy `cn.ts`: a one-function helper that joins classes with `clsx` and resolves conflicts with `tailwind-merge`. Both packages land in your project's dependencies; the peer check names any that are missing. Conflict resolution is the override mechanism: a utility in `props.class` wins over the same utility group baked into the component.
+Tailwind adds copy `cn.ts`: a one-function helper that joins classes with `clsx` and resolves conflicts with `tailwind-merge`. Both packages land in your project's dependencies; the peer check names any that are missing. Conflict resolution is the override mechanism: a utility in the `class` prop wins over the same utility group baked into the component.
 
 css projects have no `cn`: the class array composes statically, and precedence between registry CSS and your own resolves through the normal cascade (see [Theming](/ui/theming)). For joining class fragments in your own code, [`cx`](/reference/css/cx) is the css-package joiner, and [`cva`](/reference/css/cva) layers typed variant recipes over it.

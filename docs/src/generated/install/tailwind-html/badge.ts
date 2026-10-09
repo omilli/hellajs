@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 import { cn } from "./cn.js";
 
 const variants = {
@@ -11,26 +11,25 @@ const variants = {
   link: "text-primary underline-offset-4 [a&]:hover:underline",
 };
 
-interface BadgeProps {
+interface BadgeProps extends HTMLAttributes<"span"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
-  ariaInvalid?: boolean;
-  class?: string;
 }
 
-export default function Badge(props: BadgeProps): HellaNode {
+export default function Badge({ variant, children, class: cls, ...attrs }: BadgeProps): HellaNode {
   return html`
     <span
       data-slot="badge"
-      data-variant="${props.variant ?? "default"}"
-      aria-invalid="${props.ariaInvalid ? "true" : undefined}"
+      data-variant="${variant ?? "default"}"
       class="${
         cn(
           "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3",
-          variants[props.variant ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          cls,
         )
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }

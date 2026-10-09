@@ -1,5 +1,5 @@
 import { html } from "@hellajs/dom";
-import type { HellaChildren, HellaNode } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -8,63 +8,66 @@ declare const icon: string;
 declare const variants: Record<string, string>;
 // @hella:end
 
-interface MarkerProps {
+interface MarkerProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "separator" | "border";
-  class?: string;
 }
 
-export default function Marker(props: MarkerProps): HellaNode {
+export default function Marker({ variant, children, class: cls, ...attrs }: MarkerProps): HellaNode {
   return html`
     <div
       data-slot="marker"
-      data-variant="${props.variant ?? "default"}"
+      data-variant="${variant ?? "default"}"
       class="${
         // @hella:compose
         [
           base,
-          variants[props.variant ?? "default"],
-          props.class,
+          variants[variant ?? "default"],
+          cls,
         ]
         // @hella:end
       }"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface MarkerIconProps {
-  children?: HellaChildren;
+interface MarkerIconProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MarkerIcon(props: MarkerIconProps): HellaNode {
+export function MarkerIcon({ children, class: cls, ...attrs }: MarkerIconProps): HellaNode {
   return html`
     <span
       data-slot="marker-icon"
       aria-hidden="true"
       class="${
         // @hella:compose
-        [icon, props.class]
+        [icon, cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface MarkerContentProps {
-  children?: HellaChildren;
+interface MarkerContentProps extends HTMLAttributes<"span"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export function MarkerContent(props: MarkerContentProps): HellaNode {
+export function MarkerContent({ children, class: cls, ...attrs }: MarkerContentProps): HellaNode {
   return html`
     <span
       data-slot="marker-content"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }

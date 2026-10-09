@@ -1,13 +1,13 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
 // @hella:end
 
-interface DirectionProviderProps {
+interface DirectionProviderProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   dir?: "ltr" | "rtl";
-  class?: string;
 }
 
 /**
@@ -17,18 +17,19 @@ interface DirectionProviderProps {
  * attribute IS the mechanism. display: contents keeps the wrapper out of
  * layout so compositions render as if the node were not there.
  */
-export default function DirectionProvider(props: DirectionProviderProps): JSX.Element {
+export default function DirectionProvider({ dir, children, class: cls, ...attrs }: DirectionProviderProps): JSX.Element {
   return (
     <div
       data-slot="direction-provider"
-      dir={props.dir}
+      dir={dir}
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

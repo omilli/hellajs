@@ -1,4 +1,4 @@
-import type { HellaChildren } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 // @hella:styles
 declare const base: string;
@@ -10,108 +10,114 @@ declare const mediaVariants: Record<string, string>;
 declare const title: string;
 // @hella:end
 
-interface EmptyPartProps {
-  children?: HellaChildren;
+interface EmptyPartProps extends HTMLAttributes<"div"> {
   class?: string;
+  children?: HellaChildren;
 }
 
-export default function Empty(props: EmptyPartProps): JSX.Element {
+export default function Empty({ children, class: cls, ...attrs }: EmptyPartProps): JSX.Element {
   return (
     <div
       data-slot="empty"
       class={
         // @hella:compose
-        [base, props.class]
+        [base, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function EmptyHeader(props: EmptyPartProps): JSX.Element {
+export function EmptyHeader({ children, class: cls, ...attrs }: EmptyPartProps): JSX.Element {
   return (
     <div
       data-slot="empty-header"
       class={
         // @hella:compose
-        [header, props.class]
+        [header, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-interface EmptyMediaProps {
+interface EmptyMediaProps extends HTMLAttributes<"div"> {
+  class?: string;
   children?: HellaChildren;
   variant?: "default" | "icon";
-  class?: string;
 }
 
-export function EmptyMedia(props: EmptyMediaProps): JSX.Element {
+export function EmptyMedia({ variant, children, class: cls, ...attrs }: EmptyMediaProps): JSX.Element {
   return (
     <div
       data-slot="empty-icon"
-      data-variant={props.variant ?? "default"}
+      data-variant={variant ?? "default"}
       class={
         // @hella:compose
         [
           media,
-          mediaVariants[props.variant ?? "default"],
-          props.class,
+          mediaVariants[variant ?? "default"],
+          cls,
         ]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function EmptyTitle(props: EmptyPartProps): JSX.Element {
+export function EmptyTitle({ children, class: cls, ...attrs }: EmptyPartProps): JSX.Element {
   return (
     <div
       data-slot="empty-title"
       class={
         // @hella:compose
-        [title, props.class]
+        [title, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function EmptyDescription(props: EmptyPartProps): JSX.Element {
+export function EmptyDescription({ children, class: cls, ...attrs }: EmptyPartProps): JSX.Element {
   return (
     <div
       data-slot="empty-description"
       class={
         // @hella:compose
-        [description, props.class]
+        [description, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }
 
-export function EmptyContent(props: EmptyPartProps): JSX.Element {
+export function EmptyContent({ children, class: cls, ...attrs }: EmptyPartProps): JSX.Element {
   return (
     <div
       data-slot="empty-content"
       class={
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }
+      {...attrs}
     >
-      {props.children}
+      {children}
     </div>
   );
 }

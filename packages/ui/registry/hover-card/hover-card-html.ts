@@ -1,6 +1,6 @@
 import { effect, signal } from "@hellajs/core";
 import { anchorPosition, hoverIntent, html, Portal } from "@hellajs/dom";
-import type { HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
+import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 
 // @hella:styles
 declare const content: string;
@@ -12,26 +12,27 @@ type AnchorAlign = "start" | "center" | "end";
 const placementOf = (side: AnchorSide, align: AnchorAlign): Placement =>
   align === "center" ? side : `${side}-${align}`;
 
-interface HoverCardTriggerProps {
+interface HoverCardTriggerProps extends HTMLAttributes<"span"> {
   children?: HellaChildren;
   class?: string;
 }
 
 /** The manual trigger span; the composed HoverCard renders the same shape wired to hoverIntent. */
-export function HoverCardTrigger(props: HoverCardTriggerProps): HellaNode {
+export function HoverCardTrigger({ children, class: cls, ...attrs }: HoverCardTriggerProps): HellaNode {
   return html`
     <span
       data-slot="hover-card-trigger"
       class="${
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }"
-    >${() => props.children}</span>
+      ...${attrs}
+    >${() => children}</span>
   ` as HellaNode;
 }
 
-interface HoverCardContentProps {
+interface HoverCardContentProps extends HTMLAttributes<"div"> {
   state?: () => "open" | "closed";
   side?: AnchorSide;
   align?: AnchorAlign;
@@ -46,37 +47,37 @@ interface HoverCardContentProps {
   class?: string;
 }
 
-export function HoverCardContent(props: HoverCardContentProps): HellaNode {
-  const side = props.side ?? "bottom";
-  const align = props.align ?? "center";
-  const state = (): "open" | "closed" => props.state?.() ?? "open";
+export function HoverCardContent({ state, side: sideProp, align: alignProp, anchor, onOpen, onClose, onExited, children, class: cls, ...attrs }: HoverCardContentProps): HellaNode {
+  const side = sideProp ?? "bottom";
+  const align = alignProp ?? "center";
+  const stateOf = (): "open" | "closed" => state?.() ?? "open";
   const wirings: (() => void)[] = [];
   const teardown: (() => void)[] = [];
   return html`
     <div
       data-slot="hover-card-content"
-      data-state="${state}"
+      data-state="${stateOf}"
       data-side="${side}"
       data-align="${align}"
       class="${
         // @hella:compose
-        [content, props.class]
+        [content, cls]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {
         if (!(node instanceof HTMLElement)) return;
-        const anchorEl = props.anchor?.();
+        const anchorEl = anchor?.();
         if (anchorEl != null) wirings.push(anchorPosition(anchorEl, node, { placement: placementOf(side, align), offset: 4 }));
-        if (props.onOpen && props.onClose) {
+        if (onOpen && onClose) {
           // Zero delays: entering the content re-opens instantly and leaving
           // it closes immediately - the keep-open contract of the composed
           // HoverCard.
-          wirings.push(hoverIntent(node, { onOpen: props.onOpen, onClose: props.onClose, openDelay: 0, closeDelay: 0 }));
+          wirings.push(hoverIntent(node, { onOpen, onClose, openDelay: 0, closeDelay: 0 }));
         }
         // The exit's animationend (state already "closed") is the primary
         // unmount trigger; the entry's animationend is ignored.
         const onAnimationEnd = (): void => {
-          if (state() === "closed") props.onExited?.();
+          if (stateOf() === "closed") onExited?.();
         };
         node.addEventListener("animationend", onAnimationEnd);
         teardown.push(() => node.removeEventListener("animationend", onAnimationEnd));
@@ -85,11 +86,12 @@ export function HoverCardContent(props: HoverCardContentProps): HellaNode {
         while (wirings.length) wirings.pop()!();
         while (teardown.length) teardown.pop()!();
       }}"
-    >${() => props.children}</div>
+      ...${attrs}
+    >${() => children}</div>
   ` as HellaNode;
 }
 
-interface HoverCardProps {
+interface HoverCardProps extends HTMLAttributes<"span"> {
   open?: () => boolean;
   onOpenChange?: (open: boolean) => void;
   children?: HellaChildren;
@@ -97,12 +99,12 @@ interface HoverCardProps {
   class?: string;
 }
 
-export default function HoverCard(props: HoverCardProps): HellaNode {
+export default function HoverCard({ open, onOpenChange, children, content: contentSlot, class: cls, ...attrs }: HoverCardProps): HellaNode {
   const internal = signal(false);
-  const isOpen = (): boolean => (props.open !== undefined ? props.open() : internal());
+  const isOpen = (): boolean => (open !== undefined ? open() : internal());
   const setOpen = (next: boolean): void => {
-    if (props.open === undefined) internal(next);
-    props.onOpenChange?.(next);
+    if (open === undefined) internal(next);
+    onOpenChange?.(next);
   };
 
   // `visible` alone gates the render so an open→closed flip never unmounts
@@ -171,7 +173,7 @@ export default function HoverCard(props: HoverCardProps): HellaNode {
       data-slot="hover-card-trigger"
       class="${
         // @hella:compose
-        [props.class]
+        [cls]
         // @hella:end
       }"
       hook:afterMount="${(node: Element) => {
@@ -205,7 +207,8 @@ export default function HoverCard(props: HoverCardProps): HellaNode {
       hook:beforeDestroy="${() => {
         while (disposals.length) disposals.pop()!();
       }}"
-    >${() => props.children}${() => visible() && Portal({
+      ...${attrs}
+    >${() => children}${() => visible() && Portal({
       to: "body",
       children: [
         HoverCardContent({
@@ -214,7 +217,7 @@ export default function HoverCard(props: HoverCardProps): HellaNode {
           onOpen: openFromContent,
           onClose: closeFromContent,
           onExited: finishExit,
-          children: props.content,
+          children: contentSlot,
         }) as HellaChild,
       ],
     })}</span>

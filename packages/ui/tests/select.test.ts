@@ -4,6 +4,7 @@ import { delay, resetTestState, setupContainer } from "@utils/test-helpers.js";
 import { mount, peekState } from "@hellajs/dom";
 import {
   assertStructuralParity,
+  classTokens,
   renderVariant,
   selectModules,
   selectPartVariants,
@@ -311,6 +312,37 @@ describe("select", () => {
     pressEscape();
     pointerDownOutside();
     expect(content.isConnected).toBe(false);
+  });
+
+  test.each(selectVariants)("$format/$style forwards user attrs onto the trigger root across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { items: FRUITS, "aria-label": "fruit" });
+    expect(trigger.getAttribute("aria-label")).toBe("fruit");
+  });
+
+  test.each(selectVariants)("$format/$style fires a user on:click handler on the trigger root across all four variants", (variant) => {
+    const userClick = mock(() => {});
+    const trigger = renderVariant(variant, { items: FRUITS, "on:click": userClick });
+    trigger.dispatchEvent(new Event("click"));
+    expect(userClick).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(selectVariants)("$format/$style merges a user class into the trigger root's class across all four variants", (variant) => {
+    const trigger = renderVariant(variant, { items: FRUITS, class: "user-class" });
+    expect(classTokens(trigger).at(-1)).toBe("user-class");
+  });
+
+  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$format/$style trigger part lands a user aria-controls and re-emits the id", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ children: [], id: "my-trigger", "aria-controls": "my-listbox" }), container);
+    const trigger = container.firstElementChild!;
+    expect(trigger.getAttribute("id")).toBe("my-trigger");
+    expect(trigger.getAttribute("aria-controls")).toBe("my-listbox");
+  });
+
+  test.each(selectPartVariants.filter((variant) => variant.part === "Trigger"))("$format/$style trigger part leaves aria-controls to the caller when absent", (variant) => {
+    const container = setupContainer();
+    mount(variant.render({ children: [] }), container);
+    expect(container.firstElementChild!.hasAttribute("aria-controls")).toBe(false);
   });
 
   test("keeps structural parity across all four variants", () => {
