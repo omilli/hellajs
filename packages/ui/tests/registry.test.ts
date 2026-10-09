@@ -152,9 +152,9 @@ describe("registry", () => {
 
   test("a dark themeMode copies the mapped dark source in place of the target file through the resolved entry", () => {
     addComponent(["theme"], { dir: darkRoot, themeMode: "dark" });
-    expect(existsSync(join(darkComponentsDir, "tokens.dark.js"))).toBe(false);
-    expect(readFileSync(join(darkComponentsDir, "tokens.js"), "utf8")).toBe(
-      readFileSync(join(registryDir, "theme", "tokens.dark.js"), "utf8"),
+    expect(existsSync(join(darkComponentsDir, "tokens.dark.ts"))).toBe(false);
+    expect(readFileSync(join(darkComponentsDir, "tokens.ts"), "utf8")).toBe(
+      readFileSync(join(registryDir, "theme", "tokens.dark.ts"), "utf8"),
     );
   });
 
@@ -178,13 +178,20 @@ describe("registry", () => {
   test("theme and cn style slots agree with their files", () => {
     const theme = manifest.entries.theme!;
     expect(Object.keys(theme.styles!).sort()).toEqual(["css", "tailwind"]);
-    expect(theme.styles!.css!.files).toEqual(["tokens.js"]);
-    expect(theme.styles!.css!.darkFiles).toEqual({ "tokens.js": "tokens.dark.js" });
+    expect(theme.styles!.css!.files).toEqual(["tokens.ts"]);
+    expect(theme.styles!.css!.darkFiles).toEqual({ "tokens.ts": "tokens.dark.ts" });
     expect(theme.styles!.tailwind!.files).toEqual(["theme.css"]);
     expect(theme.styles!.tailwind!.deps).toEqual(["tw-animate-css"]);
-    expect(existsSync(join(registryDir, "theme", "tokens.js"))).toBe(true);
-    expect(existsSync(join(registryDir, "theme", "tokens.dark.js"))).toBe(true);
+    expect(existsSync(join(registryDir, "theme", "tokens.ts"))).toBe(true);
+    expect(existsSync(join(registryDir, "theme", "tokens.dark.ts"))).toBe(true);
     expect(existsSync(join(registryDir, "theme", "theme.css"))).toBe(true);
+    // The css-flavor contract: the sheet exports its tokens for style modules
+    // to import, with camelCase keys mapping to the kebab custom properties.
+    const sheet = readEntryFile("theme", "tokens.ts");
+    expect(sheet).toContain("export const tokens = vars({");
+    expect(sheet).toContain("primaryForeground:");
+    expect(sheet).not.toMatch(/"[a-z]+-[a-z]/);
+    expect(existsSync(join(registryDir, "cn", "cn.ts"))).toBe(true);
 
     const cn = manifest.entries.cn!;
     expect(Object.keys(cn.styles!)).toEqual(["tailwind"]);

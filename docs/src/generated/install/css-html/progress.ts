@@ -2,6 +2,7 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const indeterminate = keyframes({
   from: { transform: "translateX(-100%)" },
@@ -9,7 +10,7 @@ const indeterminate = keyframes({
 });
 
 const base = style("progress", {
-  backgroundColor: "color-mix(in oklab, var(--primary) 20%, transparent)",
+  backgroundColor: `color-mix(in oklab, ${tokens.primary} 20%, transparent)`,
   borderRadius: "calc(infinity * 1px)",
   height: "0.5rem",
   overflow: "hidden",
@@ -18,7 +19,7 @@ const base = style("progress", {
 });
 
 const indicator = style("progress-indicator", {
-  backgroundColor: "var(--primary)",
+  backgroundColor: tokens.primary,
   flex: "1",
   height: "100%",
   transition: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",

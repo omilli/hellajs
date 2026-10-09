@@ -1,15 +1,16 @@
 import { cx, style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import AspectRatio from "@registry/aspect-ratio/css/aspect-ratio.js";
 
 const box = style({
-  background: "var(--muted)",
-  borderRadius: "var(--radius)",
+  background: tokens.muted,
+  borderRadius: tokens.radius,
   overflow: "hidden",
 }, { label: "demo-box" });
 
 const fill = style({
   alignItems: "center",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "flex",
   fontSize: "0.875rem",
   height: "100%",

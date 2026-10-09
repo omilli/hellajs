@@ -1,4 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
@@ -9,8 +10,8 @@ const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 export const base = style("select-trigger", {
   alignItems: "center",
   backgroundColor: "transparent",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   display: "flex",
   fontSize: "0.875rem",
@@ -24,7 +25,7 @@ export const base = style("select-trigger", {
   whiteSpace: "nowrap",
   width: "fit-content",
   "&[data-placeholder]": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&[data-size='default']": {
     height: "2.25rem",
@@ -33,16 +34,16 @@ export const base = style("select-trigger", {
     height: "2rem",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
-    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    borderColor: tokens.destructive,
+    boxShadow: `0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:disabled": {
     cursor: "not-allowed",
     opacity: "0.5",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "& > [data-slot='select-value']": {
     alignItems: "center",
@@ -60,25 +61,25 @@ export const base = style("select-trigger", {
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
   "&:is(.dark *):hover": {
-    background: "color-mix(in oklab, var(--input) 50%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']": {
-    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 1px 2px 0 rgb(0 0 0 / 0.05), 0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 export const content = style("select-content", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   maxHeight: "var(--radix-select-content-available-height)",
   minWidth: "8rem",
   overflowX: "hidden",
@@ -125,7 +126,7 @@ export const viewport = style("select-viewport", {
 
 export const item = style("select-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -140,8 +141,8 @@ export const item = style("select-item", {
   userSelect: "none",
   width: "100%",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -161,7 +162,7 @@ export const item = style("select-item", {
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
 });
 
@@ -187,7 +188,7 @@ export const chevron = style("select-chevron", {
 });
 
 export const label = style("select-label", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.75rem",
   lineHeight: "1rem",
   paddingBlock: "0.375rem",
@@ -195,7 +196,7 @@ export const label = style("select-label", {
 });
 
 export const separator = style("select-separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   height: "1px",
   marginBlock: "0.25rem",
   marginInline: "-0.25rem",

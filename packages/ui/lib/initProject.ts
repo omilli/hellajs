@@ -6,7 +6,7 @@ import type { InitOptions } from "./types";
 
 /**
  * Writes hella.ui.json with defaults unless one is present (or --force), then
- * adds the `theme` entry through `addComponent` — `tokens.js` for the css
+ * adds the `theme` entry through `addComponent` — `tokens.ts` for the css
  * style, `theme.css` plus the shared `cn` helper for tailwind. A `themeMode`
  * option persists into the written config (the dark mode selects the
  * dark-only tokens sheet) and flows into the theme add. An invalid themeMode

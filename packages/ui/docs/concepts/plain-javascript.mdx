@@ -31,7 +31,8 @@ Or make it the project default in `hella.ui.json`, where `add` picks it up like 
 | `button.tsx` | `button.tsx` | `button.jsx` |
 | `button-html.ts` | `button.ts` | `button.js` |
 | `cn.ts` | `cn.ts` | `cn.js` |
-| `tokens.js`, `theme.css` | unchanged | unchanged |
+| `tokens.ts` | `tokens.ts` | `tokens.js` |
+| `theme.css` | unchanged | unchanged |
 
 The strip runs after the style splice, so the copied file still carries its full css or tailwind declarations. The strip is structural, not cosmetic: no `interface` or `import type` remains, JSX survives verbatim in `.jsx`, and the runtime `html` template survives in `.js`. Imports of `@hellajs/*` packages stay exactly as authored.
 

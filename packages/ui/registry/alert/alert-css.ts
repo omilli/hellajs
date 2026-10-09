@@ -1,9 +1,10 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("alert", {
   alignItems: "start",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius)",
+  border: `1px solid ${tokens.border}`,
+  borderRadius: tokens.radius,
   boxSizing: "border-box",
   display: "grid",
   fontSize: "0.875rem",
@@ -28,14 +29,14 @@ export const base = style("alert", {
 
 export const variants = {
   default: style("alert-default", {
-    backgroundColor: "var(--card)",
-    color: "var(--card-foreground)",
+    backgroundColor: tokens.card,
+    color: tokens.cardForeground,
   }),
   destructive: style("alert-destructive", {
-    backgroundColor: "var(--card)",
-    color: "var(--destructive)",
+    backgroundColor: tokens.card,
+    color: tokens.destructive,
     "& > [data-slot='alert-description']": {
-      color: "color-mix(in oklab, var(--destructive) 90%, transparent)",
+      color: `color-mix(in oklab, ${tokens.destructive} 90%, transparent)`,
     },
     "& > svg": {
       color: "currentColor",
@@ -56,7 +57,7 @@ export const title = style("alert-title", {
 });
 
 export const description = style("alert-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "grid",
   fontSize: "0.875rem",
   gap: "0.25rem",

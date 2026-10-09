@@ -1,9 +1,10 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
     height: "1px",

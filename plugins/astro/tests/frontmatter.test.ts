@@ -141,7 +141,7 @@ describe("astro", () => {
       expect(code).toMatch(/const variant = "base-[a-z]+-size-sm-[a-z]+-[a-z]+"/);
     });
 
-    test("collects imported top-level creator calls into the island tag and ignores their non-foldable calls and vars()", () => {
+    test("collects imported top-level creator calls into the island tag, discards their vars() sheets, and ignores their non-foldable calls", () => {
       const files = new Map<string, string>([
         ["/src/island-styles.ts", [
           `import { css, style, vars } from "@hellajs/css";`,
@@ -163,6 +163,52 @@ describe("astro", () => {
       expect(island).not.toContain("--brand");
       expect(island).not.toContain("nope");
       expect(css).not.toContain(".imported-rule");
+    });
+
+    test("folds member chains on an imported vars() result in either position", () => {
+      const files = new Map<string, string>([
+        ["/src/styles/tokens.ts", [
+          `import { vars } from "@hellajs/css";`,
+          `export const tokens = vars({ brand: "hotpink" });`,
+        ].join("\n")],
+        ["/src/island-styles.ts", [
+          `import { style } from "@hellajs/css";`,
+          `import { tokens } from "../styles/tokens";`,
+          `style({ color: tokens.brand }, { label: "island-brand" });`,
+        ].join("\n")],
+      ]);
+      const resolve: Resolve = (specifier) =>
+        specifier === "../styles/tokens" ? "/src/styles/tokens.ts"
+          : specifier === "../island-styles" ? "/src/island-styles.ts"
+            : null;
+      const load: Load = (id) => files.get(id) ?? "";
+      const { code, css, island, watched } = run(compiled(
+        [`import { css } from "@hellajs/css";`, `import { tokens } from "../styles/tokens";`, `import "../island-styles";`],
+        `  css({ ".hero": { color: tokens.brand } });`,
+        "<div></div>",
+      ), { resolve, load });
+      expect(code).toContain("void 0");
+      expect(css).toContain(".hero {\n  color: var(--brand);\n}");
+      expect(css).not.toContain("--brand: hotpink");
+      expect(island).toMatch(/\.island-brand-[a-z]+ \{\n {2}color: var\(--brand\);\n\}/);
+      expect(island).not.toContain("--brand: hotpink");
+      expect(watched).toContain("/src/styles/tokens.ts");
+    });
+
+    test("keeps computed member access non-foldable", () => {
+      const files = new Map<string, string>([
+        ["/src/styles/tokens.ts", [
+          `import { vars } from "@hellajs/css";`,
+          `export const tokens = vars({ brand: "hotpink" });`,
+        ].join("\n")],
+      ]);
+      const resolve: Resolve = (specifier) => (specifier === "../styles/tokens" ? "/src/styles/tokens.ts" : null);
+      const load: Load = (id) => files.get(id) ?? "";
+      expect(() => run(compiled(
+        [`import { style } from "@hellajs/css";`, `import { tokens } from "../styles/tokens";`],
+        `  const hero = style({ color: tokens["brand"] });`,
+        "<div></div>",
+      ), { resolve, load })).toThrow("requires statically evaluable arguments");
     });
 
     test("collects TSX island component styles into the island tag and frontmatter rules into the virtual css", () => {

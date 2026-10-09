@@ -1,4 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const in90 = keyframes({ from: { opacity: "0", transform: "scale(0.9)" } });
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
@@ -29,8 +30,8 @@ export const item = style("navigation-menu-item", {
 
 export const trigger = style("navigation-menu-trigger", {
   alignItems: "center",
-  background: "var(--background)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  background: tokens.background,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   display: "inline-flex",
   fontSize: "0.875rem",
@@ -45,15 +46,15 @@ export const trigger = style("navigation-menu-trigger", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "max-content",
   "&:hover": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
     outline: "1px solid",
   },
   "&:disabled": {
@@ -61,14 +62,14 @@ export const trigger = style("navigation-menu-trigger", {
     pointerEvents: "none",
   },
   "&[data-state='open']": {
-    backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
+    color: tokens.accentForeground,
   },
   "&[data-state='open']:hover": {
-    backgroundColor: "var(--accent)",
+    backgroundColor: tokens.accent,
   },
   "&[data-state='open']:focus": {
-    backgroundColor: "var(--accent)",
+    backgroundColor: tokens.accent,
   },
   "&[data-state='open'] svg": {
     transform: "rotate(180deg)",
@@ -107,7 +108,7 @@ export const content = style("navigation-menu-content", {
 });
 
 export const link = style("navigation-menu-link", {
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   boxSizing: "border-box",
   display: "flex",
   flexDirection: "column",
@@ -119,33 +120,33 @@ export const link = style("navigation-menu-link", {
   padding: "0.5rem",
   transition: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&:hover": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
     outline: "1px solid",
   },
   "&[data-active='true']": {
-    backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
+    color: tokens.accentForeground,
   },
   "&[data-active='true']:hover": {
-    backgroundColor: "var(--accent)",
+    backgroundColor: tokens.accent,
   },
   "&[data-active='true']:focus": {
-    backgroundColor: "var(--accent)",
+    backgroundColor: tokens.accent,
   },
   "& svg:not([class*='size-'])": {
     height: "1rem",
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
 });
 
@@ -164,11 +165,11 @@ export const contentAnchor = style("navigation-menu-content-anchor", {
 });
 
 export const viewport = style("navigation-menu-viewport", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   height: "var(--radix-navigation-menu-viewport-height)",
   marginTop: "0.375rem",
   overflow: "hidden",
@@ -206,8 +207,8 @@ export const indicator = style("navigation-menu-indicator", {
 });
 
 export const diamond = style("navigation-menu-diamond", {
-  background: "var(--border)",
-  borderTopLeftRadius: "calc(var(--radius) * 0.6)",
+  background: tokens.border,
+  borderTopLeftRadius: `calc(${tokens.radius} * 0.6)`,
   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
   height: "0.5rem",
   position: "relative",

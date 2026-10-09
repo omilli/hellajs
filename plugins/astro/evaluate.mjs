@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parse } from "@babel/parser";
-import { css, cssText, cva, cx, keyframes, resetCss, style } from "@hellajs/css";
+import { css, cssText, cva, cx, keyframes, resetCss, resetVars, style, vars } from "@hellajs/css";
 
 const CSS_PACKAGE = "@hellajs/css";
 const CREATORS = new Set(["css", "style", "keyframes", "vars"]);
@@ -271,7 +271,7 @@ function referencesCssText(mod) {
 /**
  * Extracts statically foldable `css()`/`style()`/`keyframes()` calls from a
  * compiled `.astro` module. Runs the real `@hellajs/css` functions in a
- * sandbox across two `resetCss()`-delimited phases — the import graph first
+ * sandbox across two `resetCss()` + `resetVars()`-delimited phases — the import graph first
  * (registrations island modules re-run at hydration), then the module body
  * (registrations nothing re-runs client-side) — collecting each phase's
  * `cssText()` separately. Imported bindings resolve recursively through
@@ -281,7 +281,11 @@ function referencesCssText(mod) {
  * Positional policies: in the `.astro` module a creator call with
  * non-foldable arguments, or any `vars()` call, throws; in imported modules
  * only top-level creator calls with foldable arguments are collected and
- * everything else is ignored silently.
+ * everything else is ignored silently, except `vars()`, which runs so its
+ * returned reference object binds — property chains on bound objects
+ * (`tokens.mutedForeground`) fold to their values in either position. A
+ * vars() sheet's registration is discarded before collection: its static
+ * delivery is the layout's `cssText()` flush, not the extraction.
  * @internal Consumed by `frontmatter.mjs` and the plugin tests; not re-exported by the package entry.
  * @param {object} options Extraction inputs
  * @param {string} options.code Compiled `.astro` module source
@@ -464,6 +468,18 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
         throw NONFOLD;
       case "CallExpression":
         return evaluateCall(node, owner, isMain, descend);
+      case "MemberExpression": {
+        // Property chains on bound plain objects fold: an imported vars()
+        // result binds as an object of `var(--*)` reference strings, so a
+        // css()/style() argument can read `tokens.mutedForeground`.
+        // Computed and optional accesses change semantics — never folded.
+        if (node.computed || node.optional) throw NONFOLD;
+        const object = evaluate(node.object, owner, isMain, descend);
+        if (object === null || typeof object !== "object") throw NONFOLD;
+        const key = node.property.name;
+        if (typeof key !== "string" || !Object.prototype.hasOwnProperty.call(object, key)) throw NONFOLD;
+        return object[key];
+      }
       default:
         throw NONFOLD;
     }
@@ -520,11 +536,8 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
       throw NONFOLD;
     }
 
-    if (fnName === "vars") {
-      if (isMain) {
-        throw new Error("[astro-hellajs] frontmatter vars() is dead server-side — move reactive vars to an island module");
-      }
-      throw NONFOLD;
+    if (fnName === "vars" && isMain) {
+      throw new Error("[astro-hellajs] frontmatter vars() is dead server-side — move reactive vars to an island module");
     }
 
     const args = [];
@@ -539,6 +552,12 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
         throw new Error(`[astro-hellajs] frontmatter ${fnName}() requires statically evaluable arguments — move dynamic styles to a module and collect with cssText()`, { cause: error });
       }
     }
+
+    // Imported-module vars(): run for real so the returned reference
+    // object binds — `tokens.x` lookups fold through it (main-module
+    // frontmatter css()/style() arguments included). The registration
+    // joins the import-graph phase like every other island rule.
+    if (fnName === "vars") return vars(...args);
 
     const result = (fnName === "recipe" ? callable : REAL_FNS.get(fnName))(...args);
     if (fnName === "cva" && typeof result === "function") recipes.add(result);
@@ -728,15 +747,46 @@ export function extractFrontmatter({ code, id, resolve = defaultResolve, load = 
     }
   };
 
+  // vars()-touching imports evaluate first, then their sheet registration is
+  // wiped (resetVars() clears only the vars buckets — css()/style() rules
+  // already collected survive into islandCss below). The extraction's vars()
+  // concern is the returned reference object — member chains fold through it;
+  // the sheet's static delivery is the layout's cssText() flush, and an
+  // extracted copy would duplicate it in every importing module's bundle.
+  // The modules Map caches the evaluated records, so evaluateImports below
+  // reuses the bindings without re-running the registrations. Direct imports
+  // only: a vars() module reached transitively still registers normally.
+  let vi = 0;
+  while (vi < mod.imports.length) {
+    const entry = mod.imports[vi++];
+    if (entry.source === CSS_PACKAGE || !entry.source.startsWith(".")) continue;
+    const varsId = resolve(entry.source, mod.id);
+    if (!varsId || modules.has(varsId)) continue;
+    let varsSource;
+    try {
+      varsSource = load(varsId);
+    } catch {
+      continue;
+    }
+    if (!/\bvars\s*\(/.test(varsSource)) continue;
+    evaluateModule(varsId);
+  }
+  resetVars();
   evaluateImports(mod);
   const islandCss = cssText();
+  // resetVars() beside resetCss(): vars() registrations live in their own
+  // bucket map that resetCss() does not clear — without it the sheet would
+  // leak across the phase boundary (pageCss re-captures it) and across
+  // extractions.
   resetCss();
+  resetVars();
   let pageCss;
   try {
     walkStatementsList(ast.program.body, mod, true, true);
     pageCss = cssText();
   } finally {
     resetCss();
+    resetVars();
   }
   return { replacements, pageCss, islandCss, watchFiles: Array.from(watched) };
 }

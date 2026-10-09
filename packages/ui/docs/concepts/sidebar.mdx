@@ -58,7 +58,7 @@ The parts read four tokens; the first three are yours to set, the last the compo
 |---|---|---|
 | `--sidebar-width` | `16rem` (wrapper) / `18rem` (mobile panel), both inline styles | You, on the provider wrapper and mobile panel |
 | `--sidebar-width-icon` | `3rem` (wrapper inline style) | You, on the provider wrapper |
-| `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring` | the sidebar oklch palette | tailwind: `theme.css` `:root` and `.dark`; css: the sidebar style module's own `vars()` registration (same values), because `tokens.js` carries no sidebar colors |
+| `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-accent`, `--sidebar-accent-foreground`, `--sidebar-border`, `--sidebar-ring` | the sidebar oklch palette | tailwind: `theme.css` `:root` and `.dark`; css: the sidebar style module's own `vars()` registration (same values), because `tokens.ts` carries no sidebar colors |
 | `--skeleton-width` | random 50% to 90% per `SidebarMenuSkeleton` | The skeleton part's inline style |
 
 Override the widths by editing the inline `style` strings on the wrapper (and the mobile panel); override the palette through the theme entry (tailwind) or the style module's `vars()` call (css).

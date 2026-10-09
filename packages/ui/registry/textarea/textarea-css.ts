@@ -1,8 +1,9 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("textarea", {
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   display: "flex",
   fieldSizing: "content",
@@ -13,7 +14,7 @@ export const base = style("textarea", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::placeholder": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&:disabled": {
     cursor: "not-allowed",
@@ -26,25 +27,25 @@ export const base = style("textarea", {
     },
   },
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
 });
 
 export const focus = style("textarea-focus", {
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
 });
 
 export const invalid = style("textarea-invalid", {
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });

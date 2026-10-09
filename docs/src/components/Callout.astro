@@ -11,11 +11,12 @@
  */
 import { cx } from "@hellajs/css";
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 
 const calloutBase = style({
   alignItems: "start",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius)",
+  border: `1px solid ${tokens.border}`,
+  borderRadius: tokens.radius,
   boxSizing: "border-box",
   display: "grid",
   fontSize: "0.875rem",
@@ -55,8 +56,8 @@ const calloutBody = style({
 const calloutVariants = {
   info: style({
     color: "oklch(74% .16 232.661)",
-    backgroundColor: "color-mix(in oklab, oklch(74% .16 232.661) 8%, var(--base-100))",
-    borderColor: "color-mix(in oklab, oklch(74% .16 232.661) 10%, var(--base-100))",
+    backgroundColor: `color-mix(in oklab, oklch(74% .16 232.661) 8%, ${tokens.base100})`,
+    borderColor: `color-mix(in oklab, oklch(74% .16 232.661) 10%, ${tokens.base100})`,
   }, {
     label: "site-callout-info"
   }),

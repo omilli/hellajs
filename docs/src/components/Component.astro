@@ -1,5 +1,6 @@
 ---
 import { css } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import CodeExample from "./CodeExample.astro";
 // `tokens.js`, not `tokens.dark.js`: its `.dark` class block carries the
 // registry's default dark palette. The demo frame below carries the `dark`
@@ -12,10 +13,10 @@ import "@registry/theme/tokens.js";
 
 css({
   ".demo-frame":{
-    backgroundColor: "var(--background)",
-    border: "1px solid var(--border)",
-    borderRadius: "var(--radius)",
-    color: "var(--foreground)",
+    backgroundColor: tokens.background,
+    border: `1px solid ${tokens.border}`,
+    borderRadius: tokens.radius,
+    color: tokens.foreground,
     marginBlock: "1.25rem",
     padding: "2rem",
     display: "flex",
@@ -36,7 +37,7 @@ css({
     flexWrap: "wrap"
   },
   ".demo-muted": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
     fontSize: "0.875rem",
     margin: 0
   }

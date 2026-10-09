@@ -1,4 +1,5 @@
 import { css, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const group = style("message-group", {
   display: "flex",
@@ -30,7 +31,7 @@ export const avatar = style("message-avatar", {
   alignSelf: "flex-end",
   overflow: "hidden",
   borderRadius: "calc(infinity * 1px)",
-  backgroundColor: "var(--muted)",
+  backgroundColor: tokens.muted,
 });
 
 export const content = style("message-content", {
@@ -50,7 +51,7 @@ export const header = style("message-header", {
   paddingInline: "0.75rem",
   fontSize: "0.75rem",
   fontWeight: "500",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
 });
 
 export const footer = style("message-footer", {
@@ -61,7 +62,7 @@ export const footer = style("message-footer", {
   paddingInline: "0.75rem",
   fontSize: "0.75rem",
   fontWeight: "500",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
 });
 
 css({

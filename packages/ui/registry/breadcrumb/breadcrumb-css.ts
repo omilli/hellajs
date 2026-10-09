@@ -1,8 +1,9 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const list = style("breadcrumb-list", {
   alignItems: "center",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "flex",
   flexWrap: "wrap",
   fontSize: "0.875rem",
@@ -28,12 +29,12 @@ export const item = style("breadcrumb-item", {
 export const link = style("breadcrumb-link", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&:hover": {
-    color: "var(--foreground)",
+    color: tokens.foreground,
   },
 });
 
 export const page = style("breadcrumb-page", {
-  color: "var(--foreground)",
+  color: tokens.foreground,
   fontWeight: "400",
 });
 

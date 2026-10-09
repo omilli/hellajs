@@ -3,6 +3,7 @@ import { anchorPosition, layerDismissal, menuTypeahead, Portal } from "@hellajs/
 import type { HTMLAttributes, HellaChildren, Placement } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
@@ -11,11 +12,11 @@ const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 const content = style("context-menu-content", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   maxHeight: "var(--radix-context-menu-content-available-height)",
   minWidth: "8rem",
   outline: "2px solid transparent",
@@ -44,7 +45,7 @@ const content = style("context-menu-content", {
 
 const item = style("context-menu-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -57,8 +58,8 @@ const item = style("context-menu-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -68,14 +69,14 @@ const item = style("context-menu-item", {
     paddingLeft: "2rem",
   },
   "&[data-variant='destructive']": {
-    color: "var(--destructive)",
+    color: tokens.destructive,
   },
   "&[data-variant='destructive']:focus": {
-    backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
-    color: "var(--destructive)",
+    backgroundColor: `color-mix(in oklab, ${tokens.destructive} 10%, transparent)`,
+    color: tokens.destructive,
   },
   "&:is(.dark *)[data-variant='destructive']:focus": {
-    backgroundColor: "color-mix(in oklab, var(--destructive) 20%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "& svg": {
     flexShrink: "0",
@@ -86,16 +87,16 @@ const item = style("context-menu-item", {
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&[data-variant='destructive'] svg": {
-    color: "var(--destructive) !important",
+    color: `${tokens.destructive} !important`,
   },
 });
 
 const checkItem = style("context-menu-check-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -109,8 +110,8 @@ const checkItem = style("context-menu-check-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -128,7 +129,7 @@ const checkItem = style("context-menu-check-item", {
 
 const radioItem = style("context-menu-radio-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -142,8 +143,8 @@ const radioItem = style("context-menu-radio-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -182,7 +183,7 @@ const radioIcon = style("context-menu-radio-icon", {
 });
 
 const label = style("context-menu-label", {
-  color: "var(--foreground)",
+  color: tokens.foreground,
   fontSize: "0.875rem",
   fontWeight: "500",
   lineHeight: "1.25rem",
@@ -194,7 +195,7 @@ const label = style("context-menu-label", {
 });
 
 const separator = style("context-menu-separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   height: "1px",
   marginBottom: "0.25rem",
   marginLeft: "-0.25rem",
@@ -203,7 +204,7 @@ const separator = style("context-menu-separator", {
 });
 
 const shortcut = style("context-menu-shortcut", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
@@ -212,7 +213,7 @@ const shortcut = style("context-menu-shortcut", {
 
 const subTrigger = style("context-menu-sub-trigger", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -224,15 +225,15 @@ const subTrigger = style("context-menu-sub-trigger", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "& svg": {
     flexShrink: "0",
@@ -243,7 +244,7 @@ const subTrigger = style("context-menu-sub-trigger", {
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
 });
 
@@ -252,11 +253,11 @@ const chevron = style("context-menu-chevron", {
 });
 
 const subContent = style("context-menu-sub-content", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   minWidth: "8rem",
   outline: "2px solid transparent",
   outlineOffset: "2px",

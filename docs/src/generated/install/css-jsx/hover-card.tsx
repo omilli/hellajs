@@ -3,6 +3,7 @@ import { anchorPosition, hoverIntent, Portal } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChild, HellaChildren, Placement } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
@@ -11,11 +12,11 @@ const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 const content = style("hover-card-content", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   outline: "2px solid transparent",
   outlineOffset: "2px",
   padding: "1rem",

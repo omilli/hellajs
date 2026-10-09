@@ -4,6 +4,7 @@ import type { Signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("form-item", {
   display: "grid",
@@ -27,17 +28,17 @@ const label = style("form-label", {
     opacity: "0.5",
   },
   "&[data-error='true']": {
-    color: "var(--destructive)",
+    color: tokens.destructive,
   },
 });
 
 const description = style("form-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
 });
 
 const message = style("form-message", {
-  color: "var(--destructive)",
+  color: tokens.destructive,
   fontSize: "0.875rem",
 });
 

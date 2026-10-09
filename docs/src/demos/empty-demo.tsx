@@ -1,8 +1,9 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import Empty, { EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@registry/empty/css/empty.js";
 
 const bareMedia = style({
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
 }, { label: "demo-bare-media" });
 
 export function EmptyDemo() {

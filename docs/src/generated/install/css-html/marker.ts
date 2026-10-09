@@ -2,10 +2,11 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("marker", {
   alignItems: "center",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   columnGap: "0.5rem",
   display: "flex",
   minHeight: "1rem",
@@ -21,21 +22,21 @@ const base = style("marker", {
     textUnderlineOffset: "3px",
   },
   "& a:hover": {
-    color: "var(--foreground)",
+    color: tokens.foreground,
   },
 });
 
 const variants: Record<string, string> = {
   separator: style("marker-separator", {
     "&::before": {
-      backgroundColor: "var(--border)",
+      backgroundColor: tokens.border,
       flex: "1 1 0%",
       height: "1px",
       marginRight: "0.25rem",
       minWidth: "0",
     },
     "&::after": {
-      backgroundColor: "var(--border)",
+      backgroundColor: tokens.border,
       flex: "1 1 0%",
       height: "1px",
       marginLeft: "0.25rem",
@@ -43,7 +44,7 @@ const variants: Record<string, string> = {
     },
   }),
   border: style("marker-border", {
-    borderBottom: "1px solid var(--border)",
+    borderBottom: `1px solid ${tokens.border}`,
     paddingBottom: "0.5rem",
   }),
 };
@@ -66,7 +67,7 @@ const content = style("marker-content", {
     textUnderlineOffset: "3px",
   },
   "& a:hover": {
-    color: "var(--foreground)",
+    color: tokens.foreground,
   },
 });
 

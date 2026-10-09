@@ -1,4 +1,5 @@
 import { css, keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const enter = keyframes({
   from: { opacity: "0", transform: "translateY(var(--enter-offset, 100%))" },
@@ -74,11 +75,11 @@ export const toasterPositions = {
 export const item = style("sonner-item", {
   alignItems: "center",
   animation: `${enter} 400ms ease-out`,
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   display: "flex",
   fontSize: "0.875rem",
   gap: "0.5rem",
@@ -199,7 +200,7 @@ export const actionButton = style("sonner-action", {
   alignItems: "center",
   background: "transparent",
   border: "1px solid color-mix(in oklab, currentColor 30%, transparent)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   color: "inherit",
   cursor: "pointer",
   display: "inline-flex",
@@ -219,7 +220,7 @@ export const close = style("sonner-close", {
   alignItems: "center",
   background: "transparent",
   border: "none",
-  borderRadius: "calc(var(--radius) * 0.5)",
+  borderRadius: `calc(${tokens.radius} * 0.5)`,
   color: "inherit",
   cursor: "pointer",
   display: "inline-flex",
@@ -247,7 +248,7 @@ export const close = style("sonner-close", {
     width: "1px",
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 2px var(--background), 0 0 0 4px var(--ring)",
+    boxShadow: `0 0 0 2px ${tokens.background}, 0 0 0 4px ${tokens.ring}`,
     opacity: "1",
     outlineStyle: "none",
   },

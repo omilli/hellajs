@@ -2,6 +2,7 @@ import { signal } from "@hellajs/core";
 import type { Signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 import { css, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("message-scroller", {
   position: "relative",
@@ -40,7 +41,7 @@ const item = style("message-scroller-item", {
 
 const buttonBase = style("message-scroller-button", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   display: "inline-flex",
   flexShrink: "0",
@@ -61,82 +62,82 @@ const buttonBase = style("message-scroller-button", {
     width: "1rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 const buttonVariants = {
   default: style("message-scroller-button-default", {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.primary} 90%, transparent)`,
     },
   }),
   destructive: style("message-scroller-button-destructive", {
-    backgroundColor: "var(--destructive)",
+    backgroundColor: tokens.destructive,
     color: "#fff",
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 90%, transparent)`,
     },
     "&:focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
     },
     "&:is(.dark *)": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 60%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 60%, transparent)`,
     },
     "&:is(.dark *):focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
     },
   }),
   outline: style("message-scroller-button-outline", {
-    background: "var(--background)",
-    border: "1px solid var(--border)",
+    background: tokens.background,
+    border: `1px solid ${tokens.border}`,
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *)": {
-      borderColor: "var(--input)",
-      background: "color-mix(in oklab, var(--input) 30%, transparent)",
+      borderColor: tokens.input,
+      background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
     },
     "&:is(.dark *):hover": {
-      background: "color-mix(in oklab, var(--input) 50%, transparent)",
+      background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
     },
   }),
   secondary: style("message-scroller-button-secondary", {
-    backgroundColor: "var(--secondary)",
-    color: "var(--secondary-foreground)",
+    backgroundColor: tokens.secondary,
+    color: tokens.secondaryForeground,
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.secondary} 80%, transparent)`,
     },
   }),
   ghost: style("message-scroller-button-ghost", {
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *):hover": {
-      backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
     },
   }),
   link: style("message-scroller-button-link", {
-    color: "var(--primary)",
+    color: tokens.primary,
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
@@ -154,7 +155,7 @@ const buttonSizes = {
     },
   }),
   xs: style("message-scroller-button-size-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     fontSize: "0.75rem",
     gap: "0.25rem",
     height: "1.5rem",
@@ -169,7 +170,7 @@ const buttonSizes = {
     },
   }),
   sm: style("message-scroller-button-size-sm", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     gap: "0.375rem",
     height: "2rem",
     paddingInline: "0.75rem",
@@ -178,7 +179,7 @@ const buttonSizes = {
     },
   }),
   lg: style("message-scroller-button-size-lg", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "2.5rem",
     paddingInline: "1.5rem",
     "&:has(> svg)": {
@@ -190,7 +191,7 @@ const buttonSizes = {
     width: "2.25rem",
   }),
   "icon-xs": style("message-scroller-button-size-icon-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "1.5rem",
     width: "1.5rem",
     "& svg:not([class*='size-'])": {
@@ -212,14 +213,14 @@ const overlay = style("message-scroller-overlay", {
   position: "absolute",
   insetInlineStart: "50%",
   translate: "-50% 0",
-  borderColor: "var(--border)",
-  backgroundColor: "var(--background)",
-  color: "var(--foreground)",
+  borderColor: tokens.border,
+  backgroundColor: tokens.background,
+  color: tokens.foreground,
   transitionProperty: "translate, scale, opacity",
   transitionDuration: "200ms",
   "&:hover": {
-    backgroundColor: "var(--muted)",
-    color: "var(--foreground)",
+    backgroundColor: tokens.muted,
+    color: tokens.foreground,
   },
   "&[data-active='false']": {
     pointerEvents: "none",

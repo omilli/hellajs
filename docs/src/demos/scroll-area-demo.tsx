@@ -1,9 +1,10 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import ScrollArea, { ScrollBar } from "@registry/scroll-area/css/scroll-area.js";
 
 const pane = style({
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) - 2px)",
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} - 2px)`,
   height: "14rem",
   width: "18rem",
 }, { label: "demo-pane" });
@@ -13,15 +14,15 @@ const pad = style({
 }, { label: "demo-pad" });
 
 const itemRow = style({
-  borderBottom: "1px solid color-mix(in oklab, var(--border) 60%, transparent)",
+  borderBottom: `1px solid color-mix(in oklab, ${tokens.border} 60%, transparent)`,
   fontSize: "0.875rem",
   padding: "0.25rem 0",
 }, { label: "demo-item-row" });
 
 const colRow = style({
   alignItems: "center",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) - 2px)",
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} - 2px)`,
   display: "flex",
   fontSize: "0.875rem",
   height: "10rem",

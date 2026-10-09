@@ -3,6 +3,7 @@ import { anchorPosition, html, layerDismissal, menuTypeahead, Portal } from "@he
 import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode, Placement } from "@hellajs/dom";
 
 import { css, keyframes, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
@@ -12,8 +13,8 @@ const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 const base = style("combobox-wrapper", {
   alignItems: "center",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   display: "flex",
   height: "2.25rem",
@@ -23,7 +24,7 @@ const base = style("combobox-wrapper", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
   "&:has(> textarea)": {
     height: "auto",
@@ -35,24 +36,24 @@ const base = style("combobox-wrapper", {
     paddingRight: "0.5rem",
   },
   "&:has([data-slot='input-group-control']:focus-visible)": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:has([data-slot][aria-invalid='true'])": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&:has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 const input = style("combobox-input", {
   background: "transparent",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   fontSize: "1rem",
   height: "2.25rem",
@@ -66,18 +67,18 @@ const input = style("combobox-input", {
   "&::file-selector-button": {
     background: "transparent",
     border: "none",
-    color: "var(--foreground)",
+    color: tokens.foreground,
     display: "inline-flex",
     fontSize: "0.875rem",
     fontWeight: "500",
     height: "1.75rem",
   },
   "&::placeholder": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&::selection": {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
   },
   "&:disabled": {
     cursor: "not-allowed",
@@ -91,26 +92,26 @@ const input = style("combobox-input", {
     },
   },
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
 });
 
 const inputFocus = style("combobox-input-focus", {
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
 });
 
 const inputInvalid = style("combobox-input-invalid", {
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
@@ -130,7 +131,7 @@ const inputControl = style("combobox-input-control", {
 
 const addon = style("combobox-addon", {
   alignItems: "center",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   cursor: "text",
   display: "flex",
   fontSize: "0.875rem",
@@ -149,7 +150,7 @@ const addon = style("combobox-addon", {
     marginRight: "-0.35rem",
   },
   "& > kbd": {
-    borderRadius: "calc(var(--radius) - 5px)",
+    borderRadius: `calc(${tokens.radius} - 5px)`,
   },
   "& > svg:not([class*='size-'])": {
     height: "1rem",
@@ -162,7 +163,7 @@ const addon = style("combobox-addon", {
 
 const buttonBase = style("combobox-button", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   display: "inline-flex",
   flexShrink: "0",
@@ -183,36 +184,36 @@ const buttonBase = style("combobox-button", {
     width: "1rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 const buttonGhost = style("combobox-button-ghost", {
   "&:hover": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:is(.dark *):hover": {
-    backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
   },
 });
 
 const buttonSizeIconXs = style("combobox-button-size-icon-xs", {
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   height: "1.5rem",
   width: "1.5rem",
   "& svg:not([class*='size-'])": {
@@ -223,7 +224,7 @@ const buttonSizeIconXs = style("combobox-button-size-icon-xs", {
 
 const sizeIconXs = style("combobox-size-icon-xs", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) - 5px)",
+  borderRadius: `calc(${tokens.radius} - 5px)`,
   display: "flex",
   fontSize: "0.875rem",
   gap: "0.5rem",
@@ -257,17 +258,17 @@ const trigger = style("combobox-trigger", {
 });
 
 const triggerIcon = style("combobox-trigger-icon", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   height: "1rem",
   pointerEvents: "none",
   width: "1rem",
 });
 
 const content = style("combobox-content", {
-  backgroundColor: "var(--popover)",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1), 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent)",
-  color: "var(--popover-foreground)",
+  backgroundColor: tokens.popover,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  boxShadow: `0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1), 0 0 0 1px color-mix(in oklab, ${tokens.foreground} 10%, transparent)`,
+  color: tokens.popoverForeground,
   maxHeight: "24rem",
   maxWidth: "var(--available-width)",
   minWidth: "calc(var(--anchor-width) + 1.75rem)",
@@ -280,8 +281,8 @@ const content = style("combobox-content", {
     minWidth: "var(--anchor-width)",
   },
   "& > [data-slot='input-group']": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
-    borderColor: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
+    borderColor: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
     boxShadow: "none",
     height: "2rem",
     margin: "0.25rem",
@@ -328,7 +329,7 @@ const list = style("combobox-list", {
 
 const item = style("combobox-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -343,8 +344,8 @@ const item = style("combobox-item", {
   userSelect: "none",
   width: "100%",
   "&[data-highlighted]": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -388,7 +389,7 @@ const xIcon = style("combobox-x-icon", {
 });
 
 const label = style("combobox-label", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.75rem",
   lineHeight: "1rem",
   paddingBlock: "0.375rem",
@@ -404,7 +405,7 @@ const label = style("combobox-label", {
 });
 
 const empty = style("combobox-empty", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "none",
   fontSize: "0.875rem",
   justifyContent: "center",
@@ -418,7 +419,7 @@ const empty = style("combobox-empty", {
 });
 
 const separator = style("combobox-separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   height: "1px",
   marginBlock: "0.25rem",
   marginInline: "-0.25rem",
@@ -428,8 +429,8 @@ const chips = style("combobox-chips", {
   alignItems: "center",
   backgroundClip: "padding-box",
   backgroundColor: "transparent",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   display: "flex",
   flexWrap: "wrap",
@@ -441,30 +442,30 @@ const chips = style("combobox-chips", {
   paddingInline: "0.625rem",
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&:focus-within": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:has([aria-invalid='true'])": {
-    borderColor: "var(--destructive)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    borderColor: tokens.destructive,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:has([data-slot='combobox-chip'])": {
     paddingInline: "0.375rem",
   },
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
   "&:is(.dark *):has([aria-invalid='true'])": {
-    borderColor: "color-mix(in oklab, var(--destructive) 50%, transparent)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    borderColor: `color-mix(in oklab, ${tokens.destructive} 50%, transparent)`,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 const chip = style("combobox-chip", {
   alignItems: "center",
-  backgroundColor: "var(--muted)",
-  borderRadius: "calc(var(--radius) * 0.6)",
-  color: "var(--foreground)",
+  backgroundColor: tokens.muted,
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
+  color: tokens.foreground,
   display: "flex",
   fontSize: "0.75rem",
   fontWeight: "500",

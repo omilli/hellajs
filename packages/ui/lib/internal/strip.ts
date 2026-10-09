@@ -7,7 +7,7 @@ const STRIP_OPTIONS = { format: "esm", target: "esnext" } as const;
  * keyed by extension: `.tsx` compiles with `jsx: "preserve"` so the copied
  * `.jsx` keeps JSX for the user's own transpiler, `.ts` compiles to plain
  * JavaScript (the runtime `html` template survives), and any other extension
- * (`tokens.js`, `theme.css`) returns verbatim. Shared options never downlevel
+ * (`theme.css`) returns verbatim. Shared options never downlevel
  * modern syntax; esbuild's output formatting may churn across minors, so
  * consumers assert structural invariants, never byte-golden text.
  * @param source Registry file text.

@@ -1,4 +1,5 @@
 import { css, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("bubble-group", {
   display: "flex",
@@ -10,56 +11,56 @@ export const base = style("bubble-group", {
 export const variants = {
   default: style("bubble-default", {
     "& > [data-slot='bubble-content']": {
-      backgroundColor: "var(--primary)",
-      color: "var(--primary-foreground)",
+      backgroundColor: tokens.primary,
+      color: tokens.primaryForeground,
     },
     "& > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "color-mix(in oklab, var(--primary) 80%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.primary} 80%, transparent)`,
     },
   }),
   secondary: style("bubble-secondary", {
     "& > [data-slot='bubble-content']": {
-      backgroundColor: "var(--secondary)",
-      color: "var(--secondary-foreground)",
+      backgroundColor: tokens.secondary,
+      color: tokens.secondaryForeground,
     },
     "& > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "color-mix(in oklch, var(--secondary), var(--foreground) 5%)",
+      backgroundColor: `color-mix(in oklch, ${tokens.secondary}, ${tokens.foreground} 5%)`,
     },
   }),
   muted: style("bubble-muted", {
     "& > [data-slot='bubble-content']": {
-      backgroundColor: "var(--muted)",
+      backgroundColor: tokens.muted,
     },
     "& > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "color-mix(in oklch, var(--muted), var(--foreground) 5%)",
+      backgroundColor: `color-mix(in oklch, ${tokens.muted}, ${tokens.foreground} 5%)`,
     },
   }),
   tinted: style("bubble-tinted", {
     "& > [data-slot='bubble-content']": {
-      backgroundColor: "oklch(from var(--primary) 0.93 calc(c * 0.4) h)",
-      color: "var(--foreground)",
+      backgroundColor: `oklch(from ${tokens.primary} 0.93 calc(c * 0.4) h)`,
+      color: tokens.foreground,
     },
     "&:is(.dark *) > [data-slot='bubble-content']": {
-      backgroundColor: "oklch(from var(--primary) 0.3 calc(c * 0.4) h)",
+      backgroundColor: `oklch(from ${tokens.primary} 0.3 calc(c * 0.4) h)`,
     },
     "& > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "oklch(from var(--primary) 0.88 calc(c * 0.5) h)",
+      backgroundColor: `oklch(from ${tokens.primary} 0.88 calc(c * 0.5) h)`,
     },
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "oklch(from var(--primary) 0.35 calc(c * 0.5) h)",
+      backgroundColor: `oklch(from ${tokens.primary} 0.35 calc(c * 0.5) h)`,
     },
   }),
   outline: style("bubble-outline", {
     "& > [data-slot='bubble-content']": {
-      borderColor: "var(--border)",
-      backgroundColor: "var(--background)",
+      borderColor: tokens.border,
+      backgroundColor: tokens.background,
     },
     "& > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "var(--muted)",
-      color: "var(--foreground)",
+      backgroundColor: tokens.muted,
+      color: tokens.foreground,
     },
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
     },
   }),
   ghost: style("bubble-ghost", {
@@ -70,26 +71,26 @@ export const variants = {
       padding: "0",
     },
     "& > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "var(--muted)",
-      color: "var(--foreground)",
+      backgroundColor: tokens.muted,
+      color: tokens.foreground,
     },
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.muted} 50%, transparent)`,
     },
   }),
   destructive: style("bubble-destructive", {
     "& > [data-slot='bubble-content']": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
-      color: "var(--destructive)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 10%, transparent)`,
+      color: tokens.destructive,
     },
     "&:is(.dark *) > [data-slot='bubble-content']": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 20%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
     },
     "& > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 20%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
     },
     "&:is(.dark *) > [data-slot='bubble-content']:is(button, a):hover": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 30%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 30%, transparent)`,
     },
   }),
 };
@@ -115,7 +116,7 @@ export const content = style("bubble-content", {
   maxWidth: "100%",
   minWidth: "0",
   overflow: "hidden",
-  borderRadius: "calc(var(--radius) * 1.4)",
+  borderRadius: `calc(${tokens.radius} * 1.4)`,
   border: "1px solid transparent",
   paddingInline: "0.75rem",
   paddingBlock: "0.5rem",
@@ -132,8 +133,8 @@ export const content = style("bubble-content", {
     outlineStyle: "none",
   },
   "&:is(button, a):focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
 });
 
@@ -147,11 +148,11 @@ export const reactions = style("bubble-reactions", {
   justifyContent: "center",
   gap: "0.25rem",
   borderRadius: "calc(infinity * 1px)",
-  backgroundColor: "var(--muted)",
+  backgroundColor: tokens.muted,
   paddingInline: "0.375rem",
   paddingBlock: "0.125rem",
   fontSize: "0.875rem",
-  boxShadow: "0 0 0 3px var(--card)",
+  boxShadow: `0 0 0 3px ${tokens.card}`,
   "&:has(button)": {
     padding: "0",
   },

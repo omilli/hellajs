@@ -4,7 +4,7 @@ title: Registry built output exports only component functions — style constant
 description: The bundle splices each style module into the canonical file as private consts, so docs chrome cannot import registry classes from @registry/* — re-declare the needed subset or SSR the components.
 tags: [ui, registry, bundle, docs]
 timestamp: 2026-10-03
-last_confirmed: 2026-10-03
+last_confirmed: 2026-10-08
 triggers: [registry-styles, docs-chrome, style-module, static-nav, bundle-pipeline]
 ---
 # Why
@@ -26,6 +26,11 @@ package-surface/pipeline change needing its own plan unit. Recall before any
 inherits this).
 
 # Evidence
+
+One non-component export exists since the tokens-js set (unit 02, verified
+2026-10-08): `packages/ui/dist/registry/theme/tokens.js` exports `const tokens`
+(the camel-keyed `vars()` reference object) for typed access in css-flavor
+style modules and user code. Component-file style constants stay private.
 
 2026-10-03, worktree plans-docs-misc-site-foundation unit 09:
 `rg -n "^export" packages/ui/dist/registry/sidebar/css/sidebar.js` → only

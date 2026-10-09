@@ -3,6 +3,7 @@ import { onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
@@ -29,7 +30,7 @@ const base = style("sheet-base", {
 });
 
 const content = style("sheet-content", {
-  background: "var(--background)",
+  background: tokens.background,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   display: "flex",
   flexDirection: "column",
@@ -42,7 +43,7 @@ const content = style("sheet-content", {
 const contentSides = {
   right: style("sheet-content-right", {
     bottom: "0",
-    borderLeft: "1px solid var(--border)",
+    borderLeft: `1px solid ${tokens.border}`,
     height: "100%",
     right: "0",
     top: "0",
@@ -61,7 +62,7 @@ const contentSides = {
   }),
   left: style("sheet-content-left", {
     bottom: "0",
-    borderRight: "1px solid var(--border)",
+    borderRight: `1px solid ${tokens.border}`,
     height: "100%",
     left: "0",
     top: "0",
@@ -79,7 +80,7 @@ const contentSides = {
     },
   }),
   top: style("sheet-content-top", {
-    borderBottom: "1px solid var(--border)",
+    borderBottom: `1px solid ${tokens.border}`,
     height: "auto",
     left: "0",
     right: "0",
@@ -92,7 +93,7 @@ const contentSides = {
     },
   }),
   bottom: style("sheet-content-bottom", {
-    borderTop: "1px solid var(--border)",
+    borderTop: `1px solid ${tokens.border}`,
     bottom: "0",
     height: "auto",
     left: "0",
@@ -107,7 +108,7 @@ const contentSides = {
 };
 
 const close = style("sheet-close", {
-  borderRadius: "calc(var(--radius) * 0.2)",
+  borderRadius: `calc(${tokens.radius} * 0.2)`,
   opacity: "0.7",
   position: "absolute",
   right: "1rem",
@@ -117,14 +118,14 @@ const close = style("sheet-close", {
     opacity: "1",
   },
   "&:focus": {
-    boxShadow: "0 0 0 2px var(--background), 0 0 0 4px var(--ring)",
+    boxShadow: `0 0 0 2px ${tokens.background}, 0 0 0 4px ${tokens.ring}`,
     outlineStyle: "none",
   },
   "&:disabled": {
     pointerEvents: "none",
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--secondary)",
+    backgroundColor: tokens.secondary,
   },
   "& svg": {
     flexShrink: "0",
@@ -163,12 +164,12 @@ const footer = style("sheet-footer", {
 });
 
 const title = style("sheet-title", {
-  color: "var(--foreground)",
+  color: tokens.foreground,
   fontWeight: "600",
 });
 
 const description = style("sheet-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 });

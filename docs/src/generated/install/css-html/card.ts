@@ -2,12 +2,13 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("card", {
-  background: "var(--card)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 1.4)",
-  color: "var(--card-foreground)",
+  background: tokens.card,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 1.4)`,
+  color: tokens.cardForeground,
   display: "flex",
   flexDirection: "column",
   gap: "1.5rem",
@@ -34,7 +35,7 @@ const title = style("card-title", {
 });
 
 const description = style("card-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 });

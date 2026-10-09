@@ -2,9 +2,10 @@ import { signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChild, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const item = style("accordion-item", {
-  borderBottom: "1px solid var(--border)",
+  borderBottom: `1px solid ${tokens.border}`,
   "&:last-child": {
     borderBottom: "0",
   },
@@ -16,7 +17,7 @@ const header = style("accordion-header", {
 
 const trigger = style("accordion-trigger", {
   alignItems: "flex-start",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "flex",
   flex: "1",
   fontSize: "0.875rem",
@@ -32,8 +33,8 @@ const trigger = style("accordion-trigger", {
     textDecorationLine: "underline",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
@@ -45,7 +46,7 @@ const trigger = style("accordion-trigger", {
 });
 
 const icon = style("accordion-icon", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   flexShrink: "0",
   height: "1rem",
   pointerEvents: "none",

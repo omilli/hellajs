@@ -1,7 +1,8 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const item = style("accordion-item", {
-  borderBottom: "1px solid var(--border)",
+  borderBottom: `1px solid ${tokens.border}`,
   "&:last-child": {
     borderBottom: "0",
   },
@@ -13,7 +14,7 @@ export const header = style("accordion-header", {
 
 export const trigger = style("accordion-trigger", {
   alignItems: "flex-start",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "flex",
   flex: "1",
   fontSize: "0.875rem",
@@ -29,8 +30,8 @@ export const trigger = style("accordion-trigger", {
     textDecorationLine: "underline",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
@@ -42,7 +43,7 @@ export const trigger = style("accordion-trigger", {
 });
 
 export const icon = style("accordion-icon", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   flexShrink: "0",
   height: "1rem",
   pointerEvents: "none",

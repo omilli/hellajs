@@ -4,6 +4,7 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("avatar", {
   borderRadius: "calc(infinity * 1px)",
@@ -32,9 +33,9 @@ const image = style("avatar-image", {
 
 const fallback = style("avatar-fallback", {
   alignItems: "center",
-  backgroundColor: "var(--muted)",
+  backgroundColor: tokens.muted,
   borderRadius: "calc(infinity * 1px)",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "flex",
   fontSize: "0.875rem",
   height: "100%",
@@ -47,11 +48,11 @@ const fallback = style("avatar-fallback", {
 
 const badge = style("avatar-badge", {
   alignItems: "center",
-  backgroundColor: "var(--primary)",
+  backgroundColor: tokens.primary,
   borderRadius: "calc(infinity * 1px)",
   bottom: "0",
-  boxShadow: "0 0 0 2px var(--background)",
-  color: "var(--primary-foreground)",
+  boxShadow: `0 0 0 2px ${tokens.background}`,
+  color: tokens.primaryForeground,
   display: "inline-flex",
   justifyContent: "center",
   position: "absolute",
@@ -89,16 +90,16 @@ const group = style("avatar-group", {
     marginInlineEnd: "-0.5rem",
   },
   "& > [data-slot='avatar']": {
-    boxShadow: "0 0 0 2px var(--background)",
+    boxShadow: `0 0 0 2px ${tokens.background}`,
   },
 });
 
 const groupCount = style("avatar-group-count", {
   alignItems: "center",
-  backgroundColor: "var(--muted)",
+  backgroundColor: tokens.muted,
   borderRadius: "calc(infinity * 1px)",
-  boxShadow: "0 0 0 2px var(--background)",
-  color: "var(--muted-foreground)",
+  boxShadow: `0 0 0 2px ${tokens.background}`,
+  color: tokens.mutedForeground,
   display: "flex",
   flexShrink: "0",
   fontSize: "0.875rem",

@@ -1,11 +1,12 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("kbd", {
   alignItems: "center",
-  backgroundColor: "var(--muted)",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  backgroundColor: tokens.muted,
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   boxSizing: "border-box",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "inline-flex",
   fontFamily: "var(--font-sans, ui-sans-serif, system-ui, sans-serif)",
   fontSize: "0.75rem",
@@ -24,11 +25,11 @@ export const base = style("kbd", {
     width: "0.75rem",
   },
   "&:is([data-slot='tooltip-content'] *)": {
-    backgroundColor: "color-mix(in oklab, var(--background) 20%, transparent)",
-    color: "var(--background)",
+    backgroundColor: `color-mix(in oklab, ${tokens.background} 20%, transparent)`,
+    color: tokens.background,
   },
   "&:is([data-slot='tooltip-content'] *):is(.dark *)": {
-    backgroundColor: "color-mix(in oklab, var(--background) 10%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.background} 10%, transparent)`,
   },
 });
 

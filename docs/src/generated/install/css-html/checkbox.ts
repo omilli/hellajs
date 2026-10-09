@@ -3,11 +3,12 @@ import { signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("checkbox", {
   boxSizing: "border-box",
   borderRadius: "4px",
-  border: "1px solid var(--input)",
+  border: `1px solid ${tokens.input}`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   flexShrink: "0",
   height: "1rem",
@@ -15,32 +16,32 @@ const base = style("checkbox", {
   transition: "box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     cursor: "not-allowed",
     opacity: "0.5",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)": {
-    backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
   "&[data-state='checked']": {
-    backgroundColor: "var(--primary)",
-    borderColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    borderColor: tokens.primary,
+    color: tokens.primaryForeground,
   },
   "&:is(.dark *)[data-state='checked']": {
-    backgroundColor: "var(--primary)",
+    backgroundColor: tokens.primary,
   },
 });
 

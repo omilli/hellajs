@@ -1,4 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
@@ -7,9 +8,9 @@ const inRight = keyframes({ from: { opacity: "0", transform: "translateX(-0.5rem
 const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 export const content = style("tooltip-content", {
-  backgroundColor: "var(--foreground)",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "var(--background)",
+  backgroundColor: tokens.foreground,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: tokens.background,
   fontSize: "0.75rem",
   lineHeight: "1rem",
   paddingBlock: "0.375rem",

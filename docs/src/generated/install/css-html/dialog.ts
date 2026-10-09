@@ -3,6 +3,7 @@ import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
@@ -23,9 +24,9 @@ const base = style("dialog-overlay", {
 });
 
 const content = style("dialog-content", {
-  background: "var(--background)",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius)",
+  background: tokens.background,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: tokens.radius,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   display: "grid",
   gap: "1rem",
@@ -52,7 +53,7 @@ const content = style("dialog-content", {
 });
 
 const close = style("dialog-close", {
-  borderRadius: "calc(var(--radius) * 0.2)",
+  borderRadius: `calc(${tokens.radius} * 0.2)`,
   opacity: "0.7",
   position: "absolute",
   right: "1rem",
@@ -62,15 +63,15 @@ const close = style("dialog-close", {
     opacity: "1",
   },
   "&:focus": {
-    boxShadow: "0 0 0 2px var(--background), 0 0 0 4px var(--ring)",
+    boxShadow: `0 0 0 2px ${tokens.background}, 0 0 0 4px ${tokens.ring}`,
     outlineStyle: "none",
   },
   "&:disabled": {
     pointerEvents: "none",
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--accent)",
-    color: "var(--muted-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.mutedForeground,
   },
   "& svg": {
     flexShrink: "0",
@@ -124,7 +125,7 @@ const title = style("dialog-title", {
 });
 
 const description = style("dialog-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 });

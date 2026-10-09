@@ -1,10 +1,11 @@
 import { css, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("card", {
-  background: "var(--card)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 1.4)",
-  color: "var(--card-foreground)",
+  background: tokens.card,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 1.4)`,
+  color: tokens.cardForeground,
   display: "flex",
   flexDirection: "column",
   gap: "1.5rem",
@@ -31,7 +32,7 @@ export const title = style("card-title", {
 });
 
 export const description = style("card-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 });

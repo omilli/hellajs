@@ -1,4 +1,5 @@
 import { css, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("tabs", {
   display: "flex",
@@ -10,8 +11,8 @@ export const base = style("tabs", {
 
 export const list = style("tabs-list", {
   alignItems: "center",
-  borderRadius: "var(--radius)",
-  color: "var(--muted-foreground)",
+  borderRadius: tokens.radius,
+  color: tokens.mutedForeground,
   display: "inline-flex",
   height: "2.25rem",
   justifyContent: "center",
@@ -28,7 +29,7 @@ export const list = style("tabs-list", {
 
 export const variants = {
   default: style("tabs-list-default", {
-    backgroundColor: "var(--muted)",
+    backgroundColor: tokens.muted,
   }),
   line: style("tabs-list-line", {
     background: "transparent",
@@ -39,8 +40,8 @@ export const variants = {
 export const trigger = style("tabs-trigger", {
   alignItems: "center",
   border: "1px solid transparent",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "color-mix(in oklab, var(--foreground) 60%, transparent)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: `color-mix(in oklab, ${tokens.foreground} 60%, transparent)`,
   display: "inline-flex",
   flex: "1",
   fontSize: "0.875rem",
@@ -63,35 +64,35 @@ export const trigger = style("tabs-trigger", {
     width: "1rem",
   },
   "&:hover": {
-    color: "var(--foreground)",
+    color: tokens.foreground,
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
-    outline: "1px solid var(--ring)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
+    outline: `1px solid ${tokens.ring}`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&:is(.dark *)": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&:is(.dark *):hover": {
-    color: "var(--foreground)",
+    color: tokens.foreground,
   },
   "&[data-state='active']": {
-    backgroundColor: "var(--background)",
-    color: "var(--foreground)",
+    backgroundColor: tokens.background,
+    color: tokens.foreground,
   },
   "&:is(.dark *)[data-state='active']": {
-    backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
-    borderColor: "var(--input)",
-    color: "var(--foreground)",
+    backgroundColor: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
+    borderColor: tokens.input,
+    color: tokens.foreground,
   },
   "&::after": {
     content: "",
-    backgroundColor: "var(--foreground)",
+    backgroundColor: tokens.foreground,
     opacity: "0",
     position: "absolute",
     transition: "opacity 150ms cubic-bezier(0.4, 0, 0.2, 1)",

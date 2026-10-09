@@ -93,6 +93,12 @@ describe("cssText", () => {
     expect(sheetIds()).toEqual(["hella-css", "hella-vars"]);
   });
 
+  test("collects camel keys under their kebab custom-property names", () => {
+    vars({ primaryForeground: "oklch(0.985 0 0)" });
+
+    expect(cssText()).toBe(":root {\n  --primary-foreground: oklch(0.985 0 0);\n}");
+  });
+
   test("wraps media vars in the at-rule", () => {
     vars({ bg: "#000" }, { media: "(prefers-color-scheme: dark)" });
 

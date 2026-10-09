@@ -1,11 +1,12 @@
 import type { HTMLAttributes } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("input", {
   background: "transparent",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   fontSize: "1rem",
   height: "2.25rem",
@@ -19,18 +20,18 @@ const base = style("input", {
   "&::file-selector-button": {
     background: "transparent",
     border: "none",
-    color: "var(--foreground)",
+    color: tokens.foreground,
     display: "inline-flex",
     fontSize: "0.875rem",
     fontWeight: "500",
     height: "1.75rem",
   },
   "&::placeholder": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&::selection": {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
   },
   "&:disabled": {
     cursor: "not-allowed",
@@ -44,26 +45,26 @@ const base = style("input", {
     },
   },
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
 });
 
 const focus = style("input-focus", {
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
 });
 
 const invalid = style("input-invalid", {
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 

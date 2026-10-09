@@ -1,4 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
@@ -8,9 +9,9 @@ const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 export const base = style("dropdown-menu-base", {
   alignItems: "center",
-  background: "var(--background)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  background: tokens.background,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   boxSizing: "border-box",
   display: "inline-flex",
@@ -35,35 +36,35 @@ export const base = style("dropdown-menu-base", {
     width: "1rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&:hover": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:has(> svg)": {
     paddingInline: "0.75rem",
   },
   "&:is(.dark *)": {
-    borderColor: "var(--input)",
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    borderColor: tokens.input,
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
   "&:is(.dark *):hover": {
-    background: "color-mix(in oklab, var(--input) 50%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
   },
 });
 
 export const content = style("dropdown-menu-content", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   maxHeight: "var(--radix-dropdown-menu-content-available-height)",
   minWidth: "8rem",
   outline: "2px solid transparent",
@@ -92,7 +93,7 @@ export const content = style("dropdown-menu-content", {
 
 export const item = style("dropdown-menu-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -105,8 +106,8 @@ export const item = style("dropdown-menu-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -116,14 +117,14 @@ export const item = style("dropdown-menu-item", {
     paddingLeft: "2rem",
   },
   "&[data-variant='destructive']": {
-    color: "var(--destructive)",
+    color: tokens.destructive,
   },
   "&[data-variant='destructive']:focus": {
-    backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
-    color: "var(--destructive)",
+    backgroundColor: `color-mix(in oklab, ${tokens.destructive} 10%, transparent)`,
+    color: tokens.destructive,
   },
   "&:is(.dark *)[data-variant='destructive']:focus": {
-    backgroundColor: "color-mix(in oklab, var(--destructive) 20%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "& svg": {
     flexShrink: "0",
@@ -134,16 +135,16 @@ export const item = style("dropdown-menu-item", {
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&[data-variant='destructive'] svg": {
-    color: "var(--destructive) !important",
+    color: `${tokens.destructive} !important`,
   },
 });
 
 export const checkItem = style("dropdown-menu-check-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -157,8 +158,8 @@ export const checkItem = style("dropdown-menu-check-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -176,7 +177,7 @@ export const checkItem = style("dropdown-menu-check-item", {
 
 export const radioItem = style("dropdown-menu-radio-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -190,8 +191,8 @@ export const radioItem = style("dropdown-menu-radio-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -241,7 +242,7 @@ export const label = style("dropdown-menu-label", {
 });
 
 export const separator = style("dropdown-menu-separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   height: "1px",
   marginBottom: "0.25rem",
   marginLeft: "-0.25rem",
@@ -250,7 +251,7 @@ export const separator = style("dropdown-menu-separator", {
 });
 
 export const shortcut = style("dropdown-menu-shortcut", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
@@ -259,7 +260,7 @@ export const shortcut = style("dropdown-menu-shortcut", {
 
 export const subTrigger = style("dropdown-menu-sub-trigger", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -272,15 +273,15 @@ export const subTrigger = style("dropdown-menu-sub-trigger", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "& svg": {
     flexShrink: "0",
@@ -291,7 +292,7 @@ export const subTrigger = style("dropdown-menu-sub-trigger", {
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
 });
 
@@ -302,11 +303,11 @@ export const chevron = style("dropdown-menu-chevron", {
 });
 
 export const subContent = style("dropdown-menu-sub-content", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   minWidth: "8rem",
   outline: "2px solid transparent",
   outlineOffset: "2px",

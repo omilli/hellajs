@@ -74,7 +74,7 @@ Call arguments must be statically evaluable: literals, objects, arrays, and temp
 
 ### Positional policy
 
-A frontmatter creator call with non-foldable arguments fails the build and points at the escape hatch below. `vars()` in a page throws: its reactivity is dead server-side. Inside imported modules the same calls are collected only when their arguments fold; non-foldable calls and `vars()` are ignored silently (island runtime owns them).
+A frontmatter creator call with non-foldable arguments fails the build and points at the escape hatch below. `vars()` in a page throws: its reactivity is dead server-side. Inside imported modules the same calls are collected only when their arguments fold; non-foldable calls are ignored silently (island runtime owns them). An imported `vars()` runs at extraction so its returned reference object binds, and property chains on bound objects (`tokens.mutedForeground`) fold to their values in either position; the sheet registration itself is discarded - its static delivery is the layout's `cssText()` flush, so an extracted copy would only duplicate it per importing module.
 
 ### Opt-out and dynamic styles
 

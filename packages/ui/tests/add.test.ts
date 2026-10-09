@@ -30,12 +30,13 @@ describe("addComponent", () => {
     expect(button.includes("@hella:")).toBe(false);
     expect(button.startsWith('import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";')).toBe(true);
     expect(button).toContain('import { style } from "@hellajs/css";');
+    expect(button).toContain('import { tokens } from "./tokens.js";');
     expect(button).toContain("const base = style(");
     expect(button.includes('layer: "hella"')).toBe(false);
-    const tokens = readFileSync(join(componentsDir, "tokens.js"), "utf8");
+    const tokens = readFileSync(join(componentsDir, "tokens.ts"), "utf8");
     expect(tokens.includes('layer: "hella"')).toBe(false);
     expect(tokens.includes("@layer")).toBe(false);
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
     expect(existsSync(join(componentsDir, "button-html.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-css.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-tailwind.ts"))).toBe(false);
@@ -53,7 +54,7 @@ describe("addComponent", () => {
     expect(button.includes("@hella:")).toBe(false);
     expect(existsSync(join(componentsDir, "cn.ts"))).toBe(true);
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(true);
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(false);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-css.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-tailwind.ts"))).toBe(false);
   });
@@ -66,7 +67,7 @@ describe("addComponent", () => {
     expect(button.includes("@hella:")).toBe(false);
     expect(existsSync(join(componentsDir, "button.tsx"))).toBe(false);
     expect(existsSync(join(componentsDir, "button-html.ts"))).toBe(false);
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
   });
 
   test("lang js renames the copied helper to cn.js", () => {
@@ -78,17 +79,17 @@ describe("addComponent", () => {
   test("css add of input pulls the tokens theme and no tailwind artifacts", () => {
     addComponent(["input"], { dir: root });
     expect(existsSync(join(componentsDir, "input.tsx"))).toBe(true);
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
     expect(existsSync(join(componentsDir, "cn.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(false);
   });
 
-  test("tailwind add of input pulls theme.css and cn, never tokens.js", () => {
+  test("tailwind add of input pulls theme.css and cn, never tokens", () => {
     addComponent(["input"], { dir: root, style: "tailwind" });
     expect(existsSync(join(componentsDir, "input.tsx"))).toBe(true);
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(true);
     expect(existsSync(join(componentsDir, "cn.ts"))).toBe(true);
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(false);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(false);
   });
 
   test("css add of a static component pulls the tokens theme and no tailwind artifacts", () => {
@@ -96,19 +97,19 @@ describe("addComponent", () => {
     for (const name of ["badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label"]) {
       expect(existsSync(join(componentsDir, `${name}.tsx`))).toBe(true);
     }
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
     expect(existsSync(join(componentsDir, "cn.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(false);
   });
 
-  test("tailwind add of a static component pulls theme.css and cn, never tokens.js", () => {
+  test("tailwind add of a static component pulls theme.css and cn, never tokens", () => {
     addComponent(["badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label"], { dir: root, style: "tailwind" });
     for (const name of ["badge", "alert", "kbd", "separator", "skeleton", "spinner", "empty", "label"]) {
       expect(existsSync(join(componentsDir, `${name}.tsx`))).toBe(true);
     }
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(true);
     expect(existsSync(join(componentsDir, "cn.ts"))).toBe(true);
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(false);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(false);
   });
 
   test("css add of input-group recursively copies its component dependencies and the theme", () => {
@@ -116,7 +117,7 @@ describe("addComponent", () => {
     for (const name of ["input-group", "input", "textarea", "button"]) {
       expect(existsSync(join(componentsDir, `${name}.tsx`))).toBe(true);
     }
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
     expect(existsSync(join(componentsDir, "cn.ts"))).toBe(false);
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(false);
   });

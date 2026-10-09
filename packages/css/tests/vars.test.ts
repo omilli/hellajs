@@ -317,7 +317,7 @@ describe("vars", () => {
 
     const recomputed = vars({ key0: "value0" });
     expect(recomputed).not.toBe(first);
-    expect(recomputed.key0).toBe("var(--key0)");
+    expect(recomputed.key0).toBe("var(--key-0)");
   });
 
   test("LRU promotes entry on access, protecting it from eviction", () => {
@@ -338,7 +338,7 @@ describe("vars", () => {
 
     const evicted = vars({ key1: "value1" });
     expect(evicted).not.toBe(second);
-    expect(evicted.key1).toBe("var(--key1)");
+    expect(evicted.key1).toBe("var(--key-1)");
   });
 
   test("LRU eviction followed by re-registration preserves the reference count", () => {
@@ -362,6 +362,63 @@ describe("vars", () => {
     removeVars(varsObj);
     removeVars(varsObj);
     expect(getStylesheet("hella-vars")).not.toContain("--color:red");
+  });
+
+  test("proxy dot access reads the kebab name for a camel key", () => {
+    const tokens = vars({ primaryForeground: "x" });
+    expect(tokens.primaryForeground).toBe("var(--primary-foreground)");
+  });
+
+  test("digit keys register and read with a boundary hyphen", () => {
+    const tokens = vars({ base50: "x" });
+
+    expect(getStylesheet("hella-vars")).toBe(":root{--base-50:x}");
+    expect(tokens.base50).toBe("var(--base-50)");
+  });
+
+  test("authored kebab keys pass through byte-identically", () => {
+    const tokens = vars({ "primary-foreground": "x" });
+
+    expect(getStylesheet("hella-vars")).toBe(":root{--primary-foreground:x}");
+    expect(tokens["primary-foreground"]).toBe("var(--primary-foreground)");
+  });
+
+  test("nested camel keys flatten to one hyphenated name", () => {
+    const tokens = vars({ color: { primaryText: "x" } });
+
+    expect(getStylesheet("hella-vars")).toBe(":root{--color-primary-text:x}");
+    expect(tokens.color.primaryText).toBe("var(--color-primary-text)");
+  });
+
+  test("prefix composes with camel-to-kebab conversion", () => {
+    const tokens = vars({ primaryForeground: "x" }, { prefix: "hj" });
+
+    expect(getStylesheet("hella-vars")).toBe(":root{--hj-primary-foreground:x}");
+    expect(tokens.primaryForeground).toBe("var(--hj-primary-foreground)");
+  });
+
+  test("reactive camel-keyed leaves re-emit the kebab name on signal change", () => {
+    const foreground = signal("red");
+
+    vars({ primaryForeground: foreground });
+
+    flush();
+    expect(getStylesheet("hella-vars")).toBe(":root{--primary-foreground:red}");
+
+    foreground("blue");
+    flush();
+    expect(getStylesheet("hella-vars")).toBe(":root{--primary-foreground:blue}");
+  });
+
+  test("removeVars drops kebab-named declarations and re-registration restores them", () => {
+    const tokens = { primaryForeground: "x" };
+
+    vars(tokens);
+    removeVars(tokens);
+    expect(getStylesheet("hella-vars")).toBe("");
+
+    vars(tokens);
+    expect(getStylesheet("hella-vars")).toBe(":root{--primary-foreground:x}");
   });
 
   test("empty object returns empty result", () => {

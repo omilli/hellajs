@@ -1,4 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const caretBlink = keyframes({
   "0%,70%,100%": { opacity: "1" },
@@ -31,8 +32,8 @@ export const group = style("input-otp-group", {
 
 export const slot = style("input-otp-slot", {
   alignItems: "center",
-  borderBlock: "1px solid var(--input)",
-  borderRight: "1px solid var(--input)",
+  borderBlock: `1px solid ${tokens.input}`,
+  borderRight: `1px solid ${tokens.input}`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   display: "flex",
   fontSize: "0.875rem",
@@ -44,30 +45,30 @@ export const slot = style("input-otp-slot", {
   transition: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "2.25rem",
   "&:first-child": {
-    borderBottomLeftRadius: "calc(var(--radius) * 0.8)",
-    borderLeft: "1px solid var(--input)",
-    borderTopLeftRadius: "calc(var(--radius) * 0.8)",
+    borderBottomLeftRadius: `calc(${tokens.radius} * 0.8)`,
+    borderLeft: `1px solid ${tokens.input}`,
+    borderTopLeftRadius: `calc(${tokens.radius} * 0.8)`,
   },
   "&:last-child": {
-    borderBottomRightRadius: "calc(var(--radius) * 0.8)",
-    borderTopRightRadius: "calc(var(--radius) * 0.8)",
+    borderBottomRightRadius: `calc(${tokens.radius} * 0.8)`,
+    borderTopRightRadius: `calc(${tokens.radius} * 0.8)`,
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[data-active='true']": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
     zIndex: "10",
   },
   "&[data-active='true'][aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[data-active='true'][aria-invalid='true']:is(.dark *)": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
   "&:is(.dark *)": {
-    backgroundColor: "color-mix(in oklab, var(--input) 30%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
 });
 
@@ -82,7 +83,7 @@ export const caretWrap = style("input-otp-caret", {
 
 export const caret = style("input-otp-caret-bar", {
   animation: `${caretBlink} 1s ease-out infinite`,
-  backgroundColor: "var(--foreground)",
+  backgroundColor: tokens.foreground,
   height: "1rem",
   width: "1px",
 });

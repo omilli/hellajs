@@ -1,6 +1,7 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("attachment", {
   position: "relative",
@@ -10,21 +11,21 @@ const base = style("attachment", {
   minWidth: "0",
   flexShrink: "0",
   flexWrap: "wrap",
-  borderRadius: "calc(var(--radius) * 1.4)",
-  border: "1px solid var(--border)",
-  backgroundColor: "var(--card)",
-  color: "var(--card-foreground)",
+  borderRadius: `calc(${tokens.radius} * 1.4)`,
+  border: `1px solid ${tokens.border}`,
+  backgroundColor: tokens.card,
+  color: tokens.cardForeground,
   transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
   transitionDuration: "150ms",
   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
   "&:focus-within": {
-    boxShadow: "0 0 0 1px color-mix(in oklab, var(--ring) 50%, transparent)",
+    boxShadow: `0 0 0 1px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:has(> a, > button):hover": {
-    backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.muted} 50%, transparent)`,
   },
   "&[data-state='error']": {
-    borderColor: "color-mix(in oklab, var(--destructive) 30%, transparent)",
+    borderColor: `color-mix(in oklab, ${tokens.destructive} 30%, transparent)`,
   },
   "&[data-state='idle']": {
     borderStyle: "dashed",
@@ -57,7 +58,7 @@ const sizes = {
     },
   }),
   xs: style("attachment-size-xs", {
-    borderRadius: "calc(var(--radius) * 1)",
+    borderRadius: `calc(${tokens.radius} * 1)`,
     gap: "0.375rem",
     fontSize: "0.75rem",
     lineHeight: "1rem",
@@ -94,9 +95,9 @@ const media = style("attachment-media", {
   alignItems: "center",
   justifyContent: "center",
   overflow: "hidden",
-  borderRadius: "calc(var(--radius) * 1)",
-  backgroundColor: "var(--muted)",
-  color: "var(--foreground)",
+  borderRadius: `calc(${tokens.radius} * 1)`,
+  backgroundColor: tokens.muted,
+  color: tokens.foreground,
   "& svg": {
     pointerEvents: "none",
   },
@@ -145,7 +146,7 @@ const description = style("attachment-description", {
   whiteSpace: "nowrap",
   fontSize: "0.75rem",
   lineHeight: "1rem",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
 });
 
 const actions = style("attachment-actions", {
@@ -180,7 +181,7 @@ const group = style("attachment-group", {
 
 const buttonBase = style("attachment-action", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   display: "inline-flex",
   flexShrink: "0",
@@ -201,82 +202,82 @@ const buttonBase = style("attachment-action", {
     width: "1rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 const buttonVariants = {
   default: style("attachment-action-default", {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.primary} 90%, transparent)`,
     },
   }),
   destructive: style("attachment-action-destructive", {
-    backgroundColor: "var(--destructive)",
+    backgroundColor: tokens.destructive,
     color: "#fff",
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 90%, transparent)`,
     },
     "&:focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
     },
     "&:is(.dark *)": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 60%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 60%, transparent)`,
     },
     "&:is(.dark *):focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
     },
   }),
   outline: style("attachment-action-outline", {
-    background: "var(--background)",
-    border: "1px solid var(--border)",
+    background: tokens.background,
+    border: `1px solid ${tokens.border}`,
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *)": {
-      borderColor: "var(--input)",
-      background: "color-mix(in oklab, var(--input) 30%, transparent)",
+      borderColor: tokens.input,
+      background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
     },
     "&:is(.dark *):hover": {
-      background: "color-mix(in oklab, var(--input) 50%, transparent)",
+      background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
     },
   }),
   secondary: style("attachment-action-secondary", {
-    backgroundColor: "var(--secondary)",
-    color: "var(--secondary-foreground)",
+    backgroundColor: tokens.secondary,
+    color: tokens.secondaryForeground,
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.secondary} 80%, transparent)`,
     },
   }),
   ghost: style("attachment-action-ghost", {
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *):hover": {
-      backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
     },
   }),
   link: style("attachment-action-link", {
-    color: "var(--primary)",
+    color: tokens.primary,
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
@@ -294,7 +295,7 @@ const buttonSizes = {
     },
   }),
   xs: style("attachment-action-size-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     fontSize: "0.75rem",
     gap: "0.25rem",
     height: "1.5rem",
@@ -309,7 +310,7 @@ const buttonSizes = {
     },
   }),
   sm: style("attachment-action-size-sm", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     gap: "0.375rem",
     height: "2rem",
     paddingInline: "0.75rem",
@@ -318,7 +319,7 @@ const buttonSizes = {
     },
   }),
   lg: style("attachment-action-size-lg", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "2.5rem",
     paddingInline: "1.5rem",
     "&:has(> svg)": {
@@ -330,7 +331,7 @@ const buttonSizes = {
     width: "2.25rem",
   }),
   "icon-xs": style("attachment-action-size-icon-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "1.5rem",
     width: "1.5rem",
     "& svg:not([class*='size-'])": {
@@ -365,15 +366,15 @@ css({
   },
   "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media']": {
     width: "1.75rem",
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
   },
   "[data-slot='attachment'][data-size='xs'] [data-slot='attachment-media'] svg:not([class*='size-'])": {
     height: "0.875rem",
     width: "0.875rem",
   },
   "[data-slot='attachment'][data-state='error'] [data-slot='attachment-media']": {
-    backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
-    color: "var(--destructive)",
+    backgroundColor: `color-mix(in oklab, ${tokens.destructive} 10%, transparent)`,
+    color: tokens.destructive,
   },
   "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-content']": {
     paddingInline: "0.25rem",
@@ -385,7 +386,7 @@ css({
     opacity: "1",
   },
   "[data-slot='attachment'][data-state='error'] [data-slot='attachment-description']": {
-    color: "color-mix(in oklab, var(--destructive) 80%, transparent)",
+    color: `color-mix(in oklab, ${tokens.destructive} 80%, transparent)`,
   },
   "[data-slot='attachment'][data-orientation='vertical'] [data-slot='attachment-actions']": {
     position: "absolute",

@@ -1,4 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
@@ -25,7 +26,7 @@ export const base = style("sheet-base", {
 });
 
 export const content = style("sheet-content", {
-  background: "var(--background)",
+  background: tokens.background,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   display: "flex",
   flexDirection: "column",
@@ -38,7 +39,7 @@ export const content = style("sheet-content", {
 export const contentSides = {
   right: style("sheet-content-right", {
     bottom: "0",
-    borderLeft: "1px solid var(--border)",
+    borderLeft: `1px solid ${tokens.border}`,
     height: "100%",
     right: "0",
     top: "0",
@@ -57,7 +58,7 @@ export const contentSides = {
   }),
   left: style("sheet-content-left", {
     bottom: "0",
-    borderRight: "1px solid var(--border)",
+    borderRight: `1px solid ${tokens.border}`,
     height: "100%",
     left: "0",
     top: "0",
@@ -75,7 +76,7 @@ export const contentSides = {
     },
   }),
   top: style("sheet-content-top", {
-    borderBottom: "1px solid var(--border)",
+    borderBottom: `1px solid ${tokens.border}`,
     height: "auto",
     left: "0",
     right: "0",
@@ -88,7 +89,7 @@ export const contentSides = {
     },
   }),
   bottom: style("sheet-content-bottom", {
-    borderTop: "1px solid var(--border)",
+    borderTop: `1px solid ${tokens.border}`,
     bottom: "0",
     height: "auto",
     left: "0",
@@ -103,7 +104,7 @@ export const contentSides = {
 };
 
 export const close = style("sheet-close", {
-  borderRadius: "calc(var(--radius) * 0.2)",
+  borderRadius: `calc(${tokens.radius} * 0.2)`,
   opacity: "0.7",
   position: "absolute",
   right: "1rem",
@@ -113,14 +114,14 @@ export const close = style("sheet-close", {
     opacity: "1",
   },
   "&:focus": {
-    boxShadow: "0 0 0 2px var(--background), 0 0 0 4px var(--ring)",
+    boxShadow: `0 0 0 2px ${tokens.background}, 0 0 0 4px ${tokens.ring}`,
     outlineStyle: "none",
   },
   "&:disabled": {
     pointerEvents: "none",
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--secondary)",
+    backgroundColor: tokens.secondary,
   },
   "& svg": {
     flexShrink: "0",
@@ -159,12 +160,12 @@ export const footer = style("sheet-footer", {
 });
 
 export const title = style("sheet-title", {
-  color: "var(--foreground)",
+  color: tokens.foreground,
   fontWeight: "600",
 });
 
 export const description = style("sheet-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 });

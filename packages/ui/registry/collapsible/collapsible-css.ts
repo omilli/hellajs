@@ -1,4 +1,5 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const trigger = style("collapsible-trigger", {
   alignItems: "center",
@@ -10,7 +11,7 @@ export const trigger = style("collapsible-trigger", {
 });
 
 export const icon = style("collapsible-icon", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   flexShrink: "0",
   height: "1rem",
   pointerEvents: "none",

@@ -2,11 +2,12 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("empty", {
   alignItems: "center",
   borderStyle: "dashed",
-  borderRadius: "var(--radius)",
+  borderRadius: tokens.radius,
   boxSizing: "border-box",
   display: "flex",
   flex: "1",
@@ -51,9 +52,9 @@ const mediaVariants = {
   }),
   icon: style("empty-media-icon", {
     alignItems: "center",
-    backgroundColor: "var(--muted)",
-    borderRadius: "var(--radius)",
-    color: "var(--foreground)",
+    backgroundColor: tokens.muted,
+    borderRadius: tokens.radius,
+    color: tokens.foreground,
     display: "flex",
     flexShrink: "0",
     height: "2.5rem",
@@ -74,7 +75,7 @@ const title = style("empty-title", {
 });
 
 const description = style("empty-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.625rem",
   "& > a": {
@@ -82,7 +83,7 @@ const description = style("empty-description", {
     textUnderlineOffset: "4px",
   },
   "& > a:hover": {
-    color: "var(--primary)",
+    color: tokens.primary,
   },
 });
 

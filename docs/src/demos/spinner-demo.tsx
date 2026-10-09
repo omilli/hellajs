@@ -1,9 +1,10 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import Spinner from "@registry/spinner/css/spinner.js";
 
 const sizeRow = style({
   alignItems: "center",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "flex",
   gap: "0.5rem",
 }, { label: "demo-size-row" });
@@ -17,9 +18,9 @@ const spinnerLg = style({ height: "1.5rem", width: "1.5rem" }, { label: "demo-sp
 
 const busyButton = style({
   alignItems: "center",
-  background: "var(--primary)",
-  borderRadius: "calc(var(--radius) - 2px)",
-  color: "var(--primary-foreground)",
+  background: tokens.primary,
+  borderRadius: `calc(${tokens.radius} - 2px)`,
+  color: tokens.primaryForeground,
   display: "inline-flex",
   fontSize: "0.875rem",
   fontWeight: 500,

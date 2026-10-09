@@ -27,7 +27,7 @@
  * are inherited properties — they reach the frame and stand, same as shadcn.
  */
 import { css } from "@hellajs/css";
-import "./tokens";
+import { tokens } from "./tokens";
 
 /** Appends the `.not-prose` subtree exclusion to a selector; the `:where()` inside `:not()` adds zero specificity, so guarded rules match exactly as strongly as without it. */
 const inProse = (sel: string) => `${sel}:not(:where(.not-prose *))`;
@@ -37,11 +37,11 @@ css({
     // Typography base: 1rem/1.75, body text at 80% foreground.
     fontSize: "1rem",
     lineHeight: 1.75,
-    color: "color-mix(in oklab, var(--foreground) 80%, transparent)",
+    color: `color-mix(in oklab, ${tokens.foreground} 80%, transparent)`,
 
     // Headings: full foreground, the typography scale.
     [inProse("h1")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       marginTop: 0,
       marginBottom: ".888889em",
       fontSize: "2.25em",
@@ -49,7 +49,7 @@ css({
       lineHeight: 1.11111,
     },
     [inProse("h2")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       marginTop: "2em",
       marginBottom: "1em",
       fontSize: "1.5em",
@@ -58,7 +58,7 @@ css({
       code: { fontSize: ".875em" },
     },
     [inProse("h3")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       marginTop: "1.6em",
       marginBottom: ".6em",
       fontSize: "1.25em",
@@ -67,7 +67,7 @@ css({
       code: { fontSize: ".9em" },
     },
     [inProse("h4")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       marginTop: "2em",
       marginBottom: ".6em",
       fontSize: "1.125em",
@@ -75,7 +75,7 @@ css({
       lineHeight: 1.6,
     },
     [inProse(":is(h5, h6)")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       marginTop: "2em",
       marginBottom: ".6em",
       fontSize: "1em",
@@ -90,12 +90,12 @@ css({
 
     // Links and emphasis: full-foreground text, underline, 500/600 weights.
     [inProse("a")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       fontWeight: 500,
       textDecoration: "underline"
     },
     [inProse("strong")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       fontWeight: 600
     },
 
@@ -106,7 +106,7 @@ css({
       paddingInlineStart: "1.625em",
       listStyleType: "disc",
       "> li::marker": {
-        color: "color-mix(in oklab, var(--foreground) 50%, transparent)",
+        color: `color-mix(in oklab, ${tokens.foreground} 50%, transparent)`,
       },
       "> li p": {
         marginTop: ".75em",
@@ -123,7 +123,7 @@ css({
       paddingInlineStart: "1.625em",
       listStyleType: "decimal",
       "> li::marker": {
-        color: "var(--foreground)",
+        color: tokens.foreground,
         fontWeight: 400
       },
       "> li p": {
@@ -145,13 +145,13 @@ css({
 
     // Blockquote: italic, left rule at the 20% mix, typographic quotes.
     [inProse("blockquote")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       fontStyle: "italic",
       fontWeight: 500,
       marginTop: "1.6em",
       marginBottom: "1.6em",
       paddingInlineStart: "1em",
-      borderInlineStart: ".25rem solid color-mix(in oklab, var(--foreground) 20%, transparent)",
+      borderInlineStart: `.25rem solid color-mix(in oklab, ${tokens.foreground} 20%, transparent)`,
       quotes: '"\u201c" "\u201d" "\u201c" "\u201d"',
       "p:first-of-type::before": {
         content: "open-quote"
@@ -167,7 +167,7 @@ css({
       marginBottom: "1.25em"
     },
     [inProse("dt")]: {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       marginTop: "1.25em",
       fontWeight: 600
     },
@@ -180,7 +180,7 @@ css({
       marginTop: "3em",
       marginBottom: "3em",
       border: "none",
-      borderTop: "1px solid color-mix(in oklab, var(--foreground) 20%, transparent)",
+      borderTop: `1px solid color-mix(in oklab, ${tokens.foreground} 20%, transparent)`,
     },
 
     // Tables: 0.875em body, 50%-mix head rule, 20%-mix row rules; collapse
@@ -195,10 +195,10 @@ css({
       fontSize: ".875em",
       lineHeight: 1.71429,
       "> thead": {
-        borderBottom: "1px solid color-mix(in oklab, var(--foreground) 50%, transparent)",
+        borderBottom: `1px solid color-mix(in oklab, ${tokens.foreground} 50%, transparent)`,
       },
       th: {
-        color: "var(--foreground)",
+        color: tokens.foreground,
         verticalAlign: "bottom",
         textAlign: "start",
         fontWeight: 600,
@@ -210,7 +210,7 @@ css({
         padding: ".571429em",
       },
       ":is(tbody, tfoot) tr": {
-        borderBottom: "1px solid color-mix(in oklab, var(--foreground) 20%, transparent)",
+        borderBottom: `1px solid color-mix(in oklab, ${tokens.foreground} 20%, transparent)`,
       },
       "tbody tr:last-child": {
         borderBottom: "none"
@@ -235,12 +235,12 @@ css({
 
     // Inline code chrome: base-50 fill, input-color border (fork 3 port).
     [inProse(":where(code)")]: {
-      color: "var(--foreground)",
-      fontFamily: "var(--font-mono)",
+      color: tokens.foreground,
+      fontFamily: tokens.fontMono,
       fontSize: ".875em",
       fontWeight: 600,
-      backgroundColor: "var(--base-50)",
-      border: "1px solid var(--input)",
+      backgroundColor: tokens.base50,
+      border: `1px solid ${tokens.input}`,
       borderRadius: ".25rem",
       padding: ".125rem .25rem",
     },
@@ -248,13 +248,13 @@ css({
     // Code blocks: chrome only; shiki token colors are inline spans. The
     // !important background beats shiki's inline `style` attr (fork 3).
     [inProse("pre.astro-code")]: {
-      backgroundColor: "var(--base-50) !important",
-      border: "1px solid var(--border)",
+      backgroundColor: `${tokens.base50} !important`,
+      border: `1px solid ${tokens.border}`,
       borderRadius: ".375rem",
       marginTop: "1.71429em",
       marginBottom: "1.71429em",
       padding: ".857143em 1.14286em",
-      fontFamily: "var(--font-mono)",
+      fontFamily: tokens.fontMono,
       fontSize: ".875em",
       fontWeight: 400,
       lineHeight: 1.71429,

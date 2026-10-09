@@ -2,6 +2,7 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const group = style("item-group", {
   display: "flex",
@@ -9,7 +10,7 @@ const group = style("item-group", {
 });
 
 const separatorBase = style("item-separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
     height: "1px",
@@ -28,7 +29,7 @@ const separator = style("item-separator-override", {
 const base = style("item", {
   alignItems: "center",
   border: "1px solid transparent",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "flex",
   flexWrap: "wrap",
   fontSize: "0.875rem",
@@ -39,11 +40,11 @@ const base = style("item", {
     transition: "color 100ms cubic-bezier(0.4, 0, 0.2, 1), background-color 100ms cubic-bezier(0.4, 0, 0.2, 1), border-color 100ms cubic-bezier(0.4, 0, 0.2, 1), outline-color 100ms cubic-bezier(0.4, 0, 0.2, 1), text-decoration-color 100ms cubic-bezier(0.4, 0, 0.2, 1), fill 100ms cubic-bezier(0.4, 0, 0.2, 1), stroke 100ms cubic-bezier(0.4, 0, 0.2, 1)",
   },
   "& a:hover": {
-    backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
 });
 
@@ -52,10 +53,10 @@ const variants = {
     backgroundColor: "transparent",
   }),
   outline: style("item-outline", {
-    borderColor: "var(--border)",
+    borderColor: tokens.border,
   }),
   muted: style("item-muted", {
-    backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.muted} 50%, transparent)`,
   }),
 };
 
@@ -87,9 +88,9 @@ const mediaVariants = {
     backgroundColor: "transparent",
   }),
   icon: style("item-media-icon", {
-    backgroundColor: "var(--muted)",
-    border: "1px solid var(--border)",
-    borderRadius: "calc(var(--radius) * 0.6)",
+    backgroundColor: tokens.muted,
+    border: `1px solid ${tokens.border}`,
+    borderRadius: `calc(${tokens.radius} * 0.6)`,
     height: "2rem",
     width: "2rem",
     "& svg:not([class*='size-'])": {
@@ -98,7 +99,7 @@ const mediaVariants = {
     },
   }),
   image: style("item-media-image", {
-    borderRadius: "calc(var(--radius) * 0.6)",
+    borderRadius: `calc(${tokens.radius} * 0.6)`,
     height: "2.5rem",
     overflow: "hidden",
     width: "2.5rem",
@@ -131,7 +132,7 @@ const title = style("item-title", {
 });
 
 const description = style("item-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   fontWeight: "400",
   lineHeight: "1.25rem",
@@ -145,7 +146,7 @@ const description = style("item-description", {
     textUnderlineOffset: "4px",
   },
   "& > a:hover": {
-    color: "var(--primary)",
+    color: tokens.primary,
   },
 });
 

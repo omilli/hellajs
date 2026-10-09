@@ -1,7 +1,8 @@
 import { css, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("calendar", {
-  backgroundColor: "var(--background)",
+  backgroundColor: tokens.background,
   padding: "0.75rem",
   width: "fit-content",
   "--cell-size": "2rem",
@@ -54,7 +55,7 @@ export const nav = style("calendar-nav", {
 /** The ref's nav buttons: ghost icon-class button tokens with the default size tokens pre-merged out against `size-(--cell-size)`/`p-0`. */
 export const navButton = style("calendar-nav-button", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   display: "inline-flex",
   flexShrink: "0",
@@ -75,8 +76,8 @@ export const navButton = style("calendar-nav-button", {
     pointerEvents: "none",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
@@ -86,21 +87,21 @@ export const navButton = style("calendar-nav-button", {
     opacity: "0.5",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:hover": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:is(.dark *)": {
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
     },
     "&[aria-invalid='true']:focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
     },
   },
 });
@@ -120,8 +121,8 @@ export const weekdays = style("calendar-weekdays", {
 });
 
 export const weekday = style("calendar-weekday", {
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "var(--muted-foreground)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: tokens.mutedForeground,
   flex: "1 1 0%",
   fontSize: "0.8rem",
   fontWeight: "400",
@@ -148,7 +149,7 @@ export const day = style("calendar-day", {
 export const dayButton = style("calendar-day-button", {
   alignItems: "center",
   aspectRatio: "1 / 1",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   color: "inherit",
   display: "flex",
@@ -173,96 +174,96 @@ export const dayButton = style("calendar-day-button", {
     pointerEvents: "none",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:hover": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:is(.dark *)": {
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
+      color: tokens.accentForeground,
     },
     "&[aria-invalid='true']:focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
     },
   },
   "&[data-selected-single='true']": {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
   },
   "&[data-range-start='true']": {
-    backgroundColor: "var(--primary)",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: tokens.primaryForeground,
   },
   "&[data-range-end='true']": {
-    backgroundColor: "var(--primary)",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: tokens.primaryForeground,
   },
   "&[data-range-middle='true']": {
-    backgroundColor: "var(--accent)",
+    backgroundColor: tokens.accent,
     borderRadius: "0",
-    color: "var(--accent-foreground)",
+    color: tokens.accentForeground,
   },
 });
 
 css({
   "[data-slot='calendar-day'][data-today='true']": {
-    backgroundColor: "var(--accent)",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: tokens.accentForeground,
   },
   "[data-slot='calendar-day'][data-today='true'][data-selected='true']": {
     borderRadius: "0",
   },
   "[data-slot='calendar-day'][data-outside='true']": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "[data-slot='calendar-day'][data-disabled='true']": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
     opacity: "0.5",
   },
   "[data-slot='calendar-day'][data-hidden='true']": {
     visibility: "hidden",
   },
   "[data-slot='calendar-day'][data-range-start='true']": {
-    backgroundColor: "var(--accent)",
-    borderBottomLeftRadius: "calc(var(--radius) * 0.8)",
-    borderTopLeftRadius: "calc(var(--radius) * 0.8)",
+    backgroundColor: tokens.accent,
+    borderBottomLeftRadius: `calc(${tokens.radius} * 0.8)`,
+    borderTopLeftRadius: `calc(${tokens.radius} * 0.8)`,
   },
   "[data-slot='calendar-day'][data-range-middle='true']": {
     borderRadius: "0",
   },
   "[data-slot='calendar-day'][data-range-end='true']": {
-    backgroundColor: "var(--accent)",
-    borderBottomRightRadius: "calc(var(--radius) * 0.8)",
-    borderTopRightRadius: "calc(var(--radius) * 0.8)",
+    backgroundColor: tokens.accent,
+    borderBottomRightRadius: `calc(${tokens.radius} * 0.8)`,
+    borderTopRightRadius: `calc(${tokens.radius} * 0.8)`,
   },
   "[data-slot='calendar-day']:first-child[data-selected='true'] button": {
-    borderBottomLeftRadius: "calc(var(--radius) * 0.8)",
-    borderTopLeftRadius: "calc(var(--radius) * 0.8)",
+    borderBottomLeftRadius: `calc(${tokens.radius} * 0.8)`,
+    borderTopLeftRadius: `calc(${tokens.radius} * 0.8)`,
   },
   "[data-slot='calendar-day']:last-child[data-selected='true'] button": {
-    borderBottomRightRadius: "calc(var(--radius) * 0.8)",
-    borderTopRightRadius: "calc(var(--radius) * 0.8)",
+    borderBottomRightRadius: `calc(${tokens.radius} * 0.8)`,
+    borderTopRightRadius: `calc(${tokens.radius} * 0.8)`,
   },
   "[data-slot='calendar-day'][data-focused='true'] [data-slot='calendar-day-button']": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
     position: "relative",
     zIndex: "10",
   },

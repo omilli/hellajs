@@ -5,6 +5,7 @@ description: Copy-paste code patterns organized by concept for common HellaJS ta
 ---
 
 import { Icon } from "astro-icon/components";
+import { tokens } from "../../../styles/tokens";
 
 # Patterns
 
@@ -17,7 +18,7 @@ Short, copy-pasteable code patterns for common tasks. Each pattern shows the ess
 <a href="/learn/patterns/reactivity" class="index-card index-card-shaded">
   <div class="index-card-body">
     <div class="index-card-head">
-      <Icon name="ph:lightning" width={20} height={20} style="color: var(--accent-foreground)" />
+      <Icon name="ph:lightning" width={20} height={20} style={`color: ${tokens.accentForeground}`} />
       <h4 class="index-card-title">Reactivity</h4>
     </div>
     <p>Derived state, batching, cleanup, conditional dependencies.</p>
@@ -77,7 +78,7 @@ Short, copy-pasteable code patterns for common tasks. Each pattern shows the ess
 <a href="/learn/patterns/testing" class="index-card index-card-shaded">
   <div class="index-card-body">
     <div class="index-card-head">
-      <Icon name="ph:flask" width={20} height={20} style="color: var(--accent-foreground)" />
+      <Icon name="ph:flask" width={20} height={20} style={`color: ${tokens.accentForeground}`} />
       <h4 class="index-card-title">Testing</h4>
     </div>
     <p>Test patterns for reactive code: microtask draining, synchronous lifecycle, console suppression.</p>
@@ -87,7 +88,7 @@ Short, copy-pasteable code patterns for common tasks. Each pattern shows the ess
 <a href="/learn/patterns/ssr" class="index-card index-card-shaded">
   <div class="index-card-body">
     <div class="index-card-head">
-      <Icon name="ph:monitor" width={20} height={20} style="color: var(--accent-foreground)" />
+      <Icon name="ph:monitor" width={20} height={20} style={`color: ${tokens.accentForeground}`} />
       <h4 class="index-card-title">SSR</h4>
     </div>
     <p>Server rendering, styled output, Express, client enhancement.</p>

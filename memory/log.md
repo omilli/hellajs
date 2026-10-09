@@ -1,6 +1,7 @@
 # Memory Update Log
 
 ## 2026-10-09
+* **Merge**: Renumbered 273->279 on merge of tokens-js: parallel workers allocated IDs the main tree had taken
 * **merge**: Renumbered 273->277 and 274->278 on merge of attrs-spread: parallel workers allocated IDs the main tree had taken
 
 ## 2026-10-08

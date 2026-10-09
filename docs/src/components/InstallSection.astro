@@ -1,4 +1,6 @@
 ---
+import { css } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import { Code } from "astro:components";
 
 interface Props {
@@ -40,6 +42,75 @@ for (const [variant, key] of Object.entries(sourceKeys)) {
 }
 
 const commandCode = `npx @hellajs/ui add ${entry}\n# bunx @hellajs/ui add ${entry}\n# pnpm dlx @hellajs/ui add ${entry}`;
+
+// The styles were a raw `<style is:global>` block until the tokens sweep:
+// raw CSS cannot reference the site sheet, so the block moved into this
+// css() map - the same extraction path the other chrome components use.
+css({
+  ".install-section": { marginBlock: "2rem" },
+  ".install-tabs": {
+    display: "flex",
+    gap: "0.25rem",
+    borderBottom: `1px solid ${tokens.border}`,
+    marginBottom: "1rem",
+  },
+  ".install-tab": {
+    padding: "0.5rem 0.875rem",
+    fontSize: "0.875rem",
+    fontWeight: 500,
+    color: tokens.mutedForeground,
+    borderBottom: "2px solid transparent",
+    marginBottom: "-1px",
+    "&.is-active": {
+      color: tokens.primary,
+      borderBottomColor: tokens.primary,
+    },
+  },
+  ".install-pickers": {
+    display: "flex",
+    gap: "1.5rem",
+    marginBottom: "0.75rem",
+  },
+  ".install-picker": {
+    display: "flex",
+    gap: "0.25rem",
+    border: `1px solid ${tokens.border}`,
+    borderRadius: tokens.radius,
+    padding: "0.2rem",
+  },
+  ".install-pick": {
+    padding: "0.25rem 0.625rem",
+    fontSize: "0.75rem",
+    borderRadius: `calc(${tokens.radius} * 0.6)`,
+    color: tokens.mutedForeground,
+    "&.is-active": {
+      backgroundColor: tokens.primary,
+      color: tokens.primaryForeground,
+    },
+  },
+  ".install-source-frame": { position: "relative" },
+  ".install-code": {
+    pre: {
+      padding: "1rem",
+      borderRadius: tokens.radius,
+      border: `1px solid ${tokens.border}`,
+      overflowX: "auto",
+      fontSize: "0.8125rem",
+      lineHeight: 1.5,
+    },
+  },
+  ".install-copy": {
+    position: "absolute",
+    top: "0.5rem",
+    right: "0.5rem",
+    padding: "0.25rem 0.625rem",
+    fontSize: "0.75rem",
+    border: `1px solid ${tokens.border}`,
+    borderRadius: `calc(${tokens.radius} * 0.6)`,
+    backgroundColor: tokens.base50,
+    color: tokens.primary,
+  },
+});
 ---
 
 <section class="install-section" data-install>
@@ -73,73 +144,6 @@ const commandCode = `npx @hellajs/ui add ${entry}\n# bunx @hellajs/ui add ${entr
   </div>
 </section>
 
-<style is:global>
-  .install-section {
-    margin-block: 2rem;
-  }
-  .install-tabs {
-    display: flex;
-    gap: 0.25rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1rem;
-  }
-  .install-tab {
-    padding: 0.5rem 0.875rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--muted-foreground);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-  }
-  .install-tab.is-active {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-  }
-  .install-pickers {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 0.75rem;
-  }
-  .install-picker {
-    display: flex;
-    gap: 0.25rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.2rem;
-  }
-  .install-pick {
-    padding: 0.25rem 0.625rem;
-    font-size: 0.75rem;
-    border-radius: calc(var(--radius) * 0.6);
-    color: var(--muted-foreground);
-  }
-  .install-pick.is-active {
-    background-color: var(--primary);
-    color: var(--primary-foreground);
-  }
-  .install-source-frame {
-    position: relative;
-  }
-  .install-code pre {
-    padding: 1rem;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    overflow-x: auto;
-    font-size: 0.8125rem;
-    line-height: 1.5;
-  }
-  .install-copy {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    padding: 0.25rem 0.625rem;
-    font-size: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) * 0.6);
-    background-color: var(--base-50);
-    color: var(--primary);
-  }
-</style>
 
 <script>
   // Tab and picker state is data-attribute swapping of pre-rendered blocks;

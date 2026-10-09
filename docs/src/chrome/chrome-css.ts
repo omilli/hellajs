@@ -34,6 +34,7 @@
  * unique; nothing is repeated).
  */
 import { css } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import "../styles/tokens";
 
 /** Left rail / drawer width — the old chrome's w-70. */
@@ -58,8 +59,8 @@ css({
   // header). data-active is the active-route hook, set server-side.
   ".site-menu-link": {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "var(--sidebar-foreground)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: tokens.sidebarForeground,
     display: "flex",
     fontSize: "0.875rem",
     gap: "0.5rem",
@@ -72,15 +73,15 @@ css({
     whiteSpace: "nowrap",
     width: "100%",
     "&:hover": {
-      backgroundColor: "var(--sidebar-accent)",
-      color: "var(--sidebar-accent-foreground)",
+      backgroundColor: tokens.sidebarAccent,
+      color: tokens.sidebarAccentForeground,
     },
     "&:focus-visible": {
-      boxShadow: "0 0 0 2px var(--sidebar-ring)",
+      boxShadow: `0 0 0 2px ${tokens.sidebarRing}`,
     },
     "&[data-active='true']": {
-      backgroundColor: "var(--sidebar-accent)",
-      color: "var(--sidebar-accent-foreground)",
+      backgroundColor: tokens.sidebarAccent,
+      color: tokens.sidebarAccentForeground,
       fontWeight: "500",
     },
   },
@@ -103,8 +104,8 @@ css({
   // selectors reach the surfaces because every one of them follows the
   // checkbox in body.
   ".site-nav": {
-    background: "var(--sidebar)",
-    color: "var(--sidebar-foreground)",
+    background: tokens.sidebar,
+    color: tokens.sidebarForeground,
     insetBlock: "0",
     left: "0",
     overflowY: "auto",
@@ -152,8 +153,8 @@ css({
   // [data-active] rule), so chrome owns it.
   ".site-nav-group-label": {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "color-mix(in oklab, var(--sidebar-foreground) 70%, transparent)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: `color-mix(in oklab, ${tokens.sidebarForeground} 70%, transparent)`,
     cursor: "pointer",
     display: "flex",
     flexShrink: "0",
@@ -165,12 +166,12 @@ css({
     paddingInline: "0.5rem",
     width: "100%",
     "&::-webkit-details-marker": { display: "none" },
-    "&[data-active='true']": { color: "var(--primary)" },
+    "&[data-active='true']": { color: tokens.primary },
   },
 
   // Nested group list — registry sidebar menuSub values (cited, see header).
   ".site-nav-sub": {
-    borderLeft: "1px solid var(--sidebar-border)",
+    borderLeft: `1px solid ${tokens.sidebarBorder}`,
     marginInline: "0.875rem",
     paddingBlock: "0.125rem",
     paddingInline: "0.625rem",
@@ -180,7 +181,7 @@ css({
   // Mobile-only main-nav links list above the section tree; the bottom
   // border is the divider the daisy menu's hr used to draw.
   ".mobile-only": {
-    borderBottom: "1px solid var(--sidebar-border)",
+    borderBottom: `1px solid ${tokens.sidebarBorder}`,
     marginBottom: "0.5rem",
     paddingBottom: "0.5rem",
     [LG]: { "&": { display: "none" } },
@@ -195,7 +196,7 @@ css({
   // layer); the body:has swap below outranks it by specificity.
   ".site-topbar": {
     alignItems: "center",
-    background: "var(--base-300)",
+    background: tokens.base300,
     display: "flex",
     gap: "1rem",
     height: NAVBAR_H,
@@ -210,12 +211,12 @@ css({
 
   ".site-logo": {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     display: "flex",
     flexShrink: "0",
     height: "2.5rem",
     "& img": { height: "2rem", width: "2rem" },
-    "&:focus-visible": { boxShadow: "0 0 0 2px var(--ring)" },
+    "&:focus-visible": { boxShadow: `0 0 0 2px ${tokens.ring}` },
   },
 
   ".site-topbar-links": {
@@ -226,19 +227,19 @@ css({
 
   ".site-topbar-link": {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "color-mix(in oklab, var(--foreground) 70%, transparent)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: `color-mix(in oklab, ${tokens.foreground} 70%, transparent)`,
     display: "flex",
     fontSize: "0.875rem",
     fontWeight: "500",
     height: "2rem",
     paddingInline: "0.75rem",
     "&:hover": {
-      backgroundColor: "var(--base-50)",
-      color: "var(--foreground)",
+      backgroundColor: tokens.base50,
+      color: tokens.foreground,
     },
-    "&:focus-visible": { boxShadow: "0 0 0 2px var(--ring)" },
-    "&[data-active='true']": { color: "var(--primary)", fontWeight: "700" },
+    "&:focus-visible": { boxShadow: `0 0 0 2px ${tokens.ring}` },
+    "&[data-active='true']": { color: tokens.primary, fontWeight: "700" },
   },
 
   ".site-topbar-actions": {
@@ -256,10 +257,10 @@ css({
   // registry constants (see file header).
   ".site-search-trigger": {
     alignItems: "center",
-    background: "var(--base-200)",
-    border: "1px solid var(--sidebar-border)",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "var(--muted-foreground)",
+    background: tokens.base200,
+    border: `1px solid ${tokens.sidebarBorder}`,
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: tokens.mutedForeground,
     cursor: "pointer",
     display: "flex",
     fontSize: "0.875rem",
@@ -268,8 +269,8 @@ css({
     paddingInline: "0.625rem",
     width: "16rem",
     "& svg": { flexShrink: "0", height: "1rem", width: "1rem" },
-    "&:hover": { borderColor: "var(--input)", color: "var(--foreground)" },
-    "&:focus-visible": { boxShadow: "0 0 0 2px var(--ring)" },
+    "&:hover": { borderColor: tokens.input, color: tokens.foreground },
+    "&:focus-visible": { boxShadow: `0 0 0 2px ${tokens.ring}` },
     [MOBILE]: {
       "&": { paddingInline: "0", width: "2.25rem", justifyContent: "center" },
       "& .site-search-label, & .site-search-kbd": { display: "none" },
@@ -278,11 +279,11 @@ css({
 
   ".site-search-kbd": {
     alignItems: "center",
-    border: "1px solid var(--border)",
-    borderRadius: "calc(var(--radius) * 0.5)",
-    color: "var(--muted-foreground)",
+    border: `1px solid ${tokens.border}`,
+    borderRadius: `calc(${tokens.radius} * 0.5)`,
+    color: tokens.mutedForeground,
     display: "flex",
-    fontFamily: "var(--font-sans)",
+    fontFamily: tokens.fontSans,
     fontSize: "0.75rem",
     fontWeight: "500",
     height: "1.25rem",
@@ -296,34 +297,34 @@ css({
 
   ".site-icon-link": {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "color-mix(in oklab, var(--foreground) 70%, transparent)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: `color-mix(in oklab, ${tokens.foreground} 70%, transparent)`,
     display: "flex",
     height: "2.25rem",
     justifyContent: "center",
     width: "2.25rem",
     "&:hover": {
-      backgroundColor: "var(--base-50)",
-      color: "var(--foreground)",
+      backgroundColor: tokens.base50,
+      color: tokens.foreground,
     },
-    "&:focus-visible": { boxShadow: "0 0 0 2px var(--ring)" },
+    "&:focus-visible": { boxShadow: `0 0 0 2px ${tokens.ring}` },
     "& svg": { height: "1.25rem", width: "1.25rem" },
   },
 
   ".site-drawer-toggle": {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) * 0.8)",
-    color: "color-mix(in oklab, var(--foreground) 70%, transparent)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
+    color: `color-mix(in oklab, ${tokens.foreground} 70%, transparent)`,
     cursor: "pointer",
     display: "flex",
     height: "2.25rem",
     justifyContent: "center",
     width: "2.25rem",
     "&:hover": {
-      backgroundColor: "var(--base-50)",
-      color: "var(--foreground)",
+      backgroundColor: tokens.base50,
+      color: tokens.foreground,
     },
-    "&:focus-visible": { boxShadow: "0 0 0 2px var(--ring)" },
+    "&:focus-visible": { boxShadow: `0 0 0 2px ${tokens.ring}` },
     "& svg": { height: "1.25rem", width: "1.25rem" },
     "& .sidebar-close": { display: "none" },
     [LG]: { "&": { display: "none" } },
@@ -360,9 +361,9 @@ css({
     [LG]: { "&": { display: "none" } },
     "& summary": {
       alignItems: "center",
-      background: "var(--sidebar)",
-      border: "1px solid var(--sidebar-border)",
-      borderRadius: "calc(var(--radius) * 0.8)",
+      background: tokens.sidebar,
+      border: `1px solid ${tokens.sidebarBorder}`,
+      borderRadius: `calc(${tokens.radius} * 0.8)`,
       cursor: "pointer",
       display: "flex",
       fontSize: "0.875rem",
@@ -380,9 +381,9 @@ css({
     },
     "&[open] .toc-chevron": { transform: "rotate(180deg)" },
     "& ul": {
-      background: "var(--sidebar)",
-      border: "1px solid var(--sidebar-border)",
-      borderRadius: "calc(var(--radius) * 0.8)",
+      background: tokens.sidebar,
+      border: `1px solid ${tokens.sidebarBorder}`,
+      borderRadius: `calc(${tokens.radius} * 0.8)`,
       marginBlockStart: "0.5rem",
       maxHeight: "calc(100dvh - 12rem)",
       overflowY: "auto",
@@ -403,7 +404,7 @@ css({
     width: "17.5rem",
     zIndex: "20",
     "& h2": {
-      color: "var(--foreground)",
+      color: tokens.foreground,
       fontSize: "0.875rem",
       fontWeight: "700",
       marginBottom: "0.5rem",

@@ -3,6 +3,7 @@ import { html, onEscape, onOutside, Portal, trapFocus } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
@@ -10,9 +11,9 @@ const zoomIn = keyframes({ from: { opacity: "0", transform: "scale(0.95)" } });
 const zoomOut = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 const base = style("command", {
-  backgroundColor: "var(--popover)",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "var(--popover-foreground)",
+  backgroundColor: tokens.popover,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: tokens.popoverForeground,
   display: "flex",
   flexDirection: "column",
   height: "100%",
@@ -22,7 +23,7 @@ const base = style("command", {
 
 const inputWrapper = style("command-input-wrapper", {
   alignItems: "center",
-  borderBottom: "1px solid var(--border)",
+  borderBottom: `1px solid ${tokens.border}`,
   display: "flex",
   gap: "0.5rem",
   height: "2.25rem",
@@ -38,7 +39,7 @@ const icon = style("command-icon", {
 
 const input = style("command-input", {
   backgroundColor: "transparent",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "flex",
   fontSize: "0.875rem",
   height: "2.5rem",
@@ -48,7 +49,7 @@ const input = style("command-input", {
   paddingBlock: "0.75rem",
   width: "100%",
   "&::placeholder": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&:disabled": {
     cursor: "not-allowed",
@@ -71,11 +72,11 @@ const empty = style("command-empty", {
 });
 
 const group = style("command-group", {
-  color: "var(--foreground)",
+  color: tokens.foreground,
   overflow: "hidden",
   padding: "0.25rem",
   "& [data-slot='command-group-heading']": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
     fontSize: "0.75rem",
     fontWeight: "500",
     lineHeight: "1rem",
@@ -85,7 +86,7 @@ const group = style("command-group", {
 });
 
 const groupHeading = style("command-group-heading", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.75rem",
   fontWeight: "500",
   lineHeight: "1rem",
@@ -94,14 +95,14 @@ const groupHeading = style("command-group-heading", {
 });
 
 const separator = style("command-separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   height: "1px",
   marginInline: "-0.25rem",
 });
 
 const item = style("command-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -118,8 +119,8 @@ const item = style("command-item", {
     pointerEvents: "none",
   },
   "&[data-selected='true']": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "& svg": {
     flexShrink: "0",
@@ -130,12 +131,12 @@ const item = style("command-item", {
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
 });
 
 const shortcut = style("command-shortcut", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
@@ -160,7 +161,7 @@ const palette = style("command-palette", {
     paddingTop: "0",
   },
   "& [data-slot='command-group-heading']": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
     fontWeight: "500",
     paddingInline: "0.5rem",
   },
@@ -188,9 +189,9 @@ const dialogOverlay = style("command-dialog-overlay", {
 });
 
 const dialogPanel = style("command-dialog-panel", {
-  background: "var(--background)",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius)",
+  background: tokens.background,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: tokens.radius,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   display: "grid",
   gap: "1rem",
@@ -236,13 +237,13 @@ const dialogTitle = style("command-dialog-title", {
 });
 
 const dialogDescription = style("command-dialog-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 });
 
 const dialogClose = style("command-dialog-close", {
-  borderRadius: "calc(var(--radius) * 0.2)",
+  borderRadius: `calc(${tokens.radius} * 0.2)`,
   opacity: "0.7",
   position: "absolute",
   right: "1rem",
@@ -252,15 +253,15 @@ const dialogClose = style("command-dialog-close", {
     opacity: "1",
   },
   "&:focus": {
-    boxShadow: "0 0 0 2px var(--background), 0 0 0 4px var(--ring)",
+    boxShadow: `0 0 0 2px ${tokens.background}, 0 0 0 4px ${tokens.ring}`,
     outlineStyle: "none",
   },
   "&:disabled": {
     pointerEvents: "none",
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--accent)",
-    color: "var(--muted-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.mutedForeground,
   },
   "& svg": {
     flexShrink: "0",

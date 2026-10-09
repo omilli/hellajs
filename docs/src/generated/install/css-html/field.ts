@@ -2,6 +2,7 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const set = style("field-set", {
   display: "flex",
@@ -47,7 +48,7 @@ const base = style("field", {
   gap: "0.75rem",
   width: "100%",
   "&[data-invalid='true']": {
-    color: "var(--destructive)",
+    color: tokens.destructive,
   },
 });
 
@@ -130,8 +131,8 @@ const label = style("field-label", {
     opacity: "0.5",
   },
   "&:has(> [data-slot='field'])": {
-    border: "1px solid var(--border)",
-    borderRadius: "calc(var(--radius) * 0.8)",
+    border: `1px solid ${tokens.border}`,
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     flexDirection: "column",
     width: "100%",
   },
@@ -139,11 +140,11 @@ const label = style("field-label", {
     padding: "1rem",
   },
   "&:has([data-state='checked'])": {
-    backgroundColor: "color-mix(in oklab, var(--primary) 5%, transparent)",
-    borderColor: "var(--primary)",
+    backgroundColor: `color-mix(in oklab, ${tokens.primary} 5%, transparent)`,
+    borderColor: tokens.primary,
   },
   "&:is(.dark *):has([data-state='checked'])": {
-    backgroundColor: "color-mix(in oklab, var(--primary) 10%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.primary} 10%, transparent)`,
   },
 });
 
@@ -158,7 +159,7 @@ const title = style("field-title", {
 });
 
 const description = style("field-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   fontWeight: "400",
   lineHeight: "1.25rem",
@@ -173,7 +174,7 @@ const description = style("field-description", {
     textUnderlineOffset: "4px",
   },
   "& > a:hover": {
-    color: "var(--primary)",
+    color: tokens.primary,
   },
 });
 
@@ -185,7 +186,7 @@ const separator = style("field-separator", {
 });
 
 const separatorBase = style("field-separator-base", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
     height: "1px",
@@ -206,8 +207,8 @@ const separatorRule = style("field-separator-rule", {
 });
 
 const separatorContent = style("field-separator-content", {
-  backgroundColor: "var(--background)",
-  color: "var(--muted-foreground)",
+  backgroundColor: tokens.background,
+  color: tokens.mutedForeground,
   display: "block",
   marginLeft: "auto",
   marginRight: "auto",
@@ -217,7 +218,7 @@ const separatorContent = style("field-separator-content", {
 });
 
 const error = style("field-error", {
-  color: "var(--destructive)",
+  color: tokens.destructive,
   fontSize: "0.875rem",
   fontWeight: "400",
 });

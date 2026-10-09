@@ -1,7 +1,8 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
     height: "1px",

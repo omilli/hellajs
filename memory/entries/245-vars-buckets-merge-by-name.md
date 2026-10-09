@@ -4,7 +4,7 @@ title: vars() buckets merge by name — token sheets sharing scope+layer overwri
 description: vars() buckets merge by name within scope+layer — fixed in site unit 08: site tokens register UNLAYERED (distinct bucket + cascade-rank win), not load order.
 tags: [css, docs-site]
 timestamp: 2026-10-03
-last_confirmed: 2026-10-03
+last_confirmed: 2026-10-08
 triggers: [vars-bucket, tokens-sheet, island-ssr, csstext-head, registry-override]
 ---
 # Why

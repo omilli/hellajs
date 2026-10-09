@@ -1,4 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const inTop = keyframes({ from: { opacity: "0", transform: "translateY(0.5rem) scale(0.95)" } });
 const inBottom = keyframes({ from: { opacity: "0", transform: "translateY(-0.5rem) scale(0.95)" } });
@@ -8,9 +9,9 @@ const out = keyframes({ to: { opacity: "0", transform: "scale(0.95)" } });
 
 export const base = style("menubar-base", {
   alignItems: "center",
-  background: "var(--background)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  background: tokens.background,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   display: "flex",
   gap: "0.25rem",
@@ -20,7 +21,7 @@ export const base = style("menubar-base", {
 
 export const trigger = style("menubar-trigger", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   display: "flex",
   fontSize: "0.875rem",
   fontWeight: "500",
@@ -30,21 +31,21 @@ export const trigger = style("menubar-trigger", {
   paddingInline: "0.5rem",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
 });
 
 export const content = style("menubar-content", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   minWidth: "12rem",
   outline: "2px solid transparent",
   outlineOffset: "2px",
@@ -71,7 +72,7 @@ export const content = style("menubar-content", {
 
 export const item = style("menubar-item", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -84,8 +85,8 @@ export const item = style("menubar-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -95,14 +96,14 @@ export const item = style("menubar-item", {
     paddingLeft: "2rem",
   },
   "&[data-variant='destructive']": {
-    color: "var(--destructive)",
+    color: tokens.destructive,
   },
   "&[data-variant='destructive']:focus": {
-    backgroundColor: "color-mix(in oklab, var(--destructive) 10%, transparent)",
-    color: "var(--destructive)",
+    backgroundColor: `color-mix(in oklab, ${tokens.destructive} 10%, transparent)`,
+    color: tokens.destructive,
   },
   "&:is(.dark *)[data-variant='destructive']:focus": {
-    backgroundColor: "color-mix(in oklab, var(--destructive) 20%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "& svg": {
     flexShrink: "0",
@@ -113,10 +114,10 @@ export const item = style("menubar-item", {
     width: "1rem",
   },
   "& svg:not([class*='text-'])": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&[data-variant='destructive'] svg": {
-    color: "var(--destructive) !important",
+    color: `${tokens.destructive} !important`,
   },
 });
 
@@ -136,8 +137,8 @@ export const checkItem = style("menubar-check-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -169,8 +170,8 @@ export const radioItem = style("menubar-radio-item", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-disabled]": {
     opacity: "0.5",
@@ -220,7 +221,7 @@ export const label = style("menubar-label", {
 });
 
 export const separator = style("menubar-separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   height: "1px",
   marginBottom: "0.25rem",
   marginLeft: "-0.25rem",
@@ -229,7 +230,7 @@ export const separator = style("menubar-separator", {
 });
 
 export const shortcut = style("menubar-shortcut", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.75rem",
   letterSpacing: "0.1em",
   lineHeight: "1rem",
@@ -238,7 +239,7 @@ export const shortcut = style("menubar-shortcut", {
 
 export const subTrigger = style("menubar-sub-trigger", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.6)",
+  borderRadius: `calc(${tokens.radius} * 0.6)`,
   cursor: "default",
   display: "flex",
   fontSize: "0.875rem",
@@ -249,15 +250,15 @@ export const subTrigger = style("menubar-sub-trigger", {
   position: "relative",
   userSelect: "none",
   "&:focus": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&[data-inset]": {
     paddingLeft: "2rem",
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
 });
 
@@ -268,11 +269,11 @@ export const chevron = style("menubar-chevron", {
 });
 
 export const subContent = style("menubar-sub-content", {
-  backgroundColor: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.popover,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-  color: "var(--popover-foreground)",
+  color: tokens.popoverForeground,
   minWidth: "8rem",
   outline: "2px solid transparent",
   outlineOffset: "2px",

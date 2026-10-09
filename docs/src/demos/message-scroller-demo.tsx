@@ -1,5 +1,6 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import { MessageScroller, MessageScrollerItem } from "@registry/message-scroller/css/message-scroller.js";
 import { Bubble } from "@registry/bubble/css/bubble.js";
 
@@ -18,9 +19,9 @@ const fill = style({
 }, { label: "demo-fill" });
 
 const sendButton = style({
-  background: "var(--primary)",
-  borderRadius: "calc(var(--radius) - 2px)",
-  color: "var(--primary-foreground)",
+  background: tokens.primary,
+  borderRadius: `calc(${tokens.radius} - 2px)`,
+  color: tokens.primaryForeground,
   cursor: "pointer",
   fontSize: "0.8125rem",
   fontWeight: 500,

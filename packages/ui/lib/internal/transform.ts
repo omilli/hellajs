@@ -118,13 +118,16 @@ function importSpecifier(line: string): string {
 /**
  * Normalizes a style module's text into spliceable body lines: package import
  * lines ride along verbatim (relative and absolute specifiers are rejected —
- * spliced output lives in a foreign directory), and `export ` prefixes are
- * stripped so the declarations become file-local. Leading and trailing blank
- * lines are dropped; interior blank lines are kept.
+ * spliced output lives in a foreign directory — with one exact allowance: the
+ * theme sheet import `../theme/tokens.js` rewrites to `./tokens.js`, the
+ * components-dir sibling the copied `tokens.ts` satisfies), and `export `
+ * prefixes are stripped so the declarations become file-local. Leading and
+ * trailing blank lines are dropped; interior blank lines are kept.
  * @param text Style module file text.
  * @returns Body lines for the canonical's `@hella:styles` region.
- * @throws {Error} When an import uses a relative or absolute specifier or the
- * module exports through `export default` / `export { … }`.
+ * @throws {Error} When an import uses a relative or absolute specifier other
+ * than `../theme/tokens.js`, or the module exports through `export default` /
+ * `export { … }`.
  */
 function parseStyleModule(text: string): string[] {
   const lines = text.split("\n");
@@ -135,6 +138,10 @@ function parseStyleModule(text: string): string[] {
     const line = lines[i++]!;
     if (IMPORT_REGEX.test(line)) {
       const spec = importSpecifier(line);
+      if (spec === "../theme/tokens.js") {
+        body.push(line.replace(`"${spec}"`, '"./tokens.js"'));
+        continue;
+      }
       if (spec.startsWith(".") || spec.startsWith("/")) {
         throw new Error(`[ui] applyStyleVariant: style module imports must use package specifiers, got "${spec}"`);
       }

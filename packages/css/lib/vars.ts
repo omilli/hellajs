@@ -3,7 +3,7 @@ import { hash, stringify } from "./internal/shared";
 import { createVarsEffect } from "./internal/reactive";
 import { hasDocument, isFunction, isPlainObject } from "./internal/core";
 import { hostQualifier } from "./internal/sheet";
-import { DOT_REGEX, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules, resolveVarsOptions } from "./internal/vars";
+import { kebabVarName, cache, CACHE_MAX, varsRegistryStatic, varsRegistryReactive, varsResultReactive, applyRules, resolveVarsOptions } from "./internal/vars";
 
 /**
  * Creates CSS custom properties (variables) from JavaScript objects with automatic reactivity support.
@@ -141,7 +141,7 @@ function buildResult<T extends CSSVarInputObject>(flat: Record<string, unknown>,
   while (i < len) {
     const key = flatKeys[i++] as string;
     const prefixedKey = fullPrefix + key;
-    const cssVarValue = `var(--${prefixedKey.replace(DOT_REGEX, "-")})`;
+    const cssVarValue = `var(--${kebabVarName(prefixedKey)})`;
 
     const keyParts = key.split(".");
     let current = result as Record<string, unknown>;

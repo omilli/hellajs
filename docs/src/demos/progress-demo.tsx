@@ -1,10 +1,11 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import Progress from "@registry/progress/css/progress.js";
 
 const advance = style({
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) - 2px)",
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} - 2px)`,
   cursor: "pointer",
   fontSize: "0.75rem",
   padding: "0.25rem 0.5rem",

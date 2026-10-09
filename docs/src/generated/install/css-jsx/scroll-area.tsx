@@ -3,6 +3,7 @@ import { onDrag } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("scroll-area", {
   position: "relative",
@@ -22,7 +23,7 @@ const viewport = style("scroll-area-viewport", {
     display: "none",
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
     outline: "1px solid",
   },
 });
@@ -58,7 +59,7 @@ const thumb = style("scroll-area-thumb", {
   position: "relative",
   flex: "1 1 0%",
   borderRadius: "9999px",
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
 });
 
 interface ScrollBarProps extends HTMLAttributes<"div"> {

@@ -2,6 +2,7 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("pagination", {
   display: "flex",
@@ -19,7 +20,7 @@ const content = style("pagination-content", {
 
 const linkBase = style("pagination-link", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   display: "inline-flex",
   flexShrink: "0",
@@ -40,48 +41,48 @@ const linkBase = style("pagination-link", {
     width: "1rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 const linkVariants = {
   ghost: style("pagination-link-ghost", {
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *):hover": {
-      backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
     },
   }),
   outline: style("pagination-link-outline", {
-    background: "var(--background)",
-    border: "1px solid var(--border)",
+    background: tokens.background,
+    border: `1px solid ${tokens.border}`,
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *)": {
-      borderColor: "var(--input)",
-      background: "color-mix(in oklab, var(--input) 30%, transparent)",
+      borderColor: tokens.input,
+      background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
     },
     "&:is(.dark *):hover": {
-      background: "color-mix(in oklab, var(--input) 50%, transparent)",
+      background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
     },
   }),
 };
@@ -96,7 +97,7 @@ const linkSizes = {
     },
   }),
   xs: style("pagination-link-size-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     fontSize: "0.75rem",
     gap: "0.25rem",
     height: "1.5rem",
@@ -111,7 +112,7 @@ const linkSizes = {
     },
   }),
   sm: style("pagination-link-size-sm", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     gap: "0.375rem",
     height: "2rem",
     paddingInline: "0.75rem",
@@ -120,7 +121,7 @@ const linkSizes = {
     },
   }),
   lg: style("pagination-link-size-lg", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "2.5rem",
     paddingInline: "1.5rem",
     "&:has(> svg)": {
@@ -132,7 +133,7 @@ const linkSizes = {
     width: "2.25rem",
   }),
   "icon-xs": style("pagination-link-size-icon-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "1.5rem",
     width: "1.5rem",
     "& svg:not([class*='size-'])": {

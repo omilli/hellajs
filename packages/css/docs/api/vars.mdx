@@ -71,6 +71,24 @@ const theme = vars({
 
 ## Key Concepts
 
+### Custom-Property Names
+
+Flat keys convert at emission: dots fold to hyphens, camel and letter-digit boundaries insert a hyphen, then the name lowercases. `primaryForeground` registers `--primary-foreground`, `base50` registers `--base-50`, and an authored kebab key such as `'primary-foreground'` passes through byte-identically. Proxy access keeps the authored key shape:
+
+```jsx
+import { vars, cssText } from '@hellajs/css';
+
+const tokens = vars({ primaryForeground: 'oklch(0.985 0 0)' });
+
+// tokens.primaryForeground = 'var(--primary-foreground)'
+// cssText() collects:
+// :root {
+//   --primary-foreground: oklch(0.985 0 0);
+// }
+```
+
+Registration, proxy references, prefixing, and removal all emit the same converted name: `vars({ primaryForeground: 'x' }, { prefix: 'hj' })` writes `--hj-primary-foreground`, and [`removeVars`](/reference/css/removevars) removes that declaration.
+
 ### Using Variables in CSS
 
 ```jsx
@@ -264,8 +282,8 @@ const appVars = vars({
   borderRadius: '0.25rem'
 }, { prefix: 'app' });
 
-// appVars.fontFamily = 'var(--app-fontFamily)'
-// appVars.borderRadius = 'var(--app-borderRadius)'
+// appVars.fontFamily = 'var(--app-font-family)'
+// appVars.borderRadius = 'var(--app-border-radius)'
 
 // Combine both: scoped + prefixed
 const themed = vars({

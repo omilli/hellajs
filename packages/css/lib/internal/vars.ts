@@ -46,6 +46,30 @@ export const CACHE_MAX = 100;
 export const DOT_REGEX = /\./g;
 
 /**
+ * Case/digit boundary pattern for `kebabVarName`: matches the left character
+ * of each boundary needing a hyphen — lowercase/digit before an uppercase,
+ * a letter before a digit, a digit before a letter. Lookaheads keep the scan
+ * single-pass across adjacent boundaries (`base50A` → both insert).
+ */
+const BOUNDARY_REGEX = /([a-z0-9])(?=[A-Z])|([a-zA-Z])(?=\d)|(\d)(?=[a-zA-Z])/g;
+
+/**
+ * @internal
+ * Derives the emitted custom-property name for a prefixed flat vars key:
+ * dots become hyphens (nested scope), hyphens insert at camel and
+ * letter↔digit case boundaries, then the name lowercases —
+ * `primaryForeground` → `primary-foreground`, `base50` → `base-50`,
+ * an authored kebab key passes through unchanged. Authored keys are never
+ * rewritten in registries/buckets/cache — conversion happens only at name
+ * emission, so caching, refcounting, and removal stay authored-key-based
+ * while re-deriving the same emitted name.
+ * @param key Prefixed flat vars key (authored form, dot-nested)
+ */
+export function kebabVarName(key: string): string {
+  return key.replace(DOT_REGEX, "-").replace(BOUNDARY_REGEX, "$&-").toLowerCase();
+}
+
+/**
  * Registry entry tracking a single vars() call's flat keys, scope,
  * resolved prefix (trailing hyphen included), resolved media condition,
  * resolved cascade layer, style host, reference count, and optional effect
@@ -137,7 +161,7 @@ export function varsRuleText(scope: string, media: string, layer: string, entrie
   const len = pairs.length;
   while (i < len) {
     const [k, v] = pairs[i++]!;
-    decls += `${pad(depth + 1)}--${k.replace(DOT_REGEX, "-")}: ${v};`;
+    decls += `${pad(depth + 1)}--${kebabVarName(k)}: ${v};`;
     if (i < len) decls += "\n";
   }
   const inner = wrapBlock(scope, decls, depth);

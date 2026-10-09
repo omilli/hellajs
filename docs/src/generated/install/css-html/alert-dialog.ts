@@ -3,6 +3,7 @@ import { html, onEscape, Portal, trapFocus } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChild, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
@@ -23,9 +24,9 @@ const base = style("alert-dialog-base", {
 });
 
 const content = style("alert-dialog-content", {
-  background: "var(--background)",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius)",
+  background: tokens.background,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: tokens.radius,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   display: "grid",
   gap: "1rem",
@@ -102,15 +103,15 @@ const title = style("alert-dialog-title", {
 });
 
 const description = style("alert-dialog-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 });
 
 const media = style("alert-dialog-media", {
   alignItems: "center",
-  backgroundColor: "var(--muted)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.muted,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "inline-flex",
   height: "4rem",
   justifyContent: "center",
@@ -129,7 +130,7 @@ const media = style("alert-dialog-media", {
 
 const buttonBase = style("alert-dialog-button", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   display: "inline-flex",
   flexShrink: "0",
@@ -150,82 +151,82 @@ const buttonBase = style("alert-dialog-button", {
     width: "1rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 const buttonVariants = {
   default: style("alert-dialog-button-default", {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.primary} 90%, transparent)`,
     },
   }),
   destructive: style("alert-dialog-button-destructive", {
-    backgroundColor: "var(--destructive)",
+    backgroundColor: tokens.destructive,
     color: "#fff",
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 90%, transparent)`,
     },
     "&:focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
     },
     "&:is(.dark *)": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 60%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 60%, transparent)`,
     },
     "&:is(.dark *):focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
     },
   }),
   outline: style("alert-dialog-button-outline", {
-    background: "var(--background)",
-    border: "1px solid var(--border)",
+    background: tokens.background,
+    border: `1px solid ${tokens.border}`,
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *)": {
-      borderColor: "var(--input)",
-      background: "color-mix(in oklab, var(--input) 30%, transparent)",
+      borderColor: tokens.input,
+      background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
     },
     "&:is(.dark *):hover": {
-      background: "color-mix(in oklab, var(--input) 50%, transparent)",
+      background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
     },
   }),
   secondary: style("alert-dialog-button-secondary", {
-    backgroundColor: "var(--secondary)",
-    color: "var(--secondary-foreground)",
+    backgroundColor: tokens.secondary,
+    color: tokens.secondaryForeground,
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.secondary} 80%, transparent)`,
     },
   }),
   ghost: style("alert-dialog-button-ghost", {
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *):hover": {
-      backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
     },
   }),
   link: style("alert-dialog-button-link", {
-    color: "var(--primary)",
+    color: tokens.primary,
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
@@ -243,7 +244,7 @@ const buttonSizes = {
     },
   }),
   xs: style("alert-dialog-button-size-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     fontSize: "0.75rem",
     gap: "0.25rem",
     height: "1.5rem",
@@ -258,7 +259,7 @@ const buttonSizes = {
     },
   }),
   sm: style("alert-dialog-button-size-sm", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     gap: "0.375rem",
     height: "2rem",
     paddingInline: "0.75rem",
@@ -267,7 +268,7 @@ const buttonSizes = {
     },
   }),
   lg: style("alert-dialog-button-size-lg", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "2.5rem",
     paddingInline: "1.5rem",
     "&:has(> svg)": {
@@ -279,7 +280,7 @@ const buttonSizes = {
     width: "2.25rem",
   }),
   "icon-xs": style("alert-dialog-button-size-icon-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "1.5rem",
     width: "1.5rem",
     "& svg:not([class*='size-'])": {

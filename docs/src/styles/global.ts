@@ -1,14 +1,15 @@
 import { css } from "@hellajs/css";
+import { tokens } from "./tokens";
 
 css({
   html: {
     colorScheme: "dark",
     scrollbarColor:
-      "color-mix(in oklab, var(--foreground) 20%, transparent) var(--base-100)",
+      `color-mix(in oklab, ${tokens.foreground} 20%, transparent) ${tokens.base100}`,
   },
   body: {
-    backgroundColor: "var(--base-100)",
-    color: "var(--foreground)",
-    fontFamily: "var(--font-sans)",
+    backgroundColor: tokens.base100,
+    color: tokens.foreground,
+    fontFamily: tokens.fontSans,
   },
 })

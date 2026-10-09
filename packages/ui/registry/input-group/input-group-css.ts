@@ -1,9 +1,10 @@
 import { css, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("input-group", {
   alignItems: "center",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   display: "flex",
   height: "2.25rem",
@@ -13,7 +14,7 @@ export const base = style("input-group", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
   "&:has(> textarea)": {
     height: "auto",
@@ -39,23 +40,23 @@ export const base = style("input-group", {
     paddingTop: "0.75rem",
   },
   "&:has([data-slot='input-group-control']:focus-visible)": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:has([data-slot][aria-invalid='true'])": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&:has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *):has([data-slot][aria-invalid='true']):has([data-slot='input-group-control']:focus-visible)": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 export const addon = style("input-group-addon", {
   alignItems: "center",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   cursor: "text",
   display: "flex",
   fontSize: "0.875rem",
@@ -66,7 +67,7 @@ export const addon = style("input-group-addon", {
   paddingBlock: "0.375rem",
   userSelect: "none",
   "& > kbd": {
-    borderRadius: "calc(var(--radius) - 5px)",
+    borderRadius: `calc(${tokens.radius} - 5px)`,
   },
   "& > svg:not([class*='size-'])": {
     height: "1rem",
@@ -113,7 +114,7 @@ export const addonAlign = {
 
 export const buttonBase = style("input-group-button", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxSizing: "border-box",
   display: "inline-flex",
   flexShrink: "0",
@@ -134,82 +135,82 @@ export const buttonBase = style("input-group-button", {
     width: "1rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 export const buttonVariants = {
   default: style("input-group-button-default", {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.primary} 90%, transparent)`,
     },
   }),
   destructive: style("input-group-button-destructive", {
-    backgroundColor: "var(--destructive)",
+    backgroundColor: tokens.destructive,
     color: "#fff",
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 90%, transparent)`,
     },
     "&:focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
     },
     "&:is(.dark *)": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 60%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 60%, transparent)`,
     },
     "&:is(.dark *):focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
     },
   }),
   outline: style("input-group-button-outline", {
-    background: "var(--background)",
-    border: "1px solid var(--border)",
+    background: tokens.background,
+    border: `1px solid ${tokens.border}`,
     boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *)": {
-      borderColor: "var(--input)",
-      background: "color-mix(in oklab, var(--input) 30%, transparent)",
+      borderColor: tokens.input,
+      background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
     },
     "&:is(.dark *):hover": {
-      background: "color-mix(in oklab, var(--input) 50%, transparent)",
+      background: `color-mix(in oklab, ${tokens.input} 50%, transparent)`,
     },
   }),
   secondary: style("input-group-button-secondary", {
-    backgroundColor: "var(--secondary)",
-    color: "var(--secondary-foreground)",
+    backgroundColor: tokens.secondary,
+    color: tokens.secondaryForeground,
     "&:hover": {
-      backgroundColor: "color-mix(in oklab, var(--secondary) 80%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.secondary} 80%, transparent)`,
     },
   }),
   ghost: style("input-group-button-ghost", {
     "&:hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
     "&:is(.dark *):hover": {
-      backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
     },
   }),
   link: style("input-group-button-link", {
-    color: "var(--primary)",
+    color: tokens.primary,
     textUnderlineOffset: "4px",
     "&:hover": {
       textDecorationLine: "underline",
@@ -219,7 +220,7 @@ export const buttonVariants = {
 
 export const buttonSizes = {
   xs: style("input-group-button-size-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     fontSize: "0.75rem",
     gap: "0.25rem",
     height: "1.5rem",
@@ -234,7 +235,7 @@ export const buttonSizes = {
     },
   }),
   sm: style("input-group-button-size-sm", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     gap: "0.375rem",
     height: "2rem",
     paddingInline: "0.75rem",
@@ -243,7 +244,7 @@ export const buttonSizes = {
     },
   }),
   "icon-xs": style("input-group-button-size-icon-xs", {
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     height: "1.5rem",
     width: "1.5rem",
     "& svg:not([class*='size-'])": {
@@ -260,7 +261,7 @@ export const buttonSizes = {
 export const sizes = {
   xs: style("input-group-size-xs", {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) - 5px)",
+    borderRadius: `calc(${tokens.radius} - 5px)`,
     display: "flex",
     gap: "0.25rem",
     height: "1.5rem",
@@ -276,7 +277,7 @@ export const sizes = {
   }),
   sm: style("input-group-size-sm", {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) * 0.8)",
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     display: "flex",
     gap: "0.375rem",
     height: "2rem",
@@ -288,7 +289,7 @@ export const sizes = {
   }),
   "icon-xs": style("input-group-size-icon-xs", {
     alignItems: "center",
-    borderRadius: "calc(var(--radius) - 5px)",
+    borderRadius: `calc(${tokens.radius} - 5px)`,
     display: "flex",
     height: "1.5rem",
     padding: "0",
@@ -313,7 +314,7 @@ export const sizes = {
 
 export const text = style("input-group-text", {
   alignItems: "center",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "flex",
   fontSize: "0.875rem",
   gap: "0.5rem",
@@ -328,8 +329,8 @@ export const text = style("input-group-text", {
 
 export const inputBase = style("input-group-input", {
   background: "transparent",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   fontSize: "1rem",
   height: "2.25rem",
@@ -343,18 +344,18 @@ export const inputBase = style("input-group-input", {
   "&::file-selector-button": {
     background: "transparent",
     border: "none",
-    color: "var(--foreground)",
+    color: tokens.foreground,
     display: "inline-flex",
     fontSize: "0.875rem",
     fontWeight: "500",
     height: "1.75rem",
   },
   "&::placeholder": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&::selection": {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
   },
   "&:disabled": {
     cursor: "not-allowed",
@@ -368,26 +369,26 @@ export const inputBase = style("input-group-input", {
     },
   },
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
 });
 
 export const inputFocus = style("input-group-input-focus", {
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
 });
 
 export const inputInvalid = style("input-group-input-invalid", {
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
@@ -406,8 +407,8 @@ export const inputControl = style("input-group-input-control", {
 });
 
 export const textareaBase = style("input-group-textarea", {
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   display: "flex",
   fieldSizing: "content",
@@ -418,7 +419,7 @@ export const textareaBase = style("input-group-textarea", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "100%",
   "&::placeholder": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&:disabled": {
     cursor: "not-allowed",
@@ -431,26 +432,26 @@ export const textareaBase = style("input-group-textarea", {
     },
   },
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
 });
 
 export const textareaFocus = style("input-group-textarea-focus", {
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
 });
 
 export const textareaInvalid = style("input-group-textarea-invalid", {
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 

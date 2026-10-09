@@ -1,4 +1,5 @@
 import { signal } from "@hellajs/core";
+import { tokens } from "../styles/tokens";
 import ContextMenu, {
   ContextMenuCheckboxItem,
   ContextMenuItem,
@@ -8,7 +9,7 @@ import ContextMenu, {
 
 function zone(label: string) {
   return (
-    <div style="padding: 2rem 3rem; border: 1px dashed var(--border); border-radius: 0.5rem; cursor: context-menu;">{label}</div>
+    <div style={`padding: 2rem 3rem; border: 1px dashed ${tokens.border}; border-radius: 0.5rem; cursor: context-menu;`}>{label}</div>
   );
 }
 

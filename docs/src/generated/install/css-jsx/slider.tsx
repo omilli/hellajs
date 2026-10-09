@@ -3,6 +3,7 @@ import { onDrag } from "@hellajs/dom";
 import type { HTMLAttributes } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("slider", {
   alignItems: "center",
@@ -24,7 +25,7 @@ const base = style("slider", {
 
 const track = style("slider-track", {
   borderRadius: "9999px",
-  backgroundColor: "var(--muted)",
+  backgroundColor: tokens.muted,
   flexGrow: "1",
   overflow: "hidden",
   position: "relative",
@@ -39,7 +40,7 @@ const track = style("slider-track", {
 });
 
 const range = style("slider-range", {
-  backgroundColor: "var(--primary)",
+  backgroundColor: tokens.primary,
   position: "absolute",
   "&[data-orientation='horizontal']": {
     height: "100%",
@@ -51,7 +52,7 @@ const range = style("slider-range", {
 
 const thumb = style("slider-thumb", {
   backgroundColor: "#fff",
-  border: "1px solid var(--primary)",
+  border: `1px solid ${tokens.primary}`,
   borderRadius: "9999px",
   boxSizing: "border-box",
   boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
@@ -62,10 +63,10 @@ const thumb = style("slider-thumb", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   width: "1rem",
   "&:hover": {
-    boxShadow: "0 0 0 4px color-mix(in oklab, var(--ring) 50%, transparent)",
+    boxShadow: `0 0 0 4px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 4px color-mix(in oklab, var(--ring) 50%, transparent)",
+    boxShadow: `0 0 0 4px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",

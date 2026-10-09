@@ -1,4 +1,5 @@
 import { css, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const set = style("field-set", {
   display: "flex",
@@ -44,7 +45,7 @@ export const base = style("field", {
   gap: "0.75rem",
   width: "100%",
   "&[data-invalid='true']": {
-    color: "var(--destructive)",
+    color: tokens.destructive,
   },
 });
 
@@ -127,8 +128,8 @@ export const label = style("field-label", {
     opacity: "0.5",
   },
   "&:has(> [data-slot='field'])": {
-    border: "1px solid var(--border)",
-    borderRadius: "calc(var(--radius) * 0.8)",
+    border: `1px solid ${tokens.border}`,
+    borderRadius: `calc(${tokens.radius} * 0.8)`,
     flexDirection: "column",
     width: "100%",
   },
@@ -136,11 +137,11 @@ export const label = style("field-label", {
     padding: "1rem",
   },
   "&:has([data-state='checked'])": {
-    backgroundColor: "color-mix(in oklab, var(--primary) 5%, transparent)",
-    borderColor: "var(--primary)",
+    backgroundColor: `color-mix(in oklab, ${tokens.primary} 5%, transparent)`,
+    borderColor: tokens.primary,
   },
   "&:is(.dark *):has([data-state='checked'])": {
-    backgroundColor: "color-mix(in oklab, var(--primary) 10%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.primary} 10%, transparent)`,
   },
 });
 
@@ -155,7 +156,7 @@ export const title = style("field-title", {
 });
 
 export const description = style("field-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   fontWeight: "400",
   lineHeight: "1.25rem",
@@ -170,7 +171,7 @@ export const description = style("field-description", {
     textUnderlineOffset: "4px",
   },
   "& > a:hover": {
-    color: "var(--primary)",
+    color: tokens.primary,
   },
 });
 
@@ -182,7 +183,7 @@ export const separator = style("field-separator", {
 });
 
 export const separatorBase = style("field-separator-base", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
     height: "1px",
@@ -203,8 +204,8 @@ export const separatorRule = style("field-separator-rule", {
 });
 
 export const separatorContent = style("field-separator-content", {
-  backgroundColor: "var(--background)",
-  color: "var(--muted-foreground)",
+  backgroundColor: tokens.background,
+  color: tokens.mutedForeground,
   display: "block",
   marginLeft: "auto",
   marginRight: "auto",
@@ -214,7 +215,7 @@ export const separatorContent = style("field-separator-content", {
 });
 
 export const error = style("field-error", {
-  color: "var(--destructive)",
+  color: tokens.destructive,
   fontSize: "0.875rem",
   fontWeight: "400",
 });

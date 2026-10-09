@@ -1,4 +1,5 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import Label from "@registry/label/css/label.js";
 
 const stack = style({
@@ -10,8 +11,8 @@ const stack = style({
 
 const bareInput = style({
   background: "transparent",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) - 2px)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} - 2px)`,
   display: "flex",
   fontSize: "0.875rem",
   height: "2.25rem",

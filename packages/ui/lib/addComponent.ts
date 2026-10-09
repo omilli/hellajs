@@ -12,7 +12,7 @@ import type { AddOptions, UiFormat, UiThemeMode } from "./types";
 /**
  * Checks a file against the requested source format: `.tsx` copies for JSX,
  * `*-html.ts` copies for runtime `html` templates, anything else (shared
- * helpers, `.js` sheets) always.
+ * helpers, theme sheets) always.
  */
 function matchesFormat(file: string, format: UiFormat): boolean {
   if (file.endsWith(".tsx")) return format === "jsx";
@@ -27,8 +27,9 @@ function matchesFormat(file: string, format: UiFormat): boolean {
  * (`<name>-<style>.ts`) spliced into every copied canonical file — both
  * styles splice; entries without canonicals (theme, cn) copy verbatim. A
  * `js` lang strips TypeScript after the splice through esbuild: `.tsx`
- * becomes `.jsx` with JSX preserved, `.ts` becomes plain `.js`, and
- * `tokens.js` / `theme.css` ride through verbatim. A `dark` themeMode swaps
+ * becomes `.jsx` with JSX preserved, `.ts` becomes plain `.js` (the theme
+ * `tokens.ts` included), and `theme.css` rides through verbatim. A `dark`
+ * themeMode swaps
  * every file the resolved entry maps in `darkFiles` for its dark source at
  * copy time (target filename unchanged), so the theme entry emits the
  * dark-only tokens sheet; it supports the css style only. Registry
@@ -79,7 +80,7 @@ export function addComponent(names: string[], options: AddOptions = {}): void {
     // *-html.ts renames to <name>.ts (js for --lang js) so user imports resolve
     // ./components/<name> in both formats; --lang js retargets the other TS files too.
     // A dark themeMode reads the mapped dark source instead of the target file
-    // (tokens.dark.js in) and renames it back (tokens.js out) - the file set is
+    // (tokens.dark.ts in) and renames it back (tokens.ts out) - the file set is
     // identical to the light copy.
     const rename: Record<string, string> = {};
     const copied: string[] = [];

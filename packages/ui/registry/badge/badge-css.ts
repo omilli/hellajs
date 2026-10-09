@@ -1,4 +1,5 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("badge", {
   alignItems: "center",
@@ -26,65 +27,65 @@ export const base = style("badge", {
     width: "0.75rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    borderColor: tokens.destructive,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 export const variants = {
   default: style("badge-default", {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
     "&:is(a):hover": {
-      backgroundColor: "color-mix(in oklab, var(--primary) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.primary} 90%, transparent)`,
     },
   }),
   secondary: style("badge-secondary", {
-    backgroundColor: "var(--secondary)",
-    color: "var(--secondary-foreground)",
+    backgroundColor: tokens.secondary,
+    color: tokens.secondaryForeground,
     "&:is(a):hover": {
-      backgroundColor: "color-mix(in oklab, var(--secondary) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.secondary} 90%, transparent)`,
     },
   }),
   destructive: style("badge-destructive", {
-    backgroundColor: "var(--destructive)",
+    backgroundColor: tokens.destructive,
     color: "#fff",
     "&:focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
     },
     "&:is(.dark *)": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 60%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 60%, transparent)`,
     },
     "&:is(.dark *):focus-visible": {
-      boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+      boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
     },
     "&:is(a):hover": {
-      backgroundColor: "color-mix(in oklab, var(--destructive) 90%, transparent)",
+      backgroundColor: `color-mix(in oklab, ${tokens.destructive} 90%, transparent)`,
     },
   }),
   outline: style("badge-outline", {
-    borderColor: "var(--border)",
-    color: "var(--foreground)",
+    borderColor: tokens.border,
+    color: tokens.foreground,
     "&:is(a):hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
   }),
   ghost: style("badge-ghost", {
     "&:is(a):hover": {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
+      backgroundColor: tokens.accent,
+      color: tokens.accentForeground,
     },
   }),
   link: style("badge-link", {
-    color: "var(--primary)",
+    color: tokens.primary,
     textUnderlineOffset: "4px",
     "&:is(a):hover": {
       textDecorationLine: "underline",

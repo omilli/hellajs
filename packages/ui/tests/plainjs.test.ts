@@ -14,7 +14,6 @@ import { runCli } from "./helpers/cli";
 
 const fixtureApp = join(import.meta.dir, "fixtures", "empty-app");
 const scratch = join(import.meta.dir, ".tmp", "plainjs");
-const tokensSource = readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.js"), "utf8");
 
 /** Fresh fixture copy under the scratch root; per-test names keep dynamic imports from colliding. */
 function fixture(name: string): string {
@@ -101,11 +100,18 @@ describe("plain-js delivery", () => {
     expect(card).not.toContain(": CardPartProps");
   });
 
-  test("css e2e add with js lang copies tokens.js through verbatim", async () => {
+  test("css e2e add with js lang strips tokens.ts to plain js and retargets the import", async () => {
     const root = fixture("e2e-tokens");
     const [exit] = await runCli(["add", "button", "--style", "css", "--format", "html", "--lang", "js"], root);
     expect(exit).toBe(0);
-    expect(readFileSync(join(componentsDir(root), "tokens.js"), "utf8")).toBe(tokensSource);
+    expect(existsSync(join(componentsDir(root), "tokens.ts"))).toBe(false);
+    const tokens = readFileSync(join(componentsDir(root), "tokens.js"), "utf8");
+    // esbuild output formatting may churn — structural invariants, not byte-golden text.
+    expect(tokens).toContain("const tokens = vars({");
+    expect(tokens).toContain("cardForeground");
+    expect(tokens).toMatch(/export\s*\{[^}]*tokens[^}]*\}/);
+    const button = readFileSync(join(componentsDir(root), "button.js"), "utf8");
+    expect(button).toContain('import { tokens } from "./tokens.js";');
   });
 
   test("stripped html button renders identically to the TS variant", async () => {

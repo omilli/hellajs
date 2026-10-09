@@ -3,6 +3,7 @@ import { effect, signal } from "@hellajs/core";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("resizable-panel-group", {
   display: "flex",
@@ -15,7 +16,7 @@ const base = style("resizable-panel-group", {
 
 const handle = style("resizable-handle", {
   alignItems: "center",
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   display: "flex",
   justifyContent: "center",
   position: "relative",
@@ -30,7 +31,7 @@ const handle = style("resizable-handle", {
     width: "0.25rem",
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 1px var(--background), 0 0 0 2px var(--ring)",
+    boxShadow: `0 0 0 1px ${tokens.background}, 0 0 0 2px ${tokens.ring}`,
   },
   "&[aria-orientation='horizontal']": {
     height: "1px",
@@ -49,9 +50,9 @@ const handle = style("resizable-handle", {
 
 const grip = style("resizable-grip", {
   alignItems: "center",
-  border: "1px solid var(--border)",
+  border: `1px solid ${tokens.border}`,
   borderRadius: "0.125rem",
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   display: "flex",
   height: "1rem",
   justifyContent: "center",

@@ -1,4 +1,5 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +26,7 @@ import {
 
 
 const muted = style({
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
 }, { label: "demo-muted" });
 

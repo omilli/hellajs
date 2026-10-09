@@ -1,5 +1,6 @@
 ---
 import { css } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import { Code } from "astro:components";
 import { exampleCode } from "../utils/example-code";
 
@@ -11,19 +12,19 @@ interface Props {
 css({
   ".view-code": {
     marginTop: "0.5rem",
-    border: "1px solid var(--border)",
-    borderRadius: "var(--radius)",
+    border: `1px solid ${tokens.border}`,
+    borderRadius: tokens.radius,
     overflow: "hidden",
     "summary": {
       padding: "0.5rem 0.875rem",
       fontSize: "0.8125rem",
       fontWeight: 500,
-      color: "var(--muted-foreground)",
+      color: tokens.mutedForeground,
       cursor: "pointer",
       userSelect: "none",
     },
     "&[open] summary": {
-      borderBottom: "1px solid var(--border)"
+      borderBottom: `1px solid ${tokens.border}`
     },
     "pre.astro-code": {
       padding: "1rem",

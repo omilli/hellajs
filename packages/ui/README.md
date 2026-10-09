@@ -33,16 +33,16 @@ npx @hellajs/ui init
 }
 ```
 
-`themeMode` selects the theme palette: dark-only projects set `"themeMode": "dark"` (or pass `--theme-mode dark`) to copy a dark-only `tokens.js` with no `.dark` class remap.
+`themeMode` selects the theme palette: dark-only projects set `"themeMode": "dark"` (or pass `--theme-mode dark`) to copy a dark-only `tokens.ts` with no `.dark` class remap.
 
 ### Two styles, one override contract
 
 Every component copies in one of two styles:
 
-- **`css`** (default) composes classes through `@hellajs/css` scoped classes and themes through `tokens.js`, a `vars()` stylesheet that is server-safe by construction. Everything the registry emits is plain unlayered CSS: your own rules and utilities override it through the normal cascade - later registration at equal specificity, higher specificity otherwise.
+- **`css`** (default) composes classes through `@hellajs/css` scoped classes and themes through `tokens.ts`, a `vars()` stylesheet that is server-safe by construction and exports its `tokens` map for the copied components to import. Everything the registry emits is plain unlayered CSS: your own rules and utilities override it through the normal cascade - later registration at equal specificity, higher specificity otherwise.
 - **`tailwind`** composes classes through a shared `cn` helper (`clsx` + `tailwind-merge`, copied as `cn.ts`) and themes through `theme.css`, a plain CSS palette with zero JS and zero `@hellajs/css`. Only the element reset sits in tailwind's `base` layer; utilities (and your own CSS) always outrank it.
 
-Components reference the palette with `var(--*)` literals (css) or shadcn's literal themed utilities like `bg-primary` (tailwind), so both styles read the same custom property names. Add the theme once per project (`init` does it) and import it in your app entry; the tailwind theme also requires `tw-animate-css` (the Dialog's animation utilities use it).
+Css components import the theme's `tokens` map (each key evaluates to the same `var(--*)` reference) and tailwind components read shadcn's literal themed utilities like `bg-primary`, so both styles read the same custom property names. Add the theme once per project (`init` does it) and import it in your app entry; the tailwind theme also requires `tw-animate-css` (the Dialog's animation utilities use it).
 
 ### Basic Usage
 

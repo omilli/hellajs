@@ -3,8 +3,8 @@
     "theme": {
       "styles": {
         "css": {
-          "files": ["tokens.js"],
-          "darkFiles": { "tokens.js": "tokens.dark.js" },
+          "files": ["tokens.ts"],
+          "darkFiles": { "tokens.ts": "tokens.dark.ts" },
           "deps": ["@hellajs/css"],
           "registryDependencies": []
         },

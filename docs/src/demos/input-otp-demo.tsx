@@ -1,9 +1,10 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import InputOTP, { InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@registry/input-otp/css/input-otp.js";
 
 const muted = style({
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   margin: 0,
   maxWidth: "26rem",

@@ -36,45 +36,48 @@
  * site tokens. Registered here rather than in the chrome css module so the
  * palette and its sidebar overrides register as one sheet, scoped with the
  * palette to `html:root`.
- * Consume through `cssText()` for the static head styles (unit 08); no
- * export — mirror of the registry theme sheet's side-effect registration
- * contract.
+ * Consume through `cssText()` for the static head styles (unit 08); the
+ * exported `tokens` object maps each camelCase key to its `var(--*)`
+ * reference (`base50` to `var(--base-50)`, digit-aware) for typed access
+ * across the site's css/style maps - values inside the sheet keep
+ * `var(--*)` literals because the const cannot reference itself during
+ * initialization.
  */
 import { vars } from "@hellajs/css";
 
-vars({
-  "base-50": "hsl(222.2 47.4% 14%)",
-  "base-100": "hsl(222.2 47.4% 8%)",
-  "base-200": "hsl(222.2 47.4% 7%)",
-  "base-300": "hsl(222.2 47.4% 6%)",
-  "base-contrast": "oklch(97.807% 0.029 256.847)",
+export const tokens = vars({
+  base50: "hsl(222.2 47.4% 14%)",
+  base100: "hsl(222.2 47.4% 8%)",
+  base200: "hsl(222.2 47.4% 7%)",
+  base300: "hsl(222.2 47.4% 6%)",
+  baseContrast: "oklch(97.807% 0.029 256.847)",
   primary: "#38EBFF",
-  "primary-foreground": "var(--base-300)",
+  primaryForeground: "var(--base-300)",
   secondary: "var(--base-200)",
-  "secondary-foreground": "var(--base-contrast)",
-  "font-sans": "'Mulish Variable', sans-serif",
-  "font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  secondaryForeground: "var(--base-contrast)",
+  fontSans: "'Mulish Variable', sans-serif",
+  fontMono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   background: "var(--base-100)",
   foreground: "var(--base-contrast)",
   card: "var(--base-300)",
-  "card-foreground": "var(--base-contrast)",
+  cardForeground: "var(--base-contrast)",
   popover: "var(--base-300)",
-  "popover-foreground": "var(--base-contrast)",
+  popoverForeground: "var(--base-contrast)",
   muted: "var(--base-300)",
-  "muted-foreground": "oklch(0.708 0 0)",
+  mutedForeground: "oklch(0.708 0 0)",
   accent: "var(--base-300)",
-  "accent-foreground": "var(--primary)",
+  accentForeground: "var(--primary)",
   destructive: "oklch(0.704 0.191 22.216)",
   border: "oklch(37.2% 0.044 257.287)",
   input: "oklch(44.6% 0.043 257.281)",
   ring: "var(--primary)",
   radius: "0.625rem",
   sidebar: "var(--base-300)",
-  "sidebar-foreground": "var(--foreground)",
-  "sidebar-accent": "var(--base-50)",
-  "sidebar-accent-foreground": "var(--foreground)",
-  "sidebar-primary": "var(--primary)",
-  "sidebar-primary-foreground": "var(--primary-foreground)",
-  "sidebar-border": "var(--border)",
-  "sidebar-ring": "var(--ring)",
+  sidebarForeground: "var(--foreground)",
+  sidebarAccent: "var(--base-50)",
+  sidebarAccentForeground: "var(--foreground)",
+  sidebarPrimary: "var(--primary)",
+  sidebarPrimaryForeground: "var(--primary-foreground)",
+  sidebarBorder: "var(--border)",
+  sidebarRing: "var(--ring)",
 }, { scoped: "html:root" });

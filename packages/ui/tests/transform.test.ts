@@ -203,6 +203,32 @@ describe("applyStyleVariant", () => {
       .toThrow('[ui] applyStyleVariant: style module imports must use package specifiers, got "../cn/cn"');
   });
 
+  test("a style module importing the theme sheet rewrites to the components-dir sibling", () => {
+    const themeModule = [
+      'import { style } from "@hellajs/css";',
+      'import { tokens } from "../theme/tokens.js";',
+      "",
+      'export const base = style("x", { color: tokens.foreground });',
+      "",
+    ].join("\n");
+    const out = applyStyleVariant(canonical, themeModule, "css");
+    expect(out).toContain('import { tokens } from "./tokens.js";');
+    expect(out).not.toContain("../theme/tokens.js");
+    expect(out).toContain("const base = style(\"x\", { color: tokens.foreground });");
+  });
+
+  test("a style module importing a non-theme relative sibling still throws", () => {
+    const sibling = [
+      'import { style } from "@hellajs/css";',
+      'import { tokens } from "./sibling.ts";',
+      "",
+      'export const base = style("x", { color: tokens.foreground });',
+      "",
+    ].join("\n");
+    expect(() => applyStyleVariant(canonical, sibling, "css"))
+      .toThrow('[ui] applyStyleVariant: style module imports must use package specifiers, got "./sibling.ts"');
+  });
+
   test("a style module import without a double-quoted specifier throws", () => {
     const singleQuoted = "import { base } from 'some-pkg';\n";
     expect(() => applyStyleVariant(canonical, singleQuoted, "css"))

@@ -2,6 +2,7 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const container = style("table-container", {
   overflowX: "auto",
@@ -18,7 +19,7 @@ const base = style("table", {
 
 const header = style("table-header", {
   "& tr": {
-    borderBottom: "1px solid var(--border)",
+    borderBottom: `1px solid ${tokens.border}`,
   },
 });
 
@@ -29,8 +30,8 @@ const body = style("table-body", {
 });
 
 const footer = style("table-footer", {
-  backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
-  borderTop: "1px solid var(--border)",
+  backgroundColor: `color-mix(in oklab, ${tokens.muted} 50%, transparent)`,
+  borderTop: `1px solid ${tokens.border}`,
   fontWeight: "500",
   "& > tr:last-child": {
     borderBottom: "0",
@@ -38,23 +39,23 @@ const footer = style("table-footer", {
 });
 
 const row = style("table-row", {
-  borderBottom: "1px solid var(--border)",
+  borderBottom: `1px solid ${tokens.border}`,
   transitionProperty: "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke",
   transitionDuration: "150ms",
   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
   "&:hover": {
-    backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.muted} 50%, transparent)`,
   },
   "&:has([aria-expanded='true'])": {
-    backgroundColor: "color-mix(in oklab, var(--muted) 50%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.muted} 50%, transparent)`,
   },
   "&[data-state='selected']": {
-    backgroundColor: "var(--muted)",
+    backgroundColor: tokens.muted,
   },
 });
 
 const head = style("table-head", {
-  color: "var(--foreground)",
+  color: tokens.foreground,
   fontWeight: "500",
   height: "2.5rem",
   paddingInline: "0.5rem",
@@ -82,7 +83,7 @@ const cell = style("table-cell", {
 });
 
 const caption = style("table-caption", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
   marginTop: "1rem",

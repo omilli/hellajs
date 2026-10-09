@@ -21,7 +21,7 @@ describe("cli e2e", () => {
     expect(exit).toBe(0);
     const config = JSON.parse(readFileSync(join(root, "hella.ui.json"), "utf8"));
     expect(config).toEqual({ componentsDir: "src/components", style: "css", format: "jsx", themeMode: "light", lang: "ts" });
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(true);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(true);
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(false);
     expect(existsSync(join(componentsDir, "button.tsx"))).toBe(false);
   });
@@ -31,8 +31,8 @@ describe("cli e2e", () => {
     expect(exit).toBe(0);
     const config = JSON.parse(readFileSync(join(root, "hella.ui.json"), "utf8"));
     expect(config.themeMode).toBe("dark");
-    expect(readFileSync(join(componentsDir, "tokens.js"), "utf8")).toBe(
-      readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.dark.js"), "utf8"),
+    expect(readFileSync(join(componentsDir, "tokens.ts"), "utf8")).toBe(
+      readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.dark.ts"), "utf8"),
     );
   });
 
@@ -40,26 +40,26 @@ describe("cli e2e", () => {
     writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ themeMode: "dark" }));
     const [darkThemeExit] = await runCli(["add", "theme"], root);
     expect(darkThemeExit).toBe(0);
-    const darkTokens = readFileSync(join(componentsDir, "tokens.js"), "utf8");
-    expect(darkTokens).toBe(readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.dark.js"), "utf8"));
-    rmSync(join(componentsDir, "tokens.js"));
+    const darkTokens = readFileSync(join(componentsDir, "tokens.ts"), "utf8");
+    expect(darkTokens).toBe(readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.dark.ts"), "utf8"));
+    rmSync(join(componentsDir, "tokens.ts"));
     const [buttonExit] = await runCli(["add", "button"], root);
     expect(buttonExit).toBe(0);
-    expect(readFileSync(join(componentsDir, "tokens.js"), "utf8")).toBe(darkTokens);
+    expect(readFileSync(join(componentsDir, "tokens.ts"), "utf8")).toBe(darkTokens);
     rmSync(root, { recursive: true, force: true });
     cpSync(join(import.meta.dir, "fixtures", "empty-app"), root, { recursive: true });
     const [lightExit] = await runCli(["add", "theme"], root);
     expect(lightExit).toBe(0);
-    expect(readFileSync(join(componentsDir, "tokens.js"), "utf8")).toBe(
-      readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.js"), "utf8"),
+    expect(readFileSync(join(componentsDir, "tokens.ts"), "utf8")).toBe(
+      readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.ts"), "utf8"),
     );
     writeFileSync(join(root, "hella.ui.json"), JSON.stringify({ themeMode: "light" }));
     const [overrideExit] = await runCli(["add", "theme", "--theme-mode", "dark", "--overwrite"], root);
     expect(overrideExit).toBe(0);
     const config = JSON.parse(readFileSync(join(root, "hella.ui.json"), "utf8"));
     expect(config.themeMode).toBe("light");
-    expect(readFileSync(join(componentsDir, "tokens.js"), "utf8")).toBe(
-      readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.dark.js"), "utf8"),
+    expect(readFileSync(join(componentsDir, "tokens.ts"), "utf8")).toBe(
+      readFileSync(join(import.meta.dir, "..", "registry", "theme", "tokens.dark.ts"), "utf8"),
     );
   });
 
@@ -77,7 +77,7 @@ describe("cli e2e", () => {
     expect(exit).toBe(0);
     expect(existsSync(join(componentsDir, "theme.css"))).toBe(true);
     expect(existsSync(join(componentsDir, "cn.ts"))).toBe(true);
-    expect(existsSync(join(componentsDir, "tokens.js"))).toBe(false);
+    expect(existsSync(join(componentsDir, "tokens.ts"))).toBe(false);
   });
 
   test("add button --style tailwind --format html lands the renamed spliced file", async () => {

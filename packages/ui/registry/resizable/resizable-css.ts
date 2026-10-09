@@ -1,4 +1,5 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("resizable-panel-group", {
   display: "flex",
@@ -11,7 +12,7 @@ export const base = style("resizable-panel-group", {
 
 export const handle = style("resizable-handle", {
   alignItems: "center",
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   display: "flex",
   justifyContent: "center",
   position: "relative",
@@ -26,7 +27,7 @@ export const handle = style("resizable-handle", {
     width: "0.25rem",
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 1px var(--background), 0 0 0 2px var(--ring)",
+    boxShadow: `0 0 0 1px ${tokens.background}, 0 0 0 2px ${tokens.ring}`,
   },
   "&[aria-orientation='horizontal']": {
     height: "1px",
@@ -45,9 +46,9 @@ export const handle = style("resizable-handle", {
 
 export const grip = style("resizable-grip", {
   alignItems: "center",
-  border: "1px solid var(--border)",
+  border: `1px solid ${tokens.border}`,
   borderRadius: "0.125rem",
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   display: "flex",
   height: "1rem",
   justifyContent: "center",

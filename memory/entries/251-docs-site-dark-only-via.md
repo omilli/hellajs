@@ -4,7 +4,7 @@ title: Docs site is dark-only via dist/registry — Component.astro scopes the d
 description: The ui demos render the registry's default dark theme via @registry/theme/tokens.js's .dark class block on .demo-frame; no vendored tokens copy — a dark-value change lands with bun bundle ui alone.
 tags: [ui, docs]
 timestamp: 2026-10-05
-last_confirmed: 2026-10-05
+last_confirmed: 2026-10-08
 triggers: [tokens-js, dark-default-demos, registry-tokens, docs-demos, bundle-ui]
 supersedes: 231
 ---
@@ -13,7 +13,11 @@ supersedes: 231
 The docs demos run the registry's built output directly: each
 `docs/src/demos/<name>-demo.tsx` island imports
 `@registry/<name>/css/<name>.js` and mounts via `client:load` through the
-`astro-plugin-hellajs` renderer; no island imports a theme module. The
+`astro-plugin-hellajs` renderer; no island imports a registry theme module.
+Since the tokens-js set (unit 03, verified 2026-10-08) css-flavor demo islands
+also import the SITE sheet (`../styles/tokens`) for typed token refs — the
+resulting client-side site-sheet registration is specificity-identical to the
+static `html:root` block and carries identical values, so it is inert. The
 single theme import lives in `docs/src/components/Component.astro`:
 `@registry/theme/tokens.js` (not `tokens.dark.js`), whose `.dark` class
 block declares the registry's default dark palette. `Component.astro` puts

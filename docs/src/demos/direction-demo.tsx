@@ -1,12 +1,13 @@
 import { signal } from "@hellajs/core";
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import Button from "@registry/button/css/button.js";
 import DirectionProvider from "@registry/direction/css/direction.js";
 
 
 
 const panel = style({
-  border: "1px solid var(--border)",
+  border: `1px solid ${tokens.border}`,
   borderRadius: "0.5rem",
   padding: "0.75rem",
 }, { label: "demo-panel" });

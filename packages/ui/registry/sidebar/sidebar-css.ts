@@ -1,14 +1,15 @@
 import { css, keyframes, style, vars } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
-vars({
+const sidebarTokens = vars({
   sidebar: "oklch(0.985 0 0)",
-  "sidebar-foreground": "oklch(0.145 0 0)",
-  "sidebar-primary": "oklch(0.205 0 0)",
-  "sidebar-primary-foreground": "oklch(0.985 0 0)",
-  "sidebar-accent": "oklch(0.97 0 0)",
-  "sidebar-accent-foreground": "oklch(0.205 0 0)",
-  "sidebar-border": "oklch(0.922 0 0)",
-  "sidebar-ring": "oklch(0.708 0 0)",
+  sidebarForeground: "oklch(0.145 0 0)",
+  sidebarPrimary: "oklch(0.205 0 0)",
+  sidebarPrimaryForeground: "oklch(0.985 0 0)",
+  sidebarAccent: "oklch(0.97 0 0)",
+  sidebarAccentForeground: "oklch(0.205 0 0)",
+  sidebarBorder: "oklch(0.922 0 0)",
+  sidebarRing: "oklch(0.708 0 0)",
 });
 
 const fadeIn = keyframes({ from: { opacity: "0" } });
@@ -26,7 +27,7 @@ export const base = style("sidebar-base", {
 });
 
 export const sidebar = style("sidebar", {
-  color: "var(--sidebar-foreground)",
+  color: sidebarTokens.sidebarForeground,
   display: "none",
   "@media (min-width: 48rem)": {
     "&": {
@@ -36,8 +37,8 @@ export const sidebar = style("sidebar", {
 });
 
 export const none = style("sidebar-none", {
-  background: "var(--sidebar)",
-  color: "var(--sidebar-foreground)",
+  background: sidebarTokens.sidebar,
+  color: sidebarTokens.sidebarForeground,
   display: "flex",
   flexDirection: "column",
   height: "100%",
@@ -84,7 +85,7 @@ export const containerPlain = "";
 export const containerInset = "";
 
 export const inner = style("sidebar-inner", {
-  background: "var(--sidebar)",
+  background: sidebarTokens.sidebar,
   display: "flex",
   flexDirection: "column",
   height: "100%",
@@ -105,9 +106,9 @@ export const overlay = style("sidebar-overlay", {
 });
 
 export const mobile = style("sidebar-mobile", {
-  background: "var(--sidebar)",
+  background: sidebarTokens.sidebar,
   boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-  color: "var(--sidebar-foreground)",
+  color: sidebarTokens.sidebarForeground,
   display: "flex",
   flexDirection: "column",
   gap: "1rem",
@@ -133,7 +134,7 @@ export const mobile = style("sidebar-mobile", {
 
 export const mobileSides = {
   left: style("sidebar-mobile-left", {
-    borderRight: "1px solid var(--border)",
+    borderRight: `1px solid ${tokens.border}`,
     bottom: "0",
     height: "100%",
     left: "0",
@@ -152,7 +153,7 @@ export const mobileSides = {
     },
   }),
   right: style("sidebar-mobile-right", {
-    borderLeft: "1px solid var(--border)",
+    borderLeft: `1px solid ${tokens.border}`,
     bottom: "0",
     height: "100%",
     right: "0",
@@ -181,7 +182,7 @@ export const mobileInner = style("sidebar-mobile-inner", {
 
 export const trigger = style("sidebar-trigger", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "inline-flex",
   flexShrink: "0",
   fontSize: "0.875rem",
@@ -203,19 +204,19 @@ export const trigger = style("sidebar-trigger", {
     width: "1rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     opacity: "0.5",
     pointerEvents: "none",
   },
   "&:hover": {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
+    backgroundColor: tokens.accent,
+    color: tokens.accentForeground,
   },
   "&:is(.dark *):hover": {
-    backgroundColor: "color-mix(in oklab, var(--accent) 50%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.accent} 50%, transparent)`,
   },
   "& span": {
     clip: "rect(0, 0, 0, 0)",
@@ -252,7 +253,7 @@ export const rail = style("sidebar-rail", {
 });
 
 export const inset = style("sidebar-inset", {
-  background: "var(--background)",
+  background: tokens.background,
   display: "flex",
   flex: "1",
   flexDirection: "column",
@@ -262,8 +263,8 @@ export const inset = style("sidebar-inset", {
 
 export const inputBase = style("sidebar-input-base", {
   background: "transparent",
-  border: "1px solid var(--input)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  border: `1px solid ${tokens.input}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
   fontSize: "1rem",
   height: "2.25rem",
@@ -277,18 +278,18 @@ export const inputBase = style("sidebar-input-base", {
   "&::file-selector-button": {
     background: "transparent",
     border: "none",
-    color: "var(--foreground)",
+    color: tokens.foreground,
     display: "inline-flex",
     fontSize: "0.875rem",
     fontWeight: "500",
     height: "1.75rem",
   },
   "&::placeholder": {
-    color: "var(--muted-foreground)",
+    color: tokens.mutedForeground,
   },
   "&::selection": {
-    backgroundColor: "var(--primary)",
-    color: "var(--primary-foreground)",
+    backgroundColor: tokens.primary,
+    color: tokens.primaryForeground,
   },
   "&:disabled": {
     cursor: "not-allowed",
@@ -302,31 +303,31 @@ export const inputBase = style("sidebar-input-base", {
     },
   },
   "&:is(.dark *)": {
-    background: "color-mix(in oklab, var(--input) 30%, transparent)",
+    background: `color-mix(in oklab, ${tokens.input} 30%, transparent)`,
   },
 });
 
 export const inputFocus = style("sidebar-input-focus", {
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
 });
 
 export const inputInvalid = style("sidebar-input-invalid", {
   "&[aria-invalid='true']": {
-    borderColor: "var(--destructive)",
+    borderColor: tokens.destructive,
   },
   "&[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 20%, transparent)`,
   },
   "&:is(.dark *)[aria-invalid='true']:focus-visible": {
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--destructive) 40%, transparent)",
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.destructive} 40%, transparent)`,
   },
 });
 
 export const input = style("sidebar-input", {
-  background: "var(--background)",
+  background: tokens.background,
   boxShadow: "none",
   height: "2rem",
   width: "100%",
@@ -347,7 +348,7 @@ export const footer = style("sidebar-footer", {
 });
 
 export const separatorBase = style("sidebar-separator-base", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
     height: "1px",
@@ -360,7 +361,7 @@ export const separatorBase = style("sidebar-separator-base", {
 });
 
 export const separator = style("sidebar-separator", {
-  background: "var(--sidebar-border)",
+  background: sidebarTokens.sidebarBorder,
   marginInline: "0.5rem",
   width: "auto",
 });
@@ -385,8 +386,8 @@ export const group = style("sidebar-group", {
 
 export const groupLabel = style("sidebar-group-label", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "color-mix(in oklab, var(--sidebar-foreground) 70%, transparent)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: `color-mix(in oklab, ${sidebarTokens.sidebarForeground} 70%, transparent)`,
   display: "flex",
   flexShrink: "0",
   fontSize: "0.75rem",
@@ -402,15 +403,15 @@ export const groupLabel = style("sidebar-group-label", {
     width: "1rem",
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 2px var(--sidebar-ring)",
+    boxShadow: `0 0 0 2px ${sidebarTokens.sidebarRing}`,
   },
 });
 
 export const groupAction = style("sidebar-group-action", {
   alignItems: "center",
   aspectRatio: "1 / 1",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "var(--sidebar-foreground)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: sidebarTokens.sidebarForeground,
   display: "flex",
   justifyContent: "center",
   outlineStyle: "none",
@@ -426,11 +427,11 @@ export const groupAction = style("sidebar-group-action", {
     width: "1rem",
   },
   "&:hover": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 2px var(--sidebar-ring)",
+    boxShadow: `0 0 0 2px ${sidebarTokens.sidebarRing}`,
   },
   "&::after": {
     inset: "-0.5rem",
@@ -462,7 +463,7 @@ export const menuItem = style("sidebar-menu-item", {
 
 export const menuButton = style("sidebar-menu-button", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "flex",
   gap: "0.5rem",
   overflow: "hidden",
@@ -482,15 +483,15 @@ export const menuButton = style("sidebar-menu-button", {
     whiteSpace: "nowrap",
   },
   "&:hover": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "&:active": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 2px var(--sidebar-ring)",
+    boxShadow: `0 0 0 2px ${sidebarTokens.sidebarRing}`,
   },
   "&:disabled": {
     opacity: "0.5",
@@ -501,25 +502,25 @@ export const menuButton = style("sidebar-menu-button", {
     pointerEvents: "none",
   },
   "&[data-active='true']": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
     fontWeight: "500",
   },
   "&[data-state='open']:hover": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
   },
 });
 
 export const menuButtonVariants = {
   default: "",
   outline: style("sidebar-menu-button-outline", {
-    background: "var(--background)",
-    boxShadow: "0 0 0 1px var(--sidebar-border)",
+    background: tokens.background,
+    boxShadow: `0 0 0 1px ${sidebarTokens.sidebarBorder}`,
     "&:hover": {
-      backgroundColor: "var(--sidebar-accent)",
-      boxShadow: "0 0 0 1px var(--sidebar-accent)",
-      color: "var(--sidebar-accent-foreground)",
+      backgroundColor: sidebarTokens.sidebarAccent,
+      boxShadow: `0 0 0 1px ${sidebarTokens.sidebarAccent}`,
+      color: sidebarTokens.sidebarAccentForeground,
     },
   }),
 };
@@ -542,8 +543,8 @@ export const menuButtonSizes = {
 export const menuAction = style("sidebar-menu-action", {
   alignItems: "center",
   aspectRatio: "1 / 1",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "var(--sidebar-foreground)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: sidebarTokens.sidebarForeground,
   display: "flex",
   justifyContent: "center",
   outlineStyle: "none",
@@ -559,11 +560,11 @@ export const menuAction = style("sidebar-menu-action", {
     width: "1rem",
   },
   "&:hover": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 2px var(--sidebar-ring)",
+    boxShadow: `0 0 0 2px ${sidebarTokens.sidebarRing}`,
   },
   "&::after": {
     inset: "-0.5rem",
@@ -580,8 +581,8 @@ export const menuActionHover = "";
 
 export const menuBadge = style("sidebar-menu-badge", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "var(--sidebar-foreground)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: sidebarTokens.sidebarForeground,
   display: "flex",
   fontSize: "0.75rem",
   fontWeight: "500",
@@ -598,7 +599,7 @@ export const menuBadge = style("sidebar-menu-badge", {
 
 export const menuSkeleton = style("sidebar-menu-skeleton", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "flex",
   gap: "0.5rem",
   height: "2rem",
@@ -611,12 +612,12 @@ const pulse = keyframes({
 
 export const skeletonBase = style("sidebar-skeleton", {
   animation: `${pulse} 2s cubic-bezier(0.4, 0, 0.2, 1) infinite`,
-  backgroundColor: "var(--accent)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.accent,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
 });
 
 export const skeletonIcon = style("sidebar-skeleton-icon", {
-  borderRadius: "calc(var(--radius) * 0.8)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   height: "1rem",
   width: "1rem",
 });
@@ -628,7 +629,7 @@ export const skeletonText = style("sidebar-skeleton-text", {
 });
 
 export const menuSub = style("sidebar-menu-sub", {
-  borderLeft: "1px solid var(--sidebar-border)",
+  borderLeft: `1px solid ${sidebarTokens.sidebarBorder}`,
   display: "flex",
   flexDirection: "column",
   gap: "0.25rem",
@@ -645,8 +646,8 @@ export const menuSubItem = style("sidebar-menu-sub-item", {
 
 export const menuSubButton = style("sidebar-menu-sub-button", {
   alignItems: "center",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "var(--sidebar-foreground)",
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: sidebarTokens.sidebarForeground,
   display: "flex",
   gap: "0.5rem",
   height: "1.75rem",
@@ -656,7 +657,7 @@ export const menuSubButton = style("sidebar-menu-sub-button", {
   paddingInline: "0.5rem",
   translate: "-1px",
   "& svg": {
-    color: "var(--sidebar-accent-foreground)",
+    color: sidebarTokens.sidebarAccentForeground,
     flexShrink: "0",
     height: "1rem",
     width: "1rem",
@@ -667,15 +668,15 @@ export const menuSubButton = style("sidebar-menu-sub-button", {
     whiteSpace: "nowrap",
   },
   "&:hover": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "&:active": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "&:focus-visible": {
-    boxShadow: "0 0 0 2px var(--sidebar-ring)",
+    boxShadow: `0 0 0 2px ${sidebarTokens.sidebarRing}`,
   },
   "&:disabled": {
     opacity: "0.5",
@@ -686,8 +687,8 @@ export const menuSubButton = style("sidebar-menu-sub-button", {
     pointerEvents: "none",
   },
   "&[data-active='true']": {
-    backgroundColor: "var(--sidebar-accent)",
-    color: "var(--sidebar-accent-foreground)",
+    backgroundColor: sidebarTokens.sidebarAccent,
+    color: sidebarTokens.sidebarAccentForeground,
   },
 });
 
@@ -703,9 +704,9 @@ export const menuSubSizes = {
 };
 
 export const tooltipContent = style("sidebar-tooltip-content", {
-  backgroundColor: "var(--foreground)",
-  borderRadius: "calc(var(--radius) * 0.8)",
-  color: "var(--background)",
+  backgroundColor: tokens.foreground,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
+  color: tokens.background,
   fontSize: "0.75rem",
   lineHeight: "1rem",
   paddingBlock: "0.375rem",
@@ -721,7 +722,7 @@ export const tooltipContent = style("sidebar-tooltip-content", {
 
 css({
   "[data-slot='sidebar-wrapper']:has([data-variant='inset'])": {
-    background: "var(--sidebar)",
+    background: sidebarTokens.sidebar,
   },
 
   "[data-collapsible='icon'][data-variant='sidebar'] [data-slot='sidebar-gap']": {
@@ -750,24 +751,24 @@ css({
     width: "calc(var(--sidebar-width-icon) + 1rem + 2px)",
   },
   "[data-side='left'][data-variant='sidebar'] [data-slot='sidebar-container']": {
-    borderRight: "1px solid var(--border)",
+    borderRight: `1px solid ${tokens.border}`,
   },
   "[data-side='right'][data-variant='sidebar'] [data-slot='sidebar-container']": {
-    borderLeft: "1px solid var(--border)",
+    borderLeft: `1px solid ${tokens.border}`,
   },
   "[data-variant='floating'] [data-slot='sidebar-container'], [data-variant='inset'] [data-slot='sidebar-container']": {
     padding: "0.5rem",
   },
 
   "[data-variant='floating'] [data-slot='sidebar-inner']": {
-    border: "1px solid var(--sidebar-border)",
+    border: `1px solid ${sidebarTokens.sidebarBorder}`,
     borderRadius: "0.5rem",
     boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
   },
 
   "@media (min-width: 48rem)": {
     "[data-slot='sidebar'][data-variant='inset'] ~ [data-slot='sidebar-inset']": {
-      borderRadius: "calc(var(--radius) * 1.4)",
+      borderRadius: `calc(${tokens.radius} * 1.4)`,
       boxShadow: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
       margin: "0.5rem",
       marginLeft: "0",
@@ -801,7 +802,7 @@ css({
     left: "100%",
   },
   "[data-collapsible='offcanvas'] [data-slot='sidebar-rail']:hover": {
-    background: "var(--sidebar)",
+    background: sidebarTokens.sidebar,
   },
   "[data-side='left'][data-collapsible='offcanvas'] [data-slot='sidebar-rail']": {
     right: "-0.5rem",
@@ -835,7 +836,7 @@ css({
   },
 
   "[data-sidebar='menu-button']:hover ~ [data-sidebar='menu-action']": {
-    color: "var(--sidebar-accent-foreground)",
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "[data-sidebar='menu-button'][data-size='sm'] ~ [data-sidebar='menu-action']": {
     top: "0.25rem",
@@ -854,17 +855,17 @@ css({
     opacity: "1",
   },
   "[data-sidebar='menu-button'][data-active='true'] ~ [data-sidebar='menu-action'][data-show-on-hover='true']": {
-    color: "var(--sidebar-accent-foreground)",
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "[data-sidebar='menu-action'][data-show-on-hover='true'][data-state='open']": {
     opacity: "1",
   },
 
   "[data-sidebar='menu-button']:hover ~ [data-slot='sidebar-menu-badge']": {
-    color: "var(--sidebar-accent-foreground)",
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "[data-sidebar='menu-button'][data-active='true'] ~ [data-slot='sidebar-menu-badge']": {
-    color: "var(--sidebar-accent-foreground)",
+    color: sidebarTokens.sidebarAccentForeground,
   },
   "[data-sidebar='menu-button'][data-size='sm'] ~ [data-slot='sidebar-menu-badge']": {
     top: "0.25rem",

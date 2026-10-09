@@ -1,4 +1,5 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../styles/tokens";
 import Separator from "@registry/separator/css/separator.js";
 
 const section = style({
@@ -14,7 +15,7 @@ const sectionTitle = style({
 }, { label: "demo-section-title" });
 
 const sectionNote = style({
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   margin: 0,
 }, { label: "demo-section-note" });

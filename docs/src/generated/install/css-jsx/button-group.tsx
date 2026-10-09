@@ -1,6 +1,7 @@
 import type { HTMLAttributes, HellaChildren } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const base = style("button-group", {
   alignItems: "stretch",
@@ -14,8 +15,8 @@ const base = style("button-group", {
     zIndex: "10",
   },
   "&:has(select[aria-hidden='true']:last-child) > [data-slot='select-trigger']:last-of-type": {
-    borderBottomRightRadius: "calc(var(--radius) * 0.8)",
-    borderTopRightRadius: "calc(var(--radius) * 0.8)",
+    borderBottomRightRadius: `calc(${tokens.radius} * 0.8)`,
+    borderTopRightRadius: `calc(${tokens.radius} * 0.8)`,
   },
   "& > [data-slot='select-trigger']:not([class*='w-'])": {
     width: "fit-content",
@@ -53,9 +54,9 @@ const orientation = {
 
 const text = style("button-group-text", {
   alignItems: "center",
-  backgroundColor: "var(--muted)",
-  border: "1px solid var(--border)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.muted,
+  border: `1px solid ${tokens.border}`,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
   display: "flex",
   fontSize: "0.875rem",
   fontWeight: "500",
@@ -72,7 +73,7 @@ const text = style("button-group-text", {
 });
 
 const separatorBase = style("button-group-separator", {
-  backgroundColor: "var(--border)",
+  backgroundColor: tokens.border,
   flexShrink: "0",
   "&[data-orientation='horizontal']": {
     height: "1px",
@@ -86,7 +87,7 @@ const separatorBase = style("button-group-separator", {
 
 const separator = style("button-group-separator-override", {
   alignSelf: "stretch",
-  backgroundColor: "var(--input)",
+  backgroundColor: tokens.input,
   margin: "0 !important",
   position: "relative",
   "&[data-orientation='vertical']": {

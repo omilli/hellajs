@@ -40,11 +40,11 @@ npx @hellajs/ui list
 
 `init` writes these defaults when the file is absent and keeps an existing file otherwise; `--force` rewrites it. `add` reads the saved values as its defaults, and the per-call flags override them.
 
-`--lang js` also retargets the copied names: `button.tsx` becomes `button.jsx`, and `button.ts` and `cn.ts` become `.js`, while `tokens.js` and `theme.css` pass through unchanged. The output is plain JavaScript with the same declarations and markup. **Plain JavaScript** covers when to skip the flag entirely: Bun and Deno run TypeScript natively, so only no-build browser pages and JS-only toolchains need it.
+`--lang js` also retargets the copied names: `button.tsx` becomes `button.jsx`, and `button.ts`, `cn.ts`, and `tokens.ts` become `.js`, while `theme.css` passes through unchanged. The output is plain JavaScript with the same declarations and markup. **Plain JavaScript** covers when to skip the flag entirely: Bun and Deno run TypeScript natively, so only no-build browser pages and JS-only toolchains need it.
 
 ## Dependency Resolution
 
-Resolution is recursive: `add button` also copies every entry `button` depends on. Each dependency resolves from its own registry folder, a shared dependency resolves once, and a dependency cycle fails the add. The css style brings `tokens.js` along; the tailwind style brings `theme.css` and `cn.ts`.
+Resolution is recursive: `add button` also copies every entry `button` depends on. Each dependency resolves from its own registry folder, a shared dependency resolves once, and a dependency cycle fails the add. The css style brings `tokens.ts` along; the tailwind style brings `theme.css` and `cn.ts`.
 
 ## Style Splicing
 

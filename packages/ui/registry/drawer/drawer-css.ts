@@ -1,4 +1,5 @@
 import { css, keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const fadeIn = keyframes({ from: { opacity: "0" } });
 const fadeOut = keyframes({ to: { opacity: "0" } });
@@ -17,7 +18,7 @@ export const base = style("drawer-base", {
 });
 
 export const content = style("drawer-content", {
-  background: "var(--background)",
+  background: tokens.background,
   display: "flex",
   flexDirection: "column",
   height: "auto",
@@ -31,8 +32,8 @@ export const content = style("drawer-content", {
 
 export const contentDirections = {
   top: style("drawer-content-top", {
-    borderBottom: "1px solid var(--border)",
-    borderRadius: "0 0 var(--radius) var(--radius)",
+    borderBottom: `1px solid ${tokens.border}`,
+    borderRadius: `0 0 ${tokens.radius} ${tokens.radius}`,
     left: "0",
     marginBottom: "6rem",
     maxHeight: "80vh",
@@ -40,8 +41,8 @@ export const contentDirections = {
     top: "0",
   }),
   bottom: style("drawer-content-bottom", {
-    borderTop: "1px solid var(--border)",
-    borderRadius: "var(--radius) var(--radius) 0 0",
+    borderTop: `1px solid ${tokens.border}`,
+    borderRadius: `${tokens.radius} ${tokens.radius} 0 0`,
     bottom: "0",
     left: "0",
     marginTop: "6rem",
@@ -49,7 +50,7 @@ export const contentDirections = {
     right: "0",
   }),
   right: style("drawer-content-right", {
-    borderLeft: "1px solid var(--border)",
+    borderLeft: `1px solid ${tokens.border}`,
     bottom: "0",
     right: "0",
     top: "0",
@@ -61,7 +62,7 @@ export const contentDirections = {
     },
   }),
   left: style("drawer-content-left", {
-    borderRight: "1px solid var(--border)",
+    borderRight: `1px solid ${tokens.border}`,
     bottom: "0",
     left: "0",
     top: "0",
@@ -75,7 +76,7 @@ export const contentDirections = {
 };
 
 export const close = style("drawer-close", {
-  borderRadius: "calc(var(--radius) * 0.2)",
+  borderRadius: `calc(${tokens.radius} * 0.2)`,
   opacity: "0.7",
   position: "absolute",
   right: "1rem",
@@ -85,14 +86,14 @@ export const close = style("drawer-close", {
     opacity: "1",
   },
   "&:focus": {
-    boxShadow: "0 0 0 2px var(--background), 0 0 0 4px var(--ring)",
+    boxShadow: `0 0 0 2px ${tokens.background}, 0 0 0 4px ${tokens.ring}`,
     outlineStyle: "none",
   },
   "&:disabled": {
     pointerEvents: "none",
   },
   "&[data-state='open']": {
-    backgroundColor: "var(--secondary)",
+    backgroundColor: tokens.secondary,
   },
   "& svg": {
     flexShrink: "0",
@@ -120,7 +121,7 @@ css({
     display: "none",
   },
   "[data-slot='drawer-content'][data-vaul-drawer-direction='bottom'] [data-slot='drawer-handle']": {
-    backgroundColor: "var(--muted)",
+    backgroundColor: tokens.muted,
     borderRadius: "calc(infinity * 1px)",
     display: "block",
     flexShrink: "0",
@@ -160,12 +161,12 @@ export const footer = style("drawer-footer", {
 });
 
 export const title = style("drawer-title", {
-  color: "var(--foreground)",
+  color: tokens.foreground,
   fontWeight: "600",
 });
 
 export const description = style("drawer-description", {
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   fontSize: "0.875rem",
   lineHeight: "1.25rem",
 });

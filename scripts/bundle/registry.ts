@@ -90,7 +90,13 @@ async function compileFile(
   const canonical = await fs.readFile(sourcePath, "utf8");
   const flavored = styleModuleText === null ? canonical : applyStyleVariant(canonical, styleModuleText, style);
   const compiled = transformRegistrySource(flavored, filename);
-  await fs.writeFile(path.join(outDir, `${path.basename(filename, ext)}.js`), compiled);
+  // Spliced style modules import the theme sheet as a components-dir sibling
+  // ("./tokens.js"); in dist the sheet compiles once at registry/theme/, so
+  // compiled entry imports retarget to the dist-relative path. Staging keeps
+  // the sibling form: the dependency pass stages tokens.ts next to each
+  // dependent canonical, so the staged import resolves for declaration emit.
+  const fixed = compiled.replaceAll('from "./tokens.js"', 'from "../../theme/tokens.js"');
+  await fs.writeFile(path.join(outDir, `${path.basename(filename, ext)}.js`), fixed);
 
   if (stageDir !== null) {
     const stageOut = path.join(stageDir, path.relative(outRoot, outDir));

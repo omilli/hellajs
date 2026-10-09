@@ -1,4 +1,5 @@
 import { style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 export const base = style("switch", {
   alignItems: "center",
@@ -14,26 +15,26 @@ export const base = style("switch", {
     width: "2rem",
   },
   "&:focus-visible": {
-    borderColor: "var(--ring)",
-    boxShadow: "0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)",
+    borderColor: tokens.ring,
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${tokens.ring} 50%, transparent)`,
   },
   "&:disabled": {
     cursor: "not-allowed",
     opacity: "0.5",
   },
   "&[data-state='checked']": {
-    backgroundColor: "var(--primary)",
+    backgroundColor: tokens.primary,
   },
   "&[data-state='unchecked']": {
-    backgroundColor: "var(--input)",
+    backgroundColor: tokens.input,
   },
   "&:is(.dark *)[data-state='unchecked']": {
-    backgroundColor: "color-mix(in oklab, var(--input) 80%, transparent)",
+    backgroundColor: `color-mix(in oklab, ${tokens.input} 80%, transparent)`,
   },
 });
 
 export const thumb = style("switch-thumb", {
-  backgroundColor: "var(--background)",
+  backgroundColor: tokens.background,
   borderRadius: "9999px",
   display: "block",
   height: "1rem",
@@ -47,9 +48,9 @@ export const thumb = style("switch-thumb", {
     translate: "0",
   },
   "&:is(.dark *)[data-state='checked']": {
-    backgroundColor: "var(--primary-foreground)",
+    backgroundColor: tokens.primaryForeground,
   },
   "&:is(.dark *)[data-state='unchecked']": {
-    backgroundColor: "var(--foreground)",
+    backgroundColor: tokens.foreground,
   },
 });

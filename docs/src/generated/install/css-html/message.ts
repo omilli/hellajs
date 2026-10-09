@@ -2,6 +2,7 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { css, style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const group = style("message-group", {
   display: "flex",
@@ -33,7 +34,7 @@ const avatar = style("message-avatar", {
   alignSelf: "flex-end",
   overflow: "hidden",
   borderRadius: "calc(infinity * 1px)",
-  backgroundColor: "var(--muted)",
+  backgroundColor: tokens.muted,
 });
 
 const content = style("message-content", {
@@ -53,7 +54,7 @@ const header = style("message-header", {
   paddingInline: "0.75rem",
   fontSize: "0.75rem",
   fontWeight: "500",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
 });
 
 const footer = style("message-footer", {
@@ -64,7 +65,7 @@ const footer = style("message-footer", {
   paddingInline: "0.75rem",
   fontSize: "0.75rem",
   fontWeight: "500",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
 });
 
 css({

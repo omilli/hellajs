@@ -1,4 +1,5 @@
 import { keyframes, style } from "@hellajs/css";
+import { tokens } from "../theme/tokens.js";
 
 const pulse = keyframes({
   "50%": { opacity: "0.5" },
@@ -6,6 +7,6 @@ const pulse = keyframes({
 
 export const base = style("skeleton", {
   animation: `${pulse} 2s cubic-bezier(0.4, 0, 0.2, 1) infinite`,
-  backgroundColor: "var(--accent)",
-  borderRadius: "calc(var(--radius) * 0.8)",
+  backgroundColor: tokens.accent,
+  borderRadius: `calc(${tokens.radius} * 0.8)`,
 });

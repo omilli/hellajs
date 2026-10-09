@@ -2,10 +2,11 @@ import { html } from "@hellajs/dom";
 import type { HTMLAttributes, HellaChildren, HellaNode } from "@hellajs/dom";
 
 import { style } from "@hellajs/css";
+import { tokens } from "./tokens.js";
 
 const list = style("breadcrumb-list", {
   alignItems: "center",
-  color: "var(--muted-foreground)",
+  color: tokens.mutedForeground,
   display: "flex",
   flexWrap: "wrap",
   fontSize: "0.875rem",
@@ -31,12 +32,12 @@ const item = style("breadcrumb-item", {
 const link = style("breadcrumb-link", {
   transition: "color 150ms cubic-bezier(0.4, 0, 0.2, 1)",
   "&:hover": {
-    color: "var(--foreground)",
+    color: tokens.foreground,
   },
 });
 
 const page = style("breadcrumb-page", {
-  color: "var(--foreground)",
+  color: tokens.foreground,
   fontWeight: "400",
 });
 

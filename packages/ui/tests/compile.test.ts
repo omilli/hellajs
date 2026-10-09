@@ -39,10 +39,12 @@ describe("compile", () => {
       expect(compiled).not.toMatch(/\bReact\b|createElement/);
     }
     expect(cssJsx).toContain(`import { style } from "@hellajs/css";`);
+    expect(cssJsx).toContain(`import { tokens } from "../../theme/tokens.js";`);
     expect(cssJsx).not.toContain("@hellajs/dom");
     expect(tailwindJsx).toContain(`import { cn } from "./cn.js";`);
     expect(tailwindJsx).not.toContain("@hellajs/");
     expect(cssHtml).toContain(`import { style } from "@hellajs/css";`);
+    expect(cssHtml).toContain(`import { tokens } from "../../theme/tokens.js";`);
     expect(cssHtml).toContain(`import { html } from "@hellajs/dom";`);
     expect(readArtifact("cn", "cn.js")).toContain(`import { clsx } from "clsx";`);
   });
@@ -79,13 +81,17 @@ describe("compile", () => {
     }
   });
 
-  test("copies theme tokens and stylesheet verbatim", () => {
-    expect(readArtifact("theme", "tokens.js")).toBe(
-      readFileSync(join(sourceRegistry, "theme", "tokens.js"), "utf8"),
-    );
-    expect(readArtifact("theme", "tokens.dark.js")).toBe(
-      readFileSync(join(sourceRegistry, "theme", "tokens.dark.js"), "utf8"),
-    );
+  test("compiles the theme sheets with their token export and copies the stylesheet verbatim", () => {
+    // The sheets compile from tokens.ts / tokens.dark.ts (staged sources), so
+    // their dist output is compiled JavaScript carrying the camelCase export;
+    // theme.css has no TS to strip and copies byte-identical.
+    const tokensJs = readArtifact("theme", "tokens.js");
+    expect(tokensJs).toContain(`import { css, vars } from "@hellajs/css";`);
+    expect(tokensJs).toContain("cardForeground");
+    expect(tokensJs).toContain("\"--card-foreground\"");
+    expect(readArtifact("theme", "tokens.dark.js")).toContain("cardForeground");
+    expect(readArtifact("theme", "tokens.dark.d.ts")).toContain("tokens");
+    expect(readArtifact("theme", "tokens.d.ts")).toContain("tokens");
     expect(readArtifact("theme", "theme.css")).toBe(
       readFileSync(join(sourceRegistry, "theme", "theme.css"), "utf8"),
     );
