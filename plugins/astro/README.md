@@ -49,7 +49,7 @@ A complete walkthrough lives in the [Astro Islands tutorial](https://hellajs.com
 
 ## Frontmatter styles
 
-Statically evaluable `css()`, `style()`, and `keyframes()` calls in `.astro` frontmatter compile at build: the integration folds each call against the real `@hellajs/css` package and replaces it with its class or name literal. The collected CSS splits by channel: rules from the page's own module ride Astro's pipeline as a page-scoped `<style>` in the built head, and rules collected from imported island modules ride a `<style id="hella-css">` in the page, which hydration drains and repopulates so those rules never duplicate. No client-side CSS ships for frontmatter styles.
+Statically evaluable `css()`, `style()`, and `keyframes()` calls in `.astro` frontmatter compile at build: the integration folds each call against the real `@hellajs/css` package and replaces it with its class or name literal. The collected CSS splits by channel: rules from the page's own module ride Astro's pipeline as a page-scoped `<style>` in the built head, and rules collected from imported island modules ride a `<style id="hella-css">` in the page, which hydration claims against the islands' re-registrations so those rules never duplicate. No client-side CSS ships for frontmatter styles.
 
 ```astro
 ---
@@ -80,7 +80,7 @@ A frontmatter creator call with non-foldable arguments fails the build and point
 
 A page importing and referencing `cssText` keeps byte-identical behavior: the integration leaves it untouched. That is also the escape hatch for dynamic styles: move them to a module and collect with `cssText()`, as shown under [Styling](#styling).
 
-Islands keep runtime registration. Rules collected from island modules ship inside the page's `<style id="hella-css">`: hydration adopts that element once, draining what the server shipped so client registrations repopulate it without duplicates.
+Islands keep runtime registration. Rules collected from island modules ship inside the page's `<style id="hella-css">`: hydration adopts that element once, claiming the delivered rules against the islands' re-registrations so each exists exactly once.
 
 ## Styling
 

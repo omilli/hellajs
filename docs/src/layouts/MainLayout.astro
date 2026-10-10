@@ -12,6 +12,10 @@ import "../chrome/chrome-css";
 import "../global.css";
 const { frontmatter = {}, title: pageTitle } = Astro.props;
 const title = frontmatter.title || pageTitle;
+// Adoptable split: the ids let hydration claim the delivered rules against
+// client re-registrations instead of re-injecting them (no duplicated rules,
+// no flash window). css side first — the client's `hella-css` sheet always
+// precedes `hella-vars`.
 
 // "On This Page" is server-rendered (site-foundation set contract: no
 // client render, zero flash). Render the slot to its final HTML first —
@@ -38,9 +42,11 @@ const toc: { text: string; slug: string; depth: number }[] = Array.from(
     <meta name="generator" content={Astro.generator} />
     <title>{title} | HellaJS</title>
     <style
+      id="hella-css"
       is:inline
-      set:html={cssText()}
+      set:html={cssText.css()}
     />
+    {cssText.vars() && <style id="hella-vars" is:inline set:html={cssText.vars()} />}
   </head>
   <body>
     <!-- Drawer state: checked = open. Sits before every drawer surface so

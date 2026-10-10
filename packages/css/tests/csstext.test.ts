@@ -131,3 +131,36 @@ describe("cssText", () => {
     expect(first).toBe(`.${cls} {\n  color: red;\n}`);
   });
 });
+
+describe("cssText namespace", () => {
+  test("members split into adoptable halves that rejoin to cssText", () => {
+    css({ body: { margin: 0 } });
+    vars({ color: { primary: "#000" } });
+
+    expect(cssText.css()).toBe("body {\n  margin: 0px;\n}");
+    expect(cssText.vars()).toBe(":root {\n  --color-primary: #000;\n}");
+    expect(`${cssText.css()}\n\n${cssText.vars()}`).toBe(cssText());
+  });
+
+  test("vars side is empty when only css registrations exist", () => {
+    css({ body: { margin: 0 } });
+
+    expect(cssText.vars()).toBe("");
+    expect(cssText.css()).toBe(cssText());
+  });
+
+  test("css side is empty when only vars registrations exist", () => {
+    vars({ a: "1" });
+
+    expect(cssText.css()).toBe("");
+    expect(cssText.vars()).toBe(cssText());
+  });
+
+  test("peeks without draining", () => {
+    style({ color: "red" });
+    const first = { css: cssText.css(), vars: cssText.vars() };
+    const second = { css: cssText.css(), vars: cssText.vars() };
+    expect(second.css).toBe(first.css);
+    expect(second.vars).toBe(first.vars);
+  });
+});

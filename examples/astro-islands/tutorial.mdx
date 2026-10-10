@@ -305,7 +305,7 @@ css({
 
 - **[`css`](/reference/css/css)`({...})`**: Registers global rules. The `#name-input` and `#greeting` selectors reach HTML that Astro itself rendered, outside any island
 - **Frontmatter folding**: The integration evaluates this call at build, folds it to a no-op (its rules are already collected), and injects an import for the page's collected CSS. Astro bundles that import as a page-scoped style tag, so none of these rules ship to the client
-- **Import-graph collection**: Starting from the page, the integration follows the imports the server module actually carries, so `Counter`'s co-located `style()` call is collected and spliced into a `<style id="hella-css">` in the page's head; the server-rendered button arrives styled at first paint. `MouseTracker` and `NameSync` never join that module (`client:only` skips the server entirely), so their calls stay runtime-only. Hydration drains that tag once before the islands re-register their rules, so nothing duplicates
+- **Import-graph collection**: Starting from the page, the integration follows the imports the server module actually carries, so `Counter`'s co-located `style()` call is collected and spliced into a `<style id="hella-css">` in the page's head; the server-rendered button arrives styled at first paint. `MouseTracker` and `NameSync` never join that module (`client:only` skips the server entirely), so their calls stay runtime-only. At hydration the islands' re-registrations claim the delivered rules in place, so nothing duplicates
 
 Build the app and inspect `dist/index.html`: two style tags in the head, one per channel. The `hella-css` tag carries the island classes; Astro's own page-scoped tag carries the frontmatter rules:
 
@@ -325,7 +325,7 @@ Build the app and inspect `dist/index.html`: two style tags in the head, one per
 
 **Code Explanation**
 
-- **Two channels**: Island-collected rules ride the `hella-css` tag because the islands re-register those same rules at hydration: the runtime adopts the tag (drains it once, then repopulates from client registrations), so each rule exists exactly once. The page's frontmatter rules are never re-registered, so they stay in Astro's pipeline tag
+- **Two channels**: Island-collected rules ride the `hella-css` tag because the islands re-register those same rules at hydration: the runtime adopts the tag (claims each delivered rule against its re-registration, so nothing inserts twice), so each rule exists exactly once. The page's frontmatter rules are never re-registered, so they stay in Astro's pipeline tag
 - **`client:only` islands**: `MouseTracker` and `NameSync` are absent from the collected CSS. Their `style()` calls ship inside their client bundles and register when the islands load, appending into the adopted `hella-css` tag. The class names match the page's because the hash derives from the rule text
 
 Styles that need runtime values do not fold: move them into an island module instead. A page that must manage its CSS manually can reference [`cssText`](/reference/css/csstext), which opts it out of extraction entirely (see [Frontmatter styles](/plugins/astro)).

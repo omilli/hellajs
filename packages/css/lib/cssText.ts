@@ -1,64 +1,66 @@
-import { injectedMap } from "./internal/injection";
-import { varsText } from "./internal/vars";
+import { cssTextCss } from "./cssTextCss";
+import { cssTextVars } from "./cssTextVars";
 
 /**
- * A host qualifier is `#` plus the host serial (digits only). Valid CSS text
- * never starts with `#` + digit — an ID selector's identifier cannot begin
- * with a digit — so this discriminates hosted keys from a text that merely
- * starts with an ID selector.
+ * The `cssText` callable-namespace contract: the base call is the combined
+ * collector; the members split the registered text into its two adoptable
+ * halves for two-tag server delivery. Each member's full contract lives on
+ * this interface.
  */
-const HOSTED_KEY = /^#\d/;
-
-/**
- * True when the text opens with a block-less statement segment (`@import …;`):
- * an unquoted ";" lands before the first "{" — statements never carry braces.
- * Quote-aware, so a brace or semicolon inside a statement's own string value
- * (an imported URL) cannot misclassify the text.
- */
-function startsWithStatement(text: string): boolean {
-  let i = 0;
-  let quote: string | null = null;
-  const len = text.length;
-  while (i < len) {
-    const ch = text[i++] as string;
-    if (quote !== null) {
-      if (ch === "\\") i++;
-      else if (ch === quote) quote = null;
-    } else if (ch === '"' || ch === "'") quote = ch;
-    else if (ch === ";") return true;
-    else if (ch === "{") return false;
-  }
-  return false;
+interface CssTextFn {
+  /**
+   * Collects the CSS text registered by `css()`, `style()`, `keyframes()`,
+   * and `vars()` calls on the default host, in first-registration order (the
+   * vars contribution appends after the css-side text — the `hella-vars`
+   * sheet mirrors the two-element client model). Statement-leading texts
+   * hoist ahead of braced-only texts within that order, so the server
+   * `<style>` keeps statements ahead of every rule, mirroring the client's
+   * before-braced placement. Each registered text is pretty-printed (one
+   * declaration per line, 2-space indentation); separately-registered
+   * blocks join with a blank line. A peek, never a drain: repeated calls
+   * return the same string until `resetCss()` / `resetVars()` clear the
+   * registrations. Identical on both platforms — registration runs without
+   * a DOM, so this is the server-side `<style>` source
+   * (`<style>${cssText()}</style>`). Host-qualified entries are excluded:
+   * their rules live in host sheets (e.g. shadow roots), not
+   * `document.head`. Split the contributions into separate adoptable tags
+   * with `cssText.css()` / `cssText.vars()`.
+   * @returns The joined rule text of all default-host registrations
+   */
+  (): string;
+  /**
+   * Collects the css-side contribution — the `css()`, `style()`, and
+   * `keyframes()` registrations on the default host, in first-registration
+   * order with statement-leading texts hoisted ahead of braced-only ones —
+   * for delivery through the `hella-css` tag. Pretty-printed like the
+   * combined call; a peek, never a drain; identical on both platforms.
+   * Host-qualified entries are excluded: their rules live in host sheets,
+   * not `document.head`.
+   * @returns The css-side text, `""` when nothing css-side is registered
+   */
+  css(): string;
+  /**
+   * Collects the vars contribution — the `vars()` bucket rules on the
+   * default host, in registration order, media-wrapped when the bucket's
+   * `media` option was set — for delivery through the `hella-vars` tag. A
+   * peek, never a drain; identical on both platforms.
+   * @returns The vars-side text, `""` when nothing vars-side is registered
+   */
+  vars(): string;
 }
 
 /**
- * Collects the CSS text registered by `css()`, `style()`, `keyframes()`, and
- * `vars()` calls on the default host, in first-registration order (the vars
- * contribution appends after the css-side text — the `hella-vars` sheet
- * mirrors the two-element client model). Statement-leading texts hoist ahead
- * of braced-only texts within that order, so the server `<style>` keeps
- * statements ahead of every rule, mirroring the client's before-braced
- * placement. Each registered text is pretty-printed (one declaration per
- * line, 2-space indentation); separately-registered blocks join with a
- * blank line. A peek, never a drain: repeated
- * calls return the same string until `resetCss()` / `resetVars()` clear the
- * registrations. Identical on both platforms — registration runs without a
- * DOM, so this is the server-side `<style>` source
- * (`<style>${cssText()}</style>`).
- * Host-qualified entries are excluded: their rules live in host sheets
- * (e.g. shadow roots), not `document.head`.
- * @returns The joined rule text of all default-host registrations
+ * Collects the registered CSS text for server-side delivery. Callable
+ * namespace: the base call is the combined collector (css side, then vars);
+ * `cssText.css()` / `cssText.vars()` split the contributions so each embeds
+ * into the `<style>` tag carrying its sheet id. Each member's full contract
+ * lives on `CssTextFn`.
  */
-export function cssText(): string {
-  const statements: string[] = [];
-  const braced: string[] = [];
-  injectedMap.forEach((_entry, key) => {
-    if (HOSTED_KEY.test(key)) return;
-    if (startsWithStatement(key)) statements.push(key);
-    else braced.push(key);
-  });
-  const cssSide = statements.concat(braced).join("\n\n");
-  const vars = varsText();
-  if (!cssSide) return vars;
-  return vars ? `${cssSide}\n\n${vars}` : cssSide;
+export const cssText: CssTextFn = Object.assign(impl, { css: cssTextCss, vars: cssTextVars });
+
+function impl(): string {
+  const css = cssTextCss();
+  const vars = cssTextVars();
+  if (!css) return vars;
+  return vars ? `${css}\n\n${vars}` : css;
 }

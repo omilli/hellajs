@@ -1,6 +1,6 @@
 ## CSS
 
-Type-safe CSS-in-JS with runtime style generation and automatic memory management. `style()` returns a content-hashed class, the same string on client and server; `css()` registers explicit globals; `cva()` layers typed variant recipes over them and `cx()` joins class fragments; `vars()` drives reactive theming; `keyframes()` hashes animation names. Every creator pairs with a reference-counted remove call, and `cssText()` collects the registered text for server rendering.
+Type-safe CSS-in-JS with runtime style generation and automatic memory management. `style()` returns a content-hashed class, the same string on client and server; `css()` registers explicit globals; `cva()` layers typed variant recipes over them and `cx()` joins class fragments; `vars()` drives reactive theming; `keyframes()` hashes animation names. Every creator pairs with a reference-counted remove call, `cssText()` collects the registered text for server rendering, and `cssText.css()` / `cssText.vars()` split it into per-sheet adoptable tags.
 
 ### Installation
 
@@ -49,8 +49,10 @@ const Card = ({ title, children }: CardProps) => (
   </div>
 );
 
-// On the server, cssText() collects every registration for one <style> embed
-const head = `<style id="hella-css">${cssText()}</style>`;
+// On the server, cssText.css() / cssText.vars() split the registrations for
+// two adoptable tags; hydration claims the delivered rules instead of re-injecting them
+const head = `<style id="hella-css">${cssText.css()}</style>
+<style id="hella-vars">${cssText.vars()}</style>`;
 ```
 
 ### API
@@ -61,7 +63,7 @@ const head = `<style id="hella-css">${cssText()}</style>`;
 - **[cx](/reference/css/cx)**: Clsx-compatible class-name joiner with no styling side effects
 - **[vars](/reference/css/vars)**: Reactive CSS custom properties that update when signals change (formerly `cssVars`)
 - **[keyframes](/reference/css/keyframes)**: Hashed, collision-free `@keyframes` definitions returning an animation name
-- **[cssText](/reference/css/csstext)**: Collect the registered CSS text (css, style, keyframes, and vars), the server-side `<style>` source
+- **[cssText](/reference/css/csstext)**: Collect the registered CSS text (css, style, keyframes, and vars), the server-side `<style>` source; `cssText.css()` / `cssText.vars()` split it into per-sheet adoptable tags
 - **[removeCss](/reference/css/removecss)**: Manually remove a generated stylesheet
 - **[removeStyle](/reference/css/removestyle)**: Manually remove a `style()` registration
 - **[removeVars](/reference/css/removevars)**: Remove specific CSS variable declarations with reference counting

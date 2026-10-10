@@ -10,7 +10,7 @@ A type-safe CSS-in-JS package with a tiny runtime footprint. Content-hashed scop
 - Reactive CSS custom properties via `vars()` and signals
 - Collision-free `@keyframes` definitions via `keyframes()`
 - Automatic memory management: reference-counted `remove*` / `reset*` pairs
-- Server-side critical CSS: the `cssText()` collector reads everything registered
+- Server-side critical CSS: the `cssText()` collector reads everything registered, and `cssText.css()` / `cssText.vars()` split it into per-sheet tags the client adopts at hydration
 
 ## Documentation
 
@@ -64,7 +64,7 @@ const buttonStyle = style('btn', {
 </button>
 ```
 
-On the server, every call above registers the same rules and `cssText()` collects them for a single `<style>` embed per response.
+On the server, every call above registers the same rules and `cssText()` collects them for a single `<style>` embed per response. `cssText.css()` / `cssText.vars()` split the collection into a `hella-css` and a `hella-vars` tag instead, so hydration claims the delivered rules in place rather than re-injecting them.
 
 ## License
 

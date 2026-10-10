@@ -1,13 +1,18 @@
 # cssText
 
-Collects the CSS text registered by [`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes), and [`vars`](/reference/css/vars) calls on the default host, in first-registration order (statement-leading texts, e.g. an `@import`, hoist ahead of braced-only texts). The server-side `<style>` source.
+Collects the CSS text registered by [`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes), and [`vars`](/reference/css/vars) calls on the default host. A callable namespace: `cssText()` joins every contribution into one string, the server-side `<style>` source; `cssText.css()` collects the css-side half and `cssText.vars()` the vars half, so server rendering can emit each into its own `<style>` tag the client claims at hydration.
 
 ## API
 
 ```typescript
-function cssText(): string
+declare const cssText: {
+  (): string;
+  css(): string;
+  vars(): string;
+};
 ```
-- **Returns**: The joined rule text of all default-host registrations
+
+- **Returns**: The joined rule text of all default-host registrations, in first-registration order (statement-leading texts, e.g. an `@import`, hoist ahead of braced-only texts).
 
 ## Basic Usage
 
@@ -26,11 +31,53 @@ const head = `<style id="hella-css">${cssText()}</style>`;
 // + ":root {\n  --color-primary: #3b82f6;\n}"
 ```
 
+## Members
+
+### css
+
+The css-side member: every registration except the vars buckets, collected for the rules sheet.
+
+```typescript
+declare namespace cssText {
+  function css(): string;
+}
+```
+
+- **Returns**: The css-side text ([`css`](/reference/css/css), [`style`](/reference/css/style), [`keyframes`](/reference/css/keyframes) registrations, statements hoisted ahead of braced-only texts). `""` when nothing css-side is registered.
+
+### vars
+
+The vars member: the custom-property bucket rules, collected for the vars sheet.
+
+```typescript
+declare namespace cssText {
+  function vars(): string;
+}
+```
+
+- **Returns**: The vars text ([`vars`](/reference/css/vars) bucket rules, media-wrapped when the bucket's `media` option was set). `""` when nothing vars-side is registered.
+
+### Two Tags, One Per Sheet
+
+The client keeps two style elements, and each member's text embeds into the tag carrying its id:
+
+```js
+import { css, vars, cssText } from '@hellajs/css';
+
+css({ body: { margin: 0 } });
+vars({ color: { primary: '#3b82f6' } });
+
+const head = `<style id="hella-css">${cssText.css()}</style>
+<style id="hella-vars">${cssText.vars()}</style>`;
+// cssText.css(): "body {\n  margin: 0px;\n}"
+// cssText.vars(): ":root {\n  --color-primary: #3b82f6;\n}"
+```
+
 ## Key Concepts
 
 ### A Peek, Never a Drain
 
-`cssText()` reads the registration state without consuming it; repeated calls return the same string until [`resetCss`](/reference/css/resetcss) / [`resetVars`](/reference/css/resetvars) clear it or [`removeStyle`](/reference/css/removestyle) / [`removeCss`](/reference/css/removecss) / [`removeKeyframes`](/reference/css/removekeyframes) / [`removeVars`](/reference/css/removevars) drop a registration to zero.
+`cssText()` and its members read the registration state without consuming it; repeated calls return the same string (equal parts for the members) until [`resetCss`](/reference/css/resetcss) / [`resetVars`](/reference/css/resetvars) clear it or [`removeStyle`](/reference/css/removestyle) / [`removeCss`](/reference/css/removecss) / [`removeKeyframes`](/reference/css/removekeyframes) / [`removeVars`](/reference/css/removevars) drop a registration to zero. Host-qualified registrations (a `host` option, e.g. a shadow root) are excluded from the combined text and from both members.
 
 ### Identical on Both Platforms
 
@@ -38,22 +85,26 @@ Registration runs without a DOM, so the collector works the same on client and s
 
 ### Vars Append After the CSS-Side Text
 
-Two style elements exist on the client (`hella-css` for rules, `hella-vars` for custom properties), and the collector mirrors that split: css-side registrations (`css`, `style`, `keyframes`) join in call order (statement-leading texts hoist ahead of braced-only ones), then the vars contribution appends (each scope+media bucket's rule, in registration order, media-wrapped when the `media` option was set).
+Two style elements exist on the client (`hella-css` for rules, `hella-vars` for custom properties), and the combined call mirrors that split: css-side registrations (`css`, `style`, `keyframes`) join in call order (statement-leading texts hoist ahead of braced-only ones), then the vars contribution appends (each scope+media bucket's rule, in registration order, media-wrapped when the `media` option was set). The members expose the same split directly.
 
 ### Formatted Output
 
 Every emission is pretty-printed: one declaration per line (`prop: value;` with a trailing semicolon), two-space indentation per nesting level (at-rule bodies indent their contents), and rules of one registration separated by single newlines. Separately-registered blocks join with a blank line, css side and vars buckets alike, so each `css()` / `style()` / `keyframes()` / `vars()` call reads as its own paragraph in the collected text.
 
-### Host-Qualified Entries Are Excluded
+### One Tag Per Sheet
 
-Styles registered with a `host` (e.g. a shadow root) live in that host's own `<style>` elements, not `document.head`; `cssText()` never includes them, css side and vars side alike. The default SSR flow has no hosts, so the collector covers everything it needs.
+The client keeps two style elements (`hella-css` for rules, `hella-vars` for custom properties), and the combined `cssText()` joins both sides into one string. Emitting that string through a single `hella-css` tag lands the vars declarations in the rules element, off the sheet the client keeps them on. `cssText.css()` and `cssText.vars()` restore the two-tag split: each part embeds into the tag carrying its id, so the delivered text mirrors the client's own element split.
 
 ### Adopting the Server Tag on Hydration
 
-Emit the collected text through a tag carrying the `hella-css` id (as in [Basic Usage](#basic-usage)) and the client adopts it: the first registration after hydration finds the existing element, drains the braced rules the server shipped (the client's registration state does not know them; block-less statements such as a leading cascade-layer order declaration are preserved), and repopulates the same element from its own registrations. One `hella-css` element before and after hydration: no duplicate rules, no flash of unstyled content. The vars contribution trailing the collected text drains along with everything else and re-lands in the client's `hella-vars` element, restoring the two-element split.
+Emit the collected text through a tag carrying the `hella-css` id (as in [Basic Usage](#basic-usage)) and the client adopts it: the first registration after hydration finds the existing element, splits the delivered text into the same rule texts its registrations produce, verifies the split against what the platform actually parsed, and claims each matching rule in place (no duplicate insert, and no window where the stylesheet is empty; the delivery is never deleted). Rules the platform dropped at parse (e.g. vendor-prefixed selectors in another engine) align through the same check and claim without them. A delivered text the client cannot match (e.g. an altered emission) inserts a fresh copy alongside it instead. Only when the delivered text cannot be aligned with the sheet at all (a quoted blank line mis-splits a rule on platforms whose `insertRule` is strict) does the client fall back to clearing the delivered braced rules and re-registering into the same element (one `hella-css` element before and after hydration either way): no duplicate rules, no flash of unstyled content. The vars contribution trailing the collected text lands in the same element and re-lands in the client's `hella-vars` sheet. For a delivery that mirrors the client's two-element split (each side in its own adoptable tag), collect with `cssText.css()` and `cssText.vars()` (see [Two Tags, One Per Sheet](#two-tags-one-per-sheet)).
 
 ## Important Considerations
 
 ### Hydration Duplicates Without the Id
 
 Embedding `cssText()` in server HTML through a tag with no `hella-css` id gives the client nothing to adopt: hydration registers the same styles into a fresh element, and the DOM carries both rule sets. The class names agree (content-hashed), so styling is correct; the duplication is cosmetic and bounded by the number of styles. Emit the tag with the id to get adoption instead.
+
+### Join With a Blank Line
+
+`cssText()`'s output equals `cssText.css() + "\n\n" + cssText.vars()` whenever both sides are non-empty; when only one side has registrations, that member alone equals `cssText()`'s output. Emit two tags rather than re-joining, so each side lands on its own sheet id.

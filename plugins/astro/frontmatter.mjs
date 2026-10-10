@@ -91,10 +91,11 @@ export function frontmatterCss(options = {}) {
       const batch = extractFrontmatter({ code, id, resolve, load });
       if (!batch) return null;
       const { pageCss, islandCss, replacements, watchFiles } = batch;
-      // Island rules ride the adoptable `hella-css` tag — hydration drains
-      // and repopulates it, so the rules the runtime re-registers never
-      // duplicate. No template anchor → status-quo single-batch delivery
-      // (duplicate-but-styled degradation for degenerate compiled shapes).
+      // Island rules ride the adoptable `hella-css` tag — hydration claims
+      // its delivered rules against the islands' re-registrations, so the
+      // rules never duplicate. No template anchor → status-quo single-batch
+      // delivery (duplicate-but-styled degradation for degenerate compiled
+      // shapes).
       let virtualCss = pageCss;
       if (islandCss) {
         const anchor = findIslandAnchor(code);

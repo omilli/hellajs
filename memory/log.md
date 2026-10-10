@@ -1,3 +1,5 @@
+* **merge**: Renumbered 273->280 and 274->281 on merge of adoption-claim: parallel workers allocated IDs the main tree had taken
+
 # Memory Update Log
 
 ## 2026-10-09

@@ -15,3 +15,10 @@ export function createShadowHost(): ShadowRoot {
 export function getCssSheet(): CSSStyleSheet {
   return (document.getElementById("hella-css") as HTMLStyleElement).sheet as CSSStyleSheet;
 }
+
+/**
+ * The live `hella-vars` sheet, for asserting rule counts against the CSSOM.
+ */
+export function getVarsSheet(): CSSStyleSheet {
+  return (document.getElementById("hella-vars") as HTMLStyleElement).sheet as CSSStyleSheet;
+}

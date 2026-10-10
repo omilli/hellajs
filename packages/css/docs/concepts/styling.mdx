@@ -187,7 +187,7 @@ const card = style('card', { padding: '1rem' });
 const page = `<!DOCTYPE html><html><head><style id="hella-css">${cssText()}</style></head><body>…</body></html>`;
 ```
 
-`cssText()` peeks, never drains; repeated calls return the same string. Emit the tag with the `hella-css` id and hydration adopts it: the client drains the server's braced rules and repopulates the same element, so no duplicate rules ship (see [cssText](/reference/css/csstext)). Without the id, hydration re-registers the same styles into a second element; the duplicated rules are identical and harmless.
+`cssText()` peeks, never drains; repeated calls return the same string. Emit the tag with the `hella-css` id and hydration adopts it: the client claims the delivered rules against its own re-registrations in the same element, so no duplicate rules ship (see [cssText](/reference/css/csstext)). Without the id, hydration re-registers the same styles into a second element; the duplicated rules are identical and harmless.
 
 ## Reactive Class Bindings
 

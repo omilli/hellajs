@@ -6,16 +6,27 @@
  */
 
 import { hasDocument } from "./core";
+import { splitTopLevelRules } from "./shared";
 
 const indexMap = new Map<string, number>();
 const sheets = new Map<string, CSSStyleSheet>();
 
 /**
- * Style elements already drained of SSR-emitted rules. Adoption runs once
- * per element: hydration repopulates it from client registrations instead
- * of duplicating what the server shipped.
+ * Style elements already adopted from SSR delivery. Adoption runs once per
+ * element: delivered rules are claimed into the registration state (or, when
+ * the delivery cannot be trusted, drained) so hydration never duplicates what
+ * the server shipped.
  */
 const adoptedElements = new WeakSet<HTMLStyleElement>();
+
+/**
+ * Claimed rule texts per adopted sheet: raw rule text → the sheet index the
+ * delivered text placed it at. upsertRule's miss path consults the map before
+ * inserting, consumes the hit, and adopts the delivered rule in place — no
+ * duplicate, no churn. Entries rebase with the sheet's indexes; unconsumed
+ * entries die with the sheet (WeakMap).
+ */
+const adoptedClaims = new WeakMap<CSSStyleSheet, Map<string, number>>();
 
 /**
  * Stable serial per host node. Never reset: qualified registry keys derived
@@ -58,24 +69,84 @@ function sheetKey(id: string, host?: ParentNode): string {
 }
 
 /**
- * Drains the braced rules a pre-existing (SSR-emitted) style element carries
- * that the client's registration state does not know, once per element:
- * without the drain, upsertRule's miss path would insert registrations
- * blindly and duplicate every SSR rule inside the adopted element. Block-less
- * statement rules stay — the client never re-emits them (a leading cascade
- * layer-order statement is exactly what keeps `hella` declared after the
- * linked stylesheet's layers once hydration re-inserts its `@layer` blocks;
- * draining it re-declares `hella` first and hands the cascade back to
- * preflight). Bottom-up deleteRule; a rule the platform rejects (exotic
- * types, e.g. @layer in happy-dom) stays rather than aborting the drain —
- * client registrations still repopulate around it.
+ * Parse-probe sheet for adoption: replays delivered segments where writing
+ * the live sheet would duplicate rules. Constructable stylesheets where the
+ * platform has them; otherwise a style element in an inert document (never
+ * rendered). Undefined when neither is available — adoption then drains.
+ */
+function createProbeSheet(): CSSStyleSheet | undefined {
+  try {
+    return new CSSStyleSheet();
+  } catch {
+    try {
+      const doc = document.implementation.createHTMLDocument("");
+      const el = doc.createElement("style");
+      doc.body.appendChild(el);
+      return el.sheet as CSSStyleSheet;
+    } catch {
+      return undefined;
+    }
+  }
+}
+
+/**
+ * Adopts a pre-existing (SSR-emitted) style element's rules, once per element.
+ * The delivered text splits on blank lines into registrations, each through
+ * the same quote-aware top-level splitter registration uses, so a matching
+ * client registration byte-equals its segment — both sides come from the same
+ * deterministic composer, no CSSOM round-trip. Each segment then replays into
+ * a parse-probe sheet: a segment the platform rejected when it parsed the
+ * delivered text (a vendor-prefixed selector, a dropped statement) rejects
+ * here too, so accepted segments align one-to-one with the sheet's rules no
+ * matter what the platform dropped. When the accepted count equals the parsed
+ * rule count, every accepted segment is seeded as a claim at its probe index
+ * and nothing is deleted: a miss-path upsert adopts its delivered rule in
+ * place instead of inserting a duplicate (no flash window). Otherwise the
+ * text cannot be aligned with the sheet (a quoted blank line mis-splits a
+ * rule into pieces that both reject; no probe sheet is available) and the
+ * drain runs: bottom-up deleteRule of braced rules, statements stay — the
+ * client never re-emits them (a leading cascade layer-order statement is
+ * exactly what keeps `hella` declared after the linked stylesheet's layers
+ * once hydration re-inserts its `@layer` blocks; draining it re-declares
+ * `hella` first and hands the cascade back to preflight). Bottom-up
+ * deleteRule; a rule the platform rejects (exotic types, e.g. @layer in
+ * happy-dom) stays rather than aborting the drain — client registrations
+ * still repopulate around it.
  */
 function adoptElementRules(el: HTMLStyleElement): void {
   if (adoptedElements.has(el)) return;
   adoptedElements.add(el);
   const s = el.sheet as CSSStyleSheet | null;
   if (!s) return;
-  let i = s.cssRules.length;
+  const chunks = (el.textContent ?? "").split("\n\n");
+  const segments: string[] = [];
+  let ci = 0;
+  while (ci < chunks.length) {
+    const rules = splitTopLevelRules(chunks[ci++]!);
+    let ri = 0;
+    while (ri < rules.length) segments.push(rules[ri++]!);
+  }
+  const probe = createProbeSheet();
+  const claims = new Map<string, number>();
+  let accepted = 0;
+  let i = 0;
+  const len = segments.length;
+  while (probe && i < len) {
+    try {
+      probe.insertRule(segments[i]!, accepted);
+      claims.set(segments[i]!, accepted);
+      accepted++;
+    } catch {
+      // Platform-rejected segment: the live parse dropped it too — seed no
+      // claim and shift no index for it.
+    }
+    i++;
+  }
+  if (probe && accepted === s.cssRules.length) {
+    adoptedClaims.set(s, claims);
+    return;
+  }
+  i = s.cssRules.length;
   while (i--) {
     if (!ruleIsBraced(s, i)) continue;
     try {
@@ -94,8 +165,9 @@ function adoptElementRules(el: HTMLStyleElement): void {
  * enforces the canonical document order (`hella-css` before `hella-vars`,
  * regardless of first-write order) so the cascade matches cssText()'s
  * css-side-then-vars emission. A pre-existing element (SSR hydration) is
- * adopted once: its braced rules drain (statements stay) so client
- * registrations repopulate the same element without duplicates.
+ * adopted once: delivered rules are claimed (upserts adopt them in place —
+ * no duplicates), or drained when the delivery cannot be trusted to the
+ * claim split.
  */
 function getSheet(id: string, host?: ParentNode): CSSStyleSheet | undefined {
   if (!hasDocument()) return undefined;
@@ -147,27 +219,42 @@ function mapKey(id: string, key: string): string {
  * Decrements every indexMap entry of the given sheet above `removedIndex` —
  * a successful deleteRule shifts all later rules down one, so their stored
  * indexes must follow or the next deleteRule/upsert hits the wrong rule.
- * Scoped by the qualified sheet key: indexMap spans both sheet ids and all hosts.
+ * Unconsumed adoption claims rebase with them (a later upsert claims the
+ * rule's post-shift index). Scoped by the qualified sheet key: indexMap
+ * spans both sheet ids and all hosts.
  */
-function rebaseIndexes(qid: string, removedIndex: number): void {
+function rebaseIndexes(s: CSSStyleSheet, qid: string, removedIndex: number): void {
   const prefix = `${qid}:`;
   indexMap.forEach((v, k) => {
     if (v > removedIndex && k.startsWith(prefix)) indexMap.set(k, v - 1);
   });
+  const claims = adoptedClaims.get(s);
+  if (claims) {
+    claims.forEach((v, k) => {
+      if (v > removedIndex) claims.set(k, v - 1);
+    });
+  }
 }
 
 /**
  * Increments every indexMap entry of the given sheet at or above
  * `insertedIndex` — a mid-sheet insertRule shifts all later rules up one,
  * so their stored indexes must follow or the next deleteRule/upsert hits
- * the wrong rule. The mirror of rebaseIndexes' post-deleteRule decrement.
- * Scoped by the qualified sheet key: indexMap spans both sheet ids and all hosts.
+ * the wrong rule. The mirror of rebaseIndexes' post-deleteRule decrement;
+ * unconsumed adoption claims rebase with them. Scoped by the qualified
+ * sheet key: indexMap spans both sheet ids and all hosts.
  */
-function shiftIndexesUp(qid: string, insertedIndex: number): void {
+function shiftIndexesUp(s: CSSStyleSheet, qid: string, insertedIndex: number): void {
   const prefix = `${qid}:`;
   indexMap.forEach((v, k) => {
     if (v >= insertedIndex && k.startsWith(prefix)) indexMap.set(k, v + 1);
   });
+  const claims = adoptedClaims.get(s);
+  if (claims) {
+    claims.forEach((v, k) => {
+      if (v >= insertedIndex) claims.set(k, v + 1);
+    });
+  }
 }
 
 /**
@@ -241,9 +328,19 @@ export function upsertRule(id: string, key: string, cssText: string, host?: Pare
       // the rule is skipped entirely — indexMap stays clean, no fallback path carries it.
       // A successful deleteRule above shifted later rules down and the rejected insert never
       // refilled the hole — rebase so remaining stored indexes match the sheet again.
-      if (shifted) rebaseIndexes(qid, existing);
+      if (shifted) rebaseIndexes(s, qid, existing);
       console.warn(`[css] rule rejected by the platform and skipped: ${cssText}`);
     }
+    return;
+  }
+
+  const claims = adoptedClaims.get(s);
+  const claimed = claims?.get(cssText);
+  if (claimed !== undefined) {
+    // Claimed delivery: adopt the sheet's rule in place — no insert, no
+    // churn. Consumed so a later removal re-registration inserts fresh.
+    claims!.delete(cssText);
+    indexMap.set(ruleKey, claimed);
     return;
   }
 
@@ -254,7 +351,7 @@ export function upsertRule(id: string, key: string, cssText: string, host?: Pare
     // insert: appending shifts nothing.
     const shifts = index < s.cssRules.length;
     s.insertRule(cssText, index);
-    if (shifts) shiftIndexesUp(qid, index);
+    if (shifts) shiftIndexesUp(s, qid, index);
     indexMap.set(ruleKey, index);
   } catch {
     // skip — rule not supported by runtime; indexMap stays clean
@@ -276,7 +373,7 @@ export function removeRule(id: string, key: string, host?: ParentNode): void {
 
   try {
     s.deleteRule(existing);
-    rebaseIndexes(qid, existing);
+    rebaseIndexes(s, qid, existing);
   } catch {
     // Index already invalidated; the remove caller already handles cleanup.
   }
@@ -301,6 +398,8 @@ export function resetSheet(id: string): void {
   }
 
   sheets.delete(id);
+  // Adopted claims need no cleanup: they are keyed by the sheet object this
+  // deletion drops, so the WeakMap entry garbage-collects with it.
   // Hosted sheets cannot be enumerated — abandon them (their <style> elements
   // keep their rules), drop the id's host registry (lazily re-created on the
   // next hosted call), and delete every qualified indexMap entry for this id.

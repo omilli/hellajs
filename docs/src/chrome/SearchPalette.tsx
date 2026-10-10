@@ -27,9 +27,9 @@
  *
  * Styles: the command module the island imports registers its own css at
  * module load (before the dialog can ever open — both triggers live on
- * this island), into the runtime-created sheet; the static head tag id
- * (site-head, see MainLayout) is deliberately NOT the runtime's #hella-css,
- * so nothing ever drains the SSR styles. chrome-css.ts owns the palette
+ * this island); the adoptable head tags (see MainLayout) carry the same
+ * rules and hydration claims them against this registration, so nothing
+ * duplicates. chrome-css.ts owns the palette
  * width (.site-search-command).
  */
 import { effect, signal } from "@hellajs/core";
