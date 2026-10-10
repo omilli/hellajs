@@ -136,9 +136,8 @@ Detailed explanation.
 
 ### Rules
 
-- **`# Title`**: Always present. Capitalized concept name (`# Routing`, `# State`, `# Styling`). Exception: ui component concept docs consumed by a ui-section wrapper page omit the H1 — the wrapper page's `<h1>` is the page's only top-level heading and the doc opens at `## Usage`.
+- **`# Title`**: Always present. Capitalized concept name (`# Routing`, `# State`, `# Styling`). Exception: ui component concept docs consumed by a ui-section wrapper page omit the H1 — the wrapper page's `<h1>` is the page's only top-level heading and the doc opens at `## API`.
 - **`##` sections**: Free-form, organized by topic. Use descriptive section names.
-- **Usage subsections**: ui component concept docs structure `## Usage` as `### jsx` and `### html` subsections; the html subsection keeps the `js` language tag per §Example Syntax (JSX Default) and a one-line lead ("The html-format (`--format html`) works the same way.").
 - **Hella terms only**: ui component concept docs describe behavior in hella terms; upstream-catalog references (shadcn, Radix, "the ref") do not appear in component docs — catalog provenance lives in `packages/ui/README.md` and `ui-comparison.md`.
 - **Code examples**: Self-contained with imports on first example per page.
 - **Cross-references**: Link to API docs on first mention of each export.
@@ -752,7 +751,7 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 
 **Location & template**
 - [ ] File at the right path per §File Locations & Naming; filename matches export name (API) or is lowercase-hyphenated (concepts/patterns)
-- [ ] Correct template from §Template Selection (Function / Prefix / Concept / Pattern / Index / Tutorial); ui component concept docs hosted by a ui-section wrapper omit the H1 and open at `## Usage` (§Concept Docs → Rules)
+- [ ] Correct template from §Template Selection (Function / Prefix / Concept / Pattern / Index / Tutorial); ui component concept docs hosted by a ui-section wrapper omit the H1 and open at `## API` (§Concept Docs → Rules)
 - [ ] Every new/extended section follows §Extending Existing Content
 
 **Frontmatter**
@@ -772,7 +771,6 @@ Run this when holding a Docs file (`.mdx` / `.md`). Each item is a yes/no or a c
 **Code examples**
 - [ ] `typescript` for pure API; `jsx` for JSX; `js` for html templates; correct tag per §Language Tags
 - [ ] JSX is the only example syntax — `html` tagged literals appear only in `html`-method docs (`api/html.mdx`), build-free-runtime recipe blocks, or ui html-format usage fences (§Example Syntax (JSX Default)); no fenced block mixes the two; audit-enforced, deliberately outside `bun lint:structure` — the html-method boundary is judgment (§Example Syntax (JSX Default))
-- [ ] ui component concept docs structure `## Usage` as `### jsx` and `### html` subsections, the html block tagged `js` with its one-line lead (§Concept Docs → Rules)
 - [ ] No upstream-catalog references (shadcn, Radix, "the ref") in component docs — provenance lives in `packages/ui/README.md` and `ui-comparison.md` (§Concept Docs → Rules)
 - [ ] `html` blocks close dynamic components with `</${Component}>` (childless: self-closing `<${Component} />`); never the `<//>` short form — audit-enforced (§Example Syntax (JSX Default) → Dynamic Component Closes)
 - [ ] Attribute values written directly, never function-wrapped — function-wrapping only in `html`-method docs; `bun lint:structure` bans function-wrapped `class`/`style`/`title`/`href`/`id` inside jsx/tsx fences (§Code Examples → Example Code Style)
